@@ -123,7 +123,7 @@ test("a deep link in a fresh session hydrates the evaluated negotiation: nothing
   await page.evaluate(() => sessionStorage.removeItem("tl-demo-v3"));
   await page.goto(url);
   await expect(page.getByTestId("queue-recommends")).toContainText("Option A");
-  await expect(page.getByTestId("deal-mandate")).toBeVisible();
+  await expect(page.getByTestId("deal-rec-reason")).toBeVisible();
   // The review reads the terms of this send from the server (the same check as "Check again", on the owner's own press) and sends what it showed.
   await page.getByTestId("queue-review-open").click();
   await expect(page.getByTestId("receipt-line-authorizes")).toContainText("proposed agreement");

@@ -13,55 +13,39 @@ test.describe("mock", () => {
     test.skip(live(testInfo), "mock-mode: the recorded reads");
   });
 
-  test("the payment-period bars live in the Future invoices row of the terms by scope: current terms, the buyer's request and FLOW's counter on one scale, with the server's words and the difference said", async ({ page }) => {
+  test("the choices table's Terms row says each choice's terms by scope in the server's words; the payment-period bars, the timing diagram and the separate terms table are gone from the Overview", async ({ page }) => {
     await checkedDeal(page);
-    const terms = page.getByTestId("deal-scope-terms");
+    const terms = page.getByTestId("deal-choice-row-terms");
     await expect(terms).toBeVisible();
-    await expect(terms.getByTestId("deal-scope-terms-bar-current")).toHaveAttribute("data-days", "45");
-    await expect(terms.getByTestId("deal-scope-terms-bar-asked")).toHaveAttribute("data-days", "60");
-    await expect(terms.getByTestId("deal-scope-terms-bar-reply").first()).toHaveAttribute("data-days", "45");
-    await expect(terms).toContainText("Now 45 days");
-    await expect(terms.getByTestId("deal-scope-terms-head-asked")).toHaveText("As they asked");
-    await expect(terms.getByTestId("deal-scope-terms-head-reply").first()).toHaveText("Option A");
-    await expect(page.getByTestId("deal-scope-terms-delta-asked")).toHaveText("+15 days requested by buyer");
-    // The standalone timing diagram section is gone.
-    await expect(page.getByTestId("deal-timing")).toHaveCount(0);
+    await expect(terms.getByTestId("deal-choice-cell-terms-asked")).toContainText("Future invoices");
+    await expect(terms.getByTestId("deal-choice-cell-terms-asked")).toContainText("60 days");
+    await expect(terms.getByTestId("deal-choice-cell-terms-reply").first()).toContainText("45 days");
+    await expect(terms.getByTestId("deal-choice-cell-terms-reply").nth(1)).toContainText("55 days");
+    await expect(page.getByTestId("deal-choices-table").locator("thead th").filter({ hasText: /\S/ }).nth(1)).toContainText("Option A");
+    for (const gone of ["deal-timing", "deal-scope-terms", "deal-scope-terms-bar-current"]) await expect(page.getByTestId(gone)).toHaveCount(0);
   });
 
-  test("the comparison's rows: the economic and cash rows say each response's figures in the server's words, a row expands in place, and Escape brings the queue back before it clears the selection", async ({ page }) => {
+  test("the choices table's cost and lowest-cash cells say each choice's figures in the server's words, and Escape clears the selection (there is no rail to bring back)", async ({ page }) => {
     await checkedDeal(page);
-    await page.getByTestId("deal-tab-compare").click();
-    await expect(page.getByTestId("deal-compare-cell-economic-asked")).toContainText("¥28,326.92");
-    await expect(page.getByTestId("deal-compare-cell-economic-reply").first()).toContainText("¥3,027.77");
-    await expect(page.getByTestId("deal-outcome-row-lowest")).toContainText("¥300k");
-    const toggle = page.getByTestId("deal-compare-expand-economic");
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByTestId("deal-compare-calc-economic").getByTestId("deal-cost-table")).toBeVisible();
-    await page.getByTestId("deal-compare-expand-terms").click();
-    await expect(page.getByTestId("deal-compare-calc-economic")).toBeVisible();
-    await expect(page.getByTestId("deal-compare-calc-terms")).toBeVisible();
-    // Escape: the queue returns from its rail first (the address keeps the tab); the next one clears the selection.
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("deals-queue")).toBeVisible();
-    await expect(page).toHaveURL(/view=compare/);
+    await expect(page.getByTestId("deal-choice-cell-cost-asked")).toContainText("¥28,326.92");
+    await expect(page.getByTestId("deal-choice-cell-cost-reply").first()).toContainText("¥3,027.77");
+    await expect(page.getByTestId("deal-choice-cell-lowest-reply").first()).toContainText("¥300k");
+    await expect(page.getByTestId("deal-choice-cell-lowest-asked")).toContainText("¥165k");
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("deal-pane")).toHaveCount(0);
+    await expect(page.getByTestId("deals-queue")).toBeVisible();
   });
 
-  test("a deep link keeps the tab; Why these results differ carries the server's reason, who decides each path, the assumptions and the rule; the chart is on Cash impact", async ({ page }) => {
+  test("a deep link keeps the section: Cash impact opens on Cash impact with its two charts, and an address that still names Compare responses lands on the Overview", async ({ page }) => {
     await checkedDeal(page);
-    await page.goto(`${new URL(page.url()).pathname}${new URL(page.url()).search}&view=compare`);
-    await expect(page.getByTestId("deal-tab-compare")).toHaveAttribute("aria-selected", "true");
-    const why = page.getByTestId("deal-why");
-    await expect(why).toContainText("Why these results differ");
-    await expect(page.getByTestId("deal-why-reason")).toContainText("Recommended because");
-    await expect(page.getByTestId("deal-why-authority")).toContainText("Option A");
-    await expect(page.getByTestId("deal-why-rule")).toHaveText("FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost.");
-    await expect(page.locator('[data-testid="deal-compare-table"]:visible')).toBeVisible();
-    await page.getByTestId("deal-tab-cash").click();
+    const here = `${new URL(page.url()).pathname}${new URL(page.url()).search}`;
+    await page.goto(`${here}&view=cash`);
+    await expect(page.getByTestId("deal-tab-cash")).toHaveAttribute("aria-current", "page");
     await expect(page.getByTestId("deal-chart")).toBeVisible();
+    await expect(page.getByTestId("deal-why-lines")).toContainText("Why the lines differ");
+    await page.goto(`${here}&view=compare`);
+    await expect(page.getByTestId("deal-choices")).toBeVisible();
+    await expect(page).not.toHaveURL(/view=compare/);
   });
 
   test("the queue's controls: sort and grouping are offered only as the queue grows (four and six negotiations; the busy books in the live describe below pin them), and one row shows none", async ({ page }) => {
@@ -84,17 +68,17 @@ test.describe("mock", () => {
     await expect(page.getByTestId("customer-exposure-table")).toBeVisible();
   });
 
-  test("a picked reply is marked in the comparison's column and named on the Overview, and \"FLOW recommends\" stays with the recommended reply only", async ({ page }) => {
+  test("a picked reply is reviewed from its own column, and \"FLOW recommends\" stays with the recommended reply only", async ({ page }) => {
     await checkedDeal(page);
-    await page.goto(`${new URL(page.url()).pathname}${new URL(page.url()).search}&path=CTR-6b07cbf70441&view=compare`);
-    const heads = page.locator('[data-testid="deal-compare-head-reply"]:visible');
-    await expect(heads.nth(1)).toHaveAttribute("data-selected", "true");
-    await expect(heads.first()).not.toHaveAttribute("data-selected", "true");
-    // The comparison still says the recommended reply's authority in the short word, Option A's column alone.
-    await expect(page.getByTestId("deal-outcome-row-send")).toContainText("FLOW can send");
-    await page.getByTestId("deal-tab-overview").click();
-    await expect(page.getByTestId("deal-recommends-title")).toHaveText("The response you picked · Option B");
-    await expect(page.getByTestId("deal-mandate")).toHaveText("Option A is the reply FLOW can send within your mandate.");
+    await page.goto(`${new URL(page.url()).pathname}${new URL(page.url()).search}&path=CTR-6b07cbf70441`);
+    const heads = page.locator('[data-testid="deal-choice-head-reply"]:visible');
+    await expect(heads.first()).toHaveAttribute("data-recommended", "true");
+    await expect(heads.nth(1)).not.toHaveAttribute("data-recommended", "true");
+    // The Overview still says the recommended reply's authority in the short word, Option A's column alone.
+    await expect(page.getByTestId("deal-choice-cell-decides-reply").first()).toContainText("FLOW can send");
+    await expect(page.getByTestId("deal-recommends-title")).toHaveText("FLOW recommends");
+    await expect(page.getByTestId("deal-rec-label")).toHaveText("Option A");
+    await expect(page.getByTestId("deal-rec-reason")).toContainText("FLOW can send it within your mandate");
   });
 
   test("Approvals: the lifecycle shows three stages, the first current while the owner has not authorized, and the button names the act", async ({ page }) => {
@@ -161,10 +145,8 @@ test.describe("live", () => {
     await page.goto("/deals");
     await page.getByTestId("queue-row").filter({ hasText: "60-day terms" }).getByTestId("queue-select").click();
     // The request breaches the reserve: its cash outcome says so in the comparison; the terms say the difference of the period.
-    await expect(page.getByTestId("deal-scope-terms-delta-asked")).toContainText("15 days", { timeout: 45_000 });
-    await expect(page.getByTestId("deal-scope-terms-bar-current")).toBeVisible();
-    await page.getByTestId("deal-tab-compare").click();
-    await expect(page.getByTestId("deal-outcome-row-reserve")).toContainText(/Breached by/);
+    await expect(page.getByTestId("deal-choice-cell-terms-asked")).toContainText("days", { timeout: 45_000 });
+    await expect(page.getByTestId("deal-choice-cell-lowest-asked")).toContainText(/Breached by/);
     await page.getByTestId("deal-tab-overview").click();
     await page.getByTestId("deal-selected-customer").click();
     await expect(page.getByTestId("customer-relationship")).toContainText("Foshan contributes an estimated");

@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, expandRow, openCompare, openInbox, openOperatorTools, openReview, resetBooks } from "./helpers";
+import { checkedDeal, openCompare, openInbox, openOperatorTools, openReview, resetBooks } from "./helpers";
 
 /**
  * Slice B of the overhaul map #121 (tickets #126 to #132, #134, #143), the contract end to end: a row's link and the origin, a deep link that hydrates a fresh session,
@@ -37,12 +37,11 @@ test.describe("mock", () => {
   test("a deep link in a fresh session hydrates the negotiation, its reply and its open comparison from the server", async ({ page }) => {
     await checkedDeal(page);
     await page.evaluate(() => sessionStorage.removeItem("tl-demo-v3")); // the tab's own session cache is gone: only the server is read
-    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}&path=CTR-6b07cbf70441&view=compare`);
+    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}&path=CTR-6b07cbf70441`);
     await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
-    await expect(page.locator('[data-testid="deal-compare-table"]:visible')).toBeVisible();
-    await expect(page.locator('[data-testid="deal-use-CTR-6b07cbf70441"]:visible')).toHaveText("Option B is selected");
-    await page.getByTestId("deal-tab-overview").click();
-    await expect(page.getByTestId("deal-recommends-title")).toHaveText("The response you picked · Option B");
+    await expect(page.locator('[data-testid="deal-choices-table"]:visible')).toBeVisible();
+    await expect(page.locator('[data-testid^="deal-use-CTR-6b07cbf70441"]:visible')).toHaveText("Review Option B");
+    await expect(page.getByTestId("deal-recommends-title")).toHaveText("FLOW recommends");
     await expect(page.getByTestId("queue-check-button")).toHaveCount(0); // an evaluated deal is read, not checked again
   });
 
@@ -201,7 +200,7 @@ test.describe("mock", () => {
     await checkedDeal(page);
     await expect(page.getByTestId("deal-pane").getByText("None", { exact: true })).toHaveCount(0);
     await openCompare(page);
-    await expect(page.getByTestId("deal-panel-compare").getByText("None", { exact: true })).toHaveCount(0);
+    await expect(page.getByTestId("deal-choices").getByText("None", { exact: true })).toHaveCount(0);
     await page.goto("/customers/BUYER-1");
     await expect(page.getByTestId("customer-figures")).toBeVisible();
     await expect(page.locator("main").getByText("None", { exact: true })).toHaveCount(0);
@@ -345,17 +344,15 @@ test.describe("live", () => {
     await page.locator('[data-testid="queue-row"][data-kind="DECISION"]').filter({ hasText: "Zhuhai" }).getByTestId("queue-select").click();
     const none = page.getByTestId("deal-no-reply");
     await expect(none).toBeVisible();
-    // The ask's own cost and basis are in the comparison's economic row, behind its calculation.
+    // The ask's own cost and basis are in the choices table's Cost to you cell.
     await openCompare(page);
-    await expandRow(page, "economic");
-    await expect(page.locator('[data-testid="deal-cost-table-total-asked"]:visible')).toContainText(/¥\d/);
-    await expect(page.locator('[data-testid="deal-cost-table-total-asked"]:visible')).toContainText("over 12 months");
-    await page.getByTestId("deal-back").click();
+    await expect(page.locator('[data-testid="deal-choice-cell-cost-asked"]:visible')).toContainText(/¥\d/);
+    await expect(page.locator('[data-testid="deal-choice-cell-cost-asked"]:visible')).toContainText("over 12 months");
     await expect(none).toContainText("you approve it first");
     await expect(page.getByTestId("deal-send")).toHaveCount(0);
     await expect(page.getByTestId("deal-review")).toHaveCount(0);
     await expect(page.getByTestId("deal-pane")).not.toContainText(/\bNone\b/);
-    await expect(page.getByTestId("deal-scope-terms-table")).not.toContainText(/\bNone\b/);
+    await expect(page.getByTestId("deal-choices")).not.toContainText(/\bNone\b/);
   });
 
   test("the send review of a picked reply reads that reply's own receipt, not the recommended one's, and Send names the picked reply", async ({ page, request }) => {
@@ -369,9 +366,8 @@ test.describe("live", () => {
     await page.getByTestId("queue-review-close").click();
     await openCompare(page);
     // The first reply that is not the recommended one.
-    await page.locator('[data-testid^="deal-use-"]:visible').nth(1).click();
-    await expect(page.locator('[data-testid^="deal-use-"]:visible').nth(1)).toHaveAttribute("aria-pressed", "true");
-    await page.getByTestId("queue-review-open").click();
+    // (The picked reply's review opens from its own column in one step.)
+    await page.locator('[data-testid^="deal-use-"]:visible').first().click();
     const picked = page.getByTestId("queue-review");
     await expect(picked.getByTestId("commitment-receipt")).toBeVisible();
     expect((await picked.getByTestId("commitment-receipt").textContent())!, "the picked reply's own receipt, not Option A's").not.toBe(recommended);

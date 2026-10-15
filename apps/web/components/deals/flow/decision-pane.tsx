@@ -385,7 +385,11 @@ export function DecisionPane({
           picture={picture}
           buyer={buyerShort}
           recordHref={`/decisions/${encodeURIComponent(decision)}`}
-          onSent={setSent}
+          onSent={(r) => {
+            setSent(r);
+            // The review is gone with the send: it cannot report that its flight ended.
+            setBusyBoth(false);
+          }}
           onBusy={setBusyBoth}
           openSignal={sendSignal}
           hideTrigger
@@ -402,7 +406,10 @@ export function DecisionPane({
           buyer={buyerShort}
           recordHref={`/decisions/${encodeURIComponent(decision)}`}
           initialOpen={view.review}
-          onDone={setOutcome}
+          onDone={(o) => {
+            setOutcome(o);
+            setBusyBoth(false);
+          }}
           onBusy={setBusyBoth}
           openSignal={acceptSignal}
           declineSignal={declineSignal}
@@ -488,6 +495,7 @@ export function DecisionPane({
         ) : null}
 
         {current === "overview" && (agreedView || agreedLoading) ? (
+          <div className="space-y-5">
           <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview" data-agreed="true">
             {outcome ? <AcceptResult outcome={outcome} /> : null}
             {sent ? <SendResult n={sent} /> : null}
@@ -503,6 +511,8 @@ export function DecisionPane({
             ) : (
               <LoadingBlock rows={4} />
             )}
+          </div>
+          {sectionNav(tabs.filter((k) => k !== "overview"))}
           </div>
         ) : current === "overview" && ready ? (
           <div id={`${uid}-panel-overview`} className="space-y-5" data-testid="deal-panel-overview">
@@ -564,6 +574,7 @@ export function DecisionPane({
             ) : null}
           </div>
         ) : current === "overview" ? (
+          <div className="space-y-5">
           <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview">
             <div className="space-y-4" data-testid="deal-level-decide">
               {done ? originalAsk : null}
@@ -622,6 +633,8 @@ export function DecisionPane({
                 </div>
               )}
             </div>
+          </div>
+          {sectionNav(tabs.filter((k) => k !== "overview"))}
           </div>
         ) : null}
 

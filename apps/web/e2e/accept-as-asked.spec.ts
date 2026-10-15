@@ -46,10 +46,8 @@ test.describe("mock", () => {
 
   test("the golden EX01 asked path is over the mandate: the comparison says it is outside the mandate, the server's reason is said once in full, and no accept button is offered", async ({ page }) => {
     await checkedDeal(page);
-    await page.getByTestId("deal-tab-compare").click();
-    await expect(page.getByTestId("deal-outcome-row-send")).toContainText("Outside mandate");
-    await expect(page.getByTestId("deal-why-authority")).toContainText("As they asked");
-    await expect(page.getByTestId("deal-why-authority")).toContainText(/mandate/i);
+    await expect(page.getByTestId("deal-choice-cell-decides-asked")).toContainText("Outside mandate");
+    await expect(page.getByTestId("deal-rec-why")).toContainText(/signed limits/i);
     await expect(page.getByTestId("deal-review-request")).toHaveCount(0);
     await expect(page.getByTestId("accept-go")).toHaveCount(0);
     await expect(page.getByTestId("accept-review-open")).toHaveCount(0);
@@ -73,9 +71,8 @@ test.describe("live", () => {
   test("the golden books' EX01 asked path is over the mandate: the server's reason is said and no accept button is offered", async ({ page, request }) => {
     await resetBooks(request);
     await checkedDeal(page);
-    await page.getByTestId("deal-tab-compare").click();
-    await expect(page.getByTestId("deal-outcome-row-send")).toContainText("Outside mandate");
-    await expect(page.getByTestId("deal-why-authority")).toContainText(/mandate/i);
+    await expect(page.getByTestId("deal-choice-cell-decides-asked")).toContainText("Outside mandate");
+    await expect(page.getByTestId("deal-rec-why")).toContainText(/limit|mandate/i);
     await expect(page.getByTestId("accept-go")).toHaveCount(0);
     await expect(page.getByTestId("accept-review-open")).toHaveCount(0);
   });

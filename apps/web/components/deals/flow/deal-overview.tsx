@@ -55,9 +55,10 @@ export function Recommendation({
   const why = asked ? [asked.first_breach_when !== null ? asked.reserve_state_text : null, asked.decides_text].filter((x): x is string => Boolean(x)) : [];
   const reason = rec?.recommended_reason_text ?? picture.recommendation?.mandate_text ?? null;
   const alternative = picture.recommendation?.alternative_text ?? null;
-  const fact = "rounded-tile bg-subtle px-4 py-3.5";
+  // A phone reads the three facts as rows (label left, value right) so the review button stays in the first screen; from the tablet width they are tiles.
+  const fact = "rounded-tile bg-subtle px-4 py-3.5 max-sm:flex max-sm:items-baseline max-sm:justify-between max-sm:gap-3 max-sm:rounded-none max-sm:bg-transparent max-sm:px-0 max-sm:py-2.5";
   return (
-    <section aria-labelledby="deal-rec-title" className="flow-card space-y-5 p-5 sm:p-7" data-testid="queue-recommends" data-path={rec ? "recommended" : "none"}>
+    <section aria-labelledby="deal-rec-title" className="flow-card flex flex-col gap-5 p-5 sm:p-7" data-testid="queue-recommends" data-path={rec ? "recommended" : "none"}>
       <h2 id="deal-rec-title" className="text-sm font-medium text-ink-2" data-testid="deal-recommends-title">
         {t("deals.rec.title")}
       </h2>
@@ -79,29 +80,31 @@ export function Recommendation({
         </div>
       )}
       {reason ? (
-        <p className="max-w-[68ch] text-[15px] leading-snug text-ink-2" data-testid="deal-rec-reason">
+        <p className="max-w-[68ch] text-[15px] leading-snug text-ink-2 max-sm:order-2" data-testid="deal-rec-reason">
           {reason}
         </p>
       ) : null}
       {subject ? (
-        <dl className="m-0 grid gap-3 sm:grid-cols-3" data-testid="deal-rec-facts">
+        <dl className="m-0 grid gap-3 max-sm:gap-0 max-sm:divide-y max-sm:divide-line sm:grid-cols-3" data-testid="deal-rec-facts">
           <div className={fact} data-testid="deal-fact-cash">
             <dt className="text-sm text-ink-2">{t("deals.rec.fact.cash", { amount: picture.floor_short })}</dt>
-            <dd className={`m-0 mt-1.5 font-display text-lg font-bold leading-snug sm:text-xl ${breach ? "text-bad-fg" : "text-ok-fg"}`}>{subject.reserve_state_text ?? NONE}</dd>
+            <dd className={`m-0 mt-1.5 font-display text-base font-bold leading-snug max-sm:mt-0 max-sm:text-right sm:text-xl ${breach ? "text-bad-fg" : "text-ok-fg"}`}>{subject.reserve_state_text ?? NONE}</dd>
           </div>
           <div className={fact} data-testid="deal-fact-cost">
             <dt className="text-sm text-ink-2">{t("deals.rec.fact.cost")}</dt>
-            <dd className="m-0 mt-1.5 font-display text-lg font-bold leading-snug text-ink sm:text-xl">{subject.economic_headline_text ?? subject.cost_total_display ?? subject.cost_display ?? NONE}</dd>
-            {subject.economic_basis_text ? <dd className="m-0 mt-0.5 text-supporting text-ink-2">{subject.economic_basis_text}</dd> : null}
+            <dd className="m-0 mt-1.5 font-display text-base font-bold leading-snug text-ink max-sm:mt-0 max-sm:text-right sm:text-xl">
+              {subject.economic_headline_text ?? subject.cost_total_display ?? subject.cost_display ?? NONE}
+              {subject.economic_basis_text ? <span className="block font-sans text-supporting font-normal text-ink-2">{subject.economic_basis_text}</span> : null}
+            </dd>
           </div>
           <div className={fact} data-testid="deal-fact-decides">
             <dt className="text-sm text-ink-2">{t("deals.rec.fact.decides")}</dt>
-            <dd className="m-0 mt-1.5 font-display text-lg font-bold leading-snug text-ink sm:text-xl">{subject.authority_short_text ?? NONE}</dd>
+            <dd className="m-0 mt-1.5 font-display text-base font-bold leading-snug text-ink max-sm:mt-0 max-sm:text-right sm:text-xl">{subject.authority_short_text ?? NONE}</dd>
           </div>
         </dl>
       ) : null}
       {rec && why.length ? (
-        <div className="max-w-[68ch] text-[15px] leading-snug text-ink-2" data-testid="deal-rec-why">
+        <div className="max-w-[68ch] text-[15px] leading-snug text-ink-2 max-sm:order-2" data-testid="deal-rec-why">
           <p className="text-supporting font-bold text-ink-2">{t("deals.rec.why")}</p>
           <ul className="m-0 mt-1 list-disc space-y-0.5 pl-5">
             {why.map((w) => (
@@ -111,13 +114,13 @@ export function Recommendation({
         </div>
       ) : null}
       {alternative && rec ? (
-        <p className="max-w-[68ch] text-[15px] leading-snug text-ink-2" data-testid="deal-alternative">
+        <p className="max-w-[68ch] text-[15px] leading-snug text-ink-2 max-sm:order-2" data-testid="deal-alternative">
           {alternative}
         </p>
       ) : null}
       {extra}
       {!reviewing && (canSend || canAccept || canDecline || whatif) ? (
-        <div className="flex flex-wrap items-center gap-3 max-sm:flex-col max-sm:items-stretch" role="group" aria-label={t("deals.actions")} data-testid="deal-actions">
+        <div className="flex flex-wrap items-center gap-3 max-sm:order-1 max-sm:flex-col max-sm:items-stretch" role="group" aria-label={t("deals.actions")} data-testid="deal-actions">
           {canSend && rec ? (
             <Button variant="primary" className={BIG} aria-expanded={false} onClick={() => onReview(rec)} data-testid="queue-review-open">
               {rec.needs_owner ? t("deals.rec.approve", { label: rec.label }) : t("deals.rec.review", { label: rec.label })}

@@ -72,11 +72,10 @@ test("the send names its option, says the reply is simulated, and carries what w
   await page.getByTestId("queue-review-close").click();
   // Option B is a path of its own: picking it in the comparison makes it the reply under review, with its own send; Option A's gives way, never two at once.
   await openCompare(page);
+  await expect(page.getByTestId("deal-choice-cell-decides-reply").nth(1)).toContainText("Needs your approval");
   await page.locator('[data-testid^="deal-use-CTR-"]:visible').last().click();
-  await expect(page.locator('[data-testid^="deal-use-CTR-"]:visible').last()).toHaveText("Option B is selected");
-  await expect(page.getByTestId("deal-outcome-row-send")).toContainText("Needs your approval");
-  await openReview(page);
-  await expect(page.getByRole("button", { name: "Send Option B to Foshan" })).toBeVisible();
+  await page.getByTestId("queue-review").waitFor();
+  await expect(page.getByRole("button", { name: "Approve and send Option B to Foshan" })).toBeVisible();
   await expect(page.getByTestId("deal-send")).toHaveCount(1);
   // Its own receipt, the server's block on Option B's priced response (not Option A's, and not words composed from the path): its own funding and its own authority.
   await expect(page.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥3,706.46 in addition");

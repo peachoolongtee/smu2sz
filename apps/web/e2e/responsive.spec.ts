@@ -215,14 +215,13 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   // The buyer's messages are the deal's Messages tab: no inbox card is under the queue while a deal is selected.
   await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
   // The page's order on the Overview: the verdict, what they ask, FLOW's reply, the terms by scope.
   // (The ask is one line when the deals read has the open offer, else the buyer's own message.)
-  const askId = (await page.getByTestId("queue-ask").count()) ? "queue-ask" : "deal-ask-quote";
-  const overview = ["queue-heading", askId, "queue-recommends", "deal-terms-section"];
-  await page.getByTestId("deal-terms-section").waitFor();
+  const overview = ["queue-heading", "queue-recommends", "deal-choices"];
+  await page.getByTestId("deal-choices").waitFor();
   const orderTops = await page.evaluate((list) => list.map((id) => (document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1e9) + scrollY), overview);
   expect(orderTops.every((y) => y >= 0)).toBe(true);
   expect(orderTops).toEqual([...orderTops].sort((a, b) => a - b));
@@ -285,10 +284,10 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   const rec = (await topOf(page, "queue-heading"))!;
   const send = await page.getByTestId("queue-review-open").boundingBox();
-  const asks = (await topOf(page, "queue-ask"))!;
+  const asks = (await topOf(page, "queue-heading"))!;
   // The buyer's messages are the deal's Messages tab: no inbox row is under the queue while a deal is selected.
   await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
   await expect(page.getByTestId("deal-steps")).toHaveCount(0);
@@ -333,7 +332,7 @@ test("on a desktop the queue is the left pane and the negotiation the right one,
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   const queue = (await page.getByTestId("deals-queue").boundingBox())!;
   const pane = (await page.getByTestId("deal-pane").boundingBox())!;
   expect(pane.x, "the negotiation is to the right of the queue").toBeGreaterThan(queue.x + queue.width - 1);
