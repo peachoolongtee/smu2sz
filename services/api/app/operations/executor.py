@@ -1478,6 +1478,31 @@ class Executor:
         return _Effect(f"Applied for {fmt_yuan(op.amount_fen)} on {f.id}; it is PENDING and counts as zero "
                        f"until committed", state=new_state)
 
+    def _committed_twin(self, op: CommitPurchase, rec: Any) -> tuple[str, str] | None:
+        """CAPEX-3: (document id, title) of the other document whose purchase is already committed (an EXECUTED CommitPurchase)
+        and which is the same contract: the same text (`doc_hash`), or the same contract reference with the same vendor.
+        None when there is none. The same document is left to the check that follows (it names its own flows)."""
+        def reference(r: Any) -> str | None:
+            if r is None or r.contract is None:
+                return None
+            for t in r.contract.terms:
+                if t.field.value == "CONTRACT_REFERENCE" and (t.text or t.value_text):
+                    return "".join((t.text or t.value_text or "").split()).casefold()
+            return None
+
+        mine = reference(rec)
+        for e in self._entries():
+            other_id = e.payload.get("document_id")
+            if e.kind != op.kind or e.result.status != EXECUTED or other_id == rec.id:
+                continue
+            same_text = hmac.compare_digest(str(e.payload.get("doc_hash") or "").encode(), rec.doc_hash.encode())
+            other = self._store.get_contract_record(str(other_id))
+            same_ref = (mine is not None and other is not None and other.counterparty_id == rec.counterparty_id
+                        and reference(other) == mine)
+            if same_text or same_ref:
+                return str(other_id), (other.title if other is not None else str(other_id))
+        return None
+
     def _commit_purchase(self, op: CommitPurchase, ctx: _Ctx) -> _Effect:
         """ADR-0013: book a confirmed capex contract's payment schedule (reached only after the owner's approval: the
         operation is always Tier 2). The schedule is derived again here, by code, from the stored record and the
@@ -1503,6 +1528,12 @@ class Executor:
         if not hmac.compare_digest(op.doc_hash.encode(), rec.doc_hash.encode()):
             raise _refuse(Code.TERMS_CHANGED, f"The document shown is not document {rec.id} as stored; nothing "
                           f"committed", document_id=rec.id)
+        twin = self._committed_twin(op, rec)
+        if twin is not None:  # CAPEX-3: one contract is one purchase, however many times it was uploaded
+            raise _refuse(Code.PRECONDITION_FAILED,
+                          f"This contract is already committed as a purchase (as {twin[1]}). Committing it again would "
+                          f"book the same payments twice, so nothing was committed",
+                          document_id=rec.id, refusal="CONTRACT_ALREADY_COMMITTED", committed_document=twin[0])
         state = ctx.state
         prefix = f"CAPEX:{rec.id}:"
         earlier = next((e for e in self._entries() if e.kind == op.kind and e.result.status == EXECUTED
