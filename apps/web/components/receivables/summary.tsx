@@ -48,7 +48,6 @@ export function Summary({ read, rows }: { read: ReceivablesRead; rows: Receivabl
       {/* What customers owe is the page's figure: the large card in Home's ink; the next payment and the net beside it are smaller. */}
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr]" aria-label={t("biz.recv.facts")} data-testid="recv3-cards">
         <div className="relative isolate overflow-hidden rounded-[var(--radius-f-card)] bg-f-btn p-6 text-f-btn-ink shadow-(--shadow-f) sm:col-span-2 lg:col-span-1" data-testid="recv3-owe">
-          <span aria-hidden className="dash-dots absolute inset-y-0 right-0 -z-10 w-2/3" />
           <dt className="text-sm font-semibold text-f-btn-ink/70">{t("recv3.card.owe")}</dt>
           <dd className={`mt-3 font-display text-[40px] font-bold leading-none tracking-[-0.03em] tabular-nums ${late ? "text-bad-bright" : ""}`}>{summary.outstanding_total_display ?? "-"}</dd>
           {summary.count_text ? (

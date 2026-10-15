@@ -219,7 +219,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     expect(await visibleText(), `${width} collapsed rail text`).toEqual([]);
     await expect(page.getByTestId("chat-open").locator(".ask-label")).toBeHidden();
     // The pointer on the rail opens the panel to 200 px over the page: the main column neither moves nor changes width.
-    await nav.getByRole("link", { name: "Deals" }).hover();
+    await nav.getByRole("link", { name: "Deals", exact: true }).hover();
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "open");
     await expect.poll(() => panelWidth(page)).toBe(200);
     await expect(nav.getByRole("link", { name: "Deals", exact: true }).locator(".side-label")).toHaveCSS("opacity", "1");
@@ -246,7 +246,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "open");
     for (const name of NAV.slice(1)) {
       await page.keyboard.press("Tab");
-      await expect(nav.getByRole("link", { name })).toBeFocused();
+      await expect(nav.getByRole("link", { name, exact: true })).toBeFocused();
     }
     expect(await mainBox(page)).toEqual(before);
     await page.locator("main").focus();
@@ -262,7 +262,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     const primary = page.getByTestId("home-check-plan");
     await expect(primary).toBeVisible();
     expect((await primary.boundingBox())!.x, `${width} collapsed`).toBeGreaterThan(56);
-    await page.getByTestId("nav-pills").getByRole("link", { name: "Deals" }).hover();
+    await page.getByTestId("nav-pills").getByRole("link", { name: "Deals", exact: true }).hover();
     await expect.poll(() => panelWidth(page)).toBe(200);
     // The open rail reads as a layer: a soft shadow, and only while it is open.
     expect(await page.getByTestId("nav-rail-panel").evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe("none");

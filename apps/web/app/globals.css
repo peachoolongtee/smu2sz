@@ -984,21 +984,11 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
       transform: scale(1);
     }
   }
-  /* The recommendation when the cash would go negative: the risk red edge and a slow red glow, so it is the first thing the eye lands on. Reduced motion keeps the edge, not the glow. */
+  /* The recommendation when the cash would go negative: the risk red edge and the risk tint as its fill (owner, 15 Oct), so it is the first thing the eye lands on. No glow, no animation. */
   .alarm-card {
     outline: 2px solid var(--color-f-risk);
     outline-offset: -2px;
     background: color-mix(in srgb, var(--color-f-risk) 4%, var(--color-panel));
-    animation: alarm-glow 2.6s var(--ease-ui) infinite;
-  }
-  @keyframes alarm-glow {
-    0%,
-    100% {
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-f-risk) 30%, transparent), var(--shadow-lift);
-    }
-    50% {
-      box-shadow: 0 0 0 10px color-mix(in srgb, var(--color-f-risk) 0%, transparent), var(--shadow-lift);
-    }
   }
   /* A panel that opens in place (the expanded forecast): it unfolds from its top edge and fades in, once. Reduced motion shows it at once. */
   .expand-in {
@@ -1028,17 +1018,11 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-f-purple) 0%, transparent); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .next-cue,
-    .alarm-card {
+    .next-cue {
       animation: none;
     }
   }
   /* The ink hero card's texture: a field of faint dots that fades out towards the figure. Decoration only. */
-  .dash-dots {
-    background-image: radial-gradient(rgb(255 255 255 / 0.14) 1.2px, transparent 1.6px);
-    background-size: 11px 11px;
-    mask-image: radial-gradient(ellipse 80% 90% at 85% 40%, #000 30%, transparent 75%);
-  }
 }
 
 /* The donut's slices draw in over 300 ms on first paint (round two); the end value is each circle's own dash array, the circumference is the page's `--f-c`. None under reduced motion. */

@@ -352,7 +352,6 @@ function TryTermsCard() {
   const { t } = useI18n();
   return (
     <section id="cash-whatif" aria-labelledby="cash-try-title" className="motion-reveal relative isolate flex flex-col overflow-hidden rounded-[var(--radius-f-card)] bg-f-btn p-5 text-f-btn-ink shadow-(--shadow-lift) sm:p-6" data-testid="cash-try" data-tour="cash-try">
-      <span aria-hidden className="dash-dots absolute inset-y-0 right-0 -z-10 w-2/3" />
       {/* Two cash lines, one moved: what the sandbox shows. Decoration only. */}
       <svg aria-hidden viewBox="0 0 160 64" className="absolute right-5 top-5 -z-10 hidden h-16 w-40 opacity-80 sm:block">
         <path d="M2 18 H40 V40 H86 V54 H122 V30 H158" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="2.5" strokeDasharray="5 4" />

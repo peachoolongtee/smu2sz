@@ -50,7 +50,34 @@ test("the Home headline sits on the canvas with no card; the planned pill meets 
   // The cards are the panel tone, solid, with no frost and no gradient; the lowest figure is the one risk red and meets AA on the panel.
   const bar = page.getByTestId("hv2-action");
   const fill = await bg(bar);
-  expect(fill).toBe(PANEL);
+  // The panel tone; while the cash would go negative the recommendation is an alarm card and takes the risk tint as its fill (owner, 15 Oct), with every text on it at 4.5:1.
+  const alarm = (await bar.getAttribute("data-alarm")) === "true";
+  if (alarm) {
+    expect(fill).not.toBe(PANEL);
+    const worst = await bar.evaluate((card) => {
+      const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true })!;
+      const rgb = (css: string) => {
+        c.clearRect(0, 0, 1, 1);
+        c.fillStyle = "#000";
+        c.fillStyle = css;
+        c.fillRect(0, 0, 1, 1);
+        return Array.from(c.getImageData(0, 0, 1, 1).data.slice(0, 3));
+      };
+      const lin = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      const lum = ([r, g, b]: number[]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+      const ground = lum(rgb(getComputedStyle(card).backgroundColor));
+      let min = 21;
+      for (const el of Array.from(card.querySelectorAll("*"))) {
+        if (![...el.childNodes].some((n) => n.nodeType === 3 && (n.textContent ?? "").trim())) continue;
+        // The alarm strip is white on the solid risk red, not on the tint.
+        if (el.closest('[data-testid="hv2-alarm"]')) continue;
+        const fg = lum(rgb(getComputedStyle(el).color));
+        min = Math.min(min, (Math.max(fg, ground) + 0.05) / (Math.min(fg, ground) + 0.05));
+      }
+      return min;
+    });
+    expect(worst, "the lowest text contrast on the alarm tint").toBeGreaterThanOrEqual(4.5);
+  } else expect(fill).toBe(PANEL);
   expect(await bar.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
   expect(await bar.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("none");
   expect(await bar.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("24px");
