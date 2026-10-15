@@ -380,3 +380,5 @@ Credentials in demo mode: owner `X-Owner-Token: demo-owner-token`, agent `X-Agen
 `demo-buyer-2-key` (BUYER-2).
 
 **Paused work of 14 Oct 2026 (second machine).** Slice D (Activity and Demo, #145) and the deal tracker (map #148) are built, verified twice by independent agents and pushed on their branches, not yet merged: what stands, what is unproven, the open owner decisions and the kickoff are in `docs/handover/16_session_handoff_2026-10-14_slice_d_and_tracker.md`. Read handoffs 14 and 15 with it.
+
+**Paused work of 15 Oct 2026.** Live mode now replays the recorded readings before any model and checks a model's reading of a buyer message against the rules grammar's, and the books open once: branch `fix/live-readers-and-books-once`, not merged. The checks still to run are in `docs/handover/19_live_readers_handoff_2026-10-15.md`.
