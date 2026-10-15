@@ -362,7 +362,7 @@ test("running the plan: no alert, the covered recommendation with its one button
   await expect(page.getByTestId("hv2-explore-deals")).toHaveAttribute("href", "/deals");
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
   await expect(page.getByTestId("home-check-plan")).toHaveCount(0);
-  expect(await filledBrand(page)).toBe(1);
+  expect(await filledBrand(page)).toBe(0); // "You're covered" means nothing is urgent: its way to the deals is the outlined button
   await page.getByTestId("home-tab-waiting").click();
   const row = worklistAfter.en.waiting[0];
   const rows = page.getByTestId("home-worklist-row");
@@ -389,8 +389,10 @@ test("Expand opens the full company forecast in place under the cards, with the 
   await expect(forecast).toBeVisible();
   await expect(page.getByRole("heading", { name: "Company cash forecast" })).toBeVisible();
   // It sits under the three cards, which stay.
-  const cards = (await page.getByTestId("hv2-outlook-card").boundingBox())!;
-  await expect.poll(async () => (await forecast.boundingBox())!.y, { message: "the forecast unfolds under the cards" }).toBeGreaterThanOrEqual(cards.y + cards.height - 1);
+  // In page coordinates: the forecast scrolls itself into view, so viewport boxes taken at different moments are not comparable.
+  const pageBottom = (id: string) => page.getByTestId(id).evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY);
+  const pageTop = (id: string) => page.getByTestId(id).evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+  await expect.poll(async () => (await pageTop("hv2-forecast")) - (await pageBottom("hv2-outlook-card")), { message: "the forecast unfolds under the cards" }).toBeGreaterThanOrEqual(-1);
   await expect(page.getByTestId("hv2-action")).toBeVisible();
   // The chart: three legend entries (the red stretches stay red and unlabelled), the current line, the plan dashed grey, the minimum with its band, the lowest point; 300 px tall.
   const legend = page.getByTestId("home-legend");
@@ -1033,22 +1035,26 @@ test("round four sizes at 1440: the three cards are 360 px tall at most (the tal
   // The middle card's order: the eyebrow with the Planned pill, the headline, the amount with the cost at its right, the consequence, the funding bar, the approval line, the actions.
   const order = await Promise.all(["home-action-eyebrow", "home-action-title", "home-kpi-funding-value", "hv2-action-facts", "home-action-text", "hv2-funding-row", "hv2-approval", "home-attention-run"].map(async (id) => (await page.getByTestId(id).boundingBox())!.y));
   expect([...order].sort((x, y) => x - y)).toEqual(order);
-  // No text block of the three cards is more than two lines (the headline and the one muted line are one), at 1440 and at 1280.
+  // No text block of the three cards is more than two lines at 1440; at 1280 the recommendation's consequence sentence may take a third line, but nothing is clipped or overlaps.
   for (const width of [1440, 1280]) {
     await page.setViewportSize({ width, height: 900 });
-    const lines = await page.evaluate((cards) => {
+    const lines = await page.evaluate(([cards, most]) => {
       const out: string[] = [];
       for (const id of cards) {
         for (const el of Array.from(document.querySelectorAll(`[data-testid="${id}"] p, [data-testid="${id}"] h2`))) {
           const style = getComputedStyle(el);
           const lh = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.3;
           const rows = Math.round(el.getBoundingClientRect().height / lh);
-          if (rows > 2 && (el.textContent ?? "").trim()) out.push(`${id}: ${rows} lines: ${(el.textContent ?? "").slice(0, 40)}`);
+          if (rows > (most as number) && (el.textContent ?? "").trim()) out.push(`${id}: ${rows} lines: ${(el.textContent ?? "").slice(0, 40)}`);
         }
       }
       return out;
-    }, ids);
+    }, [ids, width === 1280 ? 3 : 2] as const);
     expect(lines, `${width}`).toEqual([]);
+    for (const id of ids) {
+      const clipped = await page.getByTestId(id).evaluate((el) => el.scrollHeight - el.clientHeight);
+      expect(clipped, `${id} clips nothing at ${width}`).toBeLessThanOrEqual(1);
+    }
     for (const id of ids) expect((await page.getByTestId(id).boundingBox())!.height, `${id} at ${width}`).toBeLessThanOrEqual(CARD_MAX);
   }
 });

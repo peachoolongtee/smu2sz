@@ -288,7 +288,7 @@ function CoveredCard({ action, kpis }: { action: HomeV2Action; kpis: HomeV2["kpi
           </dl>
         ) : null}
         <div className="mt-auto pt-5">
-          <ButtonLink href="/deals" variant="primary" data-testid="hv2-explore-deals">
+          <ButtonLink href="/deals" data-testid="hv2-explore-deals">
             {t("hv2.covered.cta")}
             <ArrowRightIcon aria-hidden width={14} height={14} />
           </ButtonLink>
