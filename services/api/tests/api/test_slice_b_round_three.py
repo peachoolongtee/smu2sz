@@ -149,14 +149,10 @@ def test_golden_day_zero_recommendation(api: TestClient) -> None:
         "rule_text": GOLDEN_RULE}
 
 
-def test_the_rule_sentence_is_the_dictionary_word_for_word(api: TestClient) -> None:
-    import pathlib
-
+def test_the_rule_sentence_is_the_agreed_words_in_both_languages(api: TestClient) -> None:
+    """The rule sentence moved from the web dictionary (`deals.why.rule`, since deleted) to the server: it is pinned here, word for word."""
     _, pic = _golden(api)
-    dictionary = (pathlib.Path(__file__).parents[4] / "apps" / "web" / "lib" / "dictionary.ts")
-    if dictionary.exists():  # the web owns the key until it deletes it; the words are the same
-        text = dictionary.read_text(encoding="utf-8")
-        assert pic["recommendation"]["rule_text"] in text
+    assert pic["recommendation"]["rule_text"] == "FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost."
     _, zh = _golden_zh(api)
     assert zh["recommendation"]["rule_text"] == "FLOW 建议的是在您的授权范围内它可以发送的第一个回复；它不按成本对回复排序。"
 
