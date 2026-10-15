@@ -207,7 +207,11 @@ test.describe("mock", () => {
   });
 
   test("Receivables registers the invoice it shows as the scope, even when it is the default row", async ({ page }) => {
+    // /receivables is the list of customers; a customer's page holds its invoices, and the default row is the invoice the page shows.
     await page.goto("/receivables");
+    await expect(page.getByTestId("recv3-page")).toHaveAttribute("data-view", "list");
+    await page.goto("/receivables?customer=BUYER-1");
+    await expect(page.getByTestId("recv3-page")).toHaveAttribute("data-view", "customer");
     await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
     await page.getByTestId("chat-open").click();
     const chip = await scope(page);

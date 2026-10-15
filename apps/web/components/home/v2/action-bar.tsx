@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { useId } from "react";
-import { usePlanRun } from "@/components/business/next-action";
-import type { useFixAlert } from "@/components/home/fix-alert";
 import { SegmentedBar } from "@/components/home/v2/segmented-bar";
-import { AlertIcon, CheckIcon } from "@/components/icons";
+import { AlertIcon, ArrowRightIcon, CalendarIcon, CheckIcon } from "@/components/icons";
 import { Button, ButtonLink, textLinkClass } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -17,22 +15,24 @@ function factsOf(a: HomeV2Action) {
   return a.facts?.length ? a.facts : undefined;
 }
 
-/** The plan's own confirm-and-run control (the ids `fix-open-*`, `fix-*` and `fix-cancel-*`): the card's one filled button, "Compare funding options" an outline button beside it, the confirmation under the row. */
-function PlanControls({ a, run, stateVersion, fixer }: { a: HomeV2Action; run: HomeNextAction; stateVersion: number; fixer: ReturnType<typeof useFixAlert> }) {
+/**
+ * The plan's controls on Home: the plan is checked and run on Cash & funding, so the card's one filled button opens it there ("Check funding plan"); "Compare funding
+ * options" an outline link beside it.
+ */
+function PlanControls({ a }: { a: HomeV2Action }) {
   const { t } = useI18n();
-  const { primary, panel } = usePlanRun(run, stateVersion, fixer);
   return (
-    <>
-      <ActionGroup testId="home-attention-run" className="[&>*]:min-h-9">
-        {primary}
-        {a.secondary ? (
-          <ButtonLink href={a.secondary.href} data-testid="next-action-alternatives">
-            {t("hv2.action.compare")}
-          </ButtonLink>
-        ) : null}
-      </ActionGroup>
-      {panel ? <div className="mt-3">{panel}</div> : null}
-    </>
+    <ActionGroup testId="home-attention-run" className="[&>*]:min-h-9">
+      <ButtonLink href="/cash" variant="primary" data-testid="home-check-plan">
+        {t("hv2.action.check")}
+        <ArrowRightIcon aria-hidden width={14} height={14} />
+      </ButtonLink>
+      {a.secondary ? (
+        <ButtonLink href={a.secondary.href} data-testid="next-action-alternatives">
+          {t("hv2.action.compare")}
+        </ButtonLink>
+      ) : null}
+    </ActionGroup>
   );
 }
 
@@ -46,17 +46,19 @@ export function HomeV2ActionBar({
   action,
   kpis,
   nextAction,
-  stateVersion,
-  fixer,
   line: lineProp,
   fundingTotal,
   onBack,
+  alarm = null,
+  covered = false,
 }: {
   action: HomeV2Action;
   kpis: HomeV2["kpis"];
   nextAction: HomeNextAction | null;
-  stateVersion: number;
-  fixer: ReturnType<typeof useFixAlert>;
+  /** The cash goes negative without the plan: the server's lowest figure and when. The card is then the page's alarm (red edge, the strip, the red heading). */
+  alarm?: { amount: string; when: string } | null;
+  /** Nothing needs funding (no plan to run, the cash never under the minimum): the quiet card is the celebration "You're covered!" with the way to the deals. */
+  covered?: boolean;
   /** The Home read's note under its headline (the server's sentence about the cash), the recommendation's one line. */
   line?: string | null;
   /** The funding plan's total (the strip's own funding figure). */
@@ -92,6 +94,7 @@ export function HomeV2ActionBar({
     );
   }
   const quiet = action.variant === "QUIET";
+  if (quiet && covered) return <CoveredCard action={action} kpis={kpis} />;
   const run = !quiet && action.control && nextAction ? nextAction : null;
   const facts = factsOf(action);
   const cost = facts?.length === 3 ? facts[0] : null;
@@ -105,9 +108,20 @@ export function HomeV2ActionBar({
   return (
     <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant={quiet ? "quiet" : "action"} className="h-full outline-none">
       <div data-testid={run ? "home-next-action" : quiet ? undefined : "home-attention-card"} data-alert={run?.alert_id} className="h-full">
-        <section aria-labelledby={titleId} data-testid="hv2-action" className="motion-reveal f-card flex h-full min-w-0 flex-col p-4">
+        <section aria-labelledby={titleId} data-testid="hv2-action" data-alarm={alarm && !quiet ? "true" : undefined} className={`motion-reveal f-card flex h-full min-w-0 flex-col p-4 ${alarm && !quiet ? "alarm-card" : ""}`}>
+          {/* Cash goes negative without the plan: the card says so first, in the risk red, so it is the one part of the page to look at. */}
+          {alarm && !quiet ? (
+            <p role="status" className="-mx-4 -mt-4 mb-3 flex items-center gap-2 rounded-t-[var(--radius-f-card)] bg-f-risk px-4 py-2 text-sm font-bold text-white" data-testid="hv2-alarm">
+              <span aria-hidden className="relative flex size-2.5 shrink-0">
+                <span className="absolute inline-flex size-full motion-safe:animate-ping rounded-pill bg-white/70" />
+                <span className="relative inline-flex size-2.5 rounded-pill bg-white" />
+              </span>
+              <AlertIcon aria-hidden className="size-4 shrink-0" />
+              <span className="min-w-0">{t("hv2.alarm", { amount: alarm.amount, when: alarm.when })}</span>
+            </p>
+          ) : null}
           <div className="flex items-start justify-between gap-3">
-            <h2 id={titleId} className="font-display text-[16px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="home-action-eyebrow">
+            <h2 id={titleId} className={`font-display text-[16px] font-bold leading-tight tracking-[-0.01em] ${alarm && !quiet ? "text-f-risk" : "text-ink"}`} data-testid="home-action-eyebrow">
               {quiet ? action.eyebrow : t("hv2.action.eyebrow")}
             </h2>
             {planned && !quiet ? (
@@ -194,7 +208,7 @@ export function HomeV2ActionBar({
           {!quiet ? (
             <div className="mt-auto" data-testid="hv2-action-buttons">
               {run ? (
-                <PlanControls a={action} run={run} stateVersion={stateVersion} fixer={fixer} />
+                <PlanControls a={action} />
               ) : action.primary || action.secondary ? (
                 <ActionGroup>
                   {action.primary ? (
@@ -213,6 +227,73 @@ export function HomeV2ActionBar({
           ) : null}
         </section>
       </div>
+    </div>
+  );
+}
+
+/**
+ * "You're covered!": the middle card when nothing needs funding. A green medallion and the "All clear" pill, the headline in the display face, the server's sentence (what
+ * keeps the cash covered) and its next event as a chip, the two figures that say so (the lowest cash ahead, the room above the minimum), and the one button: on to the deals.
+ * Decoration (the glow, the rings) is behind everything and says nothing.
+ */
+function CoveredCard({ action, kpis }: { action: HomeV2Action; kpis: HomeV2["kpis"] }) {
+  const { t } = useI18n();
+  const lowest = kpis.lowest_ahead?.value_display ?? null;
+  const room = kpis.cash_available.buffer.headroom_text ?? null;
+  return (
+    <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant="covered" className="h-full outline-none">
+      <section aria-labelledby="hv2-covered-title" data-testid="hv2-action" data-covered="true" className="motion-reveal f-card relative isolate flex h-full min-w-0 flex-col overflow-hidden p-5">
+        {/* A soft green glow in the corner and three thin rings around it: the card's own light. */}
+        <span aria-hidden className="absolute -right-24 -top-28 -z-10 size-72 rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-ok-solid)_22%,transparent),transparent)]" />
+        <svg aria-hidden viewBox="0 0 200 200" className="absolute -right-16 -top-16 -z-10 size-56 text-ok-solid">
+          {[44, 68, 92].map((r, i) => (
+            <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="currentColor" strokeOpacity={0.18 - i * 0.05} strokeWidth="1.5" />
+          ))}
+        </svg>
+        <span className="sr-only" data-testid="home-action-eyebrow">
+          {action.eyebrow}
+        </span>
+        <div className="flex items-center gap-2.5">
+          <span aria-hidden className="covered-medal grid size-10 place-items-center rounded-pill bg-ok-solid text-white shadow-(--shadow-lift)">
+            <CheckIcon width={20} height={20} />
+          </span>
+          <span className="rounded-pill bg-f-green px-3 py-1 text-supporting font-bold uppercase tracking-[0.08em] text-f-green-ink">{t("hv2.covered.pill")}</span>
+        </div>
+        <h2 id="hv2-covered-title" className="mt-4 bg-linear-to-r from-f-green-ink to-ok-solid bg-clip-text font-display text-[34px] font-extrabold leading-[1.05] tracking-[-0.035em] text-transparent sm:text-[40px]">
+          {t("hv2.covered.title")}
+        </h2>
+        <p className="mt-2 max-w-[42ch] text-pretty text-[15px] leading-snug text-ink-2" data-testid="home-action-title">
+          {action.title}
+        </p>
+        {action.text ? (
+          <p className="mt-3 inline-flex max-w-full items-center gap-2 self-start rounded-pill bg-card px-3 py-1.5 text-supporting text-ink shadow-(--shadow-f)" data-testid="home-action-text">
+            <CalendarIcon aria-hidden width={14} height={14} className="shrink-0 text-ok-solid" />
+            <span className="min-w-0 truncate">{action.text}</span>
+          </p>
+        ) : null}
+        {lowest || room ? (
+          <dl className="mt-4 grid grid-cols-2 gap-3" data-testid="hv2-covered-facts">
+            {lowest ? (
+              <div className="rounded-tile bg-card/70 px-3 py-2">
+                <dt className="text-supporting font-semibold uppercase tracking-[0.06em] text-ink-3">{t("hv2.covered.lowest")}</dt>
+                <dd className="mt-0.5 font-display text-lg font-bold tabular-nums text-ink">{lowest}</dd>
+              </div>
+            ) : null}
+            {room ? (
+              <div className="rounded-tile bg-card/70 px-3 py-2">
+                <dt className="text-supporting font-semibold uppercase tracking-[0.06em] text-ink-3">{t("hv2.covered.room")}</dt>
+                <dd className="mt-0.5 font-display text-lg font-bold tabular-nums text-ok-fg">{room}</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : null}
+        <div className="mt-auto pt-5">
+          <ButtonLink href="/deals" data-testid="hv2-explore-deals">
+            {t("hv2.covered.cta")}
+            <ArrowRightIcon aria-hidden width={14} height={14} />
+          </ButtonLink>
+        </div>
+      </section>
     </div>
   );
 }

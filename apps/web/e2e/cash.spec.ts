@@ -1,5 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
-import { filledBrand, runPlan, walkStory, openOperatorTools } from "./helpers";
+import { filledBrand, openCashOptions, runPlan, walkStory, openOperatorTools } from "./helpers";
 
 /**
  * Cash & funding (mock mode): the risk with headroom said directly, the plan, the options in two groups that are never
@@ -33,13 +33,14 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
   await expect(action.getByTestId("next-action-cost")).toContainText("¥3,113.93");
-  // The sections come in the owner's order: the answer, the picture, the plan bar, the options (the bar is sticky, so the order is the document's).
+  // The sections come in the owner's order: the answer, the plan bar (the page's most important part), the picture, the options (the bar is in flow, so the order is the document's).
   const inOrder = await page.evaluate(() => {
-    const els = ["cash-answer", "cash-chart", "home-next-action", "cash-options"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`));
+    const els = ["cash-answer", "home-next-action", "cash-chart", "cash-options-all"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`));
     return els.every((el, i) => el !== null && (i === 0 || (els[i - 1]!.compareDocumentPosition(el!) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0));
   });
   expect(inOrder).toBe(true);
   // The comparison is the server's: grouped and ordered as it sent them, one sentence saying how, a numeral only where the server ranked.
+  await openCashOptions(page);
   const options = page.getByTestId("cash-options-list");
   await expect(options).not.toContainText("Router optimum");
   await expect(options).not.toContainText("Cheapest committed plan");
@@ -47,7 +48,7 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await expect(page.getByTestId("cash-options-order")).toHaveCount(1);
   await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(1);
   await expect(page.getByTestId("cash-options-RECOMMENDED").locator("input[type=radio]")).toBeChecked();
-  await expect(page.locator("#cash-options")).not.toContainText("ranked by cost");
+  await expect(page.getByTestId("cash-options-list")).not.toContainText("ranked by cost");
   expect(await options.locator("[data-group]").evaluateAll((els) => els.filter((el) => el.hasAttribute("data-testid") && el.getAttribute("data-testid")!.startsWith("cash-options-")).map((el) => el.getAttribute("data-group")))).toEqual([
     "RECOMMENDED",
     "CONDITIONAL_ON_BUYER",
@@ -114,7 +115,7 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
 });
 
 test("after the plan ran, the page states the current funding and folds the comparison away", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   await runPlan(page, "ALERT-RESERVE-12");
   await expect(page.getByTestId("fix-result")).toBeVisible();
   await page.goto("/cash");
@@ -126,13 +127,14 @@ test("after the plan ran, the page states the current funding and folds the comp
   await expect(chart).toContainText("Projected cash");
   await expect(chart).not.toContainText("If you do nothing");
   await expect(chart).not.toContainText("With the recommended plan");
-  const current = page.locator("#cash-current");
-  await expect(current).toContainText("Current funding");
-  await expect(current.getByTestId("cash-lot-landed")).toContainText("¥150,000.00");
-  await expect(current.getByTestId("cash-lot-landed")).toContainText("today");
-  await expect(current.getByTestId("cash-lot-transit")).toContainText("¥255,000.00");
-  await expect(current.getByTestId("cash-lot-transit")).toContainText("in 3 days");
-  await expect(current.getByTestId("cash-no-gap")).toHaveText("No additional funding is needed.");
+  const current = page.locator("#cash-sources-now");
+  await expect(current).toContainText("Your funding");
+  await expect(current.getByTestId("cash-current-amount").filter({ hasText: "¥150,000.00" })).toHaveCount(1);
+  await expect(current.getByTestId("cash-current-amount").filter({ hasText: "¥255,000.00" })).toHaveCount(1);
+  // The state is a pill now: money that landed is "Received", money on its way says when ("Arriving in 3 days").
+  await expect(current).toContainText("Received");
+  await expect(current).toContainText("Arriving in 3 days");
+  // Covered: the headline says so ("You're covered.") and no gap line or to-do list follows.
   // No comparison was taken when the plan was chosen (the plan ran from the home), and a fresh plan on covered books is empty:
   // the page shows the current funding and nothing that reads as a to-do list.
   await expect(page.locator("body")).not.toContainText(/ways to cover the gap/i);
@@ -154,7 +156,7 @@ test("covered after the walk: the comparison taken when the plan was chosen is h
   await page.goto("/demo");
   await walkStory(page, 2); // the buyer asks, FLOW decides: the Debt Desk's view at decision time is kept
   await page.evaluate(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   await runPlan(page, "ALERT-RESERVE-12");
   await expect(page.getByTestId("fix-result")).toBeVisible();
   await page.goto("/cash");
@@ -175,6 +177,7 @@ test("day 34 with a gap open: the options are today's plan, never the day-0 comp
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/cash");
   await expect(page.getByTestId("home-next-action").getByTestId("next-action-cost")).toContainText("¥1,782.19");
+  await openCashOptions(page);
   const options = page.getByTestId("cash-options-list");
   await expect(options).toBeVisible();
   // Not the opening books' ¥3,113.93 plan, and no reading of a gap "22 days ago".
@@ -232,8 +235,8 @@ test("engine words stay out of level 1 on Cash & funding and Activity", async ({
   // Visible text only (closed disclosures hold the audit level).
   const cash = await page.locator("main").innerText();
   for (const word of [/\bverdict\b/i, /sandbox/i, /admissible/i, /\bexecutor\b/i, /hash/i]) expect(cash, String(word)).not.toMatch(word);
-  await expect(page.locator("#cash-whatif")).toContainText("see the answer and the cash line");
-  await expect(page.locator("#cash-whatif").getByRole("link")).toHaveText("Try different terms");
+  await expect(page.locator("#cash-whatif")).toContainText("watch your cash line move");
+  await expect(page.locator("#cash-whatif").getByRole("link")).toHaveText("Open the sandbox");
   await page.goto("/activity");
   const activity = await page.locator("main").innerText();
   for (const word of [/hash-chained/i, /\bexecutor\b/i, /operations the/i]) expect(activity, String(word)).not.toMatch(word);
@@ -253,6 +256,7 @@ test("the page has one h1 (the server's headline) and one filled primary, and no
 
 test("choosing a plan row draws its line on the picture under its name; a row with no line says why and leaves the baseline", async ({ page }) => {
   await page.goto("/cash");
+  await openCashOptions(page);
   const picture = page.getByTestId("cash-picture");
   await expect(picture).toHaveAttribute("data-plan", "yes");
   await expect(picture.getByTestId("picture-line-plan")).toBeVisible();
@@ -308,6 +312,7 @@ test("the plan bar is in flow at every width (under the picture at 1280 px, cove
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   expect(await page.getByTestId("home-next-action").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");
   // Nothing covers the picture's plot: at the top of the page, the element on top at each corner and the middle of the svg is the svg itself.
+  await page.locator('[data-testid="cash-picture"] svg[role=img]').scrollIntoViewIfNeeded();
   const covered = await page.evaluate(() => {
     const svg = document.querySelector('[data-testid="cash-picture"] svg[role=img]')!;
     const r = svg.getBoundingClientRect();
@@ -318,8 +323,8 @@ test("the plan bar is in flow at every width (under the picture at 1280 px, cove
     }).length;
   });
   expect(covered).toBe(0);
-  // In flow, below the picture: the bar starts under the plot's foot.
-  const below = await page.evaluate(() => document.querySelector('[data-testid="cash-picture"] svg[role=img]')!.getBoundingClientRect().bottom <= document.querySelector('[data-testid="home-next-action"]')!.getBoundingClientRect().top + 1);
+  // In flow, above the picture: the plan is the page's most important part, so the plot starts under the bar's foot.
+  const below = await page.evaluate(() => document.querySelector('[data-testid="home-next-action"]')!.getBoundingClientRect().bottom <= document.querySelector('[data-testid="cash-picture"] svg[role=img]')!.getBoundingClientRect().top + 1);
   expect(below).toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByTestId("home-next-action")).toBeVisible();
@@ -336,9 +341,10 @@ test("the plan bar is in flow at every width (under the picture at 1280 px, cove
 test("the new strings are in Chinese too", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
   await page.goto("/cash");
+  await openCashOptions(page);
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   await expect(page.getByTestId("cash-options-list")).toContainText("成本");
   await expect(page.getByTestId("cash-options-list")).toContainText("已覆盖");
-  await expect(page.getByRole("heading", { name: "您的融资来源" })).toBeVisible();
+  await expect(page.locator("#cash-sources-now").getByRole("heading", { name: "您的资金" })).toBeVisible();
   await expect(page.getByTestId("cash-figures")).toContainText("最低储备");
 });

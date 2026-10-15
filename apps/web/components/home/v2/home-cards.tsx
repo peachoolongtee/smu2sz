@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { DocumentIcon, ShieldCheckIcon } from "@/components/icons";
 import { segments, r1 } from "@/components/business/cash-picture";
 import { Breakdown } from "@/components/home/v2/breakdown";
+import { CashMix } from "@/components/home/v2/cash-mix";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useI18n } from "@/lib/i18n";
 import type { HomeSeriesPoint, HomeV2, HomeView, WorklistCustomer } from "@/lib/types";
@@ -15,7 +15,17 @@ export const cardTitle = "font-display text-[16px] font-bold leading-tight track
  * "Cash available today" (the mockup's first card): the server's figure, its note ("¥100k above your ¥300k minimum"), and the reserve bar: a track to the minimum and a green part for
  * the buffer above it (a risk-red fill and "Short by" when the cash is below the minimum). The fen only size the two parts; every word is the server's or a label.
  */
-export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
+export function CashCard({
+  kpis,
+  h,
+  customers,
+}: {
+  kpis: HomeV2["kpis"];
+  /** The full Home read: with it, the card also says where the cash comes from (the ring). */
+  h?: HomeView;
+  /** The customers read (names and short names), to name a customer's early payment in the ring. */
+  customers?: { name: string; short: string }[];
+}) {
   const { t } = useI18n();
   const cash = kpis.cash_available;
   const b = cash.buffer;
@@ -36,6 +46,7 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
           {cash.note}
         </p>
       ) : null}
+      {h ? <CashMix h={h} customers={customers} /> : null}
       <div className="mt-auto pt-3 sm:pt-4" data-testid="home-buffer" data-min={b.min_fen} data-cash={b.cash_fen}>
         <div className="flex items-baseline justify-between gap-3 text-sm text-ink-3">
           <span data-testid="home-buffer-min-text">
@@ -157,7 +168,7 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
         ) : (
           <span />
         )}
-        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-8 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
+        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className={`motion-press inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-pill border px-3.5 font-semibold shadow-(--shadow-f) transition-colors touch:min-h-11 ${expanded ? "border-f-btn bg-f-btn text-f-btn-ink hover:bg-f-btn/90" : "border-line-ui bg-card text-ink hover:bg-subtle"}`} data-testid="hv2-outlook-expand">
           {expanded ? t("hv2.card.close") : t("hv2.card.expand")}
           <ExpandIcon open={expanded} />
         </button>
@@ -190,13 +201,13 @@ export function OwedCard({ customers, selected, onSelect }: { customers: Worklis
   if (rows.length === 1) {
     const only = rows[0];
     return (
-      <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-owed-card" data-ring="false">
-        <h2 id="hv2-owed-title" className={cardTitle} data-testid="hv2-owed-title">
+      <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-3.5" data-testid="hv2-owed-card" data-ring="false">
+        <h2 id="hv2-owed-title" className="font-display text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-owed-title">
           {t("hv2.owed.title")}
         </h2>
         <button type="button" aria-pressed={selected === only.customer_id} onClick={() => onSelect(only.customer_id)} className="motion-press mt-2 block w-full rounded-control px-1 py-1 text-left hover:bg-subtle touch:min-h-11" data-testid="hv2-owed-one">
-          <b className="block font-display text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums text-ink">{only.outstanding_display}</b>
-          <span className="mt-1 block text-sm text-ink-2">{only.name}</span>
+          <b className="block font-display text-[20px] font-bold leading-none tracking-[-0.02em] tabular-nums text-ink">{only.outstanding_display}</b>
+          <span className="mt-1 block text-[13px] text-ink-2">{only.name}</span>
           <span className="block text-supporting text-ink-3">{only.share_text}</span>
         </button>
       </section>
@@ -205,13 +216,13 @@ export function OwedCard({ customers, selected, onSelect }: { customers: Worklis
   const at = rows.findIndex((c) => c.customer_id === selected);
   const on = at >= 0 ? rows[at] : null;
   return (
-    <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-owed-card">
-      <h2 id="hv2-owed-title" className={cardTitle} data-testid="hv2-owed-title">
+    <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-3.5" data-testid="hv2-owed-card">
+      <h2 id="hv2-owed-title" className="font-display text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-owed-title">
         {t("hv2.owed.title")}
       </h2>
       <Breakdown
         stacked
-        size={128}
+        size={104}
         testId="hv2-owed"
         rows={rows.map((c) => ({ label: c.name, amount_display: c.outstanding_display, share_text: c.share_text as string }))}
         lifted={at >= 0 ? at : null}
@@ -245,19 +256,19 @@ export function UpcomingCard({ h, overdue }: { h: HomeView; overdue?: { short: s
         .slice(0, 3)
         .map((e) => ({ key: e.key, label: e.label_short ?? e.label, amount: e.amount_short, when: e.when, kind: (e.amount_fen ?? 0) < 0 ? "outflow" : "inflow" }));
   return (
-    <section aria-labelledby="hv2-upcoming-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-upcoming">
-      <h2 id="hv2-upcoming-title" className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink">
+    <section aria-labelledby="hv2-upcoming-title" className="motion-reveal f-card min-w-0 p-3.5" data-testid="hv2-upcoming">
+      <h2 id="hv2-upcoming-title" className="font-display text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink">
         {t("hv2.upcoming.title")}
       </h2>
       {events.length || overdue ? (
-        <ul className="mt-3 divide-y divide-line" data-testid="hv2-upcoming-list">
+        <ul className="mt-2 divide-y divide-line" data-testid="hv2-upcoming-list">
           {events.map((e) => (
-            <li key={e.key} className="flex min-h-11 items-center justify-between gap-4 py-1.5 first:pt-0" data-testid="hv2-upcoming-row" data-kind={e.kind}>
-              <span className="min-w-0 text-[15px] text-ink">
+            <li key={e.key} className="flex min-h-9 items-center justify-between gap-3 py-1 first:pt-0" data-testid="hv2-upcoming-row" data-kind={e.kind}>
+              <span className="min-w-0 text-[13px] text-ink">
                 <span className="block leading-tight first-letter:uppercase">{e.label}</span>
                 <span className="block text-supporting text-ink-3 first-letter:uppercase">{e.when}</span>
               </span>
-              <b className="shrink-0 font-semibold tabular-nums text-ink">{e.amount}</b>
+              <b className="shrink-0 text-[13px] font-semibold tabular-nums text-ink">{e.amount}</b>
             </li>
           ))}
           {overdue ? (
@@ -277,40 +288,9 @@ export function UpcomingCard({ h, overdue }: { h: HomeView; overdue?: { short: s
           {t("hv2.upcoming.none")}
         </p>
       )}
-      <Link href="/cash" className="motion-press mt-3 inline-flex min-h-10 items-center gap-1.5 text-[15px] font-semibold text-ink hover:underline hover:underline-offset-[3px] touch:min-h-11" data-testid="home-chart-full">
+      <Link href="/cash" className="motion-press mt-2 inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-ink hover:underline hover:underline-offset-[3px] touch:min-h-11" data-testid="home-chart-full">
         {t("hv2.upcoming.explore")} <span aria-hidden>↗</span>
       </Link>
     </section>
-  );
-}
-
-const FOOT = [
-  { href: "/documents", key: "hv2.foot.documents", Icon: DocumentIcon },
-  { href: "/whatif", key: "hv2.foot.whatif", Icon: ShieldCheckIcon },
-  { href: "/capex", key: "hv2.foot.capex", Icon: ShieldCheckIcon },
-  { href: "/approvals", key: "hv2.foot.approvals", Icon: ShieldCheckIcon },
-] as const;
-
-/** The footer row: the four secondary destinations of the mockup, linking to the existing routes (their pages change in their own slices). */
-export function FooterLinks({ separate = false }: { separate?: boolean }) {
-  const { t } = useI18n();
-  return (
-    <nav aria-label={t("hv2.foot")} className="mt-6 border-t border-line pt-3" data-testid="home-v2-links">
-      <ul className="flex flex-wrap gap-x-7 gap-y-1">
-        {FOOT.map(({ href, key, Icon }) => (
-          <li key={href}>
-            <Link href={href} className="motion-press inline-flex min-h-11 items-center gap-2 text-[15px] font-medium text-ink hover:underline hover:underline-offset-[3px]" data-testid={`hv2-foot-${href.slice(1)}`}>
-              <Icon width={18} height={18} aria-hidden className="text-ink-2" />
-              {t(key)}
-            </Link>
-          </li>
-        ))}
-      </ul>
-      {separate ? (
-        <p className="mt-1 pb-1 text-supporting text-ink-3" data-testid="hv2-foot-separate">
-          {t("hv2.foot.separate")}
-        </p>
-      ) : null}
-    </nav>
   );
 }

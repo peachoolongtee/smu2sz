@@ -16,6 +16,7 @@ import {
   WhatIfVerdictCard,
 } from "@/components/whatif-results";
 import { Disclosure } from "@/components/business/kit";
+import { AlertIcon, ChevronRightIcon } from "@/components/icons";
 import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
 import { getClock, getDeals, getOffer, getState, getWorklist, whatIfScope } from "@/lib/api";
 import type { WhatIfResult } from "@/lib/types";
@@ -58,9 +59,9 @@ function Ask({ customer, lang, t }: { customer: string | null; lang: "en" | "zh"
   const open = queue ? taskRows(queue).filter((x) => x.tier !== "agreements" && (x.row.kind === "DECISION" || x.row.kind === "BUYER_REPLY") && rowDecision(x.row) && (!customer || x.row.customer_id === customer)) : [];
   return (
     <>
-      <PageHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
-      <section aria-labelledby="whatif-ask-title" className="max-w-2xl" data-testid="whatif-ask">
-        <h2 id="whatif-ask-title" className="type-section text-ink">
+      <PageHeader section="sandbox" title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
+      <section aria-labelledby="whatif-ask-title" className="motion-reveal card-flat max-w-3xl" data-testid="whatif-ask">
+        <h2 id="whatif-ask-title" className="sec-title font-display text-xl font-bold tracking-[-0.01em] text-ink">
           {t("deals.which.title")}
         </h2>
         <p className="mt-1 text-sm text-ink-2">{t("whatif.ask.body")}</p>
@@ -69,15 +70,40 @@ function Ask({ customer, lang, t }: { customer: string | null; lang: "en" | "zh"
             <LoadingBlock rows={2} />
           </div>
         ) : open.length ? (
-          <ul className="mt-3 divide-y divide-line border-y border-line" data-testid="whatif-choices">
-            {open.map(({ row }) => (
-              <li key={row.key}>
-                <Link href={selectionHref("/whatif", { customer: row.customer_id, decision: rowDecision(row), from: "deal" })} className="flex min-h-11 flex-col justify-center gap-0.5 px-1 py-2.5 hover:bg-subtle focus-visible:outline-2 focus-visible:-outline-offset-2" data-testid="whatif-choice">
-                  <span className="text-[15px] font-bold text-ink">{row.subject_text}</span>
-                  {row.consequence_text ? <span className="text-supporting text-ink-3">{row.consequence_text}</span> : null}
-                </Link>
-              </li>
-            ))}
+          <ul className="mt-4 space-y-3" data-testid="whatif-choices">
+            {open.map(({ row }) => {
+              // How serious the request is as asked, in the server's word: the edge, the icon and the consequence's weight and colour say it (and the pill in words).
+              const sev = row.severity === "CRITICAL" ? "bad" : row.severity === "CAUTION" ? "warn" : null;
+              return (
+                <li key={row.key}>
+                  <Link
+                    href={selectionHref("/whatif", { customer: row.customer_id, decision: rowDecision(row), from: "deal" })}
+                    className={`motion-press group flex min-h-11 items-center gap-4 rounded-tile border-l-4 bg-card px-4 py-3.5 shadow-(--shadow-f) transition-shadow hover:shadow-(--shadow-lift) focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                      sev === "bad" ? "border-bad-solid" : sev === "warn" ? "border-warn-solid" : "border-line-strong"
+                    }`}
+                    data-testid="whatif-choice"
+                    data-severity={row.severity ?? undefined}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-display text-[16px] font-bold leading-snug tracking-[-0.01em] text-ink">{row.subject_text}</span>
+                      {row.consequence_text ? (
+                        <span className={`mt-1 flex items-start gap-1.5 text-sm ${sev === "bad" ? "font-semibold text-bad-fg" : sev === "warn" ? "font-semibold text-warn-fg" : "text-ink-3"}`} data-testid="whatif-choice-consequence">
+                          {sev ? <AlertIcon aria-hidden className={`mt-0.5 size-4 shrink-0 ${sev === "bad" ? "text-bad-solid" : "text-warn-solid"}`} /> : null}
+                          <span className="min-w-0">{row.consequence_text}</span>
+                        </span>
+                      ) : null}
+                    </span>
+                    {row.severity === "CRITICAL" || row.severity === "CAUTION" ? (
+                      <span className={`hidden shrink-0 rounded-pill px-2.5 py-0.5 text-supporting font-bold sm:inline ${sev === "bad" ? "bg-bad-bg text-bad-fg" : "bg-f-amber text-f-amber-ink"}`}>{t(`hv2.sev.${row.severity}` as const)}</span>
+                    ) : null}
+                    <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-700">
+                      <span className="hidden sm:inline">{t("whatif.ask.open")}</span>
+                      <ChevronRightIcon aria-hidden width={14} height={14} className="transition-transform duration-(--dur-fast) group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <div className="mt-3" data-testid="whatif-none">
@@ -103,7 +129,7 @@ function Run({ decision, customer }: { decision: string; customer: string | null
   const mismatch = Boolean(customer && buyerId && customer !== buyerId);
   const ask = (text: string) => (
     <>
-      <PageHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
+      <PageHeader section="sandbox" title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
       <div data-testid="whatif-ask" className="max-w-2xl">
         <h2 className="type-section text-ink">{t("deals.which.title")}</h2>
         <p className="mt-1 text-sm text-ink-2" data-testid="whatif-irrelevant">
@@ -123,7 +149,7 @@ function Run({ decision, customer }: { decision: string; customer: string | null
     const s = scope.data.scope;
     return (
       <>
-        <PageHeader title={t("whatif.title")} subtitle={t("whatif.subtitle")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
+        <PageHeader section="sandbox" title={t("whatif.title")} subtitle={t("whatif.subtitle")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
         <p className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink-2" data-testid="whatif-scope">
           <span className="font-bold text-ink">{t("whatif.scope")}</span>
           <span>{record.data?.headline ?? record.data?.counterparty_name ?? ""}</span>
@@ -158,7 +184,7 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
   if (ran?.irrelevant_text) {
     return (
       <>
-        <PageHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
+        <PageHeader section="sandbox" title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
         <div data-testid="whatif-ask" className="max-w-2xl">
           <h2 className="type-section text-ink">{t("deals.which.title")}</h2>
           <p className="mt-1 text-sm text-ink-2" data-testid="whatif-irrelevant">
@@ -173,7 +199,7 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
   }
   return (
     <>
-      <PageHeader title={t("whatif.title")} subtitle={t("whatif.subtitle")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
+      <PageHeader section="sandbox" title={t("whatif.title")} subtitle={t("whatif.subtitle")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
       <p className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink-2 ${result?.scope_text || result?.compare_text ? "mb-1" : "mb-4"}`} data-testid="whatif-scope">
         <span className="font-bold text-ink">{t("whatif.scope")}</span>
         <span>{title ?? ""}</span>

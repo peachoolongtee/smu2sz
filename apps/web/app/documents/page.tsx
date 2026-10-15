@@ -68,7 +68,7 @@ function Documents() {
   if (contractsOff(list.error)) {
     return (
       <>
-        <PageHeader section="deals" title={t("docs.title")} subtitle={t("docs.subtitle")} />
+        <PageHeader section="docs" title={t("docs.title")} subtitle={t("docs.subtitle")} />
         <Callout tone="info">{t("home.deals.off")}</Callout>
       </>
     );
@@ -76,7 +76,7 @@ function Documents() {
 
   return (
     <>
-      <PageHeader section="deals" title={t("docs.title")} subtitle={t("docs.subtitle")} />
+      <PageHeader section="docs" title={t("docs.title")} subtitle={t("docs.subtitle")} />
       {/* A flex column, not a stack: the review's parts are ordered (the decision is a bar at the foot of a phone, under the header on a desktop). */}
       <div className="flex flex-col gap-8">
         <Card id="docs-read" className="order-1" title={t("docs.read")} subtitle={t("docs.read.sub")}>
