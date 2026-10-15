@@ -143,8 +143,8 @@ test("the approval of a purchase shows the schedule the owner is committing to, 
   await expect(schedule).toContainText("Guangzhou Precision Machinery Co., Ltd.");
   await expect(schedule).toContainText("Equipment purchase contract GZPM-2026-114");
   await expect(schedule).toContainText("¥180,000.00, in 20 days");
-  await expect(schedule).toContainText("¥352,800.00, in 65 days");
+  await expect(schedule).toContainText("¥360,000.00, in 105 days");
   await expect(schedule).toContainText("¥60,000.00, in 440 days (retention)");
-  await expect(schedule).toContainText("Taken: 2.00% off the delivery payment");
-  await expect(schedule).toContainText("¥592,800.00");
+  await expect(schedule).toContainText("Not taken: every payment is made on its day");
+  await expect(schedule).toContainText("¥600,000.00");
 });

@@ -1,173 +1,348 @@
 {
-  "id": "APR-000001",
-  "op_id": "capex-commit-DOC-000004-63b22cf93d3f",
-  "kind": "COMMIT_PURCHASE",
-  "op_json": "{\"acceptance_day\":80,\"amount_fen\":59280000,\"day\":0,\"delivery_day\":60,\"doc_hash\":\"704f16e616e7c19648b5a3cc7903797baa0f80e9775a693a7d114452d0af17c0\",\"document_id\":\"DOC-000004\",\"idempotency_key\":\"capex-commit:DOC-000004:63b22cf93d3ff4b6\",\"invoice_day\":null,\"kind\":\"COMMIT_PURCHASE\",\"mandate_version\":1,\"op_id\":\"capex-commit-DOC-000004-63b22cf93d3f\",\"requested_by\":\"OWNER\",\"retention_release_day\":null,\"schedule_hash\":\"63b22cf93d3ff4b6d6b8a1cd888ffbf82c2193dde6e467007d79fd2aebd95072\",\"signing_day\":20,\"source_verdict_id\":null,\"take_early_pay\":true}",
-  "reason": "commit to the purchase under document DOC-000004: ¥592,800.00 on the contract's payment schedule, the early-payment discount taken",
-  "status": "PENDING",
-  "decided_by": null,
-  "decided_day": null,
-  "operation": {
-    "acceptance_day": 80,
-    "amount_fen": 59280000,
-    "day": 0,
-    "delivery_day": 60,
-    "doc_hash": "704f16e616e7c19648b5a3cc7903797baa0f80e9775a693a7d114452d0af17c0",
-    "document_id": "DOC-000004",
-    "idempotency_key": "capex-commit:DOC-000004:63b22cf93d3ff4b6",
-    "invoice_day": null,
-    "kind": "COMMIT_PURCHASE",
-    "mandate_version": 1,
-    "op_id": "capex-commit-DOC-000004-63b22cf93d3f",
+  "en": {
+    "id": "APR-000001",
+    "subject": "commit purchase",
+    "status": "PENDING",
+    "tier": "TIER_2",
     "requested_by": "OWNER",
-    "retention_release_day": null,
-    "schedule_hash": "63b22cf93d3ff4b6d6b8a1cd888ffbf82c2193dde6e467007d79fd2aebd95072",
-    "signing_day": 20,
-    "source_verdict_id": null,
-    "take_early_pay": true
-  },
-  "tier": "TIER_2",
-  "created_day": 0,
-  "amount_fen": 59280000,
-  "amount_display": "¥592,800.00",
-  "subject": "commit purchase",
-  "result_message": null,
-  "presentation": {
-    "headline": "Commit to the ¥592,800 equipment purchase",
-    "title_text": "Commit to the ¥592,800 equipment purchase",
-    "what": "Book the ¥592,800.00 equipment purchase on the contract's payment days",
-    "facility_name": null,
-    "buyer_name": null,
-    "invoice": null,
-    "cost_display": null,
-    "rate_text": null,
-    "cost_due_day": null,
-    "lands_day": null,
-    "lands_when": null,
-    "lands_text": null,
-    "if_decline": "Nothing runs; the request is closed.",
-    "protects": null,
-    "residual": null,
-    "series_axis": null,
-    "series_if_declined": null,
-    "series_if_approved": null,
-    "lowest_if_declined_short": null,
-    "lowest_if_declined_when": null,
-    "lowest_if_declined_fen": null,
-    "lowest_if_approved_short": null,
-    "lowest_if_approved_when": null,
-    "lowest_if_approved_fen": null,
-    "execution_status": "PENDING",
-    "reason": "Commit to the purchase under document DOC-000004: ¥592,800.00 on the contract's payment schedule, the early-payment discount taken.",
-    "next_step_text": null,
-    "next_step_href": null,
+    "created_day": 0,
+    "operation_kind": "COMMIT_PURCHASE",
+    "reason": "commit to the purchase under document DOC-000004: ¥600,000.00 on the contract's payment schedule",
+    "op_id": "capex-commit-DOC-000004-d43fb36e6a1e",
+    "operation": {
+      "acceptance_day": 80,
+      "amount_fen": 60000000,
+      "day": 0,
+      "delivery_day": 60,
+      "doc_hash": "704f16e616e7c19648b5a3cc7903797baa0f80e9775a693a7d114452d0af17c0",
+      "document_id": "DOC-000004",
+      "idempotency_key": "capex-commit:DOC-000004:d43fb36e6a1e3947",
+      "invoice_day": null,
+      "kind": "COMMIT_PURCHASE",
+      "mandate_version": 1,
+      "op_id": "capex-commit-DOC-000004-d43fb36e6a1e",
+      "requested_by": "OWNER",
+      "retention_release_day": null,
+      "schedule_hash": "d43fb36e6a1e39475e3b834227711664c55598781681cdfabd5672e10338e37e",
+      "signing_day": 20,
+      "source_verdict_id": null,
+      "take_early_pay": false
+    },
+    "amount_fen": 60000000,
+    "amount_display": "¥600,000.00",
+    "detail": "commit to the purchase under document DOC-000004: ¥600,000.00 on the contract's payment schedule",
+    "decided_day": null,
+    "result_message": null,
+    "presentation": {
+      "headline": "Commit to the ¥600,000 equipment purchase",
+      "title_text": "Commit to the ¥600,000 equipment purchase",
+      "what": "Book the ¥600,000.00 equipment purchase on the contract's payment days",
+      "facility_name": null,
+      "buyer_name": null,
+      "invoice": null,
+      "cost_display": null,
+      "rate_text": null,
+      "cost_due_day": null,
+      "lands_day": null,
+      "lands_when": null,
+      "lands_text": null,
+      "if_decline": "Nothing runs; the request is closed.",
+      "protects": null,
+      "residual": null,
+      "series_axis": null,
+      "series_if_declined": null,
+      "series_if_approved": null,
+      "lowest_if_declined_short": null,
+      "lowest_if_declined_when": null,
+      "lowest_if_declined_fen": null,
+      "lowest_if_approved_short": null,
+      "lowest_if_approved_when": null,
+      "lowest_if_approved_fen": null,
+      "execution_status": "PENDING",
+      "reason": "Commit to the purchase under document DOC-000004: ¥600,000.00 on the contract's payment schedule.",
+      "next_step_text": null,
+      "next_step_href": null,
+      "result_state_text": "Waiting for your approval",
+      "result_tone": "warn",
+      "result_message": null,
+      "decided_when": null,
+      "created_when": "today"
+    },
+    "decision_id": "approval:APR-000001",
+    "decision_state": "AUTHORIZATION_REQUIRED",
+    "quote": {
+      "recorded": false,
+      "quoted_when": null,
+      "lines": [],
+      "total_fen": null,
+      "total_display": null,
+      "cost_note": null,
+      "rate_basis": null,
+      "lands_day": null,
+      "lands_when": null,
+      "after": null,
+      "if_declined": null,
+      "needs_owner": null,
+      "text": "Price today."
+    },
+    "execution": {
+      "status": "PENDING",
+      "summary_text": "Waiting for your approval. Nothing has run."
+    },
     "result_state_text": "Waiting for your approval",
     "result_tone": "warn",
-    "result_message": null,
-    "decided_when": null,
-    "created_when": "today"
+    "receipt": {
+      "authorizes_text": "Book the ¥600,000.00 equipment purchase on the contract's payment days",
+      "executes_now_text": "Sends the request as soon as you approve: Book the ¥600,000.00 equipment purchase on the contract's payment days.",
+      "others_must_agree_text": null,
+      "in_hand_vs_future_text": null,
+      "gross_display": "¥600,000.00",
+      "fees_display": null,
+      "net_display": null,
+      "when_text": null,
+      "assumptions_text": null,
+      "authority_text": "Commit to the purchase under document DOC-000004: ¥600,000.00 on the contract's payment schedule.",
+      "remaining_text": null
+    },
+    "commit_label": "Authorize the purchase",
+    "authorize_text": "Approval books the contract's payments to the vendor on their days. It does not arrange any financing: apply for that separately.",
+    "terms_state_text": null,
+    "terms_rows": [],
+    "lifecycle": null,
+    "summary_rows": [
+      {
+        "label": "Amount requested",
+        "value_text": "¥600,000.00"
+      },
+      {
+        "label": "Facility",
+        "value_text": null
+      },
+      {
+        "label": "What happens now",
+        "value_text": "Sends the request as soon as you approve: Book the ¥600,000.00 equipment purchase on the contract's payment days."
+      },
+      {
+        "label": "Does money move now",
+        "value_text": null
+      },
+      {
+        "label": "Who decides whether funds are offered",
+        "value_text": null
+      },
+      {
+        "label": "What if you decline",
+        "value_text": "Nothing runs; the request is closed."
+      }
+    ],
+    "schedule_title": "What you are committing to",
+    "schedule_rows": [
+      {
+        "label": "Vendor",
+        "value_text": "Guangzhou Precision Machinery Co., Ltd."
+      },
+      {
+        "label": "Contract",
+        "value_text": "Equipment purchase contract GZPM-2026-114"
+      },
+      {
+        "label": "Payment 1",
+        "value_text": "¥180,000.00, in 20 days"
+      },
+      {
+        "label": "Payment 2",
+        "value_text": "¥360,000.00, in 105 days"
+      },
+      {
+        "label": "Payment 3",
+        "value_text": "¥60,000.00, in 440 days (retention)"
+      },
+      {
+        "label": "Early payment",
+        "value_text": "Not taken: every payment is made on its day"
+      },
+      {
+        "label": "Total you will pay",
+        "value_text": "¥600,000.00"
+      }
+    ],
+    "schedule_note": null,
+    "deadline_text": null,
+    "deadline_day": null,
+    "title_text": "Commit to the ¥600,000 equipment purchase",
+    "decided_text": null
   },
-  "result_state_text": "Waiting for your approval",
-  "result_tone": "warn",
-  "decision_id": "approval:APR-000001",
-  "decision_state": "AUTHORIZATION_REQUIRED",
-  "quote": {
-    "recorded": false,
-    "quoted_when": null,
-    "lines": [],
-    "total_fen": null,
-    "total_display": null,
-    "cost_note": null,
-    "rate_basis": null,
-    "lands_day": null,
-    "lands_when": null,
-    "after": null,
-    "if_declined": null,
-    "needs_owner": null,
-    "text": "Price today."
-  },
-  "execution": {
+  "zh": {
+    "id": "APR-000001",
+    "subject": "commit purchase",
     "status": "PENDING",
-    "summary_text": "Waiting for your approval. Nothing has run."
-  },
-  "receipt": {
-    "authorizes_text": "Book the ¥592,800.00 equipment purchase on the contract's payment days",
-    "executes_now_text": "Sends the request as soon as you approve: Book the ¥592,800.00 equipment purchase on the contract's payment days.",
-    "others_must_agree_text": null,
-    "in_hand_vs_future_text": null,
-    "gross_display": "¥592,800.00",
-    "fees_display": null,
-    "net_display": null,
-    "when_text": null,
-    "assumptions_text": null,
-    "authority_text": "Commit to the purchase under document DOC-000004: ¥592,800.00 on the contract's payment schedule, the early-payment discount taken.",
-    "remaining_text": null
-  },
-  "title_text": "Commit to the ¥592,800 equipment purchase",
-  "decided_text": null,
-  "commit_label": "Authorize the purchase",
-  "authorize_text": "Approval books the contract's payments to the vendor on their days. It does not arrange any financing: apply for that separately.",
-  "terms_state_text": null,
-  "terms_rows": [],
-  "lifecycle": null,
-  "summary_rows": [
-    {
-      "label": "Amount requested",
-      "value_text": "¥592,800.00"
+    "tier": "TIER_2",
+    "requested_by": "OWNER",
+    "created_day": 0,
+    "operation_kind": "COMMIT_PURCHASE",
+    "reason": "commit to the purchase under document DOC-000004: ¥600,000.00 on the contract's payment schedule",
+    "op_id": "capex-commit-DOC-000004-d43fb36e6a1e",
+    "operation": {
+      "acceptance_day": 80,
+      "amount_fen": 60000000,
+      "day": 0,
+      "delivery_day": 60,
+      "doc_hash": "704f16e616e7c19648b5a3cc7903797baa0f80e9775a693a7d114452d0af17c0",
+      "document_id": "DOC-000004",
+      "idempotency_key": "capex-commit:DOC-000004:d43fb36e6a1e3947",
+      "invoice_day": null,
+      "kind": "COMMIT_PURCHASE",
+      "mandate_version": 1,
+      "op_id": "capex-commit-DOC-000004-d43fb36e6a1e",
+      "requested_by": "OWNER",
+      "retention_release_day": null,
+      "schedule_hash": "d43fb36e6a1e39475e3b834227711664c55598781681cdfabd5672e10338e37e",
+      "signing_day": 20,
+      "source_verdict_id": null,
+      "take_early_pay": false
     },
-    {
-      "label": "Facility",
-      "value_text": null
+    "amount_fen": 60000000,
+    "amount_display": "¥600,000.00",
+    "detail": "commit to the purchase under document DOC-000004: ¥600,000.00 on the contract's payment schedule",
+    "decided_day": null,
+    "result_message": null,
+    "presentation": {
+      "headline": "确定 ¥600,000 的设备采购",
+      "title_text": "确定 ¥600,000 的设备采购",
+      "what": "按合同付款日记入 ¥600,000.00 的设备采购",
+      "facility_name": null,
+      "buyer_name": null,
+      "invoice": null,
+      "cost_display": null,
+      "rate_text": null,
+      "cost_due_day": null,
+      "lands_day": null,
+      "lands_when": null,
+      "lands_text": null,
+      "if_decline": "不会执行任何操作；该请求关闭。",
+      "protects": null,
+      "residual": null,
+      "series_axis": null,
+      "series_if_declined": null,
+      "series_if_approved": null,
+      "lowest_if_declined_short": null,
+      "lowest_if_declined_when": null,
+      "lowest_if_declined_fen": null,
+      "lowest_if_approved_short": null,
+      "lowest_if_approved_when": null,
+      "lowest_if_approved_fen": null,
+      "execution_status": "PENDING",
+      "reason": "Commit to the purchase under document DOC-000004: ¥600,000.00 on the contract's payment schedule.",
+      "next_step_text": null,
+      "next_step_href": null,
+      "result_state_text": "等待您批准",
+      "result_tone": "warn",
+      "result_message": null,
+      "decided_when": null,
+      "created_when": "今天"
     },
-    {
-      "label": "What happens now",
-      "value_text": "Sends the request as soon as you approve: Book the ¥592,800.00 equipment purchase on the contract's payment days."
+    "decision_id": "approval:APR-000001",
+    "decision_state": "AUTHORIZATION_REQUIRED",
+    "quote": {
+      "recorded": false,
+      "quoted_when": null,
+      "lines": [],
+      "total_fen": null,
+      "total_display": null,
+      "cost_note": null,
+      "rate_basis": null,
+      "lands_day": null,
+      "lands_when": null,
+      "after": null,
+      "if_declined": null,
+      "needs_owner": null,
+      "text": "按今日价格。"
     },
-    {
-      "label": "Does money move now",
-      "value_text": null
+    "execution": {
+      "status": "PENDING",
+      "summary_text": "等待您批准，尚未执行。"
     },
-    {
-      "label": "Who decides whether funds are offered",
-      "value_text": null
+    "result_state_text": "等待您批准",
+    "result_tone": "warn",
+    "receipt": {
+      "authorizes_text": "按合同付款日记入 ¥600,000.00 的设备采购",
+      "executes_now_text": "您批准后立即提交：按合同付款日记入 ¥600,000.00 的设备采购。",
+      "others_must_agree_text": null,
+      "in_hand_vs_future_text": null,
+      "gross_display": "¥600,000.00",
+      "fees_display": null,
+      "net_display": null,
+      "when_text": null,
+      "assumptions_text": null,
+      "authority_text": "Commit to the purchase under document DOC-000004: ¥600,000.00 on the contract's payment schedule.",
+      "remaining_text": null
     },
-    {
-      "label": "What if you decline",
-      "value_text": "Nothing runs; the request is closed."
-    }
-  ],
-  "schedule_title": "What you are committing to",
-  "schedule_note": null,
-  "schedule_rows": [
-    {
-      "label": "Vendor",
-      "value_text": "Guangzhou Precision Machinery Co., Ltd."
-    },
-    {
-      "label": "Contract",
-      "value_text": "Equipment purchase contract GZPM-2026-114"
-    },
-    {
-      "label": "Payment 1",
-      "value_text": "¥180,000.00, in 20 days"
-    },
-    {
-      "label": "Payment 2",
-      "value_text": "¥352,800.00, in 65 days"
-    },
-    {
-      "label": "Payment 3",
-      "value_text": "¥60,000.00, in 440 days (retention)"
-    },
-    {
-      "label": "Early payment",
-      "value_text": "Taken: 2.00% off the delivery payment, ¥7,200.00 saved, paid in 65 days"
-    },
-    {
-      "label": "Total you will pay",
-      "value_text": "¥592,800.00"
-    }
-  ],
-  "deadline_day": null,
-  "deadline_text": null
+    "commit_label": "授权该采购",
+    "authorize_text": "批准后，合同对供应商的各笔付款将按到期日记入账簿。这不会安排任何融资：融资需另行申请。",
+    "terms_state_text": null,
+    "terms_rows": [],
+    "lifecycle": null,
+    "summary_rows": [
+      {
+        "label": "申请金额",
+        "value_text": "¥600,000.00"
+      },
+      {
+        "label": "融资额度",
+        "value_text": null
+      },
+      {
+        "label": "现在会发生什么",
+        "value_text": "您批准后立即提交：按合同付款日记入 ¥600,000.00 的设备采购。"
+      },
+      {
+        "label": "现在是否有资金变动",
+        "value_text": null
+      },
+      {
+        "label": "由谁决定是否提供资金",
+        "value_text": null
+      },
+      {
+        "label": "如果您拒绝",
+        "value_text": "不会执行任何操作；该请求关闭。"
+      }
+    ],
+    "schedule_title": "您将承诺的内容",
+    "schedule_rows": [
+      {
+        "label": "供应商",
+        "value_text": "Guangzhou Precision Machinery Co., Ltd."
+      },
+      {
+        "label": "合同",
+        "value_text": "Equipment purchase contract GZPM-2026-114"
+      },
+      {
+        "label": "第 1 笔付款",
+        "value_text": "¥180,000.00，20 天后"
+      },
+      {
+        "label": "第 2 笔付款",
+        "value_text": "¥360,000.00，105 天后"
+      },
+      {
+        "label": "第 3 笔付款",
+        "value_text": "¥60,000.00，440 天后（质保金）"
+      },
+      {
+        "label": "提前付款",
+        "value_text": "未选择提前付款：每笔款项在到期日支付"
+      },
+      {
+        "label": "您将支付的总额",
+        "value_text": "¥600,000.00"
+      }
+    ],
+    "schedule_note": null,
+    "deadline_text": null,
+    "deadline_day": null,
+    "title_text": "确定 ¥600,000 的设备采购",
+    "decided_text": null
+  }
 }

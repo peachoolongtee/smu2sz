@@ -96,7 +96,7 @@ import * as receivablesMock from "./receivables";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
-import commitApprovalRow from "../../mocks/buyside/commit_approval.json";
+import commitApprovalRows from "../../mocks/buyside/commit_approval.json";
 import navCountsJson from "../../mocks/nav_counts.json";
 import offerPictureJson from "../../mocks/offer_picture_ex01.json";
 import offerPictureExposureJson from "../../mocks/offer_picture_ex01_exposure.json";
@@ -589,7 +589,14 @@ function seedApprovalStory(): void {
 function inChinese(rows: ApprovalView[]): ApprovalView[] {
   if (getLang() !== "zh") return rows;
   const op = cast<ApprovalView>(homeApprovalPending).op_id;
-  return rows.map((r) => (r.op_id === op ? { ...clone(cast<ApprovalView>(r.status === "PENDING" ? homeApprovalPendingZh : homeApprovalApprovedZh)), id: r.id } : r));
+  const purchase = cast<Pair<ApprovalView>>(commitApprovalRows);
+  return rows.map((r) =>
+    r.op_id === op
+      ? { ...clone(cast<ApprovalView>(r.status === "PENDING" ? homeApprovalPendingZh : homeApprovalApprovedZh)), id: r.id }
+      : r.op_id === purchase.en.op_id && r.status === "PENDING"
+        ? { ...clone(purchase.zh), id: r.id }
+        : r,
+  );
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
@@ -1550,8 +1557,9 @@ export async function getContractFixtures(): Promise<ContractFixture[]> {
 export async function commitContract(...args: Parameters<typeof buyside.commitContract>): ReturnType<typeof buyside.commitContract> {
   const result = await buyside.commitContract(...args);
   const s = load();
-  if (!s.approvals.some((a) => a.id === commitApprovalRow.id)) {
-    s.approvals.push(clone(commitApprovalRow as unknown as ApprovalView));
+  const row = cast<Pair<ApprovalView>>(commitApprovalRows).en;
+  if (!s.approvals.some((a) => a.id === row.id)) {
+    s.approvals.push(clone(row));
     save();
   }
   return result;
