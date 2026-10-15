@@ -26,6 +26,7 @@ RAW = (
     r".*\.document\.text", r".*\.quote", r".*\.title", r".*\.reference", r".*\.source", r".*\.note_raw", r".*\.reason_raw",
     r".*\.terms\[\]\.text", r".*\.contract_terms\[\]\.text", r".*\.owed_by_us\..*\.text", r".*\.clauses\[\]\.value_text",
     r".*\.compiler", r".*\.prompt_version", r".*\.clause",
+    r".*\.href",  # the queue's rows (13 Oct) link to a page: an address, not words
 )
 RAW_RE = [re.compile(p) for p in RAW]
 DAY_NUMBER = re.compile(r"\bday \d+\b|第 ?\d+ ?天", re.IGNORECASE)
@@ -48,7 +49,9 @@ def _without_the_contracts_words(x: Any) -> Any:
 
 def _names(client) -> list[str]:  # type: ignore[no-untyped-def]
     state = client.get("/state").json()["state"]
-    return [*(c["name"] for c in state["counterparties"]), *(f["name"] for f in state["facilities"])]
+    # The queue (13 Oct) names a customer as the owner says it aloud, its first word, the same in both languages (the house buyer_short).
+    shorts = [c["name"].replace(",", " ").split()[0] for c in state["counterparties"]]
+    return [*(c["name"] for c in state["counterparties"]), *shorts, *(f["name"] for f in state["facilities"])]
 
 
 def _business_strings(data: Any) -> list[tuple[str, str]]:

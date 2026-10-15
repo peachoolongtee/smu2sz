@@ -20,7 +20,7 @@ organisation's books, enforced by the database, not by a process-local lock:
   (`StateVersionConflict`) unless the current stored state is version `v`;
 - inside a unit, a unique key another writer claimed between this unit's check and its write (a nonce,
   an approval id) is a `ConcurrentWriteConflict`, not a business answer; the caller runs the unit again;
-- on a file SQLite database a unit of work starts with `BEGIN IMMEDIATE`, so writers queue on the
+- on a file SQLite database a unit of work (and a single write outside one) starts with `BEGIN IMMEDIATE`, so writers queue on the
   database lock and the compare-and-swap is the backstop. `sqlite_begin="deferred"` turns that off: reads
   then take no lock (like PostgreSQL READ COMMITTED) and the compare-and-swap alone must hold; the
   concurrency tests run both.
@@ -233,9 +233,7 @@ class SqlLedgerStore:
         if self._tx() is not None:
             yield
             return
-        with self.engine.begin() as conn:
-            if self._begin_immediate:
-                conn.exec_driver_sql("BEGIN IMMEDIATE")
+        with self._begin() as conn:
             self._local.conn = conn
             self._local.head = self._head_seq(conn)
             try:
@@ -243,6 +241,15 @@ class SqlLedgerStore:
             finally:
                 self._local.conn = None
                 self._local.head = None
+
+    @contextmanager
+    def _begin(self) -> Iterator[Connection]:
+        """A write transaction: on a file SQLite database it takes the write lock at once (`BEGIN IMMEDIATE`), so writers queue
+        instead of reading the same head and racing to insert it; a single store call outside a unit of work too."""
+        with self.engine.begin() as conn:
+            if self._begin_immediate:
+                conn.exec_driver_sql("BEGIN IMMEDIATE")
+            yield conn
 
     @staticmethod
     def _head_seq(conn: Connection) -> int:
@@ -273,7 +280,7 @@ class SqlLedgerStore:
                 raise ConcurrentWriteConflict(f"a concurrent writer claimed a key first: {exc.orig}") from exc
         for attempt in range(_RETRIES):
             try:
-                with self.engine.begin() as conn:
+                with self._begin() as conn:
                     return fn(conn)
             except IntegrityError as exc:
                 if on_conflict is not None:
