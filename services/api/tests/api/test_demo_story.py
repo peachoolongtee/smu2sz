@@ -17,6 +17,8 @@ from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 ID_PATTERN = re.compile(r"\b(?:APR|DOC|RCV|COM|FAC|BUYER|OFF|CTR|VER|SEC|ALERT)-[\w-]+|\bdeal:|\b[A-Z]{2,}_[A-Z_]+\b|\b[a-z]+:[A-Z0-9]{3,}")
 DAY_N = re.compile(r"\bday\s*\d+", re.IGNORECASE)

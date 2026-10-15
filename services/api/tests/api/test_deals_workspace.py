@@ -5,7 +5,11 @@ response with its send scope, and the folded fields by name. Every figure is one
 from __future__ import annotations
 
 from tests.alerts.test_repay_alert import OWNER
+from tests.api.conftest import as_three_customer_funding
 from tests.nl import conftest as nl_conftest
+import pytest
+
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
 
 rt = nl_conftest.rt
 client = nl_conftest.client
@@ -159,6 +163,7 @@ def test_a_reply_that_runs_nothing_on_send_says_so_before_the_send(client, rt):
     """On the busy books the gap cannot be funded today whatever the buyer answers, so EX01's Option A runs no funding and its receipt says so
     (the words the record uses after the send: the gap was not funded)."""
     client.post("/demo/reset", params={"scenario": "busy"}, headers=OWNER)
+    as_three_customer_funding(client)
     ws = _eval(client)["workspace"]
     [a] = ws["priced_responses"]
     assert a["label"] == "Option A" and a["receipt"]["executes_now_text"] == "No funding runs when you send: today's plan cannot run; the gap stays open."

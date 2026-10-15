@@ -14,6 +14,9 @@ from app.api.runtime import Runtime, set_runtime
 from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
+from tests.api.busy_snapshot import fast_busy  # noqa: F401  (the busy seed is replayed once per process)
+
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 AGENT = {"X-Agent-Key": "demo-agent-key"}

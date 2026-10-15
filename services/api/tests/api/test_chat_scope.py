@@ -19,6 +19,8 @@ from app.nl import reset_sessions
 from app.persistence import InMemoryLedgerStore
 from tests.api.conftest import english_leaks
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 EX01 = {"fixture_id": "EX01_PACKAGE"}
 EXPLAIN = "Why are we countering this?"
@@ -223,7 +225,11 @@ def test_a_negotiation_scope_on_a_customer_read_says_customer(api: TestClient) -
 
 # ---------------------------------------------------------------- Slice B patch: late payments, what is waiting, who owes
 
-ALL_NAMES = [*NAMES, "Zhuhai Kitchenware Wholesale Co.", "Zhuhai"]
+ALL_NAMES = [*NAMES, "Zhuhai Kitchenware Wholesale Co.", "Zhuhai",
+             # the five newer customers (BUYER-4 to BUYER-8): a buyer's own name stays original in a Chinese read
+             "Guangdong E-Motion Vehicles Co., Ltd.", "Guangdong", "GreenSky Power Engineering Co., Ltd.", "GreenSky",
+             "Jiangmen Precision Machinery Co., Ltd.", "Jiangmen", "SouthChina Storage Systems Co., Ltd.", "SouthChina",
+             "CloudLedger Software (Shenzhen) Co., Ltd.", "CloudLedger"]
 _RAW = re.compile(r"APR-\d+|RCV-[\w-]+|OFF-[\w-]+|BUYER-\d+|\bday -?\d+\b|第 -?\d+ 天|Reconciliation to")
 
 
@@ -267,7 +273,9 @@ def test_the_reconciliation_in_business_mode_is_in_words_and_the_scopes_own(api:
 
     business = ask(f"rec-biz-{lang}", "business")
     assert not _RAW.search(business), business
-    assert "120,000.00" in business and "420,000.00" in business and ("30 days overdue" in business if lang == "en" else "已逾期 30 天" in business)
+    # the company read lists the five most urgent invoices (past due first) and counts the rest: Foshan's 420,000.00 is among "4 more" now
+    assert "120,000.00" in business and "86,000.00" in business and ("and 4 more" in business if lang == "en" else "另有 4 笔" in business)
+    assert "30 days overdue" in business if lang == "en" else "已逾期 30 天" in business
     foshan = ask(f"rec-b1-{lang}", "business", customer="BUYER-1")
     assert "420,000.00" in foshan and "120,000.00" not in foshan and "Dongguan" not in foshan and not _RAW.search(foshan), foshan
     demo = ask(f"rec-demo-{lang}", "demo")
@@ -317,12 +325,12 @@ def test_who_owes_us_money_is_the_receivables_by_customer_and_honours_the_scope(
     everyone = _ask(api, f"owe-all-{lang}", text, lang)
     assert everyone["intent"] == "SHOW_STATUS" and everyone["scope_used"] is None
     assert "Cash today" not in everyone["reply"] and "现金" not in everyone["reply"].split("\n")[0]  # not the cash status
-    for amount in ("770,000.00", "200,000.00", "420,000.00", "150,000.00"):
+    for amount in ("1,032,000.00", "200,000.00", "420,000.00", "150,000.00"):
         assert amount in everyone["reply"], everyone["reply"]
     assert all(n in everyone["reply"] for n in ("Dongguan", "Foshan", "Zhuhai")) and not _RAW.search(everyone["reply"])
     foshan = _ask(api, f"owe-b1-{lang}", text, lang, scope={"customer": "BUYER-1"})
     assert foshan["scope_used"] == {"kind": "customer", "label": "Foshan Home Retail Co."}
-    assert "420,000.00" in foshan["reply"] and "Dongguan" not in foshan["reply"] and "Zhuhai" not in foshan["reply"] and "770,000.00" not in foshan["reply"]
+    assert "420,000.00" in foshan["reply"] and "Dongguan" not in foshan["reply"] and "Zhuhai" not in foshan["reply"] and "1,032,000.00" not in foshan["reply"]
     assert ("in 32 days" if lang == "en" else "32 天后") in foshan["reply"]
     dongguan = _ask(api, f"owe-b2-{lang}", text, lang, scope={"customer": "BUYER-2"})["reply"]
     assert "200,000.00" in dongguan and ("overdue" if lang == "en" else "逾期") in dongguan and "Foshan" not in dongguan

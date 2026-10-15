@@ -19,6 +19,8 @@ from app.mandate.fixture import demo_owner_public_key_hex
 from app.nl import reset_sessions
 from app.persistence import InMemoryLedgerStore
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 UNAVAILABLE = ("I could not read your books just now", "我暂时无法读取您的账目")
 # The question, its intent as the pipeline names it (the waiting and arrival questions answer under SHOW_STATUS), en and zh.
@@ -93,7 +95,10 @@ def test_the_home_reads_are_said_in_business_words_with_no_ids_no_day_numbers_an
     assert api.post("/demo/reset", params={"scenario": "busy"}).status_code == 200
     agree_on_rcv_a(api)  # a promise, an agreement and a pending application: every kind of row the reads can list
     names = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan", "Zhuhai Kitchenware Wholesale Co.", "Zhuhai",
-             "Government-guaranteed working-capital loan"]
+             "Government-guaranteed working-capital loan", "Bank credit line", "Invoice financing (onboarded platform)", "GreenSky Power Engineering Co., Ltd.",
+             "GreenSky",
+             "Guangdong E-Motion Vehicles Co., Ltd.", "Guangdong", "Jiangmen Precision Machinery Co., Ltd.", "Jiangmen",
+             "SouthChina Storage Systems Co., Ltd.", "SouthChina", "CloudLedger Software (Shenzhen) Co., Ltd.", "CloudLedger"]  # the funding the plan now runs draws on the credit line and finances a newer customer's invoice (BUYER-5)
     for n, (en, zh) in enumerate(QUESTIONS_BUSINESS):
         for scope in (None, {"customer": "BUYER-2"}):
             body: dict[str, Any] = {"session_id": f"biz-{lang}-{n}-{scope is not None}", "text": en if lang == "en" else zh, "lang": lang}

@@ -20,12 +20,15 @@ from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from app.strategy import exposure as assembly
-from tests.api.conftest import agree_on_rcv_a, english_leaks
+from tests.api.conftest import agree_on_rcv_a, as_three_customer_funding, english_leaks
+
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 EX01 = {"fixture_id": "EX01_PACKAGE"}
 NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan", "Zhuhai Kitchenware Wholesale Co.", "Zhuhai",
-         "Bank credit line", "Invoice financing (onboarded platform)", "Government-guaranteed working-capital loan"]
+         "Bank credit line", "Invoice financing (onboarded platform)", "Government-guaranteed working-capital loan",
+         "Guangdong", "CloudLedger", "GreenSky", "Jiangmen", "SouthChina"]  # the five newer customers' names stay original in Chinese
 RAW_ID = re.compile(r"\b(?:RCV|BUYER|FAC|LOT|CMT|OFF|CTR|VER|OP|APR|DOC)-[A-Za-z0-9]|RI:|\bday -?\d|\bNone\b")
 QUOTED = re.compile(r"“[^”]*”")  # the buyer's own words, in whatever language it wrote them
 HREFS = r".*href"
@@ -85,9 +88,9 @@ def _bare(text: str) -> str:
 def test_deals_counts_are_the_negotiations_only_and_the_other_counts_stay(api: TestClient) -> None:
     _busy(api)
     q = _queue(api)
-    # five decisions (Zhuhai, Dongguan, Foshan x3) and the Foshan clarification; the collection and the approval are Home's, in `counts` only
-    assert q["deals"] == {"needs_you": 5, "waiting": 1, "agreements": 0, "closed": 0, "awaiting_payment": 0, "payment_late": 0}
-    assert q["counts"] == {"needs_you": 7, "waiting": 1, "agreements": 0, "customers": 3}
+    # ten decisions (Zhuhai, Dongguan, Foshan x3 and one for each of the five newer customers) and the Foshan clarification; the collection and the approval are Home's, in `counts` only
+    assert q["deals"] == {"needs_you": 10, "waiting": 1, "agreements": 0, "closed": 0, "awaiting_payment": 0, "payment_late": 0}
+    assert q["counts"] == {"needs_you": 12, "waiting": 1, "agreements": 0, "customers": 8}
     assert q["deals"]["needs_you"] == sum(1 for r in q["needs_you"] if r["kind"] == "DECISION")
     assert {r["kind"] for r in q["needs_you"]} == {"DECISION", "COLLECTION", "APPROVAL"}  # the tiers still hold them for Home
     assert _queue(api, "zh")["deals"] == q["deals"]
@@ -114,6 +117,9 @@ def test_the_golden_story_has_one_decision(api: TestClient) -> None:
 BUSY_SUBJECTS_EN = {
     "Zhuhai": ["Zhuhai · 75-day terms on the next invoice"],
     "Dongguan": ["Dongguan · 1% rebate next quarter"],
+    "Guangdong": ["Guangdong · Offer"], "CloudLedger": ["CloudLedger · 60-day terms on future invoices and 1 more term"],
+    "GreenSky": ["GreenSky · 60-day terms on the next invoice"], "Jiangmen": ["Jiangmen · Early payment, 0.5% off"],
+    "SouthChina": ["SouthChina · 1% rebate next quarter"],
     "Foshan": ["Foshan · 60-day terms on future invoices and 2 more terms",
                "Foshan · Early payment, 1.5% off · “Early pay at 1.5%”",
                "Foshan · Early payment, 1.5% off · “pay this one early at 1.5%”",
@@ -189,10 +195,12 @@ def test_a_negotiation_row_keeps_its_coarse_topic_for_a_sentence_that_names_it(a
     q = _queue(api)
     topics = {(r["customer_short"], r["kind"], r["topic_text"]) for r in _negotiation_rows(q)}
     assert {("Zhuhai", "DECISION", "Payment terms"), ("Dongguan", "DECISION", "Rebate"), ("Foshan", "BUYER_REPLY", "Rebate"),
-            ("Foshan", "DECISION", "Payment terms"), ("Foshan", "DECISION", "Early-payment discount")} == topics
+            ("Foshan", "DECISION", "Payment terms"), ("Foshan", "DECISION", "Early-payment discount"),
+            ("Guangdong", "DECISION", "Offer"), ("CloudLedger", "DECISION", "Payment terms"), ("GreenSky", "DECISION", "Payment terms"),
+            ("Jiangmen", "DECISION", "Early-payment discount"), ("SouthChina", "DECISION", "Rebate")} == topics
     assert all(r["topic_text"] is None for r in (*q["needs_you"], *q["waiting"]) if r["kind"] in ("COLLECTION", "APPROVAL"))
     zh = {r["topic_text"] for r in _negotiation_rows(_queue(api, "zh"))}
-    assert zh == {"付款账期", "返利", "提前付款折扣"}
+    assert zh == {"付款账期", "返利", "提前付款折扣", "报价"}  # "报价" is Guangdong's offer
 
 
 # ---------------------------------------------------------------- 3. lifecycle
@@ -457,13 +465,13 @@ def test_the_busy_books_metrics_say_the_exact_words(api: TestClient) -> None:
     _busy(api)
     ov = _overview(api, "BUYER-1")
     fig = {f["key"]: f for f in ov["figures"]}
-    assert ov["relationship_text"] == ("Foshan contributes an estimated ¥1.09m a year, owes ¥420k (54.5% of your open receivables), "
+    assert ov["relationship_text"] == ("Foshan contributes an estimated ¥1.09m a year, owes ¥420k (40.7% of your open receivables), "
                                       "and has four negotiations that could change your cash.")
-    assert fig["financing"]["note"] == "¥336k financing planned against Foshan's invoice · not yet received" and fig["financing"]["value_display"] == "¥336,000"
-    assert fig["share"]["note"] == "54.5% of currently open receivables" and fig["share"]["value_display"] == "54.5%"
+    assert fig["financing"]["note"] == "¥214k financing planned against Foshan's invoice · not yet received" and fig["financing"]["value_display"] == "¥214,000"
+    assert fig["share"]["note"] == "40.7% of currently open receivables" and fig["share"]["value_display"] == "40.7%"
     zh = {f["key"]: f for f in _overview(api, "BUYER-1", "zh")["figures"]}
-    assert zh["financing"]["note"] == "计划融资 ¥336k，以Foshan的发票做融资 · 尚未到账"
-    assert zh["share"]["note"] == "占当前未收应收款的 54.5%"
+    assert zh["financing"]["note"] == "计划融资 ¥214k，以Foshan的发票做融资 · 尚未到账"
+    assert zh["share"]["note"] == "占当前未收应收款的 40.7%"
 
 
 def test_the_busy_books_primary_decision_and_the_others(api: TestClient) -> None:
@@ -493,17 +501,17 @@ def test_the_flow_follows_the_plan_from_planned_to_arranged(api: TestClient) -> 
     assert all(set(s) == {"key", "label", "amount_display", "when_text", "note", "href"} for s in flow)
     by = {s["key"]: s for s in flow}
     assert by["owed"]["amount_display"] == "¥420,000.00" and by["owed"]["label"] == "Foshan owes you"
-    assert by["financing"]["label"] == "Financing planned" and by["financing"]["amount_display"] == "¥336,000.00"
+    assert by["financing"]["label"] == "Financing planned" and by["financing"]["amount_display"] == "¥214,000.00"
     assert by["arrives"]["when_text"] == "in 3 days if the plan runs"
     assert (by["customer_pays"]["amount_display"], by["customer_pays"]["when_text"]) == ("¥420,000.00", "due in 32 days")
-    assert (by["repayment"]["amount_display"], by["repayment"]["note"]) == ("¥338,994.08", "¥336,000 advance plus ¥2,994.08 in charges")
-    assert by["net"]["amount_display"] == "about ¥81,010" and by["net"]["note"] == "if Foshan pays on the due day"
+    assert (by["repayment"]["amount_display"], by["repayment"]["note"]) == ("¥215,906.95", "¥214,000 advance plus ¥1,906.95 in charges")
+    assert by["net"]["amount_display"] == "about ¥204k" and by["net"]["note"] == "if Foshan pays on the due day"
     a = api.get("/home").json()["next_action"]  # run the plan: the same figures now come from the lot and the receivables read
     assert api.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]}).json()["executed"] == 2
     row = next(r for r in api.get("/receivables").json()["rows"] if r["receivable_id"] == "RCV-A")
     ran = {s["key"]: s for s in _overview(api, "BUYER-1")["receivable_flow"]}
-    assert ran["financing"]["label"] == "Financing arranged" and ran["repayment"]["amount_display"] == "¥338,994.08"
-    assert ran["net"]["amount_display"] == row["net_after_repayment_display"] == "about ¥81,010" and ran["arrives"]["when_text"] == "arrives in 3 days"
+    assert ran["financing"]["label"] == "Financing arranged" and ran["repayment"]["amount_display"] == "¥215,906.95"
+    assert ran["net"]["amount_display"] == row["net_after_repayment_display"] == "about ¥204k" and ran["arrives"]["when_text"] == "arrives in 3 days"
 
 
 def test_the_golden_flow_has_the_golden_plans_figures(api: TestClient) -> None:
@@ -516,8 +524,8 @@ def test_the_golden_flow_has_the_golden_plans_figures(api: TestClient) -> None:
 def test_the_flow_in_both_languages(api: TestClient, lang: str) -> None:
     _busy(api)
     flow = _overview(api, "BUYER-1", lang)["receivable_flow"]
-    assert [s["amount_display"] for s in flow if s["key"] in ("owed", "financing", "arrives", "customer_pays")] == ["¥420,000.00", "¥336,000.00",
-                                                                                                                  "¥336,000.00", "¥420,000.00"]
+    assert [s["amount_display"] for s in flow if s["key"] in ("owed", "financing", "arrives", "customer_pays")] == ["¥420,000.00", "¥214,000.00",
+                                                                                                                  "¥214,000.00", "¥420,000.00"]
     assert all(s["when_text"] is None or s["when_text"] == s["when_text"].strip() for s in flow)  # no stray space before a Chinese distance
     if lang == "zh":
         assert not english_leaks({"f": flow}, NAMES, raw_fields=[HREFS])
@@ -708,7 +716,7 @@ def test_the_share_figure_carries_the_proportion_the_word_is_built_from(api: Tes
     _busy(api)
     ov = _overview(api, "BUYER-1")
     fig = {f["key"]: f for f in ov["figures"]}
-    assert 0 <= fig["share"]["proportion"] <= 1 and f"{fig['share']['proportion'] * 100:.1f}%" == fig["share"]["value_display"] == "54.5%"
+    assert 0 <= fig["share"]["proportion"] <= 1 and f"{fig['share']['proportion'] * 100:.1f}%" == fig["share"]["value_display"] == "40.7%"
     assert all("proportion" not in f for k, f in fig.items() if k != "share")
     assert _overview(api, "BUYER-1", "zh")["figures"][3]["proportion"] == fig["share"]["proportion"]
 
@@ -886,6 +894,7 @@ INTERNAL = {"en": re.compile(r"router|valuation window", re.IGNORECASE), "zh": r
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_business_prose_after_a_send_names_no_router_and_no_valuation_window(api: TestClient, lang: str) -> None:
     _busy(api)
+    as_three_customer_funding(api)
     busy_offer = next(d["open_offer"]["offer_id"] for d in api.get("/deals").json()["deals"] if d["counterparty_id"] == "BUYER-1")
     view = api.post(f"/offers/{busy_offer}/evaluate", params={"lang": lang}, json=EX01).json()  # the evaluate view, before the books move
     agree_on_rcv_a(api)
@@ -921,8 +930,10 @@ def test_an_agreement_with_no_forward_cost_says_the_months_not_the_valuation_win
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_a_funding_cost_the_send_will_not_run_says_so_in_the_table(api: TestClient, lang: str) -> None:
     _busy(api)
+    as_three_customer_funding(api)
     deal = next(d for d in api.get("/deals").json()["deals"] if d["counterparty_id"] == "BUYER-1")
     offer = deal["open_offer"]["offer_id"]
+    api.post(f"/offers/{offer}/evaluate", json=EX01)  # the seed's stored verdict was made on the full books: evaluate again on these
     pic = api.get(f"/offers/{offer}/picture", params={"lang": lang}).json()
     reply = next(p for p in pic["paths"] if p["kind"] == "reply" and p["recommended"])
     funding = _rows(reply)["funding"]

@@ -19,6 +19,8 @@ from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from tests.api.conftest import agree_on_rcv_a, english_leaks
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 AGENT = {"X-Agent-Key": "demo-agent-key"}
 EX01 = {"fixture_id": "EX01_PACKAGE"}

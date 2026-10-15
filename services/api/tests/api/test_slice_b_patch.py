@@ -18,7 +18,9 @@ from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.nl import reset_sessions
 from app.persistence import InMemoryLedgerStore
-from tests.api.conftest import agree_on_rcv_a, english_leaks
+from tests.api.conftest import agree_on_rcv_a, as_three_customer_funding, english_leaks
+
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 ACTUAL = {"terms_days": 60, "discount_bp": 120, "rebate_bp": 100}
@@ -218,7 +220,7 @@ def test_after_an_agreement_the_history_row_and_the_outstanding_say_what_is_prom
 def test_before_an_agreement_the_history_row_and_the_outstanding_are_as_they_were(api: TestClient, busy: dict[str, str]) -> None:
     page = api.get("/customers/BUYER-1/overview").json()
     row = next(h for h in page["history"] if h["when_text"] == "In force")
-    assert row["text"].startswith("No confirmed agreement on file; payment is due 45 days") and "none agreed on this invoice" in row["text"]
+    assert row["text"].startswith("Agreement FHR-2026-07: payment is due 45 days")  # the busy books confirm the golden contracts and "none agreed on this invoice" in row["text"]
     assert next(f for f in page["figures"] if f["key"] == "outstanding")["note"] == "due in 32 days, nothing overdue"
 
 
@@ -229,7 +231,7 @@ def test_before_an_agreement_the_history_row_and_the_outstanding_are_as_they_wer
 def test_the_home_customer_rows_waiting_count_leaves_out_the_promise(api: TestClient, busy: dict[str, str], lang: str) -> None:
     agree_on_rcv_a(api)
     queue = api.get("/deals", params={"lang": lang}).json()["queue"]
-    assert queue["counts"]["waiting"] == 1 and queue["counts"]["agreements"] == 1  # one reply awaited; the agreement, which carries its promise
+    assert queue["counts"]["waiting"] == 2 and queue["counts"]["agreements"] == 1  # one reply awaited and the arranged lot that finances a newer customer's invoice; the agreement, which carries its promise
     assert not any(r["kind"] == "PROMISE" for r in queue["agreements"])
     assert any(r["kind"] == "AGREEMENT" and r["customer_id"] == "BUYER-1" and ("has promised" if lang == "en" else "买方承诺") in r["consequence_text"] for r in queue["agreements"])
     foshan = next(c for c in api.get("/customers", params={"lang": lang}).json()["customers"] if c["customer_id"] == "BUYER-1")
@@ -264,6 +266,7 @@ def test_an_unresolved_reference_is_explained_not_quoted(api: TestClient, lang: 
     ("en", "No funding runs when you send: today's plan cannot run; the gap stays open."),
     ("zh", "发送时不会办理融资：今天的方案无法执行；缺口仍未补上。")])
 def test_a_send_that_will_not_fund_says_so_before_the_send(api: TestClient, busy: dict[str, str], lang: str, expected: str) -> None:
+    as_three_customer_funding(api)
     ev = api.post(f"/offers/{busy['foshan']}/evaluate", params={"lang": lang}, json={"fixture_id": "EX01_PACKAGE"}).json()
     [reply] = ev["workspace"]["priced_responses"]
     assert reply["receipt"]["executes_now_text"] == expected
@@ -271,6 +274,7 @@ def test_a_send_that_will_not_fund_says_so_before_the_send(api: TestClient, busy
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_after_the_send_the_receipt_says_what_ran_not_the_state_word(api: TestClient, busy: dict[str, str], lang: str) -> None:
+    as_three_customer_funding(api)
     agree_on_rcv_a(api)
     agreed = next(d for d in api.get("/decisions").json()["decisions"] if d["state"] == "AGREED")
     detail = api.get(f"/decisions/{quote(agreed['id'], safe='')}", params={"lang": lang}).json()
