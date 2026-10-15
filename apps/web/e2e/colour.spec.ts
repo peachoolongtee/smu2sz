@@ -155,3 +155,16 @@ test("the Demo shell says so in its own deep strip; the Business shell has none"
   expect(await bg(strip)).toBe(BRAND_900);
   await expect(page.getByTestId("home-status")).toHaveCount(0);
 });
+
+test("after the plan ran, the covered Home has no gradient anywhere and its title is solid ink", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("home-check-plan")).toBeVisible();
+  await runPlan(page, "ALERT-RESERVE-12"); // the plan is run on Cash; the owner is back on the Home
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
+  const gradients = await page.evaluate(() => Array.from(document.querySelectorAll("*")).filter((el) => getComputedStyle(el).backgroundImage.includes("gradient")).map((el) => el.getAttribute("data-testid") ?? el.tagName));
+  expect(gradients, "gradients on the covered Home").toEqual([]);
+  // The card's title is solid ink, not clipped text.
+  const title = page.locator("#hv2-covered-title");
+  expect(await title.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("none");
+  expect(await title.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(23, 29, 30)");
+});
