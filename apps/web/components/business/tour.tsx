@@ -280,7 +280,11 @@ function TourCard({ steps, path, seenKey }: { steps: Step[]; path: string; seenK
       const frame = window.requestAnimationFrame(() => setRect(null));
       return () => window.cancelAnimationFrame(frame);
     }
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    // The part goes under the sticky header, at the top: the card then has the room below it (centred, a part about a third of the screen high left too little above and below for the card, which then sat on it).
+    const margin = el.style.scrollMarginTop;
+    el.style.scrollMarginTop = "96px";
+    el.scrollIntoView({ block: "start", behavior: "smooth" });
+    el.style.scrollMarginTop = margin;
     const update = () => setRect(el.getBoundingClientRect());
     const frame = window.requestAnimationFrame(update);
     const resize = new ResizeObserver(update);

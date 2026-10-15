@@ -21,7 +21,7 @@ async function advanceTo(page: Page, day: number, from = 0) {
 
 test("the books move after the alert was shown: 409 says so, shows the current alert, runs nothing and is not styled as success", async ({ page }) => {
   await advanceTo(page, 34);
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   await page.evaluate((k) => sessionStorage.setItem(k, "1"), MOVE_BOOKS_KEY);
   await runPlan(page, "ALERT-RESERVE-42");
 
@@ -53,7 +53,7 @@ test("the books move after the alert was shown: 409 says so, shows the current a
 
 test("the books move and the alert is gone: the 409 says the alert no longer applies", async ({ page }) => {
   await advanceTo(page, 34);
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   await page.evaluate((k) => sessionStorage.setItem(k, "gone"), MOVE_BOOKS_KEY);
   await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("fix-changed")).toContainText("The books changed since this was shown");
@@ -92,5 +92,6 @@ test("receivables and reconciliation list the bank's reference on a receipt that
   await page.goto("/receivables");
   await expect(page.getByTestId("receipt-rec-receipt-1")).toContainText("Foshan Home Retail Co.");
   await expect(page.getByTestId("receipt-ref-rec-receipt-1")).toContainText("DEMO-RCPT-1");
+  await page.goto("/receivables?customer=BUYER-1"); // the invoice rows are on the customer's page
   await expect(page.getByTestId("recv-RCV-A")).toContainText("Overdue");
 });

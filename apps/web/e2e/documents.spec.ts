@@ -63,6 +63,7 @@ test("Deals: no summary before a deal is agreed; once the buyer agrees, the conf
   const agreements = page.locator("#commitments");
   await expect(agreements.getByRole("heading", { name: "Your agreements", level: 2 })).toBeVisible();
   const deal = agreements.getByTestId("deal-summary-BUYER-1");
+  await agreements.getByTestId("commitment-toggle").first().click(); // each agreement is a folded row; opened, it shows its terms and the deal summary
   await expect(deal).toBeVisible();
   // The headline, two to four facts and one action are visible; the rest is behind one fold.
   await expect(deal.getByTestId("deal-pills")).toContainText("On track");
@@ -96,9 +97,10 @@ test("Deals: no summary before a deal is agreed; once the buyer agrees, the conf
   await expect(page).toHaveURL(/\/documents\?id=DOC-000001$/);
   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
-  // A detail page of Deals: the way back names it.
-  await expect(page.getByTestId("back-to-deals")).toHaveText("Back to Deals");
-  await page.getByTestId("back-to-deals").click();
+  // Documents is a section of its own now ("Attach deals" in the rail), not a detail page of Deals: the rail names where the owner is, and Deals is one press away.
+  await expect(page.getByTestId("back-to-deals")).toHaveCount(0);
+  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Attach deals", exact: true })).toHaveAttribute("aria-current", "page");
+  await page.getByTestId("nav-pills").getByRole("link", { name: "Deals", exact: true }).click();
   await expect(page).toHaveURL(/\/deals$/);
 });
 
@@ -258,10 +260,11 @@ test("day 34: the deal summary tells the story and points at the approval", asyn
   await expect(deal.getByTestId("deal-next")).toContainText("Chase the ¥162,800.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago.");
 
   // The owner lets the agent fix the reserve alert from the home: the fix waits for approval, and the summary says so.
-  await page.goto("/");
+  await page.goto("/cash");
   await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();
   await page.goto("/deals");
+  await page.locator("#commitments").getByTestId("commitment-toggle").first().click();
   await expect(deal.getByTestId("deal-pills")).toContainText("1 approval waiting");
   await expect(deal.getByTestId("deal-invoice-RI:BUYER-1:2")).toHaveAttribute("data-status", "ADVANCE_WAITING");
   await expect(deal.getByTestId("deal-next")).toContainText("Review the ¥200,000.00 advance on the invoice issued 32 days ago");

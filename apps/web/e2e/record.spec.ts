@@ -164,7 +164,7 @@ test("the execution summary is the record's: the agreement in its words, what ra
 
 test("the approval card shows what was quoted, and once decided what happened and how it differs", async ({ page }) => {
   await advanceTo(page, 34);
-  await page.goto("/");
+  await page.goto("/cash");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   const card = page.locator("#approval-APR-000001");
@@ -214,15 +214,15 @@ test("a refused approval ends in the record's words: it could not run, no money 
 
 test("after the cure is approved, Home's strip says the funding is on its way; the approval links to its record; Activity links each row to its record", async ({ page }) => {
   await advanceTo(page, 34);
-  await page.goto("/");
+  await page.goto("/cash");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await page.locator("#approval-APR-000001").getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.locator("#approval-APR-000001").getByTestId("approval-decided-APR-000001")).toBeVisible();
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
-  // The strip's funding cell says what is on its way (from the server's recording of the approved cure).
-  await expect(page.getByTestId("home-kpi-funding-value")).toBeVisible();
-  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
+  // Where the cash comes from says what is on its way (from the server's recording of the approved cure); with nothing left to fund the card is the covered one.
+  await expect(page.getByTestId("home-mix")).toBeVisible();
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
   await page.goto("/approvals");
   await page.getByTestId("approval-record-APR-000001").click();
   await expect(page).toHaveURL(/\/decisions\/alert%3AALERT-RESERVE-42/);
