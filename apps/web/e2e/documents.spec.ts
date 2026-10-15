@@ -63,7 +63,9 @@ test("Deals: no summary before a deal is agreed; once the buyer agrees, the conf
   const agreements = page.locator("#commitments");
   await expect(agreements.getByRole("heading", { name: "Your agreements", level: 2 })).toBeVisible();
   const deal = agreements.getByTestId("deal-summary-BUYER-1");
-  await agreements.getByTestId("commitment-toggle").first().click(); // each agreement is a folded row; opened, it shows its terms and the deal summary
+  // Each agreement is a folded row; opened, it shows its terms and the deal summary (open them all: which row holds this buyer's summary depends on the books).
+  await expect(agreements.getByTestId("commitment-toggle").first()).toBeVisible();
+  for (const toggle of await agreements.getByTestId("commitment-toggle").all()) await toggle.click();
   await expect(deal).toBeVisible();
   // The headline, two to four facts and one action are visible; the rest is behind one fold.
   await expect(deal.getByTestId("deal-pills")).toContainText("On track");

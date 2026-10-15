@@ -184,6 +184,7 @@ export function ActiveCommitments({
   dealsError,
   onRetryDeals,
   groups,
+  groupsPending = false,
 }: {
   today: number;
   buyerName: (id: string) => string;
@@ -193,6 +194,8 @@ export function ActiveCommitments({
   dealsError?: Error;
   onRetryDeals?: () => void;
   groups?: AgreementGroups;
+  /** The queue that files the agreements in their money groups has not arrived: the list waits for it, so a row the owner opens is not moved (and closed) into its group. */
+  groupsPending?: boolean;
 }) {
   const { t, lang } = useI18n();
   const ledger = useAsync(() => getLedger(lang), [lang]);
@@ -245,7 +248,7 @@ export function ActiveCommitments({
       ) : null}
       {ledger.error ? (
         <ErrorState error={ledger.error} onRetry={ledger.reload} />
-      ) : !ledger.data ? (
+      ) : !ledger.data || groupsPending ? (
         <LoadingBlock rows={2} />
       ) : items.length || loose.length || AFTER_GROUPS.some((g) => grouped[g].items.length) ? (
         <>
