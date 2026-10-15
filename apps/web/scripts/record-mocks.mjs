@@ -15,6 +15,8 @@
 //   - whatif_presets.json: every entry's `compute_ms` -> 0 and `cached` -> false (timing and cache state of the call).
 //   - the commitment id (CMT-<16 hex>) and its nonce, which the API draws at random for every deal: replaced by one fixed
 //     id and nonce wherever they appear (negotiation_accept.json, ops.json, home_act.json, home_goahead.json).
+//   - the SEC-<KIND>-<16 hex> security event ids (SEC-OPS, SEC-AUTH, ...) (random per event) and the chat's recorded decision ids (nl:<topic>:t<n>:<12 hex>, from a random
+//     session nonce): fixed ids by order of first appearance.
 //   - nl_script.json and state_after_fund.json: the NL-<16 hex> operation and lot ids, which the API derives from a random
 //     per-session nonce, become fixed ids by order of first appearance; nl_script.json, home_reconciliation_day34.json and the two
 //     home ledgers (home_ledger_day34.json, home_ledger_approved.json) and the receipts inside decisions.json are
@@ -101,10 +103,11 @@
 //   node scripts/record-mocks.mjs --api http://localhost:8197 --inputs
 // and, against an API started WITHOUT FEATURE_CUSTOMER_ECONOMICS, `--inputs --economics-off` records buyer_inputs_off.json ({ en, zh }: the sheet
 // with the economics fields refused and the server's sentence for it), which the mock serves while the spec's hook key is set.
-// --home-v2 records ONLY apps/web/mocks/home_v2/*.json and exits (Home V2 wave 2; the existing Home recordings stay for the flag-off page): for each of six
+// --home-v2 records ONLY apps/web/mocks/home_v2/*.json and exits (Home V2 wave 2; the existing Home recordings stay for the flag-off page): for each of seven
 // moments the mock chooses among (lib/mock/home-v2.ts), { en, zh } of GET /home (the full read, with its `home_v2` block), GET /worklist and GET /customers:
 //   day0        the opening books, nothing read, the plan ready and not run (worklist: the alert, no rows, two customers)
 //   offer       the opening books with the package offer received and read by FLOW (Needs you holds the Foshan decision; the plan still ready)
+//   deal        the deal made on day 0 (FLOW's counter sent and Foshan accepted it), nothing else moved yet: the books the Home shows once Foshan has agreed
 //   after_fund  the day-0 plan has run (FUNDING ARRANGED; Waiting holds the invoice financing not yet landed)
 //   day34       the deal made, the day-2 receipt, the clock at day 34 (the late invoice; the reserve alert open with its cure)
 //   pending     the day-34 cure queued for the owner's approval
@@ -188,6 +191,8 @@ async function inLang(lang, read) {
 const RECHAIN_BY_APPEARANCE = new Set(["slice_d/activity.json", "slice_d/story.json", "slice_d/restore.json", "nl_script.json", "home_reconciliation_day2.json", "bank_receipt.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
 const lossTokens = new Map(); // slice_d file -> its loss tokens, by order of first appearance
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
+const secIds = new Map(); // SEC-<KIND>-<16 hex> security event ids, random per event since the security fixes -> a fixed id by first appearance
+const nlDecisionIds = new Map(); // nl:<topic>:t<n>:<12 hex> recorded chat decisions, keyed by a random session nonce -> a fixed id by first appearance
 
 function rechainByAppearance(name, root) {
   const memo = new Map();
@@ -250,6 +255,14 @@ function normalise(name, value) {
     .replace(/NL-[0-9a-f]{16}/g, (id) => {
       if (!nlIds.has(id)) nlIds.set(id, `NL-${sha(`recorded nl id ${nlIds.size}`).slice(0, 16)}`);
       return nlIds.get(id);
+    })
+    .replace(/SEC-([A-Z]+)-([0-9a-f]{16})/g, (id, kind) => {
+      if (!secIds.has(id)) secIds.set(id, `SEC-${kind}-${sha(`recorded security event ${secIds.size}`).slice(0, 16)}`);
+      return secIds.get(id);
+    })
+    .replace(/(nl:[a-z0-9-]+:t\d+:)([0-9a-f]{12})/g, (m, head) => {
+      if (!nlDecisionIds.has(m)) nlDecisionIds.set(m, `${head}${sha(`recorded nl decision ${nlDecisionIds.size}`).slice(0, 12)}`);
+      return nlDecisionIds.get(m);
     });
   const out = JSON.parse(text, (k, v) => (k === "nonce" && typeof v === "string" && /^[0-9a-f]{32}$/.test(v) ? FIXED_NONCE : v));
   const rechain = (node) => {
@@ -713,6 +726,9 @@ if (HOME_V2) {
   await step("inbox").run();
   await step("trajectory").run();
   keep("offer", await reads());
+  // The deal made on day 0: the counter sent and accepted (the same step the day-34 walk takes), read before the clock moves.
+  await step("negotiate").run();
+  keep("deal", await reads());
   // The day-0 plan, as the home's "Go ahead" runs it on the opening books.
   await reset();
   {

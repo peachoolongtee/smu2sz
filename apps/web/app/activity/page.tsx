@@ -3,18 +3,22 @@
 import "@/app/flow-look.css";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ActivityRead, ChainBadge } from "@/components/activity/activity-read";
 import { LedgerActivity } from "@/components/activity/ledger-fallback";
-import { Disclosure } from "@/components/business/kit";
 import { PilotJournal } from "@/components/business/pilot-journal";
+import { ReconciliationSection } from "@/components/business/reconciliation-section";
+import { FoldCard } from "@/components/business/surface";
 import { ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StatusPill } from "@/components/ui/status-pill";
-import { activityMissing, getActivity } from "@/lib/api";
+import { activityMissing, getActivity, getClock, getState } from "@/lib/api";
 import { API_MODE, STRATEGY_MVP } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { readSelection } from "@/lib/selection";
 import { useAsync } from "@/lib/use-async";
+
+type Part = "timeline" | "recon";
 
 /**
  * Activity, read from GET /activity: every title, sentence, label and count is the server's. An API that has no such read (an older server) gets the ledger
@@ -25,6 +29,16 @@ function ActivityBody() {
   const params = useSearchParams();
   const sel = readSelection(params);
   const activity = useAsync(() => getActivity(lang, { customer: sel.customer, decision: sel.decision, invoice: sel.invoice, path: sel.path, from: sel.from }), [lang, sel.customer, sel.decision, sel.invoice, sel.path, sel.from]);
+  // The two parts of the page: the timeline, and the reconciliation log (opened directly by `#reconciliation`).
+  const [part, setPart] = useState<Part>("timeline");
+  useEffect(() => {
+    if (window.location.hash !== "#reconciliation") return;
+    const frame = window.requestAnimationFrame(() => setPart("recon"));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+  const books = useAsync(getState, []);
+  const clock = useAsync(getClock, []);
+  const buyerName = (id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? id;
 
   if (activity.error && activityMissing(activity.error)) return <LedgerActivity />;
   const view = activity.data;
@@ -55,16 +69,34 @@ function ActivityBody() {
       ) : !view ? (
         <LoadingBlock rows={4} />
       ) : (
-        <>
-          <ActivityRead view={view} />
-          {view.chain.chain_scope_text && view.chain.chain_text ? (
-            <Disclosure testId="activity-chain-scope" className="mt-4 text-meta" summary={t("biz.activity.chainScope")}>
-              <p className="text-ink-2">{view.chain.chain_scope_text}</p>
-            </Disclosure>
-          ) : null}
+        <div className="space-y-6">
+          <SegmentedTabs
+            label={t("nav.activity")}
+            value={part}
+            onChange={setPart}
+            testId="activity-view"
+            tabs={[
+              { value: "timeline" as Part, label: t("biz.activity.view.timeline"), testId: "activity-view-timeline" },
+              { value: "recon" as Part, label: t("biz.activity.view.recon"), testId: "activity-view-recon" },
+            ]}
+          />
+          {part === "recon" ? (
+            <ReconciliationSection today={clock.data?.day ?? books.data?.day ?? 0} buyerName={buyerName} />
+          ) : (
+            <>
+              <ActivityRead view={view} />
+              {/* What the chain check covers, folded under the record. */}
+              {view.chain.chain_scope_text && view.chain.chain_text ? (
+                <FoldCard testId="activity-chain-scope" title={t("biz.activity.chainAbout")} hint={t("biz.activity.chainAbout.hint")}>
+                  <p className="text-supporting font-bold text-ink">{t("biz.activity.chainScope")}</p>
+                  <p className="mt-1 text-sm text-ink-2">{view.chain.chain_scope_text}</p>
+                </FoldCard>
+              ) : null}
+            </>
+          )}
           {/* The shadow pilot's journal: read-only, only with the strategy build flag and a live API (the mock has none). */}
           {STRATEGY_MVP && API_MODE === "live" ? <PilotJournal /> : null}
-        </>
+        </div>
       )}
     </div>
   );

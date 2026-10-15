@@ -47,7 +47,7 @@ test("a read that hangs shows the slow state, and Retry reads it again", async (
 });
 
 test("a write that hangs may have landed: Retry reads the state first and sends nothing again", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   const alertId = await page.getByTestId("home-next-action").getAttribute("data-alert");
   let acts = 0;
   await page.route(isApi(/^\/alerts\/[^/]+\/act$/), async (route) => {

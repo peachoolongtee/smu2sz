@@ -15,7 +15,7 @@ async function approvedDay34(page: Page) {
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run, and its waiting approval linked, on Cash & funding
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await page.locator("#approval-APR-000001").getByRole("button", { name: /^(Approve|Authorize)/ }).click();
@@ -169,8 +169,10 @@ test("the tour's Activity step names the fold the page has: Evidence, not Audit 
   if ((await menu.count()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await menu.locator("> summary").click();
   await page.getByTestId("account-tour").locator("visible=true").first().click();
   const card = page.getByTestId("tour-card");
-  await expect(card).toContainText("Everything that happened");
-  await expect(card).toContainText("“Evidence” under a row holds the exact record.");
+  // The tour walks the page part by part; the record's step is the one that names the fold.
+  for (let i = 0; i < 8 && !(await card.innerText()).includes("The record"); i++) await page.getByTestId("tour-next").click();
+  await expect(card).toContainText("The record");
+  await expect(card).toContainText("Evidence shows");
   await expect(card).not.toContainText("Audit details");
   await expect(page.getByTestId("activity-evidence").first().locator("> summary")).toHaveText("Evidence");
 });

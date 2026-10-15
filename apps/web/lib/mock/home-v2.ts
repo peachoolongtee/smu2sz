@@ -3,8 +3,8 @@
  * (`scripts/record-mocks.mjs --home-v2`, `mocks/home_v2/*.json`, { en, zh } each); nothing here computes or edits a figure or a sentence.
  *
  * Always on: Home V2 is the Home. The recording is chosen by the Home's own story (lib/mock/home.ts): the opening books, the opening books with the package offer
- * read, the books after the day-0 plan ran, and (the deal made and the day-2 receipt booked) day 34 with the cure open, queued for approval, and approved. At those six
- * points the Home read is the V2 recording whole. At any other point of the story (a deal made on day 0, day 2, the other receipt books of day 34, the settled day) the older
+ * read, the deal made on day 0 (Foshan accepted the counter), the books after the day-0 plan ran, and (the deal made and the day-2 receipt booked) day 34 with the cure
+ * open, queued for approval, and approved. At those seven points the Home read is the V2 recording whole. At any other point of the story (day 2, the other receipt books of day 34, the settled day) the older
  * recording stays the read the other pages (Cash, Approvals, Receivables) take their figures from, and the Home takes its `home_v2` block from the nearest recording:
  * day 34's by the cure's stage from day 34 on, else the opening books.
  */
@@ -12,13 +12,14 @@
 import type { CustomerOverviewView, CustomersView, ExposureView, HomeView, OfferPictureView, ReceivablesRead, WorklistView } from "../types";
 import { cureStage, isFunded, isReceipted, mockClock, mockReceiptVariant, NEWS_DAY, SETTLED_DAY } from "./home";
 
-type Point = "day0" | "offer" | "after_fund" | "day34" | "pending" | "after";
+type Point = "day0" | "offer" | "deal" | "after_fund" | "day34" | "pending" | "after";
 type Loader = () => Promise<{ default: unknown }>;
 const clone = <T>(v: unknown): T => JSON.parse(JSON.stringify(v)) as T;
 
 const HOME: Record<Point, Loader> = {
   day0: () => import("../../mocks/home_v2/home_day0.json"),
   offer: () => import("../../mocks/home_v2/home_offer.json"),
+  deal: () => import("../../mocks/home_v2/home_deal.json"),
   after_fund: () => import("../../mocks/home_v2/home_after_fund.json"),
   day34: () => import("../../mocks/home_v2/home_day34.json"),
   pending: () => import("../../mocks/home_v2/home_pending.json"),
@@ -27,6 +28,7 @@ const HOME: Record<Point, Loader> = {
 const WORKLIST: Record<Point, Loader> = {
   day0: () => import("../../mocks/home_v2/worklist_day0.json"),
   offer: () => import("../../mocks/home_v2/worklist_offer.json"),
+  deal: () => import("../../mocks/home_v2/worklist_deal.json"),
   after_fund: () => import("../../mocks/home_v2/worklist_after_fund.json"),
   day34: () => import("../../mocks/home_v2/worklist_day34.json"),
   pending: () => import("../../mocks/home_v2/worklist_pending.json"),
@@ -35,6 +37,7 @@ const WORKLIST: Record<Point, Loader> = {
 const CUSTOMERS: Record<Point, Loader> = {
   day0: () => import("../../mocks/home_v2/customers_day0.json"),
   offer: () => import("../../mocks/home_v2/customers_offer.json"),
+  deal: () => import("../../mocks/home_v2/customers_deal.json"),
   after_fund: () => import("../../mocks/home_v2/customers_after_fund.json"),
   day34: () => import("../../mocks/home_v2/customers_day34.json"),
   pending: () => import("../../mocks/home_v2/customers_pending.json"),
@@ -49,7 +52,9 @@ export function homeV2Recorded(dealt: boolean, counter: boolean): Point | null {
     return stagePoint();
   }
   if (isFunded()) return "after_fund";
-  if (isReceipted() || dealt) return null;
+  if (isReceipted()) return null;
+  // Foshan agreed on day 0: the Home is the books after the deal (the cards, the worklist and the customers move with it).
+  if (dealt) return "deal";
   return counter ? "offer" : "day0";
 }
 
@@ -88,6 +93,7 @@ export const mockCustomers = (point: Point, lang: "en" | "zh") => pick<Customers
 const INVOICES: Record<Point, Loader> = {
   day0: () => import("../../mocks/home_v2/receivables_day0.json"),
   offer: () => import("../../mocks/home_v2/receivables_offer.json"),
+  deal: () => import("../../mocks/home_v2/receivables_deal.json"),
   after_fund: () => import("../../mocks/home_v2/receivables_after_fund.json"),
   day34: () => import("../../mocks/home_v2/receivables_day34.json"),
   pending: () => import("../../mocks/home_v2/receivables_pending.json"),
@@ -101,6 +107,7 @@ export const mockInvoices = (point: Point, lang: "en" | "zh") => pick<Receivable
 const FOCUS: Record<Point, Loader> = {
   day0: () => import("../../mocks/home_v2/focus_day0.json"),
   offer: () => import("../../mocks/home_v2/focus_offer.json"),
+  deal: () => import("../../mocks/home_v2/focus_deal.json"),
   after_fund: () => import("../../mocks/home_v2/focus_after_fund.json"),
   day34: () => import("../../mocks/home_v2/focus_day34.json"),
   pending: () => import("../../mocks/home_v2/focus_pending.json"),

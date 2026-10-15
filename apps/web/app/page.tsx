@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect } from "react";
 import { useFixAlert } from "@/components/home/fix-alert";
-import { ErrorState, LoadingBlock } from "@/components/ui";
+import { ErrorState, Skeleton } from "@/components/ui";
 import { HomeV2Page } from "@/components/home/v2/home-v2";
 import { getHome } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
@@ -27,6 +27,32 @@ function readLastVisit(): number | null {
   }
 }
 
+/**
+ * What the Home shows until its read arrives (a few seconds after sign-in): the page's own shape, so the canvas is never empty. A headline and a line, the three cards of the
+ * overview and the worklist, in the quiet pulse every other page uses while it loads; it is announced once ("Loading") and replaced by the real page.
+ */
+function HomeLoading() {
+  const { t } = useI18n();
+  return (
+    <div role="status" aria-live="polite" aria-busy="true" className="home-f min-w-0" data-testid="home-loading">
+      <span className="sr-only">{t("common.loading")}</span>
+      <div className="mb-5 space-y-2.5">
+        <Skeleton className="h-9 w-3/4 max-w-xl" />
+        <Skeleton className="h-4 w-1/2 max-w-md" />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
+        <Skeleton className="h-56 rounded-[var(--radius-f-card)] sm:h-72" />
+        <Skeleton className="h-56 rounded-[var(--radius-f-card)] sm:h-72" />
+        <Skeleton className="h-56 rounded-[var(--radius-f-card)] sm:h-72" />
+      </div>
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3.2fr)_minmax(15rem,1fr)]">
+        <Skeleton className="h-72 rounded-[var(--radius-f-card)]" />
+        <Skeleton className="h-48 rounded-[var(--radius-f-card)]" />
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const { lang } = useI18n();
   // "Since my last visit": the marker is read when the home is fetched (client side), so no state is needed for it.
@@ -46,9 +72,9 @@ export default function HomePage() {
   useEffect(() => onSignedIn(() => bump()), []);
   const h = view.data;
   if (view.error) return <ErrorState error={view.error} onRetry={view.reload} />;
-  if (!h) return <LoadingBlock rows={3} />;
+  if (!h) return <HomeLoading />;
   return (
-    <Suspense fallback={<LoadingBlock rows={3} />}>
+    <Suspense fallback={<HomeLoading />}>
       <HomeV2Page h={h} fixer={fixer} loading={view.loading} onRetry={view.reload} />
     </Suspense>
   );
