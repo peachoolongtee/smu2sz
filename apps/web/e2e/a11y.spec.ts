@@ -171,7 +171,8 @@ test("the remaining task, when the cure left the reserve short", async ({ page }
 test("keyboard: Tab reaches the primary action and shows a focus ring; every button has a name", async ({ page }) => {
   await page.goto("/");
   const alertId = await page.getByTestId("home-next-action").getAttribute("data-alert");
-  const run = page.getByTestId(`fix-open-${alertId}`);
+  void alertId;
+  const run = page.getByTestId("home-check-plan"); // the Home card is the plan's way in; its two presses are on Cash
   for (let i = 0; i < 60; i++) {
     await page.keyboard.press("Tab");
     if (await run.evaluate((el) => el === document.activeElement)) break;

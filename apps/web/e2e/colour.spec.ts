@@ -1,6 +1,6 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, filledBrand, openReview, openOperatorTools } from "./helpers";
+import { checkedDeal, filledBrand, openReview, openOperatorTools, runPlan } from "./helpers";
 
 /**
  * The colour direction (docs/research/colour-direction-2026-10-08.md), as computed styles in mock mode: the Home headline on the
@@ -59,12 +59,11 @@ test("the Home headline sits on the canvas with no card; the planned pill meets 
   expect(await color(page.getByTestId("home-kpi-lowest-value"))).toBe("rgb(168, 50, 34)");
   expect(contrast(await color(page.getByTestId("home-kpi-lowest-value")), PANEL)).toBeGreaterThan(4.5);
   // The one filled button is the ink primary with white text.
-  const run = page.getByTestId("fix-open-ALERT-RESERVE-12");
+  const run = page.getByTestId("home-check-plan"); // the Home card opens the plan on Cash; the ink primary is the same
   expect(await bg(run)).toBe("rgb(23, 29, 30)");
   expect(contrast(await color(run), await bg(run))).toBeGreaterThan(7);
   // Calm when healthy: the pill turns to the status word, and there is still no deep block.
-  await run.click();
-  await page.getByTestId("fix-ALERT-RESERVE-12").click();
+  await runPlan(page, "ALERT-RESERVE-12");
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
   expect(await bg(page.getByTestId("home-status"))).toBe("rgba(0, 0, 0, 0)");
   await expect(page.getByTestId("hv2-action")).toBeVisible();
@@ -103,8 +102,7 @@ test("the day-34 pending home has one primary: the decision, and the owner's dis
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/");
-  await page.getByTestId("fix-open-ALERT-RESERVE-42").click();
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
   const disc = page.getByTestId("account-menu").locator("summary span").first();

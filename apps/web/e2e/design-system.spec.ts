@@ -259,7 +259,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
     await expect(page.getByTestId("home-headline")).toBeVisible({ timeout: 15_000 });
-    const primary = page.locator('[data-testid^="fix-open-"]').first();
+    const primary = page.getByTestId("home-check-plan");
     await expect(primary).toBeVisible();
     expect((await primary.boundingBox())!.x, `${width} collapsed`).toBeGreaterThan(56);
     await page.getByTestId("nav-pills").getByRole("link", { name: "Deals" }).hover();
@@ -276,7 +276,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
   await page.getByTestId("sidebar-toggle").click();
   await expect(page.getByTestId("sidebar-toggle")).toHaveAttribute("aria-pressed", "true");
   await page.mouse.move(900, 600);
-  const pinnedPrimary = page.locator('[data-testid^="fix-open-"]').first();
+  const pinnedPrimary = page.getByTestId("home-check-plan");
   await expect(pinnedPrimary).toBeVisible();
   expect((await pinnedPrimary.boundingBox())!.x, "1280 pinned").toBeGreaterThan(200);
   await page.getByTestId("sidebar-toggle").click();
@@ -449,7 +449,7 @@ test("the owner's mockup tokens: the canvas app-wide, the palette and its dark p
     expect(card, id).toMatchObject({ bg: "rgb(248, 249, 249)", radius: "24px" });
     expect(card.shadow, id).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
   }
-  expect(await page.getByTestId("fix-open-ALERT-RESERVE-12").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(23, 29, 30)");
+  expect(await page.getByTestId("home-check-plan").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(23, 29, 30)");
   // The page is light only unless the dark hook is set.
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe("light");
 });
