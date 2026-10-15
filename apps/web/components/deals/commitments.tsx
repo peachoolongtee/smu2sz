@@ -6,11 +6,10 @@ import { CustomerSentence } from "@/components/customer-link";
 import { ChevronRightIcon } from "@/components/icons";
 import { DealSummary } from "@/components/deals/deal-summary";
 import { Badge, Card, ErrorState, LoadingBlock, textLinkClass, type Tone } from "@/components/ui";
-import { dealRecordId, getLedger } from "@/lib/api";
+import { dealRecordId, getDecisions, getLedger } from "@/lib/api";
 import { useI18n, type I18n } from "@/lib/i18n";
-import type { Commitment, CommitmentStatus, DealView, Displayed, Obligation } from "@/lib/types";
-import { useAsync } from "@/lib/use-async";
-import { useDecisions } from "@/lib/use-decision";
+import type { Commitment, CommitmentStatus, DealView, DecisionList, Displayed, LedgerView, Obligation } from "@/lib/types";
+import { useAsync, type AsyncState } from "@/lib/use-async";
 import { AFTER_GROUPS, type AfterGroup } from "@/components/deals/flow/deal-model";
 import { whenText } from "@/lib/when";
 
@@ -185,6 +184,7 @@ export function ActiveCommitments({
   onRetryDeals,
   groups,
   groupsPending = false,
+  reads,
 }: {
   today: number;
   buyerName: (id: string) => string;
@@ -196,11 +196,15 @@ export function ActiveCommitments({
   groups?: AgreementGroups;
   /** The queue that files the agreements in their money groups has not arrived: the list waits for it, so a row the owner opens is not moved (and closed) into its group. */
   groupsPending?: boolean;
+  /** The page that holds this section has already read the ledger and the deals' records: it hands them over, so the same two reads are not made twice on every write (the section asks for them itself when used alone). */
+  reads?: { ledger: AsyncState<LedgerView>; records: AsyncState<DecisionList> };
 }) {
   const { t, lang } = useI18n();
-  const ledger = useAsync(() => getLedger(lang), [lang]);
+  const ownLedger = useAsync(() => (reads ? Promise.resolve(null) : getLedger(lang)), [lang, Boolean(reads)]);
+  const ledger = (reads?.ledger ?? ownLedger) as AsyncState<LedgerView>;
   // A failed record read only costs the server's wording of the status: the commitment's own status is then shown.
-  const records = useDecisions({ family: "DEAL" });
+  const ownRecords = useAsync(() => (reads ? Promise.resolve(null) : getDecisions({ lang, family: "DEAL" })), [lang, Boolean(reads)]);
+  const records = (reads?.records ?? ownRecords) as AsyncState<DecisionList>;
   const stateText = new Map((records.data?.decisions ?? []).map((d) => [d.id, d.state_text]));
   const inForce = new Set((records.data?.decisions ?? []).filter((d) => d.state === "AGREED").map((d) => d.id));
   const all = ledger.data ? [...ledger.data.commitments].reverse() : [];
