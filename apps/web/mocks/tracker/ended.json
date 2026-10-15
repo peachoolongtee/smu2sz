@@ -209,6 +209,8 @@
       "buyer_kept": 1,
       "buyer_total": 2,
       "buyer_paid_late": 1,
+      "buyer_due": 2,
+      "buyer_to_come": 0,
       "text": "The buyer has kept one of two promises on this deal; one was paid late."
     },
     "buyer": {
@@ -442,6 +444,8 @@
       "buyer_kept": 1,
       "buyer_total": 2,
       "buyer_paid_late": 1,
+      "buyer_due": 2,
+      "buyer_to_come": 0,
       "text": "买方在这笔交易的 2 项承诺中已兑现 1 项；有 1 项逾期后才付款。"
     },
     "buyer": {

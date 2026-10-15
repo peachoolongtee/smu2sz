@@ -189,7 +189,9 @@
       "buyer_kept": 0,
       "buyer_total": 2,
       "buyer_paid_late": 0,
-      "text": "The buyer has kept zero of two promises on this deal."
+      "buyer_due": 0,
+      "buyer_to_come": 2,
+      "text": "The buyer has made two promises on this deal; none is due yet."
     },
     "buyer": {
       "text": null,
@@ -402,7 +404,9 @@
       "buyer_kept": 0,
       "buyer_total": 2,
       "buyer_paid_late": 0,
-      "text": "买方在这笔交易的 2 项承诺中已兑现 0 项。"
+      "buyer_due": 0,
+      "buyer_to_come": 2,
+      "text": "买方在这笔交易中作出了 2 项承诺，目前都还未到期。"
     },
     "buyer": {
       "text": null,

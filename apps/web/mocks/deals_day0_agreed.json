@@ -431,7 +431,14 @@
         "approval_id": null,
         "after_group": "awaiting_payment",
         "after_group_label": "Awaiting payment",
-        "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21"
+        "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21",
+        "promises": [
+          {
+            "status_text": "Expected in 2 days · ¥255k",
+            "invoice_id": "RCV-A",
+            "expected_day": 2
+          }
+        ]
       }
     ],
     "needs_you_empty_text": "Nothing needs a decision from you.",
