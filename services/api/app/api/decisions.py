@@ -527,8 +527,9 @@ def _net_label(ctx: Context, eco: Any, lang: str) -> str:
 
     months = _months(ctx.mandate.forward_concession_horizon_days)
     bank = facility_name(ctx.state, eco.basis_facility_id)
-    return (t(lang, f"Cost of the terms over {months} months, priced at the {bank} rate", f"条款在 {months} 个月内的成本，按{bank}的利率计算") if bank
-            else t(lang, f"Cost of the terms over {months} months", f"条款在 {months} 个月内的成本"))
+    return (t(lang, f"Forward cost beyond the one-off, over {months} months, priced at the {bank} rate",
+              f"一次性成本之外的远期成本，{months} 个月内，按{bank}的利率计算") if bank
+            else t(lang, f"Forward cost beyond the one-off, over {months} months", f"一次性成本之外的远期成本，{months} 个月内"))
 
 
 def _response(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | None:

@@ -202,8 +202,8 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
                          f"此报价的远期让步合计 {fc['total_display']}，超过您 {fc['cap_display']} 的上限。"))
     ahead = first_breach_ahead(bundle.trajectory, today, mandate.min_cash_fen) if bundle.trajectory is not None else None
     if ahead is not None:
-        reasons.append(t(lang, f"Accepted as asked, cash would fall below your minimum {when_text(ahead[0], today, lang)}.",
-                         f"若按对方要求接受，现金将在{when_text(ahead[0], today, lang)}低于您的最低现金储备。"))
+        reasons.append(t(lang, f"If you accept their request, cash would fall below your minimum {when_text(ahead[0], today, lang)}.",
+                         f"若接受对方的要求，现金将在{when_text(ahead[0], today, lang)}低于您的最低现金储备。"))
     action = view["business_action"]
     if not reasons:
         reasons.append(business_action_text(action, lang) + t(lang, ".", "。"))

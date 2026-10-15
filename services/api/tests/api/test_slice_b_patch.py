@@ -72,8 +72,8 @@ def test_the_sandbox_says_it_simulates_every_invoice_and_names_the_negotiations_
     assert zhuhai["scope_text"] == {
         "en": "The sandbox applies the terms to every Zhuhai invoice for the next 12 months, not only the next one; the negotiation itself asks for one invoice.",
         "zh": "沙盘把这些条款应用于Zhuhai未来 12 个月内的每一张发票，而不只是下一张；这项谈判本身只涉及一张发票。"}[lang]
-    assert zhuhai["compare_text"] == {"en": "The negotiation as asked: ¥668.32 over 12 months, within your limit.",
-                                      "zh": "按对方要求的谈判：¥668.32（12 个月内），在您的限额内。"}[lang]
+    assert zhuhai["compare_text"] == {"en": "The negotiation if you accept their request: ¥668.32 over 12 months, within your limit.",
+                                      "zh": "如果接受对方的要求，谈判成本：¥668.32（12 个月内），在您的限额内。"}[lang]
     asked = next(p for p in api.get(f"/offers/{busy['zhuhai']}/picture", params={"lang": lang}).json()["paths"] if p["key"] == "asked")
     assert asked["cost_total_display"] in zhuhai["compare_text"]  # the picture's own figure for the ask, not a second computation
     assert zhuhai["invoice_text"].count("RCV-") == 0 and "RCV-" not in zhuhai["scope_text"] + zhuhai["compare_text"]
@@ -97,7 +97,7 @@ def test_without_an_offer_the_sandbox_says_what_it_simulates_and_has_no_negotiat
     assert by_buyer["scope_text"] == "The sandbox applies the terms to every Zhuhai invoice for the next 12 months, not only the next one."
     assert by_buyer["compare_text"] is None
     presets = api.get("/whatif/presets", params={"offer_id": busy["zhuhai"]}).json()
-    assert presets["scope_text"].endswith("the negotiation itself asks for one invoice.") and presets["compare_text"].startswith("The negotiation as asked: ¥668.32")
+    assert presets["scope_text"].endswith("the negotiation itself asks for one invoice.") and presets["compare_text"].startswith("The negotiation if you accept their request: ¥668.32")
     unavailable = api.get("/whatif/presets", params={"offer_id": busy["dongguan"]}).json()
     assert unavailable["available"] is False and unavailable["compare_text"] is None  # the reason it cannot run is the scope text, unchanged
 

@@ -660,8 +660,13 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
 
     to_come = sum(1 for x in states if x == "awaited")  # a promise not yet due or settled is neither kept nor missed
     due = total - to_come
+    due_today = sum(1 for p in promised if p.status == "AWAITED" and p.promised_day == today)  # due on this very day, the receipt not yet in
     if total == 0:
         counts_text = t(lang, "The buyer has made no promise on this deal yet.", "买方在这笔交易中还没有作出承诺。")
+    elif due == 0 and due_today:
+        counts_text = t(lang, (f"The buyer has made {_num(total, lang)} {'promise' if total == 1 else 'promises'} on this deal; "
+                               f"{'it is' if due_today == 1 and total == 1 else _num(due_today, lang) + (' is' if due_today == 1 else ' are')} due today."),
+                        f"买方在这笔交易中作出了 {total} 项承诺，其中 {due_today} 项今天到期。")
     elif due == 0:
         counts_text = t(lang, ("The buyer has made one promise on this deal; it is not due yet." if total == 1
                                else f"The buyer has made {_num(total, lang)} promises on this deal; none is due yet."),

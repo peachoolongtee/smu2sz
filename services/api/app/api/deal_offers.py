@@ -40,12 +40,12 @@ def _read_text(ds: Any, action: str, cost: str, window: tuple[str, str], limit: 
     rel_en, rel_zh = (f"above your {limit} limit", f"高于您 {limit} 的上限") if over else (f"within your {limit} limit", f"在您 {limit} 的上限内")
     if action == "cannot":
         return say(lang, "FLOW cannot decide on this offer yet.", "FLOW 暂时无法就此报价作出判断。")
-    lead = {"accept": ("You can accept it", "可以接受"), "counter": ("Don't accept as asked", "不要按对方要求接受"),
+    lead = {"accept": ("You can accept it", "可以接受"), "counter": ("Don't accept their request", "不要接受对方的要求"),
             "decline": ("Don't accept it", "不要接受"), "needs_owner": ("This needs your decision", "需要您来决定")}[action]
     return say(lang, f"{lead[0]}: {cost_en}, {rel_en}.", f"{lead[1]}：{cost_zh}，{rel_zh}。")
 
 
-_SHORT = {"accept": ("Accept as asked", "按对方要求接受"), "counter": ("Counter instead of accepting as asked", "还价，不按对方要求接受"),
+_SHORT = {"accept": ("Accept their request", "接受对方的要求"), "counter": ("Counter instead of accepting their request", "还价，不接受对方的要求"),
           "decline": ("No deal", "不成交"), "needs_owner": ("Accept, with your approval", "经您批准后接受"),
           "cannot": ("Not safe to act on", "暂不宜据此行动")}
 _CLARIFY = ("Clarify before deciding", "先澄清，再决定")
@@ -61,7 +61,7 @@ def _headline_note(action: str, cost: str, window: tuple[str, str], limit: str, 
     if action == "cannot":
         return None
     rel_en, rel_zh = (f"above your {limit} limit", f"高于您 {limit} 的上限") if over else (f"within your {limit} limit", f"在您 {limit} 的上限内")
-    en, zh = f"As asked costs {cost} {window[0]}, {rel_en}.", f"按对方要求，成本将为{cost}（{window[1]}），{rel_zh}。"
+    en, zh = f"Accepting their request costs {cost} {window[0]}, {rel_en}.", f"接受对方的要求，成本将为{cost}（{window[1]}），{rel_zh}。"
     if action == "counter" and replies:
         w_en, w_zh = _COUNT_WORDS.get(replies, (f"{replies} replies are", f"{replies} 份回复"))
         en, zh = f"{en} {w_en} ready to send.", f"{zh}{w_zh}已可发送。"

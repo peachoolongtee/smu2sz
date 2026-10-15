@@ -258,7 +258,7 @@ def _asked_authority(lang: str, verdict: Any) -> tuple[str | None, str]:
         return None, say(lang, "FLOW will not act on this: the message failed its security checks", "FLOW 不会处理此消息：它未通过安全检查")
     if verdict.outcome == Outcome.COUNTER or verdict.counters:  # the offer as asked is not sent; the replies carry the authority
         return None, say(lang, "FLOW counters instead", "FLOW 改为还价")
-    return None, say(lang, "FLOW cannot accept this as asked", "FLOW 无法按对方的要求接受")
+    return None, say(lang, "FLOW cannot accept their request", "FLOW 无法接受对方的要求")
 
 
 def _reply_authority(lang: str, verdict: Any | None, owner: bool) -> tuple[str | None, str]:

@@ -377,9 +377,9 @@ def _deal_effect(pic: dict[str, Any] | None, floor: int, failed: bool, lang: Lan
     if asked_breach is not None and band:
         return severity, rec_breach, t(lang, f"If you accept their request: {_lower(band)}.", f"如果接受对方的要求：{band}。")
     if asked_path.get("authority") == "over_limit":
-        return severity, rec_breach, t(lang, "Over your limit as asked; it does not take cash below your minimum.",
-                                       "按对方要求已超出您的上限，但现金不会低于您的最低现金。")
-    return severity, rec_breach, t(lang, "Accepting as asked does not take cash below your minimum.", "按对方要求接受，现金不会低于您的最低现金。")
+        return severity, rec_breach, t(lang, "Over your limit if you accept their request; it does not take cash below your minimum.",
+                                       "接受对方的要求会超出您的上限，但现金不会低于您的最低现金。")
+    return severity, rec_breach, t(lang, "Accepting their request does not take cash below your minimum.", "接受对方的要求，现金不会低于您的最低现金。")
 
 
 def _approval_rows(home: dict[str, Any], ctx: Context, lang: Lang, plan_alert: str | None) -> list[Row]:
@@ -666,17 +666,25 @@ def _promise_said(p: Any, today: int, lang: Lang) -> str:
     return t(lang, f"The buyer has promised {amount}; it is not counted as cash until it arrives.", f"买方承诺支付 {amount}；到账前不计入现金。")
 
 
-def _headline(needs: int, late: int, waiting: int, lang: Lang) -> str:
+def _headline(needs: int, late: int, waiting: int, alert: dict[str, Any] | None, lang: Lang) -> str:
     """The sentence above the queue, counting everything the page lists for the owner: every row in Needs you (a decision, an approval, a chase,
     a set-up) and every agreed deal whose payment is late, then what waits on others. Only an empty queue says nothing needs the owner today."""
     held = []
     if needs:
         held.append(t(lang, f"{needs} {'task needs' if needs == 1 else 'tasks need'} you", f"{needs} 项任务需要您处理"))
+    if alert is not None:  # the company cash alert is something for the owner whatever the rows say
+        if str(alert["primary"]["href"]).startswith("/approvals"):
+            held.append(t(lang, "a funding plan waits for your approval", "一项融资方案正等待您批准"))
+        elif alert.get("kind_text"):
+            held.append(t(lang, "a funding plan is ready", "一项融资方案已准备好"))
+        else:
+            held.append(t(lang, "company cash is unsafe ahead and no funding plan is ready", "公司现金将不安全，且还没有准备好的融资方案"))
     if late:
         held.append(t(lang, f"{late} agreed {'deal has' if late == 1 else 'deals have'} a late payment", f"{late} 项已达成的协议有逾期付款"))
     tail = (t(lang, f" {waiting} waiting on others.", f"{waiting} 项在等待他人。") if waiting else "")
     if held:
-        return t(lang, "; ".join(held) + ".", "；".join(held) + "。") + tail
+        body = "; ".join(held) + "."
+        return t(lang, body[:1].upper() + body[1:], "；".join(held) + "。") + tail
     if waiting:
         return t(lang, f"Nothing needs you. {waiting} waiting on others.", f"没有需要您处理的事项。{waiting} 项在等待他人。")
     return t(lang, "Nothing needs you today.", "今天没有需要您处理的事项。")
@@ -763,7 +771,10 @@ def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, A
             loose.append(row)
             continue
         said = _promise_said(p, ctx.today, lang)
-        host["consequence_text"] = f"{host['consequence_text']}{t(lang, ' ', '')}{said}" if host["consequence_text"] else said
+        had = str(host["consequence_text"] or "").rstrip()
+        if had and had[-1] not in ".。":
+            had += t(lang, ".", "。")
+        host["consequence_text"] = f"{had}{t(lang, ' ', '')}{said}" if had else said
     agreement_rows = [*hosts, *loose]
     groups = {r["decision_id"]: r["after_group"] for r in agreement_rows if r["kind"] == "AGREEMENT"}
     for r in agreement_rows:  # a promised payment sits in the group of the deal it belongs to
@@ -780,8 +791,7 @@ def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, A
                     "payment_late": sum(1 for r in agreement_rows if r["kind"] == "AGREEMENT" and r["after_group"] == "payment_late")}
     return {
         "counts": {"needs_you": len(needs_rows), "waiting": len(waiting_rows), "agreements": len(agreement_rows) - len(closed_rows), "customers": customers},
-        "headline_text": _headline(len(needs_rows) + (1 if alert is not None and str(alert["primary"]["href"]).startswith("/approvals") else 0),
-                                  negotiations["payment_late"], len(waiting_rows), lang),  # the funding plan waiting for the owner is a task too
+        "headline_text": _headline(len(needs_rows), negotiations["payment_late"], len(waiting_rows), alert, lang),
         "deals": negotiations,
         "alert": alert, "needs_you": needs_rows, "waiting": waiting_rows, "agreements": agreement_rows,
         "needs_you_empty_text": (t(lang, "Nothing else needs you.", "没有其他事项需要您处理。") if alert is not None
