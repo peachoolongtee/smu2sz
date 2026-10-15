@@ -12,6 +12,7 @@ from typing import Any
 
 from app.api.presentation import fmt_short
 from app.api.presentation import t as say
+from app.strategy.words import asked_label
 
 FLOW_MAY, NEEDS_OWNER, OVER_LIMIT = "flow_may", "needs_owner", "over_limit"  # the picture's own three classes of who decides
 
@@ -154,9 +155,9 @@ def recommendation(paths: list[dict[str, Any]], current_terms_days: int | None, 
     if chosen is None:
         mandate_text = say(lang, "FLOW has no reply it can send within your mandate for this offer.", "对于此报价，FLOW 没有可在您的授权范围内发送的回复。")
     elif chosen["kind"] == "asked":
-        mandate_text = (say(lang, "Accepting as asked is within your mandate; it needs your approval.", "按对方要求接受在您的授权范围内；需要您批准。")
-                        if chosen["needs_owner"] else say(lang, "Accepting as asked is within your mandate; FLOW can accept it.",
-                                                          "按对方要求接受在您的授权范围内；FLOW 可以接受。"))
+        mandate_text = (say(lang, "Accepting their request is within your mandate; it needs your approval.", "接受对方的要求在您的授权范围内；需要您批准。")
+                        if chosen["needs_owner"] else say(lang, "Accepting their request is within your mandate; FLOW can accept it.",
+                                                          "接受对方的要求在您的授权范围内；FLOW 可以接受。"))
     elif chosen["needs_owner"]:
         mandate_text = say(lang, f"{chosen['label']} is the first reply within your mandate; it needs your approval before FLOW sends it.",
                            f"{chosen['label']} 是您的授权范围内的第一个回复；FLOW 发送前需要您批准。")
@@ -206,7 +207,7 @@ def _event_words(p: dict[str, Any], pt_day: int, e: dict[str, Any], today: int, 
 def _cause(a: dict[str, Any], b: dict[str, Any], day: int, seen: dict[str, dict[int, Any]], names: dict[str, str], lang: str
            ) -> tuple[str, list[dict[str, Any]]]:
     """In words, the events up to `day` that one line has and the other does not (the same event, same amount and same day, on both lines is
-    not a cause): "Option A: Credit-line draw ¥150k today. As asked: Early payment from Foshan ¥414,960 in 2 days."."""
+    not a cause): "Option A: Credit-line draw ¥150k today. Accept their request: Early payment from Foshan ¥414,960 in 2 days."."""
     only_a = list((seen[a["key"]][day] - seen[b["key"]][day]).elements())
     only_b = list((seen[b["key"]][day] - seen[a["key"]][day]).elements())
     sep = say(lang, "; ", "；")
@@ -236,7 +237,7 @@ def add_pairs(paths: list[dict[str, Any]], today: int, lang: str) -> None:
     asked = next((p for p in live if p["kind"] == "asked"), None)
     if not live:
         return
-    names = {p["key"]: (say(lang, "As asked", "按对方要求") if p["kind"] == "asked" else p["label"]) for p in live}
+    names = {p["key"]: (asked_label(lang) if p["kind"] == "asked" else p["label"]) for p in live}
     by_day = {p["key"]: {pt["day"]: pt for pt in p["series"]} for p in live}
     seen: dict[str, dict[int, Any]] = {}
     for p in live:  # the events up to each day, as a multiset of their words

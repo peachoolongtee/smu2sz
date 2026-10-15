@@ -78,7 +78,9 @@ def _customer_loss(row: dict[str, Any], kept: str | None, lang: str) -> dict[str
     lost_billings = say(lang, f"About {whole_yuan(billings)} a year of billings{note}", f"每年约 {whole_yuan(billings)} 的开票额{note}") if billings else None
     lost_profit = (say(lang, f"About {whole_yuan(profit)} a year of {basis[0]} foregone{' (estimated)' if est else ''}",
                        f"每年约 {whole_yuan(profit)} 的{basis[1]}{'（估算）' if est else ''}") if profit is not None else None)
-    cash = say(lang, f"{loss['receipts_text']} {loss['costs_text']}", f"{loss['receipts_text']}{loss['costs_text']}")
+    # the compare read's costs sentence refers to the gross-profit figure: it goes with that figure, and is left out where there is none
+    cash = (say(lang, f"{loss['receipts_text']} {loss['costs_text']}", f"{loss['receipts_text']}{loss['costs_text']}") if profit is not None
+            else loss["receipts_text"])
     remains = (kept[:1].upper() + kept[1:]) if kept and lang != "zh" else kept
     rows = [_row("lost_billings", say(lang, "Billings lost", "损失的开票额"), lost_billings),
             _row("lost_contribution", say(lang, "Gross profit lost", "损失的毛利"), lost_profit),

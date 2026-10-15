@@ -615,7 +615,15 @@ def _agreement_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
     """AGREEMENT: one row per agreed deal (the decision record's AGREED, and the deals over once agreed), grouped by what remains after the agreement
     from the tracker's own read: payment late, then awaiting payment, then closed, newest first within each group (#154). A deal is `closed` only
     when nothing is left owed (or the agreement was revoked or ran out); its row carries the tracker's state word and close-out sentence."""
-    from app.api.lifecycle import AGREED_STATES, GROUP_ORDER, PAYMENT_LATE, after_group, after_group_label, tracker_of
+    from app.api.lifecycle import (
+        AGREED_STATES,
+        GROUP_ORDER,
+        PAYMENT_LATE,
+        after_group,
+        after_group_label,
+        agreement_gone_word,
+        tracker_of,
+    )
 
     found = [(ds, inp) for ds, inp in ctx.states().values() if ds.family == "DEAL" and ds.state in AGREED_STATES and ds.offer is not None]
     out = []
@@ -636,6 +644,8 @@ def _agreement_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
             consequence = (built or {}).get("closeout_text") or (built or {}).get("headline_text") or ""
         elif group == PAYMENT_LATE and built is not None:
             status, consequence = built["state_word"], built.get("headline_text") or consequence
+        if group != "closed" and built is not None and (gone := agreement_gone_word(ds, lang)) is not None:
+            status, consequence = gone, built.get("state_text") or consequence  # revoked or expired, and still owed money: the owner sees it
         out.append({"key": f"agreement:{ds.decision_id}", "kind": "AGREEMENT", "customer_id": cid, "customer_short": who,
                     "subject_text": subject or f"{who} · {_topic(offer, lang)}", "subject_demo_text": subject_demo,
                     "lifecycle": "closed" if group == "closed" else "agreed", "topic_text": _topic(offer, lang),
