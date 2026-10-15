@@ -11,6 +11,13 @@ async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
+/** Cash keeps the plans it weighed in a fold (closed until asked for); open it so the list can be measured. */
+async function openCashOptions(page: Page) {
+  const fold = page.getByTestId("cash-options-all").or(page.getByTestId("cash-options")).first();
+  await expect(fold).toBeAttached();
+  if (!(await fold.evaluate((el) => el.hasAttribute("open")))) await fold.locator("summary").first().click();
+}
+
 test("no page overflows horizontally after the demo has run", async ({ page }) => {
   await page.goto("/demo");
   await walkStory(page, STORY_STEPS);
@@ -49,15 +56,17 @@ test("the Business home puts the status and the next action in the first screen,
   await expect(page).toHaveURL(/\/cash/);
 });
 
-test("Business navigation: five pills on a desktop, the same five tabs on a phone, the mode switch and Ask FLOW always visible", async ({ page }) => {
+test("Business navigation: the sections and the two doors (Sandbox, Capex) in the rail on a desktop, the six sections as tabs on a phone, the mode switch and Ask FLOW always visible", async ({ page }) => {
   await page.goto("/");
   const phone = (page.viewportSize()?.width ?? 1440) < 1024;
-  const names = ["Home", "Deals", "Cash & funding", "Receivables", "Activity"];
+  // The rail holds the sections and the doors to the sandbox and the old capex screen; a phone's bar keeps the six sections (the doors are reached from Cash there).
+  const names = ["Home", "Deals", "Attach deals", "Cash & funding", "Sandbox", "Capex", "Receivables", "Activity"];
+  const phoneNames = ["Home", "Deals", "Attach deals", "Cash & funding", "Receivables", "Activity"];
   const bar = page.getByTestId(phone ? "tab-bar" : "nav-pills");
   await expect(bar).toBeVisible();
   await expect(page.getByTestId(phone ? "nav-pills" : "tab-bar")).toBeHidden();
-  await expect(bar.getByRole("link")).toHaveText(phone ? ["Home", "Deals", "Cash", "Receivables", "Activity"] : names);
-  for (const n of names) await expect(bar.getByRole("link", { name: n, exact: true })).toBeVisible();
+  await expect(bar.getByRole("link")).toHaveText(phone ? ["Home", "Deals", "Attach", "Cash", "Receivables", "Activity"] : names);
+  for (const n of phone ? phoneNames : names) await expect(bar.getByRole("link", { name: n, exact: true })).toBeVisible();
   await expect(bar.locator('[aria-current="page"]')).toHaveText(phone ? "Home" : "Home");
   // Buy equipment and What-if are doors from Cash & funding, not sections; no hamburger in Business mode.
   await expect(page.getByRole("button", { name: "Open navigation" })).toHaveCount(0);
@@ -97,6 +106,7 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
       page.evaluate(() => {
       window.scrollTo(0, document.documentElement.scrollHeight);
       const chat = document.querySelector('[data-testid="chat-open"]')!.getBoundingClientRect();
+      const chatInHeader = Boolean(document.querySelector('[data-testid="chat-open"]')!.closest("header"));
       const bar = document.querySelector('[data-testid="tab-bar"]');
       const barTop = bar && getComputedStyle(bar).display !== "none" ? bar.getBoundingClientRect().top : innerHeight;
       // Every control in main, at the end of the page, sits above the bar and outside the Ask FLOW box.
@@ -105,7 +115,8 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
       return Array.from(document.querySelectorAll("main a[href], main button, main summary, main input")).filter((el) => {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0 || folded(el)) return false;
-        const hitsChat = r.left < chat.right && r.right > chat.left && r.top < chat.bottom && r.bottom > chat.top;
+        // Ask FLOW sits in the sticky header on a desktop (content scrolls under the header, which is not the pill covering it); on a phone it is a cell of the bar, where it must not cover a control.
+        const hitsChat = !chatInHeader && r.left < chat.right && r.right > chat.left && r.top < chat.bottom && r.bottom > chat.top;
         return hitsChat || r.bottom > barTop;
       }).length;
     });
@@ -162,11 +173,23 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
           const cy = r.y + r.height / 2;
           const okW = r.width >= 44 || (hit(el, cx - 21, cy) && hit(el, cx + 21, cy));
           const okH = r.height >= 44 || (hit(el, cx, cy - 21) && hit(el, cx, cy + 21));
+          // On a phone the forecast's numbered markers are a drawing (aria-hidden, no pointer events): each move is read in the list under the chart, whose rows are checked below.
+          if (el.closest("[aria-hidden=true]")) return false;
           return !(okW && okH);
         })
         .map((el) => `${el.tagName}:${(el.textContent ?? "").trim().slice(0, 24)}`);
     });
     expect(short, `${route}: controls a finger cannot hit at 44 px`).toEqual([]);
+    if (route === "/cash") {
+      // Every marker's move is also a 44 px row of the list.
+      const markers = await page.locator('[data-testid^="picture-marker-"]').count();
+      const rows = page.getByTestId("picture-move");
+      expect(markers).toBeGreaterThan(0);
+      await page.getByTestId("picture-moves-fold").locator("summary").click(); // the list is a fold: its summary is a 44 px target too
+      expect((await page.getByTestId("picture-moves-fold").locator("summary").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await expect(rows).toHaveCount(markers);
+      for (const row of await rows.all()) expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
   }
 });
 
@@ -233,18 +256,20 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await expect(page.getByTestId("deal-chart")).toBeVisible();
   expect(await overflowX(page), "/deals cash impact overflows horizontally").toBeLessThanOrEqual(1);
   await page.goto("/cash");
+  await openCashOptions(page);
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   expect(await overflowX(page), "/cash overflows horizontally").toBeLessThanOrEqual(1);
   const narrow = (page.viewportSize()?.width ?? 1440) < 1024;
   if (narrow) {
     for (const [route, ready] of [["/deals", "deals-inbox"], ["/cash", "cash-options-list"]] as const) {
       await page.goto(route);
+      if (ready === "cash-options-list") await openCashOptions(page);
       await expect(page.getByTestId(ready)).toBeVisible();
       const short = await page.evaluate(() =>
         Array.from(document.querySelectorAll("main a, main button, main summary"))
           .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
           // The horizon pills keep a compact look with a 44 px hit area (covered by the controls test above).
-          .filter((el) => el.getBoundingClientRect().height < 44 && !el.matches("a:not([class*=button]), summary") && !el.closest("[role=group], [role=radiogroup]"))
+          .filter((el) => el.getBoundingClientRect().height < 44 && !el.matches("a:not([class*=button]), summary") && !el.closest("[role=group], [role=radiogroup]") && !el.matches(".hit"))
           .map((el) => `${el.tagName}:${(el.textContent ?? "").trim().slice(0, 24)}`),
       );
       expect(short, `${route}: buttons under 44 px`).toEqual([]);
@@ -273,7 +298,8 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   // Home: the status, then the priced action with its button above the tab bar, with no scroll.
   await page.goto("/");
   const alertId = await page.getByTestId("home-next-action").getAttribute("data-alert");
-  const run = page.getByTestId(`fix-open-${alertId}`);
+  // The Home's card opens the plan on Cash & funding ("Check funding plan"); the plan's own two presses are on Cash.
+  const run = page.getByTestId("home-check-plan");
   await expect(run).toBeVisible();
   const box = (await run.boundingBox())!;
   const tab = (await page.getByTestId("tab-bar").boundingBox())!;
@@ -305,6 +331,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
 
   // Cash: the answer, the plan, the picture, then the comparison; its options list starts inside the first three screens.
   await page.goto("/cash");
+  await openCashOptions(page);
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   const options = (await topOf(page, "cash-options-list"))!;
   const plan = (await topOf(page, "home-next-action"))!;
@@ -378,7 +405,7 @@ test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash)
   await toDay34(page);
   await page.goto("/");
   const alert34 = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
-  expect(await bottomOf(page, `fix-open-${alert34}`), "Home day 34").toBeLessThanOrEqual(840);
+  expect(await bottomOf(page, "home-check-plan"), "Home day 34").toBeLessThanOrEqual(840);
   await page.goto("/cash");
   await expect(page.getByTestId(`fix-open-${alert34}`)).toBeVisible();
   expect(await bottomOf(page, `fix-open-${alert34}`), "Cash day 34").toBeLessThanOrEqual(840);
@@ -403,8 +430,7 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   test.skip(testInfo.project.name === "phone", "a laptop check");
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/");
-  const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
-  expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
+  expect(await bottomOf(page, "home-check-plan")).toBeLessThanOrEqual(700);
   // The three cards are one row in the page's flow (not sticky) and the whole row, today's cash among them, is inside the first screen.
   await expect(page.getByTestId("home-kpi-cash-value")).toBeVisible();
   for (const id of ["hv2-cash-card", "hv2-action", "hv2-outlook-card"]) {
@@ -416,8 +442,8 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
 test("at tablet width (820) the open invoices are one card each, so no column is clipped", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "the phone has its own check");
   await page.setViewportSize({ width: 820, height: 1180 });
-  await page.goto("/receivables");
-  await expect(page.getByTestId("recv3-list")).toBeVisible();
+  await page.goto("/receivables?customer=BUYER-1"); // /receivables is the customer list; the customer's page holds the open invoices
+  await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
   await expect(page.getByRole("columnheader").first()).toBeHidden();
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });

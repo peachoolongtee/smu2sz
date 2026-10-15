@@ -363,7 +363,7 @@ A lifted base: solid white cards on a cool canvas. Depth is a response to role a
 
 ### Named Rules
 **The Hairline First Rule.** A card's edge is a 1 px `line`; the shadow is the whisper under it, never the boundary.
-**The No Rail Rule.** No gradient on a button or a card, and no coloured rail on a card's edge but two: the selected card's 3 px accent rule (the choice the detail is about) and the "why" rule beside a reason. A status is a pill with a word, a tone is a 1 px tone line.
+**The No Rail Rule.** No gradient on a button or a card, and no coloured rail on a card's edge but two: the selected card's 3 px accent rule (the choice the detail is about) and the "why" rule beside a reason. A status is a pill with a word, a tone is a 1 px tone line. An alarm card (the recommendation while the cash would go negative) may take the risk tint as its fill, with no glow and no gradient (owner, 15 Oct).
 
 ## Shapes
 

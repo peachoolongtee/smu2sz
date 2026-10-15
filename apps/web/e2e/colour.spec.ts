@@ -1,6 +1,6 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, filledBrand, openReview, openOperatorTools } from "./helpers";
+import { checkedDeal, filledBrand, openReview, openOperatorTools, runPlan } from "./helpers";
 
 /**
  * The colour direction (docs/research/colour-direction-2026-10-08.md), as computed styles in mock mode: the Home headline on the
@@ -50,21 +50,55 @@ test("the Home headline sits on the canvas with no card; the planned pill meets 
   // The cards are the panel tone, solid, with no frost and no gradient; the lowest figure is the one risk red and meets AA on the panel.
   const bar = page.getByTestId("hv2-action");
   const fill = await bg(bar);
-  expect(fill).toBe(PANEL);
+  // The panel tone; while the cash would go negative the recommendation is an alarm card and takes the risk tint as its fill (owner, 15 Oct), with every text on it at 4.5:1.
+  const alarm = (await bar.getAttribute("data-alarm")) === "true";
+  if (alarm) {
+    expect(fill).not.toBe(PANEL);
+    const worst = await bar.evaluate((card) => {
+      const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true })!;
+      const rgb = (css: string) => {
+        c.clearRect(0, 0, 1, 1);
+        c.fillStyle = "#000";
+        c.fillStyle = css;
+        c.fillRect(0, 0, 1, 1);
+        return Array.from(c.getImageData(0, 0, 1, 1).data.slice(0, 3));
+      };
+      const lin = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      const lum = ([r, g, b]: number[]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+      // The ground of a text is the nearest solid fill under it (the card's tint, or a button's own fill).
+      const groundOf = (el: Element) => {
+        for (let n: Element | null = el; n; n = n.parentElement) {
+          const b = getComputedStyle(n).backgroundColor;
+          if (b !== "rgba(0, 0, 0, 0)" && b !== "transparent") return lum(rgb(b));
+        }
+        return lum(rgb(getComputedStyle(card).backgroundColor));
+      };
+      let min = 21;
+      for (const el of Array.from(card.querySelectorAll("*"))) {
+        if (![...el.childNodes].some((n) => n.nodeType === 3 && (n.textContent ?? "").trim())) continue;
+        // The alarm strip is white on the solid risk red, not on the tint.
+        if (el.closest('[data-testid="hv2-alarm"]')) continue;
+        const fg = lum(rgb(getComputedStyle(el).color));
+        const ground = groundOf(el);
+        min = Math.min(min, (Math.max(fg, ground) + 0.05) / (Math.min(fg, ground) + 0.05));
+      }
+      return min;
+    });
+    expect(worst, "the lowest text contrast on the alarm tint").toBeGreaterThanOrEqual(4.5);
+  } else expect(fill).toBe(PANEL);
   expect(await bar.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
   expect(await bar.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("none");
   expect(await bar.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("24px");
   expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow)).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
-  expect(contrast(await color(page.getByTestId("home-action-text")), fill)).toBeGreaterThan(4.5);
+  if (!alarm) expect(contrast(await color(page.getByTestId("home-action-text")), fill)).toBeGreaterThan(4.5); // on the alarm tint every text is measured above
   expect(await color(page.getByTestId("home-kpi-lowest-value"))).toBe("rgb(168, 50, 34)");
   expect(contrast(await color(page.getByTestId("home-kpi-lowest-value")), PANEL)).toBeGreaterThan(4.5);
   // The one filled button is the ink primary with white text.
-  const run = page.getByTestId("fix-open-ALERT-RESERVE-12");
+  const run = page.getByTestId("home-check-plan"); // the Home card opens the plan on Cash; the ink primary is the same
   expect(await bg(run)).toBe("rgb(23, 29, 30)");
   expect(contrast(await color(run), await bg(run))).toBeGreaterThan(7);
   // Calm when healthy: the pill turns to the status word, and there is still no deep block.
-  await run.click();
-  await page.getByTestId("fix-ALERT-RESERVE-12").click();
+  await runPlan(page, "ALERT-RESERVE-12");
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
   expect(await bg(page.getByTestId("home-status"))).toBe("rgba(0, 0, 0, 0)");
   await expect(page.getByTestId("hv2-action")).toBeVisible();
@@ -74,7 +108,8 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
   for (const [path, expected, loaded] of [
     ["/", 1, "[data-testid=home-next-action]"],
     ["/cash", 1, "[data-testid=cash-forecast]"],
-    ["/receivables", 1, "[data-testid=recv3-page]"], // the one primary is "Explore the cash impact"
+    ["/receivables", 0, "[data-testid=recv3-page]"], // the customers' list has no primary
+    ["/receivables?customer=BUYER-1", 1, "[data-testid=recv3-page]"], // a customer's page: the one primary is "Explore the cash impact"
     ["/activity", 0, "#activity-timeline"],
   ] as const) {
     await page.goto(path);
@@ -102,9 +137,8 @@ test("the day-34 pending home has one primary: the decision, and the owner's dis
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
-  await page.goto("/");
-  await page.getByTestId("fix-open-ALERT-RESERVE-42").click();
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await page.goto("/cash"); // the plan is run, and its waiting approval is linked, on Cash & funding
+  await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
   const disc = page.getByTestId("account-menu").locator("summary span").first();
@@ -120,4 +154,17 @@ test("the Demo shell says so in its own deep strip; the Business shell has none"
   await expect(strip).toContainText("Synthetic data. No real funds move.");
   expect(await bg(strip)).toBe(BRAND_900);
   await expect(page.getByTestId("home-status")).toHaveCount(0);
+});
+
+test("after the plan ran, the covered Home has no gradient anywhere and its title is solid ink", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("home-check-plan")).toBeVisible();
+  await runPlan(page, "ALERT-RESERVE-12"); // the plan is run on Cash; the owner is back on the Home
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
+  const gradients = await page.evaluate(() => Array.from(document.querySelectorAll("*")).filter((el) => getComputedStyle(el).backgroundImage.includes("gradient")).map((el) => el.getAttribute("data-testid") ?? el.tagName));
+  expect(gradients, "gradients on the covered Home").toEqual([]);
+  // The card's title is solid ink, not clipped text.
+  const title = page.locator("#hv2-covered-title");
+  expect(await title.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("none");
+  expect(await title.evaluate((el) => getComputedStyle(el).color)).toBe(await page.getByTestId("home-headline").evaluate((el) => getComputedStyle(el).color)); // the ink of the headline
 });
