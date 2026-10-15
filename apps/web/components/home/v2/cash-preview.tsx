@@ -12,10 +12,8 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
 /**
  * How a line is drawn: `base` the current books (2.25 px brand, the stretches under the reserve in red), `plan` the plan that is ready (1.5 px dashed ink-3, conditional on
  * execution), `option` a reply (2.25 px brand, solid) and `request` the buyer's ask (2.25 px grey, its stretches under the reserve in red). Steps are mitered, never smoothed.
- * The deal's chart (round three, section 6) draws the responses the owner chose by the order of the choice: `first` solid ink, `second` solid purple, `third` muted and dashed; each has its
- * stretches under the reserve in red (red never names a response).
  */
-export type LineStyle = "base" | "plan" | "option" | "request" | "first" | "second" | "third";
+export type LineStyle = "base" | "plan" | "option" | "request";
 
 /**
  * A cash move drawn on the chart as a numbered marker (the expanded forecast): its day, its number, money out or in, whether it sits on FLOW's plan line (a leg that lands
@@ -44,20 +42,6 @@ export interface InspectorCell {
   label: string;
   value: string;
   tone?: "bad" | "plan" | "opt";
-  /** A quiet line under the value (the day a lowest point falls on). */
-  sub?: string | null;
-}
-
-/** One block of a two-block inspector (the deal's chart): a title, its cells, a note and, under it, the cause of the difference. Every word is the server's or the dictionary's. */
-export interface InspectorSection {
-  key: string;
-  title: string;
-  cells: InspectorCell[];
-  note?: string | null;
-  causeTitle?: string;
-  cause?: string | null;
-  /** The cause as a short list per line (the server's `cause_lines`); `cause` is shown when there is none. */
-  causeLines?: { label: string; items: string[] }[] | null;
 }
 
 /** What the fixed strip under the chart says for one day, every word the server's (`when`, `display`, the effect rows' labels and amounts). */
@@ -67,8 +51,6 @@ export interface InspectorWords {
   events: { label: string; amount?: string }[];
   cause?: string | null;
   note?: string | null;
-  /** The deal's chart: two blocks side by side instead of one strip ("On this day" with its cause, "Each option's lowest point"). */
-  sections?: InspectorSection[];
 }
 
 const STROKE: Record<LineStyle, { cls: string; width: number; dash?: string }> = {
@@ -77,15 +59,8 @@ const STROKE: Record<LineStyle, { cls: string; width: number; dash?: string }> =
   plan: { cls: "stroke-ok-solid", width: 3.25 },
   option: { cls: "stroke-brand-600", width: 2.25 },
   request: { cls: "stroke-ink-3", width: 2.25 },
-  first: { cls: "stroke-f-ink", width: 2.25 },
-  second: { cls: "stroke-f-purple", width: 2.25 },
-  third: { cls: "stroke-f-muted", width: 2, dash: "6 4" },
 };
-const LEGEND_LINE: Record<LineStyle | "below" | "reserve" | "reserveAmber", string> = {
-  first: "border-t-[2.25px] border-f-ink",
-  second: "border-t-[2.25px] border-f-purple",
-  third: "border-t-2 border-dashed border-f-muted",
-  reserveAmber: "border-t-2 border-dashed border-f-amber-ink",
+const LEGEND_LINE: Record<LineStyle | "below" | "reserve", string> = {
   base: "border-t-[2.25px] border-chart-base",
   plan: "border-t-[3.25px] border-ok-solid",
   option: "border-t-[2.25px] border-brand-600",
@@ -95,7 +70,7 @@ const LEGEND_LINE: Record<LineStyle | "below" | "reserve" | "reserveAmber", stri
 };
 
 /** A legend entry: the line's own swatch, the server's name, and a quiet qualifier after a dot (13 px: it qualifies the line). */
-export function LegendItem({ kind, children, quiet }: { kind: LineStyle | "below" | "reserve" | "reserveAmber"; children: ReactNode; quiet?: ReactNode }) {
+export function LegendItem({ kind, children, quiet }: { kind: LineStyle | "below" | "reserve"; children: ReactNode; quiet?: ReactNode }) {
   return (
     <li className="inline-flex items-center gap-2">
       <i aria-hidden className={`inline-block w-[18px] ${LEGEND_LINE[kind]}`} />
@@ -147,8 +122,6 @@ export function CashPreview({
   headExtra,
   chosenDay,
   onChoose,
-  controls,
-  reserveAmber = false,
   draw = false,
   markers,
 }: {
@@ -187,12 +160,6 @@ export function CashPreview({
   /** The selected day, when something beside the chart (the event chips) selects it too; undefined keeps the chart's own state. */
   chosenDay?: number | null;
   onChoose?: (day: number) => void;
-  /** Above the legend: the deal's chips (which responses to draw) and its payment-timing switch. */
-  controls?: ReactNode;
-  /** The reserve is an amber dashed line (the deal's chart) instead of the thin red one. */
-  reserveAmber?: boolean;
-  /** Event markers on the first drawn line: a small mark on each day that carries events, with the server's words for that day (shown on hover, focus and press). */
-  markers?: { day: number; text: string }[];
 }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
@@ -208,7 +175,6 @@ export function CashPreview({
     if (d !== null) onChoose?.(d);
   };
   const [hover, setHover] = useState<number | null>(null);
-  const [tip, setTip] = useState<number | null>(null);
   const [chosenWindow, setChosenWindow] = useState<number | null>(null);
   // The marker whose callout is open: the one under the pointer or keyboard, else the one the owner clicked.
   const [pinned, setPinned] = useState<number | null>(null);
@@ -289,7 +255,6 @@ export function CashPreview({
         ) : undefined
       }
     >
-      {controls}
       <ul className="flex flex-wrap gap-x-5 gap-y-2 text-supporting text-ink-2" data-testid="home-legend">
         {legend}
       </ul>
@@ -343,7 +308,7 @@ export function CashPreview({
                 </g>
               );
             })}
-            <line x1={pl} x2={pr} y1={yOf(floor)} y2={yOf(floor)} className={reserveAmber ? "stroke-f-amber-ink" : "stroke-chart-reserve"} strokeWidth={reserveAmber ? 2 : 1.25} strokeDasharray={reserveAmber ? "6 4" : undefined} data-testid="home-reserve" />
+            <line x1={pl} x2={pr} y1={yOf(floor)} y2={yOf(floor)} className="stroke-chart-reserve" strokeWidth={1.25} data-testid="home-reserve" />
             {days.includes(day) || hover !== null ? <line x1={cx} x2={cx} y1={pt} y2={pb} className="stroke-ink-3" strokeWidth={1} data-testid="home-cursor" data-day={day} /> : null}
             {segs.map((l) => (
               <g key={l.key}>
@@ -357,13 +322,13 @@ export function CashPreview({
                   strokeWidth={STROKE[l.style].width}
                   className={`${STROKE[l.style].cls} ${draw ? `picture-draw ${l.style === "plan" ? "picture-draw-second" : ""}` : ""}`}
                 />
-                {l.style === "base" || l.style === "request" || l.style === "first" || l.style === "second" || l.style === "third" ? (
+                {l.style === "base" || l.style === "request" ? (
                   <path d={redPath(l.segs)} pathLength={draw ? 1 : undefined} fill="none" strokeLinejoin="miter" strokeWidth={2.25} className={`stroke-bad-solid ${draw ? "picture-draw" : ""}`} data-testid={`hv2-below-${l.style}`} />
                 ) : null}
               </g>
             ))}
             {segs.map((l) => (
-              <circle key={`dot-${l.key}`} cx={cx} cy={yOf(valueAt(l.segs, day))} r={4.5} strokeWidth={2} className={`stroke-surface ${l.style === "plan" ? "fill-ok-solid" : l.style === "request" ? "fill-ink-3" : l.style === "first" ? "fill-f-ink" : l.style === "second" ? "fill-f-purple" : l.style === "third" ? "fill-f-muted" : "fill-brand-600"}`} data-testid="home-dot" />
+              <circle key={`dot-${l.key}`} cx={cx} cy={yOf(valueAt(l.segs, day))} r={4.5} strokeWidth={2} className={`stroke-surface ${l.style === "plan" ? "fill-ok-solid" : l.style === "request" ? "fill-ink-3" : "fill-brand-600"}`} data-testid="home-dot" />
             ))}
             {lowest !== null ? <circle cx={xOf(lowest)} cy={yOf(valueAt(mainSegs, lowest))} r={6} strokeWidth={2.25} className="fill-surface stroke-bad-solid" data-testid="home-lowest-mark" /> : null}
             {xTicks.map((d, i) => (
@@ -457,38 +422,6 @@ export function CashPreview({
             style={{ left: xOf(lowest), top: yOf(valueAt(mainSegs, lowest)) }}
           />
         ) : null}
-        {W > 0 && markers?.length
-          ? markers
-              .filter((m) => m.day >= today && m.day <= end)
-              .map((m) => (
-                <span key={m.day} className="absolute z-10" style={{ left: xOf(m.day), top: yOf(valueAt(segs[0]?.segs ?? [], m.day)) }}>
-                  <button
-                    type="button"
-                    aria-label={m.text}
-                    aria-expanded={tip === m.day}
-                    data-testid="deal-marker"
-                    data-day={m.day}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setChosen(m.day);
-                      setTip((d) => (d === m.day ? null : m.day));
-                    }}
-                    onMouseEnter={() => setTip(m.day)}
-                    onMouseLeave={() => setTip(null)}
-                    onFocus={() => setTip(m.day)}
-                    onBlur={() => setTip(null)}
-                    className="grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill touch:size-11"
-                  >
-                    <span aria-hidden className="block size-2.5 rotate-45 border-2 border-surface bg-f-ink" />
-                  </button>
-                  {tip === m.day ? (
-                    <span role="tooltip" className="pointer-events-none absolute bottom-5 left-0 z-20 w-max max-w-[16rem] -translate-x-1/2 rounded-tile border border-line-strong bg-card px-2.5 py-1.5 text-supporting text-ink shadow-f" data-testid="deal-marker-tip">
-                      {m.text}
-                    </span>
-                  ) : null}
-                </span>
-              ))
-          : null}
       </div>
       {under}
       {showStrip ? (
@@ -501,48 +434,6 @@ export function CashPreview({
         data-day={day}
         className={`mt-1 border-t border-line-strong ${reduced ? "" : "transition-opacity duration-(--dur-fast)"}`}
       >
-        {strip.sections ? (
-          <div className="grid gap-x-8 gap-y-2 border-b border-line pb-3 md:grid-cols-2" data-testid="deal-inspector-sections">
-            {strip.sections.map((sec) => (
-              <section key={sec.key} aria-label={sec.title} data-testid={`deal-inspector-${sec.key}`} className="min-w-0">
-                <h4 className="pt-3 text-sm font-bold text-ink">{sec.title}</h4>
-                <dl className="mt-1 divide-y divide-line">
-                  {sec.cells.map((c) => (
-                    <div key={c.key} data-testid={`deal-inspector-${sec.key}-${c.key}`} className="flex items-baseline justify-between gap-3 py-1.5">
-                      <dt className="min-w-0 text-supporting text-ink-2">{c.label}</dt>
-                      <dd className={`m-0 text-right font-display text-[17px] font-bold leading-6 tabular-nums ${c.tone === "bad" ? "text-bad-fg" : "text-ink"}`}>
-                        {c.value}
-                        {c.sub ? <span className="block text-supporting font-normal leading-4 text-ink-3">{c.sub}</span> : null}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-                {sec.note ? <p className="mt-1 text-supporting text-ink-2">{sec.note}</p> : null}
-                {sec.cause || sec.causeLines?.length ? (
-                  <div className="mt-2 border-t border-line pt-2" data-testid="deal-cause">
-                    <h5 className="text-supporting font-bold text-ink-3">{sec.causeTitle}</h5>
-                    {sec.causeLines?.length ? (
-                      <ul className="m-0 mt-1 list-none space-y-2 p-0" data-testid="deal-cause-lines">
-                        {sec.causeLines.map((l, i) => (
-                          <li key={`${l.label}-${i}`} className="text-sm text-ink" data-testid="deal-cause-line">
-                            <p className="m-0 font-bold">{l.label}</p>
-                            <ul className="m-0 mt-0.5 list-disc space-y-0.5 pl-5 text-ink-2">
-                              {l.items.map((it, j) => (
-                                <li key={j}>{it}</li>
-                              ))}
-                            </ul>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="mt-0.5 text-sm text-ink">{sec.cause}</p>
-                    )}
-                  </div>
-                ) : null}
-              </section>
-            ))}
-          </div>
-        ) : (
         <dl className={`grid grid-cols-2 border-b border-line ${strip.cells.length > 3 ? "sm:grid-cols-[minmax(0,1.25fr)_repeat(3,minmax(0,1fr))]" : "sm:grid-cols-3"}`}>
           {strip.cells.map((c, i) => (
             <div key={c.key} data-testid={`hv2-inspector-${c.key}`} className={`min-w-0 py-2.5 pr-4 ${i > 0 ? "sm:border-l sm:border-line sm:pl-4" : ""} ${i % 2 === 1 ? "max-sm:border-l max-sm:border-line max-sm:pl-4" : ""} ${i > 1 ? "max-sm:border-t max-sm:border-line" : ""}`}>
@@ -551,7 +442,6 @@ export function CashPreview({
             </div>
           ))}
         </dl>
-        )}
         {strip.events.length || strip.cause ? (
           <p className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-supporting text-ink-2" data-testid="hv2-inspector-events">
             <span>{t("hv2.inspect.onDay")}</span>

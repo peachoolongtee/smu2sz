@@ -1,5 +1,4 @@
-import { getCustomerFocus, getDealExposure, getDealPicture, getDealTitle, getDeals, getHomeInvoices } from "@/lib/api";
-import { offerOfDecision } from "@/lib/home-v2-href";
+import { getCustomerFocus, getHomeInvoices } from "@/lib/api";
 
 /**
  * A row's reads are started when the owner points at it or focuses it (the "Select" affordance appears at the same moment), so the selection paints at once when it is made. A warmed read is held
@@ -32,25 +31,12 @@ export function fromWarm<T>(key: string, load: () => Promise<T>): Promise<T> {
 
 export const key = {
   overview: (customer: string, decision: string | null, lang: string) => `overview:${customer}:${decision ?? ""}:${lang}`,
-  picture: (offer: string, lang: string) => `picture:${offer}:${lang}`,
-  exposure: (offer: string, customer: string, lang: string) => `exposure:${offer}:${customer}:${lang}`,
-  deals: (lang: string) => `deals:${lang}`,
-  title: (decision: string, lang: string) => `title:${decision}:${lang}`,
   invoices: (lang: string) => `invoices:${lang}`,
 };
 
-/** Start the reads a selection will make: a deal's overview, picture, exposure, deals and title; a customer's overview and invoices. */
+/** Start the reads a customer's selection will make: its overview and the invoices. (A deal opens on the Deals page, which makes its own reads.) */
 export function warmSelection(sel: { customer?: string | null; decision?: string | null }, lang: "en" | "zh"): void {
-  if (!sel.customer) return;
-  if (sel.decision) {
-    const offer = offerOfDecision(sel.decision);
-    warm(key.overview(sel.customer, sel.decision, lang), () => getCustomerFocus(sel.customer as string, lang, { decision: sel.decision }));
-    warm(key.picture(offer, lang), () => getDealPicture(offer, lang));
-    warm(key.exposure(offer, sel.customer, lang), () => getDealExposure(offer, lang, sel.customer as string).catch(() => null));
-    warm(key.deals(lang), () => getDeals(lang).catch(() => null));
-    warm(key.title(sel.decision, lang), () => getDealTitle(sel.decision as string, lang));
-  } else {
-    warm(key.overview(sel.customer, null, lang), () => getCustomerFocus(sel.customer as string, lang));
-    warm(key.invoices(lang), () => getHomeInvoices(lang).catch(() => null));
-  }
+  if (!sel.customer || sel.decision) return;
+  warm(key.overview(sel.customer, null, lang), () => getCustomerFocus(sel.customer as string, lang));
+  warm(key.invoices(lang), () => getHomeInvoices(lang).catch(() => null));
 }
