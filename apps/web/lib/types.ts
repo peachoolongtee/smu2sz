@@ -1038,6 +1038,103 @@ export interface AcceptRefusedDetail {
   message_when?: string | null;
 }
 
+// ------------------------------------------------------------------ the message the owner sends the buyer outside FLOW (ADR-0011 addendum)
+
+/**
+ * GET /offers/{offer_id}/counters/{counter_id}/message?lang=en|zh: the message for one counter of the latest verdict, written in `lang`. The words beside it (`notice_text`, the
+ * labels, `blocked.text`, `provenance.text`, `valid_until_date`) are in that language too, so the page reads it twice when the buyer's language is not the page's: the text and its hash
+ * from the buyer's read, everything else from the page's. `text` is null when FLOW prepares none (`blocked` says why). `offered` is the record that the owner marked it sent.
+ */
+export interface BuyerMessageView {
+  offer_id: string;
+  decision_id: string;
+  verdict_id: string;
+  counter_id: string;
+  counter_label_when: string | null;
+  state_version: number;
+  counterparty_id: string;
+  buyer_name: string;
+  lang: "en" | "zh";
+  text: string | null;
+  message_hash: string | null;
+  terms_hash: string;
+  template_version: string;
+  copyable: boolean;
+  blocked: { code: BuyerMessageBlock; text: string } | null;
+  valid_until_day: Day;
+  valid_until_when: string;
+  valid_until_date: string;
+  provenance: { via: string | null; text: string };
+  offered: { recorded: true; lang: "en" | "zh"; message_hash: string; valid_until_day: Day; valid_until_when: string; same_message: boolean } | null;
+  notice_text: string;
+  copy_label: string;
+  mark_sent_label: string;
+  mark_sent_effect_text: string;
+  accepted_label: string;
+  reply_label: string;
+}
+
+/** Why FLOW prepares no message for a counter. */
+export type BuyerMessageBlock = "UNVERIFIED_SENDER" | "NOT_SENDABLE" | "NO_WORDING" | "OUTBOUND_BLOCKED" | "WINDOW_PASSED";
+
+/** POST .../offered: what the owner was shown (the verdict, the books' version, the message's hash) and the buyer's language the message was written in. */
+export interface OfferedRequest {
+  verdict_id: string;
+  state_version: number;
+  message_hash: string;
+  lang: "en" | "zh";
+}
+
+/** POST .../buyer-accepted: the offered counter the owner names, by the message they sent. */
+export interface BuyerAcceptedRequest {
+  verdict_id: string;
+  state_version: number;
+  message_hash: string;
+}
+
+/** POST /offers/{id}/buyer-reply: the buyer's reply as the owner pasted it (at most 4000 characters). */
+export interface BuyerReplyRequest {
+  verdict_id: string;
+  counter_id: string;
+  text: string;
+}
+
+/** POST .../offered: the message view again, in the page's language, with the server's sentence for what was recorded. */
+export interface OfferedResult extends BuyerMessageView {
+  already_recorded: boolean;
+  message_when: string;
+}
+
+/** POST .../buyer-accepted: the decision record as it stands, the agreement's receipt, and whether it is agreed or waits for the owner's approval. */
+export interface BuyerAcceptedResult extends AcceptResult {
+  status: "agreed" | "waiting_approval";
+  approval_id: string | null;
+}
+
+/** POST /offers/{id}/buyer-reply: the buyer's reply is a request of its own; `reply_href` opens it in Deals. */
+export interface BuyerReplyResult {
+  offer_id: string;
+  decision_id: string;
+  reply_offer_id: string;
+  reply_decision_id: string;
+  reply_href: string;
+  offer: OfferView["offer"];
+  message_when: string;
+}
+
+/**
+ * The detail of a 409 from the message routes: nothing was recorded. `message_when` is the server's sentence in the page's language. The codes: MESSAGE_CHANGED (copy it again; `message_hash`
+ * is the current one), COUNTER_CHANGED, the blocks above, NOT_OFFERED, OFFER_EXPIRED, OFFER_LAPSED, BOOKS_CHANGED, ALREADY_ANSWERED, NO_TERMS_IN_REPLY, NO_SIMULATED_BUYER (a simulated send
+ * for a buyer with no simulated profile).
+ */
+export interface BuyerMessageRefusal {
+  code: string;
+  message: string;
+  message_when?: string | null;
+  message_hash?: string;
+  reply_decision_id?: string;
+}
+
 /** One row of the Debt Desk comparison table. */
 export interface MenuRow {
   facility: Displayed<Facility>;
@@ -3728,6 +3825,8 @@ export type DecisionState =
   | "FULFILLED"
   | "REVOKED"
   | "LAPSED"
+  | "AWAITING_BUYER"
+  | "REPLIED"
   | "PARTIALLY_EXECUTED"
   | "SETTLEMENT_PENDING"
   | "SETTLED"
@@ -3736,6 +3835,7 @@ export type DecisionState =
 export type DecisionWaitCode =
   | "OWNER_RESPONSE"
   | "BUYER_CLARIFICATION"
+  | "BUYER_ANSWER"
   | "OWNER_APPROVAL"
   | "BANK_RECEIPT"
   | "INVOICE_ISSUE"
@@ -3818,6 +3918,19 @@ export interface DecisionSettlementLot {
 export type DecisionSent =
   | { recorded: false; text: string }
   | {
+      /** The owner sent the counter outside FLOW (ADR-0011 addendum): nothing simulated; `text` is the server's sentence for what was sent and, once recorded, the buyer's yes. */
+      recorded: true;
+      outside_flow: true;
+      outcome: "DEAL" | null;
+      simulated: false;
+      chosen_counter_id: string;
+      chosen_label: string | null;
+      chosen_label_text: string | null;
+      accepted_counter_id: string | null;
+      text: string;
+    }
+  | {
+      outside_flow?: undefined;
       recorded: true;
       outcome: "DEAL" | "NO_DEAL" | string;
       simulated: boolean;

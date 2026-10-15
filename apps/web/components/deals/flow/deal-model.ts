@@ -49,8 +49,8 @@ export function dealTabCounts(q: Queue): Record<DealTab, number> {
 
 // ---------------------------------------------------------------- the lifecycle pill
 
-export type Lifecycle = "counter_ready" | "owner_review" | "awaiting_buyer" | "more_info" | "agreed" | "declined" | "lapsed" | "closed";
-const LIFECYCLES: ReadonlySet<string> = new Set<Lifecycle>(["counter_ready", "owner_review", "awaiting_buyer", "more_info", "agreed", "declined", "lapsed", "closed"]);
+export type Lifecycle = "counter_ready" | "owner_review" | "awaiting_buyer" | "more_info" | "agreed" | "declined" | "lapsed" | "closed" | "answered";
+const LIFECYCLES: ReadonlySet<string> = new Set<Lifecycle>(["counter_ready", "owner_review", "awaiting_buyer", "more_info", "agreed", "declined", "lapsed", "closed", "answered"]);
 /** The server's key for "More information needed" is `more_information`. */
 const ALIAS: Record<string, Lifecycle> = { more_information: "more_info" };
 
@@ -60,13 +60,14 @@ export function lifecycleOf(row: Pick<QueueRowView, "lifecycle">): Lifecycle | n
   return key ? (ALIAS[key] ?? (LIFECYCLES.has(key) ? (key as Lifecycle) : null)) : null;
 }
 
-/** The pill's tone by lifecycle: amber is the owner's turn (a counter ready, a review, a question), lavender somebody else's (waiting for the buyer), green agreed, neutral closed (declined, lapsed). */
-const LIFECYCLE_TONE: Record<Lifecycle, PillTone> = { counter_ready: "amber", owner_review: "amber", more_info: "amber", awaiting_buyer: "lavender", agreed: "green", declined: "neutral", lapsed: "neutral", closed: "neutral" };
+/** The pill's tone by lifecycle: amber is the owner's turn (a counter ready, a review, a question), lavender somebody else's (waiting for the buyer), green agreed, neutral closed (declined, lapsed, answered by a new request). */
+const LIFECYCLE_TONE: Record<Lifecycle, PillTone> = { counter_ready: "amber", owner_review: "amber", more_info: "amber", awaiting_buyer: "lavender", agreed: "green", declined: "neutral", lapsed: "neutral", closed: "neutral", answered: "neutral" };
 
 /** The record's states as a pill tone, for the selected negotiation when the queue holds no row for it. */
 export function recordTone(state: string): PillTone {
   if (state === "AGREED" || state === "FULFILLED") return "green";
   if (state === "RESPONSE_READY" || state === "RECEIVED" || state === "NEEDS_CLARIFICATION" || state === "AUTHORIZATION_REQUIRED") return "amber";
+  if (state === "AWAITING_BUYER") return "lavender";
   return "neutral";
 }
 

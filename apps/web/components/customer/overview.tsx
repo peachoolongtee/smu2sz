@@ -377,7 +377,7 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
           recommends: primary ? (view.primary_decision?.recommends_text ?? null) : (focus && rowDecision(focus.row) === serverSel.decision_id ? focus.row.consequence_text : null),
           href: primary && view.primary_decision ? view.primary_decision.href : selectionHref("/deals", { customer: view.customer_id, decision: serverSel.decision_id, invoice: null, from: "customer" }),
           label: primary ? (view.decision?.primary.label ?? null) : null,
-          closed: pill.lifecycle === "awaiting_buyer" || pill.lifecycle === "agreed" || pill.lifecycle === "lapsed" || pill.lifecycle === "declined",
+          closed: pill.lifecycle === "awaiting_buyer" || pill.lifecycle === "agreed" || pill.lifecycle === "lapsed" || pill.lifecycle === "declined" || pill.lifecycle === "answered",
         };
       })()
     : focus && isNegotiation(focus.row)
@@ -393,7 +393,7 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
             // The server's decision speaks for this negotiation when its link names it: its own link (with the path) and its own label.
             href: speaks && view.decision ? view.decision.primary.href : dec ? selectionHref("/deals", { customer: view.customer_id, decision: dec, invoice: null, from: "customer" }) : (view.decision?.primary.href ?? "/deals"),
             label: speaks && view.decision ? view.decision.primary.label : null,
-            closed: pill.lifecycle === "awaiting_buyer" || focus.tier === "waiting" || focus.tier === "agreements" || pill.lifecycle === "lapsed",
+            closed: pill.lifecycle === "awaiting_buyer" || focus.tier === "waiting" || focus.tier === "agreements" || pill.lifecycle === "lapsed" || pill.lifecycle === "answered",
           };
         })()
       : null;

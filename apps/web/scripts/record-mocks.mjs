@@ -128,6 +128,22 @@
 //   cd services/api && SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8241
 //   node scripts/record-mocks.mjs --api http://localhost:8241 --tracker
 
+// --buyer-message records ONLY apps/web/mocks/buyer_message.json and exits (the message the owner sends the buyer outside FLOW, ADR-0011 addendum). Each walk starts
+// on fresh books with the package offer (EX01) read and evaluated, and runs once with the page in each language (`en`, `zh`):
+//   message            { <counter>: { en, zh } }  GET .../counters/<counter>/message?lang= for every reply of the picture, before anything is marked sent
+//   message_changed    { en, zh }                 the 409 MESSAGE_CHANGED of a mark with a hash that is not the message's
+//   offered            { en, zh }                 POST .../offered for the recommended reply (the message in English)
+//   awaiting           { en, zh } of { decision, message, deals, worklist }: the reads once it is marked sent (`message` is the offered reply's, with `offered`)
+//   buyer_accepted     { en, zh }                 POST .../buyer-accepted for that reply
+//   accepted           { en, zh } of { decision, deals, worklist, tracker }: the reads after the buyer's yes
+//   no_terms           { en, zh }                 the 409 NO_TERMS_IN_REPLY of a reply with no terms in it
+//   buyer_reply        { en, zh }                 POST /offers/<id>/buyer-reply with the section's REPLY_TEXT
+//   replied            { en, zh } of { decision, deals, worklist, reply_decision, reply_offer }: the reads after the reply (the answered deal; the reply's own request)
+//   no_simulated_buyer { en, zh }                 the 409 NO_SIMULATED_BUYER of the simulated send for a buyer with no simulated profile (EX09, BUYER-3)
+// The API needs the recording environment above:
+//   cd services/api && SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8531
+//   node scripts/record-mocks.mjs --api http://localhost:8531 --buyer-message
+
 import { createHash } from "node:crypto";
 import { register } from "node:module";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -141,7 +157,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --tracker]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --tracker | --buyer-message]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
@@ -155,6 +171,7 @@ const TRACKER = process.argv.includes("--tracker");
 const NO_EXPOSURE = process.argv.includes("--no-exposure");
 const INPUTS = process.argv.includes("--inputs");
 const SLICE_D = process.argv.includes("--slice-d");
+const BUYER_MESSAGE = process.argv.includes("--buyer-message");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -683,6 +700,78 @@ if (TRACKER) {
   }
   await live.demoReset();
   console.log(`recorded ${written.length} tracker files into ${join(OUT, "tracker")} from ${API}`);
+  process.exit(0);
+}
+
+// --buyer-message: the message to the buyer, marked sent, the buyer's yes and the buyer's reply, and nothing else (see the header).
+if (BUYER_MESSAGE) {
+  const { getTracker } = await import("../lib/tracker.ts");
+  const REPLY_TEXT = "We can pay the 420,000 invoice early, but only with a 1.2% discount, and we need 60-day terms on future invoices.";
+  /** The 409 detail of a call the story needs refused, with its code; a failure when the API accepted it. */
+  const refused = async (code, call) => {
+    try {
+      await call();
+    } catch (e) {
+      if (e?.status === 409 && e.detail?.code === code) return e.detail;
+      throw e;
+    }
+    throw new Error(`the API accepted a call the story needs refused with ${code}`);
+  };
+  /** Fresh books with the package offer read and evaluated: its id, the verdict, and the reply FLOW recommends. */
+  const fresh = async () => {
+    await reset();
+    const offerId = await submitSample("EX01");
+    await evaluate(offerId);
+    const verdict = demoStore.get().verdicts[offerId];
+    const picture = await live.getOfferPicture(offerId, "en");
+    const replies = picture.paths.filter((p) => p.kind === "reply");
+    const rec = replies.find((p) => p.recommended) ?? replies[0];
+    if (!verdict || !rec) throw new Error("the package offer has no verdict or no reply: the demo path has changed");
+    return { offerId, verdict, replies, rec };
+  };
+  const markSent = async (offerId, verdict, counterId, lang) => {
+    const msg = await live.getBuyerMessage(offerId, counterId, "en");
+    if (!msg.message_hash) throw new Error(`no message for ${counterId}: ${msg.blocked?.code}`);
+    return inLang(lang, () => live.markOffered(offerId, counterId, { verdict_id: verdict.id, state_version: verdict.state_version, message_hash: msg.message_hash, lang: "en" }));
+  };
+  const reads = async (offerId, counterId, lang) => ({
+    decision: await live.getDecision(dealId(offerId), lang),
+    ...(counterId ? { message: await live.getBuyerMessage(offerId, counterId, lang) } : {}),
+    deals: await inLang(lang, () => live.getDeals(lang)),
+    worklist: await inLang(lang, () => live.getWorklist(lang)),
+  });
+  const out = { message: {}, message_changed: {}, offered: {}, awaiting: {}, buyer_accepted: {}, accepted: {}, no_terms: {}, buyer_reply: {}, replied: {}, no_simulated_buyer: {} };
+  for (const lang of ["en", "zh"]) {
+    const { offerId, verdict, replies, rec } = await fresh();
+    if (lang === "en") for (const p of replies) out.message[p.key] = { en: await live.getBuyerMessage(offerId, p.key, "en"), zh: await live.getBuyerMessage(offerId, p.key, "zh") };
+    out.message_changed[lang] = await refused("MESSAGE_CHANGED", () =>
+      inLang(lang, () => live.markOffered(offerId, rec.key, { verdict_id: verdict.id, state_version: verdict.state_version, message_hash: "0".repeat(64), lang: "en" })),
+    );
+    out.offered[lang] = await markSent(offerId, verdict, rec.key, lang);
+    out.awaiting[lang] = await reads(offerId, rec.key, lang);
+    const hash = out.awaiting[lang].message.offered?.message_hash;
+    if (!hash) throw new Error("the message read after the mark carries no `offered`");
+    out.buyer_accepted[lang] = await inLang(lang, () => live.buyerAccepted(offerId, rec.key, { verdict_id: verdict.id, state_version: out.awaiting[lang].message.state_version, message_hash: hash }));
+    out.accepted[lang] = { ...(await reads(offerId, null, lang)), tracker: await getTracker(dealId(offerId), lang) };
+  }
+  for (const lang of ["en", "zh"]) {
+    const { offerId, verdict, rec } = await fresh();
+    await markSent(offerId, verdict, rec.key, lang);
+    out.no_terms[lang] = await refused("NO_TERMS_IN_REPLY", () => inLang(lang, () => live.buyerReply(offerId, { verdict_id: verdict.id, counter_id: rec.key, text: "Thanks, sounds good." })));
+    out.buyer_reply[lang] = await inLang(lang, () => live.buyerReply(offerId, { verdict_id: verdict.id, counter_id: rec.key, text: REPLY_TEXT }));
+    const reply = out.buyer_reply[lang];
+    out.replied[lang] = { ...(await reads(offerId, null, lang)), reply_decision: await live.getDecision(reply.reply_decision_id, lang), reply_offer: await live.getOffer(reply.reply_offer_id, lang) };
+  }
+  {
+    // A buyer with no simulated profile (EX09 is BUYER-3's): the simulated send is refused and nothing is sent.
+    await reset();
+    const other = (await live.submitOffer({ fixture_id: "EX09_TERMS_BUYER3" })).offer.offer_id;
+    await live.evaluateOffer(other, "EX09_TERMS_BUYER3", "en");
+    for (const lang of ["en", "zh"]) out.no_simulated_buyer[lang] = await refused("NO_SIMULATED_BUYER", () => inLang(lang, () => live.negotiate(other, { buyer_profile: "cooperative" })));
+  }
+  write("buyer_message.json", out);
+  await live.demoReset();
+  console.log(`recorded ${written.join(", ")} into ${OUT} from ${API}`);
   process.exit(0);
 }
 

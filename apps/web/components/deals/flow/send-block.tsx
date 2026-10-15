@@ -7,19 +7,20 @@ import { Button, Callout, ErrorState, LoadingBlock, Segmented, SlowNotice } from
 import { ActionGroup } from "@/components/ui/action-group";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { receiptLines } from "@/components/ui/commitment-receipt-model";
-import { counterChanged, negotiate } from "@/lib/api";
+import { counterChanged, messageRefusal, negotiate } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { bump, recordNegotiation, useDemo } from "@/lib/demo-store";
 import { errorText } from "@/lib/error-text";
 import { isTimeout } from "@/lib/errors";
 import { CostTable } from "./cost-table";
 import { StateWord } from "@/components/ui/state-word";
+import { BuyerMessage, buyerMessageId } from "./buyer-message";
 import { AUTH_TONE, quietLink } from "./flow-parts";
 import { TermsTable } from "./terms-table";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import { receiptOfSend } from "@/lib/receipt";
-import type { BuyerProfile, CommitmentReceiptView, CounterChangedDetail, NegotiationView, OfferPictureView, PicturePath } from "@/lib/types";
+import type { BuyerProfile, CommitmentReceiptView, CounterChangedDetail, NegotiationView, OfferedResult, OfferPictureView, PicturePath } from "@/lib/types";
 
 /**
  * The commit area of a reply you may send (tickets #128, #129): one filled button in the whole region. "Review and send the counter" opens the commitment receipt (the server's
@@ -33,6 +34,9 @@ import type { BuyerProfile, CommitmentReceiptView, CounterChangedDetail, Negotia
  * Round two (section 2): the review is three statements first (What you are authorizing, What happens immediately, What does not happen yet: the receipt's `authorizes_text`, `executes_now_text`,
  * `remaining_text`), then the terms and the cost of this very reply, then the one button that names the send; the rest of the receipt (who else must agree, the figures, the authority, the assumptions) is
  * one disclosure after it, with the record link as the audit evidence.
+ *
+ * The message to the buyer (ADR-0011 addendum): under the terms, the message FLOW prepared for this very reply, which the owner copies, sends themself and marks sent (`BuyerMessage`).
+ * A simulated send for a buyer with no simulated profile is refused (409 NO_SIMULATED_BUYER): the server's sentence is said, with the way to that message.
  */
 export function SendBlock({
   offerId,
@@ -41,6 +45,7 @@ export function SendBlock({
   buyer,
   recordHref,
   onSent,
+  onMarked,
   onBusy,
   openSignal = 0,
   hideTrigger = false,
@@ -55,6 +60,8 @@ export function SendBlock({
   recordHref?: string;
   /** Told with the answer when a send was accepted by the API (the page reads the deal again). */
   onSent: (n: NegotiationView) => void;
+  /** Told with the server's answer once the owner marked the message to the buyer sent (the page reads the deal again). */
+  onMarked?: (r: OfferedResult) => void;
   /** Told whenever a send or a check is in flight: the page holds the selection then. */
   onBusy: (busy: boolean) => void;
   /** The deal header's [Review the counter] opens the review from outside: each press raises this number. */
@@ -84,7 +91,10 @@ export function SendBlock({
   const [changed, setChanged] = useState<CounterChangedDetail | null>(null);
   const [slow, setSlow] = useState(false);
   const [rechecked, setRechecked] = useState(false);
-  const inFlight = sending || checking || preparing;
+  // The simulated send refused for a buyer FLOW has no simulated reply for: the server's sentence, beside the way to the message.
+  const [noSimulated, setNoSimulated] = useState<string | null>(null);
+  const [marking, setMarking] = useState(false);
+  const inFlight = sending || checking || preparing || marking;
   useEffect(() => {
     onReviewing?.(reviewing);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reports the state, not the callback
@@ -105,6 +115,7 @@ export function SendBlock({
     setError(null);
     setSlow(false);
     setRechecked(false);
+    setNoSimulated(null);
     try {
       if (!verdict) return;
       // What the owner was shown: the verdict's id and its books' version; if the books moved the API refuses and nothing is sent.
@@ -114,10 +125,12 @@ export function SendBlock({
       onSent(result);
     } catch (e) {
       const moved = counterChanged(e);
+      const refused = messageRefusal(e);
       if (isTimeout(e)) {
         setSlow(true);
         bump();
       } else if (moved) setChanged(moved);
+      else if (refused?.code === "NO_SIMULATED_BUYER") setNoSimulated(refused.message_when ?? refused.message);
       else setError(errorText(e, t));
     } finally {
       setSending(false);
@@ -196,6 +209,7 @@ export function SendBlock({
                 <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.review.terms")}</h4>
                 <TermsTable paths={[path]} heads={[path.label]} caption={t("deals.review.terms")} testId="send-terms-table" />
               </div>
+              <BuyerMessage offerId={offerId} counterId={path.key} onMarked={(r) => onMarked?.(r)} onCounterChanged={setChanged} onBusy={setMarking} />
             </section>
           ) : verdict ? (
             <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="deal-unpriced">
@@ -279,6 +293,27 @@ export function SendBlock({
         <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="slow-checked">
           {t("biz.slow.checked")}
         </p>
+      ) : null}
+      {noSimulated ? (
+        <div role="alert" data-testid="deal-no-simulated-buyer">
+          <Callout tone="warn">
+            <p>{noSimulated}</p>
+            {receipt ? (
+              <Button
+                className="mt-2"
+                size="sm"
+                onClick={() => {
+                  const el = document.getElementById(buyerMessageId(offerId, path.key));
+                  el?.scrollIntoView({ block: "start" });
+                  el?.focus({ preventScroll: true });
+                }}
+                data-testid="deal-to-message"
+              >
+                {t("bm.toMessage")}
+              </Button>
+            ) : null}
+          </Callout>
+        </div>
       ) : null}
       {error ? <ErrorState error={error} /> : null}
     </div>

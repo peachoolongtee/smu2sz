@@ -12,6 +12,13 @@ import { ApiError } from "../errors";
 import type {
   AcceptRequest,
   AcceptResult,
+  BuyerAcceptedRequest,
+  BuyerAcceptedResult,
+  BuyerMessageView,
+  BuyerReplyRequest,
+  BuyerReplyResult,
+  OfferedRequest,
+  OfferedResult,
   DeclineResult,
   ActivityView,
   DemoRestoreResult,
@@ -84,6 +91,7 @@ import type {
 } from "../types";
 
 import type { CustomerContext } from "../customer-href";
+import * as buyerMessage from "./buyer-message";
 import * as documents from "./documents";
 import * as decisions from "./decisions";
 import * as trackerMock from "./tracker"; // Deal tracker
@@ -180,6 +188,8 @@ interface Store {
   commitments: Displayed<Commitment>[];
   approvals: ApprovalView[];
   securityScene: boolean;
+  /** The message sent outside FLOW: where its walk stands (absent until the owner marks one sent). */
+  buyerMessage?: buyerMessage.BuyerMessageStage | null;
 }
 
 const emptyStore = (): Store => ({
@@ -663,24 +673,34 @@ function decisionContext(): decisions.DecisionContext {
   };
 }
 
+/** The story's context with the records the message walk holds as recordings of their own. */
+async function decisionContextNow(): Promise<decisions.DecisionContext> {
+  const ctx = decisionContext();
+  const at = load().buyerMessage;
+  if (at) ctx.recorded = buyerMessage.recordedDecisions(await buyerMessage.buyerMessageRecording(), at);
+  return ctx;
+}
+
 /** GET /decisions. */
 export async function getDecisions(q: { lang: "en" | "zh"; family?: "DEAL" | "FUNDING"; open?: boolean; limit?: number }): Promise<DecisionList> {
   await delay();
   seedApprovalStory();
-  return decisions.mockDecisions(decisionContext(), q);
+  return decisions.mockDecisions(await decisionContextNow(), q);
 }
 
 /** GET /decisions/{id}: 404 DECISION_NOT_FOUND for a record the story has not made. */
 export async function getDecision(id: string, lang: "en" | "zh"): Promise<DecisionView> {
   await delay();
   seedApprovalStory();
-  return decisions.mockDecision(decisionContext(), id, lang);
+  return decisions.mockDecision(await decisionContextNow(), id, lang);
 }
 
 // Deal tracker (#150): GET /decisions/{id}/tracker, served by lib/mock/tracker.ts.
 export async function getTracker(id: string, lang: "en" | "zh"): Promise<TrackerView> {
   await delay();
   seedApprovalStory();
+  const at = load().buyerMessage;
+  if (at?.stage === "accepted" && id === `deal:${at.offerId}`) return (await buyerMessage.buyerMessageRecording()).accepted[lang].tracker;
   return trackerMock.mockTracker(decisionContext(), id, lang);
 }
 
@@ -736,6 +756,10 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
     /* storage unavailable */
   }
   const s = load();
+  if (buyerMessage.takeHook(buyerMessage.NO_SIMULATED_BUYER_KEY)) {
+    const detail = { ...(await buyerMessage.buyerMessageRecording()).no_simulated_buyer[getLang()], offer_id: offerId };
+    throw new ApiError(409, detail.message, detail);
+  }
   if (req.verdict_id) {
     const story = counterChangedStory();
     if (story) {
@@ -786,6 +810,86 @@ export async function declineOffer(offerId: string, req: AcceptRequest): Promise
   void req;
   await delay();
   throw new ApiError(409, `Offer ${offerId} has no request that can be declined in the mock.`, { code: "OFFER_LAPSED", message: "Not served by the mock." });
+}
+
+// ------------------------------------------------------------------ the message the owner sends the buyer outside FLOW (lib/mock/buyer-message.ts)
+
+/** The package offer, read and evaluated, is the only one with a message recorded; any other is a 404, as the server answers an offer it does not hold. */
+function messageOffer(offerId: string): void {
+  const s = load();
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE")?.view.offer.offer_id;
+  if (offerId !== ex01 || !s.offers[offerId] || !s.evaluated.includes(offerId)) throw new ApiError(404, `Offer ${offerId} not found.`, { code: "OFFER_NOT_FOUND", offer_id: offerId });
+}
+
+const refusal = <T extends { message: string }>(detail: T): ApiError => new ApiError(409, detail.message, detail);
+
+/** Not marked sent in the mock (the walk's own reply only): refused as the server refuses, with no words of the mock's own. */
+function notOffered(offerId: string, counterId: string): buyerMessage.BuyerMessageStage {
+  const at = load().buyerMessage;
+  if (at?.offerId !== offerId || at.counterId !== counterId || at.stage !== "awaiting") throw new ApiError(409, "NOT_OFFERED", { code: "NOT_OFFERED", offer_id: offerId });
+  return at;
+}
+
+/** GET .../message?lang=: the reply's message before it is marked sent; the walked reply's, with `offered`, once it is. */
+export async function getBuyerMessage(offerId: string, counterId: string, lang: "en" | "zh"): Promise<BuyerMessageView> {
+  await delay();
+  messageOffer(offerId);
+  const rec = await buyerMessage.buyerMessageRecording();
+  const at = load().buyerMessage;
+  if (at?.stage === "awaiting" && counterId === at.counterId) return buyerMessage.awaitingMessage(rec, at, lang);
+  const found = rec.message[counterId]?.[lang];
+  if (!found) throw new ApiError(409, "COUNTER_CHANGED", { code: "COUNTER_CHANGED", offer_id: offerId, reevaluate: true, counters: [] });
+  return found;
+}
+
+/**
+ * POST .../offered: refused with the recorded 409 MESSAGE_CHANGED when the hash is not the message's (or by the test hook), with the recorded COUNTER_CHANGED by the bound-send hook; else the
+ * walk waits for the buyer (the recordings are of the reply FLOW recommends, whichever reply is marked). A second mark changes nothing.
+ */
+export async function markOffered(offerId: string, counterId: string, req: OfferedRequest): Promise<OfferedResult> {
+  await delay();
+  messageOffer(offerId);
+  const rec = await buyerMessage.buyerMessageRecording();
+  const lang = getLang();
+  const story = counterChangedStory();
+  if (story) throw refusal({ ...cast<Record<"replaced" | "moved", CounterChangedDetail>>(counterChangedJson)[story], offer_id: offerId });
+  const shown = rec.message[counterId]?.[req.lang];
+  if (buyerMessage.takeHook(buyerMessage.MESSAGE_CHANGED_KEY) || !shown || shown.message_hash !== req.message_hash) throw refusal(rec.message_changed[lang]);
+  const s = load();
+  if (!s.buyerMessage) {
+    s.buyerMessage = { offerId, counterId, lang: req.lang, stage: "awaiting" };
+    save();
+  }
+  return rec.offered[lang];
+}
+
+/** POST .../buyer-accepted: the agreement the buyer's yes makes (the recording of the walked reply). */
+export async function buyerAccepted(offerId: string, counterId: string, req: BuyerAcceptedRequest): Promise<BuyerAcceptedResult> {
+  void req;
+  await delay();
+  const at = notOffered(offerId, counterId);
+  const rec = await buyerMessage.buyerMessageRecording();
+  load().buyerMessage = { ...at, stage: "accepted" };
+  save();
+  return rec.buyer_accepted[getLang()];
+}
+
+/**
+ * POST /offers/{id}/buyer-reply: the server compiles the text and the mock cannot, so it chooses between its two recordings by whether the text holds a figure (the recorded reply has terms
+ * with figures; the recorded refusal, NO_TERMS_IN_REPLY, has none). The reply's own request joins the offers the mock holds.
+ */
+export async function buyerReply(offerId: string, req: BuyerReplyRequest): Promise<BuyerReplyResult> {
+  await delay();
+  const at = notOffered(offerId, req.counter_id);
+  const rec = await buyerMessage.buyerMessageRecording();
+  const lang = getLang();
+  if (!/\d/.test(req.text)) throw refusal(rec.no_terms[lang]);
+  const out = rec.buyer_reply[lang];
+  const s = load();
+  s.buyerMessage = { ...at, stage: "replied" };
+  s.offers[out.reply_offer_id] = rec.replied[lang].reply_offer;
+  save();
+  return out;
 }
 
 const APPROVAL_SEEDS = cast<Record<"apply_loan" | "apply_loan_approved" | "apply_loan_rejected", ApprovalView>>(approvalsSeed);
@@ -936,6 +1040,8 @@ export async function getWorklist(lang: "en" | "zh"): Promise<WorklistView | nul
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
+  const at = load().buyerMessage;
+  if (at) return buyerMessage.recordedReads(await buyerMessage.buyerMessageRecording(), at, lang).worklist;
   return homeV2.mockWorklist(homeV2Point(), lang);
 }
 
@@ -1283,6 +1389,8 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
 // The recordings are English: the mock takes `lang` as the live client does and answers the same recording (re-recorded, not translated by hand).
 export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {}): Promise<DealsView> {
   await delay();
+  const at = load().buyerMessage;
+  if (at) return buyerMessage.recordedReads(await buyerMessage.buyerMessageRecording(), at, lang).deals;
   const view = documents.mockDeals(openOfferStage());
   // Opened with `customer` or `invoice`, the server adds `open_offer.context.back`: the recording of that read (deals_day0_evaluated_back.json) lends its words to the open offer.
   if (ctx.customer || ctx.invoice) {
@@ -1308,7 +1416,7 @@ export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {})
 function openOfferStage(): "received" | "evaluated" | null {
   const s = load();
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE")?.view.offer.offer_id;
-  if (!ex01 || !s.offers[ex01] || s.negotiated[ex01]) return null;
+  if (!ex01 || !s.offers[ex01] || s.negotiated[ex01] || s.buyerMessage) return null;
   return s.evaluated.includes(ex01) ? "evaluated" : "received";
 }
 
