@@ -1533,6 +1533,11 @@ class Executor:
         if op.amount_fen != schedule.price_fen:
             raise _refuse(Code.TERMS_CHANGED, f"The amount {fmt_yuan(op.amount_fen)} is not the schedule's total "
                           f"{fmt_yuan(schedule.price_fen)}", document_id=rec.id)
+        bad = next((p for p in schedule.payments if p.amount_fen <= 0), None)
+        if bad is not None:  # CAPEX-1, defence in depth: a purchase books only money going out
+            raise _refuse(Code.PRECONDITION_FAILED, f"Payment {bad.n} of the schedule is {fmt_yuan(bad.amount_fen)}: a purchase "
+                          f"pays the vendor, it never brings money in. Nothing committed", document_id=rec.id,
+                          refusal="PAYMENT_NOT_POSITIVE", payment=bad.n)
         flows = [CashFlow(id=f"{prefix}{p.n}", day=p.day, amount_fen=-p.amount_fen, kind=FlowKind.CAPEX,
                           label=f"{rec.title}: {p.label}", counterparty_id=rec.counterparty_id)
                  for p in schedule.payments]

@@ -109,6 +109,7 @@ class ScheduleResult(Contract):
     derivable: bool
     schedule: PaymentSchedule | None = None
     reasons: list[str] = Field(default_factory=list)  # why it is not derivable, one sentence each
+    reasons_zh: list[str] = Field(default_factory=list)  # the same reasons in Chinese where the code has them (CAPEX-1)
     needs: list[str] = Field(default_factory=list)  # timeline fields the owner must give ("delivery_day")
 
 
@@ -235,6 +236,40 @@ def _timeline_order(t: Timeline, days: _Days) -> list[str]:
     return out
 
 
+def _unsafe_rates(terms: list[ContractTerm]) -> list[tuple[str, str]]:
+    """CAPEX-1: (English, Chinese) reasons for every rate the schedule is built from that cannot be a share of a payment.
+    A milestone share must be more than 0% and at most 100% of the price; a retention must be at most 100% and not
+    negative; an early-payment discount must be at least 0% and below 100% (a discount of the whole payment is no
+    discount). Anything else is read as a mistake in the reading, and no schedule is drawn from it: a rate above 100%
+    would otherwise turn a payment into money coming in."""
+    out: list[tuple[str, str]] = []
+
+    def pct(bp: int) -> str:
+        return fmt_pct(Fraction(bp, BP_DENOM))
+
+    for t in terms:
+        if t.rate_bp is None:
+            continue
+        where = f"clause {t.clause}" if t.clause else "a clause"
+        where_zh = f"第 {t.clause} 条" if t.clause else "某一条款"
+        rate = pct(t.rate_bp)
+        end = "so no payment schedule is drawn from this contract. Check the reading of that clause."
+        end_zh = "因此不会据此生成付款计划。请核对该条款的解读。"
+        if t.field == F.MILESTONE and not 0 < t.rate_bp <= BP_DENOM:
+            en = f"The payment share of {rate} ({where}) is not between 0% and 100% of the price, {end}"
+            zh = f"{where_zh}的付款比例 {rate} 不在合同价款的 0% 至 100% 之间，{end_zh}"
+        elif t.field == F.RETENTION and not 0 <= t.rate_bp <= BP_DENOM:
+            en = f"The retention of {rate} ({where}) is more than 100% of the price, {end}"
+            zh = f"{where_zh}的质保金 {rate} 超过合同价款的 100%，{end_zh}"
+        elif t.field == F.EARLY_PAYMENT and not 0 <= t.rate_bp < BP_DENOM:
+            en = f"The early-payment discount of {rate} ({where}) is not below 100% of the payment, {end}"
+            zh = f"{where_zh}的提前付款折扣 {rate} 不低于该笔付款的 100%，{end_zh}"
+        else:
+            continue
+        out.append((en, zh))
+    return out
+
+
 def _amounts(price: int, shares: list[int]) -> list[int]:
     """Each share of the price rounded once; the last (in the given order) carries the remainder."""
     out = [post(Fraction(price * s, BP_DENOM)) for s in shares[:-1]]
@@ -251,13 +286,16 @@ def schedule_hash(price_fen: int, payments: list[ScheduledPayment]) -> str:
 def derive_schedule(contract: CompiledContract, timeline: Timeline, *, anchor_iso: str, today: int) -> ScheduleResult:
     """The payment schedule of a capex contract on the owner's timeline, or why it cannot be derived."""
 
-    def no(*reasons: str, needs: list[str] | None = None) -> ScheduleResult:
-        return ScheduleResult(derivable=False, reasons=list(reasons), needs=needs or [])
+    def no(*reasons: str, needs: list[str] | None = None, zh: list[str] | None = None) -> ScheduleResult:
+        return ScheduleResult(derivable=False, reasons=list(reasons), reasons_zh=zh or [], needs=needs or [])
 
     if contract.status != CompileStatus.COMPILED:
         return no(f"The reading is {contract.status.value.lower().replace('_', ' ')}: a schedule is derived only from a "
                   f"complete reading.")
     terms = contract.terms
+    unsafe = _unsafe_rates(terms)
+    if unsafe:  # CAPEX-1: before anything is derived from a rate that cannot be a share of a payment
+        return no(*[en for en, _ in unsafe], zh=[zh for _, zh in unsafe])
     prices = _one(terms, F.PRICE)
     if len(prices) != 1 or prices[0].amount_fen is None:
         return no("The contract states no single price.")
@@ -374,6 +412,10 @@ def derive_schedule(contract: CompiledContract, timeline: Timeline, *, anchor_is
         clause=x[6].clause, quote=x[6].span.text, day_formula=x[7], owner_dated=x[8])
         for i, (x, a) in enumerate(zip(dated, amounts, strict=True))]
     assert sum(p.amount_fen for p in payments) == price  # the remainder rule; INVARIANT 9
+    if any(p.amount_fen <= 0 for p in payments):  # CAPEX-1: every payment is money going out; none is nil or coming in
+        return no("A payment in the schedule would be nil or money coming in to you, so no payment schedule is drawn "
+                  "from this contract. Check the reading of its shares and retention.",
+                  zh=["计划中有一笔付款为零或是流入您的资金，因此不会据此生成付款计划。请核对合同比例和质保金的解读。"])
 
     option, note = _early_pay(terms, payments, days)
     if any(p.owner_dated for p in payments):
@@ -452,6 +494,8 @@ def early_schedule(schedule: PaymentSchedule) -> PaymentSchedule | None:
     payments = [p.model_copy(update={"n": i + 1}) for i, p in enumerate(rows)]
     price = schedule.price_fen - o.discount_fen
     assert sum(p.amount_fen for p in payments) == price
+    if any(p.amount_fen <= 0 for p in payments):  # CAPEX-1: a discount never turns a payment into money coming in
+        return None
     taken = (f"The {fmt_pct(Fraction(o.rate_bp, BP_DENOM))} early-payment discount is taken: "
              f"{fmt_yuan(o.discount_fen)} off, paid by day {o.pay_by_day}.")
     return PaymentSchedule(price_fen=price, payments=payments, early_pay=None,

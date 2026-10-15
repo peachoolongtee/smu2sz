@@ -212,7 +212,7 @@ def post_capex_contract_commit(document_id: str, body: ContractCommitIn) -> dict
         derived = derive_schedule(record.contract, body.timeline, anchor_iso=state.as_of, today=state.as_of_day)
         if not derived.derivable or derived.schedule is None:
             raise HTTPException(422, {"code": "NO_SCHEDULE", "message": " ".join(derived.reasons),
-                                      "needs": derived.needs})
+                                      "message_zh": " ".join(derived.reasons_zh) or None, "needs": derived.needs})
         schedule = early_schedule(derived.schedule) if body.take_early_pay else derived.schedule
         if schedule is None:
             raise HTTPException(422, {"code": "NO_EARLY_PAYMENT",
