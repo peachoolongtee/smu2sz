@@ -470,7 +470,10 @@ test("cards: a page has one decision card, and a chosen row, invoice or path is 
   // Deals takes the owner's mockup look (a lavender row with a purple edge for the selection); the page raises no decision card.
   await checkedDeal(page);
   expect(await decisionCards()).toBe(0);
-  await expect(page.locator('[data-testid="queue-row"][data-selected="true"] > div[aria-current="true"]')).toBeVisible();
+  // The deal is its own page, so the list is hidden while it is open; the open deal's row is still the one selected style there (the lavender tint), and it is what All deals comes back to.
+  const chosen = page.locator('[data-testid="queue-row"][data-selected="true"] > div[aria-current="true"]');
+  await expect(chosen).toHaveCount(1);
+  expect(await chosen.evaluate((el) => getComputedStyle(el).backgroundColor), "a tinted row").not.toBe("rgba(0, 0, 0, 0)");
 });
 
 test("rail: a bad stored value cannot skip the language, and the folds open at once under reduced motion", async ({ page }) => {

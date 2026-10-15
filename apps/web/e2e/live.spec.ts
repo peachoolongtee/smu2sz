@@ -654,6 +654,8 @@ test("Deals: the negotiation is the API's, in its order, with the costs it price
   const post = ownerPost(request);
   await post("/demo/reset", {});
   await checkedDeal(page);
+  // The heading is the buyer's ask from the first read, so the check is done when the recommendation is there.
+  await page.getByTestId("queue-recommends").waitFor();
   await expect(page.getByTestId("queue-heading")).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   // Every sentence below is the server's: the ask in the buyer's words, the recommendation and its reason, the costs with their basis.
   await expect(page.getByTestId("queue-heading")).toContainText("early settlement of ¥420,000.00 at 1.20%");

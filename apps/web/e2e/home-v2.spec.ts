@@ -44,8 +44,11 @@ async function open(page: Page, { lang = "en", offer = false }: { lang?: Lang; o
     await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
     await page.getByTestId("queue-check-button").click();
     // The queue names the offer once FLOW has read it: only then is the offer open on the books the Home reads.
-    const headline = evaluated.deals.find((d) => d.open_offer)!.open_offer!.headline_short;
-    await expect(page.getByTestId("queue-heading")).toHaveText(headline);
+    // The deal's name is the buyer's ask in words (the server's `asks_text`), not the verdict's short heading.
+    const asks = evaluated.deals.find((d) => d.open_offer)!.open_offer!.asks_text;
+    // The title is the ask from the first read, so the check is done when the recommendation is there.
+    await page.getByTestId("queue-recommends").waitFor();
+    await expect(page.getByTestId("queue-heading")).toContainText(asks);
   }
   await page.goto("/");
   await expect(page.getByTestId("home-v2")).toBeVisible();
