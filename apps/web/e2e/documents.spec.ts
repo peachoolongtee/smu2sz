@@ -327,6 +327,8 @@ test("the decision is irreversible and says so; the controls are named, describe
 test("on a phone the decision controls are inside the first screen, above the tab bar, however long the terms list", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await readAgain(page, SUPPLY);
+  // The page brings the new reading into view 600 ms after the read: wait for that, or it lands after the jump below on a slow runner.
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   // The top of the page (the stylesheet scrolls smoothly; this jumps).
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);

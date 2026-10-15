@@ -58,8 +58,10 @@ function Documents() {
       const view = await submitDocument(req);
       bump();
       open(view.id);
-      // The answer to the drop: bring the review into view once it has rendered, its header, the decision and the deal picture in that order.
-      window.setTimeout(() => document.getElementById("doc-review")?.scrollIntoView({ behavior: "smooth", block: "start" }), 600);
+      // The answer to the drop: bring the review into view once it has rendered, its header, the decision and the deal picture in that order
+      // (at once for a reader who asked for reduced motion).
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      window.setTimeout(() => document.getElementById("doc-review")?.scrollIntoView({ behavior, block: "start" }), 600);
     } catch (e) {
       setError(e instanceof Error ? e : new Error(String(e)));
     }
