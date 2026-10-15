@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode, type RefObject } from "react";
 import { FlowLines } from "@/components/business/flow-lines";
-import { useSignedUp } from "@/lib/account";
+import { useHasAccount } from "@/lib/account";
 import type { DictKey } from "@/lib/dictionary";
 import { setLang, useI18n } from "@/lib/i18n";
 import s from "./landing.module.css";
@@ -33,7 +33,7 @@ const BADGES: { key: DictKey; icon: ReactNode }[] = [
   { key: "landing.b6", icon: <path d="M12 3a9 9 0 100 18 9 9 0 000-18zm-4 9h8M12 8v8" /> },
 ];
 
-/** Whether the visitor has signed up, read once for the whole page (useSignedUp) and shared with every button. */
+/** Whether the visitor has an account (signed in, now or before, on this browser), read once for the whole page and shared with every button. */
 const SignedUp = createContext<boolean | null>(null);
 
 const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -192,7 +192,7 @@ function Features() {
 export function Landing() {
   const { t } = useI18n();
   const root = useRef<HTMLDivElement>(null);
-  const signedUp = useSignedUp();
+  const signedUp = useHasAccount();
   useReveal(root);
   // The first page a visitor sees: once seen, "/" opens Home for the rest of this tab (the redirect is in lib/pre-hydration.ts).
   useEffect(() => {

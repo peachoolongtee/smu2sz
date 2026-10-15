@@ -1,11 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { getSetupStatus } from "./api";
-import { rememberedSignedUp } from "./account-flag";
+import { rememberedAccount } from "./account-flag";
 import { useAuth } from "./auth";
-import { useI18n } from "./i18n";
-import { useAsync } from "./use-async";
 
 const subscribe = (onChange: () => void) => {
   window.addEventListener("storage", onChange);
@@ -13,18 +10,13 @@ const subscribe = (onChange: () => void) => {
 };
 
 /**
- * Whether the visitor has signed up: their own books are open. When this tab is signed in the server says so (`GET /setup/status`);
- * otherwise the server is not asked at all (an unsigned read would be a refused credential, which the server records as a security
- * event) and this browser's memory of the setup opening the books decides. The landing page shows "Access FLOW" for a signed-up visitor
- * and "Join FLOW now!" for everyone else. Null while rendering on the server (not known yet), so no wrong button flashes. Call it once
- * per page and pass the answer down: each call is its own read.
+ * Whether the visitor has an account: signed in in this tab, or signed in (or set up their books) on this browser before. The landing
+ * page shows "Access FLOW" for them and "Join FLOW now!" with "Preview" for everyone else. Nothing is asked of the server. Null while
+ * rendering on the server (not known yet), so no wrong button flashes.
  */
-export function useSignedUp(): boolean | null {
-  const { lang } = useI18n();
+export function useHasAccount(): boolean | null {
   const { token } = useAuth();
-  const status = useAsync(() => (token ? getSetupStatus(lang).catch(() => null) : Promise.resolve(null)), [token, lang]);
-  const remembered = useSyncExternalStore<boolean | null>(subscribe, rememberedSignedUp, () => null);
+  const remembered = useSyncExternalStore<boolean | null>(subscribe, rememberedAccount, () => null);
   if (remembered === null) return null;
-  if (status.data) return status.data.books === "own";
-  return remembered;
+  return Boolean(token) || remembered;
 }
