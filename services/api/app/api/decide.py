@@ -41,6 +41,7 @@ from app.api.presentation import (
     t,
     with_roles,
 )
+from app.api.refusal import refusal_plan, runnable
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import owner_verdict_extras, trajectory_view
 from app.api.workspace import build as build_workspace
@@ -346,17 +347,7 @@ def _ops_for_plan(rt: Runtime, actions: list[FundingAction], key: str) -> list[d
     return results
 
 
-def _runnable(gap_plan) -> str | None:
-    """Why the gap plan is not run today ('' never): the router's own "cannot run today" reason, or a leg no
-    operation can run. None when every leg can be sent."""
-    if not gap_plan.actions:
-        return None
-    if not gap_plan.executable_now:
-        return gap_plan.not_executable_reason or "it cannot run today"
-    if any(a.kind not in (FundingActionKind.DRAW, FundingActionKind.FINANCE_INVOICE) or
-           (a.kind == FundingActionKind.FINANCE_INVOICE and not a.receivable_id) for a in gap_plan.actions):
-        return "it relies on a step no operation can run (a buyer paying early or a bill discount)"
-    return None
+_runnable = runnable  # the refused send's check, shared with the picture (`app.api.refusal`)
 
 
 def _counter_changed(rt: Runtime, offer: CompiledOffer, verdict, state_version: int, why: str, lang: str = "en") -> HTTPException:
@@ -512,8 +503,7 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
                           f"{accepted_label or '还价'}已被接受，协议已记录")
             funded_when = _t(lang, "the remaining gap is funded.", "其余缺口已融资。")
         else:
-            books = current_books(state, rt.store.commitments())
-            gap_plan = plan(books.state, books.with_([]), mandate)
+            gap_plan = refusal_plan(state, rt.store.commitments(), mandate)
             message = "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap."
             head_when = _t(lang, "No deal after the buyer's replies", "买方回复后未能成交")
             funded_when = _t(lang, "the near-term gap is funded another way.", "近期缺口将通过其他方式融资。")

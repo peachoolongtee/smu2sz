@@ -16,6 +16,11 @@ from app.strategy.net import NetAtCollection
 BP_FULL = 10_000
 
 
+def asked_label(lang: Lang) -> str:
+    """The one name of the buyer's path wherever the picture and its reads label it: accepting the buyer's request as it stands."""
+    return t(lang, "Accept their request", "接受对方的要求")
+
+
 def buyer_short(name: str) -> str:
     """The name an owner says aloud: its first word ("Foshan Home Retail Co." -> "Foshan"); a one-word name stays whole."""
     words = name.replace(",", " ").split()

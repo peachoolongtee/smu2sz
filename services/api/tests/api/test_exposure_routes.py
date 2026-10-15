@@ -135,8 +135,8 @@ def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id:
     verdict = api.post(f"/offers/{offer_id}/evaluate", json=EX01).json()
     body = api.get(f"/offers/{offer_id}/exposure?response=counter:0").json()
     keys = _by_label(body)
-    assert list(keys) == ["As they asked", "Option A", "Option B"]
-    assert keys["As they asked"] == "asked" and [keys["Option A"], keys["Option B"]] == [c["id"] for c in verdict["counters"]]
+    assert list(keys) == ["Accept their request", "Option A", "Option B"]
+    assert keys["Accept their request"] == "asked" and [keys["Option A"], keys["Option B"]] == [c["id"] for c in verdict["counters"]]
     a, b = keys["Option A"], keys["Option B"]
     assert body["partial"] is False and body["economics"] is None and body["loss"] is None and body["spare_read"] is True
     assert body["lead"] == a and set(body["capacity"]) - {"do_nothing"} == set(body["stress"]["paths"]) - {"do_nothing"} == set(keys.values())
@@ -327,9 +327,9 @@ def test_a_refusal_names_the_package_when_the_package_causes_it() -> None:
         return SpareCapacity(shape="S1", criterion="R-TODAY", step_fen=100_000, x_star_fen=x, plan_at_x=None, plan_next=None,
                              binding_reason="", shape_text="", refused_text=None, ceiling_fen=0, evaluations=0, scanned=False, seconds=0)
 
-    asked = _Path("asked", "asked", "As they asked", "Accepting as asked", "按对方要求接受后", None)
+    asked = _Path("asked", "asked", "Accept their request", "accepting their request", "接受对方的要求后", None)
     reply = _Path("C1", "reply", "Option A", "Option A", "采用Option A 后", None)
-    assert _refused_text(asked, spare(8_100_000), "en") == "none: accepting as asked would leave the books needing you or a new facility"
+    assert _refused_text(asked, spare(8_100_000), "en") == "none: accepting their request would leave the books needing you or a new facility"
     assert _refused_text(reply, spare(8_100_000), "en") == "none: Option A would leave the books needing you or a new facility"
     assert _refused_text(reply, spare(8_100_000), "zh") == "无：采用Option A 后，账面将需要您出面或新增融资额度"
     assert _refused_text(reply, spare(None), "en") == "none: today's books already need the owner or a new facility"  # not the package's doing

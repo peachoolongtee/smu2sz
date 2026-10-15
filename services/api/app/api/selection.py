@@ -10,7 +10,7 @@ A key the page can honour is echoed. The customer is also derived when a decisio
 page cannot honour is echoed as null and `irrelevant_text` says so in one sentence per key and asks the question the owner has to answer
 ("Which negotiation?"): an unknown customer, decision or invoice; an invoice or a decision of another customer; a decision that is not the
 one the page is about; a path that is not a reply of the decision; a scenario without a decision. Nothing is ever substituted for it.
-`back` follows `from` (`customer`, `deal`, `invoice`, or a plain page: `home`, `deals`, `receivables`, `activity`, `cash`, `approvals`) when
+`back` follows `from` (`customer`, `deal`, `invoice`, or a plain page: `home`, `deals`, `receivables`, `activity`, `cash`, `approvals`, `demo`) when
 the selections support that target, else the page's own default (`customer` for the Deals reads); a target that is the page itself is not a
 way back. A part that names another customer's record is dropped from every link, never echoed.
 
@@ -39,7 +39,8 @@ ASKED, DO_NOTHING = "asked", "do_nothing"
 # the pages `from` may name without a record behind them: (label en, label zh, href)
 _PLAIN = {"home": ("Back to Home", "返回首页", "/"), "deals": ("Back to Deals", "返回交易", "/deals"),
           "receivables": ("Back to the invoices", "返回发票", "/receivables"), "activity": ("Back to Activity", "返回动态", "/activity"),
-          "cash": ("Back to Cash", "返回现金", "/cash"), "approvals": ("Back to Approvals", "返回批准事项", "/approvals")}
+          "cash": ("Back to Cash", "返回现金", "/cash"), "approvals": ("Back to Approvals", "返回批准事项", "/approvals"),
+          "demo": ("Back to the Demo", "返回演示", "/demo")}
 # what `from` names that is the page itself, per page: never offered as a way back
 _OWN = {"deals": {"deal", "deals"}, "offer": {"deal", "deals"}, "picture": {"deal", "deals"}, "customer": {"customer"},
         "receivables": {"invoice", "receivables"}, "decision": set(), "activity": {"activity"}}

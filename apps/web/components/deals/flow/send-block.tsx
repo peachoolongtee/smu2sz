@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Disclosure } from "@/components/business/kit";
 import { Button, Callout, ErrorState, LoadingBlock, Segmented, SlowNotice } from "@/components/ui";
@@ -13,7 +13,8 @@ import { bump, recordNegotiation, useDemo } from "@/lib/demo-store";
 import { errorText } from "@/lib/error-text";
 import { isTimeout } from "@/lib/errors";
 import { CostTable } from "./cost-table";
-import { quietLink } from "./flow-parts";
+import { StateWord } from "@/components/ui/state-word";
+import { AUTH_TONE, quietLink } from "./flow-parts";
 import { TermsTable } from "./terms-table";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
@@ -41,6 +42,9 @@ export function SendBlock({
   recordHref,
   onSent,
   onBusy,
+  openSignal = 0,
+  hideTrigger = false,
+  onReviewing,
   children,
 }: {
   offerId: string;
@@ -53,6 +57,12 @@ export function SendBlock({
   onSent: (n: NegotiationView) => void;
   /** Told whenever a send or a check is in flight: the page holds the selection then. */
   onBusy: (busy: boolean) => void;
+  /** The deal header's [Review the counter] opens the review from outside: each press raises this number. */
+  openSignal?: number;
+  /** The review button is the header's, not this block's. */
+  hideTrigger?: boolean;
+  /** Told whether the review is open (the header's button gives way to the commit button while it is). */
+  onReviewing?: (open: boolean) => void;
   /** The other buttons of the decision level, beside the review button. */
   children?: ReactNode;
 }) {
@@ -75,6 +85,17 @@ export function SendBlock({
   const [slow, setSlow] = useState(false);
   const [rechecked, setRechecked] = useState(false);
   const inFlight = sending || checking || preparing;
+  useEffect(() => {
+    onReviewing?.(reviewing);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reports the state, not the callback
+  }, [reviewing]);
+  const lastSignal = useRef(openSignal);
+  useEffect(() => {
+    if (openSignal === lastSignal.current) return;
+    lastSignal.current = openSignal;
+    void open();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per press
+  }, [openSignal]);
   useEffect(() => {
     onBusy(inFlight);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reports the flight, not the callback
@@ -133,14 +154,16 @@ export function SendBlock({
 
   return (
     <div className="space-y-3">
-      <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
-        {reviewing ? null : (
-          <Button variant="primary" aria-expanded={false} aria-controls="counters" onClick={() => void open()} data-testid="queue-review-open">
-            {t("dq.review")}
-          </Button>
-        )}
-        {children}
-      </ActionGroup>
+      {hideTrigger ? null : (
+        <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
+          {reviewing ? null : (
+            <Button variant="primary" aria-expanded={false} aria-controls="counters" onClick={() => void open()} data-testid="queue-review-open">
+              {t("dq.review")}
+            </Button>
+          )}
+          {children}
+        </ActionGroup>
+      )}
       {changed ? (
         <div role="alert" data-testid="deal-counter-changed" data-reason={changed.reason}>
           <Callout tone="warn" title={t("biz.deals.changed.title")}>
@@ -158,14 +181,20 @@ export function SendBlock({
               <h3 id={`${uid}-receipt-title`} className="font-display text-base font-extrabold leading-snug text-ink">
                 {t("receipt.title.send", { label: path.label })}
               </h3>
+              {path.authority_short_text ? (
+                <p className="m-0" data-testid="send-authority" data-authority={path.authority ?? ""}>
+                  <StateWord tone={AUTH_TONE[path.authority ?? ""] ?? "neutral"}>{path.authority_short_text}</StateWord>
+                </p>
+              ) : null}
+              {/* The cost comes before the statements: one of them points back to this total ("already inside the ... above"). */}
+              <div data-testid="send-cost">
+                <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.cost.title")}</h4>
+                <CostTable paths={[path]} heads={[path.label]} caption={t("deals.cost.title")} testId="send-cost-table" />
+              </div>
               <Statements receipt={receipt} />
               <div data-testid="send-terms">
                 <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.review.terms")}</h4>
                 <TermsTable paths={[path]} heads={[path.label]} caption={t("deals.review.terms")} testId="send-terms-table" />
-              </div>
-              <div data-testid="send-cost">
-                <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.cost.title")}</h4>
-                <CostTable paths={[path]} heads={[path.label]} caption={t("deals.cost.title")} testId="send-cost-table" />
               </div>
             </section>
           ) : verdict ? (
@@ -178,6 +207,12 @@ export function SendBlock({
           {verdict && !receipt ? null : (
             <div className="space-y-2" data-testid="deal-send-confirm-box">
               <p className="text-sm text-ink-2">{t("biz.deals.send.confirmBody")}</p>
+              {/* What happens if the buyer refuses this reply: the server's sentence, above the button that sends it (nothing is said when the server wrote none). */}
+              {path.if_refused_text ? (
+                <p className="max-w-[68ch] rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-[15px] leading-snug text-ink" data-testid="deal-if-refused">
+                  {path.if_refused_text}
+                </p>
+              ) : null}
               {/* The simulated buyer's lean is the Demo's control; Business sends with the cooperative buyer and says the reply is simulated. */}
               {mode === "demo" ? (
                 <>
@@ -207,7 +242,7 @@ export function SendBlock({
             {/* No server receipt for this reply: no Send (a send the owner cannot read first is not offered). */}
             {verdict && !receipt ? null : (
               <Button variant="primary" loading={sending} disabled={inFlight || !verdict} onClick={() => void send()} data-testid="deal-send">
-                {sending ? t("biz.deals.sending") : t("deals.send.go", { label: path.label, buyer })}
+                {sending ? t("biz.deals.sending") : t(path.needs_owner ? "deals.send.approve" : "deals.send.go", { label: path.label, buyer })}
               </Button>
             )}
             <button type="button" onClick={() => setReviewing(false)} disabled={inFlight} className={`${quietLink} disabled:opacity-50`} data-testid="queue-review-close">

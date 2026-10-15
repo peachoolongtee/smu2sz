@@ -528,6 +528,17 @@ def _evaluation(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | 
             "evaluated_when": when_text(row.day, ctx.today, lang) if row is not None else t(lang, "date not recorded", "日期未记录")}
 
 
+def _net_label(ctx: Context, eco: Any, lang: str) -> str:
+    """What `net_display` measures, said honestly: the cost of the terms over the forward horizon, priced at the rate of the source that prices them."""
+    from app.api.workspace import _months
+
+    months = _months(ctx.mandate.forward_concession_horizon_days)
+    bank = facility_name(ctx.state, eco.basis_facility_id)
+    return (t(lang, f"Forward cost beyond the one-off, over {months} months, priced at the {bank} rate",
+              f"一次性成本之外的远期成本，{months} 个月内，按{bank}的利率计算") if bank
+            else t(lang, f"Forward cost beyond the one-off, over {months} months", f"一次性成本之外的远期成本，{months} 个月内"))
+
+
 def _response(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | None:
     v = ds.verdict
     if v is None:
@@ -550,7 +561,12 @@ def _response(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | No
                                "forward_value_display": fmt_yuan(eco.forward_value_fen),
                                "funding_cost_display": fmt_yuan(eco.funding_cost_fen),
                                "offset_display": fmt_yuan(-eco.offset_fen), "net_display": fmt_yuan(eco.net_fen),
-                               "net_fen": eco.net_fen, "basis_facility_name": facility_name(ctx.state, eco.basis_facility_id) or None}
+                               "net_fen": eco.net_fen, "basis_facility_name": facility_name(ctx.state, eco.basis_facility_id) or None,
+                               # `net` is the 12-month value of the terms priced at the committed marginal source, not the cost quoted when sent: an early
+                               # payment's discount and the funding of the gap are valued apart, so a counter quoted at ¥3,027.77 can carry a net of ¥0
+                               "quoted_cost_display": fmt_yuan(eco.supplier_cost_fen),
+                               "quoted_cost_label_text": t(lang, "Cost quoted when sent (one-off)", "发送时报出的成本（一次性）"),
+                               "net_label_text": _net_label(ctx, eco, lang)}
                               if eco is not None else None),
                 "funding_blocked": s.funding_blocked}
     elif ds.commitment is not None and not ds.accepted_as_asked:
@@ -757,7 +773,9 @@ def get_decision(decision_id: str, lang: str = "en", *, sel: Annotated[Selection
         subject = ds.offer if ds.offer is not None else ds.commitment
         context = build_context(rt, lang, sel, page="decision", buyer=subject.counterparty_id if subject is not None else None,
                                 deal=decision_id)
-        return {**decision_detail(ctx, ds, inp, lang), "context": context}
+        from app.api.lifecycle import workspace_words  # lifecycle reads the tracker, which reads this module
+
+        return {**decision_detail(ctx, ds, inp, lang), "context": context, **(workspace_words(rt, offer_id_of(decision_id), lang) if offer_id_of(decision_id) else {})}
 
 
 __all__ = ["Context", "Reconciled", "decision_detail", "decision_summary", "family_of", "load_context", "record_fact", "router"]

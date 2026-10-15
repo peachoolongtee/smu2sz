@@ -108,7 +108,7 @@ test("a quiet day: the sidebar carries no counts", async ({ page }) => {
 test("an offer waiting: the sidebar counts the deal, and Deals leads with FLOW's read after the check", async ({ page }) => {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
+  await expect(page.getByTestId("deals-inbox")).toHaveCount(0); // the buyer's messages are the deal's Messages tab
   await expect(page.getByTestId("next-step")).toBeVisible();
   const deal = page.url(); // the address is the selection
   await page.goto("/");
@@ -120,7 +120,7 @@ test("an offer waiting: the sidebar counts the deal, and Deals leads with FLOW's
   // After FLOW's check: the read, the cost in the bad tone (it is over the owner's limit), the replies ready.
   await page.goto(deal);
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   await page.goto("/");
   expect(await proseOf(page)).not.toMatch(/\bOFF-|\bVER-/);
 });

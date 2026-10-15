@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from collections.abc import Mapping
 from typing import Annotated, Literal
 
@@ -21,6 +22,14 @@ from app.domain.models import CompiledOffer, SourceDocument
 from app.persistence import OfferVersionConflict
 
 router = APIRouter()
+
+# What POST /offers accepts from anyone (security register SEC-17): the compiler's time grows faster than the text, so one unbounded
+# anonymous request could hold a worker for minutes. A buyer's message is short (the fixtures: at most 247 characters, 2 documents);
+# the cap per document matches the one POST /nl puts on a turn. Contracts arrive through POST /documents, term sheets through
+# POST /facilities/compile; neither is bounded here.
+MAX_DOCUMENTS = 5
+MAX_DOCUMENT_CHARS = 4000
+BUYER_CHANNELS = frozenset({"chat", "email", "portal", "attachment"})  # SEC-18: only the owner files on the owner's own channels
 
 
 class OfferIn(BaseModel):
@@ -51,7 +60,7 @@ def enforce_intake_cap(rt: Runtime, route: str, claimed: str | None) -> None:
     with rt.lock:
         if rt.take_intake_slot():
             return
-        key = f"intake-capped {route} {claimed} {rt.day} {len(rt.store.security_events())}"
+        key = f"intake-capped {route} {claimed} {rt.day} {uuid.uuid4().hex}"
         rt.store.add_security_event(SecurityEvent(
             id="SEC-INTAKE-" + hashlib.sha256(key.encode()).hexdigest()[:12], day=rt.day,
             kind=SecurityEventKind.PRIVILEGE_ESCALATION, counterparty_id=claimed,
@@ -66,9 +75,34 @@ def post_offer(body: OfferIn, x_owner_token: str | None = Header(default=None),
                x_agent_key: str | None = Header(default=None),
                x_counterparty_key: str | None = Header(default=None), lang: Literal["en", "zh"] = "en") -> dict:
     rt = get_runtime()
-    if not (rt.is_owner(x_owner_token) or is_agent(x_agent_key) or counterparty_for_key(x_counterparty_key)):
+    owner = rt.is_owner(x_owner_token)
+    bound = counterparty_for_key(x_counterparty_key)
+    if body.documents is not None:
+        _bounded(body.documents, owner=owner)
+    if bound is not None and not owner:
+        # SEC-18: the sender is whoever the channel key says (as on POST /nl), never whoever the body claims
+        if body.counterparty_id is not None and body.counterparty_id != bound:
+            raise HTTPException(403, {"code": "COUNTERPARTY_MISMATCH", "message": "the channel key does not belong to the stated counterparty"})
+        if body.fixture_id is None:
+            body = body.model_copy(update={"counterparty_id": bound})
+    if not (owner or is_agent(x_agent_key) or bound):
         enforce_intake_cap(rt, "POST /offers", body.counterparty_id)
     return intake_offer(rt, body, lang)
+
+
+def _bounded(documents: list[dict], *, owner: bool) -> None:
+    """SEC-17 and SEC-18: refuse, before anything is compiled, a submission too large to read or written on a channel the caller does not own."""
+    if len(documents) > MAX_DOCUMENTS:
+        raise HTTPException(413, {"code": "TOO_MANY_DOCUMENTS", "limit": MAX_DOCUMENTS,
+                                  "message": f"at most {MAX_DOCUMENTS} documents per submission"})
+    for d in documents:
+        text = d.get("text") if isinstance(d, dict) else None
+        if isinstance(text, str) and len(text) > MAX_DOCUMENT_CHARS:
+            raise HTTPException(413, {"code": "DOCUMENT_TOO_LARGE", "limit": MAX_DOCUMENT_CHARS,
+                                      "message": f"a document holds at most {MAX_DOCUMENT_CHARS} characters"})
+        if not owner and isinstance(d, dict) and d.get("channel") not in BUYER_CHANNELS:
+            raise HTTPException(422, {"code": "CHANNEL_NOT_ALLOWED", "channel": d.get("channel"),
+                                      "message": "a buyer's document arrives by chat, email, portal or attachment"})
 
 
 def _offer_view(rt: Runtime, offer: CompiledOffer, channels: Mapping[str, str], lang: str) -> dict:
@@ -85,15 +119,29 @@ def intake_offer(rt: Runtime, body: OfferIn, lang: str = "en") -> dict:
     """Compile the documents and store the offer: the part of POST /offers after the caller is known. The demo's seed replay
     (`app.api.demo_seed`) takes the same path, so a seeded offer is the offer the route would have stored."""
     docs, cp = _docs(body)
+    with rt.lock:
+        _unclaimed(rt, docs)
     offer = compile_offer(docs, cp)
-    try:
-        rt.store.put_offer(offer)
-    except OfferVersionConflict:
-        raise HTTPException(409, {"code": "OFFER_VERSION_CONFLICT", "offer_id": offer.offer_id}) from None
-    for d in docs:
-        rt.documents[d.doc_id] = d
+    with rt.lock:
+        _unclaimed(rt, docs)  # again: another submission may have taken the id while this one compiled
+        try:
+            rt.store.put_offer(offer)
+        except OfferVersionConflict:
+            raise HTTPException(409, {"code": "OFFER_VERSION_CONFLICT", "offer_id": offer.offer_id}) from None
+        for d in docs:
+            rt.documents[d.doc_id] = d
     return {"offer": _offer_view(rt, offer, {d.doc_id: d.channel for d in docs}, lang),
             "documents": [json.loads(d.model_dump_json()) for d in docs]}
+
+
+def _unclaimed(rt: Runtime, docs: list[SourceDocument]) -> None:
+    """SEC-16: a document id names one document. Sending the same document again is harmless; a different document under an id already
+    stored would replace the words the owner reads (and the spans of the offer that quoted them), so it is refused. Call under `rt.lock`."""
+    for d in docs:
+        held = rt.documents.get(d.doc_id)
+        if held is not None and held != d:
+            raise HTTPException(409, {"code": "DOCUMENT_ID_TAKEN", "doc_id": d.doc_id,
+                                      "message": "a different document already has this id; send it under a new id"})
 
 
 @router.get("/offers/{offer_id}", dependencies=[Depends(require_owner)])

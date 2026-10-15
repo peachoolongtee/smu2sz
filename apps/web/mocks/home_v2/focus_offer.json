@@ -168,6 +168,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
@@ -377,6 +378,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Dongguan.",
         "actions": [
@@ -642,6 +644,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
@@ -965,6 +968,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
@@ -1288,6 +1292,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
@@ -1615,6 +1620,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
@@ -1824,6 +1830,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "目前没有需要您对Dongguan作出的商务决定。",
         "actions": [
@@ -2089,6 +2096,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
@@ -2412,6 +2420,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
@@ -2735,6 +2744,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",

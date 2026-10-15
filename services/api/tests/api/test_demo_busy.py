@@ -98,7 +98,7 @@ def test_a_send_on_rcv_a_agrees_one_deal_and_the_waiting_count_leaves_the_promis
     [promise] = [r for r in w["waiting"] if r["kind"] == "PROMISE"]
     assert promise["key"].startswith(f"promise:{agreement.id}:")
     q = api.get("/deals").json()["queue"]
-    assert w["counts"] == q["counts"] == {"needs_you": 4, "waiting": 1, "agreements": 2, "customers": 3}
+    assert w["counts"] == q["counts"] == {"needs_you": 4, "waiting": 1, "agreements": 1, "customers": 3}
     assert len(w["waiting"]) == 2 and w["counts"]["waiting"] == len(w["waiting"]) - 1
 
 

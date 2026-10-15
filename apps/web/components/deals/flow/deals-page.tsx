@@ -3,16 +3,13 @@
 import "@/app/flow-look.css";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
+import { BuyingCard } from "@/components/deals/buying-card";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
-import { BuyingCard } from "@/components/deals/buying-card";
-import { DealList, useDealRows } from "@/components/deals/deal-list";
-import { DealTools } from "@/components/deals/tools";
-import { FoldCard } from "@/components/business/surface";
-import { ArrowLeftIcon } from "@/components/icons";
-import { Button, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
+import { Button, ErrorState, PageHeader } from "@/components/ui";
+import { WorklistAlertLine } from "@/components/ui/worklist-rows";
 import { contractsOff } from "@/components/documents";
 import { getClock, getCustomers, getDeals, getLedger, getPurchases, getState, getWorklist, submitOffer } from "@/lib/api";
 import { dealRecordId } from "@/lib/decision";
@@ -25,28 +22,19 @@ import type { DealsContext } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useDecisions } from "@/lib/use-decision";
 import { type DealView, DecisionPane } from "./decision-pane";
-import { dealTabCounts, dealTabOf, negotiationRows, TABLE_FROM, type DealTab } from "./deal-model";
+import { dealTabCounts, dealTabOf, dealWalk, type DealWalk, LEGACY_VIEW_KEYS, negotiationRows, sortRows, TABLE_FROM, viewOf, type DealTab } from "./deal-model";
 import { QueuePanel, type QueueLayout } from "./queue-table";
-import { TaskProgress } from "./next-step-guide";
 import { buildQueue, rowDecision, type RowTarget } from "./queue-model";
 
-const XL = "(min-width: 1280px)";
-const subscribeXl = (onChange: () => void) => {
-  const list = window.matchMedia(XL);
-  list.addEventListener("change", onChange);
-  return () => list.removeEventListener("change", onChange);
-};
-/** True from the two-pane width (`xl`); false below it and while rendering on the server. */
+/** The keys of round two that opened sections under the page: an address that carries one has the key dropped (the choices table replaced Compare responses). */
+const RETIRED: Record<string, null> = Object.fromEntries(LEGACY_VIEW_KEYS.map((k) => [k, null]));
 const HINT_KEY = "tl-deals-hint";
-const useTwoPanes = () => useSyncExternalStore(subscribeXl, () => window.matchMedia(XL).matches, () => false);
-
-/** The address names nothing (the Deals tab itself): the page is the list of every deal. Anything it names (a customer, a deal, a tab) opens the queue and the deal in full. */
-const DETAIL_PARAMS = ["customer", "buyer", "decision", "invoice", "path", "tab", "show", "scenario", "compare", "chart", "investigate"];
 
 /**
- * Deals (tickets #126 to #129): the stable title "Deals" with the state sentence under it, the queue (one row per task, by who owes the next step) beside the selected negotiation. The
+ * Deals (tickets #126 to #129): the stable title "Deals" with the state sentence under it and the queue (one row per task, by who owes the next step). A selected negotiation replaces the list with its
+ * own full-width page ("All deals (N)" at its top, "Deal i of N" with previous and next in the list's order); going back restores the list where it was. The
  * address is the whole selection (`customer`, `decision`, `path`, `invoice`, `scenario`, `from`, plus the view's `tab`, `compare`, `chart`): a row sets it, back and forward restore
- * it, and a deep link in a fresh session hydrates from the server. With nothing selected the page says "Select a request"; "No records" is only for a queue that is empty everywhere.
+ * it, and a deep link in a fresh session hydrates from the server. Opening a deal pushes one history entry; changing its sections replaces it, so Back leaves the deal in one step. "No records" is only for a queue that is empty everywhere.
  * Buyer messages that are not read yet wait in the inbox under the queue; opening one reads it into a negotiation and selects it. Every word and figure is the server's.
  */
 export function DealsPage() {
@@ -61,15 +49,8 @@ export function DealsPage() {
   const tab = dealTabOf(params.get("tab")) ?? "all";
   // Home's table is the queue's layout from 20 negotiations; the compact rows are the default (a view choice, held by the page so the queue can take the full width).
   const [layout, setLayout] = useState<QueueLayout>("compact");
-  const showRaw = params.get("show");
-  const view: DealView = {
-    compare: params.get("compare") === "1",
-    chart: params.get("chart") === "1",
-    late: sel.scenario === "late",
-    investigate: params.get("investigate") === "1",
-    show: showRaw === "cost" || showRaw === "cash" || showRaw === "none" ? showRaw : null,
-    review: params.get("review") === "1",
-  };
+  const { view: viewKey, legacy } = viewOf(params);
+  const view: DealView = { view: viewKey, review: params.get("review") === "1" };
   const demo = useDemo();
   // What the page was opened with: the deals read then says where the owner came from (`context.back`) and whether the selection names anything; later picks in the page do not change it.
   const [opened] = useState<DealsContext>(() => ({ customer: sel.customer ?? null, invoice: sel.invoice ?? null, path: sel.path ?? null, decision: sel.decision ?? null, from: sel.from ?? null }));
@@ -79,15 +60,38 @@ export function DealsPage() {
   const needWorklist = deals.data !== undefined && !deals.data.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang) : Promise.resolve(null)), [lang, needWorklist]);
   const customers = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
-  // The buying side (ADR-0013): its door shows only when the server answers it (the feature can be switched off).
+  // The buying side (ADR-0013): its card shows on the list only when the server answers (the feature can be switched off).
   const buying = useAsync(() => getPurchases(lang).catch(() => null), [lang]);
   const queue = deals.data === undefined ? undefined : deals.data.queue ? buildQueue(deals.data, null, customers.data, WORDS(t)) : worklist.data === undefined ? undefined : buildQueue(deals.data, worklist.data, customers.data, WORDS(t));
   const rows = queue ? negotiationRows(queue) : [];
   const row = decision ? (rows.find((x) => rowDecision(x.row) === decision)?.row ?? null) : null;
   const openOffer = decision ? (deals.data?.deals.find((d) => d.open_offer?.offer_id === offerOf(decision))?.open_offer ?? null) : null;
   const [sending, setSending] = useState(false);
-  const paneRef = useRef<HTMLDivElement>(null);
-  const twoPanes = useTwoPanes();
+  // The list's scroll, kept while it is on screen and restored when the owner comes back to it (from the page's own link, Escape or the browser's Back).
+  const listScroll = useRef(0);
+  const lastDecision = useRef<string | null>(decision);
+  useEffect(() => {
+    if (decision) return;
+    const on = () => {
+      listScroll.current = window.scrollY;
+    };
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, [decision]);
+  useEffect(() => {
+    const before = lastDecision.current;
+    lastDecision.current = decision;
+    if (decision === before) return;
+    // A deal opens at its top; the list comes back where it was left.
+    const top = decision ? 0 : listScroll.current;
+    const id = window.requestAnimationFrame(() => window.scrollTo({ top, behavior: "auto" }));
+    return () => window.cancelAnimationFrame(id);
+  }, [decision]);
+  // An old address (`investigate`, `compare`, `chart`, `show`) is written as the view it means.
+  useEffect(() => {
+    if (legacy) router.replace(patchedHref(pathname, search, { view: viewKey === "overview" ? null : viewKey, ...RETIRED }), { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per address
+  }, [legacy, search]);
   // First visit with nothing selected: the top row's chevron pulses twice (remembered in this browser once it has been shown; none is drawn, and nothing remembered, under reduced motion).
   const [hint, setHint] = useState(false);
   // Under reduced motion there is no cue to give, so the one-time flag is not spent: the owner who later allows motion still gets it.
@@ -114,23 +118,20 @@ export function DealsPage() {
   const go = (patch: Record<string, string | null>, how: "push" | "replace" = "push") => router[how](patchedHref(pathname, search, patch), { scroll: false });
   const select = (customer: string | null, dec: string, invoice: string | null) => {
     if (sending) return;
-    go({ customer, decision: dec, invoice, path: null, compare: null, chart: null, investigate: null, show: null, review: null });
+    go({ customer, decision: dec, invoice, path: null, view: null, lines: null, review: null, ...RETIRED });
   };
-  const close = () => go({ decision: null, customer: null, invoice: null, path: null, compare: null, chart: null, investigate: null, show: null, review: null });
+  const close = () => go({ decision: null, customer: null, invoice: null, path: null, view: null, lines: null, review: null, ...RETIRED });
+  // Previous and next walk the list's order and REPLACE the entry, so Back still leaves the deal in one step.
+  const walkTo = (to: { customer: string | null; decision: string; invoice: string | null }) => {
+    if (sending) return;
+    go({ customer: to.customer, decision: to.decision, invoice: to.invoice, path: null, view: null, lines: null, review: null, ...RETIRED }, "replace");
+  };
+  const inTab = tab === "all" ? rows : rows.filter((x) => x.tier === tab);
+  const walkTab = dealWalk(sortRows(inTab, "urgency"), decision);
+  const walk = decision && walkTab.index === null ? dealWalk(sortRows(rows, "urgency"), decision) : walkTab;
   const onTab = (k: DealTab) => go({ tab: k === "all" ? null : k }, "replace");
   // A row's target as an address (the table's links): a negotiation selects in place with this row's own customer, decision and invoice.
-  const hrefOf = (target: RowTarget) => (target.kind === "go" ? target.href : patchedHref(pathname, search, { customer: target.customer, decision: target.decision, invoice: target.invoice, path: null, compare: null, chart: null, investigate: null, show: null, review: null }));
-  const onView = (patch: Partial<DealView>) =>
-    go(
-      {
-        ...(patch.compare !== undefined ? { compare: patch.compare ? "1" : null } : {}),
-        ...(patch.chart !== undefined ? { chart: patch.chart ? "1" : null } : {}),
-        ...(patch.late !== undefined ? { scenario: patch.late ? "late" : null } : {}),
-        ...(patch.investigate !== undefined ? { investigate: patch.investigate ? "1" : null, compare: null, chart: null } : {}),
-        ...(patch.show !== undefined ? { show: patch.show } : {}),
-      },
-      "replace",
-    );
+  const hrefOf = (target: RowTarget) => (target.kind === "go" ? target.href : patchedHref(pathname, search, { customer: target.customer, decision: target.decision, invoice: target.invoice, path: null, view: null, lines: null, review: null, ...RETIRED }));
   const onPick = (key: string | null) => go({ path: key }, "replace");
 
   // Escape closes the selection (not while typing in a field or with a dialog open).
@@ -146,11 +147,6 @@ export function DealsPage() {
     return () => document.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- close reads the current address
   }, [decision, sending, search]);
-  // Below the two-pane width the negotiation opens under the list: bring it into view.
-  useEffect(() => {
-    if (!decision || typeof window === "undefined" || window.matchMedia(XL).matches) return;
-    paneRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
-  }, [decision]);
 
   // ---- the inbox: buyer messages not read yet (the simulated channel); opening one reads it into a negotiation and selects it
   const books = useAsync(getState, []);
@@ -161,6 +157,8 @@ export function DealsPage() {
   const [reading, setReading] = useState<string | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
   const [inboxPref, setInboxPref] = useState<boolean | null>(null);
+  // Open while nothing is selected and nothing needs the owner (the next thing to do is read a message); folded to one row once a negotiation is selected.
+  const inboxOpen = inboxPref ?? Boolean(queue && !decision && queue.counts.needs_you === 0);
   // The messages Business mode shows: the senders the books know (the same rule as the list itself).
   const inboxCount = INBOX.filter((m) => mode !== "business" || (known ? known.has(m.counterparty_id) : false)).length;
   async function openMessage(m: InboxMessage) {
@@ -185,51 +183,10 @@ export function DealsPage() {
 
   // ---- the state sentence under the stable title
   const counts = queue ? dealTabCounts(queue) : undefined;
-  const subtitle = !counts ? undefined : counts.needs_you > 0 ? t("deals.state.needs", { n: counts.needs_you, w: counts.waiting }) : counts.waiting > 0 ? t("deals.state.waiting", { w: counts.waiting }) : t("deals.state.none");
+  const subtitle = !counts ? undefined : queue?.headline_text ? queue.headline_text : counts.needs_you > 0 ? t("deals.state.needs", { n: counts.needs_you, w: counts.waiting }) : counts.waiting > 0 ? t("deals.state.waiting", { w: counts.waiting }) : t("deals.state.none");
   const back = deals.data?.context?.back ?? openOffer?.context?.back ?? null;
-  const listMode = !DETAIL_PARAMS.some((k) => params.get(k));
-  const today = clock.data?.day ?? books.data?.day ?? 0;
-  const buyerName = (id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? deals.data?.deals.find((d) => d.counterparty_id === id)?.counterparty_name ?? id;
-  const readDocIds = Object.values(demo.offers)
-    .map((o) => o.documents[0]?.doc_id)
-    .filter((d): d is string => Boolean(d));
-  // The list's rows are read from what the page already has: the deals read, the deals' records, the offers read and the inbox.
-  const listRows = useDealRows({
-    deals: deals.data?.deals ?? [],
-    records: records.data?.decisions ?? [],
-    offers: Object.values(demo.offers),
-    negotiations: demo.negotiations,
-    verdicts: demo.verdicts,
-    readDocIds,
-    known,
-    nameOf: buyerName,
-    today,
-  });
   const irrelevantText = opened.decision === decision ? (deals.data?.context?.irrelevant_text ?? null) : null;
 
-  // The one next click while nothing is selected: the first request in view that needs the owner, else the first message not read yet, else nothing here.
-  const scope = sel.customer ?? params.get("buyer") ?? null;
-  const inView = rows.filter((x) => !scope || x.row.customer_id === scope);
-  // Only a request that needs the owner is a next click: an agreed or waiting deal is never outlined.
-  const firstRequest = inView.find((x) => x.tier === "needs_you") ?? null;
-  const firstUnread =
-    // Only a buyer's newest message (the head of its thread, first in INBOX) is a next click; the earlier ones in the thread are history.
-    INBOX.find(
-      (m) =>
-        INBOX.find((x) => x.counterparty_id === m.counterparty_id) === m &&
-        (!scope || m.counterparty_id === scope) &&
-        (mode !== "business" || (known ? known.has(m.counterparty_id) : false)) &&
-        !readDocIds.includes(m.document.doc_id),
-    ) ?? null;
-
-  // The next click is a message when nothing is selected and no request is open in view (outlined in the inbox). With nothing selected the inbox IS the right-hand side, open;
-  // once a negotiation is selected the negotiation takes that side and the inbox folds to one row under the queue.
-  const nextIsMessage = !decision && !firstRequest && firstUnread !== null;
-  const inboxOpen = !decision || (inboxPref ?? false);
-  // Where the owner is on a request (open it, check it, send or approve): the selected negotiation's own step, reported by its pane; with nothing selected, the first step
-  // when there is something to open, else none.
-  const [paneStep, setPaneStep] = useState<number | null>(null);
-  const progress = decision ? paneStep : firstRequest || firstUnread ? 0 : null;
   const tableMode = Boolean(queue) && layout === "table" && rows.length >= TABLE_FROM;
   const QUEUE_NODE = (
     <QueuePanel
@@ -249,16 +206,13 @@ export function DealsPage() {
       onLayout={setLayout}
       hint={hint && !decision}
       onlyCustomer={!decision ? (sel.customer ?? params.get("buyer") ?? null) : null}
-      nextKey={!decision ? (firstRequest?.row.key ?? null) : null}
+      onShowAll={() => go({ customer: null, buyer: null })}
     />
   );
-  // The buying side (ADR-0013), second to the selling work: its own card under the list of every deal, only when the server
-  // answers it. A buyer's queue and an open negotiation are the selling work, so the card is not drawn there.
-  const BUYING_NODE = buying.data && !decision ? <BuyingCard key="buying" purchases={buying.data.purchases} /> : null;
   const INBOX_NODE =
     /* Not drawn until the queue is read: whether it is open depends on what the queue says (it would open and fold under the owner's hand). */
     queue === undefined ? null : (
-      <div key="inbox" className={`flow-card ${decision ? "p-4 sm:p-5" : "p-5 sm:p-7"}`} data-testid="deals-inbox">
+      <div key="inbox" className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
         {inboxOpen ? null : (
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">
             <h2 className="font-display text-base font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
@@ -279,68 +233,60 @@ export function DealsPage() {
             onOpen={(m) => void openMessage(m)}
             loadError={books.error}
             onRetry={books.reload}
-            onCollapse={decision ? () => setInboxPref(false) : undefined}
-            nextDocId={nextIsMessage ? (firstUnread?.document.doc_id ?? null) : null}
+            onCollapse={() => setInboxPref(false)}
             refusals={ledger.data?.refusals ?? null}
           />
         ) : null}
       </div>
     );
+  // With a deal selected its buyer's messages are in its Messages tab; the inbox card is the way to start a negotiation, so it stands under the queue only while nothing is selected.
+  const INBOX_SLOT = decision ? null : INBOX_NODE;
+  const inboxFor = (buyer: string | null) => (
+    <InboxList
+      currentDocId={decision ? (demo.offers[offerOf(decision) ?? ""]?.documents[0]?.doc_id ?? null) : null}
+      readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
+      known={known}
+      busy={reading}
+      today={clock.data?.day ?? books.data?.day ?? 0}
+      mode={mode}
+      statusFor={statusFor}
+      onOpen={(m) => void openMessage(m)}
+      loadError={books.error}
+      onRetry={books.reload}
+      refusals={ledger.data?.refusals ?? null}
+      onlyCounterparty={buyer}
+    />
+  );
   const PANE = (
-        <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:rounded-[var(--radius-f-card)]" data-testid="deals-detail">
-          {decision ? (
-            <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onView={onView} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} onStep={setPaneStep} />
-          ) : (
-            INBOX_NODE
-          )}
+        <div key="pane" className="min-w-0" data-testid="deals-detail">
+          {decision ? <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onGo={go} inbox={inboxFor} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} /> : null}
         </div>
   );
 
-  if (listMode)
-    return (
-      <div className="flow-f min-w-0" data-testid="deals-page" data-view="list">
-        <PageHeader section="deals" title={t("nav.deals")} subtitle={t("deals.list.pageSub")} />
-        <div className="space-y-6">
-          <DealTools />
-          {dealsError ? <ErrorState error={dealsError} onRetry={deals.reload} /> : null}
-          {books.error ? <ErrorState error={books.error} onRetry={books.reload} /> : null}
-          {readError ? <ErrorState error={readError} /> : null}
-          {(deals.loading && !deals.data) || (!books.data && !books.error) ? <LoadingBlock rows={3} /> : <DealList rows={listRows} />}
-          {BUYING_NODE}
-          {/* Every message, as it arrived: a dropdown under the list. Opening one reads it and opens its deal in full. */}
-          <FoldCard title={t("deals.list.messages")} hint={t("deals.list.messages.hint", { n: inboxCount })} testId="deal-list-messages">
-            <InboxList
-              currentDocId={null}
-              readDocIds={readDocIds}
-              known={known}
-              busy={reading}
-              today={today}
-              mode={mode}
-              statusFor={statusFor}
-              onOpen={(m) => void openMessage(m)}
-              loadError={books.error}
-              onRetry={books.reload}
-              refusals={ledger.data?.refusals ?? null}
-            />
-          </FoldCard>
-        </div>
-      </div>
-    );
-
   return (
     <div className="flow-f min-w-0" data-testid="deals-page">
-      <PageHeader section="deals" title={t("nav.deals")} subtitle={subtitle} />
+      {decision ? null : <PageHeader section="deals" title={t("nav.deals")} subtitle={subtitle} />}
       {back ? (
         <Link href={back.href} className="mb-3 inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-back">
           ‹ {back.label}
         </Link>
-      ) : (
-        // The way back to the list of every deal.
-        <Link href="/deals" className="mb-3 inline-flex min-h-8 items-center gap-1 text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="deal-list-back">
-          <ArrowLeftIcon width={14} height={14} />
-          {t("deals.list.back")}
-        </Link>
-      )}
+      ) : null}
+      {/* The company funding alert is the list's own row, full width under the header (the component Home's worklist uses); it is never one of the queue's rows or counts, and a deal's page does not carry it. */}
+      {queue?.alert && !decision ? (
+        <div className="mb-4" data-testid="deals-alert-row">
+          <WorklistAlertLine
+            testId="queue-alert"
+            tone={queue.alert.tone === "bad" ? "bad" : "warn"}
+            eyebrow={queue.alert.kind_text ?? queue.alert.eyebrow}
+            text={queue.alert.pending_text ?? queue.alert.text}
+            action={
+              <Link href={queue.alert.primary.href} className="inline-flex min-h-8 items-center gap-1 text-sm font-bold text-brand-700 underline-offset-[3px] hover:underline touch:min-h-11" data-testid="queue-alert-go">
+                {queue.alert.primary.label} <span aria-hidden>→</span>
+              </Link>
+            }
+          />
+        </div>
+      ) : null}
       {dealsError ? (
         <div className="mb-4">
           <ErrorState error={dealsError} onRetry={deals.reload} />
@@ -351,46 +297,69 @@ export function DealsPage() {
           <ErrorState error={readError} />
         </div>
       ) : null}
-      {/* Round two widths: the queue is 380 px (four tabs with their counts on one line), the workspace is fluid up to 850 px (the page's content holds at 1400 px, flow-look.css). Below `xl` a selected negotiation comes first (its decision is inside the first
-          screen of a phone) and the queue follows; from `xl` the queue is the left pane and the workspace scrolls on its own where it is taller than the window. The DOM order is the reading and focus order.
-          From 20 negotiations the owner may switch the queue to Home's table: it then takes the full width above, and the inbox and the workspace share the row beneath. */}
-      {tableMode ? <div className="mb-6">{QUEUE_NODE}</div> : null}
-      {/* Where the owner is on a request, as a task's progress across the top: open it, check it against the limits, send or approve FLOW's reply. */}
-      <TaskProgress current={progress} className="mb-6" />
-      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)] xl:items-start">
-        {/* The right-hand side is the selected negotiation, or (nothing selected) the inbox; below the two-pane width it comes first. The inbox sits under the queue only
-            while a negotiation holds the right-hand side. */}
-        {!twoPanes && (decision || queue !== undefined) ? (
-          <>
-            {PANE}
-            <div className="min-w-0 space-y-6">
-              {tableMode ? null : QUEUE_NODE}
-              {decision ? INBOX_NODE : null}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="min-w-0 space-y-6">
-              {tableMode ? null : QUEUE_NODE}
-              {decision ? INBOX_NODE : null}
-            </div>
-            {PANE}
-          </>
-        )}
+      {/* A selected deal is its own page, the full width of the content (up to 1180 px). The list stays mounted, hidden, so its search, sort and grouping are still there on the way back. */}
+      {decision ? (
+        <div className="mx-auto w-full max-w-[1180px] space-y-5" data-testid="deal-page">
+          <DealTopBar total={walk.total || counts?.all || 0} walk={walk} locked={sending} onAll={close} onWalk={walkTo} />
+          {PANE}
+        </div>
+      ) : null}
+      <div hidden={Boolean(decision)} data-testid="deals-list-view">
+        {tableMode ? <div className="mb-6">{QUEUE_NODE}</div> : null}
+        <div className="grid gap-6" data-testid="deals-grid">
+          <div className="min-w-0 space-y-6" data-testid="deals-side">
+            {tableMode ? null : QUEUE_NODE}
+            {INBOX_SLOT}
+            {buying.data ? <BuyingCard purchases={buying.data.purchases} /> : null}
+          </div>
+        </div>
+        {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the list, where the queue's Agreements tab leads the eye. */}
+        <div className="mt-8" data-testid="deals-agreements">
+          <ActiveCommitments
+            today={clock.data?.day ?? books.data?.day ?? 0}
+            buyerName={(id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? deals.data?.deals.find((d) => d.counterparty_id === id)?.counterparty_name ?? id}
+            hideEmpty
+            agreed={(deals.data?.deals ?? []).filter(isAgreed)}
+            dealsDay={deals.data?.day ?? null}
+            dealsError={dealsError}
+            onRetryDeals={deals.reload}
+          />
+        </div>
       </div>
-      <div id="deals-investigate" className="mt-6 max-w-[1214px] empty:hidden" />
-      {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the panes, where the queue's Agreements tab leads the eye. */}
-      <div className="mt-8" data-testid="deals-agreements">
-        <ActiveCommitments
-          today={today}
-          buyerName={buyerName}
-          hideEmpty
-          agreed={(deals.data?.deals ?? []).filter(isAgreed)}
-          dealsDay={deals.data?.day ?? null}
-          dealsError={dealsError}
-          onRetryDeals={deals.reload}
-        />
-      </div>
+    </div>
+  );
+}
+
+/**
+ * The top line of a deal's page: "All deals (N)" (clears the selection; the list is where it was), and, when the deal is one of several in the list, "Deal i of N" with previous and next in the
+ * list's order. The words are the dictionary's; the numbers are positions in the list the page holds.
+ */
+function DealTopBar({ total, walk, locked, onAll, onWalk }: { total: number; walk: DealWalk; locked: boolean; onAll: () => void; onWalk: (to: NonNullable<DealWalk["prev"]>) => void }) {
+  const { t } = useI18n();
+  const round = "motion-press inline-grid size-11 place-items-center rounded-pill border border-line-ui bg-card text-ink hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-40";
+  const chevron = (d: string) => (
+    <svg aria-hidden viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+  return (
+    <div className="flex items-center justify-between gap-3" data-testid="deal-topbar">
+      <button type="button" onClick={onAll} disabled={locked} className="motion-press inline-flex min-h-11 items-center gap-2 rounded-pill pr-3 text-[15px] font-medium text-ink hover:text-ink-2 disabled:opacity-50" data-testid="deal-back-all">
+        {chevron("M15 18l-6-6 6-6")}
+        <span className="max-sm:hidden">{t("deals.top.all", { n: total })}</span>
+        <span className="sm:hidden">{t("deals.top.allBare")}</span>
+      </button>
+      {walk.index !== null && walk.total > 1 ? (
+        <div className="flex items-center gap-2 text-sm text-ink-2" data-testid="deal-walk">
+          <span data-testid="deal-position">{t("deals.top.pos", { i: walk.index, n: walk.total })}</span>
+          <button type="button" aria-label={t("deals.top.prev")} disabled={locked || !walk.prev} onClick={() => walk.prev && onWalk(walk.prev)} className={round} data-testid="deal-prev">
+            {chevron("M15 18l-6-6 6-6")}
+          </button>
+          <button type="button" aria-label={t("deals.top.next")} disabled={locked || !walk.next} onClick={() => walk.next && onWalk(walk.next)} className={round} data-testid="deal-next">
+            {chevron("M9 18l6-6-6-6")}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

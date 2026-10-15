@@ -27,6 +27,7 @@ from __future__ import annotations
 import hmac
 import json
 import threading
+import uuid
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
@@ -647,7 +648,10 @@ class Executor:
             # 3. tier ------------------------------------------------------------------
             if ctx.tier == Tier.TIER_3:
                 raise self._tier3(ctx)
+            # SEC-05: the owner answering a buyer's request (accept or decline) is the owner looking, which is what the circuit waits for;
+            # the owner's other operations against an open circuit (a facility from a lender that tripped it) stay blocked until a reset
             if (isinstance(op, _CIRCUIT_OPS) and ctx.counterparty_id is not None
+                    and not (op.requested_by == Actor.OWNER and isinstance(op, AcceptOffer | RejectOffer))
                     and self._recent_refusals(ctx.counterparty_id, now) >= CIRCUIT_THRESHOLD):
                 raise _refuse(Code.CIRCUIT_OPEN,
                               f"Circuit open for {ctx.counterparty_id}: {CIRCUIT_THRESHOLD} refusals within "
@@ -771,9 +775,9 @@ class Executor:
         self._add_security(kind, day, counterparty_id, f"{getattr(op, 'kind', '?')} {op.op_id}: {detail}")
 
     def _add_security(self, kind: SecurityEventKind, day: int, counterparty_id: str | None, detail: str) -> None:
-        n = len(self._store.security_events()) + 1
         self._store.add_security_event(SecurityEvent(
-            id=f"SEC-OPS-{n:06d}", day=day, kind=kind, counterparty_id=counterparty_id,
+            # SEC-10: a random id, never a count of the table (a full read per event, and shared by concurrent writers)
+            id=f"SEC-OPS-{uuid.uuid4().hex[:16]}", day=day, kind=kind, counterparty_id=counterparty_id,
             action_taken="refused by the executor; nothing booked", detail=detail))
 
     # ---------------------------------------------------------------- context and tier
@@ -883,6 +887,8 @@ class Executor:
                 continue
             if not isinstance(e.op, _CIRCUIT_OPS):
                 continue  # only what a counterparty's own offers cause; never receipts, funding or repayments
+            if e.op.requested_by == Actor.OWNER:
+                continue  # SEC-05: the owner's own refused decisions are not the counterparty's doing
             if e.day is None or not (now - CIRCUIT_WINDOW_DAYS < e.day <= now):
                 continue
             if self._counterparty(e.op, state) == counterparty_id:
@@ -1050,11 +1056,17 @@ class Executor:
                               f"Receivable {rid} has {fmt_yuan(r.outstanding_fen)} outstanding, less than the "
                               f"{fmt_yuan(need)} these terms settle; re-evaluate the offer",
                               commitment_id=c.id, receivable_id=rid, outstanding_fen=r.outstanding_fen, need_fen=need)
-        # 2. exclusivity: one live commitment per named receivable
+        # 2. exclusivity: one live commitment per buyer request (SEC-02: obligations that name no receivable, such as terms on the next
+        # invoice, were otherwise never compared, and a second agreement booked the concession twice), and one per named receivable
         mine = {o.base.receivable_id for o in c.obligations if o.base.receivable_id}
         for other in self._store.commitments():
             if other.id == c.id or other.status not in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE):
                 continue
+            if other.offer_id == c.offer_id:
+                raise _refuse(Code.CONFLICTING_COMMITMENT,
+                              f"Commitment {c.id} answers the same request as the earlier {other.status.value} commitment {other.id}; "
+                              f"a request carries one agreement, so the owner must revoke {other.id} first",
+                              commitment_id=c.id, other_commitment_id=other.id, offer_id=c.offer_id)
             shared = sorted(mine & {o.base.receivable_id for o in other.obligations if o.base.receivable_id})
             if shared:
                 raise _refuse(Code.CONFLICTING_COMMITMENT,

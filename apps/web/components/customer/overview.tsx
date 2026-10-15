@@ -9,6 +9,8 @@ import { useMode } from "@/lib/mode";
 import { rowDecision, type Queue } from "@/components/deals/flow/queue-model";
 import { ButtonLink, PageHeader, textLinkClass } from "@/components/ui";
 import { StatusPill } from "@/components/ui/status-pill";
+import { PILL_TONE, pillClass } from "@/components/tracker/parts";
+import type { TrackerTone } from "@/lib/tracker";
 import { reviewHref, selectionHref } from "@/lib/selection";
 import { flowOf } from "@/lib/customer-r2";
 import { ExposureTable } from "./exposure-table";
@@ -19,7 +21,7 @@ import { StateWord } from "@/components/ui/state-word";
 import { stateKey } from "@/components/ui/state-word-model";
 import { fromCustomer, contextQuery, type CustomerContext } from "@/lib/customer-href";
 import { useI18n } from "@/lib/i18n";
-import type { CustomerOverviewView, OverviewAction, OverviewFigure, OverviewHistoryRow, OverviewRow, OverviewTone } from "@/lib/types";
+import type { CustomerOverviewView, DealsHistoryRow, OverviewAction, OverviewFigure, OverviewHistoryRow, OverviewRow, OverviewTone } from "@/lib/types";
 import { AllTasksLink, focusOf, OutstandingWork } from "./outstanding";
 import { rowsOfCustomer } from "./outstanding";
 
@@ -288,6 +290,33 @@ function Exposure({ view }: { view: CustomerOverviewView }) {
   );
 }
 
+/** "Deals with Foshan" (round three, section 11): the buyer's agreed and closed deals, newest first, each its subject, the tracker's state word and its close-out (or the agreed sentence), leading into Deals with the origin. */
+function DealsHistory({ name, rows }: { name: string; rows: DealsHistoryRow[] }) {
+  const { t } = useI18n();
+  return (
+    <section aria-labelledby="customer-deals-history-title" className="flow-card p-4 max-lg:order-2 sm:p-6" data-testid="customer-deals-history">
+      <h2 id="customer-deals-history-title" className="type-section text-ink">
+        {t("deals.history.title", { buyer: name })}
+      </h2>
+      <ul className="mt-2 divide-y divide-line">
+        {rows.map((r) => (
+          <li key={r.decision_id} className="py-3" data-testid="customer-deals-history-row" data-lifecycle={r.lifecycle}>
+            <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1.5">
+              <Link href={r.href} className="min-w-0 flex-1 basis-64 text-[15px] font-bold text-ink underline-offset-[3px] hover:underline" data-testid="customer-deals-history-link">
+                {r.subject_text}
+              </Link>
+              <StatusPill tone={PILL_TONE[(r.state_tone as TrackerTone) ?? "neutral"] ?? "neutral"} className={pillClass((r.state_tone as TrackerTone) ?? "neutral")} data-state-tone={r.state_tone}>
+                {r.state_word}
+              </StatusPill>
+            </div>
+            {r.summary_text ? <p className="mt-1 max-w-[68ch] text-sm text-ink-2">{r.summary_text}</p> : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function History({ rows }: { rows: OverviewHistoryRow[] }) {
   const { t } = useI18n();
   if (!rows.length) return null;
@@ -421,6 +450,7 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
           {flow ? <ReceivableFlowCard flow={flow} /> : null}
         </div>
       ) : null}
+      {view.deals_history?.length ? <DealsHistory name={view.name} rows={view.deals_history} /> : null}
       {hasEconomics || hasExposure ? (
         <div className={`grid gap-6 max-lg:order-3 ${hasEconomics && hasExposure ? "lg:grid-cols-2" : ""}`}>
           {hasEconomics ? (

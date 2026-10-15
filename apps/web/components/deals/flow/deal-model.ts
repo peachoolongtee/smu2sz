@@ -1,6 +1,6 @@
 import type { PillTone } from "@/components/ui/status-pill";
-import type { DealsCounts, OfferPictureView, PathTerm, PicturePath, QueueRowView } from "@/lib/types";
-import { pillTone, statusCells, taskRows, type Queue, type Tier } from "./queue-model";
+import type { DealsCounts, HomeSeriesPoint, PathTerm, PicturePath, PictureAxis, QueueRowView } from "@/lib/types";
+import { pillTone, rowTarget, statusCells, taskRows, type Queue, type Tier } from "./queue-model";
 
 /**
  * The model of Deals round two (docs/design/flow-mockup-2026-10-13/04_slice_b_round_two.md, sections 1 and 2): which rows the queue lists (negotiations only), the lifecycle pill, the sort and
@@ -35,18 +35,22 @@ export function dealTabCounts(q: Queue): Record<DealTab, number> {
   const rows = negotiationRows(q);
   const held = { needs_you: rows.filter((x) => x.tier === "needs_you").length, waiting: rows.filter((x) => x.tier === "waiting").length, agreements: rows.filter((x) => x.tier === "agreements").length };
   const served: DealsCounts | null = q.deals ? ("counts" in q.deals && q.deals.counts ? q.deals.counts : (q.deals as DealsCounts)) : null;
+  // Round three (section 11): the Agreed tab counts the deals in force, as the server counts them (`awaiting_payment` + `payment_late`: deals, not rows; a promised payment is a row of its deal);
+  // the closed ones are counted apart (`closed`, the Closed group's own count). The browser counts no rows when the server sends these.
+  const byGroup = served && (served.awaiting_payment !== undefined || served.payment_late !== undefined);
+  const inForce = byGroup ? (served?.awaiting_payment ?? 0) + (served?.payment_late ?? 0) : null;
   const n = {
     needs_you: served?.needs_you ?? held.needs_you,
     waiting: served?.waiting ?? held.waiting,
-    agreements: served?.agreements ?? held.agreements,
+    agreements: inForce ?? (served ? (served.agreements ?? held.agreements) + (served.closed ?? 0) : held.agreements),
   };
-  return { all: served?.all ?? served?.total ?? n.needs_you + n.waiting + n.agreements, ...n };
+  return { all: served?.all ?? served?.total ?? n.needs_you + n.waiting + n.agreements + (byGroup ? (served?.closed ?? 0) : 0), ...n };
 }
 
 // ---------------------------------------------------------------- the lifecycle pill
 
-export type Lifecycle = "counter_ready" | "owner_review" | "awaiting_buyer" | "more_info" | "agreed" | "declined" | "lapsed";
-const LIFECYCLES: ReadonlySet<string> = new Set<Lifecycle>(["counter_ready", "owner_review", "awaiting_buyer", "more_info", "agreed", "declined", "lapsed"]);
+export type Lifecycle = "counter_ready" | "owner_review" | "awaiting_buyer" | "more_info" | "agreed" | "declined" | "lapsed" | "closed";
+const LIFECYCLES: ReadonlySet<string> = new Set<Lifecycle>(["counter_ready", "owner_review", "awaiting_buyer", "more_info", "agreed", "declined", "lapsed", "closed"]);
 /** The server's key for "More information needed" is `more_information`. */
 const ALIAS: Record<string, Lifecycle> = { more_information: "more_info" };
 
@@ -57,7 +61,7 @@ export function lifecycleOf(row: Pick<QueueRowView, "lifecycle">): Lifecycle | n
 }
 
 /** The pill's tone by lifecycle: amber is the owner's turn (a counter ready, a review, a question), lavender somebody else's (waiting for the buyer), green agreed, neutral closed (declined, lapsed). */
-const LIFECYCLE_TONE: Record<Lifecycle, PillTone> = { counter_ready: "amber", owner_review: "amber", more_info: "amber", awaiting_buyer: "lavender", agreed: "green", declined: "neutral", lapsed: "neutral" };
+const LIFECYCLE_TONE: Record<Lifecycle, PillTone> = { counter_ready: "amber", owner_review: "amber", more_info: "amber", awaiting_buyer: "lavender", agreed: "green", declined: "neutral", lapsed: "neutral", closed: "neutral" };
 
 /** The record's states as a pill tone, for the selected negotiation when the queue holds no row for it. */
 export function recordTone(state: string): PillTone {
@@ -72,6 +76,8 @@ export function recordTone(state: string): PillTone {
  */
 export function rowPill(tier: DealTier, row: QueueRowView): { tone: PillTone; text: string; next: string | null; lifecycle: Lifecycle | null } {
   const lifecycle = lifecycleOf(row);
+  // An agreed deal whose payment is late carries the tracker's bad tone (it stays in Agreements, never in Needs you).
+  if (lifecycle && row.after_group === "payment_late") return { tone: "bad", text: row.status_text, next: null, lifecycle };
   if (lifecycle) return { tone: LIFECYCLE_TONE[lifecycle], text: row.status_text, next: null, lifecycle };
   const { state, next } = statusCells(row);
   const tone = pillTone(tier, row);
@@ -147,13 +153,15 @@ const SCOPE_OF: Record<string, TermScope> = {
   rebate: "quarter",
 };
 const SCOPE_ORDER: TermScope[] = ["existing", "future", "quarter", "other"];
+/** The server's scope keys (round three) as the scopes the table files by. */
+const SCOPE_OF_KEY: Record<string, TermScope> = { existing_invoice: "existing", future_invoices: "future", next_quarter: "quarter" };
 
 export interface TermCell {
   /** The server's value for this path; null when the path says nothing for the term. */
   text: string | null;
   /** The server's "instead of ..." words (a reply only). */
   sub: string | null;
-  /** The value changes what holds today (a request) or departs from the request (a reply that says what it is instead of): drawn bold with the 2 px lavender underline. */
+  /** The value changes what holds today (a request) or departs from the request (a reply that says what it is instead of): drawn bold on a lavender tint (never underlined: an underline reads as a link). */
   changed: boolean;
   /** The path does not touch the term. */
   unchanged: boolean;
@@ -167,6 +175,8 @@ export interface TermRow {
 }
 export interface TermGroup {
   scope: TermScope;
+  /** The server's word for the scope ("Future invoices"); null from an older server (the dictionary names it). */
+  label: string | null;
   rows: TermRow[];
 }
 
@@ -174,59 +184,27 @@ function cellOf(term: PathTerm | undefined, kind: PicturePath["kind"]): TermCell
   if (!term) return { text: null, sub: null, changed: false, unchanged: false, absent: true };
   const text = term.value_text?.trim() ? term.value_text : null;
   const sub = term.instead_of_text?.trim() ? term.instead_of_text : null;
-  if (!text && !sub) return { text: null, sub: null, changed: false, unchanged: true, absent: false };
+  // The server's `cell_text` is the cell's one word (the value, "Not offered" or "Unchanged"); an untouched row has no value and nothing it stands instead of.
+  if (!text && !sub) return { text: term.cell_text?.trim() ? term.cell_text : null, sub: null, changed: false, unchanged: true, absent: false };
+  if (term.cell_text?.trim()) return { text: term.cell_text, sub, changed: kind === "asked" ? Boolean(text) : Boolean(sub), unchanged: false, absent: false };
   // The ask's values are what it changes; a reply's are changed where it says what they stand instead of.
   return { text, sub, changed: kind === "asked" ? Boolean(text) : Boolean(sub), unchanged: false, absent: false };
 }
 
 /** The terms of the paths side by side, grouped by scope, one row per term the server names (in the first path that has it; the label is the server's). Paths are the table's columns in the order given. */
 export function termsGroups(paths: PicturePath[]): TermGroup[] {
-  const order: { key: string; label: string }[] = [];
-  for (const p of paths) for (const t of p.terms ?? []) if (!order.some((o) => o.key === t.key)) order.push({ key: t.key, label: t.label });
+  const order: { key: string; label: string; scope: TermScope; scopeLabel: string | null }[] = [];
+  for (const p of paths) for (const t of p.terms ?? []) if (!order.some((o) => o.key === t.key)) order.push({ key: t.key, label: t.label, scope: (t.scope ? SCOPE_OF_KEY[t.scope] : undefined) ?? SCOPE_OF[t.key] ?? "other", scopeLabel: t.scope_label ?? null });
   const groups: TermGroup[] = [];
   for (const scope of SCOPE_ORDER) {
     const rows = order
-      .filter((o) => (SCOPE_OF[o.key] ?? "other") === scope)
+      .filter((o) => o.scope === scope)
       .map((o) => ({ key: o.key, label: o.label, cells: paths.map((p) => cellOf(p.terms?.find((t) => t.key === o.key), p.kind)) }))
       // A term no path says anything for, and none says it leaves alone, is nothing to show.
       .filter((r) => r.cells.some((c) => c.text || c.sub || c.unchanged));
-    if (rows.length) groups.push({ scope, rows });
+    if (rows.length) groups.push({ scope, label: order.find((o) => o.scope === scope && o.scopeLabel)?.scopeLabel ?? null, rows });
   }
   return groups;
-}
-
-// ---------------------------------------------------------------- the timing diagram
-
-export interface TimingBar {
-  key: "current" | "asked" | "reply";
-  /** The term in days: the bar's length only; the words beside it are the server's. */
-  days: number;
-  /** The server's words for the term ("45 days"); null leaves the bar unlabelled. */
-  text: string | null;
-}
-export interface Timing {
-  bars: TimingBar[];
-  max: number;
-  /** The server's words for the difference the buyer asks ("+15 days requested by buyer"). */
-  deltaText: string | null;
-}
-
-const paymentTermsText = (p: PicturePath | null | undefined): string | null => p?.terms?.find((t) => t.key === "payment_terms" || t.key === "payment_period")?.value_text ?? null;
-
-/**
- * Current terms, the buyer's request and FLOW's counter as bars from day 0 on one scale: the server's `terms_days` numbers, their words the server's. A path with no payment term in days has no bar,
- * and fewer than two bars is no diagram. Nothing is computed: the largest number sets the scale, and the difference is only said when the server says it.
- */
-export function timingOf(picture: Pick<OfferPictureView, "current_terms_days" | "current_terms_text">, asked: PicturePath | null, reply: PicturePath | null): Timing | null {
-  const bars: TimingBar[] = [];
-  const num = (n: number | null | undefined): n is number => typeof n === "number" && Number.isFinite(n) && n >= 0;
-  if (num(picture.current_terms_days)) bars.push({ key: "current", days: picture.current_terms_days, text: picture.current_terms_text ?? null });
-  if (asked && num(asked.terms_days)) bars.push({ key: "asked", days: asked.terms_days, text: asked.terms_days_text ?? paymentTermsText(asked) });
-  if (reply && reply.key !== asked?.key && num(reply.terms_days)) bars.push({ key: "reply", days: reply.terms_days, text: reply.terms_days_text ?? paymentTermsText(reply) });
-  if (bars.length < 2) return null;
-  const max = Math.max(...bars.map((b) => b.days));
-  if (!(max > 0)) return null;
-  return { bars, max, deltaText: asked?.terms_delta_text ?? null };
 }
 
 // ---------------------------------------------------------------- the cost table
@@ -287,4 +265,190 @@ export function paneStatus(row: QueueRowView | null, stateText: string | null | 
 export function lifecyclePill(lifecycle: string | null | undefined, text: string): { tone: PillTone; text: string; lifecycle: Lifecycle | null } {
   const lc = lifecycleOf({ lifecycle });
   return { tone: lc ? LIFECYCLE_TONE[lc] : "amber", text, lifecycle: lc };
+}
+
+// ---------------------------------------------------------------- the selected deal's tabs and address (round three, section 7)
+
+/** The views of the selected deal. Before agreement: Overview (the recommendation and the choices table), Cash impact, Messages; from agreement on: Overview, Terms, Messages. `compare` is retired (the choices table replaces it): an old address that names it lands on the Overview. */
+export type DealViewKey = "overview" | "compare" | "cash" | "terms" | "messages";
+export const DEAL_VIEWS: readonly DealViewKey[] = ["overview", "compare", "cash", "terms", "messages"];
+/** The addresses of round two that opened sections under the page; they all land on the Overview now (the choices table replaced Compare responses). */
+const LEGACY_KEYS = ["investigate", "compare", "chart", "show"] as const;
+
+/** The view the address names: `view=`, else else Overview (an old link with `investigate`, `compare`, `chart` or `show` has its key dropped and lands there). `legacy` is true when the address still carries a retired key. */
+export function viewOf(params: { get(name: string): string | null }): { view: DealViewKey; legacy: boolean } {
+  const raw = params.get("view");
+  const legacy = LEGACY_KEYS.some((k) => params.get(k) !== null);
+  if (raw && (DEAL_VIEWS as readonly string[]).includes(raw)) return { view: raw as DealViewKey, legacy };
+  return { view: "overview", legacy };
+}
+export const LEGACY_VIEW_KEYS: readonly string[] = LEGACY_KEYS;
+
+/** The sections a deal has: before agreement the cash impact; from agreement on the terms (the Overview is the tracker). A deal with nothing to draw has no cash section. */
+export function tabsOf(opts: { agreed: boolean; analysis: boolean }): DealViewKey[] {
+  if (opts.agreed) return ["overview", "terms", "messages"];
+  return opts.analysis ? ["overview", "cash", "messages"] : ["overview", "messages"];
+}
+
+/** A view the deal has, else the Overview. */
+export const viewIn = (view: DealViewKey, tabs: DealViewKey[]): DealViewKey => (tabs.includes(view) ? view : "overview");
+
+// ---------------------------------------------------------------- the comparison's rows and the outcome plot (round three, sections 1 and 5)
+
+// One place per fact (round three, review of the preview): the comparison's columns carry the commercial terms, the economic impact and the buyer status; the cash, the reserve, the financing and who may
+// send each response are the outcome table's alone.
+export type CompareRowKey = "terms" | "economic" | "status";
+export const COMPARE_ROWS: readonly CompareRowKey[] = ["terms", "economic", "status"];
+
+export interface CompareCellModel {
+  /** The cell's main word and the words under it: each is one server field. */
+  value: string | null;
+  sub: string | null;
+  note: string | null;
+  /** The path breaches the reserve (a mark in the cell, never a verdict). */
+  bad: boolean;
+  /** Commercial terms only: one line per scope, the server's scope word and its `cell_text`. */
+  lines?: { scope: string | null; text: string }[];
+}
+
+/**
+ * The comparison as one model: for each of the three default rows, one cell per path. Every cell is a server word (`economic_headline_text` with its basis,
+ * `buyer_status_text`, the terms' `cell_text`); an older server that lacks the short words leaves the cell with what it did send (the cost headline, the band). Nothing is composed or computed.
+ */
+export function comparisonRows(paths: PicturePath[]): { key: CompareRowKey; cells: CompareCellModel[] }[] {
+  const groups = termsGroups(paths);
+  return COMPARE_ROWS.map((key) => ({
+    key,
+    cells: paths.map((p, i): CompareCellModel => {
+      const empty: CompareCellModel = { value: null, sub: null, note: null, bad: false };
+      if (key === "terms") return { ...empty, lines: groups.flatMap((g) => g.rows.map((r) => ({ scope: g.label, text: r.cells[i]?.text ?? "" })).filter((l) => l.text)) };
+      if (key === "economic") {
+        const h = costHeadline(p);
+        return { ...empty, value: p.economic_headline_text ?? h.display, sub: p.economic_basis_text ?? h.basis };
+      }
+      return { ...empty, value: p.buyer_status_text ?? null };
+    }),
+  }));
+}
+
+// ---------------------------------------------------------------- the cash impact charts (Deals redesign, board 3)
+
+/** A scale from fen numbers to 0..100 (positions only), with the server's labelled ticks that fall inside it. No label here is the browser's: a tick's words are the axis's own. */
+export interface CashScale {
+  lo: number;
+  hi: number;
+  ticks: { at: number; label: string }[];
+  at: (fen: number) => number;
+}
+
+/**
+ * The scale the cash charts share: it spans every value drawn (and zero), widened to the server's axis ticks around it, so the labelled ticks sit on the ends. An axis the server did not send leaves the scale
+ * unlabelled (the charts then say each figure in the server's words beside it).
+ */
+export function cashScale(values: number[], axis: PictureAxis | null | undefined): CashScale {
+  const vals = values.filter((v) => Number.isFinite(v));
+  const vmin = Math.min(0, ...vals);
+  const vmax = Math.max(0, ...vals);
+  const ticks = [...(axis?.ticks ?? [])].sort((a, b) => a.value_fen - b.value_fen);
+  const lo = Math.max(vmin === 0 ? 0 : -Infinity, ...ticks.filter((t) => t.value_fen <= vmin).map((t) => t.value_fen));
+  const lower = Number.isFinite(lo) ? lo : vmin;
+  const above = ticks.filter((t) => t.value_fen >= vmax).map((t) => t.value_fen);
+  const upper = above.length ? Math.min(...above) : vmax;
+  const span = upper - lower;
+  const at = (fen: number) => (span > 0 ? Math.min(100, Math.max(0, ((fen - lower) / span) * 100)) : 50);
+  return { lo: lower, hi: upper, at, ticks: ticks.filter((t) => t.value_fen >= lower && t.value_fen <= upper).map((t) => ({ at: at(t.value_fen), label: t.label })) };
+}
+
+export interface LinePoint {
+  /** 0..100 along the window. */
+  x: number;
+  fen: number;
+  day: number;
+  /** The server's words for the day ("in 15 days"). */
+  when: string | null;
+}
+
+/** The days of a series inside the picture's window (`picture_days`; with none, all of them), as positions along it. */
+export function lineWindow(series: HomeSeriesPoint[] | null | undefined, today: number, days: number): LinePoint[] {
+  const inside = (series ?? []).filter((p) => p.day >= today && (days > 0 ? p.day - today <= days : true));
+  const last = inside.length ? inside[inside.length - 1].day - today : 0;
+  const span = days > 0 ? days : last;
+  return inside.map((p) => ({ x: span > 0 ? ((p.day - today) / span) * 100 : 0, fen: p.closing_fen, day: p.day, when: p.when ?? null }));
+}
+
+/** The width a tick's label takes, estimated from its length (13 px text, about 7.5 px a character) and the gap kept between two labels: positions only, the words are the server's. */
+export const TICK_CHAR_PX = 7.5;
+export const TICK_GAP_PX = 10;
+
+/** Where a tick's label sits along a row `width` px wide: from `left` to `right`, in px, and how it hangs from its day. Centred on the day, unless that would run off the row: then it hangs from the day toward the row's inside. */
+export function tickExtent(xPct: number, label: string, width: number): { left: number; right: number; align: "start" | "center" | "end" } {
+  const w = label.length * TICK_CHAR_PX;
+  const at = (xPct / 100) * width;
+  if (at - w / 2 < 0) return { left: at, right: at + w, align: "start" };
+  if (at + w / 2 > width) return { left: at - w, right: at, align: "end" };
+  return { left: at - w / 2, right: at + w / 2, align: "center" };
+}
+
+/**
+ * The labelled days along a window of `width` px: the picture's moments inside it, each at its day with the server's own words ("today", "in 47 days"). Left to right, a label is kept only when it
+ * clears the one before it by a gap, so the first day always stays and the last stays only when it fits: no two labels overprint. Without a width (not measured yet) none is drawn.
+ */
+export function dayTicks(moments: { day: number; when?: string | null }[] | null | undefined, today: number, days: number, width: number): { x: number; label: string; align: "start" | "center" | "end" }[] {
+  if (!(days > 0) || !(width > 0)) return [];
+  const kept: { x: number; label: string; right: number; align: "start" | "center" | "end" }[] = [];
+  for (const m of [...(moments ?? [])].sort((a, b) => a.day - b.day)) {
+    if (!m.when || m.day < today || m.day - today > days) continue;
+    const x = ((m.day - today) / days) * 100;
+    const e = tickExtent(x, m.when, width);
+    if (kept.length && e.left < kept[kept.length - 1].right + TICK_GAP_PX) continue;
+    kept.push({ x, label: m.when, right: e.right, align: e.align });
+  }
+  return kept.map(({ x, label, align }) => ({ x, label, align }));
+}
+
+/** A row of the Closed group under the Agreed tab: an agreed deal that is over (its status is the tracker's state word, its consequence the close-out sentence). */
+export const isClosedRow = (row: Pick<QueueRowView, "lifecycle">): boolean => lifecycleOf(row) === "closed";
+
+export type AfterGroup = "payment_late" | "awaiting_payment" | "closed";
+/** The Agreements tier's groups in the server's order (payment late, awaiting payment, closed). */
+export const AFTER_GROUPS: readonly AfterGroup[] = ["payment_late", "awaiting_payment", "closed"];
+/** The Agreements tier's group counts as the server sends them (`queue.deals.awaiting_payment`, `payment_late`, `closed`: deals, not rows); null where it sends none (the rows are counted). */
+export function afterGroupCounts(q: Queue): Partial<Record<AfterGroup, number>> | null {
+  const served = q.deals ? ("counts" in q.deals && q.deals.counts ? q.deals.counts : (q.deals as DealsCounts)) : null;
+  if (!served || (served.awaiting_payment === undefined && served.payment_late === undefined && served.closed === undefined)) return null;
+  return { payment_late: served.payment_late ?? 0, awaiting_payment: served.awaiting_payment ?? 0, closed: served.closed ?? 0 };
+}
+
+/** The group an agreement row stands in: the server's `after_group`; an older server's closed row is the Closed group; any other row stands in none. */
+export function afterGroupOf(row: Pick<QueueRowView, "lifecycle" | "after_group">): AfterGroup | null {
+  if (row.after_group && (AFTER_GROUPS as readonly string[]).includes(row.after_group)) return row.after_group;
+  return isClosedRow(row) ? "closed" : null;
+}
+
+// ---------------------------------------------------------------- walking the queue (the deal page's "Deal i of N" and previous / next)
+
+export interface DealWalk {
+  /** The deals the owner can walk, in the list's order, one per record. */
+  total: number;
+  /** 1-based position of the open deal; null when the open deal is not among them. */
+  index: number | null;
+  prev: { customer: string | null; decision: string; invoice: string | null } | null;
+  next: { customer: string | null; decision: string; invoice: string | null } | null;
+}
+
+/**
+ * The walk through the list's order: the rows the list shows (the same tab, the same urgency order), one per deal record (a promised payment and its agreement are one deal), each as the
+ * address that opens it. Positions only: the browser counts what the list holds, and every word beside the numbers is the dictionary's.
+ */
+export function dealWalk(rows: DealRow[], decision: string | null): DealWalk {
+  const seen = new Set<string>();
+  const walk: { customer: string | null; decision: string; invoice: string | null }[] = [];
+  for (const { row } of rows) {
+    const to = rowTarget(row);
+    if (to.kind !== "select" || seen.has(to.decision)) continue;
+    seen.add(to.decision);
+    walk.push({ customer: to.customer, decision: to.decision, invoice: to.invoice });
+  }
+  const at = decision ? walk.findIndex((w) => w.decision === decision) : -1;
+  return { total: walk.length, index: at >= 0 ? at + 1 : null, prev: at > 0 ? walk[at - 1] : null, next: at >= 0 && at < walk.length - 1 ? walk[at + 1] : null };
 }

@@ -2639,6 +2639,29 @@ export interface HomePending {
   }[];
 }
 
+/** The request against the recommended reply on one day, as an older server wrote it. */
+export interface PointComparisonLegacy {
+  label: string;
+  asked_display: string;
+  recommended_display: string;
+  difference_display: string;
+}
+
+/** Two responses on one day (round three, section 6): each one's figure, the signed difference and the cause of it in words (the events up to that day present on one line and not the other). For a pair of replies `asked_display` is the first of the pair and `reply_display` the second. */
+export interface PointComparison {
+  asked_display: string;
+  reply_display: string;
+  difference_display: string;
+  cause_text?: string | null;
+  /** The same cause as a list per line: `{label: "Option A", items: ["Credit line draw ¥150k today", ...]}`, one entry per line of the pair, one item per event. The server splits it; the browser never does. */
+  cause_lines?: CauseLine[] | null;
+}
+
+export interface CauseLine {
+  label: string;
+  items: string[];
+}
+
 /** One day of a projection the server already ran: closing cash (fen for the axis only) and the events that moved it. */
 export interface HomeSeriesPoint {
   day: Day;
@@ -2648,7 +2671,10 @@ export interface HomeSeriesPoint {
   display?: string;
   when?: string;
   /** On a deal's picture series: the same day's figures for the request and the recommended reply, and the server's signed difference (never computed here). */
-  comparison?: { label: string; asked_display: string; recommended_display: string; difference_display: string } | null;
+  /** Round three: a map keyed by the reply's id (an older server: the request against the recommended reply, one strip). The words are the server's; the browser subtracts nothing. */
+  comparison?: PointComparisonLegacy | Record<string, PointComparison> | null;
+  /** Round three: the same day's words for a pair of two replies, keyed `<a>:<b>`. */
+  comparison_pairs?: Record<string, PointComparison> | null;
   events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string; basis?: ReceiptBasis | null; basis_text?: string | null }[];
   /** The day's net movement as the server added it (a day with several events is labelled by this, never by its largest component). */
   net_fen?: Fen;
@@ -3562,6 +3588,9 @@ export interface QueueRowView {
   why_first_text?: string | null;
   /** The negotiation's lifecycle key (round two): counter_ready, owner_review, awaiting_buyer, more_info, agreed, declined, lapsed. `status_text` is then the lifecycle word alone. Absent from an older server (the tier decides the pill's tone and `status_text` is "state . who acts"). */
   lifecycle?: string | null;
+  /** Round three, section 11: the Agreements tier's three groups, in this order: payment_late, awaiting_payment, closed. A deal with money still owed is never closed. The label is the server's word ("Payment late"). */
+  after_group?: "payment_late" | "awaiting_payment" | "closed" | null;
+  after_group_label?: string | null;
   /** The subject with the offer's id appended: the Demo view's (Business never shows an id). */
   subject_demo_text?: string | null;
   /** The day of the negotiation's latest activity (round two) and the server's words for it ("today", "3 days ago"): the "Latest activity" sort. Absent: that sort is not offered. */
@@ -3574,11 +3603,40 @@ export interface QueueRowView {
   why_first?: never;
 }
 
-/** The counts of the negotiations the Deals queue lists (round two). */
-export type DealsCounts = Partial<Record<"all" | "total" | "needs_you" | "waiting" | "agreements", number>>;
+/** The counts of the negotiations the Deals queue lists (round two). `agreements` counts the agreements in force; `closed` the agreed deals that are over (round three, section 11). */
+export type DealsCounts = Partial<Record<"all" | "total" | "needs_you" | "waiting" | "agreements" | "closed" | "awaiting_payment" | "payment_late", number>>;
+
+/** One step of a deal's whole life (round three, section 11): the offer's stages before agreement (Received, Analysed, Reply ready or Owner review, Sent, Agreed), the contract stages after it. `state_text` is the server's word for the state; `when_text` says when a done stage happened. A stage the deal does not have is absent. */
+export interface LifecycleStageView {
+  key: string;
+  label: string;
+  state: "done" | "now" | "todo" | "missed" | "part";
+  state_text: string;
+  when_text?: string | null;
+}
+
+/** What the deal workspace reads add for section 11: the lifecycle strip, and the sentence about the buyer's last agreed or ended deal (context only; `buyer_history_title` says so). */
+export interface DealLifeWords {
+  lifecycle_stages?: LifecycleStageView[] | null;
+  buyer_history_text?: string | null;
+  buyer_history_title?: string | null;
+}
+
+/** One of a buyer's agreed or closed deals on the Customer page (round three, section 11): the subject, the tracker's state word, the close-out (or the agreed sentence) and the link into Deals. */
+export interface DealsHistoryRow {
+  decision_id: string;
+  subject_text: string;
+  lifecycle: "agreed" | "closed" | string;
+  state_word: string;
+  state_tone: "ok" | "warn" | "bad" | "neutral" | string;
+  summary_text: string | null;
+  href: string;
+}
 
 /** GET /deals `queue`: the three tiers of tasks and the counts the tabs show (Needs you = distinct tasks, Waiting = distinct pending outcomes, Agreements = agreements and their promises, Customers = unique relationships; the company alert is counted nowhere). The customers themselves are `GET /customers`. */
 export interface DealsQueue {
+  /** The page's one sentence ("Nothing needs you today."), written by the server from the same rows as the list. Absent from an older server: the page then says it from the counts. */
+  headline_text?: string | null;
   counts: { needs_you: number; waiting: number; agreements: number; customers: number };
   alert: WorklistAlert | null;
   needs_you: QueueRowView[];
@@ -3781,12 +3839,16 @@ export type DecisionSent =
         net_display: string;
         net_fen: Fen;
         basis_facility_name: string | null;
+        /** The cost quoted when the reply was sent and the server's words for it and for the net ("Cost of the terms over 12 months, priced at the ... rate"). Absent from an older server (the old line is drawn). */
+        quoted_cost_display?: string;
+        quoted_cost_label_text?: string;
+        net_label_text?: string;
       } | null;
       funding_blocked: string | null;
     };
 
 /** GET /decisions/{id}: the summary plus everything the record holds. Every sentence and figure is the server's. */
-export interface DecisionView extends DecisionSummary {
+export interface DecisionView extends DecisionSummary, DealLifeWords {
   source: {
     kind: "OFFER" | "ALERT" | "OPERATION";
     offer_id?: string;
@@ -3874,7 +3936,7 @@ export interface OfferPictureLine {
 }
 
 /** GET /offers/{offer_id}/picture: the offer as asked and one line per reply FLOW has ready. Display only. */
-export interface OfferPictureView {
+export interface OfferPictureView extends DealLifeWords {
   offer_id: string;
   verdict_id: string | null;
   lang: "en" | "zh";
@@ -3901,6 +3963,12 @@ export interface OfferPictureView {
   unavailable_text?: string | null;
   /** Accept as asked (a request that needs the owner's review and has no counter): whether the owner may accept it, the server's reason when not, the labels and the receipt. Absent from an older server. */
   accept?: AcceptBlock | null;
+  /** Round three: the recommendation in words. Absent from an older server. */
+  recommendation?: PictureRecommendation | null;
+  /** Round three, section 4: the consequences apart from the responses (keys `no_new_agreement`, `late_30`, `customer_loss`). Declared ahead of the server's batch. */
+  scenarios?: PictureScenario[] | null;
+  /** Why there is no further reply, one entry per kind withheld. Absent or empty: no line is drawn. */
+  withheld?: PictureWithheld[] | null;
 }
 
 /** One term of a path, as the owner would say it: what it is now and, for a reply, what it replaces. */
@@ -3910,6 +3978,46 @@ export interface PathTerm {
   /** Null when the reply or the ask has nothing to say for this term: the line is omitted (never the word "None"). */
   value_text: string | null;
   instead_of_text: string | null;
+  /** Round three: the scope the term belongs to and the server's word for it ("Existing invoice", "Future invoices", "Next quarter"). Absent from an older server. */
+  scope?: TermScopeKey | null;
+  scope_label?: string | null;
+  /** Round three: the cell's one word, always present: the value, "Not offered" or "Unchanged" (`value_text` stays null for an untouched row, so the cell reads this). */
+  cell_text?: string | null;
+}
+
+/** One row of a scenario card: its label and words; a late-payment row is one response's lowest cash under the delay (`key` is the response's key, never shown). */
+export interface PictureScenarioRow {
+  key: string;
+  label: string;
+  text: string;
+  lowest_short?: string | null;
+  lowest_when?: string | null;
+  breach_days_text?: string | null;
+}
+
+/** One scenario card (round three, section 4), every word the server's: the assumption sentence first, then its rows. The customer loss also names its four sentences apart (the rows repeat them in order). */
+export interface PictureScenario {
+  key: "no_new_agreement" | "late_30" | "customer_loss" | string;
+  label: string;
+  assumption_text: string | null;
+  /** False when the scenario cannot be drawn on today's books: `unavailable_text` says why. */
+  available?: boolean;
+  unavailable_text?: string | null;
+  lost_billings_text?: string | null;
+  lost_contribution_text?: string | null;
+  cash_effect_text?: string | null;
+  invoice_remains_text?: string | null;
+  rows?: PictureScenarioRow[] | null;
+}
+
+/** The three scopes of a deal's terms (round three). */
+export type TermScopeKey = "existing_invoice" | "future_invoices" | "next_quarter";
+
+/** The recommendation in two sentences and the rule (round three): the first reply FLOW may send within the mandate, another that needs the owner (null when there is none), and the rule said once. */
+export interface PictureRecommendation {
+  mandate_text: string;
+  alternative_text: string | null;
+  rule_text: string;
 }
 
 /** One path on the offer's picture. `key` is "asked" or a counter's id (never shown); every word is the server's. */
@@ -3968,10 +4076,28 @@ export interface PicturePath {
   recommended_reason_kind?: string | null;
   /** Whether the company plan is assumed to run in this path's cash and that the offer is assumed accepted, in one sentence. */
   scenario_assumption_text?: string | null;
+  /** Round three, the comparison's cells in the server's short words. `authority_short_text` is null when the response cannot be sent at all. `lowest_day` is for plotting only and is never shown. */
+  authority_short_text?: string | null;
+  reserve_state_text?: string | null;
+  headroom_short?: string | null;
+  lowest_day?: Day | null;
+  financing_needed_text?: string | null;
+  buyer_status_text?: string | null;
+  economic_headline_text?: string | null;
+  economic_basis_text?: string | null;
+  economic_sentence_text?: string | null;
   /** The asked path only: what the invoice becomes under the ask (after the buyer's discount, the requested discount), each with its share of the face in the server's words; null or empty without an immediate discount. */
   ask_breakdown?: { label: string; amount_display: string; share_text: string }[] | null;
   /** The asked path only: the deal card's three facts in the server's words; any may be null. */
   ask_facts?: { invoice_value_display: string | null; requested_discount_display: string | null; requested_term_text: string | null } | null;
+  /** A reply only: what happens if the buyer refuses it, in the server's words (null on the request). Absent or null: the review says nothing about a refusal. */
+  if_refused_text?: string | null;
+}
+
+/** Why the picture has no further reply: one server sentence for each kind of counter the engine considered and did not offer (`kind`, e.g. the lever, is never shown). Empty when nothing was withheld. */
+export interface PictureWithheld {
+  kind: string;
+  text: string;
 }
 
 /** Who decides, in the verifier's three classes. */
@@ -4300,6 +4426,8 @@ export interface CustomerOverviewView {
   summary_text?: string;
   /** Round two: the one sentence first ("Foshan contributes an estimated ¥1.09m a year, owes ¥420k (54.5% of your open receivables), and has three negotiations that could change your cash."). */
   relationship_text?: string | null;
+  /** Round three, section 11: the buyer's agreed and closed deals, newest first. */
+  deals_history?: DealsHistoryRow[] | null;
   figures?: OverviewFigure[];
   /** Round two: the receivable-to-financing-to-net-collection flow for the customer's largest open invoice. */
   receivable_flow?: ReceivableFlow | FlowStep[] | null;
@@ -4427,6 +4555,8 @@ export interface ActivityRow {
   decision_id: string | null;
   href: string | null;
   href_label: string | null;
+  /** Round three: `href` leads to Deals for an agreed or ended deal; the decision record stays reachable here. */
+  record_href?: string | null;
   evidence_href: string;
   evidence_label: string;
   /** Lower-cased words of the row, for the page's search box. */

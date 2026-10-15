@@ -72,8 +72,8 @@ def test_the_sandbox_says_it_simulates_every_invoice_and_names_the_negotiations_
     assert zhuhai["scope_text"] == {
         "en": "The sandbox applies the terms to every Zhuhai invoice for the next 12 months, not only the next one; the negotiation itself asks for one invoice.",
         "zh": "沙盘把这些条款应用于Zhuhai未来 12 个月内的每一张发票，而不只是下一张；这项谈判本身只涉及一张发票。"}[lang]
-    assert zhuhai["compare_text"] == {"en": "The negotiation as asked: ¥668.32 over 12 months, within your limit.",
-                                      "zh": "按对方要求的谈判：¥668.32（12 个月内），在您的限额内。"}[lang]
+    assert zhuhai["compare_text"] == {"en": "The negotiation if you accept their request: ¥668.32 over 12 months, within your limit.",
+                                      "zh": "如果接受对方的要求，谈判成本：¥668.32（12 个月内），在您的限额内。"}[lang]
     asked = next(p for p in api.get(f"/offers/{busy['zhuhai']}/picture", params={"lang": lang}).json()["paths"] if p["key"] == "asked")
     assert asked["cost_total_display"] in zhuhai["compare_text"]  # the picture's own figure for the ask, not a second computation
     assert zhuhai["invoice_text"].count("RCV-") == 0 and "RCV-" not in zhuhai["scope_text"] + zhuhai["compare_text"]
@@ -97,7 +97,7 @@ def test_without_an_offer_the_sandbox_says_what_it_simulates_and_has_no_negotiat
     assert by_buyer["scope_text"] == "The sandbox applies the terms to every Zhuhai invoice for the next 12 months, not only the next one."
     assert by_buyer["compare_text"] is None
     presets = api.get("/whatif/presets", params={"offer_id": busy["zhuhai"]}).json()
-    assert presets["scope_text"].endswith("the negotiation itself asks for one invoice.") and presets["compare_text"].startswith("The negotiation as asked: ¥668.32")
+    assert presets["scope_text"].endswith("the negotiation itself asks for one invoice.") and presets["compare_text"].startswith("The negotiation if you accept their request: ¥668.32")
     unavailable = api.get("/whatif/presets", params={"offer_id": busy["dongguan"]}).json()
     assert unavailable["available"] is False and unavailable["compare_text"] is None  # the reason it cannot run is the scope text, unchanged
 
@@ -229,8 +229,9 @@ def test_before_an_agreement_the_history_row_and_the_outstanding_are_as_they_wer
 def test_the_home_customer_rows_waiting_count_leaves_out_the_promise(api: TestClient, busy: dict[str, str], lang: str) -> None:
     agree_on_rcv_a(api)
     queue = api.get("/deals", params={"lang": lang}).json()["queue"]
-    assert queue["counts"]["waiting"] == 1 and queue["counts"]["agreements"] == 2  # one reply awaited; the agreement and its promise
-    assert any(r["kind"] == "PROMISE" and r["customer_id"] == "BUYER-1" for r in queue["agreements"])
+    assert queue["counts"]["waiting"] == 1 and queue["counts"]["agreements"] == 1  # one reply awaited; the agreement, which carries its promise
+    assert not any(r["kind"] == "PROMISE" for r in queue["agreements"])
+    assert any(r["kind"] == "AGREEMENT" and r["customer_id"] == "BUYER-1" and ("has promised" if lang == "en" else "买方承诺") in r["consequence_text"] for r in queue["agreements"])
     foshan = next(c for c in api.get("/customers", params={"lang": lang}).json()["customers"] if c["customer_id"] == "BUYER-1")
     waiting_for_foshan = sum(1 for r in queue["waiting"] if r["customer_id"] == "BUYER-1")
     assert waiting_for_foshan == 1

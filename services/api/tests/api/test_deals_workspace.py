@@ -52,7 +52,7 @@ def test_why_it_matters_and_what_flow_recommends(client, rt):
     ws = v["workspace"]
     assert ws["why_it_matters"]["reasons"] == [
         "The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit.",
-        "Accepted as asked, cash would fall below your minimum in 47 days."]
+        "If you accept their request, cash would fall below your minimum in 47 days."]
     assert ws["recommends"] == {"action": "counter", "text": "Counter recommended"} and v["business_action"] == "counter"
 
 

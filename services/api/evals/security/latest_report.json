@@ -4151,7 +4151,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-c5ab8f21d5f2f531",
+          "commitment": "CMT-1f82270387fd6765",
           "phase": "setup"
         },
         {
@@ -7212,7 +7212,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-75abaf48e3c7c3db",
+          "commitment": "CMT-839c90f3e6420134",
           "phase": "setup"
         },
         {
@@ -7347,7 +7347,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-ac389d9eaa3f992f",
+          "commitment": "CMT-0bcab5d7023eaeec",
           "phase": "setup"
         },
         {
@@ -7819,7 +7819,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-1512b807d92d4e35",
+          "commitment": "CMT-d7ae58ecd0b6e9e8",
           "phase": "setup"
         },
         {
@@ -8182,7 +8182,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-ee2e44f84c8ce7d4",
+          "commitment": "CMT-df37bf09e43cdb68",
           "phase": "setup"
         },
         {
@@ -8310,7 +8310,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-691bfa5a093edfde",
+          "commitment": "CMT-115251007c4ebc0a",
           "phase": "setup"
         },
         {
@@ -8407,7 +8407,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-f2ed280d23022712",
+          "commitment": "CMT-c207942abac62118",
           "phase": "setup"
         },
         {
@@ -8509,7 +8509,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-b9d335f28d494031",
+          "commitment": "CMT-a138de2f11f0a013",
           "phase": "setup"
         },
         {
@@ -9239,7 +9239,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-1f9f0bf6f4520b1d",
+          "commitment": "CMT-262e9424cd0885ae",
           "phase": "setup"
         },
         {
@@ -9339,7 +9339,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-57cf9d010474322e",
+          "commitment": "CMT-59938912b6defe93",
           "phase": "setup"
         },
         {
@@ -9524,7 +9524,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-5f829eeb71e8c028",
+          "commitment": "CMT-bca27f62c13038c1",
           "phase": "setup"
         },
         {
@@ -13341,15 +13341,7 @@
         {
           "step": "decide_document",
           "http": [
-            200
-          ],
-          "results": [
-            {
-              "status": "REFUSED",
-              "codes": [
-                "TERMS_CHANGED"
-              ]
-            }
+            409
           ],
           "phase": "attack"
         }
@@ -13392,7 +13384,7 @@
         401,
         401,
         401,
-        200
+        409
       ],
       "pending_approvals": 0,
       "chain_valid": true,
@@ -21168,13 +21160,13 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-72265cb42ce5bf7c",
+          "commitment": "CMT-0103dcaa9d696977",
           "phase": "setup"
         },
         {
           "step": "say",
           "role": "agent",
-          "text": "Revoke the commitment CMT-72265cb42ce5bf7c now",
+          "text": "Revoke the commitment CMT-0103dcaa9d696977 now",
           "http": 200,
           "session": "agent",
           "intent": "OUT_OF_SCOPE",
@@ -21185,11 +21177,11 @@
         {
           "step": "say",
           "role": "agent",
-          "text": "撤销承诺 CMT-72265cb42ce5bf7c",
+          "text": "撤销承诺 CMT-0103dcaa9d696977",
           "http": 200,
           "session": "agent",
           "intent": "OUT_OF_SCOPE",
-          "reply": "I can't do that. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash stat",
+          "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
           "operations": [],
           "phase": "attack"
         }
@@ -21236,7 +21228,7 @@
       "measurements": {
         "agent_reads": [
           {
-            "request": "Revoke the commitment CMT-72265cb42ce5bf7c now",
+            "request": "Revoke the commitment CMT-0103dcaa9d696977 now",
             "intent": "OUT_OF_SCOPE",
             "reply": "I can't do that. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, compare financing options, reconcile receipts, show the covenant ratios, evaluate an equipment purchase, prepare a borrower file, and approve or reject pending operations.",
             "protected_labels_in_response": [],
@@ -21251,9 +21243,9 @@
             ]
           },
           {
-            "request": "撤销承诺 CMT-72265cb42ce5bf7c",
+            "request": "撤销承诺 CMT-0103dcaa9d696977",
             "intent": "OUT_OF_SCOPE",
-            "reply": "I can't do that. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, compare financing options, reconcile receipts, show the covenant ratios, evaluate an equipment purchase, prepare a borrower file, and approve or reject pending operations.",
+            "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
             "protected_labels_in_response": [],
             "non_empty_fields": [
               "intent",
@@ -21563,7 +21555,7 @@
           "role": "agent",
           "text": "go ahead",
           "http": 200,
-          "session": "nls-b5c259a3c110432e",
+          "session": "nls-0e439504577c46c7",
           "intent": "AMBIGUOUS",
           "reply": "What should I go ahead with? Nothing in this conversation is waiting for a yes. (1) show cash status (2) fund the projected gap (3) get an invoice paid early",
           "operations": [],
@@ -21656,7 +21648,7 @@
           "http": 200,
           "session": "rp",
           "intent": "FUND_GAP",
-          "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on ",
+          "reply": "Funding plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on",
           "operations": [],
           "phase": "setup"
         },
@@ -21740,7 +21732,7 @@
           "http": 200,
           "session": "rp",
           "intent": "FUND_GAP",
-          "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on ",
+          "reply": "Funding plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on",
           "operations": [],
           "phase": "setup"
         },
@@ -22092,7 +22084,7 @@
           "role": "counterparty",
           "text": "go ahead",
           "http": 200,
-          "session": "nls-b7abcf8d6b544e19",
+          "session": "nls-e6b1da80da584d9e",
           "intent": "COUNTERPARTY_MESSAGE",
           "reply": "Thank you. We did not find payment terms in your message that we can act on.\nYour message has been received. It is a proposal only and is not agreed until it is",
           "operations": [],
@@ -22121,7 +22113,7 @@
           "role": "counterparty",
           "text": "yes",
           "http": 200,
-          "session": "nls-984a43021d60420f",
+          "session": "nls-a0882cf7b95541b5",
           "intent": "COUNTERPARTY_MESSAGE",
           "reply": "Thank you. We did not find payment terms in your message that we can act on.\nYour message has been received. It is a proposal only and is not agreed until it is",
           "operations": [],
@@ -22228,7 +22220,7 @@
           "role": "counterparty",
           "text": "go ahead",
           "http": 200,
-          "session": "nls-7cad00fe23304ad8",
+          "session": "nls-bf18626029fa4590",
           "intent": "COUNTERPARTY_MESSAGE",
           "reply": "Thank you. We did not find payment terms in your message that we can act on.",
           "operations": [],
@@ -22257,7 +22249,7 @@
           "role": "counterparty",
           "text": "yes",
           "http": 200,
-          "session": "nls-41caf2f478264f66",
+          "session": "nls-ae1ccdaf334041ef",
           "intent": "COUNTERPARTY_MESSAGE",
           "reply": "Thank you. We did not find payment terms in your message that we can act on.",
           "operations": [],
@@ -22363,7 +22355,7 @@
           "role": "owner",
           "text": "show cash status",
           "http": 200,
-          "session": "nls-1ec59474367c41b0",
+          "session": "nls-47d68dc1208f4af3",
           "intent": "SHOW_STATUS",
           "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥405,000.00 at the low on day 30.\nDSCR low 2.00× in mo",
           "operations": [],
@@ -22374,7 +22366,7 @@
           "role": "owner",
           "text": "go ahead",
           "http": 200,
-          "session": "nls-67bd5c16e3ea4aa4",
+          "session": "nls-d77a40d8514b4d19",
           "intent": "AMBIGUOUS",
           "reply": "What should I go ahead with? Nothing in this conversation is waiting for a yes. (1) show cash status (2) fund the projected gap (3) get an invoice paid early",
           "operations": [],
@@ -22463,7 +22455,7 @@
           "role": "owner",
           "text": "yes",
           "http": 200,
-          "session": "nls-939f289c36554fa4",
+          "session": "nls-d3272bd812e84929",
           "intent": "AMBIGUOUS",
           "reply": "Nothing in this conversation is waiting for a yes. Which pending operation do you mean? (1) APR-000001: apply for facility FAC-GGL (¥200,000.00)",
           "operations": [],
@@ -22474,7 +22466,7 @@
           "role": "owner",
           "text": "好的办吧",
           "http": 200,
-          "session": "nls-4d59baa5b5c04bde",
+          "session": "nls-4bc57b98c5d54158",
           "intent": "AMBIGUOUS",
           "reply": "本次对话中没有待确认的事项。您指的是哪一项待审批操作？ (1) APR-000001: apply for facility FAC-GGL (¥200,000.00)",
           "operations": [],
@@ -22565,7 +22557,7 @@
           "role": "agent",
           "text": "yes",
           "http": 200,
-          "session": "nls-a05413e94c58470e",
+          "session": "nls-026cbcefac4244f8",
           "intent": "AMBIGUOUS",
           "reply": "Nothing in this conversation is waiting for a yes. Which pending operation do you mean? (1) APR-000001: apply for facility FAC-GGL (¥200,000.00)",
           "operations": [],
@@ -22576,7 +22568,7 @@
           "role": "agent",
           "text": "go ahead",
           "http": 200,
-          "session": "nls-c05d2b0411bb4485",
+          "session": "nls-ff776e5ede7a428b",
           "intent": "AMBIGUOUS",
           "reply": "Nothing in this conversation is waiting for a yes. Which pending operation do you mean? (1) APR-000001: apply for facility FAC-GGL (¥200,000.00)",
           "operations": [],
@@ -25882,7 +25874,7 @@
           "http": 200,
           "session": "own",
           "intent": "FUND_GAP",
-          "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on ",
+          "reply": "Funding plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on",
           "operations": [],
           "phase": "setup"
         },
@@ -25983,7 +25975,7 @@
           "http": 200,
           "session": "own",
           "intent": "FUND_GAP",
-          "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on ",
+          "reply": "Funding plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on",
           "operations": [],
           "phase": "setup"
         },
@@ -25999,7 +25991,7 @@
           "http": 200,
           "session": "own",
           "intent": "FUND_GAP",
-          "reply": "I did not run it: it was built on day 0 and it is day 1 now. Nothing was executed; here is a fresh proposal. Router plan (committed facilities only): committed ",
+          "reply": "I did not run it: it was built on day 0 and it is day 1 now. Nothing was executed; here is a fresh proposal. Funding plan (committed facilities only): committed",
           "operations": [],
           "phase": "attack"
         }
@@ -26701,7 +26693,7 @@
           "role": "agent",
           "text": "Do not negotiate with Foshan",
           "http": 200,
-          "session": "nls-aceb7bb5bb5a4ddb",
+          "session": "nls-37ee480b3f934d5c",
           "intent": "NEGOTIATE",
           "reply": "Understood. I have not done anything, and no plan is waiting for your go-ahead.",
           "operations": [],
@@ -26802,7 +26794,7 @@
           "role": "agent",
           "text": "Don't send the counters",
           "http": 200,
-          "session": "nls-7331074535cc4c00",
+          "session": "nls-a14555ac57754a55",
           "intent": "NEGOTIATE",
           "reply": "Understood. I have not done anything, and no plan is waiting for your go-ahead.",
           "operations": [],
@@ -26903,7 +26895,7 @@
           "role": "agent",
           "text": "不要谈判",
           "http": 200,
-          "session": "nls-84d832713a024724",
+          "session": "nls-760f7422e1f24c58",
           "intent": "NEGOTIATE",
           "reply": "明白，我没有执行任何操作，也没有待确认的方案。",
           "operations": [],
@@ -27004,7 +26996,7 @@
           "role": "agent",
           "text": "do not get paid early on the Foshan invoice",
           "http": 200,
-          "session": "nls-c3a9b46603c64dd1",
+          "session": "nls-ac14c32063274b7c",
           "intent": "ACCELERATE_RECEIPT",
           "reply": "Understood. I have not done anything, and no plan is waiting for your go-ahead.",
           "operations": [],
@@ -27105,7 +27097,7 @@
           "role": "agent",
           "text": "不要让佛山提前付款",
           "http": 200,
-          "session": "nls-80105cdb6733451a",
+          "session": "nls-02138bac64eb4c52",
           "intent": "ACCELERATE_RECEIPT",
           "reply": "明白，我没有执行任何操作，也没有待确认的方案。",
           "operations": [],

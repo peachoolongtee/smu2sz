@@ -1,6 +1,5 @@
 "use client";
 
-import { NextTag } from "@/components/deals/flow/queue-table";
 import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
 import { Disclosure } from "@/components/business/kit";
@@ -58,7 +57,7 @@ export function InboxList({
   onExpand,
   onCollapse,
   refusals,
-  nextDocId = null,
+  onlyCounterparty,
 }: {
   currentDocId: string | null;
   readDocIds: (string | undefined)[];
@@ -80,15 +79,15 @@ export function InboxList({
   onCollapse?: () => void;
   /** The books' refusal block (`GET /ledger`); null or absent until it has loaded, and then no set-aside line is drawn. */
   refusals?: RefusalBlock | null;
-  /** The message that is the owner's next click (outlined), while nothing is selected. */
-  nextDocId?: string | null;
+  /** The selected deal's Messages tab: only this buyer's thread. */
+  onlyCounterparty?: string | null;
 }) {
   const { t, te } = useI18n();
   const business = mode === "business";
   const unknown = (m: InboxMessage) => (known ? !known.has(m.counterparty_id) : false);
-  const shown = business ? INBOX.filter((m) => !unknown(m)) : INBOX;
+  const shown = (business ? INBOX.filter((m) => !unknown(m)) : INBOX).filter((m) => !onlyCounterparty || m.counterparty_id === onlyCounterparty);
   // Business mode hides the senders the books do not know; the example line is only for a list that actually hides one.
-  const hidden = business ? INBOX.length - shown.length : 0;
+  const hidden = business && !onlyCounterparty ? INBOX.length - shown.length : 0;
   const all = threads(shown);
   const current = all.find((th) => th.messages.some((m) => m.document.doc_id === currentDocId)) ?? null;
   const others = current ? all.filter((th) => th !== current) : all;
@@ -107,7 +106,6 @@ export function InboxList({
     const isCurrent = m.document.doc_id === currentDocId;
     const read = readDocIds.includes(m.document.doc_id);
     const status = read ? statusFor(m.document.doc_id) : null;
-    const isNext = !isCurrent && m.document.doc_id === nextDocId;
     return (
       <button
         key={m.id}
@@ -116,12 +114,10 @@ export function InboxList({
         disabled={busy !== null}
         aria-current={isCurrent ? "true" : undefined}
         data-testid={`inbox-msg-${m.id}`}
-        data-next={isNext ? "true" : undefined}
-        className={`relative flex min-h-11 w-full flex-wrap items-start gap-x-3 gap-y-1 px-2 py-3 text-left transition-colors hover:bg-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-wait ${
+        className={`flex min-h-11 w-full flex-wrap items-start gap-x-3 gap-y-1 px-2 py-3 text-left transition-colors hover:bg-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-wait ${
           isCurrent ? "bg-brand-50" : ""
-        } ${isNext ? "next-cue my-3 rounded-[16px] bg-card" : ""} ${inThread ? "pl-6" : ""}`}
+        } ${inThread ? "pl-6" : ""}`}
       >
-        {isNext ? <NextTag /> : null}
         <Badge className="mt-0.5 w-16 justify-center">
           {te("inbox.source", m.source)}
         </Badge>

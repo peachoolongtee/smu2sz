@@ -80,7 +80,7 @@ def _rows(body: dict[str, Any]) -> dict[str, dict[str, Any]]:
 def test_the_rows_come_in_the_briefs_order(reads):
     body = reads["en"]
     assert [r["kind"] for r in body["rows"]] == ["current", "asked", "reply", "reply", "customer_loss"]
-    assert [r["label"] for r in body["rows"]] == ["Your books as they stand", "As they asked", "Option A", "Option B",
+    assert [r["label"] for r in body["rows"]] == ["Your books as they stand", "Accept their request", "Option A", "Option B",
                                                   "If Foshan stops buying"]
     assert all(r["available"] for r in body["rows"]) and body["hypothetical"] is True and body["late"] == 0
 
@@ -88,14 +88,14 @@ def test_the_rows_come_in_the_briefs_order(reads):
 def test_each_row_says_its_assumption(reads):
     rows = _rows(reads["en"])
     assert rows["current"]["assumption_text"] == "Your books as they stand: Foshan keeps buying on today's terms."
-    assert rows["asked"]["assumption_text"] == "If you accept Foshan's request as asked."
+    assert rows["asked"]["assumption_text"] == "If you accept Foshan's request."
     assert rows["Option A"]["assumption_text"] == "If Foshan accepts Option A."
     assert rows["customer_loss"]["assumption_text"] == (
         "Scenario assumes Foshan stops buying from you after today; the ¥420,000 already invoiced (due in 32 days) is still paid. "
         "This is not a prediction.")
     zh = _rows(reads["zh"])
     assert zh["current"]["assumption_text"] == "您账面的现状：Foshan Home Retail Co.按今天的条款继续采购。"
-    assert zh["asked"]["assumption_text"] == "如果您按对方要求接受Foshan Home Retail Co.的请求。"
+    assert zh["asked"]["assumption_text"] == "如果您接受Foshan Home Retail Co.的请求。"
     assert zh["方案 A"]["assumption_text"] == "如果Foshan Home Retail Co.接受方案 A。"
 
 

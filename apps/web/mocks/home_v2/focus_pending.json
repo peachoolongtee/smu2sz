@@ -149,6 +149,17 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+            "lifecycle": "agreed",
+            "state_word": "Payment late",
+            "state_tone": "bad",
+            "summary_text": "Agreed 34 days ago",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -344,6 +355,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Dongguan.",
         "actions": [
@@ -593,6 +605,17 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+            "lifecycle": "agreed",
+            "state_word": "付款逾期",
+            "state_tone": "bad",
+            "summary_text": "34 天前达成协议",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [
@@ -788,6 +811,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "目前没有需要您对Dongguan作出的商务决定。",
         "actions": [

@@ -74,6 +74,7 @@ import type {
   NlRequest,
   NlResponse,
   OfferPictureView,
+  PictureScenario,
   OfferView,
   PlanRequest,
   DealsContext,
@@ -310,6 +311,11 @@ export async function getEnvelope(buyerId: string, lang: "en" | "zh", zone = fal
  * GET /offers/{offer_id}/exposure (flag `exposure`): what the open deal does to the exposure to its buyer, for every path at once. Null when
  * the server has the feature off or lacks the offer, so the Deals page keeps its current form. Call it only behind STRATEGY_MVP.
  */
+/** The scenarios behind Cash impact's Business consequences (their own read: composing them is slow on a cold start). An empty list is a server with the exposure off. */
+export async function getOfferScenarios(offerId: string, lang: "en" | "zh"): Promise<PictureScenario[]> {
+  return isMock ? (await mock()).getOfferScenarios(offerId, lang) : (await live()).getOfferScenarios(offerId, lang);
+}
+
 export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
   return isMock ? (await mock()).getOfferExposure(offerId, lang) : (await live()).getOfferExposure(offerId, lang);
 }
