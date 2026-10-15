@@ -317,3 +317,25 @@ def test_the_blank_books_stay_openable_after_a_restart(client) -> None:
     rt.scenario = "golden_sme"  # a restarted process reads the scenario from the stored books, not from memory
     rt.hydrate()
     assert client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"}).status_code == 200
+
+
+def test_a_failure_while_opening_puts_the_blank_books_back(client, monkeypatch) -> None:
+    blank(client)
+    rt = get_runtime()
+
+    def boom(*a, **k):
+        raise RuntimeError("disk on fire /srv/secret/path")
+
+    monkeypatch.setattr(rt.store, "append_operation", boom)
+    r = client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"})
+    assert r.status_code == 500 and r.json()["detail"]["code"] == "SETUP_FAILED"
+    assert "nothing was opened" in r.json()["detail"]["message"] and "disk on fire" not in r.text
+    zh = client.post("/setup/open?lang=zh", json={"draft": DRAFT, "password": "demo-owner-token"})
+    assert zh.status_code == 500 and "空白账簿" in zh.json()["detail"]["message"]
+    monkeypatch.undo()
+    state = rt.store.get_state()
+    assert state.scenario == "blank" and state.cash_fen == 0 and rt.scenario == "blank" and rt.day == 0
+    assert rt.store.operations() == [] and rt.store.commitments() == [] and rt.store.verify_chain()
+    assert client.get("/setup/status").json()["books"] == "blank"
+    # and the books can still be opened afterwards
+    assert client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"}).status_code == 200

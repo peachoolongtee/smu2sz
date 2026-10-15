@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from datetime import date, timedelta
 from fractions import Fraction
 from typing import Any, Literal
@@ -46,6 +47,7 @@ from app.domain.money import fmt_pct, fmt_yuan
 from app.persistence import InMemoryLedgerStore
 from app.setup import Built, SetupDraft, build_books
 
+log = logging.getLogger(__name__)
 router = APIRouter(dependencies=[Depends(require_owner)])
 Lang = Literal["en", "zh"]
 
@@ -464,11 +466,17 @@ def _carry_documents(draft: SetupDraft, docs: dict[str, ContractRecord]) -> list
     return out
 
 
+def _restore_blank(rt: Any) -> None:
+    """After a failed open: the blank books again, never half-built ones."""
+    try:
+        rt.reset_demo("blank")
+    except Exception:  # noqa: BLE001  the caller still answers with the refusal; the log says what else went wrong
+        log.exception("setup: the blank books could not be put back after a failed open")
+
+
 @router.post("/setup/open")
 def setup_open(body: OpenIn, request: Request, lang: str = "en") -> dict:
-    from app.api.strategy_exposure import clear_cache as clear_exposure_cache
     from app.mandate import load_demo_owner_key, sign
-    from app.nl import reset_sessions
     from app.persistence.canonical import canonical_json
 
     lg = _lang(lang)
@@ -495,36 +503,41 @@ def setup_open(body: OpenIn, request: Request, lang: str = "en") -> dict:
         if not _books_are_blank():  # the books may have changed while the draft was being checked
             raise _already_open(lg)
         carried = _carry_documents(body.draft, {r.id: r for r in _usable_documents()})
-        rt.store.reset()
-        rt.store.put_state(state)
-        rt.store.put_mandate(mandate)
-        rt.day, rt.scenario, rt.fresh = 0, "own", None
-        rt.latest_verdict.clear()
-        rt.documents.clear()
-        rt.intake_day, rt.intake_count = 0, 0
-        reset_sessions()
-        clear_exposure_cache()
-        op_id = f"open-books-{state.as_of}"
-        digest = hashlib.sha256(state.model_dump_json().encode() + mandate.model_dump_json().encode()).hexdigest()
-        payload = {"kind": OPEN_BOOKS_KIND, "op_id": op_id, "requested_by": Actor.OWNER.value, "day": 0,
-                   "company_name": company, "start_date": state.as_of, "cash_fen": state.cash_fen,
-                   "facilities": len(state.facilities), "debts": len(state.debts), "receivables": len(state.receivables),
-                   "recurring_invoices": len(state.recurring_invoices), "flows": len(state.flows),
-                   "mandate_version": mandate.version, "books_sha256": digest}
-        words = open_books_words(payload, "en")
-        msg = f"{words['event_text']} {words['event_detail']}"
-        result = OperationResult(op_id=op_id, kind=OPEN_BOOKS_KIND, status=OperationStatus.EXECUTED, tier=Tier.TIER_2,
-                                 effective_day=0, message=msg)
-        rec = rt.store.append_operation(op_id, OPEN_BOOKS_KIND, op_id, canonical_json(payload), canonical_json(result))
-        confirmed = []
-        for doc, facility in carried:
-            fresh = doc.model_copy(update={"status": DocumentStatus.PROPOSED, "decided_day": None, "decided_seq": None,
-                                           "uploaded_day": 0, "suggested_facility_id": None, "linked_facility_id": None,
-                                           "superseded_by": None})
-            rid = rt.store.add_contract_record(fresh)
-            res = rt.executor.decide_document(rid, Actor.OWNER, confirm=True, doc_hash=fresh.doc_hash, link_facility_id=facility)
-            if res.status == OperationStatus.EXECUTED:
-                confirmed.append(rid)
+        try:
+            rt.store.reset()
+            with rt.store.transaction():  # the new books, their first entry and the documents land together or not at all
+                rt.store.put_state(state)
+                rt.store.put_mandate(mandate)
+                rt.day, rt.scenario, rt.fresh = 0, "own", None
+                op_id = f"open-books-{state.as_of}"
+                digest = hashlib.sha256(state.model_dump_json().encode() + mandate.model_dump_json().encode()).hexdigest()
+                payload = {"kind": OPEN_BOOKS_KIND, "op_id": op_id, "requested_by": Actor.OWNER.value, "day": 0,
+                           "company_name": company, "start_date": state.as_of, "cash_fen": state.cash_fen,
+                           "facilities": len(state.facilities), "debts": len(state.debts), "receivables": len(state.receivables),
+                           "recurring_invoices": len(state.recurring_invoices), "flows": len(state.flows),
+                           "mandate_version": mandate.version, "books_sha256": digest}
+                words = open_books_words(payload, "en")
+                msg = f"{words['event_text']} {words['event_detail']}"
+                result = OperationResult(op_id=op_id, kind=OPEN_BOOKS_KIND, status=OperationStatus.EXECUTED, tier=Tier.TIER_2,
+                                         effective_day=0, message=msg)
+                rec = rt.store.append_operation(op_id, OPEN_BOOKS_KIND, op_id, canonical_json(payload), canonical_json(result))
+                confirmed = []
+                for doc, facility in carried:
+                    fresh = doc.model_copy(update={"status": DocumentStatus.PROPOSED, "decided_day": None, "decided_seq": None,
+                                                   "uploaded_day": 0, "suggested_facility_id": None, "linked_facility_id": None,
+                                                   "superseded_by": None})
+                    rid = rt.store.add_contract_record(fresh)
+                    res = rt.executor.decide_document(rid, Actor.OWNER, confirm=True, doc_hash=fresh.doc_hash,
+                                                      link_facility_id=facility)
+                    if res.status == OperationStatus.EXECUTED:
+                        confirmed.append(rid)
+        except Exception:
+            log.exception("setup: opening the books failed; putting the blank books back")
+            _restore_blank(rt)
+            raise HTTPException(500, {"code": "SETUP_FAILED", "message": t(
+                lg, "FLOW could not open your books, so nothing was opened and you are back at the blank books. "
+                    "Please try again.", "FLOW 无法开立您的账簿，因此未开立任何内容，已回到空白账簿。请重试。")}) from None
+        rt.clear_session_caches()
         _setup_docs.clear()
     return {"ok": True, "seq": rec.seq, "entry_hash": rec.entry_hash, "confirmed_documents": confirmed,
             "text": t(lg, "Your books are open. Home now answers from your own figures.", "账簿已开立。首页现在根据您自己的数据作答。")}
