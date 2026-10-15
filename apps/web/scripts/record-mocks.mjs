@@ -260,7 +260,7 @@ function normalise(name, value) {
       if (!secIds.has(id)) secIds.set(id, `SEC-${kind}-${sha(`recorded security event ${secIds.size}`).slice(0, 16)}`);
       return secIds.get(id);
     })
-    .replace(/(nl:[a-z0-9-]+:t\d+:)([0-9a-f]{12})/g, (m, head, tail) => {
+    .replace(/(nl:[a-z0-9-]+:t\d+:)([0-9a-f]{12})/g, (m, head) => {
       if (!nlDecisionIds.has(m)) nlDecisionIds.set(m, `${head}${sha(`recorded nl decision ${nlDecisionIds.size}`).slice(0, 12)}`);
       return nlDecisionIds.get(m);
     });
