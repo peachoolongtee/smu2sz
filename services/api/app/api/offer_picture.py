@@ -44,8 +44,10 @@ from app.api.picture_words import (
     recommendation,
 )
 from app.api.presentation import t as say
+from app.api.refusal import if_refused_text, refusal_plan
 from app.api.runtime import get_runtime
 from app.api.selection import Selection, build_context, selection
+from app.api.withheld_words import withheld
 from app.api.workspace import _months, _posted_discount, _send_runs_funding
 from app.decisions.identity import deal_id
 from app.domain.models import (
@@ -993,7 +995,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                 "unavailable_text": gone,
                 "accept": accept_block(lang, state=state, offer=offer, verdict=verdict, months=_months(mandate.forward_concession_horizon_days),
                                        lapsed_text=gone),
-                "asked": None, "replies": [], "paths": [], "recommendation": None, "moments": [], "axis": None, "picture_days": None,
+                "asked": None, "replies": [], "paths": [], "withheld": [], "recommendation": None, "moments": [], "axis": None, "picture_days": None,
                 "current_terms_days": _terms_in_force(state, offer.counterparty_id) if offer is not None else None,
                 "current_terms_text": _current_terms_text(state, offer.counterparty_id if offer is not None else None, lang),
                 "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days}
@@ -1048,6 +1050,13 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     # the verifier's own verdict on each reply as an agreement on these books: the tier, the past-due and autonomy rules, the cap codes
     rechecked = {c.id: _safe_recheck(recheck, c) for c in verdict.counters if c.id in trajs}
     paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs, assumed, funding_said, send_runs)
+    try:  # what a refused send would fund (the negotiate route's own no-deal plan, read and not run); a reply can only be refused, so each one says it
+        refused = if_refused_text(refusal_plan(state, rt.store.commitments(), mandate), state,
+                                  buyer_short(party_name(state, offer.counterparty_id)), today, lang)
+    except EngineError:
+        refused = None
+    for p in paths:
+        p["if_refused_text"] = refused if p["kind"] == "reply" else None
     _same_day_comparison(paths, lang)
     add_pairs(paths, today, lang)
     add_path_words(paths, floor, _months(mandate.forward_concession_horizon_days), financing, lang)
@@ -1063,6 +1072,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         "asked": asked_view,
         "replies": replies,
         "paths": paths,
+        "withheld": withheld(verdict, today, lang),
         "recommendation": recommendation(paths, _terms_in_force(books.state, offer.counterparty_id), lang),
         "moments": moments,
         "picture_days": picture_days,
