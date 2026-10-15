@@ -27,6 +27,7 @@ from __future__ import annotations
 import hmac
 import json
 import threading
+import uuid
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
@@ -768,9 +769,9 @@ class Executor:
         self._add_security(kind, day, counterparty_id, f"{getattr(op, 'kind', '?')} {op.op_id}: {detail}")
 
     def _add_security(self, kind: SecurityEventKind, day: int, counterparty_id: str | None, detail: str) -> None:
-        n = len(self._store.security_events()) + 1
         self._store.add_security_event(SecurityEvent(
-            id=f"SEC-OPS-{n:06d}", day=day, kind=kind, counterparty_id=counterparty_id,
+            # SEC-10: a random id, never a count of the table (a full read per event, and shared by concurrent writers)
+            id=f"SEC-OPS-{uuid.uuid4().hex[:16]}", day=day, kind=kind, counterparty_id=counterparty_id,
             action_taken="refused by the executor; nothing booked", detail=detail))
 
     # ---------------------------------------------------------------- context and tier
