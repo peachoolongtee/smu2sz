@@ -1,9 +1,9 @@
 # Checks on every push, so a break shows within minutes instead of at integration (owner, 15 Oct 2026).
 # Nothing here reads .env, a real database or a model API: the API runs on the in-memory store with the recorded model cache.
-#   - web:      typecheck, lint, unit tests (includes the mock check), on every push and pull request.
-#   - api:      ruff and the whole pytest suite in four shards, on every push and pull request.
-#   - e2e-mock: the full mock browser suite (desktop and phone), on pushes to dev, int/* and ci/*, pull requests into dev,
-#               and by hand (Actions > checks > Run workflow). It is the slow one, so it does not run on every feature push.
+#   - web:      typecheck, lint, unit tests (includes the mock check), on every push and pull request (about 3 minutes).
+#   - api:      ruff and the whole pytest suite in eight shards; e2e-mock: the full mock browser suite (desktop and phone).
+#               Both are heavy (the repository is private, so they spend Actions minutes): they run on pushes to dev, int/* and ci/*,
+#               on pull requests into dev, and by hand (Actions > checks > Run workflow), not on every feature push.
 # The live browser suite stays with the lead's integration gate (it is serial and needs a running API).
 name: checks
 
@@ -47,12 +47,13 @@ jobs:
       - run: pnpm test:unit
 
   api:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/heads/int/') || startsWith(github.ref, 'refs/heads/ci/')
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
     defaults:
       run:
         working-directory: services/api
@@ -66,9 +67,9 @@ jobs:
         if: matrix.shard == 0
         continue-on-error: true
         run: uv run --project . ruff check app tests
-      - name: pytest (shard ${{ matrix.shard }} of 4, by test file)
+      - name: pytest (shard ${{ matrix.shard }} of 8, by test file)
         run: |
-          files=$(find tests -name 'test_*.py' | sort | awk -v n=4 -v i=${{ matrix.shard }} '(NR - 1) % n == i')
+          files=$(find tests -name 'test_*.py' | sort | awk -v n=8 -v i=${{ matrix.shard }} '(NR - 1) % n == i')
           uv run --project . pytest -o addopts= -p no:cacheprovider -q $files
 
   e2e-mock:
@@ -92,7 +93,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: mock browser suite (desktop and phone)
-        run: pnpm exec playwright test --workers=4
+        run: pnpm exec playwright test --workers=2
         env:
           CI: "1"
           E2E_TARGET: mock
