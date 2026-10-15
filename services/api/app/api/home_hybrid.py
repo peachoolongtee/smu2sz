@@ -843,10 +843,12 @@ def _deals(c: HomeRead) -> list[_Deal] | None:
     return sorted(out, key=lambda d: (_ORDER.get(d.state, 9), d.buyer))
 
 
-_ORDER = {DealState.RECEIVED: 0, DealState.RESPONSE_READY: 0, DealState.AUTHORIZATION_REQUIRED: 1, DealState.NEEDS_CLARIFICATION: 2}
+_ORDER = {DealState.RECEIVED: 0, DealState.RESPONSE_READY: 0, DealState.AUTHORIZATION_REQUIRED: 1, DealState.NEEDS_CLARIFICATION: 2,
+          DealState.AWAITING_BUYER: 2}
 _STATUS = {DealState.RECEIVED: ("Your response needed", "需要您答复"), DealState.RESPONSE_READY: ("Your response needed", "需要您答复"),
            DealState.AUTHORIZATION_REQUIRED: ("Waiting for your approval", "等待您批准"),  # the decision record's word
-           DealState.NEEDS_CLARIFICATION: ("Awaiting the buyer", "等待买方"), DealState.AGREED: ("Agreed", "已达成")}
+           DealState.NEEDS_CLARIFICATION: ("Awaiting the buyer", "等待买方"), DealState.AWAITING_BUYER: ("Awaiting the buyer", "等待买方"),
+           DealState.AGREED: ("Agreed", "已达成")}
 
 
 def _recommendation(d: _Deal, lang: str) -> tuple[str, str | None]:

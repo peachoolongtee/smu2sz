@@ -29,6 +29,7 @@ from app.api.nav import router as nav_router
 from app.api.nl import router as nl_router
 from app.api.offer_picture import router as offer_picture_router
 from app.api.offers import router as offers_router
+from app.api.outbound import router as outbound_router
 from app.api.operations import router as operations_router
 from app.api.pilot import router as pilot_router
 from app.api.read import router as read_router
@@ -92,6 +93,7 @@ app.include_router(deals_router)
 app.include_router(nav_router)
 app.include_router(offer_picture_router)
 app.include_router(accept_router)
+app.include_router(outbound_router)
 app.include_router(worklist_router)
 
 

@@ -49,6 +49,7 @@ from app.books import Books, current_books
 from app.commitments import terms_hash
 from app.config import get_settings
 from app.counterparties import negotiate
+from app.counterparties.profiles import load_buyer_profiles
 from app.decisions import derive
 from app.decisions.facts import CounterEconomics, EvaluatedFact, GapLeg, GapPlan, SentFact
 from app.decisions.identity import deal_id
@@ -99,7 +100,22 @@ from app.verifier import evaluate
 router = APIRouter(dependencies=[Depends(require_owner)])
 _t = t  # `negotiate` binds a local `t` (the transcript)
 
-PROFILES = {"cooperative": "BUYER-1", "hard_line": "BUYER-1-HARDLINE"}
+BUYER_MODES = ("cooperative", "hard_line")
+
+
+def simulated_profile(counterparty_id: str, mode: str) -> str | None:
+    """The simulated buyer a send negotiates against: the offer's own buyer's profile, its hard-line variant for `hard_line`; None when
+    that buyer has no simulated profile (a send then has no simulated reply, and never borrows another buyer's reservation)."""
+    pid = counterparty_id if mode == "cooperative" else f"{counterparty_id}-HARDLINE"
+    p = load_buyer_profiles().get(pid)
+    return pid if p is not None and p.counterparty_id == counterparty_id else None
+
+
+def _no_simulated_buyer(offer: CompiledOffer, mode: str, lang: str) -> HTTPException:
+    said = t(lang, "This buyer has no simulated reply in this environment; nothing was sent. Copy the message to the buyer instead.",
+             "此环境中没有该买方的模拟回复；未发送任何内容。请改为复制发给买方的消息。")
+    return HTTPException(409, detail={"code": "NO_SIMULATED_BUYER", "offer_id": offer.offer_id, "buyer_profile": mode,
+                                      "counterparty_id": offer.counterparty_id, "message": said, "message_when": said})
 
 
 def _owner_declared(offer_id_hint: str | None) -> dict[str, Any] | None:
@@ -387,11 +403,10 @@ def negotiate_offer(offer_id: str, body: NegotiateIn, lang: str = "en") -> dict:
     `message` and the buyer's own text stay as written."""
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
-    profile = PROFILES.get(body.buyer_profile)
-    if profile is None:
+    if body.buyer_profile not in BUYER_MODES:
         raise HTTPException(422, "buyer_profile must be cooperative or hard_line")
     with rt.lock:  # one critical section from the binding check to the last write: what was checked is what runs
-        return _negotiate_locked(rt, offer_id, body, profile, lang)
+        return _negotiate_locked(rt, offer_id, body, lang)
 
 
 def _open_agreement(rt: Runtime, verdict, counter: CounterProposal):
@@ -422,7 +437,7 @@ def _approval_names(a, c) -> bool:
     return op.get("nonce") == c.nonce or op.get("commitment_id") == c.id
 
 
-def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: str, lang: str = "en") -> dict:
+def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str = "en") -> dict:
     vid = rt.latest_verdict.get(offer_id)
     verdict = rt.store.get_verdict(vid) if vid else None
     if verdict is None and (body.verdict_id or body.counter_id or body.state_version is not None):
@@ -431,6 +446,9 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
         raise HTTPException(409, "evaluate the offer first")
     offer = rt.store.get_offer(offer_id)
     assert offer is not None
+    profile = simulated_profile(offer.counterparty_id, body.buyer_profile)
+    if profile is None:  # every send used to negotiate against BUYER-1's reservation, whoever asked
+        raise _no_simulated_buyer(offer, body.buyer_profile, lang)
     chosen: CounterProposal | None = None
     with rt.lock:
         bound = body.verdict_id is not None or body.counter_id is not None or body.state_version is not None

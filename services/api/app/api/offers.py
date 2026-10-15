@@ -11,12 +11,14 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 
 from app.api.auth import counterparty_for_key, is_agent, require_owner
-from app.api.decisions import latest_verdict_for
+from app.api.decisions import latest_verdict_for, record_fact
 from app.api.display import displayed
 from app.api.presentation import abstention_words, business_text
 from app.api.runtime import Runtime, get_runtime
 from app.api.selection import Selection, build_context, selection
 from app.compiler import compile_offer, compile_term_sheet
+from app.decisions.facts import ReceivedFact, Via
+from app.decisions.identity import deal_id
 from app.domain.fixtures import load_offers, offer_documents
 from app.domain.models import CompiledOffer, SourceDocument
 from app.persistence import OfferVersionConflict
@@ -85,9 +87,13 @@ def post_offer(body: OfferIn, x_owner_token: str | None = Header(default=None),
             raise HTTPException(403, {"code": "COUNTERPARTY_MISMATCH", "message": "the channel key does not belong to the stated counterparty"})
         if body.fixture_id is None:
             body = body.model_copy(update={"counterparty_id": bound})
-    if not (owner or is_agent(x_agent_key) or bound):
+    agent = is_agent(x_agent_key)
+    if not (owner or agent or bound):
         enforce_intake_cap(rt, "POST /offers", body.counterparty_id)
-    return intake_offer(rt, body, lang)
+    # a channel key vouches only for its own buyer: a fixture filed under another buyer's name by that key is not that buyer's request
+    claimed = (load_offers().get(body.fixture_id) or {}).get("counterparty_id") if body.fixture_id else body.counterparty_id
+    via: Via = "owner" if owner else "agent" if agent else "buyer_key" if bound and claimed == bound else "anonymous"
+    return intake_offer(rt, body, lang, via=via)
 
 
 def _bounded(documents: list[dict], *, owner: bool) -> None:
@@ -115,13 +121,21 @@ def _offer_view(rt: Runtime, offer: CompiledOffer, channels: Mapping[str, str], 
     return view
 
 
-def intake_offer(rt: Runtime, body: OfferIn, lang: str = "en") -> dict:
+def intake_offer(rt: Runtime, body: OfferIn, lang: str = "en", *, via: Via = "owner", in_reply_to: str | None = None) -> dict:
     """Compile the documents and store the offer: the part of POST /offers after the caller is known. The demo's seed replay
-    (`app.api.demo_seed`) takes the same path, so a seeded offer is the offer the route would have stored."""
+    (`app.api.demo_seed`) takes the same path, so a seeded offer is the offer the route would have stored (the owner's own, `via`).
+    `via` is how the request reached FLOW, kept as the deal's RECEIVED fact: a message to the buyer is prepared only for a request whose
+    sender is known (SEC-19)."""
     docs, cp = _docs(body)
     with rt.lock:
         _unclaimed(rt, docs)
-    offer = compile_offer(docs, cp)
+    return store_compiled(rt, docs, compile_offer(docs, cp), lang, via=via, in_reply_to=in_reply_to)
+
+
+def store_compiled(rt: Runtime, docs: list[SourceDocument], offer: CompiledOffer, lang: str = "en", *, via: Via,
+                   in_reply_to: str | None = None) -> dict:
+    """Store a compiled offer and its documents, with how it reached FLOW (its RECEIVED fact). `intake_offer` and the buyer's pasted reply
+    (`app.api.outbound`) both end here."""
     with rt.lock:
         _unclaimed(rt, docs)  # again: another submission may have taken the id while this one compiled
         try:
@@ -130,6 +144,10 @@ def intake_offer(rt: Runtime, body: OfferIn, lang: str = "en") -> dict:
             raise HTTPException(409, {"code": "OFFER_VERSION_CONFLICT", "offer_id": offer.offer_id}) from None
         for d in docs:
             rt.documents[d.doc_id] = d
+        record_fact(rt, deal_id(offer.offer_id), f"{offer.offer_id}:v{offer.version}",
+                    ReceivedFact(offer_id=offer.offer_id, offer_version=offer.version, counterparty_id=offer.counterparty_id, via=via,
+                                 in_reply_to_offer_id=in_reply_to),
+                    state_version=rt.store.get_state().state_version, day=rt.day)
     return {"offer": _offer_view(rt, offer, {d.doc_id: d.channel for d in docs}, lang),
             "documents": [json.loads(d.model_dump_json()) for d in docs]}
 
