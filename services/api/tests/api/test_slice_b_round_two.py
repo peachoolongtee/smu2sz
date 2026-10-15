@@ -20,7 +20,7 @@ from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from app.strategy import exposure as assembly
-from tests.api.conftest import agree_on_rcv_a, english_leaks
+from tests.api.conftest import agree_on_rcv_a, as_three_customer_funding, english_leaks
 
 pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
 
@@ -894,6 +894,7 @@ INTERNAL = {"en": re.compile(r"router|valuation window", re.IGNORECASE), "zh": r
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_business_prose_after_a_send_names_no_router_and_no_valuation_window(api: TestClient, lang: str) -> None:
     _busy(api)
+    as_three_customer_funding(api)
     busy_offer = next(d["open_offer"]["offer_id"] for d in api.get("/deals").json()["deals"] if d["counterparty_id"] == "BUYER-1")
     view = api.post(f"/offers/{busy_offer}/evaluate", params={"lang": lang}, json=EX01).json()  # the evaluate view, before the books move
     agree_on_rcv_a(api)
@@ -929,12 +930,14 @@ def test_an_agreement_with_no_forward_cost_says_the_months_not_the_valuation_win
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_a_funding_cost_the_send_will_not_run_says_so_in_the_table(api: TestClient, lang: str) -> None:
     _busy(api)
+    as_three_customer_funding(api)
     deal = next(d for d in api.get("/deals").json()["deals"] if d["counterparty_id"] == "BUYER-1")
     offer = deal["open_offer"]["offer_id"]
+    api.post(f"/offers/{offer}/evaluate", json=EX01)  # the seed's stored verdict was made on the full books: evaluate again on these
     pic = api.get(f"/offers/{offer}/picture", params={"lang": lang}).json()
     reply = next(p for p in pic["paths"] if p["kind"] == "reply" and p["recommended"])
     funding = _rows(reply)["funding"]
-    assert funding["amount_display"] == "¥1,321.44"  # the figure is the plan's, unchanged
+    assert funding["amount_display"] == "¥2,919.20"  # the figure is the plan's, unchanged
     assert funding["note"] == {"en": "if the plan runs; it cannot run today", "zh": "若方案得以执行才会产生；今天无法执行"}[lang]
     receipt = next(p for p in api.post(f"/offers/{offer}/evaluate", params={"lang": lang}, json=EX01).json()["workspace"]["priced_responses"]
                    if p["counter_id"] == reply["key"])["receipt"]

@@ -106,3 +106,32 @@ def agree_on_rcv_a(api: _Any, fixture: str = "EX03_AS_USUAL") -> str:
     sent = api.post(f"/negotiate/{offer_id}", json={"buyer_profile": "cooperative"})
     assert sent.status_code == 200 and sent.json()["outcome"] == "DEAL", sent.text
     return str(offer_id)
+
+
+NEWER_BUYERS = ("BUYER-4", "BUYER-5", "BUYER-6", "BUYER-7", "BUYER-8")
+
+
+def as_three_customer_funding(api: _Any = None) -> None:
+    """On the busy books, fund the gap as the three-customer busy books did: take the five newer customers' invoices (BUYER-4 to BUYER-8) and
+    anything recurring that is theirs out of the stored books, so the only invoice that could fund the gap is Foshan's and today's plan cannot run
+    (the credit line alone does not cover it). A test of what a send that cannot fund says must not depend on how many customers the books hold.
+    Call it before the offer is evaluated; it clears the answer caches as a reset does and asserts the plan has legs and none can run today."""
+    from app.api.runtime import get_runtime
+    from app.funding.router import plan
+    from app.api.strategy_exposure import clear_cache as clear_exposure_cache
+    from app.nl import reset_sessions
+    from tests.api import busy_snapshot
+
+    rt = get_runtime()
+    state = rt.store.get_state()
+    gone = set(NEWER_BUYERS)
+    trimmed = state.model_copy(update={
+        "receivables": [r for r in state.receivables if r.counterparty_id not in gone],
+        "recurring_invoices": [r for r in state.recurring_invoices if r.counterparty_id not in gone],
+        "state_version": state.state_version + 1})
+    rt.store.put_state(trimmed)
+    reset_sessions()
+    clear_exposure_cache()
+    busy_snapshot.clear_answer_caches()
+    p = plan(rt.store.get_state(), [], rt.store.get_mandate())
+    assert p.actions and not p.executable_now, f"the plan was meant to be unable to run today: {p.actions} {p.executable_now}"
