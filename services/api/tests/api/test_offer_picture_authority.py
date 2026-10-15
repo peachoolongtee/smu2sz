@@ -197,7 +197,7 @@ def test_a_counter_from_an_owner_goal_breach_reads_flow_counters_instead(client,
 def test_a_hard_reject_with_no_counter_is_not_called_a_mandate_breach(client, monkeypatch):
     oid, _ = _evaluated(client)
     (asked,) = _with_verdict(client, monkeypatch, oid, outcome=Outcome.REJECT, counters=[], violations=[_violation(ViolationCode.RESERVE_BREACH)])
-    assert asked["authority"] is None and asked["authority_text"] == "FLOW cannot accept this as asked" and OLD_OVER not in asked["decides_text"]
+    assert asked["authority"] is None and asked["authority_text"] == "FLOW cannot accept their request" and OLD_OVER not in asked["decides_text"]
 
 
 @pytest.mark.parametrize("outcome", [Outcome.NEEDS_OWNER_APPROVAL, Outcome.ACCEPT])

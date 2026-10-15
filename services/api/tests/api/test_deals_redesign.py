@@ -270,8 +270,9 @@ def test_a_promise_folds_into_its_deals_one_row(api: TestClient) -> None:
 
 
 def test_the_headline_counts_the_late_agreement_the_chase_and_the_approval(api: TestClient) -> None:
-    assert _queue(api)["headline_text"] == "Nothing needs you today."
-    assert _queue(api, "zh")["headline_text"] == "今天没有需要您处理的事项。"
+    # golden day 0 carries the company cash alert ("a funding plan is ready"): that is something for the owner, so the headline says it
+    assert _queue(api)["headline_text"] == "A funding plan is ready."
+    assert _queue(api, "zh")["headline_text"] == "一项融资方案已准备好。"
     _agree(api)
     assert "late payment" not in _queue(api)["headline_text"]  # agreed and awaiting payment: nothing is late yet
     for day in (2, 30, 34):
@@ -283,9 +284,9 @@ def test_the_headline_counts_the_late_agreement_the_chase_and_the_approval(api: 
         kinds = {r["kind"] for r in q["needs_you"]}
         assert "COLLECTION" in kinds and q["deals"]["payment_late"] == 1
         assert q["alert"] is not None and q["alert"]["primary"]["href"].startswith("/approvals")  # the funding plan waiting for the owner
-        n = len(q["needs_you"]) + 1
-        assert q["headline_text"] == (f"{n} tasks need you; 1 agreed deal has a late payment." if lang == "en"
-                                      else f"{n} 项任务需要您处理；1 项已达成的协议有逾期付款。")
+        n = len(q["needs_you"])
+        assert q["headline_text"] == (f"{n} {'task needs' if n == 1 else 'tasks need'} you; a funding plan waits for your approval; 1 agreed deal has a late payment."
+                                      if lang == "en" else f"{n} 项任务需要您处理；一项融资方案正等待您批准；1 项已达成的协议有逾期付款。")
         assert "Nothing needs" not in q["headline_text"] and not BAD.search(q["headline_text"])
 
 
@@ -305,9 +306,56 @@ def test_the_record_names_what_its_net_measures_and_carries_the_quoted_cost(api:
     assert eco["net_display"] == "¥0.00" and eco["basis_facility_name"] == "Invoice financing (onboarded platform)"
     assert eco["quoted_cost_display"] == "¥3,027.77" == eco["supplier_cost_display"]
     if lang == "en":
-        assert eco["net_label_text"] == "Cost of the terms over 12 months, priced at the Invoice financing (onboarded platform) rate"
+        assert eco["net_label_text"] == "Forward cost beyond the one-off, over 12 months, priced at the Invoice financing (onboarded platform) rate"
         assert eco["quoted_cost_label_text"] == "Cost quoted when sent (one-off)"
     else:
-        assert eco["net_label_text"] == "条款在 12 个月内的成本，按Invoice financing (onboarded platform)的利率计算"
+        assert eco["net_label_text"] == "一次性成本之外的远期成本，12 个月内，按Invoice financing (onboarded platform)的利率计算"
         assert eco["quoted_cost_label_text"] == "发送时报出的成本（一次性）"
-    assert not BAD.search(eco["net_label_text"]) and "Net economic" not in eco["net_label_text"]
+    assert not BAD.search(eco["net_label_text"]) and "Net economic" not in eco["net_label_text"] and "as asked" not in eco["net_label_text"]
+
+
+# ---------------------------------------------------------------- the verifier's word fixes
+
+
+def test_the_headline_counts_the_company_cash_alert(api: TestClient) -> None:
+    assert api.post("/demo/reset", params={"scenario": "busy"}).status_code == 200
+    for lang in ("en", "zh"):
+        q = _queue(api, lang)
+        assert q["alert"] is not None and "Nothing needs" not in q["headline_text"] and "没有需要" not in q["headline_text"]
+        assert q["headline_text"].startswith(f"{len(q['needs_you'])} ") and not BAD.search(q["headline_text"])
+        assert any(w in q["headline_text"] for w in (("a funding plan is ready", "a funding plan waits for your approval", "company cash is unsafe")
+                                                     if lang == "en" else ("融资方案已准备好", "融资方案正等待您批准", "公司现金将不安全")))
+
+
+def test_a_promise_due_today_is_said_to_be_due_today(api: TestClient) -> None:
+    _, did = _agree(api)
+    assert api.post("/clock/advance", json={"to_day": 2}).status_code == 200  # the day the early payment is promised, before its receipt
+    en = api.get(f"/decisions/{did}/tracker").json()["promise_counts"]
+    assert en["text"] == "The buyer has made two promises on this deal; one is due today." and en["buyer_kept"] == 0
+    assert "今天到期" in api.get(f"/decisions/{did}/tracker", params={"lang": "zh"}).json()["promise_counts"]["text"]
+
+
+def test_the_folded_promise_follows_a_full_stop(api: TestClient) -> None:
+    _agree(api)
+    for lang, said in (("en", "The buyer has promised"), ("zh", "买方承诺")):
+        text = _queue(api, lang)["agreements"][0]["consequence_text"]
+        before = text.split(said)[0].rstrip()
+        assert before and before[-1] in ".。", text
+
+
+def test_the_bounded_counter_with_a_firm_credit_is_not_called_fewer_invoices() -> None:
+    summary = ("REJECT. No bounded-extension counter (+10 days on 3 invoices, a 0.50% credit): it would breach a covenant: leverage 1.9 against 1.8. "
+               "No bounded-extension counter (+10 days on 2 invoices): it would breach a covenant: leverage 1.9 against 1.8.")
+    [w] = withheld(_V(summary), 2, "en")
+    assert "price credit firm" in w["text"] and "fewer extended invoices" in w["text"]
+
+
+def test_no_as_asked_name_is_left_on_the_deal_cards_or_the_button(api: TestClient) -> None:
+    offer_id = _evaluate(api, EX01)
+    for lang in ("en", "zh"):
+        row = next(d for d in api.get("/deals", params={"lang": lang}).json()["deals"] if d.get("open_offer"))
+        words = [row["open_offer"][k] or "" for k in ("headline_short", "headline_note", "read_text")]
+        words.append(_picture(api, offer_id, lang)["accept"]["commit_label"])
+        assert [w for w in words if "as asked" in w.lower() or "按对方要求" in w] == []
+    assert _picture(api, offer_id)["accept"]["commit_label"] == "Accept their request"
+    assert _picture(api, offer_id, "zh")["accept"]["commit_label"] == "接受对方的要求"

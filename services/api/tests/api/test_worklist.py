@@ -140,7 +140,7 @@ def test_after_the_plan_the_alert_is_gone_and_the_financing_waits(api: TestClien
     w = _get(api)
     assert w["alert"] is None
     assert [i["kind"] for i in w["needs_you"]] == ["DECISION"]  # the Foshan decision is still the owner's
-    assert w["needs_you"][0]["consequence_text"] == "Over your limit as asked; it does not take cash below your minimum."
+    assert w["needs_you"][0]["consequence_text"] == "Over your limit if you accept their request; it does not take cash below your minimum."
     assert w["needs_you"][0]["severity"] == "CAUTION" and w["needs_you"][0]["deadline_day"] is None
     assert w["needs_you"][0]["why_first_text"] == "Why first: it has the largest effect on your cash."
     [wait] = w["waiting"]
@@ -355,7 +355,7 @@ def test_the_decisions_breach_day_is_the_recommended_paths_not_the_one_as_asked(
     unsafe = _picture(asked_breach=47, rec_series=[(0, 40_000_000), (9, 29_999_999), (30, 10_000_000)], rec_breach_when="in 9 days")
     assert worklist._deal_effect(unsafe, floor, False, "en")[:2] == ("CRITICAL", 9)
     quiet = _picture(asked_breach=None, rec_series=[(0, 40_000_000)], rec_breach_when=None, authority="flow_may", band=None)
-    assert worklist._deal_effect(quiet, floor, False, "en") == ("NORMAL", None, "Accepting as asked does not take cash below your minimum.")
+    assert worklist._deal_effect(quiet, floor, False, "en") == ("NORMAL", None, "Accepting their request does not take cash below your minimum.")
     lone = {"available": True, "day": 0, "asked": {"first_breach_day": 12}, "paths": [{"key": "asked", "recommended": False,
                                                                                       "band_text": "Below your minimum for 3 days"}]}
     assert worklist._deal_effect(lone, floor, False, "en")[:2] == ("CRITICAL", 12)  # no counter at all: the offer as asked is the only path

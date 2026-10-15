@@ -37,6 +37,7 @@ _WHAT = {
     "bounded_extension": ("a reply with fewer extended invoices", "缩减延期发票数量的回复"),
     "rebate": ("a reply with a smaller rebate", "缩减返利的回复"),
 }
+_CREDIT = ("a reply that makes the buyer's price credit firm", "让买方的价格折让变为确定的回复")  # the bounded extension with a firm credit
 _COVENANT_WORDS = {"DSCR": ("debt-service cover", "偿债覆盖率"), "leverage": ("leverage", "杠杆率"), "clean-down": ("clean-down", "清偿期限")}
 
 
@@ -93,7 +94,8 @@ def _sentences(summary: str) -> list[tuple[str, str, str, re.Pattern[str], re.Ma
             hit = _match(rest)
             if hit is not None:
                 kind = _KIND[head.group("kind")]
-                out.append((kind, *_WHAT[kind], *hit))
+                what = _CREDIT if kind == "bounded_extension" and "credit" in head.group("terms") else _WHAT[kind]
+                out.append((kind, *what, *hit))
             continue
         pos = 0  # "60-day terms <why>; 55- or 50-day terms <why>"
         while True:

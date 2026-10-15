@@ -76,7 +76,7 @@ FLOW_MAY, NEEDS_OWNER, OVER_LIMIT = "flow_may", "needs_owner", "over_limit"  # t
 
 
 def commit_label(lang: str) -> str:
-    return t(lang, "Accept as asked", "按对方要求接受")
+    return t(lang, "Accept their request", "接受对方的要求")
 
 
 def decline_label(lang: str) -> str:
@@ -89,7 +89,7 @@ def over_limit_text(lang: str) -> str:
 
 
 def not_acceptable_text(lang: str) -> str:
-    return t(lang, "FLOW cannot accept this as asked.", "FLOW 无法按对方的要求接受。")
+    return t(lang, "FLOW cannot accept their request.", "FLOW 无法接受对方的要求。")
 
 
 def asked_authority(verdict: Verdict) -> str | None:
@@ -144,8 +144,8 @@ def accept_receipt(lang: str, state: Any, verdict: Verdict, *, buyer: str, autho
     asked = request_of(buyer, lang)
     fees, future = _cost_lines(cost or {}, months, lang)
     return {**receipt(
-        authorizes_text=(t(lang, f"Accept {asked} as asked: {asks}; FLOW records the agreement under your authority.",
-                           f"按对方要求接受{asked}：{asks}；FLOW 将在您的授权下记录这份协议。") if asks else None),
+        authorizes_text=(t(lang, f"Accept {asked}: {asks}; FLOW records the agreement under your authority.",
+                           f"接受{asked}：{asks}；FLOW 将在您的授权下记录这份协议。") if asks else None),
         executes_now_text=t(lang, "Records the agreement now; no payment and no funding moves.", "立即记录协议；不会有付款，也不会办理融资。"),
         others_must_agree_text=t(lang, "Nobody else: these are the buyer's own terms.", "无需其他方同意：这些就是买方自己提出的条款。"),
         in_hand_vs_future_text=future,
@@ -357,12 +357,12 @@ def accept_as_asked(offer_id: str, body: AcceptIn, lang: str = "en") -> dict[str
         if authority == OVER_LIMIT:
             raise over_mandate(offer_id, lang)
         if authority is None:
-            raise _conflict("NOT_ACCEPTABLE", offer_id, "FLOW cannot accept this request as asked; nothing was accepted.",
+            raise _conflict("NOT_ACCEPTABLE", offer_id, "FLOW cannot accept their request; nothing was accepted.",
                             "FLOW 无法按对方的要求接受该请求；未接受任何内容。", lang)
         try:
             commitment = rt.executor.propose_commitment(verdict.id, expires_day=rt.day + PROPOSAL_DAYS)  # the verdict's own bound terms, no counter
         except (LookupError, ValueError):
-            raise _conflict("NOT_ACCEPTABLE", offer_id, "FLOW cannot accept this request as asked; nothing was accepted.",
+            raise _conflict("NOT_ACCEPTABLE", offer_id, "FLOW cannot accept their request; nothing was accepted.",
                             "FLOW 无法按对方的要求接受该请求；未接受任何内容。", lang) from None
         mandate = rt.store.get_mandate()
         op = AcceptOffer(op_id=f"accept-{commitment.id}", idempotency_key=f"accept-{commitment.id}", mandate_version=mandate.version,

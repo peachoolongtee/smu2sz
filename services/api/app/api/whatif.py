@@ -132,8 +132,8 @@ def _compare_text(rt: Any, offer_id: str | None, lang: str) -> str | None:
         cost = t(lang, f"{once} once and {forward} over {months} months", f"一次性 {once}，另加 {months} 个月内 {forward}")
     limit = {FLOW_MAY: (", within your limit", "，在您的限额内"), NEEDS_OWNER: (", within your limit", "，在您的限额内"),
              OVER_LIMIT: (", over your limit", "，超出您的限额")}.get(str(asked.get("authority")), ("", ""))
-    return t(lang, f"The negotiation as asked: {cost}{limit[0]}.",
-             f"按对方要求的谈判：{cost}{limit[1]}。")
+    return t(lang, f"The negotiation if you accept their request: {cost}{limit[0]}.",
+             f"如果接受对方的要求，谈判成本：{cost}{limit[1]}。")
 
 
 def _cash_text(reserve: dict[str, Any], lang: str) -> str | None:
