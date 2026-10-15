@@ -33,12 +33,9 @@ import { patchedHref } from "@/lib/selection";
 import { ChoicesTable, Recommendation, SectionNav, type SectionItem } from "./deal-overview";
 import { EnvelopePackages } from "./investigate";
 
-/** The deal's own view of the page, in the address: the tab (`view=`), the payment-timing assumption (`scenario=late`) and the accept review open on arrival (`review=1`). */
+/** The deal's own view of the page, in the address: the tab (`view=`), the accept review open on arrival (`review=1`). */
 export interface DealView {
   view: DealViewKey;
-  late: boolean;
-  /** The responses the chart draws (`lines`, the paths' keys, comma separated); null is the default pair. */
-  lines: string | null;
   /** The accept review is open on arrival (`review=1`): a link from Home or the Customer page to a request that needs the owner's review. */
   review: boolean;
 }
@@ -302,7 +299,6 @@ export function DecisionPane({
   const focus: PicturePath | null = picked ?? recommended;
   // The share clause of the economics read (what this concession is, against what the customer brings in a year): drawn only when the server carries it.
   const shareClause = exposure?.economics?.context_text ?? exposure?.economics?.sentence ?? null;
-  const late = view.late && Boolean(exposure?.stress.paths);
 
   async function check() {
     setChecking(true);
@@ -480,7 +476,7 @@ export function DecisionPane({
               </ButtonLink>
             </div>
           ) : null}
-          <LifecycleStrip stages={lifeStages} scroll={!isMd} />
+          {agreedDeal ? <LifecycleStrip stages={lifeStages} scroll={!isMd} /> : null}
         </div>
 
         {current !== "overview" ? sectionNav(tabs) : null}
@@ -617,7 +613,7 @@ export function DecisionPane({
 
         {current === "cash" && picture && analysis ? (
           <div id={`${uid}-panel-cash`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-cash">
-            <CashTab offerId={offer.offer.offer_id} picture={picture} paths={paths} exposure={exposure} buyer={buyerShort} lines={view.lines} late={late} onLines={(keys) => onGo({ lines: keys.join(",") }, "replace")} onLate={(l) => onGo({ scenario: l ? "late" : null }, "replace")} />
+            <CashTab offerId={offer.offer.offer_id} picture={picture} paths={paths} />
             {/* The evidence behind the choices: what the owner can live with for this buyer, then the envelope's packages by who may send them (the strategy build). */}
             {STRATEGY_MVP ? (
               <div className="mt-8" data-testid="deal-before-they-ask">

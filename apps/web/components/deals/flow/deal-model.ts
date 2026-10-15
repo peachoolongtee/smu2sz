@@ -1,5 +1,5 @@
 import type { PillTone } from "@/components/ui/status-pill";
-import type { DealsCounts, OfferPictureView, PathTerm, PicturePath, QueueRowView } from "@/lib/types";
+import type { DealsCounts, HomeSeriesPoint, PathTerm, PicturePath, PictureAxis, QueueRowView } from "@/lib/types";
 import { pillTone, rowTarget, statusCells, taskRows, type Queue, type Tier } from "./queue-model";
 
 /**
@@ -207,40 +207,6 @@ export function termsGroups(paths: PicturePath[]): TermGroup[] {
   return groups;
 }
 
-// ---------------------------------------------------------------- the timing diagram
-
-export interface TimingBar {
-  key: "current" | "asked" | "reply";
-  /** The term in days: the bar's length only; the words beside it are the server's. */
-  days: number;
-  /** The server's words for the term ("45 days"); null leaves the bar unlabelled. */
-  text: string | null;
-}
-export interface Timing {
-  bars: TimingBar[];
-  max: number;
-  /** The server's words for the difference the buyer asks ("+15 days requested by buyer"). */
-  deltaText: string | null;
-}
-
-const paymentTermsText = (p: PicturePath | null | undefined): string | null => p?.terms?.find((t) => t.key === "payment_terms" || t.key === "payment_period")?.value_text ?? null;
-
-/**
- * Current terms, the buyer's request and FLOW's counter as bars from day 0 on one scale: the server's `terms_days` numbers, their words the server's. A path with no payment term in days has no bar,
- * and fewer than two bars is no diagram. Nothing is computed: the largest number sets the scale, and the difference is only said when the server says it.
- */
-export function timingOf(picture: Pick<OfferPictureView, "current_terms_days" | "current_terms_text">, asked: PicturePath | null, reply: PicturePath | null): Timing | null {
-  const bars: TimingBar[] = [];
-  const num = (n: number | null | undefined): n is number => typeof n === "number" && Number.isFinite(n) && n >= 0;
-  if (num(picture.current_terms_days)) bars.push({ key: "current", days: picture.current_terms_days, text: picture.current_terms_text ?? null });
-  if (asked && num(asked.terms_days)) bars.push({ key: "asked", days: asked.terms_days, text: asked.terms_days_text ?? paymentTermsText(asked) });
-  if (reply && reply.key !== asked?.key && num(reply.terms_days)) bars.push({ key: "reply", days: reply.terms_days, text: reply.terms_days_text ?? paymentTermsText(reply) });
-  if (bars.length < 2) return null;
-  const max = Math.max(...bars.map((b) => b.days));
-  if (!(max > 0)) return null;
-  return { bars, max, deltaText: asked?.terms_delta_text ?? null };
-}
-
 // ---------------------------------------------------------------- the cost table
 
 /** A path's cost as one headline and the words that say what it covers: the forward cost with its two-part note when it has both a forward and a one-off part, else its total. */
@@ -365,61 +331,56 @@ export function comparisonRows(paths: PicturePath[]): { key: CompareRowKey; cell
   }));
 }
 
-export interface PlotDot {
-  key: string;
-  label: string;
-  /** The server's words for the dot (`lowest_short`) and its day (`lowest_when`). */
-  short: string;
+// ---------------------------------------------------------------- the cash impact charts (Deals redesign, board 3)
+
+/** A scale from fen numbers to 0..100 (positions only), with the server's labelled ticks that fall inside it. No label here is the browser's: a tick's words are the axis's own. */
+export interface CashScale {
+  lo: number;
+  hi: number;
+  ticks: { at: number; label: string }[];
+  at: (fen: number) => number;
+}
+
+/**
+ * The scale the cash charts share: it spans every value drawn (and zero), widened to the server's axis ticks around it, so the labelled ticks sit on the ends. An axis the server did not send leaves the scale
+ * unlabelled (the charts then say each figure in the server's words beside it).
+ */
+export function cashScale(values: number[], axis: PictureAxis | null | undefined): CashScale {
+  const vals = values.filter((v) => Number.isFinite(v));
+  const vmin = Math.min(0, ...vals);
+  const vmax = Math.max(0, ...vals);
+  const ticks = [...(axis?.ticks ?? [])].sort((a, b) => a.value_fen - b.value_fen);
+  const lo = Math.max(vmin === 0 ? 0 : -Infinity, ...ticks.filter((t) => t.value_fen <= vmin).map((t) => t.value_fen));
+  const lower = Number.isFinite(lo) ? lo : vmin;
+  const above = ticks.filter((t) => t.value_fen >= vmax).map((t) => t.value_fen);
+  const upper = above.length ? Math.min(...above) : vmax;
+  const span = upper - lower;
+  const at = (fen: number) => (span > 0 ? Math.min(100, Math.max(0, ((fen - lower) / span) * 100)) : 50);
+  return { lo: lower, hi: upper, at, ticks: ticks.filter((t) => t.value_fen >= lower && t.value_fen <= upper).map((t) => ({ at: at(t.value_fen), label: t.label })) };
+}
+
+export interface LinePoint {
+  /** 0..100 along the window. */
+  x: number;
+  fen: number;
+  day: number;
+  /** The server's words for the day ("in 15 days"). */
   when: string | null;
-  /** 0 to 100: where the dot sits on the scale, from `lowest_fen` against the scale's ends (positions only; no figure is drawn from it). */
-  at: number;
-  /** The dot is below the reserve (red); on or above it is ink. */
-  below: boolean;
-}
-export interface Plot {
-  dots: PlotDot[];
-  /** Where the reserve's dashed line sits, 0 to 100. */
-  reserveAt: number;
 }
 
-/**
- * The headroom dot plot's geometry (section 5): a horizontal scale from the lowest value to the highest of the responses' lowest cash and the reserve, a vertical line at `floor_fen` and one dot per
- * response at its `lowest_fen`. The browser scales positions only; every label is a server word. A response whose cash cannot be drawn (no `lowest_fen`) has no dot; with none there is no plot.
- */
-export function headroomPlot(paths: PicturePath[], floorFen: number): Plot | null {
-  const drawn = paths.filter((p): p is PicturePath & { lowest_fen: number } => typeof p.lowest_fen === "number" && Boolean(p.lowest_short));
-  if (!drawn.length) return null;
-  const values = [...drawn.map((p) => p.lowest_fen), floorFen];
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
-  const span = hi - lo;
-  // Room at each end so a dot on the scale's end is not clipped.
-  // Room at each end, and more beyond the highest (the reserve is often the highest mark): the reserve line and the dots at it keep clear of the plot's edge.
-  const room = span * 0.35;
-  const at = (v: number) => (span > 0 ? 6 + ((v - lo) / (span + room)) * 88 : 50);
-  return {
-    reserveAt: at(floorFen),
-    dots: drawn.map((p) => ({ key: p.key, label: p.label, short: p.lowest_short as string, when: p.lowest_when, at: at(p.lowest_fen), below: p.lowest_fen < floorFen })),
-  };
+/** The days of a series inside the picture's window (`picture_days`; with none, all of them), as positions along it. */
+export function lineWindow(series: HomeSeriesPoint[] | null | undefined, today: number, days: number): LinePoint[] {
+  const inside = (series ?? []).filter((p) => p.day >= today && (days > 0 ? p.day - today <= days : true));
+  const last = inside.length ? inside[inside.length - 1].day - today : 0;
+  const span = days > 0 ? days : last;
+  return inside.map((p) => ({ x: span > 0 ? ((p.day - today) / span) * 100 : 0, fen: p.closing_fen, day: p.day, when: p.when ?? null }));
 }
 
-// ---------------------------------------------------------------- the chart's lines (round three, section 6)
-
-/** The most responses the chart draws at once. */
-export const MAX_LINES = 3;
-
-/**
- * Which responses the chart draws: the address's `lines` (the paths' keys, comma separated, the first chosen first) kept to the paths that exist and to three; else the request and the recommended
- * reply (the first reply when none is recommended).
- */
-export function chosenLines(paths: Pick<PicturePath, "key" | "kind" | "recommended">[], raw: string | null): string[] {
-  const keys = (raw ?? "").split(",").filter((k, i, a) => k && a.indexOf(k) === i && paths.some((p) => p.key === k)).slice(0, MAX_LINES);
-  if (keys.length) return keys;
-  const asked = paths.find((p) => p.kind === "asked");
-  const reply = paths.find((p) => p.kind === "reply" && p.recommended) ?? paths.find((p) => p.kind === "reply");
-  return [asked?.key, reply?.key].filter((k): k is string => Boolean(k));
+/** The labelled days along a window: the picture's moments inside it, each at its day, with the server's own words for it ("today", "in 47 days"). */
+export function dayTicks(moments: { day: number; when?: string | null }[] | null | undefined, today: number, days: number): { x: number; label: string }[] {
+  if (!(days > 0)) return [];
+  return (moments ?? []).filter((m) => m.when && m.day >= today && m.day - today <= days).map((m) => ({ x: ((m.day - today) / days) * 100, label: m.when as string }));
 }
-
 
 /** A row of the Closed group under the Agreed tab: an agreed deal that is over (its status is the tracker's state word, its consequence the close-out sentence). */
 export const isClosedRow = (row: Pick<QueueRowView, "lifecycle">): boolean => lifecycleOf(row) === "closed";

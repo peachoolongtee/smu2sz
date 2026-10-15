@@ -4,182 +4,233 @@ import { useState } from "react";
 import { ErrorState, LoadingBlock } from "@/components/ui";
 import { getOfferScenarios } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
-import { CashPreview, LegendItem, type InspectorCell, type InspectorWords, type LineStyle, type PreviewLine } from "@/components/home/v2/cash-preview";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import { pairWords } from "@/lib/point-comparison";
-import type { ExposureView, HomeSeriesPoint, HomeView, OfferPictureView, PicturePath, PictureScenarioRow } from "@/lib/types";
-import { chosenLines, MAX_LINES } from "./deal-model";
-import { FinancialOutcomes } from "./outcomes";
-
-/** The chart's frame from the picture: the reserve, the window and the axis the server drew it with (the chart needs no company read to draw one deal). */
-export function chartCashOf(picture: OfferPictureView): HomeView["cash"] {
-  return { floor_fen: picture.floor_fen, floor_short: picture.floor_short, picture_days: picture.picture_days ?? 0, horizon_days: picture.horizon_days, axis: picture.axis ?? null, axes: null, events_rail_days: 0 } as unknown as HomeView["cash"];
-}
-
-const pointAt = (points: HomeSeriesPoint[] | null | undefined, day: number): HomeSeriesPoint | undefined => {
-  let best: HomeSeriesPoint | undefined;
-  for (const p of points ?? []) {
-    if (p.day > day) break;
-    best = p;
-  }
-  return best;
-};
-const shown = (p: HomeSeriesPoint | undefined): string => p?.display ?? p?.closing_display ?? "";
-
-const ORDER: LineStyle[] = ["first", "second", "third"];
+import type { OfferPictureView, PicturePath, PictureScenarioRow } from "@/lib/types";
+import { cashScale, dayTicks, lineWindow } from "./deal-model";
 
 /**
- * Cash impact (round three, sections 5, 6 and 4): the financial outcomes first (the table and the headroom plot), then "Cash over time": chips for which responses to draw (two on by default, a
- * third may be added, never more than three; the choice lives in the address as `lines`), the funding line, the 60 / 120 day window and the payment-timing switch; each line has one colour by
- * the order it was chosen (ink, purple, a muted dashed third), the minimum reserve is an amber dashed line, the stretch of a line under it red; event markers on the first line; the inspector in
- * two blocks that never mix (the chosen pair on a day with the server's difference and its cause, and each option's own lowest point); then the business consequences. The browser positions marks from
- * `*_fen` and `lowest_day`; every label and sentence is the server's or the dictionary's.
+ * Cash impact (Deals redesign, board 3): two charts, each answering one question, then the business consequences.
+ *   1. "Does cash stay above your minimum?": one thin bar per choice to its lowest cash on a real scale (the server's labelled ticks), the minimum as a dashed line through every bar, the server's words
+ *      for the lowest point on the right.
+ *   2. "How your cash moves, day by day": exactly two lines, the request (dashed, risk red) and the chosen reply (ink), a toggle between the replies, the band below the minimum, the server's sentence
+ *      on the days below, "Why the lines differ" (the server's `cause_lines`) and the two lowest points.
+ * The browser positions marks from `*_fen` and the series' days only; every label and sentence is the server's or the dictionary's.
  */
-export function CashTab({ offerId, picture, paths, exposure, buyer, lines, late, onLines, onLate }: { offerId: string; picture: OfferPictureView; paths: PicturePath[]; exposure: ExposureView | null | undefined; buyer: string; lines: string | null; late: boolean; onLines: (keys: string[]) => void; onLate: (late: boolean) => void }) {
-  const { t } = useI18n();
-  const chosen = chosenLines(paths, lines);
-  const chosenPaths = chosen.map((k) => paths.find((p) => p.key === k)).filter((p): p is PicturePath => Boolean(p));
-  const stress = exposure?.stress ?? null;
-  const canLate = Boolean(stress?.paths);
-  const stressed = late && canLate;
-  const delay = stress?.delay_days ?? 0;
-  const stressOf = (p: PicturePath) => stress?.paths[p.key] ?? null;
-  const seriesOf = (p: PicturePath): HomeSeriesPoint[] => {
-    if (stressed) {
-      const s = stressOf(p);
-      return s?.series?.length ? s.series.map((x) => ({ ...x, events: [] })) : [];
-    }
-    return p.series ?? [];
-  };
-  const toggle = (key: string) => {
-    if (chosen.includes(key)) {
-      if (chosen.length > 1) onLines(chosen.filter((k) => k !== key));
-    } else if (chosen.length < MAX_LINES) onLines([...chosen, key]);
-  };
-  const today = picture.day;
-  const moments = picture.moments ?? [];
-  const first = chosenPaths[0] ?? null;
-  const second = chosenPaths[1] ?? null;
-  const previewLines: PreviewLine[] = chosenPaths.map((p, i) => ({ key: p.key, label: p.label, style: ORDER[i], points: seriesOf(p) })).filter((l) => l.points.length);
-  const lowestDayOf = (p: PicturePath): number | null => (stressed ? (stressOf(p)?.lowest_day ?? null) : (p.lowest_day ?? null));
-  const chartDays = [...new Set([...moments.map((m) => m.day), ...chosenPaths.map(lowestDayOf).filter((d): d is number => d !== null), ...(first ? seriesOf(first).filter((p) => p.events.length).map((p) => p.day) : [])])].filter((d) => d >= today).sort((a, b) => a - b);
-  const markers = !first || stressed
-    ? []
-    : seriesOf(first)
-        .filter((p) => p.day >= today && p.events.length)
-        .map((p) => {
-          const said = moments.find((m) => m.day === p.day)?.events_text?.[first.key];
-          const text = said?.length ? said.join("; ") : p.events.map((e) => [e.label_short ?? e.label, e.amount_display].filter(Boolean).join(" ")).join("; ");
-          return { day: p.day, text: [p.when, text].filter(Boolean).join(" · ") };
-        });
-  const words = (day: number): InspectorWords => {
-    const whenWord = pointAt(first ? seriesOf(first) : [], day)?.when ?? moments.find((m) => m.day === day)?.word ?? moments.find((m) => m.day === day)?.label ?? "";
-    const pw = !stressed && first && second ? pairWords(first, second, (k) => pointAt(paths.find((p) => p.key === k)?.series ?? [], day)) : null;
-    const reserve = picture.floor_fen;
-    const cell = (p: PicturePath, display: string | undefined): InspectorCell => ({ key: p.key, label: p.label, value: display ?? shown(pointAt(seriesOf(p), day)), tone: (pointAt(seriesOf(p), day)?.closing_fen ?? reserve) < reserve ? "bad" : undefined });
-    const dayCells: InspectorCell[] = [
-      { key: "when", label: t("hv2.chart.when"), value: whenWord },
-      ...(first ? [cell(first, pw?.aDisplay)] : []),
-      ...(second ? [cell(second, pw?.bDisplay)] : []),
-      ...(pw?.difference
-        ? [{ key: "diff", label: first && second ? t("deals.diff.against", { label: (pw.differenceOf === "a" ? first : second).label, against: (pw.differenceOf === "a" ? second : first).label }) : t("hv2.inspect.diff"), value: pw.difference }]
-        : []),
-    ];
-    const lowCells: InspectorCell[] = chosenPaths.map((p) => {
-      const s = stressed ? stressOf(p) : null;
-      return { key: p.key, label: p.label, value: (stressed ? (s?.lowest_short ?? s?.lowest_display) : p.lowest_short) ?? "", sub: stressed ? s?.lowest_when : p.lowest_when, tone: (stressed ? (s?.breach_days ?? 0) > 0 : p.first_breach_when !== null) ? "bad" : undefined };
-    });
-    return {
-      cells: dayCells,
-      events: [],
-      sections: [
-        { key: "day", title: t("deals.insp.onDay"), cells: dayCells, note: second ? t("deals.insp.onDay.note") : null, causeTitle: t("deals.insp.cause"), cause: pw?.cause ?? null, causeLines: pw?.causeLines ?? null },
-        { key: "lowest", title: t("deals.insp.lowest"), cells: lowCells, note: chosenPaths.length > 1 ? t("deals.insp.lowest.note") : null },
-      ],
-    };
-  };
-  const controls = (
-    <div className="mb-3 space-y-2" data-testid="deal-chart-controls">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label={t("deals.chips.aria")} data-testid="deal-chips">
-        <span className="text-supporting font-bold text-ink-3">{t("deals.chips.label")}</span>
-        {paths.map((p) => {
-          const on = chosen.includes(p.key);
-          const blocked = on ? chosen.length === 1 : chosen.length >= MAX_LINES;
-          return (
-            <button
-              key={p.key}
-              type="button"
-              aria-pressed={on}
-              aria-disabled={blocked || undefined}
-              title={blocked ? (on ? t("deals.chips.last") : t("deals.chips.max")) : undefined}
-              onClick={() => toggle(p.key)}
-              className={`motion-press inline-flex min-h-8 items-center gap-1.5 rounded-pill border px-3 text-sm touch:min-h-11 ${on ? "border-f-ink bg-subtle font-bold text-ink" : "border-line-strong font-medium text-ink-2"} ${blocked ? "opacity-60" : ""}`}
-              data-testid={`deal-chip-${p.key}`}
-            >
-              {p.label}
-              {on ? <span aria-hidden>✓</span> : null}
-            </button>
-          );
-        })}
-      </div>
-      <p className="text-supporting text-ink-2" data-testid="deal-chart-funding">
-        <span className="font-bold text-ink-3">{t("deals.chart.fundingLabel")}: </span>
-        {t("deals.chart.funding")}
-      </p>
-      {canLate ? (
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" data-testid="deal-assumption-row">
-          <p className="text-sm font-bold text-ink-2">{t("hv2.deal.timing")}</p>
-          <SegmentedTabs
-            compact
-            label={t("hv2.deal.timing")}
-            value={stressed ? "late" : "expected"}
-            onChange={(x) => onLate(x === "late")}
-            tabs={[
-              { value: "expected", label: t("home.hy.scenario.expected"), testId: "deal-scenario-current" },
-              { value: "late", label: t("home.hy.scenario.late", { buyer, n: delay }), testId: "deal-scenario-late" },
-            ]}
-          />
-        </div>
-      ) : null}
-    </div>
-  );
+export function CashTab({ offerId, picture, paths }: { offerId: string; picture: OfferPictureView; paths: PicturePath[] }) {
+  const asked = paths.find((p) => p.kind === "asked") ?? null;
+  const replies = paths.filter((p) => p.kind === "reply");
   return (
     <div className="space-y-8" data-testid="deal-cash">
-      <FinancialOutcomes picture={picture} paths={paths} />
-      {previewLines.length ? (
-        <div id="deal-chart" data-testid="deal-chart" data-late={stressed ? "true" : "false"}>
-          <CashPreview
-            cash={chartCashOf(picture)}
-            today={today}
-            title={t("deals.chart.title")}
-            lines={previewLines}
-            floorLabel={t("biz.picture.reserve", { amount: picture.floor_short })}
-            selectable={chartDays}
-            initialDay={first ? (lowestDayOf(first) ?? today) : today}
-            lowestDay={null}
-            words={words}
-            testId="deal-chart-picture"
-            reserveAmber
-            markers={markers}
-            controls={controls}
-            first
-            legend={
-              <>
-                {previewLines.map((l) => (
-                  <LegendItem key={l.key} kind={l.style} quiet={paths.find((p) => p.key === l.key)?.assumption_text}>
-                    {l.label}
-                  </LegendItem>
-                ))}
-                <LegendItem kind="below">{t("hv2.chart.below")}</LegendItem>
-                <LegendItem kind="reserveAmber">{t("biz.picture.reserve", { amount: picture.floor_short })}</LegendItem>
-              </>
-            }
-          />
-        </div>
-      ) : null}
+      <LowestBars picture={picture} paths={paths} />
+      <MoveChart picture={picture} asked={asked} replies={replies} />
       <BusinessConsequences offerId={offerId} />
     </div>
+  );
+}
+
+const tickClass = "absolute top-0 whitespace-nowrap text-supporting text-ink-2";
+
+/** Chart 1: one thin bar per choice to its lowest cash. */
+function LowestBars({ picture, paths }: { picture: OfferPictureView; paths: PicturePath[] }) {
+  const { t } = useI18n();
+  const drawn = paths.filter((p): p is PicturePath & { lowest_fen: number } => typeof p.lowest_fen === "number");
+  if (!drawn.length) return null;
+  const scale = cashScale([...drawn.map((p) => p.lowest_fen), picture.floor_fen], picture.axis);
+  const floorAt = scale.at(picture.floor_fen);
+  const rec = paths.find((p) => p.kind === "reply" && p.recommended)?.key ?? null;
+  const fill = (p: PicturePath & { lowest_fen: number }) => (p.first_breach_when !== null ? "bg-bad-solid" : p.key === rec ? "bg-f-ink" : "bg-ink-3");
+  return (
+    <section aria-labelledby="deal-lowest-title" className="space-y-4" data-testid="deal-lowest">
+      <div>
+        <h2 id="deal-lowest-title" className="type-section text-ink">
+          {t("deals.cash.lowest.title", { amount: picture.floor_short })}
+        </h2>
+        <p className="mt-1.5 text-[15px] text-ink-2">{t("deals.cash.lowest.sub")}</p>
+      </div>
+      <ul className="m-0 list-none space-y-5 p-0 md:space-y-3">
+        {drawn.map((p) => (
+          <li key={p.key} className="grid grid-cols-1 gap-x-5 gap-y-2 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_minmax(0,17rem)] md:items-center" data-testid="deal-lowest-row" data-below={p.first_breach_when !== null ? "true" : "false"}>
+            <p className="m-0 text-[15px] font-bold text-ink md:order-1">
+              {p.label}
+              {p.key === rec ? <span className="ml-2 text-supporting font-bold text-f-purple-ink">{t("deals.choices.recommended")}</span> : null}
+            </p>
+            <div className="relative h-2.5 rounded-pill bg-subtle md:order-2" aria-hidden>
+              <div className={`absolute inset-y-0 left-0 rounded-pill ${fill(p)}`} style={{ width: `${scale.at(p.lowest_fen)}%` }} data-testid="deal-lowest-bar" />
+              <span className="absolute -inset-y-1.5 border-l-2 border-dashed border-f-amber-ink" style={{ left: `${floorAt}%` }} data-testid="deal-lowest-floor" />
+            </div>
+            <p className="m-0 text-[15px] md:order-3">
+              <span className={`font-bold tabular-nums ${p.first_breach_when !== null ? "text-bad-fg" : "text-ink"}`}>{p.lowest_short}</span>
+              {p.lowest_when ? <span className="ml-1.5 text-ink-2">{p.lowest_when}</span> : null}
+              {p.reserve_state_text ? <span className={`block text-supporting ${p.first_breach_when !== null ? "text-bad-fg" : "text-ink-2"}`}>{p.reserve_state_text}</span> : null}
+            </p>
+          </li>
+        ))}
+      </ul>
+      {/* The scale: the server's labelled ticks under the bars' column (the grid's middle column from the tablet width). */}
+      <div className="grid grid-cols-1 gap-x-5 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_minmax(0,17rem)]">
+        <div className="relative h-5 md:col-start-2" aria-hidden data-testid="deal-lowest-ticks">
+          {scale.ticks.map((k) => (
+            <span key={k.label} className={tickClass} style={{ left: `${k.at}%`, transform: k.at < 4 ? undefined : k.at > 96 ? "translateX(-100%)" : "translateX(-50%)" }}>
+              {k.label}
+            </span>
+          ))}
+        </div>
+      </div>
+      <p className="flex items-center gap-2 text-supporting text-ink-2">
+        <i aria-hidden className="inline-block w-[18px] border-t-2 border-dashed border-f-amber-ink" />
+        {t("biz.picture.reserve", { amount: picture.floor_short })}
+      </p>
+    </section>
+  );
+}
+
+/** Chart 2: the request against the chosen reply, day by day. */
+function MoveChart({ picture, asked, replies }: { picture: OfferPictureView; asked: PicturePath | null; replies: PicturePath[] }) {
+  const { t } = useI18n();
+  const [pick, setPick] = useState<string | null>(null);
+  const reply = replies.find((p) => p.key === pick) ?? replies.find((p) => p.recommended) ?? replies[0] ?? null;
+  const today = picture.day;
+  const days = picture.picture_days ?? 0;
+  const askedPts = lineWindow(asked?.series, today, days);
+  const replyPts = lineWindow(reply?.series, today, days);
+  if (!askedPts.length && !replyPts.length) return null;
+  const scale = cashScale([...askedPts, ...replyPts].map((p) => p.fen).concat(picture.floor_fen), picture.axis);
+  const y = (fen: number) => 100 - scale.at(fen);
+  const floorY = y(picture.floor_fen);
+  const poly = (pts: typeof askedPts) => pts.map((p) => `${p.x},${y(p.fen)}`).join(" ");
+  const xTicks = dayTicks(picture.moments, today, days);
+  const breach = asked && asked.first_breach_when !== null;
+  // The server's words for the difference between the two lines: the cause, per line, as of the last day drawn.
+  const pointOf = (key: string) => (key === asked?.key ? asked : reply)?.series?.find((s) => s.day === (replyPts[replyPts.length - 1] ?? askedPts[askedPts.length - 1])?.day);
+  const words = asked && reply ? pairWords(asked, reply, (k) => (k === reply.key ? pointOf(reply.key) : pointOf(asked.key))) : null;
+  const askedLabel = t("deals.cash.line.asked");
+  const replyLabel = reply ? t("deals.cash.line.reply", { label: reply.label }) : "";
+  const tile = "rounded-tile bg-subtle px-4 py-3.5";
+  return (
+    <section aria-labelledby="deal-move-title" className="space-y-4 border-t border-line pt-7" data-testid="deal-chart">
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <h2 id="deal-move-title" className="type-section text-ink">
+            {t("deals.cash.move.title")}
+          </h2>
+          <p className="mt-1.5 text-[15px] text-ink-2">{t("deals.cash.move.sub")}</p>
+        </div>
+        {replies.length > 1 ? (
+          <div role="group" aria-label={t("deals.cash.compare")} className="flex flex-wrap gap-2" data-testid="deal-reply-toggle">
+            {replies.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                aria-pressed={reply?.key === p.key}
+                onClick={() => setPick(p.key)}
+                className={`motion-press min-h-11 rounded-pill border px-4 text-sm ${reply?.key === p.key ? "border-f-ink bg-f-ink font-bold text-surface" : "border-line-ui bg-surface text-ink hover:bg-subtle"}`}
+                data-testid={`deal-reply-${p.key}`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      <ul className="m-0 flex list-none flex-wrap gap-x-6 gap-y-2 p-0 text-sm text-ink-2" data-testid="deal-chart-legend">
+        {reply ? (
+          <li className="inline-flex items-center gap-2">
+            <i aria-hidden className="inline-block w-[22px] border-t-[3px] border-f-ink" />
+            {replyLabel}
+          </li>
+        ) : null}
+        {asked ? (
+          <li className="inline-flex items-center gap-2">
+            <i aria-hidden className="inline-block w-[22px] border-t-[3px] border-dashed border-bad-fg" />
+            {askedLabel}
+          </li>
+        ) : null}
+        <li className="inline-flex items-center gap-2">
+          <i aria-hidden className="inline-block h-2.5 w-[22px]" style={{ background: "var(--color-chart-danger)" }} />
+          {t("hv2.chart.below")}
+        </li>
+      </ul>
+      <div className="grid grid-cols-[3.75rem_minmax(0,1fr)] gap-x-2 pt-3 sm:grid-cols-[4.5rem_minmax(0,1fr)]" data-testid="deal-chart-picture">
+        <div className="relative h-72" aria-hidden>
+          {scale.ticks.map((k) => (
+            <span key={k.label} className="absolute right-0 -translate-y-1/2 whitespace-nowrap text-supporting text-ink-2" style={{ top: `${100 - k.at}%` }}>
+              {k.label}
+            </span>
+          ))}
+          <span className="absolute right-0 -translate-y-1/2 whitespace-nowrap text-supporting font-bold text-f-amber-ink" style={{ top: `${floorY}%` }} data-testid="deal-chart-floor-label">
+            {picture.floor_short}
+          </span>
+        </div>
+        <div className="relative h-72" role="img" aria-label={t("deals.cash.aria", { reply: reply?.label ?? "", a: asked?.lowest_short ?? "", aw: asked?.lowest_when ?? "", b: reply?.lowest_short ?? "", bw: reply?.lowest_when ?? "" })}>
+          {/* The band below the minimum, the minimum as a dashed line, and the two lines (positions from fen and day numbers only). */}
+          <div aria-hidden className="absolute inset-x-0 bottom-0" style={{ top: `${floorY}%`, background: "var(--color-chart-danger)" }} data-testid="deal-chart-band" />
+          <span aria-hidden className="absolute inset-x-0 border-t-[1.5px] border-dashed border-f-amber-ink" style={{ top: `${floorY}%` }} data-testid="deal-chart-reserve" />
+          {scale.ticks.map((k) => (
+            <span key={k.label} aria-hidden className="absolute inset-x-0 border-t border-line" style={{ top: `${100 - k.at}%` }} />
+          ))}
+          <svg aria-hidden className="absolute inset-0 size-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+            {askedPts.length ? <polyline points={poly(askedPts)} fill="none" stroke="var(--color-bad-fg)" strokeWidth="3" strokeDasharray="8 6" vectorEffect="non-scaling-stroke" data-testid="deal-line-asked" /> : null}
+            {replyPts.length ? <polyline points={poly(replyPts)} fill="none" stroke="var(--color-f-ink)" strokeWidth="3" vectorEffect="non-scaling-stroke" data-testid="deal-line-reply" /> : null}
+          </svg>
+          {breach && asked?.band_text ? (
+            <p className="absolute bottom-3 right-3 m-0 rounded-tile border border-bad-fg bg-surface px-3 py-1.5 text-sm font-bold text-bad-fg" data-testid="deal-chart-below">
+              {asked.band_text}
+            </p>
+          ) : null}
+        </div>
+        <div />
+        <div className="relative h-6" aria-hidden data-testid="deal-chart-days">
+          {xTicks.map((k) => (
+            <span key={k.label} className={tickClass} style={{ left: `${k.x}%`, transform: k.x < 4 ? undefined : k.x > 96 ? "translateX(-100%)" : "translateX(-50%)" }}>
+              {k.label}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="grid items-start gap-3 md:grid-cols-3">
+        {words?.causeLines?.length || words?.cause ? (
+          <div className={tile} data-testid="deal-why-lines">
+            <p className="text-sm text-ink-2">{t("deals.cash.why")}</p>
+            {words?.causeLines?.length ? (
+              <ul className="m-0 mt-1.5 list-none space-y-2 p-0 text-[15px] text-ink">
+                {words.causeLines.map((l) => (
+                  <li key={l.label}>
+                    <span className="block text-supporting font-bold text-ink-2">{l.label}</span>
+                    <ul className="m-0 list-disc space-y-0.5 pl-5">
+                      {l.items.map((it) => (
+                        <li key={it}>{it}</li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1.5 text-[15px] text-ink">{words?.cause}</p>
+            )}
+          </div>
+        ) : null}
+        {asked?.lowest_short ? (
+          <div className={tile} data-testid="deal-lowest-asked">
+            <p className="text-sm text-ink-2">{t("deals.cash.lowest.of", { label: asked.label })}</p>
+            <p className={`mt-1.5 font-display text-lg font-bold leading-snug sm:text-xl ${asked.first_breach_when !== null ? "text-bad-fg" : "text-ink"}`}>
+              <span>{asked.lowest_short}</span>
+              {asked.lowest_when ? <span className="ml-2 font-sans text-sm font-normal text-ink-2">{asked.lowest_when}</span> : null}
+            </p>
+          </div>
+        ) : null}
+        {reply?.lowest_short ? (
+          <div className={tile} data-testid="deal-lowest-reply">
+            <p className="text-sm text-ink-2">{t("deals.cash.lowest.of", { label: reply.label })}</p>
+            <p className="mt-1.5 font-display text-lg font-bold leading-snug text-ink sm:text-xl">
+              <span>{reply.lowest_short}</span>
+              {reply.lowest_when ? <span className="ml-2 font-sans text-sm font-normal text-ink-2">{reply.lowest_when}</span> : null}
+            </p>
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }
 

@@ -7,7 +7,7 @@ import { StateWord } from "@/components/ui/state-word";
 import { getEnvelope } from "@/lib/api";
 import { STRATEGY_MVP } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
-import type { EnvelopePackageView, EnvelopeView, OfferPictureView, PicturePath } from "@/lib/types";
+import type { EnvelopePackageView, EnvelopeView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { AUTH_TONE } from "./flow-parts";
 
@@ -18,61 +18,6 @@ export function packageClass(p: Pick<EnvelopePackageView, "outcome" | "tier">): 
 }
 
 const SHOWN_FIRST = 3;
-
-/**
- * "Why these results differ" (round three, sections 1, 3 and 8): the server's reason for the recommended reply, who decides each response and why (said once in full here), the sentence each
- * response's cash assumes (the funding plans differ: that is said in the server's words, never as parity), and the rule the server states (`recommendation.rule_text`). Every sentence is the server's;
- * a response the server wrote nothing for is left out.
- */
-export function WhyDiffer({ picture, paths }: { picture: Pick<OfferPictureView, "recommendation" | "accept">; paths: PicturePath[] }) {
-  const { t } = useI18n();
-  const recommended = paths.find((p) => p.kind === "reply" && p.recommended) ?? null;
-  // The request's own reason (a request FLOW has a reply for that the owner still cannot accept as asked) is the server's `accept.reason_text`; it stands for the request when the path carries none.
-  const authority = paths.map((p) => ({ p, text: p.authority_reason_text ?? (p.kind === "asked" && picture.accept && !picture.accept.available ? picture.accept.reason_text : null) })).filter((x) => x.text);
-  const assumes = paths.filter((p) => p.scenario_assumption_text ?? p.assumption_text);
-  return (
-    <OpenSection first title={t("deals.why.differ")} testId="deal-why" id="deal-why-section">
-      <div className="space-y-4 text-sm text-ink-2">
-        {recommended?.recommended_reason_text ? (
-          <p className="max-w-[68ch] text-[15px] leading-snug text-ink" data-testid="deal-why-reason">
-            {recommended.recommended_reason_text}
-          </p>
-        ) : null}
-        {authority.length ? (
-          <div data-testid="deal-why-authority">
-            <p className="mb-1 text-supporting font-bold text-ink-3">{t("deals.why.authority")}</p>
-            <ul className="space-y-1">
-              {authority.map(({ p, text }) => (
-                <li key={p.key} className="flex flex-wrap gap-x-2">
-                  <span className="font-bold text-ink">{p.label}</span>
-                  <span className="min-w-0 flex-1 basis-64">{text}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-        {assumes.length ? (
-          <div data-testid="deal-why-assumes">
-            <p className="mb-1 text-supporting font-bold text-ink-3">{t("deals.why.assumes")}</p>
-            <ul className="space-y-1">
-              {assumes.map((p) => (
-                <li key={p.key} className="flex flex-wrap gap-x-2">
-                  <span className="font-bold text-ink">{p.label}</span>
-                  <span className="min-w-0 flex-1 basis-64">{p.scenario_assumption_text ?? p.assumption_text}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-        {picture.recommendation?.rule_text ? (
-          <p className="border-l-2 border-line-strong pl-3 text-ink" data-testid="deal-why-rule">
-            {picture.recommendation.rule_text}
-          </p>
-        ) : null}
-      </div>
-    </OpenSection>
-  );
-}
 
 /**
  * What the owner can live with for this buyer, by who may act on it (FLOW may send it, you approve first, over a limit you signed): the envelope's packages in the server's
