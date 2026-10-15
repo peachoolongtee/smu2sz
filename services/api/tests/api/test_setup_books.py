@@ -418,3 +418,49 @@ def test_a_far_bill_date_never_becomes_a_server_error(client) -> None:
     assert not [f for f in build_books(SetupDraft.model_validate(draft(bills=bills))).state.flows if f.label == "Rent"]
     far = client.post("/setup/preview", json={"draft": draft(**_biz(start_date="0001-01-01"))})
     assert far.status_code == 200 and far.json()["ok"] is False
+
+
+# ---------------------------------------------------------------- who may use setup, and where
+
+
+SETUP_CALLS = [("get", "/setup/status", None), ("get", "/setup/documents", None),
+               ("post", "/setup/documents", {"kind": "BUYER_CONTRACT", "text": "Supply agreement"}),
+               ("post", "/setup/preview", {"draft": DRAFT}), ("post", "/setup/open", {"draft": DRAFT, "password": "demo-owner-token"})]
+
+
+@pytest.mark.parametrize(("method", "path", "body"), SETUP_CALLS)
+@pytest.mark.parametrize("headers", [{"X-Agent-Key": "demo-agent-key"}, {"X-Bank-Feed-Key": "demo-bank-feed-key"},
+                                     {"X-Counterparty-Key": "demo-buyer-1-key"}, {}])
+def test_only_the_owner_reaches_setup(client, method: str, path: str, body: dict | None, headers: dict) -> None:
+    before = _counts()
+    r = client.request(method.upper(), path, json=body, headers={"X-Owner-Token": "", **headers})
+    assert r.status_code == 401, (path, r.text)
+    assert _counts() == before and setup_api._setup_docs == {}
+
+
+def test_without_demo_mode_open_and_documents_are_refused(client, monkeypatch) -> None:
+    blank(client)
+    monkeypatch.setenv("DEMO_MODE", "0")
+    monkeypatch.setenv("OWNER_TOKEN", "a-real-owner-token")
+    owner = {"X-Owner-Token": "a-real-owner-token"}
+    before = _counts()
+    text = "SUPPLY AGREEMENT between Acme Parts Co. (Supplier) and Delta Retail Co. (Buyer). The Buyer shall pay within thirty (30) days."
+    for r in (client.post("/setup/open", json={"draft": DRAFT, "password": "a-real-owner-token"}, headers=owner),
+              client.post("/setup/documents", json={"kind": "BUYER_CONTRACT", "text": text}, headers=owner),
+              client.get("/setup/documents", headers=owner)):
+        assert r.status_code == 403 and r.json()["detail"]["code"] == "SETUP_REFUSED"
+    assert _counts() == before and setup_api._setup_docs == {}
+    assert client.get("/setup/status", headers=owner).json()["can_open"] is False
+
+
+def test_setup_holds_at_most_ten_documents(client) -> None:
+    for i in range(setup_api.MAX_SETUP_DOCS):
+        text = (f"SUPPLY AGREEMENT {i} between Acme Parts Co. (Supplier) and Delta Retail {i} Co. (Buyer). "
+                "The Buyer shall pay each invoice within thirty (30) days of the invoice date.")
+        assert client.post("/setup/documents", json={"kind": "BUYER_CONTRACT", "text": text}).status_code == 200
+    assert len(setup_api._setup_docs) == setup_api.MAX_SETUP_DOCS
+    r = client.post("/setup/documents", json={"kind": "BUYER_CONTRACT", "text": "SUPPLY AGREEMENT one more, pay within 30 days."})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "SETUP_DOCUMENTS_FULL"
+    zh = client.post("/setup/documents?lang=zh", json={"kind": "BUYER_CONTRACT", "text": "SUPPLY AGREEMENT one more."})
+    assert zh.status_code == 409 and "份文件" in zh.json()["detail"]["message"]
+    assert len(setup_api._setup_docs) == setup_api.MAX_SETUP_DOCS

@@ -54,6 +54,8 @@ Lang = Literal["en", "zh"]
 OPEN_BOOKS_KIND = "OPEN_BOOKS"
 SETUP_COUNTERPARTY = "SETUP"
 FORECAST_DAYS = 90
+#: Documents the setup holds in memory at once; opening the books (or a restart) empties them.
+MAX_SETUP_DOCS = 10
 
 #: Documents read during setup, before their customer or lender exists: id -> record. In memory, like the other session caches.
 _setup_docs: dict[str, ContractRecord] = {}
@@ -79,6 +81,14 @@ def _pct_input(bp: int) -> str:
 
 def _can_open() -> bool:
     return demo_mode() or isinstance(get_runtime().store, InMemoryLedgerStore)
+
+
+def _refuse_unless_can_open(lg: Lang) -> None:
+    """Setup is for a server that may open books (the same check as `POST /setup/open`); elsewhere it holds nothing and reads nothing."""
+    if not (_can_open() and demo_mode()):
+        raise HTTPException(403, {"code": "SETUP_REFUSED", "message": t(
+            lg, "Setting up books from the app needs demo mode on this server; nothing was changed.",
+            "在此服务器上通过应用设置账簿需要演示模式；未做任何更改。")})
 
 
 def _books_are_blank() -> bool:
@@ -261,6 +271,7 @@ def _parse_start(start_date: str | None) -> date | None:
 @router.get("/setup/documents")
 def setup_documents(start_date: str | None = None, lang: str = "en") -> dict:
     lg = _lang(lang)
+    _refuse_unless_can_open(lg)
     start = _parse_start(start_date)
     return {"documents": [_doc_view(r, start, lg) for r in _usable_documents()]}
 
@@ -300,6 +311,11 @@ def read_setup_document(body: SetupDocumentIn, lang: str = "en") -> dict:
     from app.ingest import DocumentTooLarge, IngestError, extract_text
 
     lg = _lang(lang)
+    _refuse_unless_can_open(lg)
+    if len(_setup_docs) >= MAX_SETUP_DOCS:
+        raise HTTPException(409, {"code": "SETUP_DOCUMENTS_FULL", "message": t(
+            lg, f"FLOW is already holding {MAX_SETUP_DOCS} documents for your setup. Open your books, or fill a row from one "
+                "of them, before adding more.", f"FLOW 已为您的设置保存了 {MAX_SETUP_DOCS} 份文件。请先开立账簿，或用其中一份填写一行，再添加更多。")})
     if body.content_base64 is not None:
         if not body.filename:
             raise HTTPException(422, {"code": "FILENAME_REQUIRED", "message": t(lg, "An upload needs its file name.", "上传文件需要文件名。")})
@@ -481,10 +497,7 @@ def setup_open(body: OpenIn, request: Request, lang: str = "en") -> dict:
 
     lg = _lang(lang)
     rt = get_runtime()
-    if not (_can_open() and demo_mode()):
-        raise HTTPException(403, {"code": "SETUP_REFUSED", "message": t(
-            lg, "Setting up books from the app needs demo mode on this server; nothing was changed.",
-            "在此服务器上通过应用设置账簿需要演示模式；未做任何更改。")})
+    _refuse_unless_can_open(lg)
     if not is_owner(body.password):
         log_refusal(request, "setup: the signature's password did not match the owner token")
         raise HTTPException(403, {"code": "SIGNATURE_REFUSED", "message": t(
