@@ -408,7 +408,6 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   test.skip(testInfo.project.name === "phone", "a laptop check");
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/");
-  const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
   expect(await bottomOf(page, "home-check-plan")).toBeLessThanOrEqual(700);
   // The three cards are one row in the page's flow (not sticky) and the whole row, today's cash among them, is inside the first screen.
   await expect(page.getByTestId("home-kpi-cash-value")).toBeVisible();

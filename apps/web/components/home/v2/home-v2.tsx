@@ -197,13 +197,13 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
           <>
             <div className="mb-3">{bar}</div>
             {/* A customer: the customer card beside the company's cash card (the default's left pair); the owed donut stays below the movements. */}
-            <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+            <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
               <CustomerFocusPanel customerId={shown.customer as string} worklist={worklist.data} selection={selection} onAll={() => clear()} />
               <CashCard kpis={v2.kpis} h={h} customers={customers.data?.customers} />
             </div>
           </>
         ) : (
-          <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
             <CashCard kpis={v2.kpis} h={h} customers={customers.data?.customers} />
             {bar}
             {outlook}
@@ -216,7 +216,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
         </div>
       ) : null}
       {/* The worklist and the shortcuts are the page's working area (the wide column); the upcoming movements and what is owed are a quiet side column. */}
-      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,3.2fr)_minmax(15rem,1fr)]">
+      <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,3.2fr)_minmax(15rem,1fr)]">
         <div className="grid min-w-0 content-start gap-4">
           {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} showAlert={!hasCard} /> : null}
         </div>
