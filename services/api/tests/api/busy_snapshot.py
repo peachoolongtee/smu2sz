@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import os
 import sys
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
@@ -61,7 +62,8 @@ def _key(rt: Runtime) -> str:
 
 def eligible(rt: Runtime) -> bool:
     store = rt.store
-    return (not _building and type(store) is InMemoryLedgerStore and store._tx_depth == 0
+    return (os.environ.get("BUSY_REPLAY") != "1"  # BUSY_REPLAY=1 runs every test on a real replay, to compare with the snapshot
+            and not _building and type(store) is InMemoryLedgerStore and store._tx_depth == 0
             and all(not getattr(store, n) for n in TELEMETRY)
             and demo_seed.replay is _REAL_REPLAY and demo_seed.scenario_seed is _shipped_scenario_seed
             and get_runtime() is rt)

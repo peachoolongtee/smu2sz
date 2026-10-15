@@ -19,6 +19,8 @@ from app.nl import reset_sessions
 from app.persistence import InMemoryLedgerStore
 from tests.api.conftest import english_leaks
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 EX01 = {"fixture_id": "EX01_PACKAGE"}
 EXPLAIN = "Why are we countering this?"

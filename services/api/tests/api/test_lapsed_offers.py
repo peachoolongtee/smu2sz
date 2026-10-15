@@ -18,6 +18,8 @@ from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from tests.api.conftest import agree_on_rcv_a, english_leaks
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 LAPSED_EN = "Lapsed · the invoice it was about has since been settled under another agreement"
 LAPSED_ZH = "已失效 · 它所针对的发票此后已按另一份协议结算"

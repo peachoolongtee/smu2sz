@@ -16,6 +16,8 @@ from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from tests.api.conftest import english_leaks
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 ACTUAL = {"terms_days": 60, "discount_bp": 120, "rebate_bp": 100}
 NAMES = ["Foshan Home Retail Co.", "Foshan", "Zhuhai Kitchenware Wholesale Co.", "Zhuhai", "Dongguan Office Supplies Ltd.", "Dongguan"]

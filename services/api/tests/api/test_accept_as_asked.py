@@ -25,6 +25,8 @@ from app.operations.executor import committable
 from app.persistence import InMemoryLedgerStore
 from tests.api.conftest import agree_on_rcv_a, english_leaks
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 ZHUHAI, DONGGUAN, FOSHAN_1, FOSHAN_3 = "EX09_TERMS_BUYER3", "EX08B_JOINT_BUYER2", "EX01_PACKAGE", "EX03_AS_USUAL"
 CONSOLIDATE = "EX05_CONSOLIDATE"  # the golden books' own request for the owner's review: Foshan's consolidated terms (NEEDS_OWNER_APPROVAL, no counter)

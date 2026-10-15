@@ -20,6 +20,8 @@ from app.nl import reset_sessions
 from app.persistence import InMemoryLedgerStore
 from tests.api.conftest import agree_on_rcv_a, english_leaks
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 ACTUAL = {"terms_days": 60, "discount_bp": 120, "rebate_bp": 100}
 NAMES = ["Foshan Home Retail Co.", "Foshan", "Zhuhai Kitchenware Wholesale Co.", "Zhuhai", "Dongguan Office Supplies Ltd.", "Dongguan"]

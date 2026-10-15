@@ -19,6 +19,8 @@ from app.mandate.fixture import demo_owner_public_key_hex
 from app.nl import reset_sessions
 from app.persistence import InMemoryLedgerStore
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 UNAVAILABLE = ("I could not read your books just now", "我暂时无法读取您的账目")
 # The question, its intent as the pipeline names it (the waiting and arrival questions answer under SHOW_STATUS), en and zh.

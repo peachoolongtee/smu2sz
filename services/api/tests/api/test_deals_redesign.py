@@ -20,6 +20,8 @@ from app.persistence import InMemoryLedgerStore
 from app.strategy import exposure as assembly
 from tests.api.conftest import english_leaks
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 EX01 = "EX01_PACKAGE"
 NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan", "Zhuhai Kitchenware Wholesale Co.", "Zhuhai",

@@ -18,6 +18,8 @@ from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from tests.api.conftest import agree_on_rcv_a
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
+
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 EXPECTED_FEN = 302777  # the supplier cost the sent counter stored: the figure the decision record shows
 POSTED_DISCOUNT_FEN = 218620  # 85 bp of the 25,720,000 fen the agreement covers, by hand: 25_720_000 * 85 // 10_000 = 218_620

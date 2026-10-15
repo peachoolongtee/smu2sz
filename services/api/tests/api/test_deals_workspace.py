@@ -6,6 +6,9 @@ from __future__ import annotations
 
 from tests.alerts.test_repay_alert import OWNER
 from tests.nl import conftest as nl_conftest
+import pytest
+
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
 
 rt = nl_conftest.rt
 client = nl_conftest.client
