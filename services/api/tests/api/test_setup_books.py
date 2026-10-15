@@ -464,3 +464,18 @@ def test_setup_holds_at_most_ten_documents(client) -> None:
     zh = client.post("/setup/documents?lang=zh", json={"kind": "BUYER_CONTRACT", "text": "SUPPLY AGREEMENT one more."})
     assert zh.status_code == 409 and "份文件" in zh.json()["detail"]["message"]
     assert len(setup_api._setup_docs) == setup_api.MAX_SETUP_DOCS
+
+
+def test_a_projection_failure_is_logged_not_shown(client, monkeypatch, caplog) -> None:
+    def boom(*a, **k):
+        raise RuntimeError("secret engine detail /srv/app/financial.py")
+
+    monkeypatch.setattr(setup_api, "_first_look", boom)
+    with caplog.at_level("ERROR"):
+        r = client.post("/setup/preview", json={"draft": DRAFT})
+        zh = client.post("/setup/preview?lang=zh", json={"draft": DRAFT})
+    assert r.status_code == 200 and r.json()["ok"] is False and r.json()["summary"] is None
+    assert r.json()["errors"][0]["text"] == "FLOW could not project these books. Check the figures you entered, then try again."
+    assert "无法对这些账簿做预测" in zh.json()["errors"][0]["text"]
+    assert "secret engine detail" not in r.text and "secret engine detail" not in zh.text
+    assert "secret engine detail" in caplog.text

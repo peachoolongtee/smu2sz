@@ -451,10 +451,13 @@ def setup_preview(body: PreviewIn, lang: str = "en") -> dict:
     try:
         out["summary"] = _summary(built, body.draft, lg)
         out["first_look"] = _first_look(built, lg)
-    except Exception as e:  # noqa: BLE001  the engine refused these books: say so, never a 500
+    except Exception:  # noqa: BLE001  the engine refused these books: say so, never a 500
+        log.exception("setup: the preview could not project the draft")
         out["ok"] = False
-        out["errors"].append({"step": 6, "path": "", "text": t(lg, f"FLOW could not project these books: {e}",
-                                                               f"FLOW 无法对这些账簿做预测：{e}")})
+        out["summary"] = out["first_look"] = None
+        out["errors"].append({"step": 6, "path": "", "text": t(
+            lg, "FLOW could not project these books. Check the figures you entered, then try again.",
+            "FLOW 无法对这些账簿做预测。请检查您填写的数字，然后重试。")})
     return out
 
 
