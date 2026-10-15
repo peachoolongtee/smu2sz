@@ -18198,7 +18198,7 @@
             "tone": "neutral"
           },
           {
-            "label": "As asked",
+            "label": "If you accept their request",
             "value": "over your ¥5,000 limit",
             "tone": "warn"
           },

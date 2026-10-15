@@ -102,7 +102,7 @@
             "basis_facility_name": "Invoice financing (onboarded platform)",
             "quoted_cost_display": "¥3,027.77",
             "quoted_cost_label_text": "Cost quoted when sent (one-off)",
-            "net_label_text": "Cost of the terms over 12 months, priced at the Invoice financing (onboarded platform) rate"
+            "net_label_text": "Forward cost beyond the one-off, over 12 months, priced at the Invoice financing (onboarded platform) rate"
           },
           "funding_blocked": null
         },
@@ -359,7 +359,7 @@
             "basis_facility_name": "Invoice financing (onboarded platform)",
             "quoted_cost_display": "¥3,027.77",
             "quoted_cost_label_text": "发送时报出的成本（一次性）",
-            "net_label_text": "条款在 12 个月内的成本，按Invoice financing (onboarded platform)的利率计算"
+            "net_label_text": "一次性成本之外的远期成本，12 个月内，按Invoice financing (onboarded platform)的利率计算"
           },
           "funding_blocked": null
         },
@@ -2900,7 +2900,7 @@
             "basis_facility_name": "Invoice financing (onboarded platform)",
             "quoted_cost_display": "¥3,027.77",
             "quoted_cost_label_text": "Cost quoted when sent (one-off)",
-            "net_label_text": "Cost of the terms over 12 months, priced at the Invoice financing (onboarded platform) rate"
+            "net_label_text": "Forward cost beyond the one-off, over 12 months, priced at the Invoice financing (onboarded platform) rate"
           },
           "funding_blocked": null
         },
@@ -3183,7 +3183,7 @@
             "basis_facility_name": "Invoice financing (onboarded platform)",
             "quoted_cost_display": "¥3,027.77",
             "quoted_cost_label_text": "发送时报出的成本（一次性）",
-            "net_label_text": "条款在 12 个月内的成本，按Invoice financing (onboarded platform)的利率计算"
+            "net_label_text": "一次性成本之外的远期成本，12 个月内，按Invoice financing (onboarded platform)的利率计算"
           },
           "funding_blocked": null
         },
@@ -3468,7 +3468,7 @@
             "basis_facility_name": "Invoice financing (onboarded platform)",
             "quoted_cost_display": "¥3,027.77",
             "quoted_cost_label_text": "Cost quoted when sent (one-off)",
-            "net_label_text": "Cost of the terms over 12 months, priced at the Invoice financing (onboarded platform) rate"
+            "net_label_text": "Forward cost beyond the one-off, over 12 months, priced at the Invoice financing (onboarded platform) rate"
           },
           "funding_blocked": null
         },
@@ -3751,7 +3751,7 @@
             "basis_facility_name": "Invoice financing (onboarded platform)",
             "quoted_cost_display": "¥3,027.77",
             "quoted_cost_label_text": "发送时报出的成本（一次性）",
-            "net_label_text": "条款在 12 个月内的成本，按Invoice financing (onboarded platform)的利率计算"
+            "net_label_text": "一次性成本之外的远期成本，12 个月内，按Invoice financing (onboarded platform)的利率计算"
           },
           "funding_blocked": null
         },
@@ -4466,7 +4466,7 @@
             "basis_facility_name": "Invoice financing (onboarded platform)",
             "quoted_cost_display": "¥3,027.77",
             "quoted_cost_label_text": "Cost quoted when sent (one-off)",
-            "net_label_text": "Cost of the terms over 12 months, priced at the Invoice financing (onboarded platform) rate"
+            "net_label_text": "Forward cost beyond the one-off, over 12 months, priced at the Invoice financing (onboarded platform) rate"
           },
           "funding_blocked": null
         },
@@ -4723,7 +4723,7 @@
             "basis_facility_name": "Invoice financing (onboarded platform)",
             "quoted_cost_display": "¥3,027.77",
             "quoted_cost_label_text": "发送时报出的成本（一次性）",
-            "net_label_text": "条款在 12 个月内的成本，按Invoice financing (onboarded platform)的利率计算"
+            "net_label_text": "一次性成本之外的远期成本，12 个月内，按Invoice financing (onboarded platform)的利率计算"
           },
           "funding_blocked": null
         },

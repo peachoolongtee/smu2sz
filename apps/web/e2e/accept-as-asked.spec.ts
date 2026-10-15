@@ -100,7 +100,7 @@ test.describe("live", () => {
     // The one filled button names the act; the decline is quiet beside it.
     const go = page.getByTestId("accept-go");
     await expect(go).toBeEnabled();
-    await expect(go).toHaveText("Accept as asked");
+    await expect(go).toHaveText("Accept their request");
     await expect(page.getByTestId("accept-decline")).toHaveText("Decline the request");
     expect(await go.evaluate((el) => getComputedStyle(el).backgroundColor), "the one filled button is the ink primary").toBe("rgb(23, 29, 30)");
     expect(await page.getByTestId("accept-decline").evaluate((el) => getComputedStyle(el).backgroundColor), "the decline is quiet").toBe("rgba(0, 0, 0, 0)");

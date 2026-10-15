@@ -29,8 +29,8 @@ test("cold: the page is 'Deals' with the state sentence under it, the server's w
   await page.goto("/deals");
   await expect(page.locator("h1")).toHaveText("Deals");
   await expect(page.locator("h1")).toHaveCount(1);
-  // Nothing needs the owner at the opening books: the sentence says so; the alert is the page's own row above the queue.
-  await expect(page.getByText("Nothing needs you today.")).toBeVisible();
+  // The page's sentence is the server's `queue.headline_text`, which counts the funding plan that waits for the owner; the alert is the page's own row above the queue.
+  await expect(page.getByText("A funding plan is ready.")).toBeVisible();
   await expect(page.getByTestId("queue-alert")).toContainText("FLOW action ready");
   // Round three (section 9): with fewer than two negotiations the queue is its rows and nothing else (no lifecycle tabs); the total is the queue's own, and the alert is the page's row, counted nowhere.
   await expect(page.getByTestId("queue-total")).toHaveText("0");
