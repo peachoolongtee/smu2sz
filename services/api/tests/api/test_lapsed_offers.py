@@ -83,7 +83,7 @@ def test_after_a_send_on_rcv_a_the_other_foshan_replies_are_lapsed_and_in_no_tie
     listed = {r["decision_id"] for tier in ("needs_you", "waiting", "agreements") for r in q[tier]}
     assert not listed & {d["id"] for d in lapsed}  # nothing to do and nothing to wait for
     assert not any(r["customer_id"] == "BUYER-1" and r["kind"] == "DECISION" for r in q["needs_you"])
-    assert q["counts"] == {"needs_you": 4, "waiting": 1, "agreements": 1, "customers": 3}  # one row per agreed deal: the promise is folded into it (S5)
+    assert q["counts"] == {"needs_you": 9, "waiting": 2, "agreements": 1, "customers": 8}  # one row per agreed deal: the promise is folded into it (S5); eight customers, and Foshan's deal finances a newer customer's invoice, so its arranged lot waits too (test_demo_busy)
     foshan = next(c for c in api.get("/customers", params={"lang": lang}).json()["customers"] if c["customer_id"] == "BUYER-1")
     # a lapsed offer is not an open negotiation: what is left is the buyer's clarification (EX07), which waits on the buyer
     assert foshan["negotiations_count"] == 1 and foshan["needs_you_count"] == 0
@@ -111,7 +111,7 @@ def test_on_the_current_seed_the_two_foshan_negotiations_are_lapsed_not_ready(ap
     assert api.post("/demo/reset", params={"scenario": "busy"}).status_code == 200
     assert len(_lapsed(api)) == 2 and _foshan_live(api) == []
     q = api.get("/deals").json()["queue"]
-    assert q["counts"] == {"needs_you": 4, "waiting": 1, "agreements": 1, "customers": 3}  # one row per agreed deal: the promise is folded into it (S5)
+    assert q["counts"] == {"needs_you": 4, "waiting": 2, "agreements": 1, "customers": 8}  # one row per agreed deal: the promise is folded into it (S5); eight customers on the books, and the agreed deal's arranged lot waits too
     assert api.get("/worklist").json()["counts"] == q["counts"]
 
 
