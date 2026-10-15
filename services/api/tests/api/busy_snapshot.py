@@ -18,13 +18,14 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import sys
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
 
-from app.api import demo_seed, offer_picture, worklist
+from app.api import demo_seed, offer_picture
 from app.api.runtime import Runtime, get_runtime, set_runtime
 from app.config import get_settings
 from app.domain.fixtures import scenario_seed as _shipped_scenario_seed
@@ -44,6 +45,7 @@ _REAL_RESET_DEMO = Runtime.reset_demo
 class Snapshot:
     ledger: dict[str, Any]
     runtime: dict[str, Any]
+    caches: list[dict[Any, Any]]  # what the replay left in each answer cache, in `answer_caches()` order
 
 
 _built: dict[str, Snapshot] = {}
@@ -65,10 +67,36 @@ def eligible(rt: Runtime) -> bool:
             and get_runtime() is rt)
 
 
+def answer_caches() -> list[Any]:
+    """The in-process answer caches the app keeps (each keyed by a hash of the books it answers for): every `AnswerCache`, and the two
+    ordered dicts of the same kind (`offer_picture._cache`, the verifier's comparison cache), in a fixed order."""
+    from app.strategy.cache import AnswerCache
+    import importlib
+
+    evaluate = importlib.import_module("app.verifier.evaluate")  # (`app.verifier.evaluate` as an attribute is the function)
+
+    found = []
+    for name in sorted(sys.modules):
+        if name.startswith("app.") and (mod := sys.modules[name]) is not None:
+            found += [(f"{name}.{a}", v) for a, v in sorted(vars(mod).items()) if isinstance(v, AnswerCache)]
+    found += [("app.api.offer_picture._cache", offer_picture._cache), ("app.verifier.evaluate._COMPARE_CACHE", evaluate._COMPARE_CACHE)]
+    return [c for _, c in sorted(found, key=lambda x: x[0])]
+
+
+def _data(cache: Any) -> Any:
+    return cache._data if hasattr(cache, "_data") else cache
+
+
+def clear_answer_caches() -> None:
+    for c in answer_caches():
+        _data(c).clear()
+
+
 def capture(rt: Runtime) -> Snapshot:
     store: Any = rt.store
     return Snapshot(ledger={n: copy.copy(getattr(store, n)) for n in LEDGER},
-                    runtime={n: copy.deepcopy(getattr(rt, n)) for n in RUNTIME_FIELDS})
+                    runtime={n: copy.deepcopy(getattr(rt, n)) for n in RUNTIME_FIELDS},
+                    caches=[dict(_data(c)) for c in answer_caches()])
 
 
 def restore(rt: Runtime, snap: Snapshot) -> None:
@@ -84,8 +112,11 @@ def restore(rt: Runtime, snap: Snapshot) -> None:
             setattr(rt, n, copy.deepcopy(v))
         reset_sessions()
         clear_exposure_cache()
-        worklist.clear_cache()
-        offer_picture._cache.clear()
+        # The answer caches hold what the replay left in them (the fixtures clear two of them before a test opens the books, and the
+        # replay fills them again): each answer is keyed by a hash of the books it was made for, so the same books find the same answers.
+        clear_answer_caches()
+        for c, held in zip(answer_caches(), snap.caches, strict=True):
+            _data(c).update(copy.deepcopy(held))
 
 
 def _build(like: Runtime) -> Snapshot:
@@ -94,6 +125,7 @@ def _build(like: Runtime) -> Snapshot:
     builder = Runtime(settings=like.settings, store=InMemoryLedgerStore(), owner_key_hex=like.owner_key_hex)
     builder.reset()
     previous = get_runtime_or_none()
+    clear_answer_caches()  # as a test's fixtures and the reset leave them: the replay fills them
     _building = True
     set_runtime(builder)
     try:
@@ -102,8 +134,6 @@ def _build(like: Runtime) -> Snapshot:
     finally:
         _building = False
         set_runtime(previous)
-        worklist.clear_cache()
-        offer_picture._cache.clear()
 
 
 def get_runtime_or_none() -> Runtime | None:

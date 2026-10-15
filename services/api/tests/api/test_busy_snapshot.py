@@ -19,7 +19,6 @@ from tests.api import busy_snapshot
 from tests.api.conftest import agree_on_rcv_a
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
-pytestmark = pytest.mark.filterwarnings("ignore")
 
 
 # Rows stamp the wall-clock time they were written at (`recorded_at`), which no two runs share; the rest of a row is compared.
@@ -29,6 +28,8 @@ _WALL = re.compile(r"recorded_at='[^']*'")
 def _runtime() -> Runtime:
     rt = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
     rt.reset()
+    worklist.clear_cache()  # as the `rt` fixtures leave them before a test opens the busy books
+    offer_picture._cache.clear()
     return rt
 
 
@@ -44,8 +45,6 @@ def _api(rt: Runtime) -> TestClient:
     from app.main import app
 
     set_runtime(rt)
-    worklist.clear_cache()
-    offer_picture._cache.clear()
     return TestClient(app, headers=OWNER)
 
 
