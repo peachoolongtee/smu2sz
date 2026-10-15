@@ -332,6 +332,7 @@ export function DealsPage() {
             dealsError={dealsError}
             onRetryDeals={deals.reload}
             groups={agreementGroups}
+            groupsPending={queue === undefined}
           />
         </div>
       </div>
