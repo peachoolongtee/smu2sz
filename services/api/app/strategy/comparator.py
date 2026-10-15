@@ -54,7 +54,7 @@ from app.strategy.impact import (
     scenario_paid_late,
 )
 from app.strategy.inputs import CustomerInputs
-from app.strategy.words import buyer_short, margin_note, whole_yuan, year_share_sentence
+from app.strategy.words import asked_label, buyer_short, margin_note, whole_yuan, year_share_sentence
 from app.verifier.evaluate import counter_recheck
 
 LATE_DELAYS = (0, 30)  # the 15-day row waits (owner's decision 11)
@@ -116,13 +116,13 @@ def _rows(books: Books, mandate: Mandate, day: int, offer: CompiledOffer, verdic
     out = [_Row(CURRENT, CURRENT, t(lang, "Your books as they stand", "账面现状"),
                 t(lang, f"Your books as they stand: {who} keeps buying on today's terms.", f"您账面的现状：{who}按今天的条款继续采购。"),
                 books)]
-    assumption_asked = t(lang, f"If you accept {who}'s request as asked.", f"如果您按对方要求接受{who}的请求。")
+    assumption_asked = t(lang, f"If you accept {who}'s request.", f"如果您接受{who}的请求。")
     try:
         bound = cap.resolve_package(books, mandate, verdict, day=day, commitments=commitments, trusted_owner_key_hex=key_hex)
-        out.append(_Row(ASKED, ASKED, t(lang, "As they asked", "按对方要求"), assumption_asked, cap.books_with(books, bound), verdict,
+        out.append(_Row(ASKED, ASKED, asked_label(lang), assumption_asked, cap.books_with(books, bound), verdict,
                         _discounts(verdict.bound_obligations)))
     except (ValueError, EngineError):
-        out.append(_Row(ASKED, ASKED, t(lang, "As they asked", "按对方要求"), assumption_asked, None, verdict,
+        out.append(_Row(ASKED, ASKED, asked_label(lang), assumption_asked, None, verdict,
                         unavailable=t(lang, "FLOW cannot read the request against your books today.", "FLOW 今天无法按您的账目核算此请求。")))
     recheck: Any = None
     for c in verdict.counters:

@@ -313,13 +313,13 @@ def test_the_cause_names_what_one_line_has_and_the_other_does_not(api: TestClien
     by = _by_label(pic)
     asked, a = by["asked"], by["Option A"]
     cause = _point(asked, 2)["comparison"][a["key"]]["cause_text"]
-    assert "Option A:" in cause and "As asked:" in cause and "today" in cause and "in 2 days" in cause
-    asked_part, reply_part = cause.split("As asked:")[1].split("Option A:")[0], cause.split("Option A:")[1]
+    assert "Option A:" in cause and "Accept their request:" in cause and "today" in cause and "in 2 days" in cause
+    asked_part, reply_part = cause.split("Accept their request:")[1].split("Option A:")[0], cause.split("Option A:")[1]
     assert "Early payment" in asked_part and "draw" in reply_part.lower()
     assert not BAD.search(cause), cause
     # on day 0 the request has nothing yet that the reply lacks except what the reply draws
     day0 = _point(asked, 0)["comparison"][a["key"]]["cause_text"]
-    assert "As asked:" not in day0
+    assert "Accept their request:" not in day0
 
 
 def test_the_pair_words_are_in_chinese_with_no_english_left(api: TestClient) -> None:
@@ -560,7 +560,7 @@ def test_the_cause_lines_list_the_same_events_as_the_cause_text(api: TestClient)
                         assert not BAD.search(item), item
         assert seen > 0 and b
         two = _point(a, 2)["comparison"][b["key"]]["cause_lines"]
-        assert [ln["label"] for ln in two][0] == ("As asked" if lang == "en" else "按对方要求")
+        assert [ln["label"] for ln in two][0] == ("Accept their request" if lang == "en" else "接受对方的要求")
         if lang == "zh":
             assert english_leaks([ln for got in two for ln in [got["label"], *got["items"]]], NAMES) == []
 

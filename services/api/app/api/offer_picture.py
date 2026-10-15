@@ -64,7 +64,7 @@ from app.funding import plan
 from app.mandate import tier_for
 from app.operations import lengthens_terms
 from app.operations.executor import only_early_pay
-from app.strategy.words import buyer_short, share_text
+from app.strategy.words import asked_label, buyer_short, share_text
 from app.verifier import counter_recheck
 from app.verifier.evaluate import CAP_CODES
 from app.verifier.screen import SECURITY_CODES
@@ -659,7 +659,7 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
     tag = ("over" if authority == OVER_LIMIT else "recommended" if asked_recommended else "approval" if asked_needs_owner else None)
     band = _below_band(asked_view["series"], floor, breach[0], lang) if breach is not None else None
     paths = [_path_entry(
-        key="asked", kind="asked", label=say(lang, "As they asked", "按对方要求"), recommended=asked_recommended, sendable=accepts,
+        key="asked", kind="asked", label=asked_label(lang), recommended=asked_recommended, sendable=accepts,
         needs_owner=asked_needs_owner, tag=tag, cost_display=fmt_yuan(cost_fen), cost_note=note,
         cost={"cost_total_display": asked_total, "cost_basis_text": asked_basis, "cost_once_display": fmt_yuan(once) if once > 0 else None,
               "cost_forward_display": fmt_yuan(forward) if forward > 0 else None, "cost_components": []},
@@ -712,8 +712,8 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
                 band = _below_band(r["series"], floor, reply_breach[0], lang)
             elif asked_next is not None and nxt is not None and nxt < asked_next:
                 n = asked_next - nxt
-                band = say(lang, f"The next invoice is paid {n} {'day' if n == 1 else 'days'} sooner than as asked",
-                           f"下一张发票比按对方要求早 {n} 天收款")
+                band = say(lang, f"The next invoice is paid {n} {'day' if n == 1 else 'days'} sooner than if you accept their request",
+                           f"下一张发票比接受对方的要求早 {n} 天收款")
             elif r["lowest_fen"] is not None and r["lowest_fen"] >= floor:
                 band = say(lang, "Stays at or above your minimum", "现金始终不低于您的最低现金储备")
         recommended = c.id == chosen
@@ -803,7 +803,8 @@ def _moment_text(lang: str, events: dict[str, list[str]], below: list[str], name
         if everyone and len(below) > 1:
             parts.append(say(lang, "On every path, cash is below your minimum.", "每条路径的现金都低于您的最低现金储备。"))
         else:
-            who = _names(lang, [names[k] for k in below])
+            who = _names(lang, [say(lang, "If you accept their request", "如果您接受对方的要求") if names[k] == asked_label(lang) else names[k]
+                                for k in below])
             parts.append(say(lang, f"{who}, cash is below your minimum.", f"{who}的现金低于您的最低现金储备。"))
     if not parts:
         return (say(lang, "No cash moves on any path.", "各路径都没有现金变动。") if len(keys) > 1
@@ -924,7 +925,7 @@ def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: 
     for d in wanted:
         if d is not None and d not in chosen and len(chosen) < _MAX_MOMENTS:
             chosen.append(d)
-    names = {p["key"]: (say(lang, "As asked", "按对方要求") if p["kind"] == "asked" else p["label"]) for p in live}
+    names = {p["key"]: (asked_label(lang) if p["kind"] == "asked" else p["label"]) for p in live}
     named = len([d for d in chosen if d in lowest_by_day]) > 1  # more than one lowest moment is listed: each says whose it is
     discount = say(lang, "Early-payment discount", "提前付款折扣")  # the row's own label is a whole sentence about one invoice
 
@@ -956,7 +957,7 @@ def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: 
         out.append({"day": d, "label": _chip(d - today, lang), "title": _chip(d - today, lang), "when": when_text(d, today, lang),
                     "decisive": d == decisive,
                     "kind": kind, "kinds": have, "word": _word(kind, d - today, "both" if d in down and d in up else "down" if d in down else "up", lang,
-                                [(say(lang, "as asked", "按对方要求") if k == asked["key"] else names[k]) for k in lowest_by_day[d]]
+                                [names[k] for k in lowest_by_day[d]]
                                 if named and d in lowest_by_day else None), "text": text, "values": values,
                     "events_text": events_text})
     return out, picture_days
@@ -1040,7 +1041,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         replies.append({"counter_id": c.id, "label": label, "series": _line(books.state, traj, today, lang),
                         **_lowest(books.state, traj, today, lang), "note": note})
     asked_series = _line(books.state, asked, today, lang)
-    asked_view = {"label": say(lang, "As asked", "按对方要求"), "series": asked_series,
+    asked_view = {"label": asked_label(lang), "series": asked_series,
                   **_lowest(books.state, asked, today, lang),
                   "first_breach_day": breach[0] if breach else None,
                   "first_breach_when": _distance(breach[0], today, lang) if breach else None}
