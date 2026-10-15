@@ -275,13 +275,13 @@ function CoveredCard({ action, kpis }: { action: HomeV2Action; kpis: HomeV2["kpi
           <dl className="mt-4 grid grid-cols-2 gap-3" data-testid="hv2-covered-facts">
             {lowest ? (
               <div className="rounded-tile bg-card/70 px-3 py-2">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{t("hv2.covered.lowest")}</dt>
+                <dt className="text-supporting font-semibold uppercase tracking-[0.06em] text-ink-3">{t("hv2.covered.lowest")}</dt>
                 <dd className="mt-0.5 font-display text-lg font-bold tabular-nums text-ink">{lowest}</dd>
               </div>
             ) : null}
             {room ? (
               <div className="rounded-tile bg-card/70 px-3 py-2">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{t("hv2.covered.room")}</dt>
+                <dt className="text-supporting font-semibold uppercase tracking-[0.06em] text-ink-3">{t("hv2.covered.room")}</dt>
                 <dd className="mt-0.5 font-display text-lg font-bold tabular-nums text-ok-fg">{room}</dd>
               </div>
             ) : null}

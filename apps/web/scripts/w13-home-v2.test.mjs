@@ -13,7 +13,7 @@ const rec = (name) => JSON.parse(readFileSync(join(here, "..", "mocks", "home_v2
 const POINTS = ["day0", "offer", "after_fund"];
 
 test("a decision row opens its deal; any other row of the Home's own URL opens the customer; a server href that is elsewhere stays", () => {
-  assert.equal(rowHref({ kind: "DECISION", customer_id: "BUYER-1", href: "/?customer=BUYER-1&deal=deal%3AOFF-1" }), "/deals?customer=BUYER-1&decision=deal%3AOFF-1");
+  assert.equal(rowHref({ kind: "DECISION", customer_id: "BUYER-1", href: "/?customer=BUYER-1&deal=deal%3AOFF-1" }), "/deals?customer=BUYER-1&decision=deal%3AOFF-1&from=home");
   assert.equal(rowHref({ kind: "COLLECTION", customer_id: "BUYER-1", href: "/?customer=BUYER-1" }), "/customers/BUYER-1");
   assert.equal(rowHref({ kind: "CUSTOMER", href: "/?customer=BUYER-2" }), "/customers/BUYER-2");
   assert.equal(rowHref({ kind: "APPROVAL", href: "/approvals#approval-APR-1" }), "/approvals#approval-APR-1");

@@ -3108,7 +3108,7 @@ export const en = {
   "home.mix.more": "Funding sources",
   "home.mix.own": "Your own money",
   "home.mix.center": "your own",
-  "home.mix.alt": "{share}% of the money behind your cash is your own.",
+  "home.mix.alt": "The money behind your cash, by source: your own and each lender's.",
   "tour.p.home.mix.title": "Where your cash comes from",
   "tour.p.home.mix.body": "The ring splits your money into your own and what each lender provides; lighter slices are the plan's funding not run yet. Funding sources opens each facility's limits on Cash & funding.",
   // ---- Deals: an agreement folded to one row
@@ -6286,7 +6286,7 @@ export const zh: Record<DictKey, string> = {
   "home.mix.more": "资金来源",
   "home.mix.own": "您自己的资金",
   "home.mix.center": "自有资金",
-  "home.mix.alt": "您现金背后的资金中有 {share}% 是您自己的。",
+  "home.mix.alt": "您现金背后的资金按来源划分：您自己的和各家出借方的。",
   "tour.p.home.mix.title": "您的现金来源",
   "tour.p.home.mix.body": "圆环把您的资金分为自有资金和每家出借方提供的资金；浅色部分是方案中尚未执行的融资。“资金来源”会在“现金与融资”中打开每项额度的详情。",
   // ---- Deals: an agreement folded to one row

@@ -6,6 +6,20 @@ import { DEMO_TOKEN } from "./fixtures";
  * the second sends the bound act. The alerts page's own button sends at once and does not use this.
  */
 export async function runPlan(scope: Page | Locator, alertId: string): Promise<void> {
+  // The Home's card opens the plan on Cash & funding ("Check funding plan"); the two presses are there. The owner comes back to the page they started on.
+  if ("goto" in scope) {
+    const check = scope.getByTestId("home-check-plan");
+    if (await check.isVisible().catch(() => false)) {
+      const from = scope.url();
+      await check.click();
+      await scope.waitForURL(/\/cash/);
+      await scope.getByTestId(`fix-open-${alertId}`).click();
+      await scope.getByTestId(`fix-${alertId}`).click();
+      await expect(scope.getByTestId(`fix-${alertId}`)).toHaveCount(0);
+      await scope.goto(from);
+      return;
+    }
+  }
   await scope.getByTestId(`fix-open-${alertId}`).click();
   await scope.getByTestId(`fix-${alertId}`).click();
 }

@@ -84,8 +84,8 @@ function Details({ h, s }: { h: HomeView; s: FundingSlice }) {
 
 /**
  * Where the cash comes from, inside "Cash available today": a ring of the owner's own money against each lender's money and a customer's agreed early payment (what is
- * still to arrive as a lighter slice), the share in the middle, and a legend. A slice or its row opens that source: the slice stands out, the middle names it and its
- * details open under the legend (the ui-ux-testing ring's behaviour). The fen only size the arcs and the whole-percent shares (lib/funding-mix.ts).
+ * still to arrive as a lighter slice), the source in the middle, and a legend. A slice or its row opens that source: the slice stands out, the middle names it and its
+ * details open under the legend (the ui-ux-testing ring's behaviour). The fen only size the arcs (lib/funding-mix.ts); no percentage is printed (INVARIANT 13).
  */
 export function CashMix({ h, customers, bare = false }: { h: HomeView; customers?: { name: string; short: string }[]; /** On its own (the summary at the top of Cash & funding): no rule above it. */ bare?: boolean }) {
   const { t } = useI18n();
@@ -110,7 +110,7 @@ export function CashMix({ h, customers, bare = false }: { h: HomeView; customers
         </Link>
       </div>
       <div className="mt-3 flex items-center gap-4">
-        <div className="relative shrink-0" style={{ width: SIZE, height: SIZE }} role="img" aria-label={t("home.mix.alt", { share: mix.ownShare })} data-testid="home-mix-ring">
+        <div className="relative shrink-0" style={{ width: SIZE, height: SIZE }} role="img" aria-label={t("home.mix.alt")} data-testid="home-mix-ring">
           <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="size-full -rotate-90 overflow-visible" aria-hidden>
             <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="var(--color-subtle)" strokeWidth={STROKE} />
             {mix.slices.map((s, i) => {
@@ -139,10 +139,13 @@ export function CashMix({ h, customers, bare = false }: { h: HomeView; customers
             })}
           </svg>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
-            <span className="font-display text-xl font-bold leading-none text-ink tabular-nums" data-testid="home-mix-own-share">
-              {centre.share}%
-            </span>
-            <span className="mt-0.5 line-clamp-2 text-[11px] leading-tight text-ink-3">{centre.kind === "own" ? t("home.mix.center") : nameOf(centre)}</span>
+            {/* INVARIANT 13: the browser prints no percentage. The middle names the source and, where the server states one, its amount. */}
+            {centre.amount ? (
+              <span className="font-display text-base font-bold leading-none text-ink tabular-nums" data-testid="home-mix-centre-amount">
+                {centre.amount}
+              </span>
+            ) : null}
+            <span className="mt-0.5 line-clamp-2 text-supporting leading-tight text-ink-3">{centre.kind === "own" ? t("home.mix.center") : nameOf(centre)}</span>
           </div>
         </div>
         <ul className="min-w-0 flex-1 space-y-0.5" data-testid="home-mix-legend">
@@ -169,12 +172,12 @@ export function CashMix({ h, customers, bare = false }: { h: HomeView; customers
                   <span className="min-w-0 flex-1">
                     <span className={`block truncate ${s.kind === "buyer" ? "font-semibold text-ok-fg" : on ? "font-semibold text-ink" : "text-ink"}`}>{nameOf(s)}</span>
                     {sub ? (
-                      <span className="block truncate text-[11px] leading-tight text-ink-3" data-testid="home-mix-sub">
+                      <span className="block truncate text-supporting leading-tight text-ink-3" data-testid="home-mix-sub">
                         {sub}
                       </span>
                     ) : null}
                   </span>
-                  <span className="shrink-0 font-bold tabular-nums text-ink">{s.share}%</span>
+                  {s.amount ? <span className="shrink-0 font-bold tabular-nums text-ink">{s.amount}</span> : null}
                   <ChevronRightIcon aria-hidden width={12} height={12} className={`mt-0.5 shrink-0 text-ink-3 transition-transform duration-(--dur-fast) ${on ? "rotate-90" : ""}`} />
                 </button>
               </li>
