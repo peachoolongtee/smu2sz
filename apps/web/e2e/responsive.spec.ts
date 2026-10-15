@@ -173,13 +173,21 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
           const cy = r.y + r.height / 2;
           const okW = r.width >= 44 || (hit(el, cx - 21, cy) && hit(el, cx + 21, cy));
           const okH = r.height >= 44 || (hit(el, cx, cy - 21) && hit(el, cx, cy + 21));
-          // The forecast's numbered event markers sit on the line a few pixels apart (their hit areas meet where two events are close): a known limit of a dense line, raised with the lead.
-          if ((el as HTMLElement).dataset.testid?.startsWith("picture-marker")) return false;
+          // On a phone the forecast's numbered markers are a drawing (aria-hidden, no pointer events): each move is read in the list under the chart, whose rows are checked below.
+          if (el.closest("[aria-hidden=true]")) return false;
           return !(okW && okH);
         })
         .map((el) => `${el.tagName}:${(el.textContent ?? "").trim().slice(0, 24)}`);
     });
     expect(short, `${route}: controls a finger cannot hit at 44 px`).toEqual([]);
+    if (route === "/cash") {
+      // Every marker's move is also a 44 px row of the list.
+      const markers = await page.locator('[data-testid^="picture-marker-"]').count();
+      const rows = page.getByTestId("picture-move");
+      expect(markers).toBeGreaterThan(0);
+      await expect(rows).toHaveCount(markers);
+      for (const row of await rows.all()) expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
   }
 });
 

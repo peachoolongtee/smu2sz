@@ -101,7 +101,7 @@ test("the day-34 pending home has one primary: the decision, and the owner's dis
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run, and its waiting approval is linked, on Cash & funding
   await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);

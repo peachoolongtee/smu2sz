@@ -197,7 +197,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     expect(await panelWidth(page)).toBe(56);
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "closed");
     for (const name of NAV) await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "0");
+    await expect(nav.getByRole("link", { name: "Deals", exact: true }).locator(".side-label")).toHaveCSS("opacity", "0");
     const before = await mainBox(page);
 
     // Collapsed, the rail shows icons and the pin only: no text of any kind is visible in it (the Demo note, the words, the count's number), and the Ask FLOW pill is its icon.
@@ -222,7 +222,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     await nav.getByRole("link", { name: "Deals" }).hover();
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "open");
     await expect.poll(() => panelWidth(page)).toBe(200);
-    await expect(nav.getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "1");
+    await expect(nav.getByRole("link", { name: "Deals", exact: true }).locator(".side-label")).toHaveCSS("opacity", "1");
     expect(await railColumn(page)).toBe(56);
     expect(await mainBox(page)).toEqual(before);
     expect((await visibleText()).length, "the open rail says its words").toBeGreaterThan(3);
@@ -295,7 +295,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
   await page.mouse.move(900, 600);
   expect(await railColumn(page)).toBe(200);
   expect(await panelWidth(page)).toBe(200);
-  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "1");
+  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Deals", exact: true }).locator(".side-label")).toHaveCSS("opacity", "1");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-sidebar", "pinned");
   expect(await railColumn(page)).toBe(200);
@@ -464,10 +464,34 @@ test("cards: a page has one decision card, and a chosen row, invoice or path is 
     expect(await decisionCards(), path).toBeLessThanOrEqual(1);
   }
   const selected = (loc: import("@playwright/test").Locator) => loc.evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, rule: getComputedStyle(el).borderLeftWidth, ruleColor: getComputedStyle(el).borderLeftColor }));
-  const want = { bg: "rgb(230, 241, 255)", rule: "3px", ruleColor: "rgb(3, 104, 233)" };
+  // The owner's mockup selection: a lavender tint with a 3 px ink rule (the rule is why the selection is never colour alone).
+  const want = { bg: "rgb(235, 222, 250)", rule: "3px", ruleColor: "rgb(23, 29, 30)" };
   await page.goto("/receivables?customer=BUYER-1"); // /receivables lists customers; the customer's page holds the invoices
   await expect(page.getByTestId("recv-RCV-A")).toBeVisible({ timeout: 15_000 });
   expect(await selected(page.getByTestId("recv-RCV-A"))).toEqual(want);
+  // Every text on the selected row keeps 4.5:1 against the tint; the chosen row also says so to assistive tools (aria-current) besides the rule.
+  await expect(page.getByTestId("recv-RCV-A").locator('[aria-current="true"]')).toHaveCount(1);
+  const worst = await page.getByTestId("recv-RCV-A").evaluate((row) => {
+    const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true })!;
+    const rgb = (css: string) => {
+      c.clearRect(0, 0, 1, 1);
+      c.fillStyle = "#000";
+      c.fillStyle = css;
+      c.fillRect(0, 0, 1, 1);
+      return Array.from(c.getImageData(0, 0, 1, 1).data.slice(0, 3));
+    };
+    const lum = ([r, g, b]: number[]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    const lin = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    const bg = lum(rgb(getComputedStyle(row).backgroundColor));
+    let min = 21;
+    for (const el of Array.from(row.querySelectorAll("*"))) {
+      if (![...el.childNodes].some((n) => n.nodeType === 3 && (n.textContent ?? "").trim())) continue;
+      const fg = lum(rgb(getComputedStyle(el).color));
+      min = Math.min(min, (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05));
+    }
+    return min;
+  });
+  expect(worst, "the lowest text contrast on the selected row").toBeGreaterThanOrEqual(4.5);
   // Deals takes the owner's mockup look (a lavender row with a purple edge for the selection); the page raises no decision card.
   await checkedDeal(page);
   expect(await decisionCards()).toBe(0);

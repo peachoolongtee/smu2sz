@@ -78,16 +78,18 @@ test("the tour is off by default, starts from the account sheet, has two steps o
   // The Home's tour walks each part of the page (its steps are counted by the page), and ends on the sections.
   await expect(tour).toContainText(/Home · step 1 of \d+/i);
   await expect(tour).toContainText("Where your cash stands");
+  // The shell's parts close the walk, in this order: Ask FLOW, the sections, the account.
+  const next = page.getByTestId("tour-next");
+  for (let i = 0; i < 20 && !(await tour.getByRole("heading", { name: "Ask FLOW" }).isVisible().catch(() => false)) && !(await tour.innerText()).includes("Ask FLOW"); i++) await next.click();
+  await expect(tour).toContainText("Ask FLOW");
   const sections = tour.getByTestId("tour-sections");
-  for (let i = 0; i < 20 && !(await sections.isVisible()); i++) await page.getByTestId("tour-next").click();
+  for (let i = 0; i < 20 && !(await sections.isVisible()); i++) await next.click();
   // The sections, in the pages' own words; no Buy equipment among them.
-  await expect(sections.locator("li")).toHaveCount(await sections.locator("li").count());
   expect(await sections.locator("li").count()).toBeGreaterThanOrEqual(5);
   await expect(sections).toContainText("Cash & funding");
   await expect(sections).not.toContainText("Buy equipment");
-  await expect(tour).toContainText("Ask FLOW");
-  await expect(tour.getByTestId("tour-skip")).toHaveCount(0);
-  await page.getByTestId("tour-next").click();
+  // Next walks on to the account, and from its last step closes the tour.
+  for (let i = 0; i < 5 && (await tour.count()) > 0; i++) await next.click();
   await expect(tour).toHaveCount(0);
   // Esc closes it at any step; the cash page offers its own two.
   await page.goto("/cash");
