@@ -246,7 +246,8 @@ test("selecting an invoice replaces the detail in place and sets ?invoice=; the 
   expect(current.collection_state).toBe("CURRENT");
   const actionOrder = () => page.locator('[data-testid^="recv3-action-"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
   const expected = (r: typeof overdue) => [r.collection_action.primary, ...r.collection_action.others.map((o) => o.action)].map((a) => `recv3-action-${a}`);
-  expect(await actionOrder()).toEqual(expected(overdue));
+  // The page reads the books after the load: the actions are there once that answer is (a read, not an assertion, so it is polled).
+  await expect.poll(actionOrder).toEqual(expected(overdue));
   expect((await actionOrder())[0]).toBe("recv3-action-CHASE");
   await expect(page.getByTestId("recv3-action-CHASE")).toHaveText("Chase payment");
   // Once overdue the standing note about the reminder is gone.
@@ -263,7 +264,7 @@ test("selecting an invoice replaces the detail in place and sets ?invoice=; the 
   await expect(page.getByTestId(`recv-select-${current.receivable_id}`)).toHaveAttribute("aria-current", "true");
   await expect(page.getByTestId(`recv-${overdue.receivable_id}`)).not.toHaveAttribute("data-selected", "true");
   await expect(page.getByTestId("recv3-announce")).toContainText(current.invoice);
-  expect(await actionOrder()).toEqual(expected(current));
+  await expect.poll(actionOrder).toEqual(expected(current));
   expect((await actionOrder())[0]).toBe("recv3-action-VIEW_TERMS");
   await expect(page.getByTestId("recv3-action-CHASE")).toHaveCount(0);
   await expect(page.getByTestId("recv3-actions-note")).toBeVisible();
