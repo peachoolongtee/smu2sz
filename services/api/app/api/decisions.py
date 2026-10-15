@@ -562,6 +562,15 @@ def _response(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | No
                                "net_label_text": _net_label(ctx, eco, lang)}
                               if eco is not None else None),
                 "funding_blocked": s.funding_blocked}
+    elif ds.offered is not None:  # the owner sent the counter outside FLOW: nothing simulated, the buyer's answer is the owner's record
+        o = ds.offered
+        sent = {"recorded": True, "outcome": "DEAL" if ds.buyer_accepted else None, "simulated": False, "outside_flow": True,
+                "chosen_counter_id": o.counter_id, "chosen_label": labels.get(o.counter_id),
+                "chosen_label_text": option_label(labels.get(o.counter_id), lang) or None,
+                "accepted_counter_id": o.counter_id if ds.buyer_accepted else None,
+                "text": (t(lang, "You sent this counter to the buyer yourself, and recorded that they accepted it.",
+                           "您亲自将这项还价发给了买方，并记录了对方已接受。") if ds.buyer_accepted
+                         else t(lang, "You sent this counter to the buyer yourself.", "您亲自将这项还价发给了买方。"))}
     elif ds.commitment is not None and not ds.accepted_as_asked:
         sent = {"recorded": False, "text": t(lang, "The counter sent was not recorded.", "当时发送的还价没有记录。")}
     return {"counters": counters, "recommended_counter_id": ds.evaluated.recommended_counter_id if ds.evaluated else None,
@@ -594,6 +603,8 @@ def _agreement_receipt(ctx: Context, ds: DecisionState, c: Any, promises: list[d
     approval = str(getattr(a.status, "value", a.status)) if a is not None else None
     authority = {"APPROVED": t(lang, "Approved by you.", "已由您批准。"), "PENDING": t(lang, "Waiting for your approval.", "等待您批准。"),
                  "REJECTED": t(lang, "You declined it.", "您已拒绝。")}.get(approval or "")
+    if ds.buyer_accepted and approval is None:  # the buyer's yes to a counter the owner sent, recorded by the owner
+        authority = t(lang, "The buyer accepted the counter you sent; you recorded it.", "买方接受了您发出的还价；由您记录。")
     if ds.accepted_as_asked:  # the owner's click was the approval: say whose decision it was
         authority = (t(lang, "You accepted it as asked; your click was the approval.", "您已按对方要求接受；您的点击即是批准。")
                      if approval == "APPROVED" else t(lang, "You accepted it as asked.", "您已按对方要求接受。"))

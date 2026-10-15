@@ -484,6 +484,8 @@ def _not_agreed_text(state: str, lang: str) -> str:
         "LAPSED": ("This offer lapsed before it was agreed, so there is nothing to track.", "这份报价在达成协议之前已失效，因此没有可跟踪的内容。"),
         "DECLINED": ("You declined this deal, so nothing was agreed and there is nothing to track.", "您已拒绝这笔交易，没有达成协议，因此没有可跟踪的内容。"),
         "FAILED": ("This deal could not be agreed, so there is nothing to track.", "这笔交易未能达成，因此没有可跟踪的内容。"),
+        "REPLIED": ("The buyer answered this offer with new terms, so nothing was agreed on it and there is nothing to track.",
+                    "买方以新条款答复了这份报价，因此未就此达成协议，没有可跟踪的内容。"),
     }
     en, zh = words.get(state, ("This deal has not been agreed yet, so there is nothing to track.", "这笔交易尚未达成，因此没有可跟踪的内容。"))
     return t(lang, en, zh)

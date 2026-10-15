@@ -132,6 +132,20 @@ def sent_fact(*, outcome: str = "NO_DEAL", verdict_id: str = "V-1", commitment_i
     )
 
 
+def offered_fact(*, counter_id: str = "C-A", valid_until_day: int = 7) -> Any:
+    from app.decisions.facts import OfferedFact
+
+    return OfferedFact(offer_id=OFFER_ID, verdict_id="V-1", counter_id=counter_id, counterparty_id="BUYER-1", state_version_shown=1,
+                       terms_hash="t" * 64, message_hash="m" * 64, template_version="buyer-message-v1", lang="en",
+                       valid_until_day=valid_until_day)
+
+
+def replied_fact(reply_offer_id: str = "OFF-reply") -> Any:
+    from app.decisions.facts import RepliedFact
+
+    return RepliedFact(offer_id=OFFER_ID, verdict_id="V-1", counter_id="C-A", reply_offer_id=reply_offer_id)
+
+
 def evaluated_fact(verdict_id: str = "V-1") -> EvaluatedFact:
     return EvaluatedFact(offer_id=OFFER_ID, offer_version=1, verdict_id=verdict_id, outcome=Outcome.COUNTER,
                          counter_ids=["C-A"], recommended_counter_id="C-A", mandate_version=1)
