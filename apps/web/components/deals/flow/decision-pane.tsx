@@ -532,7 +532,27 @@ export function DecisionPane({
                 </>
               }
             />
-            <ChoicesTable paths={paths} recKey={recommended?.key ?? null} reviewing={reviewing} canReview={sendable} canAccept={canAccept} onReview={startSend} onAcceptReview={() => setAcceptSignal((x) => x + 1)} />
+            <ChoicesTable
+              paths={paths}
+              recKey={recommended?.key ?? null}
+              reviewing={reviewing}
+              canReview={sendable}
+              canAccept={canAccept}
+              onReview={startSend}
+              onAcceptReview={() => setAcceptSignal((x) => x + 1)}
+              note={
+                // With one reply the server says why there is no second one: one line under the table.
+                paths.filter((p) => p.kind === "reply").length === 1 && picture?.withheld?.length ? (
+                  <div className="space-y-1" data-testid="deal-withheld">
+                    {picture.withheld.map((w) => (
+                      <p key={w.text} className="max-w-[68ch] text-[15px] leading-snug text-ink-2">
+                        {w.text}
+                      </p>
+                    ))}
+                  </div>
+                ) : null
+              }
+            />
             {sectionNav(
               tabs.filter((k) => k !== "overview"),
               lastItem,
