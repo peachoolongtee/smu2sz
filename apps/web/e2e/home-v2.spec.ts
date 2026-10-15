@@ -1350,3 +1350,21 @@ test("the selection paints at once: a row's reads start on hover and focus, so n
   await page.waitForTimeout(500);
   expect(Math.abs((await page.getByTestId("home-customer-focus").boundingBox())!.height - box.height)).toBeLessThan(2);
 });
+
+test("until its read arrives the Home shows its own shape (a headline, the three cards, the worklist) and announces Loading; the canvas is never empty", async ({ page }) => {
+  // Record, from the first paint, whether the loading shape was ever in the page before the Home itself.
+  await page.addInitScript(() => {
+    const seen: string[] = [];
+    (window as unknown as { __seen: string[] }).__seen = seen;
+    const look = () => {
+      for (const id of ["home-loading", "home-v2"]) if (document.querySelector(`[data-testid="${id}"]`) && !seen.includes(id)) seen.push(id);
+    };
+    new MutationObserver(look).observe(document, { childList: true, subtree: true });
+  });
+  await page.goto("/");
+  await expect(page.getByTestId("home-v2")).toBeVisible();
+  const seen = await page.evaluate(() => (window as unknown as { __seen: string[] }).__seen);
+  expect(seen[0], "the loading shape comes first").toBe("home-loading");
+  expect(seen).toContain("home-v2");
+  await expect(page.getByTestId("home-loading")).toHaveCount(0);
+});

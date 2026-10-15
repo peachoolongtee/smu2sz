@@ -253,12 +253,15 @@ function Cash() {
           </header>
 
           {/* The main numbers at a glance, and where the cash comes from (the same ring as Home's): the page's summary before its detail from lg; on a phone the plan comes first and the summary follows the page's content (order-1), so the priced action is in the first screens. */}
-          <section aria-label={t("biz.cash.summary")} className="motion-reveal card-flat grid gap-5 max-lg:order-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" data-testid="cash-summary" data-tour="cash-summary">
-            <CashFigures h={h} big />
-            <div className="min-w-0 lg:border-l lg:border-line lg:pl-5">
-              <CashMix h={h} customers={names} bare />
-            </div>
-          </section>
+          {/* The stressed picture (opened from a late-payment link) is the page's subject: the ordinary figures are not drawn beside it. */}
+          {stressed || stressPending ? null : (
+            <section aria-label={t("biz.cash.summary")} className="motion-reveal card-flat grid gap-5 max-lg:order-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" data-testid="cash-summary" data-tour="cash-summary">
+              <CashFigures h={h} big />
+              <div className="min-w-0 lg:border-l lg:border-line lg:pl-5">
+                <CashMix h={h} customers={names} bare />
+              </div>
+            </section>
+          )}
           <PartialRead partial={h.partial} onRetry={home.reload} />
           <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           {slot}
