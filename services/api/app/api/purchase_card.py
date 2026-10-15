@@ -22,8 +22,6 @@ from app.capex.schedule import Timeline, derive_schedule, early_schedule
 from app.domain.models import ContractField, DocumentKind
 from app.domain.money import BP_DENOM, fmt_pct, fmt_yuan
 
-_KIND = {"MILESTONE": ("payment", "付款"), "PAYMENT_TERMS": ("payment", "付款"), "RETENTION": ("retention", "质保金")}
-
 
 def _empty(title: str, note: str) -> dict[str, Any]:
     return {"schedule_title": title, "schedule_rows": [], "schedule_note": note}
@@ -59,15 +57,15 @@ def purchase_schedule_view(store: Any, state: Any, op: dict[str, Any], today: in
         vendor = name
     rows = [(t(lang, "Vendor", "供应商"), vendor), (t(lang, "Contract", "合同"), rec.title)]
     for p in schedule.payments:
-        word = t(lang, *_KIND.get(p.kind, ("payment", "付款")))
+        held = p.kind == "RETENTION"
         rows.append((t(lang, f"Payment {p.n}", f"第 {p.n} 笔付款"),
-                     t(lang, f"{fmt_yuan(p.amount_fen)}, {when_text(p.day, today, lang)} ({word})",
-                       f"{fmt_yuan(p.amount_fen)}，{when_text(p.day, today, lang)}（{word}）")))
+                     t(lang, f"{fmt_yuan(p.amount_fen)}, {when_text(p.day, today, lang)}" + (" (retention)" if held else ""),
+                       f"{fmt_yuan(p.amount_fen)}，{when_text(p.day, today, lang)}" + ("（质保金）" if held else ""))))
     if take and option is not None:
         choice = t(lang, f"Taken: {fmt_pct_bp(option.rate_bp)} off the delivery payment, {fmt_yuan(option.discount_fen)} saved, "
-                         f"paid by {when_text(option.pay_by_day, today, lang)}",
+                         f"paid {when_text(option.pay_by_day, today, lang)}",
                    f"选择提前付款：交货款减免 {fmt_pct_bp(option.rate_bp)}，节省 {fmt_yuan(option.discount_fen)}，"
-                   f"{when_text(option.pay_by_day, today, lang)}前付清")
+                   f"在{when_text(option.pay_by_day, today, lang)}付清")
     elif option is not None:
         choice = t(lang, "Not taken: every payment is made on its day", "未选择提前付款：每笔款项在到期日支付")
     else:
