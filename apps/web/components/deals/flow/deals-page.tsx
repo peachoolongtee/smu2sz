@@ -332,6 +332,8 @@ export function DealsPage() {
             dealsError={dealsError}
             onRetryDeals={deals.reload}
             groups={agreementGroups}
+            groupsPending={queue === undefined}
+            reads={{ ledger, records }}
           />
         </div>
       </div>

@@ -197,7 +197,7 @@ test.describe("live", () => {
     });
   }
 
-  test("Home's selected deal card and the Customer page lead to the Deals pane with the review open on arrival, and the queue row says the server's own consequence", async ({ page, request }) => {
+  test("Home's deal row and the Customer page lead to the Deals pane with the review open on arrival, and the queue row says the server's own consequence", async ({ page, request }) => {
     await busy(request);
     const offer = await offerOfRow(request, "Zhuhai");
     const decision = `deal:${offer}`;
@@ -214,12 +214,14 @@ test.describe("live", () => {
     await primary.click();
     await expect(page.getByTestId("accept-review")).toBeVisible();
     await expect(page.getByTestId("accept-go")).toBeEnabled();
-    // Home: the selected deal card's primary.
-    await page.goto(`/?customer=BUYER-3&decision=${encodeURIComponent(decision)}`);
-    const card = page.getByTestId("deal-primary");
-    await expect(card).toHaveText("Review the request");
-    await expect(card).toHaveAttribute("href", /review=1/);
-    await card.click();
+    // Home: a deal row opens the deal on the Deals page (the Home keeps no deal card of its own), with the way back to the Home; the review opens from its one button.
+    await page.goto("/");
+    const row = page.getByTestId("home-worklist-row").filter({ hasText: "Zhuhai" }).first();
+    await expect(row.getByRole("link")).toHaveAttribute("href", `/deals?customer=BUYER-3&decision=${encodeURIComponent(decision)}&from=home`);
+    await row.getByRole("link").click();
+    await expect(page.getByTestId("deal-page")).toBeVisible();
+    await expect(page.getByTestId("queue-back")).toContainText("Back to Home");
+    await page.getByTestId("accept-review-open").click();
     await expect(page.getByTestId("accept-review")).toBeVisible();
   });
 
