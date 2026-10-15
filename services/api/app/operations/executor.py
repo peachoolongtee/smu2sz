@@ -1043,11 +1043,17 @@ class Executor:
                               f"Receivable {rid} has {fmt_yuan(r.outstanding_fen)} outstanding, less than the "
                               f"{fmt_yuan(need)} these terms settle; re-evaluate the offer",
                               commitment_id=c.id, receivable_id=rid, outstanding_fen=r.outstanding_fen, need_fen=need)
-        # 2. exclusivity: one live commitment per named receivable
+        # 2. exclusivity: one live commitment per buyer request (SEC-02: obligations that name no receivable, such as terms on the next
+        # invoice, were otherwise never compared, and a second agreement booked the concession twice), and one per named receivable
         mine = {o.base.receivable_id for o in c.obligations if o.base.receivable_id}
         for other in self._store.commitments():
             if other.id == c.id or other.status not in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE):
                 continue
+            if other.offer_id == c.offer_id:
+                raise _refuse(Code.CONFLICTING_COMMITMENT,
+                              f"Commitment {c.id} answers the same request as the earlier {other.status.value} commitment {other.id}; "
+                              f"a request carries one agreement, so the owner must revoke {other.id} first",
+                              commitment_id=c.id, other_commitment_id=other.id, offer_id=c.offer_id)
             shared = sorted(mine & {o.base.receivable_id for o in other.obligations if o.base.receivable_id})
             if shared:
                 raise _refuse(Code.CONFLICTING_COMMITMENT,
