@@ -106,7 +106,7 @@ test("three card types: a standard card has a hairline and no shadow, the decisi
   // The plan bar on Cash & funding is the decision card: solid, one soft shadow, no frost.
   expect(styles.live?.shadow).toBe(styles.decision.shadow);
   expect(styles.live?.blur).toBe("none");
-  expect(styles.live?.bg).toBe("rgb(255, 255, 255)");
+  expect(styles.live?.bg).toBe("rgb(248, 249, 249)"); // the panel tone of the owner's mockup
 });
 
 /** Visible text smaller than 13 px that carries a figure (an amount, a rate, a multiple, a thousands group): the floor for a financial qualification is 13 px. */
@@ -179,7 +179,7 @@ test("type scale: the roles are variables, the headline steps with the screen, a
   expect(found).toEqual({ Home: [], Cash: [], Receivables: [], Customer: [], Deals: [] });
 });
 
-const NAV = ["Home", "Deals", "Cash & funding", "Receivables", "Activity"];
+const NAV = ["Home", "Deals", "Attach deals", "Cash & funding", "Sandbox", "Capex", "Receivables", "Activity"];
 type Pg = import("@playwright/test").Page;
 /** The rail's grid column (the aside) and the panel that opens over the page. */
 const railColumn = (page: Pg) => page.getByTestId("nav-rail").evaluate((el) => Math.round(el.getBoundingClientRect().width));
@@ -196,7 +196,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     expect(await railColumn(page), `${width}`).toBe(56);
     expect(await panelWidth(page)).toBe(56);
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "closed");
-    for (const name of NAV) await expect(nav.getByRole("link", { name })).toBeVisible();
+    for (const name of NAV) await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "0");
     const before = await mainBox(page);
 
@@ -446,8 +446,9 @@ test("the owner's mockup tokens: the canvas app-wide, the palette and its dark p
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible({ timeout: 15_000 });
   for (const id of ["hv2-cash-card", "hv2-action", "hv2-outlook-card", "home-worklist-panel", "hv2-upcoming"]) {
     const card = await page.getByTestId(id).evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, radius: getComputedStyle(el).borderTopLeftRadius, shadow: getComputedStyle(el).boxShadow }));
-    expect(card, id).toMatchObject({ bg: "rgb(248, 249, 249)", radius: "24px" });
-    expect(card.shadow, id).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
+    // The recommendation is tinted with the risk red while the cash would go negative (the alarm card): only its radius is pinned then.
+    expect(card, id).toMatchObject(id === "hv2-action" ? { radius: "24px" } : { bg: "rgb(248, 249, 249)", radius: "24px" });
+    if (id !== "hv2-action") expect(card.shadow, id).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
   }
   expect(await page.getByTestId("home-check-plan").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(23, 29, 30)");
   // The page is light only unless the dark hook is set.
@@ -464,7 +465,7 @@ test("cards: a page has one decision card, and a chosen row, invoice or path is 
   }
   const selected = (loc: import("@playwright/test").Locator) => loc.evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, rule: getComputedStyle(el).borderLeftWidth, ruleColor: getComputedStyle(el).borderLeftColor }));
   const want = { bg: "rgb(230, 241, 255)", rule: "3px", ruleColor: "rgb(3, 104, 233)" };
-  await page.goto("/receivables");
+  await page.goto("/receivables?customer=BUYER-1"); // /receivables lists customers; the customer's page holds the invoices
   await expect(page.getByTestId("recv-RCV-A")).toBeVisible({ timeout: 15_000 });
   expect(await selected(page.getByTestId("recv-RCV-A"))).toEqual(want);
   // Deals takes the owner's mockup look (a lavender row with a purple edge for the selection); the page raises no decision card.
@@ -578,7 +579,7 @@ test("rail: on every page the collapsed rail covers no content, the open panel i
       expect(open.left, `${at} open left`).toBe(0);
       expect(open.right, `${at} open right`).toBe(200);
       expect(open.bottom, `${at} open bottom within the window`).toBeLessThanOrEqual(open.vh);
-      expect(open.labels.length, `${at} five labels`).toBe(5);
+      expect(open.labels.length, `${at} eight labels`).toBe(8); // the sections and the doors to the sandbox and the old capex screen
       for (const l of open.labels) {
         expect(l.ok, `${at} label ${l.text} is on top (${l.why})`).toBe(true);
         expect(l.clippedByPanel, `${at} label ${l.text} fits the panel`).toBe(false);

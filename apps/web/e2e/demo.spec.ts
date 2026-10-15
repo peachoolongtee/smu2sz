@@ -547,7 +547,7 @@ test("the Demo uses the app's own rail: no engine-views sidebar, and the engine 
   await page.setViewportSize({ width: 1440, height: 900 });
   await openDemo(page);
   await expect(page.getByTestId("nav-rail")).toBeVisible();
-  await expect(page.getByTestId("nav-pills").getByRole("link")).toHaveCount(5);
+  await expect(page.getByTestId("nav-pills").getByRole("link")).toHaveCount(8); // the sections and the doors to the sandbox and the old capex screen
   await expect(page.getByText("Engine views", { exact: true })).toBeHidden();
   for (const name of ["Mandate", "Verdict", "Ledger", "Reconciliation"]) await expect(page.getByTestId("nav-pills").getByRole("link", { name })).toHaveCount(0);
   await expect(page.getByTestId("demo-strip")).toBeVisible();
