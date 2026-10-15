@@ -144,12 +144,19 @@ def setup_status(lang: str = "en") -> dict:
     state = rt.store.get_state()
     opened = _opened_entry()
     books = "blank" if state.scenario == "blank" else ("own" if state.scenario is None else "demo")
-    can = _can_open() and demo_mode()
+    server_ok = _can_open() and demo_mode()
+    can = server_ok and books == "blank"  # opening replaces only the blank books (`POST /setup/open` refuses the rest)
+    if not server_ok:
+        why = t(lg, "Setting up books from the app needs demo mode on this server: a real deployment's owner signs the limits "
+                    "with their own key.", "在此服务器上通过应用设置账簿需要演示模式：正式部署由业主用自己的密钥签署规则。")
+    elif not can:
+        why = t(lg, "Books are already open on this server, so opening new ones is off. To start over, reset to the blank "
+                    "books first.", "此服务器上已有开立的账簿，因此不能再开立新的账簿。如需重新开始，请先重置为空白账簿。")
+    else:
+        why = None
     out: dict[str, Any] = {
         "books": books, "scenario": state.scenario, "can_open": can,
-        "can_open_text": None if can else t(lg, "Setting up books from the app needs demo mode on this server: a real "
-                                                "deployment's owner signs the limits with their own key.",
-                                            "在此服务器上通过应用设置账簿需要演示模式：正式部署由业主用自己的密钥签署规则。"),
+        "can_open_text": why,
         "opened": None,
     }
     if books == "own" and opened:

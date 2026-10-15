@@ -144,9 +144,18 @@ def test_a_monthly_loss_is_refused_not_hidden() -> None:
 # ---------------------------------------------------------------- the routes
 
 
-def test_status_names_the_demo_books(client) -> None:
+def test_status_names_the_demo_books_and_says_opening_waits_for_the_blank_books(client) -> None:
     body = client.get("/setup/status").json()
-    assert body["books"] == "demo" and body["can_open"] is True and body["opened"] is None
+    assert body["books"] == "demo" and body["can_open"] is False and body["opened"] is None
+    assert body["can_open_text"].startswith("Books are already open on this server")
+    zh = client.get("/setup/status?lang=zh").json()["can_open_text"]
+    assert zh.startswith("此服务器上已有开立的账簿")
+
+
+def test_status_on_the_blank_books_can_open(client) -> None:
+    client.post("/demo/reset?scenario=blank")
+    body = client.get("/setup/status").json()
+    assert body["books"] == "blank" and body["can_open"] is True and body["can_open_text"] is None
 
 
 def test_setup_routes_are_owner_only(client) -> None:
