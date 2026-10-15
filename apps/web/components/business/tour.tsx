@@ -101,6 +101,23 @@ export function Tour() {
   useEffect(() => {
     if (open && run && run.path !== pathname) tourStore.set({ open: false });
   }, [open, run, pathname]);
+  // A page still reading its data when the tour opens has none of its own parts on screen yet, so the tour opens on the sections step;
+  // while that is all it has, it watches the page and takes the page's own steps the moment their parts are there.
+  const fallback = Boolean(open && run && run.path === pathname && run.steps[0] === NAV && (STEPS[pathname] ?? []).some((s) => s !== NAV));
+  useEffect(() => {
+    if (!fallback) return;
+    const upgrade = () => {
+      const steps = stepsFor(pathname);
+      if (steps[0] !== NAV) setRun({ path: pathname, steps });
+    };
+    const observer = new MutationObserver(upgrade);
+    observer.observe(document.body, { childList: true, subtree: true });
+    const frame = window.requestAnimationFrame(upgrade);
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frame);
+    };
+  }, [fallback, pathname]);
   if (!open || !run || run.path !== pathname) return null;
   return <TourCard steps={run.steps} />;
 }
