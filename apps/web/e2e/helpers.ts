@@ -69,13 +69,20 @@ export const stripOf = (page: Page): Locator => page.getByRole("region", { name:
 /**
  * Next, one press at a time, each waited for (a press while the stepper is busy is swallowed): steps `from + 1` to `from + steps` of the story.
  * The owner's own step (the eighth) is also pressed here, because its button is the owner's click; specs that are about that click do it themselves.
+ *
+ * A step is done when the server's story has moved past it: each step's control has its own label (GET /demo/story `next.label`), so the walk waits
+ * for the control to name another step. The strip keeps showing the read it had while it reads the story again (stale while revalidating), with
+ * Next enabled and the label of the step just run: a press then would run that step again, and the walk would end a step short.
+ * The first press is the one exception to the label: on books mid-story it names a later step but starts the story over, and a read taken before
+ * the buyer's message was posted names the first step. So the first press waits for the server's first scene to be done as well.
  */
 export async function walkStory(page: Page, steps: number, from = 0): Promise<void> {
   for (let i = from; i < from + steps; i++) {
     const button = page.getByTestId("demo-next");
     await expect(button).toBeEnabled();
+    const label = ((await button.textContent()) ?? "").trim();
     // The owner's step: the strip only opens the approval; the decision is the card's one filled Approve, and then the strip moves the story on.
-    if ((await button.textContent())?.match(/Open the approval|Review the approval/)) {
+    if (label.match(/Open the approval|Review the approval/)) {
       await button.click();
       await page.getByRole("button", { name: /^Authorize/ }).click();
       await expect(page.getByText("0 pending")).toBeVisible();
@@ -84,12 +91,15 @@ export async function walkStory(page: Page, steps: number, from = 0): Promise<vo
       continue;
     }
     await button.click();
-    // The first step starts the story over: books with work on them (an earlier spec, on the shared live API) are listed first, and this is the owner's confirmation.
+    const moved = button.filter({ hasNotText: label });
+    // The first step starts the story over: books with work on them (an earlier spec, on the shared live API) are listed first, and this is the owner's
+    // confirmation. The dialog comes before any server work, so it is up before the control can name the next step.
     const dialog = page.getByTestId("books-dialog");
-    await dialog.waitFor({ state: "visible", timeout: 1500 }).catch(() => undefined);
+    await expect(dialog.or(moved).filter({ visible: true }).first()).toBeVisible();
     if (await dialog.isVisible()) await page.getByTestId("books-dialog-confirm").click();
+    if (i === 0) await expect(page.getByTestId("demo-chip-buyer")).toHaveAttribute("data-state", "done");
+    await expect(moved).toBeEnabled();
     await expect(stripOf(page)).toContainText(/Scene \d of 6|All 6 scenes/);
-    await expect(page.getByTestId("demo-next")).toBeEnabled();
   }
 }
 
