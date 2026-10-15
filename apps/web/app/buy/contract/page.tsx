@@ -46,7 +46,8 @@ const FIELD_LABEL: Record<Field, DictKey> = {
 function ContractPage() {
   const { t, lang } = useI18n();
   const id = useSearchParams().get("id") ?? "";
-  const row = useAsync(() => getPurchase(id, lang), [id, lang]);
+  // No contract named in the address: nothing to read (the page says so instead of offering a form that can only fail).
+  const row = useAsync(() => (id ? getPurchase(id, lang) : Promise.resolve(null)), [id, lang]);
   const [days, setDays] = useState<Record<Field, string>>({ signing_day: "20", delivery_day: "60", acceptance_day: "80" });
   const [uplift, setUplift] = useState("22000");
   const [ev, setEv] = useState<BuySideEvaluationView | null>(null);
@@ -94,7 +95,20 @@ function ContractPage() {
   if (row.error && contractsOff(row.error)) {
     return <EmptyState title={t("buy.off.title")} body={t("buy.off.body")} />;
   }
-  const p = row.data;
+  if (!id) {
+    return (
+      <EmptyState
+        title={t("buy.empty.title")}
+        body={t("buy.empty.body")}
+        action={
+          <Link href="/buy" className="font-bold text-brand-700 underline underline-offset-2" data-testid="buy-contract-none">
+            {t("buy.title")} →
+          </Link>
+        }
+      />
+    );
+  }
+  const p = row.data ?? undefined;
   const evaluation = early ? ev?.early_pay_evaluation : ev?.evaluation;
   const schedule: PaymentScheduleView | null | undefined = early ? ev?.early_pay_schedule : ev?.schedule.schedule;
   const canCommit = Boolean(ev?.reading_confirmed && schedule && p && p.stage === "READY" && !committed);

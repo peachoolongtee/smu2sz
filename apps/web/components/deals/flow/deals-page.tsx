@@ -272,7 +272,7 @@ export function DealsPage() {
     />
   );
   const PANE = (
-        <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:rounded-[var(--radius-f-card)]" data-testid="deals-detail">
+        <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4" data-testid="deals-detail">
           {decision ? (
             <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onGo={go} inbox={inboxFor} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} onStep={setPaneStep} />
           ) : (
@@ -355,7 +355,8 @@ export function DealsPage() {
           </>
         ) : (
           <>
-            <div className="min-w-0 space-y-6">
+            {/* The deal scrolls with the page (its sections bring the page to their top); the queue beside it stays in view, scrolling on its own where it is taller than the window. */}
+            <div className={`min-w-0 space-y-6 ${decision ? "xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:rounded-[var(--radius-f-card)]" : ""}`}>
               {tableMode ? null : QUEUE_NODE}
               {decision ? INBOX_NODE : null}
             </div>
