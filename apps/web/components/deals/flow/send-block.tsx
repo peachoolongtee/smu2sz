@@ -207,6 +207,12 @@ export function SendBlock({
           {verdict && !receipt ? null : (
             <div className="space-y-2" data-testid="deal-send-confirm-box">
               <p className="text-sm text-ink-2">{t("biz.deals.send.confirmBody")}</p>
+              {/* What happens if the buyer refuses this reply: the server's sentence, above the button that sends it (nothing is said when the server wrote none). */}
+              {path.if_refused_text ? (
+                <p className="max-w-[68ch] rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-[15px] leading-snug text-ink" data-testid="deal-if-refused">
+                  {path.if_refused_text}
+                </p>
+              ) : null}
               {/* The simulated buyer's lean is the Demo's control; Business sends with the cooperative buyer and says the reply is simulated. */}
               {mode === "demo" ? (
                 <>
@@ -236,7 +242,7 @@ export function SendBlock({
             {/* No server receipt for this reply: no Send (a send the owner cannot read first is not offered). */}
             {verdict && !receipt ? null : (
               <Button variant="primary" loading={sending} disabled={inFlight || !verdict} onClick={() => void send()} data-testid="deal-send">
-                {sending ? t("biz.deals.sending") : t("deals.send.go", { label: path.label, buyer })}
+                {sending ? t("biz.deals.sending") : t(path.needs_owner ? "deals.send.approve" : "deals.send.go", { label: path.label, buyer })}
               </Button>
             )}
             <button type="button" onClick={() => setReviewing(false)} disabled={inFlight} className={`${quietLink} disabled:opacity-50`} data-testid="queue-review-close">
