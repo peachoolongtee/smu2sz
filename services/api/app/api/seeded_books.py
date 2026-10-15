@@ -30,6 +30,7 @@ import json
 import logging
 import threading
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Literal
 
 from app.api import demo_seed, documents, runtime
@@ -63,6 +64,9 @@ class _Build:
     done: threading.Event = field(default_factory=threading.Event)
 
 
+# The longest a reset waits for a warm-up under way; past it the reset replays for real (the warm-up goes on and its snapshot is used after).
+WAIT_SECONDS = 300.0
+
 _guard = threading.Lock()
 _ready: dict[str, Snapshot] = {}  # scenario -> its snapshot
 _building: dict[str, _Build] = {}  # scenario -> the warm-up now running
@@ -76,31 +80,31 @@ def reset_for_tests() -> None:
 
 # ---------------------------------------------------------------- the key
 
-_fixtures_memo: tuple[tuple[Any, ...], str] | None = None
+_fixtures_memo: dict[Path, tuple[tuple[Any, ...], str]] = {}
 
 
-def _fixtures_digest() -> str:
-    """A hash of every file under fixtures/ (path and bytes), re-read only when a file's size or mtime moved."""
-    global _fixtures_memo
-    files = sorted(p for p in FIXTURES.rglob("*") if p.is_file())
+def _fixtures_digest(root: Path) -> str:
+    """A hash of every file under `root` (path and bytes), re-read only when a file's size or mtime moved."""
+    files = sorted(p for p in root.rglob("*") if p.is_file())
     stats = tuple((p.as_posix(), (st := p.stat()).st_mtime_ns, st.st_size) for p in files)
-    memo = _fixtures_memo
+    memo = _fixtures_memo.get(root)
     if memo is not None and memo[0] == stats:
         return memo[1]
     h = hashlib.sha256()
     for p in files:
-        h.update(p.relative_to(FIXTURES).as_posix().encode() + b"\0" + p.read_bytes() + b"\0")
-    _fixtures_memo = (stats, h.hexdigest())
-    return _fixtures_memo[1]
+        h.update(p.relative_to(root).as_posix().encode() + b"\0" + p.read_bytes() + b"\0")
+    _fixtures_memo[root] = (stats, h.hexdigest())
+    return _fixtures_memo[root][1]
 
 
 def key_of(scenario: str, settings: Any, owner_key_hex: str) -> str:
-    """What the snapshot of `scenario` depends on besides the code: the seed file's content, the fixtures, the settings and flags (the
+    """What the snapshot of `scenario` depends on besides the code: the seed file's content, the fixtures (the shipped tree and the
+    settings' own `fixture_dir`, where the compiler's cache is read), the settings and flags (the
     runtime's own and the process's), DEMO_MODE and the owner key."""
     from app.api.auth import demo_mode
 
     seed = json.dumps(demo_seed.scenario_seed(scenario), sort_keys=True)
-    parts = (scenario, hashlib.sha256(seed.encode()).hexdigest(), _fixtures_digest(), repr(settings), repr(get_settings()),
+    parts = (scenario, hashlib.sha256(seed.encode()).hexdigest(), _fixtures_digest(FIXTURES), _fixtures_digest(Path(settings.fixture_dir).resolve()), repr(settings), repr(get_settings()),
              repr(demo_mode()), owner_key_hex)
     return hashlib.sha256(repr(parts).encode()).hexdigest()
 
@@ -127,17 +131,41 @@ def _caches() -> dict[str, Any]:
     return found
 
 
-def _entries(cache: Any) -> list[tuple[Any, Any]]:
+def _guards() -> dict[str, tuple[Any, int]]:
+    """The two plain ordered dicts' own lock and size limit, which every write to them takes and keeps."""
+    import importlib
+
+    from app.api import offer_picture
+
+    evaluate = importlib.import_module("app.verifier.evaluate")
+    return {"app.api.offer_picture._cache": (offer_picture._lock, offer_picture._CACHE_SIZE),
+            "app.verifier.evaluate._COMPARE_CACHE": (evaluate._COMPARE_LOCK, evaluate._COMPARE_SIZE)}
+
+
+def _entries(name: str, cache: Any) -> list[tuple[Any, Any]]:
     if hasattr(cache, "_data"):
         with cache._lock:
             return list(cache._data.items())
-    return list(cache.items())
+    with _guards()[name][0]:
+        return list(cache.items())
+
+
+def _put(name: str, cache: Any, key: Any, value: Any) -> None:
+    if hasattr(cache, "put"):
+        cache.put(key, value)  # the AnswerCache's own lock and size limit
+        return
+    lock, size = _guards()[name]
+    with lock:
+        cache[key] = value
+        cache.move_to_end(key)
+        while len(cache) > size:
+            cache.popitem(last=False)
 
 
 def _held() -> dict[str, list[tuple[Any, Any]]]:
     """Every entry of every answer cache, copied. Each answer is keyed by a hash of the books it was made for, so an entry that is not for
     the busy books is simply never asked for; the ones that are (the replay's, the warmed reads') are what a restore needs."""
-    return {n: [(k, copy.deepcopy(v)) for k, v in _entries(c)] for n, c in _caches().items()}
+    return {n: [(k, copy.deepcopy(v)) for k, v in _entries(n, c)] for n, c in _caches().items()}
 
 
 # ---------------------------------------------------------------- eligibility, capture, restore
@@ -146,7 +174,8 @@ def _held() -> dict[str, list[tuple[Any, Any]]]:
 def eligible(rt: Runtime, scenario: str) -> bool:
     """True only when a snapshot would be the very call `reset_demo` makes."""
     store = rt.store
-    return (not rt.private and type(store) is InMemoryLedgerStore and store._tx_depth == 0
+    return (not rt.private and rt.settings.llm_mode == "cache" and get_settings().llm_mode == "cache"  # live: paid, non-deterministic
+            and type(store) is InMemoryLedgerStore and store._tx_depth == 0
             and all(not getattr(store, n) for n in TELEMETRY)
             and (demo_seed.replay, demo_seed.scenario_seed, documents.confirm_demo_documents, runtime._confirm_demo_documents) == _SHIPPED
             and demo_seed.scenario_seed(scenario) is not None and get_runtime() is rt)
@@ -175,14 +204,9 @@ def restore(rt: Runtime, snap: Snapshot) -> None:
         clear_exposure_cache()  # as `reset` does; the entries the replay left are put back just below
         caches = _caches()
         for n, entries in snap.caches.items():
-            cache = caches.get(n)
-            for k, v in entries:
-                if cache is None:
-                    continue
-                if hasattr(cache, "put"):
-                    cache.put(k, copy.deepcopy(v))
-                else:
-                    cache[k] = copy.deepcopy(v)
+            if (cache := caches.get(n)) is not None:
+                for k, v in entries:
+                    _put(n, cache, k, copy.deepcopy(v))
     rt.mark_fresh()
 
 
@@ -191,19 +215,21 @@ def await_warm_up(scenario: str) -> None:
     with _guard:
         build = _building.get(scenario)
     if build is not None:
-        build.done.wait()
+        build.done.wait(WAIT_SECONDS)
 
 
 def lookup(rt: Runtime, scenario: str) -> tuple[Snapshot | None, str | None]:
     """The snapshot to restore for `scenario` on `rt`, or None. Call it BEFORE taking `rt.lock`: a warm-up building the same snapshot is
-    waited for here, with nothing held. Also returns the key when there is none and the caller should replay and `remember`."""
+    waited for here, with nothing held (at most `WAIT_SECONDS`). A caller that holds `rt.lock` (the route does, after waiting for the warm-up
+    itself) is never waited for: with a build still running it replays for real. Returns the key when there is no snapshot and the
+    caller should replay and `remember`."""
     if not eligible(rt, scenario):
         return None, None
     key = key_of(scenario, rt.settings, rt.owner_key_hex)
     with _guard:
         build = _building.get(scenario)
-    if build is not None and build.key == key:
-        build.done.wait()
+    if build is not None and build.key == key and not rt.lock._is_owned():  # type: ignore[attr-defined]
+        build.done.wait(WAIT_SECONDS)
     with _guard:
         snap = _ready.get(scenario)
         if snap is not None and snap.key != key:
@@ -270,7 +296,7 @@ def warm_up(scenario: str = "busy") -> threading.Thread | None:
     from app.api.auth import demo_mode
 
     settings = get_settings()
-    if not demo_mode() or settings.database_url != "memory" or demo_seed.scenario_seed(scenario) is None:
+    if not demo_mode() or settings.llm_mode != "cache" or settings.database_url != "memory" or demo_seed.scenario_seed(scenario) is None:
         return None
     owner_key = demo_owner_public_key_hex()
     key = key_of(scenario, settings, owner_key)

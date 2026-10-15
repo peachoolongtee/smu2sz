@@ -77,6 +77,12 @@ def _clean() -> Iterator[None]:
     offer_picture._cache.clear()
 
 
+@pytest.fixture(autouse=True)
+def _seeded_books_forgotten() -> Iterator[None]:
+    """(Overrides the conftest's: this module's `books` fixture keeps its snapshot across its tests, and forgets it at the end.)"""
+    yield
+
+
 @pytest.fixture(scope="module")
 def books() -> Iterator[dict[str, Any]]:
     """The busy books replayed for real through the route (the reference), and the snapshot the warm-up builds (private runtime, then the
@@ -149,7 +155,7 @@ def test_a_changed_seed_flag_fixture_or_owner_key_gives_another_key(monkeypatch:
     monkeypatch.setattr(demo_seed, "scenario_seed", lambda name: {**real_seed, "offers": real_seed["offers"][:-1]})
     assert seeded_books.key_of("busy", settings, owner) != base
     monkeypatch.undo()
-    monkeypatch.setattr(seeded_books, "_fixtures_digest", lambda: "another fixtures tree")
+    monkeypatch.setattr(seeded_books, "_fixtures_digest", lambda root: "another fixtures tree")
     assert seeded_books.key_of("busy", settings, owner) != base
 
 
@@ -245,3 +251,77 @@ def test_a_failed_warm_up_leaves_nothing_waiting(monkeypatch: pytest.MonkeyPatch
     thread.join(10)
     assert "busy" not in seeded_books._building and "busy" not in seeded_books._ready
     seeded_books.await_warm_up("busy")  # returns at once
+
+
+def test_a_live_model_mode_never_warms_up_or_restores(monkeypatch: pytest.MonkeyPatch) -> None:
+    live = dataclasses.replace(get_settings(), llm_mode="live")
+    monkeypatch.setenv("DEMO_MODE", "1")
+    rt = Runtime(settings=live, store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
+    rt.reset()
+    set_runtime(rt)
+    assert not seeded_books.eligible(rt, "busy")  # the runtime's own settings say live
+    cached = _runtime()
+    set_runtime(cached)
+    assert seeded_books.eligible(cached, "busy")
+    monkeypatch.setattr(seeded_books, "get_settings", lambda: live)  # and the process's
+    assert not seeded_books.eligible(cached, "busy")
+    seeded_books.reset_for_tests()
+    assert seeded_books.warm_up("busy") is None and not seeded_books._building
+
+
+def test_a_wait_for_a_warm_up_is_bounded_and_never_made_holding_the_lock(monkeypatch: pytest.MonkeyPatch) -> None:
+    seeded_books.reset_for_tests()
+    rt = _runtime()
+    set_runtime(rt)
+    key = seeded_books.key_of("busy", rt.settings, rt.owner_key_hex)
+    seeded_books._building["busy"] = seeded_books._Build(key)  # a warm-up that never ends
+    try:
+        monkeypatch.setattr(seeded_books, "WAIT_SECONDS", 0.3)
+        started = time.perf_counter()
+        seeded_books.await_warm_up("busy")
+        assert 0.25 < time.perf_counter() - started < 5
+        started = time.perf_counter()
+        assert seeded_books.lookup(rt, "busy") == (None, key)  # timed out: the real replay answers
+        assert 0.25 < time.perf_counter() - started < 5
+        monkeypatch.setattr(seeded_books, "WAIT_SECONDS", 30.0)
+        with rt.lock:  # the caller holds the runtime's lock (the route): no wait at all
+            started = time.perf_counter()
+            assert seeded_books.lookup(rt, "busy") == (None, key)
+            assert time.perf_counter() - started < 2
+    finally:
+        seeded_books._building.pop("busy", None)
+
+
+def test_the_key_follows_the_settings_fixture_dir(tmp_path: Any) -> None:
+    settings, owner = get_settings(), demo_owner_public_key_hex()
+    (tmp_path / "compiler_cache").mkdir()
+    other = dataclasses.replace(settings, fixture_dir=str(tmp_path))
+    first = seeded_books.key_of("busy", other, owner)
+    assert first != seeded_books.key_of("busy", settings, owner)
+    (tmp_path / "compiler_cache" / "x.json").write_text("{}", encoding="utf-8")
+    second = seeded_books.key_of("busy", other, owner)
+    assert second != first
+    (tmp_path / "compiler_cache" / "x.json").write_text('{"a": 1}', encoding="utf-8")
+    assert seeded_books.key_of("busy", other, owner) not in (first, second)
+
+
+def test_a_restore_writes_the_ordered_caches_under_their_locks_and_limits() -> None:
+    import importlib
+
+    evaluate = importlib.import_module("app.verifier.evaluate")  # (`app.verifier.evaluate` as an attribute is the function)
+    rt = _runtime()
+    set_runtime(rt)
+    snap = seeded_books._capture(rt, "k")
+    snap.caches["app.api.offer_picture._cache"] = [((i,), {"i": i}) for i in range(offer_picture._CACHE_SIZE + 20)]
+    snap.caches["app.verifier.evaluate._COMPARE_CACHE"] = [((str(i), "", ""), []) for i in range(evaluate._COMPARE_SIZE + 20)]
+    offer_picture._cache.clear()
+    evaluate._COMPARE_CACHE.clear()
+    done = threading.Event()
+    with offer_picture._lock:  # a writer holds the picture cache's lock: the restore waits for it
+        t = threading.Thread(target=lambda: (seeded_books.restore(rt, snap), done.set()))
+        t.start()
+        assert not done.wait(0.5)
+    t.join(30)
+    assert done.is_set()
+    assert len(offer_picture._cache) == offer_picture._CACHE_SIZE and len(evaluate._COMPARE_CACHE) == evaluate._COMPARE_SIZE
+    assert list(offer_picture._cache)[-1] == (offer_picture._CACHE_SIZE + 19,)  # the newest are the ones kept
