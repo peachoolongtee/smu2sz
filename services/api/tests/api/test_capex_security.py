@@ -289,7 +289,7 @@ def test_the_owners_route_queues_the_commit_as_the_owner(client, on, rt):
     r = client.post(f"/capex/contracts/{doc['id']}/commit",
                     json={"timeline": TIMELINE, "schedule_hash": ev["schedule"]["schedule"]["schedule_hash"]}).json()
     assert r["status"] == "PENDING_APPROVAL"
-    assert [a for a in client.get("/approvals/queue").json()["approvals"]][0]["operation"]["requested_by"] == "OWNER"
+    assert client.get("/approvals/queue").json()["approvals"][0]["operation"]["requested_by"] == "OWNER"
 
 
 def test_the_executor_refuses_an_agent_authored_commit_that_was_already_in_the_queue(client, on, rt):
@@ -304,3 +304,36 @@ def test_the_executor_refuses_an_agent_authored_commit_that_was_already_in_the_q
     out = client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}).json()["result"]
     assert out["status"] == "REFUSED" and out["violations"][0]["inputs"]["refusal"] == "PURCHASE_OWNER_ONLY", out
     assert _capex_flows(rt) == []
+
+
+# ---------------------------------------------------------------- CAPEX-2 (a): the card carries the schedule
+
+
+def _queued_row(client, lang: str = "en", early: bool = False) -> dict:  # type: ignore[no-untyped-def]
+    doc = _upload(client)
+    ev = client.post(f"/capex/contracts/{doc['id']}/evaluate", json={"timeline": TIMELINE}).json()
+    sh = ev["early_pay_schedule"]["schedule_hash"] if early else ev["schedule"]["schedule"]["schedule_hash"]
+    r = client.post(f"/capex/contracts/{doc['id']}/commit", json={"timeline": TIMELINE, "schedule_hash": sh, "take_early_pay": early})
+    assert r.status_code == 200, r.text
+    return next(a for a in client.get(f"/approvals/queue?lang={lang}").json()["approvals"] if a["id"] == r.json()["approval_id"])
+
+
+def test_the_approval_row_shows_the_vendor_document_payments_early_pay_choice_and_total(client, on):
+    row = _queued_row(client)
+    assert row["schedule_title"] == "What you are committing to" and row["schedule_note"] is None
+    rows = {r["label"]: r["value_text"] for r in row["schedule_rows"]}
+    assert rows["Vendor"] == "Guangzhou Precision Machinery Co., Ltd."
+    assert rows["Contract"] == "Equipment purchase contract GZPM-2026-114"
+    assert rows["Payment 1"].startswith("¥180,000.00, ") and rows["Payment 2"].startswith("¥360,000.00, ")
+    assert rows["Payment 3"].startswith("¥60,000.00, ") and "(retention)" in rows["Payment 3"]
+    assert rows["Early payment"].startswith("Not taken")
+    assert rows["Total you will pay"] == "¥600,000.00"
+    assert [r["label"] for r in row["schedule_rows"]][-1] == "Total you will pay"
+
+
+def test_the_early_payment_choice_and_the_zh_words_are_the_servers(client, on):
+    row = _queued_row(client, lang="zh", early=True)
+    rows = {r["label"]: r["value_text"] for r in row["schedule_rows"]}
+    assert row["schedule_title"] == "您将承诺的内容" and rows["供应商"] == "Guangzhou Precision Machinery Co., Ltd."
+    assert rows["提前付款"].startswith("选择提前付款") and "¥7,200.00" in rows["提前付款"]
+    assert rows["您将支付的总额"] == "¥592,800.00" and "第 1 笔付款" in rows
