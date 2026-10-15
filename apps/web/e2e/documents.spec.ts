@@ -58,6 +58,8 @@ test("Deals: no summary before a deal is agreed; once the buyer agrees, the conf
   await expect(page.getByTestId("next-step")).toHaveCount(0);
   await expect(page.locator("#deal-summary")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Deal summary" })).toHaveCount(0);
+  // The agreements in force are under the list; the agreed deal's own page is the tracker, and All deals brings the list back.
+  await page.getByTestId("deal-back-all").click();
   const agreements = page.locator("#commitments");
   await expect(agreements.getByRole("heading", { name: "Your agreements", level: 2 })).toBeVisible();
   const deal = agreements.getByTestId("deal-summary-BUYER-1");
@@ -272,6 +274,7 @@ test("Chinese: the deal summary and the review screen", async ({ page }, testInf
   await agreeFoshanDeal(page);
   await openAccountMenu(page);
   await page.getByLabel("中文").check();
+  await page.getByTestId("deal-back-all").click();
   await expect(page.locator("#commitments").getByRole("heading", { name: "您的协议", level: 2 })).toBeVisible();
   await expect(page.getByTestId("deal-summary-BUYER-1")).toContainText("合同约定");
   await expect(page.getByTestId("deal-summary-BUYER-1")).toContainText("由代理读取，经您确认");
