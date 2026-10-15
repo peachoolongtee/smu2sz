@@ -104,7 +104,7 @@ export function obligationSentence(o: Ob, t: I18n["t"], te: I18n["te"], today: n
  * One agreement, folded to a row (who it is with, its status, how many terms and the give-aways booked); opening it shows the terms, the dates and the deal summary.
  * The list reads at a glance and only the agreement the owner picks takes the room.
  */
-function AgreementRow({ testId, status, head, line, badge, children }: { testId?: string; status?: string; head: ReactNode; line?: ReactNode; badge?: ReactNode; children: ReactNode }) {
+function AgreementRow({ testId, status, head, who, line, badge, children }: { testId?: string; status?: string; head: ReactNode; who?: ReactNode; line?: ReactNode; badge?: ReactNode; children: ReactNode }) {
   return (
     <li className="border-t border-line first:border-t-0" data-testid={testId} data-status={status}>
       <details className="group">
@@ -116,7 +116,11 @@ function AgreementRow({ testId, status, head, line, badge, children }: { testId?
           </span>
           {badge}
         </summary>
-        <div className="pb-4 pl-8 pr-2">{children}</div>
+        <div className="pb-4 pl-8 pr-2">
+          {/* The customer's link is in the opened part: a link must not sit inside the summary (nested interactive controls). */}
+          {who ? <p className="mb-2 text-sm font-semibold text-ink">{who}</p> : null}
+          {children}
+        </div>
       </details>
     </li>
   );
@@ -128,7 +132,8 @@ function CommitmentItem({ c, buyer, buyerId, today, recordState, inForce, summar
     <AgreementRow
       testId={`commitment-${c.id}`}
       status={c.status}
-      head={<CustomerSentence id={buyerId} name={buyer} sentence={(b) => t("deal.with", { buyer: b })} />}
+      head={t("deal.with", { buyer })}
+      who={<CustomerSentence id={buyerId} name={buyer} sentence={(b) => t("deal.with", { buyer: b })} />}
       line={t("deals.agreement.line", { n: c.obligations.length, amount: c.forward_value_display })}
       badge={
         <Badge tone={statusTone[c.status]}>
@@ -248,7 +253,7 @@ export function ActiveCommitments({
             <ul data-testid="commitments-live">
               {items}
               {loose.map((d) => (
-                <AgreementRow key={d.counterparty_id} head={<CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.with", { buyer: b })} />}>
+                <AgreementRow key={d.counterparty_id} head={t("deal.with", { buyer: d.counterparty_name })} who={<CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.with", { buyer: b })} />}>
                   <DealSummary deal={d} today={dealsDay ?? today} />
                 </AgreementRow>
               ))}

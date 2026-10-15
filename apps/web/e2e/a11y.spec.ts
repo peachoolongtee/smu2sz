@@ -37,7 +37,7 @@ test.beforeEach(async ({ request }, testInfo) => {
 });
 
 test("Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0", async ({ page }) => {
-  for (const [path, ready] of [["/", "home-next-action"], ["/cash", "cash-options-list"], ["/receivables", "recv3-cards"], ["/activity", ""], ["/approvals", ""], ["/customers/BUYER-1", "customer-figures"], ["/customers/BUYER-1/inputs", "inputs-sheet"]] as const) {
+  for (const [path, ready] of [["/", "home-next-action"], ["/cash", "cash-summary"], ["/receivables", "recv3-page"], ["/activity", ""], ["/approvals", ""], ["/customers/BUYER-1", "customer-figures"], ["/customers/BUYER-1/inputs", "inputs-sheet"]] as const) {
     await page.goto(path);
     await expect(page.locator("h1").first()).toBeVisible();
     if (ready) await expect(page.getByTestId(ready).first()).toBeVisible({ timeout: 15_000 });
@@ -80,6 +80,8 @@ test("contract ingestion and the send step: the documents and a review, the buye
   await sendCounter(page);
   // The agreements in force are under the list: All deals brings it back.
   await page.getByTestId("deal-back-all").click();
+  // Each agreement is a folded row; opening it shows its terms and the deal summary.
+  await page.locator("#commitments").getByTestId("commitment-toggle").first().click();
   await expect(page.getByTestId("deal-summary-BUYER-1")).toBeVisible();
   await scan(page, "/deals the deal summary");
   await page.getByTestId("deal-details-BUYER-1").locator("summary").click();
@@ -100,7 +102,7 @@ test("an approval waiting, the chase dialog and the remaining task at day 34", a
   await page.goto("/");
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   await scan(page, "/ day 34");
-  await page.goto("/receivables");
+  await page.goto("/receivables?customer=BUYER-1"); // /receivables lists customers; the customer's page holds its invoices
   // The first action of the selected invoice: Chase payment, as it is overdue.
   const chase = page.locator('[data-testid^="chase-detail-CHASE-open-"]:visible').first();
   await expect(chase).toBeVisible();
@@ -134,10 +136,10 @@ test("the chat panel and the Demo story", async ({ page }) => {
 
 test("the approval question, its decided card with the execution summary, the record, and Waiting on", async ({ page }) => {
   await advanceTo(page, 34);
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();
-  await scan(page, "/ with an approval waiting");
+  await scan(page, "/cash with an approval waiting");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   const card = page.locator("#approval-APR-000001");
   await expect(card).toBeVisible();
@@ -149,7 +151,7 @@ test("the approval question, its decided card with the execution summary, the re
   await expect(page.getByTestId("record-state")).toBeVisible();
   await scan(page, "decision record");
   await page.goto("/");
-  await expect(page.getByTestId("home-kpi-funding-value")).toBeVisible(); // the strip's funding cell says what is on its way
+  await expect(page.getByTestId("home-v2-action")).toBeVisible(); // the recommendation card is on the Home
   await scan(page, "/ funding on its way");
   await page.goto("/cash");
   await expect(page.locator("h1").first()).toBeVisible();

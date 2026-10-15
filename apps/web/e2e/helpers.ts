@@ -24,6 +24,13 @@ export async function runPlan(scope: Page | Locator, alertId: string): Promise<v
   await scope.getByTestId(`fix-${alertId}`).click();
 }
 
+/** Cash keeps the plans it weighed in a fold (closed until asked for): "Every option considered" when a gap is open, "Other plans considered" once covered. Open it so the list can be read. */
+export async function openCashOptions(page: Page): Promise<void> {
+  const fold = page.getByTestId("cash-options-all").or(page.getByTestId("cash-options")).first();
+  await expect(fold).toBeAttached();
+  if (!(await fold.evaluate((el) => el.hasAttribute("open")))) await fold.locator("summary").first().click();
+}
+
 /**
  * Live mode shares one in-memory API across specs, so a spec that reads the books (alerts, what-if) resets
  * them first. In mock mode every browser context starts with an empty store, so this does nothing.
