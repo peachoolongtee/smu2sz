@@ -11,6 +11,13 @@ async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
+/** Cash keeps the plans it weighed in a fold (closed until asked for); open it so the list can be measured. */
+async function openCashOptions(page: Page) {
+  const fold = page.getByTestId("cash-options-all").or(page.getByTestId("cash-options")).first();
+  await expect(fold).toBeAttached();
+  if (!(await fold.evaluate((el) => el.hasAttribute("open")))) await fold.locator("summary").first().click();
+}
+
 test("no page overflows horizontally after the demo has run", async ({ page }) => {
   await page.goto("/demo");
   await walkStory(page, STORY_STEPS);
@@ -237,12 +244,14 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await expect(page.getByTestId("deal-chart")).toBeVisible();
   expect(await overflowX(page), "/deals cash impact overflows horizontally").toBeLessThanOrEqual(1);
   await page.goto("/cash");
+  await openCashOptions(page);
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   expect(await overflowX(page), "/cash overflows horizontally").toBeLessThanOrEqual(1);
   const narrow = (page.viewportSize()?.width ?? 1440) < 1024;
   if (narrow) {
     for (const [route, ready] of [["/deals", "deals-inbox"], ["/cash", "cash-options-list"]] as const) {
       await page.goto(route);
+      if (ready === "cash-options-list") await openCashOptions(page);
       await expect(page.getByTestId(ready)).toBeVisible();
       const short = await page.evaluate(() =>
         Array.from(document.querySelectorAll("main a, main button, main summary"))
@@ -310,6 +319,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
 
   // Cash: the answer, the plan, the picture, then the comparison; its options list starts inside the first three screens.
   await page.goto("/cash");
+  await openCashOptions(page);
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   const options = (await topOf(page, "cash-options-list"))!;
   const plan = (await topOf(page, "home-next-action"))!;
@@ -420,8 +430,8 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
 test("at tablet width (820) the open invoices are one card each, so no column is clipped", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "the phone has its own check");
   await page.setViewportSize({ width: 820, height: 1180 });
-  await page.goto("/receivables");
-  await expect(page.getByTestId("recv3-list")).toBeVisible();
+  await page.goto("/receivables?customer=BUYER-1"); // /receivables is the customer list; the customer's page holds the open invoices
+  await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
   await expect(page.getByRole("columnheader").first()).toBeHidden();
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });

@@ -888,7 +888,7 @@ test("a customer with a financed invoice: the card shows the net after repayment
   await expect(view).toHaveAttribute("href", `/receivables?invoice=${row.receivable_id}`);
   // One filled button in the state: the card's (the band above is outlined).
   expect(await filledBrand(page)).toBe(1);
-  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet"); // nothing of the company's waits: the quiet card, no band
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered"); // nothing of the company's waits: the covered card (its way to the deals is outlined), no band
 });
 
 test("phone: the collection state, a customer's row opens its card and its context under the worklist, in one column", async ({ page }) => {
