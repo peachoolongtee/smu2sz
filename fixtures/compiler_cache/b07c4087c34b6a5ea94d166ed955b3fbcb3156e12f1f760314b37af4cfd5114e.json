@@ -1,0 +1,54 @@
+{
+  "doc_ids": [
+    "EX17B8-msg"
+  ],
+  "extraction": {
+    "authority_claims": [
+      {
+        "doc_id": "EX17B8-msg",
+        "kind": "PRIOR_AGREEMENT",
+        "quote": "we agreed"
+      }
+    ],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "UNSPECIFIED",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "CLAIMED_UNEVIDENCED",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX17B8-msg",
+            "text": "the 1.5% rebate we agreed last month"
+          }
+        ],
+        "rate_text": "1.5%",
+        "target_terms_text": null,
+        "type": "CLAIMED_PRIOR_CONCESSION",
+        "unresolved": []
+      }
+    ],
+    "quantities": [
+      {
+        "amount_text": "¥64,000",
+        "doc_id": "EX17B8-msg",
+        "kind": "invoice_amount",
+        "quote": "¥64,000 invoice"
+      }
+    ],
+    "unresolved_references": []
+  },
+  "key": "b07c4087c34b6a5ea94d166ed955b3fbcb3156e12f1f760314b37af4cfd5114e",
+  "kind": "offer",
+  "label": "EX17_CLAIMED_REBATE_BUYER8",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}

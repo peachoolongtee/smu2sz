@@ -24,6 +24,9 @@ OWNER = {"X-Owner-Token": "demo-owner-token"}
 AGENT = {"X-Agent-Key": "demo-agent-key"}
 EX01 = {"fixture_id": "EX01_PACKAGE"}
 NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan", "Zhuhai Kitchenware Wholesale Co.", "Zhuhai",
+         "Jiangmen Precision Machinery Co., Ltd.", "Jiangmen", "GreenSky Power Engineering Co., Ltd.", "GreenSky",
+         "SouthChina Storage Systems Co., Ltd.", "SouthChina", "CloudLedger Software (Shenzhen) Co., Ltd.", "CloudLedger",
+         "Guangdong E-Motion Vehicles Co., Ltd.", "Guangdong",
          "Bank credit line", "Invoice financing (onboarded platform)", "Buyer early-payment offer",
          "Government-guaranteed working-capital loan"]
 ROW = {"key", "kind", "tier", "customer_id", "customer_short", "subject_text", "subject_demo_text", "lifecycle", "topic_text", "last_activity_day", "last_activity_text", "status_text", "consequence_text",
@@ -100,14 +103,16 @@ def test_the_busy_queue_has_every_task_in_its_tier(api: TestClient, lang: str) -
     _busy(api)
     q = _queue(api, lang)
     # the busy seed holds no agreement: three Foshan replies (EX01, EX02, EX03) are all live on invoice RCV-A, and the owner can send any of them
-    assert q["counts"] == {"needs_you": 7, "waiting": 1, "agreements": 0, "customers": 3}
+    # the five newer customers (BUYER-4 to BUYER-8) each bring one request that needs the owner
+    assert q["counts"] == {"needs_you": 12, "waiting": 1, "agreements": 0, "customers": 8}
     assert _shape(q["needs_you"]) == {("DECISION", "BUYER-1"): 3, ("DECISION", "BUYER-2"): 1, ("DECISION", "BUYER-3"): 1,
+                                      **{("DECISION", f"BUYER-{n}"): 1 for n in range(4, 9)},
                                       ("APPROVAL", None): 1, ("COLLECTION", "BUYER-2"): 1}
     assert _shape(q["waiting"]) == {("BUYER_REPLY", "BUYER-1"): 1}
     assert q["agreements"] == []
     assert {r["tier"] for r in q["needs_you"]} == {"NEEDS_YOU"} and {r["tier"] for r in q["waiting"]} == {"WAITING"}
     rows = _rows(q)
-    assert all(set(r) == ROW for r in rows) and len({r["key"] for r in rows}) == 8
+    assert all(set(r) == ROW for r in rows) and len({r["key"] for r in rows}) == 13
     assert q["alert"] is not None and q["alert"]["key"] == "company-cash"  # shown above the tabs, counted nowhere
     assert q["needs_you_empty_text"] and q["waiting_empty_text"] and q["agreements_empty_text"]
     if lang == "zh":
@@ -145,7 +150,7 @@ def test_the_worklist_the_home_reads_is_unchanged(api: TestClient) -> None:
     _busy(api)
     w = api.get("/worklist").json()
     assert set(w) == {"lang", "day", "state_version", "alert", "counts", "needs_you", "needs_you_empty_text", "waiting", "customers", "partial"}
-    assert w["counts"] == {"needs_you": 7, "waiting": 1, "agreements": 0, "customers": 3}
+    assert w["counts"] == {"needs_you": 12, "waiting": 1, "agreements": 0, "customers": 8}
     assert {r["kind"] for r in w["waiting"]} == {"BUYER_REPLY"}
     assert all("tier" not in r and "decision_id" not in r for r in w["needs_you"] + w["waiting"])
 

@@ -1,0 +1,41 @@
+{
+  "doc_ids": [
+    "EX14B5-msg"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "FUTURE_INVOICES",
+        "bounded_invoices_text": "next invoice",
+        "confidence": 0.9,
+        "contingency": "FIRM",
+        "current_terms_text": "45",
+        "duration_kind": "RECURRING_BOUNDED",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX14B5-msg",
+            "text": "Could we have 60 days on the next invoice instead of 45"
+          }
+        ],
+        "rate_text": null,
+        "target_terms_text": "60 days",
+        "type": "TERMS_EXTENSION",
+        "unresolved": []
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "32f66c04878c45d21a4b6b1e92713c63f8ddf6584800cfdb8799e4ff6202b004",
+  "kind": "offer",
+  "label": "EX14_TERMS_BUYER5",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}

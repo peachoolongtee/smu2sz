@@ -23,7 +23,9 @@ def test_scenarios_cover_the_required_tasks():
     from app.domain.fixtures import load_offers
 
     covered = {t for s in scn for t in s.get("tags", [])}
-    for fx in load_offers():
+    for fx, o in load_offers().items():
+        if o.get("scenario", "golden_sme") != "golden_sme":
+            continue  # every task starts from the golden books; an example for another scenario's books is its seed's (test_demo_busy)
         short = fx.split("_")[0] if not fx.startswith("SEC_") else fx
         assert short in covered or fx in covered, fx
 

@@ -1,0 +1,41 @@
+{
+  "doc_ids": [
+    "EX13B4-msg"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "INVOICE",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "FIRM",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX13B4-msg",
+            "text": "pay this one early at 0.5%"
+          }
+        ],
+        "rate_text": "0.5%",
+        "target_terms_text": null,
+        "type": "IMMEDIATE_DISCOUNT",
+        "unresolved": []
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "730ce227c7575830def901948c8573e29ee7624dd69272685df199ed8d8c2551",
+  "kind": "offer",
+  "label": "EX13_EARLY_BUYER4",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}

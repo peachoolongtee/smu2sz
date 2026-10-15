@@ -1,0 +1,232 @@
+{
+  "doc_ids": [
+    "DOC-51923499e1e2fc32#0"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "terms": [
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": null,
+        "field": "CONTRACT_REFERENCE",
+        "period_text": null,
+        "quote": "Agreement No. TL-EV-2026-063",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": "TL-EV-2026-063"
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": "26 September 2026",
+        "field": "SIGNED_DATE",
+        "period_text": null,
+        "quote": "This Supply Agreement (the \"Agreement\") is made on 26 September 2026 between:",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": null
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": "26 September 2026",
+        "field": "START_DATE",
+        "period_text": null,
+        "quote": "This Agreement takes effect on 26 September 2026 and continues for a term of twelve (12) months, until 25 September 2027",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": null
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": "25 September 2027",
+        "field": "END_DATE",
+        "period_text": null,
+        "quote": "This Agreement takes effect on 26 September 2026 and continues for a term of twelve (12) months, until 25 September 2027",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": null
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": null,
+        "field": "DURATION",
+        "period_text": "twelve (12) months",
+        "quote": "This Agreement takes effect on 26 September 2026 and continues for a term of twelve (12) months, until 25 September 2027",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": null
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": null,
+        "field": "PARTY_SUPPLIER",
+        "period_text": null,
+        "quote": "Lingnan Homeware Manufacturing Co., Ltd., a company registered in Foshan, Guangdong (the \"Supplier\")",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": "Lingnan Homeware Manufacturing Co., Ltd."
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": null,
+        "field": "PARTY_BUYER",
+        "period_text": null,
+        "quote": "Guangdong E-Motion Vehicles Co., Ltd., a company registered in Foshan, Guangdong (the \"Buyer\")",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": "Guangdong E-Motion Vehicles Co., Ltd."
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": null,
+        "field": "PRICE",
+        "period_text": null,
+        "quote": "The Buyer shall pay the Supplier RMB 64,000 (sixty-four thousand yuan) for each Batch",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": "for each Batch",
+        "value_text": "RMB 64,000 (sixty-four thousand yuan)"
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": "26 October 2026",
+        "field": "INVOICING",
+        "period_text": "every thirty (30) days",
+        "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 26 October 2026, as set out in Schedule 1",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": null
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": "26 October 2026",
+        "field": "INVOICING",
+        "period_text": "every thirty (30) days",
+        "quote": "Regular Batches: one Batch every thirty (30) days from 26 October 2026, each invoiced on its delivery date",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": null
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": "26 September 2026",
+        "field": "SCHEDULED_INVOICE",
+        "period_text": null,
+        "quote": "Opening Batch: delivered and invoiced on 26 September 2026 under invoice RCV-H1 for RMB 64,000",
+        "reference_text": "RCV-H1",
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": "RMB 64,000"
+      },
+      {
+        "basis_text": "after the Invoice Date",
+        "confidence": 0.9,
+        "date_text": null,
+        "field": "PAYMENT_TERMS",
+        "period_text": "sixty (60) days",
+        "quote": "Each invoice is payable sixty (60) days after the Invoice Date",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": null
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.8,
+        "date_text": null,
+        "field": "DELIVERABLE",
+        "period_text": null,
+        "quote": "The Supplier shall deliver each Batch of Products to the Buyer's showroom and service centre in Nanhai, Foshan",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": "The Supplier shall deliver each Batch of Products to the Buyer's showroom and service centre in Nanhai, Foshan"
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.8,
+        "date_text": null,
+        "field": "DELIVERABLE",
+        "period_text": null,
+        "quote": "Each Batch shall conform to the specifications in Schedule 2",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": "Each Batch shall conform to the specifications in Schedule 2"
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.85,
+        "date_text": null,
+        "field": "REQUIRED_DOCUMENT",
+        "period_text": null,
+        "quote": "a delivery note signed by the Buyer",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": "a delivery note signed by the Buyer"
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.85,
+        "date_text": null,
+        "field": "REQUIRED_DOCUMENT",
+        "period_text": null,
+        "quote": "a VAT special invoice (fapiao) for the Batch",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": "a VAT special invoice (fapiao) for the Batch"
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.85,
+        "date_text": null,
+        "field": "REQUIRED_DOCUMENT",
+        "period_text": null,
+        "quote": "a quality inspection certificate for the Batch",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": "a quality inspection certificate for the Batch"
+      },
+      {
+        "basis_text": null,
+        "confidence": 0.9,
+        "date_text": null,
+        "field": "AMENDMENT",
+        "period_text": null,
+        "quote": "No amendment to this Agreement is valid unless it is made in writing and signed by both Parties",
+        "reference_text": null,
+        "trigger_text": null,
+        "unit_text": null,
+        "value_text": "made in writing and signed by both Parties"
+      }
+    ]
+  },
+  "key": "61a68eeb47392b1f67891bf5165e427c0f2713f47b0a3ab2498c28f941f7dd83",
+  "kind": "contract",
+  "label": "TL_EV_SUPPLY_AGREEMENT#0",
+  "prompt_version": "contract-v1",
+  "source_model": "rules-v1"
+}

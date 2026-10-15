@@ -194,11 +194,12 @@ class Runtime:
 
 
 def _confirm_demo_documents(rt: Runtime, scenario: str) -> None:
-    """Three logged CONFIRM_DOCUMENT entries for the demo documents, which were written to match the golden books.
-    Skipped for other scenarios and when contract ingestion is switched off. The documents are a convenience of the demo's
-    starting point, never a condition of starting: if they cannot be read or confirmed (a missing fixture, a changed reader),
-    the three are rolled back together, a warning is logged and the runtime starts without them."""
-    if scenario != "golden_sme" or not get_settings().features.contracts:
+    """Logged CONFIRM_DOCUMENT entries for the demo documents written to match the scenario's books: the golden books'
+    three, and on the busy books those three and the busy customers' five. Skipped for other scenarios and when contract
+    ingestion is switched off. The documents are a convenience of the demo's starting point, never a condition of
+    starting: if they cannot be read or confirmed (a missing fixture, a changed reader), they are rolled back together, a
+    warning is logged and the runtime starts without them."""
+    if scenario not in ("golden_sme", "busy") or not get_settings().features.contracts:
         return
     from app.api.documents import confirm_demo_documents
 

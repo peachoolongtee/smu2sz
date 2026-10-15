@@ -77,6 +77,51 @@
         "terms_days": 60,
         "status": "OPEN",
         "confirmed": true
+      },
+      {
+        "id": "RCV-D1",
+        "counterparty_id": "BUYER-4",
+        "face_fen": 4800000,
+        "issue_day": -11,
+        "terms_days": 30,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-E1",
+        "counterparty_id": "BUYER-5",
+        "face_fen": 8600000,
+        "issue_day": -16,
+        "terms_days": 45,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-F1",
+        "counterparty_id": "BUYER-6",
+        "face_fen": 3600000,
+        "issue_day": -6,
+        "terms_days": 30,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-G1",
+        "counterparty_id": "BUYER-7",
+        "face_fen": 2800000,
+        "issue_day": -9,
+        "terms_days": 45,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-H1",
+        "counterparty_id": "BUYER-8",
+        "face_fen": 6400000,
+        "issue_day": -5,
+        "terms_days": 60,
+        "status": "OPEN",
+        "confirmed": true
       }
     ],
     "recurring_invoices": [
@@ -90,6 +135,41 @@
       {
         "counterparty_id": "BUYER-3",
         "face_fen": 15000000,
+        "every_days": 30,
+        "next_issue_day": 25,
+        "terms_days": 60
+      },
+      {
+        "counterparty_id": "BUYER-4",
+        "face_fen": 4800000,
+        "every_days": 30,
+        "next_issue_day": 19,
+        "terms_days": 30
+      },
+      {
+        "counterparty_id": "BUYER-5",
+        "face_fen": 8600000,
+        "every_days": 30,
+        "next_issue_day": 14,
+        "terms_days": 45
+      },
+      {
+        "counterparty_id": "BUYER-6",
+        "face_fen": 3600000,
+        "every_days": 30,
+        "next_issue_day": 24,
+        "terms_days": 30
+      },
+      {
+        "counterparty_id": "BUYER-7",
+        "face_fen": 2800000,
+        "every_days": 30,
+        "next_issue_day": 21,
+        "terms_days": 45
+      },
+      {
+        "counterparty_id": "BUYER-8",
+        "face_fen": 6400000,
         "every_days": 30,
         "next_issue_day": 25,
         "terms_days": 60
@@ -356,6 +436,36 @@
       {
         "id": "BUYER-3",
         "name": "Zhuhai Kitchenware Wholesale Co.",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BUYER-4",
+        "name": "Jiangmen Precision Machinery Co., Ltd.",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BUYER-5",
+        "name": "GreenSky Power Engineering Co., Ltd.",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BUYER-6",
+        "name": "SouthChina Storage Systems Co., Ltd.",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BUYER-7",
+        "name": "CloudLedger Software (Shenzhen) Co., Ltd.",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BUYER-8",
+        "name": "Guangdong E-Motion Vehicles Co., Ltd.",
         "role": "BUYER",
         "known": true
       },

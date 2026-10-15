@@ -1,0 +1,64 @@
+{
+  "doc_ids": [
+    "EX16B7-msg"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": "¥28k",
+        "base_kind": "INVOICE",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "FIRM",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX16B7-msg",
+            "text": "settle the ¥28k early at 1%"
+          }
+        ],
+        "rate_text": "1%",
+        "target_terms_text": null,
+        "type": "IMMEDIATE_DISCOUNT",
+        "unresolved": []
+      },
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "FUTURE_INVOICES",
+        "bounded_invoices_text": null,
+        "confidence": 0.95,
+        "contingency": "FIRM",
+        "current_terms_text": null,
+        "duration_kind": "RECURRING_PERPETUAL",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX16B7-msg",
+            "text": "extend our standard terms to 60 days going forward"
+          }
+        ],
+        "rate_text": null,
+        "target_terms_text": "60 days",
+        "type": "TERMS_EXTENSION",
+        "unresolved": [
+          "current_terms_days"
+        ]
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "cc72008932ff17f11b787959fcf179f397b1513ddd3e6f866b55de5de959a9b0",
+  "kind": "offer",
+  "label": "EX16_PACKAGE_BUYER7",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}
