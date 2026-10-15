@@ -220,7 +220,7 @@ def test_after_an_agreement_the_history_row_and_the_outstanding_say_what_is_prom
 def test_before_an_agreement_the_history_row_and_the_outstanding_are_as_they_were(api: TestClient, busy: dict[str, str]) -> None:
     page = api.get("/customers/BUYER-1/overview").json()
     row = next(h for h in page["history"] if h["when_text"] == "In force")
-    assert row["text"].startswith("No confirmed agreement on file; payment is due 45 days") and "none agreed on this invoice" in row["text"]
+    assert row["text"].startswith("Agreement FHR-2026-07: payment is due 45 days")  # the busy books confirm the golden contracts and "none agreed on this invoice" in row["text"]
     assert next(f for f in page["figures"] if f["key"] == "outstanding")["note"] == "due in 32 days, nothing overdue"
 
 
@@ -231,7 +231,7 @@ def test_before_an_agreement_the_history_row_and_the_outstanding_are_as_they_wer
 def test_the_home_customer_rows_waiting_count_leaves_out_the_promise(api: TestClient, busy: dict[str, str], lang: str) -> None:
     agree_on_rcv_a(api)
     queue = api.get("/deals", params={"lang": lang}).json()["queue"]
-    assert queue["counts"]["waiting"] == 1 and queue["counts"]["agreements"] == 1  # one reply awaited; the agreement, which carries its promise
+    assert queue["counts"]["waiting"] == 2 and queue["counts"]["agreements"] == 1  # one reply awaited and the arranged lot that finances a newer customer's invoice; the agreement, which carries its promise
     assert not any(r["kind"] == "PROMISE" for r in queue["agreements"])
     assert any(r["kind"] == "AGREEMENT" and r["customer_id"] == "BUYER-1" and ("has promised" if lang == "en" else "买方承诺") in r["consequence_text"] for r in queue["agreements"])
     foshan = next(c for c in api.get("/customers", params={"lang": lang}).json()["customers"] if c["customer_id"] == "BUYER-1")
