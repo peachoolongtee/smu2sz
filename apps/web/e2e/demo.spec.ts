@@ -377,6 +377,9 @@ test("a stale page cannot reset books it did not read: the server's sentence is 
 
 test("a double click on a book-replacing control never confirms, at 390 px", async ({ page }) => {
   test.setTimeout(180_000);
+  // The confirm arms 400 ms after its dialog opens (components/demo/books-dialog.tsx). The page's clock is held while each dialog opens and
+  // is clicked, so a slow runner cannot let that moment pass between the check and the clicks; it runs freely everywhere else.
+  await page.clock.install();
   await page.setViewportSize({ width: 390, height: 844 });
   await freshDemo(page);
   for (let i = 0; i < 2; i++) {
@@ -394,8 +397,10 @@ test("a double click on a book-replacing control never confirms, at 390 px", asy
   for (const c of controls) {
     await c.open.scrollIntoViewIfNeeded();
     // The realistic double click: the second click lands wherever the first one put the dialog's confirm, a moment after it opened.
+    await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1000);
     await c.open.click();
-    await expect(c.dialog).toBeVisible();
+    // Held, the mock's 10 ms answers come only as the clock is moved on: in 10 ms steps until the dialog is open, well inside the 400 ms.
+    await expect.poll(async () => (await c.dialog.isVisible()) || (await page.clock.runFor(10), false)).toBe(true);
     const box = (await c.confirm.boundingBox())!;
     const x = box.x + box.width / 2;
     const y = box.y + box.height / 2;
@@ -405,6 +410,7 @@ test("a double click on a book-replacing control never confirms, at 390 px", asy
     await expect(c.dialog).toBeVisible();
     await expect(page).toHaveURL(/\/demo$/);
     await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+    await page.clock.resume();
     await c.cancel.click();
     await expect(c.dialog).toBeHidden();
     expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
