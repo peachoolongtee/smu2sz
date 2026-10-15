@@ -140,6 +140,20 @@ test("Cash impact: two charts, each answering one question; the removed controls
   // Removed: the headroom plot, the line chips and ?lines=, the inspector, the 66 / 120 switch and the timing switch.
   for (const gone of ["deal-headroom", "deal-chips", "deal-inspector-lowest-asked", "deal-assumption-row", "deal-outcomes"]) await expect(page.getByTestId(gone)).toHaveCount(0);
   await expect(page).not.toHaveURL(/lines=|scenario=/);
+  // The day labels under chart 2 never touch: measured on the page at this width and at a phone's.
+  const noTouch = async (label: string) => {
+    const days = page.getByTestId("deal-chart-days").locator("span");
+    await expect.poll(() => days.count(), `${label}: day labels are drawn`).toBeGreaterThan(1);
+    const boxes = (await days.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()).map((r) => ({ left: r.left, right: r.right })))).sort((a, b) => a.left - b.left);
+    for (let i = 1; i < boxes.length; i++) expect(boxes[i].left, `${label}: label ${i} clears label ${i - 1}`).toBeGreaterThanOrEqual(boxes[i - 1].right);
+    const row = (await page.getByTestId("deal-chart-days").boundingBox())!;
+    expect(boxes[0].left, `${label}: inside the row`).toBeGreaterThanOrEqual(row.x - 0.5);
+    expect(boxes[boxes.length - 1].right, `${label}: inside the row`).toBeLessThanOrEqual(row.x + row.width + 0.5);
+  };
+  await noTouch(`${page.viewportSize()!.width} px`);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await noTouch("390 px");
+  await page.setViewportSize({ width: 1440, height: 900 });
   // Business consequences stays below, with the server's own scenario labels.
   await expect(page.getByTestId("deal-scenarios")).toContainText("Buyer pays 30 days late");
 });

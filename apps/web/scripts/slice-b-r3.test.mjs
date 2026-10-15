@@ -36,8 +36,20 @@ test("the day-by-day lines: the series inside the picture's window, as positions
   assert.deepEqual(m.lineWindow(series, 10, 0).map((p) => p.day), [10, 30, 66, 90], "no window: every day from today");
   assert.deepEqual(m.lineWindow(null, 0, 66), []);
   const moments = [{ day: 0, when: "today" }, { day: 33, when: "in 33 days" }, { day: 66, when: "in 66 days" }, { day: 80, when: "in 80 days" }, { day: 5, when: null }];
-  assert.deepEqual(m.dayTicks(moments, 0, 66).map((k) => [Math.round(k.x), k.label]), [[0, "today"], [50, "in 33 days"], [100, "in 66 days"]]);
-  assert.deepEqual(m.dayTicks(moments, 0, 0), []);
+  assert.deepEqual(m.dayTicks(moments, 0, 66, 1000).map((k) => [Math.round(k.x), k.label]), [[0, "today"], [50, "in 33 days"], [100, "in 66 days"]]);
+  assert.deepEqual(m.dayTicks(moments, 0, 0, 1000), []);
+  assert.deepEqual(m.dayTicks(moments, 0, 66, 0), [], "not measured yet: none");
+  // The days crowd the right end (60, 62 and 66 of 66): no two labels overprint, at a desktop width and at a phone's; the first stays, the last only if it fits.
+  const crowded = [0, 15, 30, 45, 60, 62, 66].map((day) => ({ day, when: day === 0 ? "today" : `in ${day} days` }));
+  for (const width of [1000, 290]) {
+    const ticks = m.dayTicks(crowded, 0, 66, width);
+    assert.equal(ticks[0].label, "today");
+    const boxes = ticks.map((k) => m.tickExtent(k.x, k.label, width));
+    assert.deepEqual(ticks.map((k) => k.align), boxes.map((b) => b.align));
+    for (let i = 1; i < boxes.length; i++) assert.ok(boxes[i].left >= boxes[i - 1].right + m.TICK_GAP_PX - 1e-9, `${width} px: "${ticks[i - 1].label}" and "${ticks[i].label}" do not touch`);
+    for (const b of boxes) assert.ok(b.left >= -1e-9 && b.right <= width + 1e-9, "inside the row");
+  }
+  assert.ok(m.dayTicks(crowded, 0, 66, 1000).length > m.dayTicks(crowded, 0, 66, 290).length, "a narrower row keeps fewer");
 });
 
 const point = (comparison, comparison_pairs) => ({ day: 0, closing_fen: 0, closing_display: "", events: [], comparison, comparison_pairs });

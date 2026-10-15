@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ErrorState, LoadingBlock } from "@/components/ui";
 import { getOfferScenarios } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
@@ -8,6 +8,7 @@ import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import { pairWords } from "@/lib/point-comparison";
 import type { OfferPictureView, PicturePath, PictureScenarioRow } from "@/lib/types";
+import { useWidth } from "@/components/business/cash-picture";
 import { cashScale, dayTicks, lineWindow } from "./deal-model";
 
 /**
@@ -90,6 +91,9 @@ function LowestBars({ picture, paths }: { picture: OfferPictureView; paths: Pict
 function MoveChart({ picture, asked, replies }: { picture: OfferPictureView; asked: PicturePath | null; replies: PicturePath[] }) {
   const { t } = useI18n();
   const [pick, setPick] = useState<string | null>(null);
+  // The days row is as wide as the plot: its measured width decides how many day labels fit without touching.
+  const daysRef = useRef<HTMLDivElement>(null);
+  const plotWidth = useWidth(daysRef);
   const reply = replies.find((p) => p.key === pick) ?? replies.find((p) => p.recommended) ?? replies[0] ?? null;
   const today = picture.day;
   const days = picture.picture_days ?? 0;
@@ -100,7 +104,7 @@ function MoveChart({ picture, asked, replies }: { picture: OfferPictureView; ask
   const y = (fen: number) => 100 - scale.at(fen);
   const floorY = y(picture.floor_fen);
   const poly = (pts: typeof askedPts) => pts.map((p) => `${p.x},${y(p.fen)}`).join(" ");
-  const xTicks = dayTicks(picture.moments, today, days);
+  const xTicks = dayTicks(picture.moments, today, days, plotWidth);
   const breach = asked && asked.first_breach_when !== null;
   // The server's words for the difference between the two lines: the cause, per line, as of the last day drawn.
   const pointOf = (key: string) => (key === asked?.key ? asked : reply)?.series?.find((s) => s.day === (replyPts[replyPts.length - 1] ?? askedPts[askedPts.length - 1])?.day);
@@ -181,9 +185,9 @@ function MoveChart({ picture, asked, replies }: { picture: OfferPictureView; ask
           ) : null}
         </div>
         <div />
-        <div className="relative h-6" aria-hidden data-testid="deal-chart-days">
+        <div ref={daysRef} className="relative h-6" aria-hidden data-testid="deal-chart-days">
           {xTicks.map((k) => (
-            <span key={k.label} className={tickClass} style={{ left: `${k.x}%`, transform: k.x < 4 ? undefined : k.x > 96 ? "translateX(-100%)" : "translateX(-50%)" }}>
+            <span key={k.label} className={tickClass} style={{ left: `${k.x}%`, transform: k.align === "end" ? "translateX(-100%)" : k.align === "center" ? "translateX(-50%)" : undefined }}>
               {k.label}
             </span>
           ))}

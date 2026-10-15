@@ -376,10 +376,34 @@ export function lineWindow(series: HomeSeriesPoint[] | null | undefined, today: 
   return inside.map((p) => ({ x: span > 0 ? ((p.day - today) / span) * 100 : 0, fen: p.closing_fen, day: p.day, when: p.when ?? null }));
 }
 
-/** The labelled days along a window: the picture's moments inside it, each at its day, with the server's own words for it ("today", "in 47 days"). */
-export function dayTicks(moments: { day: number; when?: string | null }[] | null | undefined, today: number, days: number): { x: number; label: string }[] {
-  if (!(days > 0)) return [];
-  return (moments ?? []).filter((m) => m.when && m.day >= today && m.day - today <= days).map((m) => ({ x: ((m.day - today) / days) * 100, label: m.when as string }));
+/** The width a tick's label takes, estimated from its length (13 px text, about 7.5 px a character) and the gap kept between two labels: positions only, the words are the server's. */
+export const TICK_CHAR_PX = 7.5;
+export const TICK_GAP_PX = 10;
+
+/** Where a tick's label sits along a row `width` px wide: from `left` to `right`, in px, and how it hangs from its day. Centred on the day, unless that would run off the row: then it hangs from the day toward the row's inside. */
+export function tickExtent(xPct: number, label: string, width: number): { left: number; right: number; align: "start" | "center" | "end" } {
+  const w = label.length * TICK_CHAR_PX;
+  const at = (xPct / 100) * width;
+  if (at - w / 2 < 0) return { left: at, right: at + w, align: "start" };
+  if (at + w / 2 > width) return { left: at - w, right: at, align: "end" };
+  return { left: at - w / 2, right: at + w / 2, align: "center" };
+}
+
+/**
+ * The labelled days along a window of `width` px: the picture's moments inside it, each at its day with the server's own words ("today", "in 47 days"). Left to right, a label is kept only when it
+ * clears the one before it by a gap, so the first day always stays and the last stays only when it fits: no two labels overprint. Without a width (not measured yet) none is drawn.
+ */
+export function dayTicks(moments: { day: number; when?: string | null }[] | null | undefined, today: number, days: number, width: number): { x: number; label: string; align: "start" | "center" | "end" }[] {
+  if (!(days > 0) || !(width > 0)) return [];
+  const kept: { x: number; label: string; right: number; align: "start" | "center" | "end" }[] = [];
+  for (const m of [...(moments ?? [])].sort((a, b) => a.day - b.day)) {
+    if (!m.when || m.day < today || m.day - today > days) continue;
+    const x = ((m.day - today) / days) * 100;
+    const e = tickExtent(x, m.when, width);
+    if (kept.length && e.left < kept[kept.length - 1].right + TICK_GAP_PX) continue;
+    kept.push({ x, label: m.when, right: e.right, align: e.align });
+  }
+  return kept.map(({ x, label, align }) => ({ x, label, align }));
 }
 
 /** A row of the Closed group under the Agreed tab: an agreed deal that is over (its status is the tracker's state word, its consequence the close-out sentence). */
