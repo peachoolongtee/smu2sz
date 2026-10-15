@@ -337,3 +337,16 @@ def test_the_early_payment_choice_and_the_zh_words_are_the_servers(client, on):
     assert row["schedule_title"] == "您将承诺的内容" and rows["供应商"] == "Guangzhou Precision Machinery Co., Ltd."
     assert rows["提前付款"].startswith("选择提前付款") and "¥7,200.00" in rows["提前付款"]
     assert rows["您将支付的总额"] == "¥592,800.00" and "第 1 笔付款" in rows
+
+
+# ---------------------------------------------------------------- CAPEX-4: the vendor is not the business itself
+
+
+def test_a_vendor_named_as_the_business_itself_is_not_registered_or_committed(client, on, rt):
+    text = capex_contract_fixture_bytes("GZPM_EQUIPMENT_PURCHASE")[1].decode("utf-8")
+    text = text.replace("Guangzhou Precision Machinery Co., Ltd., a company", "Lingnan Homeware Manufacturing Co., Ltd., a company")
+    d = client.post("/documents", json={"kind": "CAPEX_CONTRACT", "counterparty_id": "VENDOR-SELF", "text": text}).json()["document"]
+    d = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]}).json()["document"]
+    out = _commit_and_approve(client, d)
+    assert out["status"] == "REFUSED" and out["violations"][0]["inputs"]["refusal"] == "VENDOR_IS_OWN_BUSINESS", out
+    assert _capex_flows(rt) == [] and not any(c.id == "VENDOR-SELF" for c in rt.store.get_state().counterparties)

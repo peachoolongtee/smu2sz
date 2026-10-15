@@ -1588,6 +1588,16 @@ class Executor:
         registered = ""
         if vendor is None:
             name = next((t.text for t in rec.contract.terms if t.field.value == "PARTY_SUPPLIER" and t.text), None)
+            if name is not None:  # CAPEX-4: the vendor's name comes from the contract's text, which must not name the business itself
+                def norm(x: object) -> str:
+                    return "".join(str(x or "").split()).casefold()
+
+                own = {norm(t.text) for t in rec.contract.terms if t.field.value == "PARTY_BUYER" and t.text}
+                own |= {norm(e.payload.get("company_name")) for e in self._entries() if e.payload.get("company_name")}
+                if norm(name) in own:
+                    raise _refuse(Code.PRECONDITION_FAILED, "The vendor named in this contract is your own business. A purchase "
+                                  "is made from another company, so nothing was committed; check who the seller is in the contract",
+                                  document_id=rec.id, refusal="VENDOR_IS_OWN_BUSINESS")
             counterparties.append(Counterparty(id=rec.counterparty_id, name=name or rec.counterparty_id, role="SUPPLIER",
                                                known=True))
             registered = f"; vendor {rec.counterparty_id} added to the registry as a supplier"
