@@ -37,7 +37,8 @@ export function ContextCard({ customerId, decision, row, customer, onBack }: { c
         {[row?.subject_text, name].filter(Boolean).join(" · ")}
       </p>
       {stage ? (
-        <div className="mt-4 flex items-center justify-between gap-3">
+        // The stage pill never wraps its words: when it does not fit beside the label (a narrow column, a longer stage) it goes under it.
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <span className="text-[15px] font-medium text-ink">{t("hv2.context.stage")}</span>
           <StatusPill tone={tone} testId="hv2-context-stage">
             {stage}
