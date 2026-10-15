@@ -318,7 +318,7 @@ def test_declining_dongguan_closes_the_request_and_moves_nothing(busy: TestClien
     assert all(r["id"] != f"deal:{offer_id}" for r in busy.get("/decisions", params={"open": True}).json()["decisions"])
     assert busy.get("/decisions", params={"family": "DEAL"}).json()["decisions"][0]["id"] == f"deal:{offer_id}"
     # the other decisions are untouched
-    assert len([r for r in busy.get("/deals").json()["queue"]["needs_you"] if r["kind"] == "DECISION"]) == 4
+    assert len([r for r in busy.get("/deals").json()["queue"]["needs_you"] if r["kind"] == "DECISION"]) == 9  # 3 Foshan + Zhuhai + the five newer customers' decisions
 
 
 @pytest.mark.parametrize(("lang", "title"), [("en", "You declined Dongguan's request."), ("zh", "您已拒绝Dongguan的请求。")])
@@ -531,13 +531,19 @@ def test_when_flow_may_accept_alone_the_owners_accept_just_records(busy: TestCli
 def test_a_request_for_review_names_the_act_in_the_queue(busy: TestClient, lang: str, act: str) -> None:
     rows = busy.get("/deals", params={"lang": lang}).json()["queue"]["needs_you"]
     review = [r for r in rows if r.get("lifecycle") == "owner_review"]
-    assert len(review) == 2 and all(r["consequence_text"].endswith(act) for r in review)
+    decline_only = {"en": "Decline, or try other terms.", "zh": "拒绝，或尝试其他条款。"}[lang]
+    assert len(review) == 7  # Dongguan, Zhuhai and the five newer customers' requests
+    # the picture says whether the asked terms can be accepted at all (`worklist._act_text`): five of the seven can; Guangdong's offer and
+    # Jiangmen's discount can only be declined or answered with other terms
+    assert {r["customer_short"] for r in review if not r["consequence_text"].endswith(act)} == {"Guangdong", "Jiangmen"}
+    assert all(r["consequence_text"].endswith(decline_only if r["customer_short"] in ("Guangdong", "Jiangmen") else act) for r in review)
     # the cash effect is still the first thing said
     assert all(r["consequence_text"].startswith(("If you accept their request", "如果接受对方的要求")) for r in review)
     others = [r for r in rows if r["kind"] == "DECISION" and r.get("lifecycle") != "owner_review"]
     assert others and not any(act in r["consequence_text"] for r in others)
     wl = busy.get("/worklist", params={"lang": lang}).json()["needs_you"]
-    assert all(r["consequence_text"].endswith(act) for r in wl if r.get("lifecycle") == "owner_review")
+    assert all(r["consequence_text"].endswith(decline_only if r["customer_short"] in ("Guangdong", "Jiangmen") else act)
+               for r in wl if r.get("lifecycle") == "owner_review")
 
 
 def test_an_over_limit_request_for_review_names_only_what_can_be_done(busy: TestClient, rt: Runtime) -> None:
