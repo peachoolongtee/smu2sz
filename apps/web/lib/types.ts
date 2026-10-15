@@ -3956,6 +3956,8 @@ export interface OfferPictureView extends DealLifeWords {
   recommendation?: PictureRecommendation | null;
   /** Round three, section 4: the consequences apart from the responses (keys `no_new_agreement`, `late_30`, `customer_loss`). Declared ahead of the server's batch. */
   scenarios?: PictureScenario[] | null;
+  /** Declared ahead of the server's batch: why there is no second reply. Absent or empty: no line is drawn. */
+  withheld?: PictureWithheld[] | null;
 }
 
 /** One term of a path, as the owner would say it: what it is now and, for a reply, what it replaces. */
@@ -4077,6 +4079,14 @@ export interface PicturePath {
   ask_breakdown?: { label: string; amount_display: string; share_text: string }[] | null;
   /** The asked path only: the deal card's three facts in the server's words; any may be null. */
   ask_facts?: { invoice_value_display: string | null; requested_discount_display: string | null; requested_term_text: string | null } | null;
+  /** A reply only (declared ahead of the server's batch): what happens if the buyer refuses it, in the server's words. Absent or null: the review says nothing about a refusal. */
+  if_refused_text?: string | null;
+}
+
+/** Why the picture has no second reply (declared ahead of the server's batch): one server sentence per reply FLOW did not offer. */
+export interface PictureWithheld {
+  key?: string | null;
+  text: string;
 }
 
 /** Who decides, in the verifier's three classes. */

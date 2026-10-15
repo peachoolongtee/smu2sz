@@ -100,8 +100,6 @@ function CompactRow({ tier, row, selected, locked, onSelect, activity, hint }: {
         <span className="relative z-[1]">
           <RowChevron selected={selected} hint={hint} />
         </span>
-        {/* Beside the workspace (from xl) the selected row opens into it: a 2 px purple connector from the row's right edge, across the queue card's padding and the gap, to the workspace, at the row's vertical centre. */}
-        {selected ? <span aria-hidden className="pointer-events-none absolute left-full top-1/2 hidden h-px w-11 -translate-y-1/2 bg-f-purple xl:block" data-testid="row-connector" /> : null}
       </div>
     </li>
   );

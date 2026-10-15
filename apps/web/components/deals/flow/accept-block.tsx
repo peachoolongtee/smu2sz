@@ -48,6 +48,7 @@ export function AcceptBlock({
   onDone,
   onBusy,
   openSignal = 0,
+  declineSignal = 0,
   hideTrigger = false,
   onReviewing,
 }: {
@@ -63,6 +64,8 @@ export function AcceptBlock({
   onBusy: (busy: boolean) => void;
   /** The header's [Review the request] opens the review from outside: each press raises this number. */
   openSignal?: number;
+  /** The recommendation's [Decline the request] opens the review with the decline question already asked: each press raises this number. */
+  declineSignal?: number;
   /** The open button is the header's (or the comparison's), not this block's. */
   hideTrigger?: boolean;
   /** Told whether the review is open. */
@@ -126,6 +129,14 @@ export function AcceptBlock({
     open();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per press
   }, [openSignal]);
+  const lastDecline = useRef(declineSignal);
+  useEffect(() => {
+    if (declineSignal === lastDecline.current) return;
+    lastDecline.current = declineSignal;
+    open();
+    setConfirming(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per press
+  }, [declineSignal]);
   useEffect(() => {
     onReviewing?.(reviewing);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reports the state, not the callback

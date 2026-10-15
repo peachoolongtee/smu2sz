@@ -1,6 +1,6 @@
 import type { PillTone } from "@/components/ui/status-pill";
 import type { DealsCounts, OfferPictureView, PathTerm, PicturePath, QueueRowView } from "@/lib/types";
-import { pillTone, statusCells, taskRows, type Queue, type Tier } from "./queue-model";
+import { pillTone, rowTarget, statusCells, taskRows, type Queue, type Tier } from "./queue-model";
 
 /**
  * The model of Deals round two (docs/design/flow-mockup-2026-10-13/04_slice_b_round_two.md, sections 1 and 2): which rows the queue lists (negotiations only), the lifecycle pill, the sort and
@@ -303,27 +303,25 @@ export function lifecyclePill(lifecycle: string | null | undefined, text: string
 
 // ---------------------------------------------------------------- the selected deal's tabs and address (round three, section 7)
 
-/** The five views of the selected deal. Before agreement: Overview, Compare responses, Cash impact, Messages; from agreement on: Overview, Terms, Messages. */
+/** The views of the selected deal. Before agreement: Overview (the recommendation and the choices table), Cash impact, Messages; from agreement on: Overview, Terms, Messages. `compare` is retired (the choices table replaces it): an old address that names it lands on the Overview. */
 export type DealViewKey = "overview" | "compare" | "cash" | "terms" | "messages";
 export const DEAL_VIEWS: readonly DealViewKey[] = ["overview", "compare", "cash", "terms", "messages"];
-/** The views that take the full width: the queue steps aside to its 72 px rail. */
-export const WIDE_VIEWS: ReadonlySet<DealViewKey> = new Set<DealViewKey>(["compare", "cash"]);
-/** The addresses of round two that opened sections under the page; they all land on Compare responses. */
+/** The addresses of round two that opened sections under the page; they all land on the Overview now (the choices table replaced Compare responses). */
 const LEGACY_KEYS = ["investigate", "compare", "chart", "show"] as const;
 
-/** The view the address names: `view=`, else (an old link with `investigate`, `compare`, `chart` or `show`) Compare responses, else Overview. `legacy` is true when the address still carries a retired key. */
+/** The view the address names: `view=`, else else Overview (an old link with `investigate`, `compare`, `chart` or `show` has its key dropped and lands there). `legacy` is true when the address still carries a retired key. */
 export function viewOf(params: { get(name: string): string | null }): { view: DealViewKey; legacy: boolean } {
   const raw = params.get("view");
   const legacy = LEGACY_KEYS.some((k) => params.get(k) !== null);
   if (raw && (DEAL_VIEWS as readonly string[]).includes(raw)) return { view: raw as DealViewKey, legacy };
-  return { view: legacy ? "compare" : "overview", legacy };
+  return { view: "overview", legacy };
 }
 export const LEGACY_VIEW_KEYS: readonly string[] = LEGACY_KEYS;
 
-/** The tabs a deal has: before agreement the comparison and the cash; from agreement on the terms (the Overview is the tracker). A deal with nothing to draw has neither comparison tab. */
+/** The sections a deal has: before agreement the cash impact; from agreement on the terms (the Overview is the tracker). A deal with nothing to draw has no cash section. */
 export function tabsOf(opts: { agreed: boolean; analysis: boolean }): DealViewKey[] {
   if (opts.agreed) return ["overview", "terms", "messages"];
-  return opts.analysis ? ["overview", "compare", "cash", "messages"] : ["overview", "messages"];
+  return opts.analysis ? ["overview", "cash", "messages"] : ["overview", "messages"];
 }
 
 /** A view the deal has, else the Overview. */
@@ -440,4 +438,32 @@ export function afterGroupCounts(q: Queue): Partial<Record<AfterGroup, number>> 
 export function afterGroupOf(row: Pick<QueueRowView, "lifecycle" | "after_group">): AfterGroup | null {
   if (row.after_group && (AFTER_GROUPS as readonly string[]).includes(row.after_group)) return row.after_group;
   return isClosedRow(row) ? "closed" : null;
+}
+
+// ---------------------------------------------------------------- walking the queue (the deal page's "Deal i of N" and previous / next)
+
+export interface DealWalk {
+  /** The deals the owner can walk, in the list's order, one per record. */
+  total: number;
+  /** 1-based position of the open deal; null when the open deal is not among them. */
+  index: number | null;
+  prev: { customer: string | null; decision: string; invoice: string | null } | null;
+  next: { customer: string | null; decision: string; invoice: string | null } | null;
+}
+
+/**
+ * The walk through the list's order: the rows the list shows (the same tab, the same urgency order), one per deal record (a promised payment and its agreement are one deal), each as the
+ * address that opens it. Positions only: the browser counts what the list holds, and every word beside the numbers is the dictionary's.
+ */
+export function dealWalk(rows: DealRow[], decision: string | null): DealWalk {
+  const seen = new Set<string>();
+  const walk: { customer: string | null; decision: string; invoice: string | null }[] = [];
+  for (const { row } of rows) {
+    const to = rowTarget(row);
+    if (to.kind !== "select" || seen.has(to.decision)) continue;
+    seen.add(to.decision);
+    walk.push({ customer: to.customer, decision: to.decision, invoice: to.invoice });
+  }
+  const at = decision ? walk.findIndex((w) => w.decision === decision) : -1;
+  return { total: walk.length, index: at >= 0 ? at + 1 : null, prev: at > 0 ? walk[at - 1] : null, next: at >= 0 && at < walk.length - 1 ? walk[at + 1] : null };
 }

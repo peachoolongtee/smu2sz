@@ -3,7 +3,7 @@
 import "@/app/flow-look.css";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
@@ -21,27 +21,19 @@ import type { DealsContext } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useDecisions } from "@/lib/use-decision";
 import { type DealView, DecisionPane } from "./decision-pane";
-import { dealTabCounts, dealTabOf, LEGACY_VIEW_KEYS, negotiationRows, TABLE_FROM, viewOf, WIDE_VIEWS, type DealTab } from "./deal-model";
-import { QueueRail } from "./queue-rail";
+import { dealTabCounts, dealTabOf, dealWalk, type DealWalk, LEGACY_VIEW_KEYS, negotiationRows, sortRows, TABLE_FROM, viewOf, type DealTab } from "./deal-model";
 import { QueuePanel, type QueueLayout } from "./queue-table";
 import { buildQueue, rowDecision, type RowTarget } from "./queue-model";
 
-const XL = "(min-width: 1280px)";
-/** The keys of round two that opened sections under the page: an address that carries one lands on `view=compare` and the key is dropped. */
+/** The keys of round two that opened sections under the page: an address that carries one has the key dropped (the choices table replaced Compare responses). */
 const RETIRED: Record<string, null> = Object.fromEntries(LEGACY_VIEW_KEYS.map((k) => [k, null]));
-const subscribeXl = (onChange: () => void) => {
-  const list = window.matchMedia(XL);
-  list.addEventListener("change", onChange);
-  return () => list.removeEventListener("change", onChange);
-};
-/** True from the two-pane width (`xl`); false below it and while rendering on the server. */
 const HINT_KEY = "tl-deals-hint";
-const useTwoPanes = () => useSyncExternalStore(subscribeXl, () => window.matchMedia(XL).matches, () => false);
 
 /**
- * Deals (tickets #126 to #129): the stable title "Deals" with the state sentence under it, the queue (one row per task, by who owes the next step) beside the selected negotiation. The
+ * Deals (tickets #126 to #129): the stable title "Deals" with the state sentence under it and the queue (one row per task, by who owes the next step). A selected negotiation replaces the list with its
+ * own full-width page ("All deals (N)" at its top, "Deal i of N" with previous and next in the list's order); going back restores the list where it was. The
  * address is the whole selection (`customer`, `decision`, `path`, `invoice`, `scenario`, `from`, plus the view's `tab`, `compare`, `chart`): a row sets it, back and forward restore
- * it, and a deep link in a fresh session hydrates from the server. With nothing selected the page says "Select a request"; "No records" is only for a queue that is empty everywhere.
+ * it, and a deep link in a fresh session hydrates from the server. Opening a deal pushes one history entry; changing its sections replaces it, so Back leaves the deal in one step. "No records" is only for a queue that is empty everywhere.
  * Buyer messages that are not read yet wait in the inbox under the queue; opening one reads it into a negotiation and selects it. Every word and figure is the server's.
  */
 export function DealsPage() {
@@ -72,12 +64,26 @@ export function DealsPage() {
   const row = decision ? (rows.find((x) => rowDecision(x.row) === decision)?.row ?? null) : null;
   const openOffer = decision ? (deals.data?.deals.find((d) => d.open_offer?.offer_id === offerOf(decision))?.open_offer ?? null) : null;
   const [sending, setSending] = useState(false);
-  // The queue steps aside to its rail while Compare responses or Cash impact is open (the owner may bring it back for that view; Escape does too).
-  const [shownFor, setShownFor] = useState<string | null>(null);
-  const railKey = `${decision ?? ""}:${viewKey}`;
-  const paneRef = useRef<HTMLDivElement>(null);
-  const twoPanes = useTwoPanes();
-  const railed = twoPanes && Boolean(decision) && WIDE_VIEWS.has(viewKey) && shownFor !== railKey && Boolean(queue);
+  // The list's scroll, kept while it is on screen and restored when the owner comes back to it (from the page's own link, Escape or the browser's Back).
+  const listScroll = useRef(0);
+  const lastDecision = useRef<string | null>(decision);
+  useEffect(() => {
+    if (decision) return;
+    const on = () => {
+      listScroll.current = window.scrollY;
+    };
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, [decision]);
+  useEffect(() => {
+    const before = lastDecision.current;
+    lastDecision.current = decision;
+    if (decision === before) return;
+    // A deal opens at its top; the list comes back where it was left.
+    const top = decision ? 0 : listScroll.current;
+    const id = window.requestAnimationFrame(() => window.scrollTo({ top, behavior: "auto" }));
+    return () => window.cancelAnimationFrame(id);
+  }, [decision]);
   // An old address (`investigate`, `compare`, `chart`, `show`) is written as the view it means.
   useEffect(() => {
     if (legacy) router.replace(patchedHref(pathname, search, { view: viewKey === "overview" ? null : viewKey, ...RETIRED }), { scroll: false });
@@ -112,6 +118,14 @@ export function DealsPage() {
     go({ customer, decision: dec, invoice, path: null, view: null, lines: null, review: null, ...RETIRED });
   };
   const close = () => go({ decision: null, customer: null, invoice: null, path: null, view: null, lines: null, review: null, ...RETIRED });
+  // Previous and next walk the list's order and REPLACE the entry, so Back still leaves the deal in one step.
+  const walkTo = (to: { customer: string | null; decision: string; invoice: string | null }) => {
+    if (sending) return;
+    go({ customer: to.customer, decision: to.decision, invoice: to.invoice, path: null, view: null, lines: null, review: null, ...RETIRED }, "replace");
+  };
+  const inTab = tab === "all" ? rows : rows.filter((x) => x.tier === tab);
+  const walkTab = dealWalk(sortRows(inTab, "urgency"), decision);
+  const walk = decision && walkTab.index === null ? dealWalk(sortRows(rows, "urgency"), decision) : walkTab;
   const onTab = (k: DealTab) => go({ tab: k === "all" ? null : k }, "replace");
   // A row's target as an address (the table's links): a negotiation selects in place with this row's own customer, decision and invoice.
   const hrefOf = (target: RowTarget) => (target.kind === "go" ? target.href : patchedHref(pathname, search, { customer: target.customer, decision: target.decision, invoice: target.invoice, path: null, view: null, lines: null, review: null, ...RETIRED }));
@@ -124,19 +138,12 @@ export function DealsPage() {
       if (e.key !== "Escape" || e.defaultPrevented || sending || document.querySelector("dialog[open]")) return;
       const el = e.target instanceof HTMLInputElement ? e.target : null;
       if (el && el.value) return;
-      // With the queue folded to its rail the first Escape brings it back; the next closes the selection.
-      if (railed) return setShownFor(railKey);
       close();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- close reads the current address
-  }, [decision, sending, search, railed, railKey]);
-  // Below the two-pane width the negotiation opens under the list: bring it into view.
-  useEffect(() => {
-    if (!decision || typeof window === "undefined" || window.matchMedia(XL).matches) return;
-    paneRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
-  }, [decision]);
+  }, [decision, sending, search]);
 
   // ---- the inbox: buyer messages not read yet (the simulated channel); opening one reads it into a negotiation and selects it
   const books = useAsync(getState, []);
@@ -248,36 +255,21 @@ export function DealsPage() {
     />
   );
   const PANE = (
-        <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4" data-testid="deals-detail">
-          {decision ? (
-            <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onGo={go} inbox={inboxFor} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} />
-          ) : queue === undefined ? null : (
-            <section className="flow-card p-5 sm:p-7" data-testid="deals-select" aria-label={t("deals.select.title")}>
-              <h2 className="type-section text-ink">{t("deals.select.title")}</h2>
-              <p className="mt-1 flex max-w-[56ch] items-center gap-2 text-sm text-ink-2" data-testid="deals-select-body">
-                {/* The queue's chevron, turned toward the queue (left from xl, where it is beside the workspace; up where it is above). */}
-                <span aria-hidden className={`grid size-6 shrink-0 place-items-center text-ink-3 ${twoPanes ? "rotate-180" : "-rotate-90"}`}>
-                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m6 3.5 4.5 4.5L6 12.5" />
-                  </svg>
-                </span>
-                {twoPanes ? t("deals.select.body") : t("deals.select.body.above")}
-              </p>
-            </section>
-          )}
+        <div key="pane" className="min-w-0" data-testid="deals-detail">
+          {decision ? <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onGo={go} inbox={inboxFor} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} /> : null}
         </div>
   );
 
   return (
     <div className="flow-f min-w-0" data-testid="deals-page">
-      <PageHeader section="deals" title={t("nav.deals")} subtitle={subtitle} />
+      {decision ? null : <PageHeader section="deals" title={t("nav.deals")} subtitle={subtitle} />}
       {back ? (
         <Link href={back.href} className="mb-3 inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-back">
           ‹ {back.label}
         </Link>
       ) : null}
-      {/* The company funding alert is the page's own row, full width under the header (the component Home's worklist uses); it is never one of the queue's rows or counts. */}
-      {queue?.alert ? (
+      {/* The company funding alert is the list's own row, full width under the header (the component Home's worklist uses); it is never one of the queue's rows or counts, and a deal's page does not carry it. */}
+      {queue?.alert && !decision ? (
         <div className="mb-4" data-testid="deals-alert-row">
           <WorklistAlertLine
             testId="queue-alert"
@@ -302,49 +294,68 @@ export function DealsPage() {
           <ErrorState error={readError} />
         </div>
       ) : null}
-      {/* Round two widths: the queue is 380 px (four tabs with their counts on one line), the workspace is fluid up to 850 px (the page's content holds at 1400 px, flow-look.css). Below `xl` a selected negotiation comes first (its decision is inside the first
-          screen of a phone) and the queue follows; from `xl` the queue is the left pane and the workspace scrolls on its own where it is taller than the window. The DOM order is the reading and focus order.
-          From 20 negotiations the owner may switch the queue to Home's table: it then takes the full width above, and the inbox and the workspace share the row beneath. */}
-      {tableMode ? <div className="mb-6">{QUEUE_NODE}</div> : null}
-      <div className={`grid gap-6 xl:items-start ${railed ? "xl:grid-cols-[72px_minmax(0,1400px)]" : "xl:grid-cols-[380px_minmax(0,850px)]"}`} data-testid="deals-grid" data-rail={railed ? "true" : "false"}>
-        {!twoPanes && decision ? (
-          <>
-            {PANE}
-            <div className="min-w-0 space-y-6">
-              {tableMode ? null : QUEUE_NODE}
-              {INBOX_SLOT}
-            </div>
-          </>
-        ) : railed && queue ? (
-          <>
-            <div className="min-w-0 xl:sticky xl:top-20" data-testid="deals-side">
-              <QueueRail queue={queue} selectedDecision={decision} locked={sending} onSelect={select} onShow={() => setShownFor(railKey)} />
-            </div>
-            {PANE}
-          </>
-        ) : (
-          <>
-            {/* The queue scrolls inside its own column (never sideways): it reaches into the gap so the 1 px edge that joins the selected row to the workspace is inside it. */}
-            <div className="min-w-0 space-y-6 xl:sticky xl:top-20 xl:-mr-6 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:pr-6 xl:[overflow-x:clip]" data-testid="deals-side">
-              {tableMode ? null : QUEUE_NODE}
-              {INBOX_SLOT}
-            </div>
-            {PANE}
-          </>
-        )}
+      {/* A selected deal is its own page, the full width of the content (up to 1180 px). The list stays mounted, hidden, so its search, sort and grouping are still there on the way back. */}
+      {decision ? (
+        <div className="mx-auto w-full max-w-[1180px] space-y-5" data-testid="deal-page">
+          <DealTopBar total={walk.total || counts?.all || 0} walk={walk} locked={sending} onAll={close} onWalk={walkTo} />
+          {PANE}
+        </div>
+      ) : null}
+      <div hidden={Boolean(decision)} data-testid="deals-list-view">
+        {tableMode ? <div className="mb-6">{QUEUE_NODE}</div> : null}
+        <div className="grid gap-6" data-testid="deals-grid">
+          <div className="min-w-0 space-y-6" data-testid="deals-side">
+            {tableMode ? null : QUEUE_NODE}
+            {INBOX_SLOT}
+          </div>
+        </div>
+        {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the list, where the queue's Agreements tab leads the eye. */}
+        <div className="mt-8" data-testid="deals-agreements">
+          <ActiveCommitments
+            today={clock.data?.day ?? books.data?.day ?? 0}
+            buyerName={(id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? deals.data?.deals.find((d) => d.counterparty_id === id)?.counterparty_name ?? id}
+            hideEmpty
+            agreed={(deals.data?.deals ?? []).filter(isAgreed)}
+            dealsDay={deals.data?.day ?? null}
+            dealsError={dealsError}
+            onRetryDeals={deals.reload}
+          />
+        </div>
       </div>
-      {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the panes, where the queue's Agreements tab leads the eye. */}
-      <div className="mt-8" data-testid="deals-agreements">
-        <ActiveCommitments
-          today={clock.data?.day ?? books.data?.day ?? 0}
-          buyerName={(id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? deals.data?.deals.find((d) => d.counterparty_id === id)?.counterparty_name ?? id}
-          hideEmpty
-          agreed={(deals.data?.deals ?? []).filter(isAgreed)}
-          dealsDay={deals.data?.day ?? null}
-          dealsError={dealsError}
-          onRetryDeals={deals.reload}
-        />
-      </div>
+    </div>
+  );
+}
+
+/**
+ * The top line of a deal's page: "All deals (N)" (clears the selection; the list is where it was), and, when the deal is one of several in the list, "Deal i of N" with previous and next in the
+ * list's order. The words are the dictionary's; the numbers are positions in the list the page holds.
+ */
+function DealTopBar({ total, walk, locked, onAll, onWalk }: { total: number; walk: DealWalk; locked: boolean; onAll: () => void; onWalk: (to: NonNullable<DealWalk["prev"]>) => void }) {
+  const { t } = useI18n();
+  const round = "motion-press inline-grid size-11 place-items-center rounded-pill border border-line-ui bg-card text-ink hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-40";
+  const chevron = (d: string) => (
+    <svg aria-hidden viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+  return (
+    <div className="flex items-center justify-between gap-3" data-testid="deal-topbar">
+      <button type="button" onClick={onAll} disabled={locked} className="motion-press inline-flex min-h-11 items-center gap-2 rounded-pill pr-3 text-[15px] font-medium text-ink hover:text-ink-2 disabled:opacity-50" data-testid="deal-back-all">
+        {chevron("M15 18l-6-6 6-6")}
+        <span className="max-sm:hidden">{t("deals.top.all", { n: total })}</span>
+        <span className="sm:hidden">{t("deals.top.allBare")}</span>
+      </button>
+      {walk.index !== null && walk.total > 1 ? (
+        <div className="flex items-center gap-2 text-sm text-ink-2" data-testid="deal-walk">
+          <span data-testid="deal-position">{t("deals.top.pos", { i: walk.index, n: walk.total })}</span>
+          <button type="button" aria-label={t("deals.top.prev")} disabled={locked || !walk.prev} onClick={() => walk.prev && onWalk(walk.prev)} className={round} data-testid="deal-prev">
+            {chevron("M15 18l-6-6 6-6")}
+          </button>
+          <button type="button" aria-label={t("deals.top.next")} disabled={locked || !walk.next} onClick={() => walk.next && onWalk(walk.next)} className={round} data-testid="deal-next">
+            {chevron("M9 18l6-6-6-6")}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
