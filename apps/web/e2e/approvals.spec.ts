@@ -2,6 +2,11 @@ import { expect, test as signedOut, type Locator } from "@playwright/test";
 import { proseOf, test } from "./fixtures";
 import { filledBrand, runPlan, openOperatorTools } from "./helpers";
 
+// These start signed out: the landing page (the first page a visitor sees) is taken as seen, so "/" opens Home.
+signedOut.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => sessionStorage.setItem("tl-welcomed", "1"));
+});
+
 /**
  * Mock-mode specs for the owner's decision surfaces: no tier badge on a REJECT, the approval card, the autonomy proof
  * on a Tier 1 ACCEPT, and the demo stepper resuming after sign-in. The Tier 1 offer is recorded from the live API
