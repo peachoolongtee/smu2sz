@@ -99,15 +99,25 @@ export function DealsPage() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     try {
       if (window.localStorage.getItem(HINT_KEY)) return;
-      window.localStorage.setItem(HINT_KEY, "1");
     } catch {
       return;
     }
-    const on = window.setTimeout(() => setHint(true), 0);
+    // The flag is spent when the cue shows, not before: a page torn down first (a remount on a slow machine) still owes the cue.
+    let shown = false;
+    const on = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(HINT_KEY, "1");
+      } catch {
+        return;
+      }
+      shown = true;
+      setHint(true);
+    }, 0);
     const off = window.setTimeout(() => setHint(false), 1500);
     return () => {
       window.clearTimeout(on);
       window.clearTimeout(off);
+      if (shown) setHint(false);
     };
   }, [hintable]);
 
