@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { CustomerSentence } from "@/components/customer-link";
 import { ChevronRightIcon } from "@/components/icons";
 import { DealSummary } from "@/components/deals/deal-summary";
@@ -103,10 +103,11 @@ export function obligationSentence(o: Ob, t: I18n["t"], te: I18n["te"], today: n
  * One agreement, folded to a row (who it is with, its status, how many terms and the give-aways booked); opening it shows the terms, the dates and the deal summary.
  * The list reads at a glance and only the agreement the owner picks takes the room.
  */
-function AgreementRow({ testId, status, head, who, line, badge, children }: { testId?: string; status?: string; head: ReactNode; who?: ReactNode; line?: ReactNode; badge?: ReactNode; children: ReactNode }) {
+function AgreementRow({ testId, status, head, who, line, badge, open, onOpen, children }: { testId?: string; status?: string; head: ReactNode; who?: ReactNode; line?: ReactNode; badge?: ReactNode; open?: boolean; onOpen?: (open: boolean) => void; children: ReactNode }) {
   return (
     <li className="border-t border-line first:border-t-0" data-testid={testId} data-status={status}>
-      <details className="group">
+      {/* Open or closed is the section's to keep (by the agreement), so a row the owner opened stays open when the books move it from one money group to another. */}
+      <details className="group" open={open} onToggle={onOpen ? (e) => onOpen((e.currentTarget as HTMLDetailsElement).open) : undefined}>
         <summary className="motion-press flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 rounded-tile px-2 py-3 hover:bg-subtle [&::-webkit-details-marker]:hidden" data-testid="commitment-toggle">
           <ChevronRightIcon aria-hidden width={14} height={14} className="shrink-0 text-ink-3 transition-transform duration-(--dur-fast) group-open:rotate-90" />
           <span className="min-w-0 flex-1">
@@ -125,10 +126,12 @@ function AgreementRow({ testId, status, head, who, line, badge, children }: { te
   );
 }
 
-function CommitmentItem({ c, buyer, buyerId, today, recordState, inForce, summary }: { c: Displayed<Commitment>; buyer: string; buyerId: string; today: number; recordState: string | null; inForce: boolean; summary?: ReactNode }) {
+function CommitmentItem({ c, buyer, buyerId, today, recordState, inForce, summary, open, onOpen }: { open?: boolean; onOpen?: (open: boolean) => void; c: Displayed<Commitment>; buyer: string; buyerId: string; today: number; recordState: string | null; inForce: boolean; summary?: ReactNode }) {
   const { t, te } = useI18n();
   return (
     <AgreementRow
+      open={open}
+      onOpen={onOpen}
       testId={`commitment-${c.id}`}
       status={c.status}
       head={t("deal.with", { buyer })}
@@ -200,6 +203,9 @@ export function ActiveCommitments({
   reads?: { ledger: AsyncState<LedgerView>; records: AsyncState<DecisionList> };
 }) {
   const { t, lang } = useI18n();
+  // Which agreements the owner has opened, by agreement.
+  const [opened, setOpened] = useState<Record<string, boolean>>({});
+  const openProps = (key: string) => ({ open: Boolean(opened[key]), onOpen: (o: boolean) => setOpened((p) => (Boolean(p[key]) === o ? p : { ...p, [key]: o })) });
   const ownLedger = useAsync(() => (reads ? Promise.resolve(null) : getLedger(lang)), [lang, Boolean(reads)]);
   const ledger = (reads?.ledger ?? ownLedger) as AsyncState<LedgerView>;
   // A failed record read only costs the server's wording of the status: the commitment's own status is then shown.
@@ -223,7 +229,7 @@ export function ActiveCommitments({
   const items: ReactNode[] = [];
   for (const c of live) {
     const record = dealRecordId(c.offer_id);
-    const item = <CommitmentItem key={c.id} c={c} buyer={buyerName(c.counterparty_id)} buyerId={c.counterparty_id} today={today} recordState={stateText.get(record) ?? null} inForce={inForce.has(record)} summary={summaryFor(c.counterparty_id)} />;
+    const item = <CommitmentItem key={c.id} {...openProps(c.id)} c={c} buyer={buyerName(c.counterparty_id)} buyerId={c.counterparty_id} today={today} recordState={stateText.get(record) ?? null} inForce={inForce.has(record)} summary={summaryFor(c.counterparty_id)} />;
     const g = groups?.byRecord[record];
     if (g) {
       grouped[g.group].items.push(item);
@@ -260,7 +266,7 @@ export function ActiveCommitments({
             <ul data-testid="commitments-live">
               {items}
               {loose.map((d) => (
-                <AgreementRow key={d.counterparty_id} head={t("deal.with", { buyer: d.counterparty_name })} who={<CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.with", { buyer: b })} />}>
+                <AgreementRow key={d.counterparty_id} {...openProps(`loose:${d.counterparty_id}`)} head={t("deal.with", { buyer: d.counterparty_name })} who={<CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.with", { buyer: b })} />}>
                   <DealSummary deal={d} today={dealsDay ?? today} />
                 </AgreementRow>
               ))}
