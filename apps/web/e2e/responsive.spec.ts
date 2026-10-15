@@ -11,7 +11,8 @@ async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
-test("no page overflows horizontally after the demo has run", async ({ page }) => {
+// One test per shell: the story and 23 pages in one test outran its minute on a two-core runner.
+test("no engine view overflows horizontally after the demo has run", async ({ page }) => {
   await page.goto("/demo");
   await walkStory(page, STORY_STEPS);
   await expect(page).toHaveURL(/\/activity/);
@@ -21,6 +22,12 @@ test("no page overflows horizontally after the demo has run", async ({ page }) =
     // Tables scroll inside their own region; the page itself must not.
     expect(await overflowX(page), `${route} overflows horizontally`).toBeLessThanOrEqual(1);
   }
+});
+
+test("no Business page overflows horizontally after the demo has run", async ({ page }) => {
+  await page.goto("/demo");
+  await walkStory(page, STORY_STEPS);
+  await expect(page).toHaveURL(/\/activity/);
   // The Business shell, with the deal of the demo on the books.
   await page.getByLabel("Business").click(); // the radio shows the shell on screen, so it changes once the route has
   await expect(page).toHaveURL(/\/$/);
