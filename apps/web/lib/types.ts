@@ -3836,6 +3836,10 @@ export type DecisionSent =
         net_display: string;
         net_fen: Fen;
         basis_facility_name: string | null;
+        /** The cost quoted when the reply was sent and the server's words for it and for the net ("Cost of the terms over 12 months, priced at the ... rate"). Absent from an older server (the old line is drawn). */
+        quoted_cost_display?: string;
+        quoted_cost_label_text?: string;
+        net_label_text?: string;
       } | null;
       funding_blocked: string | null;
     };

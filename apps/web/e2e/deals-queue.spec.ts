@@ -142,13 +142,18 @@ test("Cash impact: two charts, each answering one question; the removed controls
   await expect(page).not.toHaveURL(/lines=|scenario=/);
   // The day labels under chart 2 never touch: measured on the page at this width and at a phone's.
   const noTouch = async (label: string) => {
-    const days = page.getByTestId("deal-chart-days").locator("span");
-    await expect.poll(() => days.count(), `${label}: day labels are drawn`).toBeGreaterThan(1);
-    const boxes = (await days.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()).map((r) => ({ left: r.left, right: r.right })))).sort((a, b) => a.left - b.left);
-    for (let i = 1; i < boxes.length; i++) expect(boxes[i].left, `${label}: label ${i} clears label ${i - 1}`).toBeGreaterThanOrEqual(boxes[i - 1].right);
-    const row = (await page.getByTestId("deal-chart-days").boundingBox())!;
-    expect(boxes[0].left, `${label}: inside the row`).toBeGreaterThanOrEqual(row.x - 0.5);
-    expect(boxes[boxes.length - 1].right, `${label}: inside the row`).toBeLessThanOrEqual(row.x + row.width + 0.5);
+    // Polled as a whole: after a resize the row is measured again and the labels are redrawn for its new width.
+    await expect
+      .poll(async () => {
+        const row = await page.getByTestId("deal-chart-days").boundingBox();
+        const boxes = (await page.getByTestId("deal-chart-days").locator("span").evaluateAll((els) => els.map((el) => el.getBoundingClientRect()).map((r) => ({ left: r.left, right: r.right })))).sort((x, y) => x.left - y.left);
+        if (!row || boxes.length < 2) return ["not drawn"];
+        const bad: string[] = [];
+        for (let i = 1; i < boxes.length; i++) if (boxes[i].left < boxes[i - 1].right) bad.push(`label ${i} touches label ${i - 1}`);
+        if (boxes[0].left < row.x - 0.5 || boxes[boxes.length - 1].right > row.x + row.width + 0.5) bad.push("outside the row");
+        return bad;
+      }, `${label}: day labels`)
+      .toEqual([]);
   };
   await noTouch(`${page.viewportSize()!.width} px`);
   await page.setViewportSize({ width: 390, height: 844 });

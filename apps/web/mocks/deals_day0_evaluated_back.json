@@ -433,6 +433,7 @@
       "agreements": 0,
       "customers": 2
     },
+    "headline_text": "1 task needs you.",
     "deals": {
       "needs_you": 1,
       "waiting": 0,
@@ -467,7 +468,7 @@
         "last_activity_day": 0,
         "last_activity_text": "today",
         "status_text": "Counter ready",
-        "consequence_text": "As asked: below your minimum for 15 days.",
+        "consequence_text": "If you accept their request: below your minimum for 15 days.",
         "severity": "CAUTION",
         "deadline_day": null,
         "expected_day": null,
