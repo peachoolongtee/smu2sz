@@ -222,3 +222,92 @@ def test_extracting_the_no_deal_plan_left_the_refused_send_as_it_was(api: TestCl
     assert [o["kind"] for o in sent["operations"]] == ["DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"]
     assert {f.id: f.drawn_fen - drawn_before[f.id] for f in rt.store.get_state().facilities if f.drawn_fen != drawn_before[f.id]} == {
         "FAC-LINE": 15_000_000, "FAC-IF": 25_500_000}
+
+
+# ---------------------------------------------------------------- the golden walk: S4, S5, S6
+
+
+def _agree(api: TestClient) -> tuple[str, str]:
+    offer = _evaluate(api, EX01)
+    view = api.post(f"/offers/{offer}/evaluate", json={"fixture_id": EX01}).json()
+    assert api.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()["outcome"] == "DEAL"
+    return offer, str(view["decision_id"])
+
+
+def _queue(api: TestClient, lang: str = "en") -> dict[str, Any]:
+    q: dict[str, Any] = api.get("/deals", params={"lang": lang}).json()["queue"]
+    return q
+
+
+def test_no_promise_is_counted_kept_before_it_is_due(api: TestClient) -> None:
+    _, did = _agree(api)
+    for lang, want in (("en", "The buyer has made two promises on this deal; none is due yet."),
+                       ("zh", "买方在这笔交易中作出了 2 项承诺，目前都还未到期。")):
+        d = api.get(f"/decisions/{did}/tracker", params={"lang": lang}).json()
+        counts = d["promise_counts"]
+        assert counts["text"] == want and (counts["buyer_kept"], counts["buyer_total"], counts["buyer_due"], counts["buyer_to_come"]) == (0, 2, 0, 2)
+        assert "kept" not in counts["text"] and "missed" not in counts["text"].lower() and "已兑现" not in counts["text"]
+    api.post("/clock/advance", json={"to_day": 2})
+    api.post("/demo/bank-receipt")
+    text = api.get(f"/decisions/{did}/tracker").json()["promise_counts"]["text"]
+    assert text == "The buyer has kept one of one promise due so far; one more is still to come."
+
+
+def test_a_promise_folds_into_its_deals_one_row(api: TestClient) -> None:
+    _, did = _agree(api)
+    for lang in ("en", "zh"):
+        q = _queue(api, lang)
+        assert [r["kind"] for r in q["agreements"]] == ["AGREEMENT"]
+        [row] = q["agreements"]
+        assert row["decision_id"] == did and row["after_group"] == "awaiting_payment"
+        assert (q["counts"]["agreements"], q["deals"]["agreements"], q["deals"]["awaiting_payment"]) == (1, 1, 1)
+        assert not BAD.search(row["consequence_text"])
+    en = _queue(api)["agreements"][0]["consequence_text"]
+    assert en.endswith("it is not counted as cash until it arrives.") and "has promised" in en
+    assert "承诺" in _queue(api, "zh")["agreements"][0]["consequence_text"]
+    # the worklist read keeps its promise row; only the queue folds it
+    assert any(w["kind"] == "PROMISE" for w in api.get("/worklist").json()["waiting"])
+
+
+def test_the_headline_counts_the_late_agreement_the_chase_and_the_approval(api: TestClient) -> None:
+    assert _queue(api)["headline_text"] == "Nothing needs you today."
+    assert _queue(api, "zh")["headline_text"] == "今天没有需要您处理的事项。"
+    _agree(api)
+    assert "late payment" not in _queue(api)["headline_text"]  # agreed and awaiting payment: nothing is late yet
+    for day in (2, 30, 34):
+        assert api.post("/clock/advance", json={"to_day": day}).status_code == 200
+    action = api.get("/home").json()["next_action"]
+    assert api.post(f"/alerts/{action['alert_id']}/act", json={"state_version": action["state_version"], "suggestions": action["suggestions"]}).status_code == 200
+    for lang in ("en", "zh"):
+        q = _queue(api, lang)
+        kinds = {r["kind"] for r in q["needs_you"]}
+        assert "COLLECTION" in kinds and q["deals"]["payment_late"] == 1
+        assert q["alert"] is not None and q["alert"]["primary"]["href"].startswith("/approvals")  # the funding plan waiting for the owner
+        n = len(q["needs_you"]) + 1
+        assert q["headline_text"] == (f"{n} tasks need you; 1 agreed deal has a late payment." if lang == "en"
+                                      else f"{n} 项任务需要您处理；1 项已达成的协议有逾期付款。")
+        assert "Nothing needs" not in q["headline_text"] and not BAD.search(q["headline_text"])
+
+
+# ---------------------------------------------------------------- S7: the record's sent cost
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_the_record_names_what_its_net_measures_and_carries_the_quoted_cost(api: TestClient, rt: Runtime, lang: str) -> None:
+    """Option A is quoted at ¥3,027.77 and the gap is drawn on the credit line. Its `net` is ¥0.00 because it is the 12-month value of the terms
+    (an early payment's discount is valued apart) priced at the Invoice financing rate: a different measure, not a wrong value. The record says so."""
+    offer_id = _evaluate(api, EX01)
+    view = api.post(f"/offers/{offer_id}/evaluate", json={"fixture_id": EX01}).json()
+    option_a = view["counters"][0]
+    sent = api.post(f"/negotiate/{offer_id}", json={"buyer_profile": "cooperative", "counter_id": option_a["id"]}).json()
+    assert sent["outcome"] == "DEAL" and [a["facility_id"] for a in sent["plan"]["actions"]] == ["FAC-LINE"]
+    eco = api.get(f"/decisions/{sent['decision_id']}", params={"lang": lang}).json()["response"]["sent"]["economics"]
+    assert eco["net_display"] == "¥0.00" and eco["basis_facility_name"] == "Invoice financing (onboarded platform)"
+    assert eco["quoted_cost_display"] == "¥3,027.77" == eco["supplier_cost_display"]
+    if lang == "en":
+        assert eco["net_label_text"] == "Cost of the terms over 12 months, priced at the Invoice financing (onboarded platform) rate"
+        assert eco["quoted_cost_label_text"] == "Cost quoted when sent (one-off)"
+    else:
+        assert eco["net_label_text"] == "条款在 12 个月内的成本，按Invoice financing (onboarded platform)的利率计算"
+        assert eco["quoted_cost_label_text"] == "发送时报出的成本（一次性）"
+    assert not BAD.search(eco["net_label_text"]) and "Net economic" not in eco["net_label_text"]

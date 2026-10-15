@@ -131,8 +131,8 @@ def _cash_text(cost: Mapping[str, Any], lang: str) -> str | None:
     if not band:
         return None
     start = (f", starting {when}" if when else "") if lang != "zh" else (f"（最早{' ' if str(when)[:1].isdigit() else ''}{when}）" if when else "")
-    return t(lang, f"As asked: {str(band)[:1].lower() + str(band)[1:]}{start}. Accepting runs no funding, so that gap stays open.",
-             f"按对方要求：{band}{start}。接受不会办理融资，缺口仍然存在。")
+    return t(lang, f"If you accept their request: {str(band)[:1].lower() + str(band)[1:]}{start}. Accepting runs no funding, so that gap stays open.",
+             f"如果接受对方的要求：{band}{start}。接受不会办理融资，缺口仍然存在。")
 
 
 def accept_receipt(lang: str, state: Any, verdict: Verdict, *, buyer: str, authority: str, cost: Mapping[str, Any] | None, months: int) -> dict[str, str | None]:

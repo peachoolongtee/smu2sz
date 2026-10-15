@@ -658,8 +658,20 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
                         "没有记录的部分会单独标明为未衡量。差额是在您同意的条款之外计入的融资；与这笔交易相关的融资无论是否计入，都会在旁边显示。"),
     }
 
+    to_come = sum(1 for x in states if x == "awaited")  # a promise not yet due or settled is neither kept nor missed
+    due = total - to_come
     if total == 0:
         counts_text = t(lang, "The buyer has made no promise on this deal yet.", "买方在这笔交易中还没有作出承诺。")
+    elif due == 0:
+        counts_text = t(lang, ("The buyer has made one promise on this deal; it is not due yet." if total == 1
+                               else f"The buyer has made {_num(total, lang)} promises on this deal; none is due yet."),
+                        f"买方在这笔交易中作出了 {total} 项承诺，目前都还未到期。")
+    elif to_come:
+        late = (f"; {_num(paid_late, lang)} {'was' if paid_late == 1 else 'were'} paid late" if paid_late else "")
+        counts_text = t(lang, f"The buyer has kept {_num(kept, lang)} of {_num(due, lang)} {'promise' if due == 1 else 'promises'} due so far{late}; "
+                              f"{_num(to_come, lang)} more {'is' if to_come == 1 else 'are'} still to come.",
+                        f"买方已到期的 {due} 项承诺中已兑现 {kept} 项" + (f"；有 {paid_late} 项逾期后才付款" if paid_late else "")
+                        + f"；另有 {to_come} 项尚未到期。")
     else:
         counts_text = t(lang, f"The buyer has kept {_num(kept, lang)} of {_num(total, lang)} promises on this deal"
                               + (f"; {_num(paid_late, lang)} {'was' if paid_late == 1 else 'were'} paid late." if paid_late else "."),
@@ -729,9 +741,9 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         if expected is None:
             sentence += " The cost expected at agreement was not recorded."
             sentence_zh += "达成协议时的预期成本没有记录。"
-        if total:
-            sentence += f" The buyer kept {kept} of {total} promises" + (f"; {paid_late} {'was' if paid_late == 1 else 'were'} paid late." if paid_late else ".")
-            sentence_zh += f"买方在 {total} 项承诺中兑现了 {kept} 项" + (f"；有 {paid_late} 项逾期后才付款。" if paid_late else "。")
+        if due:
+            sentence += f" The buyer kept {kept} of {due} promises" + (f"; {paid_late} {'was' if paid_late == 1 else 'were'} paid late." if paid_late else ".")
+            sentence_zh += f"买方在 {due} 项承诺中兑现了 {kept} 项" + (f"；有 {paid_late} 项逾期后才付款。" if paid_late else "。")
         closeout = t(lang, sentence, sentence_zh)
     else:
         closeout = None
@@ -773,7 +785,8 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         "decision_id": ds.decision_id, "lang": lang, "available": True, "unavailable_text": None, "buyer_id": buyer, "buyer_name": name,
         "agreed_when": agreed_when, "agreed_text": agreed_text, "terms_text": terms, "headline_text": headline, "state_word": word, "state_key": key, "ended": ended, "state_tone": wtone,
         "state_text": state_text, "stages": stages, "lifecycle_stages": stages, "cost": cost, "promises": rows,
-        "promise_counts": {"buyer_kept": kept, "buyer_total": total, "buyer_paid_late": paid_late, "text": counts_text}, "buyer": buyer_view, "next": nxt,
+        "promise_counts": {"buyer_kept": kept, "buyer_total": total, "buyer_paid_late": paid_late, "buyer_due": due, "buyer_to_come": to_come,
+                           "text": counts_text}, "buyer": buyer_view, "next": nxt,
         "closeout_text": closeout,
         "links": {"record_href": f"/decisions/{quote(ds.decision_id, safe=':')}",
                   "activity_href": f"/activity?decision={quote(ds.decision_id, safe=':')}"},
