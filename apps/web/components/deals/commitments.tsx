@@ -11,6 +11,7 @@ import { useI18n, type I18n } from "@/lib/i18n";
 import type { Commitment, CommitmentStatus, DealView, Displayed, Obligation } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useDecisions } from "@/lib/use-decision";
+import { AFTER_GROUPS, type AfterGroup } from "@/components/deals/flow/deal-model";
 import { whenText } from "@/lib/when";
 
 /**
@@ -23,6 +24,15 @@ import { whenText } from "@/lib/when";
  * The deal summary (the confirmed contract beside the books, `deal-summary.tsx`) is part of this section, not a card of its own: each
  * buyer's summary sits inside the agreement it describes, so the page says it once.
  */
+
+/**
+ * The server's money groups for the agreements on the books, from the Deals queue: each deal's record id (`deal:<offer>`) to its group and the server's label, and the groups' counts
+ * as the server sent them (null: the rows held are counted). An agreement the queue does not file in a group stands above the groups.
+ */
+export interface AgreementGroups {
+  byRecord: Record<string, { group: AfterGroup; label: string | null }>;
+  counts: Partial<Record<AfterGroup, number>> | null;
+}
 
 const LIVE: CommitmentStatus[] = ["PROPOSED", "ACCEPTED", "ACTIVE"];
 
@@ -168,6 +178,7 @@ export function ActiveCommitments({
   dealsDay = null,
   dealsError,
   onRetryDeals,
+  groups,
 }: {
   today: number;
   buyerName: (id: string) => string;
@@ -176,6 +187,7 @@ export function ActiveCommitments({
   dealsDay?: number | null;
   dealsError?: Error;
   onRetryDeals?: () => void;
+  groups?: AgreementGroups;
 }) {
   const { t, lang } = useI18n();
   const ledger = useAsync(() => getLedger(lang), [lang]);
@@ -195,7 +207,17 @@ export function ActiveCommitments({
     placed.add(buyerId);
     return <DealSummary deal={deal} today={dealsDay ?? today} />;
   };
-  const items = live.map((c) => <CommitmentItem key={c.id} c={c} buyer={buyerName(c.counterparty_id)} buyerId={c.counterparty_id} today={today} recordState={stateText.get(dealRecordId(c.offer_id)) ?? null} inForce={inForce.has(dealRecordId(c.offer_id))} summary={summaryFor(c.counterparty_id)} />);
+  const grouped: Record<AfterGroup, { label: string | null; items: ReactNode[] }> = { payment_late: { label: null, items: [] }, awaiting_payment: { label: null, items: [] }, closed: { label: null, items: [] } };
+  const items: ReactNode[] = [];
+  for (const c of live) {
+    const record = dealRecordId(c.offer_id);
+    const item = <CommitmentItem key={c.id} c={c} buyer={buyerName(c.counterparty_id)} buyerId={c.counterparty_id} today={today} recordState={stateText.get(record) ?? null} inForce={inForce.has(record)} summary={summaryFor(c.counterparty_id)} />;
+    const g = groups?.byRecord[record];
+    if (g) {
+      grouped[g.group].items.push(item);
+      grouped[g.group].label ??= g.label;
+    } else items.push(item);
+  }
   const loose = agreed.filter((d) => !placed.has(d.counterparty_id) && ledger.data);
   return (
     <Card
@@ -220,15 +242,50 @@ export function ActiveCommitments({
         <ErrorState error={ledger.error} onRetry={ledger.reload} />
       ) : !ledger.data ? (
         <LoadingBlock rows={2} />
-      ) : items.length || loose.length ? (
-        <ul data-testid="commitments-live">
-          {items}
-          {loose.map((d) => (
-            <AgreementRow key={d.counterparty_id} head={<CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.with", { buyer: b })} />}>
-              <DealSummary deal={d} today={dealsDay ?? today} />
-            </AgreementRow>
-          ))}
-        </ul>
+      ) : items.length || loose.length || AFTER_GROUPS.some((g) => grouped[g].items.length) ? (
+        <>
+          {items.length || loose.length ? (
+            <ul data-testid="commitments-live">
+              {items}
+              {loose.map((d) => (
+                <AgreementRow key={d.counterparty_id} head={<CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.with", { buyer: b })} />}>
+                  <DealSummary deal={d} today={dealsDay ?? today} />
+                </AgreementRow>
+              ))}
+            </ul>
+          ) : null}
+          {/* The money groups, in the server's order: payment late, awaiting payment, closed (folded). An empty group is not drawn; the label and the count are the server's. */}
+          {AFTER_GROUPS.map((g) => {
+            const list = grouped[g].items;
+            if (!list.length) return null;
+            const label = grouped[g].label ?? t("deals.closed.title");
+            const head = (
+              <span className={`inline-flex items-center gap-1.5 ${g === "payment_late" ? "text-bad-fg" : "text-ink-2"}`}>
+                {g === "payment_late" ? <span aria-hidden className="size-2 rounded-pill bg-bad-solid" /> : null}
+                {label} <span className="font-semibold tabular-nums text-ink-3">({groups?.counts?.[g] ?? list.length})</span>
+              </span>
+            );
+            return g === "closed" ? (
+              <details key={g} className="mt-4" data-testid="commitments-group" data-group={g}>
+                <summary className="hit flex min-h-8 cursor-pointer list-none items-center gap-2 px-1 text-supporting font-bold [&::-webkit-details-marker]:hidden touch:min-h-11" data-testid="commitments-group-heading">
+                  {head}
+                </summary>
+                <ul className="mt-1.5" aria-label={label} data-testid="commitments-group-list">
+                  {list}
+                </ul>
+              </details>
+            ) : (
+              <section key={g} className="mt-4" aria-label={label} data-testid="commitments-group" data-group={g}>
+                <h3 className="px-1 pb-1.5 text-supporting font-bold" data-testid="commitments-group-heading">
+                  {head}
+                </h3>
+                <ul aria-label={label} data-testid="commitments-group-list">
+                  {list}
+                </ul>
+              </section>
+            );
+          })}
+        </>
       ) : dealsError ? null : (
         <p className="text-sm text-ink-3">{t("biz.deals.commitments.empty")}</p>
       )}
