@@ -120,7 +120,7 @@ test("Receivables day 34 in Chinese: the picture, its legend, the facts and the 
 // ---------------------------------------------------------------- Activity
 
 async function railAt34(page: Page) {
-  await advanceTo34(page, "/");
+  await advanceTo34(page, "/cash"); // the plan is run on Cash & funding
   await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();
   await page.goto("/activity");
