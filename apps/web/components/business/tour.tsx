@@ -114,7 +114,7 @@ const STEPS: Record<string, Step[]> = {
     part("cash.try", tid("cash-try")),
     part("cash.more", tid("cash-more")),
     part("cash.options", tid("cash-options-all")),
-    part("cash.sources", "#cash-sources-now"),
+    part("cash.sources", '#cash-sources-now [data-testid^="cash-facility-"]'), // the funding card is taller than the screen leaves room for beside a card: the first source stands for it
     part("cash.readings", tid("cash-readings")),
   ],
   "/whatif": [part("sandbox.pick", tid("whatif-ask")), part("sandbox.controls", "#whatif-controls"), part("sandbox.outcome", tid("whatif-outcome"))],
