@@ -159,8 +159,8 @@ def test_a_snapshot_under_another_key_is_dropped_and_the_real_replay_runs(monkey
     set_runtime(rt)
     stale = seeded_books.Snapshot(key="built under other flags", ledger={}, runtime={}, caches={})
     seeded_books._ready["busy"] = stale
-    snap, key, marks = seeded_books.lookup(rt, "busy")
-    assert snap is None and key == seeded_books.key_of("busy", rt.settings, rt.owner_key_hex) and marks is not None
+    snap, key = seeded_books.lookup(rt, "busy")
+    assert snap is None and key == seeded_books.key_of("busy", rt.settings, rt.owner_key_hex)
     assert "busy" not in seeded_books._ready
 
 
@@ -201,11 +201,15 @@ def test_the_warm_up_does_not_block_start_up_or_the_live_runtime(monkeypatch: py
         assert took < 5, f"start-up took {took:.1f}s"
         # The live runtime's lock is free while the warm-up builds, and its books are served.
         got = []
-        t = threading.Thread(target=lambda: got.append(rt.lock.acquire(timeout=5)))
+
+        def take() -> None:
+            got.append(rt.lock.acquire(timeout=5))
+            rt.lock.release()
+
+        t = threading.Thread(target=take)
         t.start()
         t.join()
         assert got == [True]
-        rt.lock.release()
         assert seeded_books._building.get("busy") is not None
         # A reset that arrives meanwhile waits for it (nothing held), then finds the snapshot ready.
         waited = []

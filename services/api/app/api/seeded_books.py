@@ -54,7 +54,7 @@ class Snapshot:
     key: str
     ledger: dict[str, Any]
     runtime: dict[str, Any]
-    caches: dict[str, list[tuple[Any, Any]]]  # cache name -> the entries the build added, oldest first
+    caches: dict[str, list[tuple[Any, Any]]]  # cache name -> its entries when the build ended, oldest first
 
 
 @dataclass
@@ -134,17 +134,10 @@ def _entries(cache: Any) -> list[tuple[Any, Any]]:
     return list(cache.items())
 
 
-def _marks() -> dict[str, set[Any]]:
-    return {n: {k for k, _ in _entries(c)} for n, c in _caches().items()}
-
-
-def _added_since(marks: dict[str, set[Any]]) -> dict[str, list[tuple[Any, Any]]]:
-    out = {}
-    for n, c in _caches().items():
-        added = [(k, copy.deepcopy(v)) for k, v in _entries(c) if k not in marks.get(n, ())]
-        if added:
-            out[n] = added
-    return out
+def _held() -> dict[str, list[tuple[Any, Any]]]:
+    """Every entry of every answer cache, copied. Each answer is keyed by a hash of the books it was made for, so an entry that is not for
+    the busy books is simply never asked for; the ones that are (the replay's, the warmed reads') are what a restore needs."""
+    return {n: [(k, copy.deepcopy(v)) for k, v in _entries(c)] for n, c in _caches().items()}
 
 
 # ---------------------------------------------------------------- eligibility, capture, restore
@@ -159,11 +152,11 @@ def eligible(rt: Runtime, scenario: str) -> bool:
             and demo_seed.scenario_seed(scenario) is not None and get_runtime() is rt)
 
 
-def _capture(rt: Runtime, key: str, marks: dict[str, set[Any]]) -> Snapshot:
+def _capture(rt: Runtime, key: str) -> Snapshot:
     store: Any = rt.store
     with rt.lock, store._lock:
         return Snapshot(key=key, ledger={n: copy.copy(getattr(store, n)) for n in LEDGER},
-                        runtime={n: copy.copy(getattr(rt, n)) for n in RUNTIME_FIELDS}, caches=_added_since(marks))
+                        runtime={n: copy.copy(getattr(rt, n)) for n in RUNTIME_FIELDS}, caches=_held())
 
 
 def restore(rt: Runtime, snap: Snapshot) -> None:
@@ -201,11 +194,11 @@ def await_warm_up(scenario: str) -> None:
         build.done.wait()
 
 
-def lookup(rt: Runtime, scenario: str) -> tuple[Snapshot | None, str | None, dict[str, set[Any]] | None]:
+def lookup(rt: Runtime, scenario: str) -> tuple[Snapshot | None, str | None]:
     """The snapshot to restore for `scenario` on `rt`, or None. Call it BEFORE taking `rt.lock`: a warm-up building the same snapshot is
-    waited for here, with nothing held. Also returns the key and the cache marks when the caller should replay and `remember`."""
+    waited for here, with nothing held. Also returns the key when there is none and the caller should replay and `remember`."""
     if not eligible(rt, scenario):
-        return None, None, None
+        return None, None
     key = key_of(scenario, rt.settings, rt.owner_key_hex)
     with _guard:
         build = _building.get(scenario)
@@ -216,14 +209,14 @@ def lookup(rt: Runtime, scenario: str) -> tuple[Snapshot | None, str | None, dic
         if snap is not None and snap.key != key:
             del _ready[scenario]  # built under other seed, fixtures, settings or owner key: invalid
             snap = None
-    return snap, key, (_marks() if snap is None else None)
+    return snap, key
 
 
-def remember(rt: Runtime, scenario: str, key: str, marks: dict[str, set[Any]]) -> None:
+def remember(rt: Runtime, scenario: str, key: str) -> None:
     """Keep what a real replay on `rt` just left (call under `rt.lock`, only after the seed ran without error)."""
     try:
         if eligible(rt, scenario):
-            snap = _capture(rt, key, marks)
+            snap = _capture(rt, key)
             with _guard:
                 _ready[scenario] = snap
     except Exception:
@@ -248,13 +241,12 @@ def build(scenario: str, key: str, settings: Any, owner_key_hex: str, warm_reads
     """Replay `scenario` for real on a private runtime and store (the routes the seed calls see it through `using_runtime`, in this thread
     only), read the home and the worklist in both languages, and keep the result. The live runtime and its lock are not used."""
     builder = Runtime(settings=settings, store=InMemoryLedgerStore(), owner_key_hex=owner_key_hex, private=True)
-    marks = _marks()
     with using_runtime(builder):
         builder.reset_demo(scenario)
         if warm_reads:
             _warm_reads("en")
             _warm_reads("zh")
-        return _capture(builder, key, marks)
+        return _capture(builder, key)
 
 
 def _run_warm_up(scenario: str, build_: _Build, settings: Any, owner_key_hex: str) -> None:

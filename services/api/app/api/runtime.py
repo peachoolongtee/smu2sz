@@ -178,7 +178,7 @@ class Runtime:
         before the lock is taken (the route waits first, so it holds nothing while it does)."""
         from app.api import seeded_books
 
-        snap, key, marks = seeded_books.lookup(self, scenario)
+        snap, key = seeded_books.lookup(self, scenario)
         with self.lock:
             if snap is not None:
                 seeded_books.restore(self, snap)
@@ -187,8 +187,8 @@ class Runtime:
             _confirm_demo_documents(self, scenario)
             self._replay_seed(scenario)
             self.mark_fresh()
-            if key is not None and marks is not None:
-                seeded_books.remember(self, scenario, key, marks)
+            if key is not None:
+                seeded_books.remember(self, scenario, key)
 
     def mark_fresh(self) -> None:
         """Remember what the books hold right after a reset, so the Demo can tell whether anything would be lost by the next one."""
