@@ -49,15 +49,17 @@ test("the Business home puts the status and the next action in the first screen,
   await expect(page).toHaveURL(/\/cash/);
 });
 
-test("Business navigation: five pills on a desktop, the same five tabs on a phone, the mode switch and Ask FLOW always visible", async ({ page }) => {
+test("Business navigation: the sections and the two doors (Sandbox, Capex) in the rail on a desktop, the six sections as tabs on a phone, the mode switch and Ask FLOW always visible", async ({ page }) => {
   await page.goto("/");
   const phone = (page.viewportSize()?.width ?? 1440) < 1024;
-  const names = ["Home", "Deals", "Cash & funding", "Receivables", "Activity"];
+  // The rail holds the sections and the doors to the sandbox and the old capex screen; a phone's bar keeps the six sections (the doors are reached from Cash there).
+  const names = ["Home", "Deals", "Attach deals", "Cash & funding", "Sandbox", "Capex", "Receivables", "Activity"];
+  const phoneNames = ["Home", "Deals", "Attach deals", "Cash & funding", "Receivables", "Activity"];
   const bar = page.getByTestId(phone ? "tab-bar" : "nav-pills");
   await expect(bar).toBeVisible();
   await expect(page.getByTestId(phone ? "nav-pills" : "tab-bar")).toBeHidden();
-  await expect(bar.getByRole("link")).toHaveText(phone ? ["Home", "Deals", "Cash", "Receivables", "Activity"] : names);
-  for (const n of names) await expect(bar.getByRole("link", { name: n, exact: true })).toBeVisible();
+  await expect(bar.getByRole("link")).toHaveText(phone ? ["Home", "Deals", "Attach", "Cash", "Receivables", "Activity"] : names);
+  for (const n of phone ? phoneNames : names) await expect(bar.getByRole("link", { name: n, exact: true })).toBeVisible();
   await expect(bar.locator('[aria-current="page"]')).toHaveText(phone ? "Home" : "Home");
   // Buy equipment and What-if are doors from Cash & funding, not sections; no hamburger in Business mode.
   await expect(page.getByRole("button", { name: "Open navigation" })).toHaveCount(0);
@@ -97,6 +99,7 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
       page.evaluate(() => {
       window.scrollTo(0, document.documentElement.scrollHeight);
       const chat = document.querySelector('[data-testid="chat-open"]')!.getBoundingClientRect();
+      const chatInHeader = Boolean(document.querySelector('[data-testid="chat-open"]')!.closest("header"));
       const bar = document.querySelector('[data-testid="tab-bar"]');
       const barTop = bar && getComputedStyle(bar).display !== "none" ? bar.getBoundingClientRect().top : innerHeight;
       // Every control in main, at the end of the page, sits above the bar and outside the Ask FLOW box.
@@ -105,7 +108,8 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
       return Array.from(document.querySelectorAll("main a[href], main button, main summary, main input")).filter((el) => {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0 || folded(el)) return false;
-        const hitsChat = r.left < chat.right && r.right > chat.left && r.top < chat.bottom && r.bottom > chat.top;
+        // Ask FLOW sits in the sticky header on a desktop (content scrolls under the header, which is not the pill covering it); on a phone it is a cell of the bar, where it must not cover a control.
+        const hitsChat = !chatInHeader && r.left < chat.right && r.right > chat.left && r.top < chat.bottom && r.bottom > chat.top;
         return hitsChat || r.bottom > barTop;
       }).length;
     });
