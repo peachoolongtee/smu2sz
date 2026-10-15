@@ -10,7 +10,7 @@
     POST /setup/preview             check the draft: the issues to fix, what to look at, the summary and a first forecast
     POST /setup/open                the owner signs the limits and opens the books: one OPEN_BOOKS entry starts the record
 
-Owner only. Opening replaces the books, so it is allowed where the demo reset is (DEMO_MODE, or the in-memory store), and the
+Owner only. Opening replaces the books, so it is allowed only on the blank books, and only where the demo reset is (DEMO_MODE, or the in-memory store), and the
 limits are signed with the demo owner key, which exists only there: a real deployment's owner signs with their own key, which
 this server never holds. The owner re-types their sign-in token to sign. Every number the page shows is computed here; the
 page computes nothing."""
@@ -77,6 +77,17 @@ def _pct_input(bp: int) -> str:
 
 def _can_open() -> bool:
     return demo_mode() or isinstance(get_runtime().store, InMemoryLedgerStore)
+
+
+def _books_are_blank() -> bool:
+    """The blank books are the only ones setup may replace. The scenario name is stored with the books, so this holds after a restart."""
+    return get_runtime().store.get_state().scenario == "blank"
+
+
+def _already_open(lg: Lang) -> HTTPException:
+    return HTTPException(409, {"code": "BOOKS_ALREADY_OPEN", "message": t(
+        lg, "Your books are already open, so nothing was changed. To start over, reset to the blank books first.",
+        "您的账簿已经开立，因此未做任何更改。如需重新开始，请先重置为空白账簿。")})
 
 
 def _opened_entry() -> dict | None:
@@ -471,6 +482,8 @@ def setup_open(body: OpenIn, request: Request, lang: str = "en") -> dict:
         raise HTTPException(403, {"code": "SIGNATURE_REFUSED", "message": t(
             lg, "That password does not match your sign-in, so nothing was signed or opened.",
             "密码与您的登录凭证不符，未签署也未开立任何内容。")})
+    if not _books_are_blank():
+        raise _already_open(lg)
     built = build_books(body.draft)
     if built.errors or built.state is None or built.mandate is None or built.start is None:
         raise HTTPException(422, {"code": "SETUP_INVALID", "message": t(lg, "Some entries need fixing first.", "部分内容需要先修改。"),
@@ -479,6 +492,8 @@ def setup_open(body: OpenIn, request: Request, lang: str = "en") -> dict:
     state = built.state
     company = (body.draft.business.company_name or "").strip()
     with rt.lock:
+        if not _books_are_blank():  # the books may have changed while the draft was being checked
+            raise _already_open(lg)
         carried = _carry_documents(body.draft, {r.id: r for r in _usable_documents()})
         rt.store.reset()
         rt.store.put_state(state)

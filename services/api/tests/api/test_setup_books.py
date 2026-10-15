@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+from app.api import setup as setup_api
 from app.api.runtime import get_runtime
 from app.mandate import verify_signature
 from app.mandate.fixture import demo_owner_public_key_hex
@@ -39,6 +40,18 @@ DRAFT: dict[str, Any] = {
               {"label": "Raw materials", "kind": "SUPPLIER", "amount": "180,000", "next_date": "2026-11-02", "repeats": "ONCE"}],
     "limits": {"min_cash": "300,000", "max_apr_pct": "15", "concession_cap": "5,000", "approval_above": "100,000", "valid_days": 90},
 }
+
+
+@pytest.fixture(autouse=True)
+def _no_documents_left_over():
+    setup_api._setup_docs.clear()
+    yield
+    setup_api._setup_docs.clear()
+
+
+def blank(client) -> None:
+    """Setup opens only the blank books."""
+    assert client.post("/demo/reset?scenario=blank").status_code == 200
 
 
 def draft(**changes: Any) -> dict[str, Any]:
@@ -158,12 +171,14 @@ def test_open_needs_the_owner_password(client) -> None:
 
 
 def test_open_refuses_an_invalid_draft(client) -> None:
+    blank(client)
     r = client.post("/setup/open", json={"draft": draft(limits={}), "password": "demo-owner-token"})
     assert r.status_code == 422 and r.json()["detail"]["code"] == "SETUP_INVALID"
-    assert get_runtime().store.get_state().scenario == "golden_sme"
+    assert get_runtime().store.get_state().scenario == "blank"
 
 
 def test_open_replaces_the_books_and_starts_the_record(client) -> None:
+    blank(client)
     r = client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"})
     assert r.status_code == 200, r.text
     rt = get_runtime()
@@ -193,14 +208,18 @@ def test_a_contract_the_row_came_from_is_confirmed_under_the_new_customer(client
     assert row["contract"]["next_invoice_date"] >= "2026-10-14"
     assert supply["progress"]["sent"] >= 1 and all(i["sent_on"] < "2026-10-14" for i in row["invoices"])
     line = next(d for d in docs if d["kind"] == "LENDER_AGREEMENT" and d["row"]["kind"] == "CREDIT_LINE")
+    # Setup opens only the blank books, which hold no documents: the confirmed ones wait as documents read during setup.
+    kept = get_runtime().store.contract_records()
+    blank(client)
+    setup_api._setup_docs.update({rec.id: rec for rec in kept})
     d = draft()
     d["customers"][0]["contract"]["document_id"] = supply["document_id"]
     d["borrowing"][0]["document_id"] = line["document_id"]
     r = client.post("/setup/open", json={"draft": d, "password": "demo-owner-token"})
     assert r.status_code == 200 and len(r.json()["confirmed_documents"]) == 2
     rt = get_runtime()
-    records = {rec.counterparty_id: rec for rec in rt.store.contract_records()}
-    assert records["BUYER-1"].status.value == "CONFIRMED" and records["LENDER-1"].linked_facility_id == "FAC-1"
+    by_party = {rec.counterparty_id: rec for rec in rt.store.contract_records()}
+    assert by_party["BUYER-1"].status.value == "CONFIRMED" and by_party["LENDER-1"].linked_facility_id == "FAC-1"
     assert [o.kind for o in rt.store.operations()] == ["OPEN_BOOKS", "CONFIRM_DOCUMENT", "CONFIRM_DOCUMENT"]
     assert rt.store.verify_chain()
 
@@ -228,6 +247,7 @@ def test_blank_scenario_is_a_new_business(client) -> None:
 
 
 def _two_invoice_books(client) -> None:
+    blank(client)
     d = draft()
     d["customers"] = [{"name": "Foshan Home Retail Co.", "contract": {"amount": "420,000", "every_days": 30, "terms_days": 45,
                                                                         "next_invoice_date": "2026-11-02"},
@@ -256,3 +276,44 @@ def test_an_offer_naming_an_invoice_only_by_amount_says_which_invoices_it_could_
     assert "the one dated 18 Sep 2026 or the one dated 3 Oct 2026" in c["ask_buyer_text"]
     zh = client.get(f"/decisions/deal:{offer_id}?lang=zh").json()["evaluation"]["clarification"]
     assert "哪一张" in zh["text"] and "2026年9月18日" in zh["text"]
+
+
+# ---------------------------------------------------------------- opening replaces only the blank books
+
+
+def _counts() -> tuple[str, int, int, int]:
+    rt = get_runtime()
+    return (rt.store.get_state().model_dump_json(), len(rt.store.commitments()), len(rt.store.operations()),
+            len(rt.store.approvals()))
+
+
+def test_a_second_open_is_refused_and_nothing_changes(client) -> None:
+    blank(client)
+    first = client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"})
+    assert first.status_code == 200, first.text
+    before = _counts()
+    again = client.post("/setup/open", json={"draft": draft(business={**DRAFT["business"], "cash": "1,000"}),
+                                             "password": "demo-owner-token"})
+    assert again.status_code == 409 and again.json()["detail"]["code"] == "BOOKS_ALREADY_OPEN"
+    assert "reset to the blank books first" in again.json()["detail"]["message"]
+    zh = client.post("/setup/open?lang=zh", json={"draft": DRAFT, "password": "demo-owner-token"})
+    assert zh.status_code == 409 and "空白账簿" in zh.json()["detail"]["message"]
+    assert _counts() == before and before[2] == 1
+    assert get_runtime().store.verify_chain()
+
+
+def test_opening_over_the_golden_books_is_refused(client) -> None:
+    client.post("/demo/reset")
+    before = _counts()
+    assert before[2] > 0  # the golden books come with their documents confirmed
+    r = client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "BOOKS_ALREADY_OPEN"
+    assert _counts() == before and get_runtime().store.get_state().scenario == "golden_sme"
+
+
+def test_the_blank_books_stay_openable_after_a_restart(client) -> None:
+    blank(client)
+    rt = get_runtime()
+    rt.scenario = "golden_sme"  # a restarted process reads the scenario from the stored books, not from memory
+    rt.hydrate()
+    assert client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"}).status_code == 200
