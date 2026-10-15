@@ -2,6 +2,11 @@ import { expect, test, type Page } from "@playwright/test";
 import { DEMO_TOKEN } from "./fixtures";
 import { checkedDeal, resetBooks } from "./helpers";
 
+// These start signed out: the landing page (the first page a visitor sees) is taken as seen, so "/" opens Home.
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => sessionStorage.setItem("tl-welcomed", "1"));
+});
+
 /**
  * /chat (POST /nl). Runs in both projects: mock replays replies recorded from the real API, live calls the
  * API. These specs import `test` from @playwright/test (not ./fixtures) because they sign in themselves,
