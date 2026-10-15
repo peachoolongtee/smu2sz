@@ -337,6 +337,24 @@ Newest last. One entry per change: date, phase, what changed, files, tests, resu
   Specs: the card's test in `e2e/buyside.spec.ts` (under the queue and before the inbox in reading order, the row,
   the links, hidden while a negotiation is open). Mock e2e for buyside, deals, deals-queue, responsive, a11y: all
   pass (one phone deals-queue test failed once and passed on two re-runs: a flake).
+- 15 Oct 2026, merge of `ui-ux-testing-v2` (ecc7b588 "New UI update") into this branch, three conflicts:
+  `lib/dictionary.ts` (both sides' keys kept, none shared), `lib/mode.ts` (that branch made `/whatif`, `/capex` and
+  `/documents` full Business routes, so `OWNER_DETAIL_ROUTES` keeps only the four buy-side routes),
+  `components/deals/flow/deals-page.tsx`: that branch split Deals into a list of every deal (`listMode`, `DealList`)
+  and a per-buyer queue, so `BuyingCard` now sits on the list page under `DealList` and before the Messages fold; the
+  per-buyer queue and an open negotiation do not draw it. The card's spec in `e2e/buyside.spec.ts` follows (list before
+  the card, the Messages fold after it; the fold is opened before a message is clicked). Not committed at time of writing.
+- 15 Oct 2026, the owner: Financial health should be more concise, in Home's design. `app/finance/page.tsx` rewritten:
+  the server's summary cut to its first two sentences as the page's line (the rest repeats the cards); four figure
+  cards in Home's `f-card` language (`cardTitle`, display-face figure, one note, `StatusPill`): above the minimum today
+  (note: cash and minimum), lowest point ahead (now the lowest cash, matching the summary, with the gap to the minimum
+  as the note; it used to show the gap as the figure), 90-day coverage, worst DSCR. Borrowing capacity as rows (name,
+  the server's sentence, amount and monthly payment on the right) instead of a four-column table; the "counts as zero"
+  badge dropped (the sentence says it). Loans as rows with a pill (green eligible, amber needs your answer, neutral not
+  eligible) and the criteria folded under "The lender's criteria". The owner's ratio entries and the formulas and
+  assumptions are `FoldCard`s (`finance-ratios`, `finance-basis`). New keys: `finance.loans.why`, `finance.basis`,
+  `finance.basis.hint`, `finance.headroom.note`, `finance.lowest.vsMin` (en, zh). Test IDs kept; the spec opens the
+  ratios fold before filling it. Mock e2e `buyside.spec.ts`: 7 passed.
 
 ## 7. How to run and check
 
