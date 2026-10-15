@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,7 +44,18 @@ load_dotenv()
 
 # SEC-13: the interactive docs and the schema map every route; they are served for the demo only
 _docs = demo_mode()
-app = FastAPI(title="TermsLedger API", version="0.1.0", docs_url="/docs" if _docs else None, redoc_url="/redoc" if _docs else None,
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Start-up: in DEMO_MODE, build the busy books in a background thread so the first reset to them is a restore (never blocks start-up)."""
+    from app.api.seeded_books import warm_up
+
+    warm_up("busy")
+    yield
+
+
+app = FastAPI(title="TermsLedger API", version="0.1.0", lifespan=lifespan, docs_url="/docs" if _docs else None, redoc_url="/redoc" if _docs else None,
               openapi_url="/openapi.json" if _docs else None)
 install_error_handlers(app)  # a conflict that survives the retries is a 409 with a retry hint, never a 500
 

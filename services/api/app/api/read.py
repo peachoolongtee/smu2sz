@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 
 from app.alerts import reconcile
+from app.api import seeded_books
 from app.api.auth import require_owner
 from app.api.causality import Causality, chain_fields, forecast_of, mark_changed, refusal_block
 from app.api.decide import _counter_allow
@@ -281,6 +282,7 @@ def demo_reset(scenario: str = "golden_sme", lang: str = "en", from_scenario: st
             "message_when": t(lang, f"There is no demo scenario called {scenario!r}; choose one of {names}. Nothing was reset.",
                               f"没有名为 {scenario!r} 的演示场景；请从 {names} 中选择。未重置任何内容。")})
     rt = get_runtime()
+    seeded_books.await_warm_up(scenario)  # a warm-up building this scenario's books is waited for here, holding no lock (never replayed twice)
     try:
         with rt.lock:
             check_books_unchanged(rt, from_scenario, confirm_loss, "zh" if lang == "zh" else "en")
