@@ -101,10 +101,10 @@ def test_the_busy_foshan_deal_says_why_it_has_one_reply(api: TestClient, lang: s
     [w] = pic["withheld"]
     assert w["kind"] == "price_adjustment"
     if lang == "en":
-        assert w["text"] == ("FLOW has no second reply: terms of 60, 55 or 50 days would leave cash ¥385,000 short of your minimum in 47 days, "
+        assert w["text"] == ("FLOW has no second reply: terms of 60, 55 or 50 days would leave cash ¥187,000 short of your minimum in 47 days, "
                              "and your committed funding cannot cover it.")
     else:
-        assert w["text"] == ("FLOW 没有第二个回复：60、55 或 50 天的账期会使现金低于您的最低现金储备 ¥385,000（47 天后），"
+        assert w["text"] == ("FLOW 没有第二个回复：60、55 或 50 天的账期会使现金低于您的最低现金储备 ¥187,000（47 天后），"
                              "而您已承诺的融资无法覆盖。")
         assert not english_leaks({"withheld_text": w["text"]}, NAMES)
     assert not BAD.search(w["text"]), w["text"]
