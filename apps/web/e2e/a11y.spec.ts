@@ -14,7 +14,9 @@ import { openStoryFold } from "./helpers";
 
 async function scan(page: Page, label: string) {
   // Under reduced motion only opacity transitions remain (a fold opening fades in): axe must read the settled colours, not a frame of the fade.
-  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+  // Read the page until nothing in it is running (a fresh read each time). Awaiting the `finished` promises of the animations present at one instant can wait for ever on one whose
+  // element the router removes half way through its fade (a detached animation never settles); an animation that really never ends still fails here.
+  await expect.poll(() => page.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").length), { message: `${label}: animations still running` }).toBe(0);
   const result = await new AxeBuilder({ page }).analyze();
   const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   const text = bad.map((v) => `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes.slice(0, 4).map((n) => n.target.join(" ")).join("\n  ")}`);
