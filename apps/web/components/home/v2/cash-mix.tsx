@@ -101,7 +101,7 @@ export function CashMix({ h, customers, bare = false }: { h: HomeView; customers
   const nameOf = (s: FundingSlice) => (s.kind === "own" ? t("home.mix.own") : (s.name ?? ""));
   const toggle = (key: string) => setOpen((k) => (k === key ? null : key));
   return (
-    <div className={bare ? "" : "mt-4 border-t border-line pt-4"} data-testid="home-mix" data-tour="home-mix">
+    <div className={bare ? "" : "mt-4 border-t border-line pt-4 max-sm:hidden"} data-testid="home-mix" data-tour="home-mix">
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="text-supporting font-semibold text-ink-2">{t("home.mix.title")}</h3>
         <Link href="/cash#cash-sources-now" className="inline-flex items-center gap-1 text-supporting font-semibold text-brand-700 hover:underline" data-testid="home-mix-more">

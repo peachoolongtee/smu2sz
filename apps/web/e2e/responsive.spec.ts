@@ -273,7 +273,8 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   // Home: the status, then the priced action with its button above the tab bar, with no scroll.
   await page.goto("/");
   const alertId = await page.getByTestId("home-next-action").getAttribute("data-alert");
-  const run = page.getByTestId(`fix-open-${alertId}`);
+  // The Home's card opens the plan on Cash & funding ("Check funding plan"); the plan's own two presses are on Cash.
+  const run = page.getByTestId("home-check-plan");
   await expect(run).toBeVisible();
   const box = (await run.boundingBox())!;
   const tab = (await page.getByTestId("tab-bar").boundingBox())!;
@@ -378,7 +379,7 @@ test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash)
   await toDay34(page);
   await page.goto("/");
   const alert34 = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
-  expect(await bottomOf(page, `fix-open-${alert34}`), "Home day 34").toBeLessThanOrEqual(840);
+  expect(await bottomOf(page, "home-check-plan"), "Home day 34").toBeLessThanOrEqual(840);
   await page.goto("/cash");
   await expect(page.getByTestId(`fix-open-${alert34}`)).toBeVisible();
   expect(await bottomOf(page, `fix-open-${alert34}`), "Cash day 34").toBeLessThanOrEqual(840);
@@ -404,7 +405,7 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/");
   const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
-  expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
+  expect(await bottomOf(page, "home-check-plan")).toBeLessThanOrEqual(700);
   // The three cards are one row in the page's flow (not sticky) and the whole row, today's cash among them, is inside the first screen.
   await expect(page.getByTestId("home-kpi-cash-value")).toBeVisible();
   for (const id of ["hv2-cash-card", "hv2-action", "hv2-outlook-card"]) {

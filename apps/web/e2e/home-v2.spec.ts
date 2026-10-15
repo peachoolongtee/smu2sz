@@ -350,18 +350,19 @@ test("on a phone the funding bar and its legend stay inside the card, and in Chi
   expect(await filledBrand(page)).toBe(1);
 });
 
-test("running the plan: no alert, the arranged funding, the quiet recommendation with no filled button, the financing on the worklist", async ({ page }) => {
+test("running the plan: no alert, the covered recommendation with its one button to the deals, the financing on the worklist", async ({ page }) => {
   await open(page, { offer: true });
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0); // the recommendation card is the alert
   await runPlan(page, ALERT); // the Home's card opens Cash & funding, where the two presses are; the owner is back on the Home after
   const v2 = homeAfter.en.home_v2;
-  await expect(page.getByTestId("home-kpi-funding-value")).toHaveText(v2.kpis.funding.value_display);
-  if (v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
-  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
+  // Nothing needs funding any more: the card is the "You're covered!" celebration (a quiet recommendation with the cash covered), with the lowest cash ahead and the room above the minimum, and one filled button, on to the deals.
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
+  await expect(page.getByTestId("hv2-covered-facts")).toContainText(v2.kpis.lowest_ahead.value_display);
+  await expect(page.getByTestId("hv2-explore-deals")).toHaveAttribute("href", "/deals");
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
-  await expect(page.getByTestId(`fix-open-${ALERT}`)).toHaveCount(0);
-  expect(await filledBrand(page)).toBe(0);
+  await expect(page.getByTestId("home-check-plan")).toHaveCount(0);
+  expect(await filledBrand(page)).toBe(1);
   await page.getByTestId("home-tab-waiting").click();
   const row = worklistAfter.en.waiting[0];
   const rows = page.getByTestId("home-worklist-row");
@@ -398,7 +399,8 @@ test("Expand opens the full company forecast in place under the cards, with the 
   await expect(legend).toContainText("conditional on execution");
   await expect(legend).toContainText("Minimum reserve");
   await expect(page.getByTestId("hv2-below-base")).toBeAttached();
-  await expect(page.getByTestId("home-line-counter")).toHaveClass(/stroke-ink-3/);
+  // FLOW's plan is the better line now: solid, bolder and in the agreed green (it was a dashed grey).
+  await expect(page.getByTestId("home-line-counter")).toHaveClass(/stroke-ok-solid/);
   await expect(page.getByTestId("home-line-plan")).toHaveClass(/stroke-chart-base/);
   await expect(page.getByTestId("hv2-danger")).toBeAttached();
   await expect(page.getByTestId("home-reserve")).toHaveClass(/stroke-chart-reserve/);
@@ -864,7 +866,7 @@ test("phone: a deal row opens the deal on the Deals page; Back to Home returns t
 test("a customer with a financed invoice: the card shows the net after repayment in the server's word, the breakdown with its shares and the one filled button View invoice", async ({ page }) => {
   await open(page, { offer: true });
   await runPlan(page, ALERT);
-  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
   await page.goto("/?customer=BUYER-1");
   const row = receivablesAfter.en.rows[0] as unknown as { receivable_id: string; net_after_repayment_display: string; collection_due_text: string; face_display: string; breakdown: { label: string; amount_display: string; share_text: string }[] };
   expect(row.net_after_repayment_display).toMatch(/^about /);
@@ -1027,7 +1029,7 @@ test("round four sizes at 1440: the three cards are 360 px tall at most (the tal
   expect(await px("hv2-summary")).toBe("15px");
   // The worklist rows are 56 px (fixed) and the upcoming movements 44 px.
   for (const r of await page.getByTestId("home-worklist-row").all()) expect(Math.round((await r.boundingBox())!.height)).toBe(56);
-  expect(Math.round((await page.getByTestId("hv2-upcoming-row").first().boundingBox())!.height)).toBe(44);
+  expect(Math.round((await page.getByTestId("hv2-upcoming-row").first().boundingBox())!.height)).toBe(39); // compact rows (min-h-9 and 4 px of air)
   // The middle card's order: the eyebrow with the Planned pill, the headline, the amount with the cost at its right, the consequence, the funding bar, the approval line, the actions.
   const order = await Promise.all(["home-action-eyebrow", "home-action-title", "home-kpi-funding-value", "hv2-action-facts", "home-action-text", "hv2-funding-row", "hv2-approval", "home-attention-run"].map(async (id) => (await page.getByTestId(id).boundingBox())!.y));
   expect([...order].sort((x, y) => x - y)).toEqual(order);
@@ -1086,7 +1088,7 @@ test("every worklist row carries a chevron (quiet, ink on hover and focus, fille
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await page.getByTestId("home-tab-customers").click();
-  const selected = page.getByTestId("home-worklist-row").first().getByTestId("row-chevron");
+  const selected = page.getByTestId("home-worklist-panel").getByTestId("home-worklist-row").first().getByTestId("row-chevron");
   await expect(selected).toHaveAttribute("data-selected", "true");
   expect(await selected.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
 });

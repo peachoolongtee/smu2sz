@@ -36,11 +36,14 @@ export function ContextCard({ customerId, customer, onBack }: { customerId: stri
         {name}
       </p>
       {stage ? (
-        <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <span className="text-[15px] font-medium text-ink">{t("hv2.context.stage")}</span>
-          <StatusPill tone={tone} testId="hv2-context-stage">
-            {stage}
-          </StatusPill>
+          {/* A long stage word wraps inside the pill instead of widening the column (no sideways scroll at 1100). */}
+          <span className="flex min-w-0 max-w-full justify-end [&>*]:max-w-full [&>*]:!whitespace-normal [&>*]:!py-1 [&>*]:!leading-tight">
+            <StatusPill tone={tone} testId="hv2-context-stage">
+              {stage}
+            </StatusPill>
+          </span>
         </div>
       ) : null}
       {sentence ? (
