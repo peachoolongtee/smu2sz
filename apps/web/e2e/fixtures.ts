@@ -22,6 +22,24 @@ export const test = base.extend({
     }, token);
     await provide(context);
   },
+  // `load` is not "ready": until React has hydrated, the page is the server's snapshot (signed out) and a click on it is lost. On a slow
+  // runner that gap is seconds, so every load waits for the shell's `data-hydrated` (components/app-shell.tsx) before the spec acts.
+  page: async ({ page }, provide) => {
+    const hydrated = () => page.waitForFunction(() => document.documentElement.hasAttribute("data-hydrated"));
+    const goto = page.goto.bind(page);
+    const reload = page.reload.bind(page);
+    page.goto = async (...args) => {
+      const res = await goto(...args);
+      await hydrated();
+      return res;
+    };
+    page.reload = async (...args) => {
+      const res = await reload(...args);
+      await hydrated();
+      return res;
+    };
+    await provide(page);
+  },
 });
 
 export { expect };

@@ -578,5 +578,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const mode = useMode();
   const pathname = usePathname();
   useDocumentMeta(pathname, mode);
+  // `data-hydrated` on <html> once the page has hydrated: before then the server's snapshot (signed out, English) is on screen and a click does
+  // nothing. The browser specs wait for it after every load (e2e/fixtures.ts). The shell's effect runs after its children's.
+  useEffect(() => {
+    document.documentElement.dataset.hydrated = "";
+  }, []);
   return shellFor(pathname, mode) === "demo" ? <BusinessShell demo>{children}</BusinessShell> : <BusinessShell>{children}</BusinessShell>;
 }
