@@ -122,7 +122,7 @@ test.describe("live", () => {
   test("the busy queue: distinct subjects, lifecycle words, sort by latest activity and grouping by customer", async ({ page, request }) => {
     await busy(request);
     await page.goto("/deals");
-    await expect(page.getByTestId("queue-row")).toHaveCount(6);
+    await expect(page.getByTestId("queue-row")).toHaveCount(11);
     const subjects = await page.getByTestId("queue-subject").allTextContents();
     expect(new Set(subjects).size, "every negotiation has its own subject").toBe(subjects.length);
     for (const word of ["Owner review needed", "Counter ready", "More information needed"]) await expect(page.getByTestId("queue-status").filter({ hasText: word }).first()).toBeVisible();
@@ -132,7 +132,7 @@ test.describe("live", () => {
     await expect(page.getByTestId("queue-activity").first()).toBeVisible();
     await page.getByTestId("queue-group").click();
     const headings = (await page.getByTestId("queue-group-heading").allTextContents()).map((h) => h.replace(/\s*\(\d+\)$/, ""));
-    expect(headings.length, "three customers").toBe(3);
+    expect(headings.length, "eight customers: every one has a negotiation").toBe(8);
     expect(headings.some((h) => h.startsWith("Foshan"))).toBe(true);
     // Demo mode may show the offer's id; Business never does.
     await page.evaluate(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "demo" })));
@@ -143,7 +143,7 @@ test.describe("live", () => {
   test("Foshan's EX01 on the busy books: the comparison says the request breaches the reserve, the terms say the difference of the period, and the customer page leads with the selected negotiation", async ({ page, request }) => {
     await busy(request);
     await page.goto("/deals");
-    await page.getByTestId("queue-row").filter({ hasText: "60-day terms" }).getByTestId("queue-select").click();
+    await page.getByTestId("queue-row").filter({ hasText: /Foshan.*60-day terms/ }).getByTestId("queue-select").click();
     // The request breaches the reserve: its cash outcome says so in the comparison; the terms say the difference of the period.
     await expect(page.getByTestId("deal-choice-cell-terms-asked")).toContainText("days", { timeout: 45_000 });
     await expect(page.getByTestId("deal-choice-cell-lowest-asked")).toContainText(/Breached by/);

@@ -253,13 +253,13 @@ test.describe("live", () => {
     await busy(request);
     await page.goto("/deals");
     // Day 0 of the busy books: nothing is agreed yet (the agreements come from the owner's own sends), so the Agreements tab is empty.
-    // Round two: Deals lists negotiations only (the server's `queue.deals` counts): the five decisions waiting on the owner and the buyer's reply; the loan approval and the overdue collection are Approvals' and Receivables' (Home keeps all eight).
-    await expect(page.getByTestId("queue-count-needs_you")).toHaveText("5");
+    // Round two: Deals lists negotiations only (the server's `queue.deals` counts): the ten decisions waiting on the owner (Zhuhai, Dongguan, Foshan x3 and one for each of the five newer customers) and the buyer's reply; the loan approval and the overdue collection are Approvals' and Receivables' (Home keeps all eight).
+    await expect(page.getByTestId("queue-count-needs_you")).toHaveText("10");
     await expect(page.getByTestId("queue-count-waiting")).toHaveText("1");
     await expect(page.getByTestId("queue-count-agreements")).toHaveText("0");
-    await expect(page.getByTestId("queue-count-all")).toHaveText("6");
+    await expect(page.getByTestId("queue-count-all")).toHaveText("11");
     const rows = page.locator('[data-testid="queue-row"]');
-    await expect(rows).toHaveCount(6);
+    await expect(rows).toHaveCount(11);
     const foshan = page.locator('[data-testid="queue-row"][data-tier="needs_you"][data-kind="DECISION"]').filter({ hasText: "Foshan" });
     await expect(foshan).toHaveCount(3);
     const hrefs = await foshan.getByTestId("queue-customer").evaluateAll((els) => els.map((el) => el.getAttribute("href")!));
@@ -276,7 +276,7 @@ test.describe("live", () => {
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-decision", chosen!);
     // Home says the same numbers as Deals.
     await page.goto("/");
-    await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveText("7");
+    await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveText("12");
     await expect(page.getByTestId("home-tab-waiting-badge")).toHaveText("1");
   });
 
