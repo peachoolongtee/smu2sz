@@ -19,6 +19,7 @@
     "reasons": [
       "Give the delivery day and the acceptance day to date the payments that wait for them."
     ],
+    "reasons_zh": [],
     "needs": [
       "delivery_day",
       "acceptance_day"

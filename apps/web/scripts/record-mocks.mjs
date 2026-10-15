@@ -126,6 +126,7 @@
 //   evaluate_day7.json                 the same with no signing day (the contract's own date, day 7: the deposit falls before any loan lands)
 //   evaluate_needs.json                the same with no timeline (the schedule asks for the delivery and acceptance days)
 //   commit.json                        POST /capex/contracts/{id}/commit (Tier 2, queued)
+//   commit_approval.json               { en, zh } of the commitment's row in GET /approvals/queue while it waits (carries the schedule rows the owner approves)
 //   health.json, health_inputs.json    GET /finance/health; POST with the owner's balance-sheet entries
 //   eligibility.json, eligibility_48.json   GET /lending/eligibility; POST with 48 months trading
 //   plans.json                         POST /capex/plans for the contract and an optional ¥400,000 robot
@@ -422,6 +423,8 @@ if (BUYSIDE) {
   if (commit.status !== "PENDING_APPROVAL") throw new Error("the purchase commitment no longer waits for the owner");
   files["buyside/commit.json"] = commit;
   files["buyside/purchases_awaiting.json"] = await both(() => live.getPurchases(getLangForRecording()));
+  // the commitment's row in the Approvals queue, with the schedule the owner approves (CAPEX-2)
+  files["buyside/commit_approval.json"] = await both(async () => (await live.getApprovals()).find((a) => a.id === commit.approval_id));
   await live.decideApproval(commit.approval_id, "APPROVE");
   files["buyside/purchases_committed.json"] = await both(() => live.getPurchases(getLangForRecording()));
   files["buyside/add_to_menu.json"] = await live.addProductToMenu("PRD-BANK1-TERM-60", 60000000);

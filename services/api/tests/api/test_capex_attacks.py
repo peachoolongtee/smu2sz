@@ -41,7 +41,7 @@ def _confirmed(client) -> tuple[str, str, str]:  # type: ignore[no-untyped-def]
 def _op(doc: str, doc_hash: str, schedule_hash: str, over: dict | None = None) -> dict:  # type: ignore[type-arg]
     over = over or {}
     body = {"kind": "COMMIT_PURCHASE", "op_id": f"attack-{sorted(over.items())}", "idempotency_key": f"attack:{sorted(over.items())}",
-            "mandate_version": 1, "requested_by": "AGENT", "document_id": doc, "doc_hash": doc_hash,
+            "mandate_version": 1, "requested_by": "OWNER", "document_id": doc, "doc_hash": doc_hash,
             "schedule_hash": schedule_hash, "amount_fen": 60_000_000, **TIMELINE}
     body.update(over)
     return body
@@ -51,20 +51,24 @@ def _capex_flows(rt) -> list[str]:  # type: ignore[no-untyped-def]
     return [f.id for f in rt.store.get_state().flows if f.kind.value == "CAPEX"]
 
 
-def test_the_agent_can_only_queue_a_purchase_never_approve_it(client, agent, on, rt):
+def test_the_agent_cannot_queue_a_purchase_and_cannot_approve_the_owners(client, agent, on, rt):
     doc, h, sh = _confirmed(client)
-    r = agent.post("/operations", json=_op(doc, h, sh)).json()["result"]
-    assert r["status"] == "PENDING_APPROVAL" and r["tier"] == "TIER_2"
+    refused = agent.post("/operations", json=_op(doc, h, sh, {"requested_by": "AGENT"})).json()["result"]
+    assert refused["status"] == "REFUSED" and refused["approval_id"] is None  # CAPEX-2: nothing queued for the owner
+    assert refused["violations"][0]["code"] == "INSUFFICIENT_AUTHORITY"
+    assert not rt.store.approvals()
+    queued = client.post("/operations", json=_op(doc, h, sh, {"op_id": "owner-op", "idempotency_key": "owner-op"})).json()["result"]
+    assert queued["status"] == "PENDING_APPROVAL" and queued["tier"] == "TIER_2"
     assert _capex_flows(rt) == []
-    denied = agent.post(f"/approvals/{r['approval_id']}", json={"decision": "APPROVE"})
+    denied = agent.post(f"/approvals/{queued['approval_id']}", json={"decision": "APPROVE"})
     assert denied.status_code in (401, 403) or denied.json()["result"]["status"] == "REFUSED"
     assert _capex_flows(rt) == []
 
 
-def test_an_owner_claim_from_the_agent_is_still_tier_2(client, agent, on, rt):
+def test_an_owner_claim_from_the_agent_is_still_the_agent_and_is_refused(client, agent, on, rt):
     doc, h, sh = _confirmed(client)
     r = agent.post("/operations", json=_op(doc, h, sh, {"requested_by": "OWNER"})).json()["result"]
-    assert r["status"] == "PENDING_APPROVAL" and _capex_flows(rt) == []
+    assert r["status"] == "REFUSED" and r["approval_id"] is None and not rt.store.approvals() and _capex_flows(rt) == []
 
 
 @pytest.mark.parametrize(("over", "code"), [
@@ -77,7 +81,7 @@ def test_an_owner_claim_from_the_agent_is_still_tier_2(client, agent, on, rt):
 ])
 def test_a_forged_commitment_books_nothing_even_when_the_owner_approves(client, agent, on, rt, over, code):
     doc, h, sh = _confirmed(client)
-    r = agent.post("/operations", json=_op(doc, h, sh, over)).json()["result"]
+    r = client.post("/operations", json=_op(doc, h, sh, over)).json()["result"]
     assert r["status"] == "PENDING_APPROVAL"
     out = client.post(f"/approvals/{r['approval_id']}", json={"decision": "APPROVE"}).json()["result"]
     assert out["status"] == "REFUSED" and out["violations"][0]["code"] == code, out
@@ -87,7 +91,7 @@ def test_a_forged_commitment_books_nothing_even_when_the_owner_approves(client, 
 def test_a_buyer_contract_cannot_be_committed_as_a_purchase(client, agent, on, rt):
     d = client.post("/documents", json={"fixture_id": "FHR_SUPPLY_AGREEMENT"}).json()["document"]
     client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]})
-    r = agent.post("/operations", json=_op(d["id"], d["doc_hash"], "0" * 64)).json()["result"]
+    r = client.post("/operations", json=_op(d["id"], d["doc_hash"], "0" * 64)).json()["result"]
     out = client.post(f"/approvals/{r['approval_id']}", json={"decision": "APPROVE"}).json()["result"]
     assert out["status"] == "REFUSED" and "not a capex contract" in out["message"]
     assert _capex_flows(rt) == []
@@ -96,7 +100,7 @@ def test_a_buyer_contract_cannot_be_committed_as_a_purchase(client, agent, on, r
 def test_with_the_feature_off_a_queued_purchase_books_nothing(client, agent, monkeypatch, rt):
     monkeypatch.setenv("FEATURE_CAPEX_CONTRACTS", "1")
     doc, h, sh = _confirmed(client)
-    r = agent.post("/operations", json=_op(doc, h, sh)).json()["result"]
+    r = client.post("/operations", json=_op(doc, h, sh)).json()["result"]
     monkeypatch.setenv("FEATURE_CAPEX_CONTRACTS", "0")
     out = client.post(f"/approvals/{r['approval_id']}", json={"decision": "APPROVE"}).json()["result"]
     assert out["status"] == "REFUSED" and out["violations"][0]["code"] == "FEATURE_DISABLED"
