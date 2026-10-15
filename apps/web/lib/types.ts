@@ -3632,6 +3632,8 @@ export interface DealsHistoryRow {
 
 /** GET /deals `queue`: the three tiers of tasks and the counts the tabs show (Needs you = distinct tasks, Waiting = distinct pending outcomes, Agreements = agreements and their promises, Customers = unique relationships; the company alert is counted nowhere). The customers themselves are `GET /customers`. */
 export interface DealsQueue {
+  /** The page's one sentence ("Nothing needs you today."), written by the server from the same rows as the list. Absent from an older server: the page then says it from the counts. */
+  headline_text?: string | null;
   counts: { needs_you: number; waiting: number; agreements: number; customers: number };
   alert: WorklistAlert | null;
   needs_you: QueueRowView[];
@@ -3956,7 +3958,7 @@ export interface OfferPictureView extends DealLifeWords {
   recommendation?: PictureRecommendation | null;
   /** Round three, section 4: the consequences apart from the responses (keys `no_new_agreement`, `late_30`, `customer_loss`). Declared ahead of the server's batch. */
   scenarios?: PictureScenario[] | null;
-  /** Declared ahead of the server's batch: why there is no second reply. Absent or empty: no line is drawn. */
+  /** Why there is no further reply, one entry per kind withheld. Absent or empty: no line is drawn. */
   withheld?: PictureWithheld[] | null;
 }
 
@@ -4079,13 +4081,13 @@ export interface PicturePath {
   ask_breakdown?: { label: string; amount_display: string; share_text: string }[] | null;
   /** The asked path only: the deal card's three facts in the server's words; any may be null. */
   ask_facts?: { invoice_value_display: string | null; requested_discount_display: string | null; requested_term_text: string | null } | null;
-  /** A reply only (declared ahead of the server's batch): what happens if the buyer refuses it, in the server's words. Absent or null: the review says nothing about a refusal. */
+  /** A reply only: what happens if the buyer refuses it, in the server's words (null on the request). Absent or null: the review says nothing about a refusal. */
   if_refused_text?: string | null;
 }
 
-/** Why the picture has no second reply (declared ahead of the server's batch): one server sentence per reply FLOW did not offer. */
+/** Why the picture has no further reply: one server sentence for each kind of counter the engine considered and did not offer (`kind`, e.g. the lever, is never shown). Empty when nothing was withheld. */
 export interface PictureWithheld {
-  key?: string | null;
+  kind: string;
   text: string;
 }
 

@@ -96,7 +96,7 @@ test("Overview: the buyer's ask is the deal's name, FLOW recommends first with i
   await page.getByTestId("deal-tab-overview").click();
   // One table, "Your choices": the request and each reply side by side; Option A is tinted and says so; every cell is the server's word.
   const table = page.getByTestId("deal-choices-table");
-  await expect(table.locator("thead th").filter({ hasText: /\S/ })).toHaveText([/^As they asked|^Accept their request/, /^Option A\s*Recommended/, /^Option B/]);
+  await expect(table.locator("thead th").filter({ hasText: /\S/ })).toHaveText([/^Accept their request/, /^Option A\s*Recommended/, /^Option B/]);
   await expect(page.getByTestId("deal-choice-cell-terms-reply").first()).toContainText("45 days");
   await expect(page.getByTestId("deal-choice-cell-terms-asked")).toContainText("60 days");
   await expect(page.getByTestId("deal-choice-cell-cost-asked")).toContainText("¥28,326.92 over 12 months");
@@ -151,6 +151,8 @@ test("Your choices: a reply is picked and reviewed from its own column, and the 
   await page.getByTestId("queue-review").waitFor();
   await expect(page).toHaveURL(new RegExp(`path=${OPTION_B}`));
   await expect(page.getByTestId("deal-send")).toHaveText("Approve and send Option B to Foshan");
+  // What happens if the buyer refuses is the server's sentence, above the send button.
+  await expect(page.getByTestId("deal-if-refused")).toContainText("If Foshan refuses, FLOW will fund the gap on its own");
   // The review reads Option B's own receipt (the server priced every sendable reply), not Option A's and not words composed from the path.
   const receiptB = (await page.getByTestId("commitment-receipt").textContent())!;
   await expect(page.getByTestId("deal-unpriced")).toHaveCount(0);

@@ -555,7 +555,7 @@ export function DecisionPane({
                 paths.filter((p) => p.kind === "reply").length === 1 && picture?.withheld?.length ? (
                   <div className="space-y-1" data-testid="deal-withheld">
                     {picture.withheld.map((w) => (
-                      <p key={w.text} className="max-w-[68ch] text-[15px] leading-snug text-ink-2">
+                      <p key={w.kind} className="max-w-[68ch] text-[15px] leading-snug text-ink-2">
                         {w.text}
                       </p>
                     ))}

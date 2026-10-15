@@ -33,7 +33,7 @@
       "rows": [
         {
           "key": "asked",
-          "label": "As they asked",
+          "label": "Accept their request",
           "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 80 days below your minimum; no committed facility covers the ¥550,000.",
           "lowest_short": "−¥250k",
           "lowest_when": "in 60 days",
@@ -68,7 +68,7 @@
       "unavailable_text": null,
       "lost_billings_text": "About ¥5,460,000 a year of billings (projected from your books)",
       "lost_contribution_text": null,
-      "cash_effect_text": "¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives. Costs that would also stop are not modelled; the economic loss is the gross-profit figure, not the cash figure.",
+      "cash_effect_text": "¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives.",
       "invoice_remains_text": "The ¥420,000 already invoiced (due in 32 days) is still paid.",
       "rows": [
         {
@@ -79,7 +79,7 @@
         {
           "key": "cash_effect",
           "label": "Effect on cash",
-          "text": "¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives. Costs that would also stop are not modelled; the economic loss is the gross-profit figure, not the cash figure."
+          "text": "¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives."
         },
         {
           "key": "invoice_remains",
@@ -123,7 +123,7 @@
       "rows": [
         {
           "key": "asked",
-          "label": "按对方要求",
+          "label": "接受对方的要求",
           "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 80 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
           "lowest_short": "−¥250k",
           "lowest_when": "60 天后",
@@ -158,7 +158,7 @@
       "unavailable_text": null,
       "lost_billings_text": "每年约 ¥5,460,000 的开票额（根据您的账目推算）",
       "lost_contribution_text": null,
-      "cash_effect_text": "未来 120 天内减少 ¥1,260,000 回款；仍会收到 ¥420,000。也会随之停止的成本没有计入；经济损失看毛利数字，而不是现金数字。",
+      "cash_effect_text": "未来 120 天内减少 ¥1,260,000 回款；仍会收到 ¥420,000。",
       "invoice_remains_text": "已开票的 ¥420,000（32 天后到期）仍会照付。",
       "rows": [
         {
@@ -169,7 +169,7 @@
         {
           "key": "cash_effect",
           "label": "对现金的影响",
-          "text": "未来 120 天内减少 ¥1,260,000 回款；仍会收到 ¥420,000。也会随之停止的成本没有计入；经济损失看毛利数字，而不是现金数字。"
+          "text": "未来 120 天内减少 ¥1,260,000 回款；仍会收到 ¥420,000。"
         },
         {
           "key": "invoice_remains",

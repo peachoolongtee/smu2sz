@@ -12,36 +12,32 @@ const { en, zh } = await import("../lib/dictionary.ts");
 const params = (q) => new URLSearchParams(q);
 const path = (key, o = {}) => ({ key, kind: key === "asked" ? "asked" : "reply", label: key, recommended: false, terms: [], first_breach_when: null, lowest_fen: null, lowest_short: null, lowest_when: null, ...o });
 
-test("the address: view= names the tab; the retired keys land on Compare responses; nothing is Overview", () => {
+test("the address: view= names the tab; the retired keys are flagged and land on the Overview (Compare responses is gone); nothing is Overview", () => {
   assert.deepEqual(m.viewOf(params("decision=deal:x")), { view: "overview", legacy: false });
   assert.deepEqual(m.viewOf(params("view=cash")), { view: "cash", legacy: false });
-  for (const old of ["investigate=1", "compare=1", "chart=1", "show=cost"]) assert.deepEqual(m.viewOf(params(old)), { view: "compare", legacy: true }, old);
+  for (const old of ["investigate=1", "compare=1", "chart=1", "show=cost"]) assert.deepEqual(m.viewOf(params(old)), { view: "overview", legacy: true }, old);
   assert.deepEqual(m.viewOf(params("view=terms&show=cash")), { view: "terms", legacy: true });
   assert.deepEqual(m.viewOf(params("view=nonsense")), { view: "overview", legacy: false });
-  assert.ok(m.WIDE_VIEWS.has("compare") && m.WIDE_VIEWS.has("cash") && !m.WIDE_VIEWS.has("overview") && !m.WIDE_VIEWS.has("messages"));
 });
 
-test("the tabs: four before agreement, three from it; a deal with nothing to draw has no comparison tab; a tab the deal lacks is the Overview", () => {
-  assert.deepEqual(m.tabsOf({ agreed: false, analysis: true }), ["overview", "compare", "cash", "messages"]);
+test("the sections: three before agreement (the choices table replaced Compare responses), three from it; a deal with nothing to draw has no cash section; a section the deal lacks is the Overview", () => {
+  assert.deepEqual(m.tabsOf({ agreed: false, analysis: true }), ["overview", "cash", "messages"]);
   assert.deepEqual(m.tabsOf({ agreed: false, analysis: false }), ["overview", "messages"]);
   assert.deepEqual(m.tabsOf({ agreed: true, analysis: true }), ["overview", "terms", "messages"]);
   assert.equal(m.viewIn("compare", m.tabsOf({ agreed: true, analysis: true })), "overview");
   assert.equal(m.viewIn("terms", m.tabsOf({ agreed: true, analysis: false })), "terms");
 });
 
-test("the chart's lines: the request and the recommended reply by default; the address's choice in its order; never more than three; unknown keys and repeats dropped", () => {
-  const four = [path("asked"), path("A", { recommended: true }), path("B"), path("C")];
-  assert.equal(m.MAX_LINES, 3);
-  assert.deepEqual(m.chosenLines(four, null), ["asked", "A"]);
-  assert.deepEqual(m.chosenLines(four, ""), ["asked", "A"]);
-  assert.deepEqual(m.chosenLines(four, "B,asked"), ["B", "asked"]);
-  assert.deepEqual(m.chosenLines(four, "asked,A,B,C"), ["asked", "A", "B"], "a fourth line is never drawn");
-  assert.deepEqual(m.chosenLines(four, "A,A,nope,C,B,asked"), ["A", "C", "B"], "repeats and unknown keys do not take a place");
-  assert.equal(m.chosenLines(four, "asked,A,B,C").length, 3);
-  // No recommended reply: the first reply stands in for it.
-  assert.deepEqual(m.chosenLines([path("asked"), path("X"), path("Y")], null), ["asked", "X"]);
-  // A choice that names nothing the deal has falls back to the default.
-  assert.deepEqual(m.chosenLines(four, "ghost"), ["asked", "A"]);
+test("the day-by-day lines: the series inside the picture's window, as positions along it; the labelled days are the picture's moments inside it", () => {
+  const series = [0, 10, 30, 66, 90].map((day) => ({ day, closing_fen: day * 100, closing_display: "", events: [] }));
+  const pts = m.lineWindow(series, 0, 66);
+  assert.deepEqual(pts.map((p) => p.day), [0, 10, 30, 66], "day 90 is outside the window");
+  assert.deepEqual(pts.map((p) => Math.round(p.x)), [0, 15, 45, 100]);
+  assert.deepEqual(m.lineWindow(series, 10, 0).map((p) => p.day), [10, 30, 66, 90], "no window: every day from today");
+  assert.deepEqual(m.lineWindow(null, 0, 66), []);
+  const moments = [{ day: 0, when: "today" }, { day: 33, when: "in 33 days" }, { day: 66, when: "in 66 days" }, { day: 80, when: "in 80 days" }, { day: 5, when: null }];
+  assert.deepEqual(m.dayTicks(moments, 0, 66).map((k) => [Math.round(k.x), k.label]), [[0, "today"], [50, "in 33 days"], [100, "in 66 days"]]);
+  assert.deepEqual(m.dayTicks(moments, 0, 0), []);
 });
 
 const point = (comparison, comparison_pairs) => ({ day: 0, closing_fen: 0, closing_display: "", events: [], comparison, comparison_pairs });
@@ -88,19 +84,18 @@ test("pair words: two replies read comparison_pairs on the first's point, in the
   assert.equal(pairWords(A, { key: "C", kind: "reply" }, pointOf), null);
 });
 
-test("the headroom plot: positions scale from the fen numbers only; the reserve is a line; below it is flagged; a response that cannot be drawn has no dot", () => {
-  const paths = [path("asked", { lowest_fen: 16_496_000, lowest_short: "¥165k", lowest_when: "in 60 days" }), path("A", { lowest_fen: 30_000_000, lowest_short: "¥300k", lowest_when: "in 30 days" }), path("B", { lowest_fen: 45_000_000, lowest_short: "¥450k", lowest_when: "in 30 days" }), path("C", { lowest_fen: null, lowest_short: null })];
-  const plot = m.headroomPlot(paths, 30_000_000);
-  assert.equal(plot.dots.length, 3, "C has no cash to draw");
-  assert.deepEqual(plot.dots.map((d) => d.key), ["asked", "A", "B"]);
-  assert.deepEqual(plot.dots.map((d) => d.below), [true, false, false], "on the reserve is not below it");
-  assert.ok(plot.dots[0].at < plot.reserveAt && plot.reserveAt === plot.dots[1].at && plot.dots[1].at < plot.dots[2].at);
-  for (const d of plot.dots) assert.ok(d.at >= 0 && d.at <= 100);
-  assert.equal(plot.dots[0].short, "¥165k", "the label is the server's word");
-  // One value only (every response on the reserve): the plot still draws, at the middle.
-  const flat = m.headroomPlot([path("A", { lowest_fen: 100, lowest_short: "¥1" })], 100);
-  assert.equal(flat.dots[0].at, 50);
-  assert.equal(m.headroomPlot([path("A")], 100), null);
+test("the cash scale: positions come from the fen numbers only, widened to the server's labelled ticks; the minimum and a value on it share a place; one value draws at the middle", () => {
+  const axis = { min_fen: 0, max_fen: 100_000_000, ticks: [0, 20_000_000, 40_000_000, 60_000_000, 80_000_000, 100_000_000].map((v) => ({ value_fen: v, label: `t${v / 1_000_000}` })) };
+  const s = m.cashScale([16_496_000, 30_000_000, 30_000_000], axis);
+  assert.equal(s.lo, 0);
+  assert.equal(s.hi, 40_000_000, "the smallest tick at or above the highest value");
+  assert.deepEqual(s.ticks.map((k) => k.label), ["t0", "t20", "t40"], "only the server's ticks inside the scale, with the server's words");
+  assert.ok(s.at(16_496_000) < s.at(30_000_000) && s.at(30_000_000) === 75);
+  assert.equal(s.at(-5), 0, "positions stay on the scale");
+  const low = m.cashScale([-40_500_000, 30_000_000], { ...axis, ticks: [{ value_fen: -60_000_000, label: "-600" }, ...axis.ticks] });
+  assert.equal(low.lo, -60_000_000, "a value below zero widens the scale to the tick under it");
+  assert.equal(m.cashScale([100, 100], null).ticks.length, 0, "no axis, no labelled ticks");
+  assert.equal(m.cashScale([], null).at(0), 50);
 });
 
 test("the comparison's three rows are server words: the economic headline and the buyer status; the terms cells list each scope's own word", () => {
@@ -128,7 +123,7 @@ test("terms by scope: the server's scope and cell word decide the row and the ce
 });
 
 test("every new Deals word has its Chinese twin, and the rule sentence is the server's (its dictionary key is gone)", () => {
-  const keys = Object.keys(en).filter((k) => /^deals\.(pane|rail|cmp|out|plot|insp|biz|chips|ov|diff|chart)\./.test(k) || k === "deals.review.counter" || k === "deals.why.differ");
+  const keys = Object.keys(en).filter((k) => /^deals\.(pane|rail|cmp|out|plot|insp|biz|chips|ov|diff|chart|top|rec|choices|sec|cash)\./.test(k) || k === "deals.review.counter" || k === "deals.why.differ");
   assert.ok(keys.length > 50);
   for (const k of keys) assert.ok(zh[k] && zh[k] !== en[k], `${k} has a zh twin`);
   assert.equal("deals.why.rule" in en, false);
