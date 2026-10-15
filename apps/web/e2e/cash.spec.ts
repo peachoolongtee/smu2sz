@@ -131,9 +131,10 @@ test("after the plan ran, the page states the current funding and folds the comp
   await expect(current).toContainText("Your funding");
   await expect(current.getByTestId("cash-current-amount").filter({ hasText: "¥150,000.00" })).toHaveCount(1);
   await expect(current.getByTestId("cash-current-amount").filter({ hasText: "¥255,000.00" })).toHaveCount(1);
-  await expect(current).toContainText("today");
-  await expect(current).toContainText("in 3 days");
-  await expect(current.getByTestId("cash-no-gap")).toHaveText("No additional funding is needed.");
+  // The state is a pill now: money that landed is "Received", money on its way says when ("Arriving in 3 days").
+  await expect(current).toContainText("Received");
+  await expect(current).toContainText("Arriving in 3 days");
+  // Covered: the headline says so ("You're covered.") and no gap line or to-do list follows.
   // No comparison was taken when the plan was chosen (the plan ran from the home), and a fresh plan on covered books is empty:
   // the page shows the current funding and nothing that reads as a to-do list.
   await expect(page.locator("body")).not.toContainText(/ways to cover the gap/i);

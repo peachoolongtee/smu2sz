@@ -113,7 +113,7 @@ export function HomeV2ActionBar({
           {alarm && !quiet ? (
             <p role="status" className="-mx-4 -mt-4 mb-3 flex items-center gap-2 rounded-t-[var(--radius-f-card)] bg-f-risk px-4 py-2 text-sm font-bold text-white" data-testid="hv2-alarm">
               <span aria-hidden className="relative flex size-2.5 shrink-0">
-                <span className="absolute inline-flex size-full animate-ping rounded-pill bg-white/70" />
+                <span className="absolute inline-flex size-full motion-safe:animate-ping rounded-pill bg-white/70" />
                 <span className="relative inline-flex size-2.5 rounded-pill bg-white" />
               </span>
               <AlertIcon aria-hidden className="size-4 shrink-0" />

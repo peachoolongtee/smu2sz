@@ -1028,7 +1028,8 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-f-purple) 0%, transparent); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .next-cue {
+    .next-cue,
+    .alarm-card {
       animation: none;
     }
   }
