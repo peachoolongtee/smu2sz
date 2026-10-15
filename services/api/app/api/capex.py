@@ -193,7 +193,8 @@ class ContractCommitIn(BaseModel):
 @router.post("/capex/contracts/{document_id}/commit")
 def post_capex_contract_commit(document_id: str, body: ContractCommitIn) -> dict:
     """Queue the owner's commitment to a confirmed capex contract's payment schedule (ADR-0013): one CommitPurchase,
-    always Tier 2, prepared by the agent; nothing is booked until the owner approves it on /approvals/{id}. The schedule
+    requested by the owner (this route is owner-only; the executor refuses any other requester, CAPEX-2), always Tier 2;
+    nothing is booked until the owner approves it on /approvals/{id}. The schedule
     is checked here first, so a stale one is answered at once (409) instead of queued; the executor checks it again on
     approval."""
     _require_buy_side()
@@ -225,7 +226,7 @@ def post_capex_contract_commit(document_id: str, body: ContractCommitIn) -> dict
         t = body.timeline
         op = CommitPurchase(
             op_id=f"capex-commit-{record.id}-{schedule.schedule_hash[:12]}", idempotency_key=key,
-            mandate_version=mandate.version, requested_by=Actor.AGENT, day=rt.day, document_id=record.id,
+            mandate_version=mandate.version, requested_by=Actor.OWNER, day=rt.day, document_id=record.id,
             doc_hash=record.doc_hash, schedule_hash=schedule.schedule_hash, amount_fen=schedule.price_fen,
             signing_day=t.signing_day, delivery_day=t.delivery_day, acceptance_day=t.acceptance_day,
             invoice_day=t.invoice_day, retention_release_day=t.retention_release_day,

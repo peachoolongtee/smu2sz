@@ -256,3 +256,51 @@ def test_a_different_contract_with_the_same_vendor_still_commits(client, on, rt)
     assert _commit_and_approve(client, first)["status"] == "EXECUTED"
     assert _commit_and_approve(client, other)["status"] == "EXECUTED"
     assert len(_capex_flows(rt)) == 6
+
+
+# ---------------------------------------------------------------- CAPEX-2 (b): only the owner authors a commit
+
+
+def test_the_agent_key_cannot_queue_a_commit_through_the_operations_route(client, agent, on, rt):
+    doc = _upload(client)
+    ev = client.post(f"/capex/contracts/{doc['id']}/evaluate", json={"timeline": TIMELINE}).json()
+    sh = ev["schedule"]["schedule"]["schedule_hash"]
+    for who in ("AGENT", "OWNER"):  # an owner claim without the owner's token is the agent's
+        r = agent.post("/operations", json=_owner_op(doc, sh, {"requested_by": who}, key=who)).json()["result"]
+        assert r["status"] == "REFUSED" and r["approval_id"] is None
+        v = r["violations"][0]
+        assert v["code"] == "INSUFFICIENT_AUTHORITY" and v["inputs"]["refusal"] == "PURCHASE_OWNER_ONLY"
+    assert rt.store.approvals() == [] and _capex_flows(rt) == []
+    assert _last_entry(rt).result.status.value == "REFUSED"  # the log records it
+    assert any(e.kind.value == "PRIVILEGE_ESCALATION" for e in rt.store.security_events())  # and so does the security record
+
+
+def test_the_agent_key_cannot_use_the_owner_only_commit_route(client, agent, on, rt):
+    doc = _upload(client)
+    ev = client.post(f"/capex/contracts/{doc['id']}/evaluate", json={"timeline": TIMELINE}).json()
+    r = agent.post(f"/capex/contracts/{doc['id']}/commit",
+                   json={"timeline": TIMELINE, "schedule_hash": ev["schedule"]["schedule"]["schedule_hash"]})
+    assert r.status_code in (401, 403) and rt.store.approvals() == []
+
+
+def test_the_owners_route_queues_the_commit_as_the_owner(client, on, rt):
+    doc = _upload(client)
+    ev = client.post(f"/capex/contracts/{doc['id']}/evaluate", json={"timeline": TIMELINE}).json()
+    r = client.post(f"/capex/contracts/{doc['id']}/commit",
+                    json={"timeline": TIMELINE, "schedule_hash": ev["schedule"]["schedule"]["schedule_hash"]}).json()
+    assert r["status"] == "PENDING_APPROVAL"
+    assert [a for a in client.get("/approvals/queue").json()["approvals"]][0]["operation"]["requested_by"] == "OWNER"
+
+
+def test_the_executor_refuses_an_agent_authored_commit_that_was_already_in_the_queue(client, on, rt):
+    """Defence in depth: even an agent-authored operation that reached the queue some other way (an older queue, a direct
+    store write) books nothing when the owner approves it."""
+    import json
+
+    doc = _upload(client)
+    ev = client.post(f"/capex/contracts/{doc['id']}/evaluate", json={"timeline": TIMELINE}).json()
+    op = _owner_op(doc, ev["schedule"]["schedule"]["schedule_hash"], {"requested_by": "AGENT", "day": rt.day})
+    aid = rt.store.add_approval(json.dumps(op, sort_keys=True), "forged into the queue")
+    out = client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}).json()["result"]
+    assert out["status"] == "REFUSED" and out["violations"][0]["inputs"]["refusal"] == "PURCHASE_OWNER_ONLY", out
+    assert _capex_flows(rt) == []

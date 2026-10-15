@@ -984,6 +984,7 @@ class Executor:
         if isinstance(op, ApplyForFacility):
             return f"apply for facility {op.facility_id} ({fmt_yuan(op.amount_fen)})"
         if isinstance(op, CommitPurchase):
+            self._owner_only_purchase(op)  # CAPEX-2: refused before it is queued, so the owner is never asked
             return (f"commit to the purchase under document {op.document_id}: {fmt_yuan(op.amount_fen)} on the "
                     f"contract's payment schedule" + (", the early-payment discount taken" if op.take_early_pay else ""))
         if isinstance(op, DrawFacility | SubmitInvoiceForFinancing):
@@ -1478,6 +1479,16 @@ class Executor:
         return _Effect(f"Applied for {fmt_yuan(op.amount_fen)} on {f.id}; it is PENDING and counts as zero "
                        f"until committed", state=new_state)
 
+    @staticmethod
+    def _owner_only_purchase(op: CommitPurchase) -> None:
+        """CAPEX-2: only the owner commits the business to a purchase. The agent prepares and shows; it never authors the
+        operation the owner is then asked to approve. Checked when the operation is queued and again when it runs."""
+        if op.requested_by != Actor.OWNER:
+            raise _refuse(Code.INSUFFICIENT_AUTHORITY,
+                          f"Only the owner can commit the business to a purchase; {op.requested_by} cannot. Nothing was "
+                          f"queued and nothing was committed", SecurityEventKind.PRIVILEGE_ESCALATION,
+                          requested_by=op.requested_by, refusal="PURCHASE_OWNER_ONLY", document_id=op.document_id)
+
     def _committed_twin(self, op: CommitPurchase, rec: Any) -> tuple[str, str] | None:
         """CAPEX-3: (document id, title) of the other document whose purchase is already committed (an EXECUTED CommitPurchase)
         and which is the same contract: the same text (`doc_hash`), or the same contract reference with the same vendor.
@@ -1515,6 +1526,7 @@ class Executor:
         if not get_settings().features.capex_contracts:  # whichever route queued it (POST /operations included)
             raise _refuse(Code.FEATURE_DISABLED, "The buy side is switched off (FEATURE_CAPEX_CONTRACTS); nothing committed",
                           document_id=op.document_id)
+        self._owner_only_purchase(op)
         rec = self._store.get_contract_record(op.document_id)
         if rec is None:
             raise _refuse(Code.PRECONDITION_FAILED, f"Document {op.document_id} does not exist",

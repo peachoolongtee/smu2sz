@@ -54,7 +54,7 @@ def test_commit_queues_for_the_owner_and_books_nothing_until_approved(client, on
     assert rt.store.get_state() == before and _capex_flows(rt) == []
     queued = [a for a in client.get("/approvals/queue").json()["approvals"] if a["id"] == body["approval_id"]]
     assert queued and queued[0]["operation"]["document_id"] == d["id"]
-    assert queued[0]["operation"]["requested_by"] == "AGENT"
+    assert queued[0]["operation"]["requested_by"] == "OWNER"  # CAPEX-2: the owner's own request, never the agent's
 
 
 def test_the_owners_approval_books_the_payments_and_registers_the_vendor(client, on, rt):
