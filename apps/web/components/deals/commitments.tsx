@@ -106,9 +106,9 @@ export function obligationSentence(o: Ob, t: I18n["t"], te: I18n["te"], today: n
 function AgreementRow({ testId, status, head, who, line, badge, open, onOpen, children }: { testId?: string; status?: string; head: ReactNode; who?: ReactNode; line?: ReactNode; badge?: ReactNode; open?: boolean; onOpen?: (open: boolean) => void; children: ReactNode }) {
   return (
     <li className="border-t border-line first:border-t-0" data-testid={testId} data-status={status}>
-      {/* Open or closed is the section's to keep (by the agreement), so a row the owner opened stays open when the books move it from one money group to another. */}
-      <details className="group" open={open} onToggle={onOpen ? (e) => onOpen((e.currentTarget as HTMLDetailsElement).open) : undefined}>
-        <summary className="motion-press flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 rounded-tile px-2 py-3 hover:bg-subtle [&::-webkit-details-marker]:hidden" data-testid="commitment-toggle">
+      {/* Open or closed is the section's to keep (by the agreement), and a press on the row sets it at once (not by the browser's later toggle event), so a row the owner opened stays open when the books move it to another money group or the list is drawn again. */}
+      <details className="group" open={open}>
+        <summary onClick={onOpen ? (e) => { e.preventDefault(); onOpen(!open); } : undefined} className="motion-press flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 rounded-tile px-2 py-3 hover:bg-subtle [&::-webkit-details-marker]:hidden" data-testid="commitment-toggle">
           <ChevronRightIcon aria-hidden width={14} height={14} className="shrink-0 text-ink-3 transition-transform duration-(--dur-fast) group-open:rotate-90" />
           <span className="min-w-0 flex-1">
             <span className="block break-words text-sm font-semibold text-ink">{head}</span>
