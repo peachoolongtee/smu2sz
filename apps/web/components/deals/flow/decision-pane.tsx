@@ -290,7 +290,6 @@ export function DecisionPane({
   const evaluated = record ? record.state !== "RECEIVED" : Boolean(picture);
   const stateCode = record?.state ?? (evaluated ? "RESPONSE_READY" : "RECEIVED");
   const done = RECORD_DONE.has(stateCode);
-  const title = open?.headline_short ?? open?.read_text ?? record?.headline ?? row?.subject_text ?? buyerName;
   const doc = offer.documents[0];
   const paths = (picture?.paths ?? []).filter((p) => p.kind === "asked" || p.kind === "reply");
   const asked = paths.find((p) => p.kind === "asked") ?? null;
@@ -463,7 +462,6 @@ export function DecisionPane({
 
   const pane = (
     <section aria-labelledby={`${uid}-title`} className="min-w-0" data-testid="deal-pane" data-decision={decision} data-state={stateCode} data-view={current}>
-      <Announce text={title} />
       <Canonical want={view.view} have={current} onGo={onGo} />
       <TabScroll view={current} />
       <Starter want={wantReview} ready={canSend && focus?.key === wantReview} fire={() => setSendSignal((x) => x + 1)} done={() => setWantReview(null)} />
@@ -551,8 +549,8 @@ export function DecisionPane({
               onReview={startSend}
               onAcceptReview={() => setAcceptSignal((x) => x + 1)}
               note={
-                // With one reply the server says why there is no second one: one line under the table.
-                paths.filter((p) => p.kind === "reply").length === 1 && picture?.withheld?.length ? (
+                // Whenever the server withheld a reply (a single reply, or none) it says why: one line each under the table.
+                picture?.withheld?.length ? (
                   <div className="space-y-1" data-testid="deal-withheld">
                     {picture.withheld.map((w) => (
                       <p key={w.kind} className="max-w-[68ch] text-[15px] leading-snug text-ink-2">
@@ -708,10 +706,15 @@ export function DecisionPane({
 function StableTitle({ id, ask, fallback }: { id: string; ask: string | null; fallback: string }) {
   const [kept, setKept] = useState<string | null>(ask);
   if (ask && ask !== kept) setKept(ask);
+  const text = ask ?? kept ?? fallback;
   return (
-    <h1 id={id} tabIndex={-1} className="type-section text-balance text-ink outline-none" data-testid="queue-heading">
-      {ask ?? kept ?? fallback}
-    </h1>
+    <>
+      {/* What a screen reader is told when the deal opens: the same name, never the verdict's short heading. */}
+      <Announce text={text} />
+      <h1 id={id} tabIndex={-1} className="type-section text-balance text-ink outline-none" data-testid="queue-heading">
+        {text}
+      </h1>
+    </>
   );
 }
 
