@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { QuoteBlock } from "@/components/approval-card";
-import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, textLinkClass, type Tone } from "@/components/ui";
+import { Badge, Button, ButtonLink, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, textLinkClass, type Tone } from "@/components/ui";
 import { StateWord } from "@/components/ui/state-word";
 import { OpStatusBadge } from "@/components/badges";
 import { ReceiptFacts } from "@/components/receipt-facts";
+import { TrackerRecordLink } from "@/components/tracker/record-link"; // Deal tracker
 import { useI18n } from "@/lib/i18n";
 import type { DecisionView } from "@/lib/types";
 import { useDecision } from "@/lib/use-decision";
@@ -95,6 +97,7 @@ function RecordBody({ d }: { d: DecisionView }) {
           <p className="text-sm font-semibold text-ink" data-testid="record-action">
             {d.evaluation.business_action_text}
           </p>
+          {d.evaluation.clarification ? <Clarification c={d.evaluation.clarification} /> : null}
           {d.response?.counters.length ? (
             <ul className="mt-3 divide-y divide-line text-sm">
               {d.response.counters.map((c) => (
@@ -160,7 +163,7 @@ function RecordBody({ d }: { d: DecisionView }) {
                 <Fact label={t("verdict.exec.agreement")} testId="record-agreement">
                   {d.agreement.status_text}
                 </Fact>
-                <Fact label={t("deal.expires")}>{d.agreement.expires_when}</Fact>
+                {d.agreement.expires_when ? <Fact label={t("deal.expires")}>{d.agreement.expires_when}</Fact> : null}
               </>
             ) : null}
           </dl>
@@ -208,6 +211,9 @@ function RecordBody({ d }: { d: DecisionView }) {
         </Card>
       ) : null}
 
+      {/* Deal tracker: shown only for a deal whose tracker read is available. */}
+      {d.family === "DEAL" ? <TrackerRecordLink id={d.id} /> : null}
+
       <p className="text-meta text-ink-3">
         <Link href={dealHome} className={textLinkClass}>
           {d.family === "DEAL" ? t("rec.openDeals") : t("rec.openApprovals")}
@@ -222,6 +228,34 @@ function RecordBody({ d }: { d: DecisionView }) {
  * authorization, the agreement, what ran and what has landed. It is where a record with no page of its own is read (a funding request from
  * Home or Activity). Every sentence and figure is the server's, in the language on screen.
  */
+/** Why the offer cannot be decided yet, in the server's words, and the question to send the buyer (copied, never sent from here). */
+function Clarification({ c }: { c: NonNullable<DecisionView["evaluation"]>["clarification"] & object }) {
+  const { t } = useI18n();
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-3 space-y-3" data-testid="record-clarification">
+      <Callout tone="warn">{c.text}</Callout>
+      {c.ask_buyer_text ? (
+        <div className="rounded-tile border border-line bg-surface p-3">
+          <p className="text-meta font-medium text-ink-3">{t("rec.clarify.ask")}</p>
+          <p className="mt-1 text-sm text-ink" data-testid="record-clarification-ask">
+            {c.ask_buyer_text}
+          </p>
+          <Button
+            size="sm"
+            className="mt-2"
+            onClick={() => {
+              void navigator.clipboard?.writeText(c.ask_buyer_text ?? "").then(() => setCopied(true), () => setCopied(false));
+            }}
+          >
+            {copied ? t("rec.clarify.copied") : t("rec.clarify.copy")}
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function DecisionPage() {
   const { t } = useI18n();
   const params = useParams<{ id: string }>();

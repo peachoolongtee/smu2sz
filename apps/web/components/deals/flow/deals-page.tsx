@@ -37,6 +37,7 @@ const subscribeXl = (onChange: () => void) => {
   return () => list.removeEventListener("change", onChange);
 };
 /** True from the two-pane width (`xl`); false below it and while rendering on the server. */
+const HINT_KEY = "tl-deals-hint";
 const useTwoPanes = () => useSyncExternalStore(subscribeXl, () => window.matchMedia(XL).matches, () => false);
 
 /** The address names nothing (the Deals tab itself): the page is the list of every deal. Anything it names (a customer, a deal, a tab) opens the queue and the deal in full. */
@@ -67,6 +68,7 @@ export function DealsPage() {
     late: sel.scenario === "late",
     investigate: params.get("investigate") === "1",
     show: showRaw === "cost" || showRaw === "cash" || showRaw === "none" ? showRaw : null,
+    review: params.get("review") === "1",
   };
   const demo = useDemo();
   // What the page was opened with: the deals read then says where the owner came from (`context.back`) and whether the selection names anything; later picks in the page do not change it.
@@ -86,17 +88,38 @@ export function DealsPage() {
   const [sending, setSending] = useState(false);
   const paneRef = useRef<HTMLDivElement>(null);
   const twoPanes = useTwoPanes();
+  // First visit with nothing selected: the top row's chevron pulses twice (remembered in this browser once it has been shown; none is drawn, and nothing remembered, under reduced motion).
+  const [hint, setHint] = useState(false);
+  // Under reduced motion there is no cue to give, so the one-time flag is not spent: the owner who later allows motion still gets it.
+  const hintable = !decision && rows.length > 0;
+  useEffect(() => {
+    if (!hintable) return;
+    // Asked of the browser here, not of a hook: a hook reads "no preference" during hydration, before the reader's setting is known.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    try {
+      if (window.localStorage.getItem(HINT_KEY)) return;
+      window.localStorage.setItem(HINT_KEY, "1");
+    } catch {
+      return;
+    }
+    const on = window.setTimeout(() => setHint(true), 0);
+    const off = window.setTimeout(() => setHint(false), 1500);
+    return () => {
+      window.clearTimeout(on);
+      window.clearTimeout(off);
+    };
+  }, [hintable]);
 
   // ---- the address is the selection
   const go = (patch: Record<string, string | null>, how: "push" | "replace" = "push") => router[how](patchedHref(pathname, search, patch), { scroll: false });
   const select = (customer: string | null, dec: string, invoice: string | null) => {
     if (sending) return;
-    go({ customer, decision: dec, invoice, path: null, compare: null, chart: null, investigate: null, show: null });
+    go({ customer, decision: dec, invoice, path: null, compare: null, chart: null, investigate: null, show: null, review: null });
   };
-  const close = () => go({ decision: null, customer: null, invoice: null, path: null, compare: null, chart: null, investigate: null, show: null });
+  const close = () => go({ decision: null, customer: null, invoice: null, path: null, compare: null, chart: null, investigate: null, show: null, review: null });
   const onTab = (k: DealTab) => go({ tab: k === "all" ? null : k }, "replace");
   // A row's target as an address (the table's links): a negotiation selects in place with this row's own customer, decision and invoice.
-  const hrefOf = (target: RowTarget) => (target.kind === "go" ? target.href : patchedHref(pathname, search, { customer: target.customer, decision: target.decision, invoice: target.invoice, path: null, compare: null, chart: null, investigate: null, show: null }));
+  const hrefOf = (target: RowTarget) => (target.kind === "go" ? target.href : patchedHref(pathname, search, { customer: target.customer, decision: target.decision, invoice: target.invoice, path: null, compare: null, chart: null, investigate: null, show: null, review: null }));
   const onView = (patch: Partial<DealView>) =>
     go(
       {
@@ -224,6 +247,7 @@ export function DealsPage() {
       hrefOf={hrefOf}
       layout={layout}
       onLayout={setLayout}
+      hint={hint && !decision}
       onlyCustomer={!decision ? (sel.customer ?? params.get("buyer") ?? null) : null}
       nextKey={!decision ? (firstRequest?.row.key ?? null) : null}
     />

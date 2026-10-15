@@ -6,6 +6,15 @@
     "day": 0,
     "available": true,
     "unavailable_text": null,
+    "accept": {
+      "available": false,
+      "reason_text": "Over a limit you signed: only a new mandate changes that.",
+      "authority": "over_limit",
+      "commit_label": "Accept as asked",
+      "decline_label": "Decline the request",
+      "decline_available": true,
+      "receipt": null
+    },
     "asked": {
       "label": "As asked",
       "series": [
@@ -12461,6 +12470,15 @@
     "day": 0,
     "available": true,
     "unavailable_text": null,
+    "accept": {
+      "available": false,
+      "reason_text": "超出您签署的上限：只有签署新的授权才能改变。",
+      "authority": "over_limit",
+      "commit_label": "按对方要求接受",
+      "decline_label": "拒绝该请求",
+      "decline_available": true,
+      "receipt": null
+    },
     "asked": {
       "label": "按对方要求",
       "series": [

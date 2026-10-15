@@ -135,6 +135,13 @@
 //   node scripts/record-mocks.mjs --api http://localhost:8233 --buyside
 //
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
+//
+// --tracker records ONLY apps/web/mocks/tracker/<moment>.json, { en, zh } of GET /decisions/{id}/tracker for the story's deal (Deal tracker, map #148), and exits.
+// The moments are walked with the stepper's own calls: offer (the offer read and evaluated, not agreed: the `available: false` answer), agreed (day 0, right
+// after the agreement), receipt (day 2, after the bank receipt), late (day 34), pending (the cure queued for approval), approved (the owner approved it) and
+// settled (day 38) and ended (the rest of the invoice paid through the bank feed, so every invoice on the deal is paid: the close-out). lib/mock/tracker.ts chooses among them by the mock's own story state. The API needs the recording environment above:
+//   cd services/api && SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8241
+//   node scripts/record-mocks.mjs --api http://localhost:8241 --tracker
 
 import { createHash } from "node:crypto";
 import { register } from "node:module";
@@ -149,7 +156,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --buyside]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --buyside | --tracker]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
@@ -159,6 +166,7 @@ const EXPOSURE = process.argv.includes("--exposure");
 const OVERVIEW = process.argv.includes("--overview");
 const BUYER_EXPOSURE = process.argv.includes("--buyer-exposure");
 const HOME_V2 = process.argv.includes("--home-v2");
+const TRACKER = process.argv.includes("--tracker");
 const NO_EXPOSURE = process.argv.includes("--no-exposure");
 const INPUTS = process.argv.includes("--inputs");
 const SLICE_D = process.argv.includes("--slice-d");
@@ -669,6 +677,61 @@ if (SLICE_D) {
   write("slice_d/audit.json", audit);
   write("slice_d/guard.json", guard);
   console.log(`recorded ${written.length} files into ${join(OUT, "slice_d")} from ${API}`);
+  process.exit(0);
+}
+
+// --tracker: the deal tracker at eight moments of the golden story and nothing else (see the header).
+if (TRACKER) {
+  mkdirSync(join(OUT, "tracker"), { recursive: true });
+  const { getTracker } = await import("../lib/tracker.ts");
+  let deal = null;
+  const keep = async (moment) => {
+    const en = await getTracker(deal, "en");
+    const zh = await getTracker(deal, "zh");
+    if (!en || !zh) throw new Error(`the tracker read is absent at ${moment}: the API is older than the deal tracker`);
+    write(`tracker/${moment}.json`, { en, zh });
+  };
+  await reset();
+  await step("inbox").run();
+  await step("trajectory").run();
+  deal = dealId(demoStore.get().offerId);
+  await keep("offer");
+  await step("negotiate").run();
+  await keep("agreed");
+  await live.advanceClock(2);
+  await bankReceipt();
+  await keep("receipt");
+  await live.advanceClock(28);
+  await live.advanceClock(4);
+  await keep("late");
+  {
+    const alerts = await live.getAlerts();
+    const reserve = alerts.alerts.find((x) => x.id.startsWith("ALERT-RESERVE") && x.actionable);
+    if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
+    await live.actOnAlert(reserve.id, {
+      state_version: alerts.state_version,
+      suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+    });
+    await keep("pending");
+    await live.decideApproval((await live.getApprovals())[0].id, "APPROVE");
+    await keep("approved");
+  }
+  await live.advanceClock(38 - 34);
+  await keep("settled");
+  {
+    // The rest of the invoice, paid through the bank feed's own route (as the server's test does): every invoice on the deal is paid, so the deal has ended.
+    const rest = (await live.getState()).state.receivables.find((r) => r.id === "RCV-A");
+    const version = (await live.getMandate()).mandate.version;
+    const res = await fetch(`${API}/operations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Owner-Token": OWNER_TOKEN, ...BANK },
+      body: JSON.stringify({ kind: "RECEIVE_PAYMENT", op_id: "rec-rest", idempotency_key: "rec-rest", mandate_version: version, requested_by: "SYSTEM", receivable_id: "RCV-A", amount_fen: rest.face_fen - (rest.settled_fen ?? 0), bank_reference: "DEMO-RCPT-REST" }),
+    });
+    if (!res.ok) throw new Error(`the rest of the invoice was not paid: ${res.status} ${await res.text()}`);
+    await keep("ended");
+  }
+  await live.demoReset();
+  console.log(`recorded ${written.length} tracker files into ${join(OUT, "tracker")} from ${API}`);
   process.exit(0);
 }
 

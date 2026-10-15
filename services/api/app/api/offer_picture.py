@@ -16,6 +16,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.accept import accept_block, answered_block
 from app.api.auth import require_owner
 from app.api.decisions import latest_verdict_for, offer_as_asked
 from app.api.home import _distance, _lowest_ahead, _series
@@ -975,10 +976,12 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     if asked is None:
         # the days the offer named have passed, or its invoice has changed since: there is nothing to draw on today's books (the decision
         # record words it as LAPSED, by the same rule)
+        gone = say(lang, "This offer can no longer be drawn on today's books: the days it named have passed or the "
+                         "invoice has changed since.", "此报价已无法按今天的账目绘制：它所说的日期已过，或发票自那时起已有变动。")
         return {"offer_id": offer_id, "verdict_id": verdict.id, "lang": lang, "day": today, "available": False,
-                "unavailable_text": say(lang, "This offer can no longer be drawn on today's books: the days it named have passed or the "
-                                              "invoice has changed since.",
-                                        "此报价已无法按今天的账目绘制：它所说的日期已过，或发票自那时起已有变动。"),
+                "unavailable_text": gone,
+                "accept": accept_block(lang, state=state, offer=offer, verdict=verdict, months=_months(mandate.forward_concession_horizon_days),
+                                       lapsed_text=gone),
                 "asked": None, "replies": [], "paths": [], "moments": [], "axis": None, "picture_days": None,
                 "current_terms_days": _terms_in_force(state, offer.counterparty_id) if offer is not None else None,
                 "current_terms_text": _current_terms_text(state, offer.counterparty_id if offer is not None else None, lang),
@@ -1037,6 +1040,10 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     return {
         "offer_id": offer_id, "verdict_id": verdict.id, "lang": lang, "day": today,
         "available": True, "unavailable_text": None,
+        # accepting the asked terms: whether it can be done, the two labels, and its receipt, from the asked path's own cost words
+        "accept": accept_block(lang, state=state, offer=offer, verdict=verdict, months=_months(mandate.forward_concession_horizon_days),
+                               cost={k: paths[0].get(k) for k in ("cost_total_display", "cost_basis_text", "cost_once_display", "cost_forward_display",
+                                                                  "band_text", "first_breach_when")}),
         "asked": asked_view,
         "replies": replies,
         "paths": paths,
@@ -1077,4 +1084,5 @@ def get_picture(offer_id: str, lang: str = "en", *, sel: Annotated[Selection, De
     with rt.lock:
         offer = rt.store.get_offer(offer_id)
         context = build_context(rt, lang, sel, page="picture", buyer=offer.counterparty_id if offer is not None else None, deal=deal_id(offer_id))
-        return {**cached_picture(rt, offer_id, lang), "context": context}
+        picture = cached_picture(rt, offer_id, lang)
+        return {**picture, "accept": answered_block(rt, offer_id, picture.get("accept"), lang), "context": context}

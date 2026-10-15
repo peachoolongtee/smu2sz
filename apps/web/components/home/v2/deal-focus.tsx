@@ -16,6 +16,7 @@ import { Disclosure } from "@/components/business/kit";
 import { Button, ButtonLink, ErrorState, LoadingBlock } from "@/components/ui";
 import { getCustomerFocus, getDealExposure, getDealTitle, getDeals } from "@/lib/api";
 import { offerOfDecision } from "@/lib/home-v2-href";
+import { reviewHref } from "@/lib/selection";
 import { useI18n } from "@/lib/i18n";
 import type { ExposurePathWords, ExposureStress, HomeSeriesPoint, HomeView, OfferPictureView, PicturePath, WorklistCustomer, WorklistNeedsRow, WorklistWaitingRow } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -385,7 +386,7 @@ export function DealFocusPanel({
               ) : null}
               <ActionGroup className="mt-2" testId="hv2-deal-actions" label={t("hv2.deal.actions")}>
                 {decisionCard ? (
-                  <ButtonLink href={decisionCard.primary.href} variant="primary" data-testid="deal-primary">
+                  <ButtonLink href={decisionCard.kind === "request" ? reviewHref(decisionCard.primary.href) : decisionCard.primary.href} variant="primary" data-testid="deal-primary">
                     {decisionCard.primary.label}
                   </ButtonLink>
                 ) : null}

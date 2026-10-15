@@ -200,5 +200,7 @@ def test_the_agreement_on_the_record_carries_its_receipt(api: TestClient, lang: 
     assert r["executes_now_text"] == detail["execution"]["summary_text"] != detail["agreement"]["status_text"] and r["authorizes_text"]  # what ran, not "Agreed"
     assert ("recorded" if lang == "en" else "已记录") in r["executes_now_text"]
     assert detail["agreement"]["terms"][0] in r["authorizes_text"]
-    assert r["when_text"] and detail["agreement"]["expires_when"] in r["when_text"]
+    # in force: the proposal's acceptance window has closed, so there is no expiry to say
+    assert r["when_text"] == ("In force." if lang == "en" else "已生效。")
+    assert (detail["agreement"]["expires_day"], detail["agreement"]["expires_when"]) == (None, None)
     assert r["remaining_text"]  # the promised payment is still awaited
