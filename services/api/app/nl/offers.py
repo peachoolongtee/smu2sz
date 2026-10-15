@@ -11,6 +11,7 @@ import re
 from contextvars import ContextVar
 
 from app.compiler import compile_offer, compile_term_sheet
+from app.compiler.cross_check import DISAGREE_FIELD
 from app.domain.fixtures import load_offers, offer_documents
 from app.domain.models import (
     BaseKind,
@@ -224,6 +225,10 @@ def clarification_request(ctx: NlContext, v: Verdict) -> str:
         return said("Your message includes a price commitment (such as a freeze or a cap), which FLOW cannot record as a "
                     "payment term. Please confirm what you are offering for the payment.",
                     "贵方消息包含价格承诺（如冻结或封顶），本系统无法将其记录为付款条款。请确认贵方为此次付款提供什么。")
+    if any(f.startswith(DISAGREE_FIELD) for f in fields):  # the model and the rules grammar read a term differently
+        return said("We could not read the terms in your message with certainty. Please restate each term (the rate, the "
+                    "payment days and any amount) plainly, one per sentence.",
+                    "我方无法确定贵方消息中的条款。请逐条清楚重述每项条款（比例、付款天数及金额），每句一项。")
     if "scope" in what or "base" in what or "receivable_id" in what:
         return t(ctx, "Please confirm what the discount or rebate applies to: which invoice, or which period's "
                       "purchases, and for how long.", "请确认该折扣或返利适用于哪张发票或哪一期的采购，以及适用多长时间。")

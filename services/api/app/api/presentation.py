@@ -16,6 +16,7 @@ from typing import Any
 from app.alerts import Alert, AlertKind
 from app.api.engine_zh import translate
 from app.books import current_books
+from app.compiler.cross_check import DISAGREE_PREFIX
 from app.domain.models import (
     BaseKind,
     Commitment,
@@ -1939,6 +1940,10 @@ def abstention_words(reason: str, channels: Iterable[str], lang: Lang) -> str | 
     (chat, email, portal: the message; attachment). None for a reason this has no sentence for (the page then says nothing of it)."""
     if reason.startswith("unresolved reference"):  # "as usual" / "same arrangement": the terms it points to are not on the books, so nothing was booked
         return t(lang, "The buyer refers to an earlier arrangement that is not in your books.", "买方提到了一项此前的约定，但您的账目中没有这项记录。")
+    if reason.startswith(DISAGREE_PREFIX):  # the model and the rules grammar read a term differently (live mode): nothing was booked on it
+        return t(lang, "FLOW read a term in this message two different ways, so nothing was booked on it. Check the highlighted "
+                       "words, or ask the buyer to confirm.",
+                 "FLOW 对这条消息中的某项条款有两种不同的理解，因此未就此记录任何内容。请查看高亮的文字，或请买方确认。")
     m = _CONFLICT.match(reason)
     if m is None:
         return None

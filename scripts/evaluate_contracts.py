@@ -17,6 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 os.environ.setdefault("LLM_MODE", "cache")
+os.environ.setdefault("LLM_LIVE_RAW", "1")  # live, the model on its own: no recorded reading first
 os.environ.setdefault("TERMSLEDGER_NO_DOTENV", "1")
 sys.path.insert(0, str(ROOT / "services" / "api"))
 
