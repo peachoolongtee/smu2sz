@@ -596,8 +596,10 @@ test("rail: on every page the collapsed rail covers no content, the open panel i
       const scrolled = await panelProbe(page);
       expect(scrolled.covered, `${at} scrolled: nothing paints over the open panel`).toEqual([]);
       expect(scrolled.foot.ok && scrolled.toggle.ok, `${at} scrolled: the foot is on top`).toBe(true);
-      // Pinned open: the content is laid out beside the 200 px track.
+      // Pinned open: the content is laid out beside the 200 px track. The rail closes 150 ms after the pointer leaves: wait for it, or the
+      // click is aimed at the open toggle's middle and lands beside the 56 px rail when it closes in between.
       await page.mouse.move(width - 100, 500);
+      await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "closed");
       await page.getByTestId("sidebar-toggle").click({ force: true });
       await page.mouse.move(width - 100, 500);
       await expect(page.locator("html")).toHaveAttribute("data-sidebar", "pinned");
