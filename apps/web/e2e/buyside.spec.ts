@@ -15,9 +15,9 @@ test("Deals shows the buying side in its own card under the list of every deal, 
   await expect(card.getByRole("heading", { name: /Buying/ })).toContainText("1");
   // selling stays first: the list of deals comes before the buying card in the reading order, the buyers' messages after it
   const [listFirst, messagesAfter] = await page.evaluate(() => {
-    const list = document.querySelector('[data-testid="deal-list"]');
+    const list = document.querySelector('[data-testid="deals-queue"]');
     const buying = document.querySelector('[data-testid="deals-buying"]');
-    const messages = document.querySelector('[data-testid="deal-list-messages"]');
+    const messages = document.querySelector('[data-testid="inbox-list"]');
     const follows = (a: Element | null, b: Element | null) => Boolean(a && b && a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
     return [follows(list, buying), follows(buying, messages)];
   });
@@ -30,10 +30,10 @@ test("Deals shows the buying side in its own card under the list of every deal, 
   await expect(card.getByTestId("deals-buying-finance")).toHaveText("Financial health and loans");
   await expect(card.getByTestId("deals-buying-plans")).toHaveText("Long-term plans");
   // while a selling negotiation is open the card steps aside: that page is the selling decision
-  await page.getByTestId("deal-list-messages").locator("summary").first().click();
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("deal-pane")).toBeVisible();
-  await expect(page.getByTestId("deals-buying")).toHaveCount(0);
+  // the deal opens as its own page; the list (and this card with it) stays mounted but hidden, so its place is kept for All deals
+  await expect(page.getByTestId("deals-buying")).toBeHidden();
   await page.goto("/deals");
   await page.getByTestId("deals-buying-DOC-000004").click();
   await expect(page).toHaveURL(/\/buy\/contract\?id=DOC-000004$/);

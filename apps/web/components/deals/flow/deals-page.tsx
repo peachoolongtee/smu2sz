@@ -309,8 +309,9 @@ export function DealsPage() {
         <div className="grid gap-6" data-testid="deals-grid">
           <div className="min-w-0 space-y-6" data-testid="deals-side">
             {tableMode ? null : QUEUE_NODE}
-            {INBOX_SLOT}
+            {/* The buying side (ADR-0013) sits between the selling list and the buyers' messages: selling stays first. */}
             {buying.data ? <BuyingCard purchases={buying.data.purchases} /> : null}
+            {INBOX_SLOT}
           </div>
         </div>
         {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the list, where the queue's Agreements tab leads the eye. */}
