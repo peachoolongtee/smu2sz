@@ -44,6 +44,12 @@ BILL_HORIZON_DAYS = 3 * 365
 #: The mandate's projection horizon and the defaults the golden mandate uses for what the setup does not ask.
 MANDATE_HORIZON_DAYS = 120
 DEFAULT_MAX_IMMEDIATE_DISCOUNT_BP = 150
+#: Bounds on what is typed: an amount stays far below 2^53 (the page and the JSON read it as a number), the books start near
+#: today's date as the server knows it, and the two ratios stay where a lender would set them.
+MAX_AMOUNT_FEN = 10**15
+MAX_START_DRIFT_DAYS = 400
+DSCR_RANGE = (Decimal("1"), Decimal("10"))
+LEVERAGE_RANGE = (Decimal("0.5"), Decimal("10"))
 ORG_ID = "OWN-1"
 
 Money = str | int | float
@@ -190,6 +196,11 @@ def parse_date(raw: str) -> date | None:
     return date.fromisoformat(text)
 
 
+def today() -> date:
+    """Today's date as the server knows it (the start date is bounded against this, whatever the browser sent)."""
+    return date.today()
+
+
 def add_months(d: date, months: int) -> date:
     y, m = divmod(d.month - 1 + months, 12)
     year, month = d.year + y, m + 1
@@ -232,6 +243,10 @@ class _Checker:
             self.error(step, path, f"{what[0]} must be more than zero." if positive else f"{what[0]} cannot be negative.",
                        f"{what[1]}必须大于零。" if positive else f"{what[1]}不能为负数。")
             return None
+        if fen > MAX_AMOUNT_FEN:
+            self.error(step, path, f"{what[0]}: the most FLOW can keep is {MAX_AMOUNT_FEN // 100:,} yuan.",
+                       f"{what[1]}：最多可填 {MAX_AMOUNT_FEN // 100:,} 元。")
+            return None
         return int(fen)
 
     def pct_bp(self, step: int, path: str, raw: Money | None, what: tuple[str, str], *, required: bool = True,
@@ -254,15 +269,27 @@ class _Checker:
             return None
         return int(bp)
 
-    def times_bp(self, step: int, path: str, raw: Money | None, what: tuple[str, str]) -> int | None:
+    def times_bp(self, step: int, path: str, raw: Money | None, what: tuple[str, str],
+                 bounds: tuple[Decimal, Decimal] = (Decimal("0.01"), Decimal("100"))) -> int | None:
         try:
             value = parse_decimal(raw)
         except ValueError:
             value = None
-        if value is None or value <= 0 or value > 100:
+        if value is None:
             self.error(step, path, f"{what[0]}: type a number of times, like 1.25.", f"{what[1]}：请输入倍数，例如 1.25。")
             return None
-        return int((value * 10000).to_integral_value())
+        lo, hi = bounds
+        if not lo <= value <= hi:
+            self.error(step, path, f"{what[0]} must be between {lo:g}x and {hi:g}x.", f"{what[1]}必须在 {lo:g} 倍到 {hi:g} 倍之间。")
+            return None
+        bp = value * 10000
+        if bp != bp.to_integral_value():
+            self.error(step, path, f"{what[0]}: at most four decimal places.", f"{what[1]}：最多四位小数。")
+            return None
+        if bp <= 0:  # cannot happen inside the bounds; a ratio that rounds to nothing is never taken as no limit
+            self.error(step, path, f"{what[0]} must be more than zero.", f"{what[1]}必须大于零。")
+            return None
+        return int(bp)
 
     def day_of(self, step: int, path: str, raw: str, start: date | None, what: tuple[str, str], *,
                required: bool = True) -> tuple[int, date] | None:
@@ -317,6 +344,10 @@ def build_books(draft: SetupDraft) -> Built:
         start = parse_date(b.start_date)
         if start is None:
             c.error(1, "business.start_date", "The start date is missing.", "请填写账簿开始日期。")
+        elif abs((start - today()).days) > MAX_START_DRIFT_DAYS:
+            c.error(1, "business.start_date", f"The start date must be within {MAX_START_DRIFT_DAYS} days of today.",
+                    f"账簿开始日期须在今天前后 {MAX_START_DRIFT_DAYS} 天之内。")
+            start = None
     except ValueError:
         c.error(1, "business.start_date", "The start date: pick a date.", "账簿开始日期：请选择日期。")
     cash = c.money(1, "business.cash", b.cash, ("Cash in the bank", "银行现金"))
@@ -415,9 +446,17 @@ def build_books(draft: SetupDraft) -> Built:
     receivables: list[Receivable] = []
     recurring: list[RecurringInvoice] = []
     advances: dict[str, int] = {}
+    seen_names: set[str] = set()
     for ci, cu in enumerate(draft.customers):
         p = f"customers[{ci}]"
         cname = c.text(3, f"{p}.name", cu.name, (f"Customer {ci + 1}: name", f"客户 {ci + 1}：名称"))
+        if cname:
+            key = " ".join(cname.casefold().split())
+            if key in seen_names:
+                c.error(3, f"{p}.name", f"Customer {ci + 1}: {cname} is already on the list. Put all its invoices under one customer.",
+                        f"客户 {ci + 1}：{cname}已在名单中。请把它的发票放在同一个客户下。")
+                cname = None
+            seen_names.add(key)
         who = (cname or f"Customer {ci + 1}", cname or f"客户 {ci + 1}")
         cid = f"BUYER-{ci + 1}"
         if cname:
@@ -441,6 +480,7 @@ def build_books(draft: SetupDraft) -> Built:
         else:
             c.warn(3, f"{p}.contract", f"{who[0]} has no contract: only the invoices you entered are counted.",
                    f"{who[1]}没有合同：只计算您填写的发票。")
+        seen_invoices: set[tuple[date, int]] = set()
         for ii, inv in enumerate(cu.invoices):
             q = f"{p}.invoices[{ii}]"
             sent = c.day_of(3, f"{q}.sent_on", inv.sent_on, start, (f"{who[0]}, invoice {ii + 1}: sent on", f"{who[1]}，发票 {ii + 1}：开票日期"))
@@ -479,6 +519,11 @@ def build_books(draft: SetupDraft) -> Built:
                 en_d, zh_d = _date_words(sent[1])
                 c.warn(3, q, f"{who[0]}'s invoice sent on {en_d} is {-due} days late. FLOW won't count on it until a payment "
                        "is recorded.", f"{who[1]}在{zh_d}开出的发票已逾期 {-due} 天。在记录收款前，FLOW 不会把它算作现金。")
+            if (sent[1], face) in seen_invoices:
+                en_d, zh_d = _date_words(sent[1])
+                c.warn(3, q, f"{who[0]}, invoice {ii + 1}: another invoice has the same date ({en_d}) and amount. Check it is not "
+                       "entered twice.", f"{who[1]}，发票 {ii + 1}：另一张发票的日期（{zh_d}）和金额与此相同。请确认没有重复填写。")
+            seen_invoices.add((sent[1], face))
             rid = f"RCV-{ci + 1}-{ii + 1}"
             receivables.append(Receivable(id=rid, counterparty_id=cid, face_fen=face, issue_day=sent[0], terms_days=terms,
                                           status="FINANCED" if fac_id else "OPEN", settled_fen=paid, advance_fen=fin,
@@ -520,7 +565,10 @@ def build_books(draft: SetupDraft) -> Built:
             if bl.repeats == "ONCE":
                 break
             n += 1
-            when = add_months(first[1], step_months[bl.repeats] * n)
+            try:
+                when = add_months(first[1], step_months[bl.repeats] * n)
+            except ValueError:  # past the last year a date can name: nothing later can fall inside the horizon
+                break
 
     # Step 5: the owner's limits
     lim = draft.limits
@@ -530,8 +578,8 @@ def build_books(draft: SetupDraft) -> Built:
     cap = c.money(5, "limits.concession_cap", lim.concession_cap, ("The yearly cap on give-aways", "每年让利上限"))
     above = c.money(5, "limits.approval_above", lim.approval_above, ("Ask me above", "超过此金额需要您批准"), positive=True)
     valid = c.days(5, "limits.valid_days", lim.valid_days, ("How long the limits last", "规则有效期"), 30, 365, default=90)
-    dscr = c.times_bp(5, "limits.min_dscr", lim.min_dscr, ("Loan cover", "偿债覆盖率"))
-    lev = c.times_bp(5, "limits.max_leverage", lim.max_leverage, ("Debt to a year's earnings", "负债与年盈利之比"))
+    dscr = c.times_bp(5, "limits.min_dscr", lim.min_dscr, ("Loan cover", "偿债覆盖率"), DSCR_RANGE)
+    lev = c.times_bp(5, "limits.max_leverage", lim.max_leverage, ("Debt to a year's earnings", "负债与年盈利之比"), LEVERAGE_RANGE)
     if cash is not None and min_cash is not None and cash < min_cash:
         c.warn(5, "limits.min_cash", "Cash today is already below your minimum: Home will open on an alert.",
                "今天的现金已低于您设定的最低值：首页将显示警报。")

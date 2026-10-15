@@ -43,6 +43,16 @@ DRAFT: dict[str, Any] = {
 
 
 @pytest.fixture(autouse=True)
+def _today_is_fixed(monkeypatch):
+    """The start date is bounded against the server's today; the drafts below are written for mid-October 2026."""
+    import datetime
+
+    import app.setup as setup_mod
+
+    monkeypatch.setattr(setup_mod, "today", lambda: datetime.date(2026, 10, 15))
+
+
+@pytest.fixture(autouse=True)
 def _no_documents_left_over():
     setup_api._setup_docs.clear()
     yield
@@ -339,3 +349,72 @@ def test_a_failure_while_opening_puts_the_blank_books_back(client, monkeypatch) 
     assert client.get("/setup/status").json()["books"] == "blank"
     # and the books can still be opened afterwards
     assert client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"}).status_code == 200
+
+
+# ---------------------------------------------------------------- bounds on what is typed
+
+
+def _lim(**k: Any) -> dict:
+    return {"limits": {**DRAFT["limits"], **k}}
+
+
+def _biz(**k: Any) -> dict:
+    return {"business": {**DRAFT["business"], **k}}
+
+
+@pytest.mark.parametrize(("change", "path"), [
+    (_biz(cash="10,000,000,000,000.01"), "business.cash"),
+    (_biz(cash="9" * 400), "business.cash"),
+    (_lim(min_cash="20,000,000,000,000"), "limits.min_cash"),
+    (_lim(approval_above="10,000,000,000,000.01"), "limits.approval_above"),
+    (_lim(concession_cap="99,999,999,999,999,999"), "limits.concession_cap"),
+    ({"customers": [{"name": "X", "invoices": [{"sent_on": "2026-10-01", "amount": "90,000,000,000,000,000", "terms_days": 30}]}]},
+     "customers[0].invoices[0].amount"),
+    (_biz(start_date="2027-11-20"), "business.start_date"),
+    (_biz(start_date="2025-09-09"), "business.start_date"),
+    (_biz(start_date="9999-12-31"), "business.start_date"),
+    ({"customers": [{"name": "Foshan Home Retail"}, {"name": "  foshan   HOME retail "}]}, "customers[1].name"),
+    (_lim(min_dscr="0.00001"), "limits.min_dscr"),
+    (_lim(min_dscr="0.99"), "limits.min_dscr"),
+    (_lim(min_dscr="10.01"), "limits.min_dscr"),
+    (_lim(min_dscr="0"), "limits.min_dscr"),
+    (_lim(max_leverage="0.1"), "limits.max_leverage"),
+    (_lim(max_leverage="11"), "limits.max_leverage"),
+])
+def test_out_of_bounds_entries_are_errors_in_both_languages(change: dict, path: str) -> None:
+    built = build_books(SetupDraft.model_validate(draft(**change)))
+    assert built.state is None and built.mandate is None
+    hit = [e for e in built.errors if e.path == path]
+    assert hit and all(e.en and e.zh and e.zh != e.en for e in hit)
+
+
+@pytest.mark.parametrize("change", [
+    _biz(cash="10,000,000,000,000"), _biz(start_date="2027-11-19"), _biz(start_date="2025-09-10"),
+    _lim(min_dscr="1"), _lim(min_dscr="10"), _lim(max_leverage="0.5"), _lim(max_leverage="10"),
+])
+def test_the_edges_of_the_bounds_are_allowed(change: dict) -> None:
+    # (a start date moved to the edge leaves the other dates of this draft before it, so only the bound itself is checked)
+    errors = build_books(SetupDraft.model_validate(draft(**change))).errors
+    assert not [e for e in errors if e.path in ("business.start_date", "business.cash") or e.path.startswith("limits.")]
+
+
+def test_the_same_invoice_twice_is_a_warning_not_an_error() -> None:
+    twice = {"sent_on": "2026-10-01", "amount": "80,000", "terms_days": 30}
+    built = build_books(SetupDraft.model_validate(draft(customers=[{"name": "Customer B", "invoices": [twice, dict(twice)]}])))
+    assert built.errors == [] and built.state is not None and len(built.state.receivables) == 2
+    dup = [w for w in built.warnings if w.path == "customers[0].invoices[1]"]
+    assert dup and "same date" in dup[0].en and dup[0].zh
+    other = build_books(SetupDraft.model_validate(draft(customers=[
+        {"name": "Customer B", "invoices": [twice, {**twice, "amount": "80,001"}]}])))
+    assert not [w for w in other.warnings if "same date" in w.en]
+
+
+def test_a_far_bill_date_never_becomes_a_server_error(client) -> None:
+    bills = [{"label": "Rent", "kind": "RENT", "amount": "9,000", "next_date": "9999-12-31", "repeats": "MONTHLY"},
+             {"label": "Tax", "kind": "TAX", "amount": "9,000", "next_date": "2026-11-30", "repeats": "YEARLY", "until": "9999-12-31"}]
+    r = client.post("/setup/preview", json={"draft": draft(bills=bills)})
+    assert r.status_code == 200 and r.json()["ok"] is True
+    assert build_books(SetupDraft.model_validate(draft(bills=bills))).state is not None
+    assert not [f for f in build_books(SetupDraft.model_validate(draft(bills=bills))).state.flows if f.label == "Rent"]
+    far = client.post("/setup/preview", json={"draft": draft(**_biz(start_date="0001-01-01"))})
+    assert far.status_code == 200 and far.json()["ok"] is False
