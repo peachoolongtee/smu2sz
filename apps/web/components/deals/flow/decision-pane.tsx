@@ -1,47 +1,79 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { CustomerName } from "@/components/customer-link";
 import { Disclosure } from "@/components/business/kit";
 import { ChasePayment } from "@/components/business/chase-payment";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { Button, ButtonLink, Callout, ErrorState, LoadingBlock } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
-import { ComparisonTable, type CompareColumn, type CompareRow } from "@/components/ui/comparison-table";
-import { OpenSection } from "@/components/ui/open-section";
-import { SegmentedTabs } from "@/components/ui/segmented-tabs";
-import { StateWord } from "@/components/ui/state-word";
 import { StatusPill } from "@/components/ui/status-pill";
+import type { DictKey } from "@/lib/dictionary";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { DecisionView, NegotiationView, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
-import { AnalysisCards, type ShowKey } from "./analysis-cards";
-import { CostTable } from "./cost-table";
-import { costHeadline, paneStatus, timingOf } from "./deal-model";
-import { AUTH_TONE, Cell, NONE, quietLink, toneOfDeal } from "./flow-parts";
-import { Investigate, lowestOf } from "./investigate";
-import { TermsTable } from "./terms-table";
-import { TimingDiagram } from "./timing-diagram";
+import { AcceptBlock, type AcceptOutcome } from "./accept-block";
+import { paneStatus, tabsOf, viewIn, type DealViewKey } from "./deal-model";
+import { quietLink } from "./flow-parts";
+import { CashTab } from "./cash-tab";
+import { ScopeTerms } from "./scope-terms";
 import { SendBlock } from "./send-block";
 import { useNegotiation } from "./use-negotiation";
+import { LifecycleStrip } from "@/components/deals/lifecycle-strip";
+import { TrackerBody } from "@/components/tracker/tracker-body";
+import { useTracker } from "@/lib/tracker";
+import { CostTable } from "./cost-table";
+import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
+import { STRATEGY_MVP } from "@/lib/config";
+import { patchedHref } from "@/lib/selection";
+import { ChoicesTable, Recommendation, SectionNav, type SectionItem } from "./deal-overview";
+import { EnvelopePackages } from "./investigate";
 import { StepReport } from "./next-step-guide";
 
-/** The deal's own view of the page, in the address: which investigation is open (`compare=1`, `chart=1`) and the payment-timing assumption (`scenario=late`). */
+/** The deal's own view of the page, in the address: the tab (`view=`), the accept review open on arrival (`review=1`). */
 export interface DealView {
-  compare: boolean;
-  chart: boolean;
-  late: boolean;
-  /** "Full analysis" is open (`investigate=1`): the Investigate level with the reasons. */
-  investigate: boolean;
-  /** Which of the two cards is open (`show=cost|cash`; `none` both folded); null is the default card. */
-  show: ShowKey | null;
+  view: DealViewKey;
+  /** The accept review is open on arrival (`review=1`): a link from Home or the Customer page to a request that needs the owner's review. */
+  review: boolean;
 }
 
+const AGREED_STATES: ReadonlySet<string> = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED"]);
 const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED", "LAPSED"]);
+
+const MD = "(min-width: 768px)";
+const subscribeMd = (onChange: () => void) => {
+  const list = window.matchMedia(MD);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
+};
+/** True from the tablet width (`md`); where it is false (a phone) the sticky part of the deal header is the compact title and tabs only. */
+const useMd = () => useSyncExternalStore(subscribeMd, () => window.matchMedia(MD).matches, () => true);
+
+/** A section change brings the page to its top (the sections replace one another in place; a tall one left behind would hide the top of the next). */
+function TabScroll({ view }: { view: DealViewKey }) {
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [view]);
+  return null;
+}
+
+/** An address that names a tab the deal does not have (Compare on a deal with nothing to compare, Terms before agreement) is written as the tab it shows. */
+function Canonical({ want, have, onGo }: { want: DealViewKey; have: DealViewKey; onGo: (patch: Record<string, string | null>, how?: "push" | "replace") => void }) {
+  useEffect(() => {
+    if (want !== have) onGo({ view: have === "overview" ? null : have }, "replace");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per mismatch
+  }, [want, have]);
+  return null;
+}
 
 function Announce({ text }: { text: string }) {
   return (
@@ -68,6 +100,18 @@ function SendResult({ n }: { n: NegotiationView }) {
           {summary}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+/** What the owner's accept (or a refusal of it) said, in the server's words, beside the record that moved on: the execution's summary after an accept, the 409's sentence after a refusal. A decline says nothing more than the record's Declined. */
+function AcceptResult({ outcome }: { outcome: AcceptOutcome }) {
+  if (outcome.kind === "declined") return null;
+  const text = outcome.text;
+  if (!text) return null;
+  return (
+    <div role={outcome.kind === "refused" ? "alert" : "status"} className="mt-5 rounded-tile border border-line bg-subtle px-4 py-3 text-sm text-ink" data-testid={outcome.kind === "accepted" ? "deal-accepted" : "deal-accept-refused"}>
+      <p data-testid={outcome.kind === "accepted" ? "deal-accepted-ran" : undefined}>{text}</p>
     </div>
   );
 }
@@ -104,7 +148,7 @@ function RecordBlock({ record, decision }: { record: DecisionView; decision: str
       ) : null}
       {record.agreement ? (
         <p className="text-sm font-bold text-ink-2" data-testid="deal-agreement">
-          {record.agreement.status_text} · {record.agreement.expires_when}
+          {[record.agreement.status_text, record.agreement.expires_when].filter(Boolean).join(" · ")}
         </p>
       ) : null}
       {terms.length ? (
@@ -160,11 +204,12 @@ export function DecisionPane({
   open,
   view,
   pickedKey,
-  onView,
+  onGo,
   onPick,
   onClose,
   onBusy,
   irrelevantText,
+  inbox,
   onStep,
 }: {
   decision: string;
@@ -177,25 +222,43 @@ export function DecisionPane({
   view: DealView;
   /** The path the address names (`path`), else null: the recommended reply. */
   pickedKey: string | null;
-  onView: (patch: Partial<DealView>) => void;
+  /** Change the address in place (a null removes the key). */
+  onGo: (patch: Record<string, string | null>, how?: "push" | "replace") => void;
   onPick: (key: string | null) => void;
   onClose: () => void;
   onBusy: (busy: boolean) => void;
   /** The server's sentence when it could not honour the selection (`context.irrelevant_text`). */
   irrelevantText: string | null;
+  /** The buyer's thread of the inbox, for the Messages tab (the page reads and opens messages). */
+  inbox?: (buyerId: string | null) => ReactNode;
   /** Says where this request is (1: check it against the limits, 2: send or approve the reply, 3: done) to the page's progress strip. */
   onStep?: (step: number) => void;
 }) {
   const { t, te } = useI18n();
   const uid = useId();
   const mode = useMode();
-  // The investigation is wider than the pane beside the queue: it opens in a full-width slot the page keeps under both columns.
-  const slot = typeof document !== "undefined" ? document.getElementById("deals-investigate") : null;
-  const n = useNegotiation(decision);
+  const n = useNegotiation(decision, { agreedPicture: view.view === "terms" });
+  const isMd = useMd();
+  // An agreed deal's Overview is the tracker (round three, section 11): the same read and the same body as the tracker's own page.
+  const agreedNow = AGREED_STATES.has(n.record?.state ?? "");
+  const tracker = useTracker(agreedNow ? decision : null);
   const [sent, setSent] = useState<NegotiationView | null>(null);
+  // The owner's accept or decline of a request as asked, once it has been answered: the review is gone when the record moves on, its words stay beside the record.
+  const [outcome, setOutcome] = useState<AcceptOutcome | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  // The deal header's review button: each press opens the review (the send or the accept block, mounted under the header on every tab); the blocks say whether it is open.
+  const [reviewingSend, setReviewingSend] = useState(false);
+  const [reviewingAccept, setReviewingAccept] = useState(false);
+  const [sendSignal, setSendSignal] = useState(0);
+  const [acceptSignal, setAcceptSignal] = useState(0);
+  const [declineSignal, setDeclineSignal] = useState(0);
+  // A reply picked in the choices table whose review opens as soon as that reply's review block is there.
+  const [wantReview, setWantReview] = useState<string | null>(null);
+  const [lastOpen, setLastOpen] = useState(false);
+  const pathname = usePathname();
+  const search = useSearchParams();
   const offer = n.offer;
   const buyerId = offer?.offer.counterparty_id ?? null;
   // Another customer's negotiation than the address names is a selection that names nothing: ask, never substitute.
@@ -231,21 +294,14 @@ export function DecisionPane({
   const evaluated = record ? record.state !== "RECEIVED" : Boolean(picture);
   const stateCode = record?.state ?? (evaluated ? "RESPONSE_READY" : "RECEIVED");
   const done = RECORD_DONE.has(stateCode);
-  const title = open?.headline_short ?? open?.read_text ?? record?.headline ?? row?.subject_text ?? buyerName;
   const doc = offer.documents[0];
   const paths = (picture?.paths ?? []).filter((p) => p.kind === "asked" || p.kind === "reply");
   const asked = paths.find((p) => p.kind === "asked") ?? null;
   const recommended = paths.find((p) => p.kind === "reply" && p.recommended) ?? null;
   const picked = pickedKey ? (paths.find((p) => p.kind === "reply" && p.key === pickedKey) ?? null) : null;
   const focus: PicturePath | null = picked ?? recommended;
-  const showsRecommended = focus !== null && focus.key === recommended?.key;
   // The share clause of the economics read (what this concession is, against what the customer brings in a year): drawn only when the server carries it.
   const shareClause = exposure?.economics?.context_text ?? exposure?.economics?.sentence ?? null;
-  const late = view.late && Boolean(exposure?.stress.paths);
-  const delay = exposure?.stress.delay_days ?? 0;
-  const wordsOf = (p: PicturePath) => exposure?.paths.find((x) => x.key === p.key);
-  const stressOf = (p: PicturePath) => exposure?.stress.paths[p.key] ?? null;
-  const canSend = Boolean(focus && focus.kind === "reply" && focus.sendable && (stateCode === "RESPONSE_READY" || stateCode === "RECEIVED") && picture && picture.available !== false && !sent);
 
   async function check() {
     setChecking(true);
@@ -265,62 +321,20 @@ export function DecisionPane({
 
   // ---- level 2: the request against the recommended (or the picked) reply
   const pair = [asked, focus].filter((p, i, a): p is PicturePath => p !== null && a.indexOf(p) === i);
-  const pairColumns: CompareColumn[] = pair.map((p) => ({ key: p.key, head: p.label, tag: <StateWord tone={toneOfDeal(p.tag_tone)}>{p.tag_text}</StateWord>, recommended: p.key === recommended?.key }));
-  const lowest = (p: PicturePath) => lowestOf(p, wordsOf(p), stressOf(p), late);
-  // The funding each path's cash rests on, in the server's short words: its own row. A server that does not send it keeps the longer assumption sentence under the table.
-  const fundingOf = (p: PicturePath) => wordsOf(p)?.funding_assumption_text ?? p.funding_assumption_text ?? null;
-  const hasFunding = pair.some((p) => fundingOf(p));
-  const pairRows: CompareRow[] = [
-    {
-      key: "lowest",
-      label: t("hv2.deal.lowest"),
-      cells: pair.map((p) => {
-        const l = lowest(p);
-        return <Cell key={p.key} value={l.value} sub={l.sub} bad={l.bad} />;
-      }),
-    },
-    {
-      key: "reserve",
-      label: t("hv2.deal.reserve"),
-      cells: pair.map((p) => {
-        const l = lowest(p);
-        return <Cell key={p.key} note={l.note} bad={l.bad} />;
-      }),
-    },
-    {
-      key: "approval",
-      label: t("deals.row.authority"),
-      cells: pair.map((p) => (
-        <StateWord key={p.key} tone={AUTH_TONE[p.authority ?? ""] ?? "neutral"}>
-          {p.authority_text ?? p.decides_text}
-        </StateWord>
-      )),
-    },
-    ...(hasFunding
-      ? [
-          {
-            key: "funding",
-            label: t("deals.row.funding"),
-            cells: pair.map((p) => {
-              const f = fundingOf(p);
-              return f ? <Cell key={p.key} note={f} /> : <span key={p.key}>{NONE}</span>;
-            }),
-          },
-        ]
-      : []),
-  ];
-  // What each path assumes, said under the table (the asked path carries no funding plan, a reply carries its own): one sentence per column, never merged into one.
-  const assumptions = hasFunding ? [] : pair.map((p) => ({ p, text: late ? null : (wordsOf(p)?.scenario_assumption_text ?? p.scenario_assumption_text) })).filter((x) => x.text);
-  const timingTabs = Boolean(exposure?.stress.paths);
 
-  const timing = picture ? timingOf(picture, asked, focus) : null;
-  // The open card: the address's, else the one the recommendation reason names (cash when the request breaches the reserve or exceeds the mandate, whose authority row is in the cash table), cost when the server does not say.
-  const shown: ShowKey = view.show ?? (["cash", "authority"].includes((recommended ?? focus)?.recommended_reason_kind ?? "") ? "cash" : "cost");
   const waitsOnApproval = stateCode === "AUTHORIZATION_REQUIRED";
   const approvalId = record?.authorization?.approval_id ?? null;
   const whatifHref = `/whatif?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}&from=deal`;
 
   const status = paneStatus(row, record?.state_text, stateCode);
+  const trackerRead = tracker.data;
+  const agreedView = AGREED_STATES.has(stateCode) && trackerRead?.available === true;
+  const agreedLoading = AGREED_STATES.has(stateCode) && trackerRead === undefined && !tracker.error;
+  const lifeStages = (agreedView ? (trackerRead?.lifecycle_stages ?? null) : null) ?? record?.lifecycle_stages ?? picture?.lifecycle_stages ?? null;
+  // The carry-over: what the buyer's last agreed or ended deal was, one quiet line; it changes no verdict, counter, plan or authority and says so in its title.
+  const history = (picture?.buyer_history_text ?? record?.buyer_history_text) || null;
+  const historyTitle = picture?.buyer_history_title ?? record?.buyer_history_title ?? undefined;
+  const agreedPath = paths.find((p) => p.key === (record?.response as { sent?: { accepted_counter_id?: string | null } } | undefined)?.sent?.accepted_counter_id) ?? null;
   const analysis = Boolean(picture && evaluated && picture.available !== false && pair.length && !done && !waitsOnApproval);
   const customerLine = (
     <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-ink-2" data-testid="deal-customer-line">
@@ -336,319 +350,392 @@ export function DecisionPane({
     </p>
   );
 
+  // ---- the sections: Overview, Cash impact, Messages before agreement; Overview, Terms, Messages from it
+  const agreedDeal = AGREED_STATES.has(stateCode);
+  // (While the picture is on its way the cash section stays: an address that names it is not rewritten before its data has come.)
+  const tabs = tabsOf({ agreed: agreedDeal, analysis: analysis || (picture === undefined && !done && !waitsOnApproval) });
+  const current: DealViewKey = viewIn(view.view, tabs);
+  const accept = picture?.accept ?? null;
+  const decisionReady = Boolean(picture && evaluated && picture.available !== false && !done && !waitsOnApproval && stateCode !== "NEEDS_CLARIFICATION" && !sent);
+  const sendable = (p: PicturePath) => p.kind === "reply" && p.sendable && (stateCode === "RESPONSE_READY" || stateCode === "RECEIVED") && Boolean(picture) && picture?.available !== false && !sent;
+  const canSend = Boolean(focus && sendable(focus));
+  // The owner's accept or decline of the request as asked: offered while the request is the question (the server says whether it may be accepted and whether it may be declined).
+  const canAccept = decisionReady && Boolean(asked && accept?.available);
+  const canDecline = decisionReady && Boolean(asked && accept?.decline_label && accept.decline_available !== false);
+  const acceptMounted = decisionReady && Boolean(asked && accept && (accept.available || accept.reason_text || canDecline));
+  const reviewing = reviewingSend || reviewingAccept;
+  const ready = Boolean(picture && evaluated && picture.available !== false && !done && !waitsOnApproval && stateCode !== "NEEDS_CLARIFICATION" && paths.length > 0);
+  // The ask in the buyer's words is the deal's one name (the server's `asks_text` in the dictionary's sentence); it stays when the deal is sent. Without it the queue row's subject, else the record's headline.
+  const askTitle = open?.asks_text ? t("dq.ask", { buyer: buyerShort, asks: open.asks_text }) : null;
+  const nameFallback = row?.subject_text ?? record?.headline ?? buyerName;
+
+  const startSend = (p: PicturePath) => {
+    if (focus?.key === p.key) setSendSignal((x) => x + 1);
+    else {
+      onPick(p.key === recommended?.key ? null : p.key);
+      setWantReview(p.key);
+    }
+  };
+
+  const reviewSlot = (
+    <>
+      {canSend && focus && picture ? (
+        <SendBlock
+          // (keyed by the reply's name, not its id: checking again names new counters, and the review that is open stays open)
+          key={`${offer.offer.offer_id}:${focus.label}`}
+          offerId={offer.offer.offer_id}
+          path={focus}
+          picture={picture}
+          buyer={buyerShort}
+          recordHref={`/decisions/${encodeURIComponent(decision)}`}
+          onSent={(r) => {
+            setSent(r);
+            // The review is gone with the send: it cannot report that its flight ended.
+            setBusyBoth(false);
+          }}
+          onBusy={setBusyBoth}
+          openSignal={sendSignal}
+          hideTrigger
+          onReviewing={setReviewingSend}
+        />
+      ) : null}
+      {acceptMounted && asked && accept && picture ? (
+        <AcceptBlock
+          key={offer.offer.offer_id}
+          offerId={offer.offer.offer_id}
+          accept={accept}
+          asked={asked}
+          picture={picture}
+          buyer={buyerShort}
+          recordHref={`/decisions/${encodeURIComponent(decision)}`}
+          initialOpen={view.review}
+          onDone={(o) => {
+            setOutcome(o);
+            setBusyBoth(false);
+          }}
+          onBusy={setBusyBoth}
+          openSignal={acceptSignal}
+          declineSignal={declineSignal}
+          hideTrigger
+          onReviewing={setReviewingAccept}
+        />
+      ) : null}
+    </>
+  );
+
+  // The original ask is history once the deal has an outcome: folded, and said not to be the agreement.
+  const originalAsk = (
+    <Disclosure testId="deal-original" className="mt-5 border-t border-line pt-1" summary={t("biz.deals.original.ask")}>
+      <div className="pt-2">
+        <h3 className="text-supporting font-bold text-ink-3">{t("deals.askTitle", { buyer: buyerShort })}</h3>
+        {doc?.text ? (
+          <figure className="mt-1.5 border-l-2 border-line-strong pl-3" data-testid="deal-ask-quote">
+            <blockquote className="max-w-[68ch] text-[15px] leading-snug text-ink">“{doc.text}”</blockquote>
+            <figcaption className="mt-1 text-supporting text-ink-3">{record?.source.received_when ? t("biz.deals.messageWhen", { channel: te("channel", doc.channel ?? "chat"), when: record.source.received_when }) : te("channel", doc.channel ?? "chat")}</figcaption>
+          </figure>
+        ) : null}
+        {open?.asks_text && !doc?.text ? (
+          <p className="mt-2 max-w-[68ch] text-sm leading-snug text-ink-2" data-testid="queue-ask">
+            {t("dq.ask", { buyer: buyerShort, asks: open.asks_text })}
+          </p>
+        ) : null}
+      </div>
+    </Disclosure>
+  );
+
+  const abstentions =
+    offer.offer.abstentions.length && !done && !waitsOnApproval ? (
+      <div data-testid="deal-abstentions">
+        <Callout tone="warn" title={t("biz.deals.cannotEvaluate")}>
+          <ul className="list-disc pl-5 text-sm">
+            {offer.offer.abstentions.map((a) => ((a.reason_when === undefined ? a.reason : a.reason_when) ? <li key={a.field}>{a.reason_when === undefined ? a.reason : a.reason_when}</li> : null))}
+          </ul>
+          <div className="mt-2">
+            <ButtonLink href={`/chat?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}`}>{t("biz.deals.clarify")}</ButtonLink>
+          </div>
+        </Callout>
+      </div>
+    ) : null;
+
+  // The section links: the address changes in place (replace), so Back leaves the deal in one step.
+  const sectionHref = (k: DealViewKey) => patchedHref(pathname, search.toString(), { view: k === "overview" ? null : k, review: null });
+  const sectionLabel = (k: DealViewKey) => (k === "messages" ? t("deals.sec.messages", { buyer: buyerShort }) : k === "overview" ? t(agreedDeal ? "deals.pane.overview" : "deals.choices.title") : t(`deals.pane.${k}` as DictKey));
+  const nav = (items: DealViewKey[]): SectionItem[] => items.map((k) => ({ key: k, label: sectionLabel(k), href: sectionHref(k), current: current === k }));
+  const sectionNav = (items: DealViewKey[], extra: SectionItem[] = []) => <SectionNav label={t("deals.sec.nav")} items={[...nav(items), ...extra]} busy={busy} />;
+  const lastItem: SectionItem[] = history ? [{ key: "last", label: t("deals.sec.last", { buyer: buyerShort }), expanded: lastOpen, onClick: () => setLastOpen((x) => !x) }] : [];
+
   const pane = (
-    <section aria-labelledby={`${uid}-title`} className="flow-card min-w-0 p-5 sm:p-7" data-testid="deal-pane" data-decision={decision} data-state={stateCode}>
-      <Announce text={title} />
-      <div key={decision} className="motion-swap">
-        <header className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="mb-1.5" data-testid="deal-state-chip" data-state={stateCode}>
+    <section aria-labelledby={`${uid}-title`} className="min-w-0" data-testid="deal-pane" data-decision={decision} data-state={stateCode} data-view={current}>
+      <Canonical want={view.view} have={current} onGo={onGo} />
+      <TabScroll view={current} />
+      <Starter want={wantReview} ready={canSend && focus?.key === wantReview} fire={() => setSendSignal((x) => x + 1)} done={() => setWantReview(null)} />
+      {/* Where this request is (opened, then checked against the limits, then FLOW's reply sent or approved), said to the page's progress strip. */}
+      <StepReport step={done || sent || outcome ? 3 : !evaluated ? 1 : 2} onStep={onStep} />
+      <div key={decision} className="motion-slide space-y-5">
+        <div className="flow-card px-5 pb-4 pt-4 sm:px-7 sm:pb-5 sm:pt-6" data-testid="deal-header">
+          <header className="space-y-2">
+            <p data-testid="deal-state-chip" data-state={stateCode}>
               <StatusPill tone={status.tone}>{status.text}</StatusPill>
             </p>
-            <h2 id={`${uid}-title`} tabIndex={-1} className="type-section text-balance text-ink" data-testid="queue-heading">
-              {title}
-            </h2>
+            <StableTitle id={`${uid}-title`} ask={askTitle} fallback={nameFallback} />
             {customerLine}
-          </div>
-          <Button variant="ghost" onClick={onClose} disabled={busy} aria-label={t("deals.close")} data-testid="deal-close">
-            <span aria-hidden>×</span> {t("deals.dismiss")}
-          </Button>
-        </header>
-        {/* Where this request is (opened, then checked against the limits, then FLOW's reply sent or approved), said to the page's progress strip. */}
-        <StepReport step={done || sent ? 3 : !evaluated ? 1 : 2} onStep={onStep} />
-
-        {/* Level 1: decide */}
-        <div className="mt-5 space-y-5" data-testid="deal-level-decide">
-          {/* What the buyer asked: open while it is the question; once the deal has an outcome it is history, folded and said not to be the agreement. */}
-          {done ? (
-            <Disclosure testId="deal-original" className="border-t border-line pt-1" summary={t("biz.deals.original.ask")}>
-              <div className="pt-2">
-            <div>
-            <h3 className="text-supporting font-bold text-ink-3">{t("deals.askTitle", { buyer: buyerShort })}</h3>
-            {doc?.text ? (
-              <figure className="mt-1.5 border-l-2 border-line-strong pl-3" data-testid="deal-ask-quote">
-                <blockquote className="max-w-[68ch] text-[15px] leading-snug text-ink">“{doc.text}”</blockquote>
-                <figcaption className="mt-1 text-supporting text-ink-3">{record?.source.received_when ? t("biz.deals.messageWhen", { channel: te("channel", doc.channel ?? "chat"), when: record.source.received_when }) : te("channel", doc.channel ?? "chat")}</figcaption>
-              </figure>
-            ) : null}
-            {open?.asks_text && !doc?.text ? (
-              <p className="mt-2 max-w-[68ch] text-sm leading-snug text-ink-2" data-testid="queue-ask">
-                {t("dq.ask", { buyer: buyerShort, asks: open.asks_text })}
-              </p>
-            ) : null}
-          </div>
-
-              </div>
-            </Disclosure>
-          ) : (
-          <div>
-            <h3 className="text-supporting font-bold text-ink-3">{t("deals.askTitle", { buyer: buyerShort })}</h3>
-            {doc?.text ? (
-              <figure className="mt-1.5 border-l-2 border-line-strong pl-3" data-testid="deal-ask-quote">
-                <blockquote className="max-w-[68ch] text-[15px] leading-snug text-ink">“{doc.text}”</blockquote>
-                <figcaption className="mt-1 text-supporting text-ink-3">{record?.source.received_when ? t("biz.deals.messageWhen", { channel: te("channel", doc.channel ?? "chat"), when: record.source.received_when }) : te("channel", doc.channel ?? "chat")}</figcaption>
-              </figure>
-            ) : null}
-            {open?.asks_text && !doc?.text ? (
-              <p className="mt-2 max-w-[68ch] text-sm leading-snug text-ink-2" data-testid="queue-ask">
-                {t("dq.ask", { buyer: buyerShort, asks: open.asks_text })}
-              </p>
-            ) : null}
-          </div>
-
-          )}
-
-          {/* The evaluation prompt belongs to a negotiation still open to evaluate: an agreed or finished one shows its record (receipt and terms) and nothing to clarify, and one that waits on an approval is past it. */}
-          {offer.offer.abstentions.length && !done && !waitsOnApproval ? (
-            <div data-testid="deal-abstentions">
-              <Callout tone="warn" title={t("biz.deals.cannotEvaluate")}>
-                <ul className="list-disc pl-5 text-sm">
-                  {offer.offer.abstentions.map((a) => ((a.reason_when === undefined ? a.reason : a.reason_when) ? <li key={a.field}>{a.reason_when === undefined ? a.reason : a.reason_when}</li> : null))}
-                </ul>
-                <div className="mt-2">
-                  <ButtonLink href={`/chat?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}`}>{t("biz.deals.clarify")}</ButtonLink>
-                </div>
-              </Callout>
+          </header>
+          {agreedView && trackerRead?.next ? (
+            <div className="mt-3" data-testid="deal-header-actions">
+              <ButtonLink href={trackerRead.next.href} variant="primary" data-testid="deal-next-action">
+                {trackerRead.next.label}
+              </ButtonLink>
             </div>
           ) : null}
-
-          {done || waitsOnApproval || stateCode === "NEEDS_CLARIFICATION" ? (
-            <>
-              {record ? <RecordBlock record={record} decision={decision} /> : null}
-              {waitsOnApproval ? (
-                <ActionGroup testId="deal-actions" label={t("deals.actions")}>
-                  <ButtonLink href={approvalId ? `/approvals#approval-${encodeURIComponent(approvalId)}` : "/approvals"} variant="primary" data-testid="deal-approvals-link">
-                    {t("next.toApprovals")}
-                  </ButtonLink>
-                </ActionGroup>
-              ) : null}
-              {sent ? <SendResult n={sent} /> : null}
-            </>
-          ) : picture === undefined ? (
-            <div data-testid="paths-loading">
-              <LoadingBlock rows={3} />
-            </div>
-          ) : !picture || !evaluated ? (
-            <div data-testid="next-step">
-              <p className="max-w-[60ch] text-sm text-ink-2" data-testid="queue-check">
-                {t("deals.check.body")}
-              </p>
-              <ActionGroup className="mt-3" testId="deal-actions" label={t("deals.actions")}>
-                <Button variant="primary" loading={checking} onClick={() => void check()} data-testid="queue-check-button">
-                  {t("biz.deals.check")}
-                </Button>
-              </ActionGroup>
-              {error ? (
-                <div className="mt-2">
-                  <ErrorState error={error} />
-                </div>
-              ) : null}
-            </div>
-          ) : picture.available === false ? (
-            <div data-testid="deal-undrawable">
-              <p className="max-w-[60ch] text-sm text-ink-2">{picture.unavailable_text}</p>
-              <ActionGroup className="mt-3" testId="deal-actions" label={t("deals.actions")}>
-                <Button loading={checking} onClick={() => void check()} data-testid="deal-check-again">
-                  {t("biz.deals.checkAgain")}
-                </Button>
-              </ActionGroup>
-              {error ? (
-                <div className="mt-2">
-                  <ErrorState error={error} />
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <>
-              {focus ? (
-                <div className="space-y-2.5 border-t border-line pt-5" data-testid="queue-recommends" data-path={focus.key === recommended?.key ? "recommended" : "other"}>
-                  <h3 className="text-supporting font-bold text-ink-3" data-testid="deal-recommends-title">
-                    {showsRecommended ? t("deals.recommend", { label: focus.label }) : t("deals.selected", { label: focus.label })}
-                  </h3>
-                  {focus.reply_text ? (
-                    <p className="max-w-[68ch] font-display text-lg font-bold leading-snug text-ink" data-testid="queue-option">
-                      {focus.reply_text}
-                    </p>
-                  ) : null}
-                  {showsRecommended && focus.recommended_reason_text ? (
-                    <p className="max-w-[68ch] text-[15px] leading-snug text-ink-2" data-testid="deal-recommended-reason">
-                      {focus.recommended_reason_text}
-                    </p>
-                  ) : null}
-                  <div data-testid="queue-authority" data-authority={focus.authority ?? ""} data-tone={AUTH_TONE[focus.authority ?? ""] ?? "neutral"}>
-                    <StateWord tone={AUTH_TONE[focus.authority ?? ""] ?? "neutral"}>{focus.authority_text ?? focus.decides_text}</StateWord>
-                    {focus.authority_reason_text ? (
-                      <p className="mt-1 max-w-[68ch] text-supporting text-ink-2" data-testid="deal-authority-reason">
-                        {focus.authority_reason_text}
-                      </p>
-                    ) : null}
-                  </div>
-                  {!showsRecommended && recommended ? (
-                    <div>
-                      <Button size="sm" onClick={() => onPick(null)} disabled={busy} data-testid="path-reply-back">
-                        {t("biz.deals.reply.back", { label: recommended.label })}
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="space-y-2.5 border-t border-line pt-5" data-testid="deal-no-reply">
-                  <h3 className="text-supporting font-bold text-ink-3">{t("dq.rec.plain")}</h3>
-                  <p className="max-w-[68ch] text-[15px] leading-snug text-ink">{asked?.decides_text ?? t("glance.offer.none")}</p>
-                  {/* No reply FLOW can send: the ask itself is what the owner can accept or decline, so its authority, the server's words for what the owner can do, and its cost with the basis are
-                      still said. There is no commit control here (the route that would accept the ask as asked does not exist); nothing is invented. */}
-                  {asked ? (
-                    <div data-testid="queue-authority" data-authority={asked.authority ?? ""} data-tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>
-                      {asked.authority_text && asked.authority_text !== asked.decides_text ? <StateWord tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>{asked.authority_text}</StateWord> : null}
-                      {asked.authority_reason_text ? (
-                        <p className="mt-1 max-w-[68ch] text-supporting text-ink-2" data-testid="deal-authority-reason">
-                          {asked.authority_reason_text}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              )}
-
-              {canSend && focus && picture ? (
-                <SendBlock
-                  // (keyed by the reply's name, not its id: checking again names new counters, and the review that is open stays open)
-                  key={`${offer.offer.offer_id}:${focus.label}`}
-                  offerId={offer.offer.offer_id}
-                  path={focus}
-                  picture={picture}
-                  buyer={buyerShort}
-                  recordHref={`/decisions/${encodeURIComponent(decision)}`}
-                  onSent={setSent}
-                  onBusy={setBusyBoth}
-                >
-                  {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}
-                  {mode === "demo" ? (
-                    <Link href="/verdict#negotiation" className={quietLink}>
-                      {t("biz.deals.negotiateLink")}
-                    </Link>
-                  ) : null}
-                </SendBlock>
-              ) : (
-                <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
-                  {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}
-                  {mode === "demo" ? (
-                    <Link href="/verdict#negotiation" className={quietLink}>
-                      {t("biz.deals.negotiateLink")}
-                    </Link>
-                  ) : null}
-                </ActionGroup>
-              )}
-              {sent ? <SendResult n={sent} /> : null}
-            </>
-          )}
+          {agreedDeal ? <LifecycleStrip stages={lifeStages} scroll={!isMd} /> : null}
         </div>
 
-        {/* The analysis (round two): open sections on dividers, not nested cards. Terms with the timing diagram, what it costs, then the cash comparison. */}
-        {analysis ? (
-          <>
-            <OpenSection title={t("deals.terms.title")} subtitle={t("deals.terms.note")} testId="deal-terms-section" className="mt-6 sm:mt-6 pt-6 sm:pt-6">
-              {/* "FLOW recommends" stands only above the recommended reply; a reply the owner picked is "Your pick". */}
-              <TermsTable
-                paths={pair}
-                heads={pair.map((p) => (p.kind === "asked" ? t("deals.terms.col.asked") : p.key === recommended?.key ? t("deals.terms.col.reply") : t("deals.terms.col.pick", { label: p.label })))}
-                subs={pair.map((p) => (p.kind === "asked" || p.key !== recommended?.key ? null : p.label))}
-                caption={t("deals.terms.title")}
-              />
-              {timing ? (
-                <div className="mt-6">
-                  <TimingDiagram timing={timing} />
-                </div>
-              ) : null}
-            </OpenSection>
-            {/* Cost and cash: two cards under the diagram, one open to its full table (the address), the other folded to its headline; then the quiet way to the full analysis. */}
-            <div className="mt-6 border-t border-line pt-6" data-testid="deal-level-consequence" role="region" aria-label={t("deals.cards.region")}>
-              <AnalysisCards
-                open={shown}
-                onShow={(k) => onView({ show: k })}
-                costTitle={t("deals.card.cost")}
-                cashTitle={t("deals.card.cash")}
-                cost={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: costHeadline(p).display, note: costHeadline(p).basis }))}
-                cash={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: lowest(p).value, note: lowest(p).sub }))}
-                costBody={
-                  <div data-testid="deal-cost-section">
-                    <p className="mb-2 text-supporting text-ink-3">{t("deals.cost.note")}</p>
-                    <CostTable paths={pair} heads={pair.map((p) => (p.kind === "asked" ? t("deals.cost.col.asked") : p.label))} caption={t("deals.cost.title")} />
-                  </div>
-                }
-                cashBody={
-                  <div data-testid="deal-cash-section">
-                    <p className="text-supporting text-ink-3">{t("hv2.deal.consequence.note")}</p>
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2" data-testid="deal-assumption-row">
-                      <p className="text-sm font-bold text-ink-2">{t("hv2.deal.timing")}</p>
-                      {timingTabs ? (
-                        <SegmentedTabs
-                          compact
-                          label={t("hv2.deal.timing")}
-                          value={late ? "late" : "expected"}
-                          onChange={(x) => onView({ late: x === "late" })}
-                          tabs={[
-                            { value: "expected", label: t("home.hy.scenario.expected"), testId: "deal-scenario-current" },
-                            { value: "late", label: t("home.hy.scenario.late", { buyer: buyerShort, n: delay }), testId: "deal-scenario-late" },
-                          ]}
-                        />
-                      ) : null}
-                    </div>
-                    <p className="mt-1 text-supporting text-ink-3">{t("hv2.deal.timing.note")}</p>
-                    <div className="mt-3" data-testid="deal-scenario-panel" data-scenario={late ? "late" : "current"}>
-                      <ComparisonTable container testId="deal-consequence" caption={t("hv2.deal.consequence")} columns={pairColumns} rows={pairRows} />
-                      {assumptions.length ? (
-                        <ul className="mt-3 space-y-1" data-testid="scenario-assumption-text">
-                          {assumptions.map(({ p, text }) => (
-                            <li key={p.key} className="text-supporting text-ink-2" data-testid="deal-assumption">
-                              <b className="font-bold text-ink">{p.label}.</b> {text}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </div>
-                  </div>
-                }
-              />
-              {paths.length > 1 ? (
-                <p className="mt-3">
-                  <Button size="sm" aria-expanded={view.investigate} aria-controls="deal-investigate-panel" onClick={() => onView({ investigate: !view.investigate })} data-testid="deal-compare-toggle">
-                    {t("deals.full")}
-                    <Chevron on={view.investigate} />
-                  </Button>
-                </p>
-              ) : null}
-            </div>
-          </>
+        {current !== "overview" ? sectionNav(tabs) : null}
+
+        {current === "overview" && (reviewSlot || sent || outcome) ? (
+          <div className="space-y-3" data-testid="deal-review-slot">
+            <div className={reviewing ? "flow-card p-5 sm:p-7" : ""}>{reviewSlot}</div>
+          </div>
         ) : null}
 
+        {current === "overview" && (agreedView || agreedLoading) ? (
+          <div className="space-y-5">
+          <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview" data-agreed="true">
+            {outcome ? <AcceptResult outcome={outcome} /> : null}
+            {sent ? <SendResult n={sent} /> : null}
+            {agreedView && trackerRead ? (
+              <div className="flex flex-col gap-6" data-testid="deal-tracker">
+                <TrackerBody d={trackerRead} mode="deal" />
+                <p className="text-sm">
+                  <Link href={`/decisions/${encodeURIComponent(decision)}`} className={quietLink} data-testid="deal-record-link">
+                    {t("deals.record")}
+                  </Link>
+                </p>
+              </div>
+            ) : (
+              <LoadingBlock rows={4} />
+            )}
+          </div>
+          {sectionNav(tabs.filter((k) => k !== "overview"))}
+          </div>
+        ) : current === "overview" && ready ? (
+          <div id={`${uid}-panel-overview`} className="space-y-5" data-testid="deal-panel-overview">
+            {sent ? <SendResult n={sent} /> : null}
+            {outcome ? <AcceptResult outcome={outcome} /> : null}
+            {abstentions}
+            <Recommendation
+              picture={picture!}
+              asked={asked}
+              rec={recommended}
+              accept={accept}
+              reviewing={reviewing}
+              canSend={Boolean(recommended && sendable(recommended))}
+              canAccept={canAccept}
+              canDecline={canDecline}
+              onReview={startSend}
+              onAcceptReview={() => setAcceptSignal((x) => x + 1)}
+              onDecline={() => setDeclineSignal((x) => x + 1)}
+              whatif={
+                <>
+                  {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}
+                  {mode === "demo" ? (
+                    <Link href="/verdict#negotiation" className={quietLink}>
+                      {t("biz.deals.negotiateLink")}
+                    </Link>
+                  ) : null}
+                </>
+              }
+            />
+            <ChoicesTable
+              paths={paths}
+              recKey={recommended?.key ?? null}
+              reviewing={reviewing}
+              canReview={sendable}
+              canAccept={canAccept}
+              onReview={startSend}
+              onAcceptReview={() => setAcceptSignal((x) => x + 1)}
+              note={
+                // Whenever the server withheld a reply (a single reply, or none) it says why: one line each under the table.
+                picture?.withheld?.length ? (
+                  <div className="space-y-1" data-testid="deal-withheld">
+                    {picture.withheld.map((w) => (
+                      <p key={w.kind} className="max-w-[68ch] text-[15px] leading-snug text-ink-2">
+                        {w.text}
+                      </p>
+                    ))}
+                  </div>
+                ) : null
+              }
+            />
+            {sectionNav(
+              tabs.filter((k) => k !== "overview"),
+              lastItem,
+            )}
+            {history && lastOpen ? (
+              <p className="flow-card max-w-[68ch] p-5 text-[15px] leading-snug text-ink-2" title={historyTitle} data-testid="deal-last-time">
+                {history}
+              </p>
+            ) : null}
+          </div>
+        ) : current === "overview" ? (
+          <div className="space-y-5">
+          <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview">
+            <div className="space-y-4" data-testid="deal-level-decide">
+              {done ? originalAsk : null}
+              {abstentions}
+              {done || waitsOnApproval || stateCode === "NEEDS_CLARIFICATION" ? (
+                <>
+                  {outcome ? <AcceptResult outcome={outcome} /> : null}
+                  {record ? <RecordBlock record={record} decision={decision} /> : null}
+                  {waitsOnApproval ? (
+                    <ActionGroup testId="deal-actions" label={t("deals.actions")}>
+                      <ButtonLink href={approvalId ? `/approvals#approval-${encodeURIComponent(approvalId)}` : "/approvals"} variant="primary" data-testid="deal-approvals-link">
+                        {t("next.toApprovals")}
+                      </ButtonLink>
+                    </ActionGroup>
+                  ) : null}
+                  {sent ? <SendResult n={sent} /> : null}
+                </>
+              ) : picture === undefined && n.error ? (
+                // The reply's picture could not be read (a slow or failed read): say so, with Retry, never "Loading" for ever.
+                <div data-testid="paths-failed">
+                  <ErrorState error={n.error} onRetry={n.reload} />
+                </div>
+              ) : picture === undefined ? (
+                <div data-testid="paths-loading">
+                  <LoadingBlock rows={3} />
+                </div>
+              ) : !picture || !evaluated ? (
+                <div data-testid="next-step">
+                  <p className="max-w-[60ch] text-sm text-ink-2" data-testid="queue-check">
+                    {t("deals.check.body")}
+                  </p>
+                  <ActionGroup className="mt-3" testId="deal-actions" label={t("deals.actions")}>
+                    <Button variant="primary" loading={checking} onClick={() => void check()} data-testid="queue-check-button">
+                      {t("biz.deals.check")}
+                    </Button>
+                  </ActionGroup>
+                  {error ? (
+                    <div className="mt-2">
+                      <ErrorState error={error} />
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div data-testid="deal-undrawable">
+                  <p className="max-w-[60ch] text-sm text-ink-2">{picture.unavailable_text ?? t("glance.offer.none")}</p>
+                  <ActionGroup className="mt-3" testId="deal-actions" label={t("deals.actions")}>
+                    <Button loading={checking} onClick={() => void check()} data-testid="deal-check-again">
+                      {t("biz.deals.checkAgain")}
+                    </Button>
+                  </ActionGroup>
+                  {error ? (
+                    <div className="mt-2">
+                      <ErrorState error={error} />
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          </div>
+          {sectionNav(tabs.filter((k) => k !== "overview"))}
+          </div>
+        ) : null}
+
+        {current === "cash" && picture === undefined ? (
+          <div className="flow-card p-5 sm:p-7" data-testid={n.error ? "paths-failed" : "paths-loading"}>
+            {n.error ? <ErrorState error={n.error} onRetry={n.reload} /> : <LoadingBlock rows={3} />}
+          </div>
+        ) : null}
+
+        {current === "cash" && picture && analysis ? (
+          <div id={`${uid}-panel-cash`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-cash">
+            <CashTab offerId={offer.offer.offer_id} picture={picture} paths={paths} />
+            {/* The evidence behind the choices: what the owner can live with for this buyer, then the envelope's packages by who may send them (the strategy build). */}
+            {STRATEGY_MVP ? (
+              <div className="mt-8" data-testid="deal-before-they-ask">
+                <BeforeTheyAsk buyerId={buyerId ?? ""} />
+              </div>
+            ) : null}
+            <div className="mt-8">
+              <EnvelopePackages buyerId={buyerId ?? ""} />
+            </div>
+          </div>
+        ) : null}
+
+        {current === "terms" ? (
+          <div id={`${uid}-panel-terms`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-terms">
+            {/* After agreement: the terms by scope of the agreed response alone (the column "Agreed"), with the cost rows quoted when it was agreed; no comparison, no chart. */}
+            {picture && agreedPath ? (
+              <div className="space-y-6" data-testid="deal-agreed-terms">
+                <ScopeTerms picture={picture} paths={[agreedPath]} heads={[t("deals.terms.agreed")]} testId="deal-agreed-scope-terms" />
+                <div>
+                  <h3 className="mb-1 text-supporting font-bold text-ink-3">{t("deals.terms.agreedCost")}</h3>
+                  <CostTable paths={[agreedPath]} heads={[t("deals.terms.agreed")]} caption={t("deals.terms.agreedCost")} testId="deal-agreed-cost-table" />
+                </div>
+                {record ? <RecordBlock record={record} decision={decision} /> : null}
+                {originalAsk}
+              </div>
+            ) : record ? (
+              <>
+                <RecordBlock record={record} decision={decision} />
+                {originalAsk}
+              </>
+            ) : null}
+          </div>
+        ) : null}
+
+        {current === "messages" ? (
+          <div id={`${uid}-panel-messages`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-messages">
+            <h3 className="text-supporting font-bold text-ink-3">{t("deals.askTitle", { buyer: buyerShort })}</h3>
+            {doc?.text ? (
+              <figure className="mt-1.5 border-l-2 border-line-strong pl-3" data-testid="deal-ask-quote-messages">
+                <blockquote className="max-w-[68ch] text-[15px] leading-snug text-ink">“{doc.text}”</blockquote>
+                <figcaption className="mt-1 text-supporting text-ink-3">{record?.source.received_when ? t("biz.deals.messageWhen", { channel: te("channel", doc.channel ?? "chat"), when: record.source.received_when }) : te("channel", doc.channel ?? "chat")}</figcaption>
+              </figure>
+            ) : null}
+            {inbox ? (
+              <div className="mt-6" data-testid="deal-thread">
+                {inbox(buyerId)}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </section>
   );
-  const investigating = Boolean(picture && evaluated && picture.available !== false && (view.compare || view.chart || view.investigate) && !done);
-  const investigate =
-    investigating && picture ? (
-      <div id="deal-investigate-panel" className="flow-card p-5 sm:p-7" data-testid="deal-investigate">
-        <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen={view.compare || view.investigate} chartOpen={view.chart || view.investigate} why={view.investigate} />
-      </div>
-    ) : null;
+
+  return pane;
+}
+
+/** The deal's one name: the buyer's ask in words. It is kept once seen, so it does not change when the deal is sent and its open offer is gone. */
+function StableTitle({ id, ask, fallback }: { id: string; ask: string | null; fallback: string }) {
+  const [kept, setKept] = useState<string | null>(ask);
+  if (ask && ask !== kept) setKept(ask);
+  const text = ask ?? kept ?? fallback;
   return (
     <>
-      {pane}
-      {investigate ? (slot ? createPortal(investigate, slot) : investigate) : null}
+      {/* What a screen reader is told when the deal opens: the same name, never the verdict's short heading. */}
+      <Announce text={text} />
+      <h1 id={id} tabIndex={-1} className="type-section text-balance text-ink outline-none" data-testid="queue-heading">
+        {text}
+      </h1>
     </>
   );
 }
 
-function Chevron({ on }: { on: boolean }) {
-  return (
-    <svg aria-hidden viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className={`transition-transform duration-(--dur) ${on ? "rotate-180" : ""}`}>
-      <path d="m4 6 4 4 4-4" />
-    </svg>
-  );
+/** Starts the send review of a reply picked from the choices table once that reply's review block is mounted (it is keyed by the reply, so it is new after the pick). */
+function Starter({ want, ready, fire, done }: { want: string | null; ready: boolean; fire: () => void; done: () => void }) {
+  useEffect(() => {
+    if (!want || !ready) return;
+    fire();
+    done();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per pick
+  }, [want, ready]);
+  return null;
 }
 
-/** The commit area's companion: the way to try other terms (the filled button is the commit's; the cash chart and every response are the full analysis, under the cost and cash cards). */
+/** The way to try other terms (a quiet link beside the recommendation's buttons). */
 function CompareButtons({ whatif }: { whatif: string }) {
   const { t } = useI18n();
   return (

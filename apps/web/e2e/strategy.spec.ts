@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, proseOf, test } from "./fixtures";
-import { checkedDeal, filledBrand, openCompare, openStoryFold, resetBooks, runPlan, openOperatorTools } from "./helpers";
+import { checkedDeal, filledBrand, openStoryFold, resetBooks, runPlan, openOperatorTools } from "./helpers";
 
 /**
  * The strategy MVP surfaces (wayfinder map #47, Wave 5): the cash price sentence on Cash & funding, the collections worth on
@@ -72,10 +72,10 @@ async function advanceTo34(page: Page, request: APIRequestContext) {
   else await advanceMockTo34(page);
 }
 
-/** The package offer read and checked on Deals, and the full comparison opened: the envelope sits at the foot of it. */
+/** The package offer read and checked on Deals, and Cash impact opened: the envelope sits at the foot of it. */
 async function openEnvelope(page: Page) {
   await checkedDeal(page);
-  await openCompare(page);
+  await page.getByTestId("deal-tab-cash").click();
   await expect(page.getByTestId("deal-envelope-packages")).toBeVisible({ timeout: 30_000 });
 }
 

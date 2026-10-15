@@ -1,0 +1,137 @@
+"use client";
+
+/**
+ * Deal tracker (map #148, ticket #150): GET /decisions/{id}/tracker?lang= for an agreed deal. The server writes every word and figure
+ * (the verdict so far, the stage, the cost expected against the cost so far, each promise and whether it was kept, what it says about
+ * the buyer, the one next step); the browser shows them. The types are the server's contract and nothing is derived from them for display.
+ */
+
+import type { LifecycleStageView } from "@/lib/types";
+import { apiMode } from "./api";
+import { ApiError } from "./errors";
+import { useI18n } from "./i18n";
+import { readSelection, selectionQuery, type Selection } from "./selection";
+import { useAsync, type AsyncState } from "./use-async";
+
+export type TrackerTone = "ok" | "warn" | "bad" | "neutral";
+export type TrackerStageState = "done" | "now" | "todo" | "missed" | "part";
+export type TrackerCertainty = "RECORDED" | "QUOTED" | "ATTRIBUTED";
+export type TrackerPromiseState = "kept" | "part" | "late" | "missed" | "awaited" | "in_force" | "ended" | "paid_late" | "failed";
+
+export interface TrackerStage {
+  key: string;
+  label: string;
+  state: TrackerStageState;
+  state_text: string;
+}
+
+export interface TrackerLine {
+  key: string;
+  label: string;
+  expected_fen: number | null;
+  expected_display: string | null;
+  actual_fen: number | null;
+  actual_display: string | null;
+  actual_note_text: string | null;
+  certainty: TrackerCertainty;
+  certainty_text: string;
+  tone: TrackerTone;
+  evidence_href: string | null;
+  /** How the line relates to the deal: null (or "none") for the agreement's own components, else funding the records relate to it. */
+  relation: "none" | "after_late_payment" | "secured_on_invoice" | null;
+  /** True when the line's figure is in the total; `actual_fen` is only the part in the total. */
+  counted: boolean;
+  /** The line's own figure, counted or not (null when none). */
+  figure_fen: number | null;
+  figure_display: string | null;
+  /** Why a related line is not counted; null when it is counted, or still to count once approved. */
+  counted_note_text: string | null;
+}
+
+export interface TrackerCost {
+  expected: { amount_fen: number | null; amount_display: string | null; basis_text: string | null; certainty: TrackerCertainty };
+  actual: { amount_fen: number; amount_display: string; note_text: string | null; tone: "bad" | "ok" | "neutral" };
+  to_come: { amount_fen: number | null; amount_display: string | null; note_text: string };
+  /** The part of the expected cost no record holds yet. */
+  unmeasured_fen: number | null;
+  unmeasured_display: string | null;
+  /** The cost on top of the agreed terms (the counted funding lines), unsigned. */
+  /** The sum of the related lines' figures, counted or not. */
+  related_fen: number | null;
+  related_display: string | null;
+  difference_fen: number;
+  difference_display: string;
+  lines: TrackerLine[];
+  method_text: string;
+}
+
+export interface TrackerPromise {
+  party: "buyer" | "you";
+  party_text: string;
+  title_text: string;
+  detail_text: string;
+  state: TrackerPromiseState;
+  state_word: string;
+  tone: TrackerTone;
+  evidence_href: string | null;
+}
+
+export interface TrackerView {
+  decision_id: string;
+  lang: "en" | "zh";
+  available: boolean;
+  unavailable_text: string | null;
+  buyer_id: string | null;
+  buyer_name: string | null;
+  agreed_when: string | null;
+  /** The eyebrow's own words ("Agreed 38 days ago"), en and zh. */
+  agreed_text: string | null;
+  terms_text: string | null;
+  headline_text: string | null;
+  state_word: string | null;
+  state_tone: TrackerTone;
+  state_text: string | null;
+  stages: TrackerStage[];
+  /** Round three: the same strip the deal workspace read carries (one function on the server). */
+  lifecycle_stages?: LifecycleStageView[];
+  /** On an unavailable read the server sends the cost with every part null; the page draws it only when `available`. */
+  cost: TrackerCost | null;
+  promises: TrackerPromise[];
+  promise_counts: { buyer_kept: number; buyer_total: number; buyer_paid_late?: number; text: string } | null;
+  buyer: { text: string | null; note_text: string | null; href: string | null } | null;
+  next: { label: string; text: string; href: string } | null;
+  closeout_text: string | null;
+  links: { record_href: string; activity_href: string | null };
+  context?: { back?: { label: string; href: string } | null } | null;
+}
+
+const enc = encodeURIComponent;
+
+/** The request path: the selection the owner arrived with travels along so the server can write the way back. */
+export function trackerPath(id: string, lang: "en" | "zh", sel: Selection = {}): string {
+  const q = selectionQuery({ ...sel, decision: undefined });
+  return `/decisions/${enc(id)}/tracker?lang=${lang}${q ? `&${q}` : ""}`;
+}
+
+/**
+ * The tracker read. Null when the server has no such read (an older API, FastAPI's own 404) or no such record: the page then says so in
+ * words and the link on the decision record is not shown. Any other failure is an error the page shows.
+ */
+export async function getTracker(id: string, lang: "en" | "zh", sel: Selection = {}): Promise<TrackerView | null> {
+  try {
+    if (apiMode === "mock") return await (await import("./mock/handlers")).getTracker(id, lang);
+    const { http } = await import("./live/http");
+    return await http<TrackerView>("GET", trackerPath(id, lang, sel));
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
+/** The tracker for one decision in the language on screen; read again whenever the session writes (useAsync). `data` is null for "no such read". */
+export function useTracker(id: string | null, sel: Selection = {}): AsyncState<TrackerView | null> {
+  const { lang } = useI18n();
+  const key = selectionQuery(sel);
+  const state = useAsync<TrackerView | null>(async () => (id ? getTracker(id, lang, readSelection(new URLSearchParams(key))) : null), [id, lang, key]);
+  return { ...state, data: state.data && state.data.decision_id === id ? state.data : state.data === null ? null : undefined };
+}

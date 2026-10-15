@@ -1,0 +1,174 @@
+{
+  "en": {
+    "decision_id": "deal:OFF-f806f79b6c21",
+    "lang": "en",
+    "available": false,
+    "unavailable_text": "This deal has not been agreed yet, so there is nothing to track.",
+    "buyer_id": null,
+    "buyer_name": null,
+    "agreed_when": null,
+    "agreed_text": null,
+    "terms_text": null,
+    "headline_text": null,
+    "state_word": null,
+    "state_key": null,
+    "ended": false,
+    "state_tone": "neutral",
+    "state_text": null,
+    "stages": [],
+    "lifecycle_stages": [
+      {
+        "key": "received",
+        "label": "Received",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": "today"
+      },
+      {
+        "key": "analysed",
+        "label": "Analysed",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": null
+      },
+      {
+        "key": "reply_ready",
+        "label": "Reply ready",
+        "state": "now",
+        "state_text": "Now",
+        "when_text": null
+      },
+      {
+        "key": "sent",
+        "label": "Sent",
+        "state": "todo",
+        "state_text": "Still to come",
+        "when_text": null
+      },
+      {
+        "key": "agreed",
+        "label": "Agreed",
+        "state": "todo",
+        "state_text": "Still to come",
+        "when_text": null
+      }
+    ],
+    "cost": {
+      "expected": null,
+      "actual": null,
+      "to_come": null,
+      "unmeasured_fen": null,
+      "unmeasured_display": null,
+      "related_fen": null,
+      "related_display": null,
+      "difference_fen": null,
+      "difference_display": null,
+      "lines": [],
+      "method_text": null
+    },
+    "promises": [],
+    "promise_counts": null,
+    "buyer": null,
+    "next": null,
+    "closeout_text": null,
+    "links": {
+      "record_href": "/decisions/deal:OFF-f806f79b6c21",
+      "activity_href": "/activity?decision=deal:OFF-f806f79b6c21"
+    },
+    "context": {
+      "customer": "BUYER-1",
+      "decision": "deal:OFF-f806f79b6c21",
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": null,
+      "irrelevant_text": null
+    }
+  },
+  "zh": {
+    "decision_id": "deal:OFF-f806f79b6c21",
+    "lang": "zh",
+    "available": false,
+    "unavailable_text": "这笔交易尚未达成，因此没有可跟踪的内容。",
+    "buyer_id": null,
+    "buyer_name": null,
+    "agreed_when": null,
+    "agreed_text": null,
+    "terms_text": null,
+    "headline_text": null,
+    "state_word": null,
+    "state_key": null,
+    "ended": false,
+    "state_tone": "neutral",
+    "state_text": null,
+    "stages": [],
+    "lifecycle_stages": [
+      {
+        "key": "received",
+        "label": "已收到",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": "今天"
+      },
+      {
+        "key": "analysed",
+        "label": "已分析",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": null
+      },
+      {
+        "key": "reply_ready",
+        "label": "回复已就绪",
+        "state": "now",
+        "state_text": "进行中",
+        "when_text": null
+      },
+      {
+        "key": "sent",
+        "label": "已发送",
+        "state": "todo",
+        "state_text": "尚未开始",
+        "when_text": null
+      },
+      {
+        "key": "agreed",
+        "label": "已达成",
+        "state": "todo",
+        "state_text": "尚未开始",
+        "when_text": null
+      }
+    ],
+    "cost": {
+      "expected": null,
+      "actual": null,
+      "to_come": null,
+      "unmeasured_fen": null,
+      "unmeasured_display": null,
+      "related_fen": null,
+      "related_display": null,
+      "difference_fen": null,
+      "difference_display": null,
+      "lines": [],
+      "method_text": null
+    },
+    "promises": [],
+    "promise_counts": null,
+    "buyer": null,
+    "next": null,
+    "closeout_text": null,
+    "links": {
+      "record_href": "/decisions/deal:OFF-f806f79b6c21",
+      "activity_href": "/activity?decision=deal:OFF-f806f79b6c21"
+    },
+    "context": {
+      "customer": "BUYER-1",
+      "decision": "deal:OFF-f806f79b6c21",
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": null,
+      "irrelevant_text": null
+    }
+  }
+}

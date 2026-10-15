@@ -1,5 +1,5 @@
 // Slice B round two (docs/design/flow-mockup-2026-10-13/04_slice_b_round_two.md), the web half: the Deals queue's model (negotiations only, lifecycle pill, sort, group, counts), the commercial terms
-// table's rows, the timing diagram's bars and the cost table's rows, as plain functions. The components are TSX (node cannot strip JSX), so what is tested is their model. Run: pnpm test:unit
+// table's rows, the walk through the list and the cost table's rows, as plain functions. The components are TSX (node cannot strip JSX), so what is tested is their model. Run: pnpm test:unit
 import assert from "node:assert/strict";
 import { register } from "node:module";
 import test from "node:test";
@@ -88,17 +88,17 @@ test("the terms table is grouped by scope (existing invoice, future invoices, ne
   assert.deepEqual(q.map((x) => x.scope), ["future", "other"]);
 });
 
-test("the timing diagram has a bar for each path with a term in days, one scale, the server's words, and no diagram below two bars", () => {
-  const a = { ...asked, terms_days: 60, terms_delta_text: "+15 days requested by buyer" };
-  const r = { ...reply, terms_days: 45 };
-  const t = m.timingOf({ current_terms_days: 45, current_terms_text: "45 days" }, a, r);
-  assert.deepEqual(t.bars.map((b) => [b.key, b.days, b.text]), [["current", 45, "45 days"], ["asked", 60, "60 days"], ["reply", 45, "45 days"]]);
-  assert.equal(t.max, 60);
-  assert.equal(t.deltaText, "+15 days requested by buyer");
-  assert.equal(m.timingOf({}, a, r)?.bars.length, 2);
-  assert.equal(m.timingOf({}, a, { ...reply }), null); // the reply has no terms change: no bar
-  assert.equal(m.timingOf({ current_terms_days: 45 }, { ...asked }, null), null);
-  assert.equal(m.timingOf({ current_terms_days: 0 }, { ...asked, terms_days: 0 }, null), null);
+test("the walk through the list (previous, next, Deal i of N): one deal per record in the list's order; a promised payment and its agreement are one deal; a row that is not a deal is not walked", () => {
+  const d = (key, decision, o = {}) => ({ tier: "needs_you", row: row({ key, decision_id: decision, ...o }) });
+  const rows = [d("1", "deal:A"), d("2", "deal:B"), d("3", "deal:B", { kind: "PROMISE" }), d("4", "approval:APR-1"), d("5", "deal:C")];
+  const w = m.dealWalk(rows, "deal:B");
+  assert.equal(w.total, 3, "the promise folds into its deal; the approval is not a deal");
+  assert.equal(w.index, 2);
+  assert.equal(w.prev.decision, "deal:A");
+  assert.equal(w.next.decision, "deal:C");
+  assert.equal(m.dealWalk(rows, "deal:A").prev, null);
+  assert.equal(m.dealWalk(rows, "deal:C").next, null);
+  assert.equal(m.dealWalk(rows, "deal:Z").index, null, "a deal not in the list has no place in it");
 });
 
 test("the cost table aligns the components of the paths by key (else label); a path without one has no cell; the headline keeps its basis words", () => {

@@ -11,6 +11,9 @@ import { ApiError } from "../errors";
 import { contextQuery, type CustomerContext } from "../customer-href";
 import { serverScenario } from "../selection";
 import type {
+  AcceptRequest,
+  AcceptResult,
+  DeclineResult,
   ActivityView,
   DemoRestoreResult,
   DemoStoryView,
@@ -67,6 +70,7 @@ import type {
   NlRequest,
   NlResponse,
   OfferPictureView,
+  PictureScenario,
   OfferView,
   OperationView,
   PlanRequest,
@@ -168,6 +172,10 @@ export const live = {
     return { ...n, operations: n.operations.map((o) => asOperationView(o as unknown as Record<string, unknown>)) };
   },
 
+  /** POST /offers/{id}/accept and /decline (accept as asked): the verdict and books version the owner was shown; a 409 refuses with the server's words and moves nothing. */
+  acceptOffer: (offerId: string, req: AcceptRequest) => http<AcceptResult>("POST", `/offers/${enc(offerId)}/accept`, { body: req }),
+  declineOffer: (offerId: string, req: AcceptRequest) => http<DeclineResult>("POST", `/offers/${enc(offerId)}/decline`, { body: req }),
+
   planFunding: (req: PlanRequest, lang: "en" | "zh" = "en") => http<FundingView>("POST", lang === "zh" ? "/router/plan?lang=zh" : "/router/plan", { body: req }),
 
   getTrajectory: (mode: Mode, verdict?: VerdictView | null): Promise<TrajectoryView> => trajectory.getTrajectory(mode, verdict),
@@ -239,6 +247,8 @@ export const live = {
     nullWhenOff(() => http<EnvelopeView>("GET", `/buyers/${enc(buyerId)}/envelope?lang=${lang}${zone ? "&zone=1" : ""}`)),
 
   /** GET /offers/{offer_id}/exposure (flag `exposure`). Null when the feature is off, the offer is unknown or the route is absent. One read carries every path. */
+  /** GET /offers/{id}/scenarios: the Cash impact tab's Business consequences (empty with the exposure off); its own read, not the picture's. */
+  getOfferScenarios: async (offerId: string, lang: "en" | "zh"): Promise<PictureScenario[]> => (await http<{ scenarios: PictureScenario[] }>("GET", `/offers/${enc(offerId)}/scenarios?lang=${lang}`)).scenarios ?? [],
   getOfferExposure: (offerId: string, lang: "en" | "zh") => nullWhenOff(() => http<ExposureView>("GET", `/offers/${enc(offerId)}/exposure?lang=${lang}`)),
 
   /** GET /offers/{offer_id}/compare (flag `exposure`). Null when the feature is off, the route is absent or the offer has no verdict yet (404). */

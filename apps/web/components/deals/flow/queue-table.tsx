@@ -5,13 +5,14 @@ import { useId, useState } from "react";
 import { CustomerName } from "@/components/customer-link";
 import { ErrorState, LoadingBlock } from "@/components/ui";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
+import { RowChevron } from "@/components/ui/row-chevron";
 import { StatusPill } from "@/components/ui/status-pill";
 import { UnderlineTabs, WORKLIST_COLUMNS, WorklistAlertLine, WorklistEmpty, WorklistRow, WorklistSearch } from "@/components/ui/worklist-rows";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { CustomersView, QueueRowView } from "@/lib/types";
-import { canSortLatest, dealTabCounts, DEAL_TABS, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
+import { canSortLatest, dealTabCounts, DEAL_TABS, afterGroupCounts, afterGroupOf, AFTER_GROUPS, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
 import { matchesRow, rowDecision, rowTarget, type Queue, type RowTarget } from "./queue-model";
 
 export type QueueLayout = "compact" | "table";
@@ -69,7 +70,7 @@ function CompactRow({ tier, row, selected, locked, onSelect, activity, next = fa
   const cls = "absolute inset-0 z-0 rounded-[16px] outline-offset-0 focus-visible:outline-2 focus-visible:outline-brand-600 disabled:cursor-wait";
   return (
     <li className="relative" data-testid="queue-row" data-tier={tier} data-kind={row.kind} data-key={row.key} data-lifecycle={pill.lifecycle ?? undefined} data-selected={selected ? "true" : "false"}>
-      <div className={`flow-row relative px-4 py-3 ${next && !selected ? "next-cue" : ""}`} aria-current={selected ? "true" : undefined} data-next={next && !selected ? "true" : undefined}>
+      <div className={`flow-row flow-row-light group relative flex items-center gap-2 px-4 py-3 ${next && !selected ? "next-cue" : ""}`} aria-current={selected ? "true" : undefined} data-next={next && !selected ? "true" : undefined}>
         {/* The owner's next click, while nothing is selected: outlined, with the words on it. */}
         {next && !selected ? <NextTag /> : null}
         {target.kind === "select" ? (
@@ -77,7 +78,7 @@ function CompactRow({ tier, row, selected, locked, onSelect, activity, next = fa
         ) : (
           <Link href={target.href} prefetch={false} className={cls} aria-label={label} data-testid="queue-go" />
         )}
-        <div className="pointer-events-none relative z-[1] min-w-0">
+        <div className="pointer-events-none relative z-[1] min-w-0 flex-1">
           <p className="text-[15px] leading-snug text-ink" data-testid="queue-subject">
             <Subject row={row} decision={decision} invoice={row.invoice_id ?? null} />
             {row.is_new ? <span className="ml-2 text-supporting font-semibold text-ink-2">{t("hv2.work.new")}</span> : null}
@@ -98,6 +99,9 @@ function CompactRow({ tier, row, selected, locked, onSelect, activity, next = fa
             </p>
           ) : null}
         </div>
+        <span className="relative z-[1]">
+          <RowChevron selected={selected} />
+        </span>
       </div>
     </li>
   );
@@ -127,7 +131,6 @@ function TableRow({ tier, row, selected, locked, hrefOf, onSelect }: { tier: Dea
       isNew={row.is_new}
       newLabel={t("hv2.work.new")}
       qualifier={row.differentiator_text}
-      selectLabel={t("hv2.row.select")}
       nextStep={row.consequence_text}
       pill={
         <StatusPill tone={pill.tone} testId="queue-status" data-tier={tier}>
@@ -159,8 +162,8 @@ export function QueuePanel({
   hrefOf,
   layout,
   onLayout,
-  alertGo,
   onlyCustomer,
+  alertGo,
   nextKey = null,
 }: {
   queue: Queue | null | undefined;
@@ -201,12 +204,17 @@ export function QueuePanel({
       </section>
     );
   const counts = dealTabCounts(queue);
+  const groupCounts = afterGroupCounts(queue);
   const all = negotiationRows(queue);
   const only = onlyCustomer ? (queue.customers.find((c) => c.customer_id === onlyCustomer)?.name ?? null) : null;
+  // Progressive controls (round three, section 9): one negotiation is its row and nothing else; the lifecycle tabs and the search appear at two rows, Sort at four, the table switch at twenty.
+  const showTabs = all.length >= 2;
+  const showSort = all.length >= 4;
+  const activeTab: DealTab = showTabs ? tab : "all";
   const visible = all.filter((x) => (!onlyCustomer || x.row.customer_id === onlyCustomer) && matchesRow(x.row, q, termsOf(x.row.customer_id)));
-  const inTab = tab === "all" ? visible : visible.filter((x) => x.tier === tab);
+  const inTab = activeTab === "all" ? visible : visible.filter((x) => x.tier === activeTab);
   const latestOk = canSortLatest(all);
-  const sorted = sortRows(inTab, sort === "latest" && latestOk ? "latest" : "urgency");
+  const sorted = sortRows(inTab, showSort && sort === "latest" && latestOk ? "latest" : "urgency");
   const tableOffered = all.length >= TABLE_FROM;
   const asTable = tableOffered && layout === "table";
   const alert = queue.alert;
@@ -226,14 +234,14 @@ export function QueuePanel({
     if (q.trim()) return { title: t("hv2.work.empty.none"), body: t("hv2.work.empty.search", { q: q.trim() }) };
     if (counts.all === 0 && queue.customers.length === 0) return { title: t("deals.empty.none"), body: t("deals.empty.none.body") };
     // The server's own words for an empty tab (alert-aware: "Nothing else needs you." while the plan waits for the owner's go).
-    const served = tab === "needs_you" ? queue.needs_you_empty_text : tab === "waiting" ? queue.waiting_empty_text : tab === "agreements" ? queue.agreements_empty_text : null;
+    const served = activeTab === "needs_you" ? queue.needs_you_empty_text : activeTab === "waiting" ? queue.waiting_empty_text : activeTab === "agreements" ? queue.agreements_empty_text : null;
     if (served) return { title: served };
-    return { title: t(`deals.empty.${tab}` as DictKey) };
+    return { title: t(`deals.empty.${activeTab}` as DictKey) };
   };
   const rowsOf = (list: DealRow[]) =>
     list.map(({ tier, row }) => {
       const selected = Boolean(selectedDecision) && rowDecision(row) === selectedDecision;
-      return asTable ? <TableRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} hrefOf={hrefOf} onSelect={onSelect} /> : <CompactRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} onSelect={onSelect} activity={sort === "latest" && latestOk} next={row.key === nextKey} />;
+      return asTable ? <TableRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} hrefOf={hrefOf} onSelect={onSelect} /> : <CompactRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} onSelect={onSelect} activity={showSort && sort === "latest" && latestOk} next={row.key === nextKey} />;
     });
   const listClass = asTable ? "space-y-2" : "space-y-2";
   return (
@@ -257,18 +265,21 @@ export function QueuePanel({
           }
         />
       ) : null}
-      <div className="mt-4" data-testid="queue-tabs">
-        <UnderlineTabs label={t("deals.tabs")} value={tab} onChange={onTab} tabs={tabs} dense />
-      </div>
+      {showTabs ? (
+        <div className="mt-4" data-testid="queue-tabs">
+          <UnderlineTabs label={t("deals.tabs")} value={activeTab} onChange={onTab} tabs={tabs} dense />
+        </div>
+      ) : null}
       {onlyCustomer ? (
         <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-2" data-testid="queue-only-customer">
           <span>{only ? t("deals.only", { name: only }) : t("deals.only.unknown")}</span>
         </p>
       ) : null}
-      <WorklistSearch value={q} onChange={setQ} label={t("deals.search")} testId="queue-search" found={t("hv2.work.found", { n: sorted.length })} foundTestId="queue-found" />
+      {showTabs ? <WorklistSearch value={q} onChange={setQ} label={t("deals.search")} testId="queue-search" found={t("hv2.work.found", { n: sorted.length })} foundTestId="queue-found" /> : null}
       {/* Order the list: sort and (from 20 negotiations) the table. They change what is shown and in what order, never what a row says. */}
+      {showSort || tableOffered ? (
       <div role="group" aria-label={t("deals.controls")} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2" data-testid="queue-controls">
-        <SegmentedTabs
+        {showSort ? <SegmentedTabs
           compact
           label={t("deals.sort.label")}
           value={sort === "latest" && latestOk ? "latest" : "urgency"}
@@ -277,7 +288,7 @@ export function QueuePanel({
             { value: "urgency" as SortKey, label: t("deals.sort.urgency"), testId: "queue-sort-urgency" },
             { value: "latest" as SortKey, label: t("deals.sort.latest"), disabled: !latestOk, testId: "queue-sort-latest" },
           ]}
-        />
+        /> : null}
         {tableOffered ? (
           <SegmentedTabs
             compact
@@ -291,7 +302,8 @@ export function QueuePanel({
           />
         ) : null}
       </div>
-      <div role="tabpanel" id={panelId} aria-labelledby={tabId(tab)} aria-busy={loading} data-testid={`queue-panel-${tab}`} className="mt-3">
+      ) : null}
+      <div role="tabpanel" id={panelId} aria-labelledby={tabId(activeTab)} aria-busy={loading} data-testid={`queue-panel-${activeTab}`} className="mt-3">
         {sorted.length === 0 ? (
           <div data-testid="queue-empty">
             <WorklistEmpty {...emptyFor()} />
@@ -306,9 +318,42 @@ export function QueuePanel({
                 <span />
               </div>
             ) : null}
-            <ul className={listClass} aria-label={t("deals.list")} data-testid="queue-list">
-              {rowsOf(sorted)}
-            </ul>
+            <>
+              <ul className={listClass} aria-label={t("deals.list")} data-testid="queue-list">
+                {rowsOf(sorted.filter((x) => afterGroupOf(x.row) === null))}
+              </ul>
+              {/* The Agreements tier's groups (round three, section 11): payment late, awaiting payment, closed: the server's label and count; an empty group is not drawn; Closed is folded. */}
+              {AFTER_GROUPS.map((g) => {
+                const list = sorted.filter((x) => afterGroupOf(x.row) === g);
+                if (!list.length) return null;
+                const label = list.find((x) => x.row.after_group_label)?.row.after_group_label ?? t("deals.closed.title");
+                const head = (
+                  <span className={`inline-flex items-center gap-1.5 ${g === "payment_late" ? "text-bad-fg" : "text-ink-2"}`}>
+                    {g === "payment_late" ? <span aria-hidden className="size-2 rounded-pill bg-bad-solid" /> : null}
+                    {label} <span className="font-semibold tabular-nums text-ink-3">({groupCounts?.[g] ?? list.length})</span>
+                  </span>
+                );
+                return g === "closed" ? (
+                  <details key={g} className="mt-4" data-testid="queue-after-group" data-group={g}>
+                    <summary className="hit flex min-h-8 cursor-pointer list-none items-center gap-2 px-1 text-supporting font-bold [&::-webkit-details-marker]:hidden touch:min-h-11" data-testid="queue-after-group-heading">
+                      {head}
+                    </summary>
+                    <ul className={`${listClass} mt-1.5`} aria-label={label} data-testid="queue-after-list">
+                      {rowsOf(list)}
+                    </ul>
+                  </details>
+                ) : (
+                  <section key={g} className="mt-4" aria-label={label} data-testid="queue-after-group" data-group={g}>
+                    <h3 className="px-1 pb-1.5 text-supporting font-bold" data-testid="queue-after-group-heading">
+                      {head}
+                    </h3>
+                    <ul className={listClass} aria-label={label} data-testid="queue-after-list">
+                      {rowsOf(list)}
+                    </ul>
+                  </section>
+                );
+              })}
+            </>
           </>
         )}
       </div>

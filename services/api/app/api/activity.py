@@ -23,7 +23,8 @@ from app.alerts import reconcile
 from app.api.auth import require_owner
 from app.api.causality import Causality, chain_fields, mark_changed
 from app.api.decisions import Reconciled, load_context
-from app.api.presentation import bank_note, last_read, live_windows, party_name, t, when_text
+from app.api.lifecycle import AGREED_STATES, deal_href
+from app.api.presentation import bank_note, last_read, live_windows, offer_buyers, party_name, t, when_text
 from app.api.read import _forecast_now, _op_view
 from app.api.runtime import get_runtime
 from app.api.security_words import is_benign_auth, known_sender, security_words
@@ -34,7 +35,7 @@ router = APIRouter(dependencies=[Depends(require_owner)])
 
 # operation kind -> the filter category it belongs to; a kind not listed is read as the system's own
 _CATEGORY = {
-    "ACCEPT_OFFER": "deals", "RECORD_COMMITMENT": "deals", "COUNTER_OFFER": "deals", "REVOKE_COMMITMENT": "deals",
+    "ACCEPT_OFFER": "deals", "RECORD_COMMITMENT": "deals", "COUNTER_OFFER": "deals", "REJECT_OFFER": "deals", "REVOKE_COMMITMENT": "deals",
     "DRAW_FACILITY": "cash", "REPAY_FACILITY": "cash", "SUBMIT_INVOICE_FOR_FINANCING": "cash", "APPLY_FOR_FACILITY": "cash",
     "ADD_FACILITY": "cash",
     "RECEIVE_PAYMENT": "receivables",
@@ -58,11 +59,13 @@ def _actor(requested_by: Any, lang: str) -> tuple[str, str]:
     return key, t(lang, en, zh)
 
 
-def _op_actor(requested_by: Any, status: str, category: str, approval: Any, lang: str) -> tuple[str, str]:
+def _op_actor(requested_by: Any, status: str, category: str, approval: Any, lang: str, owner_accepts: bool = False) -> tuple[str, str]:
     """Who took the action the row's title describes, from the log and the approval records (requested_by, the result's status and
     approval_id, the approval's status and decided_by); never from the sentence. An operation that ran or was declined because the owner
     answered its approval is the owner's; a request still waiting was prepared by FLOW for the owner."""
     owner_answered = approval is not None and approval.status != ApprovalStatus.PENDING and str(approval.decided_by or "") == "OWNER"
+    if owner_accepts and status in ("PENDING_APPROVAL", "EXECUTED"):  # the owner accepted a request as asked: their own click is the approval
+        return "you", t(lang, "You", "您")
     if status == "PENDING_APPROVAL":
         waiting = approval is None or approval.status == ApprovalStatus.PENDING
         return "agent", (t(lang, "Prepared by FLOW · waits for you", "由 FLOW 准备 · 等待您批准") if waiting
@@ -108,7 +111,8 @@ def _op_rows(rt: Any, lang: str, today: int) -> list[dict[str, Any]]:
     causality = Causality(ctx, _forecast_now(rt, state, mandate, commitments, today) if ops else None, today, lang)
     documents = {r.id: r for r in rt.store.contract_records()} if any(o.kind.endswith("_DOCUMENT") for o in ops) else {}
     approvals = {a.id: a for a in rt.store.approvals()}
-    views = [_op_view(o, state, rt.day, commitments, decided, agreements, live, lang, causality, documents) for o in ops]
+    offers = offer_buyers(rt.store, state, (_payload(o) for o in ops))
+    views = [_op_view(o, state, rt.day, commitments, decided, agreements, live, lang, causality, documents, offers) for o in ops]
     mark_changed(list(reversed(views)))  # "why" is new when it differs from the row above it: this page reads newest first
     rows: list[dict[str, Any]] = []
     last_day = 0
@@ -121,11 +125,18 @@ def _op_rows(rt: Any, lang: str, today: int) -> list[dict[str, Any]]:
         status = str(json.loads(o.result_json).get("status") or "")
         title = v.get("event_text") or v.get("message_when") or v["kind_text"]
         approval_id = json.loads(o.result_json).get("approval_id")
-        actor, actor_text = _op_actor(v.get("requested_by"), status, category, approvals.get(approval_id), lang)
+        actor, actor_text = _op_actor(v.get("requested_by"), status, category, approvals.get(approval_id), lang,
+                                      owner_accepts=o.kind == "ACCEPT_OFFER" and v.get("requested_by") == "OWNER")
         word, tone = _status(status, json.loads(o.result_json).get("approval_id") in decided, lang)
-        buyer = _buyer_of(state, payload, commitments, v)
+        buyer = _buyer_of(state, payload, commitments, v, rt.store)
         link = v.get("decision_link")
         href, href_label = (link["href"], t(lang, "Open this decision", "查看这项决定")) if link else _own_link(payload, buyer, category, lang)
+        record_href = None
+        found_deal = ctx.states().get(v.get("decision_id")) if link and ctx is not None and v.get("decision_id") else None
+        if found_deal is not None and found_deal[0].family == "DEAL" and found_deal[0].state in AGREED_STATES:  # an agreed or ended deal is followed in Deals
+            owner_of = found_deal[0].commitment.counterparty_id if found_deal[0].commitment is not None else buyer
+            if owner_of:
+                record_href, href = link["href"], deal_href(owner_of, str(v["decision_id"]), "activity")
         why = v.get("why_it_matters")
         # The guided Demo's receipt names its bank reference (DEMO-RCPT-n): the Business sentence says the amount and the payer, the reference stays in the evidence fold.
         ref = payload.get("bank_reference")
@@ -141,7 +152,7 @@ def _op_rows(rt: Any, lang: str, today: int) -> list[dict[str, Any]]:
             "why_changed": bool(v.get("why_it_matters_changed")), "remaining_text": v.get("what_remains"),
             "actor": actor, "actor_text": actor_text, "status_word": word, "tone": "neutral" if category == "system" and tone == "ok" else tone,
             "customer_id": buyer, "customer_name": party_name(state, buyer) if buyer else None,
-            "decision_id": v.get("decision_id") if link else None, "href": href, "href_label": href_label,
+            "decision_id": v.get("decision_id") if link else None, "href": href, "href_label": href_label, "record_href": record_href,
             "evidence_href": f"/trust?view=evidence&entry={o.seq}&from=activity", "evidence_label": t(lang, "Evidence", "证据"),
             "record": {"seq": o.seq, "entry_hash": o.entry_hash, "prev_hash": o.prev_hash, "kind_text": v["kind_text"],
                        "message": v["summary"], **({"reference_text": bank_note(lang, ref)} if ref else {})},
@@ -157,7 +168,7 @@ def _payload(o: Any) -> dict[str, Any]:
     return p if isinstance(p, dict) else {}
 
 
-def _buyer_of(state: Any, payload: dict[str, Any], commitments: Any, view: dict[str, Any]) -> str | None:
+def _buyer_of(state: Any, payload: dict[str, Any], commitments: Any, view: dict[str, Any], store: Any = None) -> str | None:
     """The customer an operation concerns, when the books say so (a receivable's buyer, an agreement's counterparty)."""
     rid = payload.get("receivable_id")
     if rid:
@@ -168,6 +179,13 @@ def _buyer_of(state: Any, payload: dict[str, Any], commitments: Any, view: dict[
     for c in commitments:
         if cid and cid in (c.id, c.offer_id):
             return str(c.counterparty_id)
+    if store is not None and isinstance(payload.get("offer_id"), str):  # an offer the owner declined has no agreement: the offer names its buyer
+        try:
+            offer = store.get_offer(payload["offer_id"])
+        except Exception:  # noqa: BLE001
+            offer = None
+        if offer is not None:
+            return str(offer.counterparty_id)
     link = view.get("decision_link")
     if link:
         for c in commitments:

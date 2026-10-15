@@ -10,6 +10,9 @@ import { MOCK_LATENCY_MS } from "../config";
 import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
 import type {
+  AcceptRequest,
+  AcceptResult,
+  DeclineResult,
   ActivityView,
   DemoRestoreResult,
   DemoStoryView,
@@ -40,6 +43,7 @@ import type {
   DealsView,
   NavCounts,
   OfferPictureView,
+  PictureScenario,
   DocumentDecision,
   DocumentsList,
   DocumentView,
@@ -83,6 +87,8 @@ import type { CustomerContext } from "../customer-href";
 import * as buyside from "./buyside";
 import * as documents from "./documents";
 import * as decisions from "./decisions";
+import * as trackerMock from "./tracker"; // Deal tracker
+import type { TrackerView } from "../tracker"; // Deal tracker
 import * as home from "./home";
 import * as homeV2 from "./home-v2";
 import * as receivablesMock from "./receivables";
@@ -91,6 +97,7 @@ import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
 import navCountsJson from "../../mocks/nav_counts.json";
 import offerPictureJson from "../../mocks/offer_picture_ex01.json";
+import offerPictureExposureJson from "../../mocks/offer_picture_ex01_exposure.json";
 import approvalStories from "../../mocks/w1_approval_stories.json";
 import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
@@ -671,6 +678,13 @@ export async function getDecision(id: string, lang: "en" | "zh"): Promise<Decisi
   return decisions.mockDecision(decisionContext(), id, lang);
 }
 
+// Deal tracker (#150): GET /decisions/{id}/tracker, served by lib/mock/tracker.ts.
+export async function getTracker(id: string, lang: "en" | "zh"): Promise<TrackerView> {
+  await delay();
+  seedApprovalStory();
+  return trackerMock.mockTracker(decisionContext(), id, lang);
+}
+
 export async function getOffer(offerId: string): Promise<OfferView> {
   await delay();
   const v = load().offers[offerId];
@@ -757,6 +771,22 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
   s.negotiated[offerId] = result;
   save();
   return clone(result);
+}
+
+/**
+ * POST /offers/{id}/accept and /decline: the mock holds no request that may be accepted as asked (its one open offer, EX01, has counters and its ask is over the mandate), so the page never
+ * offers the button here; a call is refused in the server's shape (the 409 words are the API's, recorded by the live specs, not written here).
+ */
+export async function acceptOffer(offerId: string, req: AcceptRequest): Promise<AcceptResult> {
+  void req;
+  await delay();
+  throw new ApiError(409, `Offer ${offerId} has no request that can be accepted as asked in the mock.`, { code: "OVER_MANDATE", message: "Not served by the mock." });
+}
+
+export async function declineOffer(offerId: string, req: AcceptRequest): Promise<DeclineResult> {
+  void req;
+  await delay();
+  throw new ApiError(409, `Offer ${offerId} has no request that can be declined in the mock.`, { code: "OFFER_LAPSED", message: "Not served by the mock." });
 }
 
 const APPROVAL_SEEDS = cast<Record<"apply_loan" | "apply_loan_approved" | "apply_loan_rejected", ApprovalView>>(approvalsSeed);
@@ -1128,6 +1158,16 @@ export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Prom
   return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
 }
 
+/** GET /offers/{id}/scenarios: the recording taken with the exposure on, in both languages, while the exposure is on; an empty list (as a server with it off) under the exposure-off hook or for any other offer. */
+export async function getOfferScenarios(offerId: string, lang: "en" | "zh"): Promise<PictureScenario[]> {
+  await delay();
+  if (exposureOff()) return [];
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
+  if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return [];
+  const rec = cast<Record<"en" | "zh", PictureScenario[]>>((await import("../../mocks/offer_scenarios_ex01.json")).default);
+  return clone(rec[lang === "zh" ? "zh" : "en"]);
+}
+
 /** GET /pilot/journal: the mock has no recording (the pilot journal is the shadow pilot's, against a real runtime), so it is absent. */
 export async function getPilotJournal(): Promise<PilotJournalView | null> {
   return null;
@@ -1311,7 +1351,8 @@ export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en")
   const s = load();
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
   if (!s.offers[offerId] || offerId !== ex01?.view.offer.offer_id) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });
-  const rec = cast<Record<"en" | "zh", OfferPictureView>>(offerPictureJson);
+  // With the exposure read on (the default) the picture is the recording taken with it on (it carries the scenarios); a server with it off answers the plain one.
+  const rec = cast<Record<"en" | "zh", OfferPictureView>>(exposureOff() ? offerPictureJson : offerPictureExposureJson);
   const view = { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
   // A spec can make the offer undrawable, as the server answers one it can no longer draw (200, no paths, no moments, a sentence): the owner must still be able to send.
   try {

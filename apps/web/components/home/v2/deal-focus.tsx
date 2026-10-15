@@ -1,5 +1,6 @@
 "use client";
 
+import { pairWords } from "@/lib/point-comparison";
 import { useId, useMemo } from "react";
 import { CashPreview, LegendItem, type InspectorWords, type PreviewLine } from "@/components/home/v2/cash-preview";
 import { pointAt, shown } from "@/components/home/v2/company-chart";
@@ -16,6 +17,7 @@ import { Disclosure } from "@/components/business/kit";
 import { Button, ButtonLink, ErrorState, LoadingBlock } from "@/components/ui";
 import { getCustomerFocus, getDealExposure, getDealTitle, getDeals } from "@/lib/api";
 import { offerOfDecision } from "@/lib/home-v2-href";
+import { reviewHref } from "@/lib/selection";
 import { useI18n } from "@/lib/i18n";
 import type { ExposurePathWords, ExposureStress, HomeSeriesPoint, HomeView, OfferPictureView, PicturePath, WorklistCustomer, WorklistNeedsRow, WorklistWaitingRow } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -204,13 +206,13 @@ export function DealFocusPanel({
     const a = pointAt(seriesOf(asked), day);
     const o = pointAt(seriesOf(recommended), day);
     // The picture's own same-day comparison (the request, the recommended reply and the server's signed difference); until the server sends it, the two series' figures and the moment's difference.
-    const cmp = pointAt(late ? [] : (recommended?.series ?? []), day)?.comparison ?? null;
-    const diff = cmp?.difference_display ?? moments.find((m) => m.day === day)?.values.find((x) => x.key === recommended?.key)?.vs_asked_short;
+    const pw = late || !asked || !recommended ? null : pairWords(asked, recommended, (k) => pointAt((k === recommended.key ? recommended : asked).series ?? [], day));
+    const diff = pw?.difference ?? moments.find((m) => m.day === day)?.values.find((x) => x.key === recommended?.key)?.vs_asked_short;
     return {
       cells: [
         { key: "when", label: t("hv2.chart.when"), value: whenWord },
-        { key: "request", label: asked?.label ?? "", value: cmp?.asked_display ?? shown(a), tone: a && a.closing_fen < h.cash.floor_fen ? "bad" : undefined },
-        { key: "option", label: recommended?.label ?? "", value: cmp?.recommended_display ?? shown(o), tone: "opt" },
+        { key: "request", label: asked?.label ?? "", value: pw?.aDisplay ?? shown(a), tone: a && a.closing_fen < h.cash.floor_fen ? "bad" : undefined },
+        { key: "option", label: recommended?.label ?? "", value: pw?.bDisplay ?? shown(o), tone: "opt" },
         ...(diff ? [{ key: "diff", label: t("hv2.inspect.diff"), value: diff }] : []),
       ],
       events: (pointAt(h.cash.series, day)?.events ?? []).filter((e) => e.amount_fen !== 0).map((e) => ({ label: e.label_short ?? e.label, amount: e.amount_display })),
@@ -385,7 +387,7 @@ export function DealFocusPanel({
               ) : null}
               <ActionGroup className="mt-2" testId="hv2-deal-actions" label={t("hv2.deal.actions")}>
                 {decisionCard ? (
-                  <ButtonLink href={decisionCard.primary.href} variant="primary" data-testid="deal-primary">
+                  <ButtonLink href={decisionCard.kind === "request" ? reviewHref(decisionCard.primary.href) : decisionCard.primary.href} variant="primary" data-testid="deal-primary">
                     {decisionCard.primary.label}
                   </ButtonLink>
                 ) : null}

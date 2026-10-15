@@ -30,6 +30,12 @@ def test_accept_offer_belongs_to_its_deal_whatever_its_key() -> None:
     assert ident(p, "nl:s1:t3:abc:2:ACCEPT_OFFER") == "deal:OFF-1"  # a chat accept belongs to its deal
 
 
+def test_reject_offer_belongs_to_its_deal_whatever_its_key() -> None:
+    p = {"kind": "REJECT_OFFER", "offer_id": "OFF-1", "reason_codes": []}
+    assert ident(p, "decline-OFF-1-V-1") == "deal:OFF-1"  # the owner's refusal of a request closes that negotiation
+    assert ident(p, "nl:s1:t3:abc:2:REJECT_OFFER") == "deal:OFF-1"
+
+
 def test_record_commitment_belongs_to_the_deal_of_its_commitment() -> None:
     assert ident({"kind": "RECORD_COMMITMENT", "commitment_id": "CMT-1"}, "rec-1", "APR-4") == "deal:OFF-1"
 

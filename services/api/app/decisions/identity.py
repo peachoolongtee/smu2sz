@@ -1,7 +1,7 @@
 """Decision identity (ADR-0011 section 3): a deterministic id, so the read model and every write agree without a lookup
 table. Pure: it reads the operation's payload, its idempotency key and the commitments, and nothing else.
 
-    DEAL                    deal:{offer_id}
+    DEAL                    deal:{offer_id}   (an offer's accept and its reject, whoever asks, belong to the deal)
     FUNDING (alert cure)    alert:{alert_id}:v{state_version}
     FUNDING (router plan)   alert:{alert_id}:v{state_version}:plan
     FUNDING (chat)          nl:{session}:{scope}
@@ -31,6 +31,7 @@ _NL = re.compile(r"^nl:[^:]+:.+:\d+:[A-Z_]+$")
 
 _ACCEPT = "ACCEPT_OFFER"
 _RECORD = "RECORD_COMMITMENT"
+_REJECT = "REJECT_OFFER"
 
 
 def deal_id(offer_id: str) -> str:
@@ -80,7 +81,7 @@ def decision_id_for(
     its commitment, not its offer) and `approval_id` the approval that queued it, if any."""
     key = idempotency_key.split("#", 1)[0]
     kind = op_payload.get("kind")
-    if kind == _ACCEPT and isinstance(op_payload.get("offer_id"), str):
+    if kind in (_ACCEPT, _REJECT) and isinstance(op_payload.get("offer_id"), str):
         return deal_id(op_payload["offer_id"])
     if kind == _RECORD and isinstance(op_payload.get("commitment_id"), str):
         c = next((c for c in commitments if c.id == op_payload["commitment_id"]), None)

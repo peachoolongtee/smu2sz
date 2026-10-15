@@ -15,6 +15,9 @@ from __future__ import annotations
 
 import hmac
 import os
+import threading
+import time
+import uuid
 
 from fastapi import Header, HTTPException, Request
 
@@ -74,19 +77,43 @@ def counterparty_for_key(key: str | None) -> str | None:
     return found
 
 
-def log_refusal(request: Request, why: str, counterparty_id: str | None = None) -> None:
-    """Every rejected credential is evidence (a probe, a misconfiguration or a stolen link)."""
-    import hashlib
+# SEC-10: refusals are evidence, but an anonymous caller must not be able to grow the store without bound. A runtime (one per process)
+# records at most this many refused credentials per wall-clock hour, then one event saying further refusals that hour are counted and
+# not recorded. The count lives on the runtime, so a fresh runtime (a restart, a test) starts with a fresh budget.
+REFUSAL_EVENTS_PER_HOUR = 300
+_refusal_lock = threading.Lock()
 
+
+def _take_refusal_slot(rt: object) -> tuple[bool, bool]:
+    """(record this refusal, it is the one that exhausts the budget and says so)."""
+    hour = int(time.time() // 3600)
+    with _refusal_lock:
+        budget = rt.__dict__.setdefault("_refusal_budget", {"hour": hour, "used": 0})
+        if budget["hour"] != hour:
+            budget.update(hour=hour, used=0)
+        budget["used"] += 1
+        used = budget["used"]
+    return used <= REFUSAL_EVENTS_PER_HOUR + 1, used == REFUSAL_EVENTS_PER_HOUR + 1
+
+
+def log_refusal(request: Request, why: str, counterparty_id: str | None = None) -> None:
+    """Every rejected credential is evidence (a probe, a misconfiguration or a stolen link), up to the hourly budget (SEC-10).
+    The id is random: it never reads the stored events (that read grew with every refusal) and two concurrent refusals never share one."""
     from app.api.runtime import get_runtime
     from app.domain.models import SecurityEvent, SecurityEventKind
 
     rt = get_runtime()
-    key = f"{request.method} {request.url.path} {why} {rt.day} {len(rt.store.security_events())}"
+    record, last = _take_refusal_slot(rt)
+    if not record:
+        return
+    detail = f"{why}: {request.method} {request.url.path}"
+    if last:
+        detail = (f"more than {REFUSAL_EVENTS_PER_HOUR} refused credentials this hour; further refusals this hour are counted, "
+                  f"not recorded (latest: {detail})")
     rt.store.add_security_event(SecurityEvent(
-        id="SEC-AUTH-" + hashlib.sha256(key.encode()).hexdigest()[:12], day=rt.day,
+        id="SEC-AUTH-" + uuid.uuid4().hex[:16], day=rt.day,
         kind=SecurityEventKind.PRIVILEGE_ESCALATION, counterparty_id=counterparty_id,
-        action_taken="request refused before reaching any module", detail=f"{why}: {request.method} {request.url.path}",
+        action_taken="request refused before reaching any module", detail=detail,
     ))
 
 

@@ -312,6 +312,23 @@ input[type="radio"] {
 }
 
 /* A card or block arriving: fades in and rises 6 px. */
+@keyframes deals-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes deals-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+@keyframes row-hint {
+  50% {
+    transform: scale(1.3);
+    color: var(--color-ink);
+  }
+}
 @keyframes biz-reveal {
   from {
     opacity: 0;
@@ -377,6 +394,20 @@ input[type="radio"] {
   /* One thing replacing another in place (the chosen invoice's detail): the same arrival at the base duration, 200 ms. */
   .motion-swap {
     animation: biz-reveal var(--dur) var(--ease-ui) backwards;
+  }
+
+  /* Deals: a newly selected negotiation arrives in the workspace from the queue's side (8 px, from xl where the queue is beside it) with the same fade, over --dur: one transform and opacity. Below xl the queue is above it: a fade alone. */
+  .motion-slide {
+    animation: deals-fade-in var(--dur) var(--ease-ui) backwards;
+  }
+  @media (min-width: 80rem) {
+    .motion-slide {
+      animation-name: deals-slide-in;
+    }
+  }
+  /* The first visit's cue: the top row's chevron pulses twice (2 x 600 ms), then is still. */
+  .row-hint {
+    animation: row-hint 600ms var(--ease-ui) 2;
   }
 
   /* Rows of a list (up to eight) rise one after the other; a ninth row and beyond just appear. */
@@ -796,6 +827,10 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
    transitions only opacity remains, at the duration its own token gave it (a colour, a transform, a height and a grid track change
    at once). Components that choose in script (the chart cursors, the segmented pill) read the same signal through use-reduced-motion.ts. */
 @media (prefers-reduced-motion: reduce) {
+  .motion-slide,
+  .row-hint {
+    animation: none !important;
+  }
   *,
   *::before,
   *::after {

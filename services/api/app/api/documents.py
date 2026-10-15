@@ -11,6 +11,7 @@ import base64
 import binascii
 import hashlib
 import re
+import uuid
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -67,7 +68,7 @@ class DecisionIn(BaseModel):
 
 def _event(kind: SecurityEventKind, day: int, counterparty_id: str | None, detail: str, spans: list | None = None) -> None:
     rt = get_runtime()
-    sid = "SEC-DOC-" + hashlib.sha256(f"{kind}|{detail}|{day}|{len(rt.store.security_events())}".encode()).hexdigest()[:12]
+    sid = "SEC-DOC-" + hashlib.sha256(f"{kind}|{detail}|{day}|{uuid.uuid4().hex}".encode()).hexdigest()[:12]
     rt.store.add_security_event(SecurityEvent(id=sid, day=day, kind=kind, counterparty_id=counterparty_id,
                                               action_taken="document not read into any record; nothing confirmed"
                                               if kind == SecurityEventKind.UNKNOWN_COUNTERPARTY

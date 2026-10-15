@@ -151,13 +151,13 @@ def priced_response(counter: dict[str, Any], *, view: dict[str, Any], verdict_id
 def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: Mandate, today: int, lang: str,
           offer: Any = None, commitments: Sequence[Any] = (), send_plans: Mapping[str, Any] | None = None,
           authority_texts: Mapping[str, str | None] | None = None, sendable_ids: Collection[str] | None = None,
-          decline_plan: Any = None) -> dict[str, Any]:
+          decline_plan: Any = None, accept: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """The workspace for one evaluated offer. `view` is the evaluate view being returned, `bundle` the verifier's bundle, `offer` the
     compiled offer, `commitments` the books' agreements. `send_plans` holds, by counter id, the router's plan for the gap that would remain
     if the buyer accepts that counter (what its send would run); `authority_texts` the sentence the offer picture gives each reply (who
     decides it); `decline_plan` the plan for the gap as it stands (what a send runs if the buyer declines); `sendable_ids` the replies the picture says could be sent (None: only the first counter is offered, as before the
     picture could be read). `priced_responses` is one entry per sendable reply in the verdict's order; `priced_response` stays the first
-    counter's, for compatibility."""
+    counter's, for compatibility. `accept` is the block for accepting the asked terms (`app.api.accept.accept_block`), carried as it is."""
     verdict = bundle.verdict
     bound = {o.id: o for o in bundle.bound_obligations}
     months = _months(mandate.forward_concession_horizon_days)
@@ -202,8 +202,8 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
                          f"此报价的远期让步合计 {fc['total_display']}，超过您 {fc['cap_display']} 的上限。"))
     ahead = first_breach_ahead(bundle.trajectory, today, mandate.min_cash_fen) if bundle.trajectory is not None else None
     if ahead is not None:
-        reasons.append(t(lang, f"Accepted as asked, cash would fall below your minimum {when_text(ahead[0], today, lang)}.",
-                         f"若按对方要求接受，现金将在{when_text(ahead[0], today, lang)}低于您的最低现金储备。"))
+        reasons.append(t(lang, f"If you accept their request, cash would fall below your minimum {when_text(ahead[0], today, lang)}.",
+                         f"若接受对方的要求，现金将在{when_text(ahead[0], today, lang)}低于您的最低现金储备。"))
     action = view["business_action"]
     if not reasons:
         reasons.append(business_action_text(action, lang) + t(lang, ".", "。"))
@@ -240,5 +240,6 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
         "recommends": {"action": action, "text": business_action_text(action, lang)},
         "priced_response": priced(chosen) if chosen is not None else None,
         "priced_responses": [priced(c) for c in offered],
+        "accept": dict(accept) if accept is not None else None,
         "advanced": {"keys": ADVANCED},
     }

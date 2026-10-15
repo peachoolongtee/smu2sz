@@ -5891,10 +5891,10 @@
       "total_note": "The 12-month figure is the forward cost only. The immediate discount is on its own line and the two are not added together."
     },
     "why_it_matters": {
-      "text": "The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit. Accepted as asked, cash would fall below your minimum in 47 days.",
+      "text": "The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit. If you accept their request, cash would fall below your minimum in 47 days.",
       "reasons": [
         "The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit.",
-        "Accepted as asked, cash would fall below your minimum in 47 days."
+        "If you accept their request, cash would fall below your minimum in 47 days."
       ]
     },
     "recommends": {
@@ -5991,6 +5991,15 @@
         "state_version": 1
       }
     ],
+    "accept": {
+      "available": false,
+      "reason_text": "Over a limit you signed: only a new mandate changes that.",
+      "authority": "over_limit",
+      "commit_label": "Accept their request",
+      "decline_label": "Decline the request",
+      "decline_available": true,
+      "receipt": null
+    },
     "advanced": {
       "keys": {
         "parsed_obligations": [

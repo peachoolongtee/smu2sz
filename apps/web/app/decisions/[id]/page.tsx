@@ -7,6 +7,7 @@ import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, 
 import { StateWord } from "@/components/ui/state-word";
 import { OpStatusBadge } from "@/components/badges";
 import { ReceiptFacts } from "@/components/receipt-facts";
+import { TrackerRecordLink } from "@/components/tracker/record-link"; // Deal tracker
 import { useI18n } from "@/lib/i18n";
 import type { DecisionView } from "@/lib/types";
 import { useDecision } from "@/lib/use-decision";
@@ -119,7 +120,17 @@ function RecordBody({ d }: { d: DecisionView }) {
                 <p>
                   {sent.chosen_label ? t("rec.sent.chosen", { label: sent.chosen_label_text ?? sent.chosen_label }) : t("rec.sent.unbound")} {t("rec.sent.simulated")}
                 </p>
-                {sent.economics ? (
+                {sent.economics?.quoted_cost_label_text && sent.economics.net_label_text ? (
+                  // The server words both figures: the cost quoted when sent, and what the net measures (a label and its value are separate elements).
+                  <dl className="m-0 mt-1 space-y-1 text-meta text-ink-2" data-testid="record-sent-economics">
+                    <div>
+                      <dt className="inline">{sent.economics.quoted_cost_label_text}</dt> <dd className="ml-1 inline tabular-nums text-ink">{sent.economics.quoted_cost_display}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline">{sent.economics.net_label_text}</dt> <dd className="ml-1 inline tabular-nums text-ink">{sent.economics.net_display}</dd>
+                    </div>
+                  </dl>
+                ) : sent.economics ? (
                   <p className="mt-0.5 text-meta text-ink-2">
                     {t("biz.deals.netCost")} {sent.economics.net_display}
                     {sent.economics.basis_facility_name ? ` · ${sent.economics.basis_facility_name}` : ""}
@@ -160,7 +171,7 @@ function RecordBody({ d }: { d: DecisionView }) {
                 <Fact label={t("verdict.exec.agreement")} testId="record-agreement">
                   {d.agreement.status_text}
                 </Fact>
-                <Fact label={t("deal.expires")}>{d.agreement.expires_when}</Fact>
+                {d.agreement.expires_when ? <Fact label={t("deal.expires")}>{d.agreement.expires_when}</Fact> : null}
               </>
             ) : null}
           </dl>
@@ -207,6 +218,9 @@ function RecordBody({ d }: { d: DecisionView }) {
           </ul>
         </Card>
       ) : null}
+
+      {/* Deal tracker: shown only for a deal whose tracker read is available. */}
+      {d.family === "DEAL" ? <TrackerRecordLink id={d.id} /> : null}
 
       <p className="text-meta text-ink-3">
         <Link href={dealHome} className={textLinkClass}>

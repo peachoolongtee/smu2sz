@@ -29,7 +29,7 @@ from app.strategy.words import buyer_short
 
 log = logging.getLogger("termsledger.decisions")
 
-LIFECYCLE = ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed")
+LIFECYCLE = ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed", "closed")
 _WORDS = {
     "counter_ready": ("Counter ready", "还价已就绪"),
     "owner_review": ("Owner review needed", "需要您审核"),
@@ -38,6 +38,7 @@ _WORDS = {
     "agreed": ("Agreed", "已达成"),
     "declined": ("Declined", "已拒绝"),
     "lapsed": ("Lapsed", "已失效"),
+    "closed": ("Closed", "已结束"),  # an agreed deal that is over; the queue's rows carry the tracker's own state word instead
 }
 _QUOTE_MAX = 48
 # the order the Home words the asks in: terms first, then the rebate, then the early-payment discount

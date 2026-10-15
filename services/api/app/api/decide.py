@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.alerts import Severity, alerts
+from app.api.accept import accept_block, answered_block
 from app.api.auth import require_feature, require_owner
 from app.api.decisions import execution_view, lapsed_conflict, latest_verdict_for, load_context, record_fact
 from app.api.display import displayed
@@ -40,6 +41,7 @@ from app.api.presentation import (
     t,
     with_roles,
 )
+from app.api.refusal import refusal_plan, runnable
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import owner_verdict_extras, trajectory_view
 from app.api.workspace import build as build_workspace
@@ -254,7 +256,7 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
     paths = _picture_paths(rt, offer_id, view, lang)
     view["workspace"] = build_workspace(
         view, bundle=bundle, state=state, mandate=mandate, today=rt.day, lang=lang, offer=offer, commitments=rt.store.commitments(),
-        send_plans=send_plans, decline_plan=decline_plan,
+        send_plans=send_plans, decline_plan=decline_plan, accept=_accept_block(rt, offer, v, state, mandate, lang),
         authority_texts={k: (str(p["decides_text"]) if p.get("decides_text") else None) for k, p in (paths or {}).items()},
         sendable_ids=None if paths is None else {k for k, p in paths.items() if p.get("sendable")})
     return view
@@ -275,6 +277,26 @@ def _picture_paths(rt: Runtime, offer_id: str, view: dict, lang: str) -> dict[st
         return {p["key"]: p for p in pic.get("paths") or [] if p.get("kind") == "reply"}
     except Exception:  # a supporting read: the receipt then carries no authority line rather than a guess
         logging.getLogger("termsledger.decisions").exception("the picture could not be read for the send receipt of %s", offer_id)
+        return None
+
+
+def _accept_block(rt: Runtime, offer: CompiledOffer, verdict, state, mandate, lang: str) -> dict | None:
+    """The block for accepting the asked terms, the offer picture's own (the cost words are the asked path's, so the two never differ). When the
+    picture cannot be read the block is built without cost words: the receipt then carries no cost line rather than a guess."""
+    from app.api.offer_picture import (
+        cached_picture,  # the picture reads the decision record, which reads this module
+    )
+    from app.api.workspace import _months
+
+    try:
+        with rt.lock:
+            return answered_block(rt, offer.offer_id, cached_picture(rt, offer.offer_id, lang)["accept"], lang)
+    except Exception:  # a supporting read: whatever fails, the block is built without the picture
+        logging.getLogger("termsledger.decisions").exception("the picture could not be read for the accept block of %s", offer.offer_id)
+    try:
+        return accept_block(lang, state=state, offer=offer, verdict=verdict, months=_months(mandate.forward_concession_horizon_days))
+    except Exception:
+        logging.getLogger("termsledger.decisions").exception("the accept block could not be built for %s", offer.offer_id)
         return None
 
 
@@ -325,17 +347,7 @@ def _ops_for_plan(rt: Runtime, actions: list[FundingAction], key: str) -> list[d
     return results
 
 
-def _runnable(gap_plan) -> str | None:
-    """Why the gap plan is not run today ('' never): the router's own "cannot run today" reason, or a leg no
-    operation can run. None when every leg can be sent."""
-    if not gap_plan.actions:
-        return None
-    if not gap_plan.executable_now:
-        return gap_plan.not_executable_reason or "it cannot run today"
-    if any(a.kind not in (FundingActionKind.DRAW, FundingActionKind.FINANCE_INVOICE) or
-           (a.kind == FundingActionKind.FINANCE_INVOICE and not a.receivable_id) for a in gap_plan.actions):
-        return "it relies on a step no operation can run (a buyer paying early or a bill discount)"
-    return None
+_runnable = runnable  # the refused send's check, shared with the picture (`app.api.refusal`)
 
 
 def _counter_changed(rt: Runtime, offer: CompiledOffer, verdict, state_version: int, why: str, lang: str = "en") -> HTTPException:
@@ -491,8 +503,7 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
                           f"{accepted_label or '还价'}已被接受，协议已记录")
             funded_when = _t(lang, "the remaining gap is funded.", "其余缺口已融资。")
         else:
-            books = current_books(state, rt.store.commitments())
-            gap_plan = plan(books.state, books.with_([]), mandate)
+            gap_plan = refusal_plan(state, rt.store.commitments(), mandate)
             message = "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap."
             head_when = _t(lang, "No deal after the buyer's replies", "买方回复后未能成交")
             funded_when = _t(lang, "the near-term gap is funded another way.", "近期缺口将通过其他方式融资。")

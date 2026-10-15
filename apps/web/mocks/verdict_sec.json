@@ -221,6 +221,15 @@
     },
     "priced_response": null,
     "priced_responses": [],
+    "accept": {
+      "available": false,
+      "reason_text": "FLOW cannot accept their request.",
+      "authority": null,
+      "commit_label": "Accept their request",
+      "decline_label": "Decline the request",
+      "decline_available": true,
+      "receipt": null
+    },
     "advanced": {
       "keys": {
         "parsed_obligations": [

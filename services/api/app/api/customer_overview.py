@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Annotated, Any, Literal, Protocol
@@ -62,6 +63,7 @@ from app.api.presentation import (
     deal_back_label,
     event_words,
     fmt_short,
+    offer_buyers,
     party_name,
     t,
     when_text,
@@ -428,7 +430,7 @@ def _economics(r: _Read) -> tuple[list[dict[str, Any]], str]:
             core = (t(lang, "more than the whole year's contribution", "超过其一整年的贡献") if ratio > 1
                     else t(lang, f"about {share_text(ratio, lang)} of it", f"约占其中的 {share_text(ratio, lang)}"))
             extra = t(lang, f", plus {once} once", f"，另加一次性 {once}") if once else ""
-            put("open_request", label, t(lang, f"{core} as asked, over 12 months{extra}", f"按对方要求，12 个月内{core}{extra}"),
+            put("open_request", label, t(lang, f"{core} if you accept their request, over 12 months{extra}", f"如果接受对方的要求，12 个月内{core}{extra}"),
                 t(lang, "the cost of keeping the same sales on softer terms, not profit gained",
                   "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润"))
         elif year <= 0 and once:  # a one-off cost has no yearly share
@@ -854,7 +856,7 @@ def _capacity_row(r: _Read, ex: dict[str, Any]) -> dict[str, Any]:
         return _row("capacity", label, today)
     rec = r.recommended
     after = (t(lang, f"if {r.who} accepts {rec['label']}", f"如果{r.who}接受{rec['label']}") if rec is not None
-             else t(lang, "if you accept as asked", "如果您按对方要求接受"))
+             else t(lang, "if you accept their request", "如果您接受对方的要求"))
     value = t(lang, f"{today}; {amount(spare['x_star_fen'])} {after}", f"{today}；{after}，{amount(spare['x_star_fen'])}")
     return _row("capacity", label, value, ex["band"]["by_path"][r.lead]["capacity"])
 
@@ -929,6 +931,17 @@ def _relationship_text(r: _Read, contribution: int | None, open_count: int) -> s
     return f"{who} {joined}."
 
 
+def _deals_history(r: _Read) -> list[dict[str, Any]]:
+    """The buyer's agreed and closed deals, newest first (subject, the tracker's state word, its close-out or agreed sentence, the link into Deals)."""
+    from app.api.lifecycle import deals_history
+
+    try:
+        return deals_history(r.ctx, r.buyer_id, r.lang)
+    except Exception:
+        log.exception("the deals history could not be read for the customer overview")
+        return []
+
+
 def _open_negotiations(r: _Read) -> tuple[list[dict[str, Any]], dict[str, Any] | None, int]:
     """(the open negotiations as rows, the primary decision, how many others are open). The primary decision is the one the page's `decision`
     block is about when it waits for the owner, else the first that does; it is null when none waits for the owner."""
@@ -958,7 +971,7 @@ def _open_negotiations(r: _Read) -> tuple[list[dict[str, Any]], dict[str, Any] |
     recommends: str | None = None
     if rec is not None:
         recommends = (t(lang, f"FLOW recommends {rec['label']}.", f"FLOW 推荐{rec['label']}。") if rec["kind"] == "reply"
-                      else t(lang, "FLOW recommends accepting as asked.", "FLOW 建议按对方要求接受。"))
+                      else t(lang, "FLOW recommends accepting their request.", "FLOW 建议接受对方的要求。"))
     n = len(waiting)
     text = (t(lang, f"{r.who} has one commercial decision requiring your response.", f"{r.who}有一项商务决定需要您答复。") if n == 1
             else t(lang, f"{r.who} has {_number_word(n, lang)} commercial decisions requiring your response.", f"{r.who}有 {n} 项商务决定需要您答复。"))
@@ -1133,10 +1146,12 @@ def _exposure_comparison(r: _Read) -> dict[str, Any] | None:
 # ---------------------------------------------------------------- the history
 
 
-def _mine(e: LoggedEntry, rids: set[str], buyer_id: str, agreements: set[str]) -> bool:
+def _mine(e: LoggedEntry, rids: set[str], buyer_id: str, agreements: set[str], offers: Collection[str] = ()) -> bool:
     p = e.payload or {}
     if p.get("receivable_id") in rids or p.get("counterparty_id") == buyer_id or p.get("buyer_id") == buyer_id:
         return True
+    if p.get("kind") in ("ACCEPT_OFFER", "REJECT_OFFER") and p.get("offer_id") in offers:
+        return True  # the owner's answer to this buyer's request (a refusal names no agreement)
     message = e.result.message or ""
     return any(cid in message for cid in agreements)
 
@@ -1196,13 +1211,15 @@ def _history(r: _Read) -> list[dict[str, Any]]:
     names = {c.id: party_name(state, c.counterparty_id) for c in ctx.commitments}
     decided = {a.id for a in ctx.approvals if str(getattr(a.status, "value", a.status)) != "PENDING"}
     known = ctx.states()
+    offers = offer_buyers(ctx.rt.store, state, (e.payload or {} for e in ctx.entries))
+    mine_offers = {oid for oid, _ in offers.items() if (held := ctx.offer(oid)) is not None and held.counterparty_id == r.buyer_id}
     entries = sorted((e for e in ctx.entries if e.day is not None and e.result.status not in _SKIP_STATUS and "CLOCK" not in e.kind.upper()
                       and not (e.result.status == OperationStatus.PENDING_APPROVAL and e.result.approval_id in decided)
-                      and _mine(e, rids, r.buyer_id, agreements)), key=lambda e: (-(e.day or 0), -e.seq))
+                      and _mine(e, rids, r.buyer_id, agreements, mine_offers)), key=lambda e: (-(e.day or 0), -e.seq))
     for e in entries[:LOG_ROWS]:
         words = event_words(state, kind=e.kind, status=e.result.status.value, payload=e.payload, message=e.result.message,
                             approval_id=e.result.approval_id, day=e.day, today=r.today, lang=lang,
-                            decided=e.result.approval_id in decided, agreements=names, window_live=False)
+                            decided=e.result.approval_id in decided, agreements=names, window_live=False, offers=offers)
         said = (_financing_event(r, e) if e.kind == "SUBMIT_INVOICE_FOR_FINANCING"
                 else _receipt_event(r, e) if e.kind == "RECEIVE_PAYMENT" else None)
         text, words_of = said if said is not None else (
@@ -1338,6 +1355,7 @@ def _build(rt: Runtime, buyer_id: str, lang: Lang) -> tuple[dict[str, Any], bool
         "receivable_flow": _receivable_flow(r), "links": _links(r, negotiations, primary),
         "exposure_comparison": _exposure_comparison(r),
         "open_negotiations": negotiations, "primary_decision": primary, "other_open_count": others,
+        "deals_history": _deals_history(r),
         "decision": decision, "none_text": none_text if decision is None else None, "actions": actions,
         "economics": econ_rows, "economics_note": econ_note,
         # the inputs sheet is Phase 2 (FEATURE_CUSTOMER_ECONOMICS): until it is on there is nowhere to send the owner, and the label stays

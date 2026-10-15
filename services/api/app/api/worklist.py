@@ -316,6 +316,8 @@ def _deal_rows(rt: Runtime, ctx: Context, lang: Lang, deals: list[tuple[dict[str
                 partial.add("offer_picture")
                 failed = True
         severity, breach, consequence = _deal_effect(pic, floor, failed, lang)
+        if lifecycle == "owner_review":
+            consequence += _act_text(pic, lang)
         activity = _activity(_latest(ds, offer), ctx.today, lang)
         needs.append(Row(key=f"deal:{view['offer_id']}", kind="DECISION", customer_id=cid, customer_short=who, subject=subject,
                          status=lifecycle_text(lifecycle, lang), consequence=consequence, severity=severity, deadline_day=breach,
@@ -323,6 +325,17 @@ def _deal_rows(rt: Runtime, ctx: Context, lang: Lang, deals: list[tuple[dict[str
                          lifecycle=lifecycle, subject_demo=subject_demo, topic=_topic(offer, lang),
                          activity=activity[0], activity_text=activity[1]))
     return needs, waits
+
+
+def _act_text(pic: dict[str, Any] | None, lang: Lang) -> str:
+    """What the owner can do with a request that waits for their review, said after its cash effect ("Accept, decline, or try other terms."): the
+    picture's own `accept` block says whether the asked terms can be accepted at all; without one the row names no act."""
+    pic = pic or {}
+    block = pic.get("accept")
+    if not block or not pic.get("available"):
+        return ""
+    return t(lang, " Accept, decline, or try other terms.", "接受、拒绝，或尝试其他条款。") if block.get("available") else t(
+        lang, " Decline, or try other terms.", "拒绝，或尝试其他条款。")
 
 
 def _first_below(path: dict[str, Any] | None, floor: int, today: int) -> int | None:
@@ -362,11 +375,11 @@ def _deal_effect(pic: dict[str, Any] | None, floor: int, failed: bool, lang: Lan
         severity = NORMAL
     band = asked_path.get("band_text")
     if asked_breach is not None and band:
-        return severity, rec_breach, t(lang, f"As asked: {_lower(band)}.", f"按对方要求：{band}。")
+        return severity, rec_breach, t(lang, f"If you accept their request: {_lower(band)}.", f"如果接受对方的要求：{band}。")
     if asked_path.get("authority") == "over_limit":
-        return severity, rec_breach, t(lang, "Over your limit as asked; it does not take cash below your minimum.",
-                                       "按对方要求已超出您的上限，但现金不会低于您的最低现金。")
-    return severity, rec_breach, t(lang, "Accepting as asked does not take cash below your minimum.", "按对方要求接受，现金不会低于您的最低现金。")
+        return severity, rec_breach, t(lang, "Over your limit if you accept their request; it does not take cash below your minimum.",
+                                       "接受对方的要求会超出您的上限，但现金不会低于您的最低现金。")
+    return severity, rec_breach, t(lang, "Accepting their request does not take cash below your minimum.", "接受对方的要求，现金不会低于您的最低现金。")
 
 
 def _approval_rows(home: dict[str, Any], ctx: Context, lang: Lang, plan_alert: str | None) -> list[Row]:
@@ -599,26 +612,82 @@ def _qs(**pairs: str | None) -> str:
 
 
 def _agreement_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
-    """AGREEMENT: one row per deal in force (the decision record's AGREED), newest first, with the terms agreed in the row's consequence."""
-    found = [ds for ds, _inp in ctx.states().values() if ds.family == "DEAL" and ds.state == DealState.AGREED and ds.offer is not None]
+    """AGREEMENT: one row per agreed deal (the decision record's AGREED, and the deals over once agreed), grouped by what remains after the agreement
+    from the tracker's own read: payment late, then awaiting payment, then closed, newest first within each group (#154). A deal is `closed` only
+    when nothing is left owed (or the agreement was revoked or ran out); its row carries the tracker's state word and close-out sentence."""
+    from app.api.lifecycle import (
+        AGREED_STATES,
+        GROUP_ORDER,
+        PAYMENT_LATE,
+        after_group,
+        after_group_label,
+        agreement_gone_word,
+        tracker_of,
+    )
+
+    found = [(ds, inp) for ds, inp in ctx.states().values() if ds.family == "DEAL" and ds.state in AGREED_STATES and ds.offer is not None]
     out = []
-    for ds in sorted(found, key=lambda d: (-d.updated_seq, d.decision_id)):
+    for ds, inp in sorted(found, key=lambda p: (-p[0].updated_seq, p[0].decision_id)):
         offer = ds.offer
         if offer is None:
             continue
+        built = tracker_of(ctx, ds, inp, lang)
+        group = after_group(ds, built)
         cid = offer.counterparty_id
         who = buyer_short(party_name(ctx.state, cid))
         c = ds.commitment
         subject, subject_demo = subject_for(ctx, offer, lang)
+        activity = _activity(_latest(ds, offer), ctx.today, lang)
+        status, consequence = lifecycle_text("agreed", lang), t(lang, "; ", "；").join(_agreed_terms(ctx, c, lang)) if c is not None else ""
+        if group == "closed":
+            status = (built or {}).get("state_word") or lifecycle_text("closed", lang)
+            consequence = (built or {}).get("closeout_text") or (built or {}).get("headline_text") or ""
+        elif group == PAYMENT_LATE and built is not None:
+            status, consequence = built["state_word"], built.get("headline_text") or consequence
+        if group != "closed" and built is not None and (gone := agreement_gone_word(ds, lang)) is not None:
+            status, consequence = gone, built.get("state_text") or consequence  # revoked or expired, and still owed money: the owner sees it
         out.append({"key": f"agreement:{ds.decision_id}", "kind": "AGREEMENT", "customer_id": cid, "customer_short": who,
-                    "subject_text": subject or f"{who} · {_topic(offer, lang)}", "subject_demo_text": subject_demo, "lifecycle": "agreed", "topic_text": _topic(offer, lang),
-                    "last_activity_day": _activity(_latest(ds, offer), ctx.today, lang)[0],
-                    "last_activity_text": _activity(_latest(ds, offer), ctx.today, lang)[1],
-                    "status_text": lifecycle_text("agreed", lang),
-                    "consequence_text": t(lang, "; ", "；").join(_agreed_terms(ctx, c, lang)) if c is not None else "",
+                    "subject_text": subject or f"{who} · {_topic(offer, lang)}", "subject_demo_text": subject_demo,
+                    "lifecycle": "closed" if group == "closed" else "agreed", "topic_text": _topic(offer, lang),
+                    "last_activity_day": activity[0], "last_activity_text": activity[1], "status_text": status, "consequence_text": consequence,
                     "severity": NORMAL, "deadline_day": None, "expected_day": None, "since_day": ds.updated_day,
-                    "differentiator_text": None, "decision_id": ds.decision_id})
-    return out
+                    "differentiator_text": None, "decision_id": ds.decision_id, "after_group": group,
+                    "after_group_label": after_group_label(group, lang)})
+    return sorted(out, key=lambda r: GROUP_ORDER.index(r["after_group"]))  # stable: newest first within a group
+
+
+def _promise_said(p: Any, today: int, lang: Lang) -> str:
+    """A promised early payment as the line of its deal's row: the amount, the day it is expected, and that it is not counted as cash until it arrives."""
+    when = when_text(p.promised_day, today, lang) if p.promised_day is not None else ""
+    amount = fmt_yuan_short(p.expected_fen)
+    if when:
+        return t(lang, f"The buyer has promised {amount} {when}; it is not counted as cash until it arrives.",
+                 f"买方承诺{_gap(when)}支付 {amount}；到账前不计入现金。")
+    return t(lang, f"The buyer has promised {amount}; it is not counted as cash until it arrives.", f"买方承诺支付 {amount}；到账前不计入现金。")
+
+
+def _headline(needs: int, late: int, waiting: int, alert: dict[str, Any] | None, lang: Lang) -> str:
+    """The sentence above the queue, counting everything the page lists for the owner: every row in Needs you (a decision, an approval, a chase,
+    a set-up) and every agreed deal whose payment is late, then what waits on others. Only an empty queue says nothing needs the owner today."""
+    held = []
+    if needs:
+        held.append(t(lang, f"{needs} {'task needs' if needs == 1 else 'tasks need'} you", f"{needs} 项任务需要您处理"))
+    if alert is not None:  # the company cash alert is something for the owner whatever the rows say
+        if str(alert["primary"]["href"]).startswith("/approvals"):
+            held.append(t(lang, "a funding plan waits for your approval", "一项融资方案正等待您批准"))
+        elif alert.get("kind_text"):
+            held.append(t(lang, "a funding plan is ready", "一项融资方案已准备好"))
+        else:
+            held.append(t(lang, "company cash is unsafe ahead and no funding plan is ready", "公司现金将不安全，且还没有准备好的融资方案"))
+    if late:
+        held.append(t(lang, f"{late} agreed {'deal has' if late == 1 else 'deals have'} a late payment", f"{late} 项已达成的协议有逾期付款"))
+    tail = (t(lang, f" {waiting} waiting on others.", f"{waiting} 项在等待他人。") if waiting else "")
+    if held:
+        body = "; ".join(held) + "."
+        return t(lang, body[:1].upper() + body[1:], "；".join(held) + "。") + tail
+    if waiting:
+        return t(lang, f"Nothing needs you. {waiting} waiting on others.", f"没有需要您处理的事项。{waiting} 项在等待他人。")
+    return t(lang, "Nothing needs you today.", "今天没有需要您处理的事项。")
 
 
 def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, Any]], alert: dict[str, Any] | None,
@@ -680,18 +749,50 @@ def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, A
                 "status_text": status, "consequence_text": row["consequence_text"],
                 "severity": row["severity"], "deadline_day": row.get("deadline_day"), "expected_day": row.get("expected_day"),
                 "differentiator_text": row.get("differentiator_text"), "decision_id": decision, "invoice_id": invoice, "approval_id": approval,
+                "after_group": row.get("after_group"), "after_group_label": row.get("after_group_label"),
                 "href": href(row["kind"], cid, decision, invoice, approval, row.get("href") or "/deals")}
 
     needs_rows = [item(_needs_item(r, False, None, lang), NEEDS_YOU_TIER) for r in needs]
     waits = [w for w in waiting if w["kind"] != "PROMISE"]
     promises = [w for w in waiting if w["kind"] == "PROMISE"]
     waiting_rows = [item(w, WAITING_TIER) for w in waits]
-    agreement_rows = [item(r, AGREEMENTS_TIER) for r in [*_agreement_rows(ctx, lang), *promises]]
+    from app.api.lifecycle import GROUP_ORDER, after_group_label
+
+    # One row per agreed deal: a promise folds into its deal's AGREEMENT row (its words join the row's consequence); a promise whose deal has no
+    # AGREEMENT row of its own stays a row, so no promise is lost
+    hosts = [{**item(r, AGREEMENTS_TIER), "promises": []} for r in _agreement_rows(ctx, lang)]  # `promises`: the folded promises' own status words
+    by_decision = {r["decision_id"]: r for r in hosts}
+    loose = []
+    for w in promises:
+        row = item(w, AGREEMENTS_TIER)
+        host = by_decision.get(row["decision_id"])
+        p = promised.get(tuple(w["key"].split(":", 2)[1:]))  # type: ignore[arg-type]
+        if host is None or p is None or host["lifecycle"] == "closed":
+            loose.append(row)
+            continue
+        host["promises"].append({"status_text": w["status_text"], "invoice_id": row["invoice_id"], "expected_day": w.get("expected_day")})
+        said = _promise_said(p, ctx.today, lang)
+        had = str(host["consequence_text"] or "").rstrip()
+        if had and had[-1] not in ".。":
+            had += t(lang, ".", "。")
+        host["consequence_text"] = f"{had}{t(lang, ' ', '')}{said}" if had else said
+    agreement_rows = [*hosts, *loose]
+    groups = {r["decision_id"]: r["after_group"] for r in agreement_rows if r["kind"] == "AGREEMENT"}
+    for r in agreement_rows:  # a promised payment sits in the group of the deal it belongs to
+        if r["after_group"] is None:
+            r["after_group"] = groups.get(r["decision_id"], "awaiting_payment")
+            r["after_group_label"] = after_group_label(r["after_group"], lang)
+    agreement_rows.sort(key=lambda r: GROUP_ORDER.index(r["after_group"]))  # payment late, awaiting payment, closed (stable: newest first within)
+    closed_rows = [r for r in agreement_rows if r["lifecycle"] == "closed"]
     negotiations = {"needs_you": sum(1 for r in needs_rows if r["kind"] == "DECISION"),
                     "waiting": sum(1 for r in waiting_rows if r["kind"] == "BUYER_REPLY"),
-                    "agreements": sum(1 for r in agreement_rows if r["kind"] in ("AGREEMENT", "PROMISE"))}
+                    "agreements": sum(1 for r in agreement_rows if r["kind"] in ("AGREEMENT", "PROMISE") and r["lifecycle"] != "closed"),
+                    "closed": len(closed_rows),
+                    "awaiting_payment": sum(1 for r in agreement_rows if r["kind"] == "AGREEMENT" and r["after_group"] == "awaiting_payment"),
+                    "payment_late": sum(1 for r in agreement_rows if r["kind"] == "AGREEMENT" and r["after_group"] == "payment_late")}
     return {
-        "counts": {"needs_you": len(needs_rows), "waiting": len(waiting_rows), "agreements": len(agreement_rows), "customers": customers},
+        "counts": {"needs_you": len(needs_rows), "waiting": len(waiting_rows), "agreements": len(agreement_rows) - len(closed_rows), "customers": customers},
+        "headline_text": _headline(len(needs_rows), negotiations["payment_late"], len(waiting_rows), alert, lang),
         "deals": negotiations,
         "alert": alert, "needs_you": needs_rows, "waiting": waiting_rows, "agreements": agreement_rows,
         "needs_you_empty_text": (t(lang, "Nothing else needs you.", "没有其他事项需要您处理。") if alert is not None

@@ -17,7 +17,7 @@ test.beforeEach(async ({}, testInfo) => {
 
 const OWED_32 = "owed: invoiced 13 days ago, due in 32 days";
 const SCHEDULED = "scheduled: not yet invoiced";
-const AFTER_CHECK = /Don't accept as asked|Counter instead of accepting as asked/;
+const AFTER_CHECK = /Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/;
 
 async function lang(page: Page, l: "en" | "zh") {
   await page.addInitScript((v) => localStorage.setItem("tl-lang", JSON.stringify({ lang: v })), l);
@@ -28,6 +28,8 @@ async function readOffer(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  // The heading is the buyer's ask from the first read, so the check is done when the recommendation is there.
+  await page.getByTestId("queue-recommends").waitFor();
   await expect(verdictHeading(page)).toContainText(AFTER_CHECK);
 }
 

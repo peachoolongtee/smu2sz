@@ -242,6 +242,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -516,6 +528,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -794,6 +818,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -1070,6 +1106,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -1358,6 +1406,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -1644,6 +1704,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -1936,6 +2008,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -2226,6 +2310,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -2347,6 +2443,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -2531,6 +2631,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -2650,6 +2762,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -2834,6 +2950,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -2955,6 +3083,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -3141,6 +3273,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -3260,6 +3404,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -3446,6 +3594,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -3567,6 +3727,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -3762,6 +3926,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -3881,6 +4057,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -4076,6 +4256,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -4197,6 +4389,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -4394,6 +4590,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -4513,6 +4721,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -4710,6 +4922,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -4831,6 +5055,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -5028,6 +5256,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -5147,6 +5387,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -5344,6 +5588,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -5465,6 +5721,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -5675,6 +5935,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -5794,6 +6066,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -6004,6 +6280,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -6125,6 +6413,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -6335,6 +6627,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -6454,6 +6758,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -6664,6 +6972,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -6785,6 +7105,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -6891,6 +7215,10 @@
             {
               "label": "Security",
               "href": "/trust?view=security&from=demo"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         }
@@ -6997,6 +7325,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -7116,6 +7456,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -7222,6 +7566,10 @@
             {
               "label": "安全",
               "href": "/trust?view=security&from=demo"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         }
@@ -7328,6 +7676,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -7597,6 +7957,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -7864,6 +8236,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -8133,6 +8517,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -8400,6 +8796,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }

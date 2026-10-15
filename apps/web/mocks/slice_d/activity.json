@@ -50,6 +50,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -82,6 +83,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -114,6 +116,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -195,6 +198,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -227,6 +231,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -259,6 +264,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -342,6 +348,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -374,6 +381,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -406,6 +414,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -487,6 +496,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -519,6 +529,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -551,6 +562,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -634,6 +646,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -666,6 +679,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -698,6 +712,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -779,6 +794,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -811,6 +827,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -843,6 +860,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -934,8 +952,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -966,8 +985,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1000,6 +1020,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1032,6 +1053,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1064,6 +1086,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1153,8 +1176,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1185,8 +1209,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1219,6 +1244,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1251,6 +1277,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1283,6 +1310,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1386,6 +1414,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "Open in Receivables",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1419,6 +1448,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1449,8 +1479,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1481,8 +1512,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1515,6 +1547,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1547,6 +1580,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1579,6 +1613,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -1680,6 +1715,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "在应收款中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1713,6 +1749,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1743,8 +1780,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1775,8 +1813,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1809,6 +1848,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1841,6 +1881,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1873,6 +1914,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -1976,6 +2018,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=8&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2008,6 +2051,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "Open in Receivables",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2041,6 +2085,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2071,8 +2116,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2103,8 +2149,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2137,6 +2184,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2169,6 +2217,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2201,6 +2250,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2302,6 +2352,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=8&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -2334,6 +2385,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "在应收款中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -2367,6 +2419,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -2397,8 +2450,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -2429,8 +2483,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -2463,6 +2518,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -2495,6 +2551,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -2527,6 +2584,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -2630,6 +2688,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "Open this decision",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=9&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2662,6 +2721,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=8&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2694,6 +2754,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "Open in Receivables",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2727,6 +2788,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2757,8 +2819,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2789,8 +2852,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2823,6 +2887,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2855,6 +2920,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2887,6 +2953,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -2988,6 +3055,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "查看这项决定",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=9&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3020,6 +3088,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=8&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3052,6 +3121,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "在应收款中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3085,6 +3155,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3115,8 +3186,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3147,8 +3219,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3181,6 +3254,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3213,6 +3287,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3245,6 +3320,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3348,6 +3424,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "Open this decision",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=10&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -3380,6 +3457,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "Open this decision",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=9&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -3412,6 +3490,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=8&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -3444,6 +3523,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "Open in Receivables",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -3477,6 +3557,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -3507,8 +3588,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -3539,8 +3621,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -3573,6 +3656,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -3605,6 +3689,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -3637,6 +3722,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -3738,6 +3824,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "查看这项决定",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=10&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3770,6 +3857,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "查看这项决定",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=9&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3802,6 +3890,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=8&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3834,6 +3923,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "在应收款中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3867,6 +3957,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3897,8 +3988,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3929,8 +4021,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3963,6 +4056,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -3995,6 +4089,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4027,6 +4122,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4130,6 +4226,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=11&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4162,6 +4259,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "Open this decision",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=10&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4194,6 +4292,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "Open this decision",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=9&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4226,6 +4325,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=8&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4258,6 +4358,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "Open in Receivables",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4291,6 +4392,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4321,8 +4423,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4353,8 +4456,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4387,6 +4491,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4419,6 +4524,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4451,6 +4557,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -4552,6 +4659,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=11&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4584,6 +4692,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "查看这项决定",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=10&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4616,6 +4725,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "查看这项决定",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=9&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4648,6 +4758,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=8&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4680,6 +4791,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "在应收款中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4713,6 +4825,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4743,8 +4856,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4775,8 +4889,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4809,6 +4924,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4841,6 +4957,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4873,6 +4990,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -4981,6 +5099,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=11&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5292,6 +5411,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "Open this decision",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=10&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5324,6 +5444,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "Open this decision",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=9&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5356,6 +5477,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=8&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5388,6 +5510,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "Open in Receivables",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5421,6 +5544,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5451,8 +5575,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5483,8 +5608,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "Open this decision",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5517,6 +5643,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5549,6 +5676,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5581,6 +5709,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "Open in Documents",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -5687,6 +5816,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=11&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -5998,6 +6128,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "查看这项决定",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=10&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -6030,6 +6161,7 @@
           "decision_id": "alert:ALERT-RESERVE-42:v7",
           "href": "/decisions/alert:ALERT-RESERVE-42:v7",
           "href_label": "查看这项决定",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=9&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -6062,6 +6194,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=8&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -6094,6 +6227,7 @@
           "decision_id": null,
           "href": "/receivables?invoice=RCV-A&customer=BUYER-1",
           "href_label": "在应收款中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=7&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -6127,6 +6261,7 @@
           "decision_id": null,
           "href": null,
           "href_label": null,
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=6&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -6157,8 +6292,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=5&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -6189,8 +6325,9 @@
           "customer_id": "BUYER-1",
           "customer_name": "Foshan Home Retail Co.",
           "decision_id": "deal:OFF-f806f79b6c21",
-          "href": "/decisions/deal:OFF-f806f79b6c21",
+          "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=activity",
           "href_label": "查看这项决定",
+          "record_href": "/decisions/deal:OFF-f806f79b6c21",
           "evidence_href": "/trust?view=evidence&entry=4&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -6223,6 +6360,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=3&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -6255,6 +6393,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=2&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -6287,6 +6426,7 @@
           "decision_id": null,
           "href": "/documents",
           "href_label": "在文件中打开",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
@@ -6370,6 +6510,7 @@
           "decision_id": "approval:APR-000001",
           "href": "/decisions/approval:APR-000001",
           "href_label": "Open this decision",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
@@ -6451,6 +6592,7 @@
           "decision_id": "approval:APR-000001",
           "href": "/decisions/approval:APR-000001",
           "href_label": "查看这项决定",
+          "record_href": null,
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {

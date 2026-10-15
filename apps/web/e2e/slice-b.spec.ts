@@ -34,13 +34,14 @@ test.describe("mock", () => {
     if (await names.count()) for (const href of await names.evaluateAll((els) => els.map((el) => el.getAttribute("href")!))) expect(href).toMatch(/^\/customers\/[^?]+\?from=activity$/);
   });
 
-  test("a deep link in a fresh session hydrates the negotiation, its reply and its open investigation from the server", async ({ page }) => {
+  test("a deep link in a fresh session hydrates the negotiation, its reply and its open comparison from the server", async ({ page }) => {
     await checkedDeal(page);
     await page.evaluate(() => sessionStorage.removeItem("tl-demo-v3")); // the tab's own session cache is gone: only the server is read
-    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}&path=CTR-6b07cbf70441&compare=1`);
+    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}&path=CTR-6b07cbf70441`);
     await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
-    await expect(page.getByTestId("deal-recommends-title")).toHaveText("The response you picked · Option B");
-    await expect(page.getByTestId("deal-compare-table")).toBeVisible();
+    await expect(page.locator('[data-testid="deal-choices-table"]:visible')).toBeVisible();
+    await expect(page.locator('[data-testid^="deal-use-CTR-6b07cbf70441"]:visible')).toHaveText("Review Option B");
+    await expect(page.getByTestId("deal-recommends-title")).toHaveText("FLOW recommends");
     await expect(page.getByTestId("queue-check-button")).toHaveCount(0); // an evaluated deal is read, not checked again
   });
 
@@ -127,7 +128,7 @@ test.describe("mock", () => {
     await expect(page.getByRole("dialog", { name: "Ask FLOW" }).locator('[data-testid^="prompt-"]')).toHaveText(["What changed today?", "What are we waiting for?", "Which payments are late?", "Who owes us money?"]);
   });
 
-  test("the queue's four tabs are all visible and inside their card at 1440, 820 and 390, in English and in Chinese", async ({ page }) => {
+  test("the queue's card holds its row at 1440, 820 and 390, in English and in Chinese; with one negotiation it offers no tabs (the four tabs on one line are pinned on the busy books in slice-b-round-three.spec.ts)", async ({ page }) => {
     for (const lang of ["en", "zh"] as const) {
       await page.addInitScript((l) => localStorage.setItem("tl-lang", JSON.stringify({ lang: l })), lang);
       for (const width of [1440, 820, 390]) {
@@ -136,18 +137,9 @@ test.describe("mock", () => {
         const card = page.getByTestId("deals-queue");
         await expect(card).toBeVisible();
         const box = (await card.boundingBox())!;
-        for (const tab of ["all", "needs_you", "waiting", "agreements"]) {
-          const t = page.getByTestId(`queue-tab-${tab}`);
-          await expect(t, `${lang} ${width}: ${tab} is shown`).toBeVisible();
-          const b = (await t.boundingBox())!;
-          expect(b.x, `${lang} ${width}: ${tab} starts inside the card`).toBeGreaterThanOrEqual(box.x - 1);
-          expect(b.x + b.width, `${lang} ${width}: ${tab} ends inside the card`).toBeLessThanOrEqual(box.x + box.width + 1);
-        }
-        const tabs = page.getByTestId("queue-tabs");
-        expect(await tabs.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), `${lang} ${width}: the tab row does not scroll or clip`).toBe(true);
-        // The last tab is reachable by the pointer as it stands.
-        await page.getByTestId("queue-tab-agreements").click();
-        await expect(page.getByTestId("queue-tab-agreements")).toHaveAttribute("aria-selected", "true");
+        await expect(page.getByTestId("queue-tabs"), `${lang} ${width}: one row, no tabs`).toHaveCount(0);
+        await expect(page.getByTestId("queue-empty").or(page.getByTestId("queue-total")).first()).toBeVisible();
+        expect(box.x + box.width, `${lang} ${width}: the card is inside the page`).toBeLessThanOrEqual(width + 1);
       }
     }
   });
@@ -207,8 +199,8 @@ test.describe("mock", () => {
   test("a term or a figure the server has no word for is omitted, never the word None", async ({ page }) => {
     await checkedDeal(page);
     await expect(page.getByTestId("deal-pane").getByText("None", { exact: true })).toHaveCount(0);
-    await page.getByTestId("deal-compare-toggle").click();
-    await expect(page.getByTestId("deal-compare-table").getByText("None", { exact: true })).toHaveCount(0);
+    await openCompare(page);
+    await expect(page.getByTestId("deal-choices").getByText("None", { exact: true })).toHaveCount(0);
     await page.goto("/customers/BUYER-1");
     await expect(page.getByTestId("customer-figures")).toBeVisible();
     await expect(page.locator("main").getByText("None", { exact: true })).toHaveCount(0);
@@ -241,6 +233,10 @@ test.describe("mock", () => {
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-only: the busy company on a real API");
+  });
+  // The busy books are loaded by these specs: the golden books go back through the API when each one is done, so a later spec (the Demo story, which starts on the golden books) never finds them.
+  test.afterEach(async ({ request }) => {
+    await resetBooks(request);
   });
 
   async function busy(request: import("@playwright/test").APIRequestContext) {
@@ -336,6 +332,7 @@ test.describe("live", () => {
     await expect(page.getByTestId("deal-sent")).toBeVisible();
     await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(AGREED)}`);
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
+    await page.getByTestId("deal-tab-terms").click();
     await expect(page.getByTestId("deal-record")).toBeVisible();
     await expect(page.getByTestId("deal-agreement-receipt")).toBeVisible();
     await expect(page.getByTestId("deal-abstentions")).toHaveCount(0);
@@ -347,13 +344,15 @@ test.describe("live", () => {
     await page.locator('[data-testid="queue-row"][data-kind="DECISION"]').filter({ hasText: "Zhuhai" }).getByTestId("queue-select").click();
     const none = page.getByTestId("deal-no-reply");
     await expect(none).toBeVisible();
-    await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText(/¥\d/);
-    await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText("over 12 months");
+    // The ask's own cost and basis are in the choices table's Cost to you cell.
+    await openCompare(page);
+    await expect(page.locator('[data-testid="deal-choice-cell-cost-asked"]:visible')).toContainText(/¥\d/);
+    await expect(page.locator('[data-testid="deal-choice-cell-cost-asked"]:visible')).toContainText("over 12 months");
     await expect(none).toContainText("you approve it first");
     await expect(page.getByTestId("deal-send")).toHaveCount(0);
     await expect(page.getByTestId("deal-review")).toHaveCount(0);
     await expect(page.getByTestId("deal-pane")).not.toContainText(/\bNone\b/);
-    await expect(page.getByTestId("deal-terms-table")).not.toContainText(/\bNone\b/);
+    await expect(page.getByTestId("deal-choices")).not.toContainText(/\bNone\b/);
   });
 
   test("the send review of a picked reply reads that reply's own receipt, not the recommended one's, and Send names the picked reply", async ({ page, request }) => {
@@ -367,9 +366,8 @@ test.describe("live", () => {
     await page.getByTestId("queue-review-close").click();
     await openCompare(page);
     // The first reply that is not the recommended one.
-    await page.locator('[data-testid^="deal-use-"]:visible').nth(1).click();
-    await expect(page.getByTestId("path-reply-back")).toBeVisible();
-    await page.getByTestId("queue-review-open").click();
+    // (The picked reply's review opens from its own column in one step.)
+    await page.locator('[data-testid^="deal-use-"]:visible').first().click();
     const picked = page.getByTestId("queue-review");
     await expect(picked.getByTestId("commitment-receipt")).toBeVisible();
     expect((await picked.getByTestId("commitment-receipt").textContent())!, "the picked reply's own receipt, not Option A's").not.toBe(recommended);
@@ -388,7 +386,7 @@ test.describe("live", () => {
     await expect(page.getByText(/Settle only part of RCV/)).toHaveCount(0);
     // The assumption the sandbox runs on and the negotiation's own figure stand under the subject, as the server sent them; the cash word is the server's, not derived from a breach day.
     await expect(page.getByTestId("whatif-scope-text")).toContainText(/^The sandbox applies the terms to every Zhuhai invoice for the next 12 months, not only the next one; the negotiation itself asks for one invoice\.$/);
-    await expect(page.getByTestId("whatif-compare")).toContainText(/^The negotiation as asked: .*(within|over) your limit\.$/);
+    await expect(page.getByTestId("whatif-compare")).toContainText(/^The negotiation if you accept their request: .*(within|over) your limit\.$/);
     await expect(page.getByTestId("whatif-cash-fig")).toHaveText(/^(Stays above it|Below it for \d+ days?)$/);
     // Another buyer, another invoice.
     await page.goto(run("OFF-4f6bf9834d4d", "BUYER-1"));
