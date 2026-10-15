@@ -1422,6 +1422,10 @@ export interface ApprovalDetail {
   lifecycle?: ApprovalLifecycleStage[] | null;
   summary_rows?: ApprovalSummaryRow[] | null;
   terms_rows?: ApprovalSummaryRow[] | null;
+  /** A purchase commitment (COMMIT_PURCHASE) only: the schedule the owner approves, in the server's words (vendor, contract, each payment, the early-payment choice, the total); `schedule_note` says when it cannot be shown or has changed. */
+  schedule_title?: string | null;
+  schedule_rows?: ApprovalSummaryRow[] | null;
+  schedule_note?: string | null;
   deadline_text?: string | null;
   deadline_day?: number | null;
   title_text?: string | null;

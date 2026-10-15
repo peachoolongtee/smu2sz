@@ -96,6 +96,7 @@ import * as receivablesMock from "./receivables";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
+import commitApprovalRow from "../../mocks/buyside/commit_approval.json";
 import navCountsJson from "../../mocks/nav_counts.json";
 import offerPictureJson from "../../mocks/offer_picture_ex01.json";
 import offerPictureExposureJson from "../../mocks/offer_picture_ex01_exposure.json";
@@ -1545,10 +1546,20 @@ export async function getContractFixtures(): Promise<ContractFixture[]> {
   return documents.mockContractFixtures();
 }
 
+/** Committing a purchase queues its CommitPurchase for the owner: the recorded queue row (with the schedule the owner approves) joins the queue once. */
+export async function commitContract(...args: Parameters<typeof buyside.commitContract>): ReturnType<typeof buyside.commitContract> {
+  const result = await buyside.commitContract(...args);
+  const s = load();
+  if (!s.approvals.some((a) => a.id === commitApprovalRow.id)) {
+    s.approvals.push(clone(commitApprovalRow as unknown as ApprovalView));
+    save();
+  }
+  return result;
+}
+
 // ------------------------------------------------------------------ the buy side (ADR-0013): mocks/buyside, see lib/mock/buyside.ts
 export {
   addProductToMenu,
-  commitContract,
   evaluateContract,
   getCapexContractFixtures,
   getEligibility,

@@ -130,3 +130,21 @@ test("the buying pages stay in the Business shell, each with its way back", asyn
   await expect(page).toHaveURL(/\/buy$/);
   await expect(page.getByTestId("buy-doors")).toContainText("Long-term plans");
 });
+
+test("the approval of a purchase shows the schedule the owner is committing to, in the server's words", async ({ page }) => {
+  await page.goto("/buy/contract?id=DOC-000004");
+  await page.getByTestId("buy-evaluate").click();
+  await page.getByTestId("buy-commit").click();
+  await expect(page.getByTestId("buy-committed")).toContainText("Queued for your approval");
+  await page.goto("/approvals");
+  const schedule = page.getByTestId("approval-schedule-APR-000001");
+  await expect(schedule).toBeVisible();
+  await expect(schedule).toContainText("What you are committing to");
+  await expect(schedule).toContainText("Guangzhou Precision Machinery Co., Ltd.");
+  await expect(schedule).toContainText("Equipment purchase contract GZPM-2026-114");
+  await expect(schedule).toContainText("¥180,000.00, in 20 days");
+  await expect(schedule).toContainText("¥352,800.00, in 65 days");
+  await expect(schedule).toContainText("¥60,000.00, in 440 days (retention)");
+  await expect(schedule).toContainText("Taken: 2.00% off the delivery payment");
+  await expect(schedule).toContainText("¥592,800.00");
+});
