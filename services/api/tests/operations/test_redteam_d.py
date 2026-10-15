@@ -15,6 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import app.api.decide as decide_mod
+import app.api.refusal as refusal_mod
 from app.alerts import MatchStatus, PromiseStatus, reconcile
 from app.api.runtime import Runtime, set_runtime
 from app.books import current_books
@@ -193,7 +194,8 @@ def test_f1_negotiate_runs_nothing_from_a_plan_that_cannot_run(client: TestClien
     oid = client.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]["offer_id"]
     client.post(f"/offers/{oid}/evaluate", headers=OWNER, json={"fixture_id": "EX01_PACKAGE"})
     for flagged in (True, False):  # flagged by the router, or (defence in depth) not flagged
-        monkeypatch.setattr(decide_mod, "plan", lambda *a, _f=flagged, **k: _plan_with_early_pay(not _f))
+        # the NO DEAL plan is app.api.refusal's since c51a7284 (the same router plan, shared with the reply's "if refused" words)
+        monkeypatch.setattr(refusal_mod, "plan", lambda *a, _f=flagged, **k: _plan_with_early_pay(not _f))
         before = (rt.store.get_state(), len(rt.store.operations()))
         n = client.post(f"/negotiate/{oid}", headers=OWNER, json={"buyer_profile": "hard_line"}).json()
         assert n["outcome"] == "NO_DEAL" and n["operations"] == []
