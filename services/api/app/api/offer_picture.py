@@ -13,6 +13,7 @@ from collections import Counter, OrderedDict
 from fractions import Fraction
 from functools import reduce
 from typing import Annotated, Any
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -20,6 +21,15 @@ from app.api.accept import accept_block, answered_block
 from app.api.auth import require_owner
 from app.api.decisions import latest_verdict_for, offer_as_asked
 from app.api.home import _distance, _lowest_ahead, _series
+from app.api.lifecycle import workspace_words
+from app.api.picture_words import (
+    add_pairs,
+    add_path_words,
+    add_term_scopes,
+    buyer_status,
+    financing_needed,
+    recommendation,
+)
 from app.api.presentation import (
     business_action,
     business_text,
@@ -34,8 +44,10 @@ from app.api.presentation import (
     whole,
 )
 from app.api.presentation import t as say
+from app.api.refusal import if_refused_text, refusal_plan
 from app.api.runtime import get_runtime
 from app.api.selection import Selection, build_context, selection
+from app.api.withheld_words import withheld
 from app.api.workspace import _months, _posted_discount, _send_runs_funding
 from app.decisions.identity import deal_id
 from app.domain.models import (
@@ -54,7 +66,7 @@ from app.funding import plan
 from app.mandate import tier_for
 from app.operations import lengthens_terms
 from app.operations.executor import only_early_pay
-from app.strategy.words import share_text
+from app.strategy.words import asked_label, buyer_short, share_text
 from app.verifier import counter_recheck
 from app.verifier.evaluate import CAP_CODES
 from app.verifier.screen import SECURITY_CODES
@@ -93,7 +105,7 @@ def _line(state: Any, traj: Any, today: int, lang: str) -> list[dict[str, Any]]:
 
 def _lowest(state: Any, traj: Any, today: int, lang: str) -> dict[str, Any]:
     low, day = _lowest_ahead(traj, today)
-    return {"lowest_fen": low, "lowest_short": fmt_short(low), "lowest_when": _distance(day, today, lang)}
+    return {"lowest_fen": low, "lowest_short": fmt_short(low), "lowest_when": _distance(day, today, lang), "lowest_day": day}
 
 
 # ---------------------------------------------------------------- the paths: one entry per line on the chart, with its column's words
@@ -190,7 +202,7 @@ def _terms_view(rows: dict[str, tuple[str | None, str | None]], asked_rows: dict
         if asked_rows is not None and value != asked_rows[key][0] and asked_rows[key][1] is not None:
             instead = say(lang, f"instead of {asked_rows[key][1]}", f"而非 {asked_rows[key][1]}")
         out.append({"key": key, "label": say(lang, en, zh), "value_text": value, "instead_of_text": instead})
-    return out
+    return add_term_scopes(out, lang)
 
 
 def _next_invoice_day(state: Any, traj: Any, today: int, buyer: str | None) -> int | None:
@@ -246,7 +258,7 @@ def _asked_authority(lang: str, verdict: Any) -> tuple[str | None, str]:
         return None, say(lang, "FLOW will not act on this: the message failed its security checks", "FLOW 不会处理此消息：它未通过安全检查")
     if verdict.outcome == Outcome.COUNTER or verdict.counters:  # the offer as asked is not sent; the replies carry the authority
         return None, say(lang, "FLOW counters instead", "FLOW 改为还价")
-    return None, say(lang, "FLOW cannot accept this as asked", "FLOW 无法按对方的要求接受")
+    return None, say(lang, "FLOW cannot accept their request", "FLOW 无法接受对方的要求")
 
 
 def _reply_authority(lang: str, verdict: Any | None, owner: bool) -> tuple[str | None, str]:
@@ -649,14 +661,14 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
     tag = ("over" if authority == OVER_LIMIT else "recommended" if asked_recommended else "approval" if asked_needs_owner else None)
     band = _below_band(asked_view["series"], floor, breach[0], lang) if breach is not None else None
     paths = [_path_entry(
-        key="asked", kind="asked", label=say(lang, "As they asked", "按对方要求"), recommended=asked_recommended, sendable=accepts,
+        key="asked", kind="asked", label=asked_label(lang), recommended=asked_recommended, sendable=accepts,
         needs_owner=asked_needs_owner, tag=tag, cost_display=fmt_yuan(cost_fen), cost_note=note,
         cost={"cost_total_display": asked_total, "cost_basis_text": asked_basis, "cost_once_display": fmt_yuan(once) if once > 0 else None,
               "cost_forward_display": fmt_yuan(forward) if forward > 0 else None, "cost_components": []},
         terms=_terms_view(asked_rows, None, lang), decides=_decides(lang, authority, authority_text, accepts, asked_needs_owner,
                                                                      lengthens_terms(bound)),
         authority=authority, authority_text=authority_text, assumption=None, reply_text=None, series=asked_view["series"],
-        low={k: asked_view[k] for k in ("lowest_fen", "lowest_short", "lowest_when")},
+        low={k: asked_view[k] for k in ("lowest_fen", "lowest_short", "lowest_when", "lowest_day")},
         breach_when=asked_view["first_breach_when"], band=band, lang=lang,
         scenario_assumption=_scenario_assumption(lang, "asked", None, funded=False), ask=_ask_words(state, bound, buyer, once, lang),
         funding_assumption=_funding_short(lang, "asked", None, funded=False), terms_days=_payment_days(state, bound, buyer),
@@ -702,8 +714,8 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
                 band = _below_band(r["series"], floor, reply_breach[0], lang)
             elif asked_next is not None and nxt is not None and nxt < asked_next:
                 n = asked_next - nxt
-                band = say(lang, f"The next invoice is paid {n} {'day' if n == 1 else 'days'} sooner than as asked",
-                           f"下一张发票比按对方要求早 {n} 天收款")
+                band = say(lang, f"The next invoice is paid {n} {'day' if n == 1 else 'days'} sooner than if you accept their request",
+                           f"下一张发票比接受对方的要求早 {n} 天收款")
             elif r["lowest_fen"] is not None and r["lowest_fen"] >= floor:
                 band = say(lang, "Stays at or above your minimum", "现金始终不低于您的最低现金储备")
         recommended = c.id == chosen
@@ -715,7 +727,7 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
             decides=_decides(lang, r_authority, r_text, sendable, needs_owner, terms_change), authority=r_authority,
             authority_text=r_text, assumption=say(lang, "If the buyer accepts this reply", "如果买方接受此回复"),
             reply_text=business_text(state, c.text, rt.day, lang),
-            series=r["series"], low={k: r[k] for k in ("lowest_fen", "lowest_short", "lowest_when")},
+            series=r["series"], low={k: r[k] for k in ("lowest_fen", "lowest_short", "lowest_when", "lowest_day")},
             breach_when=_distance(reply_breach[0], today, lang) if reply_breach else None, band=band, lang=lang,
             reason=_authority_reason(lang, r_authority, owner_rule if needs_owner else None, state, obligations, buyer, mandate),
             recommended_reason=_recommended_reason(lang, needs_owner) if recommended else None,
@@ -793,7 +805,8 @@ def _moment_text(lang: str, events: dict[str, list[str]], below: list[str], name
         if everyone and len(below) > 1:
             parts.append(say(lang, "On every path, cash is below your minimum.", "每条路径的现金都低于您的最低现金储备。"))
         else:
-            who = _names(lang, [names[k] for k in below])
+            who = _names(lang, [say(lang, "If you accept their request", "如果您接受对方的要求") if names[k] == asked_label(lang) else names[k]
+                                for k in below])
             parts.append(say(lang, f"{who}, cash is below your minimum.", f"{who}的现金低于您的最低现金储备。"))
     if not parts:
         return (say(lang, "No cash moves on any path.", "各路径都没有现金变动。") if len(keys) > 1
@@ -914,7 +927,7 @@ def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: 
     for d in wanted:
         if d is not None and d not in chosen and len(chosen) < _MAX_MOMENTS:
             chosen.append(d)
-    names = {p["key"]: (say(lang, "As asked", "按对方要求") if p["kind"] == "asked" else p["label"]) for p in live}
+    names = {p["key"]: (asked_label(lang) if p["kind"] == "asked" else p["label"]) for p in live}
     named = len([d for d in chosen if d in lowest_by_day]) > 1  # more than one lowest moment is listed: each says whose it is
     discount = say(lang, "Early-payment discount", "提前付款折扣")  # the row's own label is a whole sentence about one invoice
 
@@ -946,7 +959,7 @@ def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: 
         out.append({"day": d, "label": _chip(d - today, lang), "title": _chip(d - today, lang), "when": when_text(d, today, lang),
                     "decisive": d == decisive,
                     "kind": kind, "kinds": have, "word": _word(kind, d - today, "both" if d in down and d in up else "down" if d in down else "up", lang,
-                                [(say(lang, "as asked", "按对方要求") if k == asked["key"] else names[k]) for k in lowest_by_day[d]]
+                                [names[k] for k in lowest_by_day[d]]
                                 if named and d in lowest_by_day else None), "text": text, "values": values,
                     "events_text": events_text})
     return out, picture_days
@@ -982,7 +995,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                 "unavailable_text": gone,
                 "accept": accept_block(lang, state=state, offer=offer, verdict=verdict, months=_months(mandate.forward_concession_horizon_days),
                                        lapsed_text=gone),
-                "asked": None, "replies": [], "paths": [], "moments": [], "axis": None, "picture_days": None,
+                "asked": None, "replies": [], "paths": [], "withheld": [], "recommendation": None, "moments": [], "axis": None, "picture_days": None,
                 "current_terms_days": _terms_in_force(state, offer.counterparty_id) if offer is not None else None,
                 "current_terms_text": _current_terms_text(state, offer.counterparty_id if offer is not None else None, lang),
                 "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days}
@@ -993,6 +1006,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     plan_costs: dict[str, int] = {}  # each reply's own funding plan cost, the router's total
     assumed: dict[str, str] = {}  # each reply's scenario assumption: the legs of its own funding plan, or why it has none
     funding_said: dict[str, str | None] = {}  # the same, in the short form a comparison row reads
+    financing: dict[str, str | None] = {"asked": financing_needed(lang, "asked", None, funded=False, projected=True)}  # the funding each response needs
     send_runs: dict[str, bool] = {}  # whether each reply's funding plan can run when it is sent (the receipt's `executes_now_text` says the same)
     recheck = counter_recheck(state, mandate, trusted_owner_key_hex=rt.owner_key_hex, day=today, commitments=held)
     for c in verdict.counters:
@@ -1005,8 +1019,9 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         except EngineError:
             assumed[c.id] = _scenario_assumption(lang, "reply", None, funded=True, projected=False)
             funding_said[c.id] = _funding_short(lang, "reply", None, funded=True, projected=False)
+            financing[c.id] = financing_needed(lang, "reply", None, funded=True, projected=False)
             replies.append({"counter_id": c.id, "label": label, "series": None, "lowest_fen": None, "lowest_short": None,
-                            "lowest_when": None, "note": say(lang, "Cash cannot be projected for this reply.", "无法为此回复预测现金。")})
+                            "lowest_when": None, "lowest_day": None, "note": say(lang, "Cash cannot be projected for this reply.", "无法为此回复预测现金。")})
             continue
         trajs[c.id] = traj
         plan_costs[c.id] = funding.total_cost_fen
@@ -1014,6 +1029,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         legs = _plan_legs(actions, today, lang)
         assumed[c.id] = _scenario_assumption(lang, "reply", legs, funded=funding.need_fen != 0)
         funding_said[c.id] = _funding_short(lang, "reply", legs, funded=funding.need_fen != 0)
+        financing[c.id] = financing_needed(lang, "reply", legs, funded=funding.need_fen != 0, projected=True)
         if funding.needs_owner_approval:
             flagged.add(c.id)
         if actions:
@@ -1027,14 +1043,23 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         replies.append({"counter_id": c.id, "label": label, "series": _line(books.state, traj, today, lang),
                         **_lowest(books.state, traj, today, lang), "note": note})
     asked_series = _line(books.state, asked, today, lang)
-    asked_view = {"label": say(lang, "As asked", "按对方要求"), "series": asked_series,
+    asked_view = {"label": asked_label(lang), "series": asked_series,
                   **_lowest(books.state, asked, today, lang),
                   "first_breach_day": breach[0] if breach else None,
                   "first_breach_when": _distance(breach[0], today, lang) if breach else None}
     # the verifier's own verdict on each reply as an agreement on these books: the tier, the past-due and autonomy rules, the cap codes
     rechecked = {c.id: _safe_recheck(recheck, c) for c in verdict.counters if c.id in trajs}
     paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs, assumed, funding_said, send_runs)
+    try:  # what a refused send would fund (the negotiate route's own no-deal plan, read and not run); a reply can only be refused, so each one says it
+        refused = if_refused_text(refusal_plan(state, rt.store.commitments(), mandate), state,
+                                  buyer_short(party_name(state, offer.counterparty_id)), today, lang)
+    except EngineError:
+        refused = None
+    for p in paths:
+        p["if_refused_text"] = refused if p["kind"] == "reply" else None
     _same_day_comparison(paths, lang)
+    add_pairs(paths, today, lang)
+    add_path_words(paths, floor, _months(mandate.forward_concession_horizon_days), financing, lang)
     invoice_days = [d for t in (asked, *trajs.values()) if (d := _next_invoice_day(books.state, t, today, offer.counterparty_id)) is not None]
     moments, picture_days = _moments(paths, today, floor, mandate.horizon_days, min(invoice_days) if invoice_days else None, lang)
     return {
@@ -1047,6 +1072,8 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         "asked": asked_view,
         "replies": replies,
         "paths": paths,
+        "withheld": withheld(verdict, today, lang),
+        "recommendation": recommendation(paths, _terms_in_force(books.state, offer.counterparty_id), lang),
         "moments": moments,
         "picture_days": picture_days,
         "current_terms_days": _terms_in_force(books.state, offer.counterparty_id),
@@ -1075,6 +1102,40 @@ def cached_picture(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     return out
 
 
+def _sent_counters(rt: Any, offer_id: str) -> dict[str, str]:
+    """The replies FLOW has sent the buyer for this offer, by counter id, with how the buyer answered ("agreed", "no_deal", else "awaiting"),
+    from the decision record's SENT facts (the latest fact wins)."""
+    from app.decisions.facts import SentFact, parse_fact
+
+    out: dict[str, str] = {}
+    for record in rt.store.decision_facts(deal_id(offer_id)):
+        if record.fact != "SENT":
+            continue
+        fact = parse_fact(record)
+        if not isinstance(fact, SentFact):
+            continue
+        for cid in fact.counter_ids_sent:
+            out[cid] = ("agreed" if fact.outcome == "DEAL" and cid == fact.accepted_counter_id else "not_chosen" if fact.outcome == "DEAL"
+                        else "no_deal" if fact.outcome == "NO_DEAL" else "awaiting")
+    return out
+
+
+def with_buyer_status(rt: Any, offer_id: str, picture: dict[str, Any], lang: str) -> dict[str, Any]:
+    """The picture with `buyer_status_text` on each path ("Asked by Foshan", "Not yet sent", "Sent, awaiting reply"; and, once the buyer has
+    answered, "Agreed by Foshan" or "Sent, no agreement reached"). Read against the log each time, as the `accept` block is: a send changes the
+    log, not always the books the cache is keyed on. Call under `rt.lock`."""
+    offer = rt.store.get_offer(offer_id)
+    if offer is None or not picture.get("paths"):
+        return picture
+    sent = _sent_counters(rt, offer_id)
+    who = buyer_short(party_name(rt.store.get_state(), offer.counterparty_id))
+    from app.api.accept import _answered
+
+    over = _answered(rt, offer_id) is not None or any(v in ("agreed", "no_deal") for v in sent.values())  # the negotiation has been answered: nothing to recommend
+    return {**picture, **({"recommendation": None} if over else {}), "paths": [{**p, "buyer_status_text": buyer_status(lang, p["kind"], who, sent.get(p["key"]) if p["kind"] != "asked" else None)}
+                                 for p in picture["paths"]]}
+
+
 @router.get("/offers/{offer_id}/picture")
 def get_picture(offer_id: str, lang: str = "en", *, sel: Annotated[Selection, Depends(selection)]) -> dict[str, Any]:
     """The cash picture of an offer: `asked` (the offer as it stands, no new funding) and one line per reply. Display only. `context` is the
@@ -1085,4 +1146,22 @@ def get_picture(offer_id: str, lang: str = "en", *, sel: Annotated[Selection, De
         offer = rt.store.get_offer(offer_id)
         context = build_context(rt, lang, sel, page="picture", buyer=offer.counterparty_id if offer is not None else None, deal=deal_id(offer_id))
         picture = cached_picture(rt, offer_id, lang)
-        return {**picture, "accept": answered_block(rt, offer_id, picture.get("accept"), lang), "context": context}
+        picture = with_buyer_status(rt, offer_id, picture, lang)
+        body = {**picture, "accept": answered_block(rt, offer_id, picture.get("accept"), lang), "context": context}
+        body.update(workspace_words(rt, offer_id, lang))
+    # The scenarios are the Cash impact tab's, and the compare and exposure reads behind them cost seconds on a cold read: they come from their own
+    # route, so the first read of the picture (which holds the runtime lock) stays small.
+    return {**body, "scenarios": [], "scenarios_href": f"/offers/{quote(offer_id, safe='')}/scenarios?lang={lang}"}
+
+
+@router.get("/offers/{offer_id}/scenarios")
+def get_scenarios(offer_id: str, lang: str = "en") -> dict[str, Any]:
+    """The picture's `scenarios[]` (continue current position, the buyer pays 30 days late, the buyer stops buying), composed from the compare and
+    exposure reads, which are cached. Owner only. Empty when the exposure feature is off or either read cannot be made."""
+    from app.api.picture_scenarios import scenarios
+
+    rt = get_runtime()
+    lang = "zh" if lang == "zh" else "en"
+    with rt.lock:
+        picture = cached_picture(rt, offer_id, lang)  # 404 for an unknown offer or one with no verdict yet, as the picture says
+    return {"scenarios": scenarios(rt, offer_id, picture, lang)}

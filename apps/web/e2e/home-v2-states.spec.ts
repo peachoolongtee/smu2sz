@@ -56,6 +56,8 @@ interface State {
   /** The row kinds the page and the read show in Needs you and in Waiting, in order. */
   needs: string[];
   waiting: string[];
+  /** The agreements the worklist counts (default none): a deal whose early part is paid but whose rest is still owed is Awaiting payment (or Payment late), never closed. */
+  agreements?: number;
   /** Is the company alert on the worklist? */
   alert: boolean;
   /** Filled primary buttons on the page: the plan's control is the one (0 when the action is quiet). */
@@ -70,7 +72,7 @@ const ONE_DEAL = async (api: Api) => void (await offer(api, EX.EX01));
 
 const STATES: State[] = [
   { name: "01 no pending decisions: the plan ran, nothing needs the owner, one thing waits", drive: (api) => runPlan(api), needs: [], waiting: ["SETTLEMENT"], alert: false, filled: 0, funding: "ARRANGED", control: null },
-  { name: "01b no pending decisions: fully empty after the buyer paid", drive: async (api) => { await deal(api); await advance(api, 2); await post(api, "/demo/bank-receipt"); }, needs: [], waiting: [], alert: false, filled: 0, funding: "NONE", control: null },
+  { name: "01b no pending decisions: fully empty after the buyer paid", drive: async (api) => { await deal(api); await advance(api, 2); await post(api, "/demo/bank-receipt"); }, agreements: 1, needs: [], waiting: [], alert: false, filled: 0, funding: "NONE", control: null },
   { name: "02 one deal: a single decision row", drive: ONE_DEAL, needs: ["DECISION"], waiting: [], alert: true, filled: 1, severities: ["CAUTION"], funding: "PROPOSED", control: "RUN_PLAN" },
   {
     name: "03 five deals: sorted, the critical one first",
@@ -93,7 +95,7 @@ const STATES: State[] = [
   {
     name: "09 payment overdue: a critical collection row",
     drive: async (api) => { await deal(api); await advance(api, 2); await post(api, "/demo/bank-receipt"); await advance(api, 30); await advance(api, 34); },
-    needs: ["COLLECTION"], waiting: [], alert: true, filled: 1, severities: ["CRITICAL"], control: "RUN_PLAN",
+    agreements: 1, needs: ["COLLECTION"], waiting: [], alert: true, filled: 1, severities: ["CRITICAL"], control: "RUN_PLAN",
   },
   { name: "10 cash critical: the reserve is unsafe today", drive: async (api) => void (await advance(api, 13)), needs: [], waiting: [], alert: true, filled: 1, status: "CRITICAL", control: "RUN_PLAN" },
   { name: "11 customer selected in the crisis: the alert persists", drive: ONE_DEAL, needs: ["DECISION"], waiting: [], alert: true, filled: 1, funding: "PROPOSED", control: "RUN_PLAN" },
@@ -117,7 +119,7 @@ async function drive(api: Api, s: State): Promise<Reads> {
   const w = reads.work.en;
   expect(w.needs_you.map((r) => r.kind), "needs-you kinds").toEqual(s.needs);
   expect(w.waiting.map((r) => r.kind), "waiting kinds").toEqual(s.waiting);
-  expect(w.counts).toEqual({ needs_you: s.needs.length, waiting: s.waiting.length, agreements: 0, customers: w.customers.length });
+  expect(w.counts).toEqual({ needs_you: s.needs.length, waiting: s.waiting.length, agreements: s.agreements ?? 0, customers: w.customers.length });
   expect(Boolean(w.alert), "alert").toBe(s.alert);
   if (s.severities) expect(w.needs_you.map((r) => r.severity)).toEqual(s.severities);
   const v2 = reads.home.en.home_v2!;

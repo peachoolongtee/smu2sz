@@ -113,12 +113,11 @@ export async function openReview(page: Page): Promise<void> {
   await page.getByTestId("queue-review").waitFor();
 }
 
-/** "Compare responses" opens the full table of every response under the two panes; opens it when it is closed. */
+/** The choices table (Deals redesign: it replaced the Compare responses tab) is the Overview's: goes to the Overview when another section is open and waits for the table, or the stacked cards on a phone. */
 export async function openCompare(page: Page): Promise<void> {
-  const toggle = page.getByTestId("deal-compare-toggle");
-  await toggle.waitFor();
-  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
-  await page.getByTestId("deal-compare-table").or(page.getByTestId("deal-compare-stack")).first().waitFor();
+  const tab = page.getByTestId("deal-tab-overview");
+  if (await tab.count()) await tab.click();
+  await page.locator('[data-testid="deal-choices-table"]:visible, [data-testid="deal-choices-stack"]:visible').first().waitFor();
 }
 
 /** The inbox card opens on Deals while nothing needs the owner and no negotiation is selected, and folds to one row otherwise: opens it when it is folded. */

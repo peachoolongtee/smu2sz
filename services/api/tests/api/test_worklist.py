@@ -113,7 +113,7 @@ def test_before_the_plan_the_alert_is_there_and_needs_you_holds_the_foshan_decis
     assert (item["kind"], item["owner"], item["severity"], item["customer_short"]) == ("DECISION", "NEEDS_YOU", "CAUTION", "Foshan")
     assert (item["subject_text"], item["status_text"]) == ("Foshan · 60-day terms on future invoices and 2 more terms", "Counter ready")
     assert (item["lifecycle"], item["subject_demo_text"]) == ("counter_ready", f"Foshan · 60-day terms on future invoices and 2 more terms · {oid}")
-    assert item["consequence_text"] == "As asked: below your minimum for 15 days."
+    assert item["consequence_text"] == "If you accept their request: below your minimum for 15 days."
     # a safe counter is ready, so the breach is a consequence of the offer as asked and not a cash-safety item: no deadline, a caution
     assert item["deadline_day"] is None and item["is_new"] is False
     assert item["why_first_text"] == "Why first: it has the largest effect on your cash."
@@ -140,7 +140,7 @@ def test_after_the_plan_the_alert_is_gone_and_the_financing_waits(api: TestClien
     w = _get(api)
     assert w["alert"] is None
     assert [i["kind"] for i in w["needs_you"]] == ["DECISION"]  # the Foshan decision is still the owner's
-    assert w["needs_you"][0]["consequence_text"] == "Over your limit as asked; it does not take cash below your minimum."
+    assert w["needs_you"][0]["consequence_text"] == "Over your limit if you accept their request; it does not take cash below your minimum."
     assert w["needs_you"][0]["severity"] == "CAUTION" and w["needs_you"][0]["deadline_day"] is None
     assert w["needs_you"][0]["why_first_text"] == "Why first: it has the largest effect on your cash."
     [wait] = w["waiting"]
@@ -156,7 +156,7 @@ def test_the_counts_equal_the_rows_and_the_alert_is_counted_nowhere(api: TestCli
         if moment == "after":
             _run_plan(api)
         w = _get(api)
-        # the queue's counts: a promise is an Agreements row there, so Waiting counts the rest of the `waiting` rows
+        # the queue's counts: a promise is folded into its deal's Agreements row, so Waiting counts the rest of the `waiting` rows
         assert w["counts"] == {"needs_you": len(w["needs_you"]), "waiting": len([r for r in w["waiting"] if r["kind"] != "PROMISE"]),
                                "agreements": len([r for r in w["waiting"] if r["kind"] == "PROMISE"]), "customers": len(w["customers"])}
         assert w["counts"]["customers"] == 2
@@ -351,11 +351,11 @@ def _picture(*, asked_breach: int | None, rec_series: list[tuple[int, int]] | No
 def test_the_decisions_breach_day_is_the_recommended_paths_not_the_one_as_asked() -> None:
     floor = 30_000_000
     safe = _picture(asked_breach=47, rec_series=[(0, 40_000_000), (30, 30_000_000)], rec_breach_when=None)
-    assert worklist._deal_effect(safe, floor, False, "en") == ("CAUTION", None, "As asked: below your minimum for 15 days.")
+    assert worklist._deal_effect(safe, floor, False, "en") == ("CAUTION", None, "If you accept their request: below your minimum for 15 days.")
     unsafe = _picture(asked_breach=47, rec_series=[(0, 40_000_000), (9, 29_999_999), (30, 10_000_000)], rec_breach_when="in 9 days")
     assert worklist._deal_effect(unsafe, floor, False, "en")[:2] == ("CRITICAL", 9)
     quiet = _picture(asked_breach=None, rec_series=[(0, 40_000_000)], rec_breach_when=None, authority="flow_may", band=None)
-    assert worklist._deal_effect(quiet, floor, False, "en") == ("NORMAL", None, "Accepting as asked does not take cash below your minimum.")
+    assert worklist._deal_effect(quiet, floor, False, "en") == ("NORMAL", None, "Accepting their request does not take cash below your minimum.")
     lone = {"available": True, "day": 0, "asked": {"first_breach_day": 12}, "paths": [{"key": "asked", "recommended": False,
                                                                                       "band_text": "Below your minimum for 3 days"}]}
     assert worklist._deal_effect(lone, floor, False, "en")[:2] == ("CRITICAL", 12)  # no counter at all: the offer as asked is the only path
@@ -390,7 +390,7 @@ def test_the_chinese_read_has_the_same_figures_and_no_english_or_ids(api: TestCl
     assert (zh["alert"]["kind_text"], zh["alert"]["pending_text"]) == ("FLOW 已备好行动", "¥405k 融资方案可用 · 无需批准 · 等待您确认")
     item = zh["needs_you"][0]
     assert (item["subject_text"], item["status_text"]) == ("Foshan · 60 天账期（今后的发票），另有 2 项条款", "还价已就绪")
-    assert item["consequence_text"] == "按对方要求：低于您的最低现金储备 15 天。"
+    assert item["consequence_text"] == "如果接受对方的要求：低于您的最低现金储备 15 天。"
     assert item["why_first_text"].startswith("优先处理的原因")
     assert "您" in zh["needs_you"][0]["consequence_text"] or "您" in item["why_first_text"]  # the 您 voice, where a sentence addresses the owner
 
@@ -520,7 +520,7 @@ def test_an_offer_picture_that_fails_is_named_in_partial_and_the_row_says_so_and
     assert len(worklist._CACHE) == 0  # never cached while partial
     monkeypatch.setattr(worklist, "cached_picture", real)
     whole = _get(api)
-    assert whole["partial"] is None and whole["needs_you"][0]["consequence_text"] == "As asked: below your minimum for 15 days."
+    assert whole["partial"] is None and whole["needs_you"][0]["consequence_text"] == "If you accept their request: below your minimum for 15 days."
     assert len(worklist._CACHE) == 1
     assert _get(api, "zh", ).get("partial") is None
 

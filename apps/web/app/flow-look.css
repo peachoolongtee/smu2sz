@@ -57,6 +57,11 @@
     background-color var(--dur) var(--ease-ui),
     box-shadow var(--dur) var(--ease-ui);
 }
+/* Round three (section 9): the Deals queue's selected row is lighter, the tint of the panel and no ring; the 1 px edge that joins it to the workspace is drawn by the row itself. */
+.flow-row.flow-row-light[aria-current="true"] {
+  background: color-mix(in srgb, var(--color-f-purple-soft) 42%, var(--color-card));
+  box-shadow: none;
+}
 .flow-row[aria-current="true"] {
   background: var(--color-f-purple-soft);
   box-shadow: inset 0 0 0 1px var(--color-f-purple);

@@ -11,6 +11,8 @@
     "terms_text": "0.85% off up to ¥257,200.00 if paid early",
     "headline_text": "This deal closed with extra cost on top of the terms you agreed",
     "state_word": "Paid late",
+    "state_key": "paid_late",
+    "ended": true,
     "state_tone": "warn",
     "state_text": "The buyer paid the early part it promised. Every invoice on this deal has been paid.",
     "stages": [
@@ -18,31 +20,73 @@
         "key": "read",
         "label": "Contract read",
         "state": "done",
-        "state_text": "Done"
+        "state_text": "Done",
+        "when_text": null
       },
       {
         "key": "negotiated",
         "label": "Terms negotiated",
         "state": "done",
-        "state_text": "Done"
+        "state_text": "Done",
+        "when_text": "38 days ago"
       },
       {
         "key": "early_payment",
         "label": "Early payment in",
         "state": "done",
-        "state_text": "Done"
+        "state_text": "Done",
+        "when_text": null
       },
       {
         "key": "collecting",
         "label": "Collecting",
         "state": "done",
-        "state_text": "Done"
+        "state_text": "Done",
+        "when_text": null
       },
       {
         "key": "fulfilled",
         "label": "Fulfilled",
         "state": "done",
-        "state_text": "Done"
+        "state_text": "Done",
+        "when_text": null
+      }
+    ],
+    "lifecycle_stages": [
+      {
+        "key": "read",
+        "label": "Contract read",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": null
+      },
+      {
+        "key": "negotiated",
+        "label": "Terms negotiated",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": "38 days ago"
+      },
+      {
+        "key": "early_payment",
+        "label": "Early payment in",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": null
+      },
+      {
+        "key": "collecting",
+        "label": "Collecting",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": null
+      },
+      {
+        "key": "fulfilled",
+        "label": "Fulfilled",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": null
       }
     ],
     "cost": {
@@ -200,6 +244,8 @@
     "terms_text": "提前付款可减 0.85%，最高 ¥257,200.00",
     "headline_text": "这笔交易结束时，在您同意的条款之外还有额外成本",
     "state_word": "逾期支付",
+    "state_key": "paid_late",
+    "ended": true,
     "state_tone": "warn",
     "state_text": "买方已支付它承诺提前支付的部分。这笔交易的所有发票都已付清。",
     "stages": [
@@ -207,31 +253,73 @@
         "key": "read",
         "label": "合同已读取",
         "state": "done",
-        "state_text": "已完成"
+        "state_text": "已完成",
+        "when_text": null
       },
       {
         "key": "negotiated",
         "label": "条款已谈判",
         "state": "done",
-        "state_text": "已完成"
+        "state_text": "已完成",
+        "when_text": "38 天前"
       },
       {
         "key": "early_payment",
         "label": "提前付款到账",
         "state": "done",
-        "state_text": "已完成"
+        "state_text": "已完成",
+        "when_text": null
       },
       {
         "key": "collecting",
         "label": "催收中",
         "state": "done",
-        "state_text": "已完成"
+        "state_text": "已完成",
+        "when_text": null
       },
       {
         "key": "fulfilled",
         "label": "已履行完毕",
         "state": "done",
-        "state_text": "已完成"
+        "state_text": "已完成",
+        "when_text": null
+      }
+    ],
+    "lifecycle_stages": [
+      {
+        "key": "read",
+        "label": "合同已读取",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": null
+      },
+      {
+        "key": "negotiated",
+        "label": "条款已谈判",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": "38 天前"
+      },
+      {
+        "key": "early_payment",
+        "label": "提前付款到账",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": null
+      },
+      {
+        "key": "collecting",
+        "label": "催收中",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": null
+      },
+      {
+        "key": "fulfilled",
+        "label": "已履行完毕",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": null
       }
     ],
     "cost": {

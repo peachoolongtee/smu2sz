@@ -47,7 +47,7 @@ test("Home, Cash, Receivables, Activity, Approvals and the customer overview at 
 
 test("Deals: the inbox, a checked deal with its priced response, and the decision page", async ({ page }) => {
   await page.goto("/deals");
-  await expect(page.getByTestId("deals-select")).toBeVisible();
+  await expect(page.getByTestId("deals-list-view")).toBeVisible();
   await openInbox(page);
   await scan(page, "/deals inbox");
   await checkedDeal(page);
@@ -56,8 +56,10 @@ test("Deals: the inbox, a checked deal with its priced response, and the decisio
   await openReview(page);
   await scan(page, "/deals the receipt");
   await openCompare(page);
+  await scan(page, "/deals compare open");
+  await page.getByTestId("deal-tab-cash").click();
   await expect(page.getByTestId("deal-chart")).toBeVisible();
-  await scan(page, "/deals compare and chart open");
+  await scan(page, "/deals cash impact: outcomes, chart and scenarios open");
   const offerId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId as string);
   await page.goto(`/decisions/${encodeURIComponent(`deal:${offerId}`)}`);
   await expect(page).toHaveURL(/\/decisions\//);
@@ -76,6 +78,8 @@ test("contract ingestion and the send step: the documents and a review, the buye
   await openReview(page);
   await scan(page, "/deals the send step");
   await sendCounter(page);
+  // The agreements in force are under the list: All deals brings it back.
+  await page.getByTestId("deal-back-all").click();
   await expect(page.getByTestId("deal-summary-BUYER-1")).toBeVisible();
   await scan(page, "/deals the deal summary");
   await page.getByTestId("deal-details-BUYER-1").locator("summary").click();

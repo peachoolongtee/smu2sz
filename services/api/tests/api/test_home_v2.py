@@ -567,16 +567,16 @@ def _title(api: TestClient, lang: str = "en", **query: str) -> str | None:
 
 def test_the_chart_title_names_the_customer_the_subject_the_paths_and_the_scenario(api: TestClient) -> None:
     decision = _deal(api)
-    assert _title(api, decision=decision) == "Foshan · Payment terms · As they asked vs Option A · Expected payments"
-    assert _title(api, decision=decision, scenario="expected") == "Foshan · Payment terms · As they asked vs Option A · Expected payments"
-    assert _title(api, decision=decision, scenario="late") == "Foshan · Payment terms · As they asked vs Option A · Foshan 30 days late"
+    assert _title(api, decision=decision) == "Foshan · Payment terms · Accept their request vs Option A · Expected payments"
+    assert _title(api, decision=decision, scenario="expected") == "Foshan · Payment terms · Accept their request vs Option A · Expected payments"
+    assert _title(api, decision=decision, scenario="late") == "Foshan · Payment terms · Accept their request vs Option A · Foshan 30 days late"
 
 
 def test_the_chart_title_in_chinese_has_no_english(api: TestClient) -> None:
     decision = _deal(api)
     zh = _title(api, "zh", decision=decision)
-    assert zh == "Foshan · 付款账期 · 按对方要求 对比 方案 A · 预期收款"
-    assert _title(api, "zh", decision=decision, scenario="late") == "Foshan · 付款账期 · 按对方要求 对比 方案 A · Foshan晚付 30 天"
+    assert zh == "Foshan · 付款账期 · 接受对方的要求 对比 方案 A · 预期收款"
+    assert _title(api, "zh", decision=decision, scenario="late") == "Foshan · 付款账期 · 接受对方的要求 对比 方案 A · Foshan晚付 30 天"
     assert not english_leaks(zh, NAMES)
 
 

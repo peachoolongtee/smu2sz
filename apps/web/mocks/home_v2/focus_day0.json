@@ -149,6 +149,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -320,6 +321,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Dongguan.",
         "actions": [
@@ -569,6 +571,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [
@@ -740,6 +743,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "目前没有需要您对Dongguan作出的商务决定。",
         "actions": [

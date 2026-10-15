@@ -15,7 +15,8 @@ import { acceptRefusal } from "@/lib/accept";
 import { useI18n } from "@/lib/i18n";
 import type { AcceptBlock as AcceptView, OfferPictureView, PicturePath } from "@/lib/types";
 import { CostTable } from "./cost-table";
-import { quietLink } from "./flow-parts";
+import { StateWord } from "@/components/ui/state-word";
+import { AUTH_TONE, quietLink } from "./flow-parts";
 import { Statements } from "./send-block";
 import { TermsTable } from "./terms-table";
 
@@ -46,6 +47,10 @@ export function AcceptBlock({
   initialOpen,
   onDone,
   onBusy,
+  openSignal = 0,
+  declineSignal = 0,
+  hideTrigger = false,
+  onReviewing,
 }: {
   offerId: string;
   accept: AcceptView;
@@ -57,6 +62,14 @@ export function AcceptBlock({
   initialOpen: boolean;
   onDone: (outcome: AcceptOutcome) => void;
   onBusy: (busy: boolean) => void;
+  /** The header's [Review the request] opens the review from outside: each press raises this number. */
+  openSignal?: number;
+  /** The recommendation's [Decline the request] opens the review with the decline question already asked: each press raises this number. */
+  declineSignal?: number;
+  /** The open button is the header's (or the comparison's), not this block's. */
+  hideTrigger?: boolean;
+  /** Told whether the review is open. */
+  onReviewing?: (open: boolean) => void;
 }) {
   const { t } = useI18n();
   const uid = useId();
@@ -108,6 +121,26 @@ export function AcceptBlock({
     void prepare();
     requestAnimationFrame(() => (titleRef.current ?? regionRef.current)?.focus({ preventScroll: false }));
   }
+
+  const lastSignal = useRef(openSignal);
+  useEffect(() => {
+    if (openSignal === lastSignal.current) return;
+    lastSignal.current = openSignal;
+    open();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per press
+  }, [openSignal]);
+  const lastDecline = useRef(declineSignal);
+  useEffect(() => {
+    if (declineSignal === lastDecline.current) return;
+    lastDecline.current = declineSignal;
+    open();
+    setConfirming(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per press
+  }, [declineSignal]);
+  useEffect(() => {
+    onReviewing?.(reviewing);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reports the state, not the callback
+  }, [reviewing]);
 
   // Arrived with `review=1`: the review is open already, and its version is read once.
   useEffect(() => {
@@ -169,7 +202,7 @@ export function AcceptBlock({
 
   return (
     <div className="space-y-3">
-      {reviewing ? null : (
+      {reviewing || hideTrigger ? null : (
         <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
           <Button ref={openRef} variant="secondary" aria-expanded={false} aria-controls={`${uid}-review`} onClick={open} data-testid="accept-review-open">
             {t("accept.review")}
@@ -185,18 +218,23 @@ export function AcceptBlock({
                   <h3 id={`${uid}-title`} ref={titleRef} tabIndex={-1} className="font-display text-base font-extrabold leading-snug text-ink outline-none">
                     {t("receipt.title.accept", { buyer })}
                   </h3>
+                  {asked?.authority_short_text ? (
+                    <p className="m-0" data-testid="accept-authority" data-authority={asked.authority ?? ""}>
+                      <StateWord tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>{asked.authority_short_text}</StateWord>
+                    </p>
+                  ) : null}
+                  {asked ? (
+                    <div data-testid="accept-cost">
+                      <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.cost.title")}</h4>
+                      <CostTable paths={[asked]} heads={[asked.label]} caption={t("deals.cost.title")} testId="accept-cost-table" />
+                    </div>
+                  ) : null}
                   <Statements receipt={accept.receipt!} cash={accept.receipt?.cash_text} />
                   {asked ? (
-                    <>
-                      <div data-testid="accept-terms">
-                        <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("accept.terms")}</h4>
-                        <TermsTable paths={[asked]} heads={[t("deals.terms.col.asked")]} caption={t("accept.terms")} testId="accept-terms-table" />
-                      </div>
-                      <div data-testid="accept-cost">
-                        <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.cost.title")}</h4>
-                        <CostTable paths={[asked]} heads={[t("deals.cost.col.asked")]} caption={t("deals.cost.title")} testId="accept-cost-table" />
-                      </div>
-                    </>
+                    <div data-testid="accept-terms">
+                      <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("accept.terms")}</h4>
+                      <TermsTable paths={[asked]} heads={[asked.label]} caption={t("accept.terms")} testId="accept-terms-table" />
+                    </div>
                   ) : null}
                 </section>
               ) : preparing ? (

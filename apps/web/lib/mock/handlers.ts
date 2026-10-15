@@ -43,6 +43,7 @@ import type {
   DealsView,
   NavCounts,
   OfferPictureView,
+  PictureScenario,
   DocumentDecision,
   DocumentsList,
   DocumentView,
@@ -95,6 +96,7 @@ import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
 import navCountsJson from "../../mocks/nav_counts.json";
 import offerPictureJson from "../../mocks/offer_picture_ex01.json";
+import offerPictureExposureJson from "../../mocks/offer_picture_ex01_exposure.json";
 import approvalStories from "../../mocks/w1_approval_stories.json";
 import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
@@ -1155,6 +1157,16 @@ export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Prom
   return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
 }
 
+/** GET /offers/{id}/scenarios: the recording taken with the exposure on, in both languages, while the exposure is on; an empty list (as a server with it off) under the exposure-off hook or for any other offer. */
+export async function getOfferScenarios(offerId: string, lang: "en" | "zh"): Promise<PictureScenario[]> {
+  await delay();
+  if (exposureOff()) return [];
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
+  if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return [];
+  const rec = cast<Record<"en" | "zh", PictureScenario[]>>((await import("../../mocks/offer_scenarios_ex01.json")).default);
+  return clone(rec[lang === "zh" ? "zh" : "en"]);
+}
+
 /** GET /pilot/journal: the mock has no recording (the pilot journal is the shadow pilot's, against a real runtime), so it is absent. */
 export async function getPilotJournal(): Promise<PilotJournalView | null> {
   return null;
@@ -1337,7 +1349,8 @@ export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en")
   const s = load();
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
   if (!s.offers[offerId] || offerId !== ex01?.view.offer.offer_id) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });
-  const rec = cast<Record<"en" | "zh", OfferPictureView>>(offerPictureJson);
+  // With the exposure read on (the default) the picture is the recording taken with it on (it carries the scenarios); a server with it off answers the plain one.
+  const rec = cast<Record<"en" | "zh", OfferPictureView>>(exposureOff() ? offerPictureJson : offerPictureExposureJson);
   const view = { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
   // A spec can make the offer undrawable, as the server answers one it can no longer draw (200, no paths, no moments, a sentence): the owner must still be able to send.
   try {

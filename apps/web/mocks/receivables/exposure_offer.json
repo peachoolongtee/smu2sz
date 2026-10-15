@@ -13,7 +13,7 @@
     {
       "key": "asked",
       "kind": "asked",
-      "label": "As they asked",
+      "label": "Accept their request",
       "lowest_display": "¥165k",
       "lowest_when": "in 60 days",
       "lowest_when_text": "below it for 15 days",

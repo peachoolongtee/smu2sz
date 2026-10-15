@@ -120,7 +120,17 @@ function RecordBody({ d }: { d: DecisionView }) {
                 <p>
                   {sent.chosen_label ? t("rec.sent.chosen", { label: sent.chosen_label_text ?? sent.chosen_label }) : t("rec.sent.unbound")} {t("rec.sent.simulated")}
                 </p>
-                {sent.economics ? (
+                {sent.economics?.quoted_cost_label_text && sent.economics.net_label_text ? (
+                  // The server words both figures: the cost quoted when sent, and what the net measures (a label and its value are separate elements).
+                  <dl className="m-0 mt-1 space-y-1 text-meta text-ink-2" data-testid="record-sent-economics">
+                    <div>
+                      <dt className="inline">{sent.economics.quoted_cost_label_text}</dt> <dd className="ml-1 inline tabular-nums text-ink">{sent.economics.quoted_cost_display}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline">{sent.economics.net_label_text}</dt> <dd className="ml-1 inline tabular-nums text-ink">{sent.economics.net_display}</dd>
+                    </div>
+                  </dl>
+                ) : sent.economics ? (
                   <p className="mt-0.5 text-meta text-ink-2">
                     {t("biz.deals.netCost")} {sent.economics.net_display}
                     {sent.economics.basis_facility_name ? ` · ${sent.economics.basis_facility_name}` : ""}

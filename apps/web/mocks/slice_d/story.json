@@ -2443,6 +2443,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -2758,6 +2762,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -3075,6 +3083,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -3392,6 +3404,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -3711,6 +3727,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -4037,6 +4057,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -4365,6 +4389,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -4693,6 +4721,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -5023,6 +5055,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -5351,6 +5387,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -5681,6 +5721,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -6022,6 +6066,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -6365,6 +6413,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -6706,6 +6758,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -7049,6 +7105,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -7155,6 +7215,10 @@
             {
               "label": "Security",
               "href": "/trust?view=security&from=demo"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         }
@@ -7392,6 +7456,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -7498,6 +7566,10 @@
             {
               "label": "安全",
               "href": "/trust?view=security&from=demo"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         }

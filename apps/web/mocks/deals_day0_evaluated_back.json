@@ -367,9 +367,9 @@
         "verdict_id": "VER-a899ca66120c",
         "received_when": "today",
         "asks_text": "early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate",
-        "read_text": "Don't accept as asked: it would cost ¥28,326.92 over 12 months, above your ¥5,000.00 limit.",
-        "headline_short": "Counter instead of accepting as asked",
-        "headline_note": "As asked costs ¥28,326.92 over 12 months, above your ¥5,000.00 limit. Two replies are ready to send.",
+        "read_text": "Don't accept their request: it would cost ¥28,326.92 over 12 months, above your ¥5,000.00 limit.",
+        "headline_short": "Counter instead of accepting their request",
+        "headline_note": "Accepting their request costs ¥28,326.92 over 12 months, above your ¥5,000.00 limit. Two replies are ready to send.",
         "action_text": "Two replies are ready to send.",
         "cost_display": "¥28,326.92",
         "cost_window_text": "over 12 months",
@@ -433,10 +433,14 @@
       "agreements": 0,
       "customers": 2
     },
+    "headline_text": "1 task needs you; a funding plan is ready.",
     "deals": {
       "needs_you": 1,
       "waiting": 0,
-      "agreements": 0
+      "agreements": 0,
+      "closed": 0,
+      "awaiting_payment": 0,
+      "payment_late": 0
     },
     "alert": {
       "key": "company-cash",
@@ -464,7 +468,7 @@
         "last_activity_day": 0,
         "last_activity_text": "today",
         "status_text": "Counter ready",
-        "consequence_text": "As asked: below your minimum for 15 days.",
+        "consequence_text": "If you accept their request: below your minimum for 15 days.",
         "severity": "CAUTION",
         "deadline_day": null,
         "expected_day": null,
@@ -472,6 +476,8 @@
         "decision_id": "deal:OFF-f806f79b6c21",
         "invoice_id": null,
         "approval_id": null,
+        "after_group": null,
+        "after_group_label": null,
         "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21"
       }
     ],

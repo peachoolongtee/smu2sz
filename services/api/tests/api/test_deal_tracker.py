@@ -139,7 +139,8 @@ def test_just_after_the_agreement_expected_is_set_and_nothing_has_been_paid(api:
     assert "funding" not in _lines(d)
     assert d["headline_text"] == "The planned funding has run; the buyer's payment is still awaited"
     assert [(p["party"], p["state"]) for p in d["promises"]] == [("buyer", "awaited"), ("buyer", "awaited"), ("you", "in_force")]
-    assert d["promise_counts"] == {"buyer_kept": 0, "buyer_total": 2, "buyer_paid_late": 0, "text": "The buyer has kept zero of two promises on this deal."}
+    assert d["promise_counts"] == {"buyer_kept": 0, "buyer_total": 2, "buyer_paid_late": 0, "buyer_due": 0, "buyer_to_come": 2,
+                                  "text": "The buyer has made two promises on this deal; none is due yet."}
     assert d["cost"]["to_come"]["amount_fen"] == POSTED_DISCOUNT_FEN  # the discount posted on the awaited promise
     assert d["next"] is None and d["closeout_text"] is None
     assert d["links"]["record_href"] == f"/decisions/{did}" and d["links"]["activity_href"] == f"/activity?decision={did}"
@@ -176,7 +177,7 @@ def test_after_the_bank_receipt_the_booked_discount_is_in_the_terms_line(api: Te
     assert zh["unmeasured_fen"] == 0 and "¥841.57" in zh["actual"]["note_text"] and re.search(r"[一-鿿]", zh["actual"]["note_text"])
     states = {(p["party"], p["state"]) for p in d["promises"]}
     assert ("buyer", "kept") in states and ("you", "kept") in states
-    assert d["promise_counts"]["buyer_kept"] == 1 and d["promise_counts"]["text"] == "The buyer has kept one of two promises on this deal."
+    assert d["promise_counts"]["buyer_kept"] == 1 and d["promise_counts"]["text"] == "The buyer has kept one of one promise due so far; one more is still to come."
     _live(d)  # the early part is paid, the rest of the invoice is not due yet: the commitment is fulfilled but the deal is not over
     assert d["headline_text"] == "This deal is on the agreed terms so far" and d["state_word"] == "On plan"
     assert d["state_text"] == "The buyer paid the early part it promised. The rest of the invoice falls due in 30 days."

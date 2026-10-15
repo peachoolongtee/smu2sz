@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.auth import require_owner
 from app.api.decisions import Context, load_context
+from app.api.lifecycle import lifecycle_stages
 from app.api.presentation import (
     invoice_words,
     obligation_sentence,
@@ -105,45 +106,6 @@ def _owner_title(ob: Any, lang: str) -> str:
     if kind == ObligationType.CONTINGENT_REBATE:
         return t(lang, f"Give a rebate of {_pct(ob.rate_bp)}", f"给予 {_pct(ob.rate_bp)} 的返利")
     return t(lang, "A further promise to the buyer", "对买方的另一项承诺")
-
-
-def _stages(rt: Any, ctx: Context, buyer: str, lang: str, early_kinds: list[str], ended: bool) -> list[dict[str, Any]]:
-    """The contract stages the deal row builds when a confirmed contract is on the books (its keys and words); else the same stages, in the
-    same words (the first, contract read, is the contract's and does not apply). Whichever the source, the STATES follow the tracker's one
-    flag: ENDED means every stage is done (missed or part where a promise was missed or part kept), LIVE means collecting is the one stage
-    that is now."""
-    words = {"done": ("Done", "已完成"), "now": ("Now", "进行中"), "todo": ("Still to come", "尚未开始"),
-             "missed": ("Missed", "已错过"), "part": ("Under way", "等待中")}
-    rows: list[dict[str, Any]] = []
-    try:
-        from app.deals import deal_summary
-
-        rows = deal_summary(rt.store, buyer, ctx.today, lang).get("stages") or []
-    except Exception:  # the stages are drawn from the record instead
-        log.exception("stages of the deal could not be read")
-    if rows:
-        keys = [(s["key"], s["label"]) for s in rows]
-    else:
-        keys = [("negotiated", t(lang, "Terms negotiated", "条款已谈判")), ("early_payment", t(lang, "Early payment in", "提前付款到账")),
-                ("collecting", t(lang, "Collecting", "催收中")), ("fulfilled", t(lang, "Fulfilled", "已履行完毕"))]
-    if "missed" in early_kinds:
-        early = "missed"
-    elif "part" in early_kinds or "awaited" in early_kinds:
-        early = "part"
-    else:
-        early = "done" if early_kinds or ended else "todo"
-    out = []
-    for k, label in keys:
-        if k == "early_payment":
-            st = early
-        elif k == "collecting":
-            st = "done" if ended else "now"
-        elif k == "fulfilled":
-            st = "done" if ended else "todo"
-        else:
-            st = "done"
-        out.append({"key": k, "label": label, "state": st, "state_text": t(lang, *words[st])})
-    return out
 
 
 def _executed_seqs(ctx: Context) -> set[int]:
@@ -497,8 +459,8 @@ def _unavailable(decision_id: str, lang: str, text: str, context: dict[str, Any]
                             "related_fen": None, "related_display": None, "difference_fen": None, "difference_display": None, "lines": [],
                             "method_text": None}
     return {"decision_id": decision_id, "lang": lang, "available": False, "unavailable_text": text, "buyer_id": None, "buyer_name": None,
-            "agreed_when": None, "agreed_text": None, "terms_text": None, "headline_text": None, "state_word": None, "state_tone": "neutral", "state_text": None,
-            "stages": [], "cost": cost, "promises": [], "promise_counts": None, "buyer": None, "next": None, "closeout_text": None,
+            "agreed_when": None, "agreed_text": None, "terms_text": None, "headline_text": None, "state_word": None, "state_key": None, "ended": False, "state_tone": "neutral", "state_text": None,
+            "stages": [], "lifecycle_stages": [], "cost": cost, "promises": [], "promise_counts": None, "buyer": None, "next": None, "closeout_text": None,
             "links": {"record_href": f"/decisions/{quote(decision_id, safe=':')}",
                       "activity_href": f"/activity?decision={quote(decision_id, safe=':')}"},
             "context": context}
@@ -533,7 +495,9 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         return _unavailable(ds.decision_id, lang, t(lang, "This is a funding decision, not an agreed deal, so there is nothing to track.",
                                                     "这是一项融资决定，不是已达成的交易，因此没有可跟踪的内容。"), context)
     if c is None or c.status in (CommitmentStatus.PROPOSED,):
-        return _unavailable(ds.decision_id, lang, _not_agreed_text(ds.state.value, lang), context)
+        # nothing to track yet, but the strip of the deal's life so far is the same function's (the offer's stages)
+        return {**_unavailable(ds.decision_id, lang, _not_agreed_text(ds.state.value, lang), context),
+                "lifecycle_stages": lifecycle_stages(rt, ctx, ds, inp, lang)}
     today, buyer = ctx.today, c.counterparty_id
     name = party_name(ctx.state, buyer)
     promised = [p for p in ctx.promised if getattr(p, "commitment_id", None) == c.id]
@@ -694,8 +658,25 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
                         "没有记录的部分会单独标明为未衡量。差额是在您同意的条款之外计入的融资；与这笔交易相关的融资无论是否计入，都会在旁边显示。"),
     }
 
+    to_come = sum(1 for x in states if x == "awaited")  # a promise not yet due or settled is neither kept nor missed
+    due = total - to_come
+    due_today = sum(1 for p in promised if p.status == "AWAITED" and p.promised_day == today)  # due on this very day, the receipt not yet in
     if total == 0:
         counts_text = t(lang, "The buyer has made no promise on this deal yet.", "买方在这笔交易中还没有作出承诺。")
+    elif due == 0 and due_today:
+        counts_text = t(lang, (f"The buyer has made {_num(total, lang)} {'promise' if total == 1 else 'promises'} on this deal; "
+                               f"{'it is' if due_today == 1 and total == 1 else _num(due_today, lang) + (' is' if due_today == 1 else ' are')} due today."),
+                        f"买方在这笔交易中作出了 {total} 项承诺，其中 {due_today} 项今天到期。")
+    elif due == 0:
+        counts_text = t(lang, ("The buyer has made one promise on this deal; it is not due yet." if total == 1
+                               else f"The buyer has made {_num(total, lang)} promises on this deal; none is due yet."),
+                        f"买方在这笔交易中作出了 {total} 项承诺，目前都还未到期。")
+    elif to_come:
+        late = (f"; {_num(paid_late, lang)} {'was' if paid_late == 1 else 'were'} paid late" if paid_late else "")
+        counts_text = t(lang, f"The buyer has kept {_num(kept, lang)} of {_num(due, lang)} {'promise' if due == 1 else 'promises'} due so far{late}; "
+                              f"{_num(to_come, lang)} more {'is' if to_come == 1 else 'are'} still to come.",
+                        f"买方已到期的 {due} 项承诺中已兑现 {kept} 项" + (f"；有 {paid_late} 项逾期后才付款" if paid_late else "")
+                        + f"；另有 {to_come} 项尚未到期。")
     else:
         counts_text = t(lang, f"The buyer has kept {_num(kept, lang)} of {_num(total, lang)} promises on this deal"
                               + (f"; {_num(paid_late, lang)} {'was' if paid_late == 1 else 'were'} paid late." if paid_late else "."),
@@ -721,23 +702,23 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     # the state
     nothing = not booked and not fund and all(s == "awaited" for s in states) and not lapsed
     if "missed" in states:
-        word, wtone = t(lang, "Promise missed", "承诺未兑现"), "bad"
+        word, wtone, key = t(lang, "Promise missed", "承诺未兑现"), "bad", "missed"
     elif "failed" in states:
-        word, wtone = t(lang, "Payment failed", "付款失败"), "bad"
+        word, wtone, key = t(lang, "Payment failed", "付款失败"), "bad", "failed"
     elif "late" in states:
-        word, wtone = t(lang, "Payment late", "付款逾期"), "bad"
+        word, wtone, key = t(lang, "Payment late", "付款逾期"), "bad", "late"
     elif "part" in states:
-        word, wtone = t(lang, "Part kept", "部分兑现"), "warn"
+        word, wtone, key = t(lang, "Part kept", "部分兑现"), "warn", "part"
     elif "paid_late" in states:
-        word, wtone = t(lang, "Paid late", "逾期支付"), "warn"
+        word, wtone, key = t(lang, "Paid late", "逾期支付"), "warn", "paid_late"
     elif ended and ds.state == DealState.FULFILLED:
-        word, wtone = t(lang, "Completed", "已完成"), "ok"
+        word, wtone, key = t(lang, "Completed", "已完成"), "ok", "completed"
     elif ended:
-        word, wtone = t(lang, "Ended", "已结束"), "neutral"
+        word, wtone, key = t(lang, "Ended", "已结束"), "neutral", "ended"
     elif nothing:
-        word, wtone = t(lang, "Waiting for the buyer", "等待买方"), "neutral"
+        word, wtone, key = t(lang, "Waiting for the buyer", "等待买方"), "neutral", "waiting"
     else:
-        word, wtone = t(lang, "On plan", "按计划进行"), "ok"
+        word, wtone, key = t(lang, "On plan", "按计划进行"), "ok", "on_plan"
     state_text = _state_text(ctx, kinds, receivables, funding_done, funding_pending, lang)
     if ended:
         if expected is None:
@@ -765,9 +746,9 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         if expected is None:
             sentence += " The cost expected at agreement was not recorded."
             sentence_zh += "达成协议时的预期成本没有记录。"
-        if total:
-            sentence += f" The buyer kept {kept} of {total} promises" + (f"; {paid_late} {'was' if paid_late == 1 else 'were'} paid late." if paid_late else ".")
-            sentence_zh += f"买方在 {total} 项承诺中兑现了 {kept} 项" + (f"；有 {paid_late} 项逾期后才付款。" if paid_late else "。")
+        if due:
+            sentence += f" The buyer kept {kept} of {due} promises" + (f"; {paid_late} {'was' if paid_late == 1 else 'were'} paid late." if paid_late else ".")
+            sentence_zh += f"买方在 {due} 项承诺中兑现了 {kept} 项" + (f"；有 {paid_late} 项逾期后才付款。" if paid_late else "。")
         closeout = t(lang, sentence, sentence_zh)
     else:
         closeout = None
@@ -804,11 +785,13 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
                        "href": f"/receivables?invoice={quote(r.id, safe='')}&customer={quote(buyer, safe='')}"}
                 break
 
+    stages = lifecycle_stages(rt, ctx, ds, inp, lang, early_kinds=early_kinds, ended=ended, agreed_when=agreed_when)  # the one function the workspace read calls too
     return {
         "decision_id": ds.decision_id, "lang": lang, "available": True, "unavailable_text": None, "buyer_id": buyer, "buyer_name": name,
-        "agreed_when": agreed_when, "agreed_text": agreed_text, "terms_text": terms, "headline_text": headline, "state_word": word, "state_tone": wtone,
-        "state_text": state_text, "stages": _stages(rt, ctx, buyer, lang, early_kinds, ended), "cost": cost, "promises": rows,
-        "promise_counts": {"buyer_kept": kept, "buyer_total": total, "buyer_paid_late": paid_late, "text": counts_text}, "buyer": buyer_view, "next": nxt,
+        "agreed_when": agreed_when, "agreed_text": agreed_text, "terms_text": terms, "headline_text": headline, "state_word": word, "state_key": key, "ended": ended, "state_tone": wtone,
+        "state_text": state_text, "stages": stages, "lifecycle_stages": stages, "cost": cost, "promises": rows,
+        "promise_counts": {"buyer_kept": kept, "buyer_total": total, "buyer_paid_late": paid_late, "buyer_due": due, "buyer_to_come": to_come,
+                           "text": counts_text}, "buyer": buyer_view, "next": nxt,
         "closeout_text": closeout,
         "links": {"record_href": f"/decisions/{quote(ds.decision_id, safe=':')}",
                   "activity_href": f"/activity?decision={quote(ds.decision_id, safe=':')}"},

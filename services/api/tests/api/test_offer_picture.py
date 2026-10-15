@@ -65,6 +65,7 @@ def test_no_id_in_a_sentence_and_early_payment_names_the_buyer(client):
     for lang in ("en", "zh"):
         pic = client.get(f"/offers/{oid}/picture", params={"lang": lang}).json()
         ctx = pic.pop("context")  # the URL contract's selections are identifiers; its sentences are checked
+        pic.pop("scenarios_href")  # an address, which carries the offer's id by design
         pic["context"] = {"back": ctx["back"] and {"label": ctx["back"]["label"]}, "irrelevant_text": ctx["irrelevant_text"]}
         hits = [s for s in _strings(pic) if CODES.search(s)]
         assert hits == []
@@ -119,7 +120,7 @@ def test_paths_are_the_offer_as_asked_then_each_reply_in_the_verdicts_order(clie
     paths = pic["paths"]
     a, b = view["counters"]
     assert [p["key"] for p in paths] == ["asked", a["id"], b["id"]] and [p["kind"] for p in paths] == ["asked", "reply", "reply"]
-    assert [p["label"] for p in paths] == ["As they asked", "Option A", "Option B"]
+    assert [p["label"] for p in paths] == ["Accept their request", "Option A", "Option B"]
     assert [p["recommended"] for p in paths] == [False, True, False]
     assert [p["needs_owner"] for p in paths] == [False, False, True]
     assert [p["sendable"] for p in paths] == [False, True, True]
@@ -168,8 +169,8 @@ def test_band_text_says_what_each_path_does_against_the_minimum(client):
     oid, _ = _evaluated(client)
     asked, opt_a, opt_b = client.get(f"/offers/{oid}/picture").json()["paths"]
     assert asked["band_text"] == "Below your minimum for 15 days" and asked["first_breach_when"] == "in 47 days"
-    assert opt_a["band_text"] == "The next invoice is paid 15 days sooner than as asked"
-    assert opt_b["band_text"] == "The next invoice is paid 5 days sooner than as asked"
+    assert opt_a["band_text"] == "The next invoice is paid 15 days sooner than if you accept their request"
+    assert opt_b["band_text"] == "The next invoice is paid 5 days sooner than if you accept their request"
     assert opt_a["first_breach_when"] is None and opt_b["first_breach_when"] is None
     assert opt_a["lowest_fen"] >= 30_000_000 and opt_b["lowest_fen"] >= 30_000_000
 
@@ -205,7 +206,7 @@ def test_paths_and_moments_hold_no_id_and_are_said_in_both_languages(client):
     # the outflow's own name ("Operating bill") is the owner's label in the books, not a sentence of ours
     fields = {"paths": [{k: v for k, v in p.items() if k not in ("series", "reply_text")} for p in zh["paths"]],
               "moments": zh["moments"]}
-    assert english_leaks(fields, ["Foshan Home Retail Co.", "Operating bill"]) == []
+    assert english_leaks(fields, ["Foshan Home Retail Co.", "Foshan", "Operating bill"]) == []
 
 
 # ---------------------------------------------------------------- moments: the cursor's stops
@@ -245,8 +246,8 @@ def test_a_moments_text_says_what_every_path_has_once_then_what_differs_then_who
     pic = client.get(f"/offers/{oid}/picture").json()
     text = {m["day"]: m["text"] for m in pic["moments"]}
     assert text[47] == ("On every path: Operating bill −¥100k. Option A: Receipt from Foshan Home Retail Co. ¥420k. "
-                        "As asked, cash is below your minimum.")
-    assert text[60] == "On every path: Debt service −¥45k. As asked, cash is below your minimum."
+                        "If you accept their request, cash is below your minimum.")
+    assert text[60] == "On every path: Debt service −¥45k. If you accept their request, cash is below your minimum."
     assert text[0] == ("Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k. "
                        "Who decides: Option A: FLOW can send it; Option B: needs your approval.")
     assert opt_a not in " ".join(text.values())

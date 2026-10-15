@@ -86,13 +86,13 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
   }
   // Deals once a deal is evaluated: "Send this counter" is the one; the page has no other filled button.
   await checkedDeal(page);
-  // The commit area carries the one filled button, "Review and send the counter"; opened, the one commit button takes its place (the page has no other filled button).
+  // The deal header carries the one filled button, "Review the counter"; opened, the one commit button takes its place (the page has no other filled button).
   expect(await filledBrand(page)).toBe(1);
   await openReview(page);
   await expect(page.getByTestId("deal-send")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
   // The channel chip is neutral, not the "fine" green (the inbox is one row until it is asked for).
-  await page.getByTestId("inbox-back").click();
+  await page.getByTestId("deal-tab-messages").click();
   expect(await bg(page.getByTestId("inbox-msg-EX01").locator("span").first())).not.toBe("rgb(226, 246, 243)");
 });
 

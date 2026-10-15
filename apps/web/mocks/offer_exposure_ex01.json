@@ -13,7 +13,7 @@
       {
         "key": "asked",
         "kind": "asked",
-        "label": "As they asked",
+        "label": "Accept their request",
         "lowest_display": "¥165k",
         "lowest_when": "in 60 days",
         "lowest_when_text": "below it for 15 days",
@@ -6667,7 +6667,7 @@
       {
         "key": "asked",
         "kind": "asked",
-        "label": "按对方要求",
+        "label": "接受对方的要求",
         "lowest_display": "¥165k",
         "lowest_when": "60 天后",
         "lowest_when_text": "低于最低现金 15 天",

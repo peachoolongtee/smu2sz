@@ -224,6 +224,11 @@ def _results_and_proof(rt: Runtime, books: _Books, scenes: dict[str, str], lang:
         return _view(rt, found[0], lang, commitments, agreements).get("event_text") if found else None
 
     record = {"label": t(lang, "The deal's decision record", "这笔交易的决定记录"), "href": f"/decisions/{quote(deal, safe=':')}"}
+    from app.api.lifecycle import AGREED_STATES, deal_href
+
+    found_deal = ctx_states.get(deal)
+    tracked = found_deal is not None and found_deal[0].state in AGREED_STATES and offer is not None
+    track = ({"label": t(lang, "Track the deal", "跟踪这笔交易"), "href": deal_href(offer.counterparty_id, deal, "demo")} if tracked else None)
     for sc in SCENES:
         if scenes[sc] != "done":
             continue
@@ -240,6 +245,7 @@ def _results_and_proof(rt: Runtime, books: _Books, scenes: dict[str, str], lang:
             draw = _entry(books, "DRAW_FACILITY")
             links = [entry(x[0]) for x in (found, draw) if x]
             links += [record] if deal in ctx_states else []
+            links += [track] if track else []
         elif sc == "reality":
             bank = _entry(books, "RECEIVE_PAYMENT", lambda o, p, r: str(p.get("bank_reference", "")).startswith(BANK_PREFIX))
             late = _entry(books, "ADVANCE_CLOCK", lambda o, p, r: (r.get("effective_day") or p.get("to_day") or 0) >= LATE_DAY)
@@ -260,6 +266,7 @@ def _results_and_proof(rt: Runtime, books: _Books, scenes: dict[str, str], lang:
             result[sc] = t(lang, f"The record holds {n} entries and every one is kept.", f"记录中共有 {n} 条，且每一条都已保留。")
             links = [{"label": t(lang, "The full record", "完整记录"), "href": "/trust?view=evidence&from=demo"},
                      {"label": t(lang, "Security", "安全"), "href": "/trust?view=security&from=demo"}]
+            links += [track] if track else []
         proof[sc] = links
     return result, proof
 
