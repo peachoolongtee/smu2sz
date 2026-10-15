@@ -21,6 +21,15 @@ from app.api.accept import accept_block, answered_block
 from app.api.auth import require_owner
 from app.api.decisions import latest_verdict_for, offer_as_asked
 from app.api.home import _distance, _lowest_ahead, _series
+from app.api.lifecycle import workspace_words
+from app.api.picture_words import (
+    add_pairs,
+    add_path_words,
+    add_term_scopes,
+    buyer_status,
+    financing_needed,
+    recommendation,
+)
 from app.api.presentation import (
     business_action,
     business_text,
@@ -33,15 +42,6 @@ from app.api.presentation import (
     series_axis,
     when_text,
     whole,
-)
-from app.api.lifecycle import workspace_words
-from app.api.picture_words import (
-    add_pairs,
-    add_path_words,
-    add_term_scopes,
-    buyer_status,
-    financing_needed,
-    recommendation,
 )
 from app.api.presentation import t as say
 from app.api.refusal import if_refused_text, refusal_plan

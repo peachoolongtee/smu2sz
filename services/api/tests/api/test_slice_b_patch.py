@@ -229,8 +229,9 @@ def test_before_an_agreement_the_history_row_and_the_outstanding_are_as_they_wer
 def test_the_home_customer_rows_waiting_count_leaves_out_the_promise(api: TestClient, busy: dict[str, str], lang: str) -> None:
     agree_on_rcv_a(api)
     queue = api.get("/deals", params={"lang": lang}).json()["queue"]
-    assert queue["counts"]["waiting"] == 1 and queue["counts"]["agreements"] == 2  # one reply awaited; the agreement and its promise
-    assert any(r["kind"] == "PROMISE" and r["customer_id"] == "BUYER-1" for r in queue["agreements"])
+    assert queue["counts"]["waiting"] == 1 and queue["counts"]["agreements"] == 1  # one reply awaited; the agreement, which carries its promise
+    assert not any(r["kind"] == "PROMISE" for r in queue["agreements"])
+    assert any(r["kind"] == "AGREEMENT" and r["customer_id"] == "BUYER-1" and ("has promised" if lang == "en" else "买方承诺") in r["consequence_text"] for r in queue["agreements"])
     foshan = next(c for c in api.get("/customers", params={"lang": lang}).json()["customers"] if c["customer_id"] == "BUYER-1")
     waiting_for_foshan = sum(1 for r in queue["waiting"] if r["customer_id"] == "BUYER-1")
     assert waiting_for_foshan == 1

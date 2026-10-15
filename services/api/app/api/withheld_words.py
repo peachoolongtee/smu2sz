@@ -83,7 +83,7 @@ def _days(text: str) -> tuple[str, str]:
     return f"terms of {en} days", f"{zh} 天的账期"
 
 
-def _sentences(summary: str) -> list[tuple[str, str, re.Pattern[str], re.Match[str]]]:
+def _sentences(summary: str) -> list[tuple[str, str, str, re.Pattern[str], re.Match[str]]]:
     """(kind, what in en, what in zh, the matched reason) for every withheld counter the summary says, in the order it says them. The
     price-adjustment sentence lists one run of terms per reason, each read on its own."""
     out: list[tuple[str, str, str, re.Pattern[str], re.Match[str]]] = []
@@ -110,7 +110,7 @@ def _sentences(summary: str) -> list[tuple[str, str, re.Pattern[str], re.Match[s
                 pos += 2
             else:
                 break
-    return out  # type: ignore[return-value]
+    return out
 
 
 def withheld(verdict: Any, today: int, lang: str) -> list[dict[str, str]]:

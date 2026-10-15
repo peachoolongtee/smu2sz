@@ -98,7 +98,7 @@ def test_an_agreement_and_its_promise_are_counted_under_agreements(api: TestClie
     agree_on_rcv_a(api)
     q = _queue(api)
     agreements = [r for r in q["agreements"]]
-    assert {r["kind"] for r in agreements} == {"AGREEMENT", "PROMISE"}
+    assert {r["kind"] for r in agreements} == {"AGREEMENT"}  # the promise is folded into its deal's row
     assert q["deals"]["agreements"] == len(agreements) == q["counts"]["agreements"]
     assert all(r["lifecycle"] == "agreed" and r["status_text"] == "Agreed" for r in agreements if r["kind"] == "AGREEMENT")
 
