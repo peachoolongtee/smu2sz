@@ -90,6 +90,11 @@ import type {
   WhatIfUnscoped,
   WorklistView,
   ApprovalDecision,
+  SetupDocument,
+  SetupDraft,
+  SetupOpenResult,
+  SetupPreview,
+  SetupStatus,
 } from "../types";
 import * as approvals from "./approvals";
 import * as decisions from "./decisions";
@@ -354,6 +359,16 @@ export const live = {
 
   saveInput: (id: string | null, body: InputSaveRequest, lang: "en" | "zh") =>
     http<InputSaveResult>("POST", `${id === null ? "/firm/inputs" : `/buyers/${enc(id)}/inputs`}?lang=${lang}`, { body }),
+
+  // set up your books (ADR-0014)
+  getSetupStatus: (lang: "en" | "zh") => http<SetupStatus>("GET", `/setup/status?lang=${lang}`, { silent: true }),
+  getSetupDocuments: async (startDate: string, lang: "en" | "zh"): Promise<SetupDocument[]> =>
+    (await http<{ documents: SetupDocument[] }>("GET", `/setup/documents?lang=${lang}${startDate ? `&start_date=${enc(startDate)}` : ""}`)).documents,
+  readSetupDocument: async (body: Record<string, unknown>, lang: "en" | "zh"): Promise<SetupDocument> =>
+    (await http<{ document: SetupDocument }>("POST", `/setup/documents?lang=${lang}`, { body, timeoutMs: 60_000 })).document,
+  previewSetup: (draft: SetupDraft, lang: "en" | "zh") => http<SetupPreview>("POST", `/setup/preview?lang=${lang}`, { body: { draft } }),
+  openBooks: (draft: SetupDraft, password: string, lang: "en" | "zh") =>
+    http<SetupOpenResult>("POST", `/setup/open?lang=${lang}`, { body: { draft, password }, timeoutMs: 60_000, silent: true }),
 
   /** Owner action: close a counterparty's circuit breaker. The server checks X-Owner-Token. */
   resetCircuit: async (counterpartyId: string): Promise<{ status: string; message: string }> => {

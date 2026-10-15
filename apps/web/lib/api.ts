@@ -95,6 +95,11 @@ import type {
   WhatIfScope,
   WhatIfUnscoped,
   WorklistView,
+  SetupDocument,
+  SetupDraft,
+  SetupOpenResult,
+  SetupPreview,
+  SetupStatus,
 } from "./types";
 
 export { ApiError };
@@ -604,4 +609,35 @@ export async function addProductToMenu(productId: string, amountFen: number | nu
 /** POST /capex/plans: ranked permutations of purchases, start months and financing (a monthly estimate). */
 export async function runCapexPlans(req: CapexPlansRequest): Promise<CapexPlansView> {
   return isMock ? (await mock()).runCapexPlans(req) : (await live()).runCapexPlans(req);
+}
+
+// ------------------------------------------------------------------ set up your books (ADR-0014)
+// Owner only. The live server checks the draft, signs the limits and opens the books; the mock build cannot open books.
+
+/** GET /setup/status: which books are loaded (blank, demo or the owner's own) and whether they can be opened here. */
+export async function getSetupStatus(lang: "en" | "zh" = "en"): Promise<SetupStatus> {
+  return isMock ? (await mock()).getSetupStatus() : (await live()).getSetupStatus(lang);
+}
+
+/** GET /setup/documents: the confirmed contracts and agreements a setup row can be filled from, for the start date given. */
+export async function getSetupDocuments(startDate: string, lang: "en" | "zh" = "en"): Promise<SetupDocument[]> {
+  return isMock ? (await mock()).getSetupDocuments() : (await live()).getSetupDocuments(startDate, lang);
+}
+
+/** POST /setup/documents: read a contract or lender agreement during setup; it waits, unconfirmed, until the books are opened. */
+export async function readSetupDocument(
+  body: { kind: "BUYER_CONTRACT" | "LENDER_AGREEMENT"; filename?: string; content_base64?: string; text?: string; title?: string; start_date?: string },
+  lang: "en" | "zh" = "en",
+): Promise<SetupDocument> {
+  return isMock ? (await mock()).readSetupDocument() : (await live()).readSetupDocument(body, lang);
+}
+
+/** POST /setup/preview: the issues to fix, what to look at, the summary and a first forecast. Writes nothing. */
+export async function previewSetup(draft: SetupDraft, lang: "en" | "zh" = "en"): Promise<SetupPreview> {
+  return isMock ? (await mock()).previewSetup() : (await live()).previewSetup(draft, lang);
+}
+
+/** POST /setup/open: the owner signs the limits with their sign-in and opens the books (this replaces the books loaded now). */
+export async function openBooks(draft: SetupDraft, password: string, lang: "en" | "zh" = "en"): Promise<SetupOpenResult> {
+  return isMock ? (await mock()).openBooks() : (await live()).openBooks(draft, password, lang);
 }

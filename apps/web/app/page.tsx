@@ -4,10 +4,12 @@ import { Suspense, useEffect } from "react";
 import { useFixAlert } from "@/components/home/fix-alert";
 import { ErrorState, LoadingBlock } from "@/components/ui";
 import { HomeV2Page } from "@/components/home/v2/home-v2";
+import { SetupWelcome } from "@/components/setup/welcome";
 import { getHome } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
+import { useSetupStatus } from "@/lib/setup-draft";
 import { useAsync } from "@/lib/use-async";
 
 /**
@@ -44,7 +46,10 @@ export default function HomePage() {
   const fixer = useFixAlert();
   // A read refused for want of the owner token refetches once the owner has signed in.
   useEffect(() => onSignedIn(() => bump()), []);
+  // A new business with no books yet (ADR-0014): Home cannot answer "Am I safe?", so it offers the setup instead.
+  const { status: setup } = useSetupStatus();
   const h = view.data;
+  if (setup?.books === "blank") return <SetupWelcome />;
   if (view.error) return <ErrorState error={view.error} onRetry={view.reload} />;
   if (!h) return <LoadingBlock rows={3} />;
   return (

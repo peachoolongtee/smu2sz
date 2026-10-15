@@ -3867,6 +3867,8 @@ export interface DecisionView extends DecisionSummary, DealLifeWords {
     outcome: Outcome;
     business_action: BusinessAction;
     business_action_text: string;
+    /** Why the offer cannot be decided yet and the question to put to the buyer (an invoice named only by amount when several match). Absent from an older server. */
+    clarification?: { kind: string; text: string; ask_buyer_text: string | null; options: { receivable_id: string; sent_text: string; due_text: string; face_display: string }[] } | null;
     evaluated_day: Day | null;
     evaluated_when: string;
   } | null;
@@ -5061,4 +5063,138 @@ export interface CapexPlansView {
   daily_checks: { project_id: string; document_id: string; selected_id: string | null; plan_option_passes: boolean | null; text: string }[];
   evidence: string;
   assumptions: string[];
+}
+
+// ------------------------------------------------------------------ set up your books (ADR-0014)
+// The owner's own starting position, typed in six steps. Amounts travel as the text the owner typed; the server parses them.
+
+/** GET /setup/status */
+export interface SetupStatus {
+  books: "blank" | "demo" | "own";
+  scenario: string | null;
+  can_open: boolean;
+  can_open_text: string | null;
+  opened: { company_name: string; start_date: string; start_text: string; seq: number; text: string } | null;
+}
+
+export type SetupBorrowKind = "CREDIT_LINE" | "INVOICE_FINANCING" | "LOAN_TO_APPLY";
+export type SetupBillKind = "PAYROLL" | "RENT" | "SUPPLIER" | "TAX" | "OTHER";
+export type SetupRepeats = "ONCE" | "MONTHLY" | "QUARTERLY" | "YEARLY";
+
+export interface SetupBorrow {
+  name: string;
+  kind: SetupBorrowKind;
+  limit: string;
+  drawn: string;
+  rate_pct: string;
+  fee_pct: string;
+  advance_pct: string;
+  lead_time_days: number | null;
+  agreed: boolean;
+  clean_down_days: number | null;
+  term_months: number | null;
+  document_id: string | null;
+}
+
+export interface SetupLoan {
+  label: string;
+  owed: string;
+  repayment: string;
+  every: "MONTHLY" | "QUARTERLY";
+  next_payment_date: string;
+  rate_pct: string;
+}
+
+export interface SetupInvoice {
+  sent_on: string;
+  amount: string;
+  terms_days: number | null;
+  paid: string;
+  financed_amount: string;
+  financed_by: number | null;
+}
+
+export interface SetupContract {
+  amount: string;
+  every_days: number | null;
+  terms_days: number | null;
+  next_invoice_date: string;
+  document_id: string | null;
+}
+
+export interface SetupCustomer {
+  name: string;
+  contract: SetupContract | null;
+  invoices: SetupInvoice[];
+}
+
+export interface SetupBill {
+  label: string;
+  kind: SetupBillKind;
+  amount: string;
+  next_date: string;
+  repeats: SetupRepeats;
+  until: string;
+}
+
+export interface SetupLimits {
+  min_cash: string;
+  max_apr_pct: string;
+  concession_cap: string;
+  approval_above: string;
+  valid_days: number | null;
+  min_dscr: string;
+  max_leverage: string;
+}
+
+export interface SetupDraft {
+  business: { company_name: string; what_you_sell: string; start_date: string; cash: string; monthly_sales: string; monthly_costs: string };
+  borrowing: SetupBorrow[];
+  loans: SetupLoan[];
+  customers: SetupCustomer[];
+  bills: SetupBill[];
+  limits: SetupLimits;
+}
+
+export interface SetupIssue {
+  step: number;
+  path: string;
+  text: string;
+}
+
+/** POST /setup/preview */
+export interface SetupPreview {
+  ok: boolean;
+  errors: SetupIssue[];
+  warnings: SetupIssue[];
+  summary: { step: number; label: string; value: string; detail: string | null }[] | null;
+  first_look: {
+    headline: string;
+    detail: string;
+    breach_day: number | null;
+    min_cash_fen: number;
+    min_cash_display: string;
+    points: { day: number; cash_fen: number; date_text: string; cash_display: string }[];
+  } | null;
+}
+
+/** A document the setup can fill a row from (GET/POST /setup/documents). */
+export interface SetupDocument {
+  document_id: string;
+  title: string;
+  kind: "BUYER_CONTRACT" | "LENDER_AGREEMENT";
+  status: string;
+  from_setup: boolean;
+  row: (Partial<SetupCustomer> & Partial<SetupBorrow>) | null;
+  facts: string[];
+  progress?: { sent: number; total: number; next_date: string | null; slots: ("sent" | "future")[]; text: string; assumed_text?: string | null; earlier_paid_text: string | null } | null;
+}
+
+/** POST /setup/open */
+export interface SetupOpenResult {
+  ok: boolean;
+  seq: number;
+  entry_hash: string;
+  confirmed_documents: string[];
+  text: string;
 }
