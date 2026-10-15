@@ -49,7 +49,8 @@ GOLDEN_TRAJECTORY = "0437cc43e3b22800"
 # Red team d, F1: the two comparison rows that rely on the buyer paying early ("Discount the whole invoice at 1.2%",
 # "Line + early payment on part of the invoice") are flagged executable_now false ("needs the buyer's agreement to pay
 # early"); every figure and the selected plan (¥3,113.93) unchanged. Before: 2479590b9ee26e83.
-GOLDEN_ROUTER_PLAN = "252b9812e99b4aee"  # also: actions and comparison rows carry `lands_day` (API gaps). Earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
+# 13 Oct (61eb4576): the menu's one-day time to cash reads "1 day", not "1 days"; every figure unchanged. Before: 252b9812e99b4aee.
+GOLDEN_ROUTER_PLAN = "24f1dc649f4363e3"  # also: actions and comparison rows carry `lands_day` (API gaps). Earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
 EX01_COUNTERS = [
     # face 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥100 (the gap net of the line includes the
     # existing loan's ¥45,000 day-30 payment; compute_golden.py counter_a_face)
