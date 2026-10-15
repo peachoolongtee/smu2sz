@@ -15,6 +15,9 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -62,6 +65,9 @@ class Runtime:
     # What a fresh reset of the loaded scenario holds (a fingerprint of the whole resettable state and its counts, taken right after
     # the reset; `app.api.demo_story`). None when the books were not made by `reset_demo` in this process (then nothing counts as fresh).
     fresh: dict[str, Any] | None = None
+    # A runtime built off to the side (`app.api.seeded_books`): it never touches what the process shares (NL sessions, the exposure
+    # cache) and never takes the snapshot path itself.
+    private: bool = field(default=False, repr=False, compare=False)
 
     def clock(self) -> int:
         return self.day
@@ -154,6 +160,8 @@ class Runtime:
             self.latest_verdict.clear()
             self.documents.clear()
             self.intake_day, self.intake_count = 0, 0
+            if self.private:
+                return
             from app.api.strategy_exposure import clear_cache as clear_exposure_cache
             from app.nl import reset_sessions
 
@@ -163,12 +171,24 @@ class Runtime:
     def reset_demo(self, scenario: str = "golden_sme") -> None:
         """POST /demo/reset: the scenario's books (`reset`), then, on the golden books, the demo documents read by the
         agent and confirmed by the owner, so the deal summary is ready once a deal is agreed, then the scenario's seed
-        (offers evaluated, a deal agreed, an approval queued) when it has one. `reset` alone (tests, harnesses) leaves the chain empty."""
+        (offers evaluated, a deal agreed, an approval queued) when it has one. `reset` alone (tests, harnesses) leaves the chain empty.
+
+        A scenario with a seed is replayed once per process: the first replay's books are kept (`app.api.seeded_books`) and every
+        later reset to the same seed, fixtures, settings and owner key restores them instead. A warm-up building them is waited for
+        before the lock is taken (the route waits first, so it holds nothing while it does)."""
+        from app.api import seeded_books
+
+        snap, key = seeded_books.lookup(self, scenario)
         with self.lock:
+            if snap is not None:
+                seeded_books.restore(self, snap)
+                return
             self.reset(scenario)
             _confirm_demo_documents(self, scenario)
             self._replay_seed(scenario)
             self.mark_fresh()
+            if key is not None:
+                seeded_books.remember(self, scenario, key)
 
     def mark_fresh(self) -> None:
         """Remember what the books hold right after a reset, so the Demo can tell whether anything would be lost by the next one."""
@@ -243,11 +263,25 @@ def _owner_key_hex(s: Settings, demo: bool) -> str:
 
 
 _runtime: Runtime | None = None
+# The runtime the routes see in one thread while it builds books off to the side (`using_runtime`); the process runtime everywhere else.
+_override: ContextVar[Runtime | None] = ContextVar("termsledger_runtime_override", default=None)
+
+
+@contextmanager
+def using_runtime(rt: Runtime) -> Iterator[None]:
+    """Within this block, in this thread (and context) only, `get_runtime()` answers `rt`. Other threads keep the process runtime."""
+    token = _override.set(rt)
+    try:
+        yield
+    finally:
+        _override.reset(token)
 
 
 def get_runtime() -> Runtime:
     """Open the configured store and hydrate from it. Never deletes; seeds only an empty store, in DEMO_MODE."""
     global _runtime
+    if (override := _override.get()) is not None:
+        return override
     if _runtime is None:
         from app.api.auth import demo_mode
 
