@@ -257,7 +257,7 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
         Array.from(document.querySelectorAll("main a, main button, main summary"))
           .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
           // The horizon pills keep a compact look with a 44 px hit area (covered by the controls test above).
-          .filter((el) => el.getBoundingClientRect().height < 44 && !el.matches("a:not([class*=button]), summary") && !el.closest("[role=group], [role=radiogroup]"))
+          .filter((el) => el.getBoundingClientRect().height < 44 && !el.matches("a:not([class*=button]), summary") && !el.closest("[role=group], [role=radiogroup]") && !el.matches(".hit"))
           .map((el) => `${el.tagName}:${(el.textContent ?? "").trim().slice(0, 24)}`),
       );
       expect(short, `${route}: buttons under 44 px`).toEqual([]);

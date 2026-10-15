@@ -104,7 +104,7 @@ export function CashMix({ h, customers, bare = false }: { h: HomeView; customers
     <div className={bare ? "" : "mt-4 border-t border-line pt-4 max-sm:hidden"} data-testid="home-mix" data-tour="home-mix">
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="text-supporting font-semibold text-ink-2">{t("home.mix.title")}</h3>
-        <Link href="/cash#cash-sources-now" className="inline-flex items-center gap-1 text-supporting font-semibold text-brand-700 hover:underline" data-testid="home-mix-more">
+        <Link href="/cash#cash-sources-now" className="inline-flex items-center gap-1 text-supporting font-semibold text-brand-700 hover:underline touch:min-h-11" data-testid="home-mix-more">
           {t("home.mix.more")}
           <ArrowRightIcon aria-hidden width={11} height={11} />
         </Link>
@@ -161,7 +161,7 @@ export function CashMix({ h, customers, bare = false }: { h: HomeView; customers
                   aria-controls="home-mix-panel"
                   aria-label={t("home.mix.open", { name: nameOf(s) })}
                   onClick={() => toggle(s.key)}
-                  className={`motion-press flex w-full items-start gap-2 rounded-control px-1.5 py-1 text-left text-supporting transition-colors duration-(--dur-fast) hover:bg-subtle ${on ? "bg-subtle" : ""}`}
+                  className={`motion-press flex w-full items-start gap-2 rounded-control px-1.5 py-1 text-left touch:min-h-11 text-supporting transition-colors duration-(--dur-fast) hover:bg-subtle ${on ? "bg-subtle" : ""}`}
                   data-testid="home-mix-toggle"
                 >
                   <span

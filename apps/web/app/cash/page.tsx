@@ -215,7 +215,7 @@ function Cash() {
       ) : !h ? (
         <LoadingBlock rows={3} />
       ) : (
-        <div className="space-y-5 sm:space-y-7" aria-busy={home.loading}>
+        <div className="flex flex-col gap-5 sm:gap-7 [&>*]:min-w-0" aria-busy={home.loading}>
           {stressView ? <StressContext back={stressView.context?.back} invoice={invoiceRow?.invoice} /> : null}
           <header id="cash-answer" className="motion-reveal flex flex-col items-start gap-2.5" data-testid="cash-status" data-status={h.status}>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -252,8 +252,8 @@ function Cash() {
             ) : null}
           </header>
 
-          {/* The main numbers at a glance, and where the cash comes from (the same ring as Home's): the page's summary before its detail. */}
-          <section aria-label={t("biz.cash.summary")} className="motion-reveal card-flat grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" data-testid="cash-summary" data-tour="cash-summary">
+          {/* The main numbers at a glance, and where the cash comes from (the same ring as Home's): the page's summary before its detail from lg; on a phone the plan comes first and the summary follows the page's content (order-1), so the priced action is in the first screens. */}
+          <section aria-label={t("biz.cash.summary")} className="motion-reveal card-flat grid gap-5 max-lg:order-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" data-testid="cash-summary" data-tour="cash-summary">
             <CashFigures h={h} big />
             <div className="min-w-0 lg:border-l lg:border-line lg:pl-5">
               <CashMix h={h} customers={names} bare />
