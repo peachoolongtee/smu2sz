@@ -5,6 +5,7 @@ from app.api.runtime import Runtime, set_runtime
 from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
+from tests.api.busy_snapshot import fast_busy  # noqa: F401  (opt in with pytestmark = pytest.mark.usefixtures("fast_busy"))
 
 
 @pytest.fixture

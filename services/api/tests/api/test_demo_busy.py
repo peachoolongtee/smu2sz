@@ -22,6 +22,7 @@ from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from tests.api.conftest import agree_on_rcv_a
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 SEEDED = ["EX01_PACKAGE", "EX02_EARLY_1_5", "EX03_AS_USUAL", "EX07_CONFLICT", "EX08B_JOINT_BUYER2", "EX09_TERMS_BUYER3",
           "EX13_EARLY_BUYER4", "EX14_TERMS_BUYER5", "EX15_REBATE_BUYER6", "EX16_PACKAGE_BUYER7", "EX17_CLAIMED_REBATE_BUYER8"]

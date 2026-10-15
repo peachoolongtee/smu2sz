@@ -22,6 +22,7 @@ from app.persistence import InMemoryLedgerStore
 from tests.api.conftest import agree_on_rcv_a, english_leaks, figures
 from tests.api.test_home import _exhaust_line
 
+pytestmark = pytest.mark.usefixtures("fast_busy")  # the busy seed is replayed once per process (tests/api/busy_snapshot.py)
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan", "Bank credit line"]  # the books' own proper names
 HREFS = r".*href"
