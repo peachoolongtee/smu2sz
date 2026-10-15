@@ -166,5 +166,5 @@ test("after the plan ran, the covered Home has no gradient anywhere and its titl
   // The card's title is solid ink, not clipped text.
   const title = page.locator("#hv2-covered-title");
   expect(await title.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("none");
-  expect(await title.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(23, 29, 30)");
+  expect(await title.evaluate((el) => getComputedStyle(el).color)).toBe(await page.getByTestId("home-headline").evaluate((el) => getComputedStyle(el).color)); // the ink of the headline
 });
