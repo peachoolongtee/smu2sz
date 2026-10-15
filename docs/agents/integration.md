@@ -34,10 +34,10 @@ problems were cheap to catch early and expensive to catch late.
    - the full mock suite on desktop and phone;
    - the live suite;
    - unit tests, typecheck and lint.
-9. **The GitHub checks** (`.github/workflows/checks.yml`) run on every push:
-   - typecheck, lint and unit tests on the web;
-   - the API suite;
-   - the mock browser suite on dev, `int/*` and pull requests into dev.
+9. **The GitHub checks** (`.github/workflows/checks.yml`):
+   - on every push: typecheck, lint and unit tests on the web;
+   - on dev, `int/*`, `ci/*` and pull requests into dev: the API suite and the mock browser suite (they are heavy and spend Actions
+     minutes). Run them on your own branch from the Actions tab (Run workflow) before handing in a large change.
 
    A red check is fixed before anything else lands on that branch.
 
