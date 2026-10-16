@@ -1293,7 +1293,6 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
 
 // The recordings are English: the mock takes `lang` as the live client does and answers the same recording (re-recorded, not translated by hand).
 export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {}): Promise<DealsView> {
-  void lang;
   await delay();
   const view = documents.mockDeals(openOfferStage());
   // Opened with `customer` or `invoice`, the server adds `open_offer.context.back`: the recording of that read (deals_day0_evaluated_back.json) lends its words to the open offer.
@@ -1303,6 +1302,12 @@ export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {})
       const lent = back.deals.find((d) => d.counterparty_id === row.counterparty_id)?.open_offer?.context;
       if (row.open_offer && lent) row.open_offer.context = clone(lent);
     }
+  }
+  // Opened from the Home (`from=home`) the server's way back is its plain "Back to Home" (services/api/app/api/selection.py, `_PLAIN`); the recordings hold no read taken that way.
+  if (ctx.from === "home") {
+    const back = lang === "zh" ? { label: "返回首页", href: "/" } : { label: "Back to Home", href: "/" };
+    view.context = { ...(view.context ?? {}), back } as typeof view.context;
+    for (const row of view.deals) if (row.open_offer) row.open_offer.context = { ...(row.open_offer.context ?? {}), back } as typeof row.open_offer.context;
   }
   return view;
 }

@@ -16,6 +16,8 @@ test.beforeEach(async ({}, testInfo) => {
 });
 
 const OWED_32 = "owed: invoiced 13 days ago, due in 32 days";
+/** /receivables lists the customers (with the summary); a customer's page holds the invoices and their basis words. */
+const RECV = "/receivables?customer=BUYER-1";
 const SCHEDULED = "scheduled: not yet invoiced";
 const AFTER_CHECK = /Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/;
 
@@ -66,13 +68,15 @@ test("day 0: Cash says the invoice is owed, the later billing is scheduled, and 
 });
 
 test("Receivables says the same words as Cash, and the summary says the recurring billing is not owed yet", async ({ page }) => {
-  await page.goto("/receivables");
+  await page.goto(RECV);
   const row = receivablesDay0.rows[0];
   const text = page.getByTestId(`recv-basis-${row.receivable_id}`);
   await expect(text).toHaveText(OWED_32);
   const words = (await text.textContent()) ?? "";
   expect(await px(text)).toBe(13);
+  await page.goto("/receivables");
   await expect(page.getByTestId("recv3-scheduled-note")).toHaveText(receivablesDay0.summary.scheduled_note);
+  await page.goto("/receivables");
   await expect(page.getByTestId("recv3-scheduled-note")).toHaveText("¥420,000 more is scheduled to be invoiced in 2 days; it is not owed yet");
   await cash(page);
   await expect(page.locator("[data-testid='cash-receipts-row'][data-basis='OWED']").getByTestId("cash-receipts-text")).toHaveText(words);
@@ -103,7 +107,7 @@ test("after the buyer accepts: the dashed line is gone and the moved receipts ar
   await expect(cashAgreed.first().getByTestId("cash-receipts-text")).toHaveText("under the agreement made today");
   await expect(page.locator("[data-testid='cash-receipts-row'][data-basis='SCHEDULED']").first()).toBeVisible();
   // Receivables agrees.
-  await page.goto("/receivables");
+  await page.goto(RECV);
   await expect(page.locator("[data-testid^='recv-basis-']").first()).toHaveText("under the agreement made today");
 });
 
@@ -135,10 +139,11 @@ test("Chinese: the words, the legend and the pending rows are the server's, on C
   await expect(page.getByTestId("cash-receipts-legend")).toContainText("虚线：如果 Foshan 接受方案 A");
   await expect(page.getByRole("heading", { name: "您的收款依据" })).toBeVisible();
   await expect(page.locator("[data-testid='cash-receipts-row'][data-basis='SCHEDULED']").first().getByTestId("cash-receipts-text")).toHaveText("按计划：尚未开票");
+  await page.goto(RECV);
   await page.goto("/receivables");
   await expect(page.getByTestId("recv3-scheduled-note")).toHaveText("另有 ¥420,000 计划于 2 天后开票；目前尚未应收");
   // No English leaks into the basis words.
-  const said = await page.getByTestId("recv3-list").innerText();
+  const said = await page.getByTestId("recv3-page").innerText();
   expect(said).not.toMatch(/owed:|scheduled:|under the agreement/);
 });
 
@@ -149,8 +154,9 @@ test("phone 390x844: the pending picture, its sentence and rows fit, with no sid
   await expect(page.getByTestId("picture-line-pending")).toBeAttached();
   await expect(page.getByTestId("cash-receipts-legend")).toBeVisible();
   expect(await noSideways(page)).toBeLessThanOrEqual(1);
-  await page.goto("/receivables");
+  await page.goto(RECV);
   await expect(page.locator("[data-testid^='recv-basis-']").first()).toBeVisible();
+  await page.goto("/receivables"); // the scheduled note belongs to the summary on the list
   const note = (await page.getByTestId("recv3-scheduled-note").boundingBox())!;
   expect(note.x + note.width).toBeLessThanOrEqual(390);
   expect(await noSideways(page)).toBeLessThanOrEqual(1);

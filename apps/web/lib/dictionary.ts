@@ -3140,7 +3140,7 @@ export const en = {
   "home.mix.more": "Funding sources",
   "home.mix.own": "Your own money",
   "home.mix.center": "your own",
-  "home.mix.alt": "{share}% of the money behind your cash is your own.",
+  "home.mix.alt": "The money behind your cash, by source: your own and each lender's.",
   "tour.p.home.mix.title": "Where your cash comes from",
   "tour.p.home.mix.body": "The ring splits your money into your own and what each lender provides; lighter slices are the plan's funding not run yet. Funding sources opens each facility's limits on Cash & funding.",
   // ---- Deals: an agreement folded to one row
@@ -3512,6 +3512,71 @@ export const en = {
   "deals.tracker.unavailable": "The tracker is not available for this deal yet.",
   "deals.cmp.calc.terms": "View terms by scope",
   "deals.cmp.calc.economic": "View cost calculation",
+  // ---- Business list layouts (deal and customer lists, tool tiles, fold cards, the reconciliation tab)
+  // ---- Deals: the next-step guide while nothing is selected
+  // ---- Home shortcuts, the funding tabs, Cash's two tool cards
+  // ---- The page tours: every section and what its buttons do, per page
+  // ---- Home: where the cash comes from (the ring in Cash available today)
+  // ---- Deals: an agreement folded to one row
+  // ---- Home: the alarm, Check funding plan, who stands behind the money
+  // ---- Home: the ring's details, by source (from the ui-ux-testing ring)
+  // ---- Home: You're covered!, and Capex in plain words
+  // ---- Cash & funding: the summary at the top, the current funding as rows
+  // ---- Cash & funding: one funding card
+  // ---- Sandbox: pick a negotiation
+  // ---- Deals: the task progress strip
+  "landing.title": "Welcome",
+  "landing.nav": "FLOW",
+  "landing.tagline": "AI working-capital agent",
+  "landing.lang.switch": "中文",
+  "landing.signIn": "Sign in",
+  "landing.cta.access": "Access FLOW",
+  "landing.cta.join": "Join FLOW now!",
+  "landing.cta.preview": "Preview",
+  "landing.preview.label": "A preview of FLOW",
+  "landing.hero.title": "Built for your cash",
+  "landing.hero.body": "FLOW reads every buyer's offer, prices what it really costs you, and funds the gap within the limits you sign. Nothing moves without you.",
+  "landing.questions.title": "Every morning, three answers",
+  "landing.q1": "Am I safe?",
+  "landing.q2": "What should I do?",
+  "landing.q3": "What will it cost?",
+  "landing.features.title": "Every offer, priced before you answer",
+  "landing.f1.title": "Read every buyer's offer",
+  "landing.f1.body": "FLOW reads the message and finds every term in it: an early payment, longer terms, a rebate.",
+  "landing.f2.title": "See what it does to your cash",
+  "landing.f2.body": "Day by day, against your minimum. If a request breaks your reserve, you see when and by how much.",
+  "landing.f3.title": "One recommendation, priced",
+  "landing.f3.body": "FLOW proposes the reply that keeps you above your minimum at the lowest cost, and says why.",
+  "landing.f4.title": "You stay in control",
+  "landing.f4.body": "Every choice says who decides. Anything outside the limits you signed waits for your approval.",
+  "landing.setup.title": "Set up in one sitting",
+  "landing.setup.body": "Type in your cash, credit lines, customers and bills once. FLOW checks every figure, you sign your limits, and Home answers from then on.",
+  "landing.setup.caption": "Your first answer, every morning",
+  "landing.setup.alt": "FLOW's Home: cash today, the recommended action and the cash outlook",
+  "landing.principle": "FLOW never assumes a payment arrived, and never borrows past the limits you signed.",
+  "landing.principle.by": "How FLOW works",
+  "landing.steps.title": "How it works",
+  "landing.s1.title": "Set up your books",
+  "landing.s1.body": "Cash, credit lines, customers, bills and your limits, typed in once.",
+  "landing.s2.title": "FLOW reads each offer",
+  "landing.s2.body": "Every term priced against your cash and your limits.",
+  "landing.s3.title": "You approve what matters",
+  "landing.s3.body": "FLOW acts inside your limits; everything else waits for you.",
+  "landing.security.title": "Security built for your books",
+  "landing.security.body": "Every decision is written to a record that checks itself, and every action is held to the limits you signed.",
+  "landing.security.more": "Learn more",
+  "landing.b1": "Owner-signed limits",
+  "landing.b2": "Hash-chained record",
+  "landing.b3": "Approval above your limits",
+  "landing.b4": "Keyed buyer channels",
+  "landing.b5": "Outbound leak guard",
+  "landing.b6": "Simulation, no real funds",
+  "landing.close.title": "Know where your cash stands",
+  "landing.close.body": "Set up your books once. FLOW answers every morning.",
+  "landing.footer.sim": "Simulation. Every company, bank and figure here is synthetic.",
+  "landing.footer.nav": "More about FLOW",
+  "landing.footer.demo": "See the guided demo",
+  "landing.footer.trust": "Trust and security",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -6650,7 +6715,7 @@ export const zh: Record<DictKey, string> = {
   "home.mix.more": "资金来源",
   "home.mix.own": "您自己的资金",
   "home.mix.center": "自有资金",
-  "home.mix.alt": "您现金背后的资金中有 {share}% 是您自己的。",
+  "home.mix.alt": "您现金背后的资金按来源划分：您自己的和各家出借方的。",
   "tour.p.home.mix.title": "您的现金来源",
   "tour.p.home.mix.body": "圆环把您的资金分为自有资金和每家出借方提供的资金；浅色部分是方案中尚未执行的融资。“资金来源”会在“现金与融资”中打开每项额度的详情。",
   // ---- Deals: an agreement folded to one row
@@ -7022,4 +7087,69 @@ export const zh: Record<DictKey, string> = {
   "deals.tracker.unavailable": "这笔交易暂时没有跟踪记录。",
   "deals.cmp.calc.terms": "查看各范围的条款",
   "deals.cmp.calc.economic": "查看成本计算",
+  // ---- Business list layouts (deal and customer lists, tool tiles, fold cards, the reconciliation tab)
+  // ---- Deals: the next-step guide while nothing is selected
+  // ---- Home shortcuts, the funding tabs, Cash's two tool cards
+  // ---- The page tours: every section and what its buttons do, per page
+  // ---- Home: where the cash comes from (the ring in Cash available today)
+  // ---- Deals: an agreement folded to one row
+  // ---- Home: the alarm, Check funding plan, who stands behind the money
+  // ---- Home: the ring's details, by source (from the ui-ux-testing ring)
+  // ---- Home: You're covered!, and Capex in plain words
+  // ---- Cash & funding: the summary at the top, the current funding as rows
+  // ---- Cash & funding: one funding card
+  // ---- Sandbox: pick a negotiation
+  // ---- Deals: the task progress strip
+  "landing.title": "欢迎",
+  "landing.nav": "FLOW",
+  "landing.tagline": "AI 营运资金助手",
+  "landing.lang.switch": "English",
+  "landing.signIn": "登录",
+  "landing.cta.access": "进入 FLOW",
+  "landing.cta.join": "立即加入 FLOW！",
+  "landing.cta.preview": "预览",
+  "landing.preview.label": "FLOW 预览",
+  "landing.hero.title": "为您的现金而生",
+  "landing.hero.body": "FLOW 读懂每一位买方的报价，算清它真正让您付出的代价，并在您签署的额度内补足资金缺口。没有您的同意，什么都不会发生。",
+  "landing.questions.title": "每天早上，三个答案",
+  "landing.q1": "我安全吗？",
+  "landing.q2": "我该做什么？",
+  "landing.q3": "要花多少钱？",
+  "landing.features.title": "每一份报价，在您回复前就已算清",
+  "landing.f1.title": "读懂每一份买方报价",
+  "landing.f1.body": "FLOW 读取消息，找出其中的每一项条款：提前付款、更长账期、返利。",
+  "landing.f2.title": "看清它对现金的影响",
+  "landing.f2.body": "逐日对照您的最低现金储备。如果某个请求会击穿储备，您会看到何时、差多少。",
+  "landing.f3.title": "一个建议，附上价格",
+  "landing.f3.body": "FLOW 提出让您保持在最低储备之上且成本最低的回复，并说明原因。",
+  "landing.f4.title": "由您掌控",
+  "landing.f4.body": "每个选项都写明由谁决定。超出您签署额度的事项，都会等待您的批准。",
+  "landing.setup.title": "一次完成设置",
+  "landing.setup.body": "只需录入一次现金、授信额度、客户和账单。FLOW 核对每一个数字，您签署额度，之后首页就会给出答案。",
+  "landing.setup.caption": "每天早上的第一个答案",
+  "landing.setup.alt": "FLOW 首页：今日现金、建议操作和现金展望",
+  "landing.principle": "FLOW 从不假设款项已经到账，也从不超出您签署的额度借款。",
+  "landing.principle.by": "FLOW 的工作方式",
+  "landing.steps.title": "如何运作",
+  "landing.s1.title": "建立账簿",
+  "landing.s1.body": "现金、授信额度、客户、账单和您的额度，只需录入一次。",
+  "landing.s2.title": "FLOW 解读每份报价",
+  "landing.s2.body": "每一项条款都对照您的现金和额度算清价格。",
+  "landing.s3.title": "重要的事由您批准",
+  "landing.s3.body": "FLOW 只在您的额度内行动；其他一切都等您决定。",
+  "landing.security.title": "为您的账簿打造的安全",
+  "landing.security.body": "每个决定都写入可自我校验的记录，每个操作都受您签署的额度约束。",
+  "landing.security.more": "了解更多",
+  "landing.b1": "所有者签署的额度",
+  "landing.b2": "哈希链记录",
+  "landing.b3": "超出额度须经批准",
+  "landing.b4": "买方通道密钥",
+  "landing.b5": "外发泄露防护",
+  "landing.b6": "模拟环境，不动真钱",
+  "landing.close.title": "随时掌握现金状况",
+  "landing.close.body": "建立一次账簿，FLOW 每天早上为您解答。",
+  "landing.footer.sim": "模拟环境。这里的每家公司、银行和数字都是虚构的。",
+  "landing.footer.nav": "了解 FLOW",
+  "landing.footer.demo": "观看引导演示",
+  "landing.footer.trust": "信任与安全",
 };

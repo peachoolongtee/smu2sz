@@ -108,13 +108,13 @@ const STEPS: Record<string, Step[]> = {
   "/cash": [
     part("cash.status", "#cash-answer"),
     part("cash.summary", '[data-tour="cash-summary"]'),
-    part("cash.plan", tid("cash-plan-ring")),
+    part("cash.plan", tid("home-next-action")),
     part("cash.chart", tid("cash-forecast")),
     part("cash.markers", '[data-testid^="picture-marker-"]'),
     part("cash.try", tid("cash-try")),
     part("cash.more", tid("cash-more")),
     part("cash.options", tid("cash-options-all")),
-    part("cash.sources", "#cash-sources-now"),
+    part("cash.sources", '#cash-sources-now [data-testid^="cash-facility-"]'), // the funding card is taller than the screen leaves room for beside a card: the first source stands for it
     part("cash.readings", tid("cash-readings")),
   ],
   "/whatif": [part("sandbox.pick", tid("whatif-ask")), part("sandbox.controls", "#whatif-controls"), part("sandbox.outcome", tid("whatif-outcome"))],
@@ -280,7 +280,11 @@ function TourCard({ steps, path, seenKey }: { steps: Step[]; path: string; seenK
       const frame = window.requestAnimationFrame(() => setRect(null));
       return () => window.cancelAnimationFrame(frame);
     }
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    // The part goes under the sticky header, at the top: the card then has the room below it (centred, a part about a third of the screen high left too little above and below for the card, which then sat on it).
+    const margin = el.style.scrollMarginTop;
+    el.style.scrollMarginTop = "96px";
+    el.scrollIntoView({ block: "start", behavior: "smooth" });
+    el.style.scrollMarginTop = margin;
     const update = () => setRect(el.getBoundingClientRect());
     const frame = window.requestAnimationFrame(update);
     const resize = new ResizeObserver(update);

@@ -15,6 +15,8 @@
 //   - whatif_presets.json: every entry's `compute_ms` -> 0 and `cached` -> false (timing and cache state of the call).
 //   - the commitment id (CMT-<16 hex>) and its nonce, which the API draws at random for every deal: replaced by one fixed
 //     id and nonce wherever they appear (negotiation_accept.json, ops.json, home_act.json, home_goahead.json).
+//   - the SEC-<KIND>-<16 hex> security event ids (SEC-OPS, SEC-AUTH, ...) (random per event) and the chat's recorded decision ids (nl:<topic>:t<n>:<12 hex>, from a random
+//     session nonce): fixed ids by order of first appearance.
 //   - nl_script.json and state_after_fund.json: the NL-<16 hex> operation and lot ids, which the API derives from a random
 //     per-session nonce, become fixed ids by order of first appearance; nl_script.json, home_reconciliation_day34.json and the two
 //     home ledgers (home_ledger_day34.json, home_ledger_approved.json) and the receipts inside decisions.json are
@@ -213,6 +215,8 @@ async function inLang(lang, read) {
 const RECHAIN_BY_APPEARANCE = new Set(["slice_d/activity.json", "slice_d/story.json", "slice_d/restore.json", "nl_script.json", "home_reconciliation_day2.json", "bank_receipt.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
 const lossTokens = new Map(); // slice_d file -> its loss tokens, by order of first appearance
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
+const secIds = new Map(); // SEC-<KIND>-<16 hex> security event ids, random per event since the security fixes -> a fixed id by first appearance
+const nlDecisionIds = new Map(); // nl:<topic>:t<n>:<12 hex> recorded chat decisions, keyed by a random session nonce -> a fixed id by first appearance
 
 function rechainByAppearance(name, root) {
   const memo = new Map();
@@ -275,6 +279,14 @@ function normalise(name, value) {
     .replace(/NL-[0-9a-f]{16}/g, (id) => {
       if (!nlIds.has(id)) nlIds.set(id, `NL-${sha(`recorded nl id ${nlIds.size}`).slice(0, 16)}`);
       return nlIds.get(id);
+    })
+    .replace(/SEC-([A-Z]+)-([0-9a-f]{16})/g, (id, kind) => {
+      if (!secIds.has(id)) secIds.set(id, `SEC-${kind}-${sha(`recorded security event ${secIds.size}`).slice(0, 16)}`);
+      return secIds.get(id);
+    })
+    .replace(/(nl:[a-z0-9-]+:t\d+:)([0-9a-f]{12})/g, (m, head) => {
+      if (!nlDecisionIds.has(m)) nlDecisionIds.set(m, `${head}${sha(`recorded nl decision ${nlDecisionIds.size}`).slice(0, 12)}`);
+      return nlDecisionIds.get(m);
     });
   const out = JSON.parse(text, (k, v) => (k === "nonce" && typeof v === "string" && /^[0-9a-f]{32}$/.test(v) ? FIXED_NONCE : v));
   const rechain = (node) => {

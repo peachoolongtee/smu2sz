@@ -608,8 +608,9 @@ const TITLE_KEY: Record<string, DictKey> = {
   ...Object.fromEntries([...BUSINESS_NAV, ...DEMO_NAV].map((n) => [n.href, n.key])),
   "/approvals": "nav.approvals",
   "/limits": "nav.limits",
-  "/trust": "nav.trust",
+  "/welcome": "landing.title",
   "/setup": "setup.title",
+  "/trust": "nav.trust",
 };
 
 /**
@@ -643,5 +644,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const mode = useMode();
   const pathname = usePathname();
   useDocumentMeta(pathname, mode);
+  // The landing page is its own full page: no sidebar, header or chat.
+  if (pathname === "/welcome") return <>{children}</>;
   return shellFor(pathname, mode) === "demo" ? <BusinessShell demo>{children}</BusinessShell> : <BusinessShell>{children}</BusinessShell>;
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BuyingCard } from "@/components/deals/buying-card";
-import { ActiveCommitments } from "@/components/deals/commitments";
+import { ActiveCommitments, type AgreementGroups } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
 import { Button, ErrorState, PageHeader } from "@/components/ui";
@@ -22,7 +22,7 @@ import type { DealsContext } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useDecisions } from "@/lib/use-decision";
 import { type DealView, DecisionPane } from "./decision-pane";
-import { dealTabCounts, dealTabOf, dealWalk, type DealWalk, LEGACY_VIEW_KEYS, negotiationRows, sortRows, TABLE_FROM, viewOf, type DealTab } from "./deal-model";
+import { afterGroupCounts, afterGroupOf, dealTabCounts, dealTabOf, dealWalk, type DealWalk, LEGACY_VIEW_KEYS, negotiationRows, sortRows, TABLE_FROM, viewOf, type DealTab } from "./deal-model";
 import { QueuePanel, type QueueLayout } from "./queue-table";
 import { buildQueue, rowDecision, type RowTarget } from "./queue-model";
 
@@ -59,9 +59,9 @@ export function DealsPage() {
   // A server that does not send the queue yet is read through today's worklist.
   const needWorklist = deals.data !== undefined && !deals.data.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang) : Promise.resolve(null)), [lang, needWorklist]);
-  const customers = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
   // The buying side (ADR-0013): its card shows on the list only when the server answers (the feature can be switched off).
   const buying = useAsync(() => getPurchases(lang).catch(() => null), [lang]);
+  const customers = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
   const queue = deals.data === undefined ? undefined : deals.data.queue ? buildQueue(deals.data, null, customers.data, WORDS(t)) : worklist.data === undefined ? undefined : buildQueue(deals.data, worklist.data, customers.data, WORDS(t));
   const rows = queue ? negotiationRows(queue) : [];
   const row = decision ? (rows.find((x) => rowDecision(x.row) === decision)?.row ?? null) : null;
@@ -187,6 +187,18 @@ export function DealsPage() {
   const back = deals.data?.context?.back ?? openOffer?.context?.back ?? null;
   const irrelevantText = opened.decision === decision ? (deals.data?.context?.irrelevant_text ?? null) : null;
 
+  // The money groups the queue files the agreements in, by the deal's record id: the server's group and label (nothing is decided here).
+  const agreementGroups: AgreementGroups | undefined = queue
+    ? {
+        byRecord: Object.fromEntries(
+          [...queue.needs_you, ...queue.waiting, ...queue.agreements].flatMap((r) => {
+            const g = afterGroupOf(r);
+            return g && r.decision_id ? [[r.decision_id, { group: g, label: r.after_group_label ?? null }] as const] : [];
+          }),
+        ),
+        counts: afterGroupCounts(queue),
+      }
+    : undefined;
   const tableMode = Boolean(queue) && layout === "table" && rows.length >= TABLE_FROM;
   const QUEUE_NODE = (
     <QueuePanel
@@ -324,6 +336,9 @@ export function DealsPage() {
             dealsDay={deals.data?.day ?? null}
             dealsError={dealsError}
             onRetryDeals={deals.reload}
+            groups={agreementGroups}
+            groupsPending={queue === undefined}
+            reads={{ ledger, records }}
           />
         </div>
       </div>

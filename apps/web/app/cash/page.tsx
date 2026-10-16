@@ -166,12 +166,7 @@ function Cash() {
     </>
   );
 
-  // The plan to run is the page's loudest part: a ring in Home's ink around the plan bar.
-  const action = h?.next_action ? (
-    <div key="action" className="rounded-[var(--radius-f-card)] ring-2 ring-brand-600 ring-offset-4 ring-offset-canvas" data-testid="cash-plan-ring">
-      <NextActionBlock variant="bar" sticky={false} a={h.next_action} stateVersion={h.state_version} fixer={fixer} />
-    </div>
-  ) : null;
+  const action = h?.next_action ? <NextActionBlock key="action" variant="bar" sticky={false} a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
   const stressView = link ? stressCurrent?.view : null;
   const invoiceRow = ctx.invoice ? invoiceRead.data?.rows?.find((r) => r.receivable_id === ctx.invoice && (!r.buyer_id || r.buyer_id === link?.buyerId)) : null;
   const late = h && stressView ? lateReadOf(stressView, invoiceRow, t) : null;
@@ -220,7 +215,7 @@ function Cash() {
       ) : !h ? (
         <LoadingBlock rows={3} />
       ) : (
-        <div className="space-y-5 sm:space-y-7" aria-busy={home.loading}>
+        <div className="flex flex-col gap-5 sm:gap-7 [&>*]:min-w-0" aria-busy={home.loading}>
           {stressView ? <StressContext back={stressView.context?.back} invoice={invoiceRow?.invoice} /> : null}
           <header id="cash-answer" className="motion-reveal flex flex-col items-start gap-2.5" data-testid="cash-status" data-status={h.status}>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -257,13 +252,16 @@ function Cash() {
             ) : null}
           </header>
 
-          {/* The main numbers at a glance, and where the cash comes from (the same ring as Home's): the page's summary before its detail. */}
-          <section aria-label={t("biz.cash.summary")} className="motion-reveal card-flat grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" data-testid="cash-summary" data-tour="cash-summary">
-            <CashFigures h={h} big />
-            <div className="min-w-0 lg:border-l lg:border-line lg:pl-5">
-              <CashMix h={h} customers={names} bare />
-            </div>
-          </section>
+          {/* The main numbers at a glance, and where the cash comes from (the same ring as Home's): the page's summary before its detail from lg; on a phone the plan comes first and the summary follows the page's content (order-1), so the priced action is in the first screens. */}
+          {/* The stressed picture (opened from a late-payment link) is the page's subject: the ordinary figures are not drawn beside it. */}
+          {stressed || stressPending ? null : (
+            <section aria-label={t("biz.cash.summary")} className="motion-reveal card-flat grid gap-5 max-lg:order-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" data-testid="cash-summary" data-tour="cash-summary">
+              <CashFigures h={h} big />
+              <div className="min-w-0 lg:border-l lg:border-line lg:pl-5">
+                <CashMix h={h} customers={names} bare />
+              </div>
+            </section>
+          )}
           <PartialRead partial={h.partial} onRetry={home.reload} />
           <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           {slot}
@@ -357,7 +355,6 @@ function TryTermsCard() {
   const { t } = useI18n();
   return (
     <section id="cash-whatif" aria-labelledby="cash-try-title" className="motion-reveal relative isolate flex flex-col overflow-hidden rounded-[var(--radius-f-card)] bg-f-btn p-5 text-f-btn-ink shadow-(--shadow-lift) sm:p-6" data-testid="cash-try" data-tour="cash-try">
-      <span aria-hidden className="dash-dots absolute inset-y-0 right-0 -z-10 w-2/3" />
       {/* Two cash lines, one moved: what the sandbox shows. Decoration only. */}
       <svg aria-hidden viewBox="0 0 160 64" className="absolute right-5 top-5 -z-10 hidden h-16 w-40 opacity-80 sm:block">
         <path d="M2 18 H40 V40 H86 V54 H122 V30 H158" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="2.5" strokeDasharray="5 4" />

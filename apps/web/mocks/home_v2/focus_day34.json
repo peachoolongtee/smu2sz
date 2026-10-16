@@ -156,6 +156,8 @@
             "lifecycle": "agreed",
             "state_word": "Payment late",
             "state_tone": "bad",
+            "after_group": "payment_late",
+            "after_group_label": "Payment late",
             "summary_text": "Agreed 34 days ago",
             "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
           }
@@ -604,6 +606,8 @@
             "lifecycle": "agreed",
             "state_word": "付款逾期",
             "state_tone": "bad",
+            "after_group": "payment_late",
+            "after_group_label": "付款逾期",
             "summary_text": "34 天前达成协议",
             "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
           }

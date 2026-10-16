@@ -260,8 +260,9 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
 
           <div className="flex flex-wrap items-center gap-2.5">{actions}</div>
           {confirmPanel ? <div className="basis-full">{confirmPanel}</div> : null}
+          {/* The calculation belongs to the plan: it folds inside the same card, under a hairline. */}
+          <div className="basis-full border-t border-line pt-1">{details(t("biz.plan.seeCalc"), "")}</div>
         </ActionBar>
-        {details(t("biz.plan.seeCalc"), "")}
       </>
     );
   }

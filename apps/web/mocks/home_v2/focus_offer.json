@@ -173,7 +173,7 @@
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
           "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
-          "headline_short": "Counter instead of accepting as asked",
+          "headline_short": "Counter instead of accepting their request",
           "authority_text": "FLOW can send this counter without your approval.",
           "primary": {
             "label": "Review the counter",
@@ -233,7 +233,7 @@
           {
             "key": "open_request",
             "label": "The open request",
-            "value_display": "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once",
+            "value_display": "about 2.6% of it if you accept their request, over 12 months, plus ¥5,040.00 once",
             "note": "the cost of keeping the same sales on softer terms, not profit gained",
             "tone": "neutral",
             "entered": true
@@ -649,7 +649,7 @@
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
           "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
-          "headline_short": "Counter instead of accepting as asked",
+          "headline_short": "Counter instead of accepting their request",
           "authority_text": "FLOW can send this counter without your approval.",
           "primary": {
             "label": "Review the counter",
@@ -709,7 +709,7 @@
           {
             "key": "open_request",
             "label": "The open request",
-            "value_display": "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once",
+            "value_display": "about 2.6% of it if you accept their request, over 12 months, plus ¥5,040.00 once",
             "note": "the cost of keeping the same sales on softer terms, not profit gained",
             "tone": "neutral",
             "entered": true
@@ -973,7 +973,7 @@
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
           "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
-          "headline_short": "Counter instead of accepting as asked",
+          "headline_short": "Counter instead of accepting their request",
           "authority_text": "FLOW can send this counter without your approval.",
           "primary": {
             "label": "Review the counter",
@@ -1033,7 +1033,7 @@
           {
             "key": "open_request",
             "label": "The open request",
-            "value_display": "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once",
+            "value_display": "about 2.6% of it if you accept their request, over 12 months, plus ¥5,040.00 once",
             "note": "the cost of keeping the same sales on softer terms, not profit gained",
             "tone": "neutral",
             "entered": true
@@ -1297,7 +1297,7 @@
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
           "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
-          "headline_short": "Counter instead of accepting as asked",
+          "headline_short": "Counter instead of accepting their request",
           "authority_text": "FLOW can send this counter without your approval.",
           "primary": {
             "label": "Review the counter",
@@ -1357,7 +1357,7 @@
           {
             "key": "open_request",
             "label": "The open request",
-            "value_display": "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once",
+            "value_display": "about 2.6% of it if you accept their request, over 12 months, plus ¥5,040.00 once",
             "note": "the cost of keeping the same sales on softer terms, not profit gained",
             "tone": "neutral",
             "entered": true
@@ -1625,7 +1625,7 @@
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
           "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
-          "headline_short": "还价，不按对方要求接受",
+          "headline_short": "还价，不接受对方的要求",
           "authority_text": "FLOW 可以在无需您批准的情况下发送这份还价。",
           "primary": {
             "label": "查看还价",
@@ -1685,7 +1685,7 @@
           {
             "key": "open_request",
             "label": "当前的请求",
-            "value_display": "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
+            "value_display": "如果接受对方的要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
             "note": "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润",
             "tone": "neutral",
             "entered": true
@@ -2101,7 +2101,7 @@
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
           "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
-          "headline_short": "还价，不按对方要求接受",
+          "headline_short": "还价，不接受对方的要求",
           "authority_text": "FLOW 可以在无需您批准的情况下发送这份还价。",
           "primary": {
             "label": "查看还价",
@@ -2161,7 +2161,7 @@
           {
             "key": "open_request",
             "label": "当前的请求",
-            "value_display": "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
+            "value_display": "如果接受对方的要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
             "note": "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润",
             "tone": "neutral",
             "entered": true
@@ -2425,7 +2425,7 @@
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
           "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
-          "headline_short": "还价，不按对方要求接受",
+          "headline_short": "还价，不接受对方的要求",
           "authority_text": "FLOW 可以在无需您批准的情况下发送这份还价。",
           "primary": {
             "label": "查看还价",
@@ -2485,7 +2485,7 @@
           {
             "key": "open_request",
             "label": "当前的请求",
-            "value_display": "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
+            "value_display": "如果接受对方的要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
             "note": "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润",
             "tone": "neutral",
             "entered": true
@@ -2749,7 +2749,7 @@
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
           "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
-          "headline_short": "还价，不按对方要求接受",
+          "headline_short": "还价，不接受对方的要求",
           "authority_text": "FLOW 可以在无需您批准的情况下发送这份还价。",
           "primary": {
             "label": "查看还价",
@@ -2809,7 +2809,7 @@
           {
             "key": "open_request",
             "label": "当前的请求",
-            "value_display": "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
+            "value_display": "如果接受对方的要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
             "note": "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润",
             "tone": "neutral",
             "entered": true

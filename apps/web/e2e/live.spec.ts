@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal as readDeal, openCompare, openOperatorTools, openReview, runPlan, sendCounter, walkStory } from "./helpers";
+import { checkedDeal as readDeal, openCashOptions, openCompare, openOperatorTools, openReview, runPlan, sendCounter, walkStory } from "./helpers";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
@@ -105,7 +105,8 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
   const before = await kpis();
   await page.goto("/");
   await expect(page.getByTestId("home-kpi-cash-value")).toHaveText(before.cash_available.value_display);
-  await expect(page.getByTestId("home-kpi-funding-value")).toHaveText(before.funding.value_display);
+  // The funding on its way is not a figure on the card any more (the plan ran, nothing is left to fund: the covered card); "Where your cash comes from" names it, with the server's amount.
+  await expect(page.getByTestId("home-mix")).toContainText(before.funding.value_display.match(/¥[\d,]+/)![0]);
   // Once day 3 has passed the advance is cash.
   expect((await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 4 } })).ok()).toBeTruthy();
   const after = await kpis();
@@ -200,10 +201,13 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   const risk = page.getByTestId("home-next-action");
   await expect(risk).toContainText("¥1,782.19");
   await expect(risk.getByTestId("hv2-approval")).toHaveAttribute("data-needs-owner", "true"); // who decides: the warn line under the actions
-  await expect(risk.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
+  // The Home's card opens the plan on Cash & funding, where the button says who decides.
+  await expect(page.getByTestId("home-check-plan")).toBeVisible();
+  await page.goto("/cash");
+  await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
 
-  // The click queues it: PENDING_APPROVAL with an id, never styled as success, and the action stays on the home.
-  await runPlan(risk, "ALERT-RESERVE-42");
+  // The click queues it: PENDING_APPROVAL with an id, never styled as success, and the action stays on the page.
+  await runPlan(page, "ALERT-RESERVE-42");
   await expect.poll(() => acts.length).toBe(1);
   expect(typeof acts[0].state_version).toBe("number");
   expect(acts[0].suggestions.some((x) => x.operation_kind === "SUBMIT_INVOICE_FOR_FINANCING" && typeof x.amount_fen === "number")).toBeTruthy();
@@ -214,7 +218,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(waiting).toHaveText("Waiting for your approval");
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   // The question is the next step's card (cost, landing, the one primary); there is no second card saying it again.
-  await expect(page.getByTestId("hv2-funding-row")).toContainText("in 3 days");
+  await expect(page.getByTestId("home-next-action")).toContainText("in 3 days");
   await expect(page.locator('[data-testid^="home-approval-APR-"]')).toHaveCount(0);
 
   // The owner approves on the approval card: it executes and says when the cash lands.
@@ -243,8 +247,8 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await page.goto("/");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
-  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
-  await expect(page.getByTestId("home-kpi-funding-value")).toBeVisible();
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
+  await expect(page.getByTestId("home-mix")).toBeVisible(); // where the cash comes from names the funding on its way
   // The cure is an open decision until its cash lands: its record says what is on its way.
   await page.goto("/approvals");
   await page.locator('[data-testid^="approval-record-"]').first().click();
@@ -260,7 +264,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
 
 test("when the books move after the alert was shown, the act answers 409 and the page says so without success styling", async ({ page, request }) => {
   const { post } = await toDay34(request);
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   const fix = page.getByTestId("fix-open-ALERT-RESERVE-42");
   await expect(fix).toBeVisible();
   // The books move behind the page's back (the clock), so the state_version the page holds is stale.
@@ -432,7 +436,7 @@ test("day 34 after a half receipt: Chase payment opens the API's handoff, its ba
   expect(handoff.outstanding_display).toBe(owed);
   expect(handoff.late_days).toBe(2);
 
-  await page.goto("/receivables");
+  await page.goto("/receivables?customer=BUYER-1"); // the invoices and their receipts are on the customer's page
   const facts = page.getByTestId("receipt-facts-e2e-receipt-1");
   await expect(facts.getByTestId("receipt-facts-e2e-receipt-1-received")).toContainText(recon.receipts[0].received_display);
   await expect(facts.getByTestId("receipt-facts-e2e-receipt-1-cleared")).toContainText(recon.receipts[0].face_cleared_display);
@@ -449,7 +453,7 @@ test("day 34 after a half receipt: Chase payment opens the API's handoff, its ba
 
 test("approving after the mandate has expired is refused: the card ends as 'could not run', with no buttons and no money moved", async ({ page, request }) => {
   const { post } = await toDay34NoReceipt(request);
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   // The reserve alert's id carries the books' version, which differs without the receipt: read it from the page.
   const open = page.getByTestId("home-next-action").locator('[data-testid^="fix-open-ALERT-RESERVE"]');
   const alertId = ((await open.getAttribute("data-testid")) ?? "").replace("fix-open-", "");
@@ -621,7 +625,7 @@ test("Deals: if the books moved after the proposal was shown, Send is refused, n
 
 test("Cash & funding: a cure that cannot restore the reserve leaves a remaining task with the routes it names, and the invoice link lands on its row", async ({ page, request }) => {
   const { post } = await toDay34NoReceipt(request);
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   const open = page.getByTestId("home-next-action").locator('[data-testid^="fix-open-ALERT-RESERVE"]');
   const alertId = ((await open.getAttribute("data-testid")) ?? "").replace("fix-open-", "");
   await runPlan(page.getByTestId("home-next-action"), alertId);
@@ -675,6 +679,7 @@ test("Cash: the comparison arrives grouped and ordered by the API, and the forec
   await ownerPost(request)("/demo/reset", {});
   await page.goto("/cash");
   // The recommended plan is the first row of the radio group (chosen by default), and the ordering sentence starts from it.
+  await openCashOptions(page);
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   await expect(page.getByTestId("cash-options-order")).toHaveCount(1);
   expect(await page.getByTestId("cash-options-list").locator("[data-group]").evaluateAll((els) => els.filter((el) => (el.getAttribute("data-testid") ?? "").startsWith("cash-options-")).map((el) => el.getAttribute("data-group")))).toEqual([
@@ -694,7 +699,7 @@ test("Cash: the comparison arrives grouped and ordered by the API, and the forec
 
 test("Activity: each row says what changed, why it matters and what remains; the approval request is history with a link; the chain words are the API's", async ({ page, request }) => {
   const { post } = await toDay34(request);
-  await page.goto("/");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   await runPlan(page.getByTestId("home-next-action"), "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Authorize/ }).click();

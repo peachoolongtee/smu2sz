@@ -8,6 +8,7 @@ import { bump, resetSession } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { clearDraft } from "@/lib/setup-draft";
 import type { SetupDraft, SetupPreview, SetupStatus } from "@/lib/types";
+import { rememberAccount } from "@/lib/account-flag";
 import { useAsync } from "@/lib/use-async";
 import { TextInput } from "./fields";
 import { StepHeading } from "./steps";
@@ -31,6 +32,8 @@ export function StepReview({ draft, status, goTo }: { draft: SetupDraft; status:
     setError(null);
     try {
       await openBooks(draft, password, lang);
+      // An account: the landing page now offers "Access FLOW" on this browser.
+      rememberAccount();
       clearDraft();
       resetSession();
       bump();

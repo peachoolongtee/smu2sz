@@ -6,7 +6,7 @@ import { ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import { StatusPill, type PillTone } from "@/components/ui/status-pill";
 import { UnderlineTabs, WORKLIST_COLUMNS, WorklistAlertLine, WorklistEmpty, WorklistRow, WorklistSearch } from "@/components/ui/worklist-rows";
 import { warmSelection } from "@/components/home/v2/prefetch";
-import { type HomeSelection, NO_SELECTION, rowHref, rowSelection, selectionHref } from "@/lib/home-v2-href";
+import { dealOpenHref, type HomeSelection, NO_SELECTION, rowHref, rowSelection, selectionHref } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
 import type { CustomersView, HomeTone, WorklistCustomer, WorklistNeedsRow, WorklistSeverity, WorklistView, WorklistWaitingRow } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
@@ -66,20 +66,21 @@ function isSelected(sel: Partial<HomeSelection> | null, current: HomeSelection):
 /** A row of Needs you or Waiting: "Customer · Decision", the status (who acts), the one consequence; a quoted differentiator only when the server sends one for two alike subjects. */
 export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: WorklistNeedsRow | WorklistWaitingRow; selection?: HomeSelection; onLeave?: () => void }) {
   const { t, lang } = useI18n();
-  // A row that is the Home's own selection opens in place (the address changes, nothing else); any other row leads where the server says.
+  // A deal row opens that deal on the Deals page (the selection keys and `from=home`); a customer row is the Home's own selection; any other row leads where the server says.
   const sel = rowSelection(row);
+  const deal = sel?.decision ? dealOpenHref(sel.customer, sel.decision) : null;
   return (
     <WorklistRow
       testId="home-worklist-row"
       data={{ "data-kind": row.kind, "data-owner": row.owner, "data-key": row.key }}
-      href={sel ? selectionHref(sel) : rowHref(row)}
-      selected={isSelected(sel, selection)}
-      onClick={onLeave}
+      href={deal ?? (sel ? selectionHref(sel) : rowHref(row))}
+      selected={deal ? false : isSelected(sel, selection)}
+      onClick={deal ? undefined : onLeave}
       subject={row.subject_text}
       isNew={"is_new" in row && row.is_new}
       newLabel={t("hv2.work.new")}
       qualifier={"differentiator_text" in row ? row.differentiator_text : null}
-      onWarm={() => (sel ? warmSelection(sel, lang) : undefined)}
+      onWarm={() => (sel && !deal ? warmSelection(sel, lang) : undefined)}
       nextStep={row.consequence_text}
       pill={row.status_text ? <StatusPill tone={OWNER_PILL[row.owner] ?? "lavender"} testId="home-row-status">{row.status_text}</StatusPill> : null}
       severity={<Severity severity={row.severity} />}

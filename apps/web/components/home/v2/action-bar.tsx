@@ -113,7 +113,7 @@ export function HomeV2ActionBar({
           {alarm && !quiet ? (
             <p role="status" className="-mx-4 -mt-4 mb-3 flex items-center gap-2 rounded-t-[var(--radius-f-card)] bg-f-risk px-4 py-2 text-sm font-bold text-white" data-testid="hv2-alarm">
               <span aria-hidden className="relative flex size-2.5 shrink-0">
-                <span className="absolute inline-flex size-full animate-ping rounded-pill bg-white/70" />
+                <span className="absolute inline-flex size-full motion-safe:animate-ping rounded-pill bg-white/70" />
                 <span className="relative inline-flex size-2.5 rounded-pill bg-white" />
               </span>
               <AlertIcon aria-hidden className="size-4 shrink-0" />
@@ -243,13 +243,6 @@ function CoveredCard({ action, kpis }: { action: HomeV2Action; kpis: HomeV2["kpi
   return (
     <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant="covered" className="h-full outline-none">
       <section aria-labelledby="hv2-covered-title" data-testid="hv2-action" data-covered="true" className="motion-reveal f-card relative isolate flex h-full min-w-0 flex-col overflow-hidden p-5">
-        {/* A soft green glow in the corner and three thin rings around it: the card's own light. */}
-        <span aria-hidden className="absolute -right-24 -top-28 -z-10 size-72 rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-ok-solid)_22%,transparent),transparent)]" />
-        <svg aria-hidden viewBox="0 0 200 200" className="absolute -right-16 -top-16 -z-10 size-56 text-ok-solid">
-          {[44, 68, 92].map((r, i) => (
-            <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="currentColor" strokeOpacity={0.18 - i * 0.05} strokeWidth="1.5" />
-          ))}
-        </svg>
         <span className="sr-only" data-testid="home-action-eyebrow">
           {action.eyebrow}
         </span>
@@ -259,7 +252,7 @@ function CoveredCard({ action, kpis }: { action: HomeV2Action; kpis: HomeV2["kpi
           </span>
           <span className="rounded-pill bg-f-green px-3 py-1 text-supporting font-bold uppercase tracking-[0.08em] text-f-green-ink">{t("hv2.covered.pill")}</span>
         </div>
-        <h2 id="hv2-covered-title" className="mt-4 bg-linear-to-r from-f-green-ink to-ok-solid bg-clip-text font-display text-[34px] font-extrabold leading-[1.05] tracking-[-0.035em] text-transparent sm:text-[40px]">
+        <h2 id="hv2-covered-title" className="mt-4 font-display text-[34px] font-extrabold leading-[1.05] tracking-[-0.035em] text-ink sm:text-[40px]">
           {t("hv2.covered.title")}
         </h2>
         <p className="mt-2 max-w-[42ch] text-pretty text-[15px] leading-snug text-ink-2" data-testid="home-action-title">
@@ -275,20 +268,20 @@ function CoveredCard({ action, kpis }: { action: HomeV2Action; kpis: HomeV2["kpi
           <dl className="mt-4 grid grid-cols-2 gap-3" data-testid="hv2-covered-facts">
             {lowest ? (
               <div className="rounded-tile bg-card/70 px-3 py-2">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{t("hv2.covered.lowest")}</dt>
+                <dt className="text-supporting font-semibold uppercase tracking-[0.06em] text-ink-3">{t("hv2.covered.lowest")}</dt>
                 <dd className="mt-0.5 font-display text-lg font-bold tabular-nums text-ink">{lowest}</dd>
               </div>
             ) : null}
             {room ? (
               <div className="rounded-tile bg-card/70 px-3 py-2">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{t("hv2.covered.room")}</dt>
+                <dt className="text-supporting font-semibold uppercase tracking-[0.06em] text-ink-3">{t("hv2.covered.room")}</dt>
                 <dd className="mt-0.5 font-display text-lg font-bold tabular-nums text-ok-fg">{room}</dd>
               </div>
             ) : null}
           </dl>
         ) : null}
         <div className="mt-auto pt-5">
-          <ButtonLink href="/deals" variant="primary" data-testid="hv2-explore-deals">
+          <ButtonLink href="/deals" data-testid="hv2-explore-deals">
             {t("hv2.covered.cta")}
             <ArrowRightIcon aria-hidden width={14} height={14} />
           </ButtonLink>

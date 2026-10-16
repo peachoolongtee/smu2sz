@@ -558,12 +558,14 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
                   type="button"
                   aria-pressed={on}
                   aria-label={`${m.n}. ${m.events.map((c) => `${c.e.label_short ?? c.e.label} ${c.e.amount_short}`).join(", ")}, ${when(m.day)}`}
+                  // On a phone the markers sit too close to give each a 44 px target: they are a drawing there, and the list under the chart is where each move is read.
+                  {...(phone ? { tabIndex: -1, "aria-hidden": true } : {})}
                   onClick={() => setFocus(on ? null : m.day)}
                   onMouseEnter={() => setHover(m.day)}
                   onMouseLeave={() => setHover(null)}
                   onFocus={() => setHover(m.day)}
                   onBlur={() => setHover(null)}
-                  className={`hit motion-press absolute z-10 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill border-2 font-bold ${phone ? "size-5 text-[10px]" : "size-6 text-[11px]"} leading-none tabular-nums shadow-(--shadow-f) transition-transform duration-(--dur-fast) hover:scale-110 ${fade} ${
+                  className={`hit motion-press absolute z-10 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill border-2 font-bold ${phone ? "pointer-events-none size-5 text-[10px]" : "size-6 text-[11px]"} leading-none tabular-nums shadow-(--shadow-f) transition-transform duration-(--dur-fast) hover:scale-110 ${fade} ${
                     on || openDay === m.day ? (m.neg ? "border-bad-solid bg-bad-solid text-white" : "border-ok-solid bg-ok-solid text-white") : m.neg ? "border-bad-solid bg-card text-bad-fg" : "border-ok-solid bg-card text-ok-fg"
                   }`}
                   style={{ left: m.x, top: m.y, ...fadeStyle }}
@@ -579,6 +581,28 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
       </div>
 
       {captions}
+
+      {/* A phone reads the numbered moves as a list (the markers are too close to touch one by one): the number, what moved, the amount and when. */}
+      {phone && moves.length ? (
+        <details className="group" data-testid="picture-moves-fold">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
+            {t("biz.forecast.col.events")} ({moves.length})
+          </summary>
+        <ol className="mt-1 space-y-1.5 text-supporting text-ink-2" data-testid="picture-moves">
+          {moves.map((m) => (
+            <li key={m.day} className="flex min-h-11 items-center gap-3 rounded-tile bg-subtle px-3 py-1.5" data-testid="picture-move" data-day={m.day}>
+              <span aria-hidden className={`grid size-6 shrink-0 place-items-center rounded-pill border-2 text-supporting font-bold leading-none tabular-nums ${m.neg ? "border-bad-solid text-bad-fg" : "border-ok-solid text-ok-fg"}`}>
+                {m.n}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block break-words font-semibold text-ink">{m.events.map((c) => `${c.e.label_short ?? c.e.label} ${c.e.amount_short}`).join(", ")}</span>
+                <span className="block text-ink-3">{when(m.day)}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+        </details>
+      ) : null}
 
       {/* The same picture as a table, for a screen reader and anyone who prefers numbers: the labelled days, in the server's figures. */}
       <div className="sr-only">

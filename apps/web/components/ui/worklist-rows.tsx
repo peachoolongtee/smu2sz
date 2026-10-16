@@ -162,11 +162,11 @@ export function WorklistRow({
         data-testid="hv2-row-link"
         className={`group motion-press relative grid h-16 grid-cols-[minmax(0,1fr)_auto_24px] content-center items-center gap-x-4 gap-y-0.5 rounded-[16px] px-4 outline-offset-0 focus-visible:outline-2 focus-visible:outline-focus lg:h-14 ${WORKLIST_COLUMNS} ${
           selected ? "bg-brand-50 ring-1 ring-f-purple" : tone === "bad" ? "bg-bad-bg/70 hover:shadow-f" : tone === "warn" ? "bg-f-amber/25 hover:shadow-f" : "bg-card hover:shadow-f hover:ring-1 hover:ring-line"
-        } ${tone === "bad" ? "border-l-4 border-bad-solid" : tone === "warn" ? "border-l-4 border-warn-solid" : ""}`}
+        } ${tone ? "before:absolute before:inset-y-0 before:left-0 before:w-1 before:rounded-l-[16px]" : ""} ${tone === "bad" ? "before:bg-bad-solid" : tone === "warn" ? "before:bg-warn-solid" : ""}`}
       >
         <span className="flex min-w-0 items-baseline gap-2 text-[15px] font-semibold leading-snug text-ink" data-testid="hv2-row-subject">
           {tag ? (
-            <span className={`shrink-0 self-center rounded-pill px-2 py-px text-[11px] font-bold uppercase tracking-[0.06em] ${tone === "bad" ? "bg-f-risk text-white" : "bg-f-amber text-f-amber-ink"}`} data-testid="hv2-row-tag">
+            <span className={`shrink-0 self-center rounded-pill px-2 py-px text-[13px] font-bold uppercase tracking-[0.04em] ${tone === "bad" ? "bg-f-risk text-white" : "bg-f-amber text-f-amber-ink"}`} data-testid="hv2-row-tag">
               {tag}
             </span>
           ) : null}

@@ -102,7 +102,7 @@ export function ToolTile({
       } ${className}`}
       data-testid={testId}
     >
-      {loud ? <span aria-hidden className="dash-dots absolute inset-y-0 right-0 -z-10 w-2/3" /> : null}
+      
       <span className="flex items-start justify-between gap-3">
         <span aria-hidden className={`grid size-10 place-items-center rounded-pill sm:size-11 ${loud ? "bg-white/15 text-f-btn-ink" : "bg-subtle text-ink"}`}>
           <Icon width={20} height={20} />

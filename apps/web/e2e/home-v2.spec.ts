@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { en } from "../lib/dictionary";
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
-import { filledBrand } from "./helpers";
+import { filledBrand, runPlan } from "./helpers";
 import homeDay0 from "../mocks/home_v2/home_day0.json";
 import homeOffer from "../mocks/home_v2/home_offer.json";
 import homeAfter from "../mocks/home_v2/home_after_fund.json";
@@ -11,8 +11,6 @@ import worklistOffer from "../mocks/home_v2/worklist_offer.json";
 import worklistAfter from "../mocks/home_v2/worklist_after_fund.json";
 import evaluated from "../mocks/deals_day0_evaluated.json";
 import focusOfferRec from "../mocks/home_v2/focus_offer.json";
-import exposureRec from "../mocks/home_v2/exposure_offer.json";
-import pictureRec from "../mocks/home_v2/picture_offer.json";
 import customersOffer from "../mocks/home_v2/customers_offer.json";
 import receivablesAfter from "../mocks/home_v2/receivables_after_fund.json";
 
@@ -140,11 +138,16 @@ test("the recommendation: the title, the planned amount, one line that reconcile
   expect(barBox!.y).toBeGreaterThan(costBox!.y + costBox!.height - 1);
   expect(barBox!.y + barBox!.height).toBeLessThanOrEqual(lineBox!.y + 1);
   expect(Math.round(cardBox!.y + cardBox!.height - (actionsBox!.y + actionsBox!.height))).toBeLessThanOrEqual(20); // 16 px padding: the actions are pinned to the bottom
-  await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
+  // The plan is checked and run on Cash & funding: the card's one filled button opens it there, "Compare funding options" is the outlined link beside it.
+  await expect(page.getByTestId("home-check-plan")).toHaveText(en["hv2.action.check"]);
+  await expect(page.getByTestId("home-check-plan")).toHaveAttribute("href", "/cash");
+  await expect(page.getByTestId(`fix-open-${ALERT}`)).toHaveCount(0);
   await expect(page.getByTestId("next-action-alternatives")).toHaveText("Compare funding options");
   await expect(page.getByTestId("next-action-alternatives")).toHaveAttribute("href", a.secondary.href);
   expect(await filledBrand(page)).toBe(1);
-  // The plan's two presses: ask, then run exactly that; cancel returns.
+  // On Cash the plan's two presses are there: ask, then run exactly that; cancel returns.
+  await page.getByTestId("home-check-plan").click();
+  await expect(page).toHaveURL(/\/cash/);
   await page.getByTestId(`fix-open-${ALERT}`).click();
   await expect(page.getByTestId(`fix-confirm-${ALERT}`)).toBeVisible();
   await page.getByTestId(`fix-cancel-${ALERT}`).click();
@@ -206,8 +209,8 @@ test("no funding amount: the figure line is omitted (the title carries the amoun
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
   const said = await page.getByTestId("home-v2").innerText();
   expect(said).not.toMatch(/\b(None|null|undefined|NaN)\b/);
-  // The same with the deal and the customer selected.
-  for (const url of [DEAL, "/?customer=BUYER-1", "/?expand=1"]) {
+  // The same with the customer selected and the forecast open.
+  for (const url of ["/?customer=BUYER-1", "/?expand=1"]) {
     await page.goto(url);
     await expect(page.getByTestId("home-v2")).toBeVisible();
     await expect(page.getByTestId("hv2-stage")).toBeVisible();
@@ -347,19 +350,19 @@ test("on a phone the funding bar and its legend stay inside the card, and in Chi
   expect(await filledBrand(page)).toBe(1);
 });
 
-test("running the plan: no alert, the arranged funding, the quiet recommendation with no filled button, the financing on the worklist", async ({ page }) => {
+test("running the plan: no alert, the covered recommendation with its one button to the deals, the financing on the worklist", async ({ page }) => {
   await open(page, { offer: true });
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0); // the recommendation card is the alert
-  await page.getByTestId(`fix-open-${ALERT}`).click();
-  await page.getByTestId(`fix-${ALERT}`).click();
+  await runPlan(page, ALERT); // the Home's card opens Cash & funding, where the two presses are; the owner is back on the Home after
   const v2 = homeAfter.en.home_v2;
-  await expect(page.getByTestId("home-kpi-funding-value")).toHaveText(v2.kpis.funding.value_display);
-  if (v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
-  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
+  // Nothing needs funding any more: the card is the "You're covered!" celebration (a quiet recommendation with the cash covered), with the lowest cash ahead and the room above the minimum, and one filled button, on to the deals.
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
+  await expect(page.getByTestId("hv2-covered-facts")).toContainText(v2.kpis.lowest_ahead.value_display);
+  await expect(page.getByTestId("hv2-explore-deals")).toHaveAttribute("href", "/deals");
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
-  await expect(page.getByTestId(`fix-open-${ALERT}`)).toHaveCount(0);
-  expect(await filledBrand(page)).toBe(0);
+  await expect(page.getByTestId("home-check-plan")).toHaveCount(0);
+  expect(await filledBrand(page)).toBe(0); // "You're covered" means nothing is urgent: its way to the deals is the outlined button
   await page.getByTestId("home-tab-waiting").click();
   const row = worklistAfter.en.waiting[0];
   const rows = page.getByTestId("home-worklist-row");
@@ -386,8 +389,10 @@ test("Expand opens the full company forecast in place under the cards, with the 
   await expect(forecast).toBeVisible();
   await expect(page.getByRole("heading", { name: "Company cash forecast" })).toBeVisible();
   // It sits under the three cards, which stay.
-  const cards = (await page.getByTestId("hv2-outlook-card").boundingBox())!;
-  expect((await forecast.boundingBox())!.y).toBeGreaterThanOrEqual(cards.y + cards.height);
+  // In page coordinates: the forecast scrolls itself into view, so viewport boxes taken at different moments are not comparable.
+  const pageBottom = (id: string) => page.getByTestId(id).evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY);
+  const pageTop = (id: string) => page.getByTestId(id).evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+  await expect.poll(async () => (await pageTop("hv2-forecast")) - (await pageBottom("hv2-outlook-card")), { message: "the forecast unfolds under the cards" }).toBeGreaterThanOrEqual(-1);
   await expect(page.getByTestId("hv2-action")).toBeVisible();
   // The chart: three legend entries (the red stretches stay red and unlabelled), the current line, the plan dashed grey, the minimum with its band, the lowest point; 300 px tall.
   const legend = page.getByTestId("home-legend");
@@ -396,7 +401,8 @@ test("Expand opens the full company forecast in place under the cards, with the 
   await expect(legend).toContainText("conditional on execution");
   await expect(legend).toContainText("Minimum reserve");
   await expect(page.getByTestId("hv2-below-base")).toBeAttached();
-  await expect(page.getByTestId("home-line-counter")).toHaveClass(/stroke-ink-3/);
+  // FLOW's plan is the better line now: solid, bolder and in the agreed green (it was a dashed grey).
+  await expect(page.getByTestId("home-line-counter")).toHaveClass(/stroke-ok-solid/);
   await expect(page.getByTestId("home-line-plan")).toHaveClass(/stroke-chart-base/);
   await expect(page.getByTestId("hv2-danger")).toBeAttached();
   await expect(page.getByTestId("home-reserve")).toHaveClass(/stroke-chart-reserve/);
@@ -410,23 +416,26 @@ test("Expand opens the full company forecast in place under the cards, with the 
   await expect(windows).toHaveCount(3);
   await page.getByTestId("home-window-120").click();
   await page.getByTestId("home-window-36").click();
-  // The events of the Home read are chips, one per day, and the selected one says its sentence (the server's `explain`); it opens on the lowest point.
+  // The events of the Home read are numbered markers on their line, one per day; one opens its callout with the server's sentence (`explain`), its amount and its words for when.
   const rail = cash.events_rail.filter((e) => e.day >= 0);
-  const days = [...new Set(rail.map((e) => e.day))];
-  const lowestEvent = rail.find((e) => e.day === cash.lowest_day)!;
-  await expect(page.getByTestId(`hv2-event-${cash.lowest_day}`)).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("hv2-event-card")).toHaveAttribute("data-day", String(cash.lowest_day));
-  await expect(page.getByTestId("hv2-event-explain")).toHaveText(lowestEvent.explain);
-  await expect(page.getByTestId("hv2-event-amount")).toHaveText(lowestEvent.amount_short);
-  // Choosing another chip moves the chart's guide and the sentence; a click on the plot moves the chip.
-  const other = rail.find((e) => e.kind === "payroll")!;
-  await page.getByTestId(`hv2-event-${other.day}`).click();
-  await expect(page.getByTestId("hv2-event-explain")).toHaveText(other.explain);
+  const chips = [...new Map(rail.map((e) => [e.day, e])).values()];
+  expect(chips.length).toBeGreaterThan(3);
+  await expect(page.locator('[data-testid^="hv2-marker-"][data-day]')).toHaveCount(chips.length);
+  await expect(page.getByTestId("hv2-marker-callout")).toHaveCount(0);
+  const at = (day: number) => page.locator(`[data-testid^="hv2-marker-"][data-day="${day}"]`);
+  const lowestEvent = chips.find((e) => e.day === cash.lowest_day) ?? chips[0];
+  await at(lowestEvent.day).click();
+  await expect(page.getByTestId("hv2-marker-callout")).toHaveAttribute("data-day", String(lowestEvent.day));
+  await expect(page.getByTestId("hv2-marker-callout")).toContainText(lowestEvent.explain);
+  await expect(page.getByTestId("hv2-marker-callout")).toContainText(lowestEvent.amount_short);
+  // Choosing another marker moves the chart's guide and the callout.
+  const other = chips.find((e) => e.day !== lowestEvent.day && e.kind === "payroll") ?? chips.find((e) => e.day !== lowestEvent.day)!;
+  await at(other.day).click();
+  await expect(page.getByTestId("hv2-marker-callout")).toHaveAttribute("data-day", String(other.day));
+  await expect(page.getByTestId("hv2-marker-callout")).toContainText(other.explain);
   await expect(page.getByTestId("home-chart")).toHaveAttribute("data-day", String(other.day));
-  await expect(page.getByTestId(`hv2-event-${other.day}`)).toHaveAttribute("aria-pressed", "true");
-  expect(days.length).toBeGreaterThan(3);
   await page.getByTestId("home-lowest-point").click();
-  await expect(page.getByTestId(`hv2-event-${cash.lowest_day}`)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("home-chart")).toHaveAttribute("data-day", String(cash.lowest_day));
   expect(chart.lowest_inspector.day_text).toBeTruthy();
   // Close restores the cards and the address; Escape does the same.
   await page.getByTestId("hv2-forecast-close").click();
@@ -472,7 +481,15 @@ test("the worklist as the mockup's table: one alert line, tabs with counts, rows
   await expect(pill).toHaveText(w.needs_you[0].status_text);
   await expect(pill).toHaveAttribute("data-tone", "amber");
   expect(await pill.evaluate((n) => parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(13);
-  expect(await rows.first().locator("a").evaluate((n) => getComputedStyle(n).backgroundColor)).toBe("rgb(255, 255, 255)");
+  // A row the server marks Critical or Caution wears that severity (a red or amber edge, a faint tint, its word as a tag); a normal row is plain white.
+  const sev = w.needs_you[0].severity;
+  const tone = sev === "CRITICAL" ? "bad" : sev === "CAUTION" ? "warn" : null;
+  if (tone) {
+    await expect(rows.first()).toHaveAttribute("data-tone", tone);
+    await expect(rows.first().getByTestId("hv2-row-tag")).toHaveText(en[`hv2.sev.${sev}` as "hv2.sev.CRITICAL"]);
+  } else {
+    expect(await rows.first().locator("a").evaluate((n) => getComputedStyle(n).backgroundColor)).toBe("rgb(255, 255, 255)");
+  }
   await expect(rows.first().getByTestId("home-row-severity")).toHaveAttribute("data-severity", w.needs_you[0].severity);
   await expect(page.getByTestId("home-why-first")).toHaveCount(0);
   await expect(page.getByTestId("home-worklist-all")).toHaveText(/^All deals/);
@@ -557,7 +574,7 @@ test("round four: the worklist is a fixed-column table: the same columns on ever
   await expect(page.getByTestId("hv2-group-heading")).toHaveCount(0);
 });
 
-test("the upcoming cash movements are the rail's nearest events, and the way to the forecast; the footer row leads to the four routes", async ({ page }) => {
+test("the upcoming cash movements are the rail's nearest events, and the way to the forecast; there is no tool-tile footer under the worklist", async ({ page }) => {
   await open(page, { offer: true });
   // The server's `home_v2.upcoming`: the three nearest movements of the books, label, short signed figure, when and the direction.
   const events = homeOffer.en.home_v2.upcoming;
@@ -572,11 +589,10 @@ test("the upcoming cash movements are the rail's nearest events, and the way to 
   }
   await expect(page.getByTestId("home-chart-full")).toHaveAttribute("href", "/cash");
   await expect(page.getByTestId("home-chart-full")).toContainText("Explore company forecast");
-  const foot = page.getByTestId("home-v2-links");
-  for (const [route, word] of [["documents", "Documents"], ["whatif", "What-if terms"], ["capex", "Evaluate a purchase"], ["approvals", "Approvals"]]) {
-    await expect(foot.getByTestId(`hv2-foot-${route}`)).toHaveText(word);
-    await expect(foot.getByTestId(`hv2-foot-${route}`)).toHaveAttribute("href", `/${route}`);
-  }
+  // The owner decided against the deal tool tiles (Home's strip of approvals, sandbox, loans and attach): none is drawn; those routes are the rail's.
+  await expect(page.getByTestId("home-tools")).toHaveCount(0);
+  await expect(page.getByTestId("home-v2-links")).toHaveCount(0);
+  for (const route of ["documents", "whatif", "capex", "approvals"]) await expect(page.getByTestId(`hv2-foot-${route}`)).toHaveCount(0);
 });
 
 test("search narrows the rows already fetched, by the customers' search terms", async ({ page }) => {
@@ -612,25 +628,6 @@ test("day 0 with nothing open: Needs you is empty in words and the customers are
 });
 
 const focusOffer = focusOfferRec as unknown as Record<Lang, { customers: Record<string, FocusView>; deals: Record<string, FocusView> }>;
-const exposure = exposureRec as unknown as Record<Lang, { paths: { key: string; kind: string; label: string; lowest_display?: string; lowest_when?: string; lowest_when_text?: string; limit_text?: string; limit_word?: string }[]; stress: { delay_days: number; paths: Record<string, { lowest_short: string; lowest_when: string; text: string; breach_days_text?: string } | null> } }>;
-interface PicPath {
-  key: string;
-  kind: string;
-  label: string;
-  recommended: boolean;
-  tag_text: string;
-  authority_text?: string;
-  authority_reason_text?: string | null;
-  cost_total_display?: string | null;
-  cost_once_display?: string | null;
-  cost_forward_display?: string | null;
-  cost_basis_text?: string | null;
-  cost_components?: { label: string; display: string }[];
-  reply_text?: string | null;
-  cost_note: string;
-  cost_display: string;
-}
-const pictures = pictureRec as unknown as Record<Lang, { paths: PicPath[] }>;
 interface FocusView {
   name: string;
   figures: { key: string; label: string; value_display: string; note: string; state?: string; state_text?: string }[];
@@ -638,7 +635,6 @@ interface FocusView {
   context: { back: { href: string }; deal: string | null; scenario: string | null };
 }
 const DECISION = worklistOffer.en.needs_you[0].key; // deal:OFF-…
-const SUBJECT = { en: worklistOffer.en.needs_you[0].subject_text, zh: worklistOffer.zh.needs_you[0].subject_text };
 const DEAL = `/?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}`;
 const query = (page: Page) => new URL(page.url()).searchParams;
 
@@ -678,222 +674,65 @@ test("Escape, 'All business' and the band's button clear the selection and the p
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("home-customer-focus")).toHaveCount(0);
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
-  await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
+  await expect(page.getByTestId("home-check-plan")).toBeVisible();
   await page.goto("/?customer=BUYER-1");
   await page.getByTestId("focus-all").click();
   await expect(page).toHaveURL(/\/$/);
   await page.goto("/?customer=BUYER-1");
   await page.getByTestId("home-action-back").click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
+  await expect(page.getByTestId("home-check-plan")).toBeVisible();
 });
 
-test("a decision row opens the deal in place: level 1 the decision, level 2 the consequence; nothing else until it is asked for", async ({ page }) => {
+test("a Home deal row opens that deal on the Deals page with the selection keys and from=home; Back to Home returns", async ({ page }) => {
   await open(page, { offer: true });
-  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
-  await expect(page).toHaveURL(new RegExp(`customer=BUYER-1&decision=${encodeURIComponent(DECISION)}$`));
-  const view = focusOffer.en.deals.none;
-  const d = view.decision!;
-  const pic = pictures.en.paths;
-  const rec = pic.find((p) => p.recommended)!;
-  const asked = pic.find((p) => p.kind === "asked")!;
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  // Round five: the right of the deal card is ONE card, "Cash impact of this deal"; the company's cash card, the outlook and the recommendation leave the deal view.
-  await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-action")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-outlook-card")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
-  await expect(page.getByTestId("focus-all")).toHaveText("Dismiss");
-  await expect(page.getByTestId("hv2-context-stage")).toHaveText(worklistOffer.en.needs_you[0].status_text);
-  await expect(page.getByTestId("hv2-context")).toContainText("Deal context");
-  await expect(page.getByTestId("hv2-context-sentence")).toHaveText(worklistOffer.en.needs_you[0].consequence_text);
-  await expect(page.getByTestId("focus-title")).toHaveText(SUBJECT.en);
-  // Three facts in the server's words (the asked path's `ask_facts`): the invoice value, the requested discount, the requested term; and the breakdown the ask makes of the invoice.
-  const kpiAsked = pictures.en.paths.find((p) => p.kind === "asked") as unknown as { ask_facts: { invoice_value_display: string; requested_discount_display: string; requested_term_text: string }; ask_breakdown: { label: string; amount_display: string; share_text: string }[] };
-  await expect(page.getByTestId("hv2-deal-kpi-invoice")).toContainText("Invoice value");
-  await expect(page.getByTestId("hv2-deal-kpi-invoice")).toContainText(kpiAsked.ask_facts.invoice_value_display);
-  await expect(page.getByTestId("hv2-deal-kpi-discount")).toContainText(kpiAsked.ask_facts.requested_discount_display);
-  await expect(page.getByTestId("hv2-deal-kpi-term")).toContainText(kpiAsked.ask_facts.requested_term_text);
-  // The bar reads invoice, discount, net: the server's rows (net first) in the reverse order.
-  for (const [i, r] of [...kpiAsked.ask_breakdown].reverse().entries()) {
-    await expect(page.getByTestId(`hv2-deal-breakdown-row-${i}`)).toContainText(r.label);
-    await expect(page.getByTestId(`hv2-deal-breakdown-amount-${i}`)).toHaveText(r.amount_display);
-    await expect(page.getByTestId(`hv2-deal-breakdown-share-${i}`)).toHaveText(r.share_text);
-  }
-  // Round four: the 99 / 1 donut is a segmented bar (invoice, discount, net), the segments sized by the rows' own amounts; no donut here.
-  await expect(page.getByTestId("hv2-deal-breakdown-donut")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-deal-breakdown-bar")).toBeVisible();
-  await expect(page.getByTestId("hv2-deal-breakdown-seg-0")).toBeVisible();
-  await expect(page.getByTestId("hv2-deal-next")).toContainText(d.eyebrow);
-  await expect(page.getByTestId("focus-announce")).toHaveText(SUBJECT.en);
-  await expect(page.getByTestId("hv2-customer-line")).toContainText(view.name);
-  await expect(page.getByTestId("focus-open-customer")).toHaveAttribute("href", /\/customers\/BUYER-1\?decision=/);
-  await expect(page.getByTestId("deal-ask")).toContainText("early settlement");
-  await expect(page.getByTestId("home-why-first")).toHaveText(worklistOffer.en.needs_you[0].why_first_text!);
-  // FLOW's recommendation with its own sentence and its cost; the request's cost with its basis.
-  await expect(page.getByTestId("deal-recommends")).toHaveText(`FLOW recommends ${rec.label}`);
-  await expect(page.getByTestId("hv2-recommendation")).toContainText(rec.reply_text!);
-  await expect(page.getByTestId("queue-cost")).toContainText(rec.cost_once_display!);
-  await expect(page.getByTestId("deal-request-cost")).toContainText(asked.cost_forward_display!);
-  await expect(page.getByTestId("deal-request-cost")).toContainText(asked.cost_note);
-  // The one filled button on the page is the deal's (the same control Deals uses); the others are outlined; the health band's too.
-  await expect(page.getByTestId("deal-primary")).toHaveText(d.primary.label);
-  await expect(page.getByTestId("deal-primary")).toHaveAttribute("href", d.primary.href);
-  expect(await filledBrand(page)).toBe(1);
-  await expect(page.getByTestId("hv2-band")).toBeVisible();
-  await expect(page.getByTestId("home-action-back")).toHaveText(`Review ${homeOffer.en.home_v2.kpis.funding.value_display} funding plan`);
-  await expect(page.getByTestId(`fix-open-${ALERT}`)).toHaveCount(0);
-  await expect(page.getByTestId("hv2-compare-toggle")).toHaveText("Compare responses");
-  await expect(page.getByTestId("hv2-chart-toggle")).toHaveText("Cash impact");
-  await expect(page.getByTestId("deal-open")).toHaveAttribute("href", /\/deals\?customer=BUYER-1&decision=/);
-  // Level 2 (round three): closed until the Cash impact toggle opens it; the card is the facts, the donut, the recommendation and the one commit area.
-  await expect(page.getByText("Payment timing assumption")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-chart-toggle")).toHaveAttribute("aria-expanded", "false");
-  await expect(page.getByTestId("deal-text")).toHaveCount(0); // the second, repeating sentence is gone: the ask sentence only
-  expect((await page.getByTestId("home-deal-focus").boundingBox())!.height).toBeLessThanOrEqual(560);
-  await page.getByTestId("hv2-chart-toggle").click();
-  await expect(page.getByText("Payment timing assumption")).toBeVisible();
-  await expect(page.getByText("Changes the lowest projected cash below and the cash chart.")).toBeVisible();
-  const table = page.getByTestId("hv2-consequence-table");
-  await expect(table.locator("tbody tr")).toHaveCount(4);
-  const ex = exposure.en.paths;
-  await expect(table.getByTestId("hv2-consequence-row-lowest")).toContainText(ex.find((p) => p.kind === "asked")!.lowest_display!);
-  await expect(table.getByTestId("hv2-consequence-row-lowest")).toContainText(ex.find((p) => p.key === rec.key)!.lowest_display!);
-  await expect(table.getByTestId("hv2-consequence-row-reserve")).toContainText(ex.find((p) => p.kind === "asked")!.lowest_when_text!);
-  await expect(table.getByTestId("hv2-consequence-row-limits")).toContainText(/exceeded/i);
-  await expect(table.getByTestId("hv2-consequence-row-limits")).toContainText(/within/i);
-  await expect(table.getByTestId("hv2-consequence-row-approval")).toContainText(asked.authority_text!);
-  await expect(table.getByTestId("hv2-consequence-row-approval")).toContainText(rec.authority_text!);
-  // The full table of responses is still behind its own toggle; Cash impact opens the consequence only (the deal's chart is the cash-impact card, always there).
-  await expect(page.getByTestId("hv2-compare")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
-  await expect(page.getByTestId("home-chart")).toHaveCount(1);
-  await page.getByTestId("hv2-chart-toggle").click();
-  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(1);
-  await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
+  const row = page.getByTestId("home-worklist-row").first();
+  await expect(row.getByRole("link")).toHaveAttribute("href", `/deals?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}&from=home`);
+  await row.getByRole("link").click();
+  // The deal is on the Deals page, never in the Home: the address carries the selection keys and the origin.
+  await expect(page).toHaveURL(new RegExp(`/deals\\?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}&from=home$`));
+  expect(query(page).get("from")).toBe("home");
+  await expect(page.getByTestId("deal-page")).toBeVisible();
+  await expect(page.getByTestId("home-deal-focus")).toHaveCount(0);
+  await expect(page.getByTestId("home-v2")).toHaveCount(0);
+  // The way back is the server's words ("Back to Home", from `context.back`), and it returns to the Home overview.
+  const back = page.getByTestId("queue-back");
+  await expect(back).toContainText("Back to Home");
+  await expect(back).toHaveAttribute("href", "/");
+  // "All deals" returns to the list of deals, still opened from the Home; the Home's way back stays.
+  await page.getByTestId("deal-back-all").click();
+  await expect(page.getByTestId("deals-list-view")).toBeVisible();
+  await expect(page.getByTestId("queue-back")).toContainText("Back to Home");
+  await page.getByTestId("queue-back").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId("home-v2")).toBeVisible();
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
 });
 
-test("Compare responses expands the full table and FLOW's reasons in place, and again collapses them; focus stays on the toggle and the page does not jump", async ({ page }) => {
+test("an older Home address that names a deal is opened on the Deals page; the Home keeps no deal view", async ({ page }) => {
   await open(page, { offer: true });
   await page.goto(DEAL);
-  const toggle = page.getByTestId("hv2-compare-toggle");
-  await expect(toggle).toHaveAttribute("aria-expanded", "false");
-  await toggle.scrollIntoViewIfNeeded();
-  const before = await page.evaluate(() => window.scrollY);
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  await expect(toggle).toBeFocused();
-  expect(await page.evaluate(() => window.scrollY)).toBe(before);
-  await expect(page).toHaveURL(/compare=1/);
-  const pic = pictures.en.paths;
-  const table = page.getByTestId("hv2-compare-table-table");
-  await expect(table.locator("thead th")).toHaveCount(pic.length + 1);
-  for (const p of pic) await expect(table.locator("thead")).toContainText(p.label);
-  // The economic impact is each path's own words with their basis: the request on two lines, a reply's total with its basis, B's components.
-  const asked = pic.find((p) => p.kind === "asked")!;
-  const a = pic.find((p) => p.recommended)!;
-  const b = pic.find((p) => p.kind === "reply" && !p.recommended)!;
-  const econ = table.getByTestId("hv2-compare-table-row-economics");
-  await expect(econ).toContainText(asked.cost_forward_display!);
-  await expect(econ).toContainText(asked.cost_once_display!);
-  await expect(econ).toContainText(asked.cost_basis_text!);
-  await expect(econ).toContainText(a.cost_total_display!);
-  await expect(econ).toContainText(a.cost_basis_text!);
-  for (const c of b.cost_components ?? []) {
-    await expect(econ).toContainText(c.label);
-    await expect(econ).toContainText(c.display);
-  }
-  // Option B's header carries its authority evidence; the why lines are the server's words.
-  await expect(table.locator("thead")).toContainText(b.authority_reason_text!);
-  const why = page.getByTestId("hv2-why");
-  await expect(why).toContainText(`Why FLOW recommends ${a.label}`);
-  await expect(why).toContainText(a.authority_reason_text!);
-  await expect(why).toContainText(b.authority_reason_text!);
-  // The limit and the approval are two rows, so a reply can be within limits and still need approval.
-  await expect(table.getByTestId("hv2-compare-table-row-limits")).toBeVisible();
-  await expect(table.getByTestId("hv2-compare-table-row-approval")).toContainText(b.authority_text!);
-  expect(await filledBrand(page)).toBe(1);
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-expanded", "false");
-  await expect(page.getByTestId("hv2-compare")).toHaveCount(0);
-  await expect(page).not.toHaveURL(/compare=1/);
-  await expect(toggle).toBeFocused();
+  await expect(page).toHaveURL(new RegExp(`/deals\\?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}&from=home$`));
+  await expect(page.getByTestId("deal-page")).toBeVisible();
+  // None of the Home's former deal view remains in the Home.
+  await page.goto("/?customer=BUYER-1");
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+  for (const id of ["home-deal-focus", "hv2-deal-chart", "hv2-compare-toggle", "hv2-chart-toggle", "deal-open"]) await expect(page.getByTestId(id)).toHaveCount(0);
+  await expect(page.getByTestId("hv2-context")).toContainText("Customer context");
+  await expect(page.getByTestId("hv2-context")).not.toContainText("Deal context");
 });
 
-test("the deal's chart is the one card beside the deal card, always open: the option solid, the request grey with its stretches under the reserve in red, a same-day inspector; Cash impact opens only the consequence table", async ({ page }) => {
-  await open(page, { offer: true });
-  await page.goto(DEAL);
-  const chart = page.getByTestId("hv2-deal-chart");
-  await expect(chart).toBeVisible();
-  const pic = pictures.en.paths;
-  await expect(chart.getByTestId("home-line-option")).toHaveClass(/stroke-brand-600/);
-  await expect(chart.getByTestId("home-line-request")).toHaveClass(/stroke-ink-3/);
-  await expect(chart.getByTestId("hv2-below-request")).toBeAttached();
-  await expect(chart.getByTestId("home-legend")).toContainText(pic.find((p) => p.kind === "asked")!.label);
-  await expect(chart.getByTestId("home-legend")).toContainText(pic.find((p) => p.recommended)!.label);
-  // The window control is the company chart's (36 / 60 / 120 when the horizon allows).
-  await expect(chart.getByRole("tablist", { name: "Days shown" })).toBeVisible();
-  // The card is chart and words: the two lowest points are named under it (no same-day strip in a column this narrow).
-  await expect(chart.getByTestId("hv2-inspector")).toHaveCount(0);
-  await expect(chart.getByTestId("hv2-deal-low-asked")).toBeVisible();
-  // Cash impact opens the consequence table and nothing else: the chart is neither added nor removed.
-  const toggle = page.getByTestId("hv2-chart-toggle");
-  await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  await expect(page).toHaveURL(/chart=1/);
-  await expect(page.getByTestId("hv2-consequence-table")).toBeVisible();
-  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(1);
-  await toggle.click();
-  await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(1);
-  await expect(page).not.toHaveURL(/chart=1/);
-});
-
-test("the payment-timing assumption switches the rows, the table and the chart from the one read, and the address keeps it", async ({ page }) => {
-  await open(page, { offer: true });
-  await page.goto(DEAL + "&chart=1");
-  const panel = page.getByTestId("deal-scenario-panel");
-  await expect(panel).toHaveAttribute("data-scenario", "current");
-  const ex = exposure.en;
-  const asked = pictures.en.paths.find((p) => p.kind === "asked")!;
-  const rec = pictures.en.paths.find((p) => p.recommended)!;
-  await expect(page.getByTestId("deal-scenario-current")).toHaveText("Expected payments");
-  await expect(page.getByTestId("deal-scenario-late")).toHaveText(`Foshan ${ex.stress.delay_days} days late`);
-  await page.getByTestId("deal-scenario-late").click();
-  await expect(page).toHaveURL(/timing=late/);
-  await expect(panel).toHaveAttribute("data-scenario", "late");
-  const s = ex.stress.paths[asked.key]!;
-  await expect(panel.getByTestId("hv2-consequence-row-lowest")).toContainText(s.lowest_short);
-  await expect(panel.getByTestId("hv2-consequence-row-lowest")).toContainText(s.lowest_when);
-  await expect(panel.getByTestId("hv2-consequence-row-reserve")).toContainText(s.breach_days_text ?? s.text);
-  await expect(panel.getByTestId("hv2-consequence-row-reserve")).toContainText(ex.stress.paths[rec.key]!.breach_days_text ?? ex.stress.paths[rec.key]!.text);
-  // The same assumption in the full table and in the chart's subtitle.
-  await page.getByTestId("hv2-compare-toggle").click();
-  await expect(page.getByTestId("hv2-compare-table-row-lowest")).toContainText(s.lowest_short);
-  await expect(page).toHaveURL(/compare=1&chart=1&timing=late/);
-  await page.reload();
-  await expect(page.getByTestId("deal-scenario-late")).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByTestId("hv2-compare")).toBeVisible();
-  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
-  await page.getByTestId("deal-scenario-current").click();
-  await expect(page).not.toHaveURL(/timing=/);
-  await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "current");
-});
-
-test("back and forward restore the selections, a reload keeps them, and a decision that is not open says so", async ({ page }) => {
+test("back and forward restore the selections, a reload keeps them, and a deal row leaves the Home for the Deals page", async ({ page }) => {
   await open(page, { offer: true });
   await page.getByTestId("home-tab-customers").click();
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await page.getByTestId("hv2-focus-rows-fold").locator("> summary").click();
+  // A deal in the customer's open rows is opened on the Deals page, with the origin.
   await page.getByTestId("focus-rows").getByRole("link").click();
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  await page.getByTestId("hv2-chart-toggle").click();
-  await page.getByTestId("deal-scenario-late").click();
-  await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "late");
-  // The assumption replaced the entry (no history of its own): back goes to the customer, back again to the company.
+  await expect(page).toHaveURL(/\/deals\?.*decision=.*&from=home/);
+  await expect(page.getByTestId("deal-page")).toBeVisible();
+  // Back goes to the customer, back again to the company.
   await page.goBack();
   await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   expect(query(page).get("decision")).toBeNull();
@@ -902,14 +741,8 @@ test("back and forward restore the selections, a reload keeps them, and a decisi
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
   await page.goForward();
   await expect(page.getByTestId("home-customer-focus")).toBeVisible();
-  await page.goForward();
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "late");
   await page.reload();
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  await expect(page.getByTestId("deal-scenario-late")).toHaveAttribute("aria-selected", "true");
-  await page.goto("/?customer=BUYER-2&decision=deal%3AOFF-nope");
-  await expect(page.getByTestId("home-deal-gone")).toBeVisible();
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => /customer|decision|scenario|compare/i.test(k)))).toEqual([]);
 });
 
@@ -918,7 +751,7 @@ test("nothing in Business mode is an id, a code or a day number; every figure an
   const prose = await proseOf(page);
   expect(prose).not.toMatch(/\bday\s+\d/i);
   expect(prose).not.toMatch(/BUYER-\d|OFF-[0-9a-f]|ALERT-|deal:|NEEDS_YOU|CRITICAL|PROPOSED/);
-  for (const url of ["/", DEAL + "&compare=1&chart=1"]) {
+  for (const url of ["/", "/?customer=BUYER-1", "/?expand=1"]) {
     await page.goto(url);
     await expect(page.getByTestId("home-v2")).toBeVisible();
     const small = await page.evaluate(() => {
@@ -956,7 +789,8 @@ test("zh parity: the cards, the recommendation, the worklist, the forecast and t
   await expect(page.getByTestId("hv2-outlook-expand")).toHaveText("展开");
   await page.getByTestId("hv2-outlook-expand").click();
   const lowestEvent = homeOffer.zh.cash.events_rail.find((e) => e.day === homeOffer.zh.cash.lowest_day)!;
-  await expect(page.getByTestId("hv2-event-explain")).toHaveText(lowestEvent.explain);
+  await page.locator(`[data-testid^="hv2-marker-"][data-day="${lowestEvent.day}"]`).click();
+  await expect(page.getByTestId("hv2-marker-callout")).toContainText(lowestEvent.explain);
   await expect(page.getByTestId("home-legend")).toContainText("取决于方案执行");
   await expect(page.getByTestId("hv2-forecast-close")).toHaveText("收起");
   await page.getByTestId("hv2-forecast-close").click();
@@ -968,17 +802,12 @@ test("zh parity: the cards, the recommendation, the worklist, the forecast and t
   await expect(page.getByTestId("home-tab-all")).toContainText("全部");
   await expect(page.getByTestId("home-tab-waiting")).toContainText("等待中");
   await expect(page.getByTestId("hv2-upcoming")).toContainText("即将发生的现金变动");
-  await expect(page.getByTestId("hv2-foot-documents")).toHaveText("文件");
-  await page.goto(DEAL + "&compare=1&chart=1");
-  const pic = pictures.zh.paths;
-  await expect(page.getByTestId("focus-title")).toHaveText(SUBJECT.zh);
-  await expect(page.getByTestId("focus-all")).toHaveText("关闭");
-  await expect(page.getByTestId("hv2-context")).toContainText("交易背景");
-  await expect(page.getByTestId("deal-primary")).toHaveText(focusOffer.zh.deals.none.decision!.primary.label);
-  await expect(page.getByTestId("hv2-compare-toggle")).toHaveText("比较各个答复");
-  await expect(page.getByTestId("deal-recommends")).toHaveText(`FLOW 建议${pic.find((p) => p.recommended)!.label}`);
-  await expect(page.getByTestId("hv2-compare-table-table").locator("thead")).toContainText(pic.find((p) => p.kind === "reply" && !p.recommended)!.authority_reason_text!);
-  await expect(page.getByTestId("deal-scenario-late")).toContainText("晚付");
+  await expect(page.getByTestId("hv2-foot-documents")).toHaveCount(0); // no tool tiles
+  // A deal row opens on the Deals page, whose way back is the server's words in Chinese.
+  await expect(page.getByTestId("home-worklist-row").first().getByRole("link")).toHaveAttribute("href", /\/deals\?customer=BUYER-1&decision=.*&from=home$/);
+  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
+  await expect(page.getByTestId("deal-page")).toBeVisible();
+  await expect(page.getByTestId("queue-back")).toContainText("返回首页");
   await page.goto("/?customer=BUYER-1");
   const customer = focusOffer.zh.customers["BUYER-1"];
   await expect(page.getByTestId("focus-title")).toHaveText(customer.name);
@@ -1000,8 +829,8 @@ test("phone: the cards stack with the recommendation's primary in the first view
   for (const [w, h] of [[390, 844], [375, 812]] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.goto("/");
-    await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
-    const primary = (await page.getByTestId(`fix-open-${ALERT}`).boundingBox())!;
+    await expect(page.getByTestId("home-check-plan")).toBeVisible();
+    const primary = (await page.getByTestId("home-check-plan").boundingBox())!;
     const tabBar = (await page.getByTestId("tab-bar").boundingBox())!;
     expect(primary.y + primary.height, `inside the first ${h} px`).toBeLessThanOrEqual(h);
     expect(primary.y + primary.height, "and not behind the tab bar").toBeLessThanOrEqual(tabBar.y);
@@ -1022,33 +851,24 @@ test("phone: the cards stack with the recommendation's primary in the first view
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
 });
 
-test("phone: a row opens the deal at the top, under the one-row band; the table stacks; Dismiss restores the cards; nothing scrolls sideways", async ({ page }) => {
+test("phone: a deal row opens the deal on the Deals page; Back to Home returns to the cards; nothing scrolls sideways", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page, { offer: true });
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  await expect(page).toHaveURL(/decision=/);
-  const band = (await page.getByTestId("home-v2-action").boundingBox())!;
-  const panel = (await page.getByTestId("home-deal-focus").boundingBox())!;
-  expect(panel.y).toBeGreaterThan(band.y);
-  await expect(page.getByTestId("deal-primary")).toBeVisible();
-  expect(await filledBrand(page)).toBe(1);
-  await page.getByTestId("hv2-compare-toggle").click();
-  await expect(page.getByTestId("hv2-compare-table-stack")).toBeVisible();
-  await expect(page.getByTestId("hv2-compare-table-scroll")).toBeHidden();
-  await page.getByTestId("hv2-chart-toggle").click();
-  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
+  await expect(page.getByTestId("deal-page")).toBeVisible();
+  await expect(page).toHaveURL(/\/deals\?.*decision=.*&from=home/);
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
-  await page.getByTestId("focus-all").click();
+  await expect(page.getByTestId("queue-back")).toContainText("Back to Home");
+  await page.getByTestId("queue-back").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
 });
 
 test("a customer with a financed invoice: the card shows the net after repayment in the server's word, the breakdown with its shares and the one filled button View invoice", async ({ page }) => {
   await open(page, { offer: true });
-  await page.getByTestId(`fix-open-${ALERT}`).click();
-  await page.getByTestId(`fix-${ALERT}`).click();
-  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
+  await runPlan(page, ALERT);
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
   await page.goto("/?customer=BUYER-1");
   const row = receivablesAfter.en.rows[0] as unknown as { receivable_id: string; net_after_repayment_display: string; collection_due_text: string; face_display: string; breakdown: { label: string; amount_display: string; share_text: string }[] };
   expect(row.net_after_repayment_display).toMatch(/^about /);
@@ -1068,7 +888,7 @@ test("a customer with a financed invoice: the card shows the net after repayment
   await expect(view).toHaveAttribute("href", `/receivables?invoice=${row.receivable_id}`);
   // One filled button in the state: the card's (the band above is outlined).
   expect(await filledBrand(page)).toBe(1);
-  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet"); // nothing of the company's waits: the quiet card, no band
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered"); // nothing of the company's waits: the covered card (its way to the deals is outlined), no band
 });
 
 test("phone: the collection state, a customer's row opens its card and its context under the worklist, in one column", async ({ page }) => {
@@ -1085,53 +905,42 @@ test("phone: the collection state, a customer's row opens its card and its conte
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
 });
 
-test("1280: the table keeps its columns and scrolls before it crushes; the page does not scroll sideways", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 800 });
+test("a selected customer: Dismiss and Escape restore the overview and clear the address; the context panel replaces the upcoming movements and the cards come back", async ({ page }) => {
   await open(page, { offer: true });
-  await page.goto(DEAL + "&compare=1");
-  await expect(page.getByTestId("hv2-compare-table-table")).toBeVisible();
-  const scroll = page.getByTestId("hv2-compare-table-scroll");
-  const dims = await scroll.evaluate((el) => ({ sw: el.scrollWidth, cw: el.clientWidth }));
-  expect(dims.sw).toBeGreaterThanOrEqual(600);
-  expect(await overflowX(page)).toBeLessThanOrEqual(0);
-  expect(await filledBrand(page)).toBe(1);
-});
-
-test("a selected row: Dismiss and Escape restore the overview and clear the address; the context panel replaces the upcoming movements and the cards come back", async ({ page }) => {
-  await open(page, { offer: true });
+  await page.getByTestId("home-tab-customers").click();
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("hv2-context")).toBeVisible();
   await expect(page.getByTestId("hv2-upcoming")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0); // a deal: the deal card and its one cash-impact card
-  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible(); // a customer: the customer card beside the company's cash card
   await page.getByTestId("focus-all").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("hv2-context")).toHaveCount(0);
   await expect(page.getByTestId("hv2-upcoming")).toBeVisible();
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
-  await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
-  await page.goto(DEAL);
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await expect(page.getByTestId("home-check-plan")).toBeVisible();
+  await page.goto("/?customer=BUYER-1");
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
   // With the forecast open, Escape closes it first; a second Escape clears a selection.
-  await page.goto(DEAL + "&expand=1");
+  await page.goto("/?customer=BUYER-1&expand=1");
   await expect(page.getByTestId("hv2-forecast")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("hv2-forecast")).toHaveCount(0);
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByTestId("home-deal-focus")).toHaveCount(0);
-  // The context panel: the stage as the row's own pill, Customer profile, and the evidence fold that opens on the deal's own sentence.
-  await page.goto(DEAL);
+  await expect(page.getByTestId("home-customer-focus")).toHaveCount(0);
+  // The context panel: the stage as the customer's own pill, Customer profile, and the evidence fold with the overview's own sentence.
+  await page.goto("/?customer=BUYER-1");
   const ctx = page.getByTestId("hv2-context");
+  await expect(ctx).toContainText("Customer context");
   await expect(ctx.getByTestId("focus-open-customer")).toHaveText("Customer profile");
   const fold = page.getByTestId("hv2-context-evidence");
   await expect(fold).toContainText("Agreement & supporting evidence");
   await expect(page.getByTestId("hv2-context-evidence-text")).toBeHidden();
   await fold.locator("> summary").click();
-  await expect(page.getByTestId("hv2-context-evidence-text")).toContainText("early settlement");
+  await expect(page.getByTestId("hv2-context-evidence-text")).not.toBeEmpty();
 });
 
 test("reduced motion: a selection arrives without an animation", async ({ page }) => {
@@ -1145,9 +954,9 @@ test("reduced motion: a selection arrives without an animation", async ({ page }
   expect(name === "none" || ms <= 1).toBe(true);
 });
 
-test("accessibility: no axe violations on the default Home, expanded, with the customer and with the deal open (compared, with its chart), at 1440 and at 390", async ({ page }) => {
+test("accessibility: no axe violations on the default Home, expanded, and with the customer, at 1440 and at 390", async ({ page }) => {
   await open(page, { offer: true });
-  for (const url of ["/", "/?expand=1", "/?customer=BUYER-1", `${DEAL}&compare=1&chart=1`]) {
+  for (const url of ["/", "/?expand=1", "/?customer=BUYER-1"]) {
     await page.goto(url);
     await expect(page.getByTestId("home-v2")).toBeVisible();
     await expect(page.getByTestId("deal-working")).toHaveCount(0);
@@ -1199,13 +1008,15 @@ test("the page is fluid: with the rail collapsed the cards fill the width to 168
 
 // ---------------------------------------------------------------- round two: sizes, selection, the ways back
 
-test("round four sizes at 1440: the three cards are 300 px tall at most (the tallest decides), padded 16 px, titles 16 px, figures 32 px and the planned amount 36 px; rows 56 px and 44 px; nothing wraps to a third line", async ({ page }) => {
+// The cash card carries the funding ring ("Where your cash comes from"): the three cards are 360 px tall at most (the tallest decides).
+const CARD_MAX = 360;
+test("round four sizes at 1440: the three cards are 360 px tall at most (the tallest decides), padded 16 px, titles 16 px, figures 32 px and the planned amount 36 px; rows 56 px and 44 px; nothing wraps to a third line", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await open(page, { offer: true });
   const ids = ["hv2-cash-card", "hv2-action", "hv2-outlook-card"];
   for (const id of ids) {
     const box = (await page.getByTestId(id).boundingBox())!;
-    expect(box.height, `${id} height`).toBeLessThanOrEqual(300);
+    expect(box.height, `${id} height`).toBeLessThanOrEqual(CARD_MAX);
     expect(await page.getByTestId(id).evaluate((el) => getComputedStyle(el).paddingTop), `${id} padding`).toBe("16px");
   }
   const px = (id: string) => page.getByTestId(id).evaluate((el) => getComputedStyle(el).fontSize);
@@ -1220,31 +1031,35 @@ test("round four sizes at 1440: the three cards are 300 px tall at most (the tal
   expect(await px("hv2-summary")).toBe("15px");
   // The worklist rows are 56 px (fixed) and the upcoming movements 44 px.
   for (const r of await page.getByTestId("home-worklist-row").all()) expect(Math.round((await r.boundingBox())!.height)).toBe(56);
-  expect(Math.round((await page.getByTestId("hv2-upcoming-row").first().boundingBox())!.height)).toBe(44);
+  expect(Math.round((await page.getByTestId("hv2-upcoming-row").first().boundingBox())!.height)).toBe(39); // compact rows (min-h-9 and 4 px of air)
   // The middle card's order: the eyebrow with the Planned pill, the headline, the amount with the cost at its right, the consequence, the funding bar, the approval line, the actions.
   const order = await Promise.all(["home-action-eyebrow", "home-action-title", "home-kpi-funding-value", "hv2-action-facts", "home-action-text", "hv2-funding-row", "hv2-approval", "home-attention-run"].map(async (id) => (await page.getByTestId(id).boundingBox())!.y));
   expect([...order].sort((x, y) => x - y)).toEqual(order);
-  // No text block of the three cards is more than two lines (the headline and the one muted line are one), at 1440 and at 1280.
+  // No text block of the three cards is more than two lines at 1440; at 1280 the recommendation's consequence sentence may take a third line, but nothing is clipped or overlaps.
   for (const width of [1440, 1280]) {
     await page.setViewportSize({ width, height: 900 });
-    const lines = await page.evaluate((cards) => {
+    const lines = await page.evaluate(([cards, most]) => {
       const out: string[] = [];
       for (const id of cards) {
         for (const el of Array.from(document.querySelectorAll(`[data-testid="${id}"] p, [data-testid="${id}"] h2`))) {
           const style = getComputedStyle(el);
           const lh = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.3;
           const rows = Math.round(el.getBoundingClientRect().height / lh);
-          if (rows > 2 && (el.textContent ?? "").trim()) out.push(`${id}: ${rows} lines: ${(el.textContent ?? "").slice(0, 40)}`);
+          if (rows > (most as number) && (el.textContent ?? "").trim()) out.push(`${id}: ${rows} lines: ${(el.textContent ?? "").slice(0, 40)}`);
         }
       }
       return out;
-    }, ids);
+    }, [ids, width === 1280 ? 3 : 2] as const);
     expect(lines, `${width}`).toEqual([]);
-    for (const id of ids) expect((await page.getByTestId(id).boundingBox())!.height, `${id} at ${width}`).toBeLessThanOrEqual(300);
+    for (const id of ids) {
+      const clipped = await page.getByTestId(id).evaluate((el) => el.scrollHeight - el.clientHeight);
+      expect(clipped, `${id} clips nothing at ${width}`).toBeLessThanOrEqual(1);
+    }
+    for (const id of ids) expect((await page.getByTestId(id).boundingBox())!.height, `${id} at ${width}`).toBeLessThanOrEqual(CARD_MAX);
   }
 });
 
-test("every worklist row carries a chevron (quiet, ink on hover and focus, filled on the selected row); hover never changes the cards; a click or Enter selects", async ({ page }) => {
+test("every worklist row carries a chevron (quiet, ink on hover and focus, filled on the selected row); hover never changes the cards; a click or Enter on a customer selects it, on a deal opens it on Deals", async ({ page }) => {
   await open(page, { offer: true });
   const first = page.getByTestId("home-worklist-row").first();
   const link = first.getByRole("link");
@@ -1270,110 +1085,66 @@ test("every worklist row carries a chevron (quiet, ink on hover and focus, fille
   await expect(link).toBeFocused();
   await expect.poll(() => chevron.evaluate((el) => getComputedStyle(el).color)).not.toBe(quiet);
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/decision=/);
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  // The selected row's chevron is filled (an ink disc).
-  const selected = page.getByTestId("home-worklist-row").first().getByTestId("row-chevron");
+  // A deal row opens its deal on the Deals page.
+  await expect(page).toHaveURL(/\/deals\?.*decision=.*&from=home/);
+  await expect(page.getByTestId("deal-page")).toBeVisible();
+  await page.goBack();
+  // A customer row is selected in place; the selected row's chevron is filled (an ink disc).
+  await page.getByTestId("home-tab-customers").click();
+  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+  await page.getByTestId("home-tab-customers").click();
+  const selected = page.getByTestId("home-worklist-panel").getByTestId("home-worklist-row").first().getByTestId("row-chevron");
   await expect(selected).toHaveAttribute("data-selected", "true");
   expect(await selected.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
 });
 
-test("selecting a row transforms the cards: the company line, the deal's card, the one cash-impact card with the deal's own paths, the context panel; the three ways back and the browser's Back restore the overview", async ({ page }) => {
+test("selecting a customer transforms the cards: the company line, the customer card beside the cash card, the context panel; the three ways back and the browser's Back restore the overview", async ({ page }) => {
   await open(page, { offer: true });
+  await page.getByTestId("home-tab-customers").click();
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "sel");
-  await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
   await expect(page.getByTestId("hv2-action")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-outlook-card")).toHaveCount(0);
   // The company line: the cash and the minimum reserve in the server's words, and the way to the plan with its amount.
   const cash = homeOffer.en.home_v2.kpis.cash_available;
   const band = page.getByTestId("hv2-band");
   await expect(band).toContainText(cash.value_display);
   await expect(band).toContainText(cash.buffer.min_display);
   await expect(page.getByTestId("home-action-back")).toHaveText(`Review ${homeOffer.en.home_v2.kpis.funding.value_display} funding plan`);
-  // The deal's card and the context panel; ONE card beside the deal card, "Cash impact of this deal": the chart, the two lowest points named in the server's words (the recommended in purple) and the quiet line.
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
   await expect(page.getByTestId("hv2-context")).toBeVisible();
-  const asked = pictures.en.paths.find((p) => p.kind === "asked")! as unknown as { label: string; lowest_short: string; lowest_when: string };
-  const rec = pictures.en.paths.find((p) => p.recommended)! as unknown as { label: string; lowest_short: string; lowest_when: string };
-  const card = page.getByTestId("hv2-deal-chart");
-  await expect(card.getByRole("heading", { name: "Cash impact of this deal" })).toBeVisible();
-  await expect(card.getByTestId("hv2-deal-low-asked")).toHaveText(`${asked.label} ${asked.lowest_short} ${asked.lowest_when}`);
-  await expect(card.getByTestId("hv2-deal-low-rec")).toHaveText(`${rec.label} ${rec.lowest_short} ${rec.lowest_when}`);
-  await expect(card.getByTestId("hv2-deal-low-rec")).toHaveClass(/text-f-purple-ink/);
-  await expect(card.getByTestId("hv2-foot-separate")).toHaveText("Company cash stays separate from selected deals.");
-  await expect(page.getByTestId("hv2-foot-separate")).toHaveCount(1);
-  // The deal card and this card share one height (the taller decides, 600 px at most) and sit side by side.
-  const [dealBox, cardBox] = await Promise.all([page.getByTestId("home-deal-focus").boundingBox(), card.boundingBox()]);
-  expect(Math.abs(dealBox!.height - cardBox!.height)).toBeLessThan(2);
-  expect(cardBox!.height).toBeLessThanOrEqual(600);
-  expect(Math.abs(dealBox!.y - cardBox!.y)).toBeLessThan(2);
-  expect(cardBox!.x).toBeGreaterThan(dealBox!.x + dealBox!.width - 1);
-  // The deal's cash impact is no longer in the context panel; the panel keeps the customer line, the stage, Customer profile and the evidence.
-  await expect(page.getByTestId("hv2-context").getByTestId("hv2-deal-cash")).toHaveCount(0);
   await expect(page.getByTestId("hv2-context-stage")).toBeVisible();
   await expect(page.getByTestId("hv2-context").getByTestId("focus-open-customer")).toBeVisible();
-  await expect(page.getByTestId("hv2-context-evidence")).toBeVisible();
+  await expect(page.getByTestId("hv2-foot-separate")).toHaveText("Company cash stays separate from selected deals.");
   // Way back 1: the Dismiss on the card.
   const back = async () => {
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "ov");
     await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
     await expect(page.getByTestId("hv2-upcoming")).toBeVisible();
-    await expect(page.getByTestId("hv2-outlook-card")).not.toHaveAttribute("data-mode", "deal");
-    await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
+    await expect(page.getByTestId("home-check-plan")).toBeVisible();
   };
   await page.getByTestId("focus-all").click();
   await back();
   // Way back 2: "Back to overview" at the top of the context panel.
-  await page.goto(DEAL);
+  await page.goto("/?customer=BUYER-1");
   await expect(page.getByTestId("hv2-context-back")).toContainText("Back to overview");
   await page.getByTestId("hv2-context-back").click();
   await back();
   // Way back 3: Escape. And the browser's Back, which restores the selection and then the overview.
-  await page.goto(DEAL);
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await page.goto("/?customer=BUYER-1");
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await page.keyboard.press("Escape");
   await back();
+  await page.getByTestId("home-tab-customers").click();
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await page.goBack();
   await back();
   await page.goForward();
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-});
-
-test("the deal's invoice, discount and net: one segmented bar from the server's ask breakdown rows, each segment (and its row) clickable to say that row's sentence; a second press clears", async ({ page }) => {
-  await open(page, { offer: true });
-  await page.goto(DEAL);
-  const picture = pictures.en.paths.find((p) => p.kind === "asked") as unknown as { ask_facts: { invoice_value_display: string }; ask_breakdown: { label: string; amount_display: string; share_text: string }[] };
-  const rows = picture.ask_breakdown;
-  // The bar runs invoice, then discount, then net (the server's rows reversed into that order); the invoice is its lead.
-  const n = rows.length;
-  const seg = (i: number) => page.getByTestId(`hv2-deal-breakdown-seg-${i}`);
-  const sentence = page.getByTestId("hv2-deal-breakdown-sentence");
-  await expect(page.getByTestId("hv2-deal-line")).toContainText(picture.ask_facts.invoice_value_display);
-  expect(n).toBeGreaterThanOrEqual(2);
-  await expect(seg(0)).toHaveAttribute("aria-pressed", "false");
-  await seg(1).click();
-  await expect(seg(1)).toHaveAttribute("aria-pressed", "true");
-  await expect(seg(0)).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("hv2-deal-breakdown-row-1")).toHaveAttribute("data-active", "true");
-  await expect(page.getByTestId("hv2-deal-breakdown-row-0")).toHaveAttribute("data-active", "false");
-  const shownRow = await page.getByTestId("hv2-deal-breakdown-row-1").innerText();
-  const second = rows.find((r) => shownRow.includes(r.label) && shownRow.includes(r.amount_display)) ?? rows[n - 2];
-  await expect(sentence).toContainText(second.label);
-  await expect(sentence).toContainText(second.amount_display);
-  // The other segments dim (opacity), never a size change.
-  await expect.poll(() => seg(0).evaluate((el) => getComputedStyle(el).opacity)).toBe("0.4");
-  // A second press clears; a row is as good as its segment; the keyboard presses a segment.
-  await seg(1).click();
-  await expect(seg(1)).toHaveAttribute("aria-pressed", "false");
-  await page.getByTestId("hv2-deal-breakdown-row-0").getByRole("button").click();
-  await expect(seg(0)).toHaveAttribute("aria-pressed", "true");
-  await seg(0).focus();
-  await page.keyboard.press("Enter");
-  await expect(seg(0)).toHaveAttribute("aria-pressed", "false");
-  await expect(sentence).toHaveText("");
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
 });
 
 test("what you are owed, by customer: its own card under the upcoming movements on the default page and on every selection (the same place), a ring of the customers' rows with every slice and row a button that selects that customer, the selected slice lifted 4 px", async ({ page }) => {
@@ -1428,9 +1199,9 @@ test("what you are owed, by customer: its own card under the upcoming movements 
   await card.getByTestId("hv2-owed-slice-0").focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/customer=BUYER-1/);
-  // A deal: the same place under the context panel, and the centre names the deal's customer.
-  await page.goto(DEAL);
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  // The company's customer again: the same place under the context panel, and the centre names that customer.
+  await page.goto("/?customer=BUYER-1");
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   const onDeal = await place("hv2-context");
   expect(onDeal.x).toBe(onDefault.x);
   expect(onDeal.w).toBe(onDefault.w);
@@ -1463,46 +1234,29 @@ test("Upcoming cash movements has no overdue row when nothing is overdue (the li
   await expect(page.getByTestId("hv2-upcoming-row")).toHaveCount(homeOffer.en.home_v2.upcoming!.length);
 });
 
-// Round five: the deal view at four widths shows exactly one card beside (from lg) or under (below it) the deal card, with its chart and the two named points; the customer view keeps the customer card with the cash card.
+// The customer view at four widths keeps the customer card with the cash card (no deal view in the Home); a deal row leaves for the Deals page without a sideways scroll.
 for (const [width, height] of [[1440, 900], [1100, 800], [820, 1100], [390, 844]] as const) {
-  test(`the deal view at ${width}: exactly one card with the deal card, its chart and the two named lowest points; the customer view keeps the cash card`, async ({ page }) => {
+  test(`the customer view at ${width}: the customer card with the cash card and the owed card; a deal row leaves for Deals`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await open(page, { offer: true });
-    await page.goto(DEAL);
-    await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-    const card = page.getByTestId("hv2-deal-chart");
-    await expect(card).toBeVisible();
-    await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
-    await expect(page.getByTestId("hv2-outlook-card")).toHaveCount(0);
-    await expect(card.getByTestId("home-chart")).toBeVisible();
-    await expect(card.getByTestId("hv2-deal-low-asked")).toBeVisible();
-    await expect(card.getByTestId("hv2-deal-low-rec")).toBeVisible();
-    const [d, c] = await Promise.all([page.getByTestId("home-deal-focus").boundingBox(), card.boundingBox()]);
-    if (width >= 1024) {
-      expect(c!.x).toBeGreaterThan(d!.x + d!.width - 1);
-      expect(Math.abs(c!.height - d!.height)).toBeLessThan(2);
-      expect(c!.height).toBeLessThanOrEqual(600);
-    } else {
-      expect(c!.y).toBeGreaterThan(d!.y + d!.height - 1);
-      expect(Math.abs(c!.width - d!.width)).toBeLessThan(2);
-    }
-    expect(await overflowX(page)).toBeLessThanOrEqual(0);
-    // The customer view: the customer card beside the cash card; no cash-impact card, and the owed card stays below the right column's first card.
     await page.goto("/?customer=BUYER-1");
     await expect(page.getByTestId("home-customer-focus")).toBeVisible();
     await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
     await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(0);
     await expect(page.getByTestId("hv2-owed-card")).toBeVisible();
     expect(await overflowX(page)).toBeLessThanOrEqual(0);
+    await page.goto("/");
+    await page.getByTestId("home-worklist-row").first().getByRole("link").click();
+    await expect(page.getByTestId("deal-page")).toBeVisible();
+    expect(await overflowX(page)).toBeLessThanOrEqual(0);
   });
 }
 
-test("reduced motion: the bar does not draw in, the stage crossfades by opacity alone", async ({ page }) => {
+test("reduced motion: the stage crossfades by opacity alone", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await open(page, { offer: true });
-  await page.goto(DEAL);
-  await expect(page.getByTestId("hv2-deal-breakdown-bar")).toBeVisible();
-  expect(await page.getByTestId("hv2-deal-breakdown-bar").evaluate((n) => getComputedStyle(n).animationName)).toBe("none");
+  await page.goto("/?customer=BUYER-1");
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   const stage = page.getByTestId("hv2-stage");
   const t = await stage.evaluate((n) => [getComputedStyle(n).transitionProperty, getComputedStyle(n).transform]);
   expect(t[0]).toBe("opacity");
@@ -1513,12 +1267,10 @@ test("reduced motion: the bar does not draw in, the stage crossfades by opacity 
 
 test.describe("with motion allowed", () => {
   test.use({ reducedMotion: "no-preference" });
-  test("the bar draws in from the left over 300 ms on first paint (one transform), and the stage crossfades (opacity over 100 ms each way)", async ({ page }) => {
+  test("the stage crossfades (opacity over 100 ms each way)", async ({ page }) => {
     await open(page, { offer: true });
-    await page.goto(DEAL);
-    await expect(page.getByTestId("hv2-deal-breakdown-bar")).toBeVisible();
-    const anim = await page.getByTestId("hv2-deal-breakdown-bar").evaluate((n) => [getComputedStyle(n).animationName, getComputedStyle(n).animationDuration, getComputedStyle(n).transformOrigin.split(" ")[0]]);
-    expect(anim).toEqual(["f-bar-in", "0.3s", "0px"]);
+    await page.goto("/?customer=BUYER-1");
+    await expect(page.getByTestId("home-customer-focus")).toBeVisible();
     const stage = page.getByTestId("hv2-stage");
     expect(await stage.evaluate((n) => [getComputedStyle(n).transitionProperty, getComputedStyle(n).transitionDuration])).toEqual(["opacity", "0.1s"]);
     // Dismiss: the stage fades out, takes the overview, and fades in again.
@@ -1535,12 +1287,12 @@ for (const [width, height] of [[1440, 900], [1100, 800], [820, 1100], [390, 844]
   test(`a selection lands with the company line and the selected card at the top of the content, at ${width}: the page scrolls to them, never into the middle of the card; Dismiss scrolls back to the headline`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await open(page, { offer: true });
+    await page.getByTestId("home-tab-customers").click();
     const row = page.getByTestId("home-worklist-row").last();
     await row.scrollIntoViewIfNeeded();
     await row.getByRole("link").click();
-    await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+    await expect(page.getByTestId("home-customer-focus")).toBeVisible();
     await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "sel");
-    await expect(page.getByTestId("hv2-deal-breakdown-bar")).toBeVisible();
     await expect.poll(async () => page.evaluate(() => Math.round(document.getElementById("hv2-stage")!.getBoundingClientRect().top)), { message: "the stage lands under the sticky header" }).toBeLessThan(100);
     const m = await page.evaluate(() => {
       const header = document.querySelector("header")!.getBoundingClientRect();
@@ -1555,9 +1307,7 @@ for (const [width, height] of [[1440, 900], [1100, 800], [820, 1100], [390, 844]
     expect(m.focus - m.header).toBeLessThanOrEqual(width < 600 ? 150 : 110);
     expect(m.headBottom).toBeLessThanOrEqual(m.band);
     expect(m.y).toBeGreaterThan(0);
-    await expect(page.getByTestId("home-deal-focus")).toBeInViewport({ ratio: 0.5 });
-    // The card is compact: the facts, the bar and the one commit area, no comparison table.
-    await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
+    await expect(page.getByTestId("home-customer-focus")).toBeInViewport({ ratio: 0.5 });
     // Dismiss scrolls back to the top of the overview.
     await page.getByTestId("focus-all").click();
     await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "ov");
@@ -1565,41 +1315,56 @@ for (const [width, height] of [[1440, 900], [1100, 800], [820, 1100], [390, 844]
   });
 }
 
-test("browser Back and Forward between two selections land at the top of the selection again, and a segment press does not scroll", async ({ page }) => {
+test("browser Back and Forward between the overview and a selection land at the top of the selection again", async ({ page }) => {
   await page.setViewportSize({ width: 1100, height: 800 });
   await open(page, { offer: true });
   await page.getByTestId("home-tab-customers").click();
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("home-customer-focus")).toBeVisible();
-  await page.getByTestId("hv2-focus-rows-fold").locator("> summary").click();
-  await page.getByTestId("focus-rows").getByRole("link").click();
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
   const bandTop = () => page.evaluate(() => Math.round(document.getElementById("home-v2-action")!.getBoundingClientRect().top));
   await expect.poll(bandTop).toBeLessThan(100);
-  // A segment press changes nothing and scrolls nothing.
-  const y = await page.evaluate(() => scrollY);
-  await page.getByTestId("hv2-deal-breakdown-row-0").getByRole("button").click();
-  expect(await page.evaluate(() => scrollY)).toBe(y);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.goBack();
+  await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "ov");
+  await page.goForward();
   await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await expect.poll(bandTop).toBeLessThan(100);
+  // Another customer by the owed card: the page lands at the top again.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.goBack();
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.goForward();
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await expect.poll(bandTop).toBeLessThan(100);
 });
 
 test("the selection paints at once: a row's reads start on hover and focus, so no skeleton shows and the card does not jump", async ({ page }) => {
   await open(page, { offer: true });
+  await page.getByTestId("home-tab-customers").click();
   const link = page.getByTestId("home-worklist-row").first().getByRole("link");
   await link.hover();
   await link.click();
-  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  await expect(page.getByTestId("hv2-deal-reserved")).toHaveCount(0);
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await expect(page.getByText(en["hv2.focus.working"], { exact: true })).toHaveCount(0);
-  await expect(page.getByTestId("hv2-deal-breakdown-bar")).toBeVisible();
-  const box = (await page.getByTestId("home-deal-focus").boundingBox())!;
+  const box = (await page.getByTestId("home-customer-focus").boundingBox())!;
   await page.waitForTimeout(500);
-  expect(Math.abs((await page.getByTestId("home-deal-focus").boundingBox())!.height - box.height)).toBeLessThan(2);
+  expect(Math.abs((await page.getByTestId("home-customer-focus").boundingBox())!.height - box.height)).toBeLessThan(2);
+});
+
+test("until its read arrives the Home shows its own shape (a headline, the three cards, the worklist) and announces Loading; the canvas is never empty", async ({ page }) => {
+  // Record, from the first paint, whether the loading shape was ever in the page before the Home itself.
+  await page.addInitScript(() => {
+    const seen: string[] = [];
+    (window as unknown as { __seen: string[] }).__seen = seen;
+    const look = () => {
+      for (const id of ["home-loading", "home-v2"]) if (document.querySelector(`[data-testid="${id}"]`) && !seen.includes(id)) seen.push(id);
+    };
+    new MutationObserver(look).observe(document, { childList: true, subtree: true });
+  });
+  await page.goto("/");
+  await expect(page.getByTestId("home-v2")).toBeVisible();
+  const seen = await page.evaluate(() => (window as unknown as { __seen: string[] }).__seen);
+  expect(seen[0], "the loading shape comes first").toBe("home-loading");
+  expect(seen).toContain("home-v2");
+  await expect(page.getByTestId("home-loading")).toHaveCount(0);
 });
