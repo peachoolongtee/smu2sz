@@ -17,7 +17,9 @@ it lapses when either changes. It is never a claim of absolute security or zero 
 |---|---|---|---|
 | `e8e270f8` (`dev`, audited) | **CONDITIONAL GO**: see conditions | **NO-GO** (SEC-16, SEC-17: an anonymous caller can forge what the owner reads and stall the API) | **NO-GO** |
 | `sec/candidate` (`e8e270f8` + the four queued branches; not an integration commit) | **GO**, pending certification of the integrated commit | **CONDITIONAL GO**: also needs SEC-19/20 and the S-net conditions | **NO-GO** |
-| The integration commit Fable produces | to be certified by the Security Lead (re-run of everything in "Evidence" on that exact commit) | idem | NO-GO until the P blockers close |
+| `0ba8e4c1` / `081541d1` (dev, security fixes merged) | **GO** (certified 16 Oct, `CERTIFICATIONS.md`) | **CONDITIONAL GO**: needs SEC-19/20 and the S-net conditions | **NO-GO** |
+| `a6de32a2` (dev head, 16 Oct) | **GO** (certified 16 Oct) | CONDITIONAL GO, as above | **NO-GO** |
+| `b6d1e519` (`int/capex-fixes`, capex buy side + dev) | certification in progress | — | **NO-GO** |
 
 **Conditions for S on `e8e270f8`:** loopback only; nobody but the presenter holds the demo credentials; the presenter does not approve
 a second agreement for a request already agreed (SEC-02 is fixed only on the branch); results shown are simulation results.

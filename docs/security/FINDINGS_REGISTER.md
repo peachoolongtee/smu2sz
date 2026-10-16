@@ -2,7 +2,7 @@
 
 Owner: independent Security Lead. Branch `security/lead-audit` (worktree `.claude/worktrees/sec-lead`).
 **Audited code: `e8e270f8`** (`origin/dev`, 14 Oct 2026 18:47 +08) plus the docs-only handoff commit `94b4f79b`.
-Opened 14 Oct 2026. Evidence scripts: `docs/security/evidence/2026-10-14/` (run from `services/api` with
+Opened 14 Oct 2026; statuses as of 16 Oct 2026 (see `CERTIFICATIONS.md` for what is signed off). Evidence scripts: `docs/security/evidence/2026-10-14/` (run from `services/api` with
 `PYTHONUTF8=1 TERMSLEDGER_NO_DOTENV=1 LLM_MODE=cache`; each states its own `DATABASE_URL` / `DEMO_MODE`).
 
 **Status words.** CONFIRMED = reproduced by the Security Lead in this worktree (not only by a reviewer agent).
@@ -12,30 +12,33 @@ SUSPECTED = code reading only. Severity is for the stated scope; **S** = hackath
 
 | ID | Title | Sev S / P | Status | Fix |
 |---|---|---|---|---|
-| SEC-01 | Security attack suite cannot run on `dev` (regression gate silently broken) | High / High | CONFIRMED | **fixed** `sec/attack-harness` |
-| SEC-02 | Two ACTIVE agreements for one buyer request: concession and invoice adjustment booked twice | High / High | CONFIRMED | **fixed** `sec/one-agreement-per-request` (needs Fable sign-off) |
-| SEC-03 | Refused owner accept leaves an orphan PROPOSED commitment (non-atomic accept) | Medium / Medium | CONFIRMED | **fixed** same branch |
-| SEC-04 | Agent key blocks the owner's decline by pre-claiming its predictable idempotency key | Medium / Medium | CONFIRMED | **fixed** `sec/authority-boundaries` |
-| SEC-05 | Agent key silently opens any buyer's circuit, blocking owner accept/decline (RT1-2 fix covered receipts only) | Medium / Medium | CONFIRMED | **fixed** same branch (needs Fable sign-off) |
-| SEC-16 | **Anonymous caller overwrites the stored text of any offer** by reusing its `doc_id`; owner reads forged words ("Owner already approved … Wire to new account …") | High / High | CONFIRMED | **fixed** `sec/intake-hardening` |
-| SEC-17 | **Anonymous CPU exhaustion**: compile time super-linear in text (2.7 KB 0.4 s, 10.8 KB 4.3 s, 43 KB 62 s), no size or count limit on `POST /offers` | Medium / High | CONFIRMED | **fixed** same branch |
-| SEC-18 | Channel key not bound on `POST /offers` (BUYER-1's key files as BUYER-2); any caller may label a document `channel="owner"` (a prompt attribute in live mode) | Medium / Medium | REVIEWER-CONFIRMED, regression test by Security Lead | **fixed** same branch |
+| SEC-01 | Security attack suite cannot run on `dev` (regression gate silently broken) | High / High | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
+| SEC-02 | Two ACTIVE agreements for one buyer request: concession and invoice adjustment booked twice | High / High | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
+| SEC-03 | Refused owner accept leaves an orphan PROPOSED commitment (non-atomic accept) | Medium / Medium | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
+| SEC-04 | Agent key blocks the owner's decline by pre-claiming its predictable idempotency key | Medium / Medium | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
+| SEC-05 | Agent key silently opens any buyer's circuit, blocking owner accept/decline (RT1-2 fix covered receipts only) | Medium / Medium | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
+| SEC-16 | **Anonymous caller overwrites the stored text of any offer** by reusing its `doc_id`; owner reads forged words ("Owner already approved … Wire to new account …") | High / High | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
+| SEC-17 | **Anonymous CPU exhaustion**: compile time super-linear in text (2.7 KB 0.4 s, 10.8 KB 4.3 s, 43 KB 62 s), no size or count limit on `POST /offers` | Medium / High | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
+| SEC-18 | Channel key not bound on `POST /offers` (BUYER-1's key files as BUYER-2); any caller may label a document `channel="owner"` (a prompt attribute in live mode) | Medium / Medium | REVIEWER-CONFIRMED, regression test by Security Lead | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
 | SEC-19 | Anonymous offers filed as any buyer appear as that buyer's open request on Deals (displacing the real one); nothing marks them unauthenticated | Medium / Medium | CONFIRMED (`r3.py`) | open: design (Fable) |
 | SEC-20 | Intake cap is one global counter per simulated day (one sender locks out all anonymous buyers); keyed buyers and the agent are unthrottled | Low / Medium | REVIEWER-CONFIRMED | open |
 | SEC-21 | NL sessions: client-chosen ids, not bound to the credential; LRU eviction lets 1,001 agent turns drop the owner's pending plan; anonymous caller can continue a keyed buyer's session | Low / Medium | REVIEWER-CONFIRMED | open |
 | SEC-22 | Egress normaliser misses number forms (30,0000 / 0.3m / 3e5 / 30w / 千分之十五 / 15‰ / DSCR 125%); derived values (break-even, counter cap, shortfall) not in the protected set | Low / High if generated outbound text is added | REVIEWER-CONFIRMED | open |
-| CAPEX-1 | (branch `int/capex-buy-side`, not on `dev`) Vendor contract with retention or discount > 100% books a **cash inflow**; card shows a normal purchase | **High, merge-blocking** | CONFIRMED on `78cc1d5e` and `db95a2d5` | open: branch owner |
-| CAPEX-2 | (branch) Approval card does not show the payment schedule; the agent can queue its own valid timeline | Medium | REVIEWER-CONFIRMED | open: branch owner |
-| CAPEX-3 | (branch) Same contract uploaded twice commits twice (−¥1,200,000) | Medium | CONFIRMED | open: branch owner |
-| CAPEX-4 | (branch) Vendor registry name taken from contract text (can equal the SME's own name) | Low | REVIEWER-CONFIRMED | open: branch owner |
+| CAPEX-1 | (branch `int/capex-buy-side`, not on `dev`) Vendor contract with retention or discount > 100% books a **cash inflow**; card shows a normal purchase | **High, merge-blocking** | CONFIRMED on `78cc1d5e` and `db95a2d5` | **fixed** on `int/capex-fixes` `b6d1e519` (re-tested 16 Oct); certification of `b6d1e519` in progress |
+| CAPEX-2 | (branch) Approval card does not show the payment schedule; the agent can queue its own valid timeline | Medium | REVIEWER-CONFIRMED | **fixed** on `b6d1e519` (agent refused, card shows the schedule); certification in progress |
+| CAPEX-3 | (branch) Same contract uploaded twice commits twice (−¥1,200,000) | Medium | CONFIRMED | **fixed** on `b6d1e519`; residual: a copy with a changed reference is a separate purchase (owner's call) |
+| CAPEX-4 | (branch) Vendor registry name taken from contract text (can equal the SME's own name) | Low | REVIEWER-CONFIRMED | **fixed** on `b6d1e519` (company-key comparison); residual CAPEX-4b below |
+| CAPEX-4b | (capex) a confirmed contract whose buyer party names a real supplier makes later purchases from that supplier refused as "your own business" (fails safe: refuses, never books) | Low | CONFIRMED on `b6d1e519` | open |
+| SETUP-1..7 | (capex branch) setup feature: see `CERTIFICATIONS.md`; SETUP-1, 4, 5, 7 fixed on `b6d1e519`, SETUP-2, 3, 6 open (Low/Info) | Low-Med to Info | CONFIRMED / reviewer | partly fixed |
+| SEC-23 | Red team d F1 test patched a function the code no longer called after `c51a7284`, so the no-deal guard was untested (guard itself intact) | Low (coverage) | CONFIRMED | **fixed** `1b58291f`, merged in `bbbfb7ce` |
 | SEC-06 | No runnable production configuration (compose cannot start; web build points at localhost) | n/a / High | CONFIRMED (code) | open |
 | SEC-07 | `DEMO_MODE` defaults on; published credentials and committed demo signing key = owner takeover outside compose | Info / High | CONFIRMED (code) | open |
 | SEC-08 | Audit trail not tamper-evident (R-13): truncation/rewrite verify; approvals and security events unguarded; approval flip executes a rejected op | Medium / High | CONFIRMED (SQLite) | open |
-| SEC-09 | Bank-feed key moves the clock without bound: expires the mandate, posts debt service, logged as SYSTEM | Medium / Medium | CONFIRMED | **fixed** `sec/authority-boundaries` (amends ADR-0006 §2) |
-| SEC-10 | Unauthenticated callers grow `security_events` without bound; each refusal reads the whole table | Medium / Medium | REVIEWER-CONFIRMED | **fixed** `sec/security-event-growth` (401 rate limit at the proxy remains) |
+| SEC-09 | Bank-feed key moves the clock without bound: expires the mandate, posts debt service, logged as SYSTEM | Medium / Medium | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
+| SEC-10 | Unauthenticated callers grow `security_events` without bound; each refusal reads the whole table | Medium / Medium | REVIEWER-CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** (401 rate limit at the proxy remains) |
 | SEC-11 | Multi-process unsafe: stale clock books backdated ops; route checks rely on a per-process lock | Info / High | CONFIRMED (two runtimes, one SQLite) | open |
-| SEC-12 | No security headers (CSP, frame-ancestors, nosniff, HSTS); owner token in `sessionStorage` | Low / Medium | CONFIRMED (code) | **partly fixed** `sec/headers` (frame, sniff, referrer); full CSP and HSTS open |
-| SEC-13 | Public `/docs`, `/redoc`, `/openapi.json`; `/health` discloses `llm_mode` and every feature flag | Low / Low | CONFIRMED | **docs fixed** `sec/headers`; `/health` kept (the web needs it) |
+| SEC-12 | No security headers (CSP, frame-ancestors, nosniff, HSTS); owner token in `sessionStorage` | Low / Medium | CONFIRMED (code) | **partly fixed, merged `081541d1`, certified 16 Oct** (frame, sniff, referrer); full CSP and HSTS open |
+| SEC-13 | Public `/docs`, `/redoc`, `/openapi.json`; `/health` discloses `llm_mode` and every feature flag | Low / Low | CONFIRMED | **docs fixed, merged `081541d1`, certified 16 Oct**; `/health` kept (the web needs it) |
 | SEC-14 | Refused operations return HTTP 200 (`/circuit/*/reset`, `/approvals/*` by agent) | Info / Low | CONFIRMED | open |
 | SEC-15 | Container and secret hygiene: root containers, unpinned bases, `uv:latest`, no `.dockerignore`, placeholder secrets accepted | Info / Low | REVIEWER-CONFIRMED (code) | open |
 | R-2 | One owner credential + one signing key; accept route queues and approves in one call | Info / Medium | open (accepted risk, re-confirmed in code) | design |
