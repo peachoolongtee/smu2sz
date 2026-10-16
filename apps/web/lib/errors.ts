@@ -4,7 +4,7 @@
  * language through `errorText` (lib/error-text.ts) instead of showing the English line. A failure the server explained carries the
  * server's own words and no code.
  */
-export type ErrorCode = "owner_required" | "owner_rejected" | "not_configured" | "books_busy" | "unreachable" | "download_failed" | "mock_download" | "offer_missing" | "approval_missing" | "approval_done" | "executor_refused" | "timeout" | "timeout_write" | "timeout_reply";
+export type ErrorCode = "owner_required" | "owner_rejected" | "not_configured" | "books_busy" | "unreachable" | "download_failed" | "mock_download" | "mock_setup" | "offer_missing" | "approval_missing" | "approval_done" | "executor_refused" | "timeout" | "timeout_write" | "timeout_reply";
 
 export class ApiError extends Error {
   readonly status: number;

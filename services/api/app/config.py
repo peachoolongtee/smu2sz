@@ -66,6 +66,8 @@ class Features:
     customer_economics: bool = field(default_factory=lambda: _flag("FEATURE_CUSTOMER_ECONOMICS", default=False))  # map #88 Phase 2
     contracts: bool = field(default_factory=lambda: _flag("FEATURE_CONTRACTS"))  # contract ingestion + deal summary
     pilot_journal: bool = field(default_factory=lambda: _flag("FEATURE_PILOT_JOURNAL", default=False))  # map #58, default off
+    # ADR-0013, the buy side (capex contracts, financial health, loan eligibility, long-term plans); default off
+    capex_contracts: bool = field(default_factory=lambda: _flag("FEATURE_CAPEX_CONTRACTS", default=False))
 
 
 @dataclass(frozen=True)

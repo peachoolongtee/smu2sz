@@ -42,6 +42,7 @@ from app.api.presentation import (
     t,
     when_text,
 )
+from app.api.purchase_card import purchase_schedule_view
 from app.api.quotes import FUNDING_OPS, build_shown_quote, reason_rate
 from app.api.receipt import approval_receipt
 from app.api.runtime import Runtime, get_runtime
@@ -316,6 +317,11 @@ def _approvals_queue(rt, lang: str) -> dict:
                 log.exception("approval %s: the decision record could not be read", a.id)
         d["receipt"] = approval_receipt(lang, item=d, pres=d["presentation"]) if d.get("presentation") is not None else None
         d.update(approval_review(lang, item=d))
+        if a.kind == "COMMIT_PURCHASE":  # CAPEX-2: the owner sees the schedule they approve, in the server's words
+            try:
+                d.update(purchase_schedule_view(rt.store, state, op, rt.day, lang))
+            except Exception:
+                log.exception("approval %s: the purchase schedule could not be presented", a.id)
         d.update(deadline_view(a.kind or "", _approval_deadline(ctx, d), rt.day, lang))
         out.append(d)
     return {"approvals": out, "lang": lang, **last_read(rt.day, lang)}

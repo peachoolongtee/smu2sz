@@ -2619,6 +2619,9 @@
       "value_text": "8 天后比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00。"
     }
   ],
+  "schedule_title": null,
+  "schedule_rows": null,
+  "schedule_note": null,
   "deadline_text": "8 天后需要资金到位",
   "deadline_day": 42,
   "title_text": "申请 ¥200,000 的发票融资",

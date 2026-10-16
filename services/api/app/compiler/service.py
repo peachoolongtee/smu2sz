@@ -29,7 +29,7 @@ from app.compiler.grounding import build_offer, build_term_sheet, docs_hash
 from app.compiler.prompts import CONTRACT_PROMPT_VERSION, PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
 from app.compiler.rules import RulesBackend
 from app.config import Settings, get_settings
-from app.domain.models import CompiledContract, CompiledOffer, CompiledTermSheet, SourceDocument
+from app.domain.models import CompiledContract, CompiledOffer, CompiledTermSheet, DocumentKind, SourceDocument
 
 log = structlog.get_logger("termsledger.compiler")
 R = TypeVar("R", OfferResult, TermSheetResult, ContractResult)
@@ -94,8 +94,10 @@ class Compiler:
         res = self._run(lambda b: b.extract_term_sheet(doc), TERM_SHEET_PROMPT_VERSION, h)
         return build_term_sheet(doc, res.extraction, res.model_id, TERM_SHEET_PROMPT_VERSION)
 
-    def compile_contract(self, doc: SourceDocument) -> CompiledContract:
-        """A buyer contract, read chunk by chunk and grounded as one document. A proposal for the owner only."""
+    def compile_contract(self, doc: SourceDocument,
+                         kind: DocumentKind = DocumentKind.BUYER_CONTRACT) -> CompiledContract:
+        """A buyer contract (or, ADR-0013, a capex contract), read chunk by chunk and grounded as one document. A proposal
+        for the owner only. The kind changes only which fields are material; the reading and its cache keys do not."""
         chunks = chunk_document(doc)
         if len(chunks) > MAX_CHUNKS:  # every chunk is a model call in live mode: refuse before the first
             raise ContractTooLong(len(chunks))
@@ -106,7 +108,7 @@ class Compiler:
             res = self._run(lambda b, d=cdoc: _extract_contract(b, d), CONTRACT_PROMPT_VERSION, docs_hash([cdoc]))
             parts.append((chunk, res.extraction))
             models.append(res.model_id)
-        return build_contract(doc, parts, "+".join(dict.fromkeys(models)), CONTRACT_PROMPT_VERSION)
+        return build_contract(doc, parts, "+".join(dict.fromkeys(models)), CONTRACT_PROMPT_VERSION, kind)
 
 
 @lru_cache(maxsize=1)
@@ -122,5 +124,5 @@ def compile_term_sheet(doc: SourceDocument) -> CompiledTermSheet:
     return _default_compiler().compile_term_sheet(doc)
 
 
-def compile_contract(doc: SourceDocument) -> CompiledContract:
-    return _default_compiler().compile_contract(doc)
+def compile_contract(doc: SourceDocument, kind: DocumentKind = DocumentKind.BUYER_CONTRACT) -> CompiledContract:
+    return _default_compiler().compile_contract(doc, kind)

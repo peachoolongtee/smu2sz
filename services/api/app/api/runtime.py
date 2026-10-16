@@ -151,14 +151,20 @@ class Runtime:
             _seed(self.store, scenario)
             self.day = 0
             self.scenario = scenario
+            self.clear_session_caches()
+
+    def clear_session_caches(self) -> None:
+        """Forget what was computed on books that have just been replaced: verdicts, inbound documents, the intake count, the NL
+        sessions and the exposure answers (shared by `reset` and Set up your books)."""
+        from app.api.strategy_exposure import clear_cache as clear_exposure_cache
+        from app.nl import reset_sessions
+
+        with self.lock:
             self.latest_verdict.clear()
             self.documents.clear()
             self.intake_day, self.intake_count = 0, 0
-            from app.api.strategy_exposure import clear_cache as clear_exposure_cache
-            from app.nl import reset_sessions
-
             reset_sessions()
-            clear_exposure_cache()  # the answers were computed on the books that were just replaced
+            clear_exposure_cache()
 
     def reset_demo(self, scenario: str = "golden_sme") -> None:
         """POST /demo/reset: the scenario's books (`reset`), then, on the golden books, the demo documents read by the
@@ -221,6 +227,16 @@ def _seed(store: LedgerStore, scenario: str = "golden_sme") -> None:
         seed_demo_inputs(store, state)
 
 
+def _start_scenario() -> str:
+    """The scenario an empty demo store starts on: DEMO_SCENARIO ("blank" opens on a new business with no books), else the golden books."""
+    import os
+
+    from app.domain.fixtures import FIXTURES
+
+    name = os.environ.get("DEMO_SCENARIO", "").strip() or "golden_sme"
+    return name if (FIXTURES / "scenarios" / f"{name}.json").is_file() and "/" not in name and "\\" not in name else "golden_sme"
+
+
 def _has(read: Any) -> bool:
     try:
         read()
@@ -262,7 +278,7 @@ def get_runtime() -> Runtime:
                                    "(a financial state and an owner-signed mandate); the demo fixture is not seeded "
                                    "into a non-demo deployment.")
             if not has_state:
-                _seed(store)
+                _seed(store, _start_scenario())
             elif not has_mandate:
                 if not seedable:
                     raise StartupError("the store holds a financial state but no mandate: provision the "

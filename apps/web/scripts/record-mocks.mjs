@@ -29,6 +29,7 @@
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
 //   - offer_exposure_ex01.json (only with --exposure): `computed_in_seconds` and each `capacity[*].spare.seconds` -> 0 (timings).
+//   - home_v2/exposure*.json: the same two timings -> 0.
 //   - slice_d/*.json (only with --slice-d): every `loss_token` (a fingerprint of the books, which includes the restore history the API accumulates) becomes a fixed token by order of first appearance; the books' state version at the end of a funding decision's id (alert:ALERT-RESERVE-42:v<n>) becomes v7, the id the
 //     mock's decision recordings use for the same record; `alternate.history` is trimmed (see trimRestoreHistory).
 //   - strategy/*.json (only with --strategy): `computed_in_seconds` -> 0 (the time the call took; a cache hit differs from a miss).
@@ -119,6 +120,24 @@
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8182
 //   node scripts/record-mocks.mjs --api http://localhost:8182 --home-v2
 //
+// --buyside records ONLY apps/web/mocks/buyside/*.json and exits (ADR-0013, docs/capex_handover.md): the buy side's reads on the opening books
+// with the demo capex contract (fixtures/capex), in the order an owner walks it:
+//   fixtures.json                      GET /fixtures/capex-contracts
+//   purchases_{review,ready,awaiting,committed}.json   { en, zh } of GET /purchases after the upload, the confirmation, the commitment
+//                                      (queued) and the owner's approval of it
+//   evaluate.json                      POST /capex/contracts/{id}/evaluate on the timeline signing day 20, delivery 60, acceptance 80
+//   evaluate_day7.json                 the same with no signing day (the contract's own date, day 7: the deposit falls before any loan lands)
+//   evaluate_needs.json                the same with no timeline (the schedule asks for the delivery and acceptance days)
+//   commit.json                        POST /capex/contracts/{id}/commit (Tier 2, queued)
+//   commit_approval.json               { en, zh } of the commitment's row in GET /approvals/queue while it waits (carries the schedule rows the owner approves)
+//   health.json, health_inputs.json    GET /finance/health; POST with the owner's balance-sheet entries
+//   eligibility.json, eligibility_48.json   GET /lending/eligibility; POST with 48 months trading
+//   plans.json                         POST /capex/plans for the contract and an optional ¥400,000 robot
+//   add_to_menu.json                   POST /lending/products/PRD-BANK1-TERM-60/add-to-menu (queued; recorded last: it changes the menu)
+// The API needs FEATURE_CAPEX_CONTRACTS=1 and the other flags as above:
+//   cd services/api && FEATURE_CAPEX_CONTRACTS=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8233
+//   node scripts/record-mocks.mjs --api http://localhost:8233 --buyside
+//
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
 //
 // --tracker records ONLY apps/web/mocks/tracker/<moment>.json, { en, zh } of GET /decisions/{id}/tracker for the story's deal (Deal tracker, map #148), and exits.
@@ -141,7 +160,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --tracker]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --buyside | --tracker]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
@@ -155,6 +174,7 @@ const TRACKER = process.argv.includes("--tracker");
 const NO_EXPOSURE = process.argv.includes("--no-exposure");
 const INPUTS = process.argv.includes("--inputs");
 const SLICE_D = process.argv.includes("--slice-d");
+const BUYSIDE = process.argv.includes("--buyside");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -178,13 +198,18 @@ const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_act_d
 
 // Files whose operations are chained by first appearance (every other chained file uses `rechain` below): the chat script, whose
 // operation ids and commitment ids come from a per-session random nonce, and the day-34 reconciliation (one receipt).
+let recordingLang = "en";
+/** The language `inLang` is recording in, for a read that takes the language as an argument. */
+const getLangForRecording = () => recordingLang;
 /** Runs `read` with the UI language set to `lang` (the adapters add it to every route that takes one), then puts English back. */
 async function inLang(lang, read) {
   setLang(lang);
+  recordingLang = lang;
   try {
     return await read();
   } finally {
     setLang("en");
+    recordingLang = "en";
   }
 }
 
@@ -278,6 +303,18 @@ function normalise(name, value) {
     } else if (node && typeof node === "object") for (const v of Object.values(node)) rechain(v);
   };
   if (name.startsWith("strategy/") || name.startsWith("receivables/") || name.startsWith("buyer_exposure")) out.computed_in_seconds = 0;
+  if (name.startsWith("home_v2/exposure")) {
+    // the exposure read inside Home's recordings carries the same timings as offer_exposure_ex01.json, in both languages
+    const zero = (node) => {
+      if (Array.isArray(node)) node.forEach(zero);
+      else if (node && typeof node === "object") {
+        if ("computed_in_seconds" in node) node.computed_in_seconds = 0;
+        if (node.spare && typeof node.spare === "object" && "seconds" in node.spare) node.spare.seconds = 0;
+        Object.values(node).forEach(zero);
+      }
+    };
+    zero(out);
+  }
   if (RECHAIN.has(name)) rechain(out);
   if (RECHAIN_BY_APPEARANCE.has(name)) rechainByAppearance(name, out);
   if (name.startsWith("slice_d/")) trimRestoreHistory(name, out);
@@ -376,6 +413,50 @@ async function recvRead(point) {
     if (!view || !Array.isArray(view.rows)) throw new Error("GET /receivables is absent: start the API from a branch that carries it (feat/net-collection)");
     files[`receivables/${point}${suffix}.json`] = view;
   }
+}
+
+// --buyside: the buy side's recordings and nothing else (see the header).
+if (BUYSIDE) {
+  const TIMELINE = { signing_day: 20, delivery_day: 60, acceptance_day: 80 };
+  const both = async (read) => ({ en: await inLang("en", read), zh: await inLang("zh", read) });
+  mkdirSync(join(OUT, "buyside"), { recursive: true });
+  await reset();
+  const fixtures = await live.getCapexContractFixtures().catch(() => null);
+  if (!fixtures) throw new Error("the buy side is off: start the API with FEATURE_CAPEX_CONTRACTS=1");
+  files["buyside/fixtures.json"] = fixtures;
+  const doc = await live.submitDocument({ fixture_id: fixtures[0].id });
+  files["buyside/purchases_review.json"] = await both(() => live.getPurchases(getLangForRecording()));
+  await live.decideDocument(doc.id, "confirm", doc.doc_hash, null);
+  files["buyside/purchases_ready.json"] = await both(() => live.getPurchases(getLangForRecording()));
+  const ev = await live.evaluateContract(doc.id, TIMELINE);
+  files["buyside/evaluate.json"] = ev;
+  files["buyside/evaluate_day7.json"] = await live.evaluateContract(doc.id, { delivery_day: 60, acceptance_day: 80 });
+  files["buyside/evaluate_needs.json"] = await live.evaluateContract(doc.id, {});
+  files["buyside/health.json"] = await live.getFinanceHealth();
+  files["buyside/health_inputs.json"] = await live.getFinanceHealth({
+    inventory_fen: 30000000, other_current_assets_fen: 0, trade_payables_fen: 25000000, other_current_liabilities_fen: 5000000,
+  });
+  files["buyside/eligibility.json"] = await live.getEligibility();
+  files["buyside/eligibility_48.json"] = await live.getEligibility({ months_trading: 48 });
+  files["buyside/plans.json"] = await live.runCapexPlans({
+    projects: [
+      { id: "line", label: "Die-cutting line", document_id: doc.id, timeline: TIMELINE, monthly_uplift_fen: 2200000 },
+      { id: "robot", label: "Packing robot", price_fen: 40000000, monthly_uplift_fen: 1500000, uplift_start_month: 4, optional: true },
+    ],
+  });
+  const commit = await live.commitContract(doc.id, TIMELINE, ev.schedule.schedule.schedule_hash, false);
+  if (commit.status !== "PENDING_APPROVAL") throw new Error("the purchase commitment no longer waits for the owner");
+  files["buyside/commit.json"] = commit;
+  files["buyside/purchases_awaiting.json"] = await both(() => live.getPurchases(getLangForRecording()));
+  // the commitment's row in the Approvals queue, with the schedule the owner approves (CAPEX-2)
+  files["buyside/commit_approval.json"] = await both(async () => (await live.getApprovals()).find((a) => a.id === commit.approval_id));
+  await live.decideApproval(commit.approval_id, "APPROVE");
+  files["buyside/purchases_committed.json"] = await both(() => live.getPurchases(getLangForRecording()));
+  files["buyside/add_to_menu.json"] = await live.addProductToMenu("PRD-BANK1-TERM-60", 60000000);
+  await live.demoReset();
+  for (const name of Object.keys(files).sort()) write(name, files[name]);
+  console.log(`recorded ${written.length} buy-side files into ${join(OUT, "buyside")} from ${API}`);
+  process.exit(0);
 }
 
 // --buyer-exposure: buyer_exposure[_zh].json and nothing else, on the opening books.

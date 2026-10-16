@@ -40,9 +40,11 @@ from app.domain.models import (
     Actor,
     AddFacility,
     ApplyForFacility,
+    CashFlow,
     ChangeMandate,
     Commitment,
     CommitmentStatus,
+    CommitPurchase,
     Contingency,
     CounterOffer,
     Counterparty,
@@ -51,6 +53,7 @@ from app.domain.models import (
     FacilityKind,
     FacilityStatus,
     FinancialState,
+    FlowKind,
     ForwardConcession,
     IssueEquity,
     Mandate,
@@ -980,6 +983,10 @@ class Executor:
             return f"owner request to add facility {op.facility.id} ({op.facility.lender_id})"
         if isinstance(op, ApplyForFacility):
             return f"apply for facility {op.facility_id} ({fmt_yuan(op.amount_fen)})"
+        if isinstance(op, CommitPurchase):
+            self._owner_only_purchase(op)  # CAPEX-2: refused before it is queued, so the owner is never asked
+            return (f"commit to the purchase under document {op.document_id}: {fmt_yuan(op.amount_fen)} on the "
+                    f"contract's payment schedule" + (", the early-payment discount taken" if op.take_early_pay else ""))
         if isinstance(op, DrawFacility | SubmitInvoiceForFinancing):
             if ctx.admission is not None and ctx.admission.approval_reason:
                 return str(ctx.admission.approval_reason)
@@ -1021,6 +1028,8 @@ class Executor:
                 return self._add_facility(op, ctx)
             case ApplyForFacility():
                 return self._apply(op, ctx)
+            case CommitPurchase():
+                return self._commit_purchase(op, ctx)
             case RequestOwnerApproval():
                 return self._request_approval(op)
         raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"No handler for {getattr(op, 'kind', type(op).__name__)}")
@@ -1469,6 +1478,137 @@ class Executor:
             update={"status": FacilityStatus.PENDING})))
         return _Effect(f"Applied for {fmt_yuan(op.amount_fen)} on {f.id}; it is PENDING and counts as zero "
                        f"until committed", state=new_state)
+
+    @staticmethod
+    def _owner_only_purchase(op: CommitPurchase) -> None:
+        """CAPEX-2: only the owner commits the business to a purchase. The agent prepares and shows; it never authors the
+        operation the owner is then asked to approve. Checked when the operation is queued and again when it runs."""
+        if op.requested_by != Actor.OWNER:
+            raise _refuse(Code.INSUFFICIENT_AUTHORITY,
+                          f"Only the owner can commit the business to a purchase; {op.requested_by} cannot. Nothing was "
+                          f"queued and nothing was committed", SecurityEventKind.PRIVILEGE_ESCALATION,
+                          requested_by=op.requested_by, refusal="PURCHASE_OWNER_ONLY", document_id=op.document_id)
+
+    def _committed_twin(self, op: CommitPurchase, rec: Any) -> tuple[str, str] | None:
+        """CAPEX-3: (document id, title) of the other document whose purchase is already committed (an EXECUTED CommitPurchase)
+        and which is the same contract: the same text (`doc_hash`), or the same contract reference with the same vendor.
+        None when there is none. The same document is left to the check that follows (it names its own flows)."""
+        def reference(r: Any) -> str | None:
+            if r is None or r.contract is None:
+                return None
+            for t in r.contract.terms:
+                if t.field.value == "CONTRACT_REFERENCE" and (t.text or t.value_text):
+                    return "".join((t.text or t.value_text or "").split()).casefold()
+            return None
+
+        mine = reference(rec)
+        for e in self._entries():
+            other_id = e.payload.get("document_id")
+            if e.kind != op.kind or e.result.status != EXECUTED or other_id == rec.id:
+                continue
+            same_text = hmac.compare_digest(str(e.payload.get("doc_hash") or "").encode(), rec.doc_hash.encode())
+            other = self._store.get_contract_record(str(other_id))
+            same_ref = (mine is not None and other is not None and other.counterparty_id == rec.counterparty_id
+                        and reference(other) == mine)
+            if same_text or same_ref:
+                return str(other_id), (other.title if other is not None else str(other_id))
+        return None
+
+    def _commit_purchase(self, op: CommitPurchase, ctx: _Ctx) -> _Effect:
+        """ADR-0013: book a confirmed capex contract's payment schedule (reached only after the owner's approval: the
+        operation is always Tier 2). The schedule is derived again here, by code, from the stored record and the
+        operation's timeline; it must hash to what the owner was shown. Each payment becomes a scheduled CAPEX flow the
+        clock pays on its day; the vendor is registered as a SUPPLIER if it is not on the registry yet."""
+        from app.capex.schedule import Timeline, derive_schedule, early_schedule
+        from app.config import get_settings
+        from app.domain.models import Counterparty, DocumentKind, DocumentStatus
+
+        if not get_settings().features.capex_contracts:  # whichever route queued it (POST /operations included)
+            raise _refuse(Code.FEATURE_DISABLED, "The buy side is switched off (FEATURE_CAPEX_CONTRACTS); nothing committed",
+                          document_id=op.document_id)
+        self._owner_only_purchase(op)
+        rec = self._store.get_contract_record(op.document_id)
+        if rec is None:
+            raise _refuse(Code.PRECONDITION_FAILED, f"Document {op.document_id} does not exist",
+                          document_id=op.document_id)
+        if rec.kind != DocumentKind.CAPEX_CONTRACT or rec.contract is None:
+            raise _refuse(Code.PRECONDITION_FAILED, f"Document {rec.id} is not a capex contract; only a capex contract "
+                          f"can be committed as a purchase", document_id=rec.id, kind=rec.kind.value)
+        if rec.status != DocumentStatus.CONFIRMED:
+            raise _refuse(Code.PRECONDITION_FAILED, f"Document {rec.id} is {rec.status.value.lower()}: confirm the "
+                          f"agent's reading before committing to the purchase", document_id=rec.id)
+        if not hmac.compare_digest(op.doc_hash.encode(), rec.doc_hash.encode()):
+            raise _refuse(Code.TERMS_CHANGED, f"The document shown is not document {rec.id} as stored; nothing "
+                          f"committed", document_id=rec.id)
+        twin = self._committed_twin(op, rec)
+        if twin is not None:  # CAPEX-3: one contract is one purchase, however many times it was uploaded
+            raise _refuse(Code.PRECONDITION_FAILED,
+                          f"This contract is already committed as a purchase (as {twin[1]}). Committing it again would "
+                          f"book the same payments twice, so nothing was committed",
+                          document_id=rec.id, refusal="CONTRACT_ALREADY_COMMITTED", committed_document=twin[0])
+        state = ctx.state
+        prefix = f"CAPEX:{rec.id}:"
+        earlier = next((e for e in self._entries() if e.kind == op.kind and e.result.status == EXECUTED
+                        and e.payload.get("document_id") == rec.id), None)
+        if earlier is not None or any(f.id.startswith(prefix) for f in state.flows):
+            where = f" (seq {earlier.seq})" if earlier is not None else ""
+            raise _refuse(Code.PRECONDITION_FAILED, f"The purchase under document {rec.id} is already committed{where}",
+                          document_id=rec.id)
+        vendor = next((c for c in state.counterparties if c.id == rec.counterparty_id), None)
+        if vendor is not None and vendor.role != "SUPPLIER":
+            raise _refuse(Code.PRECONDITION_FAILED, f"{rec.counterparty_id} is a {vendor.role.lower()}, not a supplier",
+                          counterparty_id=rec.counterparty_id)
+        timeline = Timeline(signing_day=op.signing_day, delivery_day=op.delivery_day, acceptance_day=op.acceptance_day,
+                            invoice_day=op.invoice_day, retention_release_day=op.retention_release_day)
+        today = max(ctx.now, state.as_of_day)
+        derived = derive_schedule(rec.contract, timeline, anchor_iso=state.as_of, today=today)
+        if not derived.derivable or derived.schedule is None:
+            raise _refuse(Code.PRECONDITION_FAILED, "No payment schedule follows from the contract on this timeline: "
+                          + " ".join(derived.reasons), document_id=rec.id)
+        schedule = early_schedule(derived.schedule) if op.take_early_pay else derived.schedule
+        if schedule is None:
+            raise _refuse(Code.PRECONDITION_FAILED, f"Document {rec.id} offers no early-payment discount the schedule "
+                          f"could take", document_id=rec.id)
+        if not hmac.compare_digest(op.schedule_hash.encode(), schedule.schedule_hash.encode()):
+            raise _refuse(Code.TERMS_CHANGED, "The payment schedule shown is not the schedule the contract gives on "
+                          "this timeline today; nothing committed. Evaluate again and commit what is shown",
+                          document_id=rec.id)
+        if op.amount_fen != schedule.price_fen:
+            raise _refuse(Code.TERMS_CHANGED, f"The amount {fmt_yuan(op.amount_fen)} is not the schedule's total "
+                          f"{fmt_yuan(schedule.price_fen)}", document_id=rec.id)
+        bad = next((p for p in schedule.payments if p.amount_fen <= 0), None)
+        if bad is not None:  # CAPEX-1, defence in depth: a purchase books only money going out
+            raise _refuse(Code.PRECONDITION_FAILED, f"Payment {bad.n} of the schedule is {fmt_yuan(bad.amount_fen)}: a purchase "
+                          f"pays the vendor, it never brings money in. Nothing committed", document_id=rec.id,
+                          refusal="PAYMENT_NOT_POSITIVE", payment=bad.n)
+        flows = [CashFlow(id=f"{prefix}{p.n}", day=p.day, amount_fen=-p.amount_fen, kind=FlowKind.CAPEX,
+                          label=f"{rec.title}: {p.label}", counterparty_id=rec.counterparty_id)
+                 for p in schedule.payments]
+        counterparties = list(state.counterparties)
+        registered = ""
+        if vendor is None:
+            name = next((t.text for t in rec.contract.terms if t.field.value == "PARTY_SUPPLIER" and t.text), None)
+            if name is not None:  # CAPEX-4: the vendor's name comes from the contract's text, which must not name the business itself
+                from app.operations.party_names import own_business_keys, same_company_key
+
+                own = own_business_keys(
+                    contract_buyer_names=[t.text for t in rec.contract.terms if t.field.value == "PARTY_BUYER" and t.text],
+                    opened_names=[e.payload.get("company_name") for e in self._entries() if e.payload.get("company_name")],
+                    confirmed_records=[r for r in self._store.contract_records()
+                                       if r.id != rec.id and r.status == DocumentStatus.CONFIRMED],
+                    scenario=state.scenario)
+                if same_company_key(name) in own:
+                    raise _refuse(Code.PRECONDITION_FAILED, "The vendor named in this contract is your own business. A purchase "
+                                  "is made from another company, so nothing was committed; check who the seller is in the contract",
+                                  document_id=rec.id, refusal="VENDOR_IS_OWN_BUSINESS")
+            counterparties.append(Counterparty(id=rec.counterparty_id, name=name or rec.counterparty_id, role="SUPPLIER",
+                                               known=True))
+            registered = f"; vendor {rec.counterparty_id} added to the registry as a supplier"
+        new_state = _bump(state, flows=[*state.flows, *flows], counterparties=counterparties)
+        days = ", ".join(str(p.day) for p in schedule.payments)
+        return _Effect(f"Purchase under document {rec.id} ({rec.title}) committed: {len(flows)} payment"
+                       f"{'s' if len(flows) != 1 else ''} of {fmt_yuan(schedule.price_fen)} in all, on days {days}, "
+                       f"booked as scheduled payments{registered}", state=new_state)
 
     def _request_approval(self, op: RequestOwnerApproval) -> _Effect:
         entries = [e for e in self._entries() if e.op is not None and e.op.op_id == op.payload_op_id]
