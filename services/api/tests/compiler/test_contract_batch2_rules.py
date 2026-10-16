@@ -125,3 +125,34 @@ def test_no_swap_when_a_party_has_no_role_label():
     text = _lines("测试合同", "买受人：测试甲建设有限公司", "出卖人：测试乙工程有限公司", "甲方应向乙方支付货款。")
     c = _parties(text, "出卖人：测试乙工程有限公司", "买受人：测试甲建设有限公司")
     assert _one(c, F.PARTY_BUYER).text == "测试乙工程有限公司"
+
+
+# ---------------------------------------------------------------- a retention stated twice, read once
+
+ROW = "4 保留金 5%"
+CLAUSE = "保留金：按结算价的5%预留，保修期满后20日内无息返还。"
+
+
+def _retentions(row: str, clause: str, row_rate: str, clause_rate: str):  # type: ignore[no-untyped-def]
+    return _compile(_lines("测试合同", "付款表", row, "", "第五条", clause),
+                    [_x(F.RETENTION, row, value_text=row_rate), _x(F.RETENTION, clause, value_text=clause_rate)])
+
+
+def test_a_table_row_and_a_clause_with_the_same_retention_are_one_term_with_the_deadline():
+    c = _retentions(ROW, CLAUSE, "5%", "5%")
+    t = _one(c, F.RETENTION)
+    assert (t.rate_bp, t.days) == (500, 20)
+    assert c.status.value != "CONFLICTING_SOURCES"
+    assert not any(a.reason.startswith("conflicting sources") for a in c.abstentions)
+
+
+def test_two_different_retention_rates_still_conflict():
+    c = _retentions(ROW, CLAUSE.replace("5%", "6%"), "5%", "6%")
+    assert _all(c, F.RETENTION) == []
+    assert any(a.field == "RETENTION" and a.reason.startswith("conflicting sources") for a in c.abstentions)
+
+
+def test_two_different_retention_deadlines_still_conflict():
+    row = "4 保留金 5% 保修期满后30日内"
+    c = _retentions(row, CLAUSE, "5%", "5%")
+    assert _all(c, F.RETENTION) == []

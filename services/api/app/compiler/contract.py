@@ -547,6 +547,21 @@ def _per_stage_payment_terms(terms: list[ContractTerm], abst: list[Abstention]) 
     return [t for t in terms if t not in covered], bool(covered)
 
 
+def _retention_stated_twice(group: list[ContractTerm], abst: list[Abstention]) -> list[ContractTerm]:
+    """A retention stated in the payment table ("4 质量保证金 3%") and again in a clause that adds when it is released
+    ("按结算价的3%预留……缺陷责任期满后14日内返还") is one term: the one with the deadline is read. Only when every
+    statement has the same rate and exactly one states a deadline; different rates, or two deadlines, stay a conflict."""
+    rates = {t.rate_bp for t in group}
+    if len(group) < 2 or len(rates) != 1 or None in rates:
+        return group
+    timed = [t for t in group if t.days is not None or t.months is not None]
+    if len(timed) != 1 or any(t.text for t in group if t is not timed[0]):
+        return group
+    abst.append(Abstention(field=f"note:{F.RETENTION.value}", spans=[t.span for t in group], reason=(
+        "note: the same retention is stated twice and only one statement says when it is released: read once")))
+    return timed
+
+
 def _merge(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[ContractTerm], bool]:
     """Read a term stated twice once; drop a one-valued field stated with different values (CONFLICTING_SOURCES)."""
     kept: list[ContractTerm] = []
@@ -558,6 +573,8 @@ def _merge(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[Cont
         if field == F.PRICE:
             group = _without_line_items(group, abst)
             by_field[field] = group
+        if field == F.RETENTION:
+            group = _retention_stated_twice(group, abst)
         distinct: dict[tuple[object, ...], ContractTerm] = {}
         for t in group:
             distinct.setdefault(_key(t), t)
