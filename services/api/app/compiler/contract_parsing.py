@@ -36,7 +36,8 @@ _MONTH = "(?:" + "|".join(sorted(_MONTHS, key=len, reverse=True)) + r")\.?"
 _ORD = r"(?:st|nd|rd|th)?"
 # "1 September 2026", "1st day of September, 2026", "September 1, 2026", "2026-09-01", "2026年9月1日".
 DATE_PAT = (rf"(?:\d{{1,2}}{_ORD}\s+(?:day\s+of\s+)?{_MONTH},?\s+\d{{4}}|{_MONTH}\s+\d{{1,2}}{_ORD},?\s+\d{{4}}"
-            r"|\d{4}-\d{1,2}-\d{1,2}|\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日)")
+            r"|\d{4}-\d{1,2}-\d{1,2}|\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日"
+            r"|[〇零一二三四五六七八九]{4}年[一二三四五六七八九十]{1,3}月[一二三四五六七八九十]{1,3}日)")
 _DATE_RE = re.compile(DATE_PAT, I)
 
 
@@ -126,10 +127,23 @@ def parse_date(text: str | None) -> Parsed:
     return Parsed(found.pop()) if found else Parsed()
 
 
+_CN_DIGIT = {c: str(i) for i, c in enumerate("〇一二三四五六七八九")} | {"零": "0"}
+
+
+def _cn_small(t: str) -> int:
+    """一 .. 三十一 in Chinese numerals ("九", "十二", "二十", "二十五")."""
+    if "十" not in t:
+        return int(_CN_DIGIT[t])
+    head, _, tail = t.partition("十")
+    return (int(_CN_DIGIT[head]) if head else 1) * 10 + (int(_CN_DIGIT[tail]) if tail else 0)
+
+
 def _iso(s: str) -> str | None:
     s = s.strip()
     try:
-        if m := re.fullmatch(r"(\d{4})-(\d{1,2})-(\d{1,2})", s):
+        if m := re.fullmatch(r"([〇零一二三四五六七八九]{4})年([一二三四五六七八九十]{1,3})月([一二三四五六七八九十]{1,3})日", s):
+            y, mo, d = int("".join(_CN_DIGIT[c] for c in m.group(1))), _cn_small(m.group(2)), _cn_small(m.group(3))
+        elif m := re.fullmatch(r"(\d{4})-(\d{1,2})-(\d{1,2})", s):
             y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
         elif m := re.fullmatch(r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", s):
             y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
