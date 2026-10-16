@@ -17,15 +17,63 @@
     },
     {
       "from_day": 43,
-      "to_day": 60,
-      "value_fen": 8912,
-      "value_bp": 89,
+      "to_day": 43,
+      "value_fen": 9107,
+      "value_bp": 91,
       "varies": false,
       "above_guard": false,
       "from_when": "in 9 days",
+      "to_when": "in 9 days",
+      "value_pct": "0.91%",
+      "value_display": "¥91.07"
+    },
+    {
+      "from_day": 44,
+      "to_day": 44,
+      "value_fen": 9058,
+      "value_bp": 91,
+      "varies": false,
+      "above_guard": false,
+      "from_when": "in 10 days",
+      "to_when": "in 10 days",
+      "value_pct": "0.91%",
+      "value_display": "¥90.58"
+    },
+    {
+      "from_day": 45,
+      "to_day": 45,
+      "value_fen": 9009,
+      "value_bp": 90,
+      "varies": false,
+      "above_guard": false,
+      "from_when": "in 11 days",
+      "to_when": "in 11 days",
+      "value_pct": "0.90%",
+      "value_display": "¥90.09"
+    },
+    {
+      "from_day": 46,
+      "to_day": 46,
+      "value_fen": 8960,
+      "value_bp": 90,
+      "varies": false,
+      "above_guard": false,
+      "from_when": "in 12 days",
+      "to_when": "in 12 days",
+      "value_pct": "0.90%",
+      "value_display": "¥89.60"
+    },
+    {
+      "from_day": 47,
+      "to_day": 60,
+      "value_fen": 8911,
+      "value_bp": 89,
+      "varies": false,
+      "above_guard": false,
+      "from_when": "in 13 days",
       "to_when": "in 26 days",
       "value_pct": "0.89%",
-      "value_display": "¥89.12"
+      "value_display": "¥89.11"
     },
     {
       "from_day": 61,
@@ -44,7 +92,7 @@
   "no_plan": false,
   "source_state_version": 7,
   "hypothetical": true,
-  "sentence": "Cash in the next 8 days saves you ¥178.22 of funding cost per ¥10,000 (1.78%), then ¥89.12 (0.89%) for the 18 days after; later, nothing.",
+  "sentence": "Cash in the next 8 days saves you ¥178.22 of funding cost per ¥10,000 (1.78%), then ¥91.07 (0.91%) for the 1 days after, then ¥90.58 (0.91%) for the 1 days after, then ¥90.09 (0.90%) for the 1 days after, then ¥89.60 (0.90%) for the 1 days after, then ¥89.11 (0.89%) for the 14 days after; later, nothing.",
   "state_version": 7,
   "computed_in_seconds": 0,
   "amount_display": "¥10,000.00"
