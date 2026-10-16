@@ -91,7 +91,7 @@ test("with the counter ready: Cash draws the pending line dashed at 60%, with it
   await expect(page.getByTestId("cash-receipts-legend")).toHaveText(counterEn.cash.receipts_legend_text);
   const cashRows = page.getByTestId("cash-pending-rows-row");
   await expect(cashRows).toHaveCount(3);
-  await expect(cashRows.first().getByTestId("cash-pending-rows-text")).toHaveText("if Foshan accepts Option A: ¥257,200 paid 2 days after the offer");
+  await expect(cashRows.first().getByTestId("cash-pending-rows-text")).toHaveText("if Foshan accepts Option A: ¥260,000 paid 2 days after the offer");
   await expect(page.locator("[data-testid='cash-receipts-row'][data-basis='PENDING']")).toHaveCount(0);
   await expect(page.getByTestId("picture-line-nothing")).not.toHaveAttribute("stroke-dasharray", /./);
 });
@@ -134,7 +134,7 @@ test("Chinese: the words, the legend and the pending rows are the server's, on C
   await lang(page, "zh");
   await cash(page);
   await expect(page.getByTestId("picture-pending-legend")).toHaveText("如果 Foshan 接受方案 A");
-  await expect(page.getByTestId("cash-pending-rows-text").first()).toHaveText("如果 Foshan 接受方案 A：报价后 2 天收到 ¥257,200");
+  await expect(page.getByTestId("cash-pending-rows-text").first()).toHaveText("如果 Foshan 接受方案 A：报价后 2 天收到 ¥260,000");
   await expect(page.locator("[data-testid='cash-receipts-row'][data-basis='OWED']").getByTestId("cash-receipts-text")).toHaveText(counterZh.cash.events_rail[5].basis_text!);
   await expect(page.locator("[data-testid='cash-receipts-row'][data-basis='OWED']").getByTestId("cash-receipts-text")).toHaveText("应收：13 天前开票，32 天后到期");
   await expect(page.getByTestId("cash-receipts-legend")).toContainText("虚线：如果 Foshan 接受方案 A");

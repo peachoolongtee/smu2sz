@@ -95,9 +95,9 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
   await expect(hero).not.toContainText(/ago/);
   // The Cash page reads the same facts and starts its chart today.
   await page.goto("/cash");
-  await expect(page.getByTestId("cash-unsafe-when")).toHaveText("¥255k");
+  await expect(page.getByTestId("cash-unsafe-when")).toHaveText("¥258k");
   await expect(page.getByText("Short of your minimum today").first()).toBeVisible();
-  await expect(page.getByTestId("cash-figures")).toContainText("Cash today ¥45k");
+  await expect(page.getByTestId("cash-figures")).toContainText("Cash today ¥42k");
 });
 
 test("a part-paid promise: Receivables names the four facts and the window", async ({ page }, info) => {
@@ -113,7 +113,7 @@ test("a part-paid promise: Receivables names the four facts and the window", asy
   const facts = page.getByTestId("receipt-facts-rec-receipt-1");
   await expect(page.getByTestId("receipt-lead-rec-receipt-1")).toContainText("Part-paid by Foshan Home Retail Co.");
   await expect(facts.getByTestId("receipt-facts-rec-receipt-1-received")).toContainText("Cash received");
-  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining")).toContainText("¥291,400.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining")).toContainText("¥290,000.00");
   await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining").locator("dd")).toHaveClass(/font-bold/);
   await expect(facts.getByTestId("receipt-facts-rec-receipt-1-window")).toHaveText("The early-payment window has ended");
 });

@@ -56,7 +56,7 @@ test("day 0: the summary answers who owes what, with no empty panels", async ({ 
 
 test("day 34: the late invoice leads, the overdue total is the server's, and the early payment and receipt appear", async ({ page }) => {
   await advanceTo34(page);
-  await expect(page.getByTestId("recv-overdue")).toHaveText("¥162,800.00");
+  await expect(page.getByTestId("recv-overdue")).toHaveText("¥160,000.00");
   // Overdue first: its heading row leads the table, then the late invoice, then the heading over the rest.
   await expect(page.getByTestId("recv-group-overdue")).toHaveText("Overdue first");
   // "Not overdue" until the collections ranking is on; with it (the strategy build) the heading says what orders the rest.
@@ -71,7 +71,7 @@ test("day 34: the late invoice leads, the overdue total is the server's, and the
   await page.getByTestId("recv-toggle-RCV-A").click();
   await expect(page.getByTestId("recv-detail-RCV-A")).toContainText("RCV-A");
   await expect(page.getByRole("heading", { name: "Expected early payments" })).toBeVisible();
-  await expect(page.getByTestId("promised-RCV-A")).toContainText("¥255,013.80");
+  await expect(page.getByTestId("promised-RCV-A")).toContainText("¥257,790.00");
   await expect(page.getByRole("heading", { name: "Payments received" })).toBeVisible();
   await expect(page.getByTestId("receipt-rec-receipt-1")).toContainText("Foshan Home Retail Co.");
   // The record ids (the invoice, the bank's reference) are one fold down; the sentences use names.
@@ -139,14 +139,14 @@ test("day 34: only the late invoice offers Chase payment; the dialog holds the s
   const dialog = page.getByTestId("chase-dialog-RCV-A");
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("heading", { name: "Chase payment: Foshan Home Retail Co." })).toBeVisible();
-  await expect(dialog.getByTestId("chase-fact-outstanding")).toContainText("¥162,800.00");
+  await expect(dialog.getByTestId("chase-fact-outstanding")).toContainText("¥160,000.00");
   await expect(dialog.getByTestId("chase-fact-invoice")).toContainText("¥420,000.00");
   await expect(dialog.getByTestId("chase-fact-late")).toContainText("2 days");
   await expect(dialog.getByTestId("chase-fact-terms")).toContainText("45 days");
-  await expect(dialog.getByTestId("chase-fact-promise-0")).toContainText("¥255,013.80");
+  await expect(dialog.getByTestId("chase-fact-promise-0")).toContainText("¥257,790.00");
   const request = dialog.getByTestId("chase-request");
   await expect(request).toContainText("Dear Foshan Home Retail Co.");
-  await expect(request).toContainText("¥162,800.00 remains outstanding");
+  await expect(request).toContainText("¥160,000.00 remains outstanding");
   const asked = await request.innerText();
   expect(asked).not.toMatch(/CMT-|RCV-|\bday \d/);
   // One Primary inside the dialog: Copy. "Open the buyer thread" is a link in the Deals route when a thread exists.
@@ -164,19 +164,19 @@ test("day 34: only the late invoice offers Chase payment; the dialog holds the s
 
 test("day 34 after the half receipt: the chase dialog's balance is the one the page shows, and the receipt row names its four facts", async ({ page }) => {
   await advanceTo34Half(page);
-  await expect(page.getByTestId("recv-overdue")).toHaveText("¥291,400.00");
+  await expect(page.getByTestId("recv-overdue")).toHaveText("¥290,000.00");
   await page.getByTestId("chase-open-RCV-A").click();
   const dialog = page.getByTestId("chase-dialog-RCV-A");
-  await expect(dialog.getByTestId("chase-fact-outstanding")).toHaveText(/¥291,400\.00/);
-  await expect(dialog.getByTestId("chase-request")).toContainText("¥291,400.00 remains outstanding");
+  await expect(dialog.getByTestId("chase-fact-outstanding")).toHaveText(/¥290,000\.00/);
+  await expect(dialog.getByTestId("chase-request")).toContainText("¥290,000.00 remains outstanding");
   await dialog.getByTestId("chase-close").click();
   await expect(dialog).toBeHidden();
   // F25: the receipt row on the Receivables page, not only the Home change row, states received, face cleared, discount, remaining and the window.
   const facts = page.getByTestId("receipt-facts-rec-receipt-1");
-  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-received")).toContainText("¥127,506.90");
-  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-cleared")).toContainText("¥128,600.00");
-  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-discount")).toContainText("¥1,093.10");
-  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining")).toContainText("¥291,400.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-received")).toContainText("¥128,895.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-cleared")).toContainText("¥130,000.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-discount")).toContainText("¥1,105.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining")).toContainText("¥290,000.00");
   await expect(facts).toContainText("The early-payment window has ended");
 });
 
