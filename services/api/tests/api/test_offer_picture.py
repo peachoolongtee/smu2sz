@@ -159,7 +159,7 @@ def test_each_path_has_the_three_term_rows_with_what_it_replaces(client):
         return [(t["value_text"], t["instead_of_text"]) for t in p["terms"]]
 
     assert rows(asked) == [("60 days", None), ("1.20% off ¥420,000.00", None), ("1.00% rebate", None)]
-    assert rows(opt_a) == [("45 days", "instead of 60"), ("0.85% off ¥257,200.00", "instead of 1.20% off ¥420,000.00"),
+    assert rows(opt_a) == [("45 days", "instead of 60"), ("0.85% off ¥260,000.00", "instead of 1.20% off ¥420,000.00"),
                            (None, "instead of a 1.00% rebate")]  # a term the path does not carry is null, never the word "None"
     assert rows(opt_b) == [("55 days", "instead of 60"), (None, "instead of 1.20% off ¥420,000.00"),
                            ("0.30% price rise", "instead of a 1.00% rebate")]
@@ -248,7 +248,7 @@ def test_a_moments_text_says_what_every_path_has_once_then_what_differs_then_who
     assert text[47] == ("On every path: Operating bill −¥100k. Option A: Receipt from Foshan Home Retail Co. ¥420k. "
                         "If you accept their request, cash is below your minimum.")
     assert text[60] == "On every path: Debt service −¥45k. If you accept their request, cash is below your minimum."
-    assert text[0] == ("Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k. "
+    assert text[0] == ("Option A: Credit line draw ¥147k. Option B: Credit line draw ¥90k. "
                        "Who decides: Option A: within your mandate; Option B: needs your approval.")
     assert opt_a not in " ".join(text.values())
 
@@ -325,7 +325,7 @@ def test_an_offer_whose_invoice_was_part_settled_since_is_answered_as_unavailabl
     version = client.get("/mandate").json()["mandate"]["version"]
     r = client.post("/operations", headers=BANK, json={
         "kind": "RECEIVE_PAYMENT", "op_id": "rc-1", "idempotency_key": "rc-1", "mandate_version": version, "requested_by": "SYSTEM",
-        "receivable_id": "RCV-A", "amount_fen": 25_720_000, "bank_reference": "BANK-1"})
+        "receivable_id": "RCV-A", "amount_fen": 26_000_000, "bank_reference": "BANK-1"})
     assert r.json()["result"]["status"] == "EXECUTED"
     _assert_unavailable(client, oid, view)
 

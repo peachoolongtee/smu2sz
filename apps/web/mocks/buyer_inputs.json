@@ -534,6 +534,7 @@
       "open_negotiations": [],
       "primary_decision": null,
       "other_open_count": 0,
+      "deals_history": [],
       "decision": null,
       "none_text": "No commercial decision is waiting for you with Foshan.",
       "actions": [
@@ -800,6 +801,7 @@
       "open_negotiations": [],
       "primary_decision": null,
       "other_open_count": 0,
+      "deals_history": [],
       "decision": null,
       "none_text": "目前没有需要您对Foshan作出的商务决定。",
       "actions": [
@@ -953,7 +955,7 @@
         "entered_by": "OWNER",
         "entered_day": 0,
         "state_version": 1,
-        "recorded_at": "2026-10-14T02:03:36.527575+00:00",
+        "recorded_at": "2026-10-16T08:58:18.771122+00:00",
         "seq": 1
       },
       "state_version": 1,
@@ -972,7 +974,7 @@
         "entered_by": "OWNER",
         "entered_day": 0,
         "state_version": 1,
-        "recorded_at": "2026-10-14T02:03:36.578751+00:00",
+        "recorded_at": "2026-10-16T08:58:18.856828+00:00",
         "seq": 1
       },
       "state_version": 1,
@@ -995,7 +997,7 @@
           "entered_by": "OWNER",
           "entered_day": 0,
           "state_version": 1,
-          "recorded_at": "2026-10-14T02:03:36.578751+00:00",
+          "recorded_at": "2026-10-16T08:58:18.856828+00:00",
           "seq": 1
         }
       ],
@@ -1165,7 +1167,7 @@
           "entered_by": "OWNER",
           "entered_day": 0,
           "state_version": 1,
-          "recorded_at": "2026-10-14T02:03:36.578751+00:00",
+          "recorded_at": "2026-10-16T08:58:18.856828+00:00",
           "seq": 1
         }
       ],
@@ -1470,6 +1472,7 @@
       "open_negotiations": [],
       "primary_decision": null,
       "other_open_count": 0,
+      "deals_history": [],
       "decision": null,
       "none_text": "No commercial decision is waiting for you with Foshan.",
       "actions": [
@@ -1736,6 +1739,7 @@
       "open_negotiations": [],
       "primary_decision": null,
       "other_open_count": 0,
+      "deals_history": [],
       "decision": null,
       "none_text": "目前没有需要您对Foshan作出的商务决定。",
       "actions": [

@@ -69,7 +69,7 @@ export function AskHeaderInput() {
     void sendMessage(q, undefined, "OWNER");
   }
   return (
-    <div className="relative z-20 hidden h-9 w-[380px] shrink-0 items-center justify-center lg:flex xl:w-[520px]">
+    <div className="relative z-20 hidden h-9 w-[340px] shrink-0 items-center justify-center lg:flex xl:w-[520px]">
       <form
         role="search"
         aria-label={t("ask.input")}

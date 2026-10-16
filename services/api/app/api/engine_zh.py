@@ -28,7 +28,7 @@ _MISS_LIMIT = 500
 M = r"¥[\d,]+(?:\.\d+)?"  # an amount
 SM = r"[−-]?¥[\d,]+(?:\.\d+)?"  # a signed amount
 PCT = r"\d+(?:\.\d+)?%"
-WHEN = r"(?:today|tomorrow|yesterday|in \d+ days|\d+ days ago)"  # what `presentation.when_text` writes in English
+WHEN = r"(?:today|tomorrow|yesterday|in \d+ days|\d+ days ago|when approved)"  # what `presentation.when_text` writes in English
 UNTIL = r"(?:today|tomorrow|yesterday|\d+ days from now|\d+ days ago)"  # what `relative_days` writes after "to day N"
 DAYS = r"(?:days?|day\(s\))"
 DEADLINE = r"(?:by today|by tomorrow|within \d+ days|by a deadline that passed yesterday|by a deadline that passed \d+ days ago)"
@@ -39,7 +39,7 @@ _TOKEN = re.compile(r"⟦(\d+)⟧")
 
 def when_zh(phrase: str) -> str:
     """`presentation.when_text`'s English phrase in Chinese ("in 12 days" -> "12 天后")."""
-    fixed = {"today": "今天", "tomorrow": "明天", "yesterday": "昨天"}
+    fixed = {"today": "今天", "tomorrow": "明天", "yesterday": "昨天", "when approved": "获批后"}
     if phrase in fixed:
         return fixed[phrase]
     m = re.fullmatch(r"in (\d+) days", phrase)
@@ -451,6 +451,11 @@ def _breach_detail(m: re.Match[str]) -> str:
 @rule(rf"Reserve breach ahead (?P<w>{WHEN})")
 def _breach_title(m: re.Match[str]) -> str:
     return f"{when_zh(m['w'])}现金将低于最低现金储备"
+
+
+@rule(r"Reserve headroom thin on day (?P<d>\d+)")
+def _headroom_title(m: re.Match[str]) -> str:
+    return f"第 {m['d']} 天现金距最低现金储备很近"
 
 
 @rule(rf"cash goes below zero (?P<w>{WHEN}) without action")
@@ -993,6 +998,16 @@ def _terms_stay(m: re.Match[str]) -> str:
 @rule(rf"We will accept early settlement on up to (?P<amt>{M}) of this invoice at (?P<r>{PCT}), paid (?P<d>{DEADLINE})")
 def _counter_settle(m: re.Match[str]) -> str:
     return f"我们接受对本发票最多 {m['amt']} 提前结算，折扣 {m['r']}，付款期限：{deadline_zh(m['d'])}"
+
+
+@rule(rf"We will accept early settlement on up to (?P<amt>{M}) of this invoice at (?P<r>{PCT}), paid on or before day (?P<day>\d+)")
+def _counter_settle_day(m: re.Match[str]) -> str:
+    return f"我们接受对本发票最多 {m['amt']} 提前结算，折扣 {m['r']}，须在第 {m['day']} 天或之前付款"
+
+
+@rule(rf"We can extend terms by (?P<d>\d+) days on (?P<inv>the next invoice|the next \w+ invoices) if the (?P<r>{PCT}) credit is firm on each of them")
+def _counter_extend_credit(m: re.Match[str]) -> str:
+    return _counter_extend(m) + "，前提是每张发票都确定给予 " + m["r"] + " 的折让"
 
 
 @rule(r"We can extend terms by (?P<d>\d+) days on (?P<inv>the next invoice|the next \w+ invoices)")

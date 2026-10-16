@@ -56,7 +56,7 @@ def test_a_receipt_in_the_log_is_counted_as_confirmed(client, rt):
         "kind": "RECEIVE_PAYMENT", "op_id": "t-fb1", "idempotency_key": "t-fb1", "mandate_version": mv, "requested_by": "SYSTEM",
         "receivable_id": promised["receivable_id"], "amount_fen": promised["expected_fen"], "bank_reference": "T-FB-1"})
     basis = _cash(client)["forecast_basis"]
-    assert basis["confirmed_receipts_fen"] == promised["expected_fen"] == 25_501_380
+    assert basis["confirmed_receipts_fen"] == promised["expected_fen"] == 25_779_000
     # the receipt is in the log, so it is no longer an expected receipt of the horizon
     assert basis["expected_receipts_fen"] > 0
 

@@ -78,7 +78,7 @@ def verifiers(rt_day0: Runtime, books_day0: Books) -> Any:
 
 SETTINGS = [
     E.Setting(45), E.Setting(50), E.Setting(55), E.Setting(60), E.Setting(55, price=30),
-    E.Setting(45, discount=85, face=25_720_000), E.Setting(45, discount=100), E.Setting(45, rebate=125),
+    E.Setting(45, discount=85, face=26_000_000), E.Setting(45, discount=100), E.Setting(45, rebate=125),
     E.Setting(45, rebate=130), E.Setting(55, price=30, rebate=40),
 ]
 SAME = ("passes", "approved", "liquidity_only", "forward_total_fen", "codes", "binding", "reserve_day", "reserve_curable",

@@ -21,8 +21,8 @@
           {
             "key": "outstanding",
             "label": "Outstanding",
-            "value_display": "¥1,002,800",
-            "note": "¥162,800 overdue; next due in 13 days",
+            "value_display": "¥1,000,000",
+            "note": "¥160,000 overdue; next due in 13 days",
             "tone": "bad",
             "state": "overdue",
             "state_text": "Overdue"
@@ -47,7 +47,7 @@
             "proportion": 1
           }
         ],
-        "relationship_text": "Foshan contributes an estimated ¥1.01m a year, owes ¥1,003k (100% of your open receivables), and has no open negotiation.",
+        "relationship_text": "Foshan contributes an estimated ¥1.01m a year, owes ¥1,000k (100% of your open receivables), and has no open negotiation.",
         "receivable_flow": [
           {
             "key": "owed",
@@ -258,7 +258,7 @@
         "history": [
           {
             "when_text": "32 days ago",
-            "text": "The receipt of ¥255,013.80 against the ¥420,000 invoice came in.",
+            "text": "The receipt of ¥257,790 against the ¥420,000 invoice came in.",
             "href": null,
             "link_label": null,
             "state": "overdue",
@@ -471,8 +471,8 @@
           {
             "key": "outstanding",
             "label": "未收款",
-            "value_display": "¥1,002,800",
-            "note": "其中 ¥162,800 已逾期；下一笔13 天后到期",
+            "value_display": "¥1,000,000",
+            "note": "其中 ¥160,000 已逾期；下一笔13 天后到期",
             "tone": "bad",
             "state": "overdue",
             "state_text": "已逾期"
@@ -497,7 +497,7 @@
             "proportion": 1
           }
         ],
-        "relationship_text": "Foshan每年估计贡献 ¥101万，应付 ¥1,003k（占您未收应收款的 100%），目前没有进行中的谈判。",
+        "relationship_text": "Foshan每年估计贡献 ¥101万，应付 ¥1,000k（占您未收应收款的 100%），目前没有进行中的谈判。",
         "receivable_flow": [
           {
             "key": "owed",
@@ -708,7 +708,7 @@
         "history": [
           {
             "when_text": "32 天前",
-            "text": "已收到 ¥255,013.80，对应 ¥420,000 的发票。",
+            "text": "已收到 ¥257,790，对应 ¥420,000 的发票。",
             "href": null,
             "link_label": null,
             "state": "overdue",

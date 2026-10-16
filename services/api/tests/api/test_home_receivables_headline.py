@@ -18,10 +18,10 @@ def _pair(client):
 def test_someone_late_leads_with_the_late_invoice(client):
     _walk(client, receipt="half")
     en, zh = _pair(client)
-    assert en["headline"] == "¥291,400.00 from Foshan Home Retail Co. is 2 days late."
-    assert zh["headline"] == "来自Foshan Home Retail Co.的 ¥291,400.00 已逾期 2 天。"
+    assert en["headline"] == "¥290,000.00 from Foshan Home Retail Co. is 2 days late."
+    assert zh["headline"] == "来自Foshan Home Retail Co.的 ¥290,000.00 已逾期 2 天。"
     assert en["headline_tone"] == zh["headline_tone"] == "bad"
-    assert en["past_due"][0]["face_display"] == "¥291,400.00"
+    assert en["past_due"][0]["face_display"] == "¥290,000.00"
 
 
 def test_nobody_late_names_the_next_invoice(client):

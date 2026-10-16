@@ -34,14 +34,14 @@
         "terms_days": 45,
         "status": "OPEN",
         "confirmed": true,
-        "settled_fen": 25720000,
+        "settled_fen": 26000000,
         "advance_fen": 0,
         "advance_facility_id": null,
         "early_paid_fen": {
-          "CTR-193394b6ba8b-O2": 25720000
+          "CTR-193394b6ba8b-O2": 26000000
         },
         "face_display": "¥420,000.00",
-        "settled_display": "¥257,200.00",
+        "settled_display": "¥260,000.00",
         "advance_display": "¥0.00"
       },
       {
@@ -94,7 +94,7 @@
         "status": "COMMITTED",
         "owner_approved": true,
         "limit_fen": 15000000,
-        "drawn_fen": 14998620,
+        "drawn_fen": 14721000,
         "advance_rate_bp": null,
         "rate_bp": 640,
         "fee_bp_per_advance": 0,
@@ -140,7 +140,7 @@
         ],
         "source_note": "synthetic fixture (spec v2 §7.2)",
         "limit_display": "¥150,000.00",
-        "drawn_display": "¥149,986.20",
+        "drawn_display": "¥147,210.00",
         "rate_display": "6.40%",
         "upfront_fee_display": "0.00%"
       },
@@ -429,16 +429,16 @@
       {
         "id": "fund-OFF-f806f79b6c21-cooperative-0",
         "facility_id": "FAC-LINE",
-        "principal_fen": 14998620,
-        "remaining_fen": 14998620,
+        "principal_fen": 14721000,
+        "remaining_fen": 14721000,
         "request_day": 0,
         "arrival_day": 0,
         "receivable_id": null,
         "maturity_day": null,
         "settled": true,
         "assumed_date": false,
-        "principal_display": "¥149,986.20",
-        "remaining_display": "¥149,986.20"
+        "principal_display": "¥147,210.00",
+        "remaining_display": "¥147,210.00"
       }
     ],
     "scenario": "golden_sme",

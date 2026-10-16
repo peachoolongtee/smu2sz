@@ -34,8 +34,11 @@ _MONTHS = {
 }
 _MONTH = "(?:" + "|".join(sorted(_MONTHS, key=len, reverse=True)) + r")\.?"
 _ORD = r"(?:st|nd|rd|th)?"
-# "1 September 2026", "1st day of September, 2026", "September 1, 2026", "2026-09-01", "2026年9月1日".
+# "1 September 2026", "1st day of September, 2026", "September 1, 2026", "2026-09-01", "2026年9月1日", and the slash and
+# dot forms "2026/5/24", "2026.03.05": always a four-digit year first and one separator throughout, never a bare "5/24".
+_YMD_SEP = r"(?<![\d./])(?:19|20)\d{2}(?:/\d{1,2}/\d{1,2}|\.\d{1,2}\.\d{1,2})(?![\d/]|\.\d)"
 DATE_PAT = (rf"(?:\d{{1,2}}{_ORD}\s+(?:day\s+of\s+)?{_MONTH},?\s+\d{{4}}|{_MONTH}\s+\d{{1,2}}{_ORD},?\s+\d{{4}}"
+            rf"|{_YMD_SEP}"
             r"|\d{4}-\d{1,2}-\d{1,2}|\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日"
             r"|[〇零一二三四五六七八九]{4}年[一二三四五六七八九十]{1,3}月[一二三四五六七八九十]{1,3}日)")
 _DATE_RE = re.compile(DATE_PAT, I)
@@ -143,8 +146,8 @@ def _iso(s: str) -> str | None:
     try:
         if m := re.fullmatch(r"([〇零一二三四五六七八九]{4})年([一二三四五六七八九十]{1,3})月([一二三四五六七八九十]{1,3})日", s):
             y, mo, d = int("".join(_CN_DIGIT[c] for c in m.group(1))), _cn_small(m.group(2)), _cn_small(m.group(3))
-        elif m := re.fullmatch(r"(\d{4})-(\d{1,2})-(\d{1,2})", s):
-            y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        elif m := re.fullmatch(r"(\d{4})-(\d{1,2})-(\d{1,2})|(\d{4})/(\d{1,2})/(\d{1,2})|(\d{4})\.(\d{1,2})\.(\d{1,2})", s):
+            y, mo, d = (int(g) for g in m.groups() if g is not None)
         elif m := re.fullmatch(r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", s):
             y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
         elif m := re.fullmatch(rf"(\d{{1,2}}){_ORD}\s+(?:day\s+of\s+)?({_MONTH}),?\s+(\d{{4}})", s, I):
@@ -178,6 +181,28 @@ def parse_rate(text: str | None) -> Parsed:
     return Parsed(values.pop()) if values else Parsed()
 
 
+_CN_NUM = {"零": 0, "〇": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+CN_COUNT = "[零〇一二两三四五六七八九十百]+"
+
+
+def cn_int(text: str) -> int | None:
+    """A whole number written in Chinese numerals, up to 999 ("十五" 15, "三十" 30, "九十" 90, "一百八十" 180); None when
+    the text is not one."""
+    if not text or not re.fullmatch(CN_COUNT, text):
+        return None
+    total, digit, seen = 0, None, False
+    for ch in text:
+        if ch in _CN_NUM:
+            digit = _CN_NUM[ch]
+        elif ch in "十百":
+            mult = 100 if ch == "百" else 10
+            total += (1 if digit is None else digit) * mult
+            digit, seen = None, True
+        else:
+            return None
+    return total + (digit or 0) if (seen or digit is not None) else None
+
+
 def basis_of(text: str | None) -> PaymentBasis | None:
     """What payment terms count from, read from the fragment that states it."""
     if not text:
@@ -209,11 +234,13 @@ def unit_of(text: str | None) -> PriceUnit | None:
 
 
 __all__ = [
+    "CN_COUNT",
     "COUNT_PAT",
     "DATE_PAT",
     "EN_COUNT",
     "Parsed",
     "basis_of",
+    "cn_int",
     "business_days",
     "parse_count",
     "parse_date",

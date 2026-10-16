@@ -54,21 +54,22 @@ test.beforeEach(async ({}, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "mock-mode spec on the recorded story (the phone is measured inside it)");
 });
 
-test("the header and the three cards: the headline, the state pill, the cash card with the reserve bar, the outlook card with its mini chart", async ({ page }) => {
+test("the header and the cards: the headline for a screen reader, Refresh, the cash card with the reserve bar, the outlook card with its forecast and the recommendation inside it", async ({ page }) => {
   await open(page, { offer: true });
   const h = homeOffer.en;
   const v2 = h.home_v2;
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.getByTestId("home-headline")).toHaveText(h.cash.headline_conditional);
   await expect(page.getByTestId("home-status-word")).toHaveText(h.cash.status_word);
-  await expect(page.getByTestId("home-read-when")).toHaveText("Updated today");
-  await expect(page.getByTestId("home-read-when")).toHaveAttribute("aria-label", "Read today");
+  // The final UI fold (16 Oct): the top of the page is one Refresh button whose title is the server's read time; the headline and the summary are for a screen reader.
+  await expect(page.getByTestId("home-refresh")).toHaveAttribute("aria-label", "Refresh");
+  await expect(page.getByTestId("home-refresh")).toHaveAttribute("title", "Read today");
+  await expect(page.getByTestId("hv2-headline")).toHaveClass(/sr-only/);
+  await expect(page.getByTestId("hv2-summary")).toHaveClass(/sr-only/);
   // "FLOW action ready" is said once, by the recommendation card: no pill beside the headline, and the line under it keeps the server's count sentence and drops "One funding action ready.".
   await expect(page.getByTestId("hv2-state-pill")).toHaveCount(0);
   expect(v2.summary_text).toBe("One funding action ready. One deal decision needs you.");
   await expect(page.getByTestId("hv2-summary")).toHaveText("One deal decision needs you.");
-  expect(await page.getByTestId("hv2-summary").evaluate((n) => getComputedStyle(n).fontSize)).toBe("15px");
-  expect(await page.getByTestId("hv2-headline").evaluate((n) => getComputedStyle(n).fontSize)).toBe("32px");
   // Cash available today: the figure, the server's note, the reserve bar (a track to the minimum and the buffer above it); not a progress bar.
   const cash = v2.kpis.cash_available;
   await expect(page.getByTestId("hv2-metric-cash-label")).toHaveText("Cash available today");
@@ -79,7 +80,7 @@ test("the header and the three cards: the headline, the state pill, the cash car
   await expect(page.getByTestId("home-buffer-bar")).toHaveAttribute("aria-label", cash.note);
   await expect(page.getByTestId("home-buffer-cash")).toBeAttached();
   await expect(page.getByRole("progressbar")).toHaveCount(0);
-  // Company cash outlook: the lowest figure in the one risk red, "Without new funding", the mini step chart, the plan's cash, Expand.
+  // Company cash outlook: the lowest figure in the one risk red, "Without new funding", the plan's cash, the company forecast in the card (no Expand).
   const low = v2.kpis.lowest_ahead;
   await expect(page.getByTestId("hv2-metric-lowest-label")).toHaveText("Company cash outlook");
   await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText("−¥105,000");
@@ -87,13 +88,18 @@ test("the header and the three cards: the headline, the state pill, the cash car
   expect(await page.getByTestId("home-kpi-lowest-value").evaluate((n) => getComputedStyle(n).color)).toBe("rgb(168, 50, 34)");
   await expect(page.getByTestId("hv2-outlook-when")).toHaveText(new RegExp(`^${h.cash.lowest_when}$`, "i"));
   await expect(page.getByTestId("home-kpi-lowest-note")).toHaveText(low.short_note ?? low.note);
-  await expect(page.getByTestId("hv2-mini-current")).toBeAttached();
-  await expect(page.getByTestId("hv2-mini-plan")).toHaveAttribute("stroke-dasharray", /./);
+  const outlook = page.getByTestId("hv2-outlook-card");
+  await expect(outlook.getByTestId("hv2-forecast")).toBeVisible();
+  await expect(outlook.getByTestId("home-line-plan")).toBeAttached();
   if (low.with_plan) await expect(page.getByTestId("home-kpi-lowest-plan")).toHaveText(new RegExp(`^${low.with_plan.label} ${low.with_plan.value_text}$`, "i"));
-  await expect(page.getByTestId("hv2-outlook-expand")).toHaveAttribute("aria-expanded", "false");
-  // The three cards sit in one row on a desktop.
-  const tops = await Promise.all(["hv2-cash-card", "hv2-action", "hv2-outlook-card"].map(async (id) => Math.round((await page.getByTestId(id).boundingBox())!.y)));
-  expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(4);
+  await expect(page.getByTestId("hv2-outlook-expand")).toHaveCount(0);
+  // The outlook is the full-width main card with the recommendation inside it, at its right on a desktop; the cash card heads the side column beside the worklist, under the outlook.
+  await expect(outlook.getByTestId("hv2-action")).toBeVisible();
+  const [o, a, c, w] = await Promise.all(["hv2-outlook-card", "hv2-action", "hv2-cash-card", "home-worklist-panel"].map(async (id) => (await page.getByTestId(id).boundingBox())!));
+  expect(a.x).toBeGreaterThan(o.x + o.width / 2);
+  expect(c.y).toBeGreaterThanOrEqual(o.y + o.height - 1);
+  expect(Math.abs(c.y - w.y)).toBeLessThan(4);
+  expect(c.x).toBeGreaterThan(w.x + w.width - 1);
   await expect(page.getByTestId("hv2-plan-pill")).toHaveText(/^planned$/i);
 });
 
@@ -131,7 +137,7 @@ test("the recommendation: the title, the planned amount, one line that reconcile
   // Round four: the card is a flex column. The cost is the bold fact, the funding bar fills the gap under it, the approval line sits directly above the actions, and the actions are pinned to the card's bottom.
   const [actionsBox, lineBox, costBox, barBox, cardBox] = await Promise.all([page.getByTestId("home-attention-run").boundingBox(), approval.boundingBox(), page.getByTestId("hv2-hero-value").boundingBox(), page.getByTestId("hv2-funding-bar").boundingBox(), page.getByTestId("hv2-action").boundingBox()]);
   expect(lineBox!.y + lineBox!.height).toBeLessThanOrEqual(actionsBox!.y + 1);
-  expect(actionsBox!.y - (lineBox!.y + lineBox!.height)).toBeLessThan(16);
+  // Inside the outlook card (the final UI fold) the recommendation takes the forecast's height, so the room between the approval line and the actions grows; the actions stay at the bottom.
   expect(barBox!.y).toBeGreaterThan(costBox!.y + costBox!.height - 1);
   expect(barBox!.y + barBox!.height).toBeLessThanOrEqual(lineBox!.y + 1);
   expect(Math.round(cardBox!.y + cardBox!.height - (actionsBox!.y + actionsBox!.height))).toBeLessThanOrEqual(20); // 16 px padding: the actions are pinned to the bottom
@@ -206,8 +212,8 @@ test("no funding amount: the figure line is omitted (the title carries the amoun
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
   const said = await page.getByTestId("home-v2").innerText();
   expect(said).not.toMatch(/\b(None|null|undefined|NaN)\b/);
-  // The same with the customer selected and the forecast open.
-  for (const url of ["/?customer=BUYER-1", "/?expand=1"]) {
+  // The same with the customer selected (the forecast is always open in the outlook card).
+  for (const url of ["/?customer=BUYER-1"]) {
     await page.goto(url);
     await expect(page.getByTestId("home-v2")).toBeVisible();
     await expect(page.getByTestId("hv2-stage")).toBeVisible();
@@ -371,27 +377,18 @@ test("running the plan: no alert, the covered recommendation with its one button
   await expect(page.getByTestId("home-tab-waiting-badge")).toHaveText("1");
 });
 
-test("Expand opens the full company forecast in place under the cards, with the events as chips and the selected event's sentence; Close and Escape restore the cards", async ({ page }) => {
+test("the company forecast is in the outlook card (no Expand since the final UI fold), with the events as markers and the selected event's sentence", async ({ page }) => {
   await open(page, { offer: true });
   const chart = homeOffer.en.home_v2.chart;
   const cash = homeOffer.en.cash;
   const forecast = page.getByTestId("hv2-forecast");
-  const expand = page.getByTestId("hv2-outlook-expand");
-  await expect(forecast).toHaveCount(0);
-  await expect(page.getByTestId("home-chart")).toHaveCount(0);
-  await expand.click();
-  await expect(page).toHaveURL(/expand=1/);
-  await expect(expand).toHaveAttribute("aria-expanded", "true");
-  await expect(expand).toHaveText("Close");
-  await expect(forecast).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Company cash forecast" })).toBeVisible();
-  // It sits under the three cards, which stay.
-  // In page coordinates: the forecast scrolls itself into view, so viewport boxes taken at different moments are not comparable.
-  const pageBottom = (id: string) => page.getByTestId(id).evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY);
-  const pageTop = (id: string) => page.getByTestId(id).evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
-  await expect.poll(async () => (await pageTop("hv2-forecast")) - (await pageBottom("hv2-outlook-card")), { message: "the forecast unfolds under the cards" }).toBeGreaterThanOrEqual(-1);
+  // It is part of the outlook card, open on arrival; there is no Expand and no `expand` key.
+  await expect(page.getByTestId("hv2-outlook-expand")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-outlook-card").getByTestId("hv2-forecast")).toBeVisible();
+  await expect(forecast).toHaveCount(1);
+  await expect(page.getByTestId("hv2-forecast-close")).toHaveCount(0);
   await expect(page.getByTestId("hv2-action")).toBeVisible();
-  // The chart: three legend entries (the red stretches stay red and unlabelled), the current line, the plan dashed grey, the minimum with its band, the lowest point; 300 px tall.
+  // The chart: three legend entries (the red stretches stay red and unlabelled), the current line, the plan, the minimum with its band, the lowest point; 240 px tall in the card.
   const legend = page.getByTestId("home-legend");
   await expect(legend.locator("li")).toHaveCount(3);
   await expect(legend).toContainText("Current forecast");
@@ -404,7 +401,7 @@ test("Expand opens the full company forecast in place under the cards, with the 
   await expect(page.getByTestId("hv2-danger")).toBeAttached();
   await expect(page.getByTestId("home-reserve")).toHaveClass(/stroke-chart-reserve/);
   await expect(page.getByTestId("home-lowest-mark")).toBeAttached();
-  expect(Math.round((await page.getByTestId("home-chart").boundingBox())!.height)).toBe(300);
+  expect(Math.round((await page.getByTestId("home-chart").boundingBox())!.height)).toBe(240);
   await expect(page.getByTestId("hv2-inspector")).toHaveCount(0);
   await expect(page.getByTestId("hv2-forecast-full")).toHaveAttribute("href", "/cash");
   await expect(page.getByTestId("hv2-forecast-full")).toContainText("Open full analysis");
@@ -434,20 +431,6 @@ test("Expand opens the full company forecast in place under the cards, with the 
   await page.getByTestId("home-lowest-point").click();
   await expect(page.getByTestId("home-chart")).toHaveAttribute("data-day", String(cash.lowest_day));
   expect(chart.lowest_inspector.day_text).toBeTruthy();
-  // Close restores the cards and the address; Escape does the same.
-  await page.getByTestId("hv2-forecast-close").click();
-  await expect(forecast).toHaveCount(0);
-  await expect(page).not.toHaveURL(/expand=1/);
-  await expect(expand).toHaveText("Expand");
-  await page.goto("/?expand=1");
-  await expect(forecast).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(forecast).toHaveCount(0);
-  await expect(page).not.toHaveURL(/expand=1/);
-  await expand.click();
-  await expect(forecast).toBeVisible();
-  await expand.click();
-  await expect(forecast).toHaveCount(0);
 });
 
 test("the worklist as the mockup's table: one alert line, tabs with counts, rows with the next step and the status pill, the count, the way to all deals", async ({ page }) => {
@@ -457,13 +440,14 @@ test("the worklist as the mockup's table: one alert line, tabs with counts, rows
   await expect(page.getByTestId("hv2-worklist-count")).toHaveText(String(w.counts.needs_you + w.counts.waiting));
   // The alert row is not here: the recommendation card is the alert (it is shown only without a plan card, see below).
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
-  // Tabs: All is the two lists together; the count beside the label; a tab's hint is its title, not a line on the page. The chosen tab is a white pill.
+  // Tabs: All is the two lists together; the count beside the label; a tab's hint is its title, not a line on the page. The chosen tab is a purple pill with white words (the final UI fold).
   expect(w.counts.needs_you).toBe(w.needs_you.length);
   const all = page.getByTestId("home-tab-all");
   await expect(all).toHaveAttribute("aria-selected", "true");
   await expect(all).toContainText("All");
   await expect(page.getByTestId("home-tab-all-badge")).toHaveText(String(w.counts.needs_you + w.counts.waiting));
-  expect(await all.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe("rgb(255, 255, 255)");
+  expect(await all.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe("rgb(146, 82, 220)");
+  expect(await all.evaluate((n) => getComputedStyle(n).color)).toBe("rgb(255, 255, 255)");
   await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveText(String(w.counts.needs_you));
   await expect(page.getByTestId("home-tab-waiting-badge")).toHaveText(String(w.counts.waiting));
   await expect(page.getByTestId("home-tab-customers-badge")).toHaveText(String(w.counts.customers));
@@ -552,6 +536,7 @@ test("round four: the worklist is a fixed-column table: the same columns on ever
   const next = one.getByTestId("hv2-row-next");
   expect(await next.evaluate((n) => [getComputedStyle(n).fontSize, getComputedStyle(n).whiteSpace, getComputedStyle(n).textOverflow])).toEqual(["13px", "nowrap", "ellipsis"]);
   await expect(next).toHaveAttribute("title", w.needs_you[0].consequence_text);
+  await one.scrollIntoViewIfNeeded(); // the outlook card is the page's top now, so the first row starts under the fold and a hover would scroll it
   const pillBefore = (await one.getByTestId("home-row-status").boundingBox())!;
   await one.getByRole("link").hover();
   const pillAfter = (await one.getByTestId("home-row-status").boundingBox())!;
@@ -748,7 +733,7 @@ test("nothing in Business mode is an id, a code or a day number; every figure an
   const prose = await proseOf(page);
   expect(prose).not.toMatch(/\bday\s+\d/i);
   expect(prose).not.toMatch(/BUYER-\d|OFF-[0-9a-f]|ALERT-|deal:|NEEDS_YOU|CRITICAL|PROPOSED/);
-  for (const url of ["/", "/?customer=BUYER-1", "/?expand=1"]) {
+  for (const url of ["/", "/?customer=BUYER-1"]) {
     await page.goto(url);
     await expect(page.getByTestId("home-v2")).toBeVisible();
     const small = await page.evaluate(() => {
@@ -773,7 +758,7 @@ test("nothing in Business mode is an id, a code or a day number; every figure an
 test("zh parity: the cards, the recommendation, the worklist, the forecast and the deal in Chinese, the server's words as recorded", async ({ page }) => {
   await open(page, { lang: "zh", offer: true });
   const v2 = homeOffer.zh.home_v2;
-  await expect(page.getByTestId("home-read-when")).toHaveText("今天更新");
+  await expect(page.getByTestId("home-refresh")).toHaveAttribute("aria-label", "刷新");
   await expect(page.getByTestId("hv2-metric-cash-label")).toHaveText("今日可用现金");
   await expect(page.getByTestId("hv2-metric-lowest-label")).toHaveText("公司现金展望");
   await expect(page.getByTestId("home-kpi-cash-note")).toHaveText(v2.kpis.cash_available.note);
@@ -783,14 +768,11 @@ test("zh parity: the cards, the recommendation, the worklist, the forecast and t
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
   await expect(page.getByTestId("home-action-eyebrow")).toHaveText("我们的建议");
   await expect(page.getByTestId("hv2-approval")).toHaveText(v2.action.approval_text!);
-  await expect(page.getByTestId("hv2-outlook-expand")).toHaveText("展开");
-  await page.getByTestId("hv2-outlook-expand").click();
+  await expect(page.getByTestId("hv2-outlook-expand")).toHaveCount(0); // the forecast is in the outlook card
   const lowestEvent = homeOffer.zh.cash.events_rail.find((e) => e.day === homeOffer.zh.cash.lowest_day)!;
   await page.locator(`[data-testid^="hv2-marker-"][data-day="${lowestEvent.day}"]`).click();
   await expect(page.getByTestId("hv2-marker-callout")).toContainText(lowestEvent.explain);
   await expect(page.getByTestId("home-legend")).toContainText("取决于方案执行");
-  await expect(page.getByTestId("hv2-forecast-close")).toHaveText("收起");
-  await page.getByTestId("hv2-forecast-close").click();
   const w = worklistOffer.zh;
   await expect(page.getByTestId("hv2-summary")).toHaveText(homeOffer.zh.home_v2.summary_text!.replace(/^[^.。]*[.。]\s*/, ""));
   await expect(page.getByTestId("home-worklist-row").first()).toContainText(w.needs_you[0].subject_text);
@@ -817,11 +799,13 @@ test("phone: the cards stack with the recommendation's primary in the first view
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page, { offer: true });
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
-  // The cards are one column, in the mockup's order: cash, recommendation, outlook.
-  const ys = await Promise.all(["hv2-cash-card", "hv2-action", "hv2-outlook-card"].map(async (id) => (await page.getByTestId(id).boundingBox())!));
-  expect(ys[1].y).toBeGreaterThan(ys[0].y + ys[0].height - 1);
-  expect(ys[2].y).toBeGreaterThan(ys[1].y + ys[1].height - 1);
-  expect(Math.abs(ys[0].width - ys[2].width)).toBeLessThan(2);
+  // One column since the final UI fold: the outlook's figures, the recommendation inside it, then its forecast; the worklist; then the cash card, as wide as the outlook.
+  const [fig, act, fc, out, wl, cashCard] = await Promise.all(["home-kpi-lowest-value", "hv2-action", "hv2-forecast", "hv2-outlook-card", "home-worklist-panel", "hv2-cash-card"].map(async (id) => (await page.getByTestId(id).boundingBox())!));
+  expect(act.y).toBeGreaterThan(fig.y + fig.height - 1);
+  expect(fc.y).toBeGreaterThan(act.y + act.height - 1);
+  expect(wl.y).toBeGreaterThan(out.y + out.height - 1);
+  expect(cashCard.y).toBeGreaterThan(wl.y + wl.height - 1);
+  expect(Math.abs(out.width - cashCard.width)).toBeLessThan(2);
   // The primary is in the first viewport, above the bottom tab bar, at a 390 x 844 and a 375 x 812 phone.
   for (const [w, h] of [[390, 844], [375, 812]] as const) {
     await page.setViewportSize({ width: w, height: h });
@@ -920,11 +904,8 @@ test("a selected customer: Dismiss and Escape restore the overview and clear the
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
-  // With the forecast open, Escape closes it first; a second Escape clears a selection.
+  // An old `expand` key opens nothing of its own: Escape clears the selection at once (there is no Expand to close first).
   await page.goto("/?customer=BUYER-1&expand=1");
-  await expect(page.getByTestId("hv2-forecast")).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("hv2-forecast")).toHaveCount(0);
   await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("home-customer-focus")).toHaveCount(0);
@@ -951,9 +932,9 @@ test("reduced motion: a selection arrives without an animation", async ({ page }
   expect(name === "none" || ms <= 1).toBe(true);
 });
 
-test("accessibility: no axe violations on the default Home, expanded, and with the customer, at 1440 and at 390", async ({ page }) => {
+test("accessibility: no axe violations on the default Home (its forecast open in the outlook) and with the customer, at 1440 and at 390", async ({ page }) => {
   await open(page, { offer: true });
-  for (const url of ["/", "/?expand=1", "/?customer=BUYER-1"]) {
+  for (const url of ["/", "/?customer=BUYER-1"]) {
     await page.goto(url);
     await expect(page.getByTestId("home-v2")).toBeVisible();
     await expect(page.getByTestId("deal-working")).toHaveCount(0);
@@ -971,7 +952,8 @@ test("the page is fluid: with the rail collapsed the cards fill the width to 168
   const widths = async () =>
     page.evaluate(() => {
       const box = (id: string) => document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect();
-      const left = box("hv2-cash-card").left;
+      // The outlook is the full-width main card since the final UI fold: its edges are the page's.
+      const left = box("hv2-outlook-card").left;
       const right = box("hv2-outlook-card").right;
       return { main: Math.round(document.querySelector("main")!.getBoundingClientRect().width), row: Math.round(right - left), worklistLeft: Math.round(box("home-worklist-panel").left - left), upcomingRight: Math.round(box("hv2-upcoming").right - right), pane: Math.round(box("hv2-upcoming").width) };
     });
@@ -990,7 +972,7 @@ test("the page is fluid: with the rail collapsed the cards fill the width to 168
     const pinned = await widths();
     await page.getByTestId("sidebar-toggle").click();
     seen[width] = { collapsed, pinned };
-    // The cards' row and the worklist row share the left and right edges, and nothing scrolls sideways.
+    // The outlook and the worklist row share the left and right edges, and nothing scrolls sideways.
     expect(Math.abs(collapsed.worklistLeft), `${width} left edge`).toBeLessThan(1);
     expect(Math.abs(collapsed.upcomingRight), `${width} right edge`).toBeLessThan(1);
     expect(await overflowX(page)).toBeLessThanOrEqual(0);
@@ -1005,27 +987,27 @@ test("the page is fluid: with the rail collapsed the cards fill the width to 168
 
 // ---------------------------------------------------------------- round two: sizes, selection, the ways back
 
-// The cash card carries the funding ring ("Where your cash comes from"): the three cards are 360 px tall at most (the tallest decides).
+// The cash card carries the funding ring ("Where your cash comes from"): it is 360 px tall at most. Since the final UI fold the outlook is the page's main card (24 px of padding, a
+// 22 px title and a 40 px figure) with the recommendation inside it, as tall as the outlook's forecast; the headline and the summary are for a screen reader.
 const CARD_MAX = 360;
-test("round four sizes at 1440: the three cards are 360 px tall at most (the tallest decides), padded 16 px, titles 16 px, figures 32 px and the planned amount 36 px; rows 56 px and 44 px; nothing wraps to a third line", async ({ page }) => {
+test("sizes at 1440: the cash card 360 px tall at most and padded 16 px, the outlook padded 24 px with a 22 px title and a 40 px figure, the recommendation's 18 px title and 36 px amount; rows 56 px and 44 px; nothing wraps to a third line", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await open(page, { offer: true });
   const ids = ["hv2-cash-card", "hv2-action", "hv2-outlook-card"];
-  for (const id of ids) {
-    const box = (await page.getByTestId(id).boundingBox())!;
-    expect(box.height, `${id} height`).toBeLessThanOrEqual(CARD_MAX);
-    expect(await page.getByTestId(id).evaluate((el) => getComputedStyle(el).paddingTop), `${id} padding`).toBe("16px");
-  }
+  expect((await page.getByTestId("hv2-cash-card").boundingBox())!.height, "hv2-cash-card height").toBeLessThanOrEqual(CARD_MAX);
+  const pad = (id: string) => page.getByTestId(id).evaluate((el) => getComputedStyle(el).paddingTop);
+  expect(await pad("hv2-cash-card")).toBe("16px");
+  expect(await pad("hv2-action")).toBe("16px");
+  expect(await pad("hv2-outlook-card")).toBe("24px");
   const px = (id: string) => page.getByTestId(id).evaluate((el) => getComputedStyle(el).fontSize);
   expect(await px("hv2-metric-cash-label")).toBe("16px");
   expect(await px("home-action-eyebrow")).toBe("16px");
-  expect(await px("hv2-metric-lowest-label")).toBe("16px");
+  expect(await px("hv2-metric-lowest-label")).toBe("22px");
   expect(await px("home-kpi-cash-value")).toBe("32px");
-  expect(await px("home-kpi-lowest-value")).toBe("32px");
+  expect(await px("home-kpi-lowest-value")).toBe("40px");
   expect(await px("home-kpi-funding-value")).toBe("36px");
   expect(await px("home-action-title")).toBe("18px");
-  expect(await px("hv2-headline")).toBe("32px");
-  expect(await px("hv2-summary")).toBe("15px");
+  await expect(page.getByTestId("hv2-headline")).toHaveClass(/sr-only/);
   // The worklist rows are 56 px (fixed) and the upcoming movements 44 px.
   for (const r of await page.getByTestId("home-worklist-row").all()) expect(Math.round((await r.boundingBox())!.height)).toBe(56);
   expect(Math.round((await page.getByTestId("hv2-upcoming-row").first().boundingBox())!.height)).toBe(39); // compact rows (min-h-9 and 4 px of air)
@@ -1041,7 +1023,8 @@ test("round four sizes at 1440: the three cards are 360 px tall at most (the tal
         for (const el of Array.from(document.querySelectorAll(`[data-testid="${id}"] p, [data-testid="${id}"] h2`))) {
           const style = getComputedStyle(el);
           const lh = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.3;
-          const rows = Math.round(el.getBoundingClientRect().height / lh);
+          // The text's own height, without its padding (the alarm strip is a padded band of two lines).
+          const rows = Math.round((el.getBoundingClientRect().height - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)) / lh);
           if (rows > (most as number) && (el.textContent ?? "").trim()) out.push(`${id}: ${rows} lines: ${(el.textContent ?? "").slice(0, 40)}`);
         }
       }
@@ -1052,7 +1035,7 @@ test("round four sizes at 1440: the three cards are 360 px tall at most (the tal
       const clipped = await page.getByTestId(id).evaluate((el) => el.scrollHeight - el.clientHeight);
       expect(clipped, `${id} clips nothing at ${width}`).toBeLessThanOrEqual(1);
     }
-    for (const id of ids) expect((await page.getByTestId(id).boundingBox())!.height, `${id} at ${width}`).toBeLessThanOrEqual(CARD_MAX);
+    expect((await page.getByTestId("hv2-cash-card").boundingBox())!.height, `hv2-cash-card at ${width}`).toBeLessThanOrEqual(CARD_MAX);
   }
 });
 
@@ -1066,6 +1049,7 @@ test("every worklist row carries a chevron (quiet, ink on hover and focus, fille
   await expect(chevron).toHaveAttribute("aria-hidden", "true");
   await expect(first.getByTestId("hv2-row-select")).toHaveCount(0);
   const quiet = await chevron.evaluate((el) => getComputedStyle(el).color);
+  await first.scrollIntoViewIfNeeded(); // the outlook card is the page's top since the final UI fold: the first row starts under the fold
   const before = await Promise.all(["hv2-cash-card", "hv2-action", "hv2-outlook-card"].map((id) => page.getByTestId(id).boundingBox()));
   await link.hover();
   await expect.poll(() => chevron.evaluate((el) => getComputedStyle(el).color)).not.toBe(quiet);

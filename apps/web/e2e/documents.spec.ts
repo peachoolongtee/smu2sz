@@ -260,10 +260,10 @@ test("day 34: the deal summary tells the story and points at the approval", asyn
   await expect(deal.getByTestId("deal-stages").locator('li[data-state="now"]')).toContainText("Collecting");
   const rcvA = deal.getByTestId("deal-invoice-RCV-A");
   await expect(rcvA).toHaveAttribute("data-status", "LATE");
-  await expect(rcvA).toContainText("¥162,800.00");
+  await expect(rcvA).toContainText("¥160,000.00");
   await expect(rcvA).toContainText("2 days late");
-  await expect(deal.getByTestId("deal-changes")).toContainText("¥255,013.80 received on the ¥420,000.00 invoice to Foshan Home Retail Co.");
-  await expect(deal.getByTestId("deal-next")).toContainText("Chase the ¥162,800.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago.");
+  await expect(deal.getByTestId("deal-changes")).toContainText("¥257,790.00 received on the ¥420,000.00 invoice to Foshan Home Retail Co.");
+  await expect(deal.getByTestId("deal-next")).toContainText("Chase the ¥160,000.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago.");
 
   // The owner lets the agent fix the reserve alert from the home: the fix waits for approval, and the summary says so.
   await page.goto("/cash");

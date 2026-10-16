@@ -8,6 +8,7 @@ import importlib
 import json
 import re
 import time
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,8 @@ from fastapi.testclient import TestClient
 
 from app.api.runtime import Runtime, set_runtime
 from app.books import Books
+from app.domain.models import FundingActionKind
+from app.funding import plan
 from app.funding.rates import break_even_cost_share
 from app.funding.search import GRID_STEP_FEN
 from app.strategy import PriceCurve, money_line, price_sentence
@@ -64,8 +67,10 @@ def test_day0_bands_are_the_briefs_pins(curve0: PriceCurve):
 
 
 def test_day34_bands_are_the_briefs_pins(curve34: PriceCurve):
-    assert _spans(curve34) == [(34, 42, 17822), (43, 60, 8912), (61, 154, 0)]
-    assert [b.value_bp for b in curve34.bands] == [178, 89, 0]
+    # days 43 to 46 also retire the line's ¥2,790 draw (R-10 rounding) one day sooner each: 89.11 + 1.96, 1.47, 0.98, 0.49
+    assert _spans(curve34) == [(34, 42, 17822), (43, 43, 9107), (44, 44, 9058), (45, 45, 9009), (46, 46, 8960), (47, 60, 8911),
+                               (61, 154, 0)]
+    assert [b.value_bp for b in curve34.bands] == [178, 91, 91, 90, 90, 89, 0]
 
 
 @pytest.mark.parametrize("which", [0, 34])
@@ -94,7 +99,19 @@ def test_the_value_never_exceeds_the_cost_of_funds(rt_day0: Runtime, books_day0:
     # invoice financing bills whole periods: the oracle's own day-34 point (¥178.22) is two periods, and no more
     two, _, _ = break_even_cost_share(books_day34.state, rt_day34.store.get_mandate(), 60)
     assert max(b.value_fen for b in curve34.bands) <= round(two * GRID_STEP_FEN) == 17822
-    assert all(b.value_fen <= 8912 for b in curve34.bands if b.from_day >= 43)
+    # From day 43 the bound is one period of invoice financing PLUS the line interest the early cash also saves (owner,
+    # 16 Oct): the rounded early-pay face (R-10) leaves the line ¥2,790 of room, the router's plan draws it on day 34 and
+    # repays it on day 47, so cash that lands on day d < 47 retires that draw (47 − d) days sooner. Day 43:
+    # 89.11 (one period) + 2,790 × 6.4% × 4/365 = 1.96 -> 91.07 per ¥10,000.
+    line = next(f for f in books_day34.state.facilities if f.id == "FAC-LINE")
+    room = line.limit_fen - line.drawn_fen
+    drawn = plan(books_day34.state, books_day34.with_([]), rt_day34.store.get_mandate())
+    repay = next(a.repay_day for a in drawn.actions if a.kind == FundingActionKind.DRAW and a.facility_id == "FAC-LINE")
+    assert (room, repay) == (279_000, 47)
+    for b in curve34.bands:
+        if b.from_day >= 43:
+            line_saved = round(Fraction(room) * Fraction(line.rate_bp, 10_000) * max(0, repay - b.from_day) / 365)
+            assert b.value_fen <= 8912 + line_saved
 
 
 def test_no_band_is_above_the_guard_on_the_golden_books(curve0: PriceCurve, curve34: PriceCurve):
@@ -178,11 +195,12 @@ def test_the_day0_sentence(curve0: PriceCurve):
 
 def test_the_day34_sentence_has_two_bands(curve34: PriceCurve):
     en = price_sentence(curve34, today=34, lang="en")
-    assert en == ("Cash in the next 8 days saves you ¥178.22 of funding cost per ¥10,000 (1.78%), then ¥89.12 (0.89%) "
-                  "for the 18 days after; later, nothing.")
+    # three bands still: the four one-day bands of the line's ¥2,790 (R-10 rounding) read as one falling clause
+    assert en == ("Cash in the next 8 days saves you ¥178.22 of funding cost per ¥10,000 (1.78%), then ¥91.07 falling day by "
+                  "day to ¥89.60 (0.91%–0.90%) over the 4 days after, then ¥89.11 (0.89%) for the 14 days after; later, nothing.")
     zh = price_sentence(curve34, today=34, lang="zh")
-    assert zh == ("未来 8 天内到账的现金，每 ¥10,000 为您节省 ¥178.22 的融资成本（1.78%），随后的 18 天为 ¥89.12（0.89%）；"
-                  "再之后没有。")
+    assert zh == ("未来 8 天内到账的现金，每 ¥10,000 为您节省 ¥178.22 的融资成本（1.78%），随后的 4 天从 ¥91.07 逐日降至 ¥89.60"
+                  "（0.91%–0.90%），随后的 14 天为 ¥89.11（0.89%）；再之后没有。")
 
 
 def test_a_band_ending_today_or_tomorrow_is_said_as_such():

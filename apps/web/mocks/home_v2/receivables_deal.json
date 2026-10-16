@@ -64,7 +64,7 @@
         },
         "early_payment": {
           "agreed": true,
-          "text": "¥257,200 of this invoice may be paid early at 0.85% off, in 2 days; the agreement lapses if payment comes later"
+          "text": "¥260,000 of this invoice may be paid early at 0.85% off, in 2 days; the agreement lapses if payment comes later"
         },
         "pending_counter": null,
         "collection_state": "CURRENT",
@@ -189,7 +189,7 @@
         },
         "early_payment": {
           "agreed": true,
-          "text": "这张发票的 ¥257,200 可提前付款，折扣 0.85%（2 天后）；如果更晚才付款，该约定即告失效"
+          "text": "这张发票的 ¥260,000 可提前付款，折扣 0.85%（2 天后）；如果更晚才付款，该约定即告失效"
         },
         "pending_counter": null,
         "collection_state": "CURRENT",

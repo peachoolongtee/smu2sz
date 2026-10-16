@@ -238,7 +238,7 @@
           "when": "today",
           "actor": "AGENT",
           "label": "Agent replied",
-          "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
+          "text": "Rejected. Offered Option A: early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
         }
       ],
       "in_force": [
