@@ -1,0 +1,974 @@
+[
+ {
+  "method": "GET",
+  "path": "/activity",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/alerts",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/alerts/{alert_id}/act",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:ALERT_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/approvals/queue",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/approvals/{approval_id}",
+  "status": {
+   "anon": "401:CREDENTIAL_REQUIRED",
+   "bad_owner": "401:CREDENTIAL_REQUIRED",
+   "agent": "422:validation",
+   "bank": "401:CREDENTIAL_REQUIRED",
+   "buyer1": "401:CREDENTIAL_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/audit",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/borrower-file",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/borrower-file/{file_id}",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/borrower-file/{file_id}.docx",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/borrower-file/{file_id}.html",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/borrower-file/{file_id}.pdf",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/buyers/{buyer_id}/envelope",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:BUYER_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/buyers/{buyer_id}/exposure",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:BUYER_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/buyers/{buyer_id}/inputs",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:BUYER_NOT_FOUND"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/buyers/{buyer_id}/inputs",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/capex/apply",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/capex/evaluate",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/cash/price-curve",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/circuit/{counterparty_id}/reset",
+  "status": {
+   "anon": "401:CREDENTIAL_REQUIRED",
+   "bad_owner": "401:CREDENTIAL_REQUIRED",
+   "agent": "200",
+   "bank": "401:CREDENTIAL_REQUIRED",
+   "buyer1": "401:CREDENTIAL_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/clock",
+  "status": {
+   "anon": "200",
+   "bad_owner": "200",
+   "agent": "200",
+   "bank": "200",
+   "buyer1": "200",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/clock/advance",
+  "status": {
+   "anon": "403:CREDENTIAL_REQUIRED",
+   "bad_owner": "403:CREDENTIAL_REQUIRED",
+   "agent": "403:CREDENTIAL_REQUIRED",
+   "bank": "403:CREDENTIAL_REQUIRED",
+   "buyer1": "403:CREDENTIAL_REQUIRED",
+   "owner": "422"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/commitments/{commitment_id}/revoke",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:COMMITMENT_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/customers",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/customers/{customer_id}/overview",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:CUSTOMER_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/deals",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/deals/{counterparty_id}",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:UNKNOWN_BUYER"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/decisions",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/decisions/{decision_id}",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:DECISION_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/decisions/{decision_id}/compare",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:DECISION_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/decisions/{decision_id}/exposure",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:DECISION_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/decisions/{decision_id}/tracker",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:DECISION_NOT_FOUND"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/demo/bank-receipt",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "409:NO_PROMISED_RECEIPT"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/demo/reset",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/demo/restore",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/demo/story",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/docs",
+  "status": {
+   "anon": "200",
+   "bad_owner": "200",
+   "agent": "200",
+   "bank": "200",
+   "buyer1": "200",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/documents",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/documents",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:KIND_AND_COUNTERPARTY_REQUIRED"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/documents/{document_id}",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:UNKNOWN_DOCUMENT"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/documents/{document_id}/confirm",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/documents/{document_id}/reject",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/evidence",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/facilities/compile",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/firm/inputs",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/firm/inputs",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/fixtures/contracts",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/fixtures/offers",
+  "status": {
+   "anon": "200",
+   "bad_owner": "200",
+   "agent": "200",
+   "bank": "200",
+   "buyer1": "200",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/health",
+  "status": {
+   "anon": "200",
+   "bad_owner": "200",
+   "agent": "200",
+   "bank": "200",
+   "buyer1": "200",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/home",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/ledger",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/mandate",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/nav/counts",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/negotiate/{offer_id}",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "409"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/nl",
+  "status": {
+   "anon": "422:validation",
+   "bad_owner": "422:validation",
+   "agent": "422:validation",
+   "bank": "422:validation",
+   "buyer1": "422:validation",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/nl/opener",
+  "status": {
+   "anon": "403",
+   "bad_owner": "403",
+   "agent": "403",
+   "bank": "403",
+   "buyer1": "403",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/nl/reset",
+  "status": {
+   "anon": "403",
+   "bad_owner": "403",
+   "agent": "403",
+   "bank": "403",
+   "buyer1": "403",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/offers",
+  "status": {
+   "anon": "422",
+   "bad_owner": "422",
+   "agent": "422",
+   "bank": "422",
+   "buyer1": "422",
+   "owner": "422"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/offers/{offer_id}",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:OFFER_NOT_FOUND"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/offers/{offer_id}/accept",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/offers/{offer_id}/compare",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:OFFER_NOT_FOUND"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/offers/{offer_id}/decline",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/offers/{offer_id}/evaluate",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/offers/{offer_id}/exposure",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:OFFER_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/offers/{offer_id}/picture",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:OFFER_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/offers/{offer_id}/scenarios",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:OFFER_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/openapi.json",
+  "status": {
+   "anon": "200",
+   "bad_owner": "200",
+   "agent": "200",
+   "bank": "200",
+   "buyer1": "200",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/operations",
+  "status": {
+   "anon": "401:CREDENTIAL_REQUIRED",
+   "bad_owner": "401:CREDENTIAL_REQUIRED",
+   "agent": "422",
+   "bank": "401:CREDENTIAL_REQUIRED",
+   "buyer1": "401:CREDENTIAL_REQUIRED",
+   "owner": "422"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/pilot/journal",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/pilot/journal",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/receivables",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/receivables/worth",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/receivables/{receivable_id}/chase",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "404:RECEIVABLE_NOT_FOUND"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/reconciliation",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/redoc",
+  "status": {
+   "anon": "200",
+   "bad_owner": "200",
+   "agent": "200",
+   "bank": "200",
+   "buyer1": "200",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/router/plan",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/security/summary",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/state",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/trajectory",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/whatif",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "422:validation"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/whatif/presets",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/worklist",
+  "status": {
+   "anon": "401:OWNER_TOKEN_REQUIRED",
+   "bad_owner": "401:OWNER_TOKEN_REQUIRED",
+   "agent": "401:OWNER_TOKEN_REQUIRED",
+   "bank": "401:OWNER_TOKEN_REQUIRED",
+   "buyer1": "401:OWNER_TOKEN_REQUIRED",
+   "owner": "200"
+  }
+ }
+]

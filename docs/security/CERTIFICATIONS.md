@@ -6,7 +6,7 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
 | Date | Commit | What | Verdict |
 |---|---|---|---|
 | 16 Oct | `0ba8e4c1` (dev) | security fixes 1-5 (SEC-01..05, 09, 10, 16..18) as merged | **CERTIFIED** |
-| 16 Oct | `081541d1` / dev head `a6de32a2` | SEC-12/13 headers as merged, on top of round three and Dylan's UI | in progress (see below) |
+| 16 Oct | `081541d1` via dev head `a6de32a2` | SEC-12/13 headers as merged; all security fixes as they stand on dev with round three and Dylan's UI | **CERTIFIED** (one stale test fixed on `sec/redteam-d-patch-target`) |
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | **pre-merge: GO to merge dev into it**; certification is on the merge commit |
 
 ## `0ba8e4c1`: CERTIFIED
@@ -19,6 +19,23 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
   0 with harm; every fix's regression test fails before and passes after.
 - Limits: the catalogue attacks 21 of the then 76 routes; the other routes are covered by this audit's targeted tests and the
   authorization sweep, not by the catalogue. "0 of 259 attacks caused harm" must be quoted with that scope.
+
+## `a6de32a2` (dev head, contains `081541d1`): CERTIFIED
+
+- `sec/headers` (6ed44ba5) is an ancestor of `081541d1`; `081541d1` and `0ba8e4c1` are on `origin/dev`. From `081541d1` to `a6de32a2`
+  only `app/api/worklist.py` and `app/nl/reads.py` change in `services/api/app` (6 lines).
+- Evidence on `a6de32a2` (`evidence/2026-10-16/dev-a6de32a2/`):
+  - authorization sweep, 81 routes, `DEMO_MODE` on and off: no non-owner role passes an owner route; `/docs`, `/redoc`, `/openapi.json`
+    404 with `DEMO_MODE=0`; the bank-feed key gets 403 on `/clock/advance`;
+  - the 14 Oct reproductions all refused: anonymous document overwrite 409, oversized intake 413, agent-tripped circuit no longer blocks the
+    owner's accept, agent pre-claimed decline key no longer blocks the owner's decline, bank-feed clock 403, one live agreement only;
+  - attack catalogue: 126 API + 133 NL attacks, 0 with harm;
+  - 31 test shards: all exit 0 except the two pre-existing (`tests/books` digest pin, `tests/deals/test_lang.py`) and
+    `tests/operations/test_redteam_d.py::test_f1_negotiate_runs_nothing_from_a_plan_that_cannot_run`.
+- That red-team test is **stale, not a regression**: `c51a7284` moved the NO-DEAL plan into `app.api.refusal`; the test still patched
+  `app.api.decide.plan`, so it ran the real (runnable) plan and failed without testing the guard. Patched at the new site it passes, and
+  it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
+- Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
 
 ## `8911fb21` (capex buy side): pre-merge review, 16 Oct
 
