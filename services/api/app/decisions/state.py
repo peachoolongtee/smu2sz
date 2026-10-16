@@ -19,6 +19,7 @@ from typing import Any, Protocol
 
 from app.decisions.facts import (
     BuyerAcceptedFact,
+    BuyerDeclinedFact,
     EvaluatedFact,
     OfferedFact,
     QuotedFact,
@@ -328,6 +329,8 @@ class DecisionState:
     replied: RepliedFact | None = None
     # DEAL: the agreement is the buyer's yes to an offer sent outside FLOW, recorded by the owner (a BUYER_ACCEPTED fact names it)
     buyer_accepted: bool = False
+    # DEAL: the buyer said no to the offer sent outside FLOW, as the owner recorded it (BUYER_DECLINED)
+    declined: BuyerDeclinedFact | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -434,6 +437,25 @@ def _reserve_alert(i: DecisionInputs) -> AlertLike | None:
 # ---------------------------------------------------------------- DEAL
 
 
+def buyer_answer(state: DecisionState) -> str | None:
+    """What became of an offer the owner sent outside FLOW: "countered", "accepted" (the buyer's yes the owner recorded, whatever its approval
+    then did), "declined", "no_answer" (it closed unanswered), "closed" (the deal ended another way: the agreement could not run, or it was
+    settled before the buyer answered), or None while the buyer may still answer (and for a deal with no such offer)."""
+    if state.offered is None:
+        return None
+    if state.replied is not None:
+        return "countered"
+    if state.buyer_accepted:
+        return "accepted"
+    if state.declined is not None:
+        return "declined"
+    if state.state == DealState.NO_DEAL:
+        return "no_answer"
+    if state.state != DealState.AWAITING_BUYER:
+        return "closed"
+    return None
+
+
 def owner_declined(runs: Sequence[LoggedRun]) -> bool:
     """Whether the owner declined the offer: a RejectOffer the owner requested ran (EXECUTED) among the decision's runs. A rejection the agent
     made (the chat's) is not the owner's decision and does not close the offer."""
@@ -468,6 +490,7 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
     replied = next((f for _, f in reversed(facts) if isinstance(f, RepliedFact)), None)
     open_until = latest_offered.valid_until_day if latest_offered is not None else None
     accepted_ids = {f.commitment_id for _, f in facts if isinstance(f, BuyerAcceptedFact)}
+    declined = next((f for _, f in reversed(facts) if isinstance(f, BuyerDeclinedFact)), None)
     mine = list(idx.commitments.get(offer_id or "", ()))
     commitment = next((c for c in mine if latest_sent is not None and c.id == latest_sent.commitment_id), None)
     if commitment is None and mine:
@@ -494,7 +517,7 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
         _matches_accept(e.payload, commitment) and e.payload.get("requested_by") == "OWNER" for e in runs)
 
     state = _deal_state(offer, verdict, commitment, approval, accept_run, sent_for_verdict, promised, owner_declined(runs),
-                        offered_until=open_until, replied=replied is not None, today=i.today)
+                        offered_until=open_until, replied=replied is not None, today=i.today, buyer_declined=declined is not None)
     terminal = state in _DEAL_TERMINAL and not (
         state == DealState.MISSED and commitment is not None and commitment.status != CommitmentStatus.EXPIRED
     )
@@ -505,7 +528,7 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
         approvals=tuple(approvals), approval=approval, offer=offer, verdict=verdict, commitment=commitment,
         evaluated=evaluated, sent=latest_sent, quote=None, lots=_lots_of(i.state, [o.op_id for o in funding_ops], idx),
         opened_day=opened, updated_day=updated_day, updated_seq=updated_seq, accepted_as_asked=by_owner, offered=latest_offered,
-        replied=replied, buyer_accepted=buyer_yes,
+        replied=replied, buyer_accepted=buyer_yes, declined=declined,
     )
 
 
@@ -522,7 +545,7 @@ def _op_payload(runs: Sequence[LoggedRun], op_id: str) -> Mapping[str, Any]:
 def _deal_state(
     offer: CompiledOffer | None, verdict: Verdict | None, c: Commitment | None, a: ApprovalRecord | None,
     x: OpState | None, sent_for_verdict: SentFact | None, promised: Sequence[PromiseLike], declined: bool = False, *,
-    offered_until: int | None = None, replied: bool = False, today: int | None = None,
+    offered_until: int | None = None, replied: bool = False, today: int | None = None, buyer_declined: bool = False,
 ) -> DealState:
     if c is not None:
         if c.status == CommitmentStatus.REVOKED:  # 1
@@ -548,6 +571,8 @@ def _deal_state(
         return DealState.FAILED
     if replied:  # 9a: the buyer answered the offer sent outside FLOW with terms of their own, now a request of its own
         return DealState.REPLIED
+    if buyer_declined:  # 9a: the buyer said no to the offer sent outside FLOW; nothing was agreed
+        return DealState.NO_DEAL
     if offered_until is not None:  # 9b: an offer sent outside FLOW is open until its day; unanswered after it, there is no deal
         return DealState.AWAITING_BUYER if today is None or today <= offered_until else DealState.NO_DEAL
     if sent_for_verdict is not None and sent_for_verdict.outcome == "NO_DEAL":  # 10

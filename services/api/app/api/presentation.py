@@ -1990,12 +1990,17 @@ def business_action_text(code: str, lang: Lang) -> str:
     return t(lang, en, zh)
 
 
+_ANSWER_STATE_WORDS = {"declined": ("Declined by the buyer", "买方已拒绝"), "no_answer": ("Closed without an answer", "未获答复，已关闭")}
+
+
 def decision_state_text(family: str, state: str, lang: Lang, *, response: str | None = None, residual: bool = False,
-                        lapsed_by_agreement: bool = True) -> str:
+                        lapsed_by_agreement: bool = True, answer: str | None = None) -> str:
     """A decision's state in the owner's words. A deal ready for a response says what the verdict recommends ("Acceptable,
     awaiting agreement" for an acceptable offer, never "Agreed": the agreement words follow the commitment only). A funding that is
     done while the reserve is still short says so ("Funded, reserve still short"): `residual` is the decision record's own."""
     if family == "DEAL":
+        if state == "NO_DEAL" and answer in _ANSWER_STATE_WORDS:  # an offer sent outside FLOW: the buyer said no, or never answered
+            return t(lang, *_ANSWER_STATE_WORDS[answer])
         if state == "RESPONSE_READY":
             return business_action_text(response or "cannot", lang)
         en, zh = (_LAPSED_CHANGED if state == "LAPSED" and not lapsed_by_agreement

@@ -140,6 +140,12 @@ def offered_fact(*, counter_id: str = "C-A", valid_until_day: int = 7) -> Any:
                        valid_until_day=valid_until_day)
 
 
+def declined_fact(reason: str = "DISCOUNT_TOO_LOW") -> Any:
+    from app.decisions.facts import BuyerDeclinedFact
+
+    return BuyerDeclinedFact(offer_id=OFFER_ID, verdict_id="V-1", counter_id="C-A", message_hash="m" * 64, reason=reason)  # type: ignore[arg-type]
+
+
 def replied_fact(reply_offer_id: str = "OFF-reply") -> Any:
     from app.decisions.facts import RepliedFact
 

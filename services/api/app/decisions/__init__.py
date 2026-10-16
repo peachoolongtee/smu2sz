@@ -7,6 +7,7 @@ grants no authority. No engine module (`app.financial`, `app.verifier`, `app.fun
 
 from app.decisions.facts import (
     BuyerAcceptedFact,
+    BuyerDeclinedFact,
     CounterEconomics,
     DecisionFactStore,
     EvaluatedFact,
@@ -50,6 +51,7 @@ from app.decisions.state import (
 
 __all__ = [
     "BuyerAcceptedFact",
+    "BuyerDeclinedFact",
     "CounterEconomics",
     "DealState",
     "DecisionFactStore",
