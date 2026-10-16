@@ -44,14 +44,14 @@
     "costs": [
       {
         "label": "Bank credit line: draw ¥2,790.00, repaid day 47",
-        "fen": 121953,
+        "fen": 636,
         "facility_id": "FAC-LINE",
-        "formula": "2,790.00 × 6.4% × 13/365 = 6.36; 147,210.00 × 6.4% × 47/365 = 1,213.17; total ¥1,219.53",
+        "formula": "2,790.00 × 6.4% × 13/365 = 6.36",
         "needs_owner_approval": false,
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥1,219.53",
+        "display": "¥6.36",
         "label_when": "Bank credit line: draw ¥2,790.00, repaid in 13 days"
       },
       {
@@ -124,7 +124,7 @@
         "note_when": "cost ¥6.36; RESERVE_BREACH in 8 days"
       }
     ],
-    "label": "committed plan: ¥1,219.53 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20 (needs the owner's approval)",
+    "label": "committed plan: ¥6.36 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20 (needs the owner's approval)",
     "needs_owner_approval": true,
     "approval_reason": "Invoice financing (onboarded platform): advance ¥80,000.00 on RI:BUYER-1:32: effective annual cost 16.26% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥80,000.00 held 40 days (day 37 to day 77), annualised = 16.26%); Invoice financing (onboarded platform): advance ¥117,210.00 on RI:BUYER-1:2: effective annual cost 32.53% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥117,210.00 held 10 days (day 37 to day 47), annualised = 32.53%)",
     "executable_now": true,
@@ -133,7 +133,7 @@
     "need_display": "¥200,000.00",
     "total_cost_display": "¥1,702.20",
     "approval_reason_when": "Invoice financing (onboarded platform): advance ¥80,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days: the yearly cost of 16.26% is above the 15.00% limit you signed for funding without your approval (all charges on ¥80,000.00 held 40 days (from in 3 days to in 43 days), annualised = 16.26%); Invoice financing (onboarded platform): advance ¥117,210.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days: the yearly cost of 32.53% is above the 15.00% limit you signed for funding without your approval (all charges on ¥117,210.00 held 10 days (from in 3 days to in 13 days), annualised = 32.53%)",
-    "label_when": "committed plan: ¥1,219.53 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20 (needs your approval)"
+    "label_when": "committed plan: ¥6.36 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20 (needs your approval)"
   },
   "expected": {
     "id": "PLAN-EXP-e3f79d9c1040",
@@ -180,14 +180,14 @@
     "costs": [
       {
         "label": "Bank credit line: draw ¥2,790.00, repaid day 47",
-        "fen": 121953,
+        "fen": 636,
         "facility_id": "FAC-LINE",
-        "formula": "2,790.00 × 6.4% × 13/365 = 6.36; 147,210.00 × 6.4% × 47/365 = 1,213.17; total ¥1,219.53",
+        "formula": "2,790.00 × 6.4% × 13/365 = 6.36",
         "needs_owner_approval": false,
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥1,219.53",
+        "display": "¥6.36",
         "label_when": "Bank credit line: draw ¥2,790.00, repaid in 13 days"
       },
       {
@@ -260,7 +260,7 @@
         "note_when": "cost ¥6.36; RESERVE_BREACH in 8 days"
       }
     ],
-    "label": "expected plan (committed sources only): ¥1,219.53 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20 (needs the owner's approval)",
+    "label": "expected plan (committed sources only): ¥6.36 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20 (needs the owner's approval)",
     "needs_owner_approval": true,
     "approval_reason": "Invoice financing (onboarded platform): advance ¥80,000.00 on RI:BUYER-1:32: effective annual cost 16.26% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥80,000.00 held 40 days (day 37 to day 77), annualised = 16.26%); Invoice financing (onboarded platform): advance ¥117,210.00 on RI:BUYER-1:2: effective annual cost 32.53% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥117,210.00 held 10 days (day 37 to day 47), annualised = 32.53%)",
     "executable_now": true,
@@ -269,7 +269,7 @@
     "need_display": "¥200,000.00",
     "total_cost_display": "¥1,702.20",
     "approval_reason_when": "Invoice financing (onboarded platform): advance ¥80,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days: the yearly cost of 16.26% is above the 15.00% limit you signed for funding without your approval (all charges on ¥80,000.00 held 40 days (from in 3 days to in 43 days), annualised = 16.26%); Invoice financing (onboarded platform): advance ¥117,210.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days: the yearly cost of 32.53% is above the 15.00% limit you signed for funding without your approval (all charges on ¥117,210.00 held 10 days (from in 3 days to in 13 days), annualised = 32.53%)",
-    "label_when": "expected plan (committed sources only): ¥1,219.53 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20 (needs your approval)"
+    "label_when": "expected plan (committed sources only): ¥6.36 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20 (needs your approval)"
   },
   "menu": [
     {
@@ -2052,7 +2052,7 @@
         }
       ],
       "cost_fen": 170220,
-      "cost_display": "¥1,219.53 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20",
+      "cost_display": "¥6.36 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20",
       "result": "SELECTED",
       "reasons": [],
       "breach_day": null,
@@ -2064,7 +2064,7 @@
       "shortfall_fen": null,
       "worst_day": null,
       "leg_costs_fen": [
-        121953,
+        636,
         142575,
         104446
       ],
@@ -2087,8 +2087,8 @@
           "facility_id": "FAC-LINE",
           "amount_fen": 279000,
           "amount_display": "¥2,790.00",
-          "cost_fen": 121953,
-          "cost_display": "¥1,219.53"
+          "cost_fen": 636,
+          "cost_display": "¥6.36"
         },
         {
           "index": 1,
@@ -2110,11 +2110,11 @@
         }
       ],
       "name_display": "Bank credit line + Invoice financing (onboarded platform)",
-      "offset_fen": -198754,
-      "offset_display": "−¥1,987.54",
+      "offset_fen": -77437,
+      "offset_display": "−¥774.37",
       "offset_label": "Change in other interest and fees across the forecast",
       "total_fen": 170220,
-      "total_display": "¥1,219.53 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20",
+      "total_display": "¥6.36 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20",
       "selected": true,
       "role": "alternative",
       "role_reason": "Cheapest in all, but it needs 2 separate approvals; the recommended plan needs one.",
@@ -3452,7 +3452,7 @@
         }
       ],
       "cost_fen": 240162,
-      "cost_display": "¥1,993.90 + ¥2,395.26 = ¥2,401.62",
+      "cost_display": "¥6.36 + ¥2,395.26 = ¥2,401.62",
       "result": "ADMISSIBLE",
       "reasons": [],
       "breach_day": null,
@@ -3464,7 +3464,7 @@
       "shortfall_fen": null,
       "worst_day": null,
       "leg_costs_fen": [
-        199390,
+        636,
         239526
       ],
       "status": "alternative",
@@ -3485,8 +3485,8 @@
           "facility_id": "FAC-LINE",
           "amount_fen": 279000,
           "amount_display": "¥2,790.00",
-          "cost_fen": 199390,
-          "cost_display": "¥1,993.90"
+          "cost_fen": 636,
+          "cost_display": "¥6.36"
         },
         {
           "index": 1,
@@ -3499,11 +3499,11 @@
         }
       ],
       "name_display": "Bank credit line + Buyer early-payment offer",
-      "offset_fen": -198754,
-      "offset_display": "−¥1,987.54",
-      "offset_label": "Change in other interest and fees across the forecast",
+      "offset_fen": null,
+      "offset_display": null,
+      "offset_label": null,
       "total_fen": 240162,
-      "total_display": "¥1,993.90 + ¥2,395.26 = ¥2,401.62",
+      "total_display": "¥6.36 + ¥2,395.26 = ¥2,401.62",
       "selected": false,
       "role": "alternative",
       "role_reason": "Only if the buyer agrees to pay early.",
@@ -6080,7 +6080,7 @@
       "shortfall_fen": 19721000,
       "worst_day": 42,
       "leg_costs_fen": [
-        199390
+        636
       ],
       "status": "insufficient",
       "reason_kind": null,
@@ -6099,14 +6099,14 @@
           "facility_id": "FAC-LINE",
           "amount_fen": 279000,
           "amount_display": "¥2,790.00",
-          "cost_fen": 199390,
-          "cost_display": "¥1,993.90"
+          "cost_fen": 636,
+          "cost_display": "¥6.36"
         }
       ],
       "name_display": "Bank credit line",
-      "offset_fen": -198754,
-      "offset_display": "−¥1,987.54",
-      "offset_label": "Change in other interest and fees across the forecast",
+      "offset_fen": null,
+      "offset_display": null,
+      "offset_label": null,
       "total_fen": 636,
       "total_display": "¥6.36",
       "selected": false,

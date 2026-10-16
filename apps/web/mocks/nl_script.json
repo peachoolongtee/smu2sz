@@ -4163,7 +4163,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.80%, paid on or before day 2. Nothing else changes.",
+        "description": "方案 A：我们接受对本发票最多 ¥260,000 提前结算，折扣 0.80%，须在第 2 天或之前付款。其他条款不变。",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -4544,7 +4544,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+        "description": "方案 A：我们接受对本发票最多 ¥260,000 提前结算，折扣 0.85%，须在第 2 天或之前付款。其他条款不变。",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -4910,7 +4910,7 @@
   "goal_go_zh": {
     "session_id": "rec-goal-go-zh",
     "turn": 2,
-    "reply": "BUYER-1 接受了 Option A：We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.\n从 FAC-LINE 提款 ¥147,210.00：已执行。\n已到账：¥147,210.00。",
+    "reply": "BUYER-1 接受了 方案 A：我们接受对本发票最多 ¥260,000 提前结算，折扣 0.85%，须在第 2 天或之前付款。其他条款不变。\n从 FAC-LINE 提款 ¥147,210.00：已执行。\n已到账：¥147,210.00。",
     "intent": "ACCELERATE_RECEIPT",
     "lang": "zh",
     "plan": [
@@ -4925,7 +4925,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+        "description": "方案 A：我们接受对本发票最多 ¥260,000 提前结算，折扣 0.85%，须在第 2 天或之前付款。其他条款不变。",
         "status": "EXECUTED",
         "op_id": "NL-d5085a71875f9726",
         "condition": null
@@ -5227,7 +5227,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
+        "description": "方案 A：账期保持 45 天，无返利。我们接受对本发票最多 ¥260,000 提前结算，折扣 0.85%，须在第 2 天或之前付款。",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -5235,7 +5235,7 @@
       {
         "step": 3,
         "kind": "COUNTER_OFFER",
-        "description": "Option B: 55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
+        "description": "方案 B：接受 55 天账期，并对今后的发票给予 0.30% 的价格调整，无返利。",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -5894,7 +5894,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
+        "description": "方案 A：账期保持 45 天，无返利。我们接受对本发票最多 ¥260,000 提前结算，折扣 0.85%，须在第 2 天或之前付款。",
         "status": "EXECUTED",
         "op_id": "NL-84f2d241847627cf",
         "condition": null
@@ -5902,7 +5902,7 @@
       {
         "step": 3,
         "kind": "COUNTER_OFFER",
-        "description": "Option B: 55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
+        "description": "方案 B：接受 55 天账期，并对今后的发票给予 0.30% 的价格调整，无返利。",
         "status": "EXECUTED",
         "op_id": "NL-81207adc69ea410f",
         "condition": null

@@ -5776,10 +5776,10 @@
       "cost_total_display": "¥1,702.20",
       "approvals": 2,
       "legs": [
-        "Bank credit line: draw ¥2,790.00, repaid in 13 days: ¥1,219.53",
+        "Bank credit line: draw ¥2,790.00, repaid in 13 days: ¥6.36",
         "Invoice financing (onboarded platform): advance ¥80,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days: ¥1,425.75",
         "Invoice financing (onboarded platform): advance ¥117,210.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days: ¥1,044.46",
-        "Change in other interest and fees across the forecast: −¥1,987.54"
+        "Change in other interest and fees across the forecast: −¥774.37"
       ]
     },
     "rate_text": "32.5%",
@@ -5791,7 +5791,7 @@
     "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "if_nothing": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
     "after": "Cash stays at or above your minimum cash reserve for the next 120 days.",
-    "why": "The cheapest option, ¥1,702.20 in all (including ¥1,987.54 less in other interest and fees across the forecast), needs 2 separate approvals; this one needs one. Both are under your funding options.",
+    "why": "The cheapest option, ¥1,702.20 in all (including ¥774.37 less in other interest and fees across the forecast), needs 2 separate approvals; this one needs one. Both are under your funding options.",
     "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below your minimum cash reserve; the gap peaks at ¥200,000.00 in 8 days and lasts until 12 days from now. A funding plan is available: finance an invoice on Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
     "pending_approval_id": "APR-000001",
