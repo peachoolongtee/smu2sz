@@ -20,8 +20,14 @@ Mapping (FLOW term -> key field). Where FLOW states no term the prediction is nu
     CONTRACT_REFERENCE -> contract_no          SIGNED_DATE -> sign_date          PARTY_BUYER/PARTY_SUPPLIER -> buyer/seller.name
     PRICE (largest) -> amount_total            START_DATE/END_DATE -> performance.start_date/end_date
     MILESTONE.rate_bp -> payment_stages[].percent (a single PAYMENT_TERMS and no MILESTONE reads as one 100% stage)
-    PAYMENT_TERMS -> payment_stages[].days_after_trigger / days_unit (business_days -> working) / trigger
-                     (basis INVOICE/DELIVERY/ACCEPTANCE -> invoice/delivery/acceptance; other or no basis -> null)
+    MILESTONE.days / business_days -> payment_stages[].days_after_trigger / days_unit (business_days -> working): the stage's
+                     own deadline, read by code from the stage's quote (app.compiler.contract_checks.stage_deadline)
+    trigger          -> payment_stages[].trigger, classified from the stage's quote by contract_checks.stage_trigger
+                     (sign, delivery, acceptance, invoice, quarter, audit, warranty_end, milestone; null when the words name none)
+    RETENTION        -> a last stage (percent, trigger and deadline from its quote) when the quote states a deadline after a
+                     trigger ("质保期满且无质量问题后30日内"): the key lists the warranty money as a stage as well as retention_pct
+    PAYMENT_TERMS    -> the deadline of a stage that states none of its own (by position), and of the one whole stage when
+                     there is no MILESTONE (basis INVOICE/DELIVERY/ACCEPTANCE -> invoice/delivery/acceptance)
     RETENTION.rate_bp -> retention_pct         LATE_INTEREST (rate with a per-day period) -> late_payment_interest daily_rate
 Not expressible by FLOW (reported, never guessed): see NOT_EXPRESSIBLE.
 """
@@ -40,13 +46,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from app.compiler.contract_checks import stage_deadline, stage_trigger  # noqa: E402
+
 DOTENV = Path("C:/Users/ian/Documents/Projects/smu2sz/.env")
 
 NOT_EXPRESSIBLE = {
     "payment_stages[].instrument": "payment instrument (bank transfer, acceptance bill, commercial bill): no ContractField",
     "payment_stages[].trigger = sign/quarter/audit/warranty_end/milestone":
-        "PaymentBasis has only INVOICE, DELIVERY, ACCEPTANCE, MONTH_END",
-    "payment_stages[] days per stage": "PAYMENT_TERMS is one value for the contract, not one per stage",
+        "PaymentBasis has only INVOICE, DELIVERY, ACCEPTANCE, MONTH_END; the trigger is classified from the stage's quote "
+        "(contract_checks.stage_trigger), not stored",
     "payment_stages[].requires_invoice": "no field",
     "late_payment_interest = lpr_multiple": "LATE_INTEREST holds a rate in bp, not a multiple of the LPR",
     "flags (GOV_TERM_OVER_60, GOV_TERM_31_60, NON_CASH_INSTRUMENT, NO_LATE_INTEREST_CLAUSE)":
@@ -82,17 +90,28 @@ def predict(compiled: Any, doc_id: str, filename: str) -> dict[str, Any]:
     pay = by.get("PAYMENT_TERMS", [])
     stages: list[dict[str, Any]] = []
     for i, m in enumerate(milestones, 1):
-        stages.append({"seq": i, "percent": (m.rate_bp or 0) / 100, "trigger_text": m.text})
+        stage: dict[str, Any] = {"seq": i, "percent": (m.rate_bp or 0) / 100, "trigger_text": m.text}
+        trigger = stage_trigger(m.span.text, m.text)
+        if trigger is not None:
+            stage["trigger"] = trigger
+        if m.days is not None:
+            stage["days_after_trigger"], stage["days_unit"] = m.days, "working" if m.business_days else "calendar"
+        stages.append(stage)
     if not milestones and len(pay) == 1:
         stages.append({"seq": 1, "percent": 100.0, "trigger_text": None, "implied": True})
     pay_terms = [{"days_after_trigger": t.days, "days_unit": "working" if t.business_days else "calendar",
-                  "trigger": TRIGGER_OF_BASIS.get(t.basis.value) if t.basis else None} for t in pay]
+                  "trigger": TRIGGER_OF_BASIS.get(t.basis.value) if t.basis else stage_trigger(t.span.text)} for t in pay]
     for i, p in enumerate(pay_terms):
         if i < len(stages):
-            stages[i].update(p)
+            for k, v in p.items():  # a stage's own reading is never overwritten by a contract-wide term
+                stages[i].setdefault(k, v)
         else:
             stages.append({"seq": len(stages) + 1, "percent": None, **p})
     ret = first("RETENTION")
+    if ret is not None and ret.rate_bp is not None and (deadline := stage_deadline(ret.span.text)).days is not None:
+        stages.append({"seq": len(stages) + 1, "percent": ret.rate_bp / 100, "trigger_text": ret.span.text,
+                       "trigger": stage_trigger(ret.span.text), "days_after_trigger": deadline.days,
+                       "days_unit": "working" if deadline.working else "calendar"})
     late = first("LATE_INTEREST")
     interest: dict[str, Any] = {"type": "not_specified"}
     if late is not None and late.rate_bp is not None:

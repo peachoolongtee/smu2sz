@@ -21,7 +21,14 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from app.compiler import lexicon
-from app.compiler.contract_checks import check_notes, cross_checks, derived_dates
+from app.compiler.contract_checks import (
+    check_notes,
+    cross_checks,
+    derived_dates,
+    stage_basis,
+    stage_deadline,
+    stage_trigger,
+)
 from app.compiler.contract_parsing import (
     Parsed,
     basis_of,
@@ -440,7 +447,22 @@ def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDoc
             out["text"] = period
         elif f == F.MILESTONE:
             out["text"] = frags["trigger_text"]
+            _stage_schedule(ctx, out, span)
     return ContractTerm.model_validate(out)
+
+
+def _stage_schedule(ctx: _Ctx, out: dict[str, object], span: SourceSpan) -> None:
+    """A milestone's own payment deadline, read by code from its quote: the days, working or calendar, and the PaymentBasis
+    where the trigger is one it has (invoice, delivery, acceptance). A quote with no days, or two different ones, leaves
+    the stage without a deadline and says so."""
+    d = stage_deadline(span.text)
+    if d.status == "conflict":
+        _drop(ctx, F.MILESTONE, "note: the stage's quote states more than one payment deadline, so none is read", [span])
+    elif d.status == "none":
+        _drop(ctx, F.MILESTONE, "note: the stage's quote states no number of days for its payment", [span])
+    else:
+        out["days"], out["business_days"] = d.days, d.working
+        out["basis"] = stage_basis(stage_trigger(span.text, out.get("text") if isinstance(out.get("text"), str) else None))
 
 
 def _key(t: ContractTerm) -> tuple[object, ...]:
@@ -467,6 +489,21 @@ def _without_line_items(group: list[ContractTerm], abst: list[Abstention]) -> li
     abst.append(Abstention(field=F.PRICE.value, spans=[t.span for t in gone], reason=(
         "note: this amount is a line of the contract total and is read inside it")))
     return [t for t in group if t not in gone]
+
+
+def _per_stage_payment_terms(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[ContractTerm], bool]:
+    """A contract that pays in stages states each stage's days in the stage itself (on its MILESTONE term). A PAYMENT_TERMS
+    read from the same clause is that stage's deadline, not a rule for every payment, so it is not held against the others
+    as a conflict. A PAYMENT_TERMS from a clause no stage covers is the contract-wide rule and stays. Returns the terms and
+    whether payment terms were moved onto the stages (they then still count as stated)."""
+    stages = [t for t in terms if t.field == F.MILESTONE and t.days is not None]
+    if len(stages) < 2:
+        return terms, False
+    covered = [t for t in terms if t.field == F.PAYMENT_TERMS and any(_overlaps(t.span, s.span) for s in stages)]
+    if covered:
+        abst.append(Abstention(field=f"note:{F.PAYMENT_TERMS.value}", spans=[t.span for t in covered], reason=(
+            "note: the payment days are stated per stage, not once for the contract")))
+    return [t for t in terms if t not in covered], bool(covered)
 
 
 def _merge(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[ContractTerm], bool]:
@@ -526,6 +563,7 @@ def build_contract(doc: SourceDocument, parts: Sequence[tuple[Chunk, ContractExt
                   [t.span, *hit])
             continue
         clean.append(t)
+    clean, per_stage = _per_stage_payment_terms(clean, ctx.abst)
     terms, conflict = _merge(clean, ctx.abst)
     terms = sorted([*terms, *derived_dates(doc, terms, ctx.abst)], key=lambda t: (t.span.start, t.field.value))
     ctx.abst += check_notes(cross_checks(doc, terms))
@@ -534,7 +572,8 @@ def build_contract(doc: SourceDocument, parts: Sequence[tuple[Chunk, ContractExt
     not_found = [f for f in ContractField if f not in found and f.value not in conflicted]
     if conflict:
         status = CompileStatus.CONFLICTING_SOURCES
-    elif material_missing(kind, found):
+    elif material_missing(kind, found | ({F.PAYMENT_TERMS} if per_stage else set())):
+        # (a contract whose stages each state their own days has stated its payment terms)
         status = CompileStatus.ABSTAINED
     else:
         status = CompileStatus.COMPILED
