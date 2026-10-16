@@ -58,6 +58,7 @@ from app.strategy.capacity import (
     spare_capacity,
 )
 from app.strategy.concentration import concentration
+from app.strategy.impact import clear_cache as impact_clear_cache
 from app.strategy.impact import scenario_paid_late, stress
 from app.strategy.inputs import CustomerInputs, TypicalDelay
 from app.strategy.payments import (
@@ -87,6 +88,7 @@ _BASE: AnswerCache[dict[str, Any]] = AnswerCache(CACHE_SIZE)
 def clear_cache() -> None:
     _BASE.clear()
     cap.clear_cache()
+    impact_clear_cache()
 
 
 class Source(Protocol):

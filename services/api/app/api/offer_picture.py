@@ -44,7 +44,8 @@ from app.api.presentation import (
     whole,
 )
 from app.api.presentation import t as say
-from app.api.refusal import if_refused_text, refusal_plan
+from app.api.refusal import cached_refusal_plan, if_refused_text
+from app.api.refusal import clear_cache as clear_refusal_cache
 from app.api.runtime import get_runtime
 from app.api.selection import Selection, build_context, selection
 from app.api.withheld_words import withheld
@@ -1051,7 +1052,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     rechecked = {c.id: _safe_recheck(recheck, c) for c in verdict.counters if c.id in trajs}
     paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs, assumed, funding_said, send_runs)
     try:  # what a refused send would fund (the negotiate route's own no-deal plan, read and not run); a reply can only be refused, so each one says it
-        refused = if_refused_text(refusal_plan(state, rt.store.commitments(), mandate), state,
+        refused = if_refused_text(cached_refusal_plan(state, rt.store.commitments(), mandate), state,
                                   buyer_short(party_name(state, offer.counterparty_id)), today, lang)
     except EngineError:
         refused = None
@@ -1081,6 +1082,13 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         "axis": series_axis([asked_series, *(r["series"] for r in replies)], floor, picture_days),
         "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days,
     }
+
+
+def clear_cache() -> None:
+    """Forget every picture (and the refusal plan they share): the books they were drawn on were replaced (`Runtime.reset`)."""
+    with _lock:
+        _cache.clear()
+    clear_refusal_cache()
 
 
 def cached_picture(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:

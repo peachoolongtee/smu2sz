@@ -35,6 +35,7 @@ from app.financial import project
 from app.financial.invoices import InvoiceRef, issue_terms
 from app.funding import plan
 from app.funding.router import shared_runs
+from app.strategy.cache import AnswerCache, cache_key
 from app.strategy.capacity import Package, books_with, resolve_package
 from app.strategy.types import MarginalImpact, ScenarioState, StressRow
 from app.strategy.words import buyer_short, invoice_label, invoice_labels, whole_yuan
@@ -169,9 +170,23 @@ class Reading:
     lowest_day: int = 0
 
 
+_KERNEL: AnswerCache[Reading] = AnswerCache(256)  # the reading has no words, so the English and the Chinese read of one set of books share it
+
+
+def clear_cache() -> None:
+    _KERNEL.clear()
+
+
 def _read_kernel(state: FinancialState, obs: list[Obligation], mandate: Mandate) -> Reading:
     """The router's committed plan and the CONSERVATIVE unfunded trajectory of one set of books (no alerts: they need the
-    ledger store). The one place these figures are taken, for `read_books` and the stress."""
+    ledger store). The one place these figures are taken, for `read_books` and the stress. Pure in (state, obligations, mandate), so
+    it is cached by them with single-flight (`Reading` is frozen): a stress read in the other language, or for another offer on the
+    same books, takes the router's answer instead of searching again."""
+    key = cache_key(state, mandate, state.as_of_day, (), "read-kernel", "|".join(o.model_dump_json() for o in obs))
+    return _KERNEL.get_or_compute(key, lambda: _read_kernel_uncached(state, obs, mandate))
+
+
+def _read_kernel_uncached(state: FinancialState, obs: list[Obligation], mandate: Mandate) -> Reading:
     p = plan(state, obs, mandate)
     tr = project(state, obs, [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     floor = mandate.min_cash_fen
@@ -538,5 +553,5 @@ def stress(books: Books, mandate: Mandate, buyer_id: str, delays: Sequence[int] 
     return rows
 
 
-__all__ = ["DEFAULT_HORIZON_DAYS", "Reading", "funding_text", "marginal_impact", "read_books", "scenario_customer_loss",
+__all__ = ["DEFAULT_HORIZON_DAYS", "Reading", "clear_cache", "funding_text", "marginal_impact", "read_books", "scenario_customer_loss",
            "scenario_inflow", "scenario_paid_late", "scenario_received", "stress"]
