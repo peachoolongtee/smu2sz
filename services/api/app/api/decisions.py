@@ -102,11 +102,12 @@ def sent_outside_conflict(rt: Runtime, offer_id: str, lang: str) -> HTTPExceptio
     """409 OFFER_SENT_OUTSIDE when the owner sent a counter on this request to the buyer themself (an OFFERED fact): the buyer's answer is
     then recorded on the deal (accepted, countered, declined), and neither the simulated buyer nor the owner's own accept or decline of the
     request as asked may answer it as well. Call under `rt.lock`."""
-    from app.decisions.facts import OfferedFact, parse_fact
+    from app.decisions.facts import parse_fact
     from app.decisions.identity import deal_id
+    from app.decisions.state import active_offers
 
     store: Any = rt.store
-    if not any(isinstance(parse_fact(r), OfferedFact) for r in store.decision_facts(deal_id(offer_id))):
+    if not active_offers([parse_fact(r) for r in store.decision_facts(deal_id(offer_id))]):  # a corrected mark does not count
         return None
     said = t(lang, "You sent the buyer a counter yourself; record their answer on the deal instead.",
              "您已亲自向买方发出还价；请改为在这笔交易上记录对方的答复。")
@@ -720,6 +721,19 @@ def _outbound(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -
         return None
 
 
+def _reply_to(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> dict[str, Any] | None:
+    """The offer the owner sent outside FLOW that this request answers (`app.api.outbound_record`); None for any other decision."""
+    if ds.family != "DEAL":
+        return None
+    from app.api.outbound_record import reply_to_view
+
+    try:
+        return reply_to_view(ctx, ds, inp, lang)
+    except Exception:
+        log.exception("the reply_to block could not be built for %s", ds.decision_id)
+        return None
+
+
 def _history(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> list[dict[str, Any]]:
     if ds.family != "DEAL":
         return []
@@ -765,6 +779,7 @@ def decision_detail(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: 
                       if c is not None else None),
         "outbound": _outbound(ctx, ds, inp, lang),
         "history": _history(ctx, ds, inp, lang),
+        "reply_to": _reply_to(ctx, ds, inp, lang),
         "operations": _operations(ctx, ds, lang),
         "execution": execution_view(ctx, ds, lang),
         "settlement": _settlement(ctx, ds, lang),

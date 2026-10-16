@@ -56,9 +56,30 @@ def test_the_calendar_date_counts_from_the_books_day_zero() -> None:
 
 def test_an_early_payment_names_its_invoice_its_cap_its_rate_and_its_day() -> None:
     text = _say(_counter(_discount()))
-    assert "the ¥100,000 invoice issued on 26 September 2026" in text
-    assert "up to ¥50,000 of it on or before 5 October 2026" in text and "0.85% discount" in text
-    assert "open until 5 October 2026" in text
+    assert "the ¥100,000 invoice issued on 26 September 2026 and due on 10 November 2026" in text
+    assert "early settlement of up to ¥50,000 of it at a 0.85% discount if paid on or before 5 October 2026" in text
+    # what paying by the day settles, and what stays due: the net is the face less the discount, posted once (¥50,000 − ¥425)
+    assert "Paying ¥49,575 by then settles ¥50,000 of the invoice." in text
+    assert "Any amount not settled early, including the other ¥50,000, stays due on 10 November 2026 under the existing terms." in text
+    assert "open until 5 October 2026" in text and "Everything else stays as it is" not in text
+
+
+def test_every_term_the_buyer_asked_for_is_answered_and_never_left_to_everything_else() -> None:
+    asked = [_ob(9, ObligationType.TERMS_EXTENSION, ObligationBase(kind=BaseKind.FUTURE_INVOICES), days_delta=15, target_terms_days=60,
+                 duration=Duration(kind=DurationKind.RECURRING_PERPETUAL)),
+             _ob(8, ObligationType.CONTINGENT_REBATE, ObligationBase(kind=BaseKind.PERIOD_PURCHASES, amount_fen=1_000_000), rate_bp=100),
+             _ob(7, ObligationType.IMMEDIATE_DISCOUNT, ObligationBase(kind=BaseKind.INVOICE, amount_fen=10_000_000, receivable_id="RCV-T"),
+                 rate_bp=120, effective_day=4)]
+    msg = render(_counter(_discount()), _state(), buyer_name="B", terms_hash="h" * 64, valid_until_day=4, lang="en", asked=asked,
+                 current_terms_days=45)
+    assert msg.clauses[1:] == ("Payment terms on future invoices stay at 45 days.", "We are not able to offer the rebate you asked for.")
+    zh = render(_counter(_discount()), _state(), buyer_name="B", terms_hash="h" * 64, valid_until_day=4, lang="zh", asked=asked,
+                current_terms_days=45)
+    assert zh.clauses[1:] == ("今后发票的付款期限维持 45 天。", "我方无法提供贵方所要求的返利。")
+    ext = _ob(2, ObligationType.TERMS_EXTENSION, ObligationBase(kind=BaseKind.FUTURE_INVOICES), days_delta=10, target_terms_days=55,
+              duration=Duration(kind=DurationKind.RECURRING_PERPETUAL))
+    only_terms = render(_counter(ext), _state(), buyer_name="B", terms_hash="h" * 64, valid_until_day=4, lang="en", asked=asked)
+    assert "We are not able to offer the early-payment discount you asked for." in only_terms.clauses
 
 
 @pytest.mark.parametrize(("duration", "scope"), [
@@ -78,7 +99,7 @@ def test_a_price_change_says_its_direction() -> None:
     down = up.model_copy(update={"rate_bp": -30})
     assert "Prices on future invoices rise by 0.30%." in _say(_counter(up))
     assert "Prices on future invoices fall by 0.30%." in _say(_counter(down))
-    assert "今后的发票的价格上调 0.30%。" in _say(_counter(up), "zh")
+    assert "今后发票的价格上调 0.30%。" in _say(_counter(up), "zh")
 
 
 @pytest.mark.parametrize("bad", [

@@ -1974,6 +1974,15 @@ def abstention_words(reason: str, channels: Iterable[str], lang: Lang) -> str | 
     (chat, email, portal: the message; attachment). None for a reason this has no sentence for (the page then says nothing of it)."""
     if reason.startswith("unresolved reference"):  # "as usual" / "same arrangement": the terms it points to are not on the books, so nothing was booked
         return t(lang, "The buyer refers to an earlier arrangement that is not in your books.", "买方提到了一项此前的约定，但您的账目中没有这项记录。")
+    if reason.startswith("unresolved scope: the discount names several invoices"):  # what is unclear, then what to ask (round four)
+        return t(lang, "Their message does not say which single invoice the discount is for. Ask them which invoice it applies to.",
+                 "对方的消息没有说明折扣适用于哪一张发票。请询问对方折扣适用于哪张发票。")
+    if reason.startswith("partial early payment"):
+        return t(lang, "They offer to pay only part of an invoice early. Ask how much they will pay, and by when.",
+                 "对方提出只提前支付发票的一部分。请询问对方将支付多少、何时支付。")
+    if reason.startswith("conflicting sources: the message states two different amounts for the invoice"):
+        return t(lang, "Their message gives two different amounts for the invoice. Ask which amount is right.",
+                 "对方的消息给出了两个不同的发票金额。请询问哪个金额正确。")
     m = _CONFLICT.match(reason)
     if m is None:
         return None
