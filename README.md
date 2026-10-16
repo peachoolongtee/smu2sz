@@ -6,6 +6,16 @@ The language model only interprets text. Deterministic code decides and executes
 
 All data is synthetic (`fixtures/`). This is a simulation: the agent is decision support under the owner's own limits, not a lender, broker or adviser, and it executes no real payment; every facility, the buyer and the bank feed are simulated. It screens the entered obligations only, and it makes no claim of bank-covenant compliance. Nothing below needs an API key or the network once dependencies are installed: the default `LLM_MODE=cache` replays recorded model outputs and falls back to a deterministic rules grammar.
 
+## For judges
+
+One command runs everything offline, free and deterministic (recorded model readings, in-memory books, no network, no key) and writes a report you can read in a browser or an editor:
+
+```bash
+uv run --project services/api python scripts/judge_eval.py     # 2 to 4 minutes; writes services/api/evals/judge/judge-report.md and .json
+```
+
+It runs the 49 scripted conversations, the 259-attack catalogue (126 through the API, 133 through the chat), the demo walk, and a hash-chain check of the walk's log with a tampered copy that must fail. The report opens with one headline line, then a table per task area and per attack class, then every task and attack with its prompt, expected and actual outcome. The exit status is non-zero on any failure. Eight questions to ask FLOW live, with the exact input and the real answer: [`docs/deliverables/JUDGING_QUESTIONS.md`](docs/deliverables/JUDGING_QUESTIONS.md).
+
 ## Quickstart for judges
 
 Requirements: Python 3.12 with [`uv`](https://docs.astral.sh/uv/); for the web app, Node with `pnpm`. Open a terminal at the repository root. The step 1 command runs from the root; the commands in steps 2 and 3 that start with `cd` run from that directory, and the others run from the root.
