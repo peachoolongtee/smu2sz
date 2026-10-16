@@ -1,65 +1,85 @@
-%% TermsLedger v2: system architecture (source for the Technical Document, section 02).
+%% FLOW (流) / TermsLedger v2: system architecture on dev 0f92d433, 16 Oct 2026 (source for the Technical Document, section 02).
 %% Render: npx -p @mermaid-js/mermaid-cli mmdc -i architecture.mmd -o architecture.png -w 2000
 %% scripts/build_deliverables.py embeds docs/deliverables/architecture.png when it exists;
 %% otherwise it uses the ASCII fallback in technical_document.md.
 flowchart LR
   subgraph Untrusted["Untrusted input (data only)"]
     BUYER["Buyer message / PO<br/>(zh + en, text or file)"]
-    LENDER["Lender message / term sheet"]
-    OWNERNL["Owner request<br/>(/nl, natural language)"]
+    DOCS["Uploaded contract<br/>buyer, lender or vendor<br/>(Word or text PDF; scans refused)"]
+    CHAT["Chat (/nl)<br/>owner, agent key or buyer"]
   end
 
   subgraph Owner["Owner authority"]
-    MANDATE["Mandate v1<br/>Ed25519-signed limits<br/>+ 3 permission tiers"]
-    MENU["Funding menu<br/>(owner-approved facilities)"]
-    APPROVE["Tier-2 approval queue<br/>(X-Owner-Token)"]
+    MANDATE["Mandate<br/>Ed25519-signed limits<br/>+ 3 permission tiers"]
+    MENU["Funding menu<br/>(only the owner adds)"]
+    APPROVE["Tier-2 approvals<br/>(owner token)"]
+    SETUP["Set up your books<br/>/setup/open: typed entries,<br/>blank books, demo mode only"]
   end
 
-  subgraph API["FastAPI modular monolith (services/api)"]
-    NL["nl/: intent + typed slots,<br/>sessions: clarify, correct, fallback"]
-    COMPILER["compiler/: LLM or cache<br/>+ rules grammar<br/>typed obligations with exact spans,<br/>or abstain; coverage proof<br/>(autonomy_eligible, ADR-0005)"]
-    ENGINE["financial/: daily cash, debt and<br/>forward-concession trajectory<br/>(conservative decides)"]
-    ROUTER["funding/: grid-search router,<br/>marginal cost of funds,<br/>break-even discount"]
-    COV["covenants/: DSCR, leverage,<br/>clean-down per facility"]
-    VERIFIER["verifier/: screen, predicates,<br/>break-even rule, verdict + formulas,<br/>counters (reads no free text)"]
-    KERNEL["counterparties/: deterministic<br/>buyer kernel (hidden reservation),<br/>template verbaliser"]
-    EXEC["operations/: executor<br/>tier, mandate, nonce, idempotency,<br/>circuit breaker"]
-    EGRESS["egress/: outbound guard<br/>(protected values, canaries)"]
-    LOG[("Append-only hash-chained<br/>operations log + commitments<br/>+ security events")]
+  subgraph Edge["api/: the trust boundary"]
+    AUTH["auth: owner token, agent key,<br/>bank-feed key, buyer key<br/>DEMO_MODE off unless set"]
+    INTAKE["intake limits: 5 docs x 4,000 chars,<br/>buyer budget 5 a day (R-10)"]
+    AGENTVIEW["agent view (R-11):<br/>the agent key's chat gets<br/>an allow-list, behind egress"]
+    CACHE["read caches: exposure answer,<br/>offer picture, no-deal plan<br/>(keyed by the books)"]
   end
 
-  subgraph Records["Beside the engine (it imports none of them)"]
-    INGEST["ingest/ + contracts/ + deals/:<br/>an uploaded contract is read into a record<br/>(ADR-0012); the owner confirms it;<br/>the books never change"]
-    DECISIONS["decisions/: durable decision record<br/>(ADR-0011), derived on request,<br/>3 stored facts"]
-    STRATEGY["strategy/: envelope, cash price curve,<br/>collections worth; flags off by default,<br/>read-only, labelled copies"]
+  subgraph Engine["Engine (deterministic; the stability set)"]
+    NL["nl/: 22 intents, typed slots,<br/>consent grammar, sessions"]
+    COMPILER["compiler/: cache, LLM or rules grammar<br/>quotes verbatim, numbers parsed by code,<br/>abstain; coverage proof (ADR-0005)"]
+    BOOKS["books/ + clock/: current books,<br/>owner-moved clock (ADR-0006)"]
+    ENGINE["financial/: daily cash, debt, lots,<br/>forward concessions (conservative decides)"]
+    ROUTER["funding/: router on a 10,000 grid,<br/>marginal cost, admission"]
+    COV["covenants/: DSCR, leverage, clean-down"]
+    VERIFIER["verifier/: screen, hard rules,<br/>early-pay tests, autonomy,<br/>counters re-checked (reads no free text)"]
+    KERNEL["counterparties/: buyer kernel<br/>(hidden reservation)"]
+    EXEC["operations/: executor<br/>tier, mandate, nonce, idempotency,<br/>re-verification, one unit of work"]
+    EGRESS["egress/: outbound guard<br/>(protected values, 4 canaries)"]
+    LOG[("Append-only hash-chained log<br/>+ commitments + security events")]
+  end
+
+  subgraph Beside["Beside the engine (it imports none of them)"]
+    RECORDS["ingest/ + contracts/ + deals/:<br/>reading -> record; owner confirms<br/>(log only, never the books)"]
+    BUYSIDE["capex/schedule (FEATURE_CAPEX_CONTRACTS):<br/>confirmed vendor contract -> payments;<br/>health/, lending/, plans read-only"]
+    DECISIONS["decisions/: decision record<br/>(ADR-0011), derived + 3 facts"]
+    STRATEGY["strategy/: envelope, price curve,<br/>collections; flags off, read-only"]
   end
 
   EVID["GET /evidence (JSONL)<br/>scripts/verify_evidence.py"]
-  WEB["apps/web (Next.js)<br/>Home, Deals, Cash, Receivables, Activity,<br/>chat panel, owner sign-in;<br/>displays server-written sentences and money<br/>(INVARIANT 13)"]
+  WEB["apps/web (Next.js): landing, Home, Deals,<br/>Documents, Cash, Sandbox, Loans, Receivables,<br/>Activity, chat panel, owner sign-in;<br/>shows server-written money only"]
 
-  BUYER --> COMPILER
-  LENDER --> COMPILER
-  OWNERNL --> NL
+  BUYER --> AUTH
+  DOCS --> AUTH
+  CHAT --> AUTH
+  AUTH --> INTAKE
+  INTAKE --> COMPILER
+  AUTH --> NL
   NL --> COMPILER
   NL --> VERIFIER
+  NL -.->|"agent key"| AGENTVIEW
+  AGENTVIEW --> EGRESS
   COMPILER -->|"CompiledOffer (typed)"| VERIFIER
+  COMPILER -->|"contract reading"| RECORDS
   MANDATE --> VERIFIER
   MENU --> ROUTER
+  BOOKS --> ENGINE
   ENGINE --> ROUTER
   ENGINE --> COV
   ROUTER --> VERIFIER
   COV --> VERIFIER
   VERIFIER -->|"Verdict"| KERNEL
-  VERIFIER -->|"Verdict -> typed operations<br/>(built by code)"| EXEC
   KERNEL --> EGRESS
-  EXEC --> LOG
+  VERIFIER -->|"typed operations,<br/>built by code"| EXEC
   APPROVE --> EXEC
   MANDATE --> EXEC
+  ROUTER -->|"admission"| EXEC
+  EXEC --> LOG
+  EXEC --> BOOKS
+  RECORDS -->|"CONFIRM_DOCUMENT<br/>(owner, hash-bound)"| EXEC
+  RECORDS --> BUYSIDE
+  BUYSIDE -->|"CommitPurchase<br/>(owner, Tier 2, hashes bound)"| EXEC
+  SETUP -->|"OPEN_BOOKS:<br/>new books + signed limits"| BOOKS
   LOG --> EVID
-  BUYER -->|"uploaded contract / lender agreement"| INGEST
-  INGEST -->|"reading, parsed by code"| COMPILER
-  APPROVE -->|"CONFIRM_DOCUMENT / REJECT_DOCUMENT<br/>(log only, hash-bound)"| EXEC
   LOG --> DECISIONS
   ENGINE -.->|"labelled copies"| STRATEGY
-  VERIFIER -.->|"labelled copies"| STRATEGY
-  API --> WEB
+  ENGINE --> CACHE
+  Edge --> WEB
