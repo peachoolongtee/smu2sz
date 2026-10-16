@@ -186,3 +186,35 @@ def test_a_late_payment_charge_is_kept_whoever_the_payer_is(quote, rate, bp):
 def test_late_performance_without_a_penalty_word_is_not_dropped_by_this_rule():
     quote = "乙方逾期履行的，每逾期一日，按逾期部分价款的0.4%计收利息。"
     assert _one(_late(quote, "0.4%"), F.LATE_INTEREST).rate_bp == 40
+
+
+# ---------------------------------------------------------------- end date
+
+SIGNED = "签订日期：2026年1月10日"
+
+
+def _dates(sentence: str):  # type: ignore[no-untyped-def]
+    return _compile(_lines("测试合同", SIGNED, "第二条 交付", sentence),
+                    [_x(F.SIGNED_DATE, SIGNED, date_text="2026年1月10日")])
+
+
+def test_a_chained_second_period_uses_the_stated_completion_date_without_ji():
+    c = _dates("乙方应于本合同签订之日起30日内将设备运至测试地点，并在到货后10日内完成安装，全部工作不迟于2026年3月1日完成。")
+    assert _one(c, F.END_DATE).date == "2026-03-01"  # not 10 January + 30 days
+    assert _one(c, F.START_DATE).date == "2026-01-10"
+
+
+def test_a_chained_second_period_without_a_stated_date_derives_no_end_date():
+    c = _dates("乙方应于本合同签订之日起30日内将设备运至测试地点，并在到货后10日内完成安装调试。")
+    assert _all(c, F.END_DATE) == []
+    assert any(a.field == "END_DATE" and "second period" in a.reason for a in c.abstentions)
+
+
+def test_a_single_period_still_derives_signing_plus_days():
+    c = _dates("乙方应于本合同签订之日起30日内交货。")
+    assert _one(c, F.END_DATE).date == "2026-02-09"
+
+
+def test_a_single_period_with_a_different_stated_date_reads_no_end_date():
+    c = _dates("乙方应于本合同签订之日起30日内交货，不迟于2026年3月1日完成。")
+    assert _all(c, F.END_DATE) == []

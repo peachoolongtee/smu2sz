@@ -20,7 +20,11 @@ F = ContractField
 _FROM_SIGNING = re.compile(r"(?:自)?(?:本)?合同签订(?:生效)?之日起\s*(\d{1,4})\s*(个?工作日|日|天)内")
 _PERFORMANCE = re.compile(r"交货|交付|供货|送至|送达|完成|提供|履行|竣工|验收合格后")
 _PAYMENT = re.compile(r"付款|支付|预付|款|发票|汇票|转账")
-_STATED_END = re.compile(r"[（(]?即(?:不迟于)?\s*([^，。；）)\n]{6,18}?)(?:前|完成|之前)")
+_STATED_END = re.compile(r"[（(]?即(?:不迟于)?\s*([^，。；）)\n]{6,18}?)(?:前|完成|之前)"
+                         r"|不迟于\s*([^，。；）)\n]{6,18}?)(?:前|之前)?完成")
+# "签订之日起90日内运抵……，并在到货后20日内完成安装调试": a second period chained after the one counted from signing, so
+# signing plus the first period is not the end of performance
+_CHAINED = re.compile(r"(?:后|起)\s*\d{1,4}\s*(?:个?工作日|日|天)(?:内|之内|以内)")
 DERIVED = "derived: "
 
 
@@ -58,9 +62,19 @@ def derived_dates(doc: SourceDocument, terms: list[ContractTerm], abst: list[Abs
     days, (m, sentence) = next(iter(found.items()))
     span = SourceSpan(doc_id=doc.doc_id, start=m.start(), end=m.end(), text=m.group(0))
     end = (date.fromisoformat(signed.date) + timedelta(days=days)).isoformat()  # type: ignore[arg-type]
-    if stated := _STATED_END.search(sentence):
-        said = parse_date(stated.group(1)).value
-        if said is not None and said != end:
+    stated = _STATED_END.search(sentence)
+    said = parse_date(stated.group(1) or stated.group(2)).value if stated else None
+    how, end_span = f"the signing date plus {days} days", span
+    if _CHAINED.search(sentence, sentence.find(m.group(0)) + len(m.group(0))):
+        if said is None:
+            abst.append(Abstention(field=F.END_DATE.value, spans=[span], reason=(
+                "note: a second period follows the one counted from signing, so no end date is derived")))
+            return []
+        end, how = said, "the date by which the sentence says all the work is done"
+        at = _bounds(doc.text, m.start())[0] + stated.start()  # type: ignore[union-attr]
+        end_span = SourceSpan(doc_id=doc.doc_id, start=at, end=at + len(stated.group(0)), text=stated.group(0))  # type: ignore[union-attr]
+    elif said is not None:
+        if said != end:
             abst.append(Abstention(field=F.END_DATE.value, spans=[span], reason=(
                 f"note: {days} days from signing is {end}, but the contract also says {said}; no end date is read")))
             return []
@@ -69,8 +83,8 @@ def derived_dates(doc: SourceDocument, terms: list[ContractTerm], abst: list[Abs
         out.append(ContractTerm(field=F.START_DATE, span=span, clause=None, value_text=m.group(0), date=signed.date,
                                 text=DERIVED + "the signing date"))
     if F.END_DATE not in have:
-        out.append(ContractTerm(field=F.END_DATE, span=span, value_text=m.group(0), date=end,
-                                text=DERIVED + f"the signing date plus {days} days"))
+        out.append(ContractTerm(field=F.END_DATE, span=end_span, value_text=end_span.text, date=end,
+                                text=DERIVED + how))
     return out
 
 
