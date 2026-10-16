@@ -54,8 +54,8 @@ All 12 live skips are strategy tests (11 in `strategy.spec.ts` and the price-cur
 ```bash
 python3 scripts/run_scenarios.py --inproc                         # 49 scripted /nl tasks + evidence → services/api/evals/e2e/latest/
 cd services/api && uv run python -m app.security.attacks --report # 259 attacks (126 API + 133 chat, including the NL-CS consent attacks, each buyer attack with and without the buyer's key, and four on contract ingestion), 0 with harm
-PYTHONUTF8=1 uv run --project services/api python scripts/evaluate_contracts.py   # held-out contract readings → services/api/evals/contracts_heldout_report.md (the set is pending, so the report says so)
-uv run --project services/api python scripts/evaluate.py          # full offline evaluation (about 5 min) → services/api/evals/latest_report.md
+DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/evaluate_contracts.py   # held-out contract readings → services/api/evals/contracts_heldout_report.md (the set is pending, so the report says so)
+DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py          # full offline evaluation (about 5 min) → services/api/evals/latest_report.md
 uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout3   # the independent held-out set
 PYTHONUTF8=1 uv run --project services/api python scripts/certify_language_boundary.py --backend cache   # 231-item language-boundary certification; also --backend fake; WRONG_MATERIAL 0 in both. --backend live is pending an API key
 cd services/api && SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider tests/concurrency   # two-process invariants on SQLite; the PostgreSQL cases run when TERMSLEDGER_TEST_DATABASE_URL is set (pending a database URL)
