@@ -113,15 +113,15 @@ def test_accept_as_asked_pins_the_line_the_ask_and_the_cap():
     assert _w(ba.after, "leverage_room").today_fen == 110_996_000  # ¥1,109,960
 
 
-def test_option_a_leaves_thirteen_yuan_eighty_of_the_line_to_the_first_of_november():
+def test_option_a_leaves_two_thousand_seven_hundred_ninety_yuan_of_the_line_to_the_first_of_november():
     books, mandate = golden()
     after = capacity_before_after(books, mandate, OPTION_A, 0, (), trusted_owner_key_hex=OWNER_KEY).after
     assert after is not None
     line = _w(after, "credit_line", "FAC-LINE")
-    assert (line.today_fen, line.through_day, line.recovers_day) == (1_380, 31, 32)  # ¥13.80 until 1 Nov
+    assert (line.today_fen, line.through_day, line.recovers_day) == (279_000, 31, 32)  # ¥2,790 until 1 Nov: the face is rounded up to ¥260,000 (R-10), the line draws ¥147,210
     assert _w(after, "invoice_finance", "FAC-IF", "TODAY").today_fen == 0  # the part-early-paid invoice is wholly ineligible
     assert _w(after, "concession").today_fen == 500_000
-    assert (_w(after, "dscr_room").lowest_fen, _w(after, "leverage_room").today_fen) == (2_615_843, 109_501_380)
+    assert (_w(after, "dscr_room").lowest_fen, _w(after, "leverage_room").today_fen) == (2_617_401, 109_779_000)  # the line draws ¥147,210, not ¥149,986.20 (R-10)
 
 
 def test_option_b_pins_the_line_to_the_26th_and_the_21000_of_invoice_finance():
@@ -201,7 +201,7 @@ def test_with_no_plan_invoice_finance_today_is_all_of_the_candidates():
 def test_concession_after_equals_the_what_ifs_headroom_and_the_cap_fires_iff_negative():
     books, mandate = golden()
     for params, package in ((WhatIfParams(terms_days=60, discount_bp=120, rebate_bp=100), ASKED),
-                            (WhatIfParams(terms_days=45, discount_bp=85, rebate_bp=0, settle_face_fen=25_720_000), OPTION_A),
+                            (WhatIfParams(terms_days=45, discount_bp=85, rebate_bp=0, settle_face_fen=26_000_000), OPTION_A),
                             (WhatIfParams(terms_days=55, discount_bp=0, rebate_bp=0, price_adjustment_bp=30), OPTION_B)):
         shown = simulate(books.state, mandate, params, trusted_owner_key_hex=OWNER_KEY, day=0)
         after = capacity_before_after(books, mandate, package, 0, (), trusted_owner_key_hex=OWNER_KEY).after

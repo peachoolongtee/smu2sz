@@ -78,10 +78,10 @@ def test_the_send_receipt_keeps_the_three_lines_of_the_ex01_receipt(api: TestCli
     agreement, draw, cost = pr["send_scope_lines"]
     # what sending authorizes: the exact counter, recorded as a proposed agreement; nothing about who approves it (the authority sentence says that)
     assert agreement == "Send the exact Option A counter to Foshan; FLOW records it as a proposed agreement that stands only if Foshan accepts."
-    assert draw == "Draws ¥149,986.20 on the Bank credit line today"
-    assert cost == "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"
+    assert draw == "Draws ¥147,210.00 on the Bank credit line today"
+    assert cost == "Funding cost ¥825.99 for the draw (already inside the ¥3,035.99 above)"
     assert r["authorizes_text"] == agreement and r["executes_now_text"] == f"{draw}; {cost}"
-    assert r["fees_display"] == "¥3,027.77" == pr["supplier_cost_display"] and r["gross_display"] is None and r["net_display"] is None
+    assert r["fees_display"] == "¥3,035.99" == pr["supplier_cost_display"] and r["gross_display"] is None and r["net_display"] is None
     # the recheck sentence, then what the engine does whatever the buyer answers (the funding runs when the counter is sent)
     assert r["assumptions_text"].startswith(pr["recheck_text"]) and "Runs when you send, whether or not the buyer agrees" in r["assumptions_text"]
     assert r["authority_text"] == "Within your mandate: no approval needed."
@@ -95,7 +95,7 @@ def test_the_send_receipt_in_chinese(api: TestClient) -> None:
     pr = _evaluate(api, "zh")["priced_response"]
     r = _whole(pr["receipt"], "zh")
     assert r["authority_text"] == "在您的授权范围内：无需批准。"
-    assert r["in_hand_vs_future_text"].startswith("提款今天到账。") and r["fees_display"] == "¥3,027.77"
+    assert r["in_hand_vs_future_text"].startswith("提款今天到账。") and r["fees_display"] == "¥3,035.99"
     assert r["authorizes_text"] == pr["send_scope_lines"][0] == "向Foshan原样发送方案 A 的还价；FLOW 将其记为拟议中的协议，只有Foshan接受后才成立。"
     assert "；" in r["executes_now_text"] and r["remaining_text"] == "只有Foshan接受后条款才会生效；发送还价本身不会结算任何付款或融资。"
 

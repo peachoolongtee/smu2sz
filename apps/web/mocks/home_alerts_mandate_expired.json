@@ -156,11 +156,11 @@
       "kind": "RECEIVABLE_PAST_DUE",
       "severity": "WARNING",
       "title": "Receivable RCV-A is 63 day(s) past due",
-      "detail": "¥162,800.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "detail": "¥160,000.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
       "formula": "today − due_day = 95 − 32 = 63 > 0",
       "day": 32,
       "month": null,
-      "amount_fen": 16280000,
+      "amount_fen": 16000000,
       "committed_cure": null,
       "commitment_id": null,
       "receivable_id": "RCV-A",
@@ -168,7 +168,7 @@
         "receivable_id": "RCV-A",
         "counterparty_id": "BUYER-1",
         "due_day": "32",
-        "outstanding": "¥162,800.00"
+        "outstanding": "¥160,000.00"
       },
       "suggested": [
         {
@@ -177,7 +177,7 @@
           "receivable_id": "RCV-A",
           "commitment_id": null,
           "offer_id": null,
-          "amount_fen": 16280000,
+          "amount_fen": 16000000,
           "note": "chase the buyer; record the receipt when the money lands",
           "cost_fen": null,
           "cost_days": null,
@@ -185,15 +185,15 @@
           "cost_formula": "",
           "above_apr_cap": false,
           "executes_automatically": false,
-          "amount_display": "¥162,800.00",
+          "amount_display": "¥160,000.00",
           "note_when": "chase the buyer; record the receipt when the money lands"
         }
       ],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥162,800.00",
+      "amount_display": "¥160,000.00",
       "title_when": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 63 days ago is 63 days past due",
-      "detail_when": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 63 days ago and is still unpaid. The cash forecast no longer counts on a dated receipt."
+      "detail_when": "¥160,000.00 outstanding from Foshan Home Retail Co. was due 63 days ago and is still unpaid. The cash forecast no longer counts on a dated receipt."
     },
     {
       "id": "ALERT-PASTDUE-RI:BUYER-1:32",

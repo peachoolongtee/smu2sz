@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field, replace
 from fractions import Fraction
 
@@ -603,6 +604,12 @@ class Search:
         idx = [i for i, a in enumerate(actions) if a.facility_id == ref]
         if not idx:
             return None
+        # mirrors the owner-approved draw-own-lot attribution, 16 Oct; see app/funding/search.py
+        principal = re.match(r"(-?[\d,]+\.\d\d) ×", formula or "")
+        if principal is not None:
+            idx = [i for i in idx if actions[i].kind != FundingActionKind.DRAW or y(actions[i].amount_fen) == principal.group(1)]
+            if not idx:
+                return None
         if len(idx) == 1:
             return idx[0]
         # the engine's posting formula names the principal it is charged on first ("<amount> × <rate> ..."): that

@@ -183,7 +183,7 @@ test("they accepted, with their message as evidence: the exact terms, what it bi
   await expect(confirm.getByTestId("outbound-accept-authority")).toHaveText(accept.authority_text!);
   await expect(confirm.getByLabel(accept.evidence_label!)).toHaveAttribute("placeholder", accept.evidence_placeholder!);
   await expect(confirm.getByTestId("outbound-evidence-hint")).toHaveText(accept.evidence_hint_text!);
-  await confirm.getByTestId("outbound-evidence-text").fill("Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.");
+  await confirm.getByTestId("outbound-evidence-text").fill("Agreed. We will pay ¥260,000 of the September invoice by 3 October, less the 0.85% discount.");
   await expect(confirm.getByTestId("outbound-confirm")).toHaveText(accept.confirm_label);
   await confirm.getByTestId("outbound-confirm").click();
 

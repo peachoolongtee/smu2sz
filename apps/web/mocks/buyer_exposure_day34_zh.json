@@ -14,11 +14,11 @@
     "is_aggregate": false,
     "excluded_aggregates": [],
     "aggregate_note": null,
-    "ar_buyer_fen": 100280000,
-    "ar_total_fen": 100280000,
-    "ar_all_fen": 100280000,
+    "ar_buyer_fen": 100000000,
+    "ar_total_fen": 100000000,
+    "ar_all_fen": 100000000,
     "ar_share_bp": 10000,
-    "ar_text": "Foshan占您目前全部应收款的 100%（¥1,002,800）。",
+    "ar_text": "Foshan占您目前全部应收款的 100%（¥1,000,000）。",
     "receipts_from_day": 34,
     "receipts_to_day": 64,
     "receipts_buyer_fen": 42000000,
@@ -29,10 +29,10 @@
     "annual_sales_reason": "并非每位客户的年销售额都已知，因此不显示Foshan占销售额的比例。",
     "contribution_share_bp": null,
     "contribution_reason": "不显示Foshan占毛利的比例：这需要每位客户的毛利率。",
-    "sentence": "Foshan占您目前全部应收款的 100%（¥1,002,800）。Foshan占未来 30 天内到期回款的 100%（¥420,000）。",
-    "ar_buyer_display": "¥1,002,800.00",
-    "ar_total_display": "¥1,002,800.00",
-    "ar_all_display": "¥1,002,800.00",
+    "sentence": "Foshan占您目前全部应收款的 100%（¥1,000,000）。Foshan占未来 30 天内到期回款的 100%（¥420,000）。",
+    "ar_buyer_display": "¥1,000,000.00",
+    "ar_total_display": "¥1,000,000.00",
+    "ar_all_display": "¥1,000,000.00",
     "ar_share_display": "100.00%",
     "receipts_buyer_display": "¥420,000.00",
     "receipts_total_display": "¥420,000.00",
@@ -62,8 +62,8 @@
         "receivable_id": "RCV-A",
         "due_day": 32,
         "days_overdue": 2,
-        "outstanding_fen": 16280000,
-        "outstanding_display": "¥162,800.00"
+        "outstanding_fen": 16000000,
+        "outstanding_display": "¥160,000.00"
       }
     ],
     "survivorship": false,
@@ -697,8 +697,8 @@
         },
         {
           "day": 154,
-          "closing_fen": 92596376,
-          "closing_display": "¥925,963.76"
+          "closing_fen": 92881493,
+          "closing_display": "¥928,814.93"
         }
       ],
       "lowest_short": "−¥45k",
@@ -709,9 +709,9 @@
       "breach_days_text": "低于您的最低现金 35 天",
       "lowest_display": "−¥45,000.00",
       "need_display": "¥345,000.00",
-      "net_later_fen": 100280000,
-      "net_later_text": "约 ¥1,003k，一个月后",
-      "net_later_display": "¥1,002,800.00"
+      "net_later_fen": 100000000,
+      "net_later_text": "约 ¥1,000k，一个月后",
+      "net_later_display": "¥1,000,000.00"
     },
     "paths": {
       "asked": {
@@ -1332,8 +1332,8 @@
           },
           {
             "day": 154,
-            "closing_fen": 92596376,
-            "closing_display": "¥925,963.76"
+            "closing_fen": 92881493,
+            "closing_display": "¥928,814.93"
           }
         ],
         "lowest_short": "−¥45k",
@@ -1967,8 +1967,8 @@
           },
           {
             "day": 154,
-            "closing_fen": 134596376,
-            "closing_display": "¥1,345,963.76"
+            "closing_fen": 134881493,
+            "closing_display": "¥1,348,814.93"
           }
         ],
         "lowest_short": "¥100k",
@@ -2599,8 +2599,8 @@
             },
             {
               "day": 154,
-              "closing_fen": 134596376,
-              "closing_display": "¥1,345,963.76"
+              "closing_fen": 134881493,
+              "closing_display": "¥1,348,814.93"
             }
           ],
           "lowest_short": "¥100k",
@@ -2655,9 +2655,9 @@
         {
           "dimension": "credit_line",
           "facility_id": "FAC-LINE",
-          "today_fen": 1380,
+          "today_fen": 0,
           "after_fen": 15000000,
-          "lowest_fen": 1380,
+          "lowest_fen": 0,
           "lowest_day": 34,
           "recovers_day": 47,
           "through_day": 46,
@@ -2667,19 +2667,19 @@
           "reading": null,
           "month": null,
           "recovery_assumed": true,
-          "today_display": "¥13.80",
+          "today_display": "¥0.00",
           "after_display": "¥150,000.00",
-          "lowest_display": "¥13.80",
+          "lowest_display": "¥0.00",
           "lowest_when": "今天",
           "through_when": "12 天后",
           "recovers_when": "13 天后",
           "recovery_assumed_text": "13 天后恢复，前提是按计划的还款日还款（这是假设，不是记录）。",
-          "today_text": "¥13.80",
-          "lowest_text": "¥13.80",
+          "today_text": "¥0.00",
+          "lowest_text": "¥0.00",
           "after_text": "¥150,000.00",
           "label": "授信额度余量",
           "reason_text": null,
-          "today_short": "¥13.80",
+          "today_short": "¥0",
           "after_short": "¥150k",
           "facility_name": "Bank credit line",
           "reading_text": null
@@ -2687,9 +2687,9 @@
         {
           "dimension": "invoice_finance",
           "facility_id": "FAC-IF",
-          "today_fen": 15000000,
+          "today_fen": 15279000,
           "after_fen": null,
-          "lowest_fen": 15000000,
+          "lowest_fen": 15279000,
           "lowest_day": 34,
           "recovers_day": null,
           "through_day": 46,
@@ -2699,18 +2699,18 @@
           "reading": "TODAY",
           "month": null,
           "recovery_assumed": false,
-          "today_display": "¥150,000.00",
-          "lowest_display": "¥150,000.00",
+          "today_display": "¥152,790.00",
+          "lowest_display": "¥152,790.00",
           "lowest_when": "今天",
           "through_when": "12 天后",
           "recovers_when": "120 天预测期内不会恢复",
           "recovery_assumed_text": null,
-          "today_text": "¥150,000.00",
-          "lowest_text": "¥150,000.00",
+          "today_text": "¥152,790.00",
+          "lowest_text": "¥152,790.00",
           "after_text": null,
           "label": "发票融资余量",
           "reason_text": null,
-          "today_short": "¥150k",
+          "today_short": "¥153k",
           "after_short": null,
           "facility_name": "Invoice financing (onboarded platform)",
           "reading_text": "已开具的发票"
@@ -2718,9 +2718,9 @@
         {
           "dimension": "invoice_finance",
           "facility_id": "FAC-IF",
-          "today_fen": 15000000,
+          "today_fen": 15279000,
           "after_fen": 25600000,
-          "lowest_fen": 15000000,
+          "lowest_fen": 15279000,
           "lowest_day": 34,
           "recovers_day": 47,
           "through_day": 46,
@@ -2730,19 +2730,19 @@
           "reading": "AS_ISSUED",
           "month": null,
           "recovery_assumed": false,
-          "today_display": "¥150,000.00",
+          "today_display": "¥152,790.00",
           "after_display": "¥256,000.00",
-          "lowest_display": "¥150,000.00",
+          "lowest_display": "¥152,790.00",
           "lowest_when": "今天",
           "through_when": "12 天后",
           "recovers_when": "13 天后",
           "recovery_assumed_text": null,
-          "today_text": "¥150,000.00",
-          "lowest_text": "¥150,000.00",
+          "today_text": "¥152,790.00",
+          "lowest_text": "¥152,790.00",
           "after_text": "¥256,000.00",
           "label": "发票融资余量",
           "reason_text": null,
-          "today_short": "¥150k",
+          "today_short": "¥153k",
           "after_short": "¥256k",
           "facility_name": "Invoice financing (onboarded platform)",
           "reading_text": "按计划开具的发票（这是假设）"
@@ -2781,9 +2781,9 @@
         {
           "dimension": "dscr_room",
           "facility_id": null,
-          "today_fen": 2469463,
+          "today_fen": 2473601,
           "after_fen": null,
-          "lowest_fen": 2469463,
+          "lowest_fen": 2473601,
           "lowest_day": 60,
           "recovers_day": null,
           "through_day": 60,
@@ -2793,14 +2793,14 @@
           "reading": null,
           "month": 2,
           "recovery_assumed": false,
-          "today_display": "¥24,694.63",
-          "lowest_display": "¥24,694.63",
+          "today_display": "¥24,736.01",
+          "lowest_display": "¥24,736.01",
           "lowest_when": "26 天后",
           "through_when": "26 天后",
           "recovers_when": "120 天预测期内不会恢复",
           "recovery_assumed_text": null,
-          "today_text": "¥24,694.63",
-          "lowest_text": "¥24,694.63",
+          "today_text": "¥24,736.01",
+          "lowest_text": "¥24,736.01",
           "after_text": null,
           "label": "还本付息余量（偿债覆盖率）",
           "reason_text": null,
@@ -2847,7 +2847,7 @@
     "spare": null
   },
   "band": {
-    "concentration": "Foshan占您目前全部应收款的 100%（¥1,002,800）。Foshan占未来 30 天内到期回款的 100%（¥420,000）。",
+    "concentration": "Foshan占您目前全部应收款的 100%（¥1,000,000）。Foshan占未来 30 天内到期回款的 100%（¥420,000）。",
     "stress": "晚付 30 天：26 天后现金将跌至 −¥45,000，有 35 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥345,000 的缺口。",
     "capacity": null
   },
@@ -2863,7 +2863,7 @@
   "customer_context": {
     "contribution_display": "约 ¥101万",
     "contribution_note": "每年，估算；毛利率为演示而假设，尚未经您确认",
-    "owes_display": "¥1,002,800",
+    "owes_display": "¥1,000,000",
     "share_text": "100%",
     "profile_href": "/customers/BUYER-1"
   },

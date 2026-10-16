@@ -46,14 +46,15 @@ def _evaluate_ex01(state, mandate, key):
                     owner_declared=declared_for("EX01_PACKAGE"))
 
 
-def test_golden_ex01_option_a_is_face_25_720_000_at_85bp(state):
-    # gap net of the line 405,000 − 150,000 = 255,000; 255,000 / (1 − 0.85%) = 257,186.0817 -> up to 257,200
+def test_golden_ex01_option_a_is_face_26_000_000_at_85bp(state):
+    # gap net of the line 405,000 − 150,000 = 255,000; 255,000 / (1 − 0.85%) = 257,186.0817 -> up to 260,000: rounded up to
+    # two significant figures of RCV-A's outstanding 420,000 (a ¥10,000 step), so the face does not reveal the gap (R-10)
     a = _option_a(bundle("EX01_PACKAGE"))
     assert a is not None and a.label == "Option A"
     (ob,) = a.obligations
-    assert ob.base.amount_fen == 25_720_000 and ob.rate_bp == RATE_BP
+    assert ob.base.amount_fen == 26_000_000 and ob.rate_bp == RATE_BP
     assert ob.base.receivable_id == "RCV-A" and ob.effective_day == 2
-    assert "¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice)" in a.formula
+    assert "¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount)" in a.formula
 
 
 def test_the_floor_holds_every_day_with_the_counter_and_the_routers_plan(state, mandate):
@@ -65,7 +66,7 @@ def test_the_floor_holds_every_day_with_the_counter_and_the_routers_plan(state, 
     assert lowest >= mandate.min_cash_fen
     assert lowest == t.min_cash_fen and t.first_breach_day is None
     # the plan draws exactly what the gap needs, so the lowest day lands on the floor, not under it: day 30, after the
-    # existing loan's payment (400,000 + 255,013.80 + 149,986.20 − 460,000 − 45,000 = 300,000)
+    # existing loan's payment (400,000 + 257,790 + 147,210 − 460,000 − 45,000 = 300,000)
     assert (lowest, t.min_cash_day) == (mandate.min_cash_fen, 30)
 
 
@@ -76,13 +77,13 @@ def test_cost_is_the_discount_plus_the_plan_and_the_plan_adds_no_early_pay(state
     assert FundingActionKind.EARLY_PAY not in {x.kind for x in p.actions}
     discount = post(bp(ob.rate_bp) * ob.base.amount_fen)
     assert a.supplier_cost_fen == discount + p.total_cost_fen
-    # 257,200 × 0.85% = 2,186.20; line 405,000 − 255,013.80 = 149,986.20 × 6.4% × 32/365 = 841.5664 -> 841.57
-    assert (discount, p.total_cost_fen, a.supplier_cost_fen) == (218_620, 84_157, 302_777)
-    assert f"discount ¥2,186.20 + funding the rest of the gap ¥841.57 ({p.label}) = ¥3,027.77" in a.formula
+    # 260,000 × 0.85% = 2,210.00; line 405,000 − 257,790 = 147,210 × 6.4% × 32/365 = 825.9945 -> 825.99
+    assert (discount, p.total_cost_fen, a.supplier_cost_fen) == (221_000, 82_599, 303_599)
+    assert f"discount ¥2,210.00 + funding the rest of the gap ¥825.99 ({p.label}) = ¥3,035.99" in a.formula
 
 
 @pytest.mark.parametrize("drop_fen", [1, 3_733, 99_999, 500_000, 2_000_000])
-def test_face_nets_at_least_the_gap_and_is_a_whole_100_yuan(state, mandate, key, drop_fen):
+def test_face_nets_at_least_the_gap_and_is_a_whole_step(state, mandate, key, drop_fen):
     s = state.model_copy(update={"cash_fen": state.cash_fen - drop_fen})
     a = _option_a(_evaluate_ex01(s, mandate, key))
     assert a is not None
@@ -90,10 +91,11 @@ def test_face_nets_at_least_the_gap_and_is_a_whole_100_yuan(state, mandate, key,
     face = ob.base.amount_fen
     _, base_plan = baseline(s, mandate)
     assert base_plan.need_fen == GAP_FEN + drop_fen
-    assert face % 10_000 == 0
+    step = 1_000_000  # ¥10,000: two significant figures of RCV-A's outstanding 420,000 (R-10)
+    assert face % step == 0
     if face < INVOICE_FEN:
         assert Fraction(face) * (1 - bp(ob.rate_bp)) >= base_plan.need_fen - LINE_FEN
-        assert face - 10_000 < Fraction(base_plan.need_fen - LINE_FEN) / (1 - bp(ob.rate_bp))  # rounded up, no more
+        assert face - step < Fraction(base_plan.need_fen - LINE_FEN) / (1 - bp(ob.rate_bp))  # rounded up, no more
     # and the floor holds on those books
     p = plan(s, [ob], mandate, "COMMITTED")
     assert p.admissible
@@ -105,15 +107,15 @@ def test_an_early_pay_counter_whose_discount_deepens_a_curable_shortfall_is_offe
         state, mandate, key):
     """The counter property, curable reading. With ¥20,000 less cash, day 32 closes below the reserve even without
     the counter: 400,000 − 20,000 − 340,000 − 120,000 − 45,000 + 420,000 = 295,000. The counter's face is
-    (425,000 − 150,000) / (1 − 0.85%) = 277,357.54 → ¥277,400, discount 277,400 × 0.85% = ¥2,357.90; the invoice still
-    pays 420,000 by day 32 in total, so day 32 closes at 295,000 − 2,357.90 = ¥292,642.10 with no new funding: a
-    shortfall of ¥7,357.90 the re-check charges to the counter. It is curable, so the counter is offered and the
+    (425,000 − 150,000) / (1 − 0.85%) = 277,357.54 → ¥280,000 (a ¥10,000 step, R-10), discount 280,000 × 0.85% = ¥2,380.00;
+    the invoice still pays 420,000 by day 32 in total, so day 32 closes at 295,000 − 2,380.00 = ¥292,620.00 with no new
+    funding: a shortfall of ¥7,380.00 the re-check charges to the counter. It is curable, so the counter is offered and the
     summary names the plan that funds it."""
     s = state.model_copy(update={"cash_fen": state.cash_fen - 2_000_000})
     b = _evaluate_ex01(s, mandate, key)
     a = _option_a(b)
-    assert a is not None and a.obligations[0].base.amount_fen == 27_740_000
-    assert ("Option A passes its own re-check: its terms leave a shortfall of ¥7,357.90 on day 32, funded by the plan: "
+    assert a is not None and a.obligations[0].base.amount_fen == 28_000_000
+    assert ("Option A passes its own re-check: its terms leave a shortfall of ¥7,380.00 on day 32, funded by the plan: "
             "committed plan: ") in b.verdict.summary
 
 
@@ -155,6 +157,6 @@ def test_accepting_counter_a_leaves_no_critical_alert(client: TestClient, rt: Ru
     n = client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"}).json()
     assert n["outcome"] == "DEAL"
     c = rt.store.get_commitment(n["commitment"]["id"])
-    assert c is not None and c.obligations[0].base.amount_fen == 25_720_000
+    assert c is not None and c.obligations[0].base.amount_fen == 26_000_000
     alerts = client.get("/alerts").json()["alerts"]
     assert [x for x in alerts if x["severity"] == "CRITICAL"] == []

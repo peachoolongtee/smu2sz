@@ -71,7 +71,7 @@ def test_the_day34_books_are_the_demo_path_books(books_day34: Books, books_day0:
     s = books_day34.state
     assert s.as_of_day == 34 and s.cash_fen == 30_000_000
     assert sorted((r.id, r.outstanding_fen, r.due_day) for r in s.receivables if r.status == "OPEN") == [
-        ("RCV-A", 16_280_000, 32), ("RI:BUYER-1:2", 42_000_000, 47), ("RI:BUYER-1:32", 42_000_000, 77)]
+        ("RCV-A", 16_000_000, 32), ("RI:BUYER-1:2", 42_000_000, 47), ("RI:BUYER-1:32", 42_000_000, 77)]
     assert books_day0.state.as_of_day == 0
 
 
@@ -94,13 +94,13 @@ def test_rcv_a_received_by_day_12_on_the_day0_books(rt_day0: Runtime, books_day0
 def test_rcv_a_residual_received_today_on_the_day34_books(rt_day34: Runtime, books_day34: Books):
     effect = next(e for r in _oracle()[1]["ranking"] if r["receivable"] == "RCV-A"
                   for e in r["effects"] if e["receipt_day"] == 34)
-    assert _fen(next(r for r in _oracle()[1]["ranking"] if r["receivable"] == "RCV-A")["outstanding"]) == 16_280_000
+    assert _fen(next(r for r in _oracle()[1]["ranking"] if r["receivable"] == "RCV-A")["outstanding"]) == 16_000_000
     mi = _impact(rt_day34, books_day34, "RCV-A", 34)
-    assert -mi.posted_cost_delta_fen == _fen(effect["saving"]) == 137_461  # ¥1,374.61
-    assert mi.after_need_fen == _fen(effect["after"]["need"]) == 3_720_000  # ¥37,200
-    assert mi.after_cost_fen == _fen(effect["after"]["cost"]) == 33_149  # ¥331.49
+    assert -mi.posted_cost_delta_fen == _fen(effect["saving"]) == 136_426  # ¥1,364.26
+    assert mi.after_need_fen == _fen(effect["after"]["need"]) == 4_000_000  # ¥37,200
+    assert mi.after_cost_fen == _fen(effect["after"]["cost"]) == 33_794  # ¥337.94
     assert mi.after_needs_owner is True and effect["after"]["plan_needs_owner_approval"] is True
-    assert mi.before_need_fen == 20_000_000 and mi.before_cost_fen == 170_610
+    assert mi.before_need_fen == 20_000_000 and mi.before_cost_fen == 170_220
     assert mi.alerts_removed == ["RECEIVABLE_PAST_DUE", "RESERVE_HEADROOM_LOW"]
 
 
@@ -108,10 +108,10 @@ def test_a_receipt_five_days_early_is_a_cost_and_is_kept_negative(rt_day34: Runt
     effect = next(e for r in _oracle()[1]["ranking"] if r["receivable"] == "RI:BUYER-1:32"
                   for e in r["effects"] if e["receipt_day"] == 72)
     mi = _impact(rt_day34, books_day34, "RI:BUYER-1:32", 72)
-    assert mi.posted_cost_delta_fen == 7_609  # +¥76.09: dearer than the standing plan, never clamped to zero
-    assert -mi.posted_cost_delta_fen == _fen(effect["saving"]) == -7_609
-    assert mi.after_cost_fen - mi.before_cost_fen == 7_609
-    assert displayed(mi.model_dump())["posted_cost_delta_display"] == "¥76.09"
+    assert mi.posted_cost_delta_fen == 6_150  # +¥61.50: dearer than the standing plan, never clamped to zero
+    assert -mi.posted_cost_delta_fen == _fen(effect["saving"]) == -6_150
+    assert mi.after_cost_fen - mi.before_cost_fen == 6_150
+    assert displayed(mi.model_dump())["posted_cost_delta_display"] == "¥61.50"
     assert mi.breach_days_removed == 0 and mi.alerts_removed == [] and mi.alerts_added == []
 
 
@@ -148,7 +148,7 @@ def test_the_same_books_against_themselves_change_nothing(rt_day34: Runtime, boo
                      "budget_used_delta_fen": 0, "breach_days_removed": 0}
     assert mi.alerts_removed == [] and mi.alerts_added == []
     assert mi.first_breach_before == mi.first_breach_after == 42
-    assert (mi.before_cost_fen, mi.before_need_fen) == (mi.after_cost_fen, mi.after_need_fen) == (170_610, 20_000_000)
+    assert (mi.before_cost_fen, mi.before_need_fen) == (mi.after_cost_fen, mi.after_need_fen) == (170_220, 20_000_000)
     assert mi.label == "same"
 
 
@@ -165,7 +165,7 @@ def test_a_scenario_is_hypothetical_labelled_and_leaves_the_books_alone(books_da
     s = scenario_received(books_day34, "RCV-A", 34, label="RCV-A received today")
     assert s.hypothetical is True and s.label == "RCV-A received today"
     assert s.day == 34 and s.source_state_version == books_day34.state.state_version
-    assert s.assumption == "assumes the ¥162,800.00 from Foshan Home Retail Co. arrives today"
+    assert s.assumption == "assumes the ¥160,000.00 from Foshan Home Retail Co. arrives today"
     assert books_day34.state.model_dump_json() == before  # a model_copy: the books are untouched
     with pytest.raises(ValidationError):
         ScenarioState.model_validate({**s.model_dump(), "hypothetical": False})
@@ -294,7 +294,7 @@ def test_the_curve_points_are_reproduced_by_the_spikes_pair(
 
 def test_a_package_on_the_grid_is_accepted():
     p = CandidatePackage(buyer_id="BUYER-1", terms_days=55, price_bp=30, early_pay_bp=85,
-                         early_pay_face_fen=25_720_000, rebate_bp=125)
+                         early_pay_face_fen=26_000_000, rebate_bp=125)
     assert (p.terms_days, p.price_bp, p.early_pay_bp, p.rebate_bp) == (55, 30, 85, 125)
     assert CandidatePackage(buyer_id="BUYER-1", terms_days=45).early_pay_face_fen is None
     with pytest.raises(ValidationError):

@@ -20,7 +20,11 @@ F = ContractField
 _FROM_SIGNING = re.compile(r"(?:自)?(?:本)?合同签订(?:生效)?之日起\s*(\d{1,4})\s*(个?工作日|日|天)内")
 _PERFORMANCE = re.compile(r"交货|交付|供货|送至|送达|完成|提供|履行|竣工|验收合格后")
 _PAYMENT = re.compile(r"付款|支付|预付|款|发票|汇票|转账")
-_STATED_END = re.compile(r"[（(]?即(?:不迟于)?\s*([^，。；）)\n]{6,18}?)(?:前|完成|之前)")
+_STATED_END = re.compile(r"[（(]?即(?:不迟于)?\s*([^，。；）)\n]{6,18}?)(?:前|完成|之前)"
+                         r"|不迟于\s*([^，。；）)\n]{6,18}?)(?:前|之前)?完成")
+# "签订之日起90日内运抵……，并在到货后20日内完成安装调试": a second period chained after the one counted from signing, so
+# signing plus the first period is not the end of performance
+_CHAINED = re.compile(r"(?:后|起)\s*\d{1,4}\s*(?:个?工作日|日|天)(?:内|之内|以内)")
 DERIVED = "derived: "
 
 
@@ -58,9 +62,20 @@ def derived_dates(doc: SourceDocument, terms: list[ContractTerm], abst: list[Abs
     days, (m, sentence) = next(iter(found.items()))
     span = SourceSpan(doc_id=doc.doc_id, start=m.start(), end=m.end(), text=m.group(0))
     end = (date.fromisoformat(signed.date) + timedelta(days=days)).isoformat()  # type: ignore[arg-type]
-    if stated := _STATED_END.search(sentence):
-        said = parse_date(stated.group(1)).value
-        if said is not None and said != end:
+    stated = _STATED_END.search(sentence)
+    said = parse_date(stated.group(1) or stated.group(2)).value if stated else None
+    how, end_span = f"the signing date plus {days} days", span
+    if _CHAINED.search(sentence, sentence.find(m.group(0)) + len(m.group(0))):
+        if said is None:
+            abst.append(Abstention(field=F.END_DATE.value, spans=[span], reason=(
+                "note: a second period follows the one counted from signing, so no end date is derived")))
+            return []
+        end, how = str(said), "the date by which the sentence says all the work is done"
+        assert stated is not None  # a stated date was read from it
+        at = _bounds(doc.text, m.start())[0] + stated.start()
+        end_span = SourceSpan(doc_id=doc.doc_id, start=at, end=at + len(stated.group(0)), text=stated.group(0))
+    elif said is not None:
+        if said != end:
             abst.append(Abstention(field=F.END_DATE.value, spans=[span], reason=(
                 f"note: {days} days from signing is {end}, but the contract also says {said}; no end date is read")))
             return []
@@ -69,8 +84,8 @@ def derived_dates(doc: SourceDocument, terms: list[ContractTerm], abst: list[Abs
         out.append(ContractTerm(field=F.START_DATE, span=span, clause=None, value_text=m.group(0), date=signed.date,
                                 text=DERIVED + "the signing date"))
     if F.END_DATE not in have:
-        out.append(ContractTerm(field=F.END_DATE, span=span, value_text=m.group(0), date=end,
-                                text=DERIVED + f"the signing date plus {days} days"))
+        out.append(ContractTerm(field=F.END_DATE, span=end_span, value_text=end_span.text, date=end,
+                                text=DERIVED + how))
     return out
 
 
@@ -268,6 +283,67 @@ def cross_checks(doc: SourceDocument, terms: list[ContractTerm]) -> list[Check]:
                         (span,)))
                 break
     return checks
+
+
+# ---------------------------------------------------------------- who pays whom
+#
+# PARTY_BUYER is the party that pays, PARTY_SUPPLIER the party that is paid, whatever the role labels (承包人/分包人,
+# 定作方/承揽方, 承租方/出租方). A reading sometimes files them the other way round. The contract says who is paid in two
+# ways code can read: the receiving account ("乙方收款账户：户名 某某公司") and the direction of a payment of the price
+# ("甲方以银行转账方式向乙方支付合同价款的10%"). A penalty, a deposit, a refund or interest runs the other way or says
+# nothing of the price, so a sentence about one of them is not evidence.
+
+_ROLE = re.compile(r"^\s*(甲方|乙方)")
+_RECEIVING = re.compile(r"(甲方|乙方)?\s*(?:指定的?)?收款(?:账户|帐户|账号|帐号|单位|人)")
+_PAYS_TO = re.compile(r"(甲方|乙方)(?:(?!甲方|乙方)[^。；;\n向]){0,40}向(甲方|乙方)(?:支付|付清|付款|结清)")
+_NOT_PRICE = re.compile(r"违约|赔偿|罚|保证金|保函|担保|押金|定金|退还|返还|退回|垫付|代付|工资|利息|损失")
+
+
+def _sentence_after(text: str, pos: int, reach: int = 100) -> str:
+    ends = [i for i in (text.find(c, pos) for c in ("。", "；", ";")) if i != -1]
+    return text[pos:min([*ends, pos + reach])]
+
+
+def payee_roles(text: str, names: dict[str, str]) -> set[str]:
+    """The role labels (甲方/乙方) the contract says are paid. `names` maps each party's name to its role, so an account
+    held in a party's name counts as that party's even when the account line names no role."""
+    paid: set[str] = set()
+    for m in _RECEIVING.finditer(text):
+        if m.group(1):
+            paid.add(m.group(1))
+            continue
+        after = re.sub(r"\s+", "", _sentence_after(text, m.end()))
+        held = {role for name, role in names.items() if name and name in after}
+        if len(held) == 1:
+            paid |= held
+    for m in _PAYS_TO.finditer(text):
+        s, e = _bounds(text, m.start())
+        if m.group(1) != m.group(2) and not _NOT_PRICE.search(text[s:e]):
+            paid.add(m.group(2))
+    return paid
+
+
+def payer_payee_check(doc: SourceDocument, terms: list[ContractTerm], abst: list[Abstention]) -> list[ContractTerm]:
+    """PARTY_BUYER and PARTY_SUPPLIER swapped when the contract clearly says the reading's buyer is the one paid: every
+    piece of evidence names the same role, and each party's quote carries a different role label. Anything less clear
+    (no evidence, evidence both ways, a party without a label) leaves the reading as it is."""
+    buyers = [t for t in terms if t.field == F.PARTY_BUYER]
+    suppliers = [t for t in terms if t.field == F.PARTY_SUPPLIER]
+    if len(buyers) != 1 or len(suppliers) != 1:
+        return terms
+    (b,), (s,) = buyers, suppliers
+    rb, rs = _ROLE.match(b.span.text), _ROLE.match(s.span.text)
+    if rb is None or rs is None or rb.group(1) == rs.group(1):
+        return terms
+    names = {re.sub(r"\s+", "", b.text or ""): rb.group(1), re.sub(r"\s+", "", s.text or ""): rs.group(1)}
+    paid = payee_roles(doc.text, names)
+    if paid != {rb.group(1)}:
+        return terms
+    abst.append(Abstention(field=f"note:{F.PARTY_SUPPLIER.value}", spans=[b.span, s.span], reason=(
+        f"note: the contract pays {rb.group(1)} (its receiving account, or a payment made to it), so {rb.group(1)} is "
+        "the supplier and the other party the buyer")))
+    return [b.model_copy(update={"field": F.PARTY_SUPPLIER}) if t is b
+            else s.model_copy(update={"field": F.PARTY_BUYER}) if t is s else t for t in terms]
 
 
 def check_notes(checks: list[Check]) -> list[Abstention]:

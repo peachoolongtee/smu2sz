@@ -210,11 +210,11 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
     } else await expect(line).toHaveCount(0);
     // The approval line sits directly above the actions, which are pinned to the card's bottom (round four); the facts row is the cost alone.
     if (v2.action.approval_text && v2.action.control) {
-      const [lineBox, actionsBox] = await Promise.all([line.boundingBox(), page.getByTestId("hv2-action-buttons").boundingBox()]);
-      // The actions are pinned to the card's bottom and the cards are as tall as the tallest (the cash card carries the funding ring), so the gap is the card's spare room, not a wrong order.
+      const [lineBox, actionsBox, cardBox] = await Promise.all([line.boundingBox(), page.getByTestId("hv2-action-buttons").boundingBox(), page.getByTestId("hv2-action").boundingBox()]);
+      // Inside the outlook card (the final UI fold) the recommendation takes the forecast's height, so the room between the approval line and the actions grows; the order holds and the actions stay pinned to the card's bottom.
       const gap = actionsBox!.y - (lineBox!.y + lineBox!.height);
       expect(gap, "the approval line is above the actions").toBeGreaterThanOrEqual(-1);
-      expect(gap, "the approval line is directly above the actions").toBeLessThan(48);
+      expect(Math.round(cardBox!.y + cardBox!.height - (actionsBox!.y + actionsBox!.height)), "the actions are pinned to the card's bottom").toBeLessThanOrEqual(24);
     }
     if (v2.action.control === "APPROVE_PLAN") expect(v2.action.approval_needed, "a plan that waits for the owner").toBe(true);
   }

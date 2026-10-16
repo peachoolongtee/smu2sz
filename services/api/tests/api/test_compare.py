@@ -119,17 +119,17 @@ def test_the_demo_rows_as_pinned(reads):
     assert b["outcome"] == "NEEDS_OWNER_APPROVAL" and b["codes"] == ["RESERVE_BREACH"]
     # the forward concession (budget ¥5,000) and the immediate discount, each its own figure
     assert [r["concession_forward_fen"] for r in (cur, asked, a, b, loss)] == [None, 2_832_692, 0, 0, None]
-    assert [r["immediate_discount_fen"] for r in (cur, asked, a, b, loss)] == [None, 504_000, 218_620, 0, None]
+    assert [r["immediate_discount_fen"] for r in (cur, asked, a, b, loss)] == [None, 504_000, 221_000, 0, None]
     # the router's selected plan, never the verdict's cure
-    assert [r["funding_cost_fen"] for r in (cur, asked, a, b)] == [311_393, 146_805, 84_157, 370_646]
+    assert [r["funding_cost_fen"] for r in (cur, asked, a, b)] == [311_393, 146_805, 82_599, 370_646]
     assert loss["funding_cost_fen"] is None and loss["plan_flags"]["admissible"] is False
     assert loss["plan_flags"]["words"] == ["no committed plan covers it"]
     # lowest cash, unfunded, and its day (31 Oct = day 30, 30 Nov = day 60)
     assert [(r["lowest_cash_fen"], r["lowest_day"]) for r in (cur, asked, a, b, loss)] == [
-        (-10_500_000, 30), (16_496_000, 60), (15_001_380, 30), (-10_500_000, 30), (-10_500_000, 30)]
+        (-10_500_000, 30), (16_496_000, 60), (15_279_000, 30), (-10_500_000, 30), (-10_500_000, 30)]
     assert loss["breach_days"] == 94
     # the further payment FLOW could still cover alone (S1, R-TODAY), each row's own
-    assert [r["capacity"]["spare_fen"] for r in (cur, asked, a, b, loss)] == [8_100_000, 1_400_000, 0, 6_200_000, None]
+    assert [r["capacity"]["spare_fen"] for r in (cur, asked, a, b, loss)] == [8_100_000, 1_400_000, 200_000, 6_200_000, None]  # Option A: the line's ¥2,790 (R-10)
 
 
 def test_the_customer_loss_figures_each_once(reads):

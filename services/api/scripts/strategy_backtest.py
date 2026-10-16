@@ -111,15 +111,15 @@ OWNER = {"X-Owner-Token": "demo-owner-token"}
 BANK = {"X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key"}
 FACE_KIND = {"the whole outstanding invoice": "whole", "the shortfall the plan covers": "need"}
 # The one known difference from the oracle: on day 0 the module values the net saving on the face the verifier's own
-# Option A counter uses (RCV-A, 0.85% on ¥257,200: ¥86.16; the plan's need is 0.75% on ¥405,000: ¥59.39); the spike's
+# Option A counter uses (RCV-A, 0.85% on ¥260,000, the face rounded to ¥10,000 since R-10: ¥77.94; the plan's need is 0.75% on ¥405,000: ¥59.39); the spike's
 # `net_value_at_ceiling` is on the whole face (0.70%: ¥173.93).
-EXPECTED_DAY0_NET = {"RCV-A": (8_616, 17_393)}
+EXPECTED_DAY0_NET = {"RCV-A": (7_794, 17_393)}
 # The oracle's ceiling tests the plan comparison alone; the module's also holds the rate to the mandate's APR cap over the
 # days the payment is early (brief section 12). day 34 RI:BUYER-1:2 on the plan's-need face (¥200,000, 11 days early against
-# the 15% cap): the oracle's 0.80% (net ¥77.58) is a rate the verifier rejects with MAX_APR_EXCEEDED; the module's is 0.45%
-# (net ¥788.28). (books, receivable, face kind) -> (the oracle's ceiling bp, the module's ceiling bp, the oracle's net fen,
+# the 15% cap): the oracle's 0.80% (net ¥98.55) is a rate the verifier rejects with MAX_APR_EXCEEDED; the module's is 0.45%
+# (net ¥799.92). (books, receivable, face kind) -> (the oracle's ceiling bp, the module's ceiling bp, the oracle's net fen,
 # the module's net fen)
-EXPECTED_APR_CAPPED = {(34, "RI:BUYER-1:2", "need"): (80, 45, 7_758, 78_828)}
+EXPECTED_APR_CAPPED = {(34, "RI:BUYER-1:2", "need"): (80, 45, 9_855, 79_992)}
 MAX_ACTION_WORDS = 25  # a row's action sentence is at most this many words (English)
 MAX_FAILURES_IN_REPORT = 200
 

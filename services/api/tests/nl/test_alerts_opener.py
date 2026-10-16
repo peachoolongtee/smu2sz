@@ -101,7 +101,7 @@ def test_owner_text_gives_the_same_message_and_cancel_runs_nothing(client, rt, t
     assert r["intent"] == "SHOW_ALERTS" and r["awaiting_confirmation"] is True
     zh = r["lang"] == "zh"
     assert ("第 34 天" if zh else "Day 34") in r["reply"] and "RI:BUYER-1:2" in r["reply"]
-    assert "162,800.00" in r["reply"]  # RCV-A's residual after Counter A: 420,000 − 257,200
+    assert "160,000.00" in r["reply"]  # RCV-A's residual after Counter A: 420,000 − 260,000
     assert len(rt.store.operations()) == logged
     c = chat.say("取消" if zh else "cancel")
     assert c["operations"] == [] and len(rt.store.operations()) == logged
@@ -202,7 +202,7 @@ def test_a_counterparty_never_reaches_the_alerts(client, rt):
         r = Chat(client, "cp-1", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(text)
         assert r["intent"] == "COUNTERPARTY_MESSAGE" and r["awaiting_confirmation"] is False
         assert r["plan"] == [] and r["operations"] == [] and r["verdict"] is None
-        assert not any(w in r["reply"] for w in ("RI:BUYER-1", "162,800", "floor", "300,000", "FAC-"))
+        assert not any(w in r["reply"] for w in ("RI:BUYER-1", "160,000", "floor", "300,000", "FAC-"))
         assert set(r) == {"session_id", "turn", "reply", "intent", "lang", "trace_id", "plan", "verdict", "operations",
                           "clarification", "negotiation", "security_events", "parse_source", "awaiting_confirmation",
                           "amended", "replayed"}
@@ -220,7 +220,7 @@ def test_a_counterparty_session_cannot_be_opened_into(client, rt):
 def test_go_ahead_after_the_alert_cleared_executes_nothing(client, rt):
     _day34(client, rt)
     residual = next(r.outstanding_fen for r in rt.store.get_state().receivables if r.id == "RCV-A")
-    assert residual == 162_800_00
+    assert residual == 160_000_00  # 420,000 − 260,000 (the rounded early-pay face, R-10)
     assert _opener(client).json()["awaiting_confirmation"] is True
     logged = len(rt.store.operations())
     r = client.post("/operations", headers=BANK, json={
@@ -228,7 +228,7 @@ def test_go_ahead_after_the_alert_cleared_executes_nothing(client, rt):
         "mandate_version": rt.store.get_mandate().version, "requested_by": "SYSTEM",
         "receivable_id": "RCV-A", "amount_fen": residual}).json()
     assert r["result"]["status"] == "EXECUTED"
-    # the residual alone no longer clears the day-42 breach: 300,000 + 162,800 − 200,000 (payroll) = 262,800, short
+    # the residual alone no longer clears the day-42 breach: 300,000 + 160,000 − 200,000 (payroll) = 260,000, short
     # 37,200 (Counter A took more of RCV-A early, so its residual is smaller); a ¥40,000 part payment of RI:BUYER-1:2
     # from the bank feed takes day 42 to 302,800 and clears it
     assert _critical(client) == 1
