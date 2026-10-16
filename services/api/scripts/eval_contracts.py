@@ -169,6 +169,23 @@ def score(key: dict[str, Any], pred: dict[str, Any]) -> dict[str, tuple[int, int
     return out
 
 
+def summary(rows: dict[str, dict[str, tuple[int, int, int]]], groups: dict[str, list[str]]) -> str:
+    """Per-field accuracy for each group of documents (format, family): matched/key over the group's documents."""
+    fields = list(next(iter(rows.values())))
+    names = list(groups)
+    lines = ["| field | " + " | ".join(f"{g} ({len(groups[g])})" for g in names) + " |", "|" + "---|" * (len(names) + 1)]
+    for f in [*fields, "ALL"]:
+        cells = []
+        for g in names:
+            sel = [rows[i] for i in groups[g] if i in rows]
+            vals = [v for r in sel for k, v in r.items() if f in (k, "ALL")]
+            k, m = sum(v[0] for v in vals), sum(v[1] for v in vals)
+            cells.append(f"{m}/{k} {m / k:.0%}" if k else "-")
+        lines.append(f"| {f} | " + " | ".join(cells) + " |")
+    return "
+".join(lines)
+
+
 def table(rows: dict[str, dict[str, tuple[int, int, int]]]) -> str:
     fields = list(next(iter(rows.values())))
     ids = list(rows)
@@ -251,7 +268,7 @@ def main() -> int:
     from app.compiler import service
     from app.compiler.contract import contract_document
     from app.domain.models import DocumentKind
-    from app.ingest import extract_text
+    from app.ingest import IngestError, extract_text
 
     service._default_compiler = lambda: service.Compiler(_backends(args))  # type: ignore[assignment]
     keys = {r["file"]: r for r in json.loads(Path(args.key).read_text(encoding="utf-8"))}
@@ -261,22 +278,37 @@ def main() -> int:
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     preds, rows = [], {}
+    refused: dict[str, tuple[str, str]] = {}
+    meta: dict[str, dict[str, Any]] = {}
     for f in files:
         key = keys.get(f.name)
         if key is None:
             print(f"{f.name}: not in the answer key, skipped")
             continue
-        text = extract_text(f.name, f.read_bytes())
+        try:
+            text = extract_text(f.name, f.read_bytes())
+        except IngestError as e:  # a scan or an unreadable file: refused before any model call
+            refused[key["id"]] = (e.code, str(e))
+            print(f"{key['id']}: refused {e.code}: {e}")
+            continue
         compiled = service.compile_contract(contract_document(text, DocumentKind.BUYER_CONTRACT, key["id"]))
         pred = predict(compiled, key["id"], f.name)
         preds.append(pred)
         rows[key["id"]] = score(key, pred)
+        meta[key["id"]] = key
         print(f"{key['id']}: compiler={compiled.compiler} status={compiled.status.value} terms={len(compiled.terms)}")
     if not rows:
         print("nothing scored")
         return 1
+    groups: dict[str, list[str]] = {}
+    for i, k in meta.items():
+        groups.setdefault(k.get("format", "?"), []).append(i)
+        groups.setdefault(k.get("family", "?"), []).append(i)
     (out_dir / "predictions.json").write_text(json.dumps(preds, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    report = table(rows) + "\n\nNot expressible by FLOW (not scored):\n" + "\n".join(
+    report = table(rows) + "\n\nBy format and family (matched/key):\n\n" + summary(rows, groups)
+    if refused:
+        report += "\n\nRefused before any model call:\n" + "\n".join(f"- {i}: {c}: {m}" for i, (c, m) in refused.items())
+    report += "\n\nNot expressible by FLOW (not scored):\n" + "\n".join(
         f"- {k}: {v}" for k, v in NOT_EXPRESSIBLE.items()) + "\n"
     (out_dir / "report.md").write_text(report, encoding="utf-8")
     print()
