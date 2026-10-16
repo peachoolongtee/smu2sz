@@ -61,6 +61,7 @@ def _bootstrap() -> None:
     """Import the API; if its dependencies are missing, re-exec under the API's uv project."""
     sys.path.insert(0, str(API))
     os.environ.setdefault("TERMSLEDGER_NO_DOTENV", "1")
+    os.environ.setdefault("DEMO_MODE", "1")  # the in-process run uses the demo books and credentials; DEMO_MODE is off by default
     try:
         import fastapi  # noqa: F401
         import yaml  # noqa: F401
