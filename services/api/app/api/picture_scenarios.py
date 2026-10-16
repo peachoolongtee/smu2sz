@@ -114,11 +114,11 @@ def scenarios(rt: Any, offer_id: str, picture: dict[str, Any], lang: str) -> lis
             # the router's searches run once, not twice
             labels = {p["key"]: p["label"] for p in picture["paths"]}
             out.append(_late_30(_answer(rt, offer, "asked", lang, True, deal_words=False), labels, lang))
-        except Exception:  # noqa: BLE001  a supporting read: this card is left out, the others stand
+        except Exception:
             log.exception("the late-payment scenario could not be read for the picture")
         if "customer_loss" in rows:
             out.append(_customer_loss(rows["customer_loss"], kept, lang))
-    except Exception:  # noqa: BLE001  a display read: whatever fails, the picture stands without scenarios
+    except Exception:
         log.exception("the scenarios could not be read for the picture")
         return []
     order = {"no_new_agreement": 0, "late_30": 1, "customer_loss": 2}

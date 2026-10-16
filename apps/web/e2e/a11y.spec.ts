@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, openCompare, openInbox, openReview, resetBooks, runPlan, sendCounter, openOperatorTools } from "./helpers";
+import { checkedDeal, demoMode, openCompare, openInbox, openOperatorTools, openReview, resetBooks, runPlan, sendCounter } from "./helpers";
 import { openStoryFold } from "./helpers";
 
 /**
@@ -70,6 +70,7 @@ test("Deals: the inbox, a checked deal with its priced response, and the decisio
 });
 
 test("contract ingestion and the send step: the documents and a review, the buyer choice, the deal summary, the borrower file", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await page.goto("/documents");
   await expect(page.getByTestId("fixture-read-FHR_SUPPLY_AGREEMENT")).toBeVisible();
   await scan(page, "/documents");
@@ -97,6 +98,7 @@ test("contract ingestion and the send step: the documents and a review, the buye
 });
 
 test("an approval waiting, the chase dialog and the remaining task at day 34", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await checkedDeal(page);
   await openReview(page);
   await sendCounter(page);

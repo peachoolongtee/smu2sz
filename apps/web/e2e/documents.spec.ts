@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, proseOf, test } from "./fixtures";
-import { openReview, resetBooks, runPlan, sendCounter, openOperatorTools } from "./helpers";
+import { demoMode, openOperatorTools, openReview, resetBooks, runPlan, sendCounter, switchMode } from "./helpers";
 
 /**
  * Contract ingestion (brief 03) in the redesigned UI. The demo opens on the three demo documents read by the agent and
@@ -37,9 +37,13 @@ async function agreeFoshanDeal(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  // The simulated send is the Demo's only: the deal is agreed in Demo mode, and the page goes back to the mode it was in.
+  const mode = await page.evaluate(() => JSON.parse(localStorage.getItem("tl-mode") ?? '{"mode":"business"}').mode as "demo" | "business");
+  if (mode !== "demo") await switchMode(page, "demo");
   await openReview(page);
   await sendCounter(page);
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A");
+  if (mode !== "demo") await switchMode(page, mode);
 }
 
 /** The Business header keeps the language switch and sign-out inside the account menu; open it when it is there. */
@@ -275,6 +279,7 @@ test("day 34: the deal summary tells the story and points at the approval", asyn
 });
 
 test("Chinese: the deal summary and the review screen", async ({ page }, testInfo) => {
+  await demoMode(page); // the simulated send is the Demo's only
   test.skip(testInfo.project.name === "live", "the strings are the same in both modes; checked once");
   await agreeFoshanDeal(page);
   await openAccountMenu(page);

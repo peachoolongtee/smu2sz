@@ -405,6 +405,10 @@ input[type="radio"] {
       animation-name: deals-slide-in;
     }
   }
+  /* Deals, one negotiation's workspace: a new step (or a form revealed under it) fades in over --dur; under reduced motion it is there at once. */
+  .motion-fade {
+    animation: deals-fade-in var(--dur) var(--ease-ui) backwards;
+  }
   /* The first visit's cue: the top row's chevron pulses twice (2 x 600 ms), then is still. */
   .row-hint {
     animation: row-hint 600ms var(--ease-ui) 2;

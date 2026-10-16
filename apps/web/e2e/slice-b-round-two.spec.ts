@@ -1,5 +1,9 @@
 import { DEMO_TOKEN, expect, test } from "./fixtures";
+import picture from "../mocks/offer_picture_ex01.json";
 import { checkedDeal, openOperatorTools, resetBooks } from "./helpers";
+
+/** The recommended reply's words as the server wrote them (the mandate's words, round four). */
+const optionA = picture.en.paths.find((p) => p.kind === "reply" && p.recommended)!;
 
 /**
  * Slice B round two (docs/design/flow-mockup-2026-10-13/04_slice_b_round_two.md): the Deals queue's controls, the workspace's timing diagram and its two switchable cards, the Customer page's flow,
@@ -75,10 +79,10 @@ test.describe("mock", () => {
     await expect(heads.first()).toHaveAttribute("data-recommended", "true");
     await expect(heads.nth(1)).not.toHaveAttribute("data-recommended", "true");
     // The Overview still says the recommended reply's authority in the short word, Option A's column alone.
-    await expect(page.getByTestId("deal-choice-cell-decides-reply").first()).toContainText("FLOW can send");
+    await expect(page.getByTestId("deal-choice-cell-decides-reply").first()).toContainText(optionA.authority_short_text!);
     await expect(page.getByTestId("deal-recommends-title")).toHaveText("FLOW recommends");
     await expect(page.getByTestId("deal-rec-label")).toHaveText("Option A");
-    await expect(page.getByTestId("deal-rec-reason")).toContainText("FLOW can send it within your mandate");
+    await expect(page.getByTestId("deal-rec-reason")).toHaveText(optionA.recommended_reason_text!);
   });
 
   test("Approvals: the lifecycle shows three stages, the first current while the owner has not authorized, and the button names the act", async ({ page }) => {

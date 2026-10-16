@@ -240,7 +240,7 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   // The heading is the buyer's ask from the first read, so the check is done when the recommendation is there.
   await page.getByTestId("queue-recommends").waitFor();
-  await expect(verdictHeading(page)).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   // The buyer's messages are the deal's Messages tab: no inbox card is under the queue while a deal is selected.
   await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
   // The page's order on the Overview: the verdict, what they ask, FLOW's reply, the terms by scope.
@@ -314,7 +314,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   // The heading is the buyer's ask from the first read, so the check is done when the recommendation is there.
   await page.getByTestId("queue-recommends").waitFor();
-  await expect(verdictHeading(page)).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   const rec = (await topOf(page, "queue-heading"))!;
   const send = await page.getByTestId("queue-review-open").boundingBox();
   const asks = (await topOf(page, "queue-heading"))!;
@@ -364,7 +364,7 @@ test("on a desktop the deal is its own full-width page: no queue beside it, All 
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await page.getByTestId("queue-recommends").waitFor();
-  await expect(verdictHeading(page)).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   // The list is not beside the deal (it is kept hidden), and the deal's page takes the content's width.
   await expect(page.getByTestId("deals-queue")).toBeHidden();
   const top = (await page.getByTestId("deal-topbar").boundingBox())!;

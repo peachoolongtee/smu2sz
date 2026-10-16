@@ -1,4 +1,4 @@
-"""The three facts the decision record keeps (ADR-0011 section 2): what the stores cannot re-derive later.
+"""The facts the decision record keeps (ADR-0011 section 2 and its addendum on copied offers): what the stores cannot re-derive later.
 
 Each is a strict model: ids, integer fen, integer days, enums and exact `Ratio` rates, and nothing else. No sentence is
 stored (the server writes every sentence per request and language, INVARIANT 13), no buyer text, no model output. Unknown
@@ -18,7 +18,7 @@ from app.domain.money import Ratio
 from app.persistence.records import DecisionFactRecord
 
 Family = Literal["DEAL", "FUNDING"]
-FactName = Literal["EVALUATED", "SENT", "QUOTED"]
+FactName = Literal["EVALUATED", "SENT", "QUOTED", "RECEIVED", "OFFERED", "BUYER_ACCEPTED", "REPLIED", "BUYER_DECLINED", "OFFER_WITHDRAWN"]
 
 
 class EvaluatedFact(Contract):
@@ -134,10 +134,99 @@ class QuotedFact(Contract):
     after_lowest_day: int | None = None
 
 
-Fact = EvaluatedFact | SentFact | QuotedFact
+# ---------------------------------------------------------------- copied offers (ADR-0011 addendum: the owner sends the message outside FLOW)
 
-_MODELS: dict[str, type[Contract]] = {"EVALUATED": EvaluatedFact, "SENT": SentFact, "QUOTED": QuotedFact}
-FAMILY_OF: dict[str, Family] = {"EVALUATED": "DEAL", "SENT": "DEAL", "QUOTED": "FUNDING"}
+
+Via = Literal["owner", "agent", "buyer_key", "anonymous", "buyer_reply"]
+
+
+class ReceivedFact(Contract):
+    """RECEIVED (DEAL; fact_key = "{offer_id}:v{offer_version}"). How the request reached FLOW, which nothing else records: the owner's
+    token, the agent's key, the buyer's own channel key, nobody (anonymous, SEC-19), or a buyer's reply the owner pasted in
+    (`in_reply_to_offer_id` names the deal it answers)."""
+
+    offer_id: str
+    offer_version: int
+    counterparty_id: str
+    via: Via
+    in_reply_to_offer_id: str | None = None
+
+
+class OfferedFact(Contract):
+    """OFFERED (DEAL; fact_key = "{verdict_id}:{counter_id}"). The owner copied the message for this counter and sent it outside FLOW.
+    Nothing was agreed, executed or funded by it. The message is not stored: `message_hash` binds the exact words the owner was shown
+    (`app.outbound.message_hash`) to `terms_hash`, the hash of the counter's committable terms."""
+
+    offer_id: str
+    verdict_id: str
+    counter_id: str
+    counterparty_id: str
+    state_version_shown: int
+    terms_hash: str
+    message_hash: str
+    template_version: str
+    lang: Literal["en", "zh"]
+    valid_until_day: int
+
+
+class BuyerAcceptedFact(Contract):
+    """BUYER_ACCEPTED (DEAL; fact_key = "accept-{commitment_id}"). The owner recorded that the buyer accepted the offered counter; the
+    agreement then ran through the executor (`accept_op_id`, the owner's AcceptOffer), queued for approval where its tier asks."""
+
+    offer_id: str
+    verdict_id: str
+    counter_id: str
+    message_hash: str
+    commitment_id: str
+    accept_op_id: str
+    # the buyer's own message the owner pasted as evidence of the yes (a document of the deal, never stored here); None when the owner
+    # recorded the yes on their word alone
+    evidence_doc_id: str | None = None
+
+
+class RepliedFact(Contract):
+    """REPLIED (DEAL; fact_key = reply_offer_id). The buyer answered the offered counter with terms of their own: the owner pasted the reply,
+    which became the offer `reply_offer_id` (compiled and verified as any request). This deal is answered by that one."""
+
+    offer_id: str
+    verdict_id: str
+    counter_id: str
+    reply_offer_id: str
+
+
+DeclineReason = Literal["DISCOUNT_TOO_LOW", "WANTED_LONGER_TERMS", "NO_LONGER_NEEDED", "OTHER", "NO_REASON"]
+
+
+class BuyerDeclinedFact(Contract):
+    """BUYER_DECLINED (DEAL; fact_key = "declined:{verdict_id}:{counter_id}"). The owner recorded that the buyer said no to the offered counter,
+    with the reason they gave as a code (never their words). Nothing was agreed or run; the deal ends as no deal."""
+
+    offer_id: str
+    verdict_id: str
+    counter_id: str
+    message_hash: str
+    reason: DeclineReason
+
+
+class OfferWithdrawnFact(Contract):
+    """OFFER_WITHDRAWN (DEAL; fact_key = "withdrawn:{verdict_id}:{counter_id}:{n}"). The owner corrected an OFFERED mark (it was not sent after
+    all). Append-only: the mark stays on the record beside its correction, and the deal is ready for the owner's response again."""
+
+    offer_id: str
+    verdict_id: str
+    counter_id: str
+    message_hash: str
+
+
+Fact = (EvaluatedFact | SentFact | QuotedFact | ReceivedFact | OfferedFact | BuyerAcceptedFact | RepliedFact | BuyerDeclinedFact
+        | OfferWithdrawnFact)
+
+_MODELS: dict[str, type[Contract]] = {"EVALUATED": EvaluatedFact, "SENT": SentFact, "QUOTED": QuotedFact, "RECEIVED": ReceivedFact,
+                                      "OFFERED": OfferedFact, "BUYER_ACCEPTED": BuyerAcceptedFact, "REPLIED": RepliedFact,
+                                      "BUYER_DECLINED": BuyerDeclinedFact, "OFFER_WITHDRAWN": OfferWithdrawnFact}
+FAMILY_OF: dict[str, Family] = {"EVALUATED": "DEAL", "SENT": "DEAL", "QUOTED": "FUNDING", "RECEIVED": "DEAL", "OFFERED": "DEAL",
+                                "BUYER_ACCEPTED": "DEAL", "REPLIED": "DEAL", "BUYER_DECLINED": "DEAL",
+                                "OFFER_WITHDRAWN": "DEAL"}
 
 
 def body_json(fact: Fact) -> str:
@@ -164,7 +253,8 @@ def parse_fact(record: DecisionFactRecord) -> Fact | None:
         parsed = model.model_validate_json(record.body_json)
     except (ValidationError, ValueError):
         return None
-    assert isinstance(parsed, (EvaluatedFact, SentFact, QuotedFact))
+    assert isinstance(parsed, (EvaluatedFact, SentFact, QuotedFact, ReceivedFact, OfferedFact, BuyerAcceptedFact, RepliedFact,
+                               BuyerDeclinedFact, OfferWithdrawnFact))
     return parsed
 
 
@@ -178,16 +268,24 @@ class DecisionFactStore(Protocol):
 
 __all__ = [
     "FAMILY_OF",
+    "BuyerAcceptedFact",
+    "BuyerDeclinedFact",
     "CounterEconomics",
     "DecisionFactStore",
+    "DeclineReason",
     "EvaluatedFact",
     "Fact",
     "GapLeg",
     "GapPlan",
     "IfDecline",
+    "OfferWithdrawnFact",
+    "OfferedFact",
     "QuotedFact",
     "QuotedLeg",
+    "ReceivedFact",
+    "RepliedFact",
     "SentFact",
+    "Via",
     "body_json",
     "parse_fact",
     "record_for",
