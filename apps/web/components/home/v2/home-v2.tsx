@@ -117,6 +117,8 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   }, [focusing, stage.mode, selKey, reduced]);
   const cash = h.cash;
   const headline = cash.headline_conditional || h.headline;
+  // "FLOW action ready" is said once, by the recommendation card: the server's count sentence drops its first sentence ("One funding action ready.") when the card carries the plan's control.
+  const summary = v2?.summary_text ? (v2.action.control ? v2.summary_text.replace(/^[^.。]*[.。]\s*/, "") : v2.summary_text) : null;
   // The page's heading stays for a screen reader (the status and the server's headline); on screen the top of the page is one small Refresh button, which reads everything again
   // (the Home read, the worklist and the customers: every read of the page follows the store's version). Its title says when the figures were last read.
   const header = (
@@ -124,6 +126,11 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       <h1 className="sr-only" data-testid="hv2-headline">
         <span data-testid="home-status-word">{cash.status_word ?? h.status_text}</span> <span data-testid="home-headline">{headline}</span>
       </h1>
+      {summary ? (
+        <p className="sr-only" data-testid="hv2-summary">
+          {summary}
+        </p>
+      ) : null}
       <button
         type="button"
         onClick={() => bump()}
