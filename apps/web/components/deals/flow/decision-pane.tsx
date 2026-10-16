@@ -11,7 +11,9 @@ import { Button, ButtonLink, Callout, ErrorState, LoadingBlock } from "@/compone
 import { ActionGroup } from "@/components/ui/action-group";
 import { StatusPill, type PillTone } from "@/components/ui/status-pill";
 import type { DictKey } from "@/lib/dictionary";
+import { getOfferPicture } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
+import { useAsync } from "@/lib/use-async";
 import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
@@ -244,10 +246,14 @@ export function DecisionPane({
   /** The buyer's thread of the inbox, for the Messages tab (the page reads and opens messages). */
   inbox?: (buyerId: string | null) => ReactNode;
 }) {
-  const { t, te } = useI18n();
+  const { t, te, lang } = useI18n();
   const uid = useId();
   const mode = useMode();
   const n = useNegotiation(decision, { agreedPicture: view.view === "terms" });
+  // While the buyer has the offer, the terms rows say what they asked in the ask's own words: the offer picture's asked path (read for that state only; none is no column, never a guess).
+  const waitingOffer = n.record?.state === "AWAITING_BUYER" && n.record.outbound && !n.record.outbound.answer ? n.offerId : null;
+  const askedRead = useAsync(async () => (waitingOffer ? await getOfferPicture(waitingOffer, lang).catch(() => null) : null), [waitingOffer, lang]);
+  const askedWhileWaiting = askedRead.data?.paths?.find((p) => p.kind === "asked") ?? null;
   const isMd = useMd();
   // An agreed deal's Overview is the tracker (round three, section 11): the same read and the same body as the tracker's own page.
   const agreedNow = AGREED_STATES.has(n.record?.state ?? "");
@@ -526,6 +532,7 @@ export function DecisionPane({
       <WaitingStep
         offerId={offer.offer.offer_id}
         outbound={outbound}
+        asked={askedWhileWaiting}
         marked={marked?.message_when ?? null}
         onWithdrawn={(text) => {
           setMarked(null);
@@ -570,7 +577,7 @@ export function DecisionPane({
     );
   const workspaceTerms: ReactNode =
     !workspaceOn || !record ? null : awaitingBuyer && outbound && !ended ? (
-      outbound.actions?.accept.review?.terms?.length ? <TermsRows rows={reviewRows(outbound.actions.accept.review.terms)} /> : <TermSentences terms={outbound.terms} />
+      outbound.actions?.accept.review?.terms?.length ? <TermsRows rows={reviewRows(outbound.actions.accept.review.terms, askedWhileWaiting)} /> : <TermSentences terms={outbound.terms} />
     ) : ended ? (
       ended.changes?.length ? null : <TermSentences terms={ended.terms} />
     ) : record.interpretation?.terms?.length ? (
@@ -667,6 +674,8 @@ export function DecisionPane({
             {sent ? <SendResult n={sent} /> : null}
             {outcome ? <AcceptResult outcome={outcome} /> : null}
             {abstentions}
+            {/* While the send review is open the offer is said once, in the review; the recommendation card comes back with the plain overview. */}
+            {reviewingSend ? null : (
             <Recommendation
               picture={picture!}
               asked={asked}
@@ -690,6 +699,7 @@ export function DecisionPane({
                 </>
               }
             />
+            )}
             <ChoicesTable
               paths={paths}
               recKey={recommended?.key ?? null}

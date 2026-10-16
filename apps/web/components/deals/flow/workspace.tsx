@@ -11,8 +11,31 @@ import { bump } from "@/lib/demo-store";
 import { errorText } from "@/lib/error-text";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
-import type { CommitmentReceiptView, DealHistoryEntry, DecisionView, DeclineReason, OutboundView } from "@/lib/types";
+import type { CommitmentReceiptView, DealHistoryEntry, DecisionView, DeclineReason, OutboundView, PicturePath } from "@/lib/types";
 import { quietLink } from "./flow-parts";
+
+/**
+ * A confirmation said once and then gone (the mark just recorded): announced to a screen reader (`aria-live`) and shown for a few seconds, never a permanent line beside the status that
+ * already says the same. A new text shows again; leaving the deal clears it.
+ */
+export function TransientNote({ text, testId, ms = 6000 }: { text: string | null; testId?: string; ms?: number }) {
+  const [shown, setShown] = useState<string | null>(null);
+  const [last, setLast] = useState<string | null>(null);
+  if (text !== last) {
+    setLast(text);
+    setShown(text);
+  }
+  useEffect(() => {
+    if (!shown) return;
+    const id = window.setTimeout(() => setShown(null), ms);
+    return () => window.clearTimeout(id);
+  }, [shown, ms]);
+  return (
+    <p role="status" aria-live="polite" className="min-h-0 text-sm text-ink-3 motion-fade empty:hidden" data-testid={shown ? testId : undefined}>
+      {shown ?? ""}
+    </p>
+  );
+}
 
 /** A buyer's reply, as POST /offers/{id}/buyer-reply bounds one (SEC-17); the acceptance's evidence is bounded the same. */
 export const REPLY_MAX = 4000;
@@ -231,12 +254,15 @@ async function run<T>(set: { busy: (b: boolean) => void; refused: (s: string | n
 export function WaitingStep({
   offerId,
   outbound,
+  asked,
   marked,
   onWithdrawn,
   onBusy,
 }: {
   offerId: string;
   outbound: OutboundView;
+  /** The offer picture's asked path: the ask's own words for each term ("They asked"). */
+  asked?: PicturePath | null;
   /** The server's sentence for the mark just made, said once. */
   marked?: string | null;
   /** Told with the server's sentence once the mark is withdrawn (the deal is a counter ready again: this step is gone). */
@@ -325,11 +351,7 @@ export function WaitingStep({
             {outbound.text}
           </p>
         ) : null}
-        {marked ? (
-          <p role="status" className="text-sm text-ink-3" data-testid="deal-marked-sent">
-            {marked}
-          </p>
-        ) : null}
+        <TransientNote text={marked ?? null} testId="deal-marked-sent" />
       </div>
       <ActionGroup testId="outbound-actions" label={outbound.title_text}>
         {outbound.message_same && outbound.message_text ? (
@@ -393,7 +415,7 @@ export function WaitingStep({
             <div className="space-y-3 motion-fade" data-testid="outbound-confirm-accept">
               <h4 className="text-[15px] font-bold text-ink">{actions.accept.title_text ?? t("ws.confirmAccept")}</h4>
               {review?.terms?.length ? (
-                <TermsRows rows={reviewRows(review.terms)} testId="outbound-accept-terms" />
+                <TermsRows rows={reviewRows(review.terms, asked)} testId="outbound-accept-terms" />
               ) : (
                 <TermSentences terms={actions.accept.terms} testId="outbound-accept-terms" />
               )}
@@ -536,11 +558,18 @@ export function WaitingStep({
   );
 }
 
-/** The review's term rows as "instead of …" (what they asked, in the server's words) → the reply's own cell. Rows with neither are left out. */
-export function reviewRows(terms: NonNullable<NonNullable<OutboundView["actions"]>["accept"]["review"]>["terms"]): TermRow[] {
+/**
+ * The review's term rows: what they asked (the ask's own cell, from the offer picture's asked path, as the send view's left column reads it) → the reply's own cell. The server's
+ * "instead of …" is never put in the asked column; a term the picture has no ask for leaves that cell empty. Rows with neither are left out.
+ */
+export function reviewRows(terms: NonNullable<NonNullable<OutboundView["actions"]>["accept"]["review"]>["terms"], asked: PicturePath | null | undefined): TermRow[] {
+  const askedOf = (key: string) => asked?.terms?.find((x) => x.key === key) ?? null;
   return (terms ?? [])
-    .filter((r) => r.value_text || r.instead_of_text)
-    .map((r) => ({ key: r.key, label: r.label, asked: r.instead_of_text, proposed: r.cell_text ?? r.value_text }));
+    .map((r) => {
+      const a = askedOf(r.key);
+      return { key: r.key, label: r.label, asked: a?.cell_text ?? a?.value_text ?? null, proposed: r.cell_text ?? r.value_text };
+    })
+    .filter((r) => r.asked || r.proposed);
 }
 
 // ---------------------------------------------------------------- what came of it

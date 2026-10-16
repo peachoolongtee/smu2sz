@@ -61,6 +61,8 @@ test("send: what they asked beside what you offer, the letter in the buyer's lan
 
   const offer = page.getByTestId("buyer-message-offer");
   await expect(offer).toContainText(`You offer · ${before.en.counter_label_when}`);
+  // The offer is said once while the review is open: the recommendation card gives way to it.
+  await expect(page.getByTestId("queue-recommends")).toHaveCount(0);
   for (const term of before.en.review!.terms!) await expect(offer.getByTestId(`buyer-message-term-${term.key}`).getByTestId("buyer-message-term-offer")).toHaveText(literal(term.cell_text!));
   await expect(offer.getByTestId("buyer-message-cost")).toContainText(before.en.review!.cost_text!);
   await expect(offer.getByTestId("buyer-message-cost")).toHaveAttribute("data-within", "true");
@@ -77,6 +79,10 @@ test("send: what they asked beside what you offer, the letter in the buyer's lan
   await expect(panel.getByTestId("buyer-message-provenance")).toHaveAttribute("data-verified", "true");
   await expect(offer.getByTestId("buyer-message-until")).toContainText(before.en.valid_until_date);
   await expect(panel.getByTestId("buyer-message-text")).toHaveText(before.en.text!);
+  // The figures are set apart on screen, each the figure alone: no comma or full stop rides with it.
+  const figures = await panel.getByTestId("buyer-message-figure").allTextContents();
+  expect(figures.length).toBeGreaterThan(3);
+  for (const f of figures) expect(f, f).not.toMatch(/[,.;:，。]$/);
   await expect(panel.getByTestId("buyer-message-effect")).toHaveText(before.en.mark_sent_effect_text);
   // Copy is the filled button until the message has been copied; then "I've sent it to the buyer" is.
   await expect(panel.getByTestId("buyer-message-copy")).toHaveAttribute("data-filled", "true");
@@ -115,6 +121,8 @@ test("mark sent: refused when the message changed, then the deal waits for the b
   await expect(page.getByTestId("deal-state-chip")).toHaveText(rec.awaiting.en.decision.state_text);
   await expect(page.getByTestId("deal-marked-sent")).toHaveText(rec.offered.en.message_when);
   await expect(page.getByTestId("queue-review")).toHaveCount(0);
+  // The confirmation is said once, then gone: the status line keeps saying where the deal stands.
+  await expect(page.getByTestId("deal-marked-sent")).toHaveCount(0, { timeout: 10_000 });
   await expect(page.getByTestId("history-step-sent")).toContainText(waiting.label_text!);
   await expect(page.getByTestId("history-step-answer")).toHaveAttribute("data-tone", "waiting");
 
@@ -133,6 +141,9 @@ test("mark sent: refused when the message changed, then the deal waits for the b
   await expect(page.getByTestId("outbound-sent-message-text")).toHaveText(waiting.message_text!);
   // The workspace: the terms rows and the one timeline; the Messages section is gone (the original ask is its own fold).
   await expect(page.getByTestId("deal-terms-section")).toBeVisible();
+  // "They asked" is the ask itself (the picture's asked cells), never the server's "instead of …".
+  await expect(page.getByTestId("deal-terms-section").getByTestId("term-asked").first()).not.toContainText("instead of");
+  await expect(page.getByTestId("deal-terms-section").getByTestId("term-row-payment_terms").getByTestId("term-asked")).toContainText("60 days");
   await expect(page.getByTestId("deal-history-offered")).toContainText(rec.awaiting.en.decision.history!.find((h) => h.kind === "offered")!.text);
   await expect(page.getByTestId("deal-tab-messages")).toHaveCount(0);
   await page.getByTestId("outbound-record").click();
@@ -156,6 +167,8 @@ test("they accepted, with their message as evidence: the exact terms, what it bi
   const confirm = page.getByTestId("outbound-confirm-accept");
   const accept = waiting.actions!.accept;
   await expect(confirm).toContainText(accept.title_text!);
+  await expect(confirm.getByTestId("term-row-early_payment").getByTestId("term-asked")).toContainText("1.20% off ¥420,000.00");
+  await expect(confirm.getByTestId("outbound-accept-terms")).not.toContainText("instead of");
   await expect(confirm.getByTestId("outbound-accept-cost")).toHaveText(accept.review!.cost_text!);
   await expect(confirm.getByTestId("outbound-accept-binding")).toHaveText(accept.binding_text!);
   await expect(confirm.getByTestId("outbound-accept-authority")).toHaveText(accept.authority_text!);

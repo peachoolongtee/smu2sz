@@ -22,18 +22,22 @@ export const buyerMessageId = (offerId: string, counterId: string) => `buyer-mes
  * This marks spans of the server's text; it writes nothing.
  */
 const FIGURE = /¥[\d,]+(?:\.\d+)?|\d+(?:\.\d+)?%|\d{1,2} (?:January|February|March|April|May|June|July|August|September|October|November|December) \d{4}|\d{4}年\d{1,2}月\d{1,2}日/g;
+const TRAILING = /[,.;:，。；：]+$/;
 function Letter({ text }: { text: string }) {
   const parts: ReactNode[] = [];
   let last = 0;
   for (const m of text.matchAll(FIGURE)) {
     const at = m.index ?? 0;
+    // The figure alone: a comma or full stop that follows it stays in the text, outside the highlight.
+    const figure = m[0].replace(TRAILING, "");
+    if (!figure) continue;
     if (at > last) parts.push(<Fragment key={`t${at}`}>{text.slice(last, at)}</Fragment>);
     parts.push(
-      <mark key={`m${at}`} className="rounded-[4px] bg-f-amber/45 px-0.5 font-semibold text-ink">
-        {m[0]}
+      <mark key={`m${at}`} className="rounded-[4px] bg-f-amber/45 px-0.5 font-semibold text-ink" data-testid="buyer-message-figure">
+        {figure}
       </mark>,
     );
-    last = at + m[0].length;
+    last = at + figure.length;
   }
   if (last < text.length) parts.push(<Fragment key="end">{text.slice(last)}</Fragment>);
   return <>{parts}</>;
