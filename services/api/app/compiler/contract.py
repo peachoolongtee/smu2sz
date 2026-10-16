@@ -297,6 +297,26 @@ _REQUIRED: dict[ContractField, str] = {
 }
 
 
+# LATE_INTEREST is what the BUYER owes for paying late. A supplier's penalty for delivering late is not that: the
+# model sometimes records it under the same field (both read "X per day"), so code drops it by the quote's words.
+_LATE_DELIVERY = rx(
+    r"(?:逾期|延期|延迟|迟延|拖延)\s*(?:交货|交付|供货|送货|发货|提供)"
+    r"|(?:late|delayed?|overdue)\s+(?:delivery|deliveries|shipment|performance)"
+    r"|(?:delay|delays|failure|fails?|late)\s+(?:in|to|with)\s+(?:(?:the|any)\s+)?(?:deliver(?:y|ing)?|ship(?:ping|ment)?|perform(?:ing)?)"
+    r"|delivers?\s+(?:the\s+goods\s+)?(?:late|after\s+the\s+(?:delivery\s+)?date)")
+_LATE_PAYMENT = rx(
+    r"(?:逾期|延期|延迟|迟延|拖欠|拖延)\s*(?:付款|支付|结算|给付|付费)|未(?:按时|及时|按期|如期)\s*(?:付款|支付|结算)"
+    r"|(?:late|overdue|delayed|delinquent|default(?:ed)?\s+in)\s+(?:payments?|paying|invoices?|amounts?|sums?)"
+    r"|(?:payment|invoice|amount|sum)s?\s+(?:is|are|being|remains?)?\s*(?:late|overdue|past\s+due)"
+    r"|(?:delay|delays|failure|fails?|late)\s+(?:in|to|with)\s+(?:(?:the|any)\s+)?(?:paying|payments?|pay)\b"
+    r"|pays?\s+(?:\w+\s+){0,4}late|interest\s+on\s+(?:any\s+)?(?:overdue|late|unpaid)")
+
+
+def supplier_late_delivery_penalty(quote: str) -> bool:
+    """True when the quote is the supplier's penalty for late delivery and says nothing of the buyer paying late."""
+    return _LATE_DELIVERY.search(quote) is not None and _LATE_PAYMENT.search(quote) is None
+
+
 def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDocument) -> ContractTerm | None:
     sp = locate({chunk_doc.doc_id: chunk_doc}, chunk_doc.doc_id, x.quote)
     if sp is None:
@@ -309,6 +329,9 @@ def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDoc
         if v is False:
             return None
         frags[name] = v  # type: ignore[assignment]
+    if x.field == F.LATE_INTEREST and supplier_late_delivery_penalty(span.text):
+        _drop(ctx, x.field, "term dropped: the clause is the supplier's penalty, not interest owed by the buyer", [span])
+        return None
     need = _REQUIRED[x.field]
     if frags[need] is None:
         _drop(ctx, x.field, f"term dropped: no {need.removesuffix('_text').replace('_', ' ')} is stated in its quote",
