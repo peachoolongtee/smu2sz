@@ -614,8 +614,8 @@ input[type="radio"] {
   display: none;
 }
 .seg-track:not([data-pill]) .seg-tab[aria-selected="true"] {
-  border-color: var(--color-line);
-  background: var(--color-surface);
+  border-color: var(--color-f-purple);
+  background: var(--color-f-purple);
   box-shadow: var(--shadow-pill);
 }
 

@@ -26,6 +26,11 @@ export const XIcon = (p: P) => (
     <path d="M4 4l8 8M12 4l-8 8" />
   </svg>
 );
+export const RefreshIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M13 8a5 5 0 1 1-1.46-3.54M13 2.5v2.5h-2.5" />
+  </svg>
+);
 export const MenuIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" />

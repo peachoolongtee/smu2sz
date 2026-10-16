@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { CashPreview, LegendItem, type ChartMarker, type PreviewLine } from "@/components/home/v2/cash-preview";
-import { XIcon } from "@/components/icons";
 import { useI18n } from "@/lib/i18n";
 import type { HomeSeriesPoint, HomeV2Chart, HomeView } from "@/lib/types";
 
@@ -18,12 +17,12 @@ export const pointAt = (points: HomeSeriesPoint[] | null | undefined, day: numbe
 export const shown = (p: HomeSeriesPoint | undefined): string => p?.display ?? p?.closing_display ?? "";
 
 /**
- * "Company cash forecast", the outlook card's Expand (screen 06): the full forecast opens in place under the three cards (`?expand=1`), Close or Escape restores. The current books as a purple
- * step line with the stretches under the minimum in red, the plan that is ready as a grey dashed line named "conditional on execution", the minimum with its shaded band, the lowest
- * point; the events of the Home read as numbered markers on their line, each opening a callout with its sentence, every word the server's (`when`, `label`,
- * `amount_short`, `explain`). Choosing an event moves the chart's day and the other way round (a click on the plot, the arrow keys). "Open full analysis" goes to Cash & Funding.
+ * The company cash forecast inside the outlook card: the current books as a purple step line with the stretches under the minimum in red, the plan that is ready as its own line named
+ * "conditional on execution", the minimum with its shaded band, the lowest point; the events of the Home read as numbered markers on their line, each opening a callout with its sentence,
+ * every word the server's (`when`, `label`, `amount_short`, `explain`). Choosing an event moves the chart's day and the other way round (a click on the plot, the arrow keys).
+ * "Open full analysis" goes to Cash & Funding.
  */
-export function CompanyChart({ h, chart, onClose }: { h: HomeView; chart: HomeV2Chart; onClose: () => void }) {
+export function OutlookChart({ h, chart }: { h: HomeView; chart: HomeV2Chart }) {
   const { t } = useI18n();
   const cash = h.cash;
   const current = chart.legend.find((l) => l.kind === "current");
@@ -48,21 +47,15 @@ export function CompanyChart({ h, chart, onClose }: { h: HomeView; chart: HomeV2
     amount: e.amount_short,
     explain: e.explain ?? null,
   }));
-  // Opening it unfolds the card under the three cards and brings it into view; the lines then draw in.
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, []);
   return (
-    <div ref={ref} id="hv2-forecast" data-testid="hv2-forecast" className="expand-in f-card min-w-0 scroll-mt-20 p-6">
+    <div id="hv2-forecast" data-testid="hv2-forecast" className="min-w-0">
       <CashPreview
         first
         cash={cash}
         today={h.day}
-        title={t("hv2.forecast.title")}
-        subtitle={chart.note ?? t("hv2.chart.conditional")}
+        title=""
         lines={lines}
-        height={300}
+        height={240}
         inspectOpen={false}
         chosenDay={day}
         onChoose={setDay}
@@ -73,12 +66,6 @@ export function CompanyChart({ h, chart, onClose }: { h: HomeView; chart: HomeV2
         words={() => ({ cells: [], events: [] })}
         draw
         markers={markers}
-        headExtra={
-          <button type="button" onClick={onClose} className="motion-press inline-flex min-h-10 items-center gap-1.5 rounded-control px-2 text-[15px] font-semibold text-ink hover:bg-subtle touch:min-h-11" data-testid="hv2-forecast-close">
-            <XIcon width={16} height={16} aria-hidden />
-            {t("hv2.card.close")}
-          </button>
-        }
         legend={
           <>
             <LegendItem kind="base">{t("hv2.legend.current")}</LegendItem>

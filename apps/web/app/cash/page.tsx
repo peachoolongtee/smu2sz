@@ -22,7 +22,7 @@ import { onSignedIn } from "@/lib/auth";
 import { lateReadOf, originOf, parseStress } from "@/lib/cash-stress";
 import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import type { FundingView } from "@/lib/types";
+import type { AlertActResult, FundingView } from "@/lib/types";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
 import { splitSentence } from "@/lib/price-sentence";
 import { useNarrow } from "@/lib/use-narrow";
@@ -49,6 +49,19 @@ function PriceSentence({ sentence }: { sentence: string }) {
       ) : null}
     </>
   );
+}
+
+const LAST_RUN_KEY = "tl-cash-last-run";
+
+/** The last funding run's answer in this tab (a per-tab convenience, so "What happened" stays after a reload or a visit elsewhere); null without one or without storage. */
+function readLastRun(): AlertActResult | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(LAST_RUN_KEY);
+    return raw ? (JSON.parse(raw) as AlertActResult) : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -85,6 +98,16 @@ function Cash() {
   const curveRead = useStrategyAsync(() => getPriceCurve(lang), [lang]);
   const curve = curveRead.data;
   const fixer = useFixAlert();
+  // "What happened" is the answer of the run just made, else the last one this tab remembers: the run leaves the plan, so it could not be asked again.
+  const [lastRun] = useState<AlertActResult | null>(readLastRun);
+  useEffect(() => {
+    if (!fixer.result) return;
+    try {
+      window.sessionStorage.setItem(LAST_RUN_KEY, JSON.stringify(fixer.result));
+    } catch {
+      /* storage unavailable: the answer stays until the page is left */
+    }
+  }, [fixer.result]);
   // The late-payment deep link (`?stress=<buyer>:30` with the shared context beside it, from Receivables, the Customer page or the Deals queue):
   // the buyer's exposure read draws the stressed line, and its `context.back` is the way back. Without the link, or with the feature off on the
   // server (the read answers null), the parameters are ignored and the page is the ordinary one.
@@ -110,6 +133,12 @@ function Cash() {
   const snapshot = demo.funding;
   const plan = useAsync(async () => (!h ? null : covered ? (snapshot ?? null) : await planFunding({}, lang)), [Boolean(h), covered, Boolean(snapshot), h?.state_version, lang]);
   const statusTone = h?.status === "CRITICAL" ? "bad" : h?.status === "SAFE" ? "ok" : "warn";
+  // The answer at the top is its own card in the colour of what is happening: the risk red when cash goes below the minimum, amber while it needs care, green when it is safe.
+  const answerTint = {
+    bad: "bg-[color-mix(in_srgb,var(--color-f-risk)_9%,var(--color-card))] border-[color-mix(in_srgb,var(--color-f-risk)_28%,transparent)]",
+    warn: "bg-[color-mix(in_srgb,var(--color-f-amber)_38%,var(--color-card))] border-[color-mix(in_srgb,var(--color-f-amber-ink)_22%,transparent)]",
+    ok: "bg-[color-mix(in_srgb,var(--color-f-green)_45%,var(--color-card))] border-[color-mix(in_srgb,var(--color-f-green-ink)_20%,transparent)]",
+  }[statusTone];
 
   /** The comparison worth showing: none when a fresh plan on covered books says "no funding needed". */
   const comparison = (p: FundingView | undefined) => {
@@ -193,9 +222,9 @@ function Cash() {
     </section>
   ) : null;
   // After a cure that did not restore the reserve there is no plan to run: the one remaining task takes the plan's place.
-  // Every source of money in one card ("Your funding"): at the top once no further action is needed (the position is the news), else under the plans.
+  // Every source of money in one card ("Your funding"), with where the cash comes from as its ring: always the second card, under the cash figures. A plan not yet run is in neither.
   const fundingCard = h ? (
-    <FundingCard h={h} customers={names} menu={plan.data?.menu}>
+    <FundingCard h={h} customers={names} menu={plan.data?.menu} ring={<CashMix h={h} customers={names} bare withPlan={false} />}>
       {plan.data ? (
         <Disclosure testId="cash-sources" className="mt-2" summary={t("biz.cash.sources")}>
           <div className="mt-2">
@@ -205,8 +234,7 @@ function Cash() {
       ) : null}
     </FundingCard>
   ) : null;
-  const fundingOnTop = Boolean(h && !h.next_action && !h.remaining_task && covered);
-  const slot = h && !h.next_action ? h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} /> : fundingOnTop ? fundingCard : null : null;
+  const slot = h && !h.next_action && h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} /> : null;
 
   return (
     <>
@@ -217,7 +245,7 @@ function Cash() {
       ) : (
         <div className="space-y-5 sm:space-y-7" aria-busy={home.loading}>
           {stressView ? <StressContext back={stressView.context?.back} invoice={invoiceRow?.invoice} /> : null}
-          <header id="cash-answer" className="motion-reveal flex flex-col items-start gap-2.5" data-testid="cash-status" data-status={h.status}>
+          <header id="cash-answer" className={`motion-reveal flex flex-col items-start gap-2.5 rounded-[var(--radius-f-card)] border p-5 shadow-(--shadow-f) sm:p-6 ${answerTint}`} data-testid="cash-status" data-status={h.status} data-tone={statusTone}>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <Badge tone={statusTone}>{h.status_text ?? te("homestatus", h.status)}</Badge>
               {/* How fresh the conclusion is: the server's own "when" for the read the figures come from. */}
@@ -252,15 +280,13 @@ function Cash() {
             ) : null}
           </header>
 
-          {/* The main numbers at a glance, and where the cash comes from (the same ring as Home's): the page's summary before its detail. */}
-          <section aria-label={t("biz.cash.summary")} className="motion-reveal card-flat grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" data-testid="cash-summary" data-tour="cash-summary">
+          {/* The main numbers at a glance, the whole card: the page's summary before its detail. */}
+          <section aria-label={t("biz.cash.summary")} className="motion-reveal card-flat" data-testid="cash-summary" data-tour="cash-summary">
             <CashFigures h={h} big />
-            <div className="min-w-0 lg:border-l lg:border-line lg:pl-5">
-              <CashMix h={h} customers={names} bare />
-            </div>
           </section>
+          {fundingCard}
           <PartialRead partial={h.partial} onRetry={home.reload} />
-          <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
+          <FixResult flat part="notices" result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           {slot}
           {/* A phone reads the answer, then the priced action, then the chart; from lg the chart comes first and the plan bar sits under it. */}
           {stressRead.error ? (
@@ -296,8 +322,6 @@ function Cash() {
               </FoldCard>
             </>
           )}
-
-          {fundingOnTop ? null : fundingCard}
 
           {/* The debt readings are the forecast's own footer: the same projection, read by month. */}
           {view?.trajectory.months.length ? (
@@ -338,6 +362,8 @@ function Cash() {
             </FoldCard>
           ) : null}
 
+          {/* What the funding plan did, once it has run: a small button at the foot of the page that opens it. */}
+          <FixResult part="result" result={fixer.result ?? (h.next_action ? null : lastRun)} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
         </div>
       )}
     </>

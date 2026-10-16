@@ -50,11 +50,11 @@ export function UnderlineTabs<T extends string>({ label, value, onChange, tabs, 
             data-testid={t.testId}
             onClick={() => onChange(t.value)}
             onKeyDown={(e) => onKey(e, i)}
-            className={`motion-press inline-flex h-10 items-center whitespace-nowrap rounded-pill ${dense ? "gap-1 px-1.5 text-sm" : "gap-1.5 px-3.5 text-[15px]"} font-medium transition-colors duration-(--dur-fast) hover:text-ink touch:h-11 ${on ? "bg-card text-ink shadow-f" : "text-ink-3"}`}
+            className={`motion-press inline-flex h-10 items-center whitespace-nowrap rounded-pill ${dense ? "gap-1 px-1.5 text-sm" : "gap-1.5 px-3.5 text-[15px]"} font-medium transition-colors duration-(--dur-fast) touch:h-11 ${on ? "bg-f-purple font-semibold text-f-btn-ink shadow-f" : "text-ink-3 hover:bg-f-purple-soft hover:text-f-purple-ink"}`}
           >
             {t.label}
             <span
-              className={`text-supporting tabular-nums ${dense ? `inline-grid min-w-[1.125rem] place-items-center rounded-pill px-1 font-semibold leading-[1.125rem] ${on ? "bg-subtle text-ink" : "bg-subtle/60 text-ink-3"}` : on ? "text-ink" : "text-ink-3"}`}
+              className={`text-supporting tabular-nums ${dense ? `inline-grid min-w-[1.125rem] place-items-center rounded-pill px-1 font-semibold leading-[1.125rem] ${on ? "bg-white/20 text-f-btn-ink" : "bg-subtle/60 text-ink-3"}` : on ? "text-f-btn-ink" : "text-ink-3"}`}
               data-testid={t.countTestId}
             >
               {t.count}

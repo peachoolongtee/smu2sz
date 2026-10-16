@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId } from "react";
+import { useId, type CSSProperties } from "react";
 import { SegmentedBar } from "@/components/home/v2/segmented-bar";
 import { AlertIcon, ArrowRightIcon, CalendarIcon, CheckIcon } from "@/components/icons";
 import { Button, ButtonLink, textLinkClass } from "@/components/ui";
@@ -9,6 +9,9 @@ import { ActionGroup } from "@/components/ui/action-group";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useI18n } from "@/lib/i18n";
 import type { HomeNextAction, HomeV2, HomeV2Action } from "@/lib/types";
+
+/** The recommendation inside the outlook card: the card's own radius is the inner one (the alarm strip's top corners follow it). */
+const INNER = { "--radius-f-card": "20px" } as CSSProperties;
 
 /** The facts of the recommendation: the server's `facts` (label and value); until it sends them the one sentence is the line under the title. */
 function factsOf(a: HomeV2Action) {
@@ -51,6 +54,7 @@ export function HomeV2ActionBar({
   onBack,
   alarm = null,
   covered = false,
+  embedded = false,
 }: {
   action: HomeV2Action;
   kpis: HomeV2["kpis"];
@@ -64,6 +68,8 @@ export function HomeV2ActionBar({
   /** The funding plan's total (the strip's own funding figure). */
   fundingTotal?: string;
   onBack?: () => void;
+  /** Inside the outlook card: a white inner card with a smaller radius, so it reads as part of the outlook. */
+  embedded?: boolean;
 }) {
   const { t } = useI18n();
   const uid = useId();
@@ -94,7 +100,7 @@ export function HomeV2ActionBar({
     );
   }
   const quiet = action.variant === "QUIET";
-  if (quiet && covered) return <CoveredCard action={action} kpis={kpis} />;
+  if (quiet && covered) return <CoveredCard action={action} kpis={kpis} embedded={embedded} />;
   const run = !quiet && action.control && nextAction ? nextAction : null;
   const facts = factsOf(action);
   const cost = facts?.length === 3 ? facts[0] : null;
@@ -108,7 +114,7 @@ export function HomeV2ActionBar({
   return (
     <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant={quiet ? "quiet" : "action"} className="h-full outline-none">
       <div data-testid={run ? "home-next-action" : quiet ? undefined : "home-attention-card"} data-alert={run?.alert_id} className="h-full">
-        <section aria-labelledby={titleId} data-testid="hv2-action" data-alarm={alarm && !quiet ? "true" : undefined} className={`motion-reveal f-card flex h-full min-w-0 flex-col p-4 ${alarm && !quiet ? "alarm-card" : ""}`}>
+        <section aria-labelledby={titleId} data-testid="hv2-action" data-alarm={alarm && !quiet ? "true" : undefined} className={`motion-reveal f-card flex h-full min-w-0 flex-col p-4 ${embedded ? "f-card-white" : ""} ${alarm && !quiet ? "alarm-card" : ""}`} style={embedded ? INNER : undefined}>
           {/* Cash goes negative without the plan: the card says so first, in the risk red, so it is the one part of the page to look at. */}
           {alarm && !quiet ? (
             <p role="status" className="-mx-4 -mt-4 mb-3 flex items-center gap-2 rounded-t-[var(--radius-f-card)] bg-f-risk px-4 py-2 text-sm font-bold text-white" data-testid="hv2-alarm">
@@ -236,13 +242,13 @@ export function HomeV2ActionBar({
  * keeps the cash covered) and its next event as a chip, the two figures that say so (the lowest cash ahead, the room above the minimum), and the one button: on to the deals.
  * Decoration (the glow, the rings) is behind everything and says nothing.
  */
-function CoveredCard({ action, kpis }: { action: HomeV2Action; kpis: HomeV2["kpis"] }) {
+function CoveredCard({ action, kpis, embedded = false }: { action: HomeV2Action; kpis: HomeV2["kpis"]; embedded?: boolean }) {
   const { t } = useI18n();
   const lowest = kpis.lowest_ahead?.value_display ?? null;
   const room = kpis.cash_available.buffer.headroom_text ?? null;
   return (
     <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant="covered" className="h-full outline-none">
-      <section aria-labelledby="hv2-covered-title" data-testid="hv2-action" data-covered="true" className="motion-reveal f-card relative isolate flex h-full min-w-0 flex-col overflow-hidden p-5">
+      <section aria-labelledby="hv2-covered-title" data-testid="hv2-action" data-covered="true" className={`motion-reveal f-card relative isolate flex h-full min-w-0 flex-col overflow-hidden p-5 ${embedded ? "f-card-white" : ""}`} style={embedded ? INNER : undefined}>
         {/* A soft green glow in the corner and three thin rings around it: the card's own light. */}
         <span aria-hidden className="absolute -right-24 -top-28 -z-10 size-72 rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-ok-solid)_22%,transparent),transparent)]" />
         <svg aria-hidden viewBox="0 0 200 200" className="absolute -right-16 -top-16 -z-10 size-56 text-ok-solid">
@@ -266,7 +272,7 @@ function CoveredCard({ action, kpis }: { action: HomeV2Action; kpis: HomeV2["kpi
           {action.title}
         </p>
         {action.text ? (
-          <p className="mt-3 inline-flex max-w-full items-center gap-2 self-start rounded-pill bg-card px-3 py-1.5 text-supporting text-ink shadow-(--shadow-f)" data-testid="home-action-text">
+          <p className={`mt-3 inline-flex max-w-full items-center gap-2 self-start rounded-pill px-3 py-1.5 text-supporting ${embedded ? "bg-panel" : "bg-card"} text-ink shadow-(--shadow-f)`} data-testid="home-action-text">
             <CalendarIcon aria-hidden width={14} height={14} className="shrink-0 text-ok-solid" />
             <span className="min-w-0 truncate">{action.text}</span>
           </p>
@@ -274,13 +280,13 @@ function CoveredCard({ action, kpis }: { action: HomeV2Action; kpis: HomeV2["kpi
         {lowest || room ? (
           <dl className="mt-4 grid grid-cols-2 gap-3" data-testid="hv2-covered-facts">
             {lowest ? (
-              <div className="rounded-tile bg-card/70 px-3 py-2">
+              <div className={`rounded-tile px-3 py-2 ${embedded ? "bg-panel" : "bg-card/70"}`}>
                 <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{t("hv2.covered.lowest")}</dt>
                 <dd className="mt-0.5 font-display text-lg font-bold tabular-nums text-ink">{lowest}</dd>
               </div>
             ) : null}
             {room ? (
-              <div className="rounded-tile bg-card/70 px-3 py-2">
+              <div className={`rounded-tile px-3 py-2 ${embedded ? "bg-panel" : "bg-card/70"}`}>
                 <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{t("hv2.covered.room")}</dt>
                 <dd className="mt-0.5 font-display text-lg font-bold tabular-nums text-ok-fg">{room}</dd>
               </div>

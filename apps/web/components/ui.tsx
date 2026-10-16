@@ -359,7 +359,7 @@ export function Button({
 export function toggleClass(active: boolean, size: ButtonSize = "md", className = ""): string {
   return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
     size === "sm" ? "min-h-8 px-3 text-meta touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
-  } ${active ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line-ui bg-surface text-ink hover:bg-subtle"} ${className}`;
+  } ${active ? "border-f-purple bg-f-purple text-f-btn-ink" : "border-line-ui bg-surface text-ink hover:bg-subtle"} ${className}`;
 }
 
 /** A quiet text link in a card's header or a sentence (the "open" links): brand-700 on white is 8.5:1. */

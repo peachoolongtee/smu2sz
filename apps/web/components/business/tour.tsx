@@ -90,7 +90,6 @@ const STEPS: Record<string, Step[]> = {
     part("home.worklist", tid("home-worklist-panel")),
     part("home.upcoming", tid("hv2-upcoming")),
     part("home.owed", tid("hv2-owed-card")),
-    part("home.tools", '[data-tour="home-tools"]'),
     part("shell.ask", tid("ask-header")),
     NAV,
     part("shell.account", tid("account-menu")),
