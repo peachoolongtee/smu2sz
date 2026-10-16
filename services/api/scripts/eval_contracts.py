@@ -166,6 +166,9 @@ def score(key: dict[str, Any], pred: dict[str, Any]) -> dict[str, tuple[int, int
     out: dict[str, tuple[int, int, int]] = {}
 
     def scalar(name: str, k: Any, p: Any, eq=_close) -> None:  # type: ignore[no-untyped-def]
+        if k is None:  # the key states nothing (a supplement's total or end date): right when FLOW states nothing too
+            out[name] = (1, int(p is None), int(p is not None))
+            return
         out[name] = (1, int(p is not None and eq(k, p)), int(p is not None and not eq(k, p)))
 
     scalar("contract_no", _norm(key["contract_no"]), _norm(pred["contract_no"]), lambda a, b: a == b)
@@ -175,9 +178,9 @@ def score(key: dict[str, Any], pred: dict[str, Any]) -> dict[str, tuple[int, int
     scalar("amount_total", key["amount_total"], pred["amount_total"])
     scalar("performance.start_date", key["performance"]["start_date"], pred["performance"]["start_date"])
     scalar("performance.end_date", key["performance"]["end_date"], pred["performance"]["end_date"])
-    out["retention_pct"] = (1, int(_close(key["retention_pct"], pred["retention_pct"])),
-                            int(not _close(key["retention_pct"], pred["retention_pct"])))
-    ki, pi = key["late_payment_interest"], pred["late_payment_interest"]
+    kr = key["retention_pct"] or 0  # null in a supplement's key: no retention stated, as FLOW's 0
+    out["retention_pct"] = (1, int(_close(kr, pred["retention_pct"])), int(not _close(kr, pred["retention_pct"])))
+    ki, pi = key["late_payment_interest"] or {"type": "not_specified"}, pred["late_payment_interest"]
     ok = _interest_equal(ki, pi)
     out["late_payment_interest"] = (1, int(ok), int(not ok and pi.get("type") != "not_specified"))
     for name in ("percent", "days_after_trigger", "days_unit", "trigger"):
