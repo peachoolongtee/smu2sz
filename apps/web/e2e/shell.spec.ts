@@ -125,7 +125,7 @@ test("an offer waiting: the sidebar counts the deal, and Deals leads with FLOW's
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   // The heading is the buyer's ask from the first read, so the check is done when the recommendation is there.
   await page.getByTestId("queue-recommends").waitFor();
-  await expect(verdictHeading(page)).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   await page.goto("/");
   expect(await proseOf(page)).not.toMatch(/\bOFF-|\bVER-/);
 });

@@ -123,8 +123,8 @@ def test_the_parting_moment_names_who_decides_for_each_reply(client):
     oid, _ = _evaluated(client)
     en = client.get(f"/offers/{oid}/picture").json()["moments"]
     zh = client.get(f"/offers/{oid}/picture", params={"lang": "zh"}).json()["moments"]
-    assert en[0]["text"].endswith("Who decides: Option A: FLOW can send it; Option B: needs your approval.")
-    assert zh[0]["text"].endswith("由谁决定：方案 A：FLOW 可以直接发送；方案 B：需要您批准。")
+    assert en[0]["text"].endswith("Who decides: Option A: within your mandate; Option B: needs your approval.")
+    assert zh[0]["text"].endswith("由谁决定：方案 A：在您的授权范围内；方案 B：需要您批准。")
     assert not any("Who decides" in m["text"] for m in en[1:])
     # the Business voice is 您, never 你
     assert "你" not in str(zh) and "你" not in str(client.get(f"/offers/{oid}/picture", params={"lang": "zh"}).json()["paths"])
@@ -163,7 +163,7 @@ def _row(day: int, closing: int) -> dict[str, Any]:
 
 def _path(key: str, kind: str, series: list[dict[str, Any]]) -> dict[str, Any]:
     return {"key": key, "kind": kind, "label": key, "recommended": False, "series": series,
-            "authority_text": "FLOW can send it" if kind == "reply" else "x"}
+            "authority_text": "Within your mandate" if kind == "reply" else "x"}
 
 
 def test_when_more_than_six_days_qualify_the_cap_keeps_today_the_parting_the_asked_lowest_the_first_crossing_and_the_end():

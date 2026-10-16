@@ -98,7 +98,7 @@ def test_golden_day_zero_each_path_says_its_short_words(api: TestClient) -> None
     _, pic = _golden(api)
     by = _by_label(pic)
     asked, a, b = by["asked"], by["Option A"], by["Option B"]
-    assert [p["authority_short_text"] for p in (asked, a, b)] == ["Outside mandate", "FLOW can send", "Needs your approval"]
+    assert [p["authority_short_text"] for p in (asked, a, b)] == ["Outside mandate", "Within your mandate", "Needs your approval"]
     assert asked["reserve_state_text"] == "Breached by ¥135k for 15 days" and asked["headroom_short"] == "−¥135k"
     assert a["reserve_state_text"] == b["reserve_state_text"] == "Held, no buffer at the lowest point"
     assert a["headroom_short"] == "¥0"
@@ -144,7 +144,7 @@ GOLDEN_RULE = "FLOW recommends the first reply it may send within your mandate; 
 def test_golden_day_zero_recommendation(api: TestClient) -> None:
     _, pic = _golden(api)
     assert pic["recommendation"] == {
-        "mandate_text": "Option A is the reply FLOW can send within your mandate.",
+        "mandate_text": "Option A is the reply within your mandate.",
         "alternative_text": "Option B needs your approval for 55-day terms. Its net economic cost over 12 months is stated as about ¥0 under the model's assumptions.",
         "rule_text": GOLDEN_RULE}
 
@@ -202,7 +202,7 @@ def test_the_new_words_are_in_chinese_with_no_english_left(api: TestClient) -> N
     assert english_leaks(words, NAMES) == []
     by = _by_label(pic)
     assert by["asked"]["authority_short_text"] == "超出授权"
-    assert by["方案 A"]["authority_short_text"] == "FLOW 可以发送" and by["方案 B"]["authority_short_text"] == "需要您批准"
+    assert by["方案 A"]["authority_short_text"] == "在您的授权范围内" and by["方案 B"]["authority_short_text"] == "需要您批准"
     assert pic["recommendation"]["alternative_text"].startswith("方案 B 需要您批准 55 天账期。")
 
 

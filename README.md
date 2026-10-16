@@ -18,20 +18,33 @@ for f in services/api/evals/e2e/latest/evidence/*.jsonl; do python3 scripts/veri
 
 Expect 49 lines starting `VALID`, one per scripted task. Each file is one task's hash chain; the script recomputes every `entry_hash = sha256(prev_hash + payload_json + result_json)`. (The concatenated `evidence.jsonl` holds 49 separate chains, so verify the per-task files.)
 
-**2. Run it.** Two servers, one terminal each, both starting at the repository root:
+**2. Run it.** One command, the same in PowerShell, cmd, macOS and Linux, from the repository root (install the web packages once first):
 
-```bash
-cd services/api && uv sync && DEMO_MODE=1 uv run uvicorn app.main:app --reload      # API on :8000 (demo credentials, cache mode)
-cd apps/web && pnpm install && NEXT_PUBLIC_API_MODE=live pnpm dev        # UI on :3000; omit the variable for offline mock mode
+```powershell
+cd apps/web; pnpm install; cd ../..     # once
+pnpm demo                               # API on :8000 + UI on :3000 against it; open http://localhost:3000
+pnpm demo:blank                         # the same, opening on a new business with no books (the setup wizard)
+pnpm demo:mock                          # UI alone on the recorded mocks: no API, no Python
+pnpm demo --web-port 3141 --api-port 8041   # other ports, if 3000 or 8000 is taken
+```
 
-# Or one command for either mode (the API with in-memory books, the Demo scenarios and cached LLM outputs):
-scripts/dev.sh live     # API on :8000 + UI on :3000 against it, the owner sign-in prefilled
-scripts/dev.sh mock     # UI alone on the recorded mocks (the default)
+The launcher (`scripts/demo.mjs`, Node only) starts the API with in-memory books (`DATABASE_URL=memory`), the repo-root `.env` ignored (`TERMSLEDGER_NO_DOTENV=1`), the demo credentials, cached LLM outputs and every feature flag, and tells it to allow the web port it uses. It checks both ports first, waits for the API before starting the web app, prints the address to open, and stops both on Ctrl+C. The first run installs the API's Python packages (a minute or two).
+
+**"localhost refused to connect"** means nothing is listening on that port, or the web app came up on another port the API does not allow: run `pnpm demo` and open the address it prints; if it says a port is taken, pass `--web-port` / `--api-port` as it suggests.
+
+Or by hand, two terminals (PowerShell; in bash write `NAME=value` before the command instead of the `$env:` lines). Always set `TERMSLEDGER_NO_DOTENV=1` and `DATABASE_URL=memory`, or the API reads the repo-root `.env`:
+
+```powershell
+# terminal 1, from services/api
+$env:TERMSLEDGER_NO_DOTENV="1"; $env:DATABASE_URL="memory"; $env:DEMO_MODE="1"; $env:LLM_MODE="cache"; $env:CORS_ORIGINS="http://localhost:3000"
+uv run uvicorn app.main:app --port 8000
+# terminal 2, from apps/web
+$env:NEXT_PUBLIC_API_URL="http://localhost:8000"; pnpm dev:live        # or `pnpm dev:mock` for the recorded mocks alone
 ```
 
 - **Where the data lives.** Without `DATABASE_URL` the API uses the SQLite file `termsledger.db` in the directory it was started from (`services/api/termsledger.db` with the command above; the `*.db` pattern is git-ignored). The app creates the file and its tables itself the first time it opens the store (the first request, not at start); there is no Alembic step for local use. `DATABASE_URL=memory` keeps everything in the process and writes no file. For another file use the absolute form `DATABASE_URL=sqlite:////absolute/path/to/file.db` (four slashes: the scheme's three plus the leading `/` of the path).
 - **A repo-root `.env`.** The API reads `.env` at the repository root if one exists, and fills in only what the shell has not set. Set `TERMSLEDGER_NO_DOTENV=1` to skip it (the tests and the e2e config do).
-- **Other ports.** The API allows the web origin `http://localhost:3000` by default. For any other web port, start the API with `CORS_ORIGINS=<web origin>` (without it the browser's preflight is refused and every request fails) and the web app with `NEXT_PUBLIC_API_URL=<API origin>`, for example `DEMO_MODE=1 CORS_ORIGINS=http://localhost:3141 uv run uvicorn app.main:app --port 8041` and `NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8041 pnpm dev -p 3141`.
+- **Other ports.** `pnpm demo --web-port <n> --api-port <n>` handles this for you. The API allows the web origin `http://localhost:3000` by default. For any other web port, start the API with `CORS_ORIGINS=<web origin>` (without it the browser's preflight is refused and every request fails) and the web app with `NEXT_PUBLIC_API_URL=<API origin>`, for example `TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory DEMO_MODE=1 CORS_ORIGINS=http://localhost:3141 uv run uvicorn app.main:app --port 8041` and `NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8041 pnpm dev -p 3141`.
 - **Files `pnpm dev` writes.** Next.js 16 writes `apps/web/AGENTS.md` and `apps/web/CLAUDE.md` when the dev server starts; both are git-ignored.
 - More on the web app, the live mode and the e2e switches is in `apps/web/README.md`.
 

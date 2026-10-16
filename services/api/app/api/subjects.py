@@ -23,13 +23,14 @@ from collections.abc import Iterable
 from typing import Any
 
 from app.api.presentation import Lang, fmt_short, party_name, t
-from app.decisions.state import DealState
+from app.decisions.state import DealState, buyer_answer
 from app.domain.models import BaseKind, CommitmentStatus, DurationKind, FinancialState, ObligationType
 from app.strategy.words import buyer_short
 
 log = logging.getLogger("termsledger.decisions")
 
-LIFECYCLE = ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed", "closed")
+LIFECYCLE = ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed", "closed", "answered",
+             "no_answer")
 _WORDS = {
     "counter_ready": ("Counter ready", "还价已就绪"),
     "owner_review": ("Owner review needed", "需要您审核"),
@@ -39,6 +40,8 @@ _WORDS = {
     "declined": ("Declined", "已拒绝"),
     "lapsed": ("Lapsed", "已失效"),
     "closed": ("Closed", "已结束"),  # an agreed deal that is over; the queue's rows carry the tracker's own state word instead
+    "answered": ("Answered with new terms", "对方已提出新条款"),  # the buyer answered an offer sent outside FLOW with a request of their own
+    "no_answer": ("No answer", "未获答复"),  # an offer sent outside FLOW closed on its day without the buyer's answer
 }
 _QUOTE_MAX = 48
 # the order the Home words the asks in: terms first, then the rebate, then the early-payment discount
@@ -55,6 +58,8 @@ def deal_lifecycle(ds: Any) -> str:
     buyer must clarify needs more information; an agreement in force (or kept, or missed) is agreed; a refused, ended or revoked one is declined;
     an offer the books left behind, or an agreement that ran out, is lapsed."""
     st = ds.state
+    if buyer_answer(ds) == "no_answer":
+        return "no_answer"
     if st in (DealState.LAPSED, DealState.EXPIRED):
         return "lapsed"
     if st in (DealState.DECLINED, DealState.NO_DEAL, DealState.FAILED, DealState.REVOKED):
@@ -63,6 +68,10 @@ def deal_lifecycle(ds: Any) -> str:
         return "agreed"
     if st == DealState.NEEDS_CLARIFICATION:
         return "more_information"
+    if st == DealState.AWAITING_BUYER:
+        return "awaiting_buyer"
+    if st == DealState.REPLIED:
+        return "answered"
     if st == DealState.RESPONSE_READY:
         proposed = ds.commitment is not None and ds.commitment.status == CommitmentStatus.PROPOSED
         if ds.sent is not None and (ds.commitment is None or proposed):

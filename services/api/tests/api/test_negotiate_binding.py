@@ -127,4 +127,4 @@ def test_the_409_path_writes_no_verdict_and_no_fact(client):
     client.post(f"/negotiate/{oid}", json=_bound(v, verdict_id="VER-old"))
     assert len(get_runtime().store.verdicts()) == verdicts
     kinds = [f.fact for f in facts_of(get_runtime())()]
-    assert kinds == ["EVALUATED"]
+    assert kinds == ["RECEIVED", "EVALUATED"]  # intake's and evaluate's: the refused send wrote none

@@ -30,7 +30,7 @@ def rule_text(lang: str) -> str:
 
 def authority_short(lang: str, authority: str | None) -> str | None:
     """Three words and no more: who may send the response. Null where the response is not one that can be sent at all."""
-    return {FLOW_MAY: say(lang, "FLOW can send", "FLOW 可以发送"), NEEDS_OWNER: say(lang, "Needs your approval", "需要您批准"),
+    return {FLOW_MAY: say(lang, "Within your mandate", "在您的授权范围内"), NEEDS_OWNER: say(lang, "Needs your approval", "需要您批准"),
             OVER_LIMIT: say(lang, "Outside mandate", "超出授权")}.get(authority or "")
 
 
@@ -162,7 +162,7 @@ def recommendation(paths: list[dict[str, Any]], current_terms_days: int | None, 
         mandate_text = say(lang, f"{chosen['label']} is the first reply within your mandate; it needs your approval before FLOW sends it.",
                            f"{chosen['label']} 是您的授权范围内的第一个回复；FLOW 发送前需要您批准。")
     else:
-        mandate_text = say(lang, f"{chosen['label']} is the reply FLOW can send within your mandate.", f"{chosen['label']} 是 FLOW 可以在您的授权范围内发送的回复。")
+        mandate_text = say(lang, f"{chosen['label']} is the reply within your mandate.", f"{chosen['label']} 是您授权范围内的回复。")
     alternative = None
     if other is not None:
         alternative = f"{_approval_text(lang, other['label'], other.get('terms_days'), current_terms_days)}{say(lang, ' ', '')}{other['economic_sentence_text']}"

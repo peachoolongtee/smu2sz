@@ -1,0 +1,127 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_6_a_process_killed_mid_approval_and_a_hydrated_runtime_decides_once[postgres] _
+
+engine = Engine(name='postgres', url='postgresql+psycopg://<redacted> sqlite_begin='immediate', rendezvous='first-write')
+books = <app.persistence.sql_store.SqlLedgerStore object at 0x000001DB4B1B6E40>
+workers = <tests.concurrency.harness.WorkerPair object at 0x000001DB4B16BF20>
+
+    def test_6_a_process_killed_mid_approval_and_a_hydrated_runtime_decides_once(
+            engine: Engine, books: Any, workers: WorkerPair) -> None:
+        _seed_tier2(books)
+        n0 = len(books.state_history())
+        [c] = books.commitments()
+        s0 = books.get_state()
+        inside, release, out = CTX.Event(), CTX.Event(), CTX.Queue()
+        doomed = CTX.Process(target=process_queue_then_hang, args=(engine, accept_of(c), inside, release, out))
+        doomed.start()
+        try:
+            queued = out.get(timeout=4 * TIMEOUT)
+            assert queued["status"] == "PENDING_APPROVAL", queued
+            assert inside.wait(4 * TIMEOUT), "the dying process never reached its log append"
+        finally:
+            doomed.kill()  # mid-unit: the approval, nonce, commitment and state writes are uncommitted
+            doomed.join(TIMEOUT)
+        aid = queued["approval_id"]
+        journal = Journal()
+        journal.add(queued)
+        assert books.get_approval(aid).status == "PENDING"
+        assert books.get_commitment(c.id).status == "PROPOSED" and not books.nonce_used(c.nonce)
+        assert books.get_state() == s0 and len(books.operations()) == 1 and books.verify_chain()
+    
+        task = ("task_hydrate_and_decide", {"engine": engine, "approval_id": aid})
+>       ra, rb = workers.both(task, task)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\concurrency\test_invariants.py:298: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tests.concurrency.harness.WorkerPair object at 0x000001DB4B16BF20>
+a = ('task_hydrate_and_decide', {'engine': Engine(name='postgres', url='postgresql+psycopg://<redacted> sqlite_begin='immediate', rendezvous='first-write'), 'approval_id': 'APR-000001'})
+b = ('task_hydrate_and_decide', {'engine': Engine(name='postgres', url='postgresql+psycopg://<redacted> sqlite_begin='immediate', rendezvous='first-write'), 'approval_id': 'APR-000001'})
+
+    def both(self, a: tuple[str, dict[str, Any]], b: tuple[str, dict[str, Any]]) -> tuple[Any, Any]:
+        """Run `a` in worker 0 and `b` in worker 1 at the same time."""
+        self.barrier.reset()
+        self.inboxes[0].put(a)
+        self.inboxes[1].put(b)
+>       return self._collect(0), self._collect(1)
+               ^^^^^^^^^^^^^^^^
+
+tests\concurrency\harness.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tests.concurrency.harness.WorkerPair object at 0x000001DB4B16BF20>
+i = 0
+
+    def _collect(self, i: int) -> Any:
+        try:
+            kind, value = self.outboxes[i].get(timeout=4 * TIMEOUT)
+        except queue.Empty as exc:
+            raise AssertionError(f"worker {i} did not answer within {4 * TIMEOUT}s") from exc
+        if kind == "err":
+>           raise AssertionError(f"worker {i} failed:\n{value}")
+E           AssertionError: worker 0 failed:
+E           Traceback (most recent call last):
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1943, in _exec_single_context
+E               self.dialect.do_execute(
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 1180, in do_execute
+E               cursor.execute(statement, parameters)
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+E               raise ex.with_traceback(None)
+E           psycopg.errors.InternalError_: tuple concurrently updated
+E           
+E           The above exception was the direct cause of the following exception:
+E           
+E           Traceback (most recent call last):
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\tests\concurrency\harness.py", line 280, in _worker_loop
+E               outbox.put(("ok", globals()[name](barrier=barrier, **kwargs)))
+E                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\tests\concurrency\harness.py", line 243, in task_hydrate_and_decide
+E               rt = rt_mod.get_runtime()
+E                    ^^^^^^^^^^^^^^^^^^^^
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\app\api\runtime.py", line 299, in get_runtime
+E               store: LedgerStore = InMemoryLedgerStore() if s.database_url == "memory" else SqlLedgerStore(s.database_url)
+E                                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\app\persistence\sql_store.py", line 213, in __init__
+E               guards.install(conn)
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\app\persistence\guards.py", line 92, in install
+E               conn.exec_driver_sql(stmt)
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1755, in exec_driver_sql
+E               ret = self._execute_context(
+E                     ^^^^^^^^^^^^^^^^^^^^^^
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1822, in _execute_context
+E               return self._exec_single_context(
+E                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1962, in _exec_single_context
+E               self._handle_dbapi_exception(
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2332, in _handle_dbapi_exception
+E               raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1943, in _exec_single_context
+E               self.dialect.do_execute(
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 1180, in do_execute
+E               cursor.execute(statement, parameters)
+E             File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+E               raise ex.with_traceback(None)
+E           sqlalchemy.exc.InternalError: (psycopg.errors.InternalError_) tuple concurrently updated
+E           [SQL: 
+E           CREATE OR REPLACE FUNCTION termsledger_append_only() RETURNS trigger
+E           LANGUAGE plpgsql
+E           SET search_path = pg_catalog
+E           AS $$
+E           BEGIN
+E               IF current_setting('termsledger.allow_reset', true) = 'on' THEN
+E                   RETURN COALESCE(NEW, OLD);
+E               END IF;
+E               RAISE EXCEPTION USING
+E                   MESSAGE = TG_TABLE_NAME || ' is append-only; ' || TG_OP || ' refused',
+E                   ERRCODE = 'insufficient_privilege';
+E           END;
+E           $$
+E           ]
+E           (Background on this error at: https://sqlalche.me/e/21/2j85)
+
+tests\concurrency\harness.py:306: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/concurrency/test_invariants.py::test_6_a_process_killed_mid_approval_and_a_hydrated_runtime_decides_once[postgres]
+1 failed, 29 deselected in 69.33s (0:01:09)

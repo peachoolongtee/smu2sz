@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, openCompare, openInbox, openOperatorTools, openReview, resetBooks } from "./helpers";
+import { backToDealsAndReturn, checkedDeal, demoMode, openCompare, openInbox, openOperatorTools, openReview, resetBooks } from "./helpers";
 
 /**
  * Slice B of the overhaul map #121 (tickets #126 to #132, #134, #143), the contract end to end: a row's link and the origin, a deep link that hydrates a fresh session,
@@ -85,6 +85,7 @@ test.describe("mock", () => {
   });
 
   test("at 390 px the receipt's terms come before the one commit button, in the DOM and on screen", async ({ page }) => {
+    await demoMode(page); // the simulated send is the Demo's only
     await page.setViewportSize({ width: 390, height: 844 });
     await checkedDeal(page);
     await openReview(page);
@@ -316,6 +317,7 @@ test.describe("live", () => {
   });
 
   test("the What-if list offers negotiations only, not the loan approval; an agreed negotiation shows its record and no evaluation prompt; an ask that needs approval and has no counter shows its cost and offers no button", async ({ page, request }) => {
+    await demoMode(page); // the simulated send is the Demo's only
     await busy(request);
     await page.goto("/deals");
     await expect(page.getByTestId("queue-row").first()).toBeVisible();
@@ -360,6 +362,7 @@ test.describe("live", () => {
   });
 
   test("the send review of a picked reply reads that reply's own receipt, not the recommended one's, and Send names the picked reply", async ({ page, request }) => {
+    await demoMode(page); // the simulated send is the Demo's only
     await resetBooks(request);
     await checkedDeal(page); // the opening books' EX01: Option A (FLOW may send it) and Option B (needs the owner's approval), both sendable
     await page.getByTestId("queue-review-open").click();
@@ -367,7 +370,7 @@ test.describe("live", () => {
     await expect(receipt).toBeVisible();
     const recommended = (await receipt.textContent())!;
     const recommendedLabel = (await page.getByTestId("deal-send").textContent())!;
-    await page.getByTestId("queue-review-close").click();
+    await backToDealsAndReturn(page);
     await openCompare(page);
     // The first reply that is not the recommended one.
     // (The picked reply's review opens from its own column in one step.)
@@ -403,6 +406,7 @@ test.describe("live", () => {
   });
 
   test("a negotiation whose invoice was settled under another agreement is Lapsed: its word in the pane, no reply ready, no cost, and it is gone from the queue", async ({ page, request }) => {
+    await demoMode(page); // the simulated send is the Demo's only
     await busy(request);
     // Agreeing Foshan's early-payment counter settles the invoice the other two Foshan requests were about.
     await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent("deal:OFF-39cabafae4ee")}`);

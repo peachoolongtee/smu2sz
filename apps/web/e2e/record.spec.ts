@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
-import { checkedDeal, openCompare, openReview, runPlan, sendCounter, openOperatorTools } from "./helpers";
+import { backToDealsAndReturn, checkedDeal, demoMode, openCompare, openOperatorTools, openReview, runPlan, sendCounter } from "./helpers";
 
 /**
  * Wave 2 (map #65), mock mode: the pages read the durable decision record (ADR-0011). Each state is a recording of GET /decisions/{id} from the
@@ -34,6 +34,7 @@ async function advanceTo(page: Page, day: number) {
 }
 
 test("the steps follow the record: Response ready names the recommendation, a send moves it to Sent and Agreed", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("deal-pane")).toBeVisible();
@@ -61,6 +62,7 @@ test("the steps follow the record: Response ready names the recommendation, a se
 });
 
 test("the send names its option, says the reply is simulated, and carries what was shown; Option B is reviewed on its own", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await checked(page);
   await openReview(page);
   const response = page.locator("#counters");
@@ -69,7 +71,7 @@ test("the send names its option, says the reply is simulated, and carries what w
   await expect(response.getByTestId("receipt-line-authorizes")).toContainText("FLOW records it as a proposed agreement that stands only if Foshan accepts.");
   await expect(response.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥841.57 for the draw");
   await expect(response.getByTestId("deal-send-confirm-box")).toContainText("The buyer's reply is simulated");
-  await page.getByTestId("queue-review-close").click();
+  await backToDealsAndReturn(page);
   // Option B is a path of its own: picking it in the comparison makes it the reply under review, with its own send; Option A's gives way, never two at once.
   await openCompare(page);
   await expect(page.getByTestId("deal-choice-cell-decides-reply").nth(1)).toContainText("Needs your approval");
@@ -84,6 +86,7 @@ test("the send names its option, says the reply is simulated, and carries what w
 
 for (const story of ["replaced", "moved"] as const) {
   test(`COUNTER_CHANGED, ${story === "moved" ? "the books moved" : "the verdict was replaced"}: nothing was sent, and Check again is the explicit step to a current proposal`, async ({ page }) => {
+    await demoMode(page); // the simulated send is the Demo's only
     await checked(page);
     await hook(page, "tl-mock-counter-changed", story);
     await openReview(page);
@@ -107,6 +110,7 @@ for (const story of ["replaced", "moved"] as const) {
 }
 
 test("day 34: the deal's steps say Fulfilled with the receipt and 'Early payment did not arrive' without it, never Agreed", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   const deal = await checked(page);
   await openReview(page);
   await sendCounter(page.locator("#counters"));
@@ -119,11 +123,14 @@ test("day 34: the deal's steps say Fulfilled with the receipt and 'Early payment
 });
 
 test("day 34 without the receipt: the line and the agreements card say the early payment did not arrive", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await page.goto("/");
   await hook(page, "tl-mock-no-receipt", "1");
   const deal = await checked(page);
   await openReview(page);
   await sendCounter(page.locator("#counters"));
+  // The send has landed (the deal is agreed) before the clock moves.
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await advanceTo(page, 34);
   await page.goto(deal);
   const steps = page.getByTestId("deal-state-chip");
@@ -148,6 +155,7 @@ test("day 34 without the receipt: the line and the agreements card say the early
 });
 
 test("the execution summary is the record's: the agreement in its words, what ran, what has landed", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await checked(page);
   await openReview(page);
   await sendCounter(page.locator("#counters"));

@@ -50274,9 +50274,9 @@
             "cell_text": "Not offered"
           }
         ],
-        "decides_text": "FLOW can send it. Your approval is not needed.",
+        "decides_text": "Within your mandate: no approval needed.",
         "authority_reason_text": "Terms stay at 45 days, no rebate. The early-settlement offer at 0.85% is within the 1.50% limit you signed.",
-        "recommended_reason_text": "Recommended because FLOW can send it within your mandate without your approval.",
+        "recommended_reason_text": "Recommended because it is within your mandate and needs no approval.",
         "recommended_reason_kind": "cash",
         "scenario_assumption_text": "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥150k credit-line draw today); without the plan, cash falls lower.",
         "funding_assumption_text": "Funding plan required: ¥150k credit-line draw today",
@@ -50320,7 +50320,7 @@
           }
         ],
         "authority": "flow_may",
-        "authority_text": "FLOW can send it",
+        "authority_text": "Within your mandate",
         "assumption_text": "If the buyer accepts this reply",
         "reply_text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid within 2 days.",
         "series": [
@@ -62863,7 +62863,7 @@
         "ask_breakdown": null,
         "ask_facts": null,
         "if_refused_text": "If Foshan refuses, FLOW will fund the gap on its own: a ¥150,000 credit-line draw today and ¥255,000 of invoice financing in 3 days. The funding costs ¥3,113.93.",
-        "authority_short_text": "FLOW can send",
+        "authority_short_text": "Within your mandate",
         "reserve_state_text": "Held, no buffer at the lowest point",
         "headroom_short": "¥0",
         "financing_needed_text": "¥150k credit-line draw today",
@@ -75555,7 +75555,7 @@
     ],
     "withheld": [],
     "recommendation": {
-      "mandate_text": "Option A is the reply FLOW can send within your mandate.",
+      "mandate_text": "Option A is the reply within your mandate.",
       "alternative_text": "Option B needs your approval for 55-day terms. Its net economic cost over 12 months is stated as about ¥0 under the model's assumptions.",
       "rule_text": "FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost."
     },
@@ -75572,7 +75572,7 @@
           "paths_part"
         ],
         "word": "Today",
-        "text": "Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k. Who decides: Option A: FLOW can send it; Option B: needs your approval.",
+        "text": "Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k. Who decides: Option A: within your mandate; Option B: needs your approval.",
         "values": [
           {
             "key": "asked",
@@ -126289,9 +126289,9 @@
             "cell_text": "不提供"
           }
         ],
-        "decides_text": "FLOW 可以发送。无需您批准。",
+        "decides_text": "在您的授权范围内：无需批准。",
         "authority_reason_text": "账期保持 45 天，无返利。0.85% 的提前结算方案在您签署的 1.50% 上限之内。",
-        "recommended_reason_text": "推荐原因：FLOW 可以在您的授权范围内直接发送，无需您批准。",
+        "recommended_reason_text": "推荐原因：它在您的授权范围内，无需批准。",
         "recommended_reason_kind": "cash",
         "scenario_assumption_text": "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥150k（今天））；没有该方案，现金会更低。",
         "funding_assumption_text": "需要融资方案：信用额度提款 ¥150k（今天）",
@@ -126335,7 +126335,7 @@
           }
         ],
         "authority": "flow_may",
-        "authority_text": "FLOW 可以直接发送",
+        "authority_text": "在您的授权范围内",
         "assumption_text": "如果买方接受此回复",
         "reply_text": "账期保持 45 天，无返利。我们接受对本发票最多 ¥257,200 提前结算，折扣 0.85%，付款期限：2 天内。",
         "series": [
@@ -138878,7 +138878,7 @@
         "ask_breakdown": null,
         "ask_facts": null,
         "if_refused_text": "如果Foshan拒绝，FLOW 将自行为缺口融资：信用额度提款 ¥150,000（今天）、发票融资 ¥255,000（3 天后）。融资成本为 ¥3,113.93。",
-        "authority_short_text": "FLOW 可以发送",
+        "authority_short_text": "在您的授权范围内",
         "reserve_state_text": "储备守住了，最低点没有余量",
         "headroom_short": "¥0",
         "financing_needed_text": "信用额度提款 ¥150k（今天）",
@@ -151570,7 +151570,7 @@
     ],
     "withheld": [],
     "recommendation": {
-      "mandate_text": "方案 A 是 FLOW 可以在您的授权范围内发送的回复。",
+      "mandate_text": "方案 A 是您授权范围内的回复。",
       "alternative_text": "方案 B 需要您批准 55 天账期。其 12 个月内的净经济成本在模型假设下约为 ¥0。",
       "rule_text": "FLOW 建议的是在您的授权范围内它可以发送的第一个回复；它不按成本对回复排序。"
     },
@@ -151587,7 +151587,7 @@
           "paths_part"
         ],
         "word": "今天",
-        "text": "方案 A：信用额度提款 ¥150k。 方案 B：信用额度提款 ¥90k。 由谁决定：方案 A：FLOW 可以直接发送；方案 B：需要您批准。",
+        "text": "方案 A：信用额度提款 ¥150k。 方案 B：信用额度提款 ¥90k。 由谁决定：方案 A：在您的授权范围内；方案 B：需要您批准。",
         "values": [
           {
             "key": "asked",

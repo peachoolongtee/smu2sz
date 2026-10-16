@@ -10,6 +10,7 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 16 Oct | `0f92d433` + `7f55c0dc` (PostgreSQL 17) | concurrency invariants and append-only triggers on PostgreSQL | **concurrency CERTIFIED** with PG-1 fixed (branch, pending merge); SEC-08 confirmed open |
 
 ## `0ba8e4c1`: CERTIFIED
 
@@ -38,6 +39,28 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
   `app.api.decide.plan`, so it ran the real (runnable) plan and failed without testing the guard. Patched at the new site it passes, and
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
+
+## PostgreSQL 17: first run, 16 Oct
+
+A throwaway local PostgreSQL 17.11 (the owner's machine; databases `termsledger_sectest` and `termsledger_sectest2`, created empty
+for this run; the connection string never printed or committed). Evidence: `evidence/2026-10-16/postgres/` (logs redacted).
+
+- **Concurrency, on `dev` `0f92d433` as it stands:** the eight invariants of `tests/concurrency` (two processes, serial replay to
+  byte-identical books) passed whenever both workers started, but the suite was **not clean**: `test_6[postgres]` failed in 2 to 4 of
+  5 runs, and once cascaded into tests 7, 7b and 8 (the workers are session-scoped). Cause, found and fixed (**PG-1**): every store
+  re-ran CREATE TABLE and the append-only guard's DDL on open; two processes opening at once raced on the catalog ("tuple
+  concurrently updated"; on an empty database "duplicate key … pg_type_typname_nsp_index") and one failed to start, and the trigger DDL
+  waited behind a killed worker's open transaction until the server reaped it. No invariant was violated in any run: the failures were
+  processes that did not start or timed out, with nothing executed.
+- **With the PG-1 fix** (`sec/pg-guard-install-lock` 7f55c0dc: table creation and the guard in one transaction under an advisory lock,
+  the guard's DDL skipped when already in place): `tests/concurrency` 31 passed in **6 of 6** runs (10 PostgreSQL variants each, and
+  the new `test_pg_guard_install.py`, which fails without the fix); `tests/persistence`, startup and security 444 passed.
+  **PostgreSQL concurrency: certified for the 8 invariants on `0f92d433` + `7f55c0dc`**, pending that branch's merge.
+- **Append-only triggers** (`pg_guard_check.py`): installed on both tables; direct DELETE, UPDATE and TRUNCATE on `operations` refused
+  (`insufficient_privilege`), also after the skip path. **SEC-08 confirmed on PostgreSQL:** an ordinary session that runs
+  `SET LOCAL termsledger.allow_reset = 'on'` deletes from `operations` (run inside a rolled-back transaction); `security_events` and
+  `approvals` have no guard; a rejected approval reset to PENDING in the database was then approved and EXECUTED, with
+  `chain_valid: true`. The API connects as the table owner. Needs database write access; not fixed.
 
 ## `0f92d433` (dev with the owner's decisions): CERTIFIED, 16 Oct
 

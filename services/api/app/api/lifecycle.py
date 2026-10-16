@@ -29,7 +29,7 @@ log = logging.getLogger("termsledger.decisions")
 
 # A deal that is over once it was agreed ("closed"), and a deal that is over without an agreement.
 CLOSED = (DealState.FULFILLED, DealState.MISSED, DealState.REVOKED, DealState.EXPIRED)
-NOT_AGREED = (DealState.DECLINED, DealState.NO_DEAL, DealState.FAILED, DealState.LAPSED)
+NOT_AGREED = (DealState.DECLINED, DealState.NO_DEAL, DealState.FAILED, DealState.LAPSED, DealState.REPLIED)
 _WORDS = {"done": ("Done", "已完成"), "now": ("Now", "进行中"), "todo": ("Still to come", "尚未开始"), "missed": ("Missed", "已错过"),
           "part": ("Under way", "等待中")}
 
@@ -85,7 +85,7 @@ def offer_stages(ctx: Any, ds: Any, lang: str) -> list[dict[str, Any]]:
     last stage as not agreed."""
     state = ds.state
     lifecycle = deal_lifecycle(ds)
-    ended = state in NOT_AGREED or state in CLOSED or lifecycle in ("declined", "lapsed")
+    ended = state in NOT_AGREED or state in CLOSED or lifecycle in ("declined", "lapsed", "answered")
     if state == DealState.RECEIVED:
         at = 0
     elif state == DealState.NEEDS_CLARIFICATION:
@@ -94,7 +94,7 @@ def offer_stages(ctx: Any, ds: Any, lang: str) -> list[dict[str, Any]]:
         at = 3
     else:
         at = 2
-    reached = (3 if ds.sent is not None else 2 if ds.verdict is not None else 1 if ds.verdict is None and state != DealState.RECEIVED else 0) if ended else at
+    reached = (3 if ds.sent is not None or ds.offered is not None else 2 if ds.verdict is not None else 1 if ds.verdict is None and state != DealState.RECEIVED else 0) if ended else at
     out = []
     for i, (key, en, zh) in enumerate(_OFFER_STAGES):
         label = say(lang, en, zh)
@@ -143,7 +143,7 @@ def tracker_of(ctx: Any, ds: Any, inp: Any, lang: str) -> dict[str, Any] | None:
 
     try:
         built = build_tracker(ctx.rt, ctx, ds, inp, lang, {})
-    except Exception:  # noqa: BLE001
+    except Exception:
         log.exception("the tracker of %s could not be drawn for the deal history", ds.decision_id)
         return None
     return built if built.get("available") else None
@@ -229,7 +229,7 @@ def workspace_words(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         history = buyer_history_text(ctx, buyer, decision, lang) if buyer is not None else None
         return {"lifecycle_stages": lifecycle_stages(rt, ctx, ds, inp, lang), "buyer_history_text": history,
                 "buyer_history_title": history_title(lang) if history else None}
-    except Exception:  # noqa: BLE001  a words read
+    except Exception:
         log.exception("the lifecycle of %s could not be read", offer_id)
         return empty
 

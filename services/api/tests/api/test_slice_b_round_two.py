@@ -198,11 +198,15 @@ def test_a_negotiation_row_keeps_its_coarse_topic_for_a_sentence_that_names_it(a
 # ---------------------------------------------------------------- 3. lifecycle
 
 
-def test_the_lifecycle_vocabulary_is_eight_keys_in_both_languages() -> None:
-    assert LIFECYCLE == ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed", "closed")  # round three adds "closed" (an agreed deal that is over)
+def test_the_lifecycle_vocabulary_is_ten_keys_in_both_languages() -> None:
+    # round three adds "closed" (an agreed deal that is over); the copied offer adds "answered" (the buyer replied with terms of their own)
+    # and "no_answer" (it closed on its day unanswered)
+    assert LIFECYCLE == ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed", "closed", "answered",
+                         "no_answer")
     assert [lifecycle_text(k, "en") for k in LIFECYCLE] == ["Counter ready", "Owner review needed", "Awaiting buyer", "More information needed",
-                                                          "Agreed", "Declined", "Lapsed", "Closed"]
-    assert [lifecycle_text(k, "zh") for k in LIFECYCLE] == ["还价已就绪", "需要您审核", "等待买方回复", "需要更多信息", "已达成", "已拒绝", "已失效", "已结束"]
+                                                          "Agreed", "Declined", "Lapsed", "Closed", "Answered with new terms", "No answer"]
+    assert [lifecycle_text(k, "zh") for k in LIFECYCLE] == ["还价已就绪", "需要您审核", "等待买方回复", "需要更多信息", "已达成", "已拒绝", "已失效", "已结束",
+                                                          "对方已提出新条款", "未获答复"]
 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
@@ -335,7 +339,7 @@ def test_the_send_receipt_has_three_exact_statements_specific_to_this_send(api: 
     assert r["remaining_text"] == GOLDEN_RECEIPT[lang]["remaining_text"]
     assert "（" not in r["authorizes_text"] and "(" not in r["authorizes_text"]  # no parenthetical about approval
     assert "approval" not in r["authorizes_text"] and "批准" not in r["authorizes_text"]  # authority is said once, in `authority_text`
-    assert r["authority_text"] == {"en": "FLOW can send it. Your approval is not needed.", "zh": "FLOW 可以发送。无需您批准。"}[lang]
+    assert r["authority_text"] == {"en": "Within your mandate: no approval needed.", "zh": "在您的授权范围内：无需批准。"}[lang]
     assert r["executes_now_text"] == ("; " if lang == "en" else "；").join(pr["send_scope_lines"][1:])  # the gap plan's draw, then its cost
     assert ("Draws ¥147,210.00" if lang == "en" else "提款 ¥147,210.00") in r["executes_now_text"]
     if lang == "zh":

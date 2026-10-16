@@ -23,7 +23,8 @@ from app.persistence import ApprovalStatus
 _STAGES = (("received", "Received", "已收到"), ("analysed", "Analysed", "已分析"), ("reply_ready", "Reply ready", "回复已就绪"),
            ("sent", "Sent", "已发送"), ("agreed", "Agreed", "已达成"))
 # An offer whose reply waits for the owner's approval has not been sent: it stands at "Reply ready" (the owner owes the next step), never "Sent".
-_NOW = {DealState.RECEIVED: 0, DealState.NEEDS_CLARIFICATION: 1, DealState.RESPONSE_READY: 2, DealState.AUTHORIZATION_REQUIRED: 2}
+_NOW = {DealState.RECEIVED: 0, DealState.NEEDS_CLARIFICATION: 1, DealState.RESPONSE_READY: 2, DealState.AUTHORIZATION_REQUIRED: 2,
+        DealState.AWAITING_BUYER: 3}  # an offer the owner sent outside FLOW stands at "Sent" until the buyer answers
 OPEN = tuple(_NOW)
 OWNER_WAITS = (DealState.RECEIVED, DealState.RESPONSE_READY, DealState.AUTHORIZATION_REQUIRED)
 _COUNT_WORDS = {1: ("One reply is", "一份回复"), 2: ("Two replies are", "两份回复"), 3: ("Three replies are", "三份回复")}
@@ -75,6 +76,8 @@ def _action_text(state: DealState, action: str | None, replies: int, lang: str) 
         return say(lang, "The buyer needs to clarify first.", "需要买方先澄清。")
     if state == DealState.AUTHORIZATION_REQUIRED:  # the decision record's own words for this state
         return say(lang, "Waiting for your approval.", "等待您批准。")
+    if state == DealState.AWAITING_BUYER:
+        return say(lang, "You sent an offer; waiting for the buyer's answer.", "您已发出报价，等待买方答复。")
     if action == "needs_owner":
         return say(lang, "Needs your approval.", "需要您批准。")
     if action == "accept":

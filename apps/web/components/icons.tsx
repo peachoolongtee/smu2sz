@@ -116,6 +116,19 @@ export const CheckCircleIcon = (p: P) => (
     <path d="M5.4 8.2l1.8 1.8 3.4-3.6" />
   </svg>
 );
+/** Two arrows that pass each other (a counter-offer: terms going back the other way). */
+export const ArrowsExchangeIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M3 5.5h10M10 2.5l3 3-3 3M13 10.5H3M6 7.5l-3 3 3 3" />
+  </svg>
+);
+/** A circle with a cross (an offer the buyer declined). */
+export const XCircleIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" />
+    <path d="M6 6l4 4M10 6l-4 4" />
+  </svg>
+);
 export const HourglassIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M4.5 2.5h7M4.5 13.5h7M5 2.5c0 3 3 3.5 3 5.5s-3 2.5-3 5.5M11 2.5c0 3-3 3.5-3 5.5s3 2.5 3 5.5" />

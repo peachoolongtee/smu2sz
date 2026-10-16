@@ -665,7 +665,7 @@ def _authority_sentence(path: dict[str, Any], subject: Literal["counter", "reque
     """Who decides, as a sentence that stands alone, from the deal picture's own authority class for the path (never a second rule). A path
     with no class (unpriced, not drawn) keeps the picture's words."""
     sentences = {
-        ("counter", FLOW_MAY): ("FLOW can send this counter without your approval.", "FLOW 可以在无需您批准的情况下发送这份还价。"),
+        ("counter", FLOW_MAY): ("This counter is within your mandate: no approval needed.", "这份还价在您的授权范围内：无需批准。"),
         ("counter", NEEDS_OWNER): ("This counter needs your approval before it is sent.", "这份还价需要您批准后才能发送。"),
         ("counter", OVER_LIMIT): ("This counter is over a limit you signed: only a new mandate changes that.",
                                   "这份还价超出您签署的上限：只有签署新的授权才能改变。"),
@@ -692,7 +692,8 @@ def _waiting_eyebrow(r: _Read) -> str:
     """"One commercial decision waits for you" counts the customer's own open decisions the way the Deals queue does (a reply waiting on the buyer or on an
     approval is not one of them): "Three commercial decisions wait for you"."""
     n = max(1, sum(1 for _view, st, ds in open_deals(r.ctx, r.lang)
-                   if ds.offer.counterparty_id == r.buyer_id and st not in (DealState.NEEDS_CLARIFICATION, DealState.AUTHORIZATION_REQUIRED)))
+                   if ds.offer.counterparty_id == r.buyer_id
+                   and st not in (DealState.NEEDS_CLARIFICATION, DealState.AUTHORIZATION_REQUIRED, DealState.AWAITING_BUYER)))
     if n == 1:
         return t(r.lang, "One commercial decision waits for you", "有一项商务决定等待您处理")
     word = _NUMBER_EN[n].capitalize() if n < len(_NUMBER_EN) else str(n)
@@ -722,7 +723,7 @@ def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] |
             "primary": {"label": t(lang, "Read the offer", "阅读报价"), "href": f"/deals?decision={_quoted(r.decision_id() or '')}"},
             "secondary": actions}, none
     said = f"{wants} {offer['action_text']}" if lang != "zh" else f"{wants}{offer['action_text']}"
-    if r.offer_state == DealState.NEEDS_CLARIFICATION:  # the buyer's turn: nothing waits for the owner, as every other read says
+    if r.offer_state in (DealState.NEEDS_CLARIFICATION, DealState.AWAITING_BUYER):  # the buyer's turn: nothing waits for the owner, as every other read says
         return {
             "kind": "awaiting_buyer", "eyebrow": t(lang, "Waiting for the buyer", "等待买方"), "text": said,
             "headline_short": None, "authority_text": None,

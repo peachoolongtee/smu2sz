@@ -36,6 +36,7 @@ from app.api.decisions import (
     lapsed_conflict,
     latest_verdict_for,
     load_context,
+    sent_outside_conflict,
 )
 from app.api.presentation import business_text, party_name, request_of, t
 from app.api.receipt import receipt
@@ -305,6 +306,8 @@ def _bound(rt: Runtime, offer_id: str, body: AcceptIn, lang: str, *, accepting: 
         raise _changed(rt, offer, latest, version, "VERDICT_CHANGED", lang, accepting=accepting)
     if (standing := _standing(rt, offer_id, lang)) is not None:
         raise standing  # whatever the books have done since, the owner learns the request is answered
+    if (outside := sent_outside_conflict(rt, offer_id, lang)) is not None:
+        raise outside  # the buyer has the owner's counter: their answer is recorded on the deal
     if (closed := lapsed_conflict(rt, offer_id, latest, lang)) is not None:
         raise closed
     if body.state_version != version or latest.state_version != version:

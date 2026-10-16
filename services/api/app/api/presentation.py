@@ -1312,6 +1312,22 @@ def owner_offer_words(kind: str, status: str, *, buyer: str | None, lang: Lang, 
     return None
 
 
+def buyer_yes_words(status: str, *, buyer: str | None, lang: Lang, decided: bool = True) -> dict[str, str | None] | None:
+    """The owner recording a buyer's yes to a counter the owner sent outside FLOW (`app.api.outbound`, op id "buyer-yes-..."), in the
+    Activity's words: never "as asked", because the buyer accepted a counter, not their own request."""
+    who = buyer or t(lang, "the buyer", "买方")
+    if status == "EXECUTED":
+        return {"event_text": t(lang, f"You recorded that {who} accepted the counter you sent.", f"您记录了{who}已接受您发出的还价。"),
+                "event_detail": None}
+    if status == "PENDING_APPROVAL":
+        if not decided:
+            return {"event_text": t(lang, f"Waiting for your approval: {who} accepted the counter you sent.",
+                                    f"等待您批准：{who}已接受您发出的还价。"), "event_detail": None}
+        return {"event_text": t(lang, f"{who} accepted the counter you sent; it went to your approval.", f"{who}已接受您发出的还价；已提交您批准。"),
+                "event_detail": None}
+    return None
+
+
 def _count(payload: dict[str, Any], key: str) -> int:
     value = payload.get(key)
     return len(value) if isinstance(value, list) else 0
@@ -1375,6 +1391,10 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
     decision stands now). `offers` names the buyer of an offer by its id: the owner's own acceptance or refusal of a request says whose
     request it was."""
     none: dict[str, str | None] = {"event_text": None, "event_detail": None}
+    if kind == "ACCEPT_OFFER" and payload.get("requested_by") == "OWNER" and str(payload.get("op_id") or "").startswith("buyer-yes-"):
+        buyer_yes = buyer_yes_words(status, buyer=(offers or {}).get(str(payload.get("offer_id") or "")), lang=lang, decided=decided)
+        if buyer_yes is not None:
+            return buyer_yes
     if kind in ("ACCEPT_OFFER", "REJECT_OFFER") and payload.get("requested_by") == "OWNER":
         owner_words = owner_offer_words(kind, status, buyer=(offers or {}).get(str(payload.get("offer_id") or "")), lang=lang, decided=decided)
         if owner_words is not None:
@@ -1884,6 +1904,8 @@ _DEAL_STATE_WORDS = {
     "MISSED": ("Early payment did not arrive", "提前付款未到账"),
     "FULFILLED": ("Fulfilled", "已履行"),
     "REVOKED": ("Revoked", "已撤销"),
+    "AWAITING_BUYER": ("Offer sent; waiting for the buyer's answer", "报价已发出，等待买方答复"),
+    "REPLIED": ("The buyer answered with new terms", "买方提出了新条款"),
     "LAPSED": ("Lapsed · the invoice it was about has since been settled under another agreement",
                "已失效 · 它所针对的发票此后已按另一份协议结算"),
 }
@@ -1957,6 +1979,15 @@ def abstention_words(reason: str, channels: Iterable[str], lang: Lang) -> str | 
         return t(lang, "FLOW read a term in this message two different ways, so nothing was booked on it. Check the highlighted "
                        "words, or ask the buyer to confirm.",
                  "FLOW 对这条消息中的某项条款有两种不同的理解，因此未就此记录任何内容。请查看高亮的文字，或请买方确认。")
+    if reason.startswith("unresolved scope: the discount names several invoices"):  # what is unclear, then what to ask (round four)
+        return t(lang, "Their message does not say which single invoice the discount is for. Ask them which invoice it applies to.",
+                 "对方的消息没有说明折扣适用于哪一张发票。请询问对方折扣适用于哪张发票。")
+    if reason.startswith("partial early payment"):
+        return t(lang, "They offer to pay only part of an invoice early. Ask how much they will pay, and by when.",
+                 "对方提出只提前支付发票的一部分。请询问对方将支付多少、何时支付。")
+    if reason.startswith("conflicting sources: the message states two different amounts for the invoice"):
+        return t(lang, "Their message gives two different amounts for the invoice. Ask which amount is right.",
+                 "对方的消息给出了两个不同的发票金额。请询问哪个金额正确。")
     m = _CONFLICT.match(reason)
     if m is None:
         return None
@@ -2041,12 +2072,17 @@ def business_action_text(code: str, lang: Lang) -> str:
     return t(lang, en, zh)
 
 
+_ANSWER_STATE_WORDS = {"declined": ("Declined by the buyer", "买方已拒绝"), "no_answer": ("Closed without an answer", "未获答复，已关闭")}
+
+
 def decision_state_text(family: str, state: str, lang: Lang, *, response: str | None = None, residual: bool = False,
-                        lapsed_by_agreement: bool = True) -> str:
+                        lapsed_by_agreement: bool = True, answer: str | None = None) -> str:
     """A decision's state in the owner's words. A deal ready for a response says what the verdict recommends ("Acceptable,
     awaiting agreement" for an acceptable offer, never "Agreed": the agreement words follow the commitment only). A funding that is
     done while the reserve is still short says so ("Funded, reserve still short"): `residual` is the decision record's own."""
     if family == "DEAL":
+        if state == "NO_DEAL" and answer in _ANSWER_STATE_WORDS:  # an offer sent outside FLOW: the buyer said no, or never answered
+            return t(lang, *_ANSWER_STATE_WORDS[answer])
         if state == "RESPONSE_READY":
             return business_action_text(response or "cannot", lang)
         en, zh = (_LAPSED_CHANGED if state == "LAPSED" and not lapsed_by_agreement
@@ -2068,7 +2104,7 @@ def decision_state_tone(state: str, *, awaited: bool, residual: bool) -> str:
         return "warn"
     if state in ("FULFILLED", "SETTLED"):
         return "ok"
-    if state in ("DECLINED", "NO_DEAL", "EXPIRED", "REVOKED", "LAPSED"):
+    if state in ("DECLINED", "NO_DEAL", "EXPIRED", "REVOKED", "LAPSED", "REPLIED"):
         return "neutral"
     return "info"
 
@@ -2083,6 +2119,11 @@ def waiting_text(code: str, party: str, day: int | None, today: int, lang: Lang,
         return t(lang, "Waiting for your response.", "等待您的回复。")
     if code == "BUYER_CLARIFICATION":
         return t(lang, f"Waiting for {party or 'the buyer'} to clarify the offer.", f"等待{party or '买方'}澄清报价。")
+    if code == "BUYER_ANSWER":
+        return (t(lang, f"Waiting for {party or 'the buyer'} to answer the offer you sent; it closes {when}.",
+                  f"等待{party or '买方'}答复您发出的报价；该报价将于{when}截止。")
+                if day is not None else t(lang, f"Waiting for {party or 'the buyer'} to answer the offer you sent.",
+                                          f"等待{party or '买方'}答复您发出的报价。"))
     if code == "OWNER_APPROVAL":
         if day is None:
             return t(lang, "Waiting for your approval.", "等待您批准。")

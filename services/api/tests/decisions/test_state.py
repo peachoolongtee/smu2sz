@@ -44,13 +44,16 @@ from .builders import (
     approval,
     books,
     deal_inputs,
+    declined_fact,
     evaluated_fact,
     expired,
     fact_row,
     leg_run,
     lot,
     offer_with,
+    offered_fact,
     quoted,
+    replied_fact,
     run,
     sent_fact,
     verdict_with,
@@ -86,6 +89,18 @@ DEAL_ROWS = [
      lambda: deal_inputs(status=PROPOSED, approvals=(accept_approval("APR-1", ApprovalStatus.APPROVED, decided_day=6),),
                          log=(accept_run(1, PENDING, approval_id="APR-1"), accept_run(2, REFUSED, approval_id="APR-1"))),
      DealState.FAILED, True),
+    ("9a REPLIED, the buyer answered an offer sent outside FLOW with terms of their own",
+     lambda: deal_inputs(facts=(fact_row(DEAL, "V-1:C-A", offered_fact()), fact_row(DEAL, "OFF-reply", replied_fact(), seq=2))),
+     DealState.REPLIED, True),
+    ("9a NO_DEAL, the buyer declined an offer sent outside FLOW",
+     lambda: deal_inputs(facts=(fact_row(DEAL, "V-1:C-A", offered_fact()), fact_row(DEAL, "declined:V-1:C-A", declined_fact(), seq=2))),
+     DealState.NO_DEAL, True),
+    ("9b AWAITING_BUYER, an offer sent outside FLOW still open", lambda: deal_inputs(facts=(fact_row(DEAL, "V-1:C-A", offered_fact()),)),
+     DealState.AWAITING_BUYER, False),
+    ("9b NO_DEAL, an offer sent outside FLOW unanswered after its day",
+     lambda: deal_inputs(today=8, facts=(fact_row(DEAL, "V-1:C-A", offered_fact()),)), DealState.NO_DEAL, True),
+    ("9b AGREED wins over an offer sent outside FLOW",
+     lambda: deal_inputs(status=ACTIVE, facts=(fact_row(DEAL, "V-1:C-A", offered_fact()),)), DealState.AGREED, False),
     ("10 NO_DEAL", lambda: deal_inputs(facts=(fact_row(DEAL, "nodeal:V-1:hard_line", sent_fact()),)), DealState.NO_DEAL, True),
     ("11 NEEDS_CLARIFICATION, abstained offer", lambda: deal_inputs(offer=offer_with(CompileStatus.ABSTAINED)),
      DealState.NEEDS_CLARIFICATION, False),
@@ -573,3 +588,13 @@ def test_a_quote_stored_before_the_projected_field_reads_as_projected() -> None:
     body = json.loads(body_json(quoted()))
     del body["projected"]
     assert QuotedFact.model_validate_json(json.dumps(body)).projected is True
+
+
+def test_an_offer_sent_outside_reads_as_closed_when_the_deal_ended_another_way() -> None:
+    """Verifier finding 4: a refused agreement (FAILED) or an owner's decline is not "still waiting for the buyer"."""
+    from app.decisions.state import buyer_answer
+
+    offered = fact_row(DEAL, "V-1:C-A", offered_fact())
+    assert buyer_answer(derive(deal_inputs(status=PROPOSED, log=(accept_run(1, REFUSED),), facts=(offered,)))) == "closed"
+    assert buyer_answer(derive(deal_inputs(facts=(offered,)))) is None
+    assert buyer_answer(derive(deal_inputs(today=8, facts=(offered,)))) == "no_answer"

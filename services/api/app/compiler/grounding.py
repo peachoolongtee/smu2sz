@@ -761,6 +761,31 @@ def _amount_alternatives(text: str, s: int, e: int) -> list[tuple[int, int, set[
     return out
 
 
+# What ends a clause between another term and a plural: a plural past one of these may be the discount's again ("…, covering both invoices").
+_CLAUSE_BREAK_RE = re.compile(r"[,;:.!?，；：。！？、]|\band\b|\bplus\b|\bbut\b|并且|而且|以及|和|但")
+_OWN_CLAUSE_MAX = 40  # characters from the end of the other term to the plural: further than this, the plural is not plainly that term's
+
+
+def _plural_is_the_discounts(other_terms: Sequence[SourceSpan], spans: Sequence[SourceSpan], text: str, doc_id: str, at: int, end: int) -> bool:
+    """Whether a plural ("invoices", 两张发票) at [at, end) may be the discount's, so that it unbinds the discount (fail closed).
+
+    It is released to another term only when all of these hold: it overlaps none of the discount's words; another term starts after every one of
+    the discount's words ends and before the plural; and the plural follows that term in the same clause, close by (no comma, semicolon, "and" or
+    "plus" between them). "We pay the ¥420,000 invoice early at 1.2%, and we need 60-day terms on future invoices": the plural is the terms'.
+    "…1.2% off, plus a 0.3% price rise accepted, covering both invoices" and "两张发票420,000元提前付款" still unbind the discount."""
+    mine = [sp for sp in spans if sp.doc_id == doc_id]
+    if not mine or any(sp.start < end and at < sp.end for sp in mine):
+        return True
+    after_discount = max(sp.end for sp in mine)
+    for term in other_terms:
+        if term.doc_id != doc_id or term.start < after_discount or term.end > at:
+            continue
+        between = text[term.end:at]
+        if len(between) <= _OWN_CLAUSE_MAX and not _CLAUSE_BREAK_RE.search(between):
+            return False
+    return True
+
+
 def early_pay_guard(
     docs: dict[str, SourceDocument], obs: Sequence[Obligation], abst: list[Abstention]
 ) -> tuple[list[Obligation], bool, bool]:
@@ -802,9 +827,12 @@ def early_pay_guard(
                     field="base.amount_fen:invoice_amount",
                     reason="conflicting sources: the message states two different amounts for the invoice",
                     spans=[*ob.spans, SourceSpan(doc_id=d, start=a0, end=a1, text=docs[d].text[a0:a1])]))
-        # 3. several invoices
+        # 3. several invoices: a plural in the discount's sentence unbinds it, unless it plainly belongs to another term that follows the
+        # discount in the same clause ("…, and we need 60-day terms on future invoices"); see `_plural_is_the_discounts` (fail closed)
+        other_terms = [sp for o in obs if o is not ob for sp in o.spans]
         plural = next((SourceSpan(doc_id=d, start=m.start(), end=m.end(), text=m.group(0))
-                       for d, s, e in sents for m in PLURAL_INVOICES_RE.finditer(docs[d].text, s, e)), None)
+                       for d, s, e in sents for m in PLURAL_INVOICES_RE.finditer(docs[d].text, s, e)
+                       if _plural_is_the_discounts(other_terms, ob.spans, docs[d].text, d, m.start(), m.end())), None)
         if plural is not None:
             unresolved.append("scope")
             material = True
