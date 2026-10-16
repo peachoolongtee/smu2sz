@@ -112,7 +112,7 @@
         ],
         "note": "not applied; cash on day 21, gap opens on day 42",
         "label_when": "Line + guaranteed loan",
-        "note_when": "not applied; cash 13 days ago, gap opens in 8 days"
+        "note_when": "not applied; cash when approved, gap opens in 8 days"
       },
       {
         "label": "Line only",
@@ -248,7 +248,7 @@
         ],
         "note": "cost ¥9,731.78; RESERVE_BREACH on day 42; not applied; cash on day 21, gap opens on day 42",
         "label_when": "Line + guaranteed loan",
-        "note_when": "cost ¥9,731.78; RESERVE_BREACH in 8 days; not applied; cash 13 days ago, gap opens in 8 days"
+        "note_when": "cost ¥9,731.78; RESERVE_BREACH in 8 days; not applied; cash when approved, gap opens in 8 days"
       },
       {
         "label": "Line only",
@@ -7398,12 +7398,12 @@
       "status": "unavailable",
       "reason_kind": null,
       "shortfall_display": null,
-      "note_when": "not applied; cash 13 days ago, gap opens in 8 days",
+      "note_when": "not applied; cash when approved, gap opens in 8 days",
       "not_executable_reason_when": null,
       "approval_reason_when": null,
       "components_when": [
         "Bank credit line: draw ¥2,790.00, repaid in 13 days",
-        "Government-guaranteed working-capital loan: draw ¥197,210.00 (arrives 13 days ago)"
+        "Government-guaranteed working-capital loan: draw ¥197,210.00 (arrives when approved)"
       ],
       "label_when": "Line + guaranteed loan",
       "legs": [],
