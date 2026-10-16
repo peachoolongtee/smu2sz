@@ -270,6 +270,67 @@ def cross_checks(doc: SourceDocument, terms: list[ContractTerm]) -> list[Check]:
     return checks
 
 
+# ---------------------------------------------------------------- who pays whom
+#
+# PARTY_BUYER is the party that pays, PARTY_SUPPLIER the party that is paid, whatever the role labels (承包人/分包人,
+# 定作方/承揽方, 承租方/出租方). A reading sometimes files them the other way round. The contract says who is paid in two
+# ways code can read: the receiving account ("乙方收款账户：户名 某某公司") and the direction of a payment of the price
+# ("甲方以银行转账方式向乙方支付合同价款的10%"). A penalty, a deposit, a refund or interest runs the other way or says
+# nothing of the price, so a sentence about one of them is not evidence.
+
+_ROLE = re.compile(r"^\s*(甲方|乙方)")
+_RECEIVING = re.compile(r"(甲方|乙方)?\s*(?:指定的?)?收款(?:账户|帐户|账号|帐号|单位|人)")
+_PAYS_TO = re.compile(r"(甲方|乙方)(?:(?!甲方|乙方)[^。；;\n向]){0,40}向(甲方|乙方)(?:支付|付清|付款|结清)")
+_NOT_PRICE = re.compile(r"违约|赔偿|罚|保证金|保函|担保|押金|定金|退还|返还|退回|垫付|代付|工资|利息|损失")
+
+
+def _sentence_after(text: str, pos: int, reach: int = 100) -> str:
+    ends = [i for i in (text.find(c, pos) for c in ("。", "；", ";")) if i != -1]
+    return text[pos:min([*ends, pos + reach])]
+
+
+def payee_roles(text: str, names: dict[str, str]) -> set[str]:
+    """The role labels (甲方/乙方) the contract says are paid. `names` maps each party's name to its role, so an account
+    held in a party's name counts as that party's even when the account line names no role."""
+    paid: set[str] = set()
+    for m in _RECEIVING.finditer(text):
+        if m.group(1):
+            paid.add(m.group(1))
+            continue
+        after = re.sub(r"\s+", "", _sentence_after(text, m.end()))
+        held = {role for name, role in names.items() if name and name in after}
+        if len(held) == 1:
+            paid |= held
+    for m in _PAYS_TO.finditer(text):
+        s, e = _bounds(text, m.start())
+        if m.group(1) != m.group(2) and not _NOT_PRICE.search(text[s:e]):
+            paid.add(m.group(2))
+    return paid
+
+
+def payer_payee_check(doc: SourceDocument, terms: list[ContractTerm], abst: list[Abstention]) -> list[ContractTerm]:
+    """PARTY_BUYER and PARTY_SUPPLIER swapped when the contract clearly says the reading's buyer is the one paid: every
+    piece of evidence names the same role, and each party's quote carries a different role label. Anything less clear
+    (no evidence, evidence both ways, a party without a label) leaves the reading as it is."""
+    buyers = [t for t in terms if t.field == F.PARTY_BUYER]
+    suppliers = [t for t in terms if t.field == F.PARTY_SUPPLIER]
+    if len(buyers) != 1 or len(suppliers) != 1:
+        return terms
+    (b,), (s,) = buyers, suppliers
+    rb, rs = _ROLE.match(b.span.text), _ROLE.match(s.span.text)
+    if rb is None or rs is None or rb.group(1) == rs.group(1):
+        return terms
+    names = {re.sub(r"\s+", "", b.text or ""): rb.group(1), re.sub(r"\s+", "", s.text or ""): rs.group(1)}
+    paid = payee_roles(doc.text, names)
+    if paid != {rb.group(1)}:
+        return terms
+    abst.append(Abstention(field=f"note:{F.PARTY_SUPPLIER.value}", spans=[b.span, s.span], reason=(
+        f"note: the contract pays {rb.group(1)} (its receiving account, or a payment made to it), so {rb.group(1)} is "
+        "the supplier and the other party the buyer")))
+    return [b.model_copy(update={"field": F.PARTY_SUPPLIER}) if t is b
+            else s.model_copy(update={"field": F.PARTY_BUYER}) if t is s else t for t in terms]
+
+
 def check_notes(checks: list[Check]) -> list[Abstention]:
     return [Abstention(field=f"note:{c.kind}", spans=list(c.spans), reason=f"check failed: {c.note}")
             for c in checks if not c.ok]

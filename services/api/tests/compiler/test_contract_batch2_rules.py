@@ -5,7 +5,49 @@ from __future__ import annotations
 
 import pytest
 
+from app.compiler import Compiler
+from app.compiler.base import ContractResult
+from app.compiler.contract import contract_document
 from app.compiler.contract_parsing import parse_date
+from app.compiler.schema import ContractExtraction, XContractTerm
+from app.domain.models import ContractField, DocumentKind
+
+F = ContractField
+
+
+def _x(field: ContractField, quote: str, **frags: str) -> XContractTerm:
+    base = dict(value_text=None, date_text=None, period_text=None, basis_text=None, unit_text=None, trigger_text=None,
+                reference_text=None)
+    return XContractTerm(field=field, quote=quote, confidence=0.9, **{**base, **frags})  # type: ignore[arg-type]
+
+
+class _Model:
+    name = "model"
+
+    def __init__(self, terms: list[XContractTerm]) -> None:
+        self.terms = terms
+
+    def extract_contract(self, chunk):  # type: ignore[no-untyped-def]
+        return ContractResult(ContractExtraction(terms=self.terms, authority_claims=[], data_requests=[]), self.name)
+
+
+def _compile(text: str, terms: list[XContractTerm]):  # type: ignore[no-untyped-def]
+    doc = contract_document(text, DocumentKind.BUYER_CONTRACT, "BUYER-1")
+    return Compiler([_Model(terms)]).compile_contract(doc)  # type: ignore[list-item]
+
+
+def _all(c, field: ContractField) -> list:  # type: ignore[no-untyped-def]
+    return [t for t in c.terms if t.field == field]
+
+
+def _one(c, field: ContractField):  # type: ignore[no-untyped-def]
+    (t,) = _all(c, field)
+    return t
+
+
+def _lines(*parts: str) -> str:
+    return "\n".join(parts) + "\n"
+
 
 # ---------------------------------------------------------------- slash and dot dates
 
@@ -33,3 +75,53 @@ def test_a_slash_or_dot_date_that_does_not_exist_is_not_a_date(text):
 
 def test_two_different_slash_dates_are_a_conflict():
     assert parse_date("2026.3.5至2027.3.4").conflict
+
+
+# ---------------------------------------------------------------- who pays whom
+
+A_LINE = "甲方（总包方）：测试甲建设有限公司"
+B_LINE = "乙方（专业方）：测试乙工程有限公司"
+
+
+def _parties(text: str, buyer_line: str, supplier_line: str):  # type: ignore[no-untyped-def]
+    def name(line: str) -> str:
+        return line.split("：", 1)[1]
+    return _compile(text, [_x(F.PARTY_BUYER, buyer_line, value_text=name(buyer_line)),
+                           _x(F.PARTY_SUPPLIER, supplier_line, value_text=name(supplier_line))])
+
+
+@pytest.mark.parametrize("evidence", [
+    "乙方收款账户：户名 测试乙工程有限公司；开户行 测试银行；账号 6200000000000001。",
+    "收款账户：户名 测试乙工程有限公司；账号 6200000000000001。",
+    "本合同签订之日起7日内，甲方以银行转账方式向乙方支付合同价款的10%。",
+])
+def test_the_party_who_is_paid_is_the_supplier_even_when_read_the_other_way(evidence):
+    c = _parties(_lines("测试分包合同", A_LINE, B_LINE, "第三条 付款", evidence), B_LINE, A_LINE)  # read the wrong way round
+    assert _one(c, F.PARTY_BUYER).text == "测试甲建设有限公司"
+    assert _one(c, F.PARTY_SUPPLIER).text == "测试乙工程有限公司"
+    assert any(a.field == "note:PARTY_SUPPLIER" for a in c.abstentions)
+
+
+def test_a_reading_that_agrees_with_the_evidence_is_left_alone():
+    c = _parties(_lines("测试合同", A_LINE, B_LINE, "甲方应向乙方支付货款。"), A_LINE, B_LINE)
+    assert _one(c, F.PARTY_BUYER).text == "测试甲建设有限公司"
+    assert not any(a.field == "note:PARTY_SUPPLIER" for a in c.abstentions)
+
+
+@pytest.mark.parametrize("evidence", [
+    "",  # no evidence at all
+    "乙方逾期履行的，每逾期一日，按合同价款的0.1%向甲方支付违约金。",  # a penalty runs the other way: not evidence
+    "乙方应向甲方支付履约保证金。",  # a bond: not evidence
+    "甲方应向乙方支付进度款。乙方应向甲方支付服务款。",  # both ways: ambiguous
+    "甲方收款账户：户名 测试甲建设有限公司。乙方收款账户：户名 测试乙工程有限公司。",  # both hold one
+])
+def test_no_swap_without_clear_evidence(evidence):
+    c = _parties(_lines("测试合同", A_LINE, B_LINE, evidence), B_LINE, A_LINE)
+    assert _one(c, F.PARTY_BUYER).text == "测试乙工程有限公司"  # left as read
+    assert not any(a.field == "note:PARTY_SUPPLIER" for a in c.abstentions)
+
+
+def test_no_swap_when_a_party_has_no_role_label():
+    text = _lines("测试合同", "买受人：测试甲建设有限公司", "出卖人：测试乙工程有限公司", "甲方应向乙方支付货款。")
+    c = _parties(text, "出卖人：测试乙工程有限公司", "买受人：测试甲建设有限公司")
+    assert _one(c, F.PARTY_BUYER).text == "测试乙工程有限公司"

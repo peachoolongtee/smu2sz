@@ -25,6 +25,7 @@ from app.compiler.contract_checks import (
     check_notes,
     cross_checks,
     derived_dates,
+    payer_payee_check,
     stage_basis,
     stage_deadline,
     stage_trigger,
@@ -605,6 +606,7 @@ def build_contract(doc: SourceDocument, parts: Sequence[tuple[Chunk, ContractExt
         clean.append(t)
     clean, per_stage = _per_stage_payment_terms(clean, ctx.abst)
     terms, conflict = _merge(clean, ctx.abst)
+    terms = payer_payee_check(doc, terms, ctx.abst)
     terms = sorted([*terms, *derived_dates(doc, terms, ctx.abst)], key=lambda t: (t.span.start, t.field.value))
     ctx.abst += check_notes(cross_checks(doc, terms))
     found = {t.field for t in terms}
