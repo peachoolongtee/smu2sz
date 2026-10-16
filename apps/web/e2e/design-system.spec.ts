@@ -348,7 +348,7 @@ test("rail: reduced motion opens it at once, and axe finds nothing serious on th
 
 test("SegmentedTabs: the pill never leaves the track, and choosing never scrolls the page (Deals' queue is underline tabs: the control lives on Home, Receivables and the deal's timing)", async ({ page }) => {
   // The pill stays inside the track across a jump between options (no overshoot): Home's window control, the compact form.
-  await page.goto("/?expand=1");
+  await page.goto("/"); // the window control is in the outlook card's forecast
   await expect(page.getByTestId("home-window-60")).toBeVisible({ timeout: 15_000 });
   const inside = () =>
     page.evaluate(() => {
@@ -372,10 +372,13 @@ test("SegmentedTabs: the pill never leaves the track, and choosing never scrolls
   expect((await poll).every(Boolean)).toBe(true);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/?expand=1");
+  await page.goto("/"); // the window control is in the outlook card's forecast
   await expect(page.getByTestId("home-window-60")).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId("home-window-60").scrollIntoViewIfNeeded();
-  await page.evaluate(() => window.scrollBy(0, -60));
+  // The control sits in the outlook card near the top of the page: scroll down a little so the page has a scroll to keep, with the control still on screen.
+  await page.evaluate(() => {
+    const top = document.querySelector('[data-testid="home-window-60"]')!.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo(0, Math.max(60, top - 300));
+  });
   const y = await page.evaluate(() => window.scrollY);
   expect(y).toBeGreaterThan(0);
   await page.getByTestId("home-window-60").click();
@@ -447,7 +450,8 @@ test("the owner's mockup tokens: the canvas app-wide, the palette and its dark p
   for (const id of ["hv2-cash-card", "hv2-action", "hv2-outlook-card", "home-worklist-panel", "hv2-upcoming"]) {
     const card = await page.getByTestId(id).evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, radius: getComputedStyle(el).borderTopLeftRadius, shadow: getComputedStyle(el).boxShadow }));
     // The recommendation is tinted with the risk red while the cash would go negative (the alarm card): only its radius is pinned then.
-    expect(card, id).toMatchObject(id === "hv2-action" ? { radius: "24px" } : { bg: "rgb(248, 249, 249)", radius: "24px" });
+    // It sits inside the outlook card (the final UI fold), so it takes the inner radius, 20 px.
+    expect(card, id).toMatchObject(id === "hv2-action" ? { radius: "20px" } : { bg: "rgb(248, 249, 249)", radius: "24px" });
     if (id !== "hv2-action") expect(card.shadow, id).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
   }
   expect(await page.getByTestId("home-check-plan").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(23, 29, 30)");

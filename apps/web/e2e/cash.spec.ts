@@ -184,13 +184,13 @@ test("day 34 with a gap open: the options are today's plan, never the day-0 comp
   await expect(options).not.toContainText("¥3,113.93");
   await expect(options).not.toContainText("¥255,000.00");
   await expect(options).not.toContainText(" ago");
-  await expect(options).toContainText("¥1,706.10");
+  await expect(options).toContainText("¥1,702.20");
   // The cheaper plan that needs two approvals is the ranked alternative (#2); what depends on the buyer follows it, unranked.
   const alternative = page.getByTestId("cash-options-ALTERNATIVE");
   await expect(alternative.locator("h3")).toHaveText("Another way to fund it");
   await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("#2");
   await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(1);
-  await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("¥1,706.10");
+  await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("¥1,702.20");
   await expect(page.getByTestId("cash-options-CONDITIONAL_ON_BUYER")).not.toContainText("#");
   // The server's roles say it in the alternative's chip, so the grey "a cheaper option exists" note is not drawn a second time;
   // and the first row is titled with its sources, not the generic "Recommended plan".
@@ -289,20 +289,23 @@ test("each option carries a cost bar sized against the dearest row and a coverag
   await expect(page.locator("li[data-key=router_optimum] [data-testid=cash-option-coverage]")).toHaveAttribute("data-gap", "0");
 });
 
-test("your funding sources: a utilisation bar per facility with the server's limit, drawn and available", async ({ page }) => {
+test("your funding sources: a utilisation bar per facility in use with the server's limit, drawn and available", async ({ page }) => {
+  // Only money in use or arriving is a row (the final UI fold, 16 Oct): before any draw "Your funding" says so in the dictionary's words, and a plan not yet run is no row.
   await page.goto("/cash");
-  const line = page.getByTestId("cash-facility-FAC-LINE");
-  await expect(line).toContainText("Bank credit line");
-  await expect(line).toContainText("¥150,000.00");
-  await expect(line.getByTestId("cash-facility-bar")).toHaveAttribute("data-pct", "0");
-  await expect(line).toContainText("cash in same day");
+  await expect(page.getByTestId("cash-current-none")).toHaveText("No outside funding is in use yet. Your credit line and invoice financing show here once you run the funding plan.");
+  await expect(page.getByTestId("cash-facility-FAC-LINE")).toHaveCount(0);
   await page.goto("/demo");
   await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/cash");
-  await expect(page.getByTestId("cash-facility-FAC-LINE")).toBeVisible();
+  const line = page.getByTestId("cash-facility-FAC-LINE");
+  await expect(line).toBeVisible();
+  await expect(line).toContainText("Bank credit line");
+  await expect(line).toContainText("¥150,000.00");
+  await expect(line).toContainText("cash in same day");
+  await expect(page.getByTestId("cash-current-none")).toHaveCount(0);
   await expect.poll(async () => Math.max(...(await page.getByTestId("cash-facility-bar").evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-pct"))))))).toBeGreaterThan(0);
 });
 

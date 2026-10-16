@@ -36,15 +36,15 @@ def test_chase_on_the_half_receipt_walk_carries_the_balance_the_lateness_and_the
     assert r.status_code == 200
     c = r.json()
     assert c["buyer_name"] == "Foshan Home Retail Co."
-    assert c["face_display"] == "¥420,000.00" and c["outstanding_display"] == "¥291,400.00"
+    assert c["face_display"] == "¥420,000.00" and c["outstanding_display"] == "¥290,000.00"
     assert c["past_due"] is True and c["late_days"] == 2 and c["terms_days"] == 45
     assert c["due_when"] == "2 days ago" and c["issued_when"] == "47 days ago"
     assert [p["status"] for p in c["promises"]] == ["RECEIVED"]
-    assert c["promises"][0]["amount_display"] == "¥127,506.90" and c["promises"][0]["promised_when"] == "32 days ago"
+    assert c["promises"][0]["amount_display"] == "¥128,895.00" and c["promises"][0]["promised_when"] == "32 days ago"
     assert c["window_open"] is False  # the early-payment window ended on day 2
     assert c["thread_href"] == "/deals?buyer=BUYER-1"
     text = c["request_text"]
-    for figure in ("Foshan Home Retail Co.", "¥420,000.00", "¥291,400.00", "47 days ago", "fell due 2 days ago", "45 days"):
+    for figure in ("Foshan Home Retail Co.", "¥420,000.00", "¥290,000.00", "47 days ago", "fell due 2 days ago", "45 days"):
         assert figure in text, figure
     assert "Please confirm the payment date" in text
     # the owner's words: no record ids, no day numbers, anywhere in the payload
@@ -52,7 +52,7 @@ def test_chase_on_the_half_receipt_walk_carries_the_balance_the_lateness_and_the
     assert not re.search(r"CMT-|RCV-|APR-|OP-|RI:|\bday \d", c["request_text"] + " ".join(f["value"] for f in c["facts"]))
     assert "CMT-" not in blob
     facts = {f["id"]: f for f in c["facts"]}
-    assert facts["outstanding"]["value"] == "¥291,400.00" and facts["late"]["value"] == "2 days" and facts["terms"]["value"] == "45 days"
+    assert facts["outstanding"]["value"] == "¥290,000.00" and facts["late"]["value"] == "2 days" and facts["terms"]["value"] == "45 days"
     # the same figure the reconciliation (the Receivables page) shows for the invoice
     row = next(o for o in client.get("/reconciliation").json()["reconciliation"]["outstanding"] if o["receivable_id"] == "RCV-A")
     assert row["face_display"] == c["outstanding_display"]
@@ -82,7 +82,7 @@ def test_chase_in_chinese(client):
     c = client.get("/receivables/RCV-A/chase?lang=zh").json()
     text = c["request_text"]
     assert text.startswith("尊敬的Foshan Home Retail Co.：")
-    assert "¥291,400.00" in text and "已于 2 天前到期" in text and "请确认付款日期" in text
+    assert "¥290,000.00" in text and "已于 2 天前到期" in text and "请确认付款日期" in text
     assert c["due_when"] == "2 天前"
     assert {f["id"]: f["label"] for f in c["facts"]}["outstanding"] == "未付余额"
     assert not re.search(r"[A-Za-z]{2,} (?:remains|fell|issued)", text)
@@ -103,10 +103,10 @@ def test_chase_unknown_and_paid_and_bad_language(client):
 def test_reconciliation_receipts_carry_the_four_facts_and_the_window(client):
     _walk(client, receipt="half")
     receipt = client.get("/reconciliation").json()["reconciliation"]["receipts"][0]
-    assert receipt["received_display"] == "¥127,506.90"
-    assert receipt["face_cleared_display"] == "¥128,600.00"
-    assert receipt["discount_display"] == "¥1,093.10"
-    assert receipt["remaining_display"] == "¥291,400.00"
+    assert receipt["received_display"] == "¥128,895.00"
+    assert receipt["face_cleared_display"] == "¥130,000.00"
+    assert receipt["discount_display"] == "¥1,105.00"
+    assert receipt["remaining_display"] == "¥290,000.00"
     assert receipt["window_state"] == "ended"
 
 
@@ -114,7 +114,7 @@ def test_the_window_is_open_on_the_day_of_the_receipt(client):
     _walk(client, receipt="half", to=2)
     receipt = client.get("/reconciliation").json()["reconciliation"]["receipts"][0]
     assert receipt["window_state"] == "open"
-    assert receipt["remaining_display"] == "¥291,400.00"
+    assert receipt["remaining_display"] == "¥290,000.00"
 
 
 def test_a_receipt_with_no_agreed_discount_has_no_facts(client):

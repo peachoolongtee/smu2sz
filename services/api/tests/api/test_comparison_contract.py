@@ -89,8 +89,11 @@ def test_day34_the_recommended_cure_stays_first_and_the_runnable_alternative_is_
     plan = _plan(client)
     rows = plan["comparison"]
     assert [(r["key"], r["group"], r["rank"]) for r in rows] == [
-        ("recommended_plan", "RECOMMENDED", 1), ("router_optimum", "ALTERNATIVE", 2), ("full_discount", "CONDITIONAL_ON_BUYER", None)]
-    assert [r["total_fen"] for r in rows] == [178_219, 170_610, 504_000]  # every figure is the router's or the card's own
+        ("recommended_plan", "RECOMMENDED", 1), ("router_optimum", "ALTERNATIVE", 2),
+        # the rounded early-pay face (R-10) leaves ¥2,790 on the line, so the router's line rows exist on day 34 too
+        ("line_partial_early_pay", "CONDITIONAL_ON_BUYER", None), ("full_discount", "CONDITIONAL_ON_BUYER", None),
+        ("line_only", "INSUFFICIENT", None), ("line_guaranteed_loan", "NOT_AVAILABLE_YET", None)]
+    assert [r["total_fen"] for r in rows] == [178_219, 170_220, 240_162, 504_000, 636, None]  # every figure is the router's or the card's own
     assert rows[0]["router_order"] is None  # the cure row is the API's, not a spec row
     assert rows[0]["basis_text"] and rows[0]["remaining_gap_text"]  # the card's own basis and after-state sentences
 

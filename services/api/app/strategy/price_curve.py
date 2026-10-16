@@ -252,16 +252,35 @@ def price_sentence(curve: PriceCurve, *, today: int, lang: Lang) -> str:
                  f"{zh_first}（{pct}）；之后更早到账也不再节省。")
     en, zh = f"{en_first} ({pct})", f"{zh_first}（{pct}）"
     prev = first
-    for b in live[1:]:
+    rest = live[1:]
+    i = 0
+    while i < len(rest):
+        b = rest[i]
+        # a run of one-day bands, each the day after the last, is one taper (the value moving a little each day, as
+        # when early cash also retires a small drawn balance for one day fewer): one clause, not one per day
+        j = i
+        while (j + 1 < len(rest) and rest[j].from_day == rest[j].to_day and rest[j + 1].from_day == rest[j + 1].to_day
+               and rest[j + 1].from_day == rest[j].to_day + 1):
+            j += 1
+        if b.from_day == prev.to_day + 1 and j > i:
+            last = rest[j]
+            n = last.to_day - prev.to_day
+            lo, hi = fmt_pct(Fraction(b.value_bp, 10_000)), fmt_pct(Fraction(last.value_bp, 10_000))
+            span = lo if lo == hi else f"{lo}–{hi}"
+            en += f", then {fmt_yuan(b.value_fen)} falling day by day to {fmt_yuan(last.value_fen)} ({span}) over the {n} days after"
+            zh += f"，随后的 {n} 天从 {fmt_yuan(b.value_fen)} 逐日降至 {fmt_yuan(last.value_fen)}（{span}）"
+            prev, i = last, j + 1
+            continue
         pct = fmt_pct(Fraction(b.value_bp, 10_000))
         n = b.to_day - prev.to_day
         if b.from_day == prev.to_day + 1:
-            en += f", then {fmt_yuan(b.value_fen)} ({pct}) for the {n} days after"
+            days = "day" if n == 1 else f"{n} days"  # "for the day after", never "for the 1 days after"
+            en += f", then {fmt_yuan(b.value_fen)} ({pct}) for the {days} after"
             zh += f"，随后的 {n} 天为 {fmt_yuan(b.value_fen)}（{pct}）"
         else:  # a stretch worth nothing lies between the two
             en += f", then {fmt_yuan(b.value_fen)} ({pct}) {_next(b.to_day, today, 'en')}"
             zh += f"，{_next(b.to_day, today, 'zh')}的为 {fmt_yuan(b.value_fen)}（{pct}）"
-        prev = b
+        prev, i = b, i + 1
     return t(lang, en + "; later, nothing.", zh + "；再之后没有。")
 
 

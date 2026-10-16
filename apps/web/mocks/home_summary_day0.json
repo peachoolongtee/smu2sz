@@ -5891,6 +5891,7 @@
     ],
     "cost_basis": "Estimated through the expected repayment of the Bank credit line in 32 days, the first receipt that can repay it; the final interest depends on the actual repayment day. Invoice financing is billed in whole 30-day periods until the invoice is paid.",
     "cost_note": null,
+    "cost_unstated": null,
     "cheaper_option": null,
     "rate_text": null,
     "cost_days": null,

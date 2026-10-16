@@ -4,7 +4,7 @@
       "receivable_id": "RCV-A",
       "buyer_name": "Foshan Home Retail Co.",
       "face_display": "¥420,000.00",
-      "outstanding_display": "¥291,400.00",
+      "outstanding_display": "¥290,000.00",
       "issued_when": "47 days ago",
       "due_when": "2 days ago",
       "past_due": true,
@@ -13,10 +13,10 @@
       "promises": [
         {
           "status": "RECEIVED",
-          "amount_display": "¥127,506.90",
-          "face_display": "¥128,600.00",
+          "amount_display": "¥128,895.00",
+          "face_display": "¥130,000.00",
           "promised_when": "32 days ago",
-          "text": "¥127,506.90 for ¥128,600.00 of the invoice was promised 32 days ago and has arrived"
+          "text": "¥128,895.00 for ¥130,000.00 of the invoice was promised 32 days ago and has arrived"
         }
       ],
       "window_open": false,
@@ -34,7 +34,7 @@
         {
           "id": "outstanding",
           "label": "Outstanding",
-          "value": "¥291,400.00"
+          "value": "¥290,000.00"
         },
         {
           "id": "issued",
@@ -59,17 +59,17 @@
         {
           "id": "promise-0",
           "label": "Early payment promised",
-          "value": "¥127,506.90 for ¥128,600.00 of the invoice was promised 32 days ago and has arrived"
+          "value": "¥128,895.00 for ¥130,000.00 of the invoice was promised 32 days ago and has arrived"
         }
       ],
-      "request_text": "Dear Foshan Home Retail Co., the ¥420,000.00 invoice issued 47 days ago fell due 2 days ago; ¥291,400.00 remains outstanding after the payments we have received. Please confirm the payment date. Our agreed payment terms are 45 days from the invoice date. Thank you.",
+      "request_text": "Dear Foshan Home Retail Co., the ¥420,000.00 invoice issued 47 days ago fell due 2 days ago; ¥290,000.00 remains outstanding after the payments we have received. Please confirm the payment date. Our agreed payment terms are 45 days from the invoice date. Thank you.",
       "thread_href": "/deals?buyer=BUYER-1",
       "receipt": {
-        "authorizes_text": "A payment request to Foshan Home Retail Co. for ¥291,400.00.",
+        "authorizes_text": "A payment request to Foshan Home Retail Co. for ¥290,000.00.",
         "executes_now_text": "Nothing is sent from FLOW. You copy the request and send it yourself.",
         "others_must_agree_text": "Foshan Home Retail Co. has to pay, or confirm a payment date.",
-        "in_hand_vs_future_text": "¥291,400.00 is not counted as cash until Foshan Home Retail Co. pays.",
-        "gross_display": "¥291,400.00",
+        "in_hand_vs_future_text": "¥290,000.00 is not counted as cash until Foshan Home Retail Co. pays.",
+        "gross_display": "¥290,000.00",
         "fees_display": null,
         "net_display": null,
         "when_text": "The invoice fell due 2 days ago.",
@@ -214,7 +214,7 @@
       "receivable_id": "RCV-A",
       "buyer_name": "Foshan Home Retail Co.",
       "face_display": "¥420,000.00",
-      "outstanding_display": "¥291,400.00",
+      "outstanding_display": "¥290,000.00",
       "issued_when": "47 天前",
       "due_when": "2 天前",
       "past_due": true,
@@ -223,10 +223,10 @@
       "promises": [
         {
           "status": "RECEIVED",
-          "amount_display": "¥127,506.90",
-          "face_display": "¥128,600.00",
+          "amount_display": "¥128,895.00",
+          "face_display": "¥130,000.00",
           "promised_when": "32 天前",
-          "text": "32 天前约定付的 ¥127,506.90（对应发票的 ¥128,600.00）已收到"
+          "text": "32 天前约定付的 ¥128,895.00（对应发票的 ¥130,000.00）已收到"
         }
       ],
       "window_open": false,
@@ -244,7 +244,7 @@
         {
           "id": "outstanding",
           "label": "未付余额",
-          "value": "¥291,400.00"
+          "value": "¥290,000.00"
         },
         {
           "id": "issued",
@@ -269,17 +269,17 @@
         {
           "id": "promise-0",
           "label": "约定的提前付款",
-          "value": "32 天前约定付的 ¥127,506.90（对应发票的 ¥128,600.00）已收到"
+          "value": "32 天前约定付的 ¥128,895.00（对应发票的 ¥130,000.00）已收到"
         }
       ],
-      "request_text": "尊敬的Foshan Home Retail Co.：47 天前开具的 ¥420,000.00 发票已于 2 天前到期，扣除已收款项后，尚有 ¥291,400.00 未付。请确认付款日期。按我们约定的账期（自开票日起 45 天），应在到期日付款。谢谢。",
+      "request_text": "尊敬的Foshan Home Retail Co.：47 天前开具的 ¥420,000.00 发票已于 2 天前到期，扣除已收款项后，尚有 ¥290,000.00 未付。请确认付款日期。按我们约定的账期（自开票日起 45 天），应在到期日付款。谢谢。",
       "thread_href": "/deals?buyer=BUYER-1",
       "receipt": {
-        "authorizes_text": "向Foshan Home Retail Co.发出一份 ¥291,400.00 的付款请求。",
+        "authorizes_text": "向Foshan Home Retail Co.发出一份 ¥290,000.00 的付款请求。",
         "executes_now_text": "FLOW 不会发送任何内容。请您复制请求并自行发送。",
         "others_must_agree_text": "Foshan Home Retail Co.需要付款，或确认付款日期。",
-        "in_hand_vs_future_text": "Foshan Home Retail Co.付款之前，¥291,400.00 不计入现金。",
-        "gross_display": "¥291,400.00",
+        "in_hand_vs_future_text": "Foshan Home Retail Co.付款之前，¥290,000.00 不计入现金。",
+        "gross_display": "¥290,000.00",
         "fees_display": null,
         "net_display": null,
         "when_text": "发票已于 2 天前到期。",

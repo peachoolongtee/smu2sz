@@ -194,8 +194,8 @@ def test_an_open_offers_counter_that_would_apply_to_the_invoice_is_named(client)
     row = _row(client)
     pending = row["pending_counter"]
     assert pending is not None and pending["decision_id"] == f"deal:{offer['offer_id']}"
-    assert pending["text"] == "The Option A counter, if sent and accepted, would apply to ¥257,200 of it"
-    assert _row(client, "zh")["pending_counter"]["text"].startswith("方案 A 的还价如果发出并被接受，将适用于其中的 ¥257,200")
+    assert pending["text"] == "The Option A counter, if sent and accepted, would apply to ¥260,000 of it"
+    assert _row(client, "zh")["pending_counter"]["text"].startswith("方案 A 的还价如果发出并被接受，将适用于其中的 ¥260,000")
     # once the offer is accepted it is no longer open
     client.post(f"/negotiate/{offer['offer_id']}", json={"buyer_profile": "cooperative"})
     assert _row(client)["pending_counter"] is None

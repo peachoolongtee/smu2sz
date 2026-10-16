@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { OperationList } from "@/components/chat/assistant-turn";
 import { approvalHref } from "@/components/operation-result";
+import { ChevronRightIcon } from "@/components/icons";
 import { Badge, Button, ErrorState, SlowNotice } from "@/components/ui";
 import { actOnAlert, alertChanged, ApiError, getApprovals, getMandate } from "@/lib/api";
 import { isTimeout } from "@/lib/errors";
@@ -188,6 +189,7 @@ export function FixResult({
   rechecked = false,
   onRecheck,
   flat = false,
+  part = "all",
 }: {
   result: AlertActResult | null;
   error: string | null;
@@ -199,31 +201,57 @@ export function FixResult({
   onRecheck?: () => void;
   /** The seamless Home: the answer sits on the page under a hairline, no card. */
   flat?: boolean;
+  /**
+   * Which part to draw: `all` (the default); `notices` only what needs the owner now (slow, changed, an error), where the action is; `result` only "What happened", as a
+   * small button that opens it (Cash & funding keeps it at the foot of the page).
+   */
+  part?: "all" | "notices" | "result";
 }) {
   const { t } = useI18n();
   const business = useBusinessShell();
-  if (slow) return <SlowNotice message={t("err.timeout_write")} onRetry={onRecheck} />;
-  if (rechecked && !result && !changed && !error) return <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="slow-checked">{t("biz.slow.checked")}</p>;
-  if (changed) return <AlertChanged changed={changed} />;
+  const notices = part !== "result";
+  if (slow) return notices ? <SlowNotice message={t("err.timeout_write")} onRetry={onRecheck} /> : null;
+  if (rechecked && !result && !changed && !error) return notices ? <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="slow-checked">{t("biz.slow.checked")}</p> : null;
+  if (changed) return notices ? <AlertChanged changed={changed} /> : null;
   if (error) {
-    return (
+    return notices ? (
       <ErrorState error={error} />
-    );
+    ) : null;
   }
-  if (!result) return null;
+  if (!result || part === "notices") return null;
   // The one thing that happened is "it waits for your approval": the next-step tile and the decision row already say that, once each.
   if (business && result.pending_approval && !result.executed && !result.refused) return null;
+  const counts = (
+    <>
+      {/* On a Business page only the counts that are not zero: "0 refused" is noise. */}
+      {!business || result.executed ? <Badge tone={result.executed ? "ok" : "neutral"}>{t("alerts.fix.executed", { n: result.executed })}</Badge> : null}
+      {!business || result.pending_approval ? <Badge tone={result.pending_approval ? "warn" : "neutral"}>{t("alerts.fix.pending", { n: result.pending_approval })}</Badge> : null}
+      {!business || result.refused ? <Badge tone={result.refused ? "bad" : "neutral"}>{t("alerts.fix.refused", { n: result.refused })}</Badge> : null}
+    </>
+  );
+  const outcome = <p className="text-sm text-ink" data-testid="fix-outcome">{result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}</p>;
+  if (part === "result")
+    return (
+      <details className="group" data-testid="fix-result" role="status">
+        <summary className="motion-press inline-flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-pill border border-line-ui bg-card px-3.5 text-sm font-semibold text-ink shadow-(--shadow-f) hover:bg-subtle touch:min-h-11 [&::-webkit-details-marker]:hidden" data-testid="fix-result-toggle">
+          <ChevronRightIcon aria-hidden width={14} height={14} className="shrink-0 text-ink-3 transition-transform duration-(--dur-fast) group-open:rotate-90" />
+          {t("alerts.fix.title")}
+          {counts}
+        </summary>
+        <div className="card-flat mt-3 space-y-2">
+          <OperationList operations={result.results} business={business} />
+          {outcome}
+        </div>
+      </details>
+    );
   return (
     <section aria-label={t("alerts.fix.title")} className={flat ? "space-y-2 border-t border-line-strong pt-3" : "card-standard space-y-2 p-4"} data-testid="fix-result" role="status">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-ink">{t("alerts.fix.title")}</h3>
-        {/* On a Business page only the counts that are not zero: "0 refused" is noise. */}
-        {!business || result.executed ? <Badge tone={result.executed ? "ok" : "neutral"}>{t("alerts.fix.executed", { n: result.executed })}</Badge> : null}
-        {!business || result.pending_approval ? <Badge tone={result.pending_approval ? "warn" : "neutral"}>{t("alerts.fix.pending", { n: result.pending_approval })}</Badge> : null}
-        {!business || result.refused ? <Badge tone={result.refused ? "bad" : "neutral"}>{t("alerts.fix.refused", { n: result.refused })}</Badge> : null}
+        {counts}
       </div>
       <OperationList operations={result.results} business={business} />
-      <p className="text-sm text-ink" data-testid="fix-outcome">{result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}</p>
+      {outcome}
     </section>
   );
 }

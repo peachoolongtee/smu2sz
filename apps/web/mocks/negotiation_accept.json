@@ -3,11 +3,11 @@
   "decision_id": "deal:OFF-f806f79b6c21",
   "decision_recorded": true,
   "execution": {
-    "summary_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
-    "requested_fen": 14998620,
-    "requested_display": "¥149,986.20",
-    "landed_fen": 14998620,
-    "landed_display": "¥149,986.20",
+    "summary_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥147,210.00 was requested and has landed.",
+    "requested_fen": 14721000,
+    "requested_display": "¥147,210.00",
+    "landed_fen": 14721000,
+    "landed_display": "¥147,210.00",
     "in_transit_fen": 0,
     "in_transit_display": null
   },
@@ -29,7 +29,7 @@
     "offer_version": 1,
     "counterparty_id": "BUYER-1",
     "verdict_id": "VER-a899ca66120c",
-    "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+    "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
     "obligations": [
       {
         "id": "CTR-193394b6ba8b-O2",
@@ -42,10 +42,10 @@
         "effective_day": 2,
         "base": {
           "kind": "INVOICE",
-          "amount_fen": 25720000,
+          "amount_fen": 26000000,
           "receivable_id": "RCV-A",
           "events_per_year": null,
-          "amount_display": "¥257,200.00"
+          "amount_display": "¥260,000.00"
         },
         "contingency": "FIRM",
         "duration": {
@@ -58,7 +58,7 @@
             "doc_id": "CTR-193394b6ba8b",
             "start": 34,
             "end": 134,
-            "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+            "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
           }
         ],
         "confidence": 1,
@@ -101,45 +101,45 @@
       "prev_hash": "a782537d93a6556af2a943c2c31a8db87bba76b5cada428f1a3dd03b8537b7a7",
       "effective_day": 0,
       "approval_id": null,
-      "message": "Drew ¥149,986.20 on FAC-LINE on day 0",
+      "message": "Drew ¥147,210.00 on FAC-LINE on day 0",
       "day": 0,
       "requested_by": null,
-      "summary": "Drew ¥149,986.20 on FAC-LINE on day 0"
+      "summary": "Drew ¥147,210.00 on FAC-LINE on day 0"
     }
   ],
   "plan": {
-    "id": "PLAN-COM-6967b1df72ef",
+    "id": "PLAN-COM-9e5ae7275c08",
     "basis": "COMMITTED",
-    "need_fen": 14998620,
+    "need_fen": 14721000,
     "actions": [
       {
         "kind": "DRAW",
         "facility_id": "FAC-LINE",
         "day": 0,
-        "amount_fen": 14998620,
+        "amount_fen": 14721000,
         "receivable_id": null,
         "repay_day": 32,
         "rate_bp": null,
         "lands_day": 0,
         "available_from_day": 0,
-        "amount_display": "¥149,986.20"
+        "amount_display": "¥147,210.00"
       }
     ],
     "costs": [
       {
-        "label": "Bank credit line: draw ¥149,986.20, repaid day 32",
-        "fen": 84157,
+        "label": "Bank credit line: draw ¥147,210.00, repaid day 32",
+        "fen": 82599,
         "facility_id": "FAC-LINE",
-        "formula": "149,986.20 × 6.4% × 32/365 = 841.57",
+        "formula": "147,210.00 × 6.4% × 32/365 = 825.99",
         "needs_owner_approval": false,
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥841.57",
-        "label_when": "Bank credit line: draw ¥149,986.20, repaid in 32 days"
+        "display": "¥825.99",
+        "label_when": "Bank credit line: draw ¥147,210.00, repaid in 32 days"
       }
     ],
-    "total_cost_fen": 84157,
+    "total_cost_fen": 82599,
     "admissible": true,
     "violations": [],
     "marginal_cost_annual": {
@@ -152,23 +152,23 @@
       {
         "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
-        "note": "cost ¥1,953.60; admissible but dearer than the selected plan",
+        "note": "cost ¥1,920.00; admissible but dearer than the selected plan",
         "label_when": "Discount the whole invoice at 1.2%",
-        "note_when": "cost ¥1,953.60; within your limits but dearer than the selected plan"
+        "note_when": "cost ¥1,920.00; within your limits but dearer than the selected plan"
       }
     ],
-    "label": "committed plan: ¥841.57",
+    "label": "committed plan: ¥825.99",
     "needs_owner_approval": false,
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
     "available_from_day": null,
-    "need_display": "¥149,986.20",
-    "total_cost_display": "¥841.57",
-    "label_when": "committed plan: ¥841.57"
+    "need_display": "¥147,210.00",
+    "total_cost_display": "¥825.99",
+    "label_when": "committed plan: ¥825.99"
   },
   "message": "CTR-193394b6ba8b accepted; commitment recorded; remaining gap funded.",
   "message_when": "Option A was accepted and the agreement is recorded; the remaining gap is funded.",
   "lang": "en",
-  "transcript_hash": "802cf1c4946c483e21d6c89444465751ef705a8ba4ff2bc6108d36b36cdeaf34"
+  "transcript_hash": "25ee2e90a3baff56debf760d6dfb6e32e1a84761828d4cd34e96821c906cba57"
 }

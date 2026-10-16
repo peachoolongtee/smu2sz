@@ -43,5 +43,5 @@ def test_the_additional_need_flow_could_still_support():
 
     assert x(None) == 8_100_000  # ¥81,000: the finance advance-rate cap on RCV-A
     assert x(ASKED) == 1_400_000  # ¥14,000 if EX01 is accepted as asked: the line's ¥14,960 of room
-    assert x(OPTION_A) == 0  # ¥0 under Option A: the line has ¥13.80 until 1 Nov
+    assert x(OPTION_A) == 200_000  # ¥2,000 under Option A: the line has ¥2,790 until 1 Nov (face rounded to ¥260,000, R-10)
     assert x(OPTION_B) == 6_200_000  # ¥62,000 under Option B: the line in the second gap

@@ -48,7 +48,7 @@ def test_while_the_cash_is_on_its_way_the_home_waits_for_the_lender_not_the_owne
     assert home["remaining_task"] is None and home["remaining_task_links"] == []
     row = next(x for x in home["open_decisions"] if x["id"] == acted["decision_id"])
     assert row["state"] == "SETTLEMENT_PENDING" and row["waiting_for"]["code"] == "FUNDING_SETTLEMENT"
-    assert row["waiting_for"]["party"] == "lender" and row["residual"]["shortfall_display"] == "¥255,013.80"
+    assert row["waiting_for"]["party"] == "lender" and row["residual"]["shortfall_display"] == "¥257,790.00"
 
 
 def test_healthy_books_have_no_remaining_task_and_no_open_decisions(client):

@@ -83,53 +83,53 @@ def worth0(rt_day0: Runtime, books_day0: Books, mandate0: Mandate) -> WorthAnswe
 
 def test_day34_call_now_on_the_overdue_invoice(worth34: WorthAnswer):
     a = _row(worth34, RCV_A)
-    assert (a.outstanding_fen, a.due_day, a.days_late, a.status, a.financed) == (16_280_000, 32, 2, "OPEN", False)
-    assert a.gross_saving_fen == a.net_saving_fen == 137_461  # ¥1,374.61, a free action keeps all of it
+    assert (a.outstanding_fen, a.due_day, a.days_late, a.status, a.financed) == (16_000_000, 32, 2, "OPEN", False)
+    assert a.gross_saving_fen == a.net_saving_fen == 136_426  # ¥1,364.26, a free action keeps all of it
     today = next(e for e in a.effects if e.kind == "today")
-    assert (today.saving_fen, today.need_left_fen) == (137_461, 3_720_000)  # ¥37,200 still to cover
+    assert (today.saving_fen, today.need_left_fen) == (136_426, 4_000_000)  # ¥40,000 still to cover
     assert today.after_needs_owner is True and today.breach_days_removed == 0
     assert a.ceilings == []  # never an early-payment ceiling on an invoice already due
     assert "already due" in a.reason_sentence
     assert a.action == "call_now" and not a.no_saving
-    assert a.action_sentence == ("Call Foshan Home Retail Co. today for the ¥162,800.00: it saves you ¥1,374.61 "
+    assert a.action_sentence == ("Call Foshan Home Retail Co. today for the ¥160,000.00: it saves you ¥1,364.26 "
                                  "and is the only free action.")
-    assert a.worth_text == "Saves ¥1,374.61"
+    assert a.worth_text == "Saves ¥1,364.26"
 
 
 def test_day34_ri2_offers_early_payment_with_the_day42_breach_removed(worth34: WorthAnswer):
     b = _row(worth34, RI_2)
-    assert b.gross_saving_fen == 170_610 and b.net_saving_fen == 78_828
+    assert b.gross_saving_fen == 170_220 and b.net_saving_fen == 79_992
     assert b.action == "offer_early_pay" and b.days_late == 0
     today = next(e for e in b.effects if e.kind == "today")
     assert today.breach_days_removed == 5 and today.need_left_fen == 0
     assert "RESERVE_BREACH_AHEAD" in today.alerts_removed
     early = next(e for e in b.effects if e.kind == "before_due")
-    assert early.receipt_day == 42 and early.saving_fen == 170_610 and early.breach_days_removed == 5
+    assert early.receipt_day == 42 and early.saving_fen == 170_220 and early.breach_days_removed == 5
     need, whole = _ceiling(b, "need"), _ceiling(b, "whole")
-    # the oracle's plan-only ceiling is 0.80% (¥77.58); the module's APR-capped ceiling is 0.45%: 11 days early against the
+    # the oracle's plan-only ceiling is 0.80% (¥98.55); the module's APR-capped ceiling is 0.45%: 11 days early against the
     # mandate's 15% cap (0.50% would be 16.6%), so 0.80% is a rate the verifier rejects with MAX_APR_EXCEEDED
-    assert (need.face_fen, need.largest_rate_bp, need.beats_by_fen) == (20_000_000, 45, 78_828)
+    assert (need.face_fen, need.largest_rate_bp, need.beats_by_fen) == (20_000_000, 45, 79_992)
     assert (need.next_rate_bp, need.next_rate_dearer_by_fen) == (None, None)  # the next step is over the APR cap, not dearer
     assert (whole.face_fen, whole.largest_rate_bp) == (42_000_000, 40)
     assert (need.face_label, whole.face_label) == ("the plan's need", "the whole invoice")
     assert b.ceilings == [whole, need]
     # the midpoint illustration: halfway to the ceiling, rounded down to the 5 bp grid (the sweep's 0.40% point)
-    assert (need.mid_rate_bp, need.mid_saving_fen) == (20, 128_828)  # ¥1,288.28 saved at 0.20%, ¥788.28 at the 0.45% limit
-    assert (whole.mid_rate_bp, whole.mid_saving_fen) == (20, 86_610)  # the ceiling is 0.40%
-    assert (b.mid_rate_bp, b.mid_saving_fen) == (20, 128_828) and b.net_saving_fen == 78_828  # the order is on net
+    assert (need.mid_rate_bp, need.mid_saving_fen) == (20, 129_992)  # ¥1,299.92 saved at 0.20%, ¥799.92 at the 0.45% limit
+    assert (whole.mid_rate_bp, whole.mid_saving_fen) == (20, 86_220)  # the ceiling is 0.40%
+    assert (b.mid_rate_bp, b.mid_saving_fen) == (20, 129_992) and b.net_saving_fen == 79_992  # the order is on net
     # the verifier offers no early-pay counter on this invoice (every rate it would send is refused on its APR), so the
     # row quotes the plan's need; one early-payment figure per invoice, never the whole-invoice ceiling in the sentence
     assert [c.face_kind for c in b.ceilings] == ["whole", "need"]
-    assert b.worth_text == "Saves ¥788.28 at the 0.45% limit; ¥1,288.28 if they take 0.20%"
+    assert b.worth_text == "Saves ¥799.92 at the 0.45% limit; ¥1,299.92 if they take 0.20%"
     assert b.action_sentence == ("On the ¥420,000.00 due in 13 days, offer early payment at up to 0.45% on "
                                  "¥200,000.00, or fund it instead.")
-    assert b.reason_sentence.startswith("At the 0.45% limit it saves you ¥788.28 against the cheapest funding plan; "
-                                        "at 0.20% ¥1,288.28.")
+    assert b.reason_sentence.startswith("At the 0.45% limit it saves you ¥799.92 against the cheapest funding plan; "
+                                        "at 0.20% ¥1,299.92.")
 
 
 def test_day34_ri32_waits_by_the_rule(worth34: WorthAnswer):
     c = _row(worth34, RI_32)
-    assert c.gross_saving_fen == 170_610 and c.net_saving_fen == 7_368
+    assert c.gross_saving_fen == 170_220 and c.net_saving_fen == 7_110
     need, whole = _ceiling(c, "need"), _ceiling(c, "whole")
     assert (need.face_fen, need.largest_rate_bp) == (20_000_000, 120)
     assert (whole.face_fen, whole.largest_rate_bp) == (42_000_000, 65)
@@ -137,9 +137,9 @@ def test_day34_ri32_waits_by_the_rule(worth34: WorthAnswer):
     assert c.action == "wait"
     assert c.action_sentence == ("Wait: the ¥420,000.00 due in 43 days is beyond the shortfall; "
                                  "chasing it now saves nothing extra.")
-    assert c.reason_sentence == ("Collected today it would save you ¥1,706.10 and clear the shortfall, but the invoices due "
+    assert c.reason_sentence == ("Collected today it would save you ¥1,702.20 and clear the shortfall, but the invoices due "
                                  "before it already cover what you need, so chasing it adds nothing.")
-    assert c.worth_text == "Saves nothing extra now" and c.net_saving_fen == 7_368  # the figure stays in the payload
+    assert c.worth_text == "Saves nothing extra now" and c.net_saving_fen == 7_110  # the figure stays in the payload
 
 
 def test_day34_has_no_counter_face_and_the_rows_quote_the_plans_need(worth34: WorthAnswer):
@@ -149,7 +149,7 @@ def test_day34_has_no_counter_face_and_the_rows_quote_the_plans_need(worth34: Wo
         assert all(c.face_kind != "counter" for c in _row(worth34, rid).ceilings)
     assert [w.receivable_id for w in worth34.rows] == [RCV_A, RI_2, RI_32]  # the net order is the same with the counter face
     assert [w.worth_text for w in worth34.rows] == [
-        "Saves ¥1,374.61", "Saves ¥788.28 at the 0.45% limit; ¥1,288.28 if they take 0.20%", "Saves nothing extra now"]
+        "Saves ¥1,364.26", "Saves ¥799.92 at the 0.45% limit; ¥1,299.92 if they take 0.20%", "Saves nothing extra now"]
 
 
 def test_every_ceiling_passes_the_verifiers_apr_check_and_the_next_step_does_not(
@@ -186,8 +186,8 @@ def test_option_a_face_is_the_counters(rt_day0: Runtime, books_day0: Books, mand
                                        rt_day34: Runtime, books_day34: Books, mandate34: Mandate):
     clear_face_cache()
     key = rt_day0.owner_key_hex
-    assert option_a_face(books_day0, mandate0, RCV_A, trusted_owner_key_hex=key, day=0, commitments=()) == 25_720_000
-    assert option_a_face(books_day0, mandate0, RCV_A, trusted_owner_key_hex=key, day=0, commitments=()) == 25_720_000  # cached
+    assert option_a_face(books_day0, mandate0, RCV_A, trusted_owner_key_hex=key, day=0, commitments=()) == 26_000_000
+    assert option_a_face(books_day0, mandate0, RCV_A, trusted_owner_key_hex=key, day=0, commitments=()) == 26_000_000  # cached
     held = tuple(rt_day34.store.commitments())
     assert option_a_face(books_day34, mandate34, RCV_A, trusted_owner_key_hex=key, day=34, commitments=held) is None  # overdue
     assert option_a_face(books_day34, mandate34, RI_2, trusted_owner_key_hex=key, day=34, commitments=held) is None
@@ -197,10 +197,10 @@ def test_option_a_face_is_the_counters(rt_day0: Runtime, books_day0: Books, mand
 
 def test_day34_ranking_net_and_gross(worth34: WorthAnswer):
     assert [w.receivable_id for w in worth34.rows] == [RCV_A, RI_2, RI_32]
-    assert [w.net_saving_fen for w in worth34.rows] == [137_461, 78_828, 7_368]
-    assert worth34.gross_order == [RI_2, RI_32, RCV_A]  # ¥1,706.10, ¥1,706.10 (due earlier first), ¥1,374.61
-    assert [_row(worth34, i).gross_saving_fen for i in worth34.gross_order] == [170_610, 170_610, 137_461]
-    assert worth34.top_action == "¥162,800.00 from Foshan Home Retail Co. is 2 days late: ask them to pay."  # the overdue invoice first
+    assert [w.net_saving_fen for w in worth34.rows] == [136_426, 79_992, 7_110]
+    assert worth34.gross_order == [RI_2, RI_32, RCV_A]  # ¥1,702.20, ¥1,702.20 (due earlier first), ¥1,364.26
+    assert [_row(worth34, i).gross_saving_fen for i in worth34.gross_order] == [170_220, 170_220, 136_426]
+    assert worth34.top_action == "¥160,000.00 from Foshan Home Retail Co. is 2 days late: ask them to pay."  # the overdue invoice first
     assert worth34.top_action_second == worth34.rows[0].action_sentence
     assert worth34.first_breach_day == 42 == _oracle("day 34")["baseline"]["first_breach_day"]
     assert worth34.ranking_note == ("Ranked by what collecting each saves you against the cheapest funding plan, "
@@ -210,15 +210,15 @@ def test_day34_ranking_net_and_gross(worth34: WorthAnswer):
 
 def test_day34_the_five_days_early_effect_is_a_cost_shown_as_no_saving(worth34: WorthAnswer):
     effect = next(e for e in _row(worth34, RI_32).effects if e.kind == "before_due")
-    assert effect.receipt_day == 72 and effect.saving_fen == -7_609  # kept negative, never clamped
+    assert effect.receipt_day == 72 and effect.saving_fen == -6_150  # kept negative, never clamped
     assert effect.no_saving is True and effect.saving_text == "no saving"
     assert effect.breach_days_removed == 0 and effect.need_left_fen == 20_000_000
 
 
 def test_saving_text_helper():
-    assert saving_text(-7_609) == "no saving" and saving_text(0) == "no saving"
+    assert saving_text(-6_150) == "no saving" and saving_text(0) == "no saving"
     assert saving_text(0, "zh") == "没有节省"
-    assert saving_text(137_461) == "¥1,374.61" and saving_text(137_461, "zh") == "¥1,374.61"
+    assert saving_text(136_426) == "¥1,364.26" and saving_text(136_426, "zh") == "¥1,364.26"
 
 
 # ---------------------------------------------------------------- the oracle, to the fen
@@ -284,14 +284,14 @@ def test_every_sweep_value_matches_the_oracle_day34(rt_day34: Runtime, books_day
 
 
 def test_sweep_pins_day34(books_day34: Books, mandate34: Mandate):
-    assert early_pay_vs_plan(books_day34, mandate34, RI_2, 20_000_000, 40) == -88_828  # ¥888.28 under the plan
-    assert early_pay_vs_plan(books_day34, mandate34, RI_2, 20_000_000, 80) == -7_758
-    assert early_pay_vs_plan(books_day34, mandate34, RI_2, 20_000_000, 85) == 2_420  # ¥24.20 dearer
+    assert early_pay_vs_plan(books_day34, mandate34, RI_2, 20_000_000, 40) == -89_992  # ¥899.92 under the plan
+    assert early_pay_vs_plan(books_day34, mandate34, RI_2, 20_000_000, 80) == -9_855
+    assert early_pay_vs_plan(books_day34, mandate34, RI_2, 20_000_000, 85) == 168  # ¥1.68 dearer
     assert early_pay_vs_plan(books_day34, mandate34, RI_2, 20_000_000, 0) is None  # 0 bp is not an early payment
 
 
 def test_the_early_pay_test_is_refused_where_the_verifier_would_not_run_it(books_day34: Books, mandate34: Mandate):
-    assert early_pay_vs_plan(books_day34, mandate34, RCV_A, 16_280_000, 40) is None  # overdue: not settled before due
+    assert early_pay_vs_plan(books_day34, mandate34, RCV_A, 16_000_000, 40) is None  # overdue: not settled before due
     assert early_pay_vs_plan(books_day34, mandate34, "NO-SUCH", 10_000, 40) is None
 
 
@@ -307,19 +307,19 @@ def test_day0_rcv_a(worth0: WorthAnswer):
     assert (_ceiling(a, "whole").face_fen, _ceiling(a, "whole").largest_rate_bp) == (42_000_000, 70)
     assert (_ceiling(a, "need").face_fen, _ceiling(a, "need").largest_rate_bp) == (40_500_000, 75)
     assert _ceiling(a, "need").beats_by_fen == 5_939 and _ceiling(a, "need").mid_rate_bp == 35  # 0.75% / 2 down to 0.35%
-    # the row quotes the face the verifier's own Option A counter uses: ¥257,200 at up to 0.85% (the Deals card's figure)
+    # the row quotes the face the verifier's own Option A counter uses: ¥260,000 at up to 0.85% (the Deals card's figure)
     counter = _ceiling(a, "counter")
-    assert (counter.face_fen, counter.largest_rate_bp, counter.beats_by_fen) == (25_720_000, 85, 8_616)
-    assert (counter.next_rate_bp, counter.next_rate_dearer_by_fen) == (90, 5_451)
+    assert (counter.face_fen, counter.largest_rate_bp, counter.beats_by_fen) == (26_000_000, 85, 7_794)
+    assert (counter.next_rate_bp, counter.next_rate_dearer_by_fen) == (90, 5_279)
     assert [c.face_kind for c in a.ceilings] == ["whole", "need", "counter"]
-    assert a.net_saving_fen == counter.beats_by_fen == 8_616
-    assert (a.mid_rate_bp, a.mid_saving_fen) == (40, counter.mid_saving_fen) == (40, 125_006)  # 0.85% / 2 down to 0.40%
-    assert a.worth_text == "Saves ¥86.16 at the 0.85% limit; ¥1,250.06 if they take 0.40%"
+    assert a.net_saving_fen == counter.beats_by_fen == 7_794
+    assert (a.mid_rate_bp, a.mid_saving_fen) == (40, counter.mid_saving_fen) == (40, 125_451)  # 0.85% / 2 down to 0.40%
+    assert a.worth_text == "Saves ¥77.94 at the 0.85% limit; ¥1,254.51 if they take 0.40%"
     assert a.action_sentence == ("On the ¥420,000.00 due in 32 days, offer early payment at up to 0.85% on "
-                                 "¥257,200.00, or fund it instead.")
+                                 "¥260,000.00, or fund it instead.")
     assert a.reason_sentence.startswith(
-        "At the 0.85% limit it saves you ¥86.16 against the cheapest funding plan; at 0.40% ¥1,250.06. "
-        "The next step, 0.90%, is already dearer than your current funding plan (by ¥54.51). If it arrived today")
+        "At the 0.85% limit it saves you ¥77.94 against the cheapest funding plan; at 0.40% ¥1,254.51. "
+        "The next step, 0.90%, is already dearer than your current funding plan (by ¥52.79). If it arrived today")
     assert a.action == "offer_early_pay" and worth0.first_breach_day == 12
     assert worth0.gross_order == [RCV_A]
 
@@ -459,12 +459,12 @@ def test_chinese_twins_for_every_sentence(rt_day34: Runtime, books_day34: Books,
     for s in _strings(zh):
         assert not re.search(r"\bday \d|第 ?\d+ ?天", s), s
     assert _row(zh, RI_2).action_sentence == "13 天后到期的 ¥420,000.00：对 ¥200,000.00 提前付款，最高 0.45%，或改为融资。"
-    assert _row(zh, RI_32).reason_sentence == ("今天收回能为您省 ¥1,706.10，并补上缺口，但在它之前到期的发票已经够用，"
+    assert _row(zh, RI_32).reason_sentence == ("今天收回能为您省 ¥1,702.20，并补上缺口，但在它之前到期的发票已经够用，"
                                                "现在去催收不会多省什么。")
-    assert _row(zh, RI_2).worth_text == "按 0.45% 的上限可省 ¥788.28；若对方接受 0.20%，可省 ¥1,288.28"
-    assert [w.worth_text for w in zh.rows][::2] == ["可省 ¥1,374.61", "暂无额外节省"]
+    assert _row(zh, RI_2).worth_text == "按 0.45% 的上限可省 ¥799.92；若对方接受 0.20%，可省 ¥1,299.92"
+    assert [w.worth_text for w in zh.rows][::2] == ["可省 ¥1,364.26", "暂无额外节省"]
     assert zh.ranking_note.startswith("按收回每一笔相比最便宜的融资方案")
-    assert _row(zh, RCV_A).action_sentence.startswith("今天就联系 Foshan Home Retail Co. 催收这笔 ¥162,800.00：")
+    assert _row(zh, RCV_A).action_sentence.startswith("今天就联系 Foshan Home Retail Co. 催收这笔 ¥160,000.00：")
 
 
 # ---------------------------------------------------------------- the route
@@ -502,12 +502,12 @@ def test_route_answers_on_the_day34_runtime(day34_client: TestClient, rt_day34: 
     assert body["rows"][0]["action"] == "call_now"
     assert body["top_action"].endswith("is 2 days late: ask them to pay.") and body["top_action_second"] == body["rows"][0]["action_sentence"]
     assert body["gross_order"] == [RI_2, RI_32, RCV_A]
-    assert body["rows"][0]["net_saving_display"] == "¥1,374.61"
+    assert body["rows"][0]["net_saving_display"] == "¥1,364.26"
     ri2 = body["rows"][1]
     assert ri2["ceilings"][1]["largest_rate_display"] == "0.45%" and ri2["ceilings"][1]["face_display"] == "¥200,000.00"
     assert all("impact" not in e for w in body["rows"] for e in w["effects"])
     early = next(e for e in body["rows"][2]["effects"] if e["kind"] == "before_due")
-    assert early["saving_fen"] == -7_609 and early["saving_display"] == "no saving"  # the raw figure stays beside it
+    assert early["saving_fen"] == -6_150 and early["saving_display"] == "no saving"  # the raw figure stays beside it
     assert body["computed_in_seconds"] >= 0
     again = day34_client.get("/receivables/worth", headers=OWNER)  # from the cache, identical
     assert {**again.json(), "computed_in_seconds": 0} == {**body, "computed_in_seconds": 0}  # the time is per request
@@ -566,11 +566,11 @@ def test_a_ceiling_of_one_step_states_only_the_saving_at_the_limit():
 
 def test_the_overdue_invoice_leads_the_top_sentence_and_the_savings_sentence_comes_second(worth34: WorthAnswer, rt_day34: Runtime,
                                                                                     books_day34: Books, mandate34: Mandate):
-    assert worth34.top_action == "¥162,800.00 from Foshan Home Retail Co. is 2 days late: ask them to pay."
+    assert worth34.top_action == "¥160,000.00 from Foshan Home Retail Co. is 2 days late: ask them to pay."
     assert worth34.top_action_second == _row(worth34, RCV_A).action_sentence  # the ranking by saving is unchanged
     assert [w.receivable_id for w in worth34.rows] == [RCV_A, RI_2, RI_32]
     zh = receivables_worth(books_day34, mandate34, store=rt_day34.store, day=34, lang="zh")
-    assert zh.top_action == "Foshan Home Retail Co.的 ¥162,800.00 已逾期 2 天：请催对方付款。"
+    assert zh.top_action == "Foshan Home Retail Co.的 ¥160,000.00 已逾期 2 天：请催对方付款。"
     assert zh.top_action_second == _row(zh, RCV_A).action_sentence
     assert [w.net_saving_fen for w in zh.rows] == [w.net_saving_fen for w in worth34.rows]  # identical figures
     assert [w.overdue_text for w in worth34.rows] == ["Overdue", None, None] and [w.overdue_text for w in zh.rows] == ["已逾期", None, None]
@@ -580,5 +580,5 @@ def test_an_overdue_row_says_overdue_where_it_would_say_it_saves_nothing_extra()
     from app.strategy.collections import _worth_text
 
     assert _worth_text("en", "call_now", 0, None, 2) == "Overdue" and _worth_text("zh", "escalate", 0, None, 40) == "已逾期"
-    assert _worth_text("en", "call_now", 137_461, None, 2) == "Saves ¥1,374.61"  # a saving stays said, beside the overdue word
+    assert _worth_text("en", "call_now", 136_426, None, 2) == "Saves ¥1,364.26"  # a saving stays said, beside the overdue word
     assert _worth_text("en", "wait", 0, None, 0) == "Saves nothing extra now"  # an invoice not yet late is as it was

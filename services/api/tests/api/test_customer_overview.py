@@ -1,6 +1,6 @@
 """GET /customers/{id}/overview (map #88, ticket #108, the server half): the Customer overview read.
 
-Golden day 0: the Foshan offer (60-day terms, a 1% rebate, early payment) is evaluated, and FLOW's plan (a ¥150k credit-line draw and
+Golden day 0: the Foshan offer (60-day terms, a 1% rebate, early payment) is evaluated, and FLOW's plan (a ¥147k credit-line draw and
 ¥255k of invoice financing) is either waiting or has run. The read is composed from reads the other pages make, so the figures asserted
 here are theirs: the receivable rows' financing words, the exposure block's stress and capacity, the offer picture's recommended path.
 The owner's inputs are written by the test (the Demo seeds none)."""
@@ -133,7 +133,7 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
     d = b["decision"]
     assert d["eyebrow"] == "One commercial decision waits for you"
     assert d["text"] == ("Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. "
-                         "FLOW recommends countering with Option A, ¥3,027.77 once if accepted.")
+                         "FLOW recommends countering with Option A, ¥3,035.99 once if accepted.")
     assert (d["headline_short"], d["authority_text"]) == ("Counter instead of accepting their request", "This counter is within your mandate: no approval needed.")
     picture = api.get(f"/offers/{offer_id}/picture").json()
     recommended = next(p for p in picture["paths"] if p["recommended"])
@@ -167,7 +167,7 @@ def test_before_the_plan_the_exposure_rows_are_the_exposure_layers_own(api, rt):
     assert (rows[2]["label"], rows[2]["value_display"], rows[2]["tone"]) == (
         "Paid 30 days late", "−¥250,000 in 60 days; 65 days below your minimum; ¥550,000 uncovered", "bad")
     assert (rows[3]["value_display"], rows[3]["note"]) == (
-        "¥81,000 today; ¥0 if Foshan accepts Option A", "Room for another payment: ¥0 for the next 31 days (today ¥81,000).")
+        "¥81,000 today; ¥2,000 if Foshan accepts Option A", "Room for another payment: ¥2,000 (today ¥81,000).")  # the line's ¥2,790 (R-10)
     assert b["exposure"]["same_figures_note"].startswith("The same figures as on the deal")
     # the numbers are the deal's own: the exposure route says the same of the recommended path
     ex = api.get(f"/offers/{offer_id}/exposure", params={"lang": "en", "response": "counter:0"}).json()
@@ -245,7 +245,7 @@ def test_the_chinese_page_has_the_same_figures_and_no_english_left(api, rt):
     assert zh["figures"][3]["note"] == "占当前未收应收款的 100%"
     assert zh["decision"]["eyebrow"] == "有一项商务决定等待您处理"
     assert zh["decision"]["primary"]["label"] == "查看还价" and zh["decision"]["authority_text"] == "这份还价在您的授权范围内：无需批准。"
-    assert "FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价" in zh["decision"]["text"]
+    assert "FLOW 建议以方案 A（如被接受，一次性成本 ¥3,035.99）还价" in zh["decision"]["text"]
     assert [r["value_display"] for r in zh["economics"][:3]] == ["¥5,460,000", "20%", "约 ¥1,092,000"]
     assert zh["economics"][0]["note"] == "根据您的账目推算" and zh["economics"][1]["note"] == "为演示而假设，尚未经您确认"
     assert zh["economics"][4]["value_display"] == "普通"

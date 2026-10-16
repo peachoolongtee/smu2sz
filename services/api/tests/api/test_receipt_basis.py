@@ -109,14 +109,14 @@ def test_with_the_counter_ready_the_pending_line_is_an_alternative_and_the_plan_
     assert pending["label"] == "If Foshan accepts Option A"
     assert cash["receipts_legend_text"] == "Solid: money owed or scheduled under today's terms. Dashed: if Foshan accepts Option A."
     assert [(r["day"], r["kind"], r["amount_fen"], r["basis"], r["basis_text"]) for r in pending["receipt_rows"]] == [
-        (2, "EARLY_RECEIPT", 25_720_000, "PENDING", "if Foshan accepts Option A: ¥257,200 paid 2 days after the offer"),
-        (2, "DISCOUNT", -218_620, "PENDING", "if Foshan accepts Option A: ¥2,186.20 discount given 2 days after the offer"),
-        (32, "RECEIPT", 16_280_000, "PENDING", "if Foshan accepts Option A: ¥162,800 paid 32 days after the offer")]
+        (2, "EARLY_RECEIPT", 26_000_000, "PENDING", "if Foshan accepts Option A: ¥260,000 paid 2 days after the offer"),
+        (2, "DISCOUNT", -221_000, "PENDING", "if Foshan accepts Option A: ¥2,210 discount given 2 days after the offer"),
+        (32, "RECEIPT", 16_000_000, "PENDING", "if Foshan accepts Option A: ¥160,000 paid 32 days after the offer")]
     assert {r["when"] for r in pending["receipt_rows"]} == {"in 2 days", "in 32 days"}
     # it is the picture's own series for the path (composed, not recomputed), and the receipts it leaves alone keep their basis
     path = next(p for p in client.get(f"/offers/{oid}/picture").json()["paths"] if p["recommended"])
     assert [(r["day"], r["closing_fen"]) for r in pending["series"]] == [(r["day"], r["closing_fen"]) for r in path["series"]]
-    assert _by_day(pending["series"]) == {32: ("PENDING", "if Foshan accepts Option A: ¥162,800 paid 32 days after the offer"),
+    assert _by_day(pending["series"]) == {32: ("PENDING", "if Foshan accepts Option A: ¥160,000 paid 32 days after the offer"),
                                          47: SCHEDULED, 77: SCHEDULED, 107: SCHEDULED}
     assert _by_day(pending["series"], "EARLY_RECEIPT")[2][0] == "PENDING"
 
@@ -283,7 +283,7 @@ def test_the_chinese_words_at_each_stage_have_no_english_and_no_ids(client):
     cash = _home(client, "zh")["cash"]
     assert cash["pending"]["label"] == "如果 Foshan 接受方案 A"
     assert cash["receipts_legend_text"] == "实线：按现行条款已应收或已按计划的款项。虚线：如果 Foshan 接受方案 A。"
-    assert cash["pending"]["receipt_rows"][0]["basis_text"] == "如果 Foshan 接受方案 A：报价后 2 天收到 ¥257,200"
+    assert cash["pending"]["receipt_rows"][0]["basis_text"] == "如果 Foshan 接受方案 A：报价后 2 天收到 ¥260,000"
     assert english_leaks(_said(cash), names) == []
     client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"})
     cash = _home(client, "zh")["cash"]
@@ -342,7 +342,7 @@ def test_a_plans_early_pay_leg_and_a_discounted_bill_are_not_an_agreement(client
     # with the agreement recorded, the obligation's own early settlement is AGREED and the plan's leg on another day still is not
     client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"})
     agreed = BasisReader(current_books(rt.store.get_state(), rt.store.commitments()), 0, "en")
-    settlement = _event(LedgerEventKind.EARLY_RECEIPT, 2, 25_720_000, "Early settlement of RCV-A (x)", "RCV-A")
+    settlement = _event(LedgerEventKind.EARLY_RECEIPT, 2, 26_000_000, "Early settlement of RCV-A (x)", "RCV-A")
     assert agreed.of(settlement) is not None and agreed.of(settlement).code == "AGREED"  # type: ignore[union-attr]
     assert agreed.of(_event(LedgerEventKind.EARLY_RECEIPT, 3, 10_000_000, "Early payment on RCV-A", "RCV-A")) is None
     assert agreed.of(bill) is None and agreed.of(discount) is None

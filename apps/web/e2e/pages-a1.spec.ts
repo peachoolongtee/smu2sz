@@ -67,7 +67,7 @@ test("Receivables day 34: the late invoice is a filled mark left of Today, the o
   const lateFill = fills.find((f) => f[0] === "late")![1];
   for (const [state, fill] of fills) if (state !== "late") expect(fill).not.toBe(lateFill);
   // The server's amount and the day in words, with the buyer's initials.
-  await expect(page.getByTestId("recv-mark-label-RCV-A")).toContainText("¥162,800.00 · 2 days ago");
+  await expect(page.getByTestId("recv-mark-label-RCV-A")).toContainText("¥160,000.00 · 2 days ago");
   await expect(page.getByTestId("recv-mark-label-RCV-A")).toContainText("FH");
   await page.getByTestId("recv-mark-RCV-A").click();
   await expect(page.getByTestId("recv-RCV-A")).toHaveAttribute("data-highlight", "true");

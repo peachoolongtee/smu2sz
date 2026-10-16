@@ -216,6 +216,13 @@ def _priced(a: FundingAction, s: SuggestedAction, alone: Trajectory, base: Traje
     else:
         arrive = [d for d, _ in _new_events(alone, base, LedgerEventKind.DRAW, ref)]
         repay = [d for d, _ in _new_events(alone, base, LedgerEventKind.REPAYMENT, ref)]
+        if facility is None or facility.repayment != Repayment.AMORTISING:
+            # Only a repayment of this draw's own principal is its repayment. A balance drawn before the books started
+            # whose assumed repayment day moves because the draw adds cash is a new event on the same facility, not this
+            # draw being repaid (its charges would make the draw look cheaper than free).
+            own = {e.day for p in alone.days for e in p.events
+                   if e.kind == LedgerEventKind.REPAYMENT and e.ref == ref and e.amount_fen == -a.amount_fen}
+            repay = [d for d in repay if d in own]
         if not repay:  # unpriced, but the executor still tests the draw's tariff against the ceiling
             return s.model_copy(update={"above_apr_cap": needs_owner(None, None)}), None
     if len(arrive) == 1 and len(repay) == 1:  # one lump repayment: a schedule of instalments has no single day

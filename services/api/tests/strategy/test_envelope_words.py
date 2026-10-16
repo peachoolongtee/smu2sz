@@ -44,28 +44,28 @@ def _no_leak(zh: str | None) -> None:
     assert zh is not None and english_leaks({"s": zh}, (NAME,)) == []
 
 
-EARLY = Setting(45, discount=85, face=25_720_000)
+EARLY = Setting(45, discount=85, face=26_000_000)
 
 
 def test_a_tier_1_package_whose_funding_cannot_run_today():
     en, zh = _both(_p(EARLY, cure_cannot_run_today=True))
-    assert en == ("45-day terms with early payment of 0.85% on ¥257,200.00: within your limits and your cash floor holds, but its "
+    assert en == ("45-day terms with early payment of 0.85% on ¥260,000.00: within your limits and your cash floor holds, but its "
                   "funding cannot run today. It needs your approval.")
-    assert zh == "45 天账期并提前付款 0.85%（金额 ¥257,200.00）：在您的底线内，现金底线也守得住，但其资金安排今天无法执行，需要您批准。"
+    assert zh == "45 天账期并提前付款 0.85%（金额 ¥260,000.00）：在您的底线内，现金底线也守得住，但其资金安排今天无法执行，需要您批准。"
     _no_leak(zh)
 
 
 def test_a_tier_1_package_whose_fix_only_the_owner_may_approve():
     en, zh = _both(_p(EARLY, cure_needs_owner=True))
-    assert en == ("45-day terms with early payment of 0.85% on ¥257,200.00: within your limits, but the funding that keeps your cash "
+    assert en == ("45-day terms with early payment of 0.85% on ¥260,000.00: within your limits, but the funding that keeps your cash "
                   "floor needs your approval.")
-    assert zh == "45 天账期并提前付款 0.85%（金额 ¥257,200.00）：在您的底线内，但守住现金底线的资金安排需要您批准。"
+    assert zh == "45 天账期并提前付款 0.85%（金额 ¥260,000.00）：在您的底线内，但守住现金底线的资金安排需要您批准。"
     _no_leak(zh)
 
 
 @pytest.mark.parametrize(("setting", "en", "zh"), [
     (Setting(45, price=10), "a price change", "调整价格"),
-    (Setting(45, discount=85, face=25_720_000), "this early payment", "这笔提前付款"),
+    (Setting(45, discount=85, face=26_000_000), "this early payment", "这笔提前付款"),
 ])
 def test_what_a_class_2_package_needs_the_owner_for(setting, en, zh):
     p = _p(setting, outcome="NEEDS_OWNER_APPROVAL", tier="TIER_2")

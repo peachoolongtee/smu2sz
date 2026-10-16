@@ -63,7 +63,7 @@
       },
       "early_payment": {
         "agreed": true,
-        "text": "¥257,200 of this invoice may be paid early at 0.85% off, in 2 days; the agreement lapses if payment comes later"
+        "text": "¥260,000 of this invoice may be paid early at 0.85% off, in 2 days; the agreement lapses if payment comes later"
       },
       "pending_counter": null,
       "collection_state": "CURRENT",

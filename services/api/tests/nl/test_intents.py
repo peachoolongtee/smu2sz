@@ -137,7 +137,7 @@ def test_counterparty_message_is_compiled_and_answered_within_tier1(client, rt):
         "We can pay this one early at 1.5%. Nothing else changes.")
     assert r["intent"] == "COUNTERPARTY_MESSAGE"
     assert ops(r) == [] and stored_ops(rt) == [("COUNTER_OFFER", "EXECUTED")]
-    assert "0.85%" in r["reply"] and "¥257,200" in r["reply"]  # Counter A's face
+    assert "0.85%" in r["reply"] and "¥260,000" in r["reply"]  # Counter A's face
 
 
 def test_out_of_scope(client):
