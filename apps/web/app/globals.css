@@ -259,6 +259,11 @@ body {
   outline-offset: 2px;
 }
 
+/* The Ask FLOW fields (the header bar and the panel's box) show focus by their own border turning ink, not the ring. */
+.ask-field:focus-visible {
+  outline: none;
+}
+
 /* Inside the deep block the ring is white. */
 .on-deep :focus-visible {
   outline-color: var(--color-focus-on-deep);
