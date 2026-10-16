@@ -488,3 +488,64 @@ def test_a_projection_failure_is_logged_not_shown(client, monkeypatch, caplog) -
     assert "无法对这些账簿做预测" in zh.json()["errors"][0]["text"]
     assert "secret engine detail" not in r.text and "secret engine detail" not in zh.text
     assert "secret engine detail" in caplog.text
+
+
+# ---------------------------------------------------------------- SETUP-1: books are blank only while untouched
+
+
+def _open(client, **kw):
+    return client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"}, **kw)
+
+
+def test_a_fresh_blank_reset_leaves_nothing_in_the_log_no_event_and_day_zero(client) -> None:
+    blank(client)
+    rt = get_runtime()
+    assert rt.store.operations() == [] and rt.store.security_events() == [] and rt.store.get_state().as_of_day == 0
+    assert client.get("/setup/status").json()["can_open"] is True
+
+
+def test_blank_books_with_an_operation_in_the_log_are_not_opened(client) -> None:
+    from app.persistence.canonical import canonical_json
+
+    blank(client)
+    rt = get_runtime()
+    rt.store.append_operation("op-x", "NOTE", "op-x", canonical_json({"kind": "NOTE"}), canonical_json({"status": "EXECUTED"}))
+    before = _counts()
+    r = _open(client)
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "BOOKS_ALREADY_OPEN"
+    assert _counts() == before and client.get("/setup/status").json()["can_open"] is False
+    zh = _open(client, params={"lang": "zh"})
+    assert zh.status_code == 409 and "重置为空白账簿" in zh.json()["detail"]["message"]
+
+
+def test_blank_books_with_a_security_event_are_not_opened(client) -> None:
+    from app.domain.models import SecurityEvent, SecurityEventKind
+
+    blank(client)
+    rt = get_runtime()
+    rt.store.add_security_event(SecurityEvent(id="SEC-1", day=0, kind=SecurityEventKind.REPLAY, counterparty_id=None,
+                                              action_taken="refused; nothing booked", detail="x"))
+    before = _counts()
+    r = _open(client)
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "BOOKS_ALREADY_OPEN"
+    assert _counts() == before and len(rt.store.security_events()) == 1
+
+
+def test_blank_books_whose_clock_has_moved_are_not_opened(client) -> None:
+    blank(client)
+    assert client.post("/clock/advance", json={"days": 3}, headers=OWNER).status_code == 200
+    rt = get_runtime()
+    assert rt.store.get_state().as_of_day == 3
+    before = _counts()
+    r = _open(client)
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "BOOKS_ALREADY_OPEN"
+    assert _counts() == before and rt.store.get_state().scenario == "blank"
+
+
+def test_a_fresh_blank_opens_and_records_what_it_replaced(client) -> None:
+    import json
+
+    blank(client)
+    assert _open(client).status_code == 200
+    entry = json.loads(get_runtime().store.operations()[0].payload_json)
+    assert entry["replaced_ops"] == 0 and entry["replaced_head_hash"] is None and entry["replaced_scenario"] == "blank"
