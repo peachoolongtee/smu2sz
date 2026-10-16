@@ -8,8 +8,8 @@
 - Anyone else: may only submit documents (POST /offers) or talk as an unauthenticated COUNTERPARTY on /nl,
   which compiles and verifies but never executes (proposal only).
 
-DEMO_MODE (default on for local demos) accepts the published demo credentials. With DEMO_MODE=0 the
-routes fail closed (503) until OWNER_TOKEN / AGENT_KEY are set (security finding F-06)."""
+DEMO_MODE=1 (off by default since 16 Oct 2026, SEC-07; local demos opt in) accepts the published demo credentials. Without it
+the routes fail closed (503) until OWNER_TOKEN / AGENT_KEY are set (security finding F-06)."""
 
 from __future__ import annotations
 
@@ -28,7 +28,9 @@ DEMO_COUNTERPARTY_KEYS = {"BUYER-1": "demo-buyer-1-key", "BUYER-2": "demo-buyer-
 
 
 def demo_mode() -> bool:
-    return os.environ.get("DEMO_MODE", "1").strip().lower() in {"1", "true", "yes", "on"}
+    from app.config import demo_mode as configured
+
+    return configured()
 
 
 def _expected(env: str, demo_value: str) -> str | None:

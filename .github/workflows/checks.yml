@@ -21,6 +21,7 @@ env:
   TERMSLEDGER_NO_DOTENV: "1"
   DATABASE_URL: memory
   LLM_MODE: cache
+  DEMO_MODE: "1"  # off by default since 16 Oct (SEC-07); the API suite runs on the demo books and credentials
   SKIP_PERF_BENCH: "1"
   PYTHONUTF8: "1"
 

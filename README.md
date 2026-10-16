@@ -21,7 +21,7 @@ Expect 49 lines starting `VALID`, one per scripted task. Each file is one task's
 **2. Run it.** Two servers, one terminal each, both starting at the repository root:
 
 ```bash
-cd services/api && uv sync && uv run uvicorn app.main:app --reload      # API on :8000 (demo credentials, cache mode)
+cd services/api && uv sync && DEMO_MODE=1 uv run uvicorn app.main:app --reload      # API on :8000 (demo credentials, cache mode)
 cd apps/web && pnpm install && NEXT_PUBLIC_API_MODE=live pnpm dev        # UI on :3000; omit the variable for offline mock mode
 
 # Or one command for either mode (the API with in-memory books, the Demo scenarios and cached LLM outputs):
@@ -31,7 +31,7 @@ scripts/dev.sh mock     # UI alone on the recorded mocks (the default)
 
 - **Where the data lives.** Without `DATABASE_URL` the API uses the SQLite file `termsledger.db` in the directory it was started from (`services/api/termsledger.db` with the command above; the `*.db` pattern is git-ignored). The app creates the file and its tables itself the first time it opens the store (the first request, not at start); there is no Alembic step for local use. `DATABASE_URL=memory` keeps everything in the process and writes no file. For another file use the absolute form `DATABASE_URL=sqlite:////absolute/path/to/file.db` (four slashes: the scheme's three plus the leading `/` of the path).
 - **A repo-root `.env`.** The API reads `.env` at the repository root if one exists, and fills in only what the shell has not set. Set `TERMSLEDGER_NO_DOTENV=1` to skip it (the tests and the e2e config do).
-- **Other ports.** The API allows the web origin `http://localhost:3000` by default. For any other web port, start the API with `CORS_ORIGINS=<web origin>` (without it the browser's preflight is refused and every request fails) and the web app with `NEXT_PUBLIC_API_URL=<API origin>`, for example `CORS_ORIGINS=http://localhost:3141 uv run uvicorn app.main:app --port 8041` and `NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8041 pnpm dev -p 3141`.
+- **Other ports.** The API allows the web origin `http://localhost:3000` by default. For any other web port, start the API with `CORS_ORIGINS=<web origin>` (without it the browser's preflight is refused and every request fails) and the web app with `NEXT_PUBLIC_API_URL=<API origin>`, for example `DEMO_MODE=1 CORS_ORIGINS=http://localhost:3141 uv run uvicorn app.main:app --port 8041` and `NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8041 pnpm dev -p 3141`.
 - **Files `pnpm dev` writes.** Next.js 16 writes `apps/web/AGENTS.md` and `apps/web/CLAUDE.md` when the dev server starts; both are git-ignored.
 - More on the web app, the live mode and the e2e switches is in `apps/web/README.md`.
 
@@ -99,7 +99,7 @@ Other switches: `LLM_MODE=cache|live`, `LLM_PRIMARY=claude|deepseek`, `DATABASE_
 | Agent key | `X-Agent-Key` | `AGENT_KEY` | `demo-agent-key` |
 | Bank-feed key | `X-Bank-Feed-Key` | `BANK_FEED_KEY` | `demo-bank-feed-key` |
 
-The demo values work only while `DEMO_MODE` is on (the default for local runs). The mandate is signed with a published key labelled DEMO ONLY (`fixtures/keys/`).
+The demo values work only with `DEMO_MODE=1`, which is off by default (since 16 Oct 2026): every local run command here sets it. The mandate is signed with a published key labelled DEMO ONLY (`fixtures/keys/`).
 
 ## Deploy
 

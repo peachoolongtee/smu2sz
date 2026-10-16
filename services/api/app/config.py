@@ -49,6 +49,13 @@ def _int(name: str, default: int) -> int:
         return default
 
 
+def demo_mode() -> bool:
+    """DEMO_MODE: off unless set (SEC-07, the owner's decision of 16 Oct 2026). On, it accepts the published demo credentials,
+    seeds an empty store with the demo books, serves /docs and enables the demo routes. Local demos, the browser suites and the
+    tests opt in with DEMO_MODE=1; a deployment never does."""
+    return _flag("DEMO_MODE", default=False)
+
+
 @dataclass(frozen=True)
 class Features:
     terms_guard: bool = field(default_factory=lambda: _flag("FEATURE_TERMS_GUARD"))
