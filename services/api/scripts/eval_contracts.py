@@ -182,7 +182,7 @@ def table(rows: dict[str, dict[str, tuple[int, int, int]]]) -> str:
         lines.append(f"| {f} | " + " | ".join(cells) + f" | {m}/{k} | {m / k:.0%} | {x} |")
     k = sum(v[0] for r in rows.values() for v in r.values())
     m = sum(v[1] for r in rows.values() for v in r.values())
-    lines.append(f"| ALL | " + " | ".join(str(sum(v[1] for v in rows[i].values())) + "/" + str(sum(v[0] for v in rows[i].values()))
+    lines.append("| ALL | " + " | ".join(str(sum(v[1] for v in rows[i].values())) + "/" + str(sum(v[0] for v in rows[i].values()))
                                           for i in ids) + f" | {m}/{k} | {m / k:.0%} | |")
     return "\n".join(lines)
 
@@ -191,8 +191,8 @@ def table(rows: dict[str, dict[str, tuple[int, int, int]]]) -> str:
 
 
 def _backends(args: argparse.Namespace) -> list[Any]:
-    from app.compiler.base import BackendError
     from app.compiler.backends import DeepSeekBackend
+    from app.compiler.base import BackendError
     from app.compiler.cache import CacheBackend, write_entry
     from app.compiler.prompts import CONTRACT_PROMPT_VERSION
     from app.compiler.rules import RulesBackend
