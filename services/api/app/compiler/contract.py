@@ -21,6 +21,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from app.compiler import lexicon
+from app.compiler.contract_checks import check_notes, cross_checks, derived_dates
 from app.compiler.contract_parsing import (
     Parsed,
     basis_of,
@@ -526,6 +527,8 @@ def build_contract(doc: SourceDocument, parts: Sequence[tuple[Chunk, ContractExt
             continue
         clean.append(t)
     terms, conflict = _merge(clean, ctx.abst)
+    terms = sorted([*terms, *derived_dates(doc, terms, ctx.abst)], key=lambda t: (t.span.start, t.field.value))
+    ctx.abst += check_notes(cross_checks(doc, terms))
     found = {t.field for t in terms}
     conflicted = {a.field for a in ctx.abst if a.reason.startswith("conflicting sources")}
     not_found = [f for f in ContractField if f not in found and f.value not in conflicted]

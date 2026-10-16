@@ -266,6 +266,7 @@ def main() -> int:
 
     from app.compiler import service
     from app.compiler.contract import contract_document
+    from app.compiler.contract_checks import cross_checks
     from app.domain.models import DocumentKind
     from app.ingest import IngestError, extract_text
 
@@ -278,6 +279,7 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     preds, rows = [], {}
     refused: dict[str, tuple[str, str]] = {}
+    tally: Counter = Counter()
     meta: dict[str, dict[str, Any]] = {}
     for f in files:
         key = keys.get(f.name)
@@ -290,7 +292,21 @@ def main() -> int:
             refused[key["id"]] = (e.code, str(e))
             print(f"{key['id']}: refused {e.code}: {e}")
             continue
-        compiled = service.compile_contract(contract_document(text, DocumentKind.BUYER_CONTRACT, key["id"]))
+        cdoc = contract_document(text, DocumentKind.BUYER_CONTRACT, key["id"])
+        compiled = service.compile_contract(cdoc)
+        for c in cross_checks(cdoc, compiled.terms):
+            tally[f"{c.kind} {'ok' if c.ok else 'FAILED'}"] += 1
+            if not c.ok:
+                print(f"  check failed ({key['id']}): {c.note}")
+        tally["derived dates"] += sum(1 for t in compiled.terms if (t.text or "").startswith("derived: "))
+        for a in compiled.abstentions:
+            for needle, label in (("stated more than once", "total/term stated twice, read once"),
+                                  ("line of the contract total", "line item read inside the total"),
+                                  ("words against figures", "words against figures (dropped)"),
+                                  ("working days from signing", "working-day period (no date derived)"),
+                                  ("but the contract also says", "derived end disagrees with the stated one")):
+                if needle in a.reason:
+                    tally[label] += 1
         pred = predict(compiled, key["id"], f.name)
         preds.append(pred)
         rows[key["id"]] = score(key, pred)
@@ -305,6 +321,9 @@ def main() -> int:
         groups.setdefault(k.get("family", "?"), []).append(i)
     (out_dir / "predictions.json").write_text(json.dumps(preds, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     report = table(rows) + "\n\nBy format and family (matched/key):\n\n" + summary(rows, groups)
+    if tally:
+        report += ("\n\nCode-side checks (count over the readable documents):\n" + "\n".join(
+            f"- {k}: {v}" for k, v in sorted(tally.items())))
     if refused:
         report += "\n\nRefused before any model call:\n" + "\n".join(f"- {i}: {c}: {m}" for i, (c, m) in refused.items())
     report += "\n\nNot expressible by FLOW (not scored):\n" + "\n".join(
