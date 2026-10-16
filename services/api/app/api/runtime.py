@@ -285,9 +285,17 @@ def _owner_key_hex(s: Settings, demo: bool) -> str:
 
 
 _runtime: Runtime | None = None
+# Opening the books happens once. Calls that arrive while they open wait for that opening and share what it opened, or the error it
+# failed with (each used to open a copy of its own, and in live mode each copy read the demo documents through the model); the next
+# call after a failure opens them again. A call made on the opening thread itself (code inside the opening asking for the runtime it
+# is building) fails at once instead of waiting for itself. The opening must not wait for another thread that asks for the runtime.
+_opening = threading.RLock()
+_opener: int | None = None  # the thread opening the books, while it does
+_openings = 0  # openings finished, failed or not
+_failure: Exception | None = None  # the last opening's error, until an opening succeeds
 
 
-def get_runtime() -> Runtime:
+def _open_runtime() -> Runtime:
     """Open the configured store and hydrate from it. Never deletes; seeds only an empty store, in DEMO_MODE."""
     global _runtime
     if _runtime is None:
@@ -324,7 +332,37 @@ def get_runtime() -> Runtime:
     return _runtime
 
 
+def get_runtime() -> Runtime:
+    """The process's runtime, opened by the first call (`_open_runtime`). Calls that arrive while it opens wait and share it, or share
+    the error it failed with; the next call after a failure opens it again."""
+    global _opener, _openings, _failure
+    rt = _runtime
+    if rt is not None:
+        return rt
+    if _opener == threading.get_ident():
+        raise StartupError("get_runtime() was called while this thread was opening the books: the opening must use the runtime "
+                           "it is building, not ask for it")
+    seen = _openings
+    with _opening:
+        if _runtime is not None:
+            return _runtime
+        if _openings != seen and _failure is not None:  # the opening this call waited for failed: its error, not another attempt
+            raise StartupError(f"the books could not be opened: {type(_failure).__name__}: {_failure}") from _failure
+        _opener, _failure = threading.get_ident(), None
+        try:
+            rt = _open_runtime()
+        except Exception as e:
+            _failure = e
+            raise
+        finally:
+            _opener = None
+            _openings += 1
+        return rt
+
+
 def set_runtime(rt: Runtime | None) -> None:
     """Tests inject an in-memory runtime."""
-    global _runtime
-    _runtime = rt
+    global _runtime, _failure
+    with _opening:
+        _runtime = rt
+        _failure = None

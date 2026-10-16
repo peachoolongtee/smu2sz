@@ -157,8 +157,16 @@ def test_default_chain_is_cache_then_rules(monkeypatch: pytest.MonkeyPatch) -> N
     assert [b.name for b in default_backends(Settings())] == ["cache", "rules"]
 
 
-def test_live_chain_orders_claude_deepseek_rules(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_live_chain_orders_cache_claude_deepseek_rules(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LLM_MODE", "live")
+    assert [b.name for b in default_backends(Settings())] == ["cache", "claude", "deepseek", "rules"]
+    monkeypatch.setenv("LLM_PRIMARY", "deepseek")
+    assert [b.name for b in default_backends(Settings())] == ["cache", "deepseek", "claude", "rules"]
+
+
+def test_live_raw_chain_has_no_recording(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LLM_MODE", "live")
+    monkeypatch.setenv("LLM_LIVE_RAW", "1")
     assert [b.name for b in default_backends(Settings())] == ["claude", "deepseek", "rules"]
     monkeypatch.setenv("LLM_PRIMARY", "deepseek")
     assert [b.name for b in default_backends(Settings())] == ["deepseek", "claude", "rules"]
