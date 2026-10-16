@@ -92,14 +92,19 @@ def _refuse_unless_can_open(lg: Lang) -> None:
 
 
 def _books_are_blank() -> bool:
-    """The blank books are the only ones setup may replace. The scenario name is stored with the books, so this holds after a restart."""
-    return get_runtime().store.get_state().scenario == "blank"
+    """The blank books are the only ones setup may replace, and only while they are still blank (SETUP-1): the scenario is
+    "blank" (stored with the books, so this holds after a restart), the operations log holds nothing (a blank reset writes
+    no entry), there is no security event and the clock is at day 0. Books that were used keep their record."""
+    store = get_runtime().store
+    state = store.get_state()
+    return (state.scenario == "blank" and state.as_of_day == 0 and not store.operations() and not store.security_events())
 
 
 def _already_open(lg: Lang) -> HTTPException:
     return HTTPException(409, {"code": "BOOKS_ALREADY_OPEN", "message": t(
-        lg, "Your books are already open, so nothing was changed. To start over, reset to the blank books first.",
-        "您的账簿已经开立，因此未做任何更改。如需重新开始，请先重置为空白账簿。")})
+        lg, "Your books are already open or in use (they hold a record, a security event or a later date), so nothing was "
+            "changed. To start over, reset to the blank books first.",
+        "您的账簿已经开立或已在使用（其中已有记录、安全事件或更晚的日期），因此未做任何更改。如需重新开始，请先重置为空白账簿。")})
 
 
 def _opened_entry() -> dict | None:
@@ -145,7 +150,7 @@ def setup_status(lang: str = "en") -> dict:
     opened = _opened_entry()
     books = "blank" if state.scenario == "blank" else ("own" if state.scenario is None else "demo")
     server_ok = _can_open() and demo_mode()
-    can = server_ok and books == "blank"  # opening replaces only the blank books (`POST /setup/open` refuses the rest)
+    can = server_ok and _books_are_blank()  # opening replaces only the untouched blank books (`POST /setup/open` refuses the rest)
     if not server_ok:
         why = t(lg, "Setting up books from the app needs demo mode on this server: a real deployment's owner signs the limits "
                     "with their own key.", "在此服务器上通过应用设置账簿需要演示模式：正式部署由业主用自己的密钥签署规则。")
@@ -446,11 +451,12 @@ class PreviewIn(BaseModel):
 @router.post("/setup/preview")
 def setup_preview(body: PreviewIn, lang: str = "en") -> dict:
     lg = _lang(lang)
+    _refuse_unless_can_open(lg)  # SETUP-7: the preview is setup's too, so it needs demo mode like the rest
     built = build_books(body.draft)
     out: dict[str, Any] = {
         "ok": not built.errors,
         "errors": [_issue(i, lg) for i in built.errors],
-        "warnings": [_issue(i, lg) for i in built.warnings] + _document_warnings(body.draft, lg),
+        "warnings": ([] if built.errors else [_issue(i, lg) for i in built.warnings] + _document_warnings(body.draft, lg)),
         "summary": None, "first_look": None,
     }
     if built.errors:
@@ -526,6 +532,9 @@ def setup_open(body: OpenIn, request: Request, lang: str = "en") -> dict:
         if not _books_are_blank():  # the books may have changed while the draft was being checked
             raise _already_open(lg)
         carried = _carry_documents(body.draft, {r.id: r for r in _usable_documents()})
+        before = rt.store.operations()  # SETUP-1: what the open replaces goes into its own entry
+        replaced = {"replaced_head_hash": before[-1].entry_hash if before else None, "replaced_ops": len(before),
+                    "replaced_scenario": rt.store.get_state().scenario}
         try:
             rt.store.reset()
             with rt.store.transaction():  # the new books, their first entry and the documents land together or not at all
@@ -538,7 +547,7 @@ def setup_open(body: OpenIn, request: Request, lang: str = "en") -> dict:
                            "company_name": company, "start_date": state.as_of, "cash_fen": state.cash_fen,
                            "facilities": len(state.facilities), "debts": len(state.debts), "receivables": len(state.receivables),
                            "recurring_invoices": len(state.recurring_invoices), "flows": len(state.flows),
-                           "mandate_version": mandate.version, "books_sha256": digest}
+                           "mandate_version": mandate.version, "books_sha256": digest, **replaced}
                 words = open_books_words(payload, "en")
                 msg = f"{words['event_text']} {words['event_detail']}"
                 result = OperationResult(op_id=op_id, kind=OPEN_BOOKS_KIND, status=OperationStatus.EXECUTED, tier=Tier.TIER_2,

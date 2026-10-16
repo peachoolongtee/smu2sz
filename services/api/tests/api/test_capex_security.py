@@ -350,3 +350,61 @@ def test_a_vendor_named_as_the_business_itself_is_not_registered_or_committed(cl
     out = _commit_and_approve(client, d)
     assert out["status"] == "REFUSED" and out["violations"][0]["inputs"]["refusal"] == "VENDOR_IS_OWN_BUSINESS", out
     assert _capex_flows(rt) == [] and not any(c.id == "VENDOR-SELF" for c in rt.store.get_state().counterparties)
+
+
+def _vendor_contract(client, vendor: str, buyer: str = "Lingnan Homeware Manufacturing Co., Ltd.", cp: str = "VENDOR-X") -> dict:
+    text = capex_contract_fixture_bytes("GZPM_EQUIPMENT_PURCHASE")[1].decode("utf-8")
+    text = text.replace("Guangzhou Precision Machinery Co., Ltd., a company", f"{vendor}, a company")
+    text = text.replace("Lingnan Homeware Manufacturing Co., Ltd., a company", f"{buyer}, a company")
+    d = client.post("/documents", json={"kind": "CAPEX_CONTRACT", "counterparty_id": cp, "text": text}).json()["document"]
+    return client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]}).json()["document"]
+
+
+@pytest.mark.parametrize("vendor", [
+    "Lingnan Homeware Manufacturing Co. Ltd",       # the punctuation variant
+    "Lingnan Homeware Manufacturing Co.,Ltd",
+    "Lingnan Homeware Manufacturing Limited",       # the suffix spelled another way
+    "Lingnan  Homeware Manufacturing Company Limited",
+])
+def test_a_punctuation_or_suffix_variant_of_the_business_name_is_refused(client, on, rt, vendor):
+    out = _commit_and_approve(client, _vendor_contract(client, vendor))
+    assert out["status"] == "REFUSED" and out["violations"][0]["inputs"]["refusal"] == "VENDOR_IS_OWN_BUSINESS", out
+    assert _capex_flows(rt) == [] and not any(c.id == "VENDOR-X" for c in rt.store.get_state().counterparties)
+
+
+def test_the_exact_name_is_refused_when_the_contracts_buyer_party_is_changed(client, on, rt):
+    """CAPEX-4(b): the business's registered name is the books', not only what this contract calls the buyer."""
+    out = _commit_and_approve(client, _vendor_contract(client, "Lingnan Homeware Manufacturing Co., Ltd.", buyer="Some Other Buyer Co., Ltd."))
+    assert out["status"] == "REFUSED" and out["violations"][0]["inputs"]["refusal"] == "VENDOR_IS_OWN_BUSINESS", out
+    assert _capex_flows(rt) == []
+
+
+def test_the_name_registered_when_the_books_were_opened_is_refused(client, on, rt):
+    from app.operations.party_names import own_business_keys, same_company_key
+
+    keys = own_business_keys(contract_buyer_names=["X Buyer"], opened_names=["上海 华兴 有限公司"], confirmed_records=[], scenario="own")
+    assert same_company_key("上海华兴（有限公司）") in keys and same_company_key("上海华兴公司") in keys
+    assert same_company_key("上海华新有限公司") not in keys
+
+
+def test_a_genuinely_different_vendor_still_commits(client, on, rt):
+    out = _commit_and_approve(client, _vendor_contract(client, "Lingnan Homeware Trading Co., Ltd.", cp="VENDOR-OK"))
+    assert out["status"] in ("EXECUTED", "OK") or out.get("violations") in (None, []), out
+    assert _capex_flows(rt) != []
+
+
+def test_spellings_of_one_name_share_a_key():
+    from app.operations.party_names import same_company_key as k
+
+    base = k("Lingnan Homeware Manufacturing Co., Ltd.")
+    for v in ("LINGNAN  HOMEWARE MANUFACTURING CO.,LTD.", "Lingnan Homeware Manufacturing", "Lingnan-Homeware Manufacturing Limited",
+              "Ｌingnan Ｈomeware Manufacturing Ｃo．，Ｌtd．", "Lingnan Homeware Manufacturing Company"):
+        assert k(v) == base, v
+    assert k("佛山岭南家居制造有限公司") == k("佛山岭南家居制造（有限公司）") == k("佛山岭南家居制造公司") == k("佛山岭南家居制造")
+
+
+def test_company_keys_do_not_collapse_different_companies():
+    from app.operations.party_names import same_company_key as k
+
+    assert k("Co., Ltd.") != "" and k("Guangzhou Precision Machinery Co., Ltd.") != k("Lingnan Homeware Manufacturing Co., Ltd.")
+    assert k("Foshan Wood Co") != k("Foshan Steel Co") and k("") == ""

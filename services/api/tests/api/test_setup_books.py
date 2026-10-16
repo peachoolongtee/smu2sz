@@ -488,3 +488,122 @@ def test_a_projection_failure_is_logged_not_shown(client, monkeypatch, caplog) -
     assert "无法对这些账簿做预测" in zh.json()["errors"][0]["text"]
     assert "secret engine detail" not in r.text and "secret engine detail" not in zh.text
     assert "secret engine detail" in caplog.text
+
+
+# ---------------------------------------------------------------- SETUP-1: books are blank only while untouched
+
+
+def _open(client, **kw):
+    return client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"}, **kw)
+
+
+def test_a_fresh_blank_reset_leaves_nothing_in_the_log_no_event_and_day_zero(client) -> None:
+    blank(client)
+    rt = get_runtime()
+    assert rt.store.operations() == [] and rt.store.security_events() == [] and rt.store.get_state().as_of_day == 0
+    assert client.get("/setup/status").json()["can_open"] is True
+
+
+def test_blank_books_with_an_operation_in_the_log_are_not_opened(client) -> None:
+    from app.persistence.canonical import canonical_json
+
+    blank(client)
+    rt = get_runtime()
+    rt.store.append_operation("op-x", "NOTE", "op-x", canonical_json({"kind": "NOTE"}), canonical_json({"status": "EXECUTED"}))
+    before = _counts()
+    r = _open(client)
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "BOOKS_ALREADY_OPEN"
+    assert _counts() == before and client.get("/setup/status").json()["can_open"] is False
+    zh = _open(client, params={"lang": "zh"})
+    assert zh.status_code == 409 and "重置为空白账簿" in zh.json()["detail"]["message"]
+
+
+def test_blank_books_with_a_security_event_are_not_opened(client) -> None:
+    from app.domain.models import SecurityEvent, SecurityEventKind
+
+    blank(client)
+    rt = get_runtime()
+    rt.store.add_security_event(SecurityEvent(id="SEC-1", day=0, kind=SecurityEventKind.REPLAY, counterparty_id=None,
+                                              action_taken="refused; nothing booked", detail="x"))
+    before = _counts()
+    r = _open(client)
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "BOOKS_ALREADY_OPEN"
+    assert _counts() == before and len(rt.store.security_events()) == 1
+
+
+def test_blank_books_whose_clock_has_moved_are_not_opened(client) -> None:
+    blank(client)
+    assert client.post("/clock/advance", json={"days": 3}, headers=OWNER).status_code == 200
+    rt = get_runtime()
+    assert rt.store.get_state().as_of_day == 3
+    before = _counts()
+    r = _open(client)
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "BOOKS_ALREADY_OPEN"
+    assert _counts() == before and rt.store.get_state().scenario == "blank"
+
+
+def test_a_fresh_blank_opens_and_records_what_it_replaced(client) -> None:
+    import json
+
+    blank(client)
+    assert _open(client).status_code == 200
+    entry = json.loads(get_runtime().store.operations()[0].payload_json)
+    assert entry["replaced_ops"] == 0 and entry["replaced_head_hash"] is None and entry["replaced_scenario"] == "blank"
+
+
+# ---------------------------------------------------------------- SETUP-4, SETUP-5, SETUP-7
+
+
+def test_a_huge_digit_string_is_a_draft_error_never_a_500(client) -> None:
+    big = "9" * 5_000_000
+    with pytest.raises(ValueError):
+        parse_decimal(big)
+    with pytest.raises(ValueError):
+        parse_decimal("1" * 41)
+    assert parse_decimal("1" * 20 + "." + "5" * 10) is not None
+    for biz in ({**DRAFT["business"], "cash": big}, {**DRAFT["business"], "monthly_sales": "9" * 50}):
+        r = client.post("/setup/preview", json={"draft": draft(business=biz)})
+        assert r.status_code == 200 and r.json()["ok"] is False and r.json()["errors"]
+        o = client.post("/setup/open", json={"draft": draft(business=biz), "password": "demo-owner-token"})
+        assert o.status_code in (409, 422) and o.status_code != 500
+
+
+def test_the_preview_needs_demo_mode_like_the_other_setup_routes(client, monkeypatch) -> None:
+    monkeypatch.setenv("DEMO_MODE", "0")
+    monkeypatch.setenv("OWNER_TOKEN", "a-real-owner-token")
+    r = client.post("/setup/preview", json={"draft": DRAFT}, headers={"X-Owner-Token": "a-real-owner-token"})
+    assert r.status_code == 403 and r.json()["detail"]["code"] == "SETUP_REFUSED"
+    monkeypatch.undo()
+    assert client.post("/setup/preview", json={"draft": DRAFT}).status_code == 200
+
+
+def test_long_lists_are_refused_in_the_owners_words(client) -> None:
+    bills = [{"label": f"Bill {i}", "kind": "OTHER", "amount": "100", "next_date": "2026-11-02", "repeats": "MONTHLY"}
+             for i in range(201)]
+    r = client.post("/setup/preview", json={"draft": draft(bills=bills)}).json()
+    assert r["ok"] is False and r["summary"] is None and "Too many bills: 201 entered, at most 200" in r["errors"][0]["text"]
+    zh = client.post("/setup/preview?lang=zh", json={"draft": draft(bills=bills)}).json()
+    assert "支出太多" in zh["errors"][0]["text"]
+    customers = [{"name": f"Customer {i}"} for i in range(201)]
+    assert "customers" in client.post("/setup/preview", json={"draft": draft(customers=customers)}).json()["errors"][0]["text"].lower()
+    invoices = [{"sent_on": "2026-10-01", "amount": "100", "terms_days": 30}] * 201
+    r = client.post("/setup/preview", json={"draft": draft(customers=[{"name": "A", "invoices": invoices}])}).json()
+    assert r["ok"] is False and "Too many invoices for one customer" in r["errors"][0]["text"]
+    borrowing = [{"name": f"S{i}", "kind": "CREDIT_LINE", "limit": "1000"} for i in range(201)]
+    assert client.post("/setup/preview", json={"draft": draft(borrowing=borrowing)}).json()["ok"] is False
+    before = _counts()
+    o = client.post("/setup/open", json={"draft": draft(bills=bills), "password": "demo-owner-token"})
+    assert o.status_code in (409, 422) and _counts() == before
+
+
+def test_200_rows_still_pass_and_long_texts_are_refused(client) -> None:
+    bills = [{"label": f"Bill {i}", "kind": "OTHER", "amount": "100", "next_date": "2026-11-02", "repeats": "ONCE"}
+             for i in range(200)]
+    assert client.post("/setup/preview", json={"draft": draft(bills=bills)}).json()["ok"] is True
+    long_text = "x" * 201
+    r = client.post("/setup/preview", json={"draft": draft(business={**DRAFT["business"], "what_you_sell": long_text})}).json()
+    assert r["ok"] is False and "too long" in r["errors"][0]["text"] and r["errors"][0]["step"] == 1
+    huge = client.post("/setup/preview", json={"draft": draft(business={**DRAFT["business"], "company_name": "y" * 2_000_000})}).json()
+    assert huge["ok"] is False and "too long" in huge["errors"][0]["text"]
+    zh = client.post("/setup/preview?lang=zh", json={"draft": draft(business={**DRAFT["business"], "company_name": "y" * 201})}).json()
+    assert "过长" in zh["errors"][0]["text"]
