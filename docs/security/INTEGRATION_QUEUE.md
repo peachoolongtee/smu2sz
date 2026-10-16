@@ -1,5 +1,69 @@
 # Security integration queue
 
+## Round two, 16 Oct: five branches for `dev` (merge in this order)
+
+Each branch was cut from `dev`, has the latest `dev` (`fe56b357`, the final UI and the R-10 rounding) merged in, holds one concern,
+carries a regression test that fails before and passes after, and passed the full mock browser suite (docs/agents/integration.md rule 4).
+None touches an engine module (`app/financial`, `verifier`, `funding`, `alerts`, `operations`, `clock`, `books`, `mandate`). None
+depends on another; they touch different files except `app/main.py` (SEC-20 adds one middleware line). Test counts: first on `b07bb6a4`,
+then again on `fe56b357` where marked.
+
+| # | Branch @ head | Finding | Files | Tests |
+|---|---|---|---|---|
+| 1 | `sec/audit-integrity` @ `7a8daf16` | SEC-08 (persistence part) | `app/persistence/guards.py`, `sql_store.py` (reset), migration `0009_audit_guards.py`, `tests/persistence/test_audit_guards.py` | **on `fe56b357`:** persistence 162 incl. the PostgreSQL 17 guard case, concurrency 31 (10 on PostgreSQL 17, none skipped); on `b8c65b24`: operations 406, security 284, mock e2e 444 passed / 61 skipped, typecheck, lint, unit |
+| 2 | `sec/rate-limits` @ `19c144f1` | SEC-20 | new `app/api/ratelimit.py`, `app/main.py` (one line), `app/api/runtime.py` (reset per runtime), `tests/security/test_rate_limits.py` | full API suite by directory, **on `b07bb6a4` and again on `fe56b357`**: every shard passes except the known #161 hash pin in `tests/books`; tests/api 1,721 passed, 2 skipped on `b07bb6a4`; 1,729 passed, 2 skipped on `fe56b357`; mock e2e 444 passed / 61 skipped, typecheck, lint, unit |
+| 3 | `sec/egress-forms` @ `8f5f6923` | SEC-22 (number forms) | `app/egress/normalise.py`, `tests/egress/test_sec22_number_forms.py` | **on `fe56b357`:** egress + compiler 2,009 (1 skipped); on `b07bb6a4`: tests/api 1,721 passed, 2 skipped, egress + dev's `test_zh_money_units.py` 1,049, mock e2e 444 passed / 61 skipped, typecheck, lint, unit; earlier: egress 994 in 5 of 5 runs, nl 1,122, security 284 |
+| 4 | `sec/nl-sessions` @ `8f57116b` | SEC-21 | `app/nl/sessions.py`, `app/nl/service.py` (principal), `tests/nl/test_session_binding.py` | **on `fe56b357`:** nl 1,144; on `b07bb6a4`: nl 1,144, security 284, compiler 966 (1 skipped); mock e2e 444 passed / 61 skipped, typecheck, lint, unit |
+| 5 | `sec/csp` @ `26cec6da` | SEC-12 (full CSP) | new `apps/web/proxy.ts`, `apps/web/lib/csp.ts`, `app/layout.tsx` (nonce), `components/customer/overview.tsx` (one prop), `scripts/csp.test.mjs`, `package.json` (test:unit) | **on `fe56b357`: verified in the browser against a production build** (every page, the chat, two injection probes); mock e2e 444 passed / 61 skipped, typecheck, lint, unit (3 new) |
+
+**What each one does, and its limits.**
+- **SEC-08:** `approvals` decide once (PENDING to APPROVED or REJECTED, nothing else changes, no delete) and `security_events` is
+  append-only, both as database triggers on SQLite and PostgreSQL; the PostgreSQL guard no longer has a session setting that lifts it
+  (the reset lifts it with `ALTER TABLE … DISABLE TRIGGER`, which needs table ownership). Limits: whoever owns the tables can still
+  drop the triggers; the chain has no external anchor; **the executor half is not built** (below).
+- **SEC-20:** a token bucket per caller (owner, agent, bank feed: per credential and address; a buyer's key: per buyer; anyone else: per
+  address), 429 `RATE_LIMITED` with `Retry-After`; limits per minute from the environment (`RATE_LIMIT_OWNER` 3000, `_AGENT` 1200,
+  `_BANK` 600, `_BUYER` 120, `_ANON` 300; `RATE_LIMITS=0` turns them off). Limits: one process; behind a proxy every caller shares the
+  proxy's address, so the proxy's per-client limit is still a condition for S-net; the anonymous intake cap is still one counter per
+  simulated day (one sender can use it up for every anonymous buyer).
+- **SEC-22:** the egress guard now also reads 30,0000 / ¥3,00,000 / 300.000 / 300'000 / 300_000 / 0.3m / 3e5 / 30w / 400千 / 15‰ /
+  千分之十五 / 一点五个点 / 1.5 points / a ratio written as 125%; groupings are removed, every other reading is added beside the text,
+  so nothing that matched before stops matching (14 leak cases fail before, 5 ordinary sentences still pass).
+  Limit: **derived values** (break-even rate, counter cap, shortfall) are still outside the protected set; that needs the verifier
+  to hand them to the guard (engine change, below). Still Low while outbound buyer text is templates only.
+- **SEC-21:** a chat session continues only for the principal that opened it (owner, agent, `buyer:<id>` for a keyed buyer, anonymous);
+  a different caller presenting the id gets a new session; eviction drops other callers' sessions before an owner's. Ids stay
+  client-chosen (the binding makes guessing one useless).
+- **SEC-12:** `Content-Security-Policy` per page request with a fresh nonce: `script-src 'self' 'nonce-…' 'strict-dynamic'` (no
+  `'unsafe-inline'`/`'unsafe-eval'` in production), `object-src 'none'`, `base-uri 'none'`, `form-action 'self'`, `frame-ancestors
+  'none'`, `connect-src` self and the API origin. Browser check: an injected `<img onerror>` and a `javascript:` URL are blocked;
+  sign-in, Home, Deals, Cash, Approvals and the chat run with no violation. Limits: `style-src 'unsafe-inline'` (inline style
+  attributes); under `'strict-dynamic'` an already trusted script can load others; HSTS belongs to the TLS proxy. Side effect: with a
+  nonce per request every page renders on demand (none is prerendered). On `fe56b357` the gate found one consequence: the router's
+  prefetch of the Customer page's "Stress-test payment" link (`/cash?stress=…`) was never read to its end, so a request stayed open
+  (two responsive tests timed out waiting for the network to settle). That link is now not prefetched, as it already was on
+  Receivables and the Deals queue (`components/customer/overview.tsx`, one prop); navigation is unchanged.
+
+**Engine changes waiting for the owner's approval (not built).**
+1. SEC-08, executor half (`app/operations/executor.py`, `Executor._decide`): right after the existing
+   `if rec.status != ApprovalStatus.PENDING: raise ApprovalAlreadyDecided(...)`, also refuse with `ApprovalAlreadyDecided` when the
+   operations log already holds the owner's decision for this `approval_id` (status EXECUTED or REFUSED under the operation's own
+   idempotency key, not the `#decide:<actor>` attempts). Test: flip the row back to PENDING with the triggers dropped; approving must
+   be 409 with nothing executed. Without it, someone who can drop the triggers can still turn a rejection into an execution.
+2. SEC-22, derived values: the verifier passes break-even, counter cap and shortfall to the egress guard's protected set.
+
+**After merging:** tell the Security Lead the merge commit; the Security Lead re-certifies it (OUT-1 still blocks certification of
+`dev` until its fix is merged too).
+
+## Open at the deadline (disclosed; owner's decision 16 Oct, not before the deadline)
+
+SEC-11 (more than one process), SETUP-2, SETUP-3, SETUP-6, CAPEX-4b, R-2 (one owner credential and key), R-14 (no emergency write stop),
+the capex cancel path, and SEC-06 (built only if the team deploys with Compose). Also open: SEC-19 (design), SEC-14, SEC-15, OUT-2 to
+OUT-4, DEMO-L1, PRIV-1 to PRIV-5, and the two engine changes above if not approved. R-10: the owner chose rounding to the nearest
+¥10,000 (`fix/counter-base-rounding`, in progress); the Security Lead reassesses R-10 when it lands.
+
+## Round one, 14 Oct (merged; kept for the record)
+
 For the integration owner (Fable). Every branch is cut from `e8e270f8`, holds one concern, carries a regression test that fails before
 and passes after (shown below), and has not been merged anywhere. Merge with `--no-ff` in the order given; none depends on another.
 After integration the Security Lead re-certifies the integrated commit (see `RELEASE_GATE.md`).

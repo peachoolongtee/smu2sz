@@ -10,6 +10,7 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 16 Oct | `fe56b357` (dev: final UI, R-10 rounding) | R-10 reassessed; the five round-two branches re-checked on it | R-10: **residual Low**; dev itself not certified while OUT-1 is open |
 | 16 Oct | `b8c65b24` (dev: buyer messages on the web, live readers, PG-1 merged, demo launcher) | the changes since `0f92d433` | **NOT CERTIFIED: one blocking finding (OUT-1)**; every automated check passes |
 | 16 Oct | `0f92d433` + `7f55c0dc` (PostgreSQL 17) | concurrency invariants and append-only triggers on PostgreSQL | **concurrency CERTIFIED** with PG-1 fixed (branch, pending merge); SEC-08 confirmed open |
 
@@ -40,6 +41,31 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
   `app.api.decide.plan`, so it ran the real (runnable) plan and failed without testing the guard. Patched at the new site it passes, and
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
+
+## R-10 reassessed on `fe56b357` (the early-pay counter's face), 16 Oct
+
+**Change** (`2ab66177`, `app/verifier/counters.py`, owner-approved engine change): the early-pay counter's face is the gap net of the
+committed line, rounded **up** to a step of two significant figures of the invoice's outstanding amount, at most that amount; if that
+face fails its re-check, the whole outstanding amount is tried; otherwise no Option A. The ¥100 rounding is gone. Golden books:
+¥257,200 becomes ¥260,000.
+
+**Checked:** code read; `early_pay_step` evaluated; the API suite on dev (`fe56b357`) and on the branches merged with it.
+
+| Outstanding amount | Step |
+| --- | --- |
+| below ¥10,000 | ¥100 |
+| ¥10,000 to ¥99,999.99 | ¥1,000 |
+| ¥100,000 to ¥999,999.99 | **¥10,000** |
+| ¥1,000,000 to ¥9,999,999.99 | ¥100,000 |
+
+**Verdict.** The face no longer gives the gap back to the ¥100: a buyer reading it learns only that the gap (net of the line) lies
+within one step below it, about 1% to 10% of the invoice. Residual, **Low** for scope S: (1) the counter's rate still shows the
+counter cap (break-even), as before; (2) a keyed buyer asking on several days can watch the face move by whole steps, bounded by
+the 5 attempts per buyer per day; (3) a face equal to the whole outstanding amount says the gap is at least that large.
+**Note for the owner:** the decision was "the nearest ¥10,000"; the code uses two significant figures, which is ¥10,000 only for
+invoices of ¥100,000 to ¥999,999.99 (the demo's). Smaller invoices get finer steps (¥1,000, or ¥100 below ¥10,000). If a fixed
+¥10,000 floor is wanted: `step = max(10 ** (digits - 2), 1_000_000)` fen, capped at the outstanding amount (engine change, owner's
+call). Not blocking.
 
 ## `b8c65b24` (dev): NOT CERTIFIED, 16 Oct; blocked by OUT-1 only
 

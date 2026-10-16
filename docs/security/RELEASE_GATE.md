@@ -21,6 +21,8 @@ it lapses when either changes. It is never a claim of absolute security or zero 
 | `a6de32a2` (dev head, 16 Oct) | **GO** (certified 16 Oct) | CONDITIONAL GO, as above | **NO-GO** |
 | `b6d1e519` (`int/capex-fixes`, capex buy side + dev) | **GO** (certified 16 Oct) | CONDITIONAL GO, as above | **NO-GO** |
 | `0f92d433` (dev, owner's decisions) | **GO** (certified 16 Oct) | CONDITIONAL GO, as above | **NO-GO** |
+| `b8c65b24` (dev, buyer messages, demo launcher) | **NOT CERTIFIED** (OUT-1): usable for S only if the presenter never marks a counter sent outside FLOW and then negotiates in the chat | NO-GO until OUT-1 is fixed | **NO-GO** |
+| `fe56b357` (dev head, 16 Oct: final UI, R-10 rounding) | not certified: OUT-1 still present (the chat paths do not check the outside mark); R-10 reassessed, residual Low | NO-GO until OUT-1 is fixed | **NO-GO** |
 
 **Conditions for S on `e8e270f8`:** loopback only; nobody but the presenter holds the demo credentials; the presenter does not approve
 a second agreement for a request already agreed (SEC-02 is fixed only on the branch); results shown are simulation results.
