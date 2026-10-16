@@ -30,6 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.auth import demo_mode, is_owner, log_refusal, require_owner
 from app.api.presentation import t
 from app.api.runtime import get_runtime
+from app.api.security_words import BENIGN_PREFIX
 from app.domain.models import (
     Actor,
     ContractField,
@@ -94,10 +95,13 @@ def _refuse_unless_can_open(lg: Lang) -> None:
 def _books_are_blank() -> bool:
     """The blank books are the only ones setup may replace, and only while they are still blank (SETUP-1): the scenario is
     "blank" (stored with the books, so this holds after a restart), the operations log holds nothing (a blank reset writes
-    no entry), there is no security event and the clock is at day 0. Books that were used keep their record."""
+    no entry), there is no security event and the clock is at day 0. Books that were used keep their record. A refused credential
+    (`log_refusal`, id prefix `SEC-AUTH-`) is a failed sign-in, not use of the books: the web app's first read before the owner
+    signs in writes one, and counting it locked every new owner out of setup."""
     store = get_runtime().store
     state = store.get_state()
-    return (state.scenario == "blank" and state.as_of_day == 0 and not store.operations() and not store.security_events())
+    used = any(not e.id.startswith(BENIGN_PREFIX) for e in store.security_events())
+    return state.scenario == "blank" and state.as_of_day == 0 and not store.operations() and not used
 
 
 def _already_open(lg: Lang) -> HTTPException:
@@ -154,6 +158,10 @@ def setup_status(lang: str = "en") -> dict:
     if not server_ok:
         why = t(lg, "Setting up books from the app needs demo mode on this server: a real deployment's owner signs the limits "
                     "with their own key.", "在此服务器上通过应用设置账簿需要演示模式：正式部署由业主用自己的密钥签署规则。")
+    elif not can and books == "blank":
+        why = t(lg, "These blank books already have activity (a record, a security event or a later date), so opening new ones "
+                    "is off. To start over, reset to the blank books first.",
+                "这套空白账簿已有活动（记录、安全事件或更晚的日期），因此不能再开立新的账簿。如需重新开始，请先重置为空白账簿。")
     elif not can:
         why = t(lg, "Books are already open on this server, so opening new ones is off. To start over, reset to the blank "
                     "books first.", "此服务器上已有开立的账簿，因此不能再开立新的账簿。如需重新开始，请先重置为空白账簿。")
