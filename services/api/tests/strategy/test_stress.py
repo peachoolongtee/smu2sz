@@ -217,7 +217,7 @@ def test_on_day_34_rcv_a_is_two_days_overdue_and_is_not_moved_by_any_stress(book
     assert state.as_of_day == 34 and rcv_a.due_day == 32  # two days past due
     for delay in (0, 30):
         sc = scenario_paid_late(books_day34, FOSHAN, delay, 34)
-        assert any(r.id == "RCV-A" and r.outstanding_fen == 16_280_000 and r.terms_days == rcv_a.terms_days
+        assert any(r.id == "RCV-A" and r.outstanding_fen == 16_000_000 and r.terms_days == rcv_a.terms_days
                    for r in sc.state.receivables)  # still there, as it was
         assert "LATE:RCV-A" not in {f.id for f in _flows(sc.state)}  # and never re-added as a receipt
         assert ("The ¥420,000.00 invoice to Foshan Home Retail Co. (due 2 days ago) is already past due and stays as the books count it."
@@ -390,9 +390,9 @@ def test_the_buyers_own_facility_is_off_the_copy_and_other_lenders_stay():
 def test_an_early_payment_agreement_on_a_moved_invoice_lapses_and_the_whole_outstanding_moves():
     books, mandate = golden()
     bound = resolve_package(books, mandate, OPTION_A, day=0, commitments=(), trusted_owner_key_hex=OWNER_KEY)
-    side = books_with(books, bound)  # RCV-A: ¥257,200 of ¥420,000 to be settled early at 0.85%
+    side = books_with(books, bound)  # RCV-A: ¥260,000 of ¥420,000 to be settled early at 0.85%
     own = _buyer_receipts(side)
-    assert own["RCV-A"][1] == 42_000_000  # ¥257,200 early + the residual ¥162,800: the whole outstanding
+    assert own["RCV-A"][1] == 42_000_000  # ¥260,000 early + the residual ¥160,000: the whole outstanding
     sc = scenario_paid_late(side, FOSHAN, 30, 0)
     flow = next(f for f in _flows(sc.state) if f.id == "LATE:RCV-A")
     assert (flow.amount_fen, flow.day) == (42_000_000, 62)  # no discount, due day + 30

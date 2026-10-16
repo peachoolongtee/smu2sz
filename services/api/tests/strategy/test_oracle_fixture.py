@@ -60,10 +60,10 @@ def test_envelope_levers(envelope):
     assert "AGG_CONCESSION_EXCEEDED" in over["codes"]
     assert maxima["Terms (days), budget ignored"]["value"] == 55
     assert maxima["Early pay on ¥420,000.00"]["value"] == 70
-    assert maxima["Early pay on ¥257,200.00"]["value"] == 85
+    assert maxima["Early pay on ¥260,000.00"]["value"] == 85
     assert maxima["Rebate on the expected order"]["value"] == 125
-    early = maxima["Early pay on ¥257,200.00"]["at_largest"]["early_pay"]
-    assert _fen(early["face"]) == 25_720_000 and early["rate"]["display"] == "0.85%"
+    early = maxima["Early pay on ¥260,000.00"]["at_largest"]["early_pay"]
+    assert _fen(early["face"]) == 26_000_000 and early["rate"]["display"] == "0.85%"
     assert maxima["Early pay on ¥420,000.00"]["at_largest"]["early_pay"]["face"] == "whole invoice"
 
 
@@ -83,11 +83,11 @@ def test_envelope_package_cure_cost(envelope):
         envelope["packages"],
         terms_days=55,
         price_adjustment={"bp": 25, "display": "0.25%"},
-        early_pay={"rate": {"bp": 85, "display": "0.85%"}, "face": {"fen": 25_720_000, "display": "¥257,200.00"}},
+        early_pay={"rate": {"bp": 85, "display": "0.85%"}, "face": {"fen": 26_000_000, "display": "¥260,000.00"}},
     )
     assert pkg["passes"] is True and pkg["outcome"] == "NEEDS_OWNER_APPROVAL"
     assert pkg["reserve_breach"]["day"] == 47
-    assert pkg["reserve_breach"]["cure_cost"] == {"fen": 267_304, "display": "¥2,673.04"}
+    assert pkg["reserve_breach"]["cure_cost"] == {"fen": 262_356, "display": "¥2,623.56"}
 
 
 def _book(collections: dict[str, Any], label: str) -> dict[str, Any]:
@@ -105,22 +105,22 @@ def _ceiling(row: dict[str, Any], face_fen: int) -> dict[str, Any]:
 def test_collections_day_34(collections):
     book = _book(collections, "day 34")
     rcv = _ranked(book, "RCV-A")
-    assert _fen(rcv["marginal_value"]) == 137_461 and rcv["marginal_value"]["display"] == "¥1,374.61"
-    assert _fen(rcv["effects"][0]["saving"]) == 137_461
-    assert rcv["effects"][0]["after"]["need"] == {"fen": 3_720_000, "display": "¥37,200.00"}
-    assert "¥37,200.00" in rcv["sentence"]
+    assert _fen(rcv["marginal_value"]) == 136_426 and rcv["marginal_value"]["display"] == "¥1,364.26"
+    assert _fen(rcv["effects"][0]["saving"]) == 136_426
+    assert rcv["effects"][0]["after"]["need"] == {"fen": 4_000_000, "display": "¥40,000.00"}
+    assert "¥40,000.00" in rcv["sentence"]
 
     ri2 = _ranked(book, "RI:BUYER-1:2")
-    assert _fen(ri2["marginal_value"]) == 170_610
+    assert _fen(ri2["marginal_value"]) == 170_220
     assert _bp(_ceiling(ri2, 20_000_000)["largest_rate"]) == 80
     assert _bp(_ceiling(ri2, 42_000_000)["largest_rate"]) == 40
     shortfall_face = _ceiling(ri2, 20_000_000)
-    assert shortfall_face["next_rate_dearer_by"] == {"fen": 2_420, "display": "¥24.20"}
-    assert next(s for s in shortfall_face["sweep"] if _bp(s["rate"]) == 40)["c1_less_c0"]["display"] == "−¥888.28"
+    assert shortfall_face["next_rate_dearer_by"] == {"fen": 168, "display": "¥1.68"}
+    assert next(s for s in shortfall_face["sweep"] if _bp(s["rate"]) == 40)["c1_less_c0"]["display"] == "−¥899.92"
 
     ri32 = _ranked(book, "RI:BUYER-1:32")
     five_earlier = _one(ri32["effects"], receipt_day=72)
-    assert _fen(five_earlier["saving"]) == -7_609
+    assert _fen(five_earlier["saving"]) == -6_150
 
 
 def test_collections_day_0(collections):
@@ -157,13 +157,13 @@ def test_collections_price_curve(collections):
 def test_portfolio_default(portfolio):
     best = portfolio["ranked"][0]
     assert best["rank"] == 1
-    assert _fen(best["posted_cost"]) == 302_777
-    assert _fen(best["funding_cost"]) == 84_157
+    assert _fen(best["posted_cost"]) == 303_599
+    assert _fen(best["funding_cost"]) == 82_599
     assert portfolio["counts"]["feasible"] == 9
     greedy = portfolio["greedy_evaluate_many"]
     assert greedy["rank_in_enumeration"] == 7 and greedy["feasible_portfolios"] == 9
     assert _fen(greedy["cost_for_ranking"]) == 611_393
-    assert _fen(greedy["best_cost_for_ranking"]) == 302_777
+    assert _fen(greedy["best_cost_for_ranking"]) == 303_599
 
 
 @pytest.fixture(scope="module")
