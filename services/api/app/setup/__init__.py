@@ -48,6 +48,10 @@ DEFAULT_MAX_IMMEDIATE_DISCOUNT_BP = 150
 #: today's date as the server knows it, and the two ratios stay where a lender would set them.
 MAX_AMOUNT_FEN = 10**15
 MAX_START_DRIFT_DAYS = 400
+MAX_ROWS = 200  # SETUP-5: rows in any one list (customers, invoices of a customer, bills, loans, ways to borrow)
+MAX_INVOICES = 1000  # and invoices in all
+MAX_FIELD_CHARS = 200  # one typed text, name or amount
+MAX_NUMBER_CHARS = 40  # SETUP-4: an amount longer than this is not a number FLOW can keep; never reaches Decimal
 DSCR_RANGE = (Decimal("1"), Decimal("10"))
 LEVERAGE_RANGE = (Decimal("0.5"), Decimal("10"))
 ORG_ID = "OWN-1"
@@ -181,7 +185,7 @@ def parse_decimal(raw: Money | None) -> Decimal | None:
     text = text.removesuffix("%").removesuffix("x").removesuffix("×")
     if text == "":
         return None
-    if not _NUMBER.match(text):
+    if len(text) > MAX_NUMBER_CHARS or not _NUMBER.match(text):
         raise ValueError(raw)
     try:
         return Decimal(text)
@@ -332,8 +336,52 @@ class _Checker:
 # ---------------------------------------------------------------- the build
 
 
+def _size_errors(draft: SetupDraft) -> list[Issue]:
+    """SETUP-5: how many rows and how long a text the books will keep, said in the owner's words before anything is built."""
+    out: list[Issue] = []
+    lists = (("borrowing", 2, draft.borrowing, "ways to borrow", "融资来源"), ("loans", 2, draft.loans, "loans", "贷款"),
+             ("customers", 3, draft.customers, "customers", "客户"), ("bills", 4, draft.bills, "bills", "支出"))
+    for key, step, rows, en, zh in lists:
+        if len(rows) > MAX_ROWS:
+            out.append(Issue(step, key, f"Too many {en}: {len(rows)} entered, at most {MAX_ROWS}.",
+                             f"{zh}太多：已填 {len(rows)} 项，最多 {MAX_ROWS} 项。"))
+    for ci, cu in enumerate(draft.customers[:MAX_ROWS]):
+        if len(cu.invoices) > MAX_ROWS:
+            out.append(Issue(3, f"customers[{ci}].invoices", f"Too many invoices for one customer: {len(cu.invoices)} entered, at "
+                             f"most {MAX_ROWS}.", f"单个客户的发票太多：已填 {len(cu.invoices)} 张，最多 {MAX_ROWS} 张。"))
+    total = sum(len(cu.invoices) for cu in draft.customers)
+    if total > MAX_INVOICES:
+        out.append(Issue(3, "customers", f"Too many invoices: {total} entered, at most {MAX_INVOICES} in all.",
+                         f"发票太多：已填 {total} 张，总共最多 {MAX_INVOICES} 张。"))
+
+    def walk(node: object, path: str) -> None:
+        if len(out) >= 20:
+            return
+        if isinstance(node, str):
+            if len(node) > MAX_FIELD_CHARS:
+                out.append(Issue(_step_of(path), path, f"This entry is too long: {len(node)} characters, at most {MAX_FIELD_CHARS}.",
+                                 f"此项内容过长：{len(node)} 个字符，最多 {MAX_FIELD_CHARS} 个。"))
+        elif isinstance(node, BaseModel):
+            for name in type(node).model_fields:
+                walk(getattr(node, name), f"{path}.{name}" if path else name)
+        elif isinstance(node, list):
+            for i, item in enumerate(node[:MAX_ROWS]):
+                walk(item, f"{path}[{i}]")
+
+    walk(draft, "")
+    return out
+
+
+def _step_of(path: str) -> int:
+    head = path.split(".")[0].split("[")[0]
+    return {"business": 1, "borrowing": 2, "loans": 2, "customers": 3, "bills": 4, "limits": 5}.get(head, 1)
+
+
 def build_books(draft: SetupDraft) -> Built:
     """Check the draft and build the books and an unsigned mandate. With any error, `state` and `mandate` are None."""
+    too_big = _size_errors(draft)
+    if too_big:  # nothing is parsed or projected from a draft this large
+        return Built(None, None, None, errors=too_big)
     c = _Checker()
     b = draft.business
 

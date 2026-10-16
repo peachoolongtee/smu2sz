@@ -451,11 +451,12 @@ class PreviewIn(BaseModel):
 @router.post("/setup/preview")
 def setup_preview(body: PreviewIn, lang: str = "en") -> dict:
     lg = _lang(lang)
+    _refuse_unless_can_open(lg)  # SETUP-7: the preview is setup's too, so it needs demo mode like the rest
     built = build_books(body.draft)
     out: dict[str, Any] = {
         "ok": not built.errors,
         "errors": [_issue(i, lg) for i in built.errors],
-        "warnings": [_issue(i, lg) for i in built.warnings] + _document_warnings(body.draft, lg),
+        "warnings": ([] if built.errors else [_issue(i, lg) for i in built.warnings] + _document_warnings(body.draft, lg)),
         "summary": None, "first_look": None,
     }
     if built.errors:
