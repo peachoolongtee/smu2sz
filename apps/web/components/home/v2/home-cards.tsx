@@ -74,7 +74,7 @@ export function CashCard({
 /**
  * "Company cash outlook", the main card of the Home, the full width of the page: the lowest cash ahead as the figure (the one risk red when it is below the minimum), "Without new funding",
  * the plan's cash ("With plan ¥300,000"), the pill that says when the lowest point is, and the company cash forecast; "What we recommend" sits inside it, at its right on a wide screen and
- * under the forecast on a narrow one.
+ * between the figures and the forecast on a narrow one (its primary in a phone's first screen).
  */
 export function OutlookCard({ h, kpis, chart, recommendation }: { h: HomeView; kpis: HomeV2["kpis"]; chart: HomeV2Chart; recommendation: ReactNode }) {
   const { t } = useI18n();
@@ -82,8 +82,9 @@ export function OutlookCard({ h, kpis, chart, recommendation }: { h: HomeView; k
   const withPlan = low.with_plan ?? null;
   return (
     <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card min-w-0 p-4 sm:p-5 lg:p-6" data-testid="hv2-outlook-card">
-      <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(19rem,1fr)] lg:gap-6">
-        <div className="min-w-0">
+      {/* From lg: the head and the forecast on the left, the recommendation at the right across both. Below lg the recommendation comes before the forecast, so its one primary is in a phone's first screen. */}
+      <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(19rem,1fr)] lg:grid-rows-[auto_1fr] lg:gap-x-6">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <div className="flex items-start justify-between gap-3">
             <h2 id="hv2-outlook-title" className="font-display text-[20px] font-bold leading-tight tracking-[-0.01em] text-ink sm:text-[22px]" data-testid="hv2-metric-lowest-label">
               {t("hv2.card.outlook")}
@@ -115,11 +116,11 @@ export function OutlookCard({ h, kpis, chart, recommendation }: { h: HomeView; k
               </p>
             ) : null}
           </div>
-          <div className="mt-5">
-            <OutlookChart h={h} chart={chart} />
-          </div>
         </div>
-        <div className="min-w-0">{recommendation}</div>
+        <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1">{recommendation}</div>
+        <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+          <OutlookChart h={h} chart={chart} />
+        </div>
       </div>
     </section>
   );

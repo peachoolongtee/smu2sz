@@ -324,7 +324,7 @@ function TourCard({ steps, path, seenKey }: { steps: Step[]; path: string; seenK
 
   const pad = 6;
   const hole = rect ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 } : null;
-  // Where the card goes: beside the spotlight when the screen is wide enough, else below it, else above it, else pinned to
+  // Where the card goes: beside the spotlight (right, else left) when the screen is wide enough, else below it, else above it, else pinned to
   // the bottom of the screen (a tall part such as the home card), clear of the phone's tab bar.
   const CARD_W = 384;
   let place: CSSProperties = { top: "50%", left: "50%", translate: "-50% -50%" };
@@ -335,6 +335,8 @@ function TourCard({ steps, path, seenKey }: { steps: Step[]; path: string; seenK
     const width = Math.min(CARD_W, window.innerWidth - 32);
     const left = Math.min(Math.max(16, hole.left + hole.width / 2 - width / 2), window.innerWidth - width - 16);
     if (right > CARD_W + 32) place = { left: hole.left + hole.width + 16, top: Math.min(Math.max(16, hole.top), window.innerHeight - cardH - 16) };
+    // A part at the right of a wide card (Home's recommendation inside the outlook): the card goes to its left.
+    else if (hole.left > CARD_W + 32) place = { left: hole.left - CARD_W - 16, top: Math.min(Math.max(16, hole.top), window.innerHeight - cardH - 16) };
     else if (below > cardH + 16) place = { top: hole.top + hole.height + 16, left };
     else if (hole.top > cardH + 16) place = { top: hole.top - cardH - 16, left };
     else place = { bottom: 88, left: "50%", translate: "-50% 0" };
