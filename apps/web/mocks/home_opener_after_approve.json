@@ -1,7 +1,7 @@
 {
   "session_id": "rec-home-after",
   "turn": 1,
-  "reply": "Day 34. Foshan Home Retail Co.'s ¥162,800.00 on RCV-A was due on day 32 and has not arrived. 1 more warning: Reserve headroom thin on day 34.",
+  "reply": "Day 34. Foshan Home Retail Co.'s ¥160,000.00 on RCV-A was due on day 32 and has not arrived. 1 more warning: Reserve headroom thin on day 34.",
   "intent": "SHOW_ALERTS",
   "lang": "en",
   "plan": [],

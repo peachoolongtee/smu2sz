@@ -9,7 +9,7 @@
       {
         "id": "CTR-193394b6ba8b",
         "label": "Option A",
-        "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+        "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
         "obligations": [
           {
             "id": "CTR-193394b6ba8b-O2",
@@ -22,10 +22,10 @@
             "effective_day": 2,
             "base": {
               "kind": "INVOICE",
-              "amount_fen": 25720000,
+              "amount_fen": 26000000,
               "receivable_id": "RCV-A",
               "events_per_year": null,
-              "amount_display": "¥257,200.00"
+              "amount_display": "¥260,000.00"
             },
             "contingency": "FIRM",
             "duration": {
@@ -38,7 +38,7 @@
                 "doc_id": "CTR-193394b6ba8b",
                 "start": 34,
                 "end": 134,
-                "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
               }
             ],
             "confidence": 1,
@@ -46,14 +46,14 @@
             "rate_display": "0.85%"
           }
         ],
-        "supplier_cost_fen": 302777,
+        "supplier_cost_fen": 303599,
         "forward_value_fen": 0,
         "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-        "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-        "supplier_cost_display": "¥3,027.77",
+        "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+        "supplier_cost_display": "¥3,035.99",
         "forward_value_display": "¥0.00",
         "outbound_blocked": false,
-        "text_when": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid within 2 days.",
+        "text_when": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid within 2 days.",
         "rationale_when": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
         "label_when": "Option A",
         "economics": {

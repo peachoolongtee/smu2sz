@@ -2,7 +2,7 @@
   "evaluate_ex01": {
     "session_id": "rec-ex01-go",
     "turn": 1,
-    "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. The cure cannot run today: Submit RI:BUYER-1:32 to FAC-IF for a ¥135,040.00 advance: RI:BUYER-1:32 is not an invoice I can finance today; it is issued on day 32.\nIf the buyer refuses: committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3. If the buyer accepts Option A, the rest of the gap: committed plan: ¥841.57. If the buyer accepts Option B, the rest of the gap: committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46. Cash today: ¥90,000.00. Cash later: ¥315,000.00 on FAC-IF, requested today, lands on day 3.\nReply 'go ahead' to negotiate: I will then send the counters. Nothing is sent before that.",
+    "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. The cure cannot run today: Submit RI:BUYER-1:32 to FAC-IF for a ¥135,040.00 advance: RI:BUYER-1:32 is not an invoice I can finance today; it is issued on day 32.\nIf the buyer refuses: committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3. If the buyer accepts Option A, the rest of the gap: committed plan: ¥825.99. If the buyer accepts Option B, the rest of the gap: committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46. Cash today: ¥90,000.00. Cash later: ¥315,000.00 on FAC-IF, requested today, lands on day 3.\nReply 'go ahead' to negotiate: I will then send the counters. Nothing is sent before that.",
     "intent": "EVALUATE_OFFER",
     "lang": "en",
     "plan": [
@@ -17,7 +17,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -57,7 +57,7 @@
       {
         "step": 7,
         "kind": "DRAW_FACILITY",
-        "description": "Draw ¥149,986.20 on FAC-LINE, repay day 32",
+        "description": "Draw ¥147,210.00 on FAC-LINE, repay day 32",
         "status": "PROPOSED",
         "op_id": null,
         "condition": "if the buyer accepts Option A: remaining gap"
@@ -352,7 +352,7 @@
         {
           "id": "CTR-193394b6ba8b",
           "label": "Option A",
-          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
           "obligations": [
             {
               "id": "CTR-193394b6ba8b-O2",
@@ -365,10 +365,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25720000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,200.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -381,7 +381,7 @@
                   "doc_id": "CTR-193394b6ba8b",
                   "start": 34,
                   "end": 134,
-                  "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -389,11 +389,11 @@
               "rate_display": "0.85%"
             }
           ],
-          "supplier_cost_fen": 302777,
+          "supplier_cost_fen": 303599,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-          "supplier_cost_display": "¥3,027.77",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+          "supplier_cost_display": "¥3,035.99",
           "forward_value_display": "¥0.00"
         },
         {
@@ -669,7 +669,7 @@
   "negotiate_ex01": {
     "session_id": "rec-ex01-go",
     "turn": 2,
-    "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. The cure cannot run today: Submit RI:BUYER-1:32 to FAC-IF for a ¥135,040.00 advance: RI:BUYER-1:32 is not an invoice I can finance today; it is issued on day 32.\nThe buyer accepted Option A.\nThe rest of the gap, as I showed it:\nDraw ¥149,986.20 on FAC-LINE: done.\nCash in now: ¥149,986.20.",
+    "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. The cure cannot run today: Submit RI:BUYER-1:32 to FAC-IF for a ¥135,040.00 advance: RI:BUYER-1:32 is not an invoice I can finance today; it is issued on day 32.\nThe buyer accepted Option A.\nThe rest of the gap, as I showed it:\nDraw ¥147,210.00 on FAC-LINE: done.\nCash in now: ¥147,210.00.",
     "intent": "NEGOTIATE",
     "lang": "en",
     "plan": [
@@ -684,7 +684,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
         "status": "EXECUTED",
         "op_id": "NL-ec8e426389722d8f",
         "condition": null
@@ -716,7 +716,7 @@
       {
         "step": 6,
         "kind": "DRAW_FACILITY",
-        "description": "Draw ¥149,986.20 on FAC-LINE",
+        "description": "Draw ¥147,210.00 on FAC-LINE",
         "status": "EXECUTED",
         "op_id": "NL-76db55c020e1e21c",
         "condition": "remaining gap after the accepted package"
@@ -995,7 +995,7 @@
         {
           "id": "CTR-193394b6ba8b",
           "label": "Option A",
-          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
           "obligations": [
             {
               "id": "CTR-193394b6ba8b-O2",
@@ -1008,10 +1008,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25720000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,200.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -1024,7 +1024,7 @@
                   "doc_id": "CTR-193394b6ba8b",
                   "start": 34,
                   "end": 134,
-                  "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -1032,11 +1032,11 @@
               "rate_display": "0.85%"
             }
           ],
-          "supplier_cost_fen": 302777,
+          "supplier_cost_fen": 303599,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-          "supplier_cost_display": "¥3,027.77",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+          "supplier_cost_display": "¥3,035.99",
           "forward_value_display": "¥0.00"
         },
         {
@@ -1309,7 +1309,7 @@
         "prev_hash": "96710b63fb1c9acde3db54d7a3874f476efe2fe28962286bad0d6da369903bd9",
         "effective_day": 0,
         "approval_id": null,
-        "message": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+        "message": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
       },
       {
         "op_id": "NL-2450bc46bd435ca0",
@@ -1348,7 +1348,7 @@
         "prev_hash": "a7c69e295d5e54822fb5cfe6eebe3ed665bb21d312db90e7c0f4d291683d301c",
         "effective_day": 0,
         "approval_id": null,
-        "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+        "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
       }
     ],
     "clarification": null,
@@ -1360,7 +1360,7 @@
       "rounds": 1,
       "accepted_counter": "Option A",
       "ended_reason": "buyer accepted",
-      "transcript_hash": "802cf1c4946c483e21d6c89444465751ef705a8ba4ff2bc6108d36b36cdeaf34",
+      "transcript_hash": "25ee2e90a3baff56debf760d6dfb6e32e1a84761828d4cd34e96821c906cba57",
       "buyer_replies": [
         "Round 1. We accept Option A as proposed."
       ]
@@ -1389,7 +1389,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
         "status": "SKIPPED",
         "op_id": null,
         "condition": null
@@ -1429,7 +1429,7 @@
       {
         "step": 7,
         "kind": "DRAW_FACILITY",
-        "description": "Draw ¥149,986.20 on FAC-LINE, repay day 32",
+        "description": "Draw ¥147,210.00 on FAC-LINE, repay day 32",
         "status": "SKIPPED",
         "op_id": null,
         "condition": "if the buyer accepts Option A: remaining gap"
@@ -1467,7 +1467,7 @@
   "explain_en": {
     "session_id": "rec-ex01-why",
     "turn": 2,
-    "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. The cure cannot run today: Submit RI:BUYER-1:32 to FAC-IF for a ¥135,040.00 advance: RI:BUYER-1:32 is not an invoice I can finance today; it is issued on day 32.\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥28,326.92, above the cap. Observed ¥28,326.92 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00. Inputs: scope=aggregate; existing=¥0.00; new_concessions=¥28,326.92; firm_gains_netted=¥0.00; contingent_gains_ignored=¥0.00.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥209,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00. Inputs: day=47; closing_cash=¥209,960.00; baseline_closing_cash=¥635,000.00; min_cash=¥300,000.00; shortfall=¥90,040.00. Curable for ¥2,406.67.\n- DISCOUNT_ABOVE_BREAK_EVEN: Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%. Observed 1.20% vs limit < 0.88%. Formula: d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods). Inputs: discount=1.20%; days_early=30; receivable_id=RCV-A; implied_annual_rate=14.7773%; line_plus_partial_at_offered_rate=¥841.64 + ¥3,097.17 = ¥3,938.81.\n- EARLY_PAY_DEARER_THAN_PLAN: The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58). Observed ¥6,508.05 vs limit < ¥3,873.58. Formula: C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required. Inputs: plan_with_offer=committed plan: ¥1,468.05; plan_without_offer=committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58; cost_with_offer=¥6,508.05; cost_without_offer=¥3,873.58; legs=RCV-A at 1.20%.\n- Forward value ¥24,326.92 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\nForward concessions total ¥28,326.92 against the ¥5,000.00 cap.\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
+    "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. The cure cannot run today: Submit RI:BUYER-1:32 to FAC-IF for a ¥135,040.00 advance: RI:BUYER-1:32 is not an invoice I can finance today; it is issued on day 32.\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥28,326.92, above the cap. Observed ¥28,326.92 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00. Inputs: scope=aggregate; existing=¥0.00; new_concessions=¥28,326.92; firm_gains_netted=¥0.00; contingent_gains_ignored=¥0.00.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥209,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00. Inputs: day=47; closing_cash=¥209,960.00; baseline_closing_cash=¥635,000.00; min_cash=¥300,000.00; shortfall=¥90,040.00. Curable for ¥2,406.67.\n- DISCOUNT_ABOVE_BREAK_EVEN: Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%. Observed 1.20% vs limit < 0.88%. Formula: d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods). Inputs: discount=1.20%; days_early=30; receivable_id=RCV-A; implied_annual_rate=14.7773%; line_plus_partial_at_offered_rate=¥841.64 + ¥3,097.17 = ¥3,938.81.\n- EARLY_PAY_DEARER_THAN_PLAN: The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58). Observed ¥6,508.05 vs limit < ¥3,873.58. Formula: C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required. Inputs: plan_with_offer=committed plan: ¥1,468.05; plan_without_offer=committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58; cost_with_offer=¥6,508.05; cost_without_offer=¥3,873.58; legs=RCV-A at 1.20%.\n- Forward value ¥24,326.92 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\nForward concessions total ¥28,326.92 against the ¥5,000.00 cap.\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
     "intent": "EXPLAIN",
     "lang": "en",
     "plan": [],
@@ -1744,7 +1744,7 @@
         {
           "id": "CTR-193394b6ba8b",
           "label": "Option A",
-          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
           "obligations": [
             {
               "id": "CTR-193394b6ba8b-O2",
@@ -1757,10 +1757,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25720000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,200.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -1773,7 +1773,7 @@
                   "doc_id": "CTR-193394b6ba8b",
                   "start": 34,
                   "end": 134,
-                  "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -1781,11 +1781,11 @@
               "rate_display": "0.85%"
             }
           ],
-          "supplier_cost_fen": 302777,
+          "supplier_cost_fen": 303599,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-          "supplier_cost_display": "¥3,027.77",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+          "supplier_cost_display": "¥3,035.99",
           "forward_value_display": "¥0.00"
         },
         {
@@ -1940,7 +1940,7 @@
   "explain_zh": {
     "session_id": "rec-ex01-why-zh",
     "turn": 2,
-    "reply": "结论 REJECT（TIER_1）：AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN。REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. 该处理方案今天无法执行：将 RI:BUYER-1:32 提交 FAC-IF 融资，预付 ¥135,040.00：RI:BUYER-1:32 目前还不能用来融资，它将于第 32 天开出。\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥28,326.92, above the cap. Observed ¥28,326.92 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00. Inputs: scope=aggregate; existing=¥0.00; new_concessions=¥28,326.92; firm_gains_netted=¥0.00; contingent_gains_ignored=¥0.00.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥209,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00. Inputs: day=47; closing_cash=¥209,960.00; baseline_closing_cash=¥635,000.00; min_cash=¥300,000.00; shortfall=¥90,040.00. Curable for ¥2,406.67.\n- DISCOUNT_ABOVE_BREAK_EVEN: Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%. Observed 1.20% vs limit < 0.88%. Formula: d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods). Inputs: discount=1.20%; days_early=30; receivable_id=RCV-A; implied_annual_rate=14.7773%; line_plus_partial_at_offered_rate=¥841.64 + ¥3,097.17 = ¥3,938.81.\n- EARLY_PAY_DEARER_THAN_PLAN: The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58). Observed ¥6,508.05 vs limit < ¥3,873.58. Formula: C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required. Inputs: plan_with_offer=committed plan: ¥1,468.05; plan_without_offer=committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58; cost_with_offer=¥6,508.05; cost_without_offer=¥3,873.58; legs=RCV-A at 1.20%.\n- Forward value ¥24,326.92 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\n远期让步合计 ¥28,326.92，上限 ¥5,000.00。\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
+    "reply": "结论 REJECT（TIER_1）：AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN。REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. 该处理方案今天无法执行：将 RI:BUYER-1:32 提交 FAC-IF 融资，预付 ¥135,040.00：RI:BUYER-1:32 目前还不能用来融资，它将于第 32 天开出。\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥28,326.92, above the cap. Observed ¥28,326.92 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00. Inputs: scope=aggregate; existing=¥0.00; new_concessions=¥28,326.92; firm_gains_netted=¥0.00; contingent_gains_ignored=¥0.00.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥209,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00. Inputs: day=47; closing_cash=¥209,960.00; baseline_closing_cash=¥635,000.00; min_cash=¥300,000.00; shortfall=¥90,040.00. Curable for ¥2,406.67.\n- DISCOUNT_ABOVE_BREAK_EVEN: Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%. Observed 1.20% vs limit < 0.88%. Formula: d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods). Inputs: discount=1.20%; days_early=30; receivable_id=RCV-A; implied_annual_rate=14.7773%; line_plus_partial_at_offered_rate=¥841.64 + ¥3,097.17 = ¥3,938.81.\n- EARLY_PAY_DEARER_THAN_PLAN: The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58). Observed ¥6,508.05 vs limit < ¥3,873.58. Formula: C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required. Inputs: plan_with_offer=committed plan: ¥1,468.05; plan_without_offer=committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58; cost_with_offer=¥6,508.05; cost_without_offer=¥3,873.58; legs=RCV-A at 1.20%.\n- Forward value ¥24,326.92 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\n远期让步合计 ¥28,326.92，上限 ¥5,000.00。\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
     "intent": "EXPLAIN",
     "lang": "zh",
     "plan": [],
@@ -2217,7 +2217,7 @@
         {
           "id": "CTR-193394b6ba8b",
           "label": "Option A",
-          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
           "obligations": [
             {
               "id": "CTR-193394b6ba8b-O2",
@@ -2230,10 +2230,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25720000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,200.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -2246,7 +2246,7 @@
                   "doc_id": "CTR-193394b6ba8b",
                   "start": 34,
                   "end": 134,
-                  "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -2254,11 +2254,11 @@
               "rate_display": "0.85%"
             }
           ],
-          "supplier_cost_fen": 302777,
+          "supplier_cost_fen": 303599,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-          "supplier_cost_display": "¥3,027.77",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+          "supplier_cost_display": "¥3,035.99",
           "forward_value_display": "¥0.00"
         },
         {
@@ -2413,7 +2413,7 @@
   "goal": {
     "session_id": "rec-goal-go",
     "turn": 1,
-    "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥257,200.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93. If BUYER-1 accepts, the rest of the gap: committed plan: ¥841.57. If BUYER-1 refuses: Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3. Reply 'go ahead' to run it, or correct me (e.g. 'make it 0.8%').",
+    "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥260,000.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93. If BUYER-1 accepts, the rest of the gap: committed plan: ¥825.99. If BUYER-1 refuses: Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3. Reply 'go ahead' to run it, or correct me (e.g. 'make it 0.8%').",
     "intent": "ACCELERATE_RECEIPT",
     "lang": "en",
     "plan": [
@@ -2428,7 +2428,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+        "description": "Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -2468,7 +2468,7 @@
       {
         "step": 7,
         "kind": "DRAW_FACILITY",
-        "description": "Draw ¥149,986.20 on FAC-LINE, repay day 32",
+        "description": "Draw ¥147,210.00 on FAC-LINE, repay day 32",
         "status": "PROPOSED",
         "op_id": null,
         "condition": "if the buyer accepts: remaining gap after early settlement"
@@ -2590,7 +2590,7 @@
         {
           "id": "CTR-5f1cf2e81f9b",
           "label": "Option A",
-          "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+          "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
           "obligations": [
             {
               "id": "CTR-5f1cf2e81f9b-O1",
@@ -2603,10 +2603,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25720000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,200.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -2619,7 +2619,7 @@
                   "doc_id": "CTR-5f1cf2e81f9b",
                   "start": 0,
                   "end": 100,
-                  "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -2627,11 +2627,11 @@
               "rate_display": "0.85%"
             }
           ],
-          "supplier_cost_fen": 302777,
+          "supplier_cost_fen": 303599,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-          "supplier_cost_display": "¥3,027.77",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+          "supplier_cost_display": "¥3,035.99",
           "forward_value_display": "¥0.00"
         }
       ],
@@ -2794,7 +2794,7 @@
   "goal_go": {
     "session_id": "rec-goal-go",
     "turn": 2,
-    "reply": "BUYER-1 accepted Option A: We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.\nDraw ¥149,986.20 on FAC-LINE: done.\nCash in now: ¥149,986.20.",
+    "reply": "BUYER-1 accepted Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.\nDraw ¥147,210.00 on FAC-LINE: done.\nCash in now: ¥147,210.00.",
     "intent": "ACCELERATE_RECEIPT",
     "lang": "en",
     "plan": [
@@ -2809,7 +2809,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+        "description": "Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
         "status": "EXECUTED",
         "op_id": "NL-2160d50686903c41",
         "condition": null
@@ -2833,7 +2833,7 @@
       {
         "step": 5,
         "kind": "DRAW_FACILITY",
-        "description": "Draw ¥149,986.20 on FAC-LINE",
+        "description": "Draw ¥147,210.00 on FAC-LINE",
         "status": "EXECUTED",
         "op_id": "NL-ab988e1ea7302b43",
         "condition": "remaining gap after early settlement"
@@ -2955,7 +2955,7 @@
         {
           "id": "CTR-5f1cf2e81f9b",
           "label": "Option A",
-          "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+          "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
           "obligations": [
             {
               "id": "CTR-5f1cf2e81f9b-O1",
@@ -2968,10 +2968,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25720000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,200.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -2984,7 +2984,7 @@
                   "doc_id": "CTR-5f1cf2e81f9b",
                   "start": 0,
                   "end": 100,
-                  "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -2992,11 +2992,11 @@
               "rate_display": "0.85%"
             }
           ],
-          "supplier_cost_fen": 302777,
+          "supplier_cost_fen": 303599,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-          "supplier_cost_display": "¥3,027.77",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+          "supplier_cost_display": "¥3,035.99",
           "forward_value_display": "¥0.00"
         }
       ],
@@ -3044,7 +3044,7 @@
         "prev_hash": "80476e9976575a11acf84fe2bb83b1ba22b963261c31db2146e6fad7f52393c9",
         "effective_day": 0,
         "approval_id": null,
-        "message": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes."
+        "message": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes."
       },
       {
         "op_id": "NL-5dcc8a48739e27e1",
@@ -3070,7 +3070,7 @@
         "prev_hash": "cddd65175a0d922d5d1bcbd10fea8c3ce1f32ce8e8806d86c78dfe3eecf3be84",
         "effective_day": 0,
         "approval_id": null,
-        "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+        "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
       }
     ],
     "clarification": null,
@@ -3082,7 +3082,7 @@
       "rounds": 1,
       "accepted_counter": "Option A",
       "ended_reason": "buyer accepted",
-      "transcript_hash": "775b946efc16b50adac151a576478c9c33a0bd48429ad6c4e769daf99fc64aa0",
+      "transcript_hash": "8aa3e44abe6063cbb7e8a8820a731ccb56bff4d3c90513a91851f02f33c8816e",
       "buyer_replies": [
         "Round 1. We accept Option A as proposed."
       ]
@@ -3096,7 +3096,7 @@
   "amend_08": {
     "session_id": "rec-goal-08",
     "turn": 2,
-    "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥257,100.00 of RCV-A at 0.80% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93. If BUYER-1 accepts, the rest of the gap: committed plan: ¥841.40. If BUYER-1 refuses: Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3. Reply 'go ahead' to run it, or correct me (e.g. 'make it 0.8%').",
+    "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥260,000.00 of RCV-A at 0.80% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93. If BUYER-1 accepts, the rest of the gap: committed plan: ¥825.26. If BUYER-1 refuses: Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3. Reply 'go ahead' to run it, or correct me (e.g. 'make it 0.8%').",
     "intent": "ACCELERATE_RECEIPT",
     "lang": "en",
     "plan": [
@@ -3111,7 +3111,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: We will accept early settlement on up to ¥257,100 of this invoice at 0.80%, paid on or before day 2. Nothing else changes.",
+        "description": "Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.80%, paid on or before day 2. Nothing else changes.",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -3151,7 +3151,7 @@
       {
         "step": 7,
         "kind": "DRAW_FACILITY",
-        "description": "Draw ¥149,956.80 on FAC-LINE, repay day 32",
+        "description": "Draw ¥147,080.00 on FAC-LINE, repay day 32",
         "status": "PROPOSED",
         "op_id": null,
         "condition": "if the buyer accepts: remaining gap after early settlement"
@@ -3273,7 +3273,7 @@
         {
           "id": "CTR-9830bc752542",
           "label": "Option A",
-          "text": "We will accept early settlement on up to ¥257,100 of this invoice at 0.80%, paid on or before day 2. Nothing else changes.",
+          "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.80%, paid on or before day 2. Nothing else changes.",
           "obligations": [
             {
               "id": "CTR-9830bc752542-O1",
@@ -3286,10 +3286,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25710000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,100.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -3302,7 +3302,7 @@
                   "doc_id": "CTR-9830bc752542",
                   "start": 0,
                   "end": 100,
-                  "text": "We will accept early settlement on up to ¥257,100 of this invoice at 0.80%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.80%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -3310,11 +3310,11 @@
               "rate_display": "0.80%"
             }
           ],
-          "supplier_cost_fen": 289820,
+          "supplier_cost_fen": 290526,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.80% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.80%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.80%) = ¥257,056.45 → up to ¥257,100.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,056.80 + funding the rest of the gap ¥841.40 (committed plan: ¥841.40) = ¥2,898.20",
-          "supplier_cost_display": "¥2,898.20",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.80%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.80%) = ¥257,056.45 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,080.00 + funding the rest of the gap ¥825.26 (committed plan: ¥825.26) = ¥2,905.26",
+          "supplier_cost_display": "¥2,905.26",
           "forward_value_display": "¥0.00"
         }
       ],
@@ -3492,7 +3492,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+        "description": "Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -3532,7 +3532,7 @@
       {
         "step": 7,
         "kind": "DRAW_FACILITY",
-        "description": "Draw ¥149,986.20 on FAC-LINE, repay day 32",
+        "description": "Draw ¥147,210.00 on FAC-LINE, repay day 32",
         "status": "PROPOSED",
         "op_id": null,
         "condition": "if the buyer accepts: remaining gap after early settlement"
@@ -4148,7 +4148,7 @@
   "amend_08_zh": {
     "session_id": "rec-goal-08-zh",
     "turn": 2,
-    "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥257,100.00 按 0.80% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93。若对方接受，其余缺口：committed plan: ¥841.40。 若 BUYER-1 拒绝：今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
+    "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥260,000.00 按 0.80% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93。若对方接受，其余缺口：committed plan: ¥825.26。 若 BUYER-1 拒绝：今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
     "intent": "ACCELERATE_RECEIPT",
     "lang": "zh",
     "plan": [
@@ -4163,7 +4163,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: We will accept early settlement on up to ¥257,100 of this invoice at 0.80%, paid on or before day 2. Nothing else changes.",
+        "description": "Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.80%, paid on or before day 2. Nothing else changes.",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -4203,7 +4203,7 @@
       {
         "step": 7,
         "kind": "DRAW_FACILITY",
-        "description": "从 FAC-LINE 提款 ¥149,956.80",
+        "description": "从 FAC-LINE 提款 ¥147,080.00",
         "status": "PROPOSED",
         "op_id": null,
         "condition": "若买方接受：提前结算后剩余缺口"
@@ -4325,7 +4325,7 @@
         {
           "id": "CTR-9830bc752542",
           "label": "Option A",
-          "text": "We will accept early settlement on up to ¥257,100 of this invoice at 0.80%, paid on or before day 2. Nothing else changes.",
+          "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.80%, paid on or before day 2. Nothing else changes.",
           "obligations": [
             {
               "id": "CTR-9830bc752542-O1",
@@ -4338,10 +4338,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25710000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,100.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -4354,7 +4354,7 @@
                   "doc_id": "CTR-9830bc752542",
                   "start": 0,
                   "end": 100,
-                  "text": "We will accept early settlement on up to ¥257,100 of this invoice at 0.80%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.80%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -4362,11 +4362,11 @@
               "rate_display": "0.80%"
             }
           ],
-          "supplier_cost_fen": 289820,
+          "supplier_cost_fen": 290526,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.80% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.80%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.80%) = ¥257,056.45 → up to ¥257,100.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,056.80 + funding the rest of the gap ¥841.40 (committed plan: ¥841.40) = ¥2,898.20",
-          "supplier_cost_display": "¥2,898.20",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.80%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.80%) = ¥257,056.45 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,080.00 + funding the rest of the gap ¥825.26 (committed plan: ¥825.26) = ¥2,905.26",
+          "supplier_cost_display": "¥2,905.26",
           "forward_value_display": "¥0.00"
         }
       ],
@@ -4529,7 +4529,7 @@
   "goal_zh": {
     "session_id": "rec-goal-go-zh",
     "turn": 1,
-    "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥257,200.00 按 0.85% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93。若对方接受，其余缺口：committed plan: ¥841.57。 若 BUYER-1 拒绝：今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
+    "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥260,000.00 按 0.85% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93。若对方接受，其余缺口：committed plan: ¥825.99。 若 BUYER-1 拒绝：今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
     "intent": "ACCELERATE_RECEIPT",
     "lang": "zh",
     "plan": [
@@ -4544,7 +4544,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+        "description": "Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -4584,7 +4584,7 @@
       {
         "step": 7,
         "kind": "DRAW_FACILITY",
-        "description": "从 FAC-LINE 提款 ¥149,986.20",
+        "description": "从 FAC-LINE 提款 ¥147,210.00",
         "status": "PROPOSED",
         "op_id": null,
         "condition": "若买方接受：提前结算后剩余缺口"
@@ -4706,7 +4706,7 @@
         {
           "id": "CTR-5f1cf2e81f9b",
           "label": "Option A",
-          "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+          "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
           "obligations": [
             {
               "id": "CTR-5f1cf2e81f9b-O1",
@@ -4719,10 +4719,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25720000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,200.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -4735,7 +4735,7 @@
                   "doc_id": "CTR-5f1cf2e81f9b",
                   "start": 0,
                   "end": 100,
-                  "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -4743,11 +4743,11 @@
               "rate_display": "0.85%"
             }
           ],
-          "supplier_cost_fen": 302777,
+          "supplier_cost_fen": 303599,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-          "supplier_cost_display": "¥3,027.77",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+          "supplier_cost_display": "¥3,035.99",
           "forward_value_display": "¥0.00"
         }
       ],
@@ -4910,7 +4910,7 @@
   "goal_go_zh": {
     "session_id": "rec-goal-go-zh",
     "turn": 2,
-    "reply": "BUYER-1 接受了 Option A：We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.\n从 FAC-LINE 提款 ¥149,986.20：已执行。\n已到账：¥149,986.20。",
+    "reply": "BUYER-1 接受了 Option A：We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.\n从 FAC-LINE 提款 ¥147,210.00：已执行。\n已到账：¥147,210.00。",
     "intent": "ACCELERATE_RECEIPT",
     "lang": "zh",
     "plan": [
@@ -4925,7 +4925,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+        "description": "Option A: We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
         "status": "EXECUTED",
         "op_id": "NL-d5085a71875f9726",
         "condition": null
@@ -4949,7 +4949,7 @@
       {
         "step": 5,
         "kind": "DRAW_FACILITY",
-        "description": "从 FAC-LINE 提款 ¥149,986.20",
+        "description": "从 FAC-LINE 提款 ¥147,210.00",
         "status": "EXECUTED",
         "op_id": "NL-383adeb31c305b93",
         "condition": "提前结算后剩余缺口"
@@ -5071,7 +5071,7 @@
         {
           "id": "CTR-5f1cf2e81f9b",
           "label": "Option A",
-          "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
+          "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
           "obligations": [
             {
               "id": "CTR-5f1cf2e81f9b-O1",
@@ -5084,10 +5084,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25720000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,200.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -5100,7 +5100,7 @@
                   "doc_id": "CTR-5f1cf2e81f9b",
                   "start": 0,
                   "end": 100,
-                  "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -5108,11 +5108,11 @@
               "rate_display": "0.85%"
             }
           ],
-          "supplier_cost_fen": 302777,
+          "supplier_cost_fen": 303599,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-          "supplier_cost_display": "¥3,027.77",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+          "supplier_cost_display": "¥3,035.99",
           "forward_value_display": "¥0.00"
         }
       ],
@@ -5160,7 +5160,7 @@
         "prev_hash": "9240704893b5b3dbc8912ce803cf4ee3a81d48478dcc9f5afccf3121bc428598",
         "effective_day": 0,
         "approval_id": null,
-        "message": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes."
+        "message": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. Nothing else changes."
       },
       {
         "op_id": "NL-0dc3de787661a4ef",
@@ -5186,7 +5186,7 @@
         "prev_hash": "a623977a40d6321cd6be439b47edfe9e540ef83802cc2907d85a5a218f38b0de",
         "effective_day": 0,
         "approval_id": null,
-        "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+        "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
       }
     ],
     "clarification": null,
@@ -5198,7 +5198,7 @@
       "rounds": 1,
       "accepted_counter": "Option A",
       "ended_reason": "buyer accepted",
-      "transcript_hash": "775b946efc16b50adac151a576478c9c33a0bd48429ad6c4e769daf99fc64aa0",
+      "transcript_hash": "8aa3e44abe6063cbb7e8a8820a731ccb56bff4d3c90513a91851f02f33c8816e",
       "buyer_replies": [
         "第1轮。我方接受方案A。"
       ]
@@ -5212,7 +5212,7 @@
   "evaluate_ex01_zh": {
     "session_id": "rec-ex01-go-zh",
     "turn": 1,
-    "reply": "结论 REJECT（TIER_1）：AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN。REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. 该处理方案今天无法执行：将 RI:BUYER-1:32 提交 FAC-IF 融资，预付 ¥135,040.00：RI:BUYER-1:32 目前还不能用来融资，它将于第 32 天开出。\n若买方拒绝：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93。今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 若买方接受 Option A，其余缺口：committed plan: ¥841.57。 若买方接受 Option B，其余缺口：committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46。今日到账：¥90,000.00。稍后到账：FAC-IF ¥315,000.00，今日申请，第 3 天到账。\n回复“执行”开始谈判，届时我才会发送反报价；在此之前不会发送任何内容。",
+    "reply": "结论 REJECT（TIER_1）：AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN。REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. 该处理方案今天无法执行：将 RI:BUYER-1:32 提交 FAC-IF 融资，预付 ¥135,040.00：RI:BUYER-1:32 目前还不能用来融资，它将于第 32 天开出。\n若买方拒绝：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93。今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 若买方接受 Option A，其余缺口：committed plan: ¥825.99。 若买方接受 Option B，其余缺口：committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46。今日到账：¥90,000.00。稍后到账：FAC-IF ¥315,000.00，今日申请，第 3 天到账。\n回复“执行”开始谈判，届时我才会发送反报价；在此之前不会发送任何内容。",
     "intent": "EVALUATE_OFFER",
     "lang": "zh",
     "plan": [
@@ -5227,7 +5227,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
         "status": "PROPOSED",
         "op_id": null,
         "condition": null
@@ -5267,7 +5267,7 @@
       {
         "step": 7,
         "kind": "DRAW_FACILITY",
-        "description": "从 FAC-LINE 提款 ¥149,986.20",
+        "description": "从 FAC-LINE 提款 ¥147,210.00",
         "status": "PROPOSED",
         "op_id": null,
         "condition": "若买方接受 Option A：剩余缺口"
@@ -5562,7 +5562,7 @@
         {
           "id": "CTR-193394b6ba8b",
           "label": "Option A",
-          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
           "obligations": [
             {
               "id": "CTR-193394b6ba8b-O2",
@@ -5575,10 +5575,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25720000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,200.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -5591,7 +5591,7 @@
                   "doc_id": "CTR-193394b6ba8b",
                   "start": 34,
                   "end": 134,
-                  "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -5599,11 +5599,11 @@
               "rate_display": "0.85%"
             }
           ],
-          "supplier_cost_fen": 302777,
+          "supplier_cost_fen": 303599,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-          "supplier_cost_display": "¥3,027.77",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+          "supplier_cost_display": "¥3,035.99",
           "forward_value_display": "¥0.00"
         },
         {
@@ -5879,7 +5879,7 @@
   "negotiate_ex01_zh": {
     "session_id": "rec-ex01-go-zh",
     "turn": 2,
-    "reply": "结论 REJECT（TIER_1）：AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN。REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. 该处理方案今天无法执行：将 RI:BUYER-1:32 提交 FAC-IF 融资，预付 ¥135,040.00：RI:BUYER-1:32 目前还不能用来融资，它将于第 32 天开出。\n买方接受了 Option A。\n其余缺口，按之前给出的方案：\n从 FAC-LINE 提款 ¥149,986.20：已执行。\n已到账：¥149,986.20。",
+    "reply": "结论 REJECT（TIER_1）：AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN。REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. 该处理方案今天无法执行：将 RI:BUYER-1:32 提交 FAC-IF 融资，预付 ¥135,040.00：RI:BUYER-1:32 目前还不能用来融资，它将于第 32 天开出。\n买方接受了 Option A。\n其余缺口，按之前给出的方案：\n从 FAC-LINE 提款 ¥147,210.00：已执行。\n已到账：¥147,210.00。",
     "intent": "NEGOTIATE",
     "lang": "zh",
     "plan": [
@@ -5894,7 +5894,7 @@
       {
         "step": 2,
         "kind": "COUNTER_OFFER",
-        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+        "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
         "status": "EXECUTED",
         "op_id": "NL-84f2d241847627cf",
         "condition": null
@@ -5926,7 +5926,7 @@
       {
         "step": 6,
         "kind": "DRAW_FACILITY",
-        "description": "从 FAC-LINE 提款 ¥149,986.20",
+        "description": "从 FAC-LINE 提款 ¥147,210.00",
         "status": "EXECUTED",
         "op_id": "NL-f1481e2324f99f91",
         "condition": "成交后剩余缺口"
@@ -6205,7 +6205,7 @@
         {
           "id": "CTR-193394b6ba8b",
           "label": "Option A",
-          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+          "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
           "obligations": [
             {
               "id": "CTR-193394b6ba8b-O2",
@@ -6218,10 +6218,10 @@
               "effective_day": 2,
               "base": {
                 "kind": "INVOICE",
-                "amount_fen": 25720000,
+                "amount_fen": 26000000,
                 "receivable_id": "RCV-A",
                 "events_per_year": null,
-                "amount_display": "¥257,200.00"
+                "amount_display": "¥260,000.00"
               },
               "contingency": "FIRM",
               "duration": {
@@ -6234,7 +6234,7 @@
                   "doc_id": "CTR-193394b6ba8b",
                   "start": 34,
                   "end": 134,
-                  "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+                  "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
                 }
               ],
               "confidence": 1,
@@ -6242,11 +6242,11 @@
               "rate_display": "0.85%"
             }
           ],
-          "supplier_cost_fen": 302777,
+          "supplier_cost_fen": 303599,
           "forward_value_fen": 0,
           "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
-          "supplier_cost_display": "¥3,027.77",
+          "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+          "supplier_cost_display": "¥3,035.99",
           "forward_value_display": "¥0.00"
         },
         {
@@ -6519,7 +6519,7 @@
         "prev_hash": "800012b397def2a539191c2b3bc01b6477093419dc03914902553e1f83654ae5",
         "effective_day": 0,
         "approval_id": null,
-        "message": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+        "message": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
       },
       {
         "op_id": "NL-81207adc69ea410f",
@@ -6558,7 +6558,7 @@
         "prev_hash": "21eaf3c2d569647b55e0f9ef2cbc7909e78a160a461659b783718fc915f99d16",
         "effective_day": 0,
         "approval_id": null,
-        "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+        "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
       }
     ],
     "clarification": null,
@@ -6570,7 +6570,7 @@
       "rounds": 1,
       "accepted_counter": "Option A",
       "ended_reason": "buyer accepted",
-      "transcript_hash": "802cf1c4946c483e21d6c89444465751ef705a8ba4ff2bc6108d36b36cdeaf34",
+      "transcript_hash": "25ee2e90a3baff56debf760d6dfb6e32e1a84761828d4cd34e96821c906cba57",
       "buyer_replies": [
         "第1轮。我方接受方案A。"
       ]
