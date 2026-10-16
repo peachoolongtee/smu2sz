@@ -85,6 +85,8 @@ class Settings:
     features: Features = field(default_factory=Features)
     # Offers and buyer turns that arrive without a channel key, per simulated day (R04, R05).
     intake_cap_per_day: int = field(default_factory=lambda: _int("INTAKE_CAP_PER_DAY", 200))
+    # Offers and messages one keyed buyer (X-Counterparty-Key) may send per simulated day (R-10: threshold probing).
+    buyer_attempts_per_day: int = field(default_factory=lambda: _int("BUYER_ATTEMPTS_PER_DAY", 5))
 
 
 def get_settings() -> Settings:

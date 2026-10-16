@@ -23,7 +23,7 @@ from app.api.auth import counterparty_for_key, is_agent
 from app.api.decisions import record_fact
 from app.api.display import displayed
 from app.api.home import read_home
-from app.api.offers import enforce_intake_cap
+from app.api.offers import enforce_buyer_budget, enforce_intake_cap
 from app.api.presentation import business_text
 from app.api.quotes import decision_id_of
 from app.api.runtime import get_runtime
@@ -148,6 +148,8 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
                                           "message": "the channel key does not belong to the stated counterparty"})
             body = body.model_copy(update={"counterparty_id": bound})
             channel_authenticated = True
+            if not (rt.is_owner(x_owner_token) or is_agent(x_agent_key)):
+                enforce_buyer_budget(rt, "POST /nl", bound, body.lang or "en")  # R-10: 429 past the buyer's daily budget
         elif not (rt.is_owner(x_owner_token) or is_agent(x_agent_key)):
             enforce_intake_cap(rt, "POST /nl", body.counterparty_id)  # R04, R05: 429 over the daily cap
         if bound is None and x_counterparty_key:
