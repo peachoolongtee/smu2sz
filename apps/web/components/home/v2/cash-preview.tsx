@@ -348,10 +348,14 @@ export function CashPreview({
                 const y = yOf(valueAt(line, m.day));
                 const on = pinned === m.day;
                 const lit = on || peek === m.day;
+                // On a phone's narrow chart the markers sit too close for a finger: a drawing (as on Cash), the moves read in the list beside it and on Cash & funding.
+                const drawing = W < 440;
                 return (
                   <button
                     key={m.day}
                     type="button"
+                    aria-hidden={drawing || undefined}
+                    tabIndex={drawing ? -1 : undefined}
                     aria-pressed={on}
                     aria-label={`${m.n}. ${m.when}: ${m.label} ${m.amount}`}
                     onClick={(e) => {
@@ -363,7 +367,7 @@ export function CashPreview({
                     onPointerLeave={() => setPeek(null)}
                     onFocus={() => setPeek(m.day)}
                     onBlur={() => setPeek(null)}
-                    className={`hit motion-press absolute z-10 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill border-2 text-[13px] font-bold leading-none tabular-nums shadow-(--shadow-f) transition-transform duration-(--dur-fast) hover:scale-110 ${
+                    className={`${drawing ? "pointer-events-none" : "hit"} motion-press absolute z-10 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill border-2 text-[13px] font-bold leading-none tabular-nums shadow-(--shadow-f) transition-transform duration-(--dur-fast) hover:scale-110 ${
                       lit ? (m.out ? "border-bad-solid bg-bad-solid text-white" : "border-ok-solid bg-ok-solid text-white") : m.out ? "border-bad-solid bg-card text-bad-fg" : "border-ok-solid bg-card text-ok-fg"
                     } ${draw ? "picture-fade" : ""}`}
                     style={{ left: x, top: y, ...(draw ? { animationDelay: "900ms" } : {}) }}

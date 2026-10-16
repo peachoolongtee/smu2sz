@@ -4,7 +4,7 @@ import "@/app/flow-look.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BOOKS, BooksCards, type BooksId } from "@/components/demo/books-cards";
+import { BOOKS, BooksCards, booksName, type BooksId } from "@/components/demo/books-cards";
 import { TodayCard } from "@/components/home/today-card";
 import { Disclosure } from "@/components/business/kit";
 import { startTour } from "@/components/business/tour";
@@ -13,7 +13,7 @@ import { Badge, Button, ButtonLink, Callout, ErrorState, LoadingBlock, PageHeade
 import { StatusPill } from "@/components/ui/status-pill";
 import { getDemoStory, restoreDemo } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { changeBooks, resetTo } from "@/lib/books-guard";
+import { changeBooks, resetScenarioOf, resetTo } from "@/lib/books-guard";
 import { goToMore, requestStart, runStoryAction, seenOf } from "@/lib/demo-control";
 import { MORE, type MoreId } from "@/lib/demo";
 import { reachedOf, resetSession, useDemo } from "@/lib/demo-store";
@@ -60,7 +60,8 @@ function OperatorTools({ view, busy }: { view: DemoStoryView; busy: boolean }) {
   const demo = useDemo();
   const tools = view.operator_tools;
   const act = async (action: string) => {
-    if (action === "reset") await changeBooks(view.books, resetTo(view.main ? undefined : view.books.scenario, router.push));
+    // The owner's own books are not a scenario the server resets to: resetting them starts blank books, and the setup opens.
+    if (action === "reset") await changeBooks(view.books, resetTo(resetScenarioOf(view.books), router.push, view.books.scenario === "own" ? "/setup" : "/demo"));
   };
   return (
     <Disclosure card testId="demo-operator-tools" summary={<span>{tools.label} <span className="text-supporting font-normal text-ink-3">{tools.hint_text}</span></span>}>
@@ -130,7 +131,9 @@ export default function DemoPage() {
   const story = useAsync(() => (signedIn ? getDemoStory(lang, seen) : Promise.resolve(null)), [lang, seen, signedIn]);
   const [working, setWorking] = useState(false);
   const [restored, setRestored] = useState<string | null>(null);
-  const busy = demo.busy || working;
+  // The card whose Load is running: loading the busy company takes several seconds, and the button says it is working.
+  const [loading, setLoading] = useState<BooksId | null>(null);
+  const busy = demo.busy || working || loading !== null;
   const view = signedIn ? (story.data ?? null) : null;
 
   // Every card's Load goes through the guard (lib/books-guard.ts): a straight reset on fresh books, else the books dialog (the one every reset uses) lists what the current books lose from
@@ -140,16 +143,24 @@ export default function DemoPage() {
     setRestored(null);
     const card = BOOKS.find((b) => b.id === id)!;
     const alt = view.alternate;
-    const name = t(card.name);
+    const blank = id === "blank";
+    const name = t(blank ? "demo.card.blankTitle" : card.name);
     const server = id === "busy" && view.main;
-    await changeBooks(view.books, resetTo(id === "golden" ? undefined : card.scenario, router.push), {
-      alternate: server,
-      prefix: "demo-alternate",
-      labels: server
-        ? { title: alt.confirm_title_text, confirm: alt.confirm_label, cancel: alt.cancel_label, keeps: alt.keeps_text }
-        : { title: t("demo.load.title", { name }), confirm: t("demo.load.confirm", { name }), cancel: t("demo.load.cancel"), keeps: view.books.reset_keeps_text },
-      gives: { heading: t("demo.alt.get"), text: id === "busy" ? alt.scope_text : t(card.help) },
-    });
+    setLoading(id);
+    try {
+      await changeBooks(view.books, resetTo(id === "golden" ? undefined : card.scenario, router.push, blank ? "/setup" : "/demo"), {
+        alternate: server,
+        prefix: "demo-alternate",
+        labels: server
+          ? { title: alt.confirm_title_text, confirm: alt.confirm_label, cancel: alt.cancel_label, keeps: alt.keeps_text }
+          : { title: t("demo.load.title", { name }), confirm: t("demo.load.confirm", { name }), cancel: t("demo.load.cancel"), keeps: view.books.reset_keeps_text },
+        // What the TARGET books are. The server's `alternate.scope_text` describes the busy company only while the main books are loaded; on any other books it counts the
+        // books loaded now, so there the card's own help says what the busy company is.
+        gives: { heading: t("demo.alt.get"), text: server ? alt.scope_text : t(card.help) },
+      });
+    } finally {
+      setLoading(null);
+    }
   }
 
   async function restore() {
@@ -212,7 +223,7 @@ export default function DemoPage() {
         <LoadingBlock rows={4} />
       ) : (
         <>
-        <BooksCards view={view} busy={busy} onLoad={(id) => void load(id)} />
+        <BooksCards view={view} busy={busy} loading={loading} onLoad={(id) => void load(id)} />
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-6">
             <section aria-label={t("demo.scene.aria")} className="card-standard p-5" data-testid="demo-current">
@@ -236,7 +247,7 @@ export default function DemoPage() {
                   </StatusPill>
                   {/* All six scenes done: the story says so (never the other books' name). On the other books there is no story: the card names the books loaded. */}
                   <h2 className="type-section mt-2 text-balance text-ink" data-testid="demo-current-title">
-                    {view.complete ? t("demo.complete.title") : t((BOOKS.find((b) => b.scenario === view.books.scenario) ?? BOOKS[1]).name)}
+                    {view.complete ? t("demo.complete.title") : t(booksName(view.books.scenario))}
                   </h2>
                 </>
               )}

@@ -290,18 +290,19 @@ export function WorklistPanel({
   const titleId = useId();
   return (
     <section aria-labelledby={titleId} {...handlers} data-testid="home-worklist-panel" className="motion-reveal f-card min-w-0 p-4">
-      <div className="flex items-center justify-between gap-3">
+      {/* The title is the card's own band, in Home's purple, so the worklist reads as a titled section and not as one more card. */}
+      <div className="-mx-4 -mt-4 flex items-center justify-between gap-3 rounded-t-[var(--radius-f-card)] bg-f-purple-soft px-4 py-3" data-testid="hv2-worklist-head">
         <div className="flex min-w-0 items-center gap-3">
-          <h2 id={titleId} className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-worklist-title">
+          <h2 id={titleId} className="font-display text-[20px] font-bold leading-tight tracking-[-0.01em] text-f-purple-ink" data-testid="hv2-worklist-title">
             {t("hv2.work.title")}
           </h2>
           {settled ? (
-            <span aria-hidden className="inline-flex min-w-7 items-center justify-center rounded-control border border-line-ui px-1.5 text-supporting font-medium tabular-nums text-ink-2" data-testid="hv2-worklist-count">
+            <span aria-hidden className="inline-flex min-w-7 items-center justify-center rounded-control bg-f-purple px-1.5 text-supporting font-bold tabular-nums text-f-btn-ink" data-testid="hv2-worklist-count">
               {settled.counts.needs_you + settled.counts.waiting}
             </span>
           ) : null}
         </div>
-        <Link href="/deals" className="motion-press inline-flex min-h-10 items-center gap-1.5 text-[15px] font-semibold text-ink hover:underline hover:underline-offset-[3px] touch:min-h-11" data-testid="home-worklist-all">
+        <Link href="/deals" className="motion-press inline-flex min-h-10 items-center gap-1.5 text-[15px] font-semibold text-f-purple-ink hover:underline hover:underline-offset-[3px] touch:min-h-11" data-testid="home-worklist-all">
           {t("hv2.work.all.deals")} <span aria-hidden>↗</span>
         </Link>
       </div>

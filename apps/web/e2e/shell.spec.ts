@@ -77,7 +77,7 @@ test("the tour is off by default, starts from the account sheet, has two steps o
   await expect(tour).toBeVisible();
   // The Home's tour walks each part of the page (its steps are counted by the page), and ends on the sections.
   await expect(tour).toContainText(/Home · step 1 of \d+/i);
-  await expect(tour).toContainText("Where your cash stands");
+  await expect(tour).toContainText("Company cash outlook"); // the page's first part since the final UI fold (the headline is for a screen reader only)
   // The shell's parts close the walk, in this order: Ask FLOW, the sections, the account.
   const next = page.getByTestId("tour-next");
   for (let i = 0; i < 20 && !(await tour.getByRole("heading", { name: "Ask FLOW" }).isVisible().catch(() => false)) && !(await tour.innerText()).includes("Ask FLOW"); i++) await next.click();

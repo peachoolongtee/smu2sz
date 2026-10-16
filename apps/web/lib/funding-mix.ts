@@ -54,7 +54,7 @@ export function lenderHue(h: HomeView, facilityId: string | null): string {
  * `customers` (the customers read: each one's name and short name) names a customer's early payment by its short name ("Foshan"): the customer whose full name the
  * series' early-receipt line carries. Without it the rail's own words name the slice.
  */
-export function fundingMix(h: HomeView, customers: { name: string; short: string }[] = []): FundingMix | null {
+export function fundingMix(h: HomeView, customers: { name: string; short: string }[] = [], { withPlan = true }: { /** false: a plan not yet run has no slices (Cash & funding shows only money in use or arriving). */ withPlan?: boolean } = {}): FundingMix | null {
   const transit = new Map((h.cash.in_transit?.lots ?? []).map((l) => [l.facility_name, l.arrival_when]));
   // The legs of the run plan say exactly what is still arriving; without them a lender named on an in-transit lot is counted as arriving in full.
   const legs = h.home_v2?.action.legs ?? null;
@@ -65,7 +65,7 @@ export function fundingMix(h: HomeView, customers: { name: string; short: string
   const drawnFen = lenders.reduce((s, f) => s + (f.drawn_fen ?? 0), 0);
   const ownFen = Math.max(h.cash.cash_fen - (drawnFen - arrivingFen), 0);
   const plan = h.next_action;
-  const planned: Omit<FundingSlice, "share">[] = !plan
+  const planned: Omit<FundingSlice, "share">[] = !plan || !withPlan
     ? []
     : plan.legs?.length
       ? plan.legs.map((l) => ({ key: `plan-${l.index}`, kind: "planned" as const, facilityId: l.facility_id, name: l.name_display ?? l.facility_name, amount: l.amount_display, when: l.lands_when ?? null, cost: l.cost_display, fen: l.amount_fen ?? 0, buyer: l.buyer_name ?? null }))

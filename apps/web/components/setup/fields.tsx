@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { inputClass } from "@/components/ui";
 
 /**
@@ -36,11 +36,28 @@ type InputProps = {
 
 const MIN_W = { sm: "min-w-20", md: "min-w-32", lg: "min-w-48" } as const;
 
-export function TextInput({ value, onChange, invalid, placeholder, label, className = "", type = "text", inputMode, testId, size = "md" }: InputProps) {
+/**
+ * The owner's own digits with thousands separators, as the placeholders show them ("400000" → "400,000"): only a plain run of digits (with an optional "¥" and decimals) is
+ * regrouped; anything else is left exactly as typed for the server to check. Nothing is computed: the digits are the owner's.
+ */
+export function groupDigits(raw: string): string {
+  const m = /^\s*([¥￥]?)\s*(\d+)(\.\d+)?\s*$/.exec(raw);
+  if (!m) return raw;
+  return `${m[1] ? `${m[1]} ` : ""}${m[2].replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${m[3] ?? ""}`;
+}
+
+export function TextInput({ value, onChange, invalid, placeholder, label, className = "", type = "text", inputMode, testId, size = "md", group = false }: InputProps & { group?: boolean }) {
+  const numeric = inputMode === "decimal" || inputMode === "numeric";
   return (
     <input
       type={type}
       value={value ?? ""}
+      // A number field selects what is in it on focus, so typing replaces a default instead of appending to it ("5,000" + "50000").
+      onFocus={numeric ? (e) => e.currentTarget.select() : undefined}
+      onBlur={group ? (e) => {
+        const next = groupDigits(e.currentTarget.value);
+        if (next !== e.currentTarget.value) onChange(next);
+      } : undefined}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       aria-label={label}
@@ -52,7 +69,7 @@ export function TextInput({ value, onChange, invalid, placeholder, label, classN
   );
 }
 
-export const MoneyInput = (p: InputProps) => <TextInput inputMode="decimal" {...p} />;
+export const MoneyInput = (p: InputProps) => <TextInput inputMode="decimal" group {...p} />;
 export const DateInput = (p: InputProps) => <TextInput type="date" {...p} />;
 
 /** A whole number of days or months; blank is null. */
@@ -107,6 +124,25 @@ export function AddButton({ onClick, children, testId }: { onClick: () => void; 
     <button type="button" onClick={onClick} data-testid={testId} className="motion-press inline-flex min-h-10 items-center rounded-control border border-brand-600 px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50">
       {children}
     </button>
+  );
+}
+
+/**
+ * A setup table that becomes a card per row when its column is narrower than the table (a container query in globals.css, `.setup-rows`): no row scrolls sideways and no
+ * column (such as "Agreed with lender") hides off the edge. In the card each cell is labelled with its column's heading, copied from the table's own head (dictionary words).
+ */
+export function RowsTable({ label, children }: { label: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const heads = [...el.querySelectorAll("thead th")].map((th) => th.textContent?.trim() ?? "");
+    el.querySelectorAll("tbody tr").forEach((tr) => [...tr.children].forEach((td, i) => (heads[i] ? td.setAttribute("data-label", heads[i]) : td.removeAttribute("data-label"))));
+  });
+  return (
+    <div ref={ref} role="region" aria-label={label} className="setup-rows-wrap overflow-x-auto rounded-card border border-line bg-surface">
+      {children}
+    </div>
   );
 }
 
