@@ -1,0 +1,10 @@
+{
+  "name": "termsledger",
+  "private": true,
+  "description": "Repository root: only the demo launcher (no packages). The web app's packages live in apps/web, the API's in services/api.",
+  "scripts": {
+    "demo": "node scripts/demo.mjs",
+    "demo:blank": "node scripts/demo.mjs --blank",
+    "demo:mock": "node scripts/demo.mjs --mock"
+  }
+}
