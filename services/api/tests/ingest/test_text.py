@@ -254,3 +254,18 @@ def test_unwrap_does_not_join_headings_or_list_items():
         "(a) a delivery note signed by the Buyer's warehouse;",
         "(b) a quality certificate.",
     ]
+
+
+def test_unwrap_joins_two_cjk_characters_across_a_wrap_without_a_space():
+    full = "乙方收款账户：开户银行" + "中国建设银行股份有限公" * 3
+    page = f"{full}\n司深圳分行，合同总价的\n30%，重新\n提供服务。"
+    out = unwrap(page)
+    assert "有限公司深圳分行" in out
+    assert "有限公 司" not in out
+
+
+def test_unwrap_keeps_the_space_between_cjk_and_latin_or_digits_across_a_wrap():
+    full = "乙方应在收到通知后向甲方开具发票并按合同约定支付" * 3
+    assert unwrap(f"{full} RMB\n150,000 元") == f"{full} RMB 150,000 元"
+    assert unwrap(f"{full}\nABC 公司") == f"{full} ABC 公司"
+    assert unwrap(f"{full}25\n日内付款") == f"{full}25 日内付款"
