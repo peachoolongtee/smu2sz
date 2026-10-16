@@ -200,7 +200,7 @@ test("a 401 opens the owner sign-in dialog, and signing in resends the refused m
     // The real API refuses a wrong token and the dialog says so without closing.
     await dialog.getByLabel("Owner token").fill("not-the-token");
     await dialog.getByRole("button", { name: "Sign in" }).click();
-    await expect(dialog.getByRole("alert")).toContainText("rejected");
+    await expect(dialog.getByRole("alert")).toContainText("not accepted"); // the UI audit: plain words, no status code
     await expect(dialog).toBeVisible();
   }
 
