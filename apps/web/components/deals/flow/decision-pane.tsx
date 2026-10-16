@@ -562,7 +562,7 @@ export function DecisionPane({
 
         {current === "overview" && (reviewSlot || sent || outcome) ? (
           <div className="space-y-3" data-testid="deal-review-slot">
-            <div className={reviewing ? "flow-card p-5 sm:p-7" : ""}>{reviewSlot}</div>
+            <div className={reviewing && (canSend || acceptMounted) ? "flow-card p-5 sm:p-7" : ""}>{reviewSlot}</div>
           </div>
         ) : null}
 

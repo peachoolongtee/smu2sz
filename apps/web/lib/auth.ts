@@ -6,6 +6,7 @@
  * the bundle: see DEMO_BUILD in ./config for the local-demo prefill.
  */
 
+import { rememberAccount } from "./account-flag";
 import { createStore } from "./create-store";
 
 export type SignInReason = "required" | "rejected" | "unconfigured";
@@ -64,6 +65,8 @@ export function closeSignIn(): void {
 
 export function setOwnerToken(token: string): void {
   authStore.set({ token: token.trim() || null, open: false, reason: null });
+  // The landing page's "Access FLOW": this browser has an account (the token itself is never kept beyond the session).
+  if (token.trim()) rememberAccount();
   signedInListeners.forEach((l) => l());
 }
 
