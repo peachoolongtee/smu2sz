@@ -57,6 +57,7 @@ class Runtime:
     intake_day: int = 0  # the simulated day `intake_count` belongs to (R04, R05; in memory, like the caches above)
     intake_count: int = 0  # offers and buyer turns admitted without a channel key on `intake_day`
     buyer_attempts: dict[str, tuple[int, int]] = field(default_factory=dict)  # R-10: keyed buyer -> (day, attempts that day)
+    buyer_refusals: dict[str, tuple[int, int]] = field(default_factory=dict)  # R-10: keyed buyer -> (day, refusals that day)
     # The Demo's swaps to another scenario and restores of the main one (`app.api.demo_story`); in memory, and kept across `reset`
     # because a reset wipes the operations log, which therefore cannot hold the entry that says the books were replaced.
     demo_history: list[dict[str, Any]] = field(default_factory=list)
@@ -122,6 +123,14 @@ class Runtime:
             self.buyer_attempts[counterparty_id] = (self.day, used + 1)
             return True
 
+    def count_buyer_refusal(self, counterparty_id: str) -> int:
+        """Count one budget refusal for this buyer today and return how many it has had today (1 for the first)."""
+        with self.lock:
+            day, n = self.buyer_refusals.get(counterparty_id, (self.day, 0))
+            n = n + 1 if day == self.day else 1
+            self.buyer_refusals[counterparty_id] = (self.day, n)
+            return n
+
     def hydrate(self) -> None:
         """Read the clock and the seeded scenario from the stored books (start-up; nothing is written)."""
         state = self.store.get_state()
@@ -168,6 +177,7 @@ class Runtime:
             self.documents.clear()
             self.intake_day, self.intake_count = 0, 0
             self.buyer_attempts.clear()
+            self.buyer_refusals.clear()
             from app.api.strategy_exposure import clear_cache as clear_exposure_cache
             from app.nl import reset_sessions
 

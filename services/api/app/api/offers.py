@@ -81,14 +81,17 @@ def enforce_buyer_budget(rt: Runtime, route: str, counterparty_id: str, lang: st
 
     if rt.take_buyer_slot(counterparty_id):
         return
-    with rt.lock:
-        key = f"buyer-budget {route} {counterparty_id} {rt.day} {uuid.uuid4().hex}"
-        rt.store.add_security_event(SecurityEvent(
-            id="SEC-BUDGET-" + hashlib.sha256(key.encode()).hexdigest()[:12], day=rt.day,
-            kind=SecurityEventKind.DATA_EXTRACTION, counterparty_id=counterparty_id,
-            action_taken="request refused before reaching any module",
-            detail=(f"{counterparty_id} went over its daily budget of {rt.settings.buyer_attempts_per_day} offers and messages "
-                    f"({route}); repeated attempts in one day can probe the owner's thresholds")))
+    # One event per buyer per simulated day, with a deterministic id; later refusals that day are counted on the runtime
+    # (`Runtime.buyer_refusals`), not recorded, so a buyer cannot grow the store by retrying.
+    if rt.count_buyer_refusal(counterparty_id) == 1:
+        with rt.lock:
+            eid = "SEC-BUDGET-" + hashlib.sha256(f"buyer-budget {counterparty_id} {rt.day}".encode()).hexdigest()[:12]
+            if not any(e.id == eid for e in rt.store.security_events()):  # a restart on a persistent store
+                rt.store.add_security_event(SecurityEvent(
+                    id=eid, day=rt.day, kind=SecurityEventKind.DATA_EXTRACTION, counterparty_id=counterparty_id,
+                    action_taken="request refused before reaching any module; further refusals today are counted, not recorded",
+                    detail=(f"{counterparty_id} went over its daily budget of {rt.settings.buyer_attempts_per_day} offers and "
+                            f"messages ({route}); repeated attempts in one day can probe the owner's thresholds")))
     lg = "zh" if lang == "zh" else "en"
     raise HTTPException(429, {"code": "BUYER_BUDGET_EXHAUSTED",
                               "message": t(lg, "We have received your messages for today. Please write again tomorrow.",

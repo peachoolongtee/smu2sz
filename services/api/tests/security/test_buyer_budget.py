@@ -51,7 +51,21 @@ def test_the_sixth_message_in_a_day_is_refused_in_neutral_words(api):
     [event] = budget_events()
     assert event.counterparty_id == "BUYER-1" and event.kind.value == "DATA_EXTRACTION"
     zh = api.post("/nl", headers=KEY1, json={**TURN, "lang": "zh"}).json()["detail"]
-    assert zh["message"] == "今天的消息我们已收到。请明天再联系。" and len(budget_events()) == 2
+    assert zh["message"] == "今天的消息我们已收到。请明天再联系。"
+
+
+def test_one_event_per_buyer_per_day_however_often_it_retries(api):
+    for _ in range(5):
+        api.post("/nl", headers=KEY1, json=TURN)
+    for _ in range(20):
+        assert api.post("/nl", headers=KEY1, json=TURN).status_code == 429
+    assert len(budget_events()) == 1 and get_runtime().buyer_refusals["BUYER-1"] == (0, 20)
+    assert api.post("/clock/advance", headers=OWNER, json={"days": 1}).status_code == 200
+    for _ in range(5):
+        api.post("/nl", headers=KEY1, json=TURN)
+    for _ in range(3):
+        assert api.post("/nl", headers=KEY1, json=TURN).status_code == 429
+    assert len(budget_events()) == 2 and len({e.id for e in budget_events()}) == 2
 
 
 def test_offers_and_messages_share_one_budget(api):
