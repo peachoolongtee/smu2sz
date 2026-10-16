@@ -1,5 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
-import { checkedDeal, openInbox, openReview, sendCounter, walkAway } from "./helpers";
+import { checkedDeal, demoMode, openInbox, openReview, sendCounter, switchMode, walkAway } from "./helpers";
 
 /**
  * Deals in Business mode, the flows around the queue (map #121, Slice B): the buyer messages that wait in the inbox (one thread per buyer, only senders the books
@@ -69,6 +69,11 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   await inbox.getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("queue-recommends")).toBeVisible();
 
+  // Business mode sends the message itself (the buyer-message spec); the simulated send, its receipt and its buyer's lean are the Demo's only.
+  await openReview(page);
+  await expect(page.getByTestId("buyer-message")).toBeVisible();
+  await expect(page.getByTestId("deal-send")).toHaveCount(0);
+  await switchMode(page, "demo");
   // The review: the server's receipt, in its order, then the simulated buyer's lean and the one commit button that names the action.
   await openReview(page);
   const receipt = page.getByTestId("commitment-receipt");
@@ -89,9 +94,9 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   await expect(page.getByTestId("deal-send")).toHaveText("Send Option A to Foshan");
   const box = page.getByTestId("deal-send-confirm-box");
   await expect(box).toContainText("The buyer's reply is simulated in this environment");
-  // The simulated buyer's lean is the Demo's control: Business sends with the cooperative buyer and shows no choice.
-  await expect(box.getByLabel("Open to a counter")).toHaveCount(0);
-  await expect(box.getByLabel("Holds firm")).toHaveCount(0);
+  // The simulated buyer's lean is the Demo row's control.
+  await expect(box.getByLabel("Open to a counter")).toHaveCount(1);
+  await expect(box.getByLabel("Holds firm")).toHaveCount(1);
   // Not now closes the review and nothing was sent.
   await page.getByTestId("queue-review-close").click();
   await expect(page.getByTestId("queue-review")).toHaveCount(0);
@@ -118,6 +123,7 @@ test("opening a message reads it into a negotiation; Check against my limits is 
 });
 
 test("a deep link in a fresh session hydrates the evaluated negotiation: nothing but the server is read", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await checkedDeal(page);
   const url = page.url();
   await page.evaluate(() => sessionStorage.removeItem("tl-demo-v3"));

@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, filledBrand, openInbox, openReview } from "./helpers";
+import { checkedDeal, demoMode, filledBrand, openInbox, openReview } from "./helpers";
 
 /**
  * Deals (map #121, Slice B; tickets #126 to #132): the queue (one row per task, five tabs with the server's counts, a search), the selected negotiation in three levels
@@ -163,6 +163,7 @@ test("Cash impact: two charts, each answering one question; the removed controls
   await expect(page.getByTestId("deal-scenarios")).toContainText("Buyer pays 30 days late");
 });
 test("Your choices: a reply is picked and reviewed from its own column, and the review is of that reply", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await checkedDeal(page);
   await expect(page.getByTestId("deal-panel-compare")).toHaveCount(0);
   // "Review Option B" opens B's review in one step (it is not a selection that waits for a second button).
@@ -256,6 +257,7 @@ test("a deal not yet checked offers one action, Check against my limits, and no 
 });
 
 test("a send in flight holds the selection: the rows, All deals and the sections wait, and the send is not unmounted", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await page.addInitScript(() => sessionStorage.setItem("tl-mock-negotiate-slow", "1500"));
   await checkedDeal(page);
   await openReview(page);
@@ -270,6 +272,7 @@ test("a send in flight holds the selection: the rows, All deals and the sections
 });
 
 test("when the books moved the API refuses, nothing is sent, and Check again is an explicit step", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await checkedDeal(page);
   await openReview(page);
   await page.evaluate(() => sessionStorage.setItem("tl-mock-counter-changed", "moved"));

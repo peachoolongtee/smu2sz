@@ -9,15 +9,16 @@ import { ChasePayment } from "@/components/business/chase-payment";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { Button, ButtonLink, Callout, ErrorState, LoadingBlock } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
-import { StatusPill } from "@/components/ui/status-pill";
+import { StatusPill, type PillTone } from "@/components/ui/status-pill";
 import type { DictKey } from "@/lib/dictionary";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
-import type { BuyerAcceptedResult, DecisionView, NegotiationView, OfferedResult, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
+import type { DecisionView, NegotiationView, OfferedResult, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
 import { AcceptBlock, type AcceptOutcome } from "./accept-block";
-import { arrivalText, BuyerAnswer } from "./buyer-answer";
+import { HistoryStrip } from "./deal-history";
+import { arrivalText, OutboundEnding, OutboundWaiting } from "./outbound";
 import { paneStatus, tabsOf, viewIn, type DealViewKey } from "./deal-model";
 import { quietLink } from "./flow-parts";
 import { CashTab } from "./cash-tab";
@@ -116,45 +117,29 @@ function AcceptResult({ outcome }: { outcome: AcceptOutcome }) {
   );
 }
 
-/** The owner marked the message to the buyer sent: the server's sentence for what was recorded, and what marking it does (and does not do). */
+/** The owner marked the message to the buyer sent: the server's sentence for what was recorded (what marking it does was said under the button). */
 function MarkedResult({ r }: { r: OfferedResult }) {
   return (
-    <div role="status" className="mt-4 rounded-tile border border-line bg-subtle px-4 py-3 text-sm" data-testid="deal-marked-sent">
-      <p className="font-bold text-ink" data-testid="deal-marked-sent-when">
-        {r.message_when}
-      </p>
-      <p className="mt-1 text-ink-2" data-testid="deal-marked-sent-effect">
-        {r.mark_sent_effect_text}
-      </p>
-    </div>
-  );
-}
-
-/** The owner recorded the buyer's yes: the server's state word (agreed, or waiting for the owner's approval), what ran, and the agreement's receipt. */
-function BuyerYesResult({ r, decision }: { r: BuyerAcceptedResult; decision: string }) {
-  const { t } = useI18n();
-  return (
-    <div role="status" className="mt-4 space-y-3 rounded-tile border border-line bg-subtle px-4 py-3 text-sm" data-testid="deal-buyer-accepted" data-status={r.status}>
-      <p className="flex flex-wrap items-center gap-2">
-        <StatusPill tone={r.status === "agreed" ? "green" : "amber"}>{r.decision.state_text}</StatusPill>
-        {r.execution?.summary_text ? (
-          <span className="text-ink" data-testid="deal-buyer-accepted-ran">
-            {r.execution.summary_text}
-          </span>
-        ) : null}
-      </p>
-      {r.receipt ? <CommitmentReceipt receipt={r.receipt} id={`${decision}-buyer-yes`.replace(/[^A-Za-z0-9_-]/g, "-")} title={t("receipt.title.agreed")} testId="deal-buyer-accepted-receipt" /> : null}
-      {r.status === "waiting_approval" ? (
-        <ButtonLink href={r.approval_id ? `/approvals#approval-${encodeURIComponent(r.approval_id)}` : "/approvals"} data-testid="deal-buyer-accepted-approvals">
-          {t("next.toApprovals")}
-        </ButtonLink>
-      ) : null}
-    </div>
+    <p role="status" className="m-0 rounded-tile border border-line bg-card px-4 py-3 text-sm font-semibold text-ink" data-testid="deal-marked-sent">
+      {r.message_when}
+    </p>
   );
 }
 
 /** The record's own account of where a negotiation stands, for one that is out of the owner's hands or finished. */
-function RecordBlock({ record, decision, actions }: { record: DecisionView; decision: string; /** What the owner can do while the record waits (the buyer's answer to a counter sent outside FLOW), under the waiting line. */ actions?: ReactNode }) {
+/** The quiet link to the deal's decision record. */
+function RecordLink({ decision }: { decision: string }) {
+  const { t } = useI18n();
+  return (
+    <p className="text-sm">
+      <Link href={`/decisions/${encodeURIComponent(decision)}`} className={quietLink} data-testid="deal-record-link">
+        {t("deals.record")}
+      </Link>
+    </p>
+  );
+}
+
+function RecordBlock({ record, decision }: { record: DecisionView; decision: string }) {
   const { t } = useI18n();
   const ex = record.execution;
   // The money: each lot the record holds, "Received ¥… today" once it has landed and "¥… arrives in 3 days" while it is on its way; else the execution's own sentence when something ran.
@@ -178,7 +163,6 @@ function RecordBlock({ record, decision, actions }: { record: DecisionView; deci
           {waiting}
         </p>
       ) : null}
-      {actions}
       {lots.length || (ran && ex) ? (
         <p className="text-sm text-ink-2" data-testid="deal-money-lines">
           {lots.length ? lots.map((l) => <span key={l.key} className="mr-2 inline-block">{l.text}</span>) : ex?.summary_text}
@@ -280,9 +264,8 @@ export function DecisionPane({
   const [sent, setSent] = useState<NegotiationView | null>(null);
   // The owner's accept or decline of a request as asked, once it has been answered: the review is gone when the record moves on, its words stay beside the record.
   const [outcome, setOutcome] = useState<AcceptOutcome | null>(null);
-  // The message to the buyer marked sent, and the buyer's yes recorded: the server's answers, kept beside the record that moved on.
+  // The message to the buyer marked sent: the server's answer, kept beside the record that moved on (what came of it is the record's `outbound`).
   const [marked, setMarked] = useState<OfferedResult | null>(null);
-  const [buyerYes, setBuyerYes] = useState<BuyerAcceptedResult | null>(null);
   // A buyer's reply pasted on the deal it answered: that deal's sentence, said here on the reply's own deal.
   const [arrived] = useState(() => arrivalText(decision));
   const [busy, setBusy] = useState(false);
@@ -334,9 +317,10 @@ export function DecisionPane({
   const evaluated = record ? record.state !== "RECEIVED" : Boolean(picture);
   const stateCode = record?.state ?? (evaluated ? "RESPONSE_READY" : "RECEIVED");
   const done = RECORD_DONE.has(stateCode);
-  // The owner sent a counter outside FLOW and the buyer has not answered: the owner records the answer (the counter sent is the record's).
+  // The owner sent a counter outside FLOW (the record's `outbound`): while the buyer has not answered the owner records their answer; once answered, the ending says what came of it.
   const awaitingBuyer = stateCode === "AWAITING_BUYER";
-  const sentOutside = record?.response?.sent && record.response.sent.recorded && record.response.sent.outside_flow ? record.response.sent : null;
+  const outbound = record?.outbound ?? null;
+  const ended = outbound?.answer ? outbound : null;
   const doc = offer.documents[0];
   const paths = (picture?.paths ?? []).filter((p) => p.kind === "asked" || p.kind === "reply");
   const asked = paths.find((p) => p.kind === "asked") ?? null;
@@ -369,7 +353,10 @@ export function DecisionPane({
   const approvalId = record?.authorization?.approval_id ?? null;
   const whatifHref = `/whatif?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}&from=deal`;
 
-  const status = paneStatus(row, record?.state_text, stateCode);
+  // A deal with an offer sent outside FLOW is ONE state, the server's word for it, in the tone of what came of it (lavender the buyer's turn, green agreed, neutral no deal).
+  const status = outbound && record
+    ? { tone: (stateCode === "AUTHORIZATION_REQUIRED" ? "amber" : outbound.answer === null || outbound.tone === "waiting" ? "lavender" : outbound.tone === "ok" ? "green" : "neutral") as PillTone, text: record.state_text }
+    : paneStatus(row, record?.state_text, stateCode);
   const trackerRead = tracker.data;
   const agreedView = AGREED_STATES.has(stateCode) && trackerRead?.available === true;
   const agreedLoading = AGREED_STATES.has(stateCode) && trackerRead === undefined && !tracker.error;
@@ -513,20 +500,6 @@ export function DecisionPane({
   const sectionNav = (items: DealViewKey[], extra: SectionItem[] = []) => <SectionNav label={t("deals.sec.nav")} items={[...nav(items), ...extra]} busy={busy} />;
   const lastItem: SectionItem[] = history ? [{ key: "last", label: t("deals.sec.last", { buyer: buyerShort }), expanded: lastOpen, onClick: () => setLastOpen((x) => !x) }] : [];
 
-  const answer =
-    awaitingBuyer && sentOutside && offer ? (
-      <BuyerAnswer
-        offerId={offer.offer.offer_id}
-        counterId={sentOutside.chosen_counter_id}
-        onAccepted={(r) => {
-          setBuyerYes(r);
-          setBusyBoth(false);
-        }}
-        onReplied={() => setBusyBoth(false)}
-        onBusy={setBusyBoth}
-      />
-    ) : null;
-
   const pane = (
     <section aria-labelledby={`${uid}-title`} className="min-w-0" data-testid="deal-pane" data-decision={decision} data-state={stateCode} data-view={current}>
       <Canonical want={view.view} have={current} onGo={onGo} />
@@ -548,7 +521,8 @@ export function DecisionPane({
               </ButtonLink>
             </div>
           ) : null}
-          {agreedDeal ? <LifecycleStrip stages={lifeStages} scroll={!isMd} /> : null}
+          {/* The deal's four steps (the request, the counter sent, the buyer's answer, what came of it) once a counter went out outside FLOW, and before any send; an agreement made otherwise keeps its lifecycle. */}
+          {record && (outbound || (!agreedDeal && record.history?.length)) ? <HistoryStrip record={record} scroll={!isMd} /> : agreedDeal ? <LifecycleStrip stages={lifeStages} scroll={!isMd} /> : null}
         </div>
 
         {arrived ? (
@@ -571,7 +545,15 @@ export function DecisionPane({
           <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview" data-agreed="true">
             {outcome ? <AcceptResult outcome={outcome} /> : null}
             {sent ? <SendResult n={sent} /> : null}
-            {buyerYes ? <BuyerYesResult r={buyerYes} decision={decision} /> : null}
+            {ended && record ? (
+              <div className="mb-6">
+                <OutboundEnding outbound={ended} history={record.history}>
+                  {record.agreement?.receipt ? (
+                    <CommitmentReceipt receipt={record.agreement.receipt} id={`${decision}-agreement-receipt`.replace(/[^A-Za-z0-9_-]/g, "-")} title={t("receipt.title.agreed")} testId="deal-agreement-receipt" />
+                  ) : null}
+                </OutboundEnding>
+              </div>
+            ) : null}
             {agreedView && trackerRead ? (
               <div className="flex flex-col gap-6" data-testid="deal-tracker">
                 <TrackerBody d={trackerRead} mode="deal" />
@@ -655,14 +637,24 @@ export function DecisionPane({
               {done || waitsOnApproval || stateCode === "NEEDS_CLARIFICATION" || awaitingBuyer ? (
                 <>
                   {outcome ? <AcceptResult outcome={outcome} /> : null}
-                  {marked ? <MarkedResult r={marked} /> : null}
-                  {buyerYes ? <BuyerYesResult r={buyerYes} decision={decision} /> : null}
-                  {sentOutside ? (
-                    <p className="text-sm text-ink-2" data-testid="deal-sent-outside">
-                      {sentOutside.text}
-                    </p>
+                  {awaitingBuyer && outbound && !ended && offer ? (
+                    <>
+                      {marked ? <MarkedResult r={marked} /> : null}
+                      <OutboundWaiting offerId={offer.offer.offer_id} outbound={outbound} onAccepted={() => setBusyBoth(false)} onDeclined={() => setBusyBoth(false)} onReplied={() => setBusyBoth(false)} onBusy={setBusyBoth} />
+                      <RecordLink decision={decision} />
+                    </>
+                  ) : ended && record ? (
+                    <>
+                      <OutboundEnding outbound={ended} history={record.history}>
+                        {record.agreement?.receipt ? (
+                          <CommitmentReceipt receipt={record.agreement.receipt} id={`${decision}-agreement-receipt`.replace(/[^A-Za-z0-9_-]/g, "-")} title={t("receipt.title.agreed")} testId="deal-agreement-receipt" />
+                        ) : null}
+                      </OutboundEnding>
+                      {waitsOnApproval ? null : <RecordLink decision={decision} />}
+                    </>
+                  ) : record ? (
+                    <RecordBlock record={record} decision={decision} />
                   ) : null}
-                  {record ? <RecordBlock record={record} decision={decision} actions={answer} /> : null}
                   {waitsOnApproval ? (
                     <ActionGroup testId="deal-actions" label={t("deals.actions")}>
                       <ButtonLink href={approvalId ? `/approvals#approval-${encodeURIComponent(approvalId)}` : "/approvals"} variant="primary" data-testid="deal-approvals-link">

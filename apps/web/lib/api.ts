@@ -16,6 +16,8 @@ import type {
   AcceptRequest,
   BuyerAcceptedRequest,
   BuyerAcceptedResult,
+  BuyerDeclinedRequest,
+  BuyerDeclinedResult,
   BuyerMessageRefusal,
   BuyerMessageView,
   BuyerReplyRequest,
@@ -148,9 +150,9 @@ export async function declineOffer(offerId: string, req: AcceptRequest): Promise
   return isMock ? (await mock()).declineOffer(offerId, req) : (await live()).declineOffer(offerId, req);
 }
 
-/** GET /offers/{id}/counters/{counter}/message?lang=: the message to the buyer for one counter, written in the buyer's language `lang` (ADR-0011 addendum). FLOW sends nothing. */
-export async function getBuyerMessage(offerId: string, counterId: string, lang: "en" | "zh"): Promise<BuyerMessageView> {
-  return isMock ? (await mock()).getBuyerMessage(offerId, counterId, lang) : (await live()).getBuyerMessage(offerId, counterId, lang);
+/** GET /offers/{id}/counters/{counter}/message?lang=&ui_lang=: the message to the buyer for one counter, written in the buyer's language `lang`, every word around it in the page's `uiLang` (ADR-0011 addendum). FLOW sends nothing. */
+export async function getBuyerMessage(offerId: string, counterId: string, lang: "en" | "zh", uiLang: "en" | "zh"): Promise<BuyerMessageView> {
+  return isMock ? (await mock()).getBuyerMessage(offerId, counterId, lang, uiLang) : (await live()).getBuyerMessage(offerId, counterId, lang, uiLang);
 }
 
 /** POST .../offered: the owner sent the message themself. Records that and nothing else (no agreement, no money); a 409 records nothing and carries the server's words. */
@@ -161,6 +163,11 @@ export async function markOffered(offerId: string, counterId: string, req: Offer
 /** POST .../buyer-accepted: the owner records the buyer's yes to the counter they sent; the agreement is made (or queued for approval) under the owner's authority. */
 export async function buyerAccepted(offerId: string, counterId: string, req: BuyerAcceptedRequest): Promise<BuyerAcceptedResult> {
   return isMock ? (await mock()).buyerAccepted(offerId, counterId, req) : (await live()).buyerAccepted(offerId, counterId, req);
+}
+
+/** POST .../buyer-declined: the owner records the buyer's no, with the reason they gave as a code. Nothing is agreed or funded; the deal ends as no deal. */
+export async function buyerDeclined(offerId: string, counterId: string, req: BuyerDeclinedRequest): Promise<BuyerDeclinedResult> {
+  return isMock ? (await mock()).buyerDeclined(offerId, counterId, req) : (await live()).buyerDeclined(offerId, counterId, req);
 }
 
 /** POST /offers/{id}/buyer-reply: the buyer answered with terms of their own; the reply becomes a request of its own and this deal closes as answered. */

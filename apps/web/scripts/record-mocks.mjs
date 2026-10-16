@@ -129,17 +129,19 @@
 //   node scripts/record-mocks.mjs --api http://localhost:8241 --tracker
 
 // --buyer-message records ONLY apps/web/mocks/buyer_message.json and exits (the message the owner sends the buyer outside FLOW, ADR-0011 addendum). Each walk starts
-// on fresh books with the package offer (EX01) read and evaluated, and runs once with the page in each language (`en`, `zh`):
-//   message            { <counter>: { en, zh } }  GET .../counters/<counter>/message?lang= for every reply of the picture, before anything is marked sent
-//   message_changed    { en, zh }                 the 409 MESSAGE_CHANGED of a mark with a hash that is not the message's
-//   offered            { en, zh }                 POST .../offered for the recommended reply (the message in English)
-//   awaiting           { en, zh } of { decision, message, deals, worklist }: the reads once it is marked sent (`message` is the offered reply's, with `offered`)
-//   buyer_accepted     { en, zh }                 POST .../buyer-accepted for that reply
-//   accepted           { en, zh } of { decision, deals, worklist, tracker }: the reads after the buyer's yes
-//   no_terms           { en, zh }                 the 409 NO_TERMS_IN_REPLY of a reply with no terms in it
-//   buyer_reply        { en, zh }                 POST /offers/<id>/buyer-reply with the section's REPLY_TEXT
-//   replied            { en, zh } of { decision, deals, worklist, reply_decision, reply_offer }: the reads after the reply (the answered deal; the reply's own request)
-//   no_simulated_buyer { en, zh }                 the 409 NO_SIMULATED_BUYER of the simulated send for a buyer with no simulated profile (EX09, BUYER-3)
+// on fresh books with the package offer (EX01) read and evaluated, and runs once with the page in each language (`en`, `zh`); every entry is { en, zh } by the page's language:
+//   message            { <counter>: { <page>: { en, zh } } }  GET .../counters/<counter>/message?lang=<buyer>&ui_lang=<page> for every reply, before anything is marked sent
+//   ready              GET /decisions/deal:<id> before anything is marked sent (the deal's history so far)
+//   message_changed    the 409 MESSAGE_CHANGED of a mark with a hash that is not the message's
+//   offered            POST .../offered for the recommended reply (the message in English)
+//   awaiting           { decision, deals, worklist, message }: the reads once it is marked sent (`message` is the offered reply's, with `offered`)
+//   offer_sent_outside the 409 OFFER_SENT_OUTSIDE of the simulated send once the offer is out
+//   buyer_accepted     POST .../buyer-accepted; accepted { decision, deals, worklist, tracker }: the reads after it
+//   buyer_declined     POST .../buyer-declined with reason DISCOUNT_TOO_LOW; declined { decision, deals, worklist }
+//   no_terms           the 409 NO_TERMS_IN_REPLY of a reply with no terms in it
+//   buyer_reply        POST /offers/<id>/buyer-reply with the section's REPLY_TEXT; replied { decision, deals, worklist, reply_decision, reply_offer }
+//   no_answer          { decision, deals, worklist } once the clock is past the day the offer was open until; offer_expired: the 409 OFFER_EXPIRED of a no recorded then
+//   no_simulated_buyer the 409 NO_SIMULATED_BUYER of the simulated send for a buyer with no simulated profile (EX09, BUYER-3)
 // The API needs the recording environment above:
 //   cd services/api && SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8531
 //   node scripts/record-mocks.mjs --api http://localhost:8531 --buyer-message
@@ -703,10 +705,11 @@ if (TRACKER) {
   process.exit(0);
 }
 
-// --buyer-message: the message to the buyer, marked sent, the buyer's yes and the buyer's reply, and nothing else (see the header).
+// --buyer-message: the message to the buyer, marked sent, and each way the offer can end, and nothing else (see the header).
 if (BUYER_MESSAGE) {
   const { getTracker } = await import("../lib/tracker.ts");
   const REPLY_TEXT = "We can pay the 420,000 invoice early, but only with a 1.2% discount, and we need 60-day terms on future invoices.";
+  const LANGS = ["en", "zh"];
   /** The 409 detail of a call the story needs refused, with its code; a failure when the API accepted it. */
   const refused = async (code, call) => {
     try {
@@ -729,45 +732,74 @@ if (BUYER_MESSAGE) {
     if (!verdict || !rec) throw new Error("the package offer has no verdict or no reply: the demo path has changed");
     return { offerId, verdict, replies, rec };
   };
-  const markSent = async (offerId, verdict, counterId, lang) => {
-    const msg = await live.getBuyerMessage(offerId, counterId, "en");
-    if (!msg.message_hash) throw new Error(`no message for ${counterId}: ${msg.blocked?.code}`);
-    return inLang(lang, () => live.markOffered(offerId, counterId, { verdict_id: verdict.id, state_version: verdict.state_version, message_hash: msg.message_hash, lang: "en" }));
+  /** Fresh books with the recommended reply marked sent (the message in English), the page in `lang`. */
+  const sentOne = async (lang) => {
+    const f = await fresh();
+    const msg = await live.getBuyerMessage(f.offerId, f.rec.key, "en", "en");
+    if (!msg.message_hash) throw new Error(`no message for ${f.rec.key}: ${msg.blocked?.code}`);
+    const offered = await inLang(lang, () =>
+      live.markOffered(f.offerId, f.rec.key, { verdict_id: f.verdict.id, state_version: f.verdict.state_version, message_hash: msg.message_hash, lang: "en" }),
+    );
+    return { ...f, offered, hash: msg.message_hash };
   };
-  const reads = async (offerId, counterId, lang) => ({
+  const reads = async (offerId, lang, more = {}) => ({
     decision: await live.getDecision(dealId(offerId), lang),
-    ...(counterId ? { message: await live.getBuyerMessage(offerId, counterId, lang) } : {}),
     deals: await inLang(lang, () => live.getDeals(lang)),
     worklist: await inLang(lang, () => live.getWorklist(lang)),
+    ...more,
   });
-  const out = { message: {}, message_changed: {}, offered: {}, awaiting: {}, buyer_accepted: {}, accepted: {}, no_terms: {}, buyer_reply: {}, replied: {}, no_simulated_buyer: {} };
-  for (const lang of ["en", "zh"]) {
+  const out = {
+    message: {}, ready: {}, message_changed: {}, offered: {}, awaiting: {}, offer_sent_outside: {}, buyer_accepted: {}, accepted: {}, buyer_declined: {}, declined: {},
+    no_terms: {}, buyer_reply: {}, replied: {}, no_answer: {}, offer_expired: {}, no_simulated_buyer: {},
+  };
+  for (const lang of LANGS) {
+    // The send review: the message of every reply, the page in `lang`, the buyer in either language; a mark with a hash that is not the message's is refused.
     const { offerId, verdict, replies, rec } = await fresh();
-    if (lang === "en") for (const p of replies) out.message[p.key] = { en: await live.getBuyerMessage(offerId, p.key, "en"), zh: await live.getBuyerMessage(offerId, p.key, "zh") };
+    for (const p of replies) {
+      out.message[p.key] ??= {};
+      out.message[p.key][lang] = { en: await live.getBuyerMessage(offerId, p.key, "en", lang), zh: await live.getBuyerMessage(offerId, p.key, "zh", lang) };
+    }
+    out.ready[lang] = await live.getDecision(dealId(offerId), lang);
     out.message_changed[lang] = await refused("MESSAGE_CHANGED", () =>
       inLang(lang, () => live.markOffered(offerId, rec.key, { verdict_id: verdict.id, state_version: verdict.state_version, message_hash: "0".repeat(64), lang: "en" })),
     );
-    out.offered[lang] = await markSent(offerId, verdict, rec.key, lang);
-    out.awaiting[lang] = await reads(offerId, rec.key, lang);
-    const hash = out.awaiting[lang].message.offered?.message_hash;
-    if (!hash) throw new Error("the message read after the mark carries no `offered`");
-    out.buyer_accepted[lang] = await inLang(lang, () => live.buyerAccepted(offerId, rec.key, { verdict_id: verdict.id, state_version: out.awaiting[lang].message.state_version, message_hash: hash }));
-    out.accepted[lang] = { ...(await reads(offerId, null, lang)), tracker: await getTracker(dealId(offerId), lang) };
   }
-  for (const lang of ["en", "zh"]) {
-    const { offerId, verdict, rec } = await fresh();
-    await markSent(offerId, verdict, rec.key, lang);
+  for (const lang of LANGS) {
+    // Marked sent, then the buyer's yes. A simulated send once the offer is out is refused.
+    const { offerId, verdict, rec, offered, hash } = await sentOne(lang);
+    out.offered[lang] = offered;
+    out.awaiting[lang] = await reads(offerId, lang, { message: await live.getBuyerMessage(offerId, rec.key, "en", lang) });
+    out.offer_sent_outside[lang] = await refused("OFFER_SENT_OUTSIDE", () => inLang(lang, () => live.negotiate(offerId, { buyer_profile: "cooperative" })));
+    out.buyer_accepted[lang] = await inLang(lang, () => live.buyerAccepted(offerId, rec.key, { verdict_id: verdict.id, state_version: out.awaiting[lang].message.state_version, message_hash: hash }));
+    out.accepted[lang] = await reads(offerId, lang, { tracker: await getTracker(dealId(offerId), lang) });
+  }
+  for (const lang of LANGS) {
+    // Marked sent, then the buyer's no, with a reason.
+    const { offerId, verdict, rec, hash } = await sentOne(lang);
+    out.buyer_declined[lang] = await inLang(lang, () => live.buyerDeclined(offerId, rec.key, { verdict_id: verdict.id, message_hash: hash, reason: "DISCOUNT_TOO_LOW" }));
+    out.declined[lang] = await reads(offerId, lang);
+  }
+  for (const lang of LANGS) {
+    // Marked sent, then the buyer's reply: refused with no terms in it, then read as a request of its own.
+    const { offerId, verdict, rec } = await sentOne(lang);
     out.no_terms[lang] = await refused("NO_TERMS_IN_REPLY", () => inLang(lang, () => live.buyerReply(offerId, { verdict_id: verdict.id, counter_id: rec.key, text: "Thanks, sounds good." })));
     out.buyer_reply[lang] = await inLang(lang, () => live.buyerReply(offerId, { verdict_id: verdict.id, counter_id: rec.key, text: REPLY_TEXT }));
     const reply = out.buyer_reply[lang];
-    out.replied[lang] = { ...(await reads(offerId, null, lang)), reply_decision: await live.getDecision(reply.reply_decision_id, lang), reply_offer: await live.getOffer(reply.reply_offer_id, lang) };
+    out.replied[lang] = await reads(offerId, lang, { reply_decision: await live.getDecision(reply.reply_decision_id, lang), reply_offer: await live.getOffer(reply.reply_offer_id, lang) });
+  }
+  for (const lang of LANGS) {
+    // Marked sent and never answered: the clock moves past the day the offer is open until, and the offer closes as no deal; a no recorded after it is refused.
+    const { offerId, verdict, rec, offered, hash } = await sentOne(lang);
+    await live.advanceClock(offered.offered.valid_until_day + 1);
+    out.no_answer[lang] = await reads(offerId, lang);
+    out.offer_expired[lang] = await refused("OFFER_EXPIRED", () => inLang(lang, () => live.buyerDeclined(offerId, rec.key, { verdict_id: verdict.id, message_hash: hash, reason: "NO_REASON" })));
   }
   {
     // A buyer with no simulated profile (EX09 is BUYER-3's): the simulated send is refused and nothing is sent.
     await reset();
     const other = (await live.submitOffer({ fixture_id: "EX09_TERMS_BUYER3" })).offer.offer_id;
     await live.evaluateOffer(other, "EX09_TERMS_BUYER3", "en");
-    for (const lang of ["en", "zh"]) out.no_simulated_buyer[lang] = await refused("NO_SIMULATED_BUYER", () => inLang(lang, () => live.negotiate(other, { buyer_profile: "cooperative" })));
+    for (const lang of LANGS) out.no_simulated_buyer[lang] = await refused("NO_SIMULATED_BUYER", () => inLang(lang, () => live.negotiate(other, { buyer_profile: "cooperative" })));
   }
   write("buyer_message.json", out);
   await live.demoReset();

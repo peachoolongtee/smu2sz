@@ -14,6 +14,8 @@ import type {
   AcceptResult,
   BuyerAcceptedRequest,
   BuyerAcceptedResult,
+  BuyerDeclinedRequest,
+  BuyerDeclinedResult,
   BuyerMessageView,
   BuyerReplyRequest,
   BuyerReplyResult,
@@ -676,8 +678,13 @@ function decisionContext(): decisions.DecisionContext {
 /** The story's context with the records the message walk holds as recordings of their own. */
 async function decisionContextNow(): Promise<decisions.DecisionContext> {
   const ctx = decisionContext();
-  const at = load().buyerMessage;
-  if (at) ctx.recorded = buyerMessage.recordedDecisions(await buyerMessage.buyerMessageRecording(), at);
+  const m = await messageStage();
+  if (m) ctx.recorded = buyerMessage.recordedDecisions(m.rec, m.at, m.stage);
+  else if (openOfferStage() === "evaluated") {
+    // The package offer read and not answered: the message recording's read of the same moment, which carries the deal's history (the same record as decisions.json's `ready.ex01` otherwise).
+    const rec = await buyerMessage.buyerMessageRecording();
+    ctx.recorded = { [rec.ready.en.id]: rec.ready };
+  }
   return ctx;
 }
 
@@ -699,8 +706,8 @@ export async function getDecision(id: string, lang: "en" | "zh"): Promise<Decisi
 export async function getTracker(id: string, lang: "en" | "zh"): Promise<TrackerView> {
   await delay();
   seedApprovalStory();
-  const at = load().buyerMessage;
-  if (at?.stage === "accepted" && id === `deal:${at.offerId}`) return (await buyerMessage.buyerMessageRecording()).accepted[lang].tracker;
+  const m = await messageStage();
+  if (m?.stage === "accepted" && id === `deal:${m.at.offerId}`) return m.rec.accepted[lang].tracker;
   return trackerMock.mockTracker(decisionContext(), id, lang);
 }
 
@@ -760,6 +767,9 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
     const detail = { ...(await buyerMessage.buyerMessageRecording()).no_simulated_buyer[getLang()], offer_id: offerId };
     throw new ApiError(409, detail.message, detail);
   }
+  // Once the owner sent a counter outside FLOW, the simulated buyer does not answer it as well (the recorded 409 OFFER_SENT_OUTSIDE).
+  const sentOutside = load().buyerMessage;
+  if (sentOutside?.offerId === offerId) throw refusal({ ...(await buyerMessage.buyerMessageRecording()).offer_sent_outside[getLang()], offer_id: offerId });
   if (req.verdict_id) {
     const story = counterChangedStory();
     if (story) {
@@ -823,21 +833,30 @@ function messageOffer(offerId: string): void {
 
 const refusal = <T extends { message: string }>(detail: T): ApiError => new ApiError(409, detail.message, detail);
 
-/** Not marked sent in the mock (the walk's own reply only): refused as the server refuses, with no words of the mock's own. */
-function notOffered(offerId: string, counterId: string): buyerMessage.BuyerMessageStage {
+/** Where the message walk stands for the reads (null before anything is marked sent): the clock past the day the offer was open until closes an unanswered one. */
+async function messageStage(): Promise<{ rec: buyerMessage.BuyerMessageRecording; at: buyerMessage.BuyerMessageStage; stage: buyerMessage.ReadStage } | null> {
   const at = load().buyerMessage;
-  if (at?.offerId !== offerId || at.counterId !== counterId || at.stage !== "awaiting") throw new ApiError(409, "NOT_OFFERED", { code: "NOT_OFFERED", offer_id: offerId });
-  return at;
+  if (!at) return null;
+  const rec = await buyerMessage.buyerMessageRecording();
+  return { rec, at, stage: buyerMessage.readStage(rec, at, home.mockClock().day) };
 }
 
-/** GET .../message?lang=: the reply's message before it is marked sent; the walked reply's, with `offered`, once it is. */
-export async function getBuyerMessage(offerId: string, counterId: string, lang: "en" | "zh"): Promise<BuyerMessageView> {
+/** The walk's own reply, still waiting for the buyer: else refused as the server refuses (the offer closed: the recorded OFFER_EXPIRED; otherwise NOT_OFFERED, with no words of the mock's own). */
+async function waitingFor(offerId: string, counterId: string): Promise<buyerMessage.BuyerMessageStage> {
+  const m = await messageStage();
+  if (m?.stage === "no_answer" && m.at.offerId === offerId) throw refusal(m.rec.offer_expired[getLang()]);
+  if (!m || m.at.offerId !== offerId || m.at.counterId !== counterId || m.stage !== "awaiting") throw new ApiError(409, "NOT_OFFERED", { code: "NOT_OFFERED", offer_id: offerId });
+  return m.at;
+}
+
+/** GET .../message?lang=&ui_lang=: the reply's message before it is marked sent; the walked reply's, with `offered`, once it is. */
+export async function getBuyerMessage(offerId: string, counterId: string, lang: "en" | "zh", uiLang: "en" | "zh"): Promise<BuyerMessageView> {
   await delay();
   messageOffer(offerId);
   const rec = await buyerMessage.buyerMessageRecording();
   const at = load().buyerMessage;
-  if (at?.stage === "awaiting" && counterId === at.counterId) return buyerMessage.awaitingMessage(rec, at, lang);
-  const found = rec.message[counterId]?.[lang];
+  if (at?.stage === "awaiting" && counterId === at.counterId) return buyerMessage.awaitingMessage(rec, at, uiLang);
+  const found = rec.message[counterId]?.[uiLang]?.[lang];
   if (!found) throw new ApiError(409, "COUNTER_CHANGED", { code: "COUNTER_CHANGED", offer_id: offerId, reevaluate: true, counters: [] });
   return found;
 }
@@ -853,7 +872,7 @@ export async function markOffered(offerId: string, counterId: string, req: Offer
   const lang = getLang();
   const story = counterChangedStory();
   if (story) throw refusal({ ...cast<Record<"replaced" | "moved", CounterChangedDetail>>(counterChangedJson)[story], offer_id: offerId });
-  const shown = rec.message[counterId]?.[req.lang];
+  const shown = rec.message[counterId]?.en?.[req.lang];
   if (buyerMessage.takeHook(buyerMessage.MESSAGE_CHANGED_KEY) || !shown || shown.message_hash !== req.message_hash) throw refusal(rec.message_changed[lang]);
   const s = load();
   if (!s.buyerMessage) {
@@ -867,11 +886,22 @@ export async function markOffered(offerId: string, counterId: string, req: Offer
 export async function buyerAccepted(offerId: string, counterId: string, req: BuyerAcceptedRequest): Promise<BuyerAcceptedResult> {
   void req;
   await delay();
-  const at = notOffered(offerId, counterId);
+  const at = await waitingFor(offerId, counterId);
   const rec = await buyerMessage.buyerMessageRecording();
   load().buyerMessage = { ...at, stage: "accepted" };
   save();
   return rec.buyer_accepted[getLang()];
+}
+
+/** POST .../buyer-declined: the buyer's no (the recording of the walked reply, declined with a reason; the reason on screen is the recording's). Refused once the offer has closed. */
+export async function buyerDeclined(offerId: string, counterId: string, req: BuyerDeclinedRequest): Promise<BuyerDeclinedResult> {
+  void req;
+  await delay();
+  const at = await waitingFor(offerId, counterId);
+  const rec = await buyerMessage.buyerMessageRecording();
+  load().buyerMessage = { ...at, stage: "declined" };
+  save();
+  return rec.buyer_declined[getLang()];
 }
 
 /**
@@ -880,7 +910,7 @@ export async function buyerAccepted(offerId: string, counterId: string, req: Buy
  */
 export async function buyerReply(offerId: string, req: BuyerReplyRequest): Promise<BuyerReplyResult> {
   await delay();
-  const at = notOffered(offerId, req.counter_id);
+  const at = await waitingFor(offerId, req.counter_id);
   const rec = await buyerMessage.buyerMessageRecording();
   const lang = getLang();
   if (!/\d/.test(req.text)) throw refusal(rec.no_terms[lang]);
@@ -1040,8 +1070,8 @@ export async function getWorklist(lang: "en" | "zh"): Promise<WorklistView | nul
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
-  const at = load().buyerMessage;
-  if (at) return buyerMessage.recordedReads(await buyerMessage.buyerMessageRecording(), at, lang).worklist;
+  const m = await messageStage();
+  if (m) return buyerMessage.recordedReads(m.rec, m.stage, lang).worklist;
   return homeV2.mockWorklist(homeV2Point(), lang);
 }
 
@@ -1389,8 +1419,8 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
 // The recordings are English: the mock takes `lang` as the live client does and answers the same recording (re-recorded, not translated by hand).
 export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {}): Promise<DealsView> {
   await delay();
-  const at = load().buyerMessage;
-  if (at) return buyerMessage.recordedReads(await buyerMessage.buyerMessageRecording(), at, lang).deals;
+  const m = await messageStage();
+  if (m) return buyerMessage.recordedReads(m.rec, m.stage, lang).deals;
   const view = documents.mockDeals(openOfferStage());
   // Opened with `customer` or `invoice`, the server adds `open_offer.context.back`: the recording of that read (deals_day0_evaluated_back.json) lends its words to the open offer.
   if (ctx.customer || ctx.invoice) {
