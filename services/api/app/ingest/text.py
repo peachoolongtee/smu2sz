@@ -201,13 +201,21 @@ def _heading(line: str) -> bool:
 _TERMINAL = (".", ":", ";", "!", "?", "。", "；", "：")
 
 
+def _cjk(ch: str) -> bool:
+    """A CJK ideograph, CJK or full-width punctuation, kana or hangul: text that is written without spaces."""
+    o = ord(ch)
+    return (0x3000 <= o <= 0x30FF or 0x3400 <= o <= 0x4DBF or 0x4E00 <= o <= 0x9FFF or 0xAC00 <= o <= 0xD7AF
+            or 0xF900 <= o <= 0xFAFF or 0xFE30 <= o <= 0xFE4F or 0xFF00 <= o <= 0xFFEF or 0x20000 <= o <= 0x2FA1F)
+
+
 def unwrap(page: str) -> str:
     """Re-join the visual line wraps of one PDF page into paragraphs, so a sentence is never cut by a wrap.
 
     A line joins the one before it unless it starts a block itself or is a heading, and the line before is not a
     heading, when either that line is nearly full width (at least 80% of the page's longest line) or it plainly
     continues (no terminal punctuation, and the new line starts in lower case). A word hyphenated at the wrap is
-    re-joined without the hyphen only when the next line starts in lower case. Paragraphs are separated by a
+    re-joined without the hyphen only when the next line starts in lower case. Two CJK characters across a wrap are
+    joined with no space, because Chinese has none and a quote must match the source. Paragraphs are separated by a
     blank line."""
     lines = [ln.rstrip() for ln in page.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
     width = max((len(ln) for ln in lines if ln.strip()), default=0)
@@ -228,6 +236,8 @@ def unwrap(page: str) -> str:
         if joins:
             if cur.endswith("-") and stripped[:1].islower():
                 cur = cur[:-1] + stripped
+            elif cur and _cjk(cur[-1]) and _cjk(stripped[0]):
+                cur = cur + stripped  # a wrap inside Chinese text is not a space
             else:
                 cur = f"{cur} {stripped}"
         else:

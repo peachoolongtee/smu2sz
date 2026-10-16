@@ -18,11 +18,12 @@ from typing import Any, Literal
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.api.agent_view import agent_view
 from app.api.auth import counterparty_for_key, is_agent
 from app.api.decisions import record_fact
 from app.api.display import displayed
 from app.api.home import read_home
-from app.api.offers import enforce_intake_cap
+from app.api.offers import enforce_buyer_budget, enforce_intake_cap
 from app.api.presentation import business_text
 from app.api.quotes import decision_id_of
 from app.api.runtime import get_runtime
@@ -106,6 +107,16 @@ def _record_shown_quote(rt, pending: PendingPlan, operations: list[dict[str, Any
         return None
 
 
+def _session_ops(session_id: str | None, owner_auth: bool = False) -> list[Any]:
+    """The typed operations of the plan a session holds, if any (their amounts are what an agent turn acts on). Only a session
+    opened by the same kind of caller counts: the owner's session id named by an agent key adds nothing to its allow-list."""
+    session = SESSIONS.get(session_id) if session_id else None
+    if session is None or session.actor != "OWNER" or bool(session.owner_auth) != owner_auth:
+        return []
+    pending = session.pending_plan if session is not None else None
+    return list(pending.ops) if pending is not None else []
+
+
 def _security_event(rt, kind: str, claimed: str | None, action: str, detail: str) -> None:
     import hashlib
 
@@ -140,15 +151,19 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
                                           "message": "the channel key does not belong to the stated counterparty"})
             body = body.model_copy(update={"counterparty_id": bound})
             channel_authenticated = True
+            if not (rt.is_owner(x_owner_token) or is_agent(x_agent_key)):
+                enforce_buyer_budget(rt, "POST /nl", bound, body.lang or "en")  # R-10: 429 past the buyer's daily budget
         elif not (rt.is_owner(x_owner_token) or is_agent(x_agent_key)):
             enforce_intake_cap(rt, "POST /nl", body.counterparty_id)  # R04, R05: 429 over the daily cap
         if bound is None and x_counterparty_key:
             with rt.lock:
                 _security_event(rt, "wrong-key", body.counterparty_id, "treated as an unauthenticated proposal; nothing executed",
                                 "counterparty message with an unknown X-Counterparty-Key")
+    agent_turn = not is_counterparty and not rt.is_owner(x_owner_token)  # the agent key alone (R-11)
     with rt.lock:
         token = COUNTERPARTY_AUTHENTICATED.set(channel_authenticated)
         shown = _confirmable(body, rt.is_owner(x_owner_token)) if not is_counterparty else None
+        held_before = _session_ops(body.session_id) if agent_turn else []
         try:
             resp = handle(body, store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex,
                           owner_authenticated=rt.is_owner(x_owner_token),
@@ -157,7 +172,9 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
         finally:
             COUNTERPARTY_AUTHENTICATED.reset(token)
         recorded = _record_shown_quote(rt, shown, list(resp.operations)) if shown is not None else None
-    out = resp.model_dump(mode="json")
+        out = resp.model_dump(mode="json")
+        if agent_turn:  # R-11: the agent's chat does not read cash and limits; an allow-list, built under the lock
+            return agent_view(out, rt, [*held_before, *_session_ops(resp.session_id)])
     if recorded is not None:
         out["decision_id"], out["decision_recorded"] = recorded
     if is_counterparty:

@@ -75,7 +75,7 @@ def test_authenticated_callers_are_never_capped(small_cap, headers):
     for _ in range(3):
         assert small_cap.post("/offers", json=OFFER).status_code == 200
     assert small_cap.post("/offers", json=OFFER).status_code == 429
-    for _ in range(8):
+    for _ in range(5):  # within a keyed buyer's own daily budget (R-10, tests/security/test_buyer_budget.py)
         assert small_cap.post("/offers", headers=headers, json=OFFER).status_code == 200
     assert len(capped_events()) == 1  # only the anonymous request above
     assert get_runtime().intake_count == 3  # authenticated calls do not use the allowance

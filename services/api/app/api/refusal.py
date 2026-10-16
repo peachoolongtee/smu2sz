@@ -14,12 +14,29 @@ from app.books import current_books
 from app.domain.models import FundingActionKind
 from app.domain.money import fmt_yuan
 from app.funding import plan
+from app.strategy.cache import AnswerCache, cache_key
 
 
 def refusal_plan(state: Any, commitments: Any, mandate: Any) -> Any:
     """The plan a refused send funds the near-term gap with: the router's committed plan on the books as they stand, with no new terms."""
     books = current_books(state, commitments)
     return plan(books.state, books.with_([]), mandate)
+
+
+_PLANS: AnswerCache[Any] = AnswerCache(8)
+
+
+def clear_cache() -> None:
+    _PLANS.clear()
+
+
+def cached_refusal_plan(state: Any, commitments: Any, mandate: Any) -> Any:
+    """`refusal_plan`, for the reads (the picture): it is a router search over the whole book, the same for every offer and in either language
+    (it has no words), so it is cached by the books, the commitments and the mandate with single-flight, and the plan is only read. The send
+    that really runs the plan (`decide`) calls `refusal_plan` itself."""
+    commitments = tuple(commitments)
+    key = cache_key(state, mandate, state.as_of_day, commitments, "refusal-plan")
+    return _PLANS.get_or_compute(key, lambda: refusal_plan(state, commitments, mandate))
 
 
 def runnable(gap_plan: Any) -> str | None:

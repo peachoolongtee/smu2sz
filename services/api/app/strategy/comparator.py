@@ -53,6 +53,7 @@ from app.strategy.impact import (
     scenario_customer_loss,
     scenario_paid_late,
 )
+from app.strategy.impact import clear_cache as impact_clear_cache
 from app.strategy.inputs import CustomerInputs
 from app.strategy.words import asked_label, buyer_short, margin_note, whole_yuan, year_share_sentence
 from app.verifier.evaluate import counter_recheck
@@ -67,6 +68,7 @@ _CACHE: AnswerCache[dict[str, Any]] = AnswerCache(CACHE_SIZE)
 
 def clear_cache() -> None:
     _CACHE.clear()
+    impact_clear_cache()
 
 
 @dataclass(frozen=True)

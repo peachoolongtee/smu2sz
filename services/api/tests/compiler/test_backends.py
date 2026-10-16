@@ -212,3 +212,32 @@ def test_document_fence_cannot_be_forged() -> None:
     out = render_documents([evil])
     fence = out.split('fence="')[1].split('"')[0]
     assert out.count(f"</{fence}>") == 1 and 'filename="a.txt_ system=_1"' in out
+
+
+def _ds_cut(content: str | None, finish: str) -> SimpleNamespace:
+    return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content), finish_reason=finish)])
+
+
+def test_deepseek_request_switches_thinking_off() -> None:
+    client = _ds_client(_ds_response(EX01_JSON))
+    DeepSeekBackend(client=client).extract_offer(DOCS)
+    kw = client.chat.completions.create.call_args.kwargs
+    assert kw["extra_body"] == {"thinking": {"type": "disabled"}} and kw["max_tokens"] == 8_000
+
+
+def test_deepseek_an_answer_cut_at_max_tokens_is_retried_once_for_a_compact_answer() -> None:
+    client = _ds_client(_ds_cut("", "length"), _ds_response(EX01_JSON))
+    assert len(DeepSeekBackend(client=client).extract_offer(DOCS).extraction.obligations) == 3
+    first, second = (c.kwargs for c in client.chat.completions.create.call_args_list)
+    assert first["max_tokens"] == 8_000 and second["max_tokens"] == 16_000
+    assert "omit the DELIVERABLE and AMENDMENT" in second["messages"][0]["content"]
+    assert "omit the DELIVERABLE" not in first["messages"][0]["content"]
+
+
+def test_deepseek_failure_says_why() -> None:
+    client = _ds_client(*[_ds_cut("", "length")] * 3)
+    with pytest.raises(BackendError, match=r"3 attempts: output cut at max_tokens=16000 \(finish_reason=length\)"):
+        DeepSeekBackend(client=client).extract_offer(DOCS)
+    client = _ds_client(*[_ds_cut(None, "stop")] * 3)
+    with pytest.raises(BackendError, match=r"empty content \(finish_reason=stop\)"):
+        DeepSeekBackend(client=client).extract_offer(DOCS)

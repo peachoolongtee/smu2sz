@@ -72,11 +72,17 @@ _RESPONSE = re.compile(r"^(asked|counter:[0-9]{1,3})$")
 
 
 _BUYER_CACHE: AnswerCache[dict[str, Any]] = AnswerCache(assembly.CACHE_SIZE)
+# The offer and decision reads' assembled block, by everything it is read from (the books, the mandate, the day, the commitments in force
+# so the state version moves the key, the verdict, the log's change marker, the customer inputs, the language, `spare`, the lead path and
+# the flag the route is behind), so a repeated read (the Deals page asks for the same block again and again) neither rebuilds the books
+# nor reaches the assembly.
+_ANSWERS: AnswerCache[dict[str, Any]] = AnswerCache(64)
 
 
 def clear_cache() -> None:
     assembly.clear_cache()
     _BUYER_CACHE.clear()
+    _ANSWERS.clear()
 
 
 def _not_found(code: str, message: str) -> HTTPException:
@@ -107,26 +113,33 @@ def _answer(rt: Runtime, offer: CompiledOffer, response: str, lang: Literal["en"
     with rt.lock:
         state = rt.store.get_state()
         mandate = rt.store.get_mandate()
-        held = tuple(c for c in rt.store.commitments() if c.offer_id != offer.offer_id)  # the offer as asked, not as booked later
-        books = current_books(state, held)
+        held_all = tuple(rt.store.commitments())
+        held = tuple(c for c in held_all if c.offer_id != offer.offer_id)  # the offer as asked, not as booked later
         day = rt.day
         inputs = inputs_from_store(rt.store)
         verdict = latest_verdict_for(rt, offer.offer_id)
-        held_all = tuple(rt.store.commitments())
         lapsed = verdict is not None and is_lapsed(state, mandate, held_all, offer.offer_id, verdict)
+        marker = rt.store.change_marker()
     if lapsed:  # the same rule as the picture's "no longer drawn" and the decision's LAPSED: there is nothing to read, and nothing to retry
         said = lapsed_offer_text(lang, lapsed_by_agreement(held_all, offer.offer_id, verdict))
         raise HTTPException(409, detail={"code": "OFFER_LAPSED", "message": said, "message_when": said})
     if not any(c.id == offer.counterparty_id for c in state.counterparties):
         raise _not_found("BUYER_NOT_FOUND", f"There is no buyer {offer.counterparty_id} on the books.")
     try:
-        assembly.lead_key(verdict, response)  # the counters can change between the check of `response` and this read
+        lead = assembly.lead_key(verdict, response)  # the counters can change between the check of `response` and this read
     except ValueError:
         raise _not_found("COUNTER_NOT_FOUND", f"Offer {offer.offer_id} has no {response} any more: its counter-offers changed "
                                               "while you were reading. Read it again.") from None
-    try:
-        core = assembly.exposure(rt, books, mandate, day, offer, verdict, lang, held, inputs, response=response, spare=spare,
+    key = cache_key(state, mandate, day, held_all, "offer-exposure", offer.offer_id, verdict.id if verdict is not None else "", marker,
+                    inputs.digest(), lang, bool(spare), lead, deal_words)
+
+    def build() -> dict[str, Any]:
+        books = current_books(state, held)
+        return assembly.exposure(rt, books, mandate, day, offer, verdict, lang, held, inputs, response=response, spare=spare,
                                  deal_words=deal_words)
+
+    try:
+        core = _ANSWERS.get_or_compute(key, build)
     except EngineError as exc:
         raise HTTPException(422, f"cannot project: {exc}") from None
     return {"buyer_id": offer.counterparty_id, "buyer_name": core["buyer"]["name"], "response": response, "lang": lang, **core,

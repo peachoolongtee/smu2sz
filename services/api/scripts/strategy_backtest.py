@@ -16,8 +16,10 @@ recorded oracle (`fixtures/strategy/collections_both.json`) to the fen.
 
 Usage (from the repository root):
 
-    TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 \
+    TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 \
       uv run --project services/api python services/api/scripts/strategy_backtest.py [--json] [--quick] [--out PATH]
+
+DEMO_MODE=1 is required (it is off by default): the replay signs in with the published demo credentials.
 
 `--quick` replays the golden scenario only and writes no report unless `--out` is given. `--json` prints the result
 as JSON on stdout. Exit 1 on any failure. Read-only: nothing here writes to the evals or to a database; after a run,
@@ -49,6 +51,9 @@ for _key, _value in (("TERMSLEDGER_NO_DOTENV", "1"), ("DATABASE_URL", "memory"),
                      ("PYTHONUTF8", "1"), ("FEATURE_ENVELOPE", "1"), ("FEATURE_PRICE_CURVE", "1"),
                      ("FEATURE_COLLECTIONS_WORTH", "1")):
     os.environ[_key] = _value
+
+if os.environ.get("DEMO_MODE", "").strip().lower() not in {"1", "true", "yes", "on"}:
+    sys.exit("strategy_backtest.py uses the demo books and credentials: run it with DEMO_MODE=1 (DEMO_MODE is off by default).")
 
 ROOT = Path(__file__).resolve().parents[3]
 API = ROOT / "services" / "api"

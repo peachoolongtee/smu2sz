@@ -369,3 +369,14 @@ def test_clause_labels():
     assert clause_label(text, text.index("a certificate")) == "6.1(b)"
     assert clause_label(text, text.index("First")) == "Schedule 1, 1"
     assert clause_label(text, 0) is None  # an unnumbered preamble
+
+
+@pytest.mark.parametrize("text, iso", [("二〇二五年十二月十七日", "2025-12-17"), ("二〇二六年三月二十五日", "2026-03-25"),
+                                       ("二〇二五年十月一日", "2025-10-01"), ("二〇二六年六月三十日", "2026-06-30"),
+                                       ("签订于二〇二五年十月三日。", "2025-10-03")])
+def test_dates_written_in_chinese_numerals_are_read(text, iso):
+    assert parse_date(text).value == iso
+
+
+def test_a_chinese_numeral_date_that_does_not_exist_is_not_a_date():
+    assert parse_date("二〇二六年二月三十日").value is None

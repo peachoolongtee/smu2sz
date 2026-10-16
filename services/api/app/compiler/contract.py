@@ -21,6 +21,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from app.compiler import lexicon
+from app.compiler.contract_checks import check_notes, cross_checks, derived_dates
 from app.compiler.contract_parsing import (
     Parsed,
     basis_of,
@@ -33,7 +34,7 @@ from app.compiler.contract_parsing import (
     unit_of,
 )
 from app.compiler.grounding import locate
-from app.compiler.parsing import rx
+from app.compiler.parsing import find_money, rx
 from app.compiler.schema import ContractExtraction, XAuthorityClaim, XContractTerm, XDataRequest
 from app.domain.models import (
     MULTI_VALUED_CONTRACT_FIELDS,
@@ -308,6 +309,39 @@ _REQUIRED: dict[ContractField, str] = {
 }
 
 
+# LATE_INTEREST is what the BUYER owes for paying late. A supplier's penalty for delivering late is not that: the
+# model sometimes records it under the same field (both read "X per day"), so code drops it by the quote's words.
+_LATE_DELIVERY = rx(
+    r"(?:逾期|延期|延迟|迟延|拖延)\s*(?:交货|交付|供货|送货|发货|提供)"
+    r"|(?:late|delayed?|overdue)\s+(?:delivery|deliveries|shipment|performance)"
+    r"|(?:delay|delays|failure|fails?|late)\s+(?:in|to|with)\s+(?:(?:the|any)\s+)?(?:deliver(?:y|ing)?|ship(?:ping|ment)?|perform(?:ing)?)"
+    r"|delivers?\s+(?:the\s+goods\s+)?(?:late|after\s+the\s+(?:delivery\s+)?date)", I)
+_LATE_PAYMENT = rx(
+    r"(?:逾期|延期|延迟|迟延|拖欠|拖延)\s*(?:付款|支付|结算|给付|付费)|未(?:按时|及时|按期|如期)\s*(?:付款|支付|结算)"
+    r"|(?:late|overdue|delayed|delinquent|default(?:ed)?\s+in)\s+(?:payments?|paying|invoices?|amounts?|sums?)"
+    r"|(?:payment|invoice|amount|sum)s?\s+(?:is|are|being|remains?)?\s*(?:late|overdue|past\s+due)"
+    r"|(?:delay|delays|failure|fails?|late)\s+(?:in|to|with)\s+(?:(?:the|any)\s+)?(?:paying|payments?|pay)\b"
+    r"|pays?\s+(?:\w+\s+){0,4}late|interest\s+on\s+(?:any\s+)?(?:overdue|late|unpaid)", I)
+
+
+def supplier_late_delivery_penalty(quote: str) -> bool:
+    """True when the quote is the supplier's penalty for late delivery and says nothing of the buyer paying late."""
+    return _LATE_DELIVERY.search(quote) is not None and _LATE_PAYMENT.search(quote) is None
+
+
+# RETENTION is money withheld from a payment. A performance bond or guarantee the supplier posts is a different thing
+# (it is returned after acceptance, nothing is withheld), so a quote about a bond with no word of withholding is dropped.
+_BOND = rx(r"履约保证金|履约保函|履约担保|保函|履约保证|performance\s+(?:bond|guarantee|security)|security\s+deposit"
+           r"|(?:bank|bid|tender)\s+guarantee", I)
+_WITHHELD = rx(r"质保金|质量保证金|保留金|尾款|扣留|扣除|暂扣|预留|retention|retain(?:s|ed|ing)?|withh[eo]ld(?:s|ing)?"
+               r"|withheld|holdback|deduct(?:s|ed|ion)?", I)
+
+
+def is_performance_bond(quote: str) -> bool:
+    """True when the quote is about a performance bond or guarantee and says nothing of money withheld."""
+    return _BOND.search(quote) is not None and _WITHHELD.search(quote) is None
+
+
 def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDocument) -> ContractTerm | None:
     sp = locate({chunk_doc.doc_id: chunk_doc}, chunk_doc.doc_id, x.quote)
     if sp is None:
@@ -320,6 +354,13 @@ def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDoc
         if v is False:
             return None
         frags[name] = v  # type: ignore[assignment]
+    if x.field == F.LATE_INTEREST and supplier_late_delivery_penalty(span.text):
+        _drop(ctx, x.field, "term dropped: the clause is the supplier's penalty, not interest owed by the buyer", [span])
+        return None
+    if x.field == F.RETENTION and is_performance_bond(span.text):
+        _drop(ctx, x.field, "term dropped: the clause is a performance bond the supplier posts, not money withheld "
+              "from payments", [span])
+        return None
     need = _REQUIRED[x.field]
     if frags[need] is None:
         _drop(ctx, x.field, f"term dropped: no {need.removesuffix('_text').replace('_', ' ')} is stated in its quote",
@@ -407,6 +448,27 @@ def _key(t: ContractTerm) -> tuple[object, ...]:
     return (t.amount_fen, t.rate_bp, t.days, t.months, t.date, t.basis, t.unit, t.reference, text)
 
 
+def _without_line_items(group: list[ContractTerm], abst: list[Abstention]) -> list[ContractTerm]:
+    """A price that is a line of the contract total is read inside it, not against it: the row that states the total
+    (quantity, unit price, total), or lines that add up to it. A different amount stays a conflict."""
+    amounts = [t.amount_fen for t in group if t.amount_fen is not None]
+    if len(set(amounts)) < 2:
+        return group
+    total = max(group, key=lambda t: t.amount_fen or 0)
+    lines = [t for t in group if t.amount_fen != total.amount_fen]
+    stated = [t for t in lines if total.amount_fen in {f.value for f in find_money(t.span.text)}]
+    rest = [t for t in lines if t not in stated]
+    summed = bool(rest) and sum(t.amount_fen or 0 for t in rest) == total.amount_fen
+    if not stated and not summed:
+        return group
+    gone = stated + (rest if summed else [])
+    if len(gone) != len(lines):
+        return group
+    abst.append(Abstention(field=F.PRICE.value, spans=[t.span for t in gone], reason=(
+        "note: this amount is a line of the contract total and is read inside it")))
+    return [t for t in group if t not in gone]
+
+
 def _merge(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[ContractTerm], bool]:
     """Read a term stated twice once; drop a one-valued field stated with different values (CONFLICTING_SOURCES)."""
     kept: list[ContractTerm] = []
@@ -415,6 +477,9 @@ def _merge(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[Cont
     for t in terms:
         by_field.setdefault(t.field, []).append(t)
     for field, group in by_field.items():
+        if field == F.PRICE:
+            group = _without_line_items(group, abst)
+            by_field[field] = group
         distinct: dict[tuple[object, ...], ContractTerm] = {}
         for t in group:
             distinct.setdefault(_key(t), t)
@@ -462,6 +527,8 @@ def build_contract(doc: SourceDocument, parts: Sequence[tuple[Chunk, ContractExt
             continue
         clean.append(t)
     terms, conflict = _merge(clean, ctx.abst)
+    terms = sorted([*terms, *derived_dates(doc, terms, ctx.abst)], key=lambda t: (t.span.start, t.field.value))
+    ctx.abst += check_notes(cross_checks(doc, terms))
     found = {t.field for t in terms}
     conflicted = {a.field for a in ctx.abst if a.reason.startswith("conflicting sources")}
     not_found = [f for f in ContractField if f not in found and f.value not in conflicted]
