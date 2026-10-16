@@ -191,7 +191,7 @@ def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id:
     assumed = [w for w in cap["after"]["windows"] if w["recovery_assumed"]]
     assert assumed and all(w["recovery_assumed_text"].endswith("(an assumption, not a record).") for w in assumed)
     line = next(w for w in cap["after"]["windows"] if w["dimension"] == "credit_line")
-    assert (line["today_fen"], line["today_short"], line["through_when"], line["recovers_when"]) == (1_380, "¥13.80", "in 31 days", "in 32 days")
+    assert (line["today_fen"], line["today_short"], line["through_when"], line["recovers_when"]) == (279_000, "¥3k", "in 31 days", "in 32 days")  # the line keeps ¥2,790 (R-10)
     assert line["after_short"] == "¥150k" and line["facility_name"] == "Bank credit line" and line["over_by"] is False
     before = next(w for w in cap["before"]["windows"] if w["dimension"] == "credit_line")
     assert before["today_fen"] == 0 and before["label"] == "Credit line room"
