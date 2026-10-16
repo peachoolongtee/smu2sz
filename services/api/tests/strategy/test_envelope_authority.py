@@ -21,7 +21,7 @@ from tests.api.conftest import english_leaks
 from .conftest import OWNER
 
 GOLDEN_BUYER = "BUYER-1"
-OPTION_A = (45, 0, 85, 25_720_000, 0)
+OPTION_A = (45, 0, 85, 26_000_000, 0)
 OPTION_B = (55, 30, 0, None, 0)
 
 CLASS_2_EN = ("55-day terms with a 0.30% price rise: within your limits and your cash floor holds, but FLOW cannot agree "
@@ -76,9 +76,9 @@ def test_a_class_2_package_without_longer_terms_names_what_needs_the_owner(facts
     assert rebate.authority == "needs_owner"
     assert rebate.authority_sentence == ("45-day terms with a 1.25% rebate: within your limits and your cash floor holds, but FLOW "
                                          "cannot agree a rebate on its own. It needs your approval.")
-    deep = en[(55, 25, 85, 25_720_000, 60)]
+    deep = en[(55, 25, 85, 26_000_000, 60)]
     assert deep.authority_sentence is not None and deep.authority_sentence.startswith(
-        "55-day terms with a 0.25% price rise, early payment of 0.85% on ¥257,200.00 and a 0.60% rebate: ")
+        "55-day terms with a 0.25% price rise, early payment of 0.85% on ¥260,000.00 and a 0.60% rebate: ")
 
 
 def test_the_budget_ignored_maximum_is_the_one_class_3_package_with_its_cap(facts):

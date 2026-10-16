@@ -93,7 +93,7 @@ test("Overview: the server's subject is the deal's name, FLOW recommends first w
   await expect(page.getByTestId("queue-option")).toContainText("Terms stay at 45 days, no rebate.");
   await expect(page.getByTestId("deal-rec-reason")).toHaveText(optionA.recommended_reason_text!);
   await expect(page.getByTestId("deal-fact-cash")).toContainText("Held, no buffer at the lowest point");
-  await expect(page.getByTestId("deal-fact-cost")).toContainText("¥3,027.77");
+  await expect(page.getByTestId("deal-fact-cost")).toContainText("¥3,035.99");
   await expect(page.getByTestId("deal-fact-decides")).toContainText(optionA.authority_short_text!);
   await expect(page.getByTestId("deal-rec-why")).toContainText("Breached by ¥135k for 15 days");
   // The buyer's own words are in the Messages section.
@@ -106,9 +106,9 @@ test("Overview: the server's subject is the deal's name, FLOW recommends first w
   await expect(page.getByTestId("deal-choice-cell-terms-reply").first()).toContainText("45 days");
   await expect(page.getByTestId("deal-choice-cell-terms-asked")).toContainText("60 days");
   await expect(page.getByTestId("deal-choice-cell-cost-asked")).toContainText("¥28,326.92 over 12 months");
-  await expect(page.getByTestId("deal-choice-cell-cost-reply").first()).toContainText("¥3,027.77");
+  await expect(page.getByTestId("deal-choice-cell-cost-reply").first()).toContainText("¥3,035.99");
   await expect(page.getByTestId("deal-choice-cell-cost-reply").first()).toContainText("One-off cost, nothing ongoing");
-  await expect(page.getByTestId("deal-choice-cell-funding-reply").first()).toContainText("¥150k credit-line draw today");
+  await expect(page.getByTestId("deal-choice-cell-funding-reply").first()).toContainText("¥147k credit-line draw today");
   await expect(page.getByTestId("deal-choice-cell-decides-reply").nth(1)).toContainText("Needs your approval");
   // The compare tab, the breadcrumb, the Close button and the queue rail are gone.
   for (const gone of ["deal-tab-compare", "deal-crumbs", "deal-close", "queue-rail", "deal-compare-table"]) await expect(page.getByTestId(gone)).toHaveCount(0);
@@ -137,7 +137,7 @@ test("Cash impact: two charts, each answering one question; the removed controls
   await expect(chart.locator("polyline")).toHaveCount(2);
   await expect(page.getByTestId("deal-chart-below")).toHaveText("Below your minimum for 15 days");
   await expect(page.getByTestId("deal-reply-toggle").getByRole("button", { name: "Option A" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("deal-why-lines")).toContainText("Credit line draw ¥150k today");
+  await expect(page.getByTestId("deal-why-lines")).toContainText("Credit line draw ¥147k today");
   await expect(page.getByTestId("deal-lowest-asked")).toContainText("¥165k");
   await expect(page.getByTestId("deal-lowest-reply")).toContainText("¥300k");
   await page.getByTestId("deal-reply-toggle").getByRole("button", { name: "Option B" }).click();

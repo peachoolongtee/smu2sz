@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "command": "FLOW_RESEARCH_SPIKES=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run --project services/api python services/api/scripts/research/collections_spike.py --day both --json",
-    "branch": "feat/mvp-w0",
-    "base_commit": "bcc67d4",
-    "recorded": "2026-10-08"
+    "command": "DEMO_MODE=1 FLOW_RESEARCH_SPIKES=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run --project services/api python services/api/scripts/research/collections_spike.py --day both --json",
+    "branch": "fix/counter-base-rounding",
+    "base_commit": "0f92d433",
+    "recorded": "2026-10-16"
   },
   "spike": "collections",
   "hypothetical": true,
@@ -1500,7 +1500,7 @@
         ]
       },
       "readings": 6,
-      "seconds": 6.42
+      "seconds": 11.768
     },
     {
       "books": "day 34",
@@ -1512,8 +1512,8 @@
       },
       "baseline": {
         "cost": {
-          "fen": 170610,
-          "display": "¥1,706.10"
+          "fen": 170220,
+          "display": "¥1,702.20"
         },
         "need": {
           "fen": 20000000,
@@ -1531,7 +1531,7 @@
           "RECEIVABLE_PAST_DUE",
           "RESERVE_HEADROOM_LOW"
         ],
-        "plan": "committed plan: ¥1,425.75 + ¥1,069.32 = ¥1,706.10 (needs the owner's approval)",
+        "plan": "committed plan: ¥1,219.53 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20 (needs the owner's approval)",
         "plan_needs_owner_approval": true
       },
       "ranking": [
@@ -1548,8 +1548,8 @@
               "label": "received today (day 34)",
               "receipt_day": 34,
               "saving": {
-                "fen": 170610,
-                "display": "¥1,706.10"
+                "fen": 170220,
+                "display": "¥1,702.20"
               },
               "shortfall_removed": {
                 "fen": 20000000,
@@ -1587,8 +1587,8 @@
               "label": "received 5 days before it is due (day 42)",
               "receipt_day": 42,
               "saving": {
-                "fen": 170610,
-                "display": "¥1,706.10"
+                "fen": 170220,
+                "display": "¥1,702.20"
               },
               "shortfall_removed": {
                 "fen": 20000000,
@@ -1635,24 +1635,24 @@
                 "display": "0.40%"
               },
               "cost_without": {
-                "fen": 373112,
-                "display": "¥3,731.12"
+                "fen": 368974,
+                "display": "¥3,689.74"
               },
               "cost_with": {
-                "fen": 370502,
-                "display": "¥3,705.02"
+                "fen": 366754,
+                "display": "¥3,667.54"
               },
               "beats_by": {
-                "fen": 2610,
-                "display": "¥26.10"
+                "fen": 2220,
+                "display": "¥22.20"
               },
               "next_rate": {
                 "bp": 45,
                 "display": "0.45%"
               },
               "next_rate_dearer_by": {
-                "fen": 18390,
-                "display": "¥183.90"
+                "fen": 18780,
+                "display": "¥187.80"
               },
               "sweep": [
                 {
@@ -1661,8 +1661,8 @@
                     "display": "0.05%"
                   },
                   "c1_less_c0": {
-                    "fen": -149610,
-                    "display": "−¥1,496.10"
+                    "fen": -149220,
+                    "display": "−¥1,492.20"
                   }
                 },
                 {
@@ -1671,8 +1671,8 @@
                     "display": "0.10%"
                   },
                   "c1_less_c0": {
-                    "fen": -128610,
-                    "display": "−¥1,286.10"
+                    "fen": -128220,
+                    "display": "−¥1,282.20"
                   }
                 },
                 {
@@ -1681,8 +1681,8 @@
                     "display": "0.15%"
                   },
                   "c1_less_c0": {
-                    "fen": -107610,
-                    "display": "−¥1,076.10"
+                    "fen": -107220,
+                    "display": "−¥1,072.20"
                   }
                 },
                 {
@@ -1691,8 +1691,8 @@
                     "display": "0.20%"
                   },
                   "c1_less_c0": {
-                    "fen": -86610,
-                    "display": "−¥866.10"
+                    "fen": -86220,
+                    "display": "−¥862.20"
                   }
                 },
                 {
@@ -1701,8 +1701,8 @@
                     "display": "0.25%"
                   },
                   "c1_less_c0": {
-                    "fen": -65610,
-                    "display": "−¥656.10"
+                    "fen": -65220,
+                    "display": "−¥652.20"
                   }
                 },
                 {
@@ -1711,8 +1711,8 @@
                     "display": "0.30%"
                   },
                   "c1_less_c0": {
-                    "fen": -44610,
-                    "display": "−¥446.10"
+                    "fen": -44220,
+                    "display": "−¥442.20"
                   }
                 },
                 {
@@ -1721,8 +1721,8 @@
                     "display": "0.35%"
                   },
                   "c1_less_c0": {
-                    "fen": -23610,
-                    "display": "−¥236.10"
+                    "fen": -23220,
+                    "display": "−¥232.20"
                   }
                 },
                 {
@@ -1731,8 +1731,8 @@
                     "display": "0.40%"
                   },
                   "c1_less_c0": {
-                    "fen": -2610,
-                    "display": "−¥26.10"
+                    "fen": -2220,
+                    "display": "−¥22.20"
                   }
                 },
                 {
@@ -1741,8 +1741,8 @@
                     "display": "0.45%"
                   },
                   "c1_less_c0": {
-                    "fen": 18390,
-                    "display": "¥183.90"
+                    "fen": 18780,
+                    "display": "¥187.80"
                   }
                 },
                 {
@@ -1751,8 +1751,8 @@
                     "display": "0.50%"
                   },
                   "c1_less_c0": {
-                    "fen": 39390,
-                    "display": "¥393.90"
+                    "fen": 39780,
+                    "display": "¥397.80"
                   }
                 },
                 {
@@ -1761,8 +1761,8 @@
                     "display": "0.55%"
                   },
                   "c1_less_c0": {
-                    "fen": 60390,
-                    "display": "¥603.90"
+                    "fen": 60780,
+                    "display": "¥607.80"
                   }
                 },
                 {
@@ -1771,8 +1771,8 @@
                     "display": "0.60%"
                   },
                   "c1_less_c0": {
-                    "fen": 81390,
-                    "display": "¥813.90"
+                    "fen": 81780,
+                    "display": "¥817.80"
                   }
                 },
                 {
@@ -1781,8 +1781,8 @@
                     "display": "0.65%"
                   },
                   "c1_less_c0": {
-                    "fen": 102390,
-                    "display": "¥1,023.90"
+                    "fen": 102780,
+                    "display": "¥1,027.80"
                   }
                 },
                 {
@@ -1791,8 +1791,8 @@
                     "display": "0.70%"
                   },
                   "c1_less_c0": {
-                    "fen": 123390,
-                    "display": "¥1,233.90"
+                    "fen": 123780,
+                    "display": "¥1,237.80"
                   }
                 },
                 {
@@ -1801,8 +1801,8 @@
                     "display": "0.75%"
                   },
                   "c1_less_c0": {
-                    "fen": 144390,
-                    "display": "¥1,443.90"
+                    "fen": 144780,
+                    "display": "¥1,447.80"
                   }
                 },
                 {
@@ -1811,8 +1811,8 @@
                     "display": "0.80%"
                   },
                   "c1_less_c0": {
-                    "fen": 165390,
-                    "display": "¥1,653.90"
+                    "fen": 165780,
+                    "display": "¥1,657.80"
                   }
                 },
                 {
@@ -1821,8 +1821,8 @@
                     "display": "0.85%"
                   },
                   "c1_less_c0": {
-                    "fen": 186390,
-                    "display": "¥1,863.90"
+                    "fen": 186780,
+                    "display": "¥1,867.80"
                   }
                 },
                 {
@@ -1831,8 +1831,8 @@
                     "display": "0.90%"
                   },
                   "c1_less_c0": {
-                    "fen": 207390,
-                    "display": "¥2,073.90"
+                    "fen": 207780,
+                    "display": "¥2,077.80"
                   }
                 },
                 {
@@ -1841,8 +1841,8 @@
                     "display": "0.95%"
                   },
                   "c1_less_c0": {
-                    "fen": 228390,
-                    "display": "¥2,283.90"
+                    "fen": 228780,
+                    "display": "¥2,287.80"
                   }
                 },
                 {
@@ -1851,8 +1851,8 @@
                     "display": "1.00%"
                   },
                   "c1_less_c0": {
-                    "fen": 249390,
-                    "display": "¥2,493.90"
+                    "fen": 249780,
+                    "display": "¥2,497.80"
                   }
                 },
                 {
@@ -1861,8 +1861,8 @@
                     "display": "1.05%"
                   },
                   "c1_less_c0": {
-                    "fen": 270390,
-                    "display": "¥2,703.90"
+                    "fen": 270780,
+                    "display": "¥2,707.80"
                   }
                 },
                 {
@@ -1871,8 +1871,8 @@
                     "display": "1.10%"
                   },
                   "c1_less_c0": {
-                    "fen": 291390,
-                    "display": "¥2,913.90"
+                    "fen": 291780,
+                    "display": "¥2,917.80"
                   }
                 },
                 {
@@ -1881,8 +1881,8 @@
                     "display": "1.15%"
                   },
                   "c1_less_c0": {
-                    "fen": 312390,
-                    "display": "¥3,123.90"
+                    "fen": 312780,
+                    "display": "¥3,127.80"
                   }
                 },
                 {
@@ -1891,8 +1891,8 @@
                     "display": "1.20%"
                   },
                   "c1_less_c0": {
-                    "fen": 333390,
-                    "display": "¥3,333.90"
+                    "fen": 333780,
+                    "display": "¥3,337.80"
                   }
                 },
                 {
@@ -1901,8 +1901,8 @@
                     "display": "1.25%"
                   },
                   "c1_less_c0": {
-                    "fen": 354390,
-                    "display": "¥3,543.90"
+                    "fen": 354780,
+                    "display": "¥3,547.80"
                   }
                 },
                 {
@@ -1911,8 +1911,8 @@
                     "display": "1.30%"
                   },
                   "c1_less_c0": {
-                    "fen": 375390,
-                    "display": "¥3,753.90"
+                    "fen": 375780,
+                    "display": "¥3,757.80"
                   }
                 },
                 {
@@ -1921,8 +1921,8 @@
                     "display": "1.35%"
                   },
                   "c1_less_c0": {
-                    "fen": 396390,
-                    "display": "¥3,963.90"
+                    "fen": 396780,
+                    "display": "¥3,967.80"
                   }
                 },
                 {
@@ -1931,8 +1931,8 @@
                     "display": "1.40%"
                   },
                   "c1_less_c0": {
-                    "fen": 417390,
-                    "display": "¥4,173.90"
+                    "fen": 417780,
+                    "display": "¥4,177.80"
                   }
                 },
                 {
@@ -1941,8 +1941,8 @@
                     "display": "1.45%"
                   },
                   "c1_less_c0": {
-                    "fen": 438390,
-                    "display": "¥4,383.90"
+                    "fen": 438780,
+                    "display": "¥4,387.80"
                   }
                 },
                 {
@@ -1951,8 +1951,8 @@
                     "display": "1.50%"
                   },
                   "c1_less_c0": {
-                    "fen": 459390,
-                    "display": "¥4,593.90"
+                    "fen": 459780,
+                    "display": "¥4,597.80"
                   }
                 }
               ],
@@ -1969,24 +1969,24 @@
                 "display": "0.80%"
               },
               "cost_without": {
-                "fen": 373112,
-                "display": "¥3,731.12"
+                "fen": 368974,
+                "display": "¥3,689.74"
               },
               "cost_with": {
-                "fen": 365354,
-                "display": "¥3,653.54"
+                "fen": 359119,
+                "display": "¥3,591.19"
               },
               "beats_by": {
-                "fen": 7758,
-                "display": "¥77.58"
+                "fen": 9855,
+                "display": "¥98.55"
               },
               "next_rate": {
                 "bp": 85,
                 "display": "0.85%"
               },
               "next_rate_dearer_by": {
-                "fen": 2420,
-                "display": "¥24.20"
+                "fen": 168,
+                "display": "¥1.68"
               },
               "sweep": [
                 {
@@ -1995,8 +1995,8 @@
                     "display": "0.05%"
                   },
                   "c1_less_c0": {
-                    "fen": -158828,
-                    "display": "−¥1,588.28"
+                    "fen": -159992,
+                    "display": "−¥1,599.92"
                   }
                 },
                 {
@@ -2005,8 +2005,8 @@
                     "display": "0.10%"
                   },
                   "c1_less_c0": {
-                    "fen": -148828,
-                    "display": "−¥1,488.28"
+                    "fen": -149992,
+                    "display": "−¥1,499.92"
                   }
                 },
                 {
@@ -2015,8 +2015,8 @@
                     "display": "0.15%"
                   },
                   "c1_less_c0": {
-                    "fen": -138828,
-                    "display": "−¥1,388.28"
+                    "fen": -139992,
+                    "display": "−¥1,399.92"
                   }
                 },
                 {
@@ -2025,8 +2025,8 @@
                     "display": "0.20%"
                   },
                   "c1_less_c0": {
-                    "fen": -128828,
-                    "display": "−¥1,288.28"
+                    "fen": -129992,
+                    "display": "−¥1,299.92"
                   }
                 },
                 {
@@ -2035,8 +2035,8 @@
                     "display": "0.25%"
                   },
                   "c1_less_c0": {
-                    "fen": -118828,
-                    "display": "−¥1,188.28"
+                    "fen": -119992,
+                    "display": "−¥1,199.92"
                   }
                 },
                 {
@@ -2045,8 +2045,8 @@
                     "display": "0.30%"
                   },
                   "c1_less_c0": {
-                    "fen": -108828,
-                    "display": "−¥1,088.28"
+                    "fen": -109992,
+                    "display": "−¥1,099.92"
                   }
                 },
                 {
@@ -2055,8 +2055,8 @@
                     "display": "0.35%"
                   },
                   "c1_less_c0": {
-                    "fen": -98828,
-                    "display": "−¥988.28"
+                    "fen": -99992,
+                    "display": "−¥999.92"
                   }
                 },
                 {
@@ -2065,8 +2065,8 @@
                     "display": "0.40%"
                   },
                   "c1_less_c0": {
-                    "fen": -88828,
-                    "display": "−¥888.28"
+                    "fen": -89992,
+                    "display": "−¥899.92"
                   }
                 },
                 {
@@ -2075,8 +2075,8 @@
                     "display": "0.45%"
                   },
                   "c1_less_c0": {
-                    "fen": -78828,
-                    "display": "−¥788.28"
+                    "fen": -79992,
+                    "display": "−¥799.92"
                   }
                 },
                 {
@@ -2085,8 +2085,8 @@
                     "display": "0.50%"
                   },
                   "c1_less_c0": {
-                    "fen": -68828,
-                    "display": "−¥688.28"
+                    "fen": -69992,
+                    "display": "−¥699.92"
                   }
                 },
                 {
@@ -2095,8 +2095,8 @@
                     "display": "0.55%"
                   },
                   "c1_less_c0": {
-                    "fen": -58650,
-                    "display": "−¥586.50"
+                    "fen": -59969,
+                    "display": "−¥599.69"
                   }
                 },
                 {
@@ -2105,8 +2105,8 @@
                     "display": "0.60%"
                   },
                   "c1_less_c0": {
-                    "fen": -48471,
-                    "display": "−¥484.71"
+                    "fen": -49946,
+                    "display": "−¥499.46"
                   }
                 },
                 {
@@ -2115,8 +2115,8 @@
                     "display": "0.65%"
                   },
                   "c1_less_c0": {
-                    "fen": -38293,
-                    "display": "−¥382.93"
+                    "fen": -39924,
+                    "display": "−¥399.24"
                   }
                 },
                 {
@@ -2125,8 +2125,8 @@
                     "display": "0.70%"
                   },
                   "c1_less_c0": {
-                    "fen": -28115,
-                    "display": "−¥281.15"
+                    "fen": -29901,
+                    "display": "−¥299.01"
                   }
                 },
                 {
@@ -2135,8 +2135,8 @@
                     "display": "0.75%"
                   },
                   "c1_less_c0": {
-                    "fen": -17937,
-                    "display": "−¥179.37"
+                    "fen": -19878,
+                    "display": "−¥198.78"
                   }
                 },
                 {
@@ -2145,8 +2145,8 @@
                     "display": "0.80%"
                   },
                   "c1_less_c0": {
-                    "fen": -7758,
-                    "display": "−¥77.58"
+                    "fen": -9855,
+                    "display": "−¥98.55"
                   }
                 },
                 {
@@ -2155,8 +2155,8 @@
                     "display": "0.85%"
                   },
                   "c1_less_c0": {
-                    "fen": 2420,
-                    "display": "¥24.20"
+                    "fen": 168,
+                    "display": "¥1.68"
                   }
                 },
                 {
@@ -2165,8 +2165,8 @@
                     "display": "0.90%"
                   },
                   "c1_less_c0": {
-                    "fen": 12598,
-                    "display": "¥125.98"
+                    "fen": 10190,
+                    "display": "¥101.90"
                   }
                 },
                 {
@@ -2175,8 +2175,8 @@
                     "display": "0.95%"
                   },
                   "c1_less_c0": {
-                    "fen": 22776,
-                    "display": "¥227.76"
+                    "fen": 20213,
+                    "display": "¥202.13"
                   }
                 },
                 {
@@ -2185,8 +2185,8 @@
                     "display": "1.00%"
                   },
                   "c1_less_c0": {
-                    "fen": 32954,
-                    "display": "¥329.54"
+                    "fen": 30236,
+                    "display": "¥302.36"
                   }
                 },
                 {
@@ -2195,8 +2195,8 @@
                     "display": "1.05%"
                   },
                   "c1_less_c0": {
-                    "fen": 43133,
-                    "display": "¥431.33"
+                    "fen": 40259,
+                    "display": "¥402.59"
                   }
                 },
                 {
@@ -2205,8 +2205,8 @@
                     "display": "1.10%"
                   },
                   "c1_less_c0": {
-                    "fen": 53311,
-                    "display": "¥533.11"
+                    "fen": 50281,
+                    "display": "¥502.81"
                   }
                 },
                 {
@@ -2215,8 +2215,8 @@
                     "display": "1.15%"
                   },
                   "c1_less_c0": {
-                    "fen": 63489,
-                    "display": "¥634.89"
+                    "fen": 60304,
+                    "display": "¥603.04"
                   }
                 },
                 {
@@ -2225,8 +2225,8 @@
                     "display": "1.20%"
                   },
                   "c1_less_c0": {
-                    "fen": 73667,
-                    "display": "¥736.67"
+                    "fen": 70327,
+                    "display": "¥703.27"
                   }
                 },
                 {
@@ -2235,8 +2235,8 @@
                     "display": "1.25%"
                   },
                   "c1_less_c0": {
-                    "fen": 83845,
-                    "display": "¥838.45"
+                    "fen": 80350,
+                    "display": "¥803.50"
                   }
                 },
                 {
@@ -2245,8 +2245,8 @@
                     "display": "1.30%"
                   },
                   "c1_less_c0": {
-                    "fen": 94024,
-                    "display": "¥940.24"
+                    "fen": 90373,
+                    "display": "¥903.73"
                   }
                 },
                 {
@@ -2255,8 +2255,8 @@
                     "display": "1.35%"
                   },
                   "c1_less_c0": {
-                    "fen": 104202,
-                    "display": "¥1,042.02"
+                    "fen": 100395,
+                    "display": "¥1,003.95"
                   }
                 },
                 {
@@ -2265,8 +2265,8 @@
                     "display": "1.40%"
                   },
                   "c1_less_c0": {
-                    "fen": 114380,
-                    "display": "¥1,143.80"
+                    "fen": 112198,
+                    "display": "¥1,121.98"
                   }
                 },
                 {
@@ -2275,8 +2275,8 @@
                     "display": "1.45%"
                   },
                   "c1_less_c0": {
-                    "fen": 124558,
-                    "display": "¥1,245.58"
+                    "fen": 122198,
+                    "display": "¥1,221.98"
                   }
                 },
                 {
@@ -2285,8 +2285,8 @@
                     "display": "1.50%"
                   },
                   "c1_less_c0": {
-                    "fen": 134737,
-                    "display": "¥1,347.37"
+                    "fen": 132198,
+                    "display": "¥1,321.98"
                   }
                 }
               ],
@@ -2294,7 +2294,7 @@
             }
           ],
           "action": "offer early pay up to 0.80%",
-          "sentence": "Offer Foshan Home Retail Co. early payment on RI:BUYER-1:2 (¥420,000.00, due day 47) at up to 0.80% on ¥200,000.00 (0.40% if it covers ¥420,000.00): paying it today would avoid ¥1,706.10 of financing cost and clears the shortfall, and a discount up to that rate costs less than the financing it replaces. The standing plan already advances against it.",
+          "sentence": "Offer Foshan Home Retail Co. early payment on RI:BUYER-1:2 (¥420,000.00, due day 47) at up to 0.80% on ¥200,000.00 (0.40% if it covers ¥420,000.00): paying it today would avoid ¥1,702.20 of financing cost and clears the shortfall, and a discount up to that rate costs less than the financing it replaces. The standing plan already advances against it.",
           "skipped": "",
           "outstanding": {
             "fen": 42000000,
@@ -2305,12 +2305,12 @@
             "display": "¥420,000.00"
           },
           "marginal_value": {
-            "fen": 170610,
-            "display": "¥1,706.10"
+            "fen": 170220,
+            "display": "¥1,702.20"
           },
           "net_value_at_ceiling": {
-            "fen": 7758,
-            "display": "¥77.58"
+            "fen": 9855,
+            "display": "¥98.55"
           }
         },
         {
@@ -2326,8 +2326,8 @@
               "label": "received today (day 34)",
               "receipt_day": 34,
               "saving": {
-                "fen": 170610,
-                "display": "¥1,706.10"
+                "fen": 170220,
+                "display": "¥1,702.20"
               },
               "shortfall_removed": {
                 "fen": 20000000,
@@ -2366,8 +2366,8 @@
               "label": "received 5 days before it is due (day 72)",
               "receipt_day": 72,
               "saving": {
-                "fen": -7609,
-                "display": "−¥76.09"
+                "fen": -6150,
+                "display": "−¥61.50"
               },
               "shortfall_removed": {
                 "fen": 0,
@@ -2377,8 +2377,8 @@
               "alerts_cleared": [],
               "after": {
                 "cost": {
-                  "fen": 178219,
-                  "display": "¥1,782.19"
+                  "fen": 176370,
+                  "display": "¥1,763.70"
                 },
                 "need": {
                   "fen": 20000000,
@@ -2396,7 +2396,7 @@
                   "RECEIVABLE_PAST_DUE",
                   "RESERVE_HEADROOM_LOW"
                 ],
-                "plan": "committed plan: ¥1,782.19 (needs the owner's approval)",
+                "plan": "committed plan: ¥1,864.84 + ¥1,757.34 = ¥1,763.70 (needs the owner's approval)",
                 "plan_needs_owner_approval": true
               }
             },
@@ -2404,8 +2404,8 @@
               "label": "received by the first breach day (day 42)",
               "receipt_day": 42,
               "saving": {
-                "fen": 170610,
-                "display": "¥1,706.10"
+                "fen": 170220,
+                "display": "¥1,702.20"
               },
               "shortfall_removed": {
                 "fen": 20000000,
@@ -2452,24 +2452,24 @@
                 "display": "0.65%"
               },
               "cost_without": {
-                "fen": 373112,
-                "display": "¥3,731.12"
+                "fen": 368974,
+                "display": "¥3,689.74"
               },
               "cost_with": {
-                "fen": 367676,
-                "display": "¥3,676.76"
+                "fen": 365924,
+                "display": "¥3,659.24"
               },
               "beats_by": {
-                "fen": 5436,
-                "display": "¥54.36"
+                "fen": 3050,
+                "display": "¥30.50"
               },
               "next_rate": {
                 "bp": 70,
                 "display": "0.70%"
               },
               "next_rate_dearer_by": {
-                "fen": 15564,
-                "display": "¥155.64"
+                "fen": 17950,
+                "display": "¥179.50"
               },
               "sweep": [
                 {
@@ -2478,8 +2478,8 @@
                     "display": "0.05%"
                   },
                   "c1_less_c0": {
-                    "fen": -257436,
-                    "display": "−¥2,574.36"
+                    "fen": -255050,
+                    "display": "−¥2,550.50"
                   }
                 },
                 {
@@ -2488,8 +2488,8 @@
                     "display": "0.10%"
                   },
                   "c1_less_c0": {
-                    "fen": -236436,
-                    "display": "−¥2,364.36"
+                    "fen": -234050,
+                    "display": "−¥2,340.50"
                   }
                 },
                 {
@@ -2498,8 +2498,8 @@
                     "display": "0.15%"
                   },
                   "c1_less_c0": {
-                    "fen": -215436,
-                    "display": "−¥2,154.36"
+                    "fen": -213050,
+                    "display": "−¥2,130.50"
                   }
                 },
                 {
@@ -2508,8 +2508,8 @@
                     "display": "0.20%"
                   },
                   "c1_less_c0": {
-                    "fen": -194436,
-                    "display": "−¥1,944.36"
+                    "fen": -192050,
+                    "display": "−¥1,920.50"
                   }
                 },
                 {
@@ -2518,8 +2518,8 @@
                     "display": "0.25%"
                   },
                   "c1_less_c0": {
-                    "fen": -173436,
-                    "display": "−¥1,734.36"
+                    "fen": -171050,
+                    "display": "−¥1,710.50"
                   }
                 },
                 {
@@ -2528,8 +2528,8 @@
                     "display": "0.30%"
                   },
                   "c1_less_c0": {
-                    "fen": -152436,
-                    "display": "−¥1,524.36"
+                    "fen": -150050,
+                    "display": "−¥1,500.50"
                   }
                 },
                 {
@@ -2538,8 +2538,8 @@
                     "display": "0.35%"
                   },
                   "c1_less_c0": {
-                    "fen": -131436,
-                    "display": "−¥1,314.36"
+                    "fen": -129050,
+                    "display": "−¥1,290.50"
                   }
                 },
                 {
@@ -2548,8 +2548,8 @@
                     "display": "0.40%"
                   },
                   "c1_less_c0": {
-                    "fen": -110436,
-                    "display": "−¥1,104.36"
+                    "fen": -108050,
+                    "display": "−¥1,080.50"
                   }
                 },
                 {
@@ -2558,8 +2558,8 @@
                     "display": "0.45%"
                   },
                   "c1_less_c0": {
-                    "fen": -89436,
-                    "display": "−¥894.36"
+                    "fen": -87050,
+                    "display": "−¥870.50"
                   }
                 },
                 {
@@ -2568,8 +2568,8 @@
                     "display": "0.50%"
                   },
                   "c1_less_c0": {
-                    "fen": -68436,
-                    "display": "−¥684.36"
+                    "fen": -66050,
+                    "display": "−¥660.50"
                   }
                 },
                 {
@@ -2578,8 +2578,8 @@
                     "display": "0.55%"
                   },
                   "c1_less_c0": {
-                    "fen": -47436,
-                    "display": "−¥474.36"
+                    "fen": -45050,
+                    "display": "−¥450.50"
                   }
                 },
                 {
@@ -2588,8 +2588,8 @@
                     "display": "0.60%"
                   },
                   "c1_less_c0": {
-                    "fen": -26436,
-                    "display": "−¥264.36"
+                    "fen": -24050,
+                    "display": "−¥240.50"
                   }
                 },
                 {
@@ -2598,8 +2598,8 @@
                     "display": "0.65%"
                   },
                   "c1_less_c0": {
-                    "fen": -5436,
-                    "display": "−¥54.36"
+                    "fen": -3050,
+                    "display": "−¥30.50"
                   }
                 },
                 {
@@ -2608,8 +2608,8 @@
                     "display": "0.70%"
                   },
                   "c1_less_c0": {
-                    "fen": 15564,
-                    "display": "¥155.64"
+                    "fen": 17950,
+                    "display": "¥179.50"
                   }
                 },
                 {
@@ -2618,8 +2618,8 @@
                     "display": "0.75%"
                   },
                   "c1_less_c0": {
-                    "fen": 36564,
-                    "display": "¥365.64"
+                    "fen": 38950,
+                    "display": "¥389.50"
                   }
                 },
                 {
@@ -2628,8 +2628,8 @@
                     "display": "0.80%"
                   },
                   "c1_less_c0": {
-                    "fen": 57564,
-                    "display": "¥575.64"
+                    "fen": 59950,
+                    "display": "¥599.50"
                   }
                 },
                 {
@@ -2638,8 +2638,8 @@
                     "display": "0.85%"
                   },
                   "c1_less_c0": {
-                    "fen": 78564,
-                    "display": "¥785.64"
+                    "fen": 80950,
+                    "display": "¥809.50"
                   }
                 },
                 {
@@ -2648,8 +2648,8 @@
                     "display": "0.90%"
                   },
                   "c1_less_c0": {
-                    "fen": 99564,
-                    "display": "¥995.64"
+                    "fen": 101950,
+                    "display": "¥1,019.50"
                   }
                 },
                 {
@@ -2658,8 +2658,8 @@
                     "display": "0.95%"
                   },
                   "c1_less_c0": {
-                    "fen": 120564,
-                    "display": "¥1,205.64"
+                    "fen": 122950,
+                    "display": "¥1,229.50"
                   }
                 },
                 {
@@ -2668,8 +2668,8 @@
                     "display": "1.00%"
                   },
                   "c1_less_c0": {
-                    "fen": 141564,
-                    "display": "¥1,415.64"
+                    "fen": 143950,
+                    "display": "¥1,439.50"
                   }
                 },
                 {
@@ -2678,8 +2678,8 @@
                     "display": "1.05%"
                   },
                   "c1_less_c0": {
-                    "fen": 162564,
-                    "display": "¥1,625.64"
+                    "fen": 164950,
+                    "display": "¥1,649.50"
                   }
                 },
                 {
@@ -2688,8 +2688,8 @@
                     "display": "1.10%"
                   },
                   "c1_less_c0": {
-                    "fen": 183564,
-                    "display": "¥1,835.64"
+                    "fen": 185950,
+                    "display": "¥1,859.50"
                   }
                 },
                 {
@@ -2698,8 +2698,8 @@
                     "display": "1.15%"
                   },
                   "c1_less_c0": {
-                    "fen": 204564,
-                    "display": "¥2,045.64"
+                    "fen": 206950,
+                    "display": "¥2,069.50"
                   }
                 },
                 {
@@ -2708,8 +2708,8 @@
                     "display": "1.20%"
                   },
                   "c1_less_c0": {
-                    "fen": 225564,
-                    "display": "¥2,255.64"
+                    "fen": 227950,
+                    "display": "¥2,279.50"
                   }
                 },
                 {
@@ -2718,8 +2718,8 @@
                     "display": "1.25%"
                   },
                   "c1_less_c0": {
-                    "fen": 246564,
-                    "display": "¥2,465.64"
+                    "fen": 248950,
+                    "display": "¥2,489.50"
                   }
                 },
                 {
@@ -2728,8 +2728,8 @@
                     "display": "1.30%"
                   },
                   "c1_less_c0": {
-                    "fen": 267564,
-                    "display": "¥2,675.64"
+                    "fen": 269950,
+                    "display": "¥2,699.50"
                   }
                 },
                 {
@@ -2738,8 +2738,8 @@
                     "display": "1.35%"
                   },
                   "c1_less_c0": {
-                    "fen": 288564,
-                    "display": "¥2,885.64"
+                    "fen": 290950,
+                    "display": "¥2,909.50"
                   }
                 },
                 {
@@ -2748,8 +2748,8 @@
                     "display": "1.40%"
                   },
                   "c1_less_c0": {
-                    "fen": 309564,
-                    "display": "¥3,095.64"
+                    "fen": 311950,
+                    "display": "¥3,119.50"
                   }
                 },
                 {
@@ -2758,8 +2758,8 @@
                     "display": "1.45%"
                   },
                   "c1_less_c0": {
-                    "fen": 330564,
-                    "display": "¥3,305.64"
+                    "fen": 332950,
+                    "display": "¥3,329.50"
                   }
                 },
                 {
@@ -2768,8 +2768,8 @@
                     "display": "1.50%"
                   },
                   "c1_less_c0": {
-                    "fen": 351564,
-                    "display": "¥3,515.64"
+                    "fen": 353950,
+                    "display": "¥3,539.50"
                   }
                 }
               ],
@@ -2786,24 +2786,24 @@
                 "display": "1.20%"
               },
               "cost_without": {
-                "fen": 373112,
-                "display": "¥3,731.12"
+                "fen": 368974,
+                "display": "¥3,689.74"
               },
               "cost_with": {
-                "fen": 365744,
-                "display": "¥3,657.44"
+                "fen": 361864,
+                "display": "¥3,618.64"
               },
               "beats_by": {
-                "fen": 7368,
-                "display": "¥73.68"
+                "fen": 7110,
+                "display": "¥71.10"
               },
               "next_rate": {
                 "bp": 125,
                 "display": "1.25%"
               },
               "next_rate_dearer_by": {
-                "fen": 2721,
-                "display": "¥27.21"
+                "fen": 2913,
+                "display": "¥29.13"
               },
               "sweep": [
                 {
@@ -2812,8 +2812,8 @@
                     "display": "0.05%"
                   },
                   "c1_less_c0": {
-                    "fen": -238616,
-                    "display": "−¥2,386.16"
+                    "fen": -237429,
+                    "display": "−¥2,374.29"
                   }
                 },
                 {
@@ -2822,8 +2822,8 @@
                     "display": "0.10%"
                   },
                   "c1_less_c0": {
-                    "fen": -228616,
-                    "display": "−¥2,286.16"
+                    "fen": -227429,
+                    "display": "−¥2,274.29"
                   }
                 },
                 {
@@ -2832,8 +2832,8 @@
                     "display": "0.15%"
                   },
                   "c1_less_c0": {
-                    "fen": -218616,
-                    "display": "−¥2,186.16"
+                    "fen": -217429,
+                    "display": "−¥2,174.29"
                   }
                 },
                 {
@@ -2842,8 +2842,8 @@
                     "display": "0.20%"
                   },
                   "c1_less_c0": {
-                    "fen": -208616,
-                    "display": "−¥2,086.16"
+                    "fen": -207429,
+                    "display": "−¥2,074.29"
                   }
                 },
                 {
@@ -2852,8 +2852,8 @@
                     "display": "0.25%"
                   },
                   "c1_less_c0": {
-                    "fen": -198616,
-                    "display": "−¥1,986.16"
+                    "fen": -197429,
+                    "display": "−¥1,974.29"
                   }
                 },
                 {
@@ -2862,8 +2862,8 @@
                     "display": "0.30%"
                   },
                   "c1_less_c0": {
-                    "fen": -188616,
-                    "display": "−¥1,886.16"
+                    "fen": -187429,
+                    "display": "−¥1,874.29"
                   }
                 },
                 {
@@ -2872,8 +2872,8 @@
                     "display": "0.35%"
                   },
                   "c1_less_c0": {
-                    "fen": -178616,
-                    "display": "−¥1,786.16"
+                    "fen": -177429,
+                    "display": "−¥1,774.29"
                   }
                 },
                 {
@@ -2882,8 +2882,8 @@
                     "display": "0.40%"
                   },
                   "c1_less_c0": {
-                    "fen": -168616,
-                    "display": "−¥1,686.16"
+                    "fen": -167429,
+                    "display": "−¥1,674.29"
                   }
                 },
                 {
@@ -2892,8 +2892,8 @@
                     "display": "0.45%"
                   },
                   "c1_less_c0": {
-                    "fen": -158616,
-                    "display": "−¥1,586.16"
+                    "fen": -157429,
+                    "display": "−¥1,574.29"
                   }
                 },
                 {
@@ -2902,8 +2902,8 @@
                     "display": "0.50%"
                   },
                   "c1_less_c0": {
-                    "fen": -148616,
-                    "display": "−¥1,486.16"
+                    "fen": -147429,
+                    "display": "−¥1,474.29"
                   }
                 },
                 {
@@ -2912,8 +2912,8 @@
                     "display": "0.55%"
                   },
                   "c1_less_c0": {
-                    "fen": -138527,
-                    "display": "−¥1,385.27"
+                    "fen": -137406,
+                    "display": "−¥1,374.06"
                   }
                 },
                 {
@@ -2922,8 +2922,8 @@
                     "display": "0.60%"
                   },
                   "c1_less_c0": {
-                    "fen": -128438,
-                    "display": "−¥1,284.38"
+                    "fen": -127383,
+                    "display": "−¥1,273.83"
                   }
                 },
                 {
@@ -2932,8 +2932,8 @@
                     "display": "0.65%"
                   },
                   "c1_less_c0": {
-                    "fen": -118349,
-                    "display": "−¥1,183.49"
+                    "fen": -117361,
+                    "display": "−¥1,173.61"
                   }
                 },
                 {
@@ -2942,8 +2942,8 @@
                     "display": "0.70%"
                   },
                   "c1_less_c0": {
-                    "fen": -108259,
-                    "display": "−¥1,082.59"
+                    "fen": -107338,
+                    "display": "−¥1,073.38"
                   }
                 },
                 {
@@ -2952,8 +2952,8 @@
                     "display": "0.75%"
                   },
                   "c1_less_c0": {
-                    "fen": -98170,
-                    "display": "−¥981.70"
+                    "fen": -97315,
+                    "display": "−¥973.15"
                   }
                 },
                 {
@@ -2962,8 +2962,8 @@
                     "display": "0.80%"
                   },
                   "c1_less_c0": {
-                    "fen": -88081,
-                    "display": "−¥880.81"
+                    "fen": -87292,
+                    "display": "−¥872.92"
                   }
                 },
                 {
@@ -2972,8 +2972,8 @@
                     "display": "0.85%"
                   },
                   "c1_less_c0": {
-                    "fen": -77992,
-                    "display": "−¥779.92"
+                    "fen": -77269,
+                    "display": "−¥772.69"
                   }
                 },
                 {
@@ -2982,8 +2982,8 @@
                     "display": "0.90%"
                   },
                   "c1_less_c0": {
-                    "fen": -67903,
-                    "display": "−¥679.03"
+                    "fen": -67247,
+                    "display": "−¥672.47"
                   }
                 },
                 {
@@ -2992,8 +2992,8 @@
                     "display": "0.95%"
                   },
                   "c1_less_c0": {
-                    "fen": -57814,
-                    "display": "−¥578.14"
+                    "fen": -57224,
+                    "display": "−¥572.24"
                   }
                 },
                 {
@@ -3002,8 +3002,8 @@
                     "display": "1.00%"
                   },
                   "c1_less_c0": {
-                    "fen": -47725,
-                    "display": "−¥477.25"
+                    "fen": -47201,
+                    "display": "−¥472.01"
                   }
                 },
                 {
@@ -3012,8 +3012,8 @@
                     "display": "1.05%"
                   },
                   "c1_less_c0": {
-                    "fen": -37636,
-                    "display": "−¥376.36"
+                    "fen": -37178,
+                    "display": "−¥371.78"
                   }
                 },
                 {
@@ -3022,8 +3022,8 @@
                     "display": "1.10%"
                   },
                   "c1_less_c0": {
-                    "fen": -27547,
-                    "display": "−¥275.47"
+                    "fen": -27156,
+                    "display": "−¥271.56"
                   }
                 },
                 {
@@ -3032,8 +3032,8 @@
                     "display": "1.15%"
                   },
                   "c1_less_c0": {
-                    "fen": -17457,
-                    "display": "−¥174.57"
+                    "fen": -17133,
+                    "display": "−¥171.33"
                   }
                 },
                 {
@@ -3042,8 +3042,8 @@
                     "display": "1.20%"
                   },
                   "c1_less_c0": {
-                    "fen": -7368,
-                    "display": "−¥73.68"
+                    "fen": -7110,
+                    "display": "−¥71.10"
                   }
                 },
                 {
@@ -3052,8 +3052,8 @@
                     "display": "1.25%"
                   },
                   "c1_less_c0": {
-                    "fen": 2721,
-                    "display": "¥27.21"
+                    "fen": 2913,
+                    "display": "¥29.13"
                   }
                 },
                 {
@@ -3062,8 +3062,8 @@
                     "display": "1.30%"
                   },
                   "c1_less_c0": {
-                    "fen": 12810,
-                    "display": "¥128.10"
+                    "fen": 12936,
+                    "display": "¥129.36"
                   }
                 },
                 {
@@ -3072,8 +3072,8 @@
                     "display": "1.35%"
                   },
                   "c1_less_c0": {
-                    "fen": 22899,
-                    "display": "¥228.99"
+                    "fen": 22958,
+                    "display": "¥229.58"
                   }
                 },
                 {
@@ -3082,8 +3082,8 @@
                     "display": "1.40%"
                   },
                   "c1_less_c0": {
-                    "fen": 32988,
-                    "display": "¥329.88"
+                    "fen": 33870,
+                    "display": "¥338.70"
                   }
                 },
                 {
@@ -3092,8 +3092,8 @@
                     "display": "1.45%"
                   },
                   "c1_less_c0": {
-                    "fen": 43077,
-                    "display": "¥430.77"
+                    "fen": 43870,
+                    "display": "¥438.70"
                   }
                 },
                 {
@@ -3102,8 +3102,8 @@
                     "display": "1.50%"
                   },
                   "c1_less_c0": {
-                    "fen": 53166,
-                    "display": "¥531.66"
+                    "fen": 53870,
+                    "display": "¥538.70"
                   }
                 }
               ],
@@ -3111,7 +3111,7 @@
             }
           ],
           "action": "offer early pay up to 1.20%",
-          "sentence": "Offer Foshan Home Retail Co. early payment on RI:BUYER-1:32 (¥420,000.00, due day 77) at up to 1.20% on ¥200,000.00 (0.65% if it covers ¥420,000.00): paying it today would avoid ¥1,706.10 of financing cost and clears the shortfall, and a discount up to that rate costs less than the financing it replaces. The standing plan already advances against it.",
+          "sentence": "Offer Foshan Home Retail Co. early payment on RI:BUYER-1:32 (¥420,000.00, due day 77) at up to 1.20% on ¥200,000.00 (0.65% if it covers ¥420,000.00): paying it today would avoid ¥1,702.20 of financing cost and clears the shortfall, and a discount up to that rate costs less than the financing it replaces. The standing plan already advances against it.",
           "skipped": "",
           "outstanding": {
             "fen": 42000000,
@@ -3122,12 +3122,12 @@
             "display": "¥420,000.00"
           },
           "marginal_value": {
-            "fen": 170610,
-            "display": "¥1,706.10"
+            "fen": 170220,
+            "display": "¥1,702.20"
           },
           "net_value_at_ceiling": {
-            "fen": 7368,
-            "display": "¥73.68"
+            "fen": 7110,
+            "display": "¥71.10"
           }
         },
         {
@@ -3143,12 +3143,12 @@
               "label": "received today (day 34)",
               "receipt_day": 34,
               "saving": {
-                "fen": 137461,
-                "display": "¥1,374.61"
+                "fen": 136426,
+                "display": "¥1,364.26"
               },
               "shortfall_removed": {
-                "fen": 16280000,
-                "display": "¥162,800.00"
+                "fen": 16000000,
+                "display": "¥160,000.00"
               },
               "breach_days_removed": 0,
               "alerts_cleared": [
@@ -3157,24 +3157,24 @@
               ],
               "after": {
                 "cost": {
-                  "fen": 33149,
-                  "display": "¥331.49"
+                  "fen": 33794,
+                  "display": "¥337.94"
                 },
                 "need": {
-                  "fen": 3720000,
-                  "display": "¥37,200.00"
+                  "fen": 4000000,
+                  "display": "¥40,000.00"
                 },
                 "admissible": true,
                 "first_breach_day": 42,
                 "breach_days": 5,
                 "shortfall": {
-                  "fen": 3720000,
-                  "display": "¥37,200.00"
+                  "fen": 4000000,
+                  "display": "¥40,000.00"
                 },
                 "alerts": [
                   "RESERVE_BREACH_AHEAD"
                 ],
-                "plan": "committed plan: ¥331.49 (needs the owner's approval)",
+                "plan": "committed plan: ¥1,219.53 + ¥331.58 = ¥337.94 (needs the owner's approval)",
                 "plan_needs_owner_approval": true
               }
             }
@@ -3182,14 +3182,14 @@
           "early_pay": [
             {
               "face": {
-                "fen": 16280000,
-                "display": "¥162,800.00"
+                "fen": 16000000,
+                "display": "¥160,000.00"
               },
               "face_label": "the whole outstanding invoice",
               "largest_rate": null,
               "cost_without": {
-                "fen": 373112,
-                "display": "¥3,731.12"
+                "fen": 368974,
+                "display": "¥3,689.74"
               },
               "cost_with": null,
               "beats_by": null,
@@ -3200,23 +3200,23 @@
             }
           ],
           "action": "call now",
-          "sentence": "Call Foshan Home Retail Co. first: recovering ¥162,800.00 now avoids ¥1,374.61 of financing cost and leaves ¥37,200.00 to cover.",
+          "sentence": "Call Foshan Home Retail Co. first: recovering ¥160,000.00 now avoids ¥1,364.26 of financing cost and leaves ¥40,000.00 to cover.",
           "skipped": "",
           "outstanding": {
-            "fen": 16280000,
-            "display": "¥162,800.00"
+            "fen": 16000000,
+            "display": "¥160,000.00"
           },
           "face": {
             "fen": 42000000,
             "display": "¥420,000.00"
           },
           "marginal_value": {
-            "fen": 137461,
-            "display": "¥1,374.61"
+            "fen": 136426,
+            "display": "¥1,364.26"
           },
           "net_value_at_ceiling": {
-            "fen": 137461,
-            "display": "¥1,374.61"
+            "fen": 136426,
+            "display": "¥1,364.26"
           }
         }
       ],
@@ -3292,127 +3292,127 @@
           {
             "arrival_day": 43,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 9107,
+              "display": "¥91.07"
             }
           },
           {
             "arrival_day": 44,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 9058,
+              "display": "¥90.58"
             }
           },
           {
             "arrival_day": 45,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 9009,
+              "display": "¥90.09"
             }
           },
           {
             "arrival_day": 46,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8960,
+              "display": "¥89.60"
             }
           },
           {
             "arrival_day": 47,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 48,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 49,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 50,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 51,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 52,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 53,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 54,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 55,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 56,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 57,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 58,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 59,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
             "arrival_day": 60,
             "worth": {
-              "fen": 8912,
-              "display": "¥89.12"
+              "fen": 8911,
+              "display": "¥89.11"
             }
           },
           {
@@ -3866,7 +3866,7 @@
         ]
       },
       "readings": 11,
-      "seconds": 3.165
+      "seconds": 14.309
     }
   ]
 }

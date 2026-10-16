@@ -53,7 +53,7 @@ GOLDEN_ROUTER_PLAN = "252b9812e99b4aee"  # also: actions and comparison rows car
 EX01_COUNTERS = [
     # face 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥100 (the gap net of the line includes the
     # existing loan's ¥45,000 day-30 payment; compute_golden.py counter_a_face)
-    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, "
+    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, "
     "paid on or before day 2.",
     # 60-day terms fail the counter's own re-check (day 47 ¥85,000 below the reserve, no admissible cure); 55 days is
     # curable in time. +10 days: 420,000 × 10/365 × 10.8417% = ¥1,247.53 per invoice → 0.30% (¥1,260.00)
@@ -312,15 +312,15 @@ def test_negotiate_cooperative_plan_and_operations_unchanged(client: TestClient)
     assert n["outcome"] == "DEAL"
     assert [(o["kind"], o["status"], o["tier"]) for o in n["operations"]] == [
         ("ACCEPT_OFFER", "EXECUTED", "TIER_1"), ("DRAW_FACILITY", "EXECUTED", "TIER_1")]
-    # the line carries 405,000 − (257,200 − 2,186.20) = 149,986.20
-    assert n["operations"][1]["message"] == "Drew ¥149,986.20 on FAC-LINE on day 0"
+    # the line carries 405,000 − (260,000 − 2,210.00) = 147,210.00
+    assert n["operations"][1]["message"] == "Drew ¥147,210.00 on FAC-LINE on day 0"
     # the accepted counter is in the books once, not twice: the line carries the rest of the gap and the
     # router adds no early pay on top (the counter's face already nets the gap less the line)
     assert [(a["kind"], a["facility_id"], a["amount_fen"]) for a in n["plan"]["actions"]] == [
-        ("DRAW", "FAC-LINE", 14_998_620)]
-    # 149,986.20 × 6.4% × 32/365 = 841.5664 -> 841.57
-    assert n["plan"]["need_fen"] == 14_998_620 and n["plan"]["total_cost_fen"] == 84_157
-    assert n["plan"]["label"] == "committed plan: ¥841.57"
+        ("DRAW", "FAC-LINE", 14_721_000)]
+    # 147,210.00 × 6.4% × 32/365 = 841.5664 -> 825.99
+    assert n["plan"]["need_fen"] == 14_721_000 and n["plan"]["total_cost_fen"] == 82_599
+    assert n["plan"]["label"] == "committed plan: ¥825.99"
 
 
 def test_negotiate_hard_line_still_funds_the_standing_gap(client: TestClient) -> None:
@@ -349,7 +349,7 @@ def test_verdict_and_counters_carry_only_the_offers_obligations(client: TestClie
     # the cure of a longer extension needed, so 60-, 55- and 50-day terms leave the day-62 shortfall with no cure and
     # no price-adjustment counter is offered; against that dearer standing plan the early payment at 0.85% is offered.
     assert [c.text for c in stored.counters] == [
-        "Terms stay at 60 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, "
+        "Terms stay at 60 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, "
         "paid on or before day 2."]
     # red team e, F2: the buyer's 60 days are the terms already in force (45 + 15), so the offer asks for no longer
     # terms and there is no price-adjustment counter to search for (the summary used to explain why 60-, 55- and

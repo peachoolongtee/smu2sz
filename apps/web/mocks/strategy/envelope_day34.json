@@ -2,8 +2,8 @@
   "buyer_id": "BUYER-1",
   "buyer_name": "Foshan Home Retail Co.",
   "primary": "At today's price: up to 45 days within your limits. You can live with: 80-day terms with a 0.95% price rise, or early payment of 0.40% on ¥420,000.00; not 85 days.",
-  "reason": "The ¥162,800.00 still owed by Foshan Home Retail Co. is 2 days past due, so any deal with Foshan Home Retail Co. needs your approval; the ¥5,000.00 budget buys no terms without a price rise.",
-  "money": "Without a deal your current funding plan costs ¥1,706.10.",
+  "reason": "The ¥160,000.00 still owed by Foshan Home Retail Co. is 2 days past due, so any deal with Foshan Home Retail Co. needs your approval; the ¥5,000.00 budget buys no terms without a price rise.",
+  "money": "Without a deal your current funding plan costs ¥1,702.20.",
   "packages": [
     {
       "package": {
@@ -29,7 +29,7 @@
         "needs your approval"
       ],
       "counter_match": true,
-      "plan_cost_fen": 170610,
+      "plan_cost_fen": 170220,
       "summary": "45-day terms · rebate 1.25%",
       "authority": "needs_owner",
       "authority_words": "within your limits; needs your approval",
@@ -40,7 +40,7 @@
       "economics_sentence": null,
       "economics_note": null,
       "forward_budget_used_display": "¥5,000.00",
-      "plan_cost_display": "¥1,706.10"
+      "plan_cost_display": "¥1,702.20"
     }
   ],
   "more": [
@@ -105,7 +105,7 @@
         "needs your approval"
       ],
       "counter_match": false,
-      "plan_cost_fen": 170610,
+      "plan_cost_fen": 170220,
       "summary": "50-day terms · price up 0.05%",
       "authority": "needs_owner",
       "authority_words": "within your limits; needs your approval",
@@ -116,7 +116,7 @@
       "economics_sentence": null,
       "economics_note": null,
       "forward_budget_used_display": "¥4,965.21",
-      "plan_cost_display": "¥1,706.10"
+      "plan_cost_display": "¥1,702.20"
     },
     {
       "package": {
@@ -179,7 +179,7 @@
         "needs your approval"
       ],
       "counter_match": false,
-      "plan_cost_fen": 170610,
+      "plan_cost_fen": 170220,
       "summary": "55-day terms · price up 0.20%",
       "authority": "needs_owner",
       "authority_words": "within your limits; needs your approval",
@@ -190,7 +190,7 @@
       "economics_sentence": null,
       "economics_note": null,
       "forward_budget_used_display": "¥4,890.41",
-      "plan_cost_display": "¥1,706.10"
+      "plan_cost_display": "¥1,702.20"
     },
     {
       "package": {
@@ -257,7 +257,7 @@
       "reserve_breach": null,
       "flags": [],
       "counter_match": false,
-      "plan_cost_fen": 170610,
+      "plan_cost_fen": 170220,
       "summary": "90-day terms",
       "authority": "over_your_limits",
       "authority_words": "over a limit you signed",
@@ -268,7 +268,7 @@
       "economics_sentence": null,
       "economics_note": null,
       "forward_budget_used_display": "¥67,366.85",
-      "plan_cost_display": "¥1,706.10",
+      "plan_cost_display": "¥1,702.20",
       "cap_display": "¥5,000.00",
       "cap_used_display": "¥67,366.85",
       "over_cap_by_display": "¥62,366.85"
@@ -315,7 +315,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "45-day terms",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -326,7 +326,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥0.00",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "next_step": {
         "package": {
@@ -354,7 +354,7 @@
         "reserve_breach": null,
         "flags": [],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "50-day terms",
         "authority": "over_your_limits",
         "authority_words": "over a limit you signed",
@@ -365,7 +365,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥7,485.21",
-        "plan_cost_display": "¥1,706.10",
+        "plan_cost_display": "¥1,702.20",
         "cap_display": "¥5,000.00",
         "cap_used_display": "¥7,485.21",
         "over_cap_by_display": "¥2,485.21"
@@ -413,7 +413,7 @@
         "reserve_breach": null,
         "flags": [],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "90-day terms",
         "authority": "over_your_limits",
         "authority_words": "over a limit you signed",
@@ -424,7 +424,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥67,366.85",
-        "plan_cost_display": "¥1,706.10",
+        "plan_cost_display": "¥1,702.20",
         "cap_display": "¥5,000.00",
         "cap_used_display": "¥67,366.85",
         "over_cap_by_display": "¥62,366.85"
@@ -471,7 +471,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "80-day terms · price up 0.95%",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -482,7 +482,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥4,516.44",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "next_step": {
         "package": {
@@ -510,7 +510,7 @@
         "reserve_breach": null,
         "flags": [],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "85-day terms · price up 1.00%",
         "authority": "over_your_limits",
         "authority_words": "over a limit you signed",
@@ -521,7 +521,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥9,481.64",
-        "plan_cost_display": "¥1,706.10",
+        "plan_cost_display": "¥1,702.20",
         "cap_display": "¥5,000.00",
         "cap_used_display": "¥9,481.64",
         "over_cap_by_display": "¥4,481.64"
@@ -662,7 +662,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "45-day terms · rebate 1.25%",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -673,7 +673,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥5,000.00",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "next_step": {
         "package": {
@@ -701,7 +701,7 @@
         "reserve_breach": null,
         "flags": [],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "45-day terms · rebate 1.30%",
         "authority": "over_your_limits",
         "authority_words": "over a limit you signed",
@@ -712,7 +712,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥5,200.00",
-        "plan_cost_display": "¥1,706.10",
+        "plan_cost_display": "¥1,702.20",
         "cap_display": "¥5,000.00",
         "cap_used_display": "¥5,200.00",
         "over_cap_by_display": "¥200.00"
@@ -752,7 +752,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "30-day terms",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -763,7 +763,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥0.00",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "no price rise needed",
       "min_price_display": "0.00%"
@@ -800,7 +800,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "35-day terms",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -811,7 +811,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥0.00",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "no price rise needed",
       "min_price_display": "0.00%"
@@ -848,7 +848,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "40-day terms",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -859,7 +859,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥0.00",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "no price rise needed",
       "min_price_display": "0.00%"
@@ -896,7 +896,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "45-day terms",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -907,7 +907,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥0.00",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "no price rise needed",
       "min_price_display": "0.00%"
@@ -944,7 +944,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "50-day terms · price up 0.05%",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -955,7 +955,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥4,965.21",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "0.05%",
       "min_price_display": "0.05%",
@@ -994,7 +994,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "55-day terms · price up 0.20%",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -1005,7 +1005,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥4,890.41",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "0.20%",
       "min_price_display": "0.20%",
@@ -1044,7 +1044,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "60-day terms · price up 0.35%",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -1055,7 +1055,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥4,815.62",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "0.35%",
       "min_price_display": "0.35%",
@@ -1094,7 +1094,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "65-day terms · price up 0.50%",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -1105,7 +1105,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥4,740.82",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "0.50%",
       "min_price_display": "0.50%",
@@ -1144,7 +1144,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "70-day terms · price up 0.65%",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -1155,7 +1155,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥4,666.03",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "0.65%",
       "min_price_display": "0.65%",
@@ -1194,7 +1194,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "75-day terms · price up 0.80%",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -1205,7 +1205,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥4,591.23",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "0.80%",
       "min_price_display": "0.80%",
@@ -1244,7 +1244,7 @@
           "needs your approval"
         ],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "80-day terms · price up 0.95%",
         "authority": "needs_owner",
         "authority_words": "within your limits; needs your approval",
@@ -1255,7 +1255,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥4,516.44",
-        "plan_cost_display": "¥1,706.10"
+        "plan_cost_display": "¥1,702.20"
       },
       "lowest_price_words": "0.95%",
       "min_price_display": "0.95%",
@@ -1296,7 +1296,7 @@
         "reserve_breach": null,
         "flags": [],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "85-day terms · price up 1.00%",
         "authority": "over_your_limits",
         "authority_words": "over a limit you signed",
@@ -1307,7 +1307,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥9,481.64",
-        "plan_cost_display": "¥1,706.10",
+        "plan_cost_display": "¥1,702.20",
         "cap_display": "¥5,000.00",
         "cap_used_display": "¥9,481.64",
         "over_cap_by_display": "¥4,481.64"
@@ -1350,7 +1350,7 @@
         "reserve_breach": null,
         "flags": [],
         "counter_match": false,
-        "plan_cost_fen": 170610,
+        "plan_cost_fen": 170220,
         "summary": "90-day terms · price up 1.00%",
         "authority": "over_your_limits",
         "authority_words": "over a limit you signed",
@@ -1361,7 +1361,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥16,966.85",
-        "plan_cost_display": "¥1,706.10",
+        "plan_cost_display": "¥1,702.20",
         "cap_display": "¥5,000.00",
         "cap_used_display": "¥16,966.85",
         "over_cap_by_display": "¥11,966.85"

@@ -1,9 +1,9 @@
 {
   "buyer_id": "BUYER-1",
   "buyer_name": "Foshan Home Retail Co.",
-  "primary": "At today's price: up to 45 days within your limits. You can live with: 55-day terms with a 0.30% price rise, or early payment of 0.85% on ¥257,200.00; not 60 days without an early payment.",
+  "primary": "At today's price: up to 45 days within your limits. You can live with: 55-day terms with a 0.30% price rise, or early payment of 0.85% on ¥260,000.00; not 60 days without an early payment.",
   "reason": "60 days without an early payment leaves a shortfall in 47 days that no fix covers; the ¥5,000.00 budget buys no terms without a price rise.",
-  "money": "Cost to you ¥0.00 with the price rise, or ¥3,027.77 with the early payment; without a deal your current funding plan costs ¥3,113.93.",
+  "money": "Cost to you ¥0.00 with the price rise, or ¥3,035.99 with the early payment; without a deal your current funding plan costs ¥3,113.93.",
   "packages": [
     {
       "package": {
@@ -11,11 +11,11 @@
         "terms_days": 45,
         "price_bp": 0,
         "early_pay_bp": 85,
-        "early_pay_face_fen": 25720000,
+        "early_pay_face_fen": 26000000,
         "rebate_bp": 0,
         "price_display": "0.00%",
         "early_pay_display": "0.85%",
-        "early_pay_face_display": "¥257,200.00",
+        "early_pay_face_display": "¥260,000.00",
         "rebate_display": "0.00%"
       },
       "outcome": "ACCEPT",
@@ -28,8 +28,8 @@
       "reserve_breach": null,
       "flags": [],
       "counter_match": true,
-      "plan_cost_fen": 84157,
-      "summary": "45-day terms · early payment 0.85% on ¥257,200.00",
+      "plan_cost_fen": 82599,
+      "summary": "45-day terms · early payment 0.85% on ¥260,000.00",
       "authority": "flow_may",
       "authority_words": "FLOW may do this on its own",
       "authority_sentence": null,
@@ -39,7 +39,7 @@
       "economics_sentence": null,
       "economics_note": null,
       "forward_budget_used_display": "¥0.00",
-      "plan_cost_display": "¥841.57"
+      "plan_cost_display": "¥825.99"
     },
     {
       "package": {
@@ -132,11 +132,11 @@
         "terms_days": 45,
         "price_bp": 0,
         "early_pay_bp": 85,
-        "early_pay_face_fen": 25720000,
+        "early_pay_face_fen": 26000000,
         "rebate_bp": 125,
         "price_display": "0.00%",
         "early_pay_display": "0.85%",
-        "early_pay_face_display": "¥257,200.00",
+        "early_pay_face_display": "¥260,000.00",
         "rebate_display": "1.25%"
       },
       "outcome": "NEEDS_OWNER_APPROVAL",
@@ -151,18 +151,18 @@
         "needs your approval"
       ],
       "counter_match": false,
-      "plan_cost_fen": 84157,
-      "summary": "45-day terms · early payment 0.85% on ¥257,200.00 · rebate 1.25%",
+      "plan_cost_fen": 82599,
+      "summary": "45-day terms · early payment 0.85% on ¥260,000.00 · rebate 1.25%",
       "authority": "needs_owner",
       "authority_words": "within your limits; needs your approval",
-      "authority_sentence": "45-day terms with early payment of 0.85% on ¥257,200.00 and a 1.25% rebate: within your limits and your cash floor holds, but FLOW cannot agree a rebate on its own. It needs your approval.",
+      "authority_sentence": "45-day terms with early payment of 0.85% on ¥260,000.00 and a 1.25% rebate: within your limits and your cash floor holds, but FLOW cannot agree a rebate on its own. It needs your approval.",
       "cap_fen": null,
       "cap_used_fen": null,
       "over_cap_by_fen": null,
       "economics_sentence": null,
       "economics_note": null,
       "forward_budget_used_display": "¥5,000.00",
-      "plan_cost_display": "¥841.57"
+      "plan_cost_display": "¥825.99"
     },
     {
       "package": {
@@ -253,11 +253,11 @@
         "terms_days": 50,
         "price_bp": 10,
         "early_pay_bp": 85,
-        "early_pay_face_fen": 25720000,
+        "early_pay_face_fen": 26000000,
         "rebate_bp": 55,
         "price_display": "0.10%",
         "early_pay_display": "0.85%",
-        "early_pay_face_display": "¥257,200.00",
+        "early_pay_face_display": "¥260,000.00",
         "rebate_display": "0.55%"
       },
       "outcome": "NEEDS_OWNER_APPROVAL",
@@ -273,26 +273,26 @@
         "day": 47,
         "when": "in 47 days",
         "curable": true,
-        "cure_cost_fen": 267304,
-        "cure_cost_display": "¥2,673.04"
+        "cure_cost_fen": 262356,
+        "cure_cost_display": "¥2,623.56"
       },
       "flags": [
         "needs your approval",
         "its funding cannot run today"
       ],
       "counter_match": false,
-      "plan_cost_fen": 267304,
-      "summary": "50-day terms · price up 0.10% · early payment 0.85% on ¥257,200.00 · rebate 0.55%",
+      "plan_cost_fen": 262356,
+      "summary": "50-day terms · price up 0.10% · early payment 0.85% on ¥260,000.00 · rebate 0.55%",
       "authority": "needs_owner",
       "authority_words": "within your limits; needs your approval",
-      "authority_sentence": "50-day terms with a 0.10% price rise, early payment of 0.85% on ¥257,200.00 and a 0.55% rebate: within your limits and your cash floor holds, but FLOW cannot agree longer terms on its own. It needs your approval.",
+      "authority_sentence": "50-day terms with a 0.10% price rise, early payment of 0.85% on ¥260,000.00 and a 0.55% rebate: within your limits and your cash floor holds, but FLOW cannot agree longer terms on its own. It needs your approval.",
       "cap_fen": null,
       "cap_used_fen": null,
       "over_cap_by_fen": null,
       "economics_sentence": null,
       "economics_note": null,
       "forward_budget_used_display": "¥4,848.97",
-      "plan_cost_display": "¥2,673.04"
+      "plan_cost_display": "¥2,623.56"
     },
     {
       "package": {
@@ -392,11 +392,11 @@
         "terms_days": 55,
         "price_bp": 25,
         "early_pay_bp": 85,
-        "early_pay_face_fen": 25720000,
+        "early_pay_face_fen": 26000000,
         "rebate_bp": 60,
         "price_display": "0.25%",
         "early_pay_display": "0.85%",
-        "early_pay_face_display": "¥257,200.00",
+        "early_pay_face_display": "¥260,000.00",
         "rebate_display": "0.60%"
       },
       "outcome": "NEEDS_OWNER_APPROVAL",
@@ -412,26 +412,26 @@
         "day": 47,
         "when": "in 47 days",
         "curable": true,
-        "cure_cost_fen": 267304,
-        "cure_cost_display": "¥2,673.04"
+        "cure_cost_fen": 262356,
+        "cure_cost_display": "¥2,623.56"
       },
       "flags": [
         "needs your approval",
         "its funding cannot run today"
       ],
       "counter_match": false,
-      "plan_cost_fen": 267304,
-      "summary": "55-day terms · price up 0.25% · early payment 0.85% on ¥257,200.00 · rebate 0.60%",
+      "plan_cost_fen": 262356,
+      "summary": "55-day terms · price up 0.25% · early payment 0.85% on ¥260,000.00 · rebate 0.60%",
       "authority": "needs_owner",
       "authority_words": "within your limits; needs your approval",
-      "authority_sentence": "55-day terms with a 0.25% price rise, early payment of 0.85% on ¥257,200.00 and a 0.60% rebate: within your limits and your cash floor holds, but FLOW cannot agree longer terms on its own. It needs your approval.",
+      "authority_sentence": "55-day terms with a 0.25% price rise, early payment of 0.85% on ¥260,000.00 and a 0.60% rebate: within your limits and your cash floor holds, but FLOW cannot agree longer terms on its own. It needs your approval.",
       "cap_fen": null,
       "cap_used_fen": null,
       "over_cap_by_fen": null,
       "economics_sentence": null,
       "economics_note": null,
       "forward_budget_used_display": "¥4,967.95",
-      "plan_cost_display": "¥2,673.04"
+      "plan_cost_display": "¥2,623.56"
     },
     {
       "package": {
@@ -952,32 +952,32 @@
       "face_display": "¥420,000.00"
     },
     {
-      "lever": "Early pay on ¥257,200.00",
+      "lever": "Early pay on ¥260,000.00",
       "key": "early_pay_counter",
-      "label": "Early payment on ¥257,200.00",
+      "label": "Early payment on ¥260,000.00",
       "unit": "bp",
       "maximum": 85,
       "confirmed": true,
       "scanned": false,
       "wall": "break-even",
       "wall_text": "the break-even for paying early",
-      "face_fen": 25720000,
+      "face_fen": 26000000,
       "rule_price_bp": null,
       "unavailable": null,
-      "maximum_display": "0.85% on ¥257,200.00",
+      "maximum_display": "0.85% on ¥260,000.00",
       "wall_words": "the break-even for paying early",
-      "next_step_sentence": "0.90% on ¥257,200.00: over your limits",
+      "next_step_sentence": "0.90% on ¥260,000.00: over your limits",
       "at_maximum": {
         "package": {
           "buyer_id": "BUYER-1",
           "terms_days": 45,
           "price_bp": 0,
           "early_pay_bp": 85,
-          "early_pay_face_fen": 25720000,
+          "early_pay_face_fen": 26000000,
           "rebate_bp": 0,
           "price_display": "0.00%",
           "early_pay_display": "0.85%",
-          "early_pay_face_display": "¥257,200.00",
+          "early_pay_face_display": "¥260,000.00",
           "rebate_display": "0.00%"
         },
         "outcome": "ACCEPT",
@@ -990,8 +990,8 @@
         "reserve_breach": null,
         "flags": [],
         "counter_match": false,
-        "plan_cost_fen": 84157,
-        "summary": "45-day terms · early payment 0.85% on ¥257,200.00",
+        "plan_cost_fen": 82599,
+        "summary": "45-day terms · early payment 0.85% on ¥260,000.00",
         "authority": "flow_may",
         "authority_words": "FLOW may do this on its own",
         "authority_sentence": null,
@@ -1001,7 +1001,7 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥0.00",
-        "plan_cost_display": "¥841.57"
+        "plan_cost_display": "¥825.99"
       },
       "next_step": {
         "package": {
@@ -1009,11 +1009,11 @@
           "terms_days": 45,
           "price_bp": 0,
           "early_pay_bp": 90,
-          "early_pay_face_fen": 25720000,
+          "early_pay_face_fen": 26000000,
           "rebate_bp": 0,
           "price_display": "0.00%",
           "early_pay_display": "0.90%",
-          "early_pay_face_display": "¥257,200.00",
+          "early_pay_face_display": "¥260,000.00",
           "rebate_display": "0.00%"
         },
         "outcome": "COUNTER",
@@ -1032,8 +1032,8 @@
         "reserve_breach": null,
         "flags": [],
         "counter_match": false,
-        "plan_cost_fen": 85364,
-        "summary": "45-day terms · early payment 0.90% on ¥257,200.00",
+        "plan_cost_fen": 82672,
+        "summary": "45-day terms · early payment 0.90% on ¥260,000.00",
         "authority": null,
         "authority_words": null,
         "authority_sentence": null,
@@ -1043,9 +1043,9 @@
         "economics_sentence": null,
         "economics_note": null,
         "forward_budget_used_display": "¥0.00",
-        "plan_cost_display": "¥853.64"
+        "plan_cost_display": "¥826.72"
       },
-      "face_display": "¥257,200.00"
+      "face_display": "¥260,000.00"
     },
     {
       "lever": "Rebate on the expected order",

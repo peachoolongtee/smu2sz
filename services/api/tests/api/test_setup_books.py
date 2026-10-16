@@ -82,6 +82,14 @@ def test_amounts_are_parsed_by_code() -> None:
         parse_decimal("four hundred")
 
 
+def test_thousands_separators_must_group_by_threes() -> None:
+    assert parse_decimal("1,234,567.89") == parse_decimal("1234567.89")
+    assert parse_decimal("¥ 5，000") == 5000
+    for slip in ("5,00050000", "50,00", "1,2345", ",500", "500,"):
+        with pytest.raises(ValueError):
+            parse_decimal(slip)
+
+
 def test_draft_becomes_the_books_mid_contract() -> None:
     built = build_books(SetupDraft.model_validate(DRAFT))
     assert built.errors == []
@@ -631,3 +639,19 @@ def test_200_rows_still_pass_and_long_texts_are_refused(client) -> None:
     assert huge["ok"] is False and "too long" in huge["errors"][0]["text"]
     zh = client.post("/setup/preview?lang=zh", json={"draft": draft(business={**DRAFT["business"], "company_name": "y" * 201})}).json()
     assert "过长" in zh["errors"][0]["text"]
+
+
+def test_the_story_names_blank_and_own_books_as_what_they_are(client) -> None:
+    """The Demo never calls the blank books or the owner's own books "the alternate books" or a demo scenario (UI audit, 16 Oct)."""
+    blank(client)
+    for lang in ("en", "zh"):
+        s = client.get(f"/demo/story?lang={lang}").json()
+        assert s["scenario"] == "blank" and s["next"]["href"] == "/setup"
+        assert "alternate" not in s["alternate"]["loaded_text"] and "备用" not in s["alternate"]["loaded_text"]
+    assert _open(client).status_code == 200
+    for lang in ("en", "zh"):
+        s = client.get(f"/demo/story?lang={lang}").json()
+        assert s["scenario"] == "own" and s["next"]["href"] == "/"
+        words = " ".join([s["alternate"]["loaded_text"], s["alternate"]["restore_text"], s["next"]["hint_text"]])
+        assert "alternate" not in words and "another scenario" not in words and "Busy" not in words and "备用" not in words
+        assert ("your own books" in words) if lang == "en" else ("您自己的账目" in words)

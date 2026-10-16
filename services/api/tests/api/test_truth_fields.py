@@ -120,7 +120,7 @@ def test_option_b_shows_the_parts_its_floored_cost_hides(client, rt):
     assert e["funding_cost_display"] == "¥16,217.95" and e["offset_display"] == "¥16,380.00"
     assert e["net_fen"] == -16_205 and e["net_display"] == "−¥162.05" and e["is_net"] is True
     # Option A has no offsetting part: its figure is a plain cost, not a net
-    assert a["economics"]["is_net"] is False and a["supplier_cost_display"] == "¥3,027.77"
+    assert a["economics"]["is_net"] is False and a["supplier_cost_display"] == "¥3,035.99"
 
 
 # ---------------------------------------------------------------- first breach versus worst point

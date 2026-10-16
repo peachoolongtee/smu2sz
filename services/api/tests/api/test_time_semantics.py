@@ -68,20 +68,20 @@ def test_a_deadline_is_by_today_only_on_the_day_itself():
 
 
 def test_the_settlement_window_is_said_by_its_own_day():
-    clause = "agreed early payment for ¥128,600.00 of face; up to ¥128,600.00 more may be settled early by day 2"
+    clause = "agreed early payment for ¥130,000.00 of face; up to ¥130,000.00 more may be settled early by day 2"
     live = lambda text, today: settlement_words(text, today, live=True)  # noqa: E731
-    assert live(clause, 2).endswith("; up to ¥128,600.00 more may still be settled early by today")
+    assert live(clause, 2).endswith("; up to ¥130,000.00 more may still be settled early by today")
     assert live(clause, 1).endswith("more may still be settled early by tomorrow")
     assert live(clause, 0).endswith("more may still be settled early within 2 days")
     # a window the promise no longer has open is never "may still": the neutral form says what could be done
-    assert settlement_words(clause, 2).endswith("; up to ¥128,600.00 more could be settled early until today")
+    assert settlement_words(clause, 2).endswith("; up to ¥130,000.00 more could be settled early until today")
     assert settlement_words(clause, 0).endswith("more could be settled early until 2 days from now")
     assert settlement_words(clause, 1).endswith("more could be settled early until tomorrow")
     for live_flag in (True, False):  # a window that has ended is ended whatever the promise says
-        assert settlement_words(clause, 34, live_flag).endswith("; the early-payment window for the other ¥128,600.00 ended 32 days ago")
-        assert settlement_words(clause, 3, live_flag).endswith("; the early-payment window for the other ¥128,600.00 ended yesterday")
-    due = "(settles ¥1.00; ¥291,400.00 still due on day 32)"
-    assert settlement_words(due, 34) == "(settles ¥1.00; ¥291,400.00 was still due 2 days ago)"
+        assert settlement_words(clause, 34, live_flag).endswith("; the early-payment window for the other ¥130,000.00 ended 32 days ago")
+        assert settlement_words(clause, 3, live_flag).endswith("; the early-payment window for the other ¥130,000.00 ended yesterday")
+    due = "(settles ¥1.00; ¥290,000.00 still due on day 32)"
+    assert settlement_words(due, 34) == "(settles ¥1.00; ¥290,000.00 was still due 2 days ago)"
     assert settlement_words(due, 30) == due  # not yet due: the ordinary day rewrite says "in 2 days"
     assert settlement_words("¥1.00 promised for day 2 under commitment CMT-ab", 34) == (
         "¥1.00 promised as an early payment due 32 days ago under commitment CMT-ab")
@@ -144,8 +144,8 @@ def test_day_34_without_a_receipt_the_first_breach_is_today_and_the_payroll_driv
     assert cash["series"][0]["day"] == 34 and all(row["day"] >= 34 for row in cash["series"])
     # already under the reserve (F01): the headline says so; the zero day is the note's fact
     assert home["headline"] == "Below reserve today."
-    assert home["note"].startswith("Cash is ¥255k below your ¥300k minimum cash reserve and goes below zero in 8 days if nothing is done.")
-    assert home["worst"] == "Worst point: −¥155k in 8 days if you do nothing."
+    assert home["note"].startswith("Cash is ¥258k below your ¥300k minimum cash reserve and goes below zero in 8 days if nothing is done.")
+    assert home["worst"] == "Worst point: −¥158k in 8 days if you do nothing."
 
 
 def test_the_trajectory_view_keeps_the_engines_day_and_adds_the_first_breach_ahead(client):
@@ -174,7 +174,7 @@ def test_with_the_cure_approved_the_headline_says_below_reserve_and_the_worst_po
     assert client.post(f"/approvals/{approval['id']}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
     home = client.get("/home").json()
     assert home["headline"] == "Below reserve today."
-    assert home["note"].startswith("Cash is ¥255k below your ¥300k minimum cash reserve")
+    assert home["note"].startswith("Cash is ¥258k below your ¥300k minimum cash reserve")
     assert home["worst"] == "Lowest point: ¥0.00 in 8 days if nothing more is done."  # R04: not "if you do nothing"
     assert home["cash"]["below_reserve_today"] is True and home["cash"]["first_breach_when"] == "today"
     assert any(d.startswith("Payroll of") for d in home["cash"]["drivers"])
@@ -188,7 +188,7 @@ def test_with_the_cure_approved_the_headline_says_below_reserve_and_the_worst_po
 def test_day_2_the_early_payment_window_is_still_open_by_today(client):
     _walk(client, receipt="half", to=2)
     receipt = client.get("/reconciliation").json()["reconciliation"]["receipts"][0]
-    assert "up to ¥128,600.00 more may still be settled early by today" in receipt["detail_when"]
+    assert "up to ¥130,000.00 more may still be settled early by today" in receipt["detail_when"]
     assert "ended" not in receipt["detail_when"] and "by day 2" in receipt["detail"]
 
 
@@ -196,17 +196,17 @@ def test_day_34_a_receipt_from_day_2_does_not_say_by_today(client):
     _walk(client, receipt="half")
     rec = client.get("/reconciliation").json()["reconciliation"]
     receipt, promise = rec["receipts"][0], rec["promised"][0]
-    assert receipt["detail_when"] == ("agreed early payment for ¥128,600.00 of the invoice; the early-payment window for the "
-                                      "other ¥128,600.00 ended 32 days ago")
+    assert receipt["detail_when"] == ("agreed early payment for ¥130,000.00 of the invoice; the early-payment window for the "
+                                      "other ¥130,000.00 ended 32 days ago")
     assert "by today" not in receipt["detail_when"]
     assert "by day 2" in receipt["detail"]  # the raw sentence is untouched
-    assert promise["detail_when"].endswith("the other ¥128,600.00 is due on the invoice's own day.")
+    assert promise["detail_when"].endswith("the other ¥130,000.00 is due on the invoice's own day.")
     assert "CMT-" not in promise["detail_when"]
     event = next(o for o in client.get("/ledger").json()["operations"] if o["kind"] == "RECEIVE_PAYMENT")
     for text in (event["event_detail"], event["message_when"]):
         assert "by today" not in text and "more may be settled early" not in text
-        assert "ended 32 days ago" in text and "¥291,400.00 was still due 2 days ago" in text
-    assert event["event_text"] == "Received ¥127,506.90 from Foshan Home Retail Co."
+        assert "ended 32 days ago" in text and "¥290,000.00 was still due 2 days ago" in text
+    assert event["event_text"] == "Received ¥128,895.00 from Foshan Home Retail Co."
 
 
 def test_a_lapsed_promise_names_the_buyer_not_the_commitment(client):
@@ -228,18 +228,18 @@ def test_after_a_partial_receipt_the_change_says_what_arrived(client):
     changes = client.get("/home").json()["changes"]
     row = next(c for c in changes if c.get("window_state"))
     assert row["text"] == row["event_text"] == (
-        "Received ¥127,506.90 from Foshan Home Retail Co. 32 days ago: it cleared ¥128,600.00 of the invoice, including a "
-        "¥1,093.10 early-payment discount; ¥291,400.00 remains and is overdue; the early-payment window has ended.")
+        "Received ¥128,895.00 from Foshan Home Retail Co. 32 days ago: it cleared ¥130,000.00 of the invoice, including a "
+        "¥1,105.00 early-payment discount; ¥290,000.00 remains and is overdue; the early-payment window has ended.")
     assert (row["received_display"], row["face_cleared_display"], row["discount_display"], row["remaining_display"]) == (
-        "¥127,506.90", "¥128,600.00", "¥1,093.10", "¥291,400.00")
+        "¥128,895.00", "¥130,000.00", "¥1,105.00", "¥290,000.00")
     assert row["window_state"] == "ended" and row["kind"] == "LATE"
     assert not any("did not arrive" in c["text"] for c in changes)
     assert not any("CMT-" in c["text"] for c in changes)
     overdue = next(c for c in changes if c["kind"] == "LATE" and not c.get("window_state"))
-    assert overdue["text"] == "¥291,400.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid."
+    assert overdue["text"] == "¥290,000.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid."
     warnings = client.get("/home").json()["warnings"]
     assert next(w["detail"] for w in warnings) == (
-        "¥291,400.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. "
+        "¥290,000.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. "
         "The cash forecast no longer counts on a dated receipt.")
     assert not any("CMT-" in w["title"] + w["detail"] for w in warnings)
 
@@ -248,7 +248,7 @@ def test_the_first_breach_after_the_half_receipt_is_today_too(client):
     _walk(client, receipt="half")
     cash = client.get("/home").json()["cash"]
     assert cash["first_breach_day"] == 34 and cash["first_breach_when"] == "today" and cash["below_reserve_today"] is True
-    assert cash["first_breach_cash_short"] == "¥172k"
+    assert cash["first_breach_cash_short"] == "¥171k"
 
 
 # ---------------------------------------------------------------- F02: the card carries the terms
@@ -345,9 +345,9 @@ def test_a_cure_that_only_keeps_cash_above_zero_still_states_its_after_state(cli
     _act(client)
     row = _queue(client)[0]
     p = row["presentation"]
-    assert p["protects"] == ("At its lowest point, in 8 days, cash would still be ¥300,000.00 below your minimum cash reserve; today it is ¥255,013.80 below.")
+    assert p["protects"] == ("At its lowest point, in 8 days, cash would still be ¥300,000.00 below your minimum cash reserve; today it is ¥257,790.00 below.")
     assert p["residual"] == {"shortfall_display": "¥300,000.00", "from_when": "today", "restores_reserve": False, "lowest_when": "in 8 days",
-                             "shortfall_today_display": "¥255,013.80", "text": p["protects"]}
+                             "shortfall_today_display": "¥257,790.00", "text": p["protects"]}
     assert p["execution_status"] == "PENDING" and p["if_decline"] == "Cash goes below zero in 8 days."
     # the home's card for the same cure says the same
     assert client.get("/home").json()["approvals"][0]["protects"] == p["protects"]
@@ -434,13 +434,13 @@ def test_a_cap_below_the_invoice_is_a_cap_not_a_smaller_invoice(client):
     rt = get_runtime()
     commitment = rt.store.commitments()[0]
     capped = commitment.model_copy(update={"obligations": [
-        ob.model_copy(update={"base": ob.base.model_copy(update={"amount_fen": 25_720_000})}) for ob in commitment.obligations]})
+        ob.model_copy(update={"base": ob.base.model_copy(update={"amount_fen": 26_000_000})}) for ob in commitment.obligations]})
     rt.store.put_commitment(capped)
     row = _queue(client)[0]
     assert row["presentation"]["terms"] == [
-        "The buyer may pay early and take 0.50% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. "
+        "The buyer may pay early and take 0.50% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. "
         "(effective in 2 days; one time)"]
-    assert row["presentation"]["amount_display"] == "¥257,200.00"
+    assert row["presentation"]["amount_display"] == "¥260,000.00"
     assert "RCV-" not in str(row["presentation"]["terms"])
 
 
@@ -524,8 +524,8 @@ def test_two_part_payments_read_as_one_change_and_no_warning_says_nothing_arrive
     client.post("/clock/advance", json={"to_day": 34})
     home = client.get("/home").json()
     row = next(c for c in home["changes"] if c.get("window_state"))
-    assert row["text"].startswith("Received 2 payments totalling ¥127,506.90 from Foshan Home Retail Co. (the last 32 days ago): "
-                                  "together they cleared ¥128,600.00 of the invoice")
+    assert row["text"].startswith("Received 2 payments totalling ¥128,895.00 from Foshan Home Retail Co. (the last 32 days ago): "
+                                  "together they cleared ¥130,000.00 of the invoice")
     assert row["window_state"] == "ended" and row["kind"] == "LATE"
     assert not any("did not arrive" in w["title"] + w["detail"] for w in home["warnings"])
     early = next(w for w in home["warnings"] if w["kind"] == "RECEIVABLE_PAST_DUE" and "partly paid" in w["title"])
@@ -538,7 +538,7 @@ def test_the_half_receipt_leaves_no_warning_that_says_nothing_arrived(client):
     home = client.get("/home").json()
     assert not any("did not arrive" in w["title"] + w["detail"] for w in home["warnings"])
     early = next(w for w in home["warnings"] if "partly paid" in w["title"])
-    assert early["detail"].startswith("Received ¥127,506.90 from Foshan Home Retail Co. 32 days ago: it cleared ¥128,600.00")
+    assert early["detail"].startswith("Received ¥128,895.00 from Foshan Home Retail Co. 32 days ago: it cleared ¥130,000.00")
     assert "CMT-" not in early["title"] + early["detail"]
 
 

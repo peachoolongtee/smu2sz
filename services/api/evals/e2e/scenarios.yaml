@@ -90,14 +90,14 @@ scenarios:
     after: {cash_unchanged: true, facilities_added: 0, unauthorised_executions: 0}
 
   - id: S07_ex02_counter
-    title: "EX02 from the buyer: early pay at 1.5% is countered at 0.85% on up to ¥257,200"
+    title: "EX02 from the buyer: early pay at 1.5% is countered at 0.85% on up to ¥260,000"
     tags: [EX02, counterparty]
     turns:
       - actor: COUNTERPARTY
         counterparty_id: BUYER-1
         text: "We can pay this one early at 1.5%. Nothing else changes."
         expect: {intent: COUNTERPARTY_MESSAGE, ops_count: 0, store_outcome: COUNTER, store_codes: [MAX_APR_EXCEEDED],
-                 store_ops: ["COUNTER_OFFER:EXECUTED"], reply_contains: ["0.85%", "¥257,200"]}
+                 store_ops: ["COUNTER_OFFER:EXECUTED"], reply_contains: ["0.85%", "¥260,000"]}
 
   - id: S08_ex03_as_usual
     title: "EX03: 'same arrangement as usual' books nothing for the reference; counter proposed"

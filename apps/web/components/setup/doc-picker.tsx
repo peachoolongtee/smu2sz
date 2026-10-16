@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Badge, Button, Callout, textareaClass } from "@/components/ui";
 import { getSetupDocuments, readSetupDocument } from "@/lib/api";
+import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import type { SetupDocument } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -36,7 +37,7 @@ export function DocPicker({ kind, startDate, onUse, onClose }: { kind: SetupDocu
         : await readSetupDocument({ kind, text, start_date: startDate }, lang);
       onUse(doc);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorText(e, t));
     } finally {
       setBusy(false);
     }

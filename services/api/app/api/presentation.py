@@ -344,6 +344,9 @@ def deadline_text(n: int) -> str:
     return "by a deadline that passed yesterday" if n == -1 else f"by a deadline that passed {-n} days ago"
 
 
+PAST_CASH_DAY = "when approved"  # a facility's cash day already past: the cash comes once the facility is approved
+
+
 def relative_days(text: str, today: int, lang: Lang) -> str:
     """Server sentences written with day numbers ("lands on day 37", "by day 47", "paid on or before day 2", "lasts to day 41",
     "(day 37 to day 47)", "from day 0 to day 32", "arrives day 21", "(day 12)", "第 37 天"), re-said as distances from today
@@ -368,6 +371,11 @@ def relative_days(text: str, today: int, lang: Lang) -> str:
     text = re.sub(r"\bthrough day (-?\d+)\b", through, text)
     text = re.sub(r"\b(?:by|on or before) day (-?\d+)\b", by, text)
     text = re.sub(r"\brepaid day (-?\d+)\b", lambda m: "repaid " + on(m), text)
+    # A facility not yet in place whose cash day the router states as its lead time ("cash on day 21", "arrives day 21")
+    # reads "13 days ago" once the clock is past it: that day means nothing today, so it says when the cash can come.
+    text = re.sub(r"\b(cash on|arrives) day (-?\d+)\b",
+                  lambda m: (("cash" if m.group(1) == "cash on" else "arrives") + " " + PAST_CASH_DAY)
+                  if int(m.group(2)) < today else m.group(0), text)
     text = re.sub(r"\barrives day (-?\d+)\b", lambda m: "arrives " + on(m), text)
     text = re.sub(r"\bdue day (-?\d+)\b", lambda m: "due " + on(m), text)
     text = re.sub(r"\b(?:on|for) day (-?\d+)\b", on, text)

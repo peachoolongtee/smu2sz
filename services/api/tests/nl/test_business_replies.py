@@ -27,8 +27,8 @@ def test_the_verdict_on_an_offer_is_one_outcome_line_the_plan_and_the_confirm_wo
     j = _say(client, "Evaluate EX01", "b1")
     assert j["reply"].splitlines() == [
         "FLOW recommends a counter: the offer's future concessions cost ¥28,326.92 over the next 12 months, above your ¥5,000 limit.",
-        ("If the buyer accepts Option A, the rest of the gap is funded: draws ¥149,986.20 on the Bank credit line today; "
-         "estimated cost ¥841.57."),
+        ("If the buyer accepts Option A, the rest of the gap is funded: draws ¥147,210.00 on the Bank credit line today; "
+         "estimated cost ¥825.99."),
         ("If the buyer refuses, the gap is funded another way: draws ¥150,000.00 on the Bank credit line today; requests ¥255,000.00 of "
          "invoice financing, arriving in 3 days; estimated cost ¥3,113.93."),
         'Reply "Yes, run it" to send Option A and Option B to Foshan Home Retail Co. Nothing is sent before that.']
@@ -38,7 +38,7 @@ def test_the_verdict_on_an_offer_is_one_outcome_line_the_plan_and_the_confirm_wo
 def test_yes_run_it_sends_the_counters_and_says_what_happened_in_business_words(client):
     _say(client, "Evaluate EX01", "b2")
     j = _say(client, "Yes, run it", "b2")
-    assert j["reply"] == "Foshan Home Retail Co. accepted Option A and the agreement is recorded. Drew ¥149,986.20 on the Bank credit line today."
+    assert j["reply"] == "Foshan Home Retail Co. accepted Option A and the agreement is recorded. Drew ¥147,210.00 on the Bank credit line today."
     assert [(o["kind"], o["status"]) for o in j["operations"]] == [("COUNTER_OFFER", "EXECUTED"), ("COUNTER_OFFER", "EXECUTED"),
                                                                    ("ACCEPT_OFFER", "EXECUTED"), ("DRAW_FACILITY", "EXECUTED")]
 
@@ -59,7 +59,7 @@ def test_the_same_in_chinese(client):
     assert j["reply"].splitlines()[-1].startswith("回复“好，执行”即可向Foshan Home Retail Co.发送方案 A、方案 B")
     assert not ID_OR_CODE.search(j["reply"])
     done = _say(client, "好，执行", "b4", "zh")  # the Chinese confirm words confirm the plan
-    assert done["reply"] == "Foshan Home Retail Co.接受了方案 A，协议已记录。已从Bank credit line提款 ¥149,986.20，今天到账。"
+    assert done["reply"] == "Foshan Home Retail Co.接受了方案 A，协议已记录。已从Bank credit line提款 ¥147,210.00，今天到账。"
 
 
 def test_the_funding_plan_in_chinese(client):
@@ -73,7 +73,7 @@ def test_without_the_mode_the_raw_replies_are_exactly_as_before_and_the_same_ope
     assert raw["reply"].startswith("Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED") and "Reply 'go ahead' to negotiate" in raw["reply"]
     assert ID_OR_CODE.search(raw["reply"])
     ran = _say(client, "go ahead", "r1", mode=None)
-    assert "Draw ¥149,986.20 on FAC-LINE: done." in ran["reply"]
+    assert "Draw ¥147,210.00 on FAC-LINE: done." in ran["reply"]
 
 
 def test_the_demo_mode_funding_plan_keeps_its_ids_and_its_go_ahead(client):
@@ -190,8 +190,9 @@ def test_which_pending_operation_names_each_one_in_words_with_its_id_in_a_parent
     _say(client, "what needs me today?", "ap3")
     first = _say(client, "Yes, run it", "ap3")["operations"][0]["approval_id"]
     _say(client, "fund the gap", "ap4")
-    second = _say(client, "Yes, run it", "ap4")  # the first leg of the plan waits for the owner as well
-    assert second["operations"][0]["status"] == "PENDING_APPROVAL"
+    second = _say(client, "Yes, run it", "ap4")  # the plan's advance waits for the owner as well
+    # (the ¥2,790 of the line the rounded early-pay face left unused, R-10, is drawn first at Tier 1)
+    assert next(o for o in second["operations"] if o["kind"] == "SUBMIT_INVOICE_FOR_FINANCING")["status"] == "PENDING_APPROVAL"
     _owner_words(second["reply"])
     asked = _say(client, "approve it", "ap5")
     assert asked["intent"] == "AMBIGUOUS" and asked["clarification"] is not None
@@ -206,9 +207,10 @@ def test_a_funding_plan_run_that_waits_for_the_owner_says_what_ran_what_waits_an
     _day34(client, rt)
     assert _say(client, "fund the gap", "fg1")["awaiting_confirmation"] is True
     j = _say(client, "Yes, run it", "fg1")
-    aid = j["operations"][0]["approval_id"]
-    assert j["reply"] == (f"This needs your approval before it runs ({aid}): requests ¥80,000.00 of invoice financing, arriving in 3 days. The plan's "
-                          "estimated cost is ¥1,706.10 in all. I have not run it. Not sent: requests ¥120,000.00 of invoice financing, arriving in 3 "
+    # the rounded early-pay face (R-10) leaves ¥2,790 of the line unused, so the plan draws it first (6.40%, Tier 1)
+    aid = next(o for o in j["operations"] if o["kind"] == "SUBMIT_INVOICE_FOR_FINANCING")["approval_id"]
+    assert j["reply"] == (f"Done so far: Drew ¥2,790.00 on the Bank credit line today. This needs your approval before it runs ({aid}): requests ¥80,000.00 of invoice financing, arriving in 3 days. The plan's "
+                          "estimated cost is ¥1,702.20 in all. I have not run it. Not sent: requests ¥117,210.00 of invoice financing, arriving in 3 "
                           'days. Reply "Yes, do it" to approve it.')
     _owner_words(j["reply"])
     raw = _say(client, "fund the gap", "fg2", mode=None)
@@ -230,12 +232,12 @@ def test_a_void_plan_says_nothing_ran_and_proposes_again_in_business_words(clien
 def test_the_repayment_proposal_and_its_confirmed_run_are_in_business_words(client, rt):
     to_day47(client, rt)
     plan = _say(client, "repay the credit line", "rp1")
-    assert plan["reply"] == ("You can repay ¥149,986.20 on the Bank credit line today, and cash stays above your minimum. FLOW's plan: Repays "
-                             '¥149,986.20 on the Bank credit line today. Reply "Yes, run it" to run it.')
+    assert plan["reply"] == ("You can repay ¥147,210.00 on the Bank credit line today, and cash stays above your minimum. FLOW's plan: Repays "
+                             '¥147,210.00 on the Bank credit line today. Reply "Yes, run it" to run it.')
     assert plan["awaiting_confirmation"] is True
     done = _say(client, "Yes, run it", "rp1")  # the consent flow still executes
     assert [(o["kind"], o["status"]) for o in done["operations"]] == [("REPAY_FACILITY", "EXECUTED")]
-    assert done["reply"] == "Done. Repaid ¥149,986.20 on the Bank credit line, interest ¥1,236.05."
+    assert done["reply"] == "Done. Repaid ¥147,210.00 on the Bank credit line, interest ¥1,213.17."
     zh = _say(client, "repay the credit line", "rp2", "zh")
     assert zh["reply"] == "没有可按需偿还的已提款额度。"  # the line is repaid now; this reply never carried an id
     for reply in (plan["reply"], done["reply"]):
@@ -245,21 +247,21 @@ def test_the_repayment_proposal_and_its_confirmed_run_are_in_business_words(clie
 def test_the_repayment_in_chinese_and_the_raw_repayment_unchanged_without_the_mode(client, rt):
     to_day47(client, rt)
     raw = _say(client, "repay the credit line", "rp4", mode=None)
-    assert raw["reply"].startswith("Repay ¥149,986.20 on FAC-LINE. Reply 'go ahead' to execute.")
+    assert raw["reply"].startswith("Repay ¥147,210.00 on FAC-LINE. Reply 'go ahead' to execute.")
     zh = _say(client, "repay the credit line", "rp3", "zh")
-    assert zh["reply"] == "您今天可以向Bank credit line还款 ¥149,986.20，现金仍高于最低现金储备。FLOW 的方案：今天向Bank credit line还款 ¥149,986.20。回复“好，执行”即可执行。"
-    assert _say(client, "好，执行", "rp3", "zh")["reply"] == "已完成。已向Bank credit line还款 ¥149,986.20，利息 ¥1,236.05。"
+    assert zh["reply"] == "您今天可以向Bank credit line还款 ¥147,210.00，现金仍高于最低现金储备。FLOW 的方案：今天向Bank credit line还款 ¥147,210.00。回复“好，执行”即可执行。"
+    assert _say(client, "好，执行", "rp3", "zh")["reply"] == "已完成。已向Bank credit line还款 ¥147,210.00，利息 ¥1,213.17。"
     _owner_words(zh["reply"])
 
 
 def test_the_repayment_alert_cure_runs_after_yes_run_it(client, rt):
     to_day47(client, rt)
     plan = _say(client, "what needs me today?", "rp5")
-    assert plan["reply"] == ("The ¥149,986.20 drawn on the Bank credit line can be repaid today, and cash stays above your minimum. FLOW's plan: "
-                             'Repays ¥149,986.20 on the Bank credit line today. Reply "Yes, run it" to run it.')
+    assert plan["reply"] == ("The ¥147,210.00 drawn on the Bank credit line can be repaid today, and cash stays above your minimum. FLOW's plan: "
+                             'Repays ¥147,210.00 on the Bank credit line today. Reply "Yes, run it" to run it.')
     done = _say(client, "Yes, run it", "rp5")
     assert [(o["kind"], o["status"]) for o in done["operations"]] == [("REPAY_FACILITY", "EXECUTED")]
-    assert done["reply"] == "Done. Repaid ¥149,986.20 on the Bank credit line. Interest as quoted ¥1,236.05. The line is repaid."
+    assert done["reply"] == "Done. Repaid ¥147,210.00 on the Bank credit line. Interest as quoted ¥1,213.17. The line is repaid."
     _owner_words(plan["reply"])
     _owner_words(done["reply"])
 
@@ -272,16 +274,16 @@ def test_the_status_read_in_english_and_chinese_and_raw_without_the_mode(client,
     assert en["reply"].splitlines() == [
         "Cash today is ¥300,000.00; your minimum cash reserve is ¥300,000.00.",
         "Cash would fall below your minimum: ¥200,000.00 short in 8 days.",
-        "Debt service cover (DSCR) is lowest at 1.91× in month 3; your minimum is 1.25×.",
-        "Leverage is highest at 1.49× in month 1; your maximum is 2.50×.",
+        "Debt service cover (DSCR) is lowest at 1.92× in month 3; your minimum is 1.25×.",
+        "Leverage is highest at 1.48× in month 1; your maximum is 2.50×.",
         "Future concessions given: ¥0.00 of your ¥5,000 limit.",
-        "Drawn: ¥149,986.20 on the Bank credit line.",
+        "Drawn: ¥147,210.00 on the Bank credit line.",
         "1 item waits for your approval."]  # an approval's id is not a Business word
     zh = _say(client, "show cash status", "st2", "zh")
     assert zh["reply"].splitlines() == [
         "今天现金 ¥300,000.00；您的最低现金储备为 ¥300,000.00。", "现金将低于最低现金储备：8 天后缺 ¥200,000.00。",
-        "偿债覆盖率（DSCR）最低 1.91×（第 3 月），下限 1.25×。", "杠杆率最高 1.49×（第 1 月），上限 2.50×。",
-        "已给出的远期让步：¥0.00，上限 ¥5,000。", "已提款：Bank credit line ¥149,986.20。", "1 项待您审批。"]
+        "偿债覆盖率（DSCR）最低 1.92×（第 3 月），下限 1.25×。", "杠杆率最高 1.48×（第 1 月），上限 2.50×。",
+        "已给出的远期让步：¥0.00，上限 ¥5,000。", "已提款：Bank credit line ¥147,210.00。", "1 项待您审批。"]
     for reply in (en["reply"], zh["reply"]):
         _owner_words(reply)
     raw = _say(client, "show cash status", "st3", mode=None)
@@ -295,9 +297,9 @@ def test_past_due_invoices_and_other_alerts_are_said_without_ids_when_no_cure_is
     _say(client, f"approve {aid}", "pd1")
     client.post("/clock/advance", json={"to_day": 36}, headers=OWNER)
     en = _say(client, "what needs me today?", "pd2")
-    assert en["reply"] == ("¥162,800.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. was due 4 days ago and has not arrived. 1 more warning: "
+    assert en["reply"] == ("¥160,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. was due 4 days ago and has not arrived. 1 more warning: "
                            "Cash is close to your minimum today.")
     zh = _say(client, "what needs me today?", "pd3", "zh")
-    assert zh["reply"] == "Foshan Home Retail Co. 的 ¥420,000.00 发票的 ¥162,800.00 应于4 天前到账，至今未到。另有 1 项提醒：今天现金仅略高于最低现金储备。"
+    assert zh["reply"] == "Foshan Home Retail Co. 的 ¥420,000.00 发票的 ¥160,000.00 应于4 天前到账，至今未到。另有 1 项提醒：今天现金仅略高于最低现金储备。"
     for reply in (en["reply"], zh["reply"]):
         _owner_words(reply)

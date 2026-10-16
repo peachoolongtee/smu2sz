@@ -50,19 +50,19 @@ from .conftest import OWNER
 
 _DIR = Path(__file__).resolve().parents[4] / "fixtures" / "strategy"
 GOLDEN_BUYER = "BUYER-1"
-OPTION_A = (45, 0, 85, 25_720_000, 0)  # terms, price, early-pay bp, face, rebate
+OPTION_A = (45, 0, 85, 26_000_000, 0)  # terms, price, early-pay bp, face, rebate
 OPTION_B = (55, 30, 0, None, 0)
 
 PRIMARY_EN = ("At today's price: up to 45 days within your limits. You can live with: 55-day terms with a 0.30% price rise, "
-              "or early payment of 0.85% on ¥257,200.00; not 60 days without an early payment.")
+              "or early payment of 0.85% on ¥260,000.00; not 60 days without an early payment.")
 REASON_EN = ("60 days without an early payment leaves a shortfall in 47 days that no fix covers; the ¥5,000.00 budget buys no terms "
              "without a price rise.")
-MONEY_EN = ("Cost to you ¥0.00 with the price rise, or ¥3,027.77 with the early payment; without a deal "
+MONEY_EN = ("Cost to you ¥0.00 with the price rise, or ¥3,035.99 with the early payment; without a deal "
             "your current funding plan costs ¥3,113.93.")
-PRIMARY_ZH = ("按现价：在您的底线内，账期最长 45 天。您能接受的范围：55 天账期并加价 0.30%，或提前付款 0.85%（金额 ¥257,200.00）；"
+PRIMARY_ZH = ("按现价：在您的底线内，账期最长 45 天。您能接受的范围：55 天账期并加价 0.30%，或提前付款 0.85%（金额 ¥260,000.00）；"
               "不提前付款则不能做到 60 天。")
 REASON_ZH = "不提前付款的 60 天账期会在 47 天后出现无法补上的缺口；¥5,000.00 的预算无法在不加价的情况下延长账期。"
-MONEY_ZH = "您的成本：加价方案 ¥0.00，或提前付款方案 ¥3,027.77；不做交易时，现行资金安排的成本为 ¥3,113.93。"
+MONEY_ZH = "您的成本：加价方案 ¥0.00，或提前付款方案 ¥3,035.99；不做交易时，现行资金安排的成本为 ¥3,113.93。"
 
 CODE_NAME = re.compile(r"\b[A-Z]{2,}(?:_[A-Z]+)+\b")  # AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, ...
 DAY_N = re.compile(r"\bday \d|第 ?\d+ ?天", re.IGNORECASE)
@@ -181,8 +181,8 @@ def test_early_pay_on_the_whole_invoice(answer):
 
 
 def test_early_pay_on_the_face_the_verifier_names(answer):
-    lv = _by_lever(answer)[early_pay_lever(25_720_000)]
-    assert lv.maximum == 85 and lv.face_fen == 25_720_000 and lv.wall == "break-even"
+    lv = _by_lever(answer)[early_pay_lever(26_000_000)]
+    assert lv.maximum == 85 and lv.face_fen == 26_000_000 and lv.wall == "break-even"
     assert lv.next_step is not None and lv.next_step.package.early_pay_bp == 90
     assert "DISCOUNT_ABOVE_BREAK_EVEN" in lv.next_step.binding_codes
 
@@ -262,12 +262,12 @@ def test_the_interaction_packages_pin_the_brief_figures(golden):
             CandidatePackage(buyer_id=GOLDEN_BUYER, terms_days=55, price_bp=30, rebate_bp=125),
             CandidatePackage(buyer_id=GOLDEN_BUYER, terms_days=55, price_bp=30, rebate_bp=130),
             CandidatePackage(buyer_id=GOLDEN_BUYER, terms_days=55, price_bp=30, early_pay_bp=85,
-                             early_pay_face_fen=25_720_000)]
+                             early_pay_face_fen=26_000_000)]
     got = probe_packages(golden.books, golden.mandate, pkgs, day=0, trusted_owner_key_hex=golden.rt.owner_key_hex)
     assert [p.passes for p in got] == [False, True, False, True]
     assert [p.forward_budget_used_fen for p in got] == [1_310_897, 483_795, 503_795, 0]
     assert got[0].binding_codes == ["AGG_CONCESSION_EXCEEDED"]
-    assert _cure(got[3]) == (47, True, 267_304)
+    assert _cure(got[3]) == (47, True, 262_356)
 
 
 def test_default_grid_packages_are_all_approved(answer):
@@ -293,8 +293,8 @@ def test_packages_say_what_needs_the_owner_in_words(answer):
     b = by[OPTION_B]
     assert b.flags == ["needs your approval", "its funding cannot run today"]
     assert b.reserve_breach is not None and b.reserve_breach.when == "in 47 days" and b.reserve_breach.cure_cost_fen == 157_036
-    deep = by[(55, 25, 85, 25_720_000, 60)]
-    assert deep.outcome == "NEEDS_OWNER_APPROVAL" and _cure(deep) == (47, True, 267_304)
+    deep = by[(55, 25, 85, 26_000_000, 60)]
+    assert deep.outcome == "NEEDS_OWNER_APPROVAL" and _cure(deep) == (47, True, 262_356)
 
 
 # ---------------------------------------------------------------- words
@@ -319,7 +319,7 @@ LEVER_WORDS_EN = {  # maximum_display, wall_words, next_step_sentence
     "terms_with_price": ("55 days, price up 0.30%", "your cash floor", "60 days, price up 1.00%: over your limits"),
     "early_pay_whole": ("0.70% on ¥420,000.00", "the cheaper funding you already have",
                         "0.75% on ¥420,000.00: over your limits"),
-    "early_pay_counter": ("0.85% on ¥257,200.00", "the break-even for paying early", "0.90% on ¥257,200.00: over your limits"),
+    "early_pay_counter": ("0.85% on ¥260,000.00", "the break-even for paying early", "0.90% on ¥260,000.00: over your limits"),
     "rebate": ("1.25%", "your budget for what you give buyers", "1.30%: over your limits"),
 }
 LEVER_WORDS_ZH = {
@@ -327,20 +327,20 @@ LEVER_WORDS_ZH = {
     "terms_budget_ignored": ("55 天", "您的现金底线", "60 天：超出您的底线"),
     "terms_with_price": ("55 天，加价 0.30%", "您的现金底线", "60 天，加价 1.00%：超出您的底线"),
     "early_pay_whole": ("0.70%，金额 ¥420,000.00", "您已有的更便宜的资金安排", "0.75%，金额 ¥420,000.00：超出您的底线"),
-    "early_pay_counter": ("0.85%，金额 ¥257,200.00", "提前付款的盈亏平衡点", "0.90%，金额 ¥257,200.00：超出您的底线"),
+    "early_pay_counter": ("0.85%，金额 ¥260,000.00", "提前付款的盈亏平衡点", "0.90%，金额 ¥260,000.00：超出您的底线"),
     "rebate": ("1.25%", "您给买家让利的预算", "1.30%：超出您的底线"),
 }
 SUMMARIES_EN = [  # the card first (the verifier's three counters, in the order of the asks), then the rest in the grid's order
-    "45-day terms · early payment 0.85% on ¥257,200.00",
+    "45-day terms · early payment 0.85% on ¥260,000.00",
     "55-day terms · price up 0.30%",
     "45-day terms · rebate 1.25%",
-    "45-day terms · early payment 0.85% on ¥257,200.00 · rebate 1.25%",
+    "45-day terms · early payment 0.85% on ¥260,000.00 · rebate 1.25%",
     "45-day terms · early payment 0.70% · rebate 1.25%",
     "50-day terms · price up 0.10% · rebate 0.55%",
-    "50-day terms · price up 0.10% · early payment 0.85% on ¥257,200.00 · rebate 0.55%",
+    "50-day terms · price up 0.10% · early payment 0.85% on ¥260,000.00 · rebate 0.55%",
     "50-day terms · price up 0.10% · early payment 0.65% · rebate 0.55%",
     "55-day terms · price up 0.25% · rebate 0.60%",
-    "55-day terms · price up 0.25% · early payment 0.85% on ¥257,200.00 · rebate 0.60%",
+    "55-day terms · price up 0.25% · early payment 0.85% on ¥260,000.00 · rebate 0.60%",
     "55-day terms · price up 0.25% · early payment 0.65% · rebate 0.60%",
 ]
 
@@ -355,7 +355,7 @@ def test_the_lever_table_comes_worded_by_the_server_in_chinese(cold):
     assert {lv.key: (lv.maximum_display, lv.wall_words, lv.next_step_sentence) for lv in zh.levers} == LEVER_WORDS_ZH
     summaries = {_setting(p): p.summary for p in _all(zh)}
     assert summaries[(55, 25, 0, None, 60)] == "55 天账期 · 加价 0.25% · 返利 0.60%"
-    assert summaries[(45, 0, 85, 25_720_000, 125)] == "45 天账期 · 提前付款 0.85%，金额 ¥257,200.00 · 返利 1.25%"
+    assert summaries[(45, 0, 85, 26_000_000, 125)] == "45 天账期 · 提前付款 0.85%，金额 ¥260,000.00 · 返利 1.25%"
 
 
 def test_the_zone_rows_say_the_lowest_price_in_words(zoned):
@@ -501,10 +501,10 @@ def test_day_34_books_no_extension_passes_without_a_price_rise(rt_day34, books_d
     a = envelope_answer(facts, "en")
     print(f"\nenvelope, day-34 books: {time.perf_counter() - started:.2f} s, {facts.evaluations} verifier runs")
     by = _by_lever(a)
-    # the engine's figures: the credit line has ¥13.80 left, cash sits on the ¥300,000 floor (headroom ¥0) and the
+    # the engine's figures: the credit line has ¥2,790 left (R-10 rounding), cash sits on the ¥300,000 floor (headroom ¥0) and the
     # trajectory breaches on day 42, so nothing can be added without the owner; RCV-A is two days past due
     line = next(f for f in books_day34.state.facilities if f.id == "FAC-LINE")
-    assert line.limit_fen - line.drawn_fen == 1_380
+    assert line.limit_fen - line.drawn_fen == 279_000
     assert books_day34.state.cash_fen == g.mandate.min_cash_fen
     assert a.refused is None and a.source_state_version == books_day34.state.state_version
     # no longer terms pass on their own: the ¥5,000 budget stops them at 50 days (¥7,485.21 against ¥5,000.00)
@@ -525,12 +525,12 @@ def test_day_34_books_no_extension_passes_without_a_price_rise(rt_day34, books_d
     assert with_early and all(p.approved and p.package.early_pay_face_fen is None for p in with_early)
     assert "early payment of 0.40% on ¥420,000.00" in a.primary
     # the overdue invoice is why the standing position needs the owner, and the reason says so
-    assert facts.past_due == ((16_280_000, 2),)
-    assert a.reason.startswith("The ¥162,800.00 still owed by Foshan Home Retail Co. is 2 days past due, so any deal "
+    assert facts.past_due == ((16_000_000, 2),)
+    assert a.reason.startswith("The ¥160,000.00 still owed by Foshan Home Retail Co. is 2 days past due, so any deal "
                                "with Foshan Home Retail Co. needs your approval; the ¥5,000.00 budget buys no terms")
     zh = envelope_answer(facts, "zh")
-    assert zh.reason.startswith("Foshan Home Retail Co. 欠款 ¥162,800.00 已逾期 2 天，因此与其做任何交易都需要您批准；")
-    assert a.money == "Without a deal your current funding plan costs ¥1,706.10."
+    assert zh.reason.startswith("Foshan Home Retail Co. 欠款 ¥160,000.00 已逾期 2 天，因此与其做任何交易都需要您批准；")
+    assert a.money == "Without a deal your current funding plan costs ¥1,702.20."
     assert all(p.approved for p in _all(a)) and not CODE_NAME.search(a.primary + a.reason + a.money)
     assert not DAY_N.search(a.primary + a.reason + a.money)
 

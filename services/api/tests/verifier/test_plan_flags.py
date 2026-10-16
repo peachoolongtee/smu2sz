@@ -108,23 +108,39 @@ def test_the_plan_without_the_early_payment_is_said_to_need_the_owner(monkeypatc
     dearer = next(v for v in flagged.verdict.violations if v.code.value == "EARLY_PAY_DEARER_THAN_PLAN")
     assert "the plan without it needs the owner's approval: " in dearer.message
     assert "32.53%" in dearer.message and dearer.inputs["plan_without_offer_needs_owner_approval"] == "true"
-    # The early-pay counter (0.85% for the 10 days RCV-A has left) fails its own re-check on these books: its all-in
-    # rate is above the 15% ceiling, so it is not offered (the counter property). As built, it states the flags.
+    # No early-pay counter on these books. Its face is rounded up to a whole ¥10,000 (R-10, ADR-0007 addendum 16 Oct):
+    # ¥100,000 at 0.85% for the 10 days RCV-A has left costs ¥1,171.06, not below the standing plan's ¥1,143.91, so it
+    # fails ADR-0007 test 3 (as an offer: EARLY_PAY_DEARER_THAN_PLAN), and so does the whole invoice (¥3,570.00). A
+    # counter that fails test 3 is never built. (The ¥100 face, ¥90,800, passed test 3 and then failed its re-check on
+    # the 15% rate ceiling, 28.4463%.)
     assert flagged.verdict.counters == []
-    assert ("No early-pay counter (early settlement of ¥90,800 at 0.85%): it is above the mandate's rate ceiling: "
-            "28.4463% against 15.00%") in flagged.verdict.summary
+    offer = compile_offer(offer_documents("EX02_EARLY_1_5"), "BUYER-1")
+    mandate = load_signed_mandate()
+    assert counters(offer, flagged.verdict, state, mandate, bound=flagged.bound_obligations) == []
+    disable_flags(monkeypatch)
+    plain = run("EX02_EARLY_1_5", state)
+    assert figures(flagged) == figures(plain)
+
+
+def test_an_early_pay_counter_states_the_flags_of_the_plans_it_stands_on(monkeypatch):
+    """On the busy books EX02's Option A exists and the committed plan that funds the rest of the gap cannot run today
+    (it relies on the buyer's early payment on RI:BUYER-1:2, not issued yet). The counter states the flag in its formula
+    and rationale, supplier-side only; what goes to the buyer, its obligations and its figures are unchanged."""
+    state, _ = load_scenario("busy")
+    flagged = run("EX02_EARLY_1_5", state)
     offer = compile_offer(offer_documents("EX02_EARLY_1_5"), "BUYER-1")
     mandate = load_signed_mandate()
     (counter,) = counters(offer, flagged.verdict, state, mandate, bound=flagged.bound_obligations)
-    assert "the standing plan it is compared with needs the owner's approval" in counter.formula
-    assert "the standing plan it is compared with needs the owner's approval" in counter.rationale
-    assert "approval" not in counter.text  # what goes to the buyer is untouched
+    assert "Flagged: the committed plan that funds the rest of the gap cannot run today: " in counter.formula
+    assert "Note: the committed plan that funds the rest of the gap cannot run today: " in counter.rationale
+    assert "cannot run today" not in counter.text  # what goes to the buyer is untouched
 
     disable_flags(monkeypatch)
     plain = run("EX02_EARLY_1_5", state)
     assert figures(flagged) == figures(plain)
     (unflagged,) = counters(offer, plain.verdict, state, mandate, bound=plain.bound_obligations)
     assert unflagged.text == counter.text and unflagged.obligations == counter.obligations
+    assert "Flagged" not in unflagged.formula
 
 
 def test_a_passed_check_that_leans_on_a_flagged_standing_plan_says_so():

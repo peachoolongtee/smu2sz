@@ -67,8 +67,12 @@ def test_the_day34_books_plan_and_comparison_do_not_depend_on_the_stamps(client,
     to_day34(client, rt)
     books = current_books(rt.store.get_state(), rt.store.commitments())
     mandate = rt.store.get_mandate()
-    _check(books.state, books.with_([]), mandate, plan_cost=170_610,
-           plan_keys=(("FINANCE_INVOICE", "FAC-IF", 34, 8_000_000, "RI:BUYER-1:32", -1, -1),
-                      ("FINANCE_INVOICE", "FAC-IF", 34, 12_000_000, "RI:BUYER-1:2", -1, -1)),
+    _check(books.state, books.with_([]), mandate, plan_cost=170_220,
+           plan_keys=(("DRAW", "FAC-LINE", 34, 279_000, "", 47, -1),  # the line's last ¥2,790 (rounded early-pay face, R-10)
+                      ("FINANCE_INVOICE", "FAC-IF", 34, 8_000_000, "RI:BUYER-1:32", -1, -1),
+                      ("FINANCE_INVOICE", "FAC-IF", 34, 11_721_000, "RI:BUYER-1:2", -1, -1)),
            rows=[("full_discount", 504_000, "ADMISSIBLE", [], None, False),
-                 ("router_optimum", 170_610, "SELECTED", [], None, True)])
+                 ("line_partial_early_pay", 240_162, "ADMISSIBLE", [], None, False),  # the line rows: ¥2,790 left (R-10)
+                 ("router_optimum", 170_220, "SELECTED", [], None, True),
+                 ("line_guaranteed_loan", None, "NOT_ADMISSIBLE", ["UNCOMMITTED_FACILITY"], None, True),
+                 ("line_only", 636, "NOT_ADMISSIBLE", ["RESERVE_BREACH"], 42, True)])

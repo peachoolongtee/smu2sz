@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Callout, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { Badge, Callout, tableCls, tdCls, thCls } from "@/components/ui";
 import { getSetupDocuments } from "@/lib/api";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
@@ -9,7 +9,7 @@ import { blankCustomer, blankInvoice, updateDraft } from "@/lib/setup-draft";
 import type { SetupContract, SetupCustomer, SetupDocument, SetupDraft, SetupInvoice } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { DocPicker } from "./doc-picker";
-import { AddButton, DateInput, Field, IntInput, type Issues, MoneyInput, RemoveButton, Select, TextInput } from "./fields";
+import { AddButton, DateInput, Field, IntInput, type Issues, MoneyInput, RemoveButton, RowsTable, Select, TextInput } from "./fields";
 import { StepHeading } from "./steps";
 
 /**
@@ -177,8 +177,8 @@ function CustomerEditor({ index, cu, draft, issues, docs, onChange, onRemove }: 
         {cu.invoices.length === 0 ? (
           <p className="text-sm text-ink-3">{t("setup.s3.noInvoices")}</p>
         ) : (
-          <TableWrap label={t("setup.s3.invoices")}>
-            <table className={`${tableCls} min-w-[860px]`}>
+          <RowsTable label={t("setup.s3.invoices")}>
+            <table className={`${tableCls} setup-rows min-w-[860px]`}>
               <thead>
                 <tr>
                   {(["sent", "amount", "terms", "paid", "financed", "financedBy"] as const).map((c) => (
@@ -228,7 +228,7 @@ function CustomerEditor({ index, cu, draft, issues, docs, onChange, onRemove }: 
                 })}
               </tbody>
             </table>
-          </TableWrap>
+          </RowsTable>
         )}
       </section>
     </div>

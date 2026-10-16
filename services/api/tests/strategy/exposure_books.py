@@ -18,8 +18,8 @@ FOSHAN = "BUYER-1"
 
 # EX01 as asked: early settlement of the whole RCV-A at 1.2%, 60-day terms, 1% off the next quarter's order.
 ASKED = CandidatePackage(buyer_id=FOSHAN, terms_days=60, early_pay_bp=120, rebate_bp=100)
-# Option A: ¥257,200 of RCV-A settled early at 0.85%, the terms as they are.
-OPTION_A = CandidatePackage(buyer_id=FOSHAN, terms_days=45, early_pay_bp=85, early_pay_face_fen=25_720_000)
+# Option A: ¥260,000 of RCV-A settled early at 0.85%, the terms as they are.
+OPTION_A = CandidatePackage(buyer_id=FOSHAN, terms_days=45, early_pay_bp=85, early_pay_face_fen=26_000_000)
 # Option B: 55-day terms at a 0.30% price.
 OPTION_B = CandidatePackage(buyer_id=FOSHAN, terms_days=55, price_bp=30)
 PACKAGES = {"asked": ASKED, "option_a": OPTION_A, "option_b": OPTION_B}

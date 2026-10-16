@@ -22,7 +22,7 @@
             "key": "outstanding",
             "label": "Outstanding",
             "value_display": "¥420,000",
-            "note": "¥255,013.80 promised in 2 days; otherwise due in 32 days",
+            "note": "¥257,790 promised in 2 days; otherwise due in 32 days",
             "tone": "neutral",
             "state": "current",
             "state_text": "Not due yet"
@@ -91,7 +91,7 @@
             {
               "label": "Lowest cash",
               "expected_text": "¥300,000 in 30 days",
-              "late_text": "−¥100,013.80 in 60 days"
+              "late_text": "−¥102,790 in 60 days"
             },
             {
               "label": "Reserve breach",
@@ -101,12 +101,12 @@
             {
               "label": "Maximum shortfall",
               "expected_text": "None",
-              "late_text": "¥400,013.80"
+              "late_text": "¥402,790"
             },
             {
               "label": "Additional funding needed",
               "expected_text": "None",
-              "late_text": "¥400,013.80 uncovered"
+              "late_text": "¥402,790 uncovered"
             }
           ]
         },
@@ -200,7 +200,7 @@
             {
               "key": "stress",
               "label": "Paid 30 days late",
-              "value_display": "−¥100,013.80 in 60 days; 50 days below your minimum; ¥400,013.80 uncovered",
+              "value_display": "−¥102,790 in 60 days; 50 days below your minimum; ¥402,790 uncovered",
               "note": null,
               "tone": "bad",
               "state": "none",
@@ -209,7 +209,7 @@
             {
               "key": "capacity",
               "label": "Spare capacity",
-              "value_display": "¥0 today",
+              "value_display": "¥2,000 today",
               "note": null,
               "tone": "neutral",
               "state": "none",
@@ -230,7 +230,7 @@
           },
           {
             "when_text": "In force",
-            "text": "Agreed: ¥257,200 of this invoice may be paid early at 0.85% off, in 2 days; the agreement lapses if payment comes later. Otherwise payment is due 45 days from the invoice date",
+            "text": "Agreed: ¥260,000 of this invoice may be paid early at 0.85% off, in 2 days; the agreement lapses if payment comes later. Otherwise payment is due 45 days from the invoice date",
             "href": "/documents",
             "link_label": "The terms",
             "state": "none",
@@ -376,7 +376,7 @@
             {
               "key": "capacity",
               "label": "Spare capacity",
-              "value_display": "¥0 today",
+              "value_display": "¥2,000 today",
               "note": null,
               "tone": "neutral",
               "state": "none",
@@ -428,7 +428,7 @@
             "key": "outstanding",
             "label": "未收款",
             "value_display": "¥420,000",
-            "note": "已承诺 2 天后支付 ¥255,013.80；否则 32 天后到期",
+            "note": "已承诺 2 天后支付 ¥257,790；否则 32 天后到期",
             "tone": "neutral",
             "state": "current",
             "state_text": "未到期"
@@ -497,7 +497,7 @@
             {
               "label": "最低现金",
               "expected_text": "30 天后为 ¥300,000",
-              "late_text": "60 天后降至 −¥100,013.80"
+              "late_text": "60 天后降至 −¥102,790"
             },
             {
               "label": "储备缺口",
@@ -507,12 +507,12 @@
             {
               "label": "最大缺口",
               "expected_text": "无",
-              "late_text": "¥400,013.80"
+              "late_text": "¥402,790"
             },
             {
               "label": "需要额外融资",
               "expected_text": "无",
-              "late_text": "¥400,013.80 缺口无法覆盖"
+              "late_text": "¥402,790 缺口无法覆盖"
             }
           ]
         },
@@ -606,7 +606,7 @@
             {
               "key": "stress",
               "label": "晚付 30 天",
-              "value_display": "60 天后降至 −¥100,013.80；有 50 天低于您的最低现金；¥400,013.80 缺口无法覆盖",
+              "value_display": "60 天后降至 −¥102,790；有 50 天低于您的最低现金；¥402,790 缺口无法覆盖",
               "note": null,
               "tone": "bad",
               "state": "none",
@@ -615,7 +615,7 @@
             {
               "key": "capacity",
               "label": "可用余量",
-              "value_display": "今天 ¥0",
+              "value_display": "今天 ¥2,000",
               "note": null,
               "tone": "neutral",
               "state": "none",
@@ -636,7 +636,7 @@
           },
           {
             "when_text": "现行",
-            "text": "已约定：这张发票的 ¥257,200 可提前付款，折扣 0.85%（2 天后）；如果更晚才付款，该约定即告失效。否则账期为自开票日起 45 天",
+            "text": "已约定：这张发票的 ¥260,000 可提前付款，折扣 0.85%（2 天后）；如果更晚才付款，该约定即告失效。否则账期为自开票日起 45 天",
             "href": "/documents",
             "link_label": "条款",
             "state": "none",
@@ -782,7 +782,7 @@
             {
               "key": "capacity",
               "label": "可用余量",
-              "value_display": "今天 ¥0",
+              "value_display": "今天 ¥2,000",
               "note": null,
               "tone": "neutral",
               "state": "none",

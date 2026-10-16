@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "command": "FLOW_RESEARCH_SPIKES=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run --project services/api python services/api/scripts/research/envelope_spike.py --json",
-    "branch": "feat/mvp-w0",
-    "base_commit": "bcc67d4",
-    "recorded": "2026-10-08"
+    "command": "DEMO_MODE=1 FLOW_RESEARCH_SPIKES=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run --project services/api python services/api/scripts/research/envelope_spike.py --json",
+    "branch": "fix/counter-base-rounding",
+    "base_commit": "0f92d433",
+    "recorded": "2026-10-16"
   },
   "buyer": "BUYER-1",
   "receivable": "RCV-A",
@@ -339,7 +339,7 @@
       }
     },
     {
-      "lever": "Early pay on ¥257,200.00",
+      "lever": "Early pay on ¥260,000.00",
       "wall": "plan comparison / break-even",
       "largest_that_passes": "0.85%",
       "value": 85,
@@ -356,8 +356,8 @@
             "display": "0.85%"
           },
           "face": {
-            "fen": 25720000,
-            "display": "¥257,200.00"
+            "fen": 26000000,
+            "display": "¥260,000.00"
           }
         },
         "rebate": {
@@ -389,8 +389,8 @@
             "display": "0.90%"
           },
           "face": {
-            "fen": 25720000,
-            "display": "¥257,200.00"
+            "fen": 26000000,
+            "display": "¥260,000.00"
           }
         },
         "rebate": {
@@ -1189,8 +1189,8 @@
           "display": "0.85%"
         },
         "face": {
-          "fen": 25720000,
-          "display": "¥257,200.00"
+          "fen": 26000000,
+          "display": "¥260,000.00"
         }
       },
       "rebate": {
@@ -1222,8 +1222,8 @@
             "display": "0.85%"
           },
           "face": {
-            "fen": 25720000,
-            "display": "¥257,200.00"
+            "fen": 26000000,
+            "display": "¥260,000.00"
           }
         },
         "rebate": {
@@ -1383,8 +1383,8 @@
           "display": "0.85%"
         },
         "face": {
-          "fen": 25720000,
-          "display": "¥257,200.00"
+          "fen": 26000000,
+          "display": "¥260,000.00"
         }
       },
       "rebate": {
@@ -1408,8 +1408,8 @@
         "day": 47,
         "curable": true,
         "cure_cost": {
-          "fen": 267304,
-          "display": "¥2,673.04"
+          "fen": 262356,
+          "display": "¥2,623.56"
         },
         "cure_flags": [
           "the cure cannot run today"
@@ -1428,8 +1428,8 @@
             "display": "0.85%"
           },
           "face": {
-            "fen": 25720000,
-            "display": "¥257,200.00"
+            "fen": 26000000,
+            "display": "¥260,000.00"
           }
         },
         "rebate": {
@@ -1456,8 +1456,8 @@
           "day": 47,
           "curable": true,
           "cure_cost": {
-            "fen": 267304,
-            "display": "¥2,673.04"
+            "fen": 262356,
+            "display": "¥2,623.56"
           },
           "cure_flags": [
             "the cure cannot run today"
@@ -1600,8 +1600,8 @@
           "display": "0.85%"
         },
         "face": {
-          "fen": 25720000,
-          "display": "¥257,200.00"
+          "fen": 26000000,
+          "display": "¥260,000.00"
         }
       },
       "rebate": {
@@ -1625,8 +1625,8 @@
         "day": 47,
         "curable": true,
         "cure_cost": {
-          "fen": 267304,
-          "display": "¥2,673.04"
+          "fen": 262356,
+          "display": "¥2,623.56"
         },
         "cure_flags": [
           "the cure cannot run today"
@@ -1645,8 +1645,8 @@
             "display": "0.85%"
           },
           "face": {
-            "fen": 25720000,
-            "display": "¥257,200.00"
+            "fen": 26000000,
+            "display": "¥260,000.00"
           }
         },
         "rebate": {
@@ -1673,8 +1673,8 @@
           "day": 47,
           "curable": true,
           "cure_cost": {
-            "fen": 267304,
-            "display": "¥2,673.04"
+            "fen": 262356,
+            "display": "¥2,623.56"
           },
           "cure_flags": [
             "the cure cannot run today"
@@ -1776,8 +1776,8 @@
           "display": "0.85%"
         },
         "face": {
-          "fen": 25720000,
-          "display": "¥257,200.00"
+          "fen": 26000000,
+          "display": "¥260,000.00"
         }
       },
       "rebate": {
@@ -1801,8 +1801,8 @@
         "day": 47,
         "curable": true,
         "cure_cost": {
-          "fen": 267304,
-          "display": "¥2,673.04"
+          "fen": 262356,
+          "display": "¥2,623.56"
         },
         "cure_flags": [
           "the cure cannot run today"
@@ -1821,8 +1821,8 @@
             "display": "0.85%"
           },
           "face": {
-            "fen": 25720000,
-            "display": "¥257,200.00"
+            "fen": 26000000,
+            "display": "¥260,000.00"
           }
         },
         "rebate": {
@@ -1849,8 +1849,8 @@
           "day": 47,
           "curable": true,
           "cure_cost": {
-            "fen": 267304,
-            "display": "¥2,673.04"
+            "fen": 262356,
+            "display": "¥2,623.56"
           },
           "cure_flags": [
             "the cure cannot run today"
@@ -1953,8 +1953,8 @@
           "display": "0.85%"
         },
         "face": {
-          "fen": 25720000,
-          "display": "¥257,200.00"
+          "fen": 26000000,
+          "display": "¥260,000.00"
         }
       },
       "rebate": {
@@ -1978,8 +1978,8 @@
         "day": 47,
         "curable": true,
         "cure_cost": {
-          "fen": 400957,
-          "display": "¥4,009.57"
+          "fen": 393535,
+          "display": "¥3,935.35"
         },
         "cure_flags": [
           "the cure needs the owner's approval",
@@ -1999,8 +1999,8 @@
             "display": "0.85%"
           },
           "face": {
-            "fen": 25720000,
-            "display": "¥257,200.00"
+            "fen": 26000000,
+            "display": "¥260,000.00"
           }
         },
         "rebate": {
@@ -2027,8 +2027,8 @@
           "day": 47,
           "curable": true,
           "cure_cost": {
-            "fen": 400957,
-            "display": "¥4,009.57"
+            "fen": 393535,
+            "display": "¥3,935.35"
           },
           "cure_flags": [
             "the cure needs the owner's approval",
@@ -2131,8 +2131,8 @@
           "display": "0.85%"
         },
         "face": {
-          "fen": 25720000,
-          "display": "¥257,200.00"
+          "fen": 26000000,
+          "display": "¥260,000.00"
         }
       },
       "rebate": {
@@ -2156,8 +2156,8 @@
         "day": 47,
         "curable": true,
         "cure_cost": {
-          "fen": 400957,
-          "display": "¥4,009.57"
+          "fen": 393535,
+          "display": "¥3,935.35"
         },
         "cure_flags": [
           "the cure cannot run today"
@@ -2176,8 +2176,8 @@
             "display": "0.85%"
           },
           "face": {
-            "fen": 25720000,
-            "display": "¥257,200.00"
+            "fen": 26000000,
+            "display": "¥260,000.00"
           }
         },
         "rebate": {
@@ -2204,8 +2204,8 @@
           "day": 47,
           "curable": true,
           "cure_cost": {
-            "fen": 400957,
-            "display": "¥4,009.57"
+            "fen": 393535,
+            "display": "¥3,935.35"
           },
           "cure_flags": [
             "the cure cannot run today"
@@ -2307,8 +2307,8 @@
           "display": "0.85%"
         },
         "face": {
-          "fen": 25720000,
-          "display": "¥257,200.00"
+          "fen": 26000000,
+          "display": "¥260,000.00"
         }
       },
       "rebate": {
@@ -2332,8 +2332,8 @@
         "day": 47,
         "curable": true,
         "cure_cost": {
-          "fen": 400957,
-          "display": "¥4,009.57"
+          "fen": 393535,
+          "display": "¥3,935.35"
         },
         "cure_flags": [
           "the cure cannot run today"
@@ -2352,8 +2352,8 @@
             "display": "0.85%"
           },
           "face": {
-            "fen": 25720000,
-            "display": "¥257,200.00"
+            "fen": 26000000,
+            "display": "¥260,000.00"
           }
         },
         "rebate": {
@@ -2380,8 +2380,8 @@
           "day": 47,
           "curable": true,
           "cure_cost": {
-            "fen": 400957,
-            "display": "¥4,009.57"
+            "fen": 393535,
+            "display": "¥3,935.35"
           },
           "cure_flags": [
             "the cure cannot run today"
@@ -2483,8 +2483,8 @@
           "display": "0.85%"
         },
         "face": {
-          "fen": 25720000,
-          "display": "¥257,200.00"
+          "fen": 26000000,
+          "display": "¥260,000.00"
         }
       },
       "rebate": {
@@ -2508,8 +2508,8 @@
         "day": 47,
         "curable": true,
         "cure_cost": {
-          "fen": 400957,
-          "display": "¥4,009.57"
+          "fen": 393535,
+          "display": "¥3,935.35"
         },
         "cure_flags": [
           "the cure cannot run today"
@@ -2528,8 +2528,8 @@
             "display": "0.85%"
           },
           "face": {
-            "fen": 25720000,
-            "display": "¥257,200.00"
+            "fen": 26000000,
+            "display": "¥260,000.00"
           }
         },
         "rebate": {
@@ -2556,8 +2556,8 @@
           "day": 47,
           "curable": true,
           "cure_cost": {
-            "fen": 400957,
-            "display": "¥4,009.57"
+            "fen": 393535,
+            "display": "¥3,935.35"
           },
           "cure_flags": [
             "the cure cannot run today"
@@ -2663,8 +2663,8 @@
           "display": "0.85%"
         },
         "face": {
-          "fen": 25720000,
-          "display": "¥257,200.00"
+          "fen": 26000000,
+          "display": "¥260,000.00"
         }
       },
       "rebate": {
@@ -2676,12 +2676,10 @@
       "passes": false,
       "codes": [
         "AGG_CONCESSION_EXCEEDED",
-        "RESERVE_BREACH",
-        "EARLY_PAY_DEARER_THAN_PLAN"
+        "RESERVE_BREACH"
       ],
       "binding_codes": [
-        "AGG_CONCESSION_EXCEEDED",
-        "EARLY_PAY_DEARER_THAN_PLAN"
+        "AGG_CONCESSION_EXCEEDED"
       ],
       "counter_grade": false,
       "recheck_failure": null,
@@ -2693,8 +2691,8 @@
         "day": 47,
         "curable": true,
         "cure_cost": {
-          "fen": 400957,
-          "display": "¥4,009.57"
+          "fen": 393535,
+          "display": "¥3,935.35"
         },
         "cure_flags": [
           "the cure cannot run today"
@@ -2801,8 +2799,8 @@
           "display": "0.85%"
         },
         "face": {
-          "fen": 25720000,
-          "display": "¥257,200.00"
+          "fen": 26000000,
+          "display": "¥260,000.00"
         }
       },
       "rebate": {
@@ -2831,8 +2829,8 @@
         "day": 47,
         "curable": true,
         "cure_cost": {
-          "fen": 473670,
-          "display": "¥4,736.70"
+          "fen": 473734,
+          "display": "¥4,737.34"
         },
         "cure_flags": [
           "the cure cannot run today"
@@ -2849,17 +2847,17 @@
     {
       "phase": "lever searches and the terms x price zone (steps 1 to 4)",
       "evaluations": 51,
-      "seconds": 5.29
+      "seconds": 8.97
     },
     {
       "phase": "approved packages (smallest price, then largest rebate, per terms value and early-pay variant)",
       "evaluations": 134,
-      "seconds": 21.83
+      "seconds": 38.76
     }
   ],
   "grid": [],
   "evaluations": 185,
   "lookups": 359,
-  "seconds": 27.121,
+  "seconds": 47.721,
   "spike": "envelope"
 }
