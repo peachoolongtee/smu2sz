@@ -36,11 +36,28 @@ type InputProps = {
 
 const MIN_W = { sm: "min-w-20", md: "min-w-32", lg: "min-w-48" } as const;
 
-export function TextInput({ value, onChange, invalid, placeholder, label, className = "", type = "text", inputMode, testId, size = "md" }: InputProps) {
+/**
+ * The owner's own digits with thousands separators, as the placeholders show them ("400000" → "400,000"): only a plain run of digits (with an optional "¥" and decimals) is
+ * regrouped; anything else is left exactly as typed for the server to check. Nothing is computed: the digits are the owner's.
+ */
+export function groupDigits(raw: string): string {
+  const m = /^\s*([¥￥]?)\s*(\d+)(\.\d+)?\s*$/.exec(raw);
+  if (!m) return raw;
+  return `${m[1] ? `${m[1]} ` : ""}${m[2].replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${m[3] ?? ""}`;
+}
+
+export function TextInput({ value, onChange, invalid, placeholder, label, className = "", type = "text", inputMode, testId, size = "md", group = false }: InputProps & { group?: boolean }) {
+  const numeric = inputMode === "decimal" || inputMode === "numeric";
   return (
     <input
       type={type}
       value={value ?? ""}
+      // A number field selects what is in it on focus, so typing replaces a default instead of appending to it ("5,000" + "50000").
+      onFocus={numeric ? (e) => e.currentTarget.select() : undefined}
+      onBlur={group ? (e) => {
+        const next = groupDigits(e.currentTarget.value);
+        if (next !== e.currentTarget.value) onChange(next);
+      } : undefined}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       aria-label={label}
@@ -52,7 +69,7 @@ export function TextInput({ value, onChange, invalid, placeholder, label, classN
   );
 }
 
-export const MoneyInput = (p: InputProps) => <TextInput inputMode="decimal" {...p} />;
+export const MoneyInput = (p: InputProps) => <TextInput inputMode="decimal" group {...p} />;
 export const DateInput = (p: InputProps) => <TextInput type="date" {...p} />;
 
 /** A whole number of days or months; blank is null. */

@@ -82,6 +82,14 @@ def test_amounts_are_parsed_by_code() -> None:
         parse_decimal("four hundred")
 
 
+def test_thousands_separators_must_group_by_threes() -> None:
+    assert parse_decimal("1,234,567.89") == parse_decimal("1234567.89")
+    assert parse_decimal("¥ 5，000") == 5000
+    for slip in ("5,00050000", "50,00", "1,2345", ",500", "500,"):
+        with pytest.raises(ValueError):
+            parse_decimal(slip)
+
+
 def test_draft_becomes_the_books_mid_contract() -> None:
     built = build_books(SetupDraft.model_validate(DRAFT))
     assert built.errors == []
