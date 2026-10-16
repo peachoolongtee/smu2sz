@@ -1422,6 +1422,10 @@ export interface ApprovalDetail {
   lifecycle?: ApprovalLifecycleStage[] | null;
   summary_rows?: ApprovalSummaryRow[] | null;
   terms_rows?: ApprovalSummaryRow[] | null;
+  /** A purchase commitment (COMMIT_PURCHASE) only: the schedule the owner approves, in the server's words (vendor, contract, each payment, the early-payment choice, the total); `schedule_note` says when it cannot be shown or has changed. */
+  schedule_title?: string | null;
+  schedule_rows?: ApprovalSummaryRow[] | null;
+  schedule_note?: string | null;
   deadline_text?: string | null;
   deadline_day?: number | null;
   title_text?: string | null;
@@ -3270,7 +3274,8 @@ export interface HomeView {
 
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
 
-export type DocumentKind = "BUYER_CONTRACT" | "LENDER_AGREEMENT";
+/** CAPEX_CONTRACT (ADR-0013): a vendor contract for equipment the SME buys, read like a buyer contract. */
+export type DocumentKind = "BUYER_CONTRACT" | "LENDER_AGREEMENT" | "CAPEX_CONTRACT";
 export type DocumentStatus = "PROPOSED" | "CONFIRMED" | "REJECTED";
 export type ContractFieldName =
   | "PARTY_SUPPLIER" | "PARTY_BUYER" | "CONTRACT_REFERENCE" | "SIGNED_DATE" | "START_DATE" | "END_DATE" | "DURATION"
@@ -3866,6 +3871,8 @@ export interface DecisionView extends DecisionSummary, DealLifeWords {
     outcome: Outcome;
     business_action: BusinessAction;
     business_action_text: string;
+    /** Why the offer cannot be decided yet and the question to put to the buyer (an invoice named only by amount when several match). Absent from an older server. */
+    clarification?: { kind: string; text: string; ask_buyer_text: string | null; options: { receivable_id: string; sent_text: string; due_text: string; face_display: string }[] } | null;
     evaluated_day: Day | null;
     evaluated_when: string;
   } | null;
@@ -4684,4 +4691,513 @@ export interface DemoRestoreResult {
   day: number;
   restored_text: string;
   story: DemoStoryView;
+}
+
+// ------------------------------------------------------------------ the buy side (ADR-0013, docs/capex_handover.md)
+//
+// Read-only views of the API's buy side (FEATURE_CAPEX_CONTRACTS): the owner's capex contracts, the screen on a contract's
+// payment schedule, financial health, indicative loan eligibility and long-term plans. Every money figure arrives with
+// its `*_display`; ratios arrive with `display` ("2.55×") or as a percentage string the server wrote.
+
+/** A ratio the buy side says as a multiple: the exact fraction, `text` ("2.55") and `display` ("2.55×"). */
+export interface MultipleRatio extends Ratio {
+  display?: string;
+}
+
+export type PurchaseStage = "REVIEW" | "READY" | "AWAITING_APPROVAL" | "COMMITTED" | "PAID" | "REJECTED";
+
+export interface PurchasePayment {
+  n: number;
+  day: Day;
+  amount_fen: Fen;
+  amount_display: string;
+  label: string;
+  paid: boolean;
+  when: string;
+}
+
+/** GET /purchases, GET /purchases/{id}: one capex contract, where it stands and the one thing to do next. */
+export interface PurchaseRow {
+  direction: "BUY";
+  document_id: string;
+  title: string;
+  vendor_id: string;
+  vendor_name: string;
+  vendor_registered: boolean;
+  document_status: "PROPOSED" | "CONFIRMED" | "REJECTED";
+  stage: PurchaseStage;
+  next_action: string;
+  price_fen: Fen | null;
+  price_display: string | null;
+  approval_id: string | null;
+  committed_seq: number | null;
+  payments: PurchasePayment[];
+  paid_display: string;
+  to_pay_display: string;
+}
+
+export interface PurchasesView {
+  day: Day;
+  lang: string;
+  purchases: PurchaseRow[];
+}
+
+/** The owner's expected days for the events a contract cannot fix (day numbers on the books' clock). */
+export interface BuyTimeline {
+  signing_day?: number | null;
+  delivery_day?: number | null;
+  acceptance_day?: number | null;
+  invoice_day?: number | null;
+  retention_release_day?: number | null;
+}
+
+export interface BuyEstimate {
+  monthly_uplift_fen?: Fen;
+  uplift_start_month?: number | null;
+  life_months?: number;
+  hurdle_bp?: Bp;
+  payback_limit_months?: number;
+}
+
+export interface ScheduledPaymentView {
+  n: number;
+  day: Day;
+  amount_fen: Fen;
+  amount_display: string;
+  share_bp: Bp;
+  share_display: string;
+  kind: "MILESTONE" | "PAYMENT_TERMS" | "RETENTION";
+  event: "SIGNING" | "DELIVERY" | "ACCEPTANCE" | "INVOICE" | null;
+  offset_days: number;
+  label: string;
+  clause: string | null;
+  quote: string;
+  day_formula: string;
+  owner_dated: boolean;
+}
+
+export interface EarlyPayOptionView {
+  payment_n: number;
+  rate_bp: Bp;
+  rate_display: string;
+  window_days: number;
+  pay_by_day: Day;
+  due_day: Day;
+  days_earlier: number;
+  discount_fen: Fen;
+  discount_display: string;
+  pay_early_fen: Fen;
+  pay_early_display: string;
+  implied_annual_rate: Ratio | null;
+  implied_annual_rate_display?: string | null;
+  clause: string | null;
+  quote: string;
+  formula: string;
+}
+
+export interface PaymentScheduleView {
+  price_fen: Fen;
+  price_display: string;
+  payments: ScheduledPaymentView[];
+  early_pay: EarlyPayOptionView | null;
+  early_pay_note: string | null;
+  assumptions: string[];
+  schedule_hash: string;
+}
+
+export interface ScheduleResultView {
+  derivable: boolean;
+  schedule: PaymentScheduleView | null;
+  reasons: string[];
+  needs: string[];
+}
+
+export interface EarlyPayDecisionView {
+  option: EarlyPayOptionView;
+  worth_it: boolean;
+  liquidity_ok: boolean;
+  take: boolean;
+  text: string;
+  formula: string;
+  return_share_display: string | null;
+  cost_share_display: string | null;
+  marginal_rate_display: string | null;
+  marginal_facility_id: string | null;
+}
+
+/** The capex screen's result on a schedule: the existing CapexView plus what the daily projection cannot see. */
+export type BuyCapexView = CapexView & {
+  horizon_end_day?: Day;
+  beyond_horizon_fen?: Fen;
+  beyond_horizon_display?: string;
+};
+
+/** POST /capex/contracts/{id}/evaluate: the contract's schedule, the capex screen on it and the vendor's early-payment discount. */
+export interface BuySideEvaluationView {
+  document_id: string;
+  doc_hash: string;
+  title: string;
+  counterparty_id: string;
+  reading_confirmed: boolean;
+  timeline: BuyTimeline;
+  uplift_start_month: number | null;
+  uplift_start_basis: string | null;
+  schedule: ScheduleResultView;
+  evaluation: BuyCapexView | null;
+  early_pay: EarlyPayDecisionView | null;
+  early_pay_evaluation: BuyCapexView | null;
+  early_pay_schedule: PaymentScheduleView | null;
+  summary: string;
+}
+
+/** POST /capex/contracts/{id}/commit: the Tier-2 commitment queued for the owner. */
+export interface PurchaseCommitResult {
+  approval_id: string | null;
+  status: string;
+  result: { status: string; tier: Tier; kind: string; message: string };
+  schedule: PaymentScheduleView;
+}
+
+export interface HealthInputsRequest {
+  inventory_fen?: Fen | null;
+  other_current_assets_fen?: Fen | null;
+  trade_payables_fen?: Fen | null;
+  other_current_liabilities_fen?: Fen | null;
+}
+
+export interface FacilityCapacityView {
+  facility_id: string;
+  name: string;
+  status: string;
+  counts_now: boolean;
+  rate_bp: Bp;
+  rate_display: string;
+  term_months: number;
+  room_fen: Fen;
+  room_display: string;
+  capacity_fen: Fen;
+  capacity_display: string;
+  binding: "LIMIT" | "DSCR" | "LEVERAGE" | "NONE";
+  monthly_payment_fen: Fen | null;
+  monthly_payment_display: string | null;
+  text: string;
+}
+
+/** GET/POST /finance/health: cash, the 90-day cash coverage, the owner-input ratios, covenant room and borrowing capacity. */
+export interface FinanceHealthView {
+  day: Day;
+  state_version: number;
+  cash: {
+    cash_display: string;
+    reserve_display: string;
+    headroom_fen: Fen;
+    headroom_display: string;
+    lowest_display: string;
+    lowest_day: Day;
+    lowest_headroom_fen: Fen;
+    lowest_headroom_display: string;
+    first_breach_day: Day | null;
+    status: "OK" | "SHORT";
+    plan_admissible: boolean | null;
+    plan_cost_display: string | null;
+    text: string;
+  };
+  coverage: {
+    window_days: number;
+    ratio: MultipleRatio | null;
+    out_display: string;
+    operating_in_display: string;
+    funding_in_display: string;
+    capex_out_display: string;
+    text: string;
+    formula: string;
+  };
+  liquidity: {
+    available: boolean;
+    needs: string[];
+    debt_due_12m_display: string;
+    capex_due_12m_display: string;
+    receivables_display: string;
+    current_ratio: MultipleRatio | null;
+    quick_ratio: MultipleRatio | null;
+    current_assets_display: string | null;
+    current_liabilities_display: string | null;
+    evidence: string | null;
+    text: string;
+    formula: string;
+  };
+  covenants: {
+    worst_dscr: MultipleRatio | null;
+    min_dscr: MultipleRatio;
+    worst_leverage: MultipleRatio | null;
+    max_leverage: MultipleRatio;
+    dscr_ok: boolean;
+    leverage_ok: boolean;
+    dscr_room_monthly_display: string;
+    leverage_room_display: string;
+    text: string;
+    formula: string;
+  } | null;
+  capacity: FacilityCapacityView[];
+  summary: string;
+  assumptions: string[];
+}
+
+export interface EligibilityCriterion {
+  name: string;
+  required: string;
+  observed: string;
+  passes: boolean | null;
+  moves_with_amount: boolean;
+}
+
+export interface LoanProductView {
+  id: string;
+  lender_id: string;
+  lender_name: string;
+  name: string;
+  facility_kind: string;
+  rate_display: string;
+  term_months: number;
+  min_amount_display: string;
+  max_amount_display: string;
+  collateral: boolean;
+  personal_guarantee: boolean;
+}
+
+export interface ProductEligibilityView {
+  product: LoanProductView;
+  facility_id: string;
+  on_menu: boolean;
+  status: "ELIGIBLE" | "ELIGIBLE_UP_TO" | "NOT_ELIGIBLE" | "UNKNOWN";
+  max_eligible_fen: Fen | null;
+  max_eligible_display: string | null;
+  requested_passes: boolean | null;
+  criteria: EligibilityCriterion[];
+  monthly_payment_display: string | null;
+  all_in_rate_display: string;
+  own_limits_max_display: string;
+  own_limits_binding: string;
+  tier3: string[];
+  text: string;
+}
+
+/** GET/POST /lending/eligibility: indicative, against a synthetic catalogue. */
+export interface EligibilityView {
+  day: Day;
+  products: ProductEligibilityView[];
+  buyer_concentration_display?: string;
+  largest_buyer_id: string | null;
+  indicative: string;
+  assumptions: string[];
+}
+
+export interface AddToMenuResult {
+  approval_id: string | null;
+  status: string;
+  facility_id: string;
+  amount_display: string;
+}
+
+export interface PlanProjectRequest {
+  id: string;
+  label?: string;
+  document_id?: string | null;
+  timeline?: BuyTimeline | null;
+  price_fen?: Fen | null;
+  monthly_uplift_fen?: Fen;
+  uplift_start_month?: number | null;
+  life_months?: number;
+  start_offsets?: number[];
+  options?: string[] | null;
+  optional?: boolean;
+}
+
+export interface CapexPlansRequest {
+  projects: PlanProjectRequest[];
+  horizon_months?: number;
+  hurdle_bp?: Bp;
+}
+
+export interface PlanChoiceView {
+  project_id: string;
+  label: string;
+  included: boolean;
+  start_offset_months: number;
+  option: string;
+  option_label: string;
+  first_payment_day: Day | null;
+  principal_display: string | null;
+  monthly_payment_display: string | null;
+}
+
+export interface PlanMonthView {
+  month: number;
+  cash_fen: Fen;
+  cash_display: string;
+  baseline_cash_fen: Fen;
+  dscr: MultipleRatio | null;
+  leverage: MultipleRatio | null;
+}
+
+export interface RankedPlanView {
+  rank: number | null;
+  choices: PlanChoiceView[];
+  npv_fen: Fen;
+  npv_display: string;
+  financing_charges_display: string;
+  lowest_headroom_fen: Fen;
+  lowest_headroom_display: string;
+  lowest_month: number;
+  admissible: boolean;
+  first_failure: string | null;
+  months: PlanMonthView[];
+  text: string;
+}
+
+/** POST /capex/plans: a monthly estimate, never a hard constraint. */
+export interface CapexPlansView {
+  horizon_months: number;
+  combinations: number;
+  admissible_count: number;
+  best: RankedPlanView[];
+  best_unconstrained: RankedPlanView | null;
+  never_admissible: string[];
+  baseline_lowest_headroom_display: string;
+  daily_checks: { project_id: string; document_id: string; selected_id: string | null; plan_option_passes: boolean | null; text: string }[];
+  evidence: string;
+  assumptions: string[];
+}
+// ------------------------------------------------------------------ set up your books (ADR-0013)
+// The owner's own starting position, typed in six steps. Amounts travel as the text the owner typed; the server parses them.
+
+/** GET /setup/status */
+export interface SetupStatus {
+  books: "blank" | "demo" | "own";
+  scenario: string | null;
+  can_open: boolean;
+  can_open_text: string | null;
+  opened: { company_name: string; start_date: string; start_text: string; seq: number; text: string } | null;
+}
+
+export type SetupBorrowKind = "CREDIT_LINE" | "INVOICE_FINANCING" | "LOAN_TO_APPLY";
+export type SetupBillKind = "PAYROLL" | "RENT" | "SUPPLIER" | "TAX" | "OTHER";
+export type SetupRepeats = "ONCE" | "MONTHLY" | "QUARTERLY" | "YEARLY";
+
+export interface SetupBorrow {
+  name: string;
+  kind: SetupBorrowKind;
+  limit: string;
+  drawn: string;
+  rate_pct: string;
+  fee_pct: string;
+  advance_pct: string;
+  lead_time_days: number | null;
+  agreed: boolean;
+  clean_down_days: number | null;
+  term_months: number | null;
+  document_id: string | null;
+}
+
+export interface SetupLoan {
+  label: string;
+  owed: string;
+  repayment: string;
+  every: "MONTHLY" | "QUARTERLY";
+  next_payment_date: string;
+  rate_pct: string;
+}
+
+export interface SetupInvoice {
+  sent_on: string;
+  amount: string;
+  terms_days: number | null;
+  paid: string;
+  financed_amount: string;
+  financed_by: number | null;
+}
+
+export interface SetupContract {
+  amount: string;
+  every_days: number | null;
+  terms_days: number | null;
+  next_invoice_date: string;
+  document_id: string | null;
+}
+
+export interface SetupCustomer {
+  name: string;
+  contract: SetupContract | null;
+  invoices: SetupInvoice[];
+}
+
+export interface SetupBill {
+  label: string;
+  kind: SetupBillKind;
+  amount: string;
+  next_date: string;
+  repeats: SetupRepeats;
+  until: string;
+}
+
+export interface SetupLimits {
+  min_cash: string;
+  max_apr_pct: string;
+  concession_cap: string;
+  approval_above: string;
+  valid_days: number | null;
+  min_dscr: string;
+  max_leverage: string;
+}
+
+export interface SetupDraft {
+  business: { company_name: string; what_you_sell: string; start_date: string; cash: string; monthly_sales: string; monthly_costs: string };
+  borrowing: SetupBorrow[];
+  loans: SetupLoan[];
+  customers: SetupCustomer[];
+  bills: SetupBill[];
+  limits: SetupLimits;
+}
+
+export interface SetupIssue {
+  step: number;
+  path: string;
+  text: string;
+}
+
+/** POST /setup/preview */
+export interface SetupPreview {
+  ok: boolean;
+  errors: SetupIssue[];
+  warnings: SetupIssue[];
+  summary: { step: number; label: string; value: string; detail: string | null }[] | null;
+  first_look: {
+    headline: string;
+    detail: string;
+    breach_day: number | null;
+    min_cash_fen: number;
+    min_cash_display: string;
+    points: { day: number; cash_fen: number; date_text: string; cash_display: string }[];
+  } | null;
+}
+
+/** A document the setup can fill a row from (GET/POST /setup/documents). */
+export interface SetupDocument {
+  document_id: string;
+  title: string;
+  kind: "BUYER_CONTRACT" | "LENDER_AGREEMENT";
+  status: string;
+  from_setup: boolean;
+  row: (Partial<SetupCustomer> & Partial<SetupBorrow>) | null;
+  facts: string[];
+  progress?: { sent: number; total: number; next_date: string | null; slots: ("sent" | "future")[]; text: string; assumed_text?: string | null; earlier_paid_text: string | null } | null;
+}
+
+/** POST /setup/open */
+export interface SetupOpenResult {
+  ok: boolean;
+  seq: number;
+  entry_hash: string;
+  confirmed_documents: string[];
+  text: string;
 }

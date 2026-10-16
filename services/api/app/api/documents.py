@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import binascii
 import hashlib
+import re
 import uuid
 from typing import Literal
 
@@ -20,16 +21,26 @@ from app.api.auth import require_feature, require_owner
 from app.api.errors import ALREADY_DECIDED_CODE
 from app.api.runtime import Runtime, get_runtime
 from app.compiler import ContractTooLong
+from app.config import get_settings
 from app.contracts import read_document, record_view
 from app.deals import documents_for
-from app.domain.fixtures import contract_fixture_bytes, load_contract_fixtures
+from app.domain.fixtures import (
+    capex_contract_fixture_bytes,
+    contract_fixture_bytes,
+    load_capex_contract_fixtures,
+    load_contract_fixtures,
+)
 from app.domain.models import Actor, DocumentKind, DocumentStatus, SecurityEvent, SecurityEventKind
 from app.ingest import DocumentTooLarge, IngestError, extract_text
 
 router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature("contracts"))])
 
 Lang = Literal["en", "zh"]
-_ROLE = {DocumentKind.BUYER_CONTRACT: "BUYER", DocumentKind.LENDER_AGREEMENT: "LENDER"}
+_ROLE = {DocumentKind.BUYER_CONTRACT: "BUYER", DocumentKind.LENDER_AGREEMENT: "LENDER",
+         DocumentKind.CAPEX_CONTRACT: "SUPPLIER"}
+# ADR-0013 (D12): the vendor of a capex contract need not be on the registry yet (the owner is shopping); committing the
+# purchase registers it. Its id must still look like a registry id.
+_VENDOR_ID = re.compile(r"^[A-Z0-9][A-Z0-9_-]{1,63}$")
 
 
 class DocumentIn(BaseModel):
@@ -40,7 +51,7 @@ class DocumentIn(BaseModel):
 
     fixture_id: str | None = Field(default=None, max_length=64)
     format: Literal["md", "docx", "pdf"] | None = None
-    kind: Literal["BUYER_CONTRACT", "LENDER_AGREEMENT"] | None = None
+    kind: Literal["BUYER_CONTRACT", "LENDER_AGREEMENT", "CAPEX_CONTRACT"] | None = None
     counterparty_id: str | None = Field(default=None, max_length=64)
     filename: str | None = Field(default=None, max_length=200)
     content_base64: str | None = Field(default=None, max_length=7_200_000)  # 5 MB of file
@@ -65,6 +76,10 @@ def _event(kind: SecurityEventKind, day: int, counterparty_id: str | None, detai
                                               detail=detail, spans=spans or []))
 
 
+def _capex_on() -> bool:
+    return get_settings().features.capex_contracts
+
+
 def _refusal(code: str, message: str, message_zh: str | None) -> dict[str, str]:
     return {"code": code, "message": message, **({"message_zh": message_zh} if message_zh else {})}
 
@@ -74,13 +89,19 @@ def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
     rt = get_runtime()
     title = body.title
     if body.fixture_id is not None:
-        fx = load_contract_fixtures().get(body.fixture_id)
+        capex_fx = load_capex_contract_fixtures().get(body.fixture_id) if _capex_on() else None
+        fx = load_contract_fixtures().get(body.fixture_id) or capex_fx
         if fx is None:
             raise HTTPException(404, {"code": "UNKNOWN_FIXTURE", "message": "no such demo document"})
         kind, cp = DocumentKind(fx["kind"]), fx["counterparty_id"]
         if (body.kind and body.kind != kind.value) or (body.counterparty_id and body.counterparty_id != cp):
             raise HTTPException(422, {"code": "FIXTURE_MISMATCH", "message": "the demo document says what it is"})
-        name, data = contract_fixture_bytes(body.fixture_id, None if body.format in (None, "md") else body.format)
+        fmt = None if body.format in (None, "md") else body.format
+        if fx is capex_fx and fmt is not None and fmt not in fx.get("formats", []):
+            raise HTTPException(422, {"code": "FORMAT_NOT_AVAILABLE",
+                                      "message": f"this demo document has no {fmt} copy"})
+        name, data = (capex_contract_fixture_bytes(body.fixture_id, fmt) if fx is capex_fx
+                      else contract_fixture_bytes(body.fixture_id, fmt))
         source, title = f"fixture:{body.fixture_id}", title or fx["title"]
     else:
         if body.kind is None or body.counterparty_id is None:
@@ -99,20 +120,27 @@ def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
             name, data, source = "pasted.txt", body.text.encode("utf-8"), "text"
         else:
             raise HTTPException(422, {"code": "DOCUMENT_REQUIRED", "message": "a fixture, an upload or text is required"})
+    if kind == DocumentKind.CAPEX_CONTRACT and not _capex_on():
+        raise HTTPException(403, {"code": "FEATURE_DISABLED", "feature": "capex_contracts",
+                                  "message": "Capex contracts are switched off (FEATURE_CAPEX_CONTRACTS)."})
     # The registry check, then the slow part (the file, its text, the reading) with the runtime lock released: a large or
     # crafted file must never hold up every other route. The lock is taken again only to store the record.
     with rt.lock:
         state = rt.store.get_state()
         day = rt.day
         party = next((c for c in state.counterparties if c.id == cp), None)
-        if party is None or not party.known:
+        new_vendor = kind == DocumentKind.CAPEX_CONTRACT and party is None
+        if new_vendor and not _VENDOR_ID.fullmatch(cp):
+            raise HTTPException(422, {"code": "BAD_COUNTERPARTY_ID",
+                                      "message": "a vendor id is capital letters, digits, '-' or '_' (2 to 64 characters)"})
+        if not new_vendor and (party is None or not party.known):
             _event(SecurityEventKind.UNKNOWN_COUNTERPARTY, day, cp,
                    f"a {kind.value.lower().replace('_', ' ')} naming {cp}, who is not on the owner's registry, was "
                    f"refused before it was read")
             raise HTTPException(422, {"code": "UNKNOWN_COUNTERPARTY",
                                       "message": f"{cp} is not on your registry; documents are read only for known "
                                                  f"counterparties"})
-        if party.role != _ROLE[kind]:
+        if party is not None and party.role != _ROLE[kind]:
             raise HTTPException(422, {"code": "COUNTERPARTY_ROLE_MISMATCH",
                                       "message": f"{cp} is a {party.role.lower()}, not a {_ROLE[kind].lower()}"})
     try:
@@ -206,3 +234,15 @@ def list_contract_fixtures() -> dict:
     return {"contracts": [{"id": k, "kind": v["kind"], "counterparty_id": v["counterparty_id"], "title": v["title"],
                            "formats": ["md", *v.get("formats", [])], "link_facility_id": v.get("link_facility_id")}
                           for k, v in load_contract_fixtures().items()]}
+
+
+@router.get("/fixtures/capex-contracts")
+def list_capex_contract_fixtures() -> dict:
+    """The demo capex contracts (ADR-0013), listed apart from `/fixtures/contracts` because the demo never confirms them."""
+    if not _capex_on():
+        raise HTTPException(403, {"code": "FEATURE_DISABLED", "feature": "capex_contracts",
+                                  "message": "Capex contracts are switched off (FEATURE_CAPEX_CONTRACTS)."})
+    return {"contracts": [{"id": k, "kind": v["kind"], "counterparty_id": v["counterparty_id"],
+                           "counterparty_name": v.get("counterparty_name"), "title": v["title"],
+                           "formats": ["md", *v.get("formats", [])]}
+                          for k, v in load_capex_contract_fixtures().items()]}

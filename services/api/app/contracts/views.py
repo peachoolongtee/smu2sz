@@ -18,6 +18,7 @@ from app.api.engine_zh import translate
 from app.api.presentation import Lang, t, when_text
 from app.contracts.derive import date_display, day_of
 from app.domain.models import (
+    CONTRACT_READING_KINDS,
     MULTI_VALUED_CONTRACT_FIELDS,
     ContractField,
     ContractRecord,
@@ -277,9 +278,14 @@ def _name(state: FinancialState | None, counterparty_id: str) -> str:
     return cp.name if cp else counterparty_id
 
 
+_KIND_TEXT = {DocumentKind.BUYER_CONTRACT: ("Buyer contract", "买方合同"),
+              DocumentKind.LENDER_AGREEMENT: ("Lender agreement", "贷款方协议"),
+              DocumentKind.CAPEX_CONTRACT: ("Capex contract", "设备采购合同")}
+
+
 def _kind_text(kind: DocumentKind, lang: Lang) -> str:
-    return t(lang, "Buyer contract" if kind == DocumentKind.BUYER_CONTRACT else "Lender agreement",
-             "买方合同" if kind == DocumentKind.BUYER_CONTRACT else "贷款方协议")
+    en, zh = _KIND_TEXT[kind]
+    return t(lang, en, zh)
 
 
 def _status_text(record: ContractRecord, lang: Lang, today: int | None) -> str:
@@ -334,7 +340,7 @@ def replacement_words(record: ContractRecord | ContractGuardRow, records: Sequen
 
 def record_summary(record: ContractRecord, state: FinancialState | None, lang: Lang = "en",
                    today: int | None = None, records: Sequence[ContractRecord | ContractGuardRow] = ()) -> dict[str, Any]:
-    if record.kind == DocumentKind.BUYER_CONTRACT and record.contract is not None:
+    if record.kind in CONTRACT_READING_KINDS and record.contract is not None:
         n_blank = len(blanks(record))
         summary = t(lang, f"{len(record.contract.terms)} terms read, {n_blank} left blank",
                     f"已读取 {len(record.contract.terms)} 项条款，{n_blank} 项留空")

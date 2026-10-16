@@ -43,6 +43,10 @@ interface RawApproval {
   authorize_text?: string | null;
   terms_state_text?: string | null;
   terms_rows?: ApprovalSummaryRow[] | null;
+  /** A purchase commitment's schedule, in the server's words. */
+  schedule_title?: string | null;
+  schedule_rows?: ApprovalSummaryRow[] | null;
+  schedule_note?: string | null;
   lifecycle?: ApprovalLifecycleStage[] | null;
   summary_rows?: ApprovalSummaryRow[] | null;
   deadline_text?: string | null;
@@ -97,6 +101,9 @@ function toViews(approvals: RawApproval[]): ApprovalView[] {
         terms_rows: a.terms_rows ?? null,
         lifecycle: a.lifecycle ?? null,
         summary_rows: a.summary_rows ?? null,
+        schedule_title: a.schedule_title ?? null,
+        schedule_rows: a.schedule_rows ?? null,
+        schedule_note: a.schedule_note ?? null,
         deadline_text: a.deadline_text ?? null,
         deadline_day: a.deadline_day ?? null,
         title_text: a.title_text ?? null,

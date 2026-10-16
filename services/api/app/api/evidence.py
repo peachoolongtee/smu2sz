@@ -42,7 +42,8 @@ def build(rt: Runtime, screenshots: dict[str, str] | None = None) -> str:
         "competition": "FinTechathon 2026, International track, Topic E (SME Finance Copilot)",
         "project": "TermsLedger v2",
         "scenario": rt.scenario,
-        "scenario_sha256": _sha(FIXTURES / "scenarios" / f"{rt.scenario}.json"),
+        # Books the owner opened at setup have no fixture file; their hash is in the chain's OPEN_BOOKS entry.
+        "scenario_sha256": _sha(p) if (p := FIXTURES / "scenarios" / f"{rt.scenario}.json").is_file() else None,
         "offers_sha256": _sha(FIXTURES / "offers" / "offers.yaml"),
         "mandate_version": mandate.version,
         "mandate_signature": mandate.signature_hex,

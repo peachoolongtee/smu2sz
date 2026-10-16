@@ -1,8 +1,8 @@
 """Reading an uploaded document into a PROPOSED `ContractRecord` (brief 03 §6.4).
 
-The compiler reads the text (a buyer contract with `compile_contract`, a lender agreement with `compile_term_sheet`);
-this module adds the security flags for contracts, the facility the agreement appears to describe, and the record's
-provenance. Nothing here writes the books or decides: the owner confirms through `Executor.decide_document`.
+The compiler reads the text (a buyer or capex contract with `compile_contract`, a lender agreement with
+`compile_term_sheet`); this module adds the security flags for contracts, the facility the agreement appears to
+describe, and the record's provenance. Nothing here writes the books or decides: the owner confirms through `Executor.decide_document`.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from app.compiler import compile_contract, compile_term_sheet
 from app.compiler.contract import contract_document, document_flags, ground_flags
 from app.compiler.schema import XAuthorityClaim, XDataRequest
 from app.domain.models import (
+    CONTRACT_READING_KINDS,
     CompiledTermSheet,
     ContractField,
     ContractRecord,
@@ -21,7 +22,8 @@ from app.domain.models import (
     text_hash,
 )
 
-KIND_TITLES = {DocumentKind.BUYER_CONTRACT: "Buyer contract", DocumentKind.LENDER_AGREEMENT: "Lender agreement"}
+KIND_TITLES = {DocumentKind.BUYER_CONTRACT: "Buyer contract", DocumentKind.LENDER_AGREEMENT: "Lender agreement",
+               DocumentKind.CAPEX_CONTRACT: "Capex contract"}
 
 
 def doc_hash(text: str) -> str:
@@ -39,8 +41,8 @@ def read_document(text: str, kind: DocumentKind, counterparty_id: str, *, title:
                   facilities: Sequence[Facility]) -> ContractRecord:
     """The agent's reading of one document, as a PROPOSED record (its id is assigned by the store)."""
     doc = contract_document(text, kind, counterparty_id)
-    if kind == DocumentKind.BUYER_CONTRACT:
-        reading = compile_contract(doc)
+    if kind in CONTRACT_READING_KINDS:
+        reading = compile_contract(doc, kind)
         ref = next((t.text for t in reading.terms if t.field == ContractField.CONTRACT_REFERENCE), None)
         return ContractRecord(
             id="DOC-PENDING", kind=kind, counterparty_id=counterparty_id,

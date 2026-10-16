@@ -2619,6 +2619,9 @@
       "value_text": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days."
     }
   ],
+  "schedule_title": null,
+  "schedule_rows": null,
+  "schedule_note": null,
   "deadline_text": "Cash needed in 8 days",
   "deadline_day": 42,
   "title_text": "Request ¥200,000 of invoice financing",

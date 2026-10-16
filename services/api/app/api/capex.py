@@ -19,7 +19,11 @@ from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.runtime import get_runtime
 from app.capex import CapexDisabled, CapexRequest, CapexResult, evaluate_capex
-from app.domain.models import Actor, ApplyForFacility
+from app.capex.buyside import BuySideEvaluation, CapexEstimate, NotACapexContract, evaluate_contract
+from app.capex.schedule import Timeline, derive_schedule, early_schedule
+from app.config import get_settings
+from app.domain.models import Actor, ApplyForFacility, CommitPurchase, DocumentKind, DocumentStatus
+from app.domain.money import Ratio, fmt_pct
 
 router = APIRouter(dependencies=[Depends(require_owner)])
 
@@ -112,3 +116,122 @@ def post_capex_apply(body: CapexApplyIn) -> dict:
             status = str(getattr(rec.status, "value", rec.status)) if rec is not None else None
     return {"approval_id": applied.approval_id, "approval_status": status, "state_version": state.state_version,
             "application": json.loads(applied.model_dump_json())}
+
+
+# ---------------------------------------------------------------- ADR-0013: the buy side of one capex contract
+
+
+class ContractEvaluateIn(BaseModel):
+    """The owner's timeline (the days the contract cannot fix) and estimate (what the equipment earns)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    timeline: Timeline = Field(default_factory=Timeline)
+    estimate: CapexEstimate = Field(default_factory=CapexEstimate)
+
+
+def _require_buy_side() -> None:
+    features = get_settings().features
+    if not features.capex or not features.capex_contracts:
+        raise HTTPException(403, {"code": "FEATURE_DISABLED", "feature": "capex_contracts",
+                                  "message": "Capex contracts are switched off (FEATURE_CAPEX / FEATURE_CAPEX_CONTRACTS)."})
+
+
+def _rate_text(r: Ratio | None) -> str | None:
+    return fmt_pct(r.value) if r is not None else None
+
+
+def buyside_view(ev: BuySideEvaluation) -> dict:
+    """The evaluation with every money field displayed; rates (exact ratios) are said as percentages."""
+    view = _with_null_displays(displayed(json.loads(ev.model_dump_json())))
+    sched = view["schedule"].get("schedule")
+    if sched and sched.get("early_pay") and ev.schedule.schedule and ev.schedule.schedule.early_pay:
+        sched["early_pay"]["implied_annual_rate_display"] = _rate_text(ev.schedule.schedule.early_pay.implied_annual_rate)
+    if view.get("early_pay") and ev.early_pay is not None:
+        e = ev.early_pay
+        view["early_pay"].update({"return_share_display": _rate_text(e.return_share),
+                                  "cost_share_display": _rate_text(e.cost_share),
+                                  "marginal_rate_display": _rate_text(e.marginal_rate)})
+    return view
+
+
+@router.post("/capex/contracts/{document_id}/evaluate")
+def post_capex_contract_evaluate(document_id: str, body: ContractEvaluateIn | None = None) -> dict:
+    """Read-only: the contract's payment schedule on the owner's timeline, the capex screen on it, and the vendor's
+    early-payment discount. Nothing is written. An unconfirmed reading may be screened (`reading_confirmed` says so);
+    only a confirmed one can be committed."""
+    _require_buy_side()
+    body = body or ContractEvaluateIn()
+    rt = get_runtime()
+    with rt.lock:
+        record = rt.store.get_contract_record(document_id)
+        if record is None:
+            raise HTTPException(404, {"code": "UNKNOWN_DOCUMENT", "message": f"no document {document_id}"})
+        state, mandate = rt.store.get_state(), rt.store.get_mandate()
+        try:
+            ev = evaluate_contract(record, body.timeline, body.estimate, state, mandate,
+                                   commitments=rt.store.commitments())
+        except NotACapexContract as exc:
+            raise HTTPException(422, {"code": exc.code, "message": str(exc)}) from None
+        except CapexDisabled as exc:
+            raise HTTPException(403, detail={"code": exc.code.value, "message": str(exc)}) from None
+    return buyside_view(ev)
+
+
+class ContractCommitIn(BaseModel):
+    """What the owner commits to: the timeline the schedule was shown on, whether the early-payment discount is taken,
+    and the hash of the schedule shown (from the evaluation: `schedule.schedule.schedule_hash`, or
+    `early_pay_schedule.schedule_hash` when the discount is taken)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    timeline: Timeline
+    take_early_pay: bool = False
+    schedule_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+@router.post("/capex/contracts/{document_id}/commit")
+def post_capex_contract_commit(document_id: str, body: ContractCommitIn) -> dict:
+    """Queue the owner's commitment to a confirmed capex contract's payment schedule (ADR-0013): one CommitPurchase,
+    requested by the owner (this route is owner-only; the executor refuses any other requester, CAPEX-2), always Tier 2;
+    nothing is booked until the owner approves it on /approvals/{id}. The schedule
+    is checked here first, so a stale one is answered at once (409) instead of queued; the executor checks it again on
+    approval."""
+    _require_buy_side()
+    rt = get_runtime()
+    with rt.lock:
+        record = rt.store.get_contract_record(document_id)
+        if record is None:
+            raise HTTPException(404, {"code": "UNKNOWN_DOCUMENT", "message": f"no document {document_id}"})
+        if record.kind != DocumentKind.CAPEX_CONTRACT or record.contract is None:
+            raise HTTPException(422, {"code": "NOT_A_CAPEX_CONTRACT",
+                                      "message": f"{document_id} is not a capex contract"})
+        if record.status != DocumentStatus.CONFIRMED:
+            raise HTTPException(422, {"code": "NOT_CONFIRMED",
+                                      "message": "confirm the agent's reading of the contract before committing to it"})
+        state, mandate = rt.store.get_state(), rt.store.get_mandate()
+        derived = derive_schedule(record.contract, body.timeline, anchor_iso=state.as_of, today=state.as_of_day)
+        if not derived.derivable or derived.schedule is None:
+            raise HTTPException(422, {"code": "NO_SCHEDULE", "message": " ".join(derived.reasons),
+                                      "message_zh": " ".join(derived.reasons_zh) or None, "needs": derived.needs})
+        schedule = early_schedule(derived.schedule) if body.take_early_pay else derived.schedule
+        if schedule is None:
+            raise HTTPException(422, {"code": "NO_EARLY_PAYMENT",
+                                      "message": "the contract offers no early-payment discount the schedule could take"})
+        if schedule.schedule_hash != body.schedule_hash:
+            raise HTTPException(409, {"code": "SCHEDULE_CHANGED", "schedule_hash": schedule.schedule_hash,
+                                      "message": "the payment schedule is not the one shown; evaluate again and commit "
+                                                 "what is shown"})
+        key = f"capex-commit:{record.id}:{schedule.schedule_hash[:16]}"
+        t = body.timeline
+        op = CommitPurchase(
+            op_id=f"capex-commit-{record.id}-{schedule.schedule_hash[:12]}", idempotency_key=key,
+            mandate_version=mandate.version, requested_by=Actor.OWNER, day=rt.day, document_id=record.id,
+            doc_hash=record.doc_hash, schedule_hash=schedule.schedule_hash, amount_fen=schedule.price_fen,
+            signing_day=t.signing_day, delivery_day=t.delivery_day, acceptance_day=t.acceptance_day,
+            invoice_day=t.invoice_day, retention_release_day=t.retention_release_day,
+            take_early_pay=body.take_early_pay)
+        result = rt.executor.execute(op)  # Tier 2: PENDING_APPROVAL; the owner decides on /approvals/{id}
+    return {"approval_id": result.approval_id, "status": result.status.value,
+            "result": json.loads(result.model_dump_json()),
+            "schedule": _with_null_displays(displayed(json.loads(schedule.model_dump_json())))}

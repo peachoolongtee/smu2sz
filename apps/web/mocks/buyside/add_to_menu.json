@@ -1,0 +1,104 @@
+{
+  "approval_id": "APR-000002",
+  "status": "PENDING_APPROVAL",
+  "facility_id": "FAC-BANK1-TERM-60",
+  "amount_fen": 60000000,
+  "amount_display": "¥600,000.00",
+  "eligibility": {
+    "product": {
+      "id": "PRD-BANK1-TERM-60",
+      "lender_id": "BANK-1",
+      "lender_name": "Main bank",
+      "name": "Equipment term loan, 60 months",
+      "facility_kind": "EQUIPMENT_TERM_LOAN",
+      "repayment": "AMORTISING",
+      "rate_bp": 520,
+      "upfront_fee_bp": 50,
+      "term_months": 60,
+      "lead_time_days": 21,
+      "min_amount_fen": 20000000,
+      "max_amount_fen": 300000000,
+      "collateral": false,
+      "personal_guarantee": false,
+      "criteria": {
+        "min_dscr_bp": 13000,
+        "max_leverage_bp": 30000,
+        "min_coverage_bp": 10000,
+        "max_buyer_concentration_bp": null,
+        "min_months_trading": 24,
+        "min_dscr_display": "1.30×",
+        "max_leverage_display": "3.00×",
+        "min_coverage_display": "100.00%"
+      },
+      "rate_display": "5.20%",
+      "upfront_fee_display": "0.50%",
+      "min_amount_display": "¥200,000.00",
+      "max_amount_display": "¥3,000,000.00"
+    },
+    "facility_id": "FAC-BANK1-TERM-60",
+    "on_menu": false,
+    "status": "UNKNOWN",
+    "max_eligible_fen": 127778422,
+    "requested_fen": null,
+    "requested_passes": null,
+    "criteria": [
+      {
+        "name": "DSCR with the loan",
+        "required": "≥ 1.30×",
+        "observed": "1.30× = ¥90,000.00 / (¥45,000.00 + ¥24,230.76)",
+        "passes": true,
+        "moves_with_amount": true
+      },
+      {
+        "name": "Leverage with the loan",
+        "required": "≤ 3.00×",
+        "observed": "2.53× = (¥1,455,000.00 + ¥1,277,784.22) / (12 × ¥90,000.00)",
+        "passes": true,
+        "moves_with_amount": true
+      },
+      {
+        "name": "90-day cash coverage",
+        "required": "≥ 1.00×",
+        "observed": "2.00×",
+        "passes": true,
+        "moves_with_amount": false
+      },
+      {
+        "name": "Months trading",
+        "required": "≥ 24",
+        "observed": "not given: tell FLOW how long the company has traded",
+        "passes": null,
+        "moves_with_amount": false
+      }
+    ],
+    "monthly_payment_fen": 2423076,
+    "all_in_rate": {
+      "num": 53,
+      "den": 1000,
+      "text": "0.05"
+    },
+    "all_in_rate_formula": "5.2% + 0.5% × 12/60 = 5.3%",
+    "own_limits_max_fen": 124500000,
+    "own_limits_binding": "LEVERAGE",
+    "tier3": [],
+    "text": "Equipment term loan, 60 months (Main bank): up to ¥1,277,784.22 on the ratios, but it also needs months trading, which only you can give. Your own limits allow ¥1,245,000.00 (set by your leverage maximum).",
+    "max_eligible_display": "¥1,277,784.22",
+    "monthly_payment_display": "¥24,230.76",
+    "own_limits_max_display": "¥1,245,000.00",
+    "requested_display": null,
+    "all_in_rate_display": "5.30%"
+  },
+  "result": {
+    "op_id": "add-FAC-BANK1-TERM-60-0",
+    "kind": "ADD_FACILITY",
+    "status": "PENDING_APPROVAL",
+    "tier": "TIER_2",
+    "violations": [],
+    "seq": 7,
+    "entry_hash": "940540d46977e8881b6f84ecd4d114417e3bbe73bb3254902277db10d880095b",
+    "prev_hash": "d27d530d33e66ab9cf6afd3d8c32471d7efc962b682c364524110bf75317bf23",
+    "effective_day": 0,
+    "approval_id": "APR-000002",
+    "message": "Queued for owner approval (APR-000002): owner request to add facility FAC-BANK1-TERM-60 (BANK-1)"
+  }
+}
