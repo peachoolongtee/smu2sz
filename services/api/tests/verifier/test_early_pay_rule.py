@@ -116,7 +116,7 @@ def test_whole_invoice_at_85bp_costs_3570_against_the_plan_3113_93_and_is_counte
     assert v.inputs["plan_without_offer"] == "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93"
     assert v.spans == SPAN
     (a,) = b.verdict.counters  # the partial early-pay counter still exists
-    assert a.obligations[0].base.amount_fen == 25_720_000 and a.obligations[0].rate_bp == 85
+    assert a.obligations[0].base.amount_fen == 26_000_000 and a.obligations[0].rate_bp == 85
 
 
 def test_whole_invoice_at_64bp_costs_2688_and_is_accepted(state, mandate, key):
@@ -281,8 +281,8 @@ def test_no_plan_without_the_offer_but_one_with_it_passes_both_tests(state, mand
 def test_golden_counter_a_is_unchanged(state):
     (a,) = [c for c in bundle("EX01_PACKAGE").verdict.counters if c.label == "Option A"]
     (ob,) = a.obligations
-    # face ⌈255,000 / (1 − 0.85%)⌉ to ¥100 = 257,200; cost 2,186.20 + 841.57 = 3,027.77 (compute_golden.py)
-    assert (ob.base.amount_fen, ob.rate_bp, a.supplier_cost_fen) == (25_720_000, 85, 302_777)
+    # face ⌈255,000 / (1 − 0.85%)⌉ to ¥10,000 (R-10) = 260,000; cost 2,210.00 + 825.99 = 3,035.99 (compute_golden.py)
+    assert (ob.base.amount_fen, ob.rate_bp, a.supplier_cost_fen) == (26_000_000, 85, 303_599)
     assert "c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%" in a.formula
 
 
@@ -298,13 +298,13 @@ def test_the_buyers_cheap_standing_early_pay_is_not_a_plan_the_router_can_run(st
     # Red team d, F1: the buyer's programme at 0.40% needs the buyer's agreement to pay early; no operation runs it, so
     # the router's plan is the line and the advance (¥3,113.93). Before, it planned on the programme, no counter beat
     # that plan and the offer was rejected with no counter. Now the offer (0.85% on the whole invoice, ¥3,570.00) is
-    # still dearer than the plan, and Counter A (¥3,027.77, as on the golden books) beats it and is offered.
+    # still dearer than the plan, and Counter A (¥3,035.99, as on the golden books) beats it and is offered.
     cheap = _with(state, **{"FAC-EARLYPAY": {"rate_bp": 40}})
     b = _ev(cheap, mandate, key, _leg(85))
     assert codes(b.verdict.violations) == ["EARLY_PAY_DEARER_THAN_PLAN"]
     assert b.plan_committed is not None
     [a] = b.verdict.counters
-    assert a.label == "Option A" and a.supplier_cost_fen == 302_777 and b.verdict.outcome == Outcome.COUNTER
+    assert a.label == "Option A" and a.supplier_cost_fen == 303_599 and b.verdict.outcome == Outcome.COUNTER
 
 
 def test_no_early_pay_counter_when_none_beats_the_plan_and_the_offer_is_rejected(state, mandate, key):
