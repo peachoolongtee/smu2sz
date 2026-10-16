@@ -132,6 +132,7 @@ import homeApprovalPending from "../../mocks/home_approval_pending.json";
 import homeApprovalApprovedZh from "../../mocks/home_approval_approved_zh.json";
 import homeApprovalPendingZh from "../../mocks/home_approval_pending_zh.json";
 import { getLang } from "../i18n";
+import { en, zh } from "../dictionary";
 import homeApprove from "../../mocks/home_approve.json";
 import ledgerApproved from "../../mocks/home_ledger_approved.json";
 import ledgerDay34 from "../../mocks/home_ledger_day34.json";
@@ -1744,7 +1745,8 @@ const SETUP_LIVE_ONLY = "Setting up your own books needs the full app (live mode
 
 export async function getSetupStatus(): Promise<SetupStatus> {
   await delay();
-  return { books: "demo", scenario: "golden_sme", can_open: false, can_open_text: SETUP_LIVE_ONLY, opened: null };
+  // The sentence in the owner's language (the dictionary's own words for this refusal), never the English one on a Chinese screen.
+  return { books: "demo", scenario: "golden_sme", can_open: false, can_open_text: getLang() === "zh" ? zh["err.mock_setup"] : en["err.mock_setup"], opened: null };
 }
 
 export async function getSetupDocuments(): Promise<SetupDocument[]> {
