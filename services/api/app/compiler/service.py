@@ -12,6 +12,10 @@ In live mode a model's reading of a buyer message is also checked against the ru
 documents (`compiler.cross_check`): a term the two read differently is abstained on, never decided by either alone.
 LLM_LIVE_RAW=1 keeps live mode as it was (no recording first, no check), to measure a model on its own.
 
+A model never sees the identifiers FLOW does not read (accounts, phones, emails, credit codes, ID numbers, labelled
+addresses): `compiler.redaction` wraps each model backend (LLM_REDACT, on by default) and maps the model's quotes back to
+the original text before grounding. The recording is looked up, and the rules grammar reads, by the original text.
+
 A contract is read chunk by chunk (`compiler.contract.chunk_document`); each chunk takes the backend chain on its own,
 so a recorded chunk replays even when another chunk of the same document falls through to the rules grammar.
 """
@@ -33,6 +37,7 @@ from app.compiler.contract import MAX_CHUNKS, ContractTooLong, build_contract, c
 from app.compiler.cross_check import check_against_rules
 from app.compiler.grounding import build_offer, build_term_sheet, docs_hash
 from app.compiler.prompts import CONTRACT_PROMPT_VERSION, PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
+from app.compiler.redaction import redacting
 from app.compiler.rules import RULES_MODEL_ID, RulesBackend
 from app.config import Settings, get_settings
 from app.domain.models import CompiledContract, CompiledOffer, CompiledTermSheet, DocumentKind, SourceDocument
@@ -58,7 +63,8 @@ def default_backends(settings: Settings | None = None) -> list[LLMBackend]:
     if s.llm_mode == "live":
         claude = ClaudeBackend(model=s.claude_model, hard_model=s.claude_hard_model)
         deepseek = DeepSeekBackend(model=s.deepseek_model)
-        first: list[LLMBackend] = [deepseek, claude] if s.llm_primary == "deepseek" else [claude, deepseek]
+        # Only the models see redacted text (compiler.redaction): the recording and the rules grammar read the original.
+        first = redacting([deepseek, claude] if s.llm_primary == "deepseek" else [claude, deepseek], s.llm_redact)
         recorded: list[LLMBackend] = [] if s.llm_live_raw else [CacheBackend(cache_dir(s))]
         return [*recorded, *first, RulesBackend()]
     return [CacheBackend(cache_dir(s)), RulesBackend()]

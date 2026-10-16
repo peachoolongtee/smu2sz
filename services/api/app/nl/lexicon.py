@@ -151,7 +151,17 @@ STATUS_QUESTION = _re(
     r"^\s*(?:are|is|will|would|could|do|does|am)\s+(?:we|there|it|our|the)\b.{0,60}"
     r"\b(?:breach\w*|break\w*|below|under|short|enough|dip\w*|fall\w*|drop\w*|covenants?|reserve|floor|minimum|gap)\b",
     r"\b(?:any|close to|near|at risk of)\s+(?:a\s+|any\s+)?(?:covenant|breach)",
-    r"会不会.{0,12}(?:跌破|低于|违反|突破|违约|缺钱|不够)", r"(?:有没有|是否).{0,10}(?:违约|违反|跌破|缺口)")
+    r"会不会.{0,12}(?:跌破|低于|违反|突破|违约|缺钱|不够)", r"(?:有没有|是否).{0,10}(?:违约|违反|跌破|缺口)",
+    # "Am I safe this month?", "Are we OK for cash?", "Are we covered until payday?": asks about the owner's own position
+    # (not a deal: "are we OK to accept this offer?" names an offer, an invoice or a buyer and stays out)
+    r"^(?!.*\b(?:offers?|deals?|accept\w*|buyers?|invoices?|approv\w*|contracts?|quotes?|terms)\b)\s*"
+    r"(?:am|are|is|will|would|can|could)\s+(?:i|we|our|my)\b.{0,40}\b(?:safe|ok|okay|fine|covered|comfortable|alright)\b",
+    r"\bcash runway\b", r"\brunway\b", r"\bhow is (?:our|the|my) cash\b",
+    r"\bhow long (?:will|does|can|would) (?:our |the |my )?(?:cash|money|runway)\b",
+    r"\b(?:will|do|would) (?:we|i) have enough (?:cash|money)\b",
+    r"^\s*(?:我们?|咱们?|公司|本公司)[^，。？?！!]{0,8}安全吗", r"(?:现金|资金|钱)(?:够不够|够吗|够用吗|充足吗|紧张吗|安全吗|还够)",
+    r"(?:够不够|够)(?:用的?)?(?:现金|资金|钱)", r"现金跑道", r"(?:现金|资金|钱).{0,6}(?:能|可以)?撑(?:多久|多长时间|几天)",
+    r"现金(?:怎么样|如何|还好吗|还行吗)")
 REPAY = _re(r"\brepay", r"\bpay (?:back|down|off)\b", r"\bpay (?:the |our )?(?:credit |bank )?line (?:back|down|off)\b",
             r"\bclear (?:the |our )?(?:balance on the |outstanding balance on the |outstanding )?(?:credit |bank )?line\b",
             r"\bsettle (?:the |our )?(?:credit |bank )?line\b", r"还款", r"偿还", r"还清", r"归还",

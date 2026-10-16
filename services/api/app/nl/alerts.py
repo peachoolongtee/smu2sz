@@ -39,6 +39,14 @@ MAX_PAST_DUE = 2
 MAX_TITLES = 3
 
 
+def _title(ctx: NlContext, alert: Alert) -> str:
+    """An alert's title as the reader's language says it: the engine's English through the translation layer in Chinese."""
+    if ctx.lang != "zh":
+        return alert.title
+    from app.api.engine_zh import translate
+    return translate(alert.title, [c.name for c in ctx.state().counterparties] + [f.name for f in ctx.state().facilities]) or alert.title
+
+
 def _news(found: list[Alert]) -> list[Alert]:
     return [a for a in found if a.severity in (Severity.CRITICAL, Severity.WARNING)]
 
@@ -295,7 +303,7 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
         parts.append(_mandate_sentence(ctx, mand))
     rest_sentence: list[str] = []
     if rest:  # the other alerts, in one line, before the question so that the question ends the message
-        titles = "; ".join(a.title for a in rest[:MAX_TITLES]) + ("…" if len(rest) > MAX_TITLES else "")
+        titles = ("；" if ctx.lang == "zh" else "; ").join(_title(ctx, a) for a in rest[:MAX_TITLES]) + ("…" if len(rest) > MAX_TITLES else "")
         all_warn = all(a.severity == Severity.WARNING for a in rest)
         more = bool(past_due or breach)
         noun_en = ("warning" if all_warn else "alert") + ("" if len(rest) == 1 else "s")

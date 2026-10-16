@@ -89,6 +89,9 @@ class Settings:
     # Live mode replays a recorded reading before calling a model, and checks a model's reading of a buyer message against the
     # rules grammar's (app/compiler/service.py). LLM_LIVE_RAW=1 turns both off, to measure a model on its own.
     llm_live_raw: bool = field(default_factory=lambda: _flag("LLM_LIVE_RAW", default=False))
+    # Privacy before the model (app/compiler/redaction.py): accounts, phones, emails, credit codes, ID numbers and labelled
+    # addresses are replaced by placeholders before any text goes to a model provider. On by default; LLM_REDACT=0 turns it off.
+    llm_redact: bool = field(default_factory=lambda: _flag("LLM_REDACT", default=True))
     fixture_dir: str = field(
         default_factory=lambda: os.environ.get(
             "FIXTURE_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "..", "fixtures")
