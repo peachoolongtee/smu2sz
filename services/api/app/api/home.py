@@ -79,7 +79,7 @@ from app.domain.models import (
     Mode,
     OperationStatus,
 )
-from app.domain.money import fmt_yuan
+from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.financial import EngineError, project
 from app.financial.lots import ensure_lots
 from app.funding.recommend import (
@@ -514,6 +514,34 @@ def after_facts(state: FinancialState, obs: list[Any], mandate: Mandate, actions
     return False, first[0], _episode_low(traj, first[0], mandate.min_cash_fen)[1]
 
 
+def _is_negative(display: str) -> bool:
+    """`fmt_yuan` writes a negative amount with a leading minus sign (U+2212)."""
+    return display.lstrip().startswith(("−", "-"))
+
+
+def _stated_cost(state: FinancialState, legs: list[dict[str, Any]], cost_total: str | None, cost_basis: str | None,
+                 cost_note: str | None, lang: str) -> tuple[str | None, str | None, str | None, str | None]:
+    """(cost_total, cost_basis, cost_note, cost_unstated): the plan's cost as the owner reads it. A net figure below zero is never
+    stated as a cost: the engine's net is the plan's charges less what the books already post without it, so it falls below zero
+    when the plan lowers the charges already in the forecast. The basis says so and `cost_unstated` is "NET_SAVING". With no total
+    because a draw has no repayment date (the projection carries it open and posts no interest), the basis says the rate it runs at
+    and `cost_unstated` is "UNPRICED". Otherwise the inputs come back unchanged and `cost_unstated` is None."""
+    if cost_total is not None and _is_negative(cost_total):
+        less = cost_total.lstrip().lstrip("−-")
+        basis = t(lang, f"No added cost: in the forecast, this plan lowers the interest and fees you already pay by {less}.",
+                  f"无新增成本：按预测，此方案使您原本要支付的利息和费用减少 {less}。")
+        return None, basis, None, "NET_SAVING"
+    if cost_total is None:
+        open_draws = [leg for leg in legs if leg["operation_kind"] == "DRAW_FACILITY" and not leg["cost_display"]]
+        rates = sorted({f.rate_bp for leg in open_draws for f in state.facilities if f.id == leg["facility_id"]})
+        if rates:
+            rate = " / ".join(fmt_pct(bp(r)) for r in rates)
+            basis = t(lang, f"Not priced: the draw has no repayment date yet, so interest runs at {rate} a year while the balance stays drawn.",
+                      f"未计价：该提款尚无还款日，余额未还期间按年化 {rate} 计息。")
+            return None, basis, cost_note, "UNPRICED"
+    return cost_total, cost_basis, cost_note, None
+
+
 def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: list[Alert], approvals: list[Any],
                  today: int, state_version: int, lang: str, *, use_router: bool = True) -> dict[str, Any] | None:
     """The one thing to do now, for the first actionable critical alert (a reserve breach), else a repayment the books
@@ -538,9 +566,9 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
         legs = plan_legs(state, p, today, lang)
         needs_owner = p.needs_owner_approval
         needs_owner_reason = engine_sentence(state, p.approval_reason, today, lang) if needs_owner else None
-        cost_total = fmt_yuan(p.total_cost_fen)
+        cost_total: str | None = fmt_yuan(p.total_cost_fen)
         cost_breakdown = _plan_lines(state, p, lang)
-        cost_basis = _plan_basis(state, p, lang)
+        cost_basis: str | None = _plan_basis(state, p, lang)
         cost_note = None
         actions = list(p.actions)
         suggestions = plan_suggestions(p)
@@ -591,6 +619,8 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
             why = t(lang, "A committed funding that covers the whole gap in time.", "能及时覆盖整个缺口的已承诺融资。")
         else:
             why = engine_sentence(state, alert.detail, today, lang)
+
+    cost_total, cost_basis, cost_note, cost_unstated = _stated_cost(state, legs, cost_total, cost_basis, cost_note, lang)
 
     if len(legs) == 1:
         title = legs[0]["label"]
@@ -684,6 +714,7 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
         "cost_breakdown": cost_breakdown,
         "cost_basis": cost_basis or None,
         "cost_note": cost_note,
+        "cost_unstated": cost_unstated,
         "cheaper_option": cheaper,
         "rate_text": next((leg["rate_text"] for leg in legs if leg["rate_text"]), None),
         "cost_days": next((leg["cost_days"] for leg in legs if leg["cost_days"]), None),

@@ -50,13 +50,13 @@ def _owner(api: TestClient, text: str, lang: str) -> dict:
 def test_a_chinese_terms_request_gets_the_counter_in_chinese(api: TestClient) -> None:
     out = _buyer(api, TERMS_ZH, "zh")
     assert out["reply"].startswith("方案 A：账期保持 45 天。") and "\n方案 B：接受 55 天账期" in out["reply"]
-    assert "¥257,200" in out["reply"] and "0.85%" in out["reply"] and "0.30%" in out["reply"]
+    assert "¥260,000" in out["reply"] and "0.85%" in out["reply"] and "0.30%" in out["reply"]
     assert english_leaks({"reply": out["reply"]}, NAMES) == []
 
 
 def test_the_english_counter_is_unchanged_and_carries_the_same_figures(api: TestClient) -> None:
     out = _buyer(api, TERMS_EN, "en")
-    assert out["reply"].startswith("Option A: Terms stay at 45 days. We will accept early settlement on up to ¥257,200")
+    assert out["reply"].startswith("Option A: Terms stay at 45 days. We will accept early settlement on up to ¥260,000")
     assert "Option B: 55-day terms accepted with a 0.30% price adjustment" in out["reply"]
 
 

@@ -90,10 +90,10 @@ def test_the_chinese_deal_card_says_the_same_things_in_chinese(day34):
     assert [(s["label"], s["note"]) for s in deal["stages"]] == [
         ("合同已读取", "34 天前"), ("条款已谈判", "34 天前"), ("提前付款到账", "32 天前"), ("催收中", "已逾期 2 天"),
         ("已履行完毕", "300 天后")]
-    assert deal["changes"][3]["text"].startswith("提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥257,200.00，折扣 0.85%")
+    assert deal["changes"][3]["text"].startswith("提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥260,000.00，折扣 0.85%")
     assert "应于32 天前付款" in deal["changes"][3]["text"] and deal["changes"][3]["text"].endswith("由代理在您设定的限额内入账")
     assert deal["next_action"]["text"] == (
-        "催收 Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）中未收的 ¥162,800.00。审批：针对32 天前开具的发票，"
+        "催收 Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）中未收的 ¥160,000.00。审批：针对32 天前开具的发票，"
         "垫款 ¥200,000.00，以保证8 天后的现金不低于您的底线。")
     assert deal["invoices"][0]["label"] == "Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）"
     assert deal["invoices"][1]["label"] == "32 天前开具的发票"

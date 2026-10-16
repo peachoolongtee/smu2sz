@@ -438,14 +438,17 @@ def _first_look(built: Built, lg: Lang) -> dict:
     if breach is not None and breach <= FORECAST_DAYS:
         head = (t(lg, "Your cash is already below your minimum", "您的现金已低于最低值") if breach == 0 else
                 t(lg, f"Your cash goes below your minimum in {breach} days", f"您的现金将在 {breach} 天后低于最低值"))
-        detail = t(lg, f"Lowest point {fmt_yuan(traj.min_cash_fen)} on {_date_words(built.start + timedelta(days=traj.min_cash_day), lg)}. "
+        # The window is named: Home looks further ahead (the mandate's horizon), so its lowest point can differ from this one.
+        detail = t(lg, f"Lowest point in the next {FORECAST_DAYS} days {fmt_yuan(traj.min_cash_fen)} on "
+                       f"{_date_words(built.start + timedelta(days=traj.min_cash_day), lg)}. "
                        "After you open the books, Home shows the plan to fix it.",
-                   f"最低点 {fmt_yuan(traj.min_cash_fen)}，在{_date_words(built.start + timedelta(days=traj.min_cash_day), lg)}。开立账簿后，首页会给出解决方案。")
+                   f"未来 {FORECAST_DAYS} 天内最低点 {fmt_yuan(traj.min_cash_fen)}，在{_date_words(built.start + timedelta(days=traj.min_cash_day), lg)}。"
+                   "开立账簿后，首页会给出解决方案。")
     else:
         head = t(lg, f"Your cash stays above your minimum for the next {FORECAST_DAYS} days",
                  f"未来 {FORECAST_DAYS} 天您的现金都高于最低值")
-        detail = t(lg, f"Lowest point {fmt_yuan(traj.min_cash_fen)}, on what you entered.",
-                   f"按您填写的数据，最低点为 {fmt_yuan(traj.min_cash_fen)}。")
+        detail = t(lg, f"Lowest point in the next {FORECAST_DAYS} days {fmt_yuan(traj.min_cash_fen)}, on what you entered.",
+                   f"按您填写的数据，未来 {FORECAST_DAYS} 天内最低点为 {fmt_yuan(traj.min_cash_fen)}。")
     return {"headline": head, "detail": detail, "breach_day": breach, "min_cash_fen": m.min_cash_fen,
             "min_cash_display": fmt_yuan(m.min_cash_fen), "points": points}
 

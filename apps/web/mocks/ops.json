@@ -16,10 +16,10 @@
     "status": "EXECUTED",
     "tier": "TIER_1",
     "requested_by": "AGENT",
-    "message": "Drew ¥149,986.20 on FAC-LINE on day 0",
-    "summary": "Drew ¥149,986.20 on FAC-LINE on day 0",
-    "message_when": "Drew ¥149,986.20 on Bank credit line today",
-    "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received today.",
+    "message": "Drew ¥147,210.00 on FAC-LINE on day 0",
+    "summary": "Drew ¥147,210.00 on FAC-LINE on day 0",
+    "message_when": "Drew ¥147,210.00 on Bank credit line today",
+    "event_text": "¥147,210.00 drawn on the Bank credit line. Cash received today.",
     "event_detail": null,
     "decision_id": "deal:OFF-f806f79b6c21"
   },
@@ -88,11 +88,11 @@
     "status": "EXECUTED",
     "tier": "TIER_1",
     "requested_by": "SYSTEM",
-    "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
-    "summary": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
-    "message_when": "Received ¥255,013.80 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 30 days (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due in 30 days)",
-    "event_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-    "event_detail": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due in 30 days. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
+    "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
+    "summary": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
+    "message_when": "Received ¥257,790.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 30 days (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due in 30 days)",
+    "event_text": "Received ¥257,790.00 from Foshan Home Retail Co.",
+    "event_detail": "Settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due in 30 days. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
     "decision_id": null
   }
 }

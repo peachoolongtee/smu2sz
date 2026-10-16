@@ -141,13 +141,14 @@ sf = F(out["reserve_shortfall_max"], 100)
 out["reserve_cure_cost_if"] = if_cost(sf, 57)
 
 # Counter A
-# face = the exact gross-up of the gap net of the committed line, rounded UP to a whole 100 yuan (so it nets
-# at least the gap); the rest of the gap is carried on the committed line, whose cost is the funding cost
-ca_face = -(-(PR / (1 - bp(85))) // 100) * 100
+# face = the exact gross-up of the gap net of the committed line, rounded UP (so it nets at least the gap) to two
+# significant figures of RCV-A's outstanding 420,000, a step of 10,000 yuan, so the face does not reveal the gap
+# (R-10, ADR-0007 addendum 16 Oct); the rest of the gap is carried on the committed line, whose cost is the funding cost
+ca_face = min(-(-(PR / (1 - bp(85))) // 10000) * 10000, Y(420000))
 out["counter_a_face"] = fen(ca_face)
 out["counter_a_discount"] = fen(ca_face * bp(85))
 ca_line_draw = F(need, 100) - (ca_face - F(out["counter_a_discount"], 100))
-# the line carries the rest of the gap: 405,000 - (257,200 - 2,186.20) = 149,986.20 (shown by the demo's repay)
+# the line carries the rest of the gap: 405,000 - (260,000 - 2,210.00) = 147,210.00 (shown by the demo's repay)
 out["counter_a_total"] = out["counter_a_discount"] + fen(ca_line_draw * LINE_RATE * 32 / 365)
 # Counter B
 out["counter_b_price_adj_per_invoice"] = fen(Y(420000) * bp(45))

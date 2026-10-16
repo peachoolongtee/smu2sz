@@ -31,7 +31,7 @@ def test_an_executed_event_says_the_forecast_now_matching_the_homes_first_breach
     gap = f"¥{(cash['floor_fen'] - cash['first_breach_cash_fen']) / 100:,.2f}"
     want = f"Cash forecast is now {gap} below your minimum {cash['first_breach_when']}."
     receipt = next(o for o in _ledger(client)["operations"] if o["kind"] == "RECEIVE_PAYMENT")
-    assert receipt["what_changed"] == receipt["event_text"] == "Received ¥255,013.80 from Foshan Home Retail Co."
+    assert receipt["what_changed"] == receipt["event_text"] == "Received ¥257,790.00 from Foshan Home Retail Co."
     assert receipt["why_it_matters"] == want and receipt["why_it_matters_as_of"] == "now"
     clock = next(o for o in _ledger(client)["operations"] if o["kind"] == "ADVANCE_CLOCK")
     assert clock["why_it_matters"] == want

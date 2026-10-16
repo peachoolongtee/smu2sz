@@ -81,8 +81,9 @@ def grid(face_max_fen: int) -> dict[str, dict[str, int]]:
 # ¥85,000 below the reserve with no admissible cure), 55 days is curable in time.
 PRESETS: dict[str, WhatIfParams] = {
     "actual": WhatIfParams(terms_days=60, discount_bp=120, rebate_bp=100),
-    # Option A's face nets the gap less the line, which includes the existing loan's day-30 payment (¥257,200)
-    "option_a": WhatIfParams(terms_days=45, discount_bp=85, rebate_bp=0, settle_face_fen=25_720_000),
+    # Option A's face nets the gap less the line, which includes the existing loan's day-30 payment, rounded up to a whole
+    # ¥10,000 so it does not reveal the gap (R-10, ADR-0007 addendum): ¥260,000
+    "option_a": WhatIfParams(terms_days=45, discount_bp=85, rebate_bp=0, settle_face_fen=26_000_000),
     "option_b": WhatIfParams(terms_days=55, discount_bp=0, rebate_bp=0, price_adjustment_bp=30),
     "status_quo": WhatIfParams(terms_days=45, discount_bp=0, rebate_bp=0),
 }

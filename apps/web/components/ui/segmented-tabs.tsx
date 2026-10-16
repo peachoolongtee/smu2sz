@@ -26,8 +26,8 @@ export interface SegmentedTabOption<T extends string | number> {
 
 /**
  * The one segmented control (the owner's reference: a pill track, a raised selected pill, an icon and a label on each, an optional count badge), light:
- * a `#eef1f5` track on a `line-ui` hairline, a white selected pill with its own hairline and a 1 px shadow. The selected state is not the pill alone: the selected
- * label is weight 800 with its icon in the brand blue, the rest 600 in `ink-2` (the pill is 1.15:1 on the track; the weight and the icon carry the choice).
+ * a `#eef1f5` track on a `line-ui` hairline, the selected pill in Home's purple (every filter's selected colour) with white words and a 1 px shadow; the selected
+ * label is weight 800, the rest 600 in `ink-2`.
  *
  * It is a tablist: `role="tab"` and `aria-selected` on each option, one tab stop (the selected one) and the arrow keys, Home and End to move; the selection
  * follows the focus (choosing is cheap here: a filter, a window, a scenario, a queue). Each option is as wide as its own label (a weight-800 twin reserves the
@@ -138,7 +138,7 @@ export function SegmentedTabs<T extends string | number>({
         <span
           ref={pill}
           aria-hidden
-          className={`pointer-events-none absolute inset-y-0.5 left-0 border bg-surface ${compact ? "rounded-control border-line-strong" : "rounded-pill border-line shadow-pill"} ${reduced ? "" : "transition-[transform,width] duration-(--dur-fast) ease-select"} ${selected < 0 ? "opacity-0" : ""}`}
+          className={`pointer-events-none absolute inset-y-0.5 left-0 border border-f-purple bg-f-purple ${compact ? "rounded-control" : "rounded-pill shadow-pill"} ${reduced ? "" : "transition-[transform,width] duration-(--dur-fast) ease-select"} ${selected < 0 ? "opacity-0" : ""}`}
         />
         {tabs.map((o, i) => {
           const on = i === selected;
@@ -153,10 +153,10 @@ export function SegmentedTabs<T extends string | number>({
               onClick={() => onChange(o.value)}
               onKeyDown={(e) => onKeyDown(e, i)}
               className={`seg-tab relative z-10 flex min-w-0 max-w-72 flex-auto cursor-pointer items-center justify-center gap-2 border border-transparent px-3 text-center leading-tight transition-colors duration-(--dur-fast) disabled:cursor-not-allowed disabled:opacity-50 ${compact ? "h-6.5 rounded-control text-supporting" : "min-h-11 rounded-pill text-sm sm:px-4"} ${scroll ? "whitespace-nowrap" : ""} ${
-                on ? `font-extrabold text-ink ${pill ? "border-transparent" : "border-line bg-surface shadow-pill"}` : "border-transparent font-semibold text-ink-2 enabled:hover:text-ink"
+                on ? `font-extrabold text-f-btn-ink ${pill ? "border-transparent" : "border-f-purple bg-f-purple shadow-pill"}` : "border-transparent font-semibold text-ink-2 enabled:hover:text-f-purple-ink"
               }`}
             >
-              {Icon ? <Icon className={`size-4 shrink-0 transition-colors duration-(--dur-fast) ${on ? "text-brand-600" : ""}`} /> : null}
+              {Icon ? <Icon className={`size-4 shrink-0 transition-colors duration-(--dur-fast) ${on ? "text-f-btn-ink" : ""}`} /> : null}
               <span
                 data-label={typeof o.label === "string" ? o.label : undefined}
                 className={`min-w-0 ${scroll ? "" : "max-h-9 overflow-hidden"} after:invisible after:block after:h-0 after:overflow-hidden after:font-extrabold after:content-[attr(data-label)]`}

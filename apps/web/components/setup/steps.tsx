@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { Disclosure } from "@/components/business/kit";
-import { TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { tableCls, tdCls, thCls } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dictionary";
 import { blankBill, blankBorrow, blankLoan, updateDraft } from "@/lib/setup-draft";
 import type { SetupBill, SetupBorrow, SetupDocument, SetupDraft, SetupLoan } from "@/lib/types";
 import { DocPicker } from "./doc-picker";
-import { AddButton, DateInput, Field, IntInput, type Issues, MoneyInput, RemoveButton, Select, TextInput } from "./fields";
+import { AddButton, DateInput, Field, IntInput, type Issues, MoneyInput, RemoveButton, RowsTable, Select, TextInput } from "./fields";
 
 /** The setup's steps 1, 2, 4 and 5 (step 3, customers, and step 6, review, have their own files). Every edit goes straight into the draft. */
 
@@ -108,8 +108,8 @@ export function StepFunding({ draft, issues }: { draft: SetupDraft; issues: Issu
         {draft.borrowing.length === 0 ? (
           <p className="rounded-card border border-dashed border-line-strong px-4 py-6 text-center text-sm text-ink-2">{t("setup.s2.none")}</p>
         ) : (
-          <TableWrap label={t("setup.s2.sources")}>
-            <table className={`${tableCls} min-w-[980px]`}>
+          <RowsTable label={t("setup.s2.sources")}>
+            <table className={`${tableCls} setup-rows min-w-[980px]`}>
               <thead>
                 <tr>
                   {(["name", "kind", "limit", "drawn", "rate", "fee", "lead", "cleandown", "agreed"] as const).map((c) => (
@@ -174,7 +174,7 @@ export function StepFunding({ draft, issues }: { draft: SetupDraft; issues: Issu
                 })}
               </tbody>
             </table>
-          </TableWrap>
+          </RowsTable>
         )}
         <p className="text-meta text-ink-3">{t("setup.s2.foot")}</p>
       </section>
@@ -190,8 +190,8 @@ export function StepFunding({ draft, issues }: { draft: SetupDraft; issues: Issu
         {draft.loans.length === 0 ? (
           <p className="text-sm text-ink-3">{t("setup.s2.noLoans")}</p>
         ) : (
-          <TableWrap label={t("setup.s2.loans")}>
-            <table className={`${tableCls} min-w-[820px]`}>
+          <RowsTable label={t("setup.s2.loans")}>
+            <table className={`${tableCls} setup-rows min-w-[820px]`}>
               <thead>
                 <tr>
                   {(["lender", "owed", "repayment", "every", "nextPay", "interest"] as const).map((c) => (
@@ -235,7 +235,7 @@ export function StepFunding({ draft, issues }: { draft: SetupDraft; issues: Issu
                 })}
               </tbody>
             </table>
-          </TableWrap>
+          </RowsTable>
         )}
       </section>
     </div>
@@ -272,8 +272,8 @@ export function StepBills({ draft, issues }: { draft: SetupDraft; issues: Issues
       {draft.bills.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong px-4 py-6 text-center text-sm text-ink-2">{t("setup.s4.none")}</p>
       ) : (
-        <TableWrap label={t("setup.step.4")}>
-          <table className={`${tableCls} min-w-[860px]`}>
+        <RowsTable label={t("setup.step.4")}>
+          <table className={`${tableCls} setup-rows min-w-[860px]`}>
             <thead>
               <tr>
                 {(["what", "billKind", "amount", "nextOn", "repeats", "until"] as const).map((c) => (
@@ -321,7 +321,7 @@ export function StepBills({ draft, issues }: { draft: SetupDraft; issues: Issues
               })}
             </tbody>
           </table>
-        </TableWrap>
+        </RowsTable>
       )}
       <p className="text-meta text-ink-3">{t("setup.s4.foot")}</p>
     </div>

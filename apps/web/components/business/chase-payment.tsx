@@ -73,7 +73,7 @@ export function ChasePayment({
         onClick={(e) => {
           if (e.target === e.currentTarget) setOpen(false);
         }}
-        className="m-auto w-[min(36rem,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/40"
+        className="fixed inset-0 m-auto h-fit w-[min(36rem,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/40"
       >
         {open ? <ChaseBody receivableId={receivableId} buyer={buyer} titleId={title} onClose={() => setOpen(false)} /> : null}
       </dialog>

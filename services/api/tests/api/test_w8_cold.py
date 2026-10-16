@@ -19,11 +19,11 @@ def test_the_partial_cure_names_the_worst_point_apart_from_todays_gap(client):
     _walk(client)
     _act(client)
     en, zh = [client.get("/approvals/queue", params={"lang": lang}).json()["approvals"][0] for lang in ("en", "zh")]
-    want = "At its lowest point, in 8 days, cash would still be ¥300,000.00 below your minimum cash reserve; today it is ¥255,013.80 below."
+    want = "At its lowest point, in 8 days, cash would still be ¥300,000.00 below your minimum cash reserve; today it is ¥257,790.00 below."
     assert en["presentation"]["protects"] == en["presentation"]["residual"]["text"] == en["quote"]["after"] == want
-    assert zh["presentation"]["protects"] == zh["quote"]["after"] == "在最低点（8 天后），现金仍比最低现金储备低 ¥300,000.00；今天低 ¥255,013.80。"
+    assert zh["presentation"]["protects"] == zh["quote"]["after"] == "在最低点（8 天后），现金仍比最低现金储备低 ¥300,000.00；今天低 ¥257,790.00。"
     assert client.get("/home").json()["next_action"]["after"] == want  # the home says the same
-    assert en["presentation"]["residual"]["shortfall_today_display"] == zh["presentation"]["residual"]["shortfall_today_display"] == "¥255,013.80"
+    assert en["presentation"]["residual"]["shortfall_today_display"] == zh["presentation"]["residual"]["shortfall_today_display"] == "¥257,790.00"
     assert en["presentation"]["residual"]["shortfall_display"] == zh["presentation"]["residual"]["shortfall_display"] == "¥300,000.00"
     # once approved the same card keeps the sentence (the quote was stored with the day of its lowest point)
     client.post(f"/approvals/{en['id']}", json={"decision": "APPROVE"})
@@ -64,7 +64,7 @@ def test_a_waiting_card_states_what_it_asks_and_has_no_next_step(client):
     _walk(client)
     _act(client)
     en = client.get("/approvals/queue").json()["approvals"][0]["presentation"]
-    assert en["headline"] == en["title_text"] == "Request ¥155,013.80 of invoice financing" and en["next_step_text"] is None
+    assert en["headline"] == en["title_text"] == "Request ¥157,790 of invoice financing" and en["next_step_text"] is None
 
 
 def test_the_signed_limits_are_named_in_words_not_as_a_mandate_version(client):

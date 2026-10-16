@@ -103,11 +103,11 @@ def test_golden_day_zero_each_path_says_its_short_words(api: TestClient) -> None
     assert a["reserve_state_text"] == b["reserve_state_text"] == "Held, no buffer at the lowest point"
     assert a["headroom_short"] == "¥0"
     assert asked["financing_needed_text"] == "None in this scenario"
-    assert a["financing_needed_text"] == "¥150k credit-line draw today"
+    assert a["financing_needed_text"] == "¥147k credit-line draw today"
     assert b["financing_needed_text"] == "¥90k credit-line draw today, ¥315k invoice financing in 3 days"
     assert [p["buyer_status_text"] for p in (asked, a, b)] == ["Asked by Foshan", "Not yet sent", "Not yet sent"]
     assert (asked["economic_headline_text"], asked["economic_basis_text"]) == ("¥5,040.00 once, ¥28,326.92 over 12 months", "Two parts, not added together")
-    assert (a["economic_headline_text"], a["economic_basis_text"]) == ("¥3,027.77", "One-off cost, nothing ongoing")
+    assert (a["economic_headline_text"], a["economic_basis_text"]) == ("¥3,035.99", "One-off cost, nothing ongoing")
     assert (b["economic_headline_text"], b["economic_basis_text"]) == ("About ¥0", "Net economic cost over 12 months")
 
 
@@ -129,10 +129,10 @@ def test_the_terms_are_grouped_by_scope_and_an_untouched_scope_says_unchanged(ap
                                                                  ("rebate_or_price", "next_quarter")]
         assert [t["scope_label"] for t in p["terms"]] == ["Future invoices", "Existing invoice", "Next quarter"]
     cells = {k: {t["scope"]: t["cell_text"] for t in p["terms"]} for k, p in by.items()}
-    assert cells["Option A"] == {"future_invoices": "45 days", "existing_invoice": "0.85% off ¥257,200.00", "next_quarter": "Not offered"}
+    assert cells["Option A"] == {"future_invoices": "45 days", "existing_invoice": "0.85% off ¥260,000.00", "next_quarter": "Not offered"}
     assert cells["Option B"]["existing_invoice"] == "Not offered" and cells["Option B"]["next_quarter"] == "0.30% price rise"
     # the round-two reading of `value_text` is as it was: null where the path carries nothing
-    assert [t["value_text"] for t in by["Option A"]["terms"]] == ["45 days", "0.85% off ¥257,200.00", None]
+    assert [t["value_text"] for t in by["Option A"]["terms"]] == ["45 days", "0.85% off ¥260,000.00", None]
 
 
 # ================================================================ task 2: the recommendation
@@ -416,7 +416,7 @@ def test_the_strip_is_one_function_at_every_moment_of_the_golden_story(api: Test
     overview = api.get("/customers/BUYER-1/overview").json()
     [hist] = overview["deals_history"]
     assert hist["decision_id"] == did and hist["lifecycle"] == "closed" and hist["state_word"] == "Paid late"
-    assert hist["summary_text"].startswith("This deal cost ¥4,809.96 against ¥3,027.77 expected")
+    assert hist["summary_text"].startswith("This deal cost ¥4,818.18 against ¥3,035.99 expected")
     assert hist["href"] == f"/deals?customer=BUYER-1&decision={did}&from=customer"
     zh_hist = api.get("/customers/BUYER-1/overview", params={"lang": "zh"}).json()["deals_history"]
     for item, lang in ((hist, "en"), (zh_hist[0], "zh")):
@@ -431,7 +431,7 @@ def test_the_strip_is_one_function_at_every_moment_of_the_golden_story(api: Test
     # a new Foshan request: the history line is present, in the tracker's words, and the verdict and the reply are what the picture alone says
     new = _evaluate(api, "EX03_AS_USUAL")
     pic = _picture(api, new)
-    assert pic["buyer_history_text"].startswith("Last time Foshan agreed ") and "This deal cost ¥4,809.96 against ¥3,027.77 expected" in pic["buyer_history_text"]
+    assert pic["buyer_history_text"].startswith("Last time Foshan agreed ") and "This deal cost ¥4,818.18 against ¥3,035.99 expected" in pic["buyer_history_text"]
     assert pic["buyer_history_title"] == "Context only: it changes no verdict, counter, plan or authority."
     assert not BAD.search(pic["buyer_history_text"]) and not BAD.search(pic["buyer_history_title"])
     with rt.lock:

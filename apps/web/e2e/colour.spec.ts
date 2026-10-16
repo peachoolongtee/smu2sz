@@ -85,10 +85,13 @@ test("the Home headline sits on the canvas with no card; the planned pill meets 
       return min;
     });
     expect(worst, "the lowest text contrast on the alarm tint").toBeGreaterThanOrEqual(4.5);
-  } else expect(fill).toBe(PANEL);
+  } else expect(fill).toBe("rgb(255, 255, 255)"); // the white inner card of the outlook (the final UI fold, 16 Oct)
   expect(await bar.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
   expect(await bar.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("none");
-  expect(await bar.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("24px");
+  // The recommendation sits inside the outlook card, so it takes the inner radius (20 px) under the outlook's 24 px.
+  await expect(page.getByTestId("hv2-outlook-card").getByTestId("hv2-action")).toHaveCount(1);
+  expect(await bar.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("20px");
+  expect(await page.getByTestId("hv2-outlook-card").evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("24px");
   expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow)).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
   if (!alarm) expect(contrast(await color(page.getByTestId("home-action-text")), fill)).toBeGreaterThan(4.5); // on the alarm tint every text is measured above
   expect(await color(page.getByTestId("home-kpi-lowest-value"))).toBe("rgb(168, 50, 34)");
