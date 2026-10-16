@@ -129,7 +129,7 @@ function MoveChart({ picture, asked, replies }: { picture: OfferPictureView; ask
                 type="button"
                 aria-pressed={reply?.key === p.key}
                 onClick={() => setPick(p.key)}
-                className={`motion-press min-h-11 rounded-pill border px-4 text-sm ${reply?.key === p.key ? "border-f-ink bg-f-ink font-bold text-surface" : "border-line-ui bg-surface text-ink hover:bg-subtle"}`}
+                className={`motion-press min-h-11 rounded-pill border px-4 text-sm ${reply?.key === p.key ? "border-f-purple bg-f-purple font-bold text-f-btn-ink" : "border-line-ui bg-surface text-ink hover:bg-subtle"}`}
                 data-testid={`deal-reply-${p.key}`}
               >
                 {p.label}

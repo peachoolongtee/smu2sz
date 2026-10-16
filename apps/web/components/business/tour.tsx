@@ -82,15 +82,14 @@ const part = (key: string, target: string, extra?: Step["extra"]): Step => ({ ta
 /** The steps of each page, in reading order: every section, and what its buttons do. A step whose part is not on screen is left out. */
 const STEPS: Record<string, Step[]> = {
   "/": [
-    part("home.status", tid("home-status")),
+    // The page's order: the outlook (the recommendation inside it), the worklist, then the side column. The headline is for a screen reader only, so it is no step.
+    part("home.outlook", tid("hv2-outlook-card")),
+    part("home.action", tid("hv2-action")),
+    part("home.worklist", tid("home-worklist-panel")),
     part("home.cash", tid("hv2-cash-card")),
     part("home.mix", '[data-tour="home-mix"]'),
-    part("home.action", tid("hv2-action")),
-    part("home.outlook", tid("hv2-outlook-card")),
-    part("home.worklist", tid("home-worklist-panel")),
     part("home.upcoming", tid("hv2-upcoming")),
     part("home.owed", tid("hv2-owed-card")),
-    part("home.tools", '[data-tour="home-tools"]'),
     part("shell.ask", tid("ask-header")),
     NAV,
     part("shell.account", tid("account-menu")),
@@ -108,13 +107,14 @@ const STEPS: Record<string, Step[]> = {
   "/cash": [
     part("cash.status", "#cash-answer"),
     part("cash.summary", '[data-tour="cash-summary"]'),
+    // "Your funding" is the second card (from lg). It is taller than the screen leaves room for beside a card: the ring stands for it (none without a source to draw), else its first row or its empty line.
+    part("cash.sources", '#cash-sources-now [data-testid="home-mix"], #cash-sources-now [data-testid^="cash-facility-"], #cash-sources-now [data-testid="cash-current-row"], #cash-sources-now [data-testid="cash-current-none"]'),
     part("cash.plan", tid("home-next-action")),
     part("cash.chart", tid("cash-forecast")),
     part("cash.markers", '[data-testid^="picture-marker-"]'),
     part("cash.try", tid("cash-try")),
     part("cash.more", tid("cash-more")),
     part("cash.options", tid("cash-options-all")),
-    part("cash.sources", '#cash-sources-now [data-testid^="cash-facility-"]'), // the funding card is taller than the screen leaves room for beside a card: the first source stands for it
     part("cash.readings", tid("cash-readings")),
   ],
   "/whatif": [part("sandbox.pick", tid("whatif-ask")), part("sandbox.controls", "#whatif-controls"), part("sandbox.outcome", tid("whatif-outcome"))],
