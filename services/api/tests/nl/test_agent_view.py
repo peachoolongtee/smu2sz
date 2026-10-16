@@ -141,3 +141,15 @@ def test_every_amount_an_agent_turn_states_is_its_own_operations(client, rt, scr
         assert {_fen(m) for m in MONEY.findall(body)} <= own, body
         assert all(s["description"] == "Counter the offer" for s in r["plan"] if s["kind"] == "COUNTER_OFFER")
         assert all(o["message"] is None for o in r["operations"] if o["kind"] == "COUNTER_OFFER")
+
+
+def test_the_owners_session_adds_nothing_to_the_agents_allow_list(client, rt):
+    from app.api.nl import _session_ops
+
+    owner = Chat(client, "own-sess").say("Get paid early on RCV-A")
+    assert owner["awaiting_confirmation"] and _session_ops("own-sess", owner_auth=True)
+    assert _session_ops("own-sess") == []  # the agent key naming the owner's session
+    r = Chat(client, "own-sess", owner=False).say("go ahead")
+    body = json.dumps({k: r[k] for k in ("reply", "plan", "operations")}, ensure_ascii=False)
+    assert {_fen(m) for m in MONEY.findall(body)} <= {int(a.value) for a in _allowed(rt, r)}, body
+    assert "%" not in body

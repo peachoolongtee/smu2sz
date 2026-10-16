@@ -107,9 +107,12 @@ def _record_shown_quote(rt, pending: PendingPlan, operations: list[dict[str, Any
         return None
 
 
-def _session_ops(session_id: str | None) -> list[Any]:
-    """The typed operations of the plan a session holds, if any (their amounts are what an agent turn acts on)."""
+def _session_ops(session_id: str | None, owner_auth: bool = False) -> list[Any]:
+    """The typed operations of the plan a session holds, if any (their amounts are what an agent turn acts on). Only a session
+    opened by the same kind of caller counts: the owner's session id named by an agent key adds nothing to its allow-list."""
     session = SESSIONS.get(session_id) if session_id else None
+    if session is None or session.actor != "OWNER" or bool(session.owner_auth) != owner_auth:
+        return []
     pending = session.pending_plan if session is not None else None
     return list(pending.ops) if pending is not None else []
 
