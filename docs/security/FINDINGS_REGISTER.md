@@ -31,8 +31,8 @@ SUSPECTED = code reading only. Severity is for the stated scope; **S** = hackath
 | CAPEX-4b | (capex) a confirmed contract whose buyer party names a real supplier makes later purchases from that supplier refused as "your own business" (fails safe: refuses, never books) | Low | CONFIRMED on `b6d1e519` | open |
 | SETUP-1..7 | (capex branch) setup feature: see `CERTIFICATIONS.md`; SETUP-1, 4, 5, 7 fixed on `b6d1e519`, SETUP-2, 3, 6 open (Low/Info) | Low-Med to Info | CONFIRMED / reviewer | partly fixed |
 | SEC-23 | Red team d F1 test patched a function the code no longer called after `c51a7284`, so the no-deal guard was untested (guard itself intact) | Low (coverage) | CONFIRMED | **fixed** `1b58291f`, merged in `bbbfb7ce` |
-| SEC-06 | No runnable production configuration (compose cannot start; web build points at localhost) | n/a / High | CONFIRMED (code) | fixed on sec/owner-decisions-16oct (pending Security Lead verification): `DEMO_MODE` off unless set; tests, live suite, CI and run commands opt in |
-| SEC-07 | `DEMO_MODE` defaults on; published credentials and committed demo signing key = owner takeover outside compose | Info / High | CONFIRMED (code) | open |
+| SEC-06 | No runnable production configuration (compose cannot start; web build points at localhost) | n/a / High | CONFIRMED (code) | open |
+| SEC-07 | `DEMO_MODE` defaults on; published credentials and committed demo signing key = owner takeover outside compose | Info / High | CONFIRMED (code) | **fixed, certified on `0f92d433`** (default off) |
 | SEC-08 | Audit trail not tamper-evident (R-13): truncation/rewrite verify; approvals and security events unguarded; approval flip executes a rejected op | Medium / High | CONFIRMED (SQLite) | open |
 | SEC-09 | Bank-feed key moves the clock without bound: expires the mandate, posts debt service, logged as SYSTEM | Medium / Medium | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
 | SEC-10 | Unauthenticated callers grow `security_events` without bound; each refusal reads the whole table | Medium / Medium | REVIEWER-CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** (401 rate limit at the proxy remains) |
@@ -43,8 +43,8 @@ SUSPECTED = code reading only. Severity is for the stated scope; **S** = hackath
 | SEC-15 | Container and secret hygiene: root containers, unpinned bases, `uv:latest`, no `.dockerignore`, placeholder secrets accepted | Info / Low | REVIEWER-CONFIRMED (code) | open |
 | R-2 | One owner credential + one signing key; accept route queues and approves in one call | Info / Medium | open (accepted risk, re-confirmed in code) | design |
 | R-3 | Persuaded-but-authorised agent: Tier 1 inside the mandate, no aggregate draw limit | Medium / Medium | open (re-confirmed in code) | design |
-| R-10 | Buyer threshold probing: one keyed message reveals the counter cap (0.85%), and the counter's face (¥257,200) reveals the owner's funding gap; no per-buyer attempt budget | Medium / High | REVIEWER-CONFIRMED (`r2.py`); anonymous callers get no oracle | fixed on sec/owner-decisions-16oct (pending Security Lead verification): per-buyer budget, 5 a simulated day (`BUYER_ATTEMPTS_PER_DAY`), 429 `BUYER_BUDGET_EXHAUSTED` + `SEC-BUDGET-` event; counter-face pricing and circuit-breaker wiring still open (engine stability set) |
-| R-11 | Agent key reads cash, floor, DSCR/leverage limits, concession cap, break-even and full verdict JSON through `/nl` (wider than documented) | Medium / High | REVIEWER-CONFIRMED (`r1.py`, `r2.py`) | fixed on sec/owner-decisions-16oct (pending Security Lead verification): owner decision 16 Oct, the agent key's `/nl` turns get an allow-list view (`app/api/agent_view.py`) behind the egress guard |
+| R-10 | Buyer threshold probing: one keyed message reveals the counter cap (0.85%), and the counter's face (¥257,200) reveals the owner's funding gap; no per-buyer attempt budget | Medium / High | REVIEWER-CONFIRMED (`r2.py`); anonymous callers get no oracle | **mitigated, certified on `0f92d433`** (5 per buyer per day); residual: one message reveals the counter cap and the gap |
+| R-11 | Agent key reads cash, floor, DSCR/leverage limits, concession cap, break-even and full verdict JSON through `/nl` (wider than documented) | Medium / High | REVIEWER-CONFIRMED (`r1.py`, `r2.py`) | **fixed, certified on `0f92d433`** (agent allow-list) |
 
 Unverified areas and blockers are listed at the end; they are not passes.
 
@@ -269,7 +269,6 @@ Unverified areas and blockers are listed at the end; they are not passes.
   ¥257,200 of this invoice at 0.85%": the counter cap (break-even 0.88%) and, through ¥257,200 = ¥255,000 / (1 − 0.85%), the owner's
   funding gap. Anonymous callers get identical replies at every rate (no oracle). Keyed buyers' turns execute at Tier 1
   (`app/nl/offers.py:355`): the handoff's "proposal only, never executed" is true only for keyless buyers.
-  **16 Oct (sec/owner-decisions-16oct):** the per-buyer budget is in (`app/api/offers.py` `enforce_buyer_budget`, `Runtime.take_buyer_slot`). Left for the lead, because each touches the engine stability set: (1) the counter's face is `gap / (1 − rate)`, so it states the funding gap; round the face up to a coarse grid (for example ¥10,000) or offer the invoice's whole face, inside the verifier's coverage proof (`app/verifier`, `app/funding`); (2) price counters from a fixed rate grid not derived from the cap and break-even; (3) count `SEC-BUDGET-` events in `Executor._recent_refusals` (`app/operations/executor.py`) so repeated exhaustion opens the circuit.
 - **R-11** (reviewer `r1.py`, `r2.py`, agent key, actor OWNER by default): "show cash status" returns cash, reserve floor, shortfall, DSCR
   and leverage limits, concession cap; "show alerts", "get an invoice paid early", "evaluate", "what if" return the floor, break-even,
   counter cap and the full verdict JSON with limits. Only CHANGES, COMPARE_FINANCING, SHOW_DEAL ask for the owner's sign-in
