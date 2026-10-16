@@ -665,7 +665,7 @@ def _authority_sentence(path: dict[str, Any], subject: Literal["counter", "reque
     """Who decides, as a sentence that stands alone, from the deal picture's own authority class for the path (never a second rule). A path
     with no class (unpriced, not drawn) keeps the picture's words."""
     sentences = {
-        ("counter", FLOW_MAY): ("FLOW can send this counter without your approval.", "FLOW 可以在无需您批准的情况下发送这份还价。"),
+        ("counter", FLOW_MAY): ("This counter is within your mandate: no approval needed.", "这份还价在您的授权范围内：无需批准。"),
         ("counter", NEEDS_OWNER): ("This counter needs your approval before it is sent.", "这份还价需要您批准后才能发送。"),
         ("counter", OVER_LIMIT): ("This counter is over a limit you signed: only a new mandate changes that.",
                                   "这份还价超出您签署的上限：只有签署新的授权才能改变。"),

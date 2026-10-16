@@ -582,3 +582,14 @@ def test_a_reply_names_the_counter_it_answered(api: TestClient) -> None:
     assert _offered(api, oid, v, b).status_code == 200 and _offered(api, oid, v, a).status_code == 200
     r = api.post(f"/offers/{oid}/buyer-reply", json={"verdict_id": v["id"], "counter_id": b["counter_id"], "text": "Could you do 50-day terms instead?"})
     assert _decision(api, r.json()["reply_offer_id"])["reply_to"]["title_text"] == "In reply to Option B you sent on 1 October 2026"
+
+
+def test_an_offer_that_ended_unagreed_lists_what_was_offered_never_as_in_force(api: TestClient) -> None:
+    """Owner review of the screens: after the offer closed, its terms read as offered, not "effective yesterday"."""
+    oid, _v, _m = _sent(api)
+    assert _decision(api, oid)["outbound"]["terms_title_text"] == "What you offered"
+    assert api.post("/clock/advance", json={"to_day": 3}).status_code == 200
+    out = _decision(api, oid)["outbound"]
+    assert out["terms_title_text"] == "What you offered (not agreed)"
+    assert out["terms"] == ["Payment terms: 45 days", "Early payment: 0.85% off ¥257,200.00", "Rebate or price: Not offered"]
+    assert not any("effective" in line for line in out["terms"])

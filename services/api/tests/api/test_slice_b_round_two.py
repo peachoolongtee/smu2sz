@@ -339,7 +339,7 @@ def test_the_send_receipt_has_three_exact_statements_specific_to_this_send(api: 
     assert r["remaining_text"] == GOLDEN_RECEIPT[lang]["remaining_text"]
     assert "（" not in r["authorizes_text"] and "(" not in r["authorizes_text"]  # no parenthetical about approval
     assert "approval" not in r["authorizes_text"] and "批准" not in r["authorizes_text"]  # authority is said once, in `authority_text`
-    assert r["authority_text"] == {"en": "FLOW can send it. Your approval is not needed.", "zh": "FLOW 可以发送。无需您批准。"}[lang]
+    assert r["authority_text"] == {"en": "Within your mandate: no approval needed.", "zh": "在您的授权范围内：无需批准。"}[lang]
     assert r["executes_now_text"] == ("; " if lang == "en" else "；").join(pr["send_scope_lines"][1:])  # the gap plan's draw, then its cost
     assert ("Draws ¥149,986.20" if lang == "en" else "提款 ¥149,986.20") in r["executes_now_text"]
     if lang == "zh":

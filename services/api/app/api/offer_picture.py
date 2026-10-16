@@ -234,7 +234,7 @@ FLOW_MAY, NEEDS_OWNER, OVER_LIMIT = "flow_may", "needs_owner", "over_limit"
 
 
 def _authority_text(lang: str, authority: str) -> str:
-    return {FLOW_MAY: say(lang, "FLOW can send it", "FLOW 可以直接发送"),
+    return {FLOW_MAY: say(lang, "Within your mandate", "在您的授权范围内"),
             NEEDS_OWNER: say(lang, "Needs your approval", "需要您批准"),
             OVER_LIMIT: say(lang, "Over a limit you signed: only a new mandate changes that",
                             "超出您签署的上限：只有签署新的授权才能改变")}[authority]
@@ -286,7 +286,7 @@ def _decides(lang: str, authority: str | None, authority_text: str, sendable: bo
         return say(lang, "It changes your terms, so you approve it first.", "它会改变您的条款，需要您先批准。")
     if needs_owner:
         return say(lang, "It is above what FLOW may agree alone, so you approve it first.", "它超出 FLOW 可自行同意的范围，需要您先批准。")
-    return say(lang, "FLOW can send it. Your approval is not needed.", "FLOW 可以发送。无需您批准。")
+    return say(lang, "Within your mandate: no approval needed.", "在您的授权范围内：无需批准。")
 
 
 # ---------------------------------------------------------------- the evidence behind who decides
@@ -453,8 +453,8 @@ def _recommended_reason(lang: str, needs_owner: bool) -> str:
     if needs_owner:
         return say(lang, "Recommended because it is the first counter within your mandate; it needs your approval.",
                    "推荐原因：它是您授权范围内的第一个还价；需要您批准。")
-    return say(lang, "Recommended because FLOW can send it within your mandate without your approval.",
-               "推荐原因：FLOW 可以在您的授权范围内直接发送，无需您批准。")
+    return say(lang, "Recommended because it is within your mandate and needs no approval.",
+               "推荐原因：它在您的授权范围内，无需批准。")
 
 
 _LANDING_KINDS = {FundingActionKind.DRAW: ("credit-line draw", "信用额度提款"), FundingActionKind.FINANCE_INVOICE: ("invoice financing", "发票融资")}
