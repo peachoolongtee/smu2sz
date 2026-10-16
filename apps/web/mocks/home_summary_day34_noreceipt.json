@@ -5838,6 +5838,7 @@
     ],
     "cost_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
     "cost_note": null,
+    "cost_unstated": null,
     "cheaper_option": null,
     "rate_text": "32.5%",
     "cost_days": 10,

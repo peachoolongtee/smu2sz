@@ -5770,6 +5770,7 @@
     ],
     "cost_basis": "发票融资按整 30 天计费，直至发票付清。",
     "cost_note": null,
+    "cost_unstated": null,
     "cheaper_option": {
       "label": "从Bank credit line提款 ¥2,790.00，以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥80,000.00，以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥117,210.00",
       "cost_total_display": "¥1,702.20",

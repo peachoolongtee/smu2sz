@@ -5838,6 +5838,7 @@
     ],
     "cost_basis": "发票融资按整 30 天计费，直至发票付清。",
     "cost_note": null,
+    "cost_unstated": null,
     "cheaper_option": null,
     "rate_text": "32.5%",
     "cost_days": 10,
