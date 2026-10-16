@@ -2,8 +2,10 @@
 
 - **Early-pay counter (Option A).** Keep the current terms, no rebate; accept early settlement on up
   to the face that closes the near-term gap net of the committed line, at the largest whole-5bp rate
-  strictly below the break-even discount d/(1−d) < c (0.85% < 0.88%). The face is rounded up to a whole
-  ¥100 so it nets at least the gap; the router's committed plan on books that include the counter must
+  strictly below the break-even discount d/(1−d) < c (0.85% < 0.88%). The face is rounded up to a coarse
+  step (two significant figures of the invoice's outstanding amount, `early_pay_step`) so it nets at least the gap
+  and does not reveal it (R-10), at most the outstanding amount; if that face fails its re-check the whole
+  outstanding amount is tried, else no Option A; the router's committed plan on books that include the counter must
   keep the floor (else no Option A). Supplier cost = discount + that plan's cost.
 - **Price-adjustment counter (Option B).** Accept a perpetual terms extension with the smallest
   whole-5bp PRICE_ADJUSTMENT whose per-invoice amount covers the per-invoice funding cost, no rebate.
@@ -349,6 +351,12 @@ def _target_receivable(ctx: _Ctx) -> Receivable | None:
     return rcvs[0] if rcvs else None
 
 
+def early_pay_step(outstanding_fen: int) -> int:
+    """The early-pay face's rounding step in fen: the power of ten one digit below the outstanding amount's leading
+    digit (¥10,000 for an invoice of ¥100,000 to ¥999,999.99), so the face keeps two significant figures."""
+    return 10 ** max(0, len(str(max(outstanding_fen, 1))) - 2)
+
+
 def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | None:
     r = _target_receivable(ctx)
     if r is None:
@@ -384,78 +392,101 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
         return None
     rate = bp(rate_bp)
     face_exact = Fraction(net) / (1 - rate)
-    face = min(int(-(-face_exact // 10_000)) * 10_000, r.face_fen)  # rounded UP to a whole ¥100, never above the invoice
-    if face <= 0:
-        return None
-    disc_ob = _obligation(
-        ctx.cp, ObligationType.IMMEDIATE_DISCOUNT, rate_bp=rate_bp, effective_day=settle,
-        base=ObligationBase(kind=BaseKind.INVOICE, amount_fen=face, receivable_id=r.id),
-    )
-    # the committed plan on books that include the counter: a counter that cannot keep the floor is not offered
-    counter_plan = funding_plan(ctx.state, [*ctx.live, disc_ob], ctx.mandate, "COMMITTED")
-    if not counter_plan.admissible:
-        return None
-    t = project(ctx.state, [*ctx.live, disc_ob], counter_plan.actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
-    live_discounts = 0
-    if ctx.live:  # what the commitments in force already cost is not the counter's cost
-        live_discounts = project(ctx.state, list(ctx.live), [], Mode.CONSERVATIVE,
-                                 ctx.mandate.horizon_days).discounts_posted_fen
-    # Read from the projection (ADR-0007): interest + fees + discounts the engine posts with the counter in the
-    # books and the router's plan for the rest. The counter's own discount is its face at its rate; everything
-    # else is the cost of funding the rest of the gap.
-    total = t.interest_posted_fen + t.fees_posted_fen + t.discounts_posted_fen - live_discounts
-    discount = post(rate * face)
-    funding_cost = total - discount
-    # ADR-0007 test 3 for the counter: it is offered only if it beats the standing plan, like with like
-    # (both exclude the discounts the live commitments already post).
-    if base_plan.admissible:
-        t0 = project(ctx.state, list(ctx.live), base_plan.actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
-        standing = t0.interest_posted_fen + t0.fees_posted_fen + t0.discounts_posted_fen - live_discounts
-        if total >= standing:
-            return None
+    # R-10 (owner, 16 Oct): the face is a coarse step above the gap, never the gap to the ¥100, so the figure a buyer
+    # reads does not give the owner's funding gap back; at most the invoice's outstanding amount.
+    step = early_pay_step(r.outstanding_fen)
+    stepped = min(int(-(-face_exact // step)) * step, r.outstanding_fen)
 
-    clauses: list[tuple[str, Obligation | None]] = []
-    touched_terms = bool(ctx.of_type(ObligationType.TERMS_EXTENSION))
-    mentioned_rebate = bool(ctx.of_type(ObligationType.CONTINGENT_REBATE)) or any(
-        is_claimed(o) for o in ctx.offer.obligations)
-    current = ctx.current_terms()
-    lead = []
-    if touched_terms and current is not None:
-        lead.append(f"Terms stay at {current} days")
-    if mentioned_rebate:
-        lead.append("no rebate" if lead else "No rebate is on record, so none applies")
-    if lead:
-        clauses.append((", ".join(lead) + ".", None))
-    # red team e, F4: the promise names its day; any portion up to the face paid by then earns the rate
-    settle_text = (f"We will accept early settlement on up to {money_text(face)} of this invoice at "
-                   f"{rate_text(rate_bp)}, paid on or before day {settle}.")
-    clauses.append((settle_text, disc_ob))
-    if not lead:
-        clauses.append(("Nothing else changes.", None))
-    if k_periods is not None:
-        times = f" × {k_periods}" if k_periods > 1 else ""
-        c_text = f"{fmt_pct(ctx.rate, 4)} × {period}/365{times} = {fmt_pct(c, 4)}"
-    else:
-        c_text = f"{fmt_pct(ctx.rate, 4)} × {n}/365 = {fmt_pct(c, 4)}"
-    formula = (
-        f"break-even: d/(1−d) < c, c = {c_text} "
-        f"→ d < {fmt_pct(d_ratio.value, 4)}; largest whole-5bp rate below it = {rate_text(rate_bp)}. "
-        f"Face: (near-term need {fmt_yuan(need)} − committed line {fmt_yuan(line_avail)}) / (1 − {rate_text(rate_bp)}) "
-        f"= {fmt_yuan(post(face_exact))} → up to {fmt_yuan(face)} (rounded up to a whole ¥100, at most the invoice). "
-        f"Cost: discount {fmt_yuan(discount)} + funding the rest of the gap {fmt_yuan(funding_cost)} "
-        f"({counter_plan.label}) = {fmt_yuan(total)}"
-    )
-    rationale = (f"Early settlement at {rate_text(rate_bp)} is cheaper than financing the invoice on the "
-                 f"marginal committed source; the line covers the rest of the near-term gap.")
-    # What the router flagged on the plans this counter stands on (supplier-side texts only: the outbound text, the
-    # figures and whether the counter is offered are unchanged).
-    for plan, subject in ((counter_plan, "the committed plan that funds the rest of the gap"),
-                          (base_plan, "the standing plan it is compared with")):
-        flags = plan_flags(plan, subject)
-        if flags:
-            formula += f". Flagged: {flags}"
-            rationale += f" Note: {flags}."
-    return _proposal(ctx, label, clauses, total, rationale, formula)
+    def at(face: int, face_note: str) -> CounterProposal | None:
+        disc_ob = _obligation(
+            ctx.cp, ObligationType.IMMEDIATE_DISCOUNT, rate_bp=rate_bp, effective_day=settle,
+            base=ObligationBase(kind=BaseKind.INVOICE, amount_fen=face, receivable_id=r.id),
+        )
+        # the committed plan on books that include the counter: a counter that cannot keep the floor is not offered
+        counter_plan = funding_plan(ctx.state, [*ctx.live, disc_ob], ctx.mandate, "COMMITTED")
+        if not counter_plan.admissible:
+            return None
+        t = project(ctx.state, [*ctx.live, disc_ob], counter_plan.actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
+        live_discounts = 0
+        if ctx.live:  # what the commitments in force already cost is not the counter's cost
+            live_discounts = project(ctx.state, list(ctx.live), [], Mode.CONSERVATIVE,
+                                     ctx.mandate.horizon_days).discounts_posted_fen
+        # Read from the projection (ADR-0007): interest + fees + discounts the engine posts with the counter in the
+        # books and the router's plan for the rest. The counter's own discount is its face at its rate; everything
+        # else is the cost of funding the rest of the gap.
+        total = t.interest_posted_fen + t.fees_posted_fen + t.discounts_posted_fen - live_discounts
+        discount = post(rate * face)
+        funding_cost = total - discount
+        # ADR-0007 test 3 for the counter: it is offered only if it beats the standing plan, like with like
+        # (both exclude the discounts the live commitments already post).
+        if base_plan.admissible:
+            t0 = project(ctx.state, list(ctx.live), base_plan.actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
+            standing = t0.interest_posted_fen + t0.fees_posted_fen + t0.discounts_posted_fen - live_discounts
+            if total >= standing:
+                return None
+
+        clauses: list[tuple[str, Obligation | None]] = []
+        touched_terms = bool(ctx.of_type(ObligationType.TERMS_EXTENSION))
+        mentioned_rebate = bool(ctx.of_type(ObligationType.CONTINGENT_REBATE)) or any(
+            is_claimed(o) for o in ctx.offer.obligations)
+        current = ctx.current_terms()
+        lead = []
+        if touched_terms and current is not None:
+            lead.append(f"Terms stay at {current} days")
+        if mentioned_rebate:
+            lead.append("no rebate" if lead else "No rebate is on record, so none applies")
+        if lead:
+            clauses.append((", ".join(lead) + ".", None))
+        # red team e, F4: the promise names its day; any portion up to the face paid by then earns the rate
+        settle_text = (f"We will accept early settlement on up to {money_text(face)} of this invoice at "
+                       f"{rate_text(rate_bp)}, paid on or before day {settle}.")
+        clauses.append((settle_text, disc_ob))
+        if not lead:
+            clauses.append(("Nothing else changes.", None))
+        if k_periods is not None:
+            times = f" × {k_periods}" if k_periods > 1 else ""
+            c_text = f"{fmt_pct(ctx.rate, 4)} × {period}/365{times} = {fmt_pct(c, 4)}"
+        else:
+            c_text = f"{fmt_pct(ctx.rate, 4)} × {n}/365 = {fmt_pct(c, 4)}"
+        formula = (
+            f"break-even: d/(1−d) < c, c = {c_text} "
+            f"→ d < {fmt_pct(d_ratio.value, 4)}; largest whole-5bp rate below it = {rate_text(rate_bp)}. "
+            f"Face: (near-term need {fmt_yuan(need)} − committed line {fmt_yuan(line_avail)}) / (1 − {rate_text(rate_bp)}) "
+            f"= {fmt_yuan(post(face_exact))} → up to {fmt_yuan(face)} ({face_note}). "
+            f"Cost: discount {fmt_yuan(discount)} + funding the rest of the gap {fmt_yuan(funding_cost)} "
+            f"({counter_plan.label}) = {fmt_yuan(total)}"
+        )
+        rationale = (f"Early settlement at {rate_text(rate_bp)} is cheaper than financing the invoice on the "
+                     f"marginal committed source; the line covers the rest of the near-term gap.")
+        # What the router flagged on the plans this counter stands on (supplier-side texts only: the outbound text, the
+        # figures and whether the counter is offered are unchanged).
+        for plan, subject in ((counter_plan, "the committed plan that funds the rest of the gap"),
+                              (base_plan, "the standing plan it is compared with")):
+            flags = plan_flags(plan, subject)
+            if flags:
+                formula += f". Flagged: {flags}"
+                rationale += f" Note: {flags}."
+        return _proposal(ctx, label, clauses, total, rationale, formula)
+
+    # The rounded face first, then the whole outstanding amount; each must pass its own re-check. Never the ¥100
+    # rounding: if neither passes, no early-pay counter is offered.
+    candidates = [(stepped, f"rounded up to a whole {money_text(step)}, at most the outstanding amount")]
+    if stepped != r.outstanding_fen:
+        candidates.append((r.outstanding_fen, "the whole outstanding amount: the rounded face did not pass"))
+    failed: tuple[CounterProposal, str] | None = None
+    for face, note in candidates:
+        if face <= 0:
+            continue
+        cand = at(face, note)
+        if cand is None:
+            continue
+        why = ctx.why_not(cand)
+        if why is None:
+            return cand
+        failed = failed or (cand, why)
+    if failed is not None:
+        ctx.notes.append(f"No {_KIND['early_pay']} counter ({_terms_text(failed[0])}): it {failed[1]}")
+    return None
 
 
 # ---------------------------------------------------------------- Option B: price adjustment
@@ -744,7 +775,7 @@ def _counters(ctx: _Ctx, offer: CompiledOffer) -> list[CounterProposal]:
 
     out: list[CounterProposal] = []
     if has_discount or perpetual or (claimed and not ctx.bound):
-        a = _passes(ctx, "early_pay", early_pay_counter(ctx))
+        a = early_pay_counter(ctx)  # re-checked inside, so that the whole outstanding amount can be tried
         if a is not None:
             out.append(a)
         if len(perpetual) == 1:  # re-checked inside, so that shorter terms can be tried

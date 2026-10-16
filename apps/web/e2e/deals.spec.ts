@@ -84,11 +84,11 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   await expect(page.getByTestId("send-terms-table-table")).toBeVisible();
   await expect(page.getByTestId("send-cost-table")).toBeVisible();
   await expect(page.getByTestId("receipt-line-authorizes")).toContainText("FLOW records it as a proposed agreement that stands only if Foshan accepts.");
-  await expect(page.getByTestId("receipt-line-executes_now")).toContainText("Draws ¥149,986.20 on the Bank credit line today");
+  await expect(page.getByTestId("receipt-line-executes_now")).toContainText("Draws ¥147,210.00 on the Bank credit line today");
   await page.getByTestId("send-fold").locator("> summary").click();
   const rest = await page.getByTestId("send-fold-lines").locator("[data-testid^=receipt-line-]").evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")!.replace("receipt-line-", "")));
   expect(rest).toEqual(["others_must_agree", "in_hand_vs_future", "fees", "when", "assumptions", "authority"]);
-  await expect(page.getByTestId("receipt-line-fees")).toContainText("¥3,027.77");
+  await expect(page.getByTestId("receipt-line-fees")).toContainText("¥3,035.99");
   await expect(page.getByTestId("receipt-line-others_must_agree")).toContainText("must accept the counter");
   await expect(page.getByTestId("receipt-line-gross")).toHaveCount(0); // the server has no gross for a counter: the line is omitted, not invented
   await expect(page.getByTestId("deal-send")).toHaveText("Send Option A to Foshan");
@@ -106,7 +106,7 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   await sendCounter(page);
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A. The agreement is on your books.");
   // What ran is the server's own summary, said once under the result; the agreement receipt's "Runs now" line is the same summary, not the state word "Agreed".
-  await expect(page.getByTestId("deal-sent-ran")).toHaveText("Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.");
+  await expect(page.getByTestId("deal-sent-ran")).toHaveText("Agreement with Foshan Home Retail Co. recorded. Funding of ¥147,210.00 was requested and has landed.");
   // The agreed deal's Overview is the tracker; the record's own account (the agreement's receipt, what was agreed, what is left) is its Terms tab.
   await page.getByTestId("deal-tab-terms").click();
   await expect(page.getByTestId("deal-agreement-receipt").getByTestId("receipt-line-executes_now")).toContainText("Agreement with Foshan Home Retail Co. recorded.");
@@ -115,7 +115,7 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   await expect(page.getByTestId("deal-send")).toHaveCount(0);
   await expect(page.getByTestId("queue-review-open")).toHaveCount(0);
   // The record's own account: money received, what was agreed, what is left, and the agreement's receipt.
-  await expect(page.getByTestId("deal-money-lines")).toContainText("¥149,986.20");
+  await expect(page.getByTestId("deal-money-lines")).toContainText("¥147,210.00");
   await expect(page.getByTestId("deal-terms")).toContainText("0.85% off");
   await expect(page.getByTestId("deal-waiting")).toContainText("Waiting for Foshan Home Retail Co. to pay");
   await expect(page.getByTestId("deal-agreement-receipt")).toContainText("In force.");

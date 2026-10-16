@@ -78,7 +78,7 @@ def test_a_buyer_with_no_receivable_owes_nothing_and_has_no_share_to_state(books
 
 def test_day34_the_next_30_days_receipt_is_foshans_alone(books_day34: Books) -> None:
     c = concentration(books_day34, "BUYER-1", 34)
-    assert c.ar_share_bp == 10_000 and c.ar_buyer_fen == 100_280_000  # RCV-A's ¥162,800 still outstanding + two issued invoices of ¥420,000
+    assert c.ar_share_bp == 10_000 and c.ar_buyer_fen == 100_000_000  # RCV-A's ¥160,000 still outstanding + two issued invoices of ¥420,000
     assert (c.receipts_from_day, c.receipts_to_day) == (34, 64)
     assert c.receipts_share_bp == 10_000 and c.receipts_buyer_fen == 42_000_000  # RI:BUYER-1:2 on day 47; RCV-A is overdue
     assert c.receipts_text == "Foshan is 100% of the receipts due in the next 30 days (¥420,000)."

@@ -13,9 +13,9 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "en",
           "ui_lang": "en",
-          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
-          "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
+          "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
           "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
@@ -41,11 +41,11 @@
               {
                 "key": "early_payment",
                 "label": "Early payment",
-                "value_text": "0.85% off ¥257,200.00",
+                "value_text": "0.85% off ¥260,000.00",
                 "instead_of_text": "instead of 1.20% off ¥420,000.00",
                 "scope": "existing_invoice",
                 "scope_label": "Existing invoice",
-                "cell_text": "0.85% off ¥257,200.00"
+                "cell_text": "0.85% off ¥260,000.00"
               },
               {
                 "key": "rebate_or_price",
@@ -57,9 +57,9 @@
                 "cell_text": "Not offered"
               }
             ],
-            "cost_display": "¥3,027.77",
+            "cost_display": "¥3,035.99",
             "cost_note": "once; nothing ongoing",
-            "cost_text": "Estimated one-time cost: ¥3,027.77",
+            "cost_text": "Estimated one-time cost: ¥3,035.99",
             "decides_text": "Within your mandate: no approval needed.",
             "authority": "flow_may",
             "needs_owner": false
@@ -103,9 +103,9 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "zh",
           "ui_lang": "en",
-          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n1. 提前付款：对于2026年9月18日开具、2026年11月2日到期的 ¥420,000 发票，如贵方于2026年10月3日或之前付款，我方接受其中最多 ¥257,200 按 0.85% 的折扣提前结清；届时支付 ¥255,013.80 即可结清发票中的 ¥257,200。未提前结清的部分（包括其余 ¥162,800）仍按原条款于2026年11月2日到期。\n2. 今后发票的付款期限维持 45 天。\n3. 我方无法提供贵方所要求的返利。\n\n其他条款均无变更。本报价有效期至2026年10月3日。请回复确认。\n\n此致\n敬礼",
-          "message_hash": "348ab28d34298c336e42e15243ad8985c2dac4e1e6afe9119c0f46bc1f599335",
-          "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n1. 提前付款：对于2026年9月18日开具、2026年11月2日到期的 ¥420,000 发票，如贵方于2026年10月3日或之前付款，我方接受其中最多 ¥260,000 按 0.85% 的折扣提前结清；届时支付 ¥257,790 即可结清发票中的 ¥260,000。未提前结清的部分（包括其余 ¥160,000）仍按原条款于2026年11月2日到期。\n2. 今后发票的付款期限维持 45 天。\n3. 我方无法提供贵方所要求的返利。\n\n其他条款均无变更。本报价有效期至2026年10月3日。请回复确认。\n\n此致\n敬礼",
+          "message_hash": "b69abd6c73d36acceaabbc3e47ce24bc8266bec6f2ce3fe8fa6ba94d84749c82",
+          "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
           "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
@@ -131,11 +131,11 @@
               {
                 "key": "early_payment",
                 "label": "Early payment",
-                "value_text": "0.85% off ¥257,200.00",
+                "value_text": "0.85% off ¥260,000.00",
                 "instead_of_text": "instead of 1.20% off ¥420,000.00",
                 "scope": "existing_invoice",
                 "scope_label": "Existing invoice",
-                "cell_text": "0.85% off ¥257,200.00"
+                "cell_text": "0.85% off ¥260,000.00"
               },
               {
                 "key": "rebate_or_price",
@@ -147,9 +147,9 @@
                 "cell_text": "Not offered"
               }
             ],
-            "cost_display": "¥3,027.77",
+            "cost_display": "¥3,035.99",
             "cost_note": "once; nothing ongoing",
-            "cost_text": "Estimated one-time cost: ¥3,027.77",
+            "cost_text": "Estimated one-time cost: ¥3,035.99",
             "decides_text": "Within your mandate: no approval needed.",
             "authority": "flow_may",
             "needs_owner": false
@@ -195,9 +195,9 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "en",
           "ui_lang": "zh",
-          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
-          "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
+          "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
           "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
@@ -223,11 +223,11 @@
               {
                 "key": "early_payment",
                 "label": "提前付款",
-                "value_text": "¥257,200.00 减免 0.85%",
+                "value_text": "¥260,000.00 减免 0.85%",
                 "instead_of_text": "而非 ¥420,000.00 减免 1.20%",
                 "scope": "existing_invoice",
                 "scope_label": "现有发票",
-                "cell_text": "¥257,200.00 减免 0.85%"
+                "cell_text": "¥260,000.00 减免 0.85%"
               },
               {
                 "key": "rebate_or_price",
@@ -239,9 +239,9 @@
                 "cell_text": "不提供"
               }
             ],
-            "cost_display": "¥3,027.77",
+            "cost_display": "¥3,035.99",
             "cost_note": "一次性；之后无持续成本",
-            "cost_text": "预计一次性成本：¥3,027.77",
+            "cost_text": "预计一次性成本：¥3,035.99",
             "decides_text": "在您的授权范围内：无需批准。",
             "authority": "flow_may",
             "needs_owner": false
@@ -285,9 +285,9 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "zh",
           "ui_lang": "zh",
-          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n1. 提前付款：对于2026年9月18日开具、2026年11月2日到期的 ¥420,000 发票，如贵方于2026年10月3日或之前付款，我方接受其中最多 ¥257,200 按 0.85% 的折扣提前结清；届时支付 ¥255,013.80 即可结清发票中的 ¥257,200。未提前结清的部分（包括其余 ¥162,800）仍按原条款于2026年11月2日到期。\n2. 今后发票的付款期限维持 45 天。\n3. 我方无法提供贵方所要求的返利。\n\n其他条款均无变更。本报价有效期至2026年10月3日。请回复确认。\n\n此致\n敬礼",
-          "message_hash": "348ab28d34298c336e42e15243ad8985c2dac4e1e6afe9119c0f46bc1f599335",
-          "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n1. 提前付款：对于2026年9月18日开具、2026年11月2日到期的 ¥420,000 发票，如贵方于2026年10月3日或之前付款，我方接受其中最多 ¥260,000 按 0.85% 的折扣提前结清；届时支付 ¥257,790 即可结清发票中的 ¥260,000。未提前结清的部分（包括其余 ¥160,000）仍按原条款于2026年11月2日到期。\n2. 今后发票的付款期限维持 45 天。\n3. 我方无法提供贵方所要求的返利。\n\n其他条款均无变更。本报价有效期至2026年10月3日。请回复确认。\n\n此致\n敬礼",
+          "message_hash": "b69abd6c73d36acceaabbc3e47ce24bc8266bec6f2ce3fe8fa6ba94d84749c82",
+          "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
           "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
@@ -313,11 +313,11 @@
               {
                 "key": "early_payment",
                 "label": "提前付款",
-                "value_text": "¥257,200.00 减免 0.85%",
+                "value_text": "¥260,000.00 减免 0.85%",
                 "instead_of_text": "而非 ¥420,000.00 减免 1.20%",
                 "scope": "existing_invoice",
                 "scope_label": "现有发票",
-                "cell_text": "¥257,200.00 减免 0.85%"
+                "cell_text": "¥260,000.00 减免 0.85%"
               },
               {
                 "key": "rebate_or_price",
@@ -329,9 +329,9 @@
                 "cell_text": "不提供"
               }
             ],
-            "cost_display": "¥3,027.77",
+            "cost_display": "¥3,035.99",
             "cost_note": "一次性；之后无持续成本",
-            "cost_text": "预计一次性成本：¥3,027.77",
+            "cost_text": "预计一次性成本：¥3,035.99",
             "decides_text": "在您的授权范围内：无需批准。",
             "authority": "flow_may",
             "needs_owner": false
@@ -792,7 +792,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "Option A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -962,7 +962,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "方案 A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -1081,14 +1081,14 @@
       "offer_id": "OFF-f806f79b6c21",
       "message": "The message changed since you copied it; copy it again before marking it sent.",
       "message_when": "The message changed since you copied it; copy it again before marking it sent.",
-      "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605"
+      "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac"
     },
     "zh": {
       "code": "MESSAGE_CHANGED",
       "offer_id": "OFF-f806f79b6c21",
       "message": "The message changed since you copied it; copy it again before marking it sent.",
       "message_when": "您复制之后消息已有变化；请重新复制后再标记为已发送。",
-      "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605"
+      "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac"
     }
   },
   "offered": {
@@ -1103,9 +1103,9 @@
       "buyer_name": "Foshan Home Retail Co.",
       "lang": "en",
       "ui_lang": "en",
-      "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-      "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
-      "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+      "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+      "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
+      "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
       "template_version": "buyer-message-v2",
       "copyable": true,
       "blocked": null,
@@ -1131,11 +1131,11 @@
           {
             "key": "early_payment",
             "label": "Early payment",
-            "value_text": "0.85% off ¥257,200.00",
+            "value_text": "0.85% off ¥260,000.00",
             "instead_of_text": "instead of 1.20% off ¥420,000.00",
             "scope": "existing_invoice",
             "scope_label": "Existing invoice",
-            "cell_text": "0.85% off ¥257,200.00"
+            "cell_text": "0.85% off ¥260,000.00"
           },
           {
             "key": "rebate_or_price",
@@ -1147,9 +1147,9 @@
             "cell_text": "Not offered"
           }
         ],
-        "cost_display": "¥3,027.77",
+        "cost_display": "¥3,035.99",
         "cost_note": "once; nothing ongoing",
-        "cost_text": "Estimated one-time cost: ¥3,027.77",
+        "cost_text": "Estimated one-time cost: ¥3,035.99",
         "decides_text": "Within your mandate: no approval needed.",
         "authority": "flow_may",
         "needs_owner": false
@@ -1174,7 +1174,7 @@
       "offered": {
         "recorded": true,
         "lang": "en",
-        "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+        "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
         "valid_until_day": 2,
         "valid_until_when": "in 2 days",
         "same_message": true
@@ -1202,9 +1202,9 @@
       "buyer_name": "Foshan Home Retail Co.",
       "lang": "en",
       "ui_lang": "zh",
-      "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-      "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
-      "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+      "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+      "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
+      "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
       "template_version": "buyer-message-v2",
       "copyable": true,
       "blocked": null,
@@ -1230,11 +1230,11 @@
           {
             "key": "early_payment",
             "label": "提前付款",
-            "value_text": "¥257,200.00 减免 0.85%",
+            "value_text": "¥260,000.00 减免 0.85%",
             "instead_of_text": "而非 ¥420,000.00 减免 1.20%",
             "scope": "existing_invoice",
             "scope_label": "现有发票",
-            "cell_text": "¥257,200.00 减免 0.85%"
+            "cell_text": "¥260,000.00 减免 0.85%"
           },
           {
             "key": "rebate_or_price",
@@ -1246,9 +1246,9 @@
             "cell_text": "不提供"
           }
         ],
-        "cost_display": "¥3,027.77",
+        "cost_display": "¥3,035.99",
         "cost_note": "一次性；之后无持续成本",
-        "cost_text": "预计一次性成本：¥3,027.77",
+        "cost_text": "预计一次性成本：¥3,035.99",
         "decides_text": "在您的授权范围内：无需批准。",
         "authority": "flow_may",
         "needs_owner": false
@@ -1273,7 +1273,7 @@
       "offered": {
         "recorded": true,
         "lang": "en",
-        "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+        "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
         "valid_until_day": 2,
         "valid_until_when": "2 天后",
         "same_message": true
@@ -1351,7 +1351,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "Option A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -1384,7 +1384,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "today",
@@ -1396,9 +1396,9 @@
             "date": "3 October 2026"
           },
           "terms": [
-            "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+            "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "You marked Option A as sent on 1 October 2026, in English",
           "provenance_text": "Marked sent by you · FLOW cannot confirm delivery",
@@ -1419,7 +1419,7 @@
               "evidence_placeholder": "Paste the buyer's reply that accepts the offer",
               "evidence_hint_text": "Without it, the record says you confirmed the acceptance yourself.",
               "terms": [
-                "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+                "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
               ],
               "review": {
                 "terms": [
@@ -1435,11 +1435,11 @@
                   {
                     "key": "early_payment",
                     "label": "Early payment",
-                    "value_text": "0.85% off ¥257,200.00",
+                    "value_text": "0.85% off ¥260,000.00",
                     "instead_of_text": "instead of 1.20% off ¥420,000.00",
                     "scope": "existing_invoice",
                     "scope_label": "Existing invoice",
-                    "cell_text": "0.85% off ¥257,200.00"
+                    "cell_text": "0.85% off ¥260,000.00"
                   },
                   {
                     "key": "rebate_or_price",
@@ -1451,9 +1451,9 @@
                     "cell_text": "Not offered"
                   }
                 ],
-                "cost_display": "¥3,027.77",
+                "cost_display": "¥3,035.99",
                 "cost_note": "once; nothing ongoing",
-                "cost_text": "Estimated one-time cost: ¥3,027.77",
+                "cost_text": "Estimated one-time cost: ¥3,035.99",
                 "decides_text": "Within your mandate: no approval needed.",
                 "authority": "flow_may",
                 "needs_owner": false
@@ -1859,7 +1859,7 @@
                 "when": "today",
                 "actor": "AGENT",
                 "label": "Agent replied",
-                "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
+                "text": "Rejected. Offered Option A: early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
               }
             ],
             "in_force": [
@@ -2197,9 +2197,9 @@
         "buyer_name": "Foshan Home Retail Co.",
         "lang": "en",
         "ui_lang": "en",
-        "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-        "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
-        "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+        "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+        "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
+        "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
         "template_version": "buyer-message-v2",
         "copyable": true,
         "blocked": null,
@@ -2225,11 +2225,11 @@
             {
               "key": "early_payment",
               "label": "Early payment",
-              "value_text": "0.85% off ¥257,200.00",
+              "value_text": "0.85% off ¥260,000.00",
               "instead_of_text": "instead of 1.20% off ¥420,000.00",
               "scope": "existing_invoice",
               "scope_label": "Existing invoice",
-              "cell_text": "0.85% off ¥257,200.00"
+              "cell_text": "0.85% off ¥260,000.00"
             },
             {
               "key": "rebate_or_price",
@@ -2241,9 +2241,9 @@
               "cell_text": "Not offered"
             }
           ],
-          "cost_display": "¥3,027.77",
+          "cost_display": "¥3,035.99",
           "cost_note": "once; nothing ongoing",
-          "cost_text": "Estimated one-time cost: ¥3,027.77",
+          "cost_text": "Estimated one-time cost: ¥3,035.99",
           "decides_text": "Within your mandate: no approval needed.",
           "authority": "flow_may",
           "needs_owner": false
@@ -2268,7 +2268,7 @@
         "offered": {
           "recorded": true,
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "valid_until_day": 2,
           "valid_until_when": "in 2 days",
           "same_message": true
@@ -2343,7 +2343,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "方案 A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -2376,7 +2376,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -2388,9 +2388,9 @@
             "date": "2026年10月3日"
           },
           "terms": [
-            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
           "provenance_text": "由您标记为已发送 · FLOW 无法确认对方已收到",
@@ -2411,7 +2411,7 @@
               "evidence_placeholder": "粘贴买方接受报价的回复",
               "evidence_hint_text": "如不粘贴，记录将注明由您本人确认接受。",
               "terms": [
-                "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+                "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）"
               ],
               "review": {
                 "terms": [
@@ -2427,11 +2427,11 @@
                   {
                     "key": "early_payment",
                     "label": "提前付款",
-                    "value_text": "¥257,200.00 减免 0.85%",
+                    "value_text": "¥260,000.00 减免 0.85%",
                     "instead_of_text": "而非 ¥420,000.00 减免 1.20%",
                     "scope": "existing_invoice",
                     "scope_label": "现有发票",
-                    "cell_text": "¥257,200.00 减免 0.85%"
+                    "cell_text": "¥260,000.00 减免 0.85%"
                   },
                   {
                     "key": "rebate_or_price",
@@ -2443,9 +2443,9 @@
                     "cell_text": "不提供"
                   }
                 ],
-                "cost_display": "¥3,027.77",
+                "cost_display": "¥3,035.99",
                 "cost_note": "一次性；之后无持续成本",
-                "cost_text": "预计一次性成本：¥3,027.77",
+                "cost_text": "预计一次性成本：¥3,035.99",
                 "decides_text": "在您的授权范围内：无需批准。",
                 "authority": "flow_may",
                 "needs_owner": false
@@ -2851,7 +2851,7 @@
                 "when": "今天",
                 "actor": "AGENT",
                 "label": "代理答复",
-                "text": "已拒绝。已提出：方案 A：提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥257,200.00，折扣 0.85%，应于2 天后付款；方案 B：账期调整为 55 天和价格变动 0.30%"
+                "text": "已拒绝。已提出：方案 A：提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥260,000.00，折扣 0.85%，应于2 天后付款；方案 B：账期调整为 55 天和价格变动 0.30%"
               }
             ],
             "in_force": [
@@ -3189,9 +3189,9 @@
         "buyer_name": "Foshan Home Retail Co.",
         "lang": "en",
         "ui_lang": "zh",
-        "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-        "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
-        "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+        "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+        "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
+        "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
         "template_version": "buyer-message-v2",
         "copyable": true,
         "blocked": null,
@@ -3217,11 +3217,11 @@
             {
               "key": "early_payment",
               "label": "提前付款",
-              "value_text": "¥257,200.00 减免 0.85%",
+              "value_text": "¥260,000.00 减免 0.85%",
               "instead_of_text": "而非 ¥420,000.00 减免 1.20%",
               "scope": "existing_invoice",
               "scope_label": "现有发票",
-              "cell_text": "¥257,200.00 减免 0.85%"
+              "cell_text": "¥260,000.00 减免 0.85%"
             },
             {
               "key": "rebate_or_price",
@@ -3233,9 +3233,9 @@
               "cell_text": "不提供"
             }
           ],
-          "cost_display": "¥3,027.77",
+          "cost_display": "¥3,035.99",
           "cost_note": "一次性；之后无持续成本",
-          "cost_text": "预计一次性成本：¥3,027.77",
+          "cost_text": "预计一次性成本：¥3,035.99",
           "decides_text": "在您的授权范围内：无需批准。",
           "authority": "flow_may",
           "needs_owner": false
@@ -3260,7 +3260,7 @@
         "offered": {
           "recorded": true,
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "valid_until_day": 2,
           "valid_until_when": "2 天后",
           "same_message": true
@@ -3308,7 +3308,7 @@
         "terminal": false,
         "headline": "Offer from Foshan Home Retail Co.",
         "counterparty_name": "Foshan Home Retail Co.",
-        "amount_display": "¥257,200.00",
+        "amount_display": "¥260,000.00",
         "opened_when": "today",
         "updated_when": "today",
         "waiting_for": {
@@ -3353,7 +3353,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "Option A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -3387,10 +3387,10 @@
           "expires_day": null,
           "expires_when": null,
           "terms": [
-            "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+            "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
           "receipt": {
-            "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
+            "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
             "executes_now_text": "Agreement with Foshan Home Retail Co. recorded.",
             "others_must_agree_text": null,
             "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
@@ -3400,7 +3400,7 @@
             "when_text": "In force.",
             "assumptions_text": null,
             "authority_text": "The buyer accepted the counter you sent; you recorded it.",
-            "remaining_text": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+            "remaining_text": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
           }
         },
         "outbound": {
@@ -3408,7 +3408,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "today",
@@ -3420,9 +3420,9 @@
             "date": "3 October 2026"
           },
           "terms": [
-            "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+            "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "You marked Option A as sent on 1 October 2026, in English",
           "provenance_text": "Source: recorded by you, with the buyer's message",
@@ -3449,8 +3449,8 @@
           "evidence_quote": "Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.",
           "status_text": "The agreement is in force.",
           "consequences": [
-            "Foshan Home Retail Co. can settle ¥257,200.00 of the invoice by paying ¥255,013.80 by 3 October 2026.",
-            "The other ¥162,800.00 stays due on 2 November 2026.",
+            "Foshan Home Retail Co. can settle ¥260,000.00 of the invoice by paying ¥257,790.00 by 3 October 2026.",
+            "The other ¥160,000.00 stays due on 2 November 2026.",
             "No cash has been received yet; FLOW reconciles the payment when it arrives."
           ],
           "consequences_title_text": "What changes now",
@@ -3526,17 +3526,17 @@
             "receivable_id": "RCV-A",
             "counterparty_id": "BUYER-1",
             "promised_day": 2,
-            "face_fen": 25720000,
-            "discount_fen": 218620,
-            "expected_fen": 25501380,
+            "face_fen": 26000000,
+            "discount_fen": 221000,
+            "expected_fen": 25779000,
             "status": "AWAITED",
             "receipt_seq": null,
-            "detail": "¥255,013.80 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
-            "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-            "face_display": "¥257,200.00",
-            "discount_display": "¥2,186.20",
-            "expected_display": "¥255,013.80",
-            "detail_when": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+            "detail": "¥257,790.00 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
+            "formula": "¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+            "face_display": "¥260,000.00",
+            "discount_display": "¥2,210.00",
+            "expected_display": "¥257,790.00",
+            "detail_when": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
           }
         ],
         "remaining_task": {
@@ -3551,7 +3551,7 @@
         }
       },
       "receipt": {
-        "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
+        "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
         "executes_now_text": "Agreement with Foshan Home Retail Co. recorded.",
         "others_must_agree_text": null,
         "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
@@ -3561,7 +3561,7 @@
         "when_text": "In force.",
         "assumptions_text": null,
         "authority_text": "The buyer accepted the counter you sent; you recorded it.",
-        "remaining_text": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+        "remaining_text": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
       },
       "execution": {
         "summary_text": "Agreement with Foshan Home Retail Co. recorded."
@@ -3583,7 +3583,7 @@
         "terminal": false,
         "headline": "来自Foshan Home Retail Co.的报价",
         "counterparty_name": "Foshan Home Retail Co.",
-        "amount_display": "¥257,200.00",
+        "amount_display": "¥260,000.00",
         "opened_when": "今天",
         "updated_when": "今天",
         "waiting_for": {
@@ -3628,7 +3628,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "方案 A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -3662,10 +3662,10 @@
           "expires_day": null,
           "expires_when": null,
           "terms": [
-            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）"
           ],
           "receipt": {
-            "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）。",
+            "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）。",
             "executes_now_text": "已记录与Foshan Home Retail Co.的协议。",
             "others_must_agree_text": null,
             "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
@@ -3675,7 +3675,7 @@
             "when_text": "已生效。",
             "assumptions_text": null,
             "authority_text": "买方接受了您发出的还价；由您记录。",
-            "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
+            "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥257,790.00 应在2 天内到账；约定日尚未过。"
           }
         },
         "outbound": {
@@ -3683,7 +3683,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -3695,9 +3695,9 @@
             "date": "2026年10月3日"
           },
           "terms": [
-            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
           "provenance_text": "来源：由您记录，附买方的消息",
@@ -3724,8 +3724,8 @@
           "evidence_quote": "Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.",
           "status_text": "协议已生效。",
           "consequences": [
-            "Foshan Home Retail Co.可在2026年10月3日前支付 ¥255,013.80，结清发票中的 ¥257,200.00。",
-            "其余 ¥162,800.00 仍于2026年11月2日到期。",
+            "Foshan Home Retail Co.可在2026年10月3日前支付 ¥257,790.00，结清发票中的 ¥260,000.00。",
+            "其余 ¥160,000.00 仍于2026年11月2日到期。",
             "尚未收到任何款项；款项到账后 FLOW 会进行对账。"
           ],
           "consequences_title_text": "接下来的变化",
@@ -3801,17 +3801,17 @@
             "receivable_id": "RCV-A",
             "counterparty_id": "BUYER-1",
             "promised_day": 2,
-            "face_fen": 25720000,
-            "discount_fen": 218620,
-            "expected_fen": 25501380,
+            "face_fen": 26000000,
+            "discount_fen": 221000,
+            "expected_fen": 25779000,
             "status": "AWAITED",
             "receipt_seq": null,
-            "detail": "¥255,013.80 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
-            "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-            "face_display": "¥257,200.00",
-            "discount_display": "¥2,186.20",
-            "expected_display": "¥255,013.80",
-            "detail_when": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
+            "detail": "¥257,790.00 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
+            "formula": "¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+            "face_display": "¥260,000.00",
+            "discount_display": "¥2,210.00",
+            "expected_display": "¥257,790.00",
+            "detail_when": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥257,790.00 应在2 天内到账；约定日尚未过。"
           }
         ],
         "remaining_task": {
@@ -3826,7 +3826,7 @@
         }
       },
       "receipt": {
-        "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）。",
+        "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）。",
         "executes_now_text": "已记录与Foshan Home Retail Co.的协议。",
         "others_must_agree_text": null,
         "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
@@ -3836,7 +3836,7 @@
         "when_text": "已生效。",
         "assumptions_text": null,
         "authority_text": "买方接受了您发出的还价；由您记录。",
-        "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
+        "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥257,790.00 应在2 天内到账；约定日尚未过。"
       },
       "execution": {
         "summary_text": "已记录与Foshan Home Retail Co.的协议。"
@@ -3860,7 +3860,7 @@
         "terminal": false,
         "headline": "Offer from Foshan Home Retail Co.",
         "counterparty_name": "Foshan Home Retail Co.",
-        "amount_display": "¥257,200.00",
+        "amount_display": "¥260,000.00",
         "opened_when": "today",
         "updated_when": "today",
         "waiting_for": {
@@ -3905,7 +3905,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "Option A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -3939,10 +3939,10 @@
           "expires_day": null,
           "expires_when": null,
           "terms": [
-            "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+            "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
           "receipt": {
-            "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
+            "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
             "executes_now_text": "Agreement with Foshan Home Retail Co. recorded.",
             "others_must_agree_text": null,
             "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
@@ -3952,7 +3952,7 @@
             "when_text": "In force.",
             "assumptions_text": null,
             "authority_text": "The buyer accepted the counter you sent; you recorded it.",
-            "remaining_text": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+            "remaining_text": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
           }
         },
         "outbound": {
@@ -3960,7 +3960,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "today",
@@ -3972,9 +3972,9 @@
             "date": "3 October 2026"
           },
           "terms": [
-            "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+            "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "You marked Option A as sent on 1 October 2026, in English",
           "provenance_text": "Source: recorded by you, with the buyer's message",
@@ -4001,8 +4001,8 @@
           "evidence_quote": "Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.",
           "status_text": "The agreement is in force.",
           "consequences": [
-            "Foshan Home Retail Co. can settle ¥257,200.00 of the invoice by paying ¥255,013.80 by 3 October 2026.",
-            "The other ¥162,800.00 stays due on 2 November 2026.",
+            "Foshan Home Retail Co. can settle ¥260,000.00 of the invoice by paying ¥257,790.00 by 3 October 2026.",
+            "The other ¥160,000.00 stays due on 2 November 2026.",
             "No cash has been received yet; FLOW reconciles the payment when it arrives."
           ],
           "consequences_title_text": "What changes now",
@@ -4078,17 +4078,17 @@
             "receivable_id": "RCV-A",
             "counterparty_id": "BUYER-1",
             "promised_day": 2,
-            "face_fen": 25720000,
-            "discount_fen": 218620,
-            "expected_fen": 25501380,
+            "face_fen": 26000000,
+            "discount_fen": 221000,
+            "expected_fen": 25779000,
             "status": "AWAITED",
             "receipt_seq": null,
-            "detail": "¥255,013.80 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
-            "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-            "face_display": "¥257,200.00",
-            "discount_display": "¥2,186.20",
-            "expected_display": "¥255,013.80",
-            "detail_when": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+            "detail": "¥257,790.00 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
+            "formula": "¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+            "face_display": "¥260,000.00",
+            "discount_display": "¥2,210.00",
+            "expected_display": "¥257,790.00",
+            "detail_when": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
           }
         ],
         "remaining_task": {
@@ -4390,14 +4390,14 @@
                 "when": "today",
                 "actor": "AGENT",
                 "label": "Agent replied",
-                "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
+                "text": "Rejected. Offered Option A: early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
               },
               {
                 "day": 0,
                 "when": "today",
                 "actor": "BUYER",
                 "label": "Buyer accepted",
-                "text": "early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; booked by the agent within your limits"
+                "text": "early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; booked by the agent within your limits"
               }
             ],
             "in_force": [
@@ -4422,7 +4422,7 @@
               {
                 "key": "early_payment",
                 "label": "Early payment",
-                "value_display": "early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days",
+                "value_display": "early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days",
                 "vs_contract": "DIFFERENT",
                 "vs_contract_text": "Differs from the contract",
                 "contract_display": "The buyer may settle early at 1.20% off, within 2 days",
@@ -4561,7 +4561,7 @@
             "eyebrow": "Company cash",
             "kind_text": "FLOW action ready",
             "text": "Reserve unsafe in 20 days. A funding plan is ready.",
-            "pending_text": "¥150k funding plan available · no approval needed · waits for your go",
+            "pending_text": "¥147k funding plan available · no approval needed · waits for your go",
             "tone": "bad",
             "primary": {
               "label": "Run or compare",
@@ -4584,7 +4584,7 @@
               "last_activity_day": 0,
               "last_activity_text": "today",
               "status_text": "Agreed",
-              "consequence_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time). The buyer has promised ¥255k in 2 days; it is not counted as cash until it arrives.",
+              "consequence_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time). The buyer has promised ¥258k in 2 days; it is not counted as cash until it arrives.",
               "severity": "NORMAL",
               "deadline_day": null,
               "expected_day": null,
@@ -4597,7 +4597,7 @@
               "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21",
               "promises": [
                 {
-                  "status_text": "Expected in 2 days · ¥255k",
+                  "status_text": "Expected in 2 days · ¥258k",
                   "invoice_id": "RCV-A",
                   "expected_day": 2
                 }
@@ -4627,7 +4627,7 @@
           "eyebrow": "Company cash",
           "kind_text": "FLOW action ready",
           "text": "Reserve unsafe in 20 days. A funding plan is ready.",
-          "pending_text": "¥150k funding plan available · no approval needed · waits for your go",
+          "pending_text": "¥147k funding plan available · no approval needed · waits for your go",
           "tone": "bad",
           "primary": {
             "label": "Run or compare",
@@ -4653,7 +4653,7 @@
             "topic_text": null,
             "last_activity_day": null,
             "last_activity_text": null,
-            "status_text": "Expected in 2 days · ¥255k",
+            "status_text": "Expected in 2 days · ¥258k",
             "consequence_text": "Not counted as cash until it arrives.",
             "since_day": null,
             "expected_day": 2,
@@ -4701,7 +4701,7 @@
         "buyer_name": "Foshan Home Retail Co.",
         "agreed_when": "today",
         "agreed_text": "Agreed today",
-        "terms_text": "0.85% off up to ¥257,200.00 if paid early",
+        "terms_text": "0.85% off up to ¥260,000.00 if paid early",
         "headline_text": "Nothing has happened on this deal yet",
         "state_word": "Waiting for the buyer",
         "state_key": "waiting",
@@ -4786,7 +4786,7 @@
           "expected": {
             "amount_fen": 2832692,
             "amount_display": "¥28,326.92",
-            "basis_text": "0.85% off up to ¥257,200.00 if paid early",
+            "basis_text": "0.85% off up to ¥260,000.00 if paid early",
             "certainty": "QUOTED"
           },
           "actual": {
@@ -4796,12 +4796,12 @@
             "tone": "neutral"
           },
           "to_come": {
-            "amount_fen": 218620,
-            "amount_display": "¥2,186.20",
+            "amount_fen": 221000,
+            "amount_display": "¥2,210.00",
             "note_text": "Still to come if the buyer pays early as promised: the discount posted for that payment."
           },
-          "unmeasured_fen": 2614072,
-          "unmeasured_display": "¥26,140.72",
+          "unmeasured_fen": 2611692,
+          "unmeasured_display": "¥26,116.92",
           "related_fen": 0,
           "related_display": "¥0.00",
           "difference_fen": 0,
@@ -4832,8 +4832,8 @@
           {
             "party": "buyer",
             "party_text": "The buyer",
-            "title_text": "Pay ¥255,013.80 early",
-            "detail_text": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed.",
+            "title_text": "Pay ¥257,790.00 early",
+            "detail_text": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed.",
             "state": "awaited",
             "state_word": "Awaited",
             "tone": "neutral",
@@ -4853,7 +4853,7 @@
             "party": "you",
             "party_text": "You",
             "title_text": "Allow 0.85% off if paid early",
-            "detail_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)",
+            "detail_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)",
             "state": "in_force",
             "state_word": "In force",
             "tone": "neutral",
@@ -4904,7 +4904,7 @@
         "terminal": false,
         "headline": "来自Foshan Home Retail Co.的报价",
         "counterparty_name": "Foshan Home Retail Co.",
-        "amount_display": "¥257,200.00",
+        "amount_display": "¥260,000.00",
         "opened_when": "今天",
         "updated_when": "今天",
         "waiting_for": {
@@ -4949,7 +4949,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "方案 A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -4983,10 +4983,10 @@
           "expires_day": null,
           "expires_when": null,
           "terms": [
-            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）"
           ],
           "receipt": {
-            "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）。",
+            "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）。",
             "executes_now_text": "已记录与Foshan Home Retail Co.的协议。",
             "others_must_agree_text": null,
             "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
@@ -4996,7 +4996,7 @@
             "when_text": "已生效。",
             "assumptions_text": null,
             "authority_text": "买方接受了您发出的还价；由您记录。",
-            "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
+            "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥257,790.00 应在2 天内到账；约定日尚未过。"
           }
         },
         "outbound": {
@@ -5004,7 +5004,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -5016,9 +5016,9 @@
             "date": "2026年10月3日"
           },
           "terms": [
-            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
           "provenance_text": "来源：由您记录，附买方的消息",
@@ -5045,8 +5045,8 @@
           "evidence_quote": "Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.",
           "status_text": "协议已生效。",
           "consequences": [
-            "Foshan Home Retail Co.可在2026年10月3日前支付 ¥255,013.80，结清发票中的 ¥257,200.00。",
-            "其余 ¥162,800.00 仍于2026年11月2日到期。",
+            "Foshan Home Retail Co.可在2026年10月3日前支付 ¥257,790.00，结清发票中的 ¥260,000.00。",
+            "其余 ¥160,000.00 仍于2026年11月2日到期。",
             "尚未收到任何款项；款项到账后 FLOW 会进行对账。"
           ],
           "consequences_title_text": "接下来的变化",
@@ -5122,17 +5122,17 @@
             "receivable_id": "RCV-A",
             "counterparty_id": "BUYER-1",
             "promised_day": 2,
-            "face_fen": 25720000,
-            "discount_fen": 218620,
-            "expected_fen": 25501380,
+            "face_fen": 26000000,
+            "discount_fen": 221000,
+            "expected_fen": 25779000,
             "status": "AWAITED",
             "receipt_seq": null,
-            "detail": "¥255,013.80 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
-            "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-            "face_display": "¥257,200.00",
-            "discount_display": "¥2,186.20",
-            "expected_display": "¥255,013.80",
-            "detail_when": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
+            "detail": "¥257,790.00 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
+            "formula": "¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+            "face_display": "¥260,000.00",
+            "discount_display": "¥2,210.00",
+            "expected_display": "¥257,790.00",
+            "detail_when": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥257,790.00 应在2 天内到账；约定日尚未过。"
           }
         ],
         "remaining_task": {
@@ -5434,14 +5434,14 @@
                 "when": "今天",
                 "actor": "AGENT",
                 "label": "代理答复",
-                "text": "已拒绝。已提出：方案 A：提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥257,200.00，折扣 0.85%，应于2 天后付款；方案 B：账期调整为 55 天和价格变动 0.30%"
+                "text": "已拒绝。已提出：方案 A：提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥260,000.00，折扣 0.85%，应于2 天后付款；方案 B：账期调整为 55 天和价格变动 0.30%"
               },
               {
                 "day": 0,
                 "when": "今天",
                 "actor": "BUYER",
                 "label": "买方接受",
-                "text": "提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥257,200.00，折扣 0.85%，应于2 天后付款；由代理在您设定的限额内入账"
+                "text": "提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥260,000.00，折扣 0.85%，应于2 天后付款；由代理在您设定的限额内入账"
               }
             ],
             "in_force": [
@@ -5466,7 +5466,7 @@
               {
                 "key": "early_payment",
                 "label": "提前付款",
-                "value_display": "提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥257,200.00，折扣 0.85%，应于2 天后付款",
+                "value_display": "提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥260,000.00，折扣 0.85%，应于2 天后付款",
                 "vs_contract": "DIFFERENT",
                 "vs_contract_text": "与合同不同",
                 "contract_display": "买方可提前付款，折扣 1.20%，须在 2 天内",
@@ -5605,7 +5605,7 @@
             "eyebrow": "公司现金",
             "kind_text": "FLOW 已备好行动",
             "text": "现金储备将在 20 天后变得不安全。融资方案已准备好。",
-            "pending_text": "¥150k 融资方案可用 · 无需批准 · 等待您确认",
+            "pending_text": "¥147k 融资方案可用 · 无需批准 · 等待您确认",
             "tone": "bad",
             "primary": {
               "label": "执行或比较",
@@ -5628,7 +5628,7 @@
               "last_activity_day": 0,
               "last_activity_text": "今天",
               "status_text": "已达成",
-              "consequence_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）。买方承诺 2 天后支付 ¥255k；到账前不计入现金。",
+              "consequence_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）。买方承诺 2 天后支付 ¥258k；到账前不计入现金。",
               "severity": "NORMAL",
               "deadline_day": null,
               "expected_day": null,
@@ -5641,7 +5641,7 @@
               "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21",
               "promises": [
                 {
-                  "status_text": "预计 2 天后到账 · ¥255k",
+                  "status_text": "预计 2 天后到账 · ¥258k",
                   "invoice_id": "RCV-A",
                   "expected_day": 2
                 }
@@ -5671,7 +5671,7 @@
           "eyebrow": "公司现金",
           "kind_text": "FLOW 已备好行动",
           "text": "现金储备将在 20 天后变得不安全。融资方案已准备好。",
-          "pending_text": "¥150k 融资方案可用 · 无需批准 · 等待您确认",
+          "pending_text": "¥147k 融资方案可用 · 无需批准 · 等待您确认",
           "tone": "bad",
           "primary": {
             "label": "执行或比较",
@@ -5697,7 +5697,7 @@
             "topic_text": null,
             "last_activity_day": null,
             "last_activity_text": null,
-            "status_text": "预计 2 天后到账 · ¥255k",
+            "status_text": "预计 2 天后到账 · ¥258k",
             "consequence_text": "到账前不计入现金。",
             "since_day": null,
             "expected_day": 2,
@@ -5745,7 +5745,7 @@
         "buyer_name": "Foshan Home Retail Co.",
         "agreed_when": "今天",
         "agreed_text": "今天达成协议",
-        "terms_text": "提前付款可减 0.85%，最高 ¥257,200.00",
+        "terms_text": "提前付款可减 0.85%，最高 ¥260,000.00",
         "headline_text": "这笔交易目前还没有任何进展",
         "state_word": "等待买方",
         "state_key": "waiting",
@@ -5830,7 +5830,7 @@
           "expected": {
             "amount_fen": 2832692,
             "amount_display": "¥28,326.92",
-            "basis_text": "提前付款可减 0.85%，最高 ¥257,200.00",
+            "basis_text": "提前付款可减 0.85%，最高 ¥260,000.00",
             "certainty": "QUOTED"
           },
           "actual": {
@@ -5840,12 +5840,12 @@
             "tone": "neutral"
           },
           "to_come": {
-            "amount_fen": 218620,
-            "amount_display": "¥2,186.20",
+            "amount_fen": 221000,
+            "amount_display": "¥2,210.00",
             "note_text": "买方按承诺提前付款时才会发生：该笔付款所记的折扣。"
           },
-          "unmeasured_fen": 2614072,
-          "unmeasured_display": "¥26,140.72",
+          "unmeasured_fen": 2611692,
+          "unmeasured_display": "¥26,116.92",
           "related_fen": 0,
           "related_display": "¥0.00",
           "difference_fen": 0,
@@ -5876,8 +5876,8 @@
           {
             "party": "buyer",
             "party_text": "买方",
-            "title_text": "提前支付 ¥255,013.80",
-            "detail_text": "约定于2 天后到账的 ¥255,013.80 提前付款尚未到账。",
+            "title_text": "提前支付 ¥257,790.00",
+            "detail_text": "约定于2 天后到账的 ¥257,790.00 提前付款尚未到账。",
             "state": "awaited",
             "state_word": "等待中",
             "tone": "neutral",
@@ -5897,7 +5897,7 @@
             "party": "you",
             "party_text": "您",
             "title_text": "提前付款可减 0.85%",
-            "detail_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）",
+            "detail_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）",
             "state": "in_force",
             "state_word": "有效",
             "tone": "neutral",
@@ -5995,7 +5995,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "Option A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -6028,7 +6028,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "today",
@@ -6041,10 +6041,10 @@
           },
           "terms": [
             "Payment terms: 45 days",
-            "Early payment: 0.85% off ¥257,200.00",
+            "Early payment: 0.85% off ¥260,000.00",
             "Rebate or price: Not offered"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "You marked Option A as sent on 1 October 2026, in English",
           "provenance_text": "Marked sent by you · FLOW cannot confirm delivery",
@@ -6201,7 +6201,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "方案 A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -6234,7 +6234,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -6247,10 +6247,10 @@
           },
           "terms": [
             "账期：45 天",
-            "提前付款：¥257,200.00 减免 0.85%",
+            "提前付款：¥260,000.00 减免 0.85%",
             "返利或价格：未提供"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
           "provenance_text": "由您标记为已发送 · FLOW 无法确认对方已收到",
@@ -6409,7 +6409,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "Option A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -6442,7 +6442,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "today",
@@ -6455,10 +6455,10 @@
           },
           "terms": [
             "Payment terms: 45 days",
-            "Early payment: 0.85% off ¥257,200.00",
+            "Early payment: 0.85% off ¥260,000.00",
             "Rebate or price: Not offered"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "You marked Option A as sent on 1 October 2026, in English",
           "provenance_text": "Marked sent by you · FLOW cannot confirm delivery",
@@ -6842,7 +6842,7 @@
                 "when": "today",
                 "actor": "AGENT",
                 "label": "Agent replied",
-                "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
+                "text": "Rejected. Offered Option A: early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
               }
             ],
             "in_force": [
@@ -7186,7 +7186,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "方案 A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -7219,7 +7219,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -7232,10 +7232,10 @@
           },
           "terms": [
             "账期：45 天",
-            "提前付款：¥257,200.00 减免 0.85%",
+            "提前付款：¥260,000.00 减免 0.85%",
             "返利或价格：未提供"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
           "provenance_text": "由您标记为已发送 · FLOW 无法确认对方已收到",
@@ -7619,7 +7619,7 @@
                 "when": "今天",
                 "actor": "AGENT",
                 "label": "代理答复",
-                "text": "已拒绝。已提出：方案 A：提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥257,200.00，折扣 0.85%，应于2 天后付款；方案 B：账期调整为 55 天和价格变动 0.30%"
+                "text": "已拒绝。已提出：方案 A：提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥260,000.00，折扣 0.85%，应于2 天后付款；方案 B：账期调整为 55 天和价格变动 0.30%"
               }
             ],
             "in_force": [
@@ -7966,7 +7966,7 @@
                 "id": "CTR-193394b6ba8b",
                 "label": "Option A",
                 "label_text": "Option A",
-                "supplier_cost_display": "¥3,027.77",
+                "supplier_cost_display": "¥3,035.99",
                 "forward_value_display": "¥0.00"
               },
               {
@@ -8109,7 +8109,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "Option A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -8300,7 +8300,7 @@
                 "id": "CTR-193394b6ba8b",
                 "label": "Option A",
                 "label_text": "方案 A",
-                "supplier_cost_display": "¥3,027.77",
+                "supplier_cost_display": "¥3,035.99",
                 "forward_value_display": "¥0.00"
               },
               {
@@ -8443,7 +8443,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "方案 A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -8853,7 +8853,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "Option A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -8886,7 +8886,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "today",
@@ -8899,10 +8899,10 @@
           },
           "terms": [
             "Payment terms: 45 days",
-            "Early payment: 0.85% off ¥257,200.00",
+            "Early payment: 0.85% off ¥260,000.00",
             "Rebate or price: Not offered"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "You marked Option A as sent on 1 October 2026, in English",
           "provenance_text": "Marked sent by you · FLOW cannot confirm delivery",
@@ -8939,7 +8939,7 @@
             {
               "key": "early_payment",
               "label": "Early payment",
-              "ours_text": "0.85% off ¥257,200.00",
+              "ours_text": "0.85% off ¥260,000.00",
               "theirs_text": "1.20% off ¥420,000.00",
               "changed": true
             }
@@ -9298,7 +9298,7 @@
                 "when": "today",
                 "actor": "AGENT",
                 "label": "Agent replied",
-                "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
+                "text": "Rejected. Offered Option A: early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
               }
             ],
             "in_force": [
@@ -9692,7 +9692,7 @@
           "href": "/deals?decision=deal:OFF-f806f79b6c21",
           "title_text": "In reply to Option A you sent on 1 October 2026",
           "terms": [
-            "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+            "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ]
         },
         "operations": [],
@@ -9947,7 +9947,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "方案 A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -9980,7 +9980,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -9993,10 +9993,10 @@
           },
           "terms": [
             "账期：45 天",
-            "提前付款：¥257,200.00 减免 0.85%",
+            "提前付款：¥260,000.00 减免 0.85%",
             "返利或价格：未提供"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
           "provenance_text": "由您标记为已发送 · FLOW 无法确认对方已收到",
@@ -10033,7 +10033,7 @@
             {
               "key": "early_payment",
               "label": "提前付款",
-              "ours_text": "¥257,200.00 减免 0.85%",
+              "ours_text": "¥260,000.00 减免 0.85%",
               "theirs_text": "¥420,000.00 减免 1.20%",
               "changed": true
             }
@@ -10392,7 +10392,7 @@
                 "when": "今天",
                 "actor": "AGENT",
                 "label": "代理答复",
-                "text": "已拒绝。已提出：方案 A：提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥257,200.00，折扣 0.85%，应于2 天后付款；方案 B：账期调整为 55 天和价格变动 0.30%"
+                "text": "已拒绝。已提出：方案 A：提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥260,000.00，折扣 0.85%，应于2 天后付款；方案 B：账期调整为 55 天和价格变动 0.30%"
               }
             ],
             "in_force": [
@@ -10786,7 +10786,7 @@
           "href": "/deals?decision=deal:OFF-f806f79b6c21",
           "title_text": "回复您于2026年10月1日发出的方案 A",
           "terms": [
-            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）"
           ]
         },
         "operations": [],
@@ -11043,7 +11043,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "Option A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -11076,7 +11076,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "3 days ago",
@@ -11089,10 +11089,10 @@
           },
           "terms": [
             "Payment terms: 45 days",
-            "Early payment: 0.85% off ¥257,200.00",
+            "Early payment: 0.85% off ¥260,000.00",
             "Rebate or price: Not offered"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "You marked Option A as sent on 1 October 2026, in English",
           "provenance_text": "Marked sent by you · FLOW cannot confirm delivery",
@@ -11474,7 +11474,7 @@
                 "when": "3 days ago",
                 "actor": "AGENT",
                 "label": "Agent replied",
-                "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due yesterday; Option B: payment terms to 55 days and a price change of 0.30%"
+                "text": "Rejected. Offered Option A: early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due yesterday; Option B: payment terms to 55 days and a price change of 0.30%"
               }
             ],
             "in_force": [
@@ -11789,7 +11789,7 @@
               "id": "CTR-193394b6ba8b",
               "label": "Option A",
               "label_text": "方案 A",
-              "supplier_cost_display": "¥3,027.77",
+              "supplier_cost_display": "¥3,035.99",
               "forward_value_display": "¥0.00"
             },
             {
@@ -11822,7 +11822,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
+          "message_hash": "f2deafca99ea6a07a7c86c432842ab0ac985ff313dc0a44020cb2e119acebdac",
           "sent": {
             "day": 0,
             "when": "3 天前",
@@ -11835,10 +11835,10 @@
           },
           "terms": [
             "账期：45 天",
-            "提前付款：¥257,200.00 减免 0.85%",
+            "提前付款：¥260,000.00 减免 0.85%",
             "返利或价格：未提供"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥260,000 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥257,790 by then settles ¥260,000 of the invoice. Any amount not settled early, including the other ¥160,000, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
           "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
           "provenance_text": "由您标记为已发送 · FLOW 无法确认对方已收到",
@@ -12220,7 +12220,7 @@
                 "when": "3 天前",
                 "actor": "AGENT",
                 "label": "代理答复",
-                "text": "已拒绝。已提出：方案 A：提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥257,200.00，折扣 0.85%，应于昨天付款；方案 B：账期调整为 55 天和价格变动 0.30%"
+                "text": "已拒绝。已提出：方案 A：提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥260,000.00，折扣 0.85%，应于昨天付款；方案 B：账期调整为 55 天和价格变动 0.30%"
               }
             ],
             "in_force": [

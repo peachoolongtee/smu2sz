@@ -172,7 +172,7 @@ test.describe("desktop", () => {
     // The classes in the verifier's own order: what FLOW may send, what the owner approves first. A class with nothing in it is not drawn.
     await expect(env.getByTestId("envelope-class-flow_may")).toContainText("FLOW may send these");
     await expect(env.getByTestId("envelope-class-flow_may").getByTestId("envelope-package")).toHaveCount(1);
-    await expect(env.getByTestId("envelope-class-flow_may")).toContainText("early payment 0.85% on ¥257,200.00");
+    await expect(env.getByTestId("envelope-class-flow_may")).toContainText("early payment 0.85% on ¥260,000.00");
     const owner = env.getByTestId("envelope-class-needs_owner");
     await expect(owner).toContainText("You approve these first");
     // The first three of a class are listed; the rest are one fold away, said with their count.

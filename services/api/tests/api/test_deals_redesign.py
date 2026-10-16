@@ -295,7 +295,7 @@ def test_the_headline_counts_the_late_agreement_the_chase_and_the_approval(api: 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_the_record_names_what_its_net_measures_and_carries_the_quoted_cost(api: TestClient, rt: Runtime, lang: str) -> None:
-    """Option A is quoted at ¥3,027.77 and the gap is drawn on the credit line. Its `net` is ¥0.00 because it is the 12-month value of the terms
+    """Option A is quoted at ¥3,035.99 and the gap is drawn on the credit line. Its `net` is ¥0.00 because it is the 12-month value of the terms
     (an early payment's discount is valued apart) priced at the Invoice financing rate: a different measure, not a wrong value. The record says so."""
     offer_id = _evaluate(api, EX01)
     view = api.post(f"/offers/{offer_id}/evaluate", json={"fixture_id": EX01}).json()
@@ -304,7 +304,7 @@ def test_the_record_names_what_its_net_measures_and_carries_the_quoted_cost(api:
     assert sent["outcome"] == "DEAL" and [a["facility_id"] for a in sent["plan"]["actions"]] == ["FAC-LINE"]
     eco = api.get(f"/decisions/{sent['decision_id']}", params={"lang": lang}).json()["response"]["sent"]["economics"]
     assert eco["net_display"] == "¥0.00" and eco["basis_facility_name"] == "Invoice financing (onboarded platform)"
-    assert eco["quoted_cost_display"] == "¥3,027.77" == eco["supplier_cost_display"]
+    assert eco["quoted_cost_display"] == "¥3,035.99" == eco["supplier_cost_display"]
     if lang == "en":
         assert eco["net_label_text"] == "Forward cost beyond the one-off, over 12 months, priced at the Invoice financing (onboarded platform) rate"
         assert eco["quoted_cost_label_text"] == "Cost quoted when sent (one-off)"

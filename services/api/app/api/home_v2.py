@@ -319,6 +319,7 @@ class _PlanParts(NamedTuple):
     legs: str  # "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned"
     cost: str | None  # the plan's cost word ("¥3,113.93"), None when the plan carries none
     approval: str  # "no approval needed" / "your approval is needed"
+    unstated: str | None = None  # why no cost is stated: "UNPRICED" (an open draw) or "NET_SAVING" (the plan lowers charges already due)
 
 
 def _plan_parts(c: HomeRead, a: dict[str, Any]) -> _PlanParts:
@@ -326,7 +327,7 @@ def _plan_parts(c: HomeRead, a: dict[str, Any]) -> _PlanParts:
     within = (t(lang, "needs your approval because of its cost", "因其成本需要您批准") if a["needs_owner"]
               else t(lang, "within your signed limits", "在您签署的授权内"))
     approval = t(lang, "your approval is needed", "需要您批准") if a["needs_owner"] else t(lang, "no approval needed", "无需批准")
-    return _PlanParts(within, _legs_text(c, a), a.get("cost_total_display") or None, approval)
+    return _PlanParts(within, _legs_text(c, a), a.get("cost_total_display") or None, approval, a.get("cost_unstated"))
 
 
 def _plan_sentence(lang: str, p: _PlanParts) -> str:
@@ -337,7 +338,8 @@ def _plan_sentence(lang: str, p: _PlanParts) -> str:
 def _plan_facts(lang: str, p: _PlanParts) -> list[dict[str, str]]:
     """The plan's three facts, each the sentence's own part (the approval's first letter raised in English: it stands alone as a value)."""
     approval = p.approval[:1].upper() + p.approval[1:] if lang == "en" else p.approval
-    return [{"label": t(lang, "Estimated cost", "预计成本"), "value": p.cost or t(lang, "Not priced", "未计价")},
+    unstated = t(lang, "No added cost", "无新增成本") if p.unstated == "NET_SAVING" else t(lang, "Not priced", "未计价")
+    return [{"label": t(lang, "Estimated cost", "预计成本"), "value": p.cost or unstated},
             {"label": t(lang, "Funding", "融资"), "value": p.legs},
             {"label": t(lang, "Approval", "批准"), "value": approval}]
 
@@ -361,7 +363,8 @@ def _leg(c: HomeRead, *, kind: str, amount_fen: int, lands_day: int, lands_when:
     lang = c.lang
     return {"label": _leg_label(lang, kind), "amount_display": whole(amount_fen), "amount_fen": amount_fen,
             "lands_when": lands_when or when_text(lands_day, c.today, lang), "lands_day": lands_day - c.today,
-            "cost_display": whole(cost_fen) if cost_fen is not None else None,
+            # a leg's cost is shown only when it is one: a net below zero (the leg lowers charges already due) is not a cost to the owner
+            "cost_display": whole(cost_fen) if cost_fen is not None and cost_fen >= 0 else None,
             "repaid_when": when_text(repay_day, c.today, lang) if kind == "DRAW_FACILITY" and repay_day is not None else None,
             "state": state, "state_text": _cap(state_word(lang, state)), "authority_text": authority}
 
@@ -378,7 +381,8 @@ def _action_legs(c: HomeRead, action: dict[str, Any], funding_line: dict[str, An
     basis: str | None = None
     if _is_plan(a) and a is not None:
         authority = str(a.get("authority_text") or "")
-        basis = str(a["cost_basis"]) if a.get("cost_total_display") and a.get("cost_basis") else None
+        # the basis of a stated cost, or why none is stated (an open draw's rate, a net saving); never a basis for a figure not shown
+        basis = str(a["cost_basis"]) if (a.get("cost_total_display") or a.get("cost_unstated")) and a.get("cost_basis") else None
         for leg in _landing_legs(a):
             out.append(_leg(c, kind=leg["operation_kind"], amount_fen=int(leg["amount_fen"]), lands_day=int(leg["lands_day"]), lands_when=str(leg["lands_when"]),
                             cost_fen=leg.get("cost_fen"), repay_day=leg.get("cost_due_day"), state=state_of(None, planned=True), authority=authority))

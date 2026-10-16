@@ -419,7 +419,7 @@ test("the Deals question about the deal explains the verdict the page evaluated,
   await panel.getByTestId("prompt-page-option").click();
   const option = panel.getByTestId("chat-turn").last();
   await expect(option.getByTestId("chat-reply")).toContainText("Option A:");
-  await expect(option.getByTestId("chat-reply")).toContainText("¥3,027.77");
+  await expect(option.getByTestId("chat-reply")).toContainText("¥3,035.99");
 });
 
 test("Home's 'What changed today?' is a read of the books, not a list of what the agent can do", async ({ page, request }) => {

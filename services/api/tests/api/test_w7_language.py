@@ -101,8 +101,8 @@ def test_alert_sentences_are_said_in_chinese_in_the_owners_words():
     assert detail.startswith("预计现金将在12 天后降至 ¥60,000.00，比最低现金储备低 ¥240,000.00；缺口在30 天后最大，为 ¥405,000.00，持续到31 天后。")
     assert "从Bank credit line提款 ¥150,000.00，成本 ¥1,200.00（年化 6.4%，29 天）" in detail
     assert "以发票在Invoice financing (onboarded platform)融资 ¥255,000.00，成本 ¥2,272.29（年化 11.2%，29 天）" in detail
-    assert _zh("¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The cash forecast no longer "
-               "counts on a dated receipt.") == "Foshan Home Retail Co.应付的 ¥162,800.00 原定2 天前到期，目前仍未收款。现金预测不再把这笔款项当作有确定日期的回款。"
+    assert _zh("¥160,000.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The cash forecast no longer "
+               "counts on a dated receipt.") == "Foshan Home Retail Co.应付的 ¥160,000.00 原定2 天前到期，目前仍未收款。现金预测不再把这笔款项当作有确定日期的回款。"
 
 
 def test_a_sentence_no_template_knows_passes_through_unchanged_and_is_recorded():
@@ -210,7 +210,7 @@ def test_the_approvals_queue_in_chinese_end_to_end(client):
     _walk(client)
     _act(client)  # the day-34 cure is above the rate ceiling: it waits for the owner
     en, zh = _both(client, "/approvals/queue", QUEUE_RAW)
-    assert [r["status"] for r in zh["approvals"]] == ["PENDING"] and zh["approvals"][0]["presentation"]["headline"] == "申请 ¥155,013.80 的发票融资"
+    assert [r["status"] for r in zh["approvals"]] == ["PENDING"] and zh["approvals"][0]["presentation"]["headline"] == "申请 ¥157,790 的发票融资"
     p = zh["approvals"][0]["presentation"]
     assert p["reason"].startswith("年化成本") and "您签署的无需批准融资上限" in p["reason"]
     assert p["created_when"] and p["if_decline"] and zh["approvals"][0]["quote"]["after"]
@@ -245,7 +245,7 @@ def test_the_ledger_and_the_audit_in_chinese(client):
 def test_the_reconciliation_in_chinese_names_the_promise_and_the_receipt(client):
     _walk(client, to=2)
     promise = _read(client, "/reconciliation", "zh")["reconciliation"]["promised"][0]
-    assert promise["detail_when"] == ("与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（30 天后到期）的 ¥255,013.80 "
+    assert promise["detail_when"] == ("与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（30 天后到期）的 ¥257,790.00 "
                                       "应在今天之前到账；约定日尚未过。")
     version = client.get("/mandate").json()["mandate"]["version"]
     client.post("/operations", headers=BANK, json={
@@ -254,7 +254,7 @@ def test_the_reconciliation_in_chinese_names_the_promise_and_the_receipt(client)
     en, zh = _both(client, "/reconciliation", RECON_RAW)
     receipt = zh["reconciliation"]["receipts"][0]
     assert receipt["window_state_text"].startswith("提前付款期限") and en["reconciliation"]["receipts"][0]["window_state_text"].startswith("The early")
-    assert receipt["detail_when"] == "约定的提前付款，对应发票 ¥128,600.00；另有最多 ¥128,600.00 仍可在今天之前提前结算"
+    assert receipt["detail_when"] == "约定的提前付款，对应发票 ¥130,000.00；另有最多 ¥130,000.00 仍可在今天之前提前结算"
     _freshness(zh)
 
 

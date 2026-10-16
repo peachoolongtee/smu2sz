@@ -47,7 +47,7 @@ def _x(package=None, criterion="R-TODAY"):
 
 def test_the_four_demo_figures_and_what_binds_each():
     current, asked, a, b = _x(), _x(ASKED), _x(OPTION_A), _x(OPTION_B)
-    assert [r.x_star_fen for r in (current, asked, a, b)] == [8_100_000, 1_400_000, 0, 6_200_000]  # ¥81,000 / 14,000 / 0 / 62,000
+    assert [r.x_star_fen for r in (current, asked, a, b)] == [8_100_000, 1_400_000, 200_000, 6_200_000]  # ¥81,000 / 14,000 / 2,000 / 62,000
     # the router's own words for why the next ¥1,000 fails
     assert "RI:BUYER-1:2" in current.binding_reason and "15.49%" in current.binding_reason
     assert "15.00% ceiling" in current.binding_reason
@@ -60,13 +60,14 @@ def test_the_four_demo_figures_and_what_binds_each():
 
 def test_the_as_issued_reading_is_labelled_and_larger_where_later_invoices_can_be_financed():
     rows = [_x(p, "R-AS-ISSUED").x_star_fen for p in (None, ASKED, OPTION_A, OPTION_B)]
-    assert rows == [8_100_000, 25_000_000, 0, 9_500_000]  # ¥81,000 / ¥250,000 / ¥0 / ¥95,000 (r4 section 3)
+    assert rows == [8_100_000, 25_000_000, 200_000, 9_500_000]  # ¥81,000 / ¥250,000 / ¥2,000 / ¥95,000 (r4 section 3)
     assert "an assumption" in _x(ASKED, "R-AS-ISSUED").shape_text and "an assumption" not in _x(ASKED).shape_text
 
 
-def test_option_a_leaves_no_room_for_a_further_payment_without_the_owner():
+def test_option_a_leaves_two_thousand_yuan_for_a_further_payment_without_the_owner():
+    # the face is rounded up to ¥260,000 (R-10), so the line draws ¥147,210 and keeps ¥2,790: two ¥1,000 steps fit
     r = _x(OPTION_A)
-    assert r.x_star_fen == 0 and r.refused_text is None  # zero is an answer; "none" is a refusal
+    assert r.x_star_fen == 200_000 and r.refused_text is None
     assert r.plan_at_x is not None and r.plan_at_x.admissible and not r.plan_next.executable_now
 
 

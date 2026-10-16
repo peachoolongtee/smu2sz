@@ -184,13 +184,13 @@ test("day 34 with a gap open: the options are today's plan, never the day-0 comp
   await expect(options).not.toContainText("¥3,113.93");
   await expect(options).not.toContainText("¥255,000.00");
   await expect(options).not.toContainText(" ago");
-  await expect(options).toContainText("¥1,706.10");
+  await expect(options).toContainText("¥1,702.20");
   // The cheaper plan that needs two approvals is the ranked alternative (#2); what depends on the buyer follows it, unranked.
   const alternative = page.getByTestId("cash-options-ALTERNATIVE");
   await expect(alternative.locator("h3")).toHaveText("Another way to fund it");
   await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("#2");
   await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(1);
-  await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("¥1,706.10");
+  await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("¥1,702.20");
   await expect(page.getByTestId("cash-options-CONDITIONAL_ON_BUYER")).not.toContainText("#");
   // The server's roles say it in the alternative's chip, so the grey "a cheaper option exists" note is not drawn a second time;
   // and the first row is titled with its sources, not the generic "Recommended plan".

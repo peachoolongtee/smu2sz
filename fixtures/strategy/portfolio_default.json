@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "command": "FLOW_RESEARCH_SPIKES=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run --project services/api python services/api/scripts/research/portfolio_spike.py --json",
-    "branch": "feat/mvp-w0",
-    "base_commit": "bcc67d4",
-    "recorded": "2026-10-08"
+    "command": "DEMO_MODE=1 FLOW_RESEARCH_SPIKES=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run --project services/api python services/api/scripts/research/portfolio_spike.py --json",
+    "branch": "fix/counter-base-rounding",
+    "base_commit": "0f92d433",
+    "recorded": "2026-10-16"
   },
   "spike": "portfolio",
   "deals": [
@@ -124,24 +124,24 @@
       },
       "feasible": true,
       "need": {
-        "fen": 14998620,
-        "display": "¥149,986.20"
+        "fen": 14721000,
+        "display": "¥147,210.00"
       },
       "funding_cost": {
-        "fen": 84157,
-        "display": "¥841.57"
+        "fen": 82599,
+        "display": "¥825.99"
       },
       "posted_cost": {
-        "fen": 302777,
-        "display": "¥3,027.77"
+        "fen": 303599,
+        "display": "¥3,035.99"
       },
       "concession_value": {
         "fen": 0,
         "display": "¥0.00"
       },
       "cost_for_ranking": {
-        "fen": 302777,
-        "display": "¥3,027.77"
+        "fen": 303599,
+        "display": "¥3,035.99"
       },
       "budget_used": {
         "fen": 0,
@@ -153,7 +153,7 @@
       },
       "owner_decisions": 0,
       "binding": "EX01 as asked -> forward budget (and not acceptable alone)",
-      "plan": "committed plan: ¥841.57"
+      "plan": "committed plan: ¥825.99"
     },
     {
       "rank": 2,
@@ -244,24 +244,24 @@
       },
       "feasible": true,
       "need": {
-        "fen": 14998620,
-        "display": "¥149,986.20"
+        "fen": 14721000,
+        "display": "¥147,210.00"
       },
       "funding_cost": {
-        "fen": 84157,
-        "display": "¥841.57"
+        "fen": 82599,
+        "display": "¥825.99"
       },
       "posted_cost": {
-        "fen": 302777,
-        "display": "¥3,027.77"
+        "fen": 303599,
+        "display": "¥3,035.99"
       },
       "concession_value": {
         "fen": 250000,
         "display": "¥2,500.00"
       },
       "cost_for_ranking": {
-        "fen": 552777,
-        "display": "¥5,527.77"
+        "fen": 553599,
+        "display": "¥5,535.99"
       },
       "budget_used": {
         "fen": 250000,
@@ -273,7 +273,7 @@
       },
       "owner_decisions": 1,
       "binding": "EX01 as asked -> forward budget (and not acceptable alone); EX08A as asked -> forward budget",
-      "plan": "committed plan: ¥841.57"
+      "plan": "committed plan: ¥825.99"
     },
     {
       "rank": 5,
@@ -324,24 +324,24 @@
       },
       "feasible": true,
       "need": {
-        "fen": 14998620,
-        "display": "¥149,986.20"
+        "fen": 14721000,
+        "display": "¥147,210.00"
       },
       "funding_cost": {
-        "fen": 84157,
-        "display": "¥841.57"
+        "fen": 82599,
+        "display": "¥825.99"
       },
       "posted_cost": {
-        "fen": 302777,
-        "display": "¥3,027.77"
+        "fen": 303599,
+        "display": "¥3,035.99"
       },
       "concession_value": {
         "fen": 300000,
         "display": "¥3,000.00"
       },
       "cost_for_ranking": {
-        "fen": 602777,
-        "display": "¥6,027.77"
+        "fen": 603599,
+        "display": "¥6,035.99"
       },
       "budget_used": {
         "fen": 300000,
@@ -353,7 +353,7 @@
       },
       "owner_decisions": 1,
       "binding": "EX01 as asked -> forward budget (and not acceptable alone); EX08B as asked -> forward budget",
-      "plan": "committed plan: ¥841.57"
+      "plan": "committed plan: ¥825.99"
     },
     {
       "rank": 7,
@@ -511,8 +511,8 @@
       "display": "¥6,113.93"
     },
     "best_cost_for_ranking": {
-      "fen": 302777,
-      "display": "¥3,027.77"
+      "fen": 303599,
+      "display": "¥3,035.99"
     },
     "outcomes": {
       "EX01": "REJECT",
@@ -543,8 +543,8 @@
     }
   },
   "seconds": {
-    "prepare_candidates": 0.436,
-    "enumerate_and_rank": 0.09,
-    "total": 0.543
+    "prepare_candidates": 0.694,
+    "enumerate_and_rank": 0.138,
+    "total": 0.858
   }
 }

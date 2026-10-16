@@ -57,7 +57,7 @@ def test_a_package_whose_fix_cannot_land_in_time_is_not_shown(late_fix):
     assert all(p.approved and p.authority in ("flow_may", "needs_owner") for p in shown)
     # every 50- and 55-day package leans on the day-47 fix: none is shown; the terms in force are
     assert {p.package.terms_days for p in shown} == {45}
-    assert any(p.package.early_pay_bp == 85 and p.package.early_pay_face_fen == 25_720_000 for p in shown)  # Option A
+    assert any(p.package.early_pay_bp == 85 and p.package.early_pay_face_fen == 26_000_000 for p in shown)  # Option A
 
 
 def test_the_zones_smallest_price_counts_only_approved_packages(late_fix):
