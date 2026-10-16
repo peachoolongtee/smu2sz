@@ -378,6 +378,12 @@ def _stage_or_retention(ctx: _Ctx, x: XContractTerm, span: SourceSpan) -> XContr
     return x
 
 
+# A price per kilogram, per trip, per mould shot, per piece, per placement or per thousand sheets is a rate in a rate card
+# or a unit-price row, never the contract total: it is not read as a PRICE, so it cannot stand against the total.
+_RATE_UNIT = re.compile(r"\s*(?:每\s*)?(?:公斤|车次|模次|件|点|千张)\s*")
+_TOTAL_WORDS = re.compile(r"合计|总价|总额|总金额|预估金额")
+
+
 def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDocument) -> ContractTerm | None:
     sp = locate({chunk_doc.doc_id: chunk_doc}, chunk_doc.doc_id, x.quote)
     if sp is None:
@@ -429,6 +435,10 @@ def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDoc
             return None
         out["months"] = p.value
     elif f == F.PRICE:
+        if _RATE_UNIT.fullmatch(frags["unit_text"] or "") and not _TOTAL_WORDS.search(frags["value_text"] or ""):
+            ctx.abst.append(Abstention(field=f"note:{F.PRICE.value}", spans=[span], reason=(
+                f"note: a price per {frags['unit_text']} is a unit rate, not a candidate contract total")))
+            return None
         p = parse_money(frags["value_text"])
         if not _need(ctx, f, p, "amount", span):
             return None

@@ -218,3 +218,37 @@ def test_a_single_period_still_derives_signing_plus_days():
 def test_a_single_period_with_a_different_stated_date_reads_no_end_date():
     c = _dates("乙方应于本合同签订之日起30日内交货，不迟于2026年3月1日完成。")
     assert _all(c, F.END_DATE) == []
+
+
+# ---------------------------------------------------------------- unit rates are not totals
+
+TOTAL = "本合同年度预估费用为人民币500,000.00元。"
+
+
+@pytest.mark.parametrize("row, value, unit", [
+    ("1 测试路线 零担 公斤 人民币2.50元", "人民币2.50元", "公斤"),
+    ("2 测试路线 整车 车次 人民币3,000.00元", "人民币3,000.00元", "车次"),
+    ("1 测试注塑 模次 RMB 1.50", "RMB 1.50", "模次"),
+    ("1 测试贴片 点 0.02元", "0.02元", "点"),
+    ("1 测试印刷 千张 80.00元", "80.00元", "千张"),
+    ("1 测试加工 件 12.00元", "12.00元", "件"),
+])
+def test_a_unit_rate_does_not_stand_against_the_total(row, value, unit):
+    c = _compile(_lines("测试合同", "费率表", row, "第三条", TOTAL),
+                 [_x(F.PRICE, row, value_text=value, unit_text=unit),
+                  _x(F.PRICE, TOTAL, value_text="人民币500,000.00元", unit_text="预估费用")])
+    assert _one(c, F.PRICE).amount_fen == 50_000_000
+    assert not any(a.reason.startswith("conflicting sources") for a in c.abstentions)
+
+
+def test_two_different_totals_still_conflict():
+    other = "合同总价为人民币600,000.00元。"
+    c = _compile(_lines("测试合同", TOTAL, other),
+                 [_x(F.PRICE, TOTAL, value_text="人民币500,000.00元"), _x(F.PRICE, other, value_text="人民币600,000.00元")])
+    assert _all(c, F.PRICE) == []
+
+
+def test_a_price_per_month_or_per_square_metre_is_not_dropped_by_this_rule():
+    row = "1 测试租赁 台 每月 人民币4,000.00元"
+    c = _compile(_lines("测试合同", row), [_x(F.PRICE, row, value_text="人民币4,000.00元", unit_text="每月")])
+    assert _one(c, F.PRICE).amount_fen == 400_000
