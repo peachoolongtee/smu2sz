@@ -60,7 +60,21 @@ export function DealsPage() {
   const needWorklist = deals.data !== undefined && !deals.data.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang) : Promise.resolve(null)), [lang, needWorklist]);
   // The buying side (ADR-0013): its card shows on the list only when the server answers (the feature can be switched off).
-  const buying = useAsync(() => getPurchases(lang).catch(() => null), [lang]);
+  // It is read once when the list is on screen, not with the page's other reads: those are read again after every write (an accept, a send), and on a server that
+  // answers one request at a time this card's read would stand in the queue before the open deal's own record. With a deal open (the list is hidden) nothing is read.
+  const [purchases, setPurchases] = useState<NonNullable<Awaited<ReturnType<typeof getPurchases>>>["purchases"] | null>(null);
+  const listOpen = decision === null;
+  useEffect(() => {
+    if (!listOpen) return;
+    let live = true;
+    getPurchases(lang).then(
+      (v) => live && setPurchases(v.purchases),
+      () => live && setPurchases(null),
+    );
+    return () => {
+      live = false;
+    };
+  }, [lang, listOpen]);
   const customers = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
   const queue = deals.data === undefined ? undefined : deals.data.queue ? buildQueue(deals.data, null, customers.data, WORDS(t)) : worklist.data === undefined ? undefined : buildQueue(deals.data, worklist.data, customers.data, WORDS(t));
   const rows = queue ? negotiationRows(queue) : [];
@@ -322,7 +336,7 @@ export function DealsPage() {
           <div className="min-w-0 space-y-6" data-testid="deals-side">
             {tableMode ? null : QUEUE_NODE}
             {/* The buying side (ADR-0013) sits between the selling list and the buyers' messages: selling stays first. */}
-            {buying.data ? <BuyingCard purchases={buying.data.purchases} /> : null}
+            {purchases ? <BuyingCard purchases={purchases} /> : null}
             {INBOX_SLOT}
           </div>
         </div>
