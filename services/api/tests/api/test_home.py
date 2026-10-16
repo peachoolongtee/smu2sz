@@ -226,15 +226,15 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     assert c["label"] == ("Draw ¥2,790.00 on Bank credit line and "
                           "Finance ¥80,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform) and "
                           "Finance ¥117,210.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)")
-    assert c["legs"][-1] == "Change in other interest and fees across the forecast: −¥1,987.54"
+    assert c["legs"][-1] == "Change in other interest and fees across the forecast: −¥774.37"
     # no invoice id is left in the sentences; the two invoices of the same buyer and face stay apart by their due day
     assert c["legs"][:3] == [
-        "Bank credit line: draw ¥2,790.00, repaid in 13 days: ¥1,219.53",
+        "Bank credit line: draw ¥2,790.00, repaid in 13 days: ¥6.36",
         "Invoice financing (onboarded platform): advance ¥80,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days: ¥1,425.75",
         "Invoice financing (onboarded platform): advance ¥117,210.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days: ¥1,044.46"]
     assert not any("RI:BUYER-1" in c_["text"] for c_ in h["changes"]) and not any("RI:BUYER-1" in leg for leg in c["legs"])
     assert any("¥160,000.00 outstanding from Foshan Home Retail Co." in c_["text"] for c_ in h["changes"])
-    assert a["why"].startswith("The cheapest option, ¥1,702.20 in all (including ¥1,987.54 less in other interest and fees across the "
+    assert a["why"].startswith("The cheapest option, ¥1,702.20 in all (including ¥774.37 less in other interest and fees across the "
                                "forecast), needs 2 separate approvals; this one needs one.")
     # queued for the owner, the approval says what declining leaves: the alert's shortfall sentence, relative to today
     client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})

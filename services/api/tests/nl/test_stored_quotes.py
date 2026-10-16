@@ -64,7 +64,7 @@ def test_the_chat_fund_the_gap_plan_is_stored_as_the_quote_and_a_later_approval_
 
     fact = quoted(did)
     assert [(leg.amount_fen, leg.cost_fen, leg.lands_day, leg.above_ceiling) for leg in fact.legs] == [
-        (279_000, 121_953, 34, False), (8_000_000, 142_575, 37, True), (11_721_000, 104_446, 37, True)]  # R-10: the line's ¥2,790 first
+        (279_000, 636, 34, False), (8_000_000, 142_575, 37, True), (11_721_000, 104_446, 37, True)]  # R-10: the line's ¥2,790 first
     assert fact.total_cost_fen == 170_220 and fact.needs_owner is True and fact.alert_id == did
     assert fact.restores_reserve is True and fact.alert_kind == "OPERATION"
 

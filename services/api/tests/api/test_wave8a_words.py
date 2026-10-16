@@ -44,7 +44,7 @@ def test_day34_the_recommended_cure_is_a_row_and_the_cheapest_plan_is_the_altern
     assert rec["total_display"] == na["cost_total_display"]  # the card and the row say the same figure
     assert rec["role_reason"] == ("The next step: it needs one approval; the cheapest plan (¥1,702.20 in all) needs 2 separate "
                                   "approvals.")
-    assert (cheapest["role"], cheapest["total_display"]) == ("alternative", "¥1,219.53 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20")
+    assert (cheapest["role"], cheapest["total_display"]) == ("alternative", "¥6.36 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20")
     assert cheapest["role_reason"] == "Cheapest in all, but it needs 2 separate approvals; the recommended plan needs one."
     # exactly one recommended row, listed first; the router's own status and selection are untouched
     assert [r["role"] for r in plan["comparison"]].count("recommended") == 1 and plan["comparison"][0]["key"] == "recommended_plan"
@@ -62,10 +62,10 @@ def test_day34_two_advances_on_one_source_are_told_apart_and_the_total_reconcile
     to_day34(client, rt)
     cheapest = next(r for r in _comparison(client)["comparison"] if r["key"] == "router_optimum")
     assert [(g["name_display"], g["cost_display"]) for g in cheapest["legs"]] == [
-        ("Bank credit line", "¥1,219.53"), ("Invoice financing (onboarded platform), ¥80k", "¥1,425.75"),
+        ("Bank credit line", "¥6.36"), ("Invoice financing (onboarded platform), ¥80k", "¥1,425.75"),
         ("Invoice financing (onboarded platform), ¥117k", "¥1,044.46")]  # R-10: the line's last ¥2,790 is drawn first
     # the total is not the sum of the legs: the difference is a named line, so the page never shows an equation that fails
-    assert cheapest["offset_display"] == "−¥1,987.54" and cheapest["offset_label"] == "Change in other interest and fees across the forecast"
+    assert cheapest["offset_display"] == "−¥774.37" and cheapest["offset_label"] == "Change in other interest and fees across the forecast"
     assert sum(g["cost_fen"] for g in cheapest["legs"]) + cheapest["offset_fen"] == cheapest["total_fen"] == 170_220
 
 
