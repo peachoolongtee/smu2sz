@@ -150,8 +150,10 @@ def test_collections_price_curve(collections):
     assert day0[2][0] == 31 and day0[2][2] == 0
     day34 = _segments(_book(collections, "day 34"))
     assert day34[0] == (34, 42, 17_822)
-    assert day34[1] == (43, 60, 8_912)
-    assert day34[2][0] == 61 and day34[2][2] == 0
+    # days 43 to 46 also retire the line's ¥2,790 draw (R-10 rounding) one day sooner each (2,790 × 6.4% × n/365 per ¥10,000
+    # of cash on top of one invoice-financing period, 89.11): 91.07, 90.58, 90.09, 89.60, then 89.11 to day 60
+    assert day34[1:6] == [(43, 43, 9_107), (44, 44, 9_058), (45, 45, 9_009), (46, 46, 8_960), (47, 60, 8_911)]
+    assert day34[6][0] == 61 and day34[6][2] == 0
 
 
 def test_portfolio_default(portfolio):
