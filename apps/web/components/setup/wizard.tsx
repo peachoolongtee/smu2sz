@@ -3,7 +3,9 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BankIcon } from "@/components/icons";
-import { Button, ButtonLink, Callout, PageHeader } from "@/components/ui";
+import { Button, ButtonLink, Callout, ErrorState, PageHeader } from "@/components/ui";
+import { requestSignIn, useAuth } from "@/lib/auth";
+import { API_MODE } from "@/lib/config";
 import { previewSetup } from "@/lib/api";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
@@ -32,7 +34,9 @@ export function SetupWizard() {
   const step = STEPS.includes(raw as (typeof STEPS)[number]) ? raw : 0;
   const [issues, setIssues] = useState<SetupIssue[]>([]);
   const [checking, setChecking] = useState(false);
-  const [checkError, setCheckError] = useState<string | null>(null);
+  const [checkError, setCheckError] = useState<Error | string | null>(null);
+  // The setup is the owner's work and the server checks every step: ask for the sign-in before the owner types, not after.
+  const signedIn = useAuth().token !== null;
 
   useEffect(() => {
     if (step > 0) ensureStartDate();
@@ -54,7 +58,8 @@ export function SetupWizard() {
       setIssues(mine);
       if (mine.length === 0) goTo(step + 1);
     } catch (e) {
-      setCheckError(e instanceof Error ? e.message : String(e));
+      // Said in words (a sign-in that is needed is asked for, never shown as a status code).
+      setCheckError(e instanceof Error ? e : String(e));
     } finally {
       setChecking(false);
     }
@@ -108,7 +113,16 @@ export function SetupWizard() {
               </ul>
             </Callout>
           ) : null}
-          {checkError ? <Callout tone="bad">{checkError}</Callout> : null}
+          {!signedIn && API_MODE === "live" ? (
+            <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-info-line bg-info-bg p-4" data-testid="setup-signin">
+              <div className="min-w-0 flex-[1_1_16rem]">
+                <p className="font-semibold text-ink">{t("setup.signin.title")}</p>
+                <p className="mt-0.5 text-sm text-ink-2">{t("setup.signin.body")}</p>
+              </div>
+              <Button onClick={() => requestSignIn("required")}>{t("auth.signin")}</Button>
+            </div>
+          ) : null}
+          {checkError ? <ErrorState error={checkError} /> : null}
           {step === 1 ? <StepBusiness draft={draft} issues={byPath} /> : null}
           {step === 2 ? <StepFunding draft={draft} issues={byPath} /> : null}
           {step === 3 ? <StepCustomers draft={draft} issues={byPath} initialPick={params.get("pick") === "1"} /> : null}

@@ -5891,6 +5891,7 @@
     ],
     "cost_basis": "按预计32 天后（第一笔足以还款的收款）偿还Bank credit line估算；最终利息取决于实际还款日。 发票融资按整 30 天计费，直至发票付清。",
     "cost_note": null,
+    "cost_unstated": null,
     "cheaper_option": null,
     "rate_text": null,
     "cost_days": null,

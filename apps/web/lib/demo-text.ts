@@ -21,7 +21,9 @@ export function stepNarration({ t, lang }: Pick<I18n, "t" | "lang">, id: StepId,
       .flatMap((sentence) => {
         const names = [...sentence.matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
         if (names.some((n) => !facts.values[n]?.trim())) return [];
-        return [sentence.replace(/\{(\w+)\}/g, (_, n: string) => facts.values[n].trim())];
+        const said = sentence.replace(/\{(\w+)\}/g, (_, n: string) => facts.values[n].trim());
+        // A server headline used as a sentence may carry no full stop of its own; the next sentence must not run on from it.
+        return [/[.!?。！？…:：)）"”]$/.test(said) ? said : `${said}${lang === "zh" ? "。" : "."}`];
       })
       .join(" ");
     if (told) return told;

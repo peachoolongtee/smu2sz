@@ -51,7 +51,9 @@
     ".next-demo/types/**/*.ts",
     ".next-demo/dev/types/**/*.ts",
     ".next-demo-mock/types/**/*.ts",
-    ".next-demo-mock/dev/types/**/*.ts"
+    ".next-demo-mock/dev/types/**/*.ts",
+    ".next-claude/types/**/*.ts",
+    ".next-claude/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -61,7 +61,7 @@ export function CashFigures({ h, big = false }: { h: HomeView; big?: boolean }) 
   const headroom = cash.headroom_short !== undefined ? versusMinimum(cash.headroom_short, cash.headroom_fen, false, true) : null;
   const lowestHeadroom = cash.lowest_headroom_short !== undefined ? versusMinimum(cash.lowest_headroom_short, cash.lowest_headroom_fen, true) : null;
   return (
-    <dl className={big ? "grid grid-cols-2 gap-3" : "mt-2 flex flex-wrap gap-x-8 gap-y-3"} data-testid="cash-figures">
+    <dl className={big ? "grid grid-cols-2 gap-3 lg:grid-cols-4" : "mt-2 flex flex-wrap gap-x-8 gap-y-3"} data-testid="cash-figures">
       <Fact big={big} label={t("biz.cashToday")} testId="cash-today">
         {cash.cash_short}
       </Fact>

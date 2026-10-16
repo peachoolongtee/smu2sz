@@ -618,8 +618,8 @@ input[type="radio"] {
   display: none;
 }
 .seg-track:not([data-pill]) .seg-tab[aria-selected="true"] {
-  border-color: var(--color-line);
-  background: var(--color-surface);
+  border-color: var(--color-f-purple);
+  background: var(--color-f-purple);
   box-shadow: var(--shadow-pill);
 }
 
@@ -1061,5 +1061,57 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     .f-bar {
       animation: none;
     }
+  }
+}
+
+/* The setup's tables (components/setup/fields.tsx, RowsTable): a card per row whenever the column is narrower than the table, each cell labelled
+   with its column's heading, so no row scrolls sideways and no column hides off the edge (no horizontal page scroll down to 360 px). */
+.setup-rows-wrap {
+  container-type: inline-size;
+}
+@container (max-width: 62.5rem) {
+  .setup-rows {
+    display: block;
+    min-width: 0 !important;
+  }
+  .setup-rows thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .setup-rows tbody {
+    display: block;
+  }
+  .setup-rows tr {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    gap: 0.75rem 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .setup-rows tr:last-child {
+    border-bottom: 0;
+  }
+  .setup-rows td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    text-align: start;
+  }
+  .setup-rows td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: var(--text-supporting);
+    font-weight: 600;
+    color: var(--color-ink-2);
+  }
+  .setup-rows input:not([type="checkbox"]),
+  .setup-rows select {
+    min-width: 0;
   }
 }

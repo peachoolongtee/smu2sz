@@ -899,7 +899,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "Latest, today: ¥149,986.20 drawn on the Bank credit line. Cash received today.",
+      "state_text": "Latest, today: ¥147,210.00 drawn on the Bank credit line. Cash received today.",
       "summary": {
         "business_count": 5,
         "security_alert_count": 0,
@@ -939,7 +939,7 @@
           "category": "cash",
           "category_label": "Cash",
           "when": "today",
-          "title_text": "¥149,986.20 drawn on the Bank credit line. Cash received today.",
+          "title_text": "¥147,210.00 drawn on the Bank credit line. Cash received today.",
           "detail_text": null,
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
@@ -962,9 +962,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "Credit line drawn",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "¥149,986.20 drawn on the bank credit line. cash received today. the forecast stays at or above your minimum. waiting for foshan home retail co. to pay, due in 2 days. foshan home retail co. cash"
+          "search_text": "¥147,210.00 drawn on the bank credit line. cash received today. the forecast stays at or above your minimum. waiting for foshan home retail co. to pay, due in 2 days. foshan home retail co. cash"
         },
         {
           "id": "op:4",
@@ -1123,7 +1123,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最新，今天：已从Bank credit line提取 ¥149,986.20。资金今天已到账。",
+      "state_text": "最新，今天：已从Bank credit line提取 ¥147,210.00。资金今天已到账。",
       "summary": {
         "business_count": 5,
         "security_alert_count": 0,
@@ -1163,7 +1163,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "今天",
-          "title_text": "已从Bank credit line提取 ¥149,986.20。资金今天已到账。",
+          "title_text": "已从Bank credit line提取 ¥147,210.00。资金今天已到账。",
           "detail_text": null,
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
@@ -1186,9 +1186,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "信用额度已提款",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "已从bank credit line提取 ¥149,986.20。资金今天已到账。 预测现金不低于您的最低现金储备。 等待foshan home retail co.付款，应于2 天后到账。 foshan home retail co. 现金"
+          "search_text": "已从bank credit line提取 ¥147,210.00。资金今天已到账。 预测现金不低于您的最低现金储备。 等待foshan home retail co.付款，应于2 天后到账。 foshan home retail co. 现金"
         },
         {
           "id": "op:4",
@@ -1349,7 +1349,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "Latest, today: Received ¥255,013.80 from Foshan Home Retail Co.",
+      "state_text": "Latest, today: Received ¥257,790.00 from Foshan Home Retail Co.",
       "summary": {
         "business_count": 6,
         "security_alert_count": 0,
@@ -1399,8 +1399,8 @@
           "category": "receivables",
           "category_label": "Receivables",
           "when": "today",
-          "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due in 30 days.",
+          "title_text": "Received ¥257,790.00 from Foshan Home Retail Co.",
+          "detail_text": "Settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due in 30 days.",
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
           "why_changed": true,
@@ -1422,10 +1422,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due in 30 days. the forecast stays at or above your minimum. foshan home retail co. receivables"
+          "search_text": "received ¥257,790.00 from foshan home retail co. settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due in 30 days. the forecast stays at or above your minimum. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -1466,7 +1466,7 @@
           "category": "cash",
           "category_label": "Cash",
           "when": "2 days ago",
-          "title_text": "¥149,986.20 drawn on the Bank credit line. Cash received 2 days ago.",
+          "title_text": "¥147,210.00 drawn on the Bank credit line. Cash received 2 days ago.",
           "detail_text": null,
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
@@ -1489,9 +1489,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "Credit line drawn",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "¥149,986.20 drawn on the bank credit line. cash received 2 days ago. the forecast stays at or above your minimum. foshan home retail co. cash"
+          "search_text": "¥147,210.00 drawn on the bank credit line. cash received 2 days ago. the forecast stays at or above your minimum. foshan home retail co. cash"
         },
         {
           "id": "op:4",
@@ -1650,7 +1650,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最新，今天：已收到Foshan Home Retail Co.的 ¥255,013.80。",
+      "state_text": "最新，今天：已收到Foshan Home Retail Co.的 ¥257,790.00。",
       "summary": {
         "business_count": 6,
         "security_alert_count": 0,
@@ -1700,8 +1700,8 @@
           "category": "receivables",
           "category_label": "应收款",
           "when": "今天",
-          "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定30 天后到期。",
+          "title_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定30 天后到期。",
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
           "why_changed": true,
@@ -1723,10 +1723,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定30 天后到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥257,790.00。 按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定30 天后到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -1767,7 +1767,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "2 天前",
-          "title_text": "已从Bank credit line提取 ¥149,986.20。资金已于2 天前到账。",
+          "title_text": "已从Bank credit line提取 ¥147,210.00。资金已于2 天前到账。",
           "detail_text": null,
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
@@ -1790,9 +1790,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "信用额度已提款",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "已从bank credit line提取 ¥149,986.20。资金已于2 天前到账。 预测现金不低于您的最低现金储备。 foshan home retail co. 现金"
+          "search_text": "已从bank credit line提取 ¥147,210.00。资金已于2 天前到账。 预测现金不低于您的最低现金储备。 foshan home retail co. 现金"
         },
         {
           "id": "op:4",
@@ -1953,7 +1953,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "Latest, 32 days ago: Received ¥255,013.80 from Foshan Home Retail Co.",
+      "state_text": "Latest, 32 days ago: Received ¥257,790.00 from Foshan Home Retail Co.",
       "summary": {
         "business_count": 6,
         "security_alert_count": 0,
@@ -2036,8 +2036,8 @@
           "category": "receivables",
           "category_label": "Receivables",
           "when": "32 days ago",
-          "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago.",
+          "title_text": "Received ¥257,790.00 from Foshan Home Retail Co.",
+          "detail_text": "Settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 was still due 2 days ago.",
           "why_text": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
           "why_as_of_text": "now",
           "why_changed": false,
@@ -2059,10 +2059,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. receivables"
+          "search_text": "received ¥257,790.00 from foshan home retail co. settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 was still due 2 days ago. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -2103,7 +2103,7 @@
           "category": "cash",
           "category_label": "Cash",
           "when": "34 days ago",
-          "title_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
+          "title_text": "¥147,210.00 drawn on the Bank credit line. Cash received 34 days ago.",
           "detail_text": null,
           "why_text": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
           "why_as_of_text": "now",
@@ -2126,9 +2126,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "Credit line drawn",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "¥149,986.20 drawn on the bank credit line. cash received 34 days ago. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. cash"
+          "search_text": "¥147,210.00 drawn on the bank credit line. cash received 34 days ago. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. cash"
         },
         {
           "id": "op:4",
@@ -2287,7 +2287,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最新，32 天前：已收到Foshan Home Retail Co.的 ¥255,013.80。",
+      "state_text": "最新，32 天前：已收到Foshan Home Retail Co.的 ¥257,790.00。",
       "summary": {
         "business_count": 6,
         "security_alert_count": 0,
@@ -2370,8 +2370,8 @@
           "category": "receivables",
           "category_label": "应收款",
           "when": "32 天前",
-          "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。",
+          "title_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定2 天前到期。",
           "why_text": "截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。",
           "why_as_of_text": "现在",
           "why_changed": false,
@@ -2393,10 +2393,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥257,790.00。 按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定2 天前到期。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -2437,7 +2437,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "34 天前",
-          "title_text": "已从Bank credit line提取 ¥149,986.20。资金已于34 天前到账。",
+          "title_text": "已从Bank credit line提取 ¥147,210.00。资金已于34 天前到账。",
           "detail_text": null,
           "why_text": "截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。",
           "why_as_of_text": "现在",
@@ -2460,9 +2460,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "信用额度已提款",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "已从bank credit line提取 ¥149,986.20。资金已于34 天前到账。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 现金"
+          "search_text": "已从bank credit line提取 ¥147,210.00。资金已于34 天前到账。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 现金"
         },
         {
           "id": "op:4",
@@ -2739,8 +2739,8 @@
           "category": "receivables",
           "category_label": "Receivables",
           "when": "32 days ago",
-          "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago.",
+          "title_text": "Received ¥257,790.00 from Foshan Home Retail Co.",
+          "detail_text": "Settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 was still due 2 days ago.",
           "why_text": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
           "why_as_of_text": "now",
           "why_changed": false,
@@ -2762,10 +2762,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. receivables"
+          "search_text": "received ¥257,790.00 from foshan home retail co. settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 was still due 2 days ago. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -2806,7 +2806,7 @@
           "category": "cash",
           "category_label": "Cash",
           "when": "34 days ago",
-          "title_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
+          "title_text": "¥147,210.00 drawn on the Bank credit line. Cash received 34 days ago.",
           "detail_text": null,
           "why_text": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
           "why_as_of_text": "now",
@@ -2829,9 +2829,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "Credit line drawn",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "¥149,986.20 drawn on the bank credit line. cash received 34 days ago. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. cash"
+          "search_text": "¥147,210.00 drawn on the bank credit line. cash received 34 days ago. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. cash"
         },
         {
           "id": "op:4",
@@ -3106,8 +3106,8 @@
           "category": "receivables",
           "category_label": "应收款",
           "when": "32 天前",
-          "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。",
+          "title_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定2 天前到期。",
           "why_text": "截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。",
           "why_as_of_text": "现在",
           "why_changed": false,
@@ -3129,10 +3129,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥257,790.00。 按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定2 天前到期。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -3173,7 +3173,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "34 天前",
-          "title_text": "已从Bank credit line提取 ¥149,986.20。资金已于34 天前到账。",
+          "title_text": "已从Bank credit line提取 ¥147,210.00。资金已于34 天前到账。",
           "detail_text": null,
           "why_text": "截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。",
           "why_as_of_text": "现在",
@@ -3196,9 +3196,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "信用额度已提款",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "已从bank credit line提取 ¥149,986.20。资金已于34 天前到账。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 现金"
+          "search_text": "已从bank credit line提取 ¥147,210.00。资金已于34 天前到账。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 现金"
         },
         {
           "id": "op:4",
@@ -3508,8 +3508,8 @@
           "category": "receivables",
           "category_label": "Receivables",
           "when": "32 days ago",
-          "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago.",
+          "title_text": "Received ¥257,790.00 from Foshan Home Retail Co.",
+          "detail_text": "Settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 was still due 2 days ago.",
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
           "why_changed": false,
@@ -3531,10 +3531,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. the forecast stays at or above your minimum. foshan home retail co. receivables"
+          "search_text": "received ¥257,790.00 from foshan home retail co. settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 was still due 2 days ago. the forecast stays at or above your minimum. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -3575,7 +3575,7 @@
           "category": "cash",
           "category_label": "Cash",
           "when": "34 days ago",
-          "title_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
+          "title_text": "¥147,210.00 drawn on the Bank credit line. Cash received 34 days ago.",
           "detail_text": null,
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
@@ -3598,9 +3598,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "Credit line drawn",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "¥149,986.20 drawn on the bank credit line. cash received 34 days ago. the forecast stays at or above your minimum. foshan home retail co. cash"
+          "search_text": "¥147,210.00 drawn on the bank credit line. cash received 34 days ago. the forecast stays at or above your minimum. foshan home retail co. cash"
         },
         {
           "id": "op:4",
@@ -3908,8 +3908,8 @@
           "category": "receivables",
           "category_label": "应收款",
           "when": "32 天前",
-          "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。",
+          "title_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定2 天前到期。",
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
           "why_changed": false,
@@ -3931,10 +3931,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥257,790.00。 按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定2 天前到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -3975,7 +3975,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "34 天前",
-          "title_text": "已从Bank credit line提取 ¥149,986.20。资金已于34 天前到账。",
+          "title_text": "已从Bank credit line提取 ¥147,210.00。资金已于34 天前到账。",
           "detail_text": null,
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
@@ -3998,9 +3998,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "信用额度已提款",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "已从bank credit line提取 ¥149,986.20。资金已于34 天前到账。 预测现金不低于您的最低现金储备。 foshan home retail co. 现金"
+          "search_text": "已从bank credit line提取 ¥147,210.00。资金已于34 天前到账。 预测现金不低于您的最低现金储备。 foshan home retail co. 现金"
         },
         {
           "id": "op:4",
@@ -4343,8 +4343,8 @@
           "category": "receivables",
           "category_label": "Receivables",
           "when": "36 days ago",
-          "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago.",
+          "title_text": "Received ¥257,790.00 from Foshan Home Retail Co.",
+          "detail_text": "Settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 was still due 6 days ago.",
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
           "why_changed": false,
@@ -4366,10 +4366,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago. the forecast stays at or above your minimum. foshan home retail co. receivables"
+          "search_text": "received ¥257,790.00 from foshan home retail co. settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 was still due 6 days ago. the forecast stays at or above your minimum. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -4410,7 +4410,7 @@
           "category": "cash",
           "category_label": "Cash",
           "when": "38 days ago",
-          "title_text": "¥149,986.20 drawn on the Bank credit line. Cash received 38 days ago.",
+          "title_text": "¥147,210.00 drawn on the Bank credit line. Cash received 38 days ago.",
           "detail_text": null,
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
@@ -4433,9 +4433,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "Credit line drawn",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "¥149,986.20 drawn on the bank credit line. cash received 38 days ago. the forecast stays at or above your minimum. foshan home retail co. cash"
+          "search_text": "¥147,210.00 drawn on the bank credit line. cash received 38 days ago. the forecast stays at or above your minimum. foshan home retail co. cash"
         },
         {
           "id": "op:4",
@@ -4776,8 +4776,8 @@
           "category": "receivables",
           "category_label": "应收款",
           "when": "36 天前",
-          "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。",
+          "title_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定6 天前到期。",
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
           "why_changed": false,
@@ -4799,10 +4799,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥257,790.00。 按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定6 天前到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -4843,7 +4843,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "38 天前",
-          "title_text": "已从Bank credit line提取 ¥149,986.20。资金已于38 天前到账。",
+          "title_text": "已从Bank credit line提取 ¥147,210.00。资金已于38 天前到账。",
           "detail_text": null,
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
@@ -4866,9 +4866,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "信用额度已提款",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "已从bank credit line提取 ¥149,986.20。资金已于38 天前到账。 预测现金不低于您的最低现金储备。 foshan home retail co. 现金"
+          "search_text": "已从bank credit line提取 ¥147,210.00。资金已于38 天前到账。 预测现金不低于您的最低现金储备。 foshan home retail co. 现金"
         },
         {
           "id": "op:4",
@@ -5495,8 +5495,8 @@
           "category": "receivables",
           "category_label": "Receivables",
           "when": "36 days ago",
-          "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago.",
+          "title_text": "Received ¥257,790.00 from Foshan Home Retail Co.",
+          "detail_text": "Settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 was still due 6 days ago.",
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
           "why_changed": false,
@@ -5518,10 +5518,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago. the forecast stays at or above your minimum. foshan home retail co. receivables"
+          "search_text": "received ¥257,790.00 from foshan home retail co. settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 was still due 6 days ago. the forecast stays at or above your minimum. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -5562,7 +5562,7 @@
           "category": "cash",
           "category_label": "Cash",
           "when": "38 days ago",
-          "title_text": "¥149,986.20 drawn on the Bank credit line. Cash received 38 days ago.",
+          "title_text": "¥147,210.00 drawn on the Bank credit line. Cash received 38 days ago.",
           "detail_text": null,
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
@@ -5585,9 +5585,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "Credit line drawn",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "¥149,986.20 drawn on the bank credit line. cash received 38 days ago. the forecast stays at or above your minimum. foshan home retail co. cash"
+          "search_text": "¥147,210.00 drawn on the bank credit line. cash received 38 days ago. the forecast stays at or above your minimum. foshan home retail co. cash"
         },
         {
           "id": "op:4",
@@ -6212,8 +6212,8 @@
           "category": "receivables",
           "category_label": "应收款",
           "when": "36 天前",
-          "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。",
+          "title_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定6 天前到期。",
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
           "why_changed": false,
@@ -6235,10 +6235,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
             "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥257,790.00。 按约定的 0.85% 提前付款折扣结清 ¥260,000.00；另有 ¥160,000.00 原定6 天前到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -6279,7 +6279,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "38 天前",
-          "title_text": "已从Bank credit line提取 ¥149,986.20。资金已于38 天前到账。",
+          "title_text": "已从Bank credit line提取 ¥147,210.00。资金已于38 天前到账。",
           "detail_text": null,
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
@@ -6302,9 +6302,9 @@
             "entry_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
             "prev_hash": "72854b0697d6c13c447acfcfd3ad7143a305a08999a1ed96dc8f4c63e2b31219",
             "kind_text": "信用额度已提款",
-            "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+            "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
           },
-          "search_text": "已从bank credit line提取 ¥149,986.20。资金已于38 天前到账。 预测现金不低于您的最低现金储备。 foshan home retail co. 现金"
+          "search_text": "已从bank credit line提取 ¥147,210.00。资金已于38 天前到账。 预测现金不低于您的最低现金储备。 foshan home retail co. 现金"
         },
         {
           "id": "op:4",

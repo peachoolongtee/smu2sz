@@ -175,14 +175,19 @@ class Built:
 # ---------------------------------------------------------------- parsing what the owner typed
 
 _NUMBER = re.compile(r"^-?\d+(\.\d+)?$")
+_GROUPED = re.compile(r"^-?\d{1,3}(,\d{3})+(\.\d+)?$")
 
 
 def parse_decimal(raw: Money | None) -> Decimal | None:
     """'¥400,000', '400000', '4.35%', 1.25 → Decimal; blank → None. Raises ValueError on anything else."""
     if raw is None:
         return None
-    text = str(raw).strip().replace("¥", "").replace("￥", "").replace(",", "").replace("，", "").replace(" ", "")
-    text = text.removesuffix("%").removesuffix("x").removesuffix("×")
+    grouped = str(raw).strip().replace("¥", "").replace("￥", "").replace("，", ",").replace(" ", "")
+    grouped = grouped.removesuffix("%").removesuffix("x").removesuffix("×")
+    # Thousands separators, when typed, must group by threes ("400,000"); "5,00050000" is a typing slip, not an amount.
+    if "," in grouped and not _GROUPED.match(grouped):
+        raise ValueError(raw)
+    text = grouped.replace(",", "")
     if text == "":
         return None
     if len(text) > MAX_NUMBER_CHARS or not _NUMBER.match(text):

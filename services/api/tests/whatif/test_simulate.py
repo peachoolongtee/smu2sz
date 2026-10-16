@@ -62,11 +62,11 @@ def test_covenant_chips_and_break_even(run, g):
 
 
 def test_option_a_is_not_rejected_for_concessions(run):
-    r = run(WhatIfParams(terms_days=45, discount_bp=85, rebate_bp=0, settle_face_fen=25_720_000))
+    r = run(WhatIfParams(terms_days=45, discount_bp=85, rebate_bp=0, settle_face_fen=26_000_000))
     assert not CONCESSION_CODES & set(r.codes)
     assert r.outcome != "REJECT"
     assert r.forward["total_fen"] == 0 and r.forward["over_cap"] is False
-    assert r.params["effective_face_fen"] == 25_720_000 and r.params["effective_face_display"] == "¥257,200.00"
+    assert r.params["effective_face_fen"] == 26_000_000 and r.params["effective_face_display"] == "¥260,000.00"
 
 
 def test_option_b_nets_the_extension_with_the_price_adjustment(run):

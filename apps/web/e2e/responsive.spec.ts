@@ -42,7 +42,9 @@ test("the Business home puts the status and the next action in the first screen,
   await page.goto("/");
   const status = page.getByTestId("home-status");
   await expect(status).toBeInViewport();
-  await expect(page.getByTestId("home-headline")).toBeInViewport();
+  // The headline is for a screen reader since the final UI fold; on screen the outlook's lowest figure says where the cash stands.
+  await expect(page.getByTestId("home-headline")).toHaveText(/./);
+  await expect(page.getByTestId("home-kpi-lowest-value")).toBeInViewport();
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
@@ -431,9 +433,9 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/");
   expect(await bottomOf(page, "home-check-plan")).toBeLessThanOrEqual(700);
-  // The three cards are one row in the page's flow (not sticky) and the whole row, today's cash among them, is inside the first screen.
+  // Since the final UI fold the outlook is the page's main card: its figure and the recommendation inside it are in the first screen; today's cash heads the side column below.
   await expect(page.getByTestId("home-kpi-cash-value")).toBeVisible();
-  for (const id of ["hv2-cash-card", "hv2-action", "hv2-outlook-card"]) {
+  for (const id of ["home-kpi-lowest-value", "hv2-action"]) {
     const box = (await page.getByTestId(id).boundingBox())!;
     expect(box.y + box.height, id).toBeLessThanOrEqual(768);
   }

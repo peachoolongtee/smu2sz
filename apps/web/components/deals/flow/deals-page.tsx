@@ -197,7 +197,10 @@ export function DealsPage() {
 
   // ---- the state sentence under the stable title
   const counts = queue ? dealTabCounts(queue) : undefined;
-  const subtitle = !counts ? undefined : queue?.headline_text ? queue.headline_text : counts.needs_you > 0 ? t("deals.state.needs", { n: counts.needs_you, w: counts.waiting }) : counts.waiting > 0 ? t("deals.state.waiting", { w: counts.waiting }) : t("deals.state.none");
+  // The server's sentence counts every task that needs the owner (an approval and a payment to chase too); the tabs count the negotiations listed here. When the two differ the page
+  // says how many of them are the deals below and where the others wait, so "7 tasks need you" never sits over "Needs you 5" unexplained.
+  const outside = queue && counts && queue.counts.needs_you > counts.needs_you ? ` ${t("deals.state.outside", { n: counts.needs_you })}` : "";
+  const subtitle = !counts ? undefined : queue?.headline_text ? queue.headline_text + outside : counts.needs_you > 0 ? t("deals.state.needs", { n: counts.needs_you, w: counts.waiting }) : counts.waiting > 0 ? t("deals.state.waiting", { w: counts.waiting }) : t("deals.state.none");
   const back = deals.data?.context?.back ?? openOffer?.context?.back ?? null;
   const irrelevantText = opened.decision === decision ? (deals.data?.context?.irrelevant_text ?? null) : null;
 

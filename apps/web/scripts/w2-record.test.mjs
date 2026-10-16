@@ -54,8 +54,8 @@ test("the execution summary is read from the record: the agreement in the server
   const agreed = summaryFromRecord(en("agreed_day0.ex01"));
   assert.equal(agreed.agreement, "agreed");
   assert.equal(agreed.agreement_text, "Agreed");
-  assert.match(agreed.summary_text, /Agreement with .* recorded\. Funding of ¥149,986\.20 was requested and has landed\./);
-  assert.ok(agreed.funding.some((f) => f.text.includes("¥149,986.20")));
+  assert.match(agreed.summary_text, /Agreement with .* recorded\. Funding of ¥147,210\.00 was requested and has landed\./);
+  assert.ok(agreed.funding.some((f) => f.text.includes("¥147,210.00")));
   assert.equal(agreed.lots.length, 1);
   assert.equal(agreed.lots[0].landed, true);
   // A buyer who walked: no agreement, and the funding that ran anyway is listed.

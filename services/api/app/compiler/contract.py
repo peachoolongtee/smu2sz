@@ -25,6 +25,7 @@ from app.compiler.contract_checks import (
     check_notes,
     cross_checks,
     derived_dates,
+    payer_payee_check,
     stage_basis,
     stage_deadline,
     stage_trigger,
@@ -332,9 +333,16 @@ _LATE_PAYMENT = rx(
     r"|pays?\s+(?:\w+\s+){0,4}late|interest\s+on\s+(?:any\s+)?(?:overdue|late|unpaid)", I)
 
 
+# "乙方逾期履行的，每逾期一日，按逾期部分价款的0.2%向甲方支付违约金": 乙方 performing late, a penalty (违约金), no late payment.
+_SUPPLIER_LATE_PERFORMANCE = rx(r"乙方\s*(?:逾期|延期|延迟|迟延)\s*(?:履行|交付|交货|完成|履约)")
+
+
 def supplier_late_delivery_penalty(quote: str) -> bool:
-    """True when the quote is the supplier's penalty for late delivery and says nothing of the buyer paying late."""
-    return _LATE_DELIVERY.search(quote) is not None and _LATE_PAYMENT.search(quote) is None
+    """True when the quote is the supplier's penalty for late delivery (or 乙方's late performance with a 违约金) and says
+    nothing of the buyer paying late."""
+    late = _LATE_DELIVERY.search(quote) is not None or (
+        _SUPPLIER_LATE_PERFORMANCE.search(quote) is not None and "违约金" in quote)
+    return late and _LATE_PAYMENT.search(quote) is None
 
 
 # RETENTION is money withheld from a payment. A performance bond or guarantee the supplier posts is a different thing
@@ -368,6 +376,12 @@ def _stage_or_retention(ctx: _Ctx, x: XContractTerm, span: SourceSpan) -> XContr
         _drop(ctx, F.MILESTONE, "note: a payment stage read as a retention is read as a stage", [span])
         return x.model_copy(update={"field": F.MILESTONE})
     return x
+
+
+# A price per kilogram, per trip, per mould shot, per piece, per placement or per thousand sheets is a rate in a rate card
+# or a unit-price row, never the contract total: it is not read as a PRICE, so it cannot stand against the total.
+_RATE_UNIT = re.compile(r"\s*(?:每\s*)?(?:公斤|车次|模次|件|点|千张)\s*")
+_TOTAL_WORDS = re.compile(r"合计|总价|总额|总金额|预估金额")
 
 
 def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDocument) -> ContractTerm | None:
@@ -421,6 +435,10 @@ def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDoc
             return None
         out["months"] = p.value
     elif f == F.PRICE:
+        if _RATE_UNIT.fullmatch(frags["unit_text"] or "") and not _TOTAL_WORDS.search(frags["value_text"] or ""):
+            ctx.abst.append(Abstention(field=f"note:{F.PRICE.value}", spans=[span], reason=(
+                f"note: a price per {frags['unit_text']} is a unit rate, not a candidate contract total")))
+            return None
         p = parse_money(frags["value_text"])
         if not _need(ctx, f, p, "amount", span):
             return None
@@ -546,6 +564,21 @@ def _per_stage_payment_terms(terms: list[ContractTerm], abst: list[Abstention]) 
     return [t for t in terms if t not in covered], bool(covered)
 
 
+def _retention_stated_twice(group: list[ContractTerm], abst: list[Abstention]) -> list[ContractTerm]:
+    """A retention stated in the payment table ("4 质量保证金 3%") and again in a clause that adds when it is released
+    ("按结算价的3%预留……缺陷责任期满后14日内返还") is one term: the one with the deadline is read. Only when every
+    statement has the same rate and exactly one states a deadline; different rates, or two deadlines, stay a conflict."""
+    rates = {t.rate_bp for t in group}
+    if len(group) < 2 or len(rates) != 1 or None in rates:
+        return group
+    timed = [t for t in group if t.days is not None or t.months is not None]
+    if len(timed) != 1 or any(t.text for t in group if t is not timed[0]):
+        return group
+    abst.append(Abstention(field=f"note:{F.RETENTION.value}", spans=[t.span for t in group], reason=(
+        "note: the same retention is stated twice and only one statement says when it is released: read once")))
+    return timed
+
+
 def _merge(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[ContractTerm], bool]:
     """Read a term stated twice once; drop a one-valued field stated with different values (CONFLICTING_SOURCES)."""
     kept: list[ContractTerm] = []
@@ -557,6 +590,8 @@ def _merge(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[Cont
         if field == F.PRICE:
             group = _without_line_items(group, abst)
             by_field[field] = group
+        if field == F.RETENTION:
+            group = _retention_stated_twice(group, abst)
         distinct: dict[tuple[object, ...], ContractTerm] = {}
         for t in group:
             distinct.setdefault(_key(t), t)
@@ -605,6 +640,7 @@ def build_contract(doc: SourceDocument, parts: Sequence[tuple[Chunk, ContractExt
         clean.append(t)
     clean, per_stage = _per_stage_payment_terms(clean, ctx.abst)
     terms, conflict = _merge(clean, ctx.abst)
+    terms = payer_payee_check(doc, terms, ctx.abst)
     terms = sorted([*terms, *derived_dates(doc, terms, ctx.abst)], key=lambda t: (t.span.start, t.field.value))
     ctx.abst += check_notes(cross_checks(doc, terms))
     found = {t.field for t in terms}

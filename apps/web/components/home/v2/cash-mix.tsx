@@ -87,10 +87,22 @@ function Details({ h, s }: { h: HomeView; s: FundingSlice }) {
  * still to arrive as a lighter slice), the source in the middle, and a legend. A slice or its row opens that source: the slice stands out, the middle names it and its
  * details open under the legend (the ui-ux-testing ring's behaviour). The fen only size the arcs (lib/funding-mix.ts); no percentage is printed (INVARIANT 13).
  */
-export function CashMix({ h, customers, bare = false }: { h: HomeView; customers?: { name: string; short: string }[]; /** On its own (the summary at the top of Cash & funding): no rule above it. */ bare?: boolean }) {
+export function CashMix({
+  h,
+  customers,
+  bare = false,
+  withPlan = true,
+}: {
+  h: HomeView;
+  customers?: { name: string; short: string }[];
+  /** On its own (inside "Your funding" on Cash & funding): no rule above it and no link to the page it is on. */
+  bare?: boolean;
+  /** false: the legs of a plan not yet run are left out of the ring. */
+  withPlan?: boolean;
+}) {
   const { t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
-  const mix = fundingMix(h, customers);
+  const mix = fundingMix(h, customers, { withPlan });
   if (!mix) return null;
   const total = mix.slices.reduce((s, x) => s + x.fen, 0);
   const gap = mix.slices.length > 1 ? 3 : 0;
@@ -104,10 +116,12 @@ export function CashMix({ h, customers, bare = false }: { h: HomeView; customers
     <div className={bare ? "" : "mt-4 border-t border-line pt-4 max-sm:hidden"} data-testid="home-mix" data-tour="home-mix">
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="text-supporting font-semibold text-ink-2">{t("home.mix.title")}</h3>
-        <Link href="/cash#cash-sources-now" className="inline-flex items-center gap-1 text-supporting font-semibold text-brand-700 hover:underline touch:min-h-11" data-testid="home-mix-more">
-          {t("home.mix.more")}
-          <ArrowRightIcon aria-hidden width={11} height={11} />
-        </Link>
+        {bare ? null : (
+          <Link href="/cash#cash-sources-now" className="inline-flex items-center gap-1 text-supporting font-semibold text-brand-700 hover:underline touch:min-h-11" data-testid="home-mix-more">
+            {t("home.mix.more")}
+            <ArrowRightIcon aria-hidden width={11} height={11} />
+          </Link>
+        )}
       </div>
       <div className="mt-3 flex items-center gap-4">
         <div className="relative shrink-0" style={{ width: SIZE, height: SIZE }} role="img" aria-label={t("home.mix.alt")} data-testid="home-mix-ring">

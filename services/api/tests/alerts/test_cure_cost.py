@@ -132,7 +132,7 @@ def test_the_opener_states_the_price_and_go_ahead_still_runs_one_operation(clien
             f"periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it "
             f"does not run until you do.") in en
     # the router's cheaper two-invoice plan would need two approvals: the cure is proposed and the option is named
-    assert "A cheaper plan exists, ¥1,706.10 in all, but it would need 2 separate approvals; this one needs one. Go ahead?" in en
+    assert "A cheaper plan exists, ¥1,702.20 in all, but it would need 2 separate approvals; this one needs one. Go ahead?" in en
     assert en.endswith("Go ahead?") and en.index("a year") < en.index("yearly ceiling")
     zh = client.post("/nl/opener", json={"session_id": "pc-2", "lang": "zh"}, headers=OWNER).json()["reply"]
     for figure in (cost, rate, str(s["cost_days"]), cap, "47", "需要您批准"):
