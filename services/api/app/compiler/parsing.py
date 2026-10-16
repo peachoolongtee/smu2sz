@@ -45,6 +45,16 @@ _SUFFIX = r"(?:元|\s?yuan\b|\s?RMB\b|\s?CNY\b)"
 # "the 420,000 invoice". `ctx` is an empty group that records that lookahead.
 _BILL_CTX = r"(?:(?P<ctx>)(?=\s?(?:的|那张|这张|那笔|这笔)?\s?(?:inv(?:oice)?s?\b|inv\.|bills?\b|发票|货款|张票)))"
 
+# A 万/亿 count of things is not money: "一万步", "3万人参加", "五万公里" (人 is a measure word, but not in 人民币).
+_ZH_MEASURE = r"(?:人(?!民币)|步|公里|公斤|里|米|斤|吨|亩|平方|字|次|个|只|台|套|件|辆|名|户|股|册|份)"
+_ZH_MEASURE_RE = re.compile(_ZH_MEASURE)
+_ARABIC_TO_ZH = str.maketrans("123456789", "一二三四五六七八九")
+# Arabic numeral and Chinese tail in one amount: "3万5千元" = 35,000, "1亿2千万" = 120,000,000, "2万3千5百元".
+# The tail needs a 千/百 digit (a bare "3万5" stays ambiguous and is not read).
+_MIXED_TAIL = r"(?:[1-9一二两三四五六七八九][千百]){1,2}(?:[1-9一二三四五六七八九]十)?"
+MIXED_ZH_RE = re.compile(
+    rf"(?P<num>\d+(?:\.\d+)?)(?P<unit>[万亿])\s?(?P<tail>{_MIXED_TAIL}[万]?)(?P<zs>元整?|块钱?)?")
+
 MONEY_RE = re.compile(
     rf"(?P<cur>{_CUR})?(?P<num>{_NUM})(?:\s?(?P<unit>{_UNIT}))?(?P<suffix>{_SUFFIX})?{_BILL_CTX}?",
 )
@@ -95,8 +105,9 @@ def _strip_names(p: str) -> str:
 
 # Same grammar, no named groups: digits (with ¥/k/万), English number words, Chinese numerals.
 MONEY_PAT = (
-    f"(?:{_strip_names(MONEY_RE.pattern)}|{_strip_names(EN_WORD_MONEY_RE.pattern)}"
+    f"(?:(?:{_strip_names(MIXED_ZH_RE.pattern)}|{_strip_names(MONEY_RE.pattern)}|{_strip_names(EN_WORD_MONEY_RE.pattern)}"
     rf"|(?:人民币\s?)?(?<![{_ZH_N}万亿])[{_ZH_N}]+(?:(?:万|亿)[{_ZH_N}万亿]*(?:元整?|块钱?)?|元整?|块钱?))"
+    rf"(?:(?<![万亿])|(?!{_ZH_MEASURE})))"
 )
 
 
@@ -109,6 +120,10 @@ def _money_value(m: re.Match[str]) -> int | None:
                                            or (not unit_key and re.fullmatch(r"\d{5,}", m.group("num")) is not None))
     if not (cur or suffix or unit_key in {"万", "亿"} or bill):
         return None
+    if unit_key in {"万", "亿"} and not (cur or suffix) and _ZH_MEASURE_RE.match(m.string, m.end()):
+        return None  # "3万人", "一万步": a count, not money
+    if unit_key in {"万", "亿"} and re.match(r"[1-9一二两三四五六七八九]", m.string[m.end():m.end() + 1]) and not suffix:
+        return None  # "3万5" (35,000 colloquially): do not guess, as "四万二"
     try:
         d = Decimal(m.group("num").replace(",", ""))
     except InvalidOperation:
@@ -203,6 +218,8 @@ def _word_money(text: str) -> list[Found]:
         z = m.group("z")
         if not (m.group("zs") or "万" in z or "亿" in z):
             continue
+        if not m.group("zs") and m.group(0)[:3] != "人民币" and _ZH_MEASURE_RE.match(text, m.end()):
+            continue  # "一万步", "五万公里": a count, not money
         if not re.search("[一二两三四五六七八九十]", z.translate(_ZH_CAPITAL)):
             continue  # "千万" (by all means), not an amount
         n = zh_number(z)
@@ -213,11 +230,20 @@ def _word_money(text: str) -> list[Found]:
 
 def find_money(text: str) -> list[Found]:
     out: list[Found] = []
+    for m in MIXED_ZH_RE.finditer(text):
+        tail = zh_number(m.group("tail").translate(_ARABIC_TO_ZH))
+        if not tail:
+            continue
+        d = Decimal(m.group("num")) * _UNIT_MULT[m.group("unit")] + tail
+        if d * 100 == (d * 100).to_integral_value():
+            out.append(Found(m.start(), m.end(), int(d * 100), m.group(0)))
     for m in MONEY_RE.finditer(text):
         v = _money_value(m)
         if v is None:
             continue
         s, e = m.start(), m.end()
+        if any(s < o.end and o.start < e for o in out):
+            continue
         raw = text[s:e]
         stripped = raw.rstrip()
         out.append(Found(s, s + len(stripped), v, stripped))

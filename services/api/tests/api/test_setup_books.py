@@ -158,6 +158,30 @@ def test_status_on_the_blank_books_can_open(client) -> None:
     assert body["books"] == "blank" and body["can_open"] is True and body["can_open_text"] is None
 
 
+def test_a_refused_sign_in_on_the_blank_books_leaves_them_openable(client) -> None:
+    """The web app's first read goes out before the owner signs in; its 401 is logged as a refused credential (a security
+    event), and that must not count as use of the blank books (it locked every new owner out of setup)."""
+    client.post("/demo/reset?scenario=blank")
+    assert client.get("/home", headers={"X-Owner-Token": ""}).status_code == 401
+    assert client.get("/setup/status", headers={"X-Owner-Token": "nope"}).status_code == 401
+    assert get_runtime().store.security_events()  # the refusals were recorded
+    body = client.get("/setup/status").json()
+    assert body["books"] == "blank" and body["can_open"] is True and body["can_open_text"] is None
+    assert client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"}).status_code == 200
+
+
+def test_blank_books_with_a_real_security_event_say_they_have_activity(client) -> None:
+    from app.domain.models import SecurityEvent, SecurityEventKind
+
+    client.post("/demo/reset?scenario=blank")
+    get_runtime().store.add_security_event(SecurityEvent(
+        id="SEC-INJ-000001", day=0, kind=SecurityEventKind.PRIVILEGE_ESCALATION, counterparty_id=None,
+        action_taken="refused", detail="test"))
+    body = client.get("/setup/status").json()
+    assert body["can_open"] is False and body["can_open_text"].startswith("These blank books already have activity")
+    assert client.get("/setup/status?lang=zh").json()["can_open_text"].startswith("这套空白账簿已有活动")
+
+
 def test_setup_routes_are_owner_only(client) -> None:
     assert client.get("/setup/status", headers={"X-Owner-Token": "nope"}).status_code == 401
     assert client.post("/setup/preview", json={"draft": DRAFT}, headers={"X-Owner-Token": ""}).status_code == 401
