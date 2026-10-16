@@ -9,6 +9,7 @@ import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { buyerAccepted, buyerDeclined, buyerReply, getBuyerMessage, messageRefusal, withdrawOffered } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { errorText } from "@/lib/error-text";
+import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import type { CommitmentReceiptView, DealHistoryEntry, DecisionView, DeclineReason, OutboundView } from "@/lib/types";
 import { quietLink } from "./flow-parts";
@@ -67,7 +68,7 @@ export function Workspace({
   return (
     <div className="overflow-hidden rounded-[24px] bg-card shadow-(--shadow-f)" data-testid="deal-workspace" data-step={focusKey}>
       {replyTo ? (
-        <p className="m-0 border-b border-line bg-f-purple-soft/50 px-5 py-3 text-sm sm:px-7" data-testid="deal-reply-to">
+        <p className="border-b border-line bg-f-purple-soft/50 px-5 py-3 text-sm sm:px-7" data-testid="deal-reply-to">
           <Link href={replyTo.href} className={`${quietLink} px-0`}>
             {replyTo.title_text}
           </Link>
@@ -117,7 +118,7 @@ export function TermsRows({ rows, askedHead, proposedHead, testId = "deal-terms-
   const { t } = useI18n();
   if (!rows.length) return null;
   return (
-    <dl className="m-0 divide-y divide-line" data-testid={testId}>
+    <dl className="divide-y divide-line" data-testid={testId}>
       <div aria-hidden className="hidden grid-cols-[minmax(8rem,0.8fr)_1fr_1fr] gap-x-6 pb-2 text-supporting font-semibold text-ink-3 sm:grid">
         <span />
         <span>{askedHead ?? t("ws.asked")}</span>
@@ -126,11 +127,11 @@ export function TermsRows({ rows, askedHead, proposedHead, testId = "deal-terms-
       {rows.map((r) => (
         <div key={r.key} className="grid gap-x-6 gap-y-0.5 py-2.5 sm:grid-cols-[minmax(8rem,0.8fr)_1fr_1fr]" data-testid={`term-row-${r.key}`} data-changed={r.changed ? "true" : undefined}>
           <dt className="text-sm font-semibold text-ink-2">{r.label}</dt>
-          <dd className="m-0 text-sm text-ink-2" data-testid="term-asked">
+          <dd className="text-sm text-ink-2" data-testid="term-asked">
             <span className="sr-only">{askedHead ?? t("ws.asked")}: </span>
             {r.asked ?? ""}
           </dd>
-          <dd className={`m-0 text-sm ${r.changed ? "font-bold text-f-purple-ink" : "font-semibold text-ink"}`} data-testid="term-proposed">
+          <dd className={`text-sm ${r.changed ? "font-bold text-f-purple-ink" : "font-semibold text-ink"}`} data-testid="term-proposed">
             <span className="sr-only">{proposedHead ?? t("ws.proposes")}: </span>
             <span aria-hidden className="mr-1 text-ink-3 sm:hidden">→</span>
             {r.proposed ?? ""}
@@ -146,7 +147,7 @@ export function TermsRows({ rows, askedHead, proposedHead, testId = "deal-terms-
 export function TermSentences({ terms, testId = "deal-terms-list" }: { terms: string[]; testId?: string }) {
   if (!terms.length) return null;
   return (
-    <ul className="m-0 list-disc space-y-1 pl-5 text-sm text-ink" data-testid={testId}>
+    <ul className="list-disc space-y-1 pl-5 text-sm text-ink" data-testid={testId}>
       {terms.map((x, i) => (
         <li key={i}>{x}</li>
       ))}
@@ -159,6 +160,10 @@ const DOT: Record<string, string> = {
   waiting: "border-f-purple bg-f-purple-soft",
   neutral: "border-f-muted bg-f-line",
 };
+
+
+/** Who did it, as a quiet tag after the line (the server's `source`). */
+const SOURCE: Record<string, DictKey> = { buyer: "hist.by.buyer", flow: "hist.by.flow", owner: "hist.by.owner", simulator: "hist.by.simulator" };
 
 /** The deal's one timeline, oldest first: date and the server's sentence. Folded after four lines (the latest ones are what the owner needs; "Show all" opens the rest). */
 export function Timeline({ entries }: { entries: DealHistoryEntry[] }) {
@@ -179,12 +184,19 @@ export function Timeline({ entries }: { entries: DealHistoryEntry[] }) {
           </button>
         ) : null}
       </div>
-      <ol id={`${uid}-list`} aria-labelledby={`${uid}-h`} className="m-0 mt-3 list-none space-y-2 p-0" data-hidden={hidden}>
+      <ol id={`${uid}-list`} aria-labelledby={`${uid}-h`} className="mt-3 list-none space-y-2 p-0" data-hidden={hidden}>
         {shown.map((h, i) => (
           <li key={`${h.kind}-${i}`} className="grid grid-cols-[0.75rem_7.5rem_1fr] items-start gap-x-3 text-sm sm:grid-cols-[0.75rem_9rem_1fr]" data-testid={`deal-history-${h.kind}`}>
             <span aria-hidden className={`mt-1.5 size-2.5 rounded-pill border-2 ${DOT[h.tone] ?? "border-f-ink bg-f-ink"}`} />
             <span className="tabular-nums text-ink-3">{h.date}</span>
-            <span className="min-w-0 text-ink">{h.text}</span>
+            <span className="min-w-0 text-ink">
+              {h.text}
+              {h.source && SOURCE[h.source] ? (
+                <span className="ml-2 text-supporting text-ink-3" data-testid="deal-history-source" data-source={h.source}>
+                  {t(SOURCE[h.source])}
+                </span>
+              ) : null}
+            </span>
           </li>
         ))}
       </ol>
@@ -216,7 +228,21 @@ async function run<T>(set: { busy: (b: boolean) => void; refused: (s: string | n
  * [View sent message] and the one filled [Record their response]; "I marked it sent by mistake" as a quiet link when the server offers it. Recording opens a compact choice (accepted,
  * proposed different terms, unclear or a question, declined), each revealing only its own form.
  */
-export function WaitingStep({ offerId, outbound, marked, onBusy }: { offerId: string; outbound: OutboundView; /** The server's sentence for the mark just made, said once. */ marked?: string | null; onBusy?: (busy: boolean) => void }) {
+export function WaitingStep({
+  offerId,
+  outbound,
+  marked,
+  onWithdrawn,
+  onBusy,
+}: {
+  offerId: string;
+  outbound: OutboundView;
+  /** The server's sentence for the mark just made, said once. */
+  marked?: string | null;
+  /** Told with the server's sentence once the mark is withdrawn (the deal is a counter ready again: this step is gone). */
+  onWithdrawn?: (text: string) => void;
+  onBusy?: (busy: boolean) => void;
+}) {
   const { t, lang } = useI18n();
   const uid = useId();
   const router = useRouter();
@@ -265,7 +291,16 @@ export function WaitingStep({ offerId, outbound, marked, onBusy }: { offerId: st
         router.push(r.reply_href);
       },
     );
-  const withdraw = () => run(setters, t, () => withdrawOffered(offerId, outbound.counter_id, { verdict_id: outbound.verdict_id, message_hash: outbound.message_hash }), () => bump());
+  const withdraw = () =>
+    run(
+      setters,
+      t,
+      () => withdrawOffered(offerId, outbound.counter_id, { verdict_id: outbound.verdict_id, message_hash: outbound.message_hash }),
+      (r) => {
+        onWithdrawn?.(r.message_when);
+        bump();
+      },
+    );
 
   const choices: { key: Answer; label: string }[] = actions
     ? ([
@@ -285,6 +320,11 @@ export function WaitingStep({ offerId, outbound, marked, onBusy }: { offerId: st
         <p className="max-w-[72ch] text-[15px] text-ink-2" data-testid="outbound-status">
           {outbound.status_text ?? outbound.sent_text}
         </p>
+        {outbound.status_text && outbound.text ? (
+          <p className="max-w-[72ch] text-sm text-ink-3" data-testid="outbound-expiry">
+            {outbound.text}
+          </p>
+        ) : null}
         {marked ? (
           <p role="status" className="text-sm text-ink-3" data-testid="deal-marked-sent">
             {marked}
@@ -294,7 +334,7 @@ export function WaitingStep({ offerId, outbound, marked, onBusy }: { offerId: st
       <ActionGroup testId="outbound-actions" label={outbound.title_text}>
         {outbound.message_same && outbound.message_text ? (
           <Button aria-expanded={viewing} aria-controls={`${uid}-sent`} onClick={() => setViewing((x) => !x)} data-testid="outbound-view-sent">
-            {t("ws.viewSent")}
+            {actions?.view_message_label ?? t("ws.viewSent")}
           </Button>
         ) : null}
         {actions ? (
@@ -309,7 +349,7 @@ export function WaitingStep({ offerId, outbound, marked, onBusy }: { offerId: st
             }}
             data-testid="outbound-record"
           >
-            {t("ws.record")}
+            {actions.record_label ?? t("ws.record")}
           </Button>
         ) : null}
       </ActionGroup>
@@ -351,13 +391,17 @@ export function WaitingStep({ offerId, outbound, marked, onBusy }: { offerId: st
 
           {answer === "accept" ? (
             <div className="space-y-3 motion-fade" data-testid="outbound-confirm-accept">
-              <h4 className="text-[15px] font-bold text-ink">{t("ws.confirmAccept")}</h4>
+              <h4 className="text-[15px] font-bold text-ink">{actions.accept.title_text ?? t("ws.confirmAccept")}</h4>
               {review?.terms?.length ? (
                 <TermsRows rows={reviewRows(review.terms)} testId="outbound-accept-terms" />
               ) : (
                 <TermSentences terms={actions.accept.terms} testId="outbound-accept-terms" />
               )}
-              {review?.cost_display ? (
+              {review?.cost_text ? (
+                <p className={`text-sm font-semibold ${review.needs_owner ? "text-ink" : "text-f-green-ink"}`} data-testid="outbound-accept-cost">
+                  {review.cost_text}
+                </p>
+              ) : review?.cost_display ? (
                 <p className="text-sm" data-testid="outbound-accept-cost">
                   <span className={`font-bold tabular-nums ${review.needs_owner ? "text-ink" : "text-f-green-ink"}`}>{review.cost_display}</span>
                   {review.cost_note ? <span className="text-ink-2"> · {review.cost_note}</span> : null}
@@ -385,9 +429,15 @@ export function WaitingStep({ offerId, outbound, marked, onBusy }: { offerId: st
                     rows={3}
                     placeholder={actions.accept.evidence_placeholder ?? undefined}
                     onChange={(e) => setEvidence(e.target.value)}
+                    aria-describedby={actions.accept.evidence_hint_text ? `${uid}-evidence-hint` : undefined}
                     className={`${textareaClass} w-full max-w-[80ch]`}
                     data-testid="outbound-evidence-text"
                   />
+                  {actions.accept.evidence_hint_text ? (
+                    <p id={`${uid}-evidence-hint`} className="text-supporting text-ink-3" data-testid="outbound-evidence-hint">
+                      {actions.accept.evidence_hint_text}
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
               <ActionGroup label={actions.accept.label}>
@@ -426,7 +476,7 @@ export function WaitingStep({ offerId, outbound, marked, onBusy }: { offerId: st
             </div>
           ) : answer === "decline" ? (
             <div className="space-y-3 motion-fade" data-testid="outbound-confirm-decline">
-              <fieldset className="m-0 min-w-0 border-0 p-0">
+              <fieldset className="min-w-0 border-0 p-0">
                 <legend className="mb-2 text-sm font-semibold text-ink-2">{actions.decline.reasons_label_text}</legend>
                 <div className="flex flex-wrap gap-2" data-testid="outbound-reasons">
                   {actions.decline.reasons.map((r) => (
@@ -527,14 +577,17 @@ export function EndingStep({ outbound, receipt, decision }: { outbound: Outbound
         </p>
       ) : null}
       {outbound.consequences?.length ? (
-        <ul className="m-0 list-disc space-y-1 pl-5 text-sm text-ink" data-testid="outbound-ending-consequences">
-          {outbound.consequences.map((c, i) => (
-            <li key={i}>{c}</li>
-          ))}
-        </ul>
+        <div data-testid="outbound-ending-consequences">
+          {outbound.consequences_title_text ? <h3 className="mb-1.5 text-sm font-bold text-ink">{outbound.consequences_title_text}</h3> : null}
+          <ul className="list-disc space-y-1 pl-5 text-sm text-ink">
+            {outbound.consequences.map((c, i) => (
+              <li key={i}>{c}</li>
+            ))}
+          </ul>
+        </div>
       ) : null}
       {outbound.evidence_quote ? (
-        <blockquote className="m-0 max-w-[72ch] border-l-2 border-line-strong pl-3 text-[15px] leading-snug text-ink-2" data-testid="outbound-ending-evidence">
+        <blockquote className="max-w-[72ch] border-l-2 border-line-strong pl-3 text-[15px] leading-snug text-ink-2" data-testid="outbound-ending-evidence">
           “{outbound.evidence_quote}”
         </blockquote>
       ) : null}
@@ -545,8 +598,9 @@ export function EndingStep({ outbound, receipt, decision }: { outbound: Outbound
           proposedHead={t("ws.theirs")}
           testId="outbound-ending-changes"
         />
-      ) : outbound.reply_quote ? (
-        <blockquote className="m-0 max-w-[72ch] border-l-2 border-f-purple pl-3 text-[15px] leading-snug text-ink" data-testid="outbound-ending-quote">
+      ) : null}
+      {outbound.reply_quote ? (
+        <blockquote className="max-w-[72ch] border-l-2 border-f-purple pl-3 text-[15px] leading-snug text-ink" data-testid="outbound-ending-quote">
           “{outbound.reply_quote}”
         </blockquote>
       ) : null}

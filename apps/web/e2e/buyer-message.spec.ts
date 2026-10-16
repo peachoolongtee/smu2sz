@@ -62,13 +62,17 @@ test("send: what they asked beside what you offer, the letter in the buyer's lan
   const offer = page.getByTestId("buyer-message-offer");
   await expect(offer).toContainText(`You offer · ${before.en.counter_label_when}`);
   for (const term of before.en.review!.terms!) await expect(offer.getByTestId(`buyer-message-term-${term.key}`).getByTestId("buyer-message-term-offer")).toHaveText(literal(term.cell_text!));
-  await expect(offer.getByTestId("buyer-message-cost")).toContainText(before.en.review!.cost_display!);
+  await expect(offer.getByTestId("buyer-message-cost")).toContainText(before.en.review!.cost_text!);
   await expect(offer.getByTestId("buyer-message-cost")).toHaveAttribute("data-within", "true");
   await expect(offer.getByTestId("buyer-message-decides")).toHaveText(before.en.review!.decides_text!);
 
   await expect(panel.getByRole("heading", { name: before.en.send_title_text })).toBeAttached();
   await expect(panel.getByTestId("buyer-message-recipient")).toContainText(before.en.buyer_name);
-  await expect(panel.getByTestId("buyer-message-notice")).toHaveText(before.en.notice_text);
+  await expect(panel.getByTestId("buyer-message-channel")).toHaveText(before.en.channel!.label);
+  await expect(panel.getByTestId("buyer-message-notice")).toHaveText(before.en.channel!.text!);
+  await expect(panel.getByTestId("buyer-message-copy")).toHaveText(before.en.copy_label);
+  await expect(panel.getByTestId("buyer-message-mark-sent")).toHaveText(before.en.mark_sent_label);
+  await expect(page.getByTestId("queue-review-close")).toHaveText(before.en.back_label!);
   await expect(panel.getByTestId("buyer-message-provenance")).toHaveText(before.en.provenance.text);
   await expect(panel.getByTestId("buyer-message-provenance")).toHaveAttribute("data-verified", "true");
   await expect(offer.getByTestId("buyer-message-until")).toContainText(before.en.valid_until_date);
@@ -78,7 +82,7 @@ test("send: what they asked beside what you offer, the letter in the buyer's lan
   await expect(panel.getByTestId("buyer-message-copy")).toHaveAttribute("data-filled", "true");
   await expect(panel.getByTestId("buyer-message-mark-sent")).toHaveAttribute("data-filled", "false");
   await panel.getByTestId("buyer-message-copy").click();
-  await expect(panel.getByTestId("buyer-message-copy-status")).toHaveText("Copied");
+  await expect(panel.getByTestId("buyer-message-copy-status")).toHaveText(before.en.copied_text!);
   expect(await clipboard(page)).toBe(before.en.text);
   await expect(panel.getByTestId("buyer-message-mark-sent")).toHaveAttribute("data-filled", "true");
 
@@ -86,8 +90,8 @@ test("send: what they asked beside what you offer, the letter in the buyer's lan
   await panel.getByTestId("buyer-message-lang").getByText(before.en.languages![1].label).click();
   await expect(panel.getByTestId("buyer-message-text")).toHaveAttribute("data-lang", "zh");
   await expect(panel.getByTestId("buyer-message-text")).toHaveText(before.zh.text!);
-  await expect(panel.getByTestId("buyer-message-notice")).toHaveText(before.zh.notice_text);
-  expect(before.zh.notice_text).toBe(before.en.notice_text);
+  await expect(panel.getByTestId("buyer-message-notice")).toHaveText(before.zh.channel!.text!);
+  expect(before.zh.channel!.text).toBe(before.en.channel!.text);
   await expect(panel.getByTestId("buyer-message-copy")).toHaveAttribute("data-filled", "true");
   await panel.getByTestId("buyer-message-copy").click();
   expect(await clipboard(page)).toBe(before.zh.text);
@@ -117,9 +121,12 @@ test("mark sent: refused when the message changed, then the deal waits for the b
   // The current step: the server's "Waiting for …" and its one line, the deadline said once (in the identity, while the line does not carry it), no progress bar.
   await expect(page.getByTestId("outbound-title")).toHaveText(waiting.title_text);
   await expect(page.getByTestId("outbound-title")).toBeFocused();
-  const statusText = (waiting as { status_text?: string | null }).status_text ?? null;
-  await expect(page.getByTestId("outbound-status")).toHaveText(statusText ?? waiting.sent_text);
-  if (!statusText) await expect(page.getByTestId("deal-deadline")).toContainText(waiting.closes_text!);
+  await expect(page.getByTestId("outbound-status")).toHaveText(waiting.status_text!);
+  await expect(page.getByTestId("outbound-expiry")).toHaveText(waiting.text);
+  // The deadline is said once: the one line carries it, so the identity does not repeat it.
+  await expect(page.getByTestId("deal-deadline")).toHaveCount(0);
+  await expect(page.getByTestId("outbound-record")).toHaveText(waiting.actions!.record_label!);
+  await expect(page.getByTestId("outbound-view-sent")).toHaveText(waiting.actions!.view_message_label!);
   await expect(page.locator('[role="progressbar"]')).toHaveCount(0);
   await expect(page.getByTestId("outbound-record")).toHaveAttribute("aria-expanded", "false");
   await page.getByTestId("outbound-view-sent").click();
@@ -130,7 +137,8 @@ test("mark sent: refused when the message changed, then the deal waits for the b
   await expect(page.getByTestId("deal-tab-messages")).toHaveCount(0);
   await page.getByTestId("outbound-record").click();
   await expect(page.getByTestId("outbound-answer")).toContainText(waiting.actions!.question_text);
-  for (const k of ["accept", "counter", "decline"] as const) await expect(page.getByTestId(`outbound-tile-${k}`)).toContainText(waiting.actions![k].label);
+  for (const k of ["accept", "counter", "unclear", "decline"] as const) await expect(page.getByTestId(`outbound-tile-${k}`)).toContainText(waiting.actions![k]!.label);
+  await expect(page.getByTestId("deal-history-offered").getByTestId("deal-history-source")).toHaveText("by you");
   await scan(page, "waiting for the buyer");
 
   // The decision record says the counter went out outside FLOW.
@@ -139,15 +147,22 @@ test("mark sent: refused when the message changed, then the deal waits for the b
   await expect(page.getByTestId("record-sent-outside")).toHaveText((rec.awaiting.en.decision.response!.sent as { text: string }).text);
 });
 
-test("they accepted: the terms, cost and authority, then the agreement with its receipt folded and the history", async ({ page }) => {
+test("they accepted, with their message as evidence: the exact terms, what it binds, then the acceptance recorded, its source, what changes, the receipt folded", async ({ page }) => {
   await markedSent(page);
   await page.getByTestId("outbound-record").click();
   await page.getByTestId("outbound-tile-accept").click();
   await expect(page.getByTestId("outbound-tile-accept")).toHaveAttribute("data-selected", "true");
   await expect(page.getByTestId("outbound-confirm-counter")).toHaveCount(0);
   const confirm = page.getByTestId("outbound-confirm-accept");
-  await expect(confirm.getByTestId("outbound-accept-cost")).toContainText(waiting.actions!.accept.review!.cost_display!);
-  await expect(confirm.getByTestId("outbound-accept-authority")).toHaveText(waiting.actions!.accept.authority_text!);
+  const accept = waiting.actions!.accept;
+  await expect(confirm).toContainText(accept.title_text!);
+  await expect(confirm.getByTestId("outbound-accept-cost")).toHaveText(accept.review!.cost_text!);
+  await expect(confirm.getByTestId("outbound-accept-binding")).toHaveText(accept.binding_text!);
+  await expect(confirm.getByTestId("outbound-accept-authority")).toHaveText(accept.authority_text!);
+  await expect(confirm.getByLabel(accept.evidence_label!)).toHaveAttribute("placeholder", accept.evidence_placeholder!);
+  await expect(confirm.getByTestId("outbound-evidence-hint")).toHaveText(accept.evidence_hint_text!);
+  await confirm.getByTestId("outbound-evidence-text").fill("Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.");
+  await expect(confirm.getByTestId("outbound-confirm")).toHaveText(accept.confirm_label);
   await confirm.getByTestId("outbound-confirm").click();
 
   const done = rec.accepted.en.decision;
@@ -155,6 +170,12 @@ test("they accepted: the terms, cost and authority, then the agreement with its 
   await expect(ending).toHaveAttribute("data-answer", "accepted");
   await expect(ending.getByTestId("outbound-ending-title")).toHaveText(done.outbound!.title_text);
   await expect(ending.getByTestId("outbound-ending-text")).toHaveText(done.outbound!.text);
+  await expect(ending.getByTestId("outbound-ending-provenance")).toHaveText(done.outbound!.provenance_text!);
+  await expect(ending.getByTestId("outbound-ending-evidence")).toContainText(done.outbound!.evidence_quote!);
+  await expect(ending.getByTestId("outbound-ending-status")).toHaveText(done.outbound!.status_text!);
+  await expect(ending.getByTestId("outbound-ending-consequences")).toContainText(done.outbound!.consequences_title_text!);
+  for (const c of done.outbound!.consequences!) await expect(ending.getByTestId("outbound-ending-consequences")).toContainText(c);
+  for (const l of done.outbound!.links) await expect(ending.getByRole("link", { name: l.label })).toHaveAttribute("href", l.href);
   await expect(page.getByTestId("deal-history-accepted")).toContainText(done.history!.find((h) => h.kind === "accepted")!.text);
   await expect(ending.getByTestId("deal-agreement-receipt")).toBeHidden();
   await ending.getByTestId("outbound-agreement-details").locator("summary").click();
@@ -186,6 +207,10 @@ test("they countered: refused with no terms, then their reply is a request of it
   await expect(page).toHaveURL((url) => url.searchParams.get("decision") === reply.reply_decision_id);
   await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-decision", reply.reply_decision_id);
   await expect(page.getByTestId("deal-reply-arrived")).toHaveText(reply.message_when);
+  // The new request says what it answers, and links back.
+  const replyTo = rec.replied.en.reply_decision.reply_to!;
+  await expect(page.getByTestId("deal-reply-to")).toHaveText(replyTo.title_text);
+  await expect(page.getByTestId("deal-reply-to").getByRole("link")).toHaveAttribute("href", replyTo.href);
 
   // The deal it answered: one state, countered, with their words and the way to their new request.
   await page.goto(`/deals?decision=${encodeURIComponent(reply.decision_id)}`);
@@ -194,12 +219,19 @@ test("they countered: refused with no terms, then their reply is a request of it
   await expect(ending).toHaveAttribute("data-answer", "countered");
   await expect(ending.getByTestId("outbound-ending-title")).toHaveText(answered.title_text);
   await expect(ending.getByTestId("outbound-ending-quote")).toContainText(answered.reply_quote!);
+  for (const c of answered.changes!) {
+    const row = ending.getByTestId("outbound-ending-changes").getByTestId(`term-row-${c.key}`);
+    await expect(row.getByTestId("term-asked")).toContainText(c.ours_text!);
+    await expect(row.getByTestId("term-proposed")).toContainText(c.theirs_text!);
+    if (c.changed) await expect(row).toHaveAttribute("data-changed", "true");
+  }
+  await expect(ending.getByTestId("outbound-ending-reply-state")).toHaveText(answered.reply_state_text!);
   await expect(ending.getByTestId("outbound-ending-primary")).toHaveText(answered.links[0].label);
   await expect(ending.getByTestId("outbound-ending-primary")).toHaveAttribute("href", answered.links[0].href);
   await expect(page.getByTestId("deal-state-chip")).toHaveText(rec.replied.en.decision.state_text);
 });
 
-test("they declined: the reason chips, what is funded instead, then no deal with the reason and the way to Cash", async ({ page }) => {
+test("they declined: the reason chips and what it leaves, then no agreement, the reason as reported, and the ways on", async ({ page }) => {
   await markedSent(page);
   await page.getByTestId("outbound-record").click();
   await page.getByTestId("outbound-tile-decline").click();
@@ -209,6 +241,8 @@ test("they declined: the reason chips, what is funded instead, then no deal with
   await confirm.getByTestId("outbound-reason-DISCOUNT_TOO_LOW").click();
   await expect(confirm.getByTestId("outbound-reason-DISCOUNT_TOO_LOW").locator("input")).toBeChecked();
   await expect(confirm.getByTestId("outbound-decline-effect")).toHaveText(waiting.actions!.decline.effect_text);
+  await expect(confirm.getByTestId("outbound-reasons").locator("label")).toHaveCount(waiting.actions!.decline.reasons.length);
+  await expect(page.getByTestId("outbound-waiting")).not.toContainText("will fund");
   await confirm.getByTestId("outbound-confirm").click();
 
   const done = rec.declined.en.decision;
@@ -216,7 +250,9 @@ test("they declined: the reason chips, what is funded instead, then no deal with
   await expect(ending).toHaveAttribute("data-answer", "declined");
   await expect(ending.getByTestId("outbound-ending-title")).toHaveText(done.outbound!.title_text);
   await expect(ending.getByTestId("outbound-ending-reason")).toHaveText(done.outbound!.reason_text!);
-  await expect(ending.getByTestId("outbound-ending-primary")).toHaveText(done.outbound!.links[0].label);
+  await expect(ending.getByTestId("outbound-ending-primary")).toHaveText(done.outbound!.links.find((l) => "primary" in l && l.primary)!.label);
+  await expect(ending.getByTestId("outbound-ending-links").getByRole("link")).toHaveCount(done.outbound!.links.length);
+  await expect(ending).not.toContainText("will fund");
   await expect(page.getByTestId("deal-history-declined")).toContainText(done.history!.find((h) => h.kind === "declined")!.text);
   await expect(page.getByTestId("deal-state-chip")).toHaveText(done.state_text);
   await expect(page.getByTestId("history-step-answer")).toContainText("Declined");
@@ -245,6 +281,23 @@ test("no answer: once the clock passes the day the offer was open until, it clos
   await expect(page.getByTestId("outbound-waiting")).toHaveCount(0);
 });
 
+test("marked sent by mistake: the quiet link, its effect, then the deal is a counter ready again and the timeline keeps the mark beside the correction", async ({ page }) => {
+  await markedSent(page);
+  const withdraw = waiting.actions!.withdraw!;
+  await expect(page.getByTestId("outbound-withdraw-open")).toHaveText(withdraw.label);
+  await page.getByTestId("outbound-withdraw-open").click();
+  await expect(page.getByTestId("outbound-withdraw")).toContainText(withdraw.effect_text);
+  await page.getByTestId("outbound-withdraw-confirm").click();
+  const after = rec.withdrawn.en;
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
+  await expect(page.getByTestId("deal-withdrawn")).toHaveText(after.result.message_when);
+  await expect(page.getByTestId("deal-history-offered")).toContainText(after.decision.history!.find((h) => h.kind === "offered")!.text);
+  await expect(page.getByTestId("deal-history-withdrawn")).toContainText(after.decision.history!.find((h) => h.kind === "withdrawn")!.text);
+  // The counter can be sent again.
+  await openReview(page);
+  await expect(page.getByTestId("buyer-message-mark-sent")).toBeVisible();
+});
+
 test("Demo mode: the simulated send is a dashed Demo-only row under the cards; a buyer with no simulated reply is refused in the server's words", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "demo" })));
   await messagePanel(page);
@@ -265,12 +318,12 @@ test("the page in Chinese: the panel's words, the waiting state and its answers 
   const panel = await messagePanel(page);
   const zh = rec.message[COUNTER as keyof typeof rec.message].zh;
   await expect(panel.getByRole("heading", { name: zh.zh.send_title_text })).toBeAttached();
-  await expect(panel.getByTestId("buyer-message-notice")).toHaveText(zh.zh.notice_text);
+  await expect(panel.getByTestId("buyer-message-notice")).toHaveText(zh.zh.channel!.text!);
   // The buyer's language starts at the page's; the owner can still pick English, and the words stay Chinese.
   await expect(panel.getByTestId("buyer-message-text")).toHaveText(zh.zh.text!);
   await panel.getByTestId("buyer-message-lang").getByText(zh.zh.languages![0].label).click();
   await expect(panel.getByTestId("buyer-message-text")).toHaveText(zh.en.text!);
-  await expect(panel.getByTestId("buyer-message-notice")).toHaveText(zh.en.notice_text);
+  await expect(panel.getByTestId("buyer-message-notice")).toHaveText(zh.en.channel!.text!);
   await panel.getByTestId("buyer-message-mark-sent").click();
   await expect(page.getByTestId("deal-marked-sent")).toHaveText(rec.offered.zh.message_when);
   await expect(page.getByTestId("deal-state-chip")).toHaveText(rec.awaiting.zh.decision.state_text);

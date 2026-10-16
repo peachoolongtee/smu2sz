@@ -16,6 +16,7 @@ import type {
   DecisionView,
   OfferView,
   OfferedResult,
+  WithdrawResult,
   WorklistView,
 } from "../types";
 import type { TrackerView } from "../tracker";
@@ -43,6 +44,8 @@ export interface BuyerMessageRecording {
   no_answer: Both<Reads>;
   offer_expired: Both<BuyerMessageRefusal>;
   no_simulated_buyer: Both<BuyerMessageRefusal>;
+  /** The mark withdrawn: the route's answer and the deal's record after it. */
+  withdrawn: Both<{ result: WithdrawResult; decision: DecisionView }>;
 }
 
 /** Where the walk stands: the reply the owner marked sent, then the buyer's answer as the owner recorded it. */

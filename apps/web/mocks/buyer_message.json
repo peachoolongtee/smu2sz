@@ -13,10 +13,10 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "en",
           "ui_lang": "en",
-          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
-          "template_version": "buyer-message-v1",
+          "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
           "valid_until_day": 2,
@@ -59,11 +59,16 @@
             ],
             "cost_display": "¥3,027.77",
             "cost_note": "once; nothing ongoing",
-            "decides_text": "FLOW can send it. Your approval is not needed.",
+            "cost_text": "Estimated one-time cost: ¥3,027.77",
+            "decides_text": "Within your mandate: no approval needed.",
             "authority": "flow_may",
-            "authority_text": "FLOW can send it",
-            "needs_owner": false,
-            "if_declined_text": "If Foshan refuses, FLOW will fund the gap on its own: a ¥150,000 credit-line draw today and ¥255,000 of invoice financing in 3 days. The funding costs ¥3,113.93."
+            "needs_owner": false
+          },
+          "authority_text": "Within your mandate: no approval needed.",
+          "channel": {
+            "kind": "manual",
+            "label": "Manual sending · No channel connected",
+            "text": "FLOW cannot send this or confirm it arrived. Copy it and send it through your usual channel."
           },
           "languages": [
             {
@@ -75,12 +80,15 @@
               "label": "Chinese"
             }
           ],
-          "send_title_text": "Send it to Foshan Home Retail Co. yourself",
+          "send_title_text": "Your response to Foshan Home Retail Co.",
           "offered": null,
-          "notice_text": "FLOW does not send this message. Copy it, send it to the buyer yourself, then mark it as sent.",
-          "copy_label": "Copy the message",
-          "mark_sent_label": "I've sent it to the buyer",
-          "mark_sent_effect_text": "Marking it sent agrees nothing and moves no money: the deal waits for the buyer's answer.",
+          "notice_text": "FLOW does not send this message. Copy it, send it through your usual channel, then mark it as sent.",
+          "copy_label": "Copy response",
+          "copied_text": "Copied",
+          "copy_failed_text": "Could not copy. Select the message and copy it.",
+          "mark_sent_label": "Mark as sent",
+          "mark_sent_effect_text": "This records that you sent it; FLOW cannot confirm it arrived. Nothing is agreed and no money moves.",
+          "back_label": "Back to Deals",
           "accepted_label": "The buyer accepted",
           "reply_label": "Paste the buyer's reply"
         },
@@ -95,10 +103,10 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "zh",
           "ui_lang": "en",
-          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n提前付款：对于2026年9月18日开具的 ¥420,000 发票，如贵方于2026年10月3日或之前支付其中最多 ¥257,200，我方接受该笔付款减去 0.85% 的折扣。\n\n其余条款保持不变。本报价有效期至2026年10月3日。请回复确认。\n\n此致\n敬礼",
-          "message_hash": "75f2157a9c52830cf86ac7f221faec606f057623d154312e8818c599855b1e76",
+          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n1. 提前付款：对于2026年9月18日开具、2026年11月2日到期的 ¥420,000 发票，如贵方于2026年10月3日或之前付款，我方接受其中最多 ¥257,200 按 0.85% 的折扣提前结清；届时支付 ¥255,013.80 即可结清发票中的 ¥257,200。未提前结清的部分（包括其余 ¥162,800）仍按原条款于2026年11月2日到期。\n2. 今后发票的付款期限维持 45 天。\n3. 我方无法提供贵方所要求的返利。\n\n其他条款均无变更。本报价有效期至2026年10月3日。请回复确认。\n\n此致\n敬礼",
+          "message_hash": "348ab28d34298c336e42e15243ad8985c2dac4e1e6afe9119c0f46bc1f599335",
           "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
-          "template_version": "buyer-message-v1",
+          "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
           "valid_until_day": 2,
@@ -141,11 +149,16 @@
             ],
             "cost_display": "¥3,027.77",
             "cost_note": "once; nothing ongoing",
-            "decides_text": "FLOW can send it. Your approval is not needed.",
+            "cost_text": "Estimated one-time cost: ¥3,027.77",
+            "decides_text": "Within your mandate: no approval needed.",
             "authority": "flow_may",
-            "authority_text": "FLOW can send it",
-            "needs_owner": false,
-            "if_declined_text": "If Foshan refuses, FLOW will fund the gap on its own: a ¥150,000 credit-line draw today and ¥255,000 of invoice financing in 3 days. The funding costs ¥3,113.93."
+            "needs_owner": false
+          },
+          "authority_text": "Within your mandate: no approval needed.",
+          "channel": {
+            "kind": "manual",
+            "label": "Manual sending · No channel connected",
+            "text": "FLOW cannot send this or confirm it arrived. Copy it and send it through your usual channel."
           },
           "languages": [
             {
@@ -157,12 +170,15 @@
               "label": "Chinese"
             }
           ],
-          "send_title_text": "Send it to Foshan Home Retail Co. yourself",
+          "send_title_text": "Your response to Foshan Home Retail Co.",
           "offered": null,
-          "notice_text": "FLOW does not send this message. Copy it, send it to the buyer yourself, then mark it as sent.",
-          "copy_label": "Copy the message",
-          "mark_sent_label": "I've sent it to the buyer",
-          "mark_sent_effect_text": "Marking it sent agrees nothing and moves no money: the deal waits for the buyer's answer.",
+          "notice_text": "FLOW does not send this message. Copy it, send it through your usual channel, then mark it as sent.",
+          "copy_label": "Copy response",
+          "copied_text": "Copied",
+          "copy_failed_text": "Could not copy. Select the message and copy it.",
+          "mark_sent_label": "Mark as sent",
+          "mark_sent_effect_text": "This records that you sent it; FLOW cannot confirm it arrived. Nothing is agreed and no money moves.",
+          "back_label": "Back to Deals",
           "accepted_label": "The buyer accepted",
           "reply_label": "Paste the buyer's reply"
         }
@@ -179,10 +195,10 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "en",
           "ui_lang": "zh",
-          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
-          "template_version": "buyer-message-v1",
+          "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
           "valid_until_day": 2,
@@ -225,11 +241,16 @@
             ],
             "cost_display": "¥3,027.77",
             "cost_note": "一次性；之后无持续成本",
-            "decides_text": "FLOW 可以发送。无需您批准。",
+            "cost_text": "预计一次性成本：¥3,027.77",
+            "decides_text": "在您的授权范围内：无需批准。",
             "authority": "flow_may",
-            "authority_text": "FLOW 可以直接发送",
-            "needs_owner": false,
-            "if_declined_text": "如果Foshan拒绝，FLOW 将自行为缺口融资：信用额度提款 ¥150,000（今天）、发票融资 ¥255,000（3 天后）。融资成本为 ¥3,113.93。"
+            "needs_owner": false
+          },
+          "authority_text": "在您的授权范围内：无需批准。",
+          "channel": {
+            "kind": "manual",
+            "label": "手动发送 · 未连接任何渠道",
+            "text": "FLOW 无法发送这条消息，也无法确认对方已收到。请复制后通过您惯用的渠道发送。"
           },
           "languages": [
             {
@@ -241,12 +262,15 @@
               "label": "中文"
             }
           ],
-          "send_title_text": "由您亲自发给Foshan Home Retail Co.",
+          "send_title_text": "您给Foshan Home Retail Co.的答复",
           "offered": null,
-          "notice_text": "FLOW 不会发送这条消息。请复制后由您亲自发给买方，然后标记为已发送。",
-          "copy_label": "复制消息",
-          "mark_sent_label": "我已发给买方",
-          "mark_sent_effect_text": "标记为已发送不会达成任何协议，也不会动用资金：这笔交易将等待买方答复。",
+          "notice_text": "FLOW 不会发送这条消息。请复制后通过您惯用的渠道发送，然后标记为已发送。",
+          "copy_label": "复制答复",
+          "copied_text": "已复制",
+          "copy_failed_text": "无法复制。请选中消息后复制。",
+          "mark_sent_label": "标记为已发送",
+          "mark_sent_effect_text": "这只记录您已发送；FLOW 无法确认对方已收到。不会达成任何协议，也不会动用资金。",
+          "back_label": "返回交易",
           "accepted_label": "买方已接受",
           "reply_label": "粘贴买方的回复"
         },
@@ -261,10 +285,10 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "zh",
           "ui_lang": "zh",
-          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n提前付款：对于2026年9月18日开具的 ¥420,000 发票，如贵方于2026年10月3日或之前支付其中最多 ¥257,200，我方接受该笔付款减去 0.85% 的折扣。\n\n其余条款保持不变。本报价有效期至2026年10月3日。请回复确认。\n\n此致\n敬礼",
-          "message_hash": "75f2157a9c52830cf86ac7f221faec606f057623d154312e8818c599855b1e76",
+          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n1. 提前付款：对于2026年9月18日开具、2026年11月2日到期的 ¥420,000 发票，如贵方于2026年10月3日或之前付款，我方接受其中最多 ¥257,200 按 0.85% 的折扣提前结清；届时支付 ¥255,013.80 即可结清发票中的 ¥257,200。未提前结清的部分（包括其余 ¥162,800）仍按原条款于2026年11月2日到期。\n2. 今后发票的付款期限维持 45 天。\n3. 我方无法提供贵方所要求的返利。\n\n其他条款均无变更。本报价有效期至2026年10月3日。请回复确认。\n\n此致\n敬礼",
+          "message_hash": "348ab28d34298c336e42e15243ad8985c2dac4e1e6afe9119c0f46bc1f599335",
           "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
-          "template_version": "buyer-message-v1",
+          "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
           "valid_until_day": 2,
@@ -307,11 +331,16 @@
             ],
             "cost_display": "¥3,027.77",
             "cost_note": "一次性；之后无持续成本",
-            "decides_text": "FLOW 可以发送。无需您批准。",
+            "cost_text": "预计一次性成本：¥3,027.77",
+            "decides_text": "在您的授权范围内：无需批准。",
             "authority": "flow_may",
-            "authority_text": "FLOW 可以直接发送",
-            "needs_owner": false,
-            "if_declined_text": "如果Foshan拒绝，FLOW 将自行为缺口融资：信用额度提款 ¥150,000（今天）、发票融资 ¥255,000（3 天后）。融资成本为 ¥3,113.93。"
+            "needs_owner": false
+          },
+          "authority_text": "在您的授权范围内：无需批准。",
+          "channel": {
+            "kind": "manual",
+            "label": "手动发送 · 未连接任何渠道",
+            "text": "FLOW 无法发送这条消息，也无法确认对方已收到。请复制后通过您惯用的渠道发送。"
           },
           "languages": [
             {
@@ -323,12 +352,15 @@
               "label": "中文"
             }
           ],
-          "send_title_text": "由您亲自发给Foshan Home Retail Co.",
+          "send_title_text": "您给Foshan Home Retail Co.的答复",
           "offered": null,
-          "notice_text": "FLOW 不会发送这条消息。请复制后由您亲自发给买方，然后标记为已发送。",
-          "copy_label": "复制消息",
-          "mark_sent_label": "我已发给买方",
-          "mark_sent_effect_text": "标记为已发送不会达成任何协议，也不会动用资金：这笔交易将等待买方答复。",
+          "notice_text": "FLOW 不会发送这条消息。请复制后通过您惯用的渠道发送，然后标记为已发送。",
+          "copy_label": "复制答复",
+          "copied_text": "已复制",
+          "copy_failed_text": "无法复制。请选中消息后复制。",
+          "mark_sent_label": "标记为已发送",
+          "mark_sent_effect_text": "这只记录您已发送；FLOW 无法确认对方已收到。不会达成任何协议，也不会动用资金。",
+          "back_label": "返回交易",
           "accepted_label": "买方已接受",
           "reply_label": "粘贴买方的回复"
         }
@@ -347,10 +379,10 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "en",
           "ui_lang": "en",
-          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Payment terms on future invoices move from 45 to 55 days.\n2. Prices on future invoices rise by 0.30%.\n\nEverything else stays as it is. This offer is open until 8 October 2026. Please reply to confirm.\n\nKind regards",
-          "message_hash": "a2960af12e61416a38d6d61f4ca1dbc5c7091fc1b8d180e3a275ddf9d8364e7f",
+          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Payment terms on future invoices move from 45 to 55 days.\n2. Prices on future invoices rise by 0.30%.\n3. We are not able to offer the early-payment discount you asked for.\n4. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 8 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_hash": "faa38c285cc3fe40ff1fb20542c50d6c4c079dbe5eef43e703e1d82e7be95fa2",
           "terms_hash": "2901bddee5e7850cb4bf1902e1e1ed4783cbe41bd84b17d77ffe53f1f816ef94",
-          "template_version": "buyer-message-v1",
+          "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
           "valid_until_day": 7,
@@ -393,11 +425,16 @@
             ],
             "cost_display": "¥0.00",
             "cost_note": "the price rise pays for the longer terms",
-            "decides_text": "It changes your terms, so you approve it first.",
+            "cost_text": "Estimated one-time cost: ¥0.00",
+            "decides_text": "Needs your approval before you send it.",
             "authority": "needs_owner",
-            "authority_text": "Needs your approval",
-            "needs_owner": true,
-            "if_declined_text": "If Foshan refuses, FLOW will fund the gap on its own: a ¥150,000 credit-line draw today and ¥255,000 of invoice financing in 3 days. The funding costs ¥3,113.93."
+            "needs_owner": true
+          },
+          "authority_text": "Needs your approval before you send it.",
+          "channel": {
+            "kind": "manual",
+            "label": "Manual sending · No channel connected",
+            "text": "FLOW cannot send this or confirm it arrived. Copy it and send it through your usual channel."
           },
           "languages": [
             {
@@ -409,12 +446,15 @@
               "label": "Chinese"
             }
           ],
-          "send_title_text": "Send it to Foshan Home Retail Co. yourself",
+          "send_title_text": "Your response to Foshan Home Retail Co.",
           "offered": null,
-          "notice_text": "FLOW does not send this message. Copy it, send it to the buyer yourself, then mark it as sent.",
-          "copy_label": "Copy the message",
-          "mark_sent_label": "I've sent it to the buyer",
-          "mark_sent_effect_text": "Marking it sent agrees nothing and moves no money: the deal waits for the buyer's answer.",
+          "notice_text": "FLOW does not send this message. Copy it, send it through your usual channel, then mark it as sent.",
+          "copy_label": "Copy response",
+          "copied_text": "Copied",
+          "copy_failed_text": "Could not copy. Select the message and copy it.",
+          "mark_sent_label": "Mark as sent",
+          "mark_sent_effect_text": "This records that you sent it; FLOW cannot confirm it arrived. Nothing is agreed and no money moves.",
+          "back_label": "Back to Deals",
           "accepted_label": "The buyer accepted",
           "reply_label": "Paste the buyer's reply"
         },
@@ -429,10 +469,10 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "zh",
           "ui_lang": "en",
-          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n1. 今后的发票的付款期限由 45 天调整为 55 天。\n2. 今后的发票的价格上调 0.30%。\n\n其余条款保持不变。本报价有效期至2026年10月8日。请回复确认。\n\n此致\n敬礼",
-          "message_hash": "8ac35e1028c636db04cd93ddc837b5a00ef5a352c8e52dd655dd4b6164ec3c80",
+          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n1. 今后发票的付款期限由 45 天调整为 55 天。\n2. 今后发票的价格上调 0.30%。\n3. 我方无法提供贵方所要求的提前付款折扣。\n4. 我方无法提供贵方所要求的返利。\n\n其他条款均无变更。本报价有效期至2026年10月8日。请回复确认。\n\n此致\n敬礼",
+          "message_hash": "9247832cdd7cc048bcafadbe46201c4a348e53ffba40a4dcdc31a7afb94bd76e",
           "terms_hash": "2901bddee5e7850cb4bf1902e1e1ed4783cbe41bd84b17d77ffe53f1f816ef94",
-          "template_version": "buyer-message-v1",
+          "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
           "valid_until_day": 7,
@@ -475,11 +515,16 @@
             ],
             "cost_display": "¥0.00",
             "cost_note": "the price rise pays for the longer terms",
-            "decides_text": "It changes your terms, so you approve it first.",
+            "cost_text": "Estimated one-time cost: ¥0.00",
+            "decides_text": "Needs your approval before you send it.",
             "authority": "needs_owner",
-            "authority_text": "Needs your approval",
-            "needs_owner": true,
-            "if_declined_text": "If Foshan refuses, FLOW will fund the gap on its own: a ¥150,000 credit-line draw today and ¥255,000 of invoice financing in 3 days. The funding costs ¥3,113.93."
+            "needs_owner": true
+          },
+          "authority_text": "Needs your approval before you send it.",
+          "channel": {
+            "kind": "manual",
+            "label": "Manual sending · No channel connected",
+            "text": "FLOW cannot send this or confirm it arrived. Copy it and send it through your usual channel."
           },
           "languages": [
             {
@@ -491,12 +536,15 @@
               "label": "Chinese"
             }
           ],
-          "send_title_text": "Send it to Foshan Home Retail Co. yourself",
+          "send_title_text": "Your response to Foshan Home Retail Co.",
           "offered": null,
-          "notice_text": "FLOW does not send this message. Copy it, send it to the buyer yourself, then mark it as sent.",
-          "copy_label": "Copy the message",
-          "mark_sent_label": "I've sent it to the buyer",
-          "mark_sent_effect_text": "Marking it sent agrees nothing and moves no money: the deal waits for the buyer's answer.",
+          "notice_text": "FLOW does not send this message. Copy it, send it through your usual channel, then mark it as sent.",
+          "copy_label": "Copy response",
+          "copied_text": "Copied",
+          "copy_failed_text": "Could not copy. Select the message and copy it.",
+          "mark_sent_label": "Mark as sent",
+          "mark_sent_effect_text": "This records that you sent it; FLOW cannot confirm it arrived. Nothing is agreed and no money moves.",
+          "back_label": "Back to Deals",
           "accepted_label": "The buyer accepted",
           "reply_label": "Paste the buyer's reply"
         }
@@ -513,10 +561,10 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "en",
           "ui_lang": "zh",
-          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Payment terms on future invoices move from 45 to 55 days.\n2. Prices on future invoices rise by 0.30%.\n\nEverything else stays as it is. This offer is open until 8 October 2026. Please reply to confirm.\n\nKind regards",
-          "message_hash": "a2960af12e61416a38d6d61f4ca1dbc5c7091fc1b8d180e3a275ddf9d8364e7f",
+          "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Payment terms on future invoices move from 45 to 55 days.\n2. Prices on future invoices rise by 0.30%.\n3. We are not able to offer the early-payment discount you asked for.\n4. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 8 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_hash": "faa38c285cc3fe40ff1fb20542c50d6c4c079dbe5eef43e703e1d82e7be95fa2",
           "terms_hash": "2901bddee5e7850cb4bf1902e1e1ed4783cbe41bd84b17d77ffe53f1f816ef94",
-          "template_version": "buyer-message-v1",
+          "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
           "valid_until_day": 7,
@@ -559,11 +607,16 @@
             ],
             "cost_display": "¥0.00",
             "cost_note": "提价抵补了延长账期的成本",
-            "decides_text": "它会改变您的条款，需要您先批准。",
+            "cost_text": "预计一次性成本：¥0.00",
+            "decides_text": "发送前需经您批准。",
             "authority": "needs_owner",
-            "authority_text": "需要您批准",
-            "needs_owner": true,
-            "if_declined_text": "如果Foshan拒绝，FLOW 将自行为缺口融资：信用额度提款 ¥150,000（今天）、发票融资 ¥255,000（3 天后）。融资成本为 ¥3,113.93。"
+            "needs_owner": true
+          },
+          "authority_text": "发送前需经您批准。",
+          "channel": {
+            "kind": "manual",
+            "label": "手动发送 · 未连接任何渠道",
+            "text": "FLOW 无法发送这条消息，也无法确认对方已收到。请复制后通过您惯用的渠道发送。"
           },
           "languages": [
             {
@@ -575,12 +628,15 @@
               "label": "中文"
             }
           ],
-          "send_title_text": "由您亲自发给Foshan Home Retail Co.",
+          "send_title_text": "您给Foshan Home Retail Co.的答复",
           "offered": null,
-          "notice_text": "FLOW 不会发送这条消息。请复制后由您亲自发给买方，然后标记为已发送。",
-          "copy_label": "复制消息",
-          "mark_sent_label": "我已发给买方",
-          "mark_sent_effect_text": "标记为已发送不会达成任何协议，也不会动用资金：这笔交易将等待买方答复。",
+          "notice_text": "FLOW 不会发送这条消息。请复制后通过您惯用的渠道发送，然后标记为已发送。",
+          "copy_label": "复制答复",
+          "copied_text": "已复制",
+          "copy_failed_text": "无法复制。请选中消息后复制。",
+          "mark_sent_label": "标记为已发送",
+          "mark_sent_effect_text": "这只记录您已发送；FLOW 无法确认对方已收到。不会达成任何协议，也不会动用资金。",
+          "back_label": "返回交易",
           "accepted_label": "买方已接受",
           "reply_label": "粘贴买方的回复"
         },
@@ -595,10 +651,10 @@
           "buyer_name": "Foshan Home Retail Co.",
           "lang": "zh",
           "ui_lang": "zh",
-          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n1. 今后的发票的付款期限由 45 天调整为 55 天。\n2. 今后的发票的价格上调 0.30%。\n\n其余条款保持不变。本报价有效期至2026年10月8日。请回复确认。\n\n此致\n敬礼",
-          "message_hash": "8ac35e1028c636db04cd93ddc837b5a00ef5a352c8e52dd655dd4b6164ec3c80",
+          "text": "Foshan Home Retail Co.：\n\n感谢贵方的来函。我方可提供以下条件：\n\n1. 今后发票的付款期限由 45 天调整为 55 天。\n2. 今后发票的价格上调 0.30%。\n3. 我方无法提供贵方所要求的提前付款折扣。\n4. 我方无法提供贵方所要求的返利。\n\n其他条款均无变更。本报价有效期至2026年10月8日。请回复确认。\n\n此致\n敬礼",
+          "message_hash": "9247832cdd7cc048bcafadbe46201c4a348e53ffba40a4dcdc31a7afb94bd76e",
           "terms_hash": "2901bddee5e7850cb4bf1902e1e1ed4783cbe41bd84b17d77ffe53f1f816ef94",
-          "template_version": "buyer-message-v1",
+          "template_version": "buyer-message-v2",
           "copyable": true,
           "blocked": null,
           "valid_until_day": 7,
@@ -641,11 +697,16 @@
             ],
             "cost_display": "¥0.00",
             "cost_note": "提价抵补了延长账期的成本",
-            "decides_text": "它会改变您的条款，需要您先批准。",
+            "cost_text": "预计一次性成本：¥0.00",
+            "decides_text": "发送前需经您批准。",
             "authority": "needs_owner",
-            "authority_text": "需要您批准",
-            "needs_owner": true,
-            "if_declined_text": "如果Foshan拒绝，FLOW 将自行为缺口融资：信用额度提款 ¥150,000（今天）、发票融资 ¥255,000（3 天后）。融资成本为 ¥3,113.93。"
+            "needs_owner": true
+          },
+          "authority_text": "发送前需经您批准。",
+          "channel": {
+            "kind": "manual",
+            "label": "手动发送 · 未连接任何渠道",
+            "text": "FLOW 无法发送这条消息，也无法确认对方已收到。请复制后通过您惯用的渠道发送。"
           },
           "languages": [
             {
@@ -657,12 +718,15 @@
               "label": "中文"
             }
           ],
-          "send_title_text": "由您亲自发给Foshan Home Retail Co.",
+          "send_title_text": "您给Foshan Home Retail Co.的答复",
           "offered": null,
-          "notice_text": "FLOW 不会发送这条消息。请复制后由您亲自发给买方，然后标记为已发送。",
-          "copy_label": "复制消息",
-          "mark_sent_label": "我已发给买方",
-          "mark_sent_effect_text": "标记为已发送不会达成任何协议，也不会动用资金：这笔交易将等待买方答复。",
+          "notice_text": "FLOW 不会发送这条消息。请复制后通过您惯用的渠道发送，然后标记为已发送。",
+          "copy_label": "复制答复",
+          "copied_text": "已复制",
+          "copy_failed_text": "无法复制。请选中消息后复制。",
+          "mark_sent_label": "标记为已发送",
+          "mark_sent_effect_text": "这只记录您已发送；FLOW 无法确认对方已收到。不会达成任何协议，也不会动用资金。",
+          "back_label": "返回交易",
           "accepted_label": "买方已接受",
           "reply_label": "粘贴买方的回复"
         }
@@ -718,6 +782,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "Counter recommended",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "today"
       },
@@ -753,7 +818,8 @@
           "date": "1 October 2026",
           "kind": "received",
           "text": "Foshan Home Retail Co. sent their request",
-          "tone": "neutral"
+          "tone": "neutral",
+          "source": "buyer"
         },
         {
           "day": 0,
@@ -761,9 +827,11 @@
           "date": "1 October 2026",
           "kind": "checked",
           "text": "FLOW checked it against your books",
-          "tone": "neutral"
+          "tone": "neutral",
+          "source": "flow"
         }
       ],
+      "reply_to": null,
       "operations": [],
       "execution": {
         "summary_text": "Nothing has been executed yet.",
@@ -884,6 +952,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "建议还价",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "今天"
       },
@@ -919,7 +988,8 @@
           "date": "2026年10月1日",
           "kind": "received",
           "text": "Foshan Home Retail Co.发来请求",
-          "tone": "neutral"
+          "tone": "neutral",
+          "source": "buyer"
         },
         {
           "day": 0,
@@ -927,9 +997,11 @@
           "date": "2026年10月1日",
           "kind": "checked",
           "text": "FLOW 已对照您的账目核查",
-          "tone": "neutral"
+          "tone": "neutral",
+          "source": "flow"
         }
       ],
+      "reply_to": null,
       "operations": [],
       "execution": {
         "summary_text": "尚未执行任何操作。",
@@ -1009,14 +1081,14 @@
       "offer_id": "OFF-f806f79b6c21",
       "message": "The message changed since you copied it; copy it again before marking it sent.",
       "message_when": "The message changed since you copied it; copy it again before marking it sent.",
-      "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5"
+      "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605"
     },
     "zh": {
       "code": "MESSAGE_CHANGED",
       "offer_id": "OFF-f806f79b6c21",
       "message": "The message changed since you copied it; copy it again before marking it sent.",
       "message_when": "您复制之后消息已有变化；请重新复制后再标记为已发送。",
-      "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5"
+      "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605"
     }
   },
   "offered": {
@@ -1031,10 +1103,10 @@
       "buyer_name": "Foshan Home Retail Co.",
       "lang": "en",
       "ui_lang": "en",
-      "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-      "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+      "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+      "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
       "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
-      "template_version": "buyer-message-v1",
+      "template_version": "buyer-message-v2",
       "copyable": true,
       "blocked": null,
       "valid_until_day": 2,
@@ -1077,11 +1149,16 @@
         ],
         "cost_display": "¥3,027.77",
         "cost_note": "once; nothing ongoing",
-        "decides_text": "FLOW can send it. Your approval is not needed.",
+        "cost_text": "Estimated one-time cost: ¥3,027.77",
+        "decides_text": "Within your mandate: no approval needed.",
         "authority": "flow_may",
-        "authority_text": "FLOW can send it",
-        "needs_owner": false,
-        "if_declined_text": "If Foshan refuses, FLOW will fund the gap on its own: a ¥150,000 credit-line draw today and ¥255,000 of invoice financing in 3 days. The funding costs ¥3,113.93."
+        "needs_owner": false
+      },
+      "authority_text": "Within your mandate: no approval needed.",
+      "channel": {
+        "kind": "manual",
+        "label": "Manual sending · No channel connected",
+        "text": "FLOW cannot send this or confirm it arrived. Copy it and send it through your usual channel."
       },
       "languages": [
         {
@@ -1093,19 +1170,22 @@
           "label": "Chinese"
         }
       ],
-      "send_title_text": "Send it to Foshan Home Retail Co. yourself",
+      "send_title_text": "Your response to Foshan Home Retail Co.",
       "offered": {
         "recorded": true,
         "lang": "en",
-        "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+        "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
         "valid_until_day": 2,
         "valid_until_when": "in 2 days",
         "same_message": true
       },
-      "notice_text": "FLOW does not send this message. Copy it, send it to the buyer yourself, then mark it as sent.",
-      "copy_label": "Copy the message",
-      "mark_sent_label": "I've sent it to the buyer",
-      "mark_sent_effect_text": "Marking it sent agrees nothing and moves no money: the deal waits for the buyer's answer.",
+      "notice_text": "FLOW does not send this message. Copy it, send it through your usual channel, then mark it as sent.",
+      "copy_label": "Copy response",
+      "copied_text": "Copied",
+      "copy_failed_text": "Could not copy. Select the message and copy it.",
+      "mark_sent_label": "Mark as sent",
+      "mark_sent_effect_text": "This records that you sent it; FLOW cannot confirm it arrived. Nothing is agreed and no money moves.",
+      "back_label": "Back to Deals",
       "accepted_label": "The buyer accepted",
       "reply_label": "Paste the buyer's reply",
       "already_recorded": false,
@@ -1122,10 +1202,10 @@
       "buyer_name": "Foshan Home Retail Co.",
       "lang": "en",
       "ui_lang": "zh",
-      "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-      "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+      "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+      "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
       "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
-      "template_version": "buyer-message-v1",
+      "template_version": "buyer-message-v2",
       "copyable": true,
       "blocked": null,
       "valid_until_day": 2,
@@ -1168,11 +1248,16 @@
         ],
         "cost_display": "¥3,027.77",
         "cost_note": "一次性；之后无持续成本",
-        "decides_text": "FLOW 可以发送。无需您批准。",
+        "cost_text": "预计一次性成本：¥3,027.77",
+        "decides_text": "在您的授权范围内：无需批准。",
         "authority": "flow_may",
-        "authority_text": "FLOW 可以直接发送",
-        "needs_owner": false,
-        "if_declined_text": "如果Foshan拒绝，FLOW 将自行为缺口融资：信用额度提款 ¥150,000（今天）、发票融资 ¥255,000（3 天后）。融资成本为 ¥3,113.93。"
+        "needs_owner": false
+      },
+      "authority_text": "在您的授权范围内：无需批准。",
+      "channel": {
+        "kind": "manual",
+        "label": "手动发送 · 未连接任何渠道",
+        "text": "FLOW 无法发送这条消息，也无法确认对方已收到。请复制后通过您惯用的渠道发送。"
       },
       "languages": [
         {
@@ -1184,19 +1269,22 @@
           "label": "中文"
         }
       ],
-      "send_title_text": "由您亲自发给Foshan Home Retail Co.",
+      "send_title_text": "您给Foshan Home Retail Co.的答复",
       "offered": {
         "recorded": true,
         "lang": "en",
-        "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+        "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
         "valid_until_day": 2,
         "valid_until_when": "2 天后",
         "same_message": true
       },
-      "notice_text": "FLOW 不会发送这条消息。请复制后由您亲自发给买方，然后标记为已发送。",
-      "copy_label": "复制消息",
-      "mark_sent_label": "我已发给买方",
-      "mark_sent_effect_text": "标记为已发送不会达成任何协议，也不会动用资金：这笔交易将等待买方答复。",
+      "notice_text": "FLOW 不会发送这条消息。请复制后通过您惯用的渠道发送，然后标记为已发送。",
+      "copy_label": "复制答复",
+      "copied_text": "已复制",
+      "copy_failed_text": "无法复制。请选中消息后复制。",
+      "mark_sent_label": "标记为已发送",
+      "mark_sent_effect_text": "这只记录您已发送；FLOW 无法确认对方已收到。不会达成任何协议，也不会动用资金。",
+      "back_label": "返回交易",
       "accepted_label": "买方已接受",
       "reply_label": "粘贴买方的回复",
       "already_recorded": false,
@@ -1253,6 +1341,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -1295,7 +1384,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "today",
@@ -1309,18 +1398,26 @@
           "terms": [
             "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "You sent Option A on 1 October 2026, in English",
+          "sent_text": "You marked Option A as sent on 1 October 2026, in English",
+          "provenance_text": "Marked sent by you · FLOW cannot confirm delivery",
           "answer": null,
           "tone": "waiting",
           "links": [],
           "actions": {
-            "question_text": "What did Foshan Home Retail Co. say?",
+            "question_text": "What did Foshan Home Retail Co. reply?",
+            "record_label": "Record their response",
+            "view_message_label": "View sent message",
             "accept": {
-              "label": "They accepted",
+              "label": "Accepted",
               "hint_text": "Becomes the agreement",
-              "confirm_label": "Record their acceptance",
+              "title_text": "Confirm buyer acceptance",
+              "confirm_label": "Confirm and record agreement",
+              "binding_text": "You confirm that Foshan Home Retail Co. accepted exactly these terms of Option A, as sent on 1 October 2026, before the offer expires on 3 October 2026.",
+              "evidence_label": "Their message (optional)",
+              "evidence_placeholder": "Paste the buyer's reply that accepts the offer",
+              "evidence_hint_text": "Without it, the record says you confirmed the acceptance yourself.",
               "terms": [
                 "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
               ],
@@ -1356,51 +1453,68 @@
                 ],
                 "cost_display": "¥3,027.77",
                 "cost_note": "once; nothing ongoing",
-                "decides_text": "FLOW can send it. Your approval is not needed.",
+                "cost_text": "Estimated one-time cost: ¥3,027.77",
+                "decides_text": "Within your mandate: no approval needed.",
                 "authority": "flow_may",
-                "authority_text": "FLOW can send it",
-                "needs_owner": false,
-                "if_declined_text": "If Foshan refuses, FLOW will fund the gap on its own: a ¥150,000 credit-line draw today and ¥255,000 of invoice financing in 3 days. The funding costs ¥3,113.93."
+                "needs_owner": false
               },
-              "authority_text": "Within your limits: in force when you record it."
+              "authority_text": "Within your mandate: in force when you record it."
             },
             "counter": {
-              "label": "They countered",
-              "hint_text": "Paste their new terms",
+              "label": "Proposed different terms",
+              "hint_text": "Paste their reply",
+              "confirm_label": "Evaluate their proposal",
+              "placeholder_text": "Paste the buyer's reply as they wrote it",
+              "effect_text": "FLOW reads their terms and checks them as a new request in this negotiation."
+            },
+            "unclear": {
+              "label": "Unclear or a question",
+              "hint_text": "Paste their reply; FLOW says what is missing",
               "confirm_label": "Read their reply",
               "placeholder_text": "Paste the buyer's reply as they wrote it",
-              "effect_text": "FLOW reads their terms and checks them as a new request."
+              "effect_text": "FLOW records nothing it cannot read safely; it says what to ask the buyer."
             },
             "decline": {
-              "label": "They declined",
-              "hint_text": "Close it as no deal",
+              "label": "Declined",
+              "hint_text": "Close it with no agreement",
               "confirm_label": "Record that they declined",
-              "reasons_label_text": "Why, if they said",
+              "reasons_label_text": "Reason they gave, as you report it (optional)",
               "reasons": [
                 {
                   "code": "DISCOUNT_TOO_LOW",
-                  "text": "The discount was too low"
+                  "text": "Discount too low"
                 },
                 {
                   "code": "WANTED_LONGER_TERMS",
-                  "text": "They wanted longer terms"
+                  "text": "Payment terms unacceptable"
                 },
                 {
                   "code": "NO_LONGER_NEEDED",
-                  "text": "They no longer need it"
+                  "text": "No longer interested"
+                },
+                {
+                  "code": "OTHER",
+                  "text": "Other"
                 },
                 {
                   "code": "NO_REASON",
-                  "text": "No reason given"
+                  "text": "Unknown"
                 }
               ],
-              "effect_text": "If Foshan refuses, FLOW will fund the gap on its own: a ¥150,000 credit-line draw today and ¥255,000 of invoice financing in 3 days. The funding costs ¥3,113.93."
+              "effect_text": "Nothing is agreed and no money moves. The invoice stays due on its existing terms."
+            },
+            "withdraw": {
+              "label": "I marked it sent by mistake",
+              "confirm_label": "Undo “marked sent”",
+              "effect_text": "The mark stays on the record beside your correction, and the deal is ready to send again."
             }
           },
-          "title_text": "Waiting for Foshan Home Retail Co.'s answer",
-          "text": "Unanswered by 3 October 2026, it closes as no deal on its own.",
-          "closes_text": "Closes 3 October 2026 · in 2 days",
-          "progress": 0
+          "title_text": "Waiting for Foshan Home Retail Co.'s response",
+          "status_text": "Option A · marked sent by you on 1 October 2026 · FLOW cannot confirm delivery · expires 3 October 2026 (in 2 days)",
+          "text": "If there is no response by 3 October 2026, the offer closes with no agreement.",
+          "closes_text": "Expires 3 October 2026 · in 2 days",
+          "progress": 0,
+          "authority_text": "Within your mandate: no approval needed."
         },
         "history": [
           {
@@ -1409,7 +1523,8 @@
             "date": "1 October 2026",
             "kind": "received",
             "text": "Foshan Home Retail Co. sent their request",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -1417,17 +1532,20 @@
             "date": "1 October 2026",
             "kind": "checked",
             "text": "FLOW checked it against your books",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "offered",
-            "text": "You sent Option A, open until 3 October 2026",
-            "tone": "waiting"
+            "text": "You marked Option A as sent, open until 3 October 2026",
+            "tone": "waiting",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [],
         "execution": {
           "summary_text": "Nothing has been executed yet.",
@@ -2078,10 +2196,10 @@
         "buyer_name": "Foshan Home Retail Co.",
         "lang": "en",
         "ui_lang": "en",
-        "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-        "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+        "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+        "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
         "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
-        "template_version": "buyer-message-v1",
+        "template_version": "buyer-message-v2",
         "copyable": true,
         "blocked": null,
         "valid_until_day": 2,
@@ -2124,11 +2242,16 @@
           ],
           "cost_display": "¥3,027.77",
           "cost_note": "once; nothing ongoing",
-          "decides_text": "FLOW can send it. Your approval is not needed.",
+          "cost_text": "Estimated one-time cost: ¥3,027.77",
+          "decides_text": "Within your mandate: no approval needed.",
           "authority": "flow_may",
-          "authority_text": "FLOW can send it",
-          "needs_owner": false,
-          "if_declined_text": "If Foshan refuses, FLOW will fund the gap on its own: a ¥150,000 credit-line draw today and ¥255,000 of invoice financing in 3 days. The funding costs ¥3,113.93."
+          "needs_owner": false
+        },
+        "authority_text": "Within your mandate: no approval needed.",
+        "channel": {
+          "kind": "manual",
+          "label": "Manual sending · No channel connected",
+          "text": "FLOW cannot send this or confirm it arrived. Copy it and send it through your usual channel."
         },
         "languages": [
           {
@@ -2140,19 +2263,22 @@
             "label": "Chinese"
           }
         ],
-        "send_title_text": "Send it to Foshan Home Retail Co. yourself",
+        "send_title_text": "Your response to Foshan Home Retail Co.",
         "offered": {
           "recorded": true,
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "valid_until_day": 2,
           "valid_until_when": "in 2 days",
           "same_message": true
         },
-        "notice_text": "FLOW does not send this message. Copy it, send it to the buyer yourself, then mark it as sent.",
-        "copy_label": "Copy the message",
-        "mark_sent_label": "I've sent it to the buyer",
-        "mark_sent_effect_text": "Marking it sent agrees nothing and moves no money: the deal waits for the buyer's answer.",
+        "notice_text": "FLOW does not send this message. Copy it, send it through your usual channel, then mark it as sent.",
+        "copy_label": "Copy response",
+        "copied_text": "Copied",
+        "copy_failed_text": "Could not copy. Select the message and copy it.",
+        "mark_sent_label": "Mark as sent",
+        "mark_sent_effect_text": "This records that you sent it; FLOW cannot confirm it arrived. Nothing is agreed and no money moves.",
+        "back_label": "Back to Deals",
         "accepted_label": "The buyer accepted",
         "reply_label": "Paste the buyer's reply"
       }
@@ -2206,6 +2332,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -2248,7 +2375,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -2262,18 +2389,26 @@
           "terms": [
             "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "您于2026年10月1日以英文发出了方案 A",
+          "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
+          "provenance_text": "由您标记为已发送 · FLOW 无法确认对方已收到",
           "answer": null,
           "tone": "waiting",
           "links": [],
           "actions": {
-            "question_text": "Foshan Home Retail Co.怎么答复？",
+            "question_text": "Foshan Home Retail Co.如何答复？",
+            "record_label": "记录对方的答复",
+            "view_message_label": "查看已发送的消息",
             "accept": {
-              "label": "对方已接受",
+              "label": "已接受",
               "hint_text": "成为协议",
-              "confirm_label": "记录对方已接受",
+              "title_text": "确认买方已接受",
+              "confirm_label": "确认并记录协议",
+              "binding_text": "您确认Foshan Home Retail Co.已在报价于2026年10月3日到期前，接受了您于2026年10月1日发出的方案 A的上述条款，且未作改动。",
+              "evidence_label": "对方的消息（可选）",
+              "evidence_placeholder": "粘贴买方接受报价的回复",
+              "evidence_hint_text": "如不粘贴，记录将注明由您本人确认接受。",
               "terms": [
                 "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
               ],
@@ -2309,26 +2444,32 @@
                 ],
                 "cost_display": "¥3,027.77",
                 "cost_note": "一次性；之后无持续成本",
-                "decides_text": "FLOW 可以发送。无需您批准。",
+                "cost_text": "预计一次性成本：¥3,027.77",
+                "decides_text": "在您的授权范围内：无需批准。",
                 "authority": "flow_may",
-                "authority_text": "FLOW 可以直接发送",
-                "needs_owner": false,
-                "if_declined_text": "如果Foshan拒绝，FLOW 将自行为缺口融资：信用额度提款 ¥150,000（今天）、发票融资 ¥255,000（3 天后）。融资成本为 ¥3,113.93。"
+                "needs_owner": false
               },
               "authority_text": "在您的授权范围内：记录后即生效。"
             },
             "counter": {
-              "label": "对方还价",
-              "hint_text": "粘贴对方的新条款",
+              "label": "提出了不同条款",
+              "hint_text": "粘贴对方的回复",
+              "confirm_label": "评估对方的提议",
+              "placeholder_text": "按原文粘贴买方的回复",
+              "effect_text": "FLOW 会读取对方的条款，并作为本次谈判中的新请求进行核查。"
+            },
+            "unclear": {
+              "label": "不明确或提出问题",
+              "hint_text": "粘贴对方的回复；FLOW 会指出缺少的信息",
               "confirm_label": "读取对方的回复",
               "placeholder_text": "按原文粘贴买方的回复",
-              "effect_text": "FLOW 会读取对方的条款，并作为一项新请求进行核查。"
+              "effect_text": "FLOW 不会记录无法安全读取的内容；它会说明需要向买方询问什么。"
             },
             "decline": {
-              "label": "对方已拒绝",
-              "hint_text": "以不成交关闭",
+              "label": "已拒绝",
+              "hint_text": "以不达成协议关闭",
               "confirm_label": "记录对方已拒绝",
-              "reasons_label_text": "如对方说明了原因",
+              "reasons_label_text": "对方给出的原因，由您报告（可选）",
               "reasons": [
                 {
                   "code": "DISCOUNT_TOO_LOW",
@@ -2336,24 +2477,35 @@
                 },
                 {
                   "code": "WANTED_LONGER_TERMS",
-                  "text": "对方想要更长的账期"
+                  "text": "付款期限不可接受"
                 },
                 {
                   "code": "NO_LONGER_NEEDED",
-                  "text": "对方已不再需要"
+                  "text": "已不再感兴趣"
+                },
+                {
+                  "code": "OTHER",
+                  "text": "其他"
                 },
                 {
                   "code": "NO_REASON",
-                  "text": "未说明原因"
+                  "text": "原因不明"
                 }
               ],
-              "effect_text": "如果Foshan拒绝，FLOW 将自行为缺口融资：信用额度提款 ¥150,000（今天）、发票融资 ¥255,000（3 天后）。融资成本为 ¥3,113.93。"
+              "effect_text": "不会达成任何协议，也不会动用资金。发票仍按原条款到期。"
+            },
+            "withdraw": {
+              "label": "我误标为已发送",
+              "confirm_label": "撤销“已发送”",
+              "effect_text": "该标记会与您的更正一同保留在记录中，交易将恢复为待发送。"
             }
           },
           "title_text": "等待Foshan Home Retail Co.答复",
-          "text": "如在2026年10月3日前未获答复，将自动关闭，不成交。",
-          "closes_text": "2026年10月3日截止 · 2 天后",
-          "progress": 0
+          "status_text": "方案 A · 您于2026年10月1日标记为已发送 · FLOW 无法确认对方已收到 · 2026年10月3日到期（2 天后）",
+          "text": "如在2026年10月3日前未获答复，报价将关闭，不达成任何协议。",
+          "closes_text": "2026年10月3日到期 · 2 天后",
+          "progress": 0,
+          "authority_text": "在您的授权范围内：无需批准。"
         },
         "history": [
           {
@@ -2362,7 +2514,8 @@
             "date": "2026年10月1日",
             "kind": "received",
             "text": "Foshan Home Retail Co.发来请求",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -2370,17 +2523,20 @@
             "date": "2026年10月1日",
             "kind": "checked",
             "text": "FLOW 已对照您的账目核查",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "offered",
-            "text": "您发出了方案 A，有效至2026年10月3日",
-            "tone": "waiting"
+            "text": "您将方案 A标记为已发送，有效至2026年10月3日",
+            "tone": "waiting",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [],
         "execution": {
           "summary_text": "尚未执行任何操作。",
@@ -3031,10 +3187,10 @@
         "buyer_name": "Foshan Home Retail Co.",
         "lang": "en",
         "ui_lang": "zh",
-        "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
-        "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+        "text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+        "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
         "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
-        "template_version": "buyer-message-v1",
+        "template_version": "buyer-message-v2",
         "copyable": true,
         "blocked": null,
         "valid_until_day": 2,
@@ -3077,11 +3233,16 @@
           ],
           "cost_display": "¥3,027.77",
           "cost_note": "一次性；之后无持续成本",
-          "decides_text": "FLOW 可以发送。无需您批准。",
+          "cost_text": "预计一次性成本：¥3,027.77",
+          "decides_text": "在您的授权范围内：无需批准。",
           "authority": "flow_may",
-          "authority_text": "FLOW 可以直接发送",
-          "needs_owner": false,
-          "if_declined_text": "如果Foshan拒绝，FLOW 将自行为缺口融资：信用额度提款 ¥150,000（今天）、发票融资 ¥255,000（3 天后）。融资成本为 ¥3,113.93。"
+          "needs_owner": false
+        },
+        "authority_text": "在您的授权范围内：无需批准。",
+        "channel": {
+          "kind": "manual",
+          "label": "手动发送 · 未连接任何渠道",
+          "text": "FLOW 无法发送这条消息，也无法确认对方已收到。请复制后通过您惯用的渠道发送。"
         },
         "languages": [
           {
@@ -3093,19 +3254,22 @@
             "label": "中文"
           }
         ],
-        "send_title_text": "由您亲自发给Foshan Home Retail Co.",
+        "send_title_text": "您给Foshan Home Retail Co.的答复",
         "offered": {
           "recorded": true,
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "valid_until_day": 2,
           "valid_until_when": "2 天后",
           "same_message": true
         },
-        "notice_text": "FLOW 不会发送这条消息。请复制后由您亲自发给买方，然后标记为已发送。",
-        "copy_label": "复制消息",
-        "mark_sent_label": "我已发给买方",
-        "mark_sent_effect_text": "标记为已发送不会达成任何协议，也不会动用资金：这笔交易将等待买方答复。",
+        "notice_text": "FLOW 不会发送这条消息。请复制后通过您惯用的渠道发送，然后标记为已发送。",
+        "copy_label": "复制答复",
+        "copied_text": "已复制",
+        "copy_failed_text": "无法复制。请选中消息后复制。",
+        "mark_sent_label": "标记为已发送",
+        "mark_sent_effect_text": "这只记录您已发送；FLOW 无法确认对方已收到。不会达成任何协议，也不会动用资金。",
+        "back_label": "返回交易",
         "accepted_label": "买方已接受",
         "reply_label": "粘贴买方的回复"
       }
@@ -3177,6 +3341,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -3241,7 +3406,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "today",
@@ -3255,20 +3420,38 @@
           "terms": [
             "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "You sent Option A on 1 October 2026, in English",
+          "sent_text": "You marked Option A as sent on 1 October 2026, in English",
+          "provenance_text": "Source: recorded by you, with the buyer's message",
           "answer": "accepted",
           "tone": "ok",
-          "links": [],
+          "links": [
+            {
+              "label": "View receivable",
+              "href": "/receivables#RCV-A"
+            },
+            {
+              "label": "View customer",
+              "href": "/customers/BUYER-1"
+            }
+          ],
           "actions": null,
           "answered": {
             "day": 0,
             "when": "today",
             "date": "1 October 2026"
           },
-          "title_text": "Foshan Home Retail Co. accepted Option A on 1 October 2026",
-          "text": "The agreement is in force."
+          "title_text": "Buyer acceptance recorded",
+          "text": "You confirmed that Foshan Home Retail Co. accepted Option A on 1 October 2026.",
+          "evidence_quote": "Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.",
+          "status_text": "The agreement is in force.",
+          "consequences": [
+            "Foshan Home Retail Co. can settle ¥257,200.00 of the invoice by paying ¥255,013.80 by 3 October 2026.",
+            "The other ¥162,800.00 stays due on 2 November 2026.",
+            "No cash has been received yet; FLOW reconciles the payment when it arrives."
+          ],
+          "consequences_title_text": "What changes now"
         },
         "history": [
           {
@@ -3277,7 +3460,8 @@
             "date": "1 October 2026",
             "kind": "received",
             "text": "Foshan Home Retail Co. sent their request",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -3285,25 +3469,29 @@
             "date": "1 October 2026",
             "kind": "checked",
             "text": "FLOW checked it against your books",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "offered",
-            "text": "You sent Option A, open until 3 October 2026",
-            "tone": "waiting"
+            "text": "You marked Option A as sent, open until 3 October 2026",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "accepted",
-            "text": "Foshan Home Retail Co. accepted; you recorded it",
-            "tone": "ok"
+            "text": "You recorded that Foshan Home Retail Co. accepted, with their message",
+            "tone": "ok",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [
           {
             "op_id": "buyer-yes-CMT-a78afaa5becb5273",
@@ -3427,6 +3615,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -3491,7 +3680,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -3505,20 +3694,38 @@
           "terms": [
             "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "您于2026年10月1日以英文发出了方案 A",
+          "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
+          "provenance_text": "来源：由您记录，附买方的消息",
           "answer": "accepted",
           "tone": "ok",
-          "links": [],
+          "links": [
+            {
+              "label": "查看应收账款",
+              "href": "/receivables#RCV-A"
+            },
+            {
+              "label": "查看客户",
+              "href": "/customers/BUYER-1"
+            }
+          ],
           "actions": null,
           "answered": {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日"
           },
-          "title_text": "Foshan Home Retail Co.于2026年10月1日接受了方案 A",
-          "text": "协议已生效。"
+          "title_text": "已记录买方接受",
+          "text": "您确认Foshan Home Retail Co.已于2026年10月1日接受方案 A。",
+          "evidence_quote": "Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.",
+          "status_text": "协议已生效。",
+          "consequences": [
+            "Foshan Home Retail Co.可在2026年10月3日前支付 ¥255,013.80，结清发票中的 ¥257,200.00。",
+            "其余 ¥162,800.00 仍于2026年11月2日到期。",
+            "尚未收到任何款项；款项到账后 FLOW 会进行对账。"
+          ],
+          "consequences_title_text": "接下来的变化"
         },
         "history": [
           {
@@ -3527,7 +3734,8 @@
             "date": "2026年10月1日",
             "kind": "received",
             "text": "Foshan Home Retail Co.发来请求",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -3535,25 +3743,29 @@
             "date": "2026年10月1日",
             "kind": "checked",
             "text": "FLOW 已对照您的账目核查",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "offered",
-            "text": "您发出了方案 A，有效至2026年10月3日",
-            "tone": "waiting"
+            "text": "您将方案 A标记为已发送，有效至2026年10月3日",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "accepted",
-            "text": "Foshan Home Retail Co.已接受；由您记录",
-            "tone": "ok"
+            "text": "您记录了Foshan Home Retail Co.已接受，附对方的消息",
+            "tone": "ok",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [
           {
             "op_id": "buyer-yes-CMT-a78afaa5becb5273",
@@ -3679,6 +3891,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -3743,7 +3956,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "today",
@@ -3757,20 +3970,38 @@
           "terms": [
             "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "You sent Option A on 1 October 2026, in English",
+          "sent_text": "You marked Option A as sent on 1 October 2026, in English",
+          "provenance_text": "Source: recorded by you, with the buyer's message",
           "answer": "accepted",
           "tone": "ok",
-          "links": [],
+          "links": [
+            {
+              "label": "View receivable",
+              "href": "/receivables#RCV-A"
+            },
+            {
+              "label": "View customer",
+              "href": "/customers/BUYER-1"
+            }
+          ],
           "actions": null,
           "answered": {
             "day": 0,
             "when": "today",
             "date": "1 October 2026"
           },
-          "title_text": "Foshan Home Retail Co. accepted Option A on 1 October 2026",
-          "text": "The agreement is in force."
+          "title_text": "Buyer acceptance recorded",
+          "text": "You confirmed that Foshan Home Retail Co. accepted Option A on 1 October 2026.",
+          "evidence_quote": "Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.",
+          "status_text": "The agreement is in force.",
+          "consequences": [
+            "Foshan Home Retail Co. can settle ¥257,200.00 of the invoice by paying ¥255,013.80 by 3 October 2026.",
+            "The other ¥162,800.00 stays due on 2 November 2026.",
+            "No cash has been received yet; FLOW reconciles the payment when it arrives."
+          ],
+          "consequences_title_text": "What changes now"
         },
         "history": [
           {
@@ -3779,7 +4010,8 @@
             "date": "1 October 2026",
             "kind": "received",
             "text": "Foshan Home Retail Co. sent their request",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -3787,25 +4019,29 @@
             "date": "1 October 2026",
             "kind": "checked",
             "text": "FLOW checked it against your books",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "offered",
-            "text": "You sent Option A, open until 3 October 2026",
-            "tone": "waiting"
+            "text": "You marked Option A as sent, open until 3 October 2026",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "accepted",
-            "text": "Foshan Home Retail Co. accepted; you recorded it",
-            "tone": "ok"
+            "text": "You recorded that Foshan Home Retail Co. accepted, with their message",
+            "tone": "ok",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [
           {
             "op_id": "buyer-yes-CMT-a78afaa5becb5273",
@@ -4698,6 +4934,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -4762,7 +4999,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -4776,20 +5013,38 @@
           "terms": [
             "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "您于2026年10月1日以英文发出了方案 A",
+          "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
+          "provenance_text": "来源：由您记录，附买方的消息",
           "answer": "accepted",
           "tone": "ok",
-          "links": [],
+          "links": [
+            {
+              "label": "查看应收账款",
+              "href": "/receivables#RCV-A"
+            },
+            {
+              "label": "查看客户",
+              "href": "/customers/BUYER-1"
+            }
+          ],
           "actions": null,
           "answered": {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日"
           },
-          "title_text": "Foshan Home Retail Co.于2026年10月1日接受了方案 A",
-          "text": "协议已生效。"
+          "title_text": "已记录买方接受",
+          "text": "您确认Foshan Home Retail Co.已于2026年10月1日接受方案 A。",
+          "evidence_quote": "Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.",
+          "status_text": "协议已生效。",
+          "consequences": [
+            "Foshan Home Retail Co.可在2026年10月3日前支付 ¥255,013.80，结清发票中的 ¥257,200.00。",
+            "其余 ¥162,800.00 仍于2026年11月2日到期。",
+            "尚未收到任何款项；款项到账后 FLOW 会进行对账。"
+          ],
+          "consequences_title_text": "接下来的变化"
         },
         "history": [
           {
@@ -4798,7 +5053,8 @@
             "date": "2026年10月1日",
             "kind": "received",
             "text": "Foshan Home Retail Co.发来请求",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -4806,25 +5062,29 @@
             "date": "2026年10月1日",
             "kind": "checked",
             "text": "FLOW 已对照您的账目核查",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "offered",
-            "text": "您发出了方案 A，有效至2026年10月3日",
-            "tone": "waiting"
+            "text": "您将方案 A标记为已发送，有效至2026年10月3日",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "accepted",
-            "text": "Foshan Home Retail Co.已接受；由您记录",
-            "tone": "ok"
+            "text": "您记录了Foshan Home Retail Co.已接受，附对方的消息",
+            "tone": "ok",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [
           {
             "op_id": "buyer-yes-CMT-a78afaa5becb5273",
@@ -5719,6 +5979,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -5761,7 +6022,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "today",
@@ -5775,16 +6036,25 @@
           "terms": [
             "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "You sent Option A on 1 October 2026, in English",
+          "sent_text": "You marked Option A as sent on 1 October 2026, in English",
+          "provenance_text": "Marked sent by you · FLOW cannot confirm delivery",
           "answer": "declined",
           "tone": "neutral",
           "links": [
             {
-              "label": "Review funding in Cash",
-              "href": "/cash#cash-options",
+              "label": "Review your cash outlook",
+              "href": "/cash",
               "primary": true
+            },
+            {
+              "label": "View customer",
+              "href": "/customers/BUYER-1"
+            },
+            {
+              "label": "Back to Deals",
+              "href": "/deals"
             }
           ],
           "actions": null,
@@ -5793,10 +6063,10 @@
             "when": "today",
             "date": "1 October 2026"
           },
-          "title_text": "Foshan Home Retail Co. declined Option A on 1 October 2026",
+          "title_text": "No agreement was reached",
+          "text": "You recorded that Foshan Home Retail Co. declined Option A on 1 October 2026. Their invoice stays due on its existing terms; nothing was agreed, borrowed or moved.",
           "reason_code": "DISCOUNT_TOO_LOW",
-          "reason_text": "The discount was too low",
-          "text": "Nothing was agreed and no money moved."
+          "reason_text": "Reason, as you reported it: Discount too low"
         },
         "history": [
           {
@@ -5805,7 +6075,8 @@
             "date": "1 October 2026",
             "kind": "received",
             "text": "Foshan Home Retail Co. sent their request",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -5813,25 +6084,29 @@
             "date": "1 October 2026",
             "kind": "checked",
             "text": "FLOW checked it against your books",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "offered",
-            "text": "You sent Option A, open until 3 October 2026",
-            "tone": "waiting"
+            "text": "You marked Option A as sent, open until 3 October 2026",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "declined",
-            "text": "Foshan Home Retail Co. declined: the discount was too low",
-            "tone": "neutral"
+            "text": "You recorded that Foshan Home Retail Co. declined (discount too low)",
+            "tone": "neutral",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [],
         "execution": {
           "summary_text": "Nothing has been executed yet.",
@@ -5907,6 +6182,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -5949,7 +6225,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -5963,16 +6239,25 @@
           "terms": [
             "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "您于2026年10月1日以英文发出了方案 A",
+          "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
+          "provenance_text": "由您标记为已发送 · FLOW 无法确认对方已收到",
           "answer": "declined",
           "tone": "neutral",
           "links": [
             {
-              "label": "在现金页查看融资",
-              "href": "/cash#cash-options",
+              "label": "查看您的现金展望",
+              "href": "/cash",
               "primary": true
+            },
+            {
+              "label": "查看客户",
+              "href": "/customers/BUYER-1"
+            },
+            {
+              "label": "返回交易",
+              "href": "/deals"
             }
           ],
           "actions": null,
@@ -5981,10 +6266,10 @@
             "when": "今天",
             "date": "2026年10月1日"
           },
-          "title_text": "Foshan Home Retail Co.于2026年10月1日拒绝了方案 A",
+          "title_text": "未达成协议",
+          "text": "您记录了Foshan Home Retail Co.于2026年10月1日拒绝方案 A。其发票仍按原条款到期；未达成、借入或动用任何资金。",
           "reason_code": "DISCOUNT_TOO_LOW",
-          "reason_text": "折扣太低",
-          "text": "未达成任何协议，也未动用资金。"
+          "reason_text": "原因（由您报告）：折扣太低"
         },
         "history": [
           {
@@ -5993,7 +6278,8 @@
             "date": "2026年10月1日",
             "kind": "received",
             "text": "Foshan Home Retail Co.发来请求",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -6001,25 +6287,29 @@
             "date": "2026年10月1日",
             "kind": "checked",
             "text": "FLOW 已对照您的账目核查",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "offered",
-            "text": "您发出了方案 A，有效至2026年10月3日",
-            "tone": "waiting"
+            "text": "您将方案 A标记为已发送，有效至2026年10月3日",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "declined",
-            "text": "Foshan Home Retail Co.已拒绝：折扣太低",
-            "tone": "neutral"
+            "text": "您记录了Foshan Home Retail Co.已拒绝（折扣太低）",
+            "tone": "neutral",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [],
         "execution": {
           "summary_text": "尚未执行任何操作。",
@@ -6097,6 +6387,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -6139,7 +6430,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "today",
@@ -6153,16 +6444,25 @@
           "terms": [
             "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "You sent Option A on 1 October 2026, in English",
+          "sent_text": "You marked Option A as sent on 1 October 2026, in English",
+          "provenance_text": "Marked sent by you · FLOW cannot confirm delivery",
           "answer": "declined",
           "tone": "neutral",
           "links": [
             {
-              "label": "Review funding in Cash",
-              "href": "/cash#cash-options",
+              "label": "Review your cash outlook",
+              "href": "/cash",
               "primary": true
+            },
+            {
+              "label": "View customer",
+              "href": "/customers/BUYER-1"
+            },
+            {
+              "label": "Back to Deals",
+              "href": "/deals"
             }
           ],
           "actions": null,
@@ -6171,10 +6471,10 @@
             "when": "today",
             "date": "1 October 2026"
           },
-          "title_text": "Foshan Home Retail Co. declined Option A on 1 October 2026",
+          "title_text": "No agreement was reached",
+          "text": "You recorded that Foshan Home Retail Co. declined Option A on 1 October 2026. Their invoice stays due on its existing terms; nothing was agreed, borrowed or moved.",
           "reason_code": "DISCOUNT_TOO_LOW",
-          "reason_text": "The discount was too low",
-          "text": "Nothing was agreed and no money moved."
+          "reason_text": "Reason, as you reported it: Discount too low"
         },
         "history": [
           {
@@ -6183,7 +6483,8 @@
             "date": "1 October 2026",
             "kind": "received",
             "text": "Foshan Home Retail Co. sent their request",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -6191,25 +6492,29 @@
             "date": "1 October 2026",
             "kind": "checked",
             "text": "FLOW checked it against your books",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "offered",
-            "text": "You sent Option A, open until 3 October 2026",
-            "tone": "waiting"
+            "text": "You marked Option A as sent, open until 3 October 2026",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "declined",
-            "text": "Foshan Home Retail Co. declined: the discount was too low",
-            "tone": "neutral"
+            "text": "You recorded that Foshan Home Retail Co. declined (discount too low)",
+            "tone": "neutral",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [],
         "execution": {
           "summary_text": "Nothing has been executed yet.",
@@ -6856,6 +7161,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -6898,7 +7204,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -6912,16 +7218,25 @@
           "terms": [
             "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "您于2026年10月1日以英文发出了方案 A",
+          "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
+          "provenance_text": "由您标记为已发送 · FLOW 无法确认对方已收到",
           "answer": "declined",
           "tone": "neutral",
           "links": [
             {
-              "label": "在现金页查看融资",
-              "href": "/cash#cash-options",
+              "label": "查看您的现金展望",
+              "href": "/cash",
               "primary": true
+            },
+            {
+              "label": "查看客户",
+              "href": "/customers/BUYER-1"
+            },
+            {
+              "label": "返回交易",
+              "href": "/deals"
             }
           ],
           "actions": null,
@@ -6930,10 +7245,10 @@
             "when": "今天",
             "date": "2026年10月1日"
           },
-          "title_text": "Foshan Home Retail Co.于2026年10月1日拒绝了方案 A",
+          "title_text": "未达成协议",
+          "text": "您记录了Foshan Home Retail Co.于2026年10月1日拒绝方案 A。其发票仍按原条款到期；未达成、借入或动用任何资金。",
           "reason_code": "DISCOUNT_TOO_LOW",
-          "reason_text": "折扣太低",
-          "text": "未达成任何协议，也未动用资金。"
+          "reason_text": "原因（由您报告）：折扣太低"
         },
         "history": [
           {
@@ -6942,7 +7257,8 @@
             "date": "2026年10月1日",
             "kind": "received",
             "text": "Foshan Home Retail Co.发来请求",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -6950,25 +7266,29 @@
             "date": "2026年10月1日",
             "kind": "checked",
             "text": "FLOW 已对照您的账目核查",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "offered",
-            "text": "您发出了方案 A，有效至2026年10月3日",
-            "tone": "waiting"
+            "text": "您将方案 A标记为已发送，有效至2026年10月3日",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "declined",
-            "text": "Foshan Home Retail Co.已拒绝：折扣太低",
-            "tone": "neutral"
+            "text": "您记录了Foshan Home Retail Co.已拒绝（折扣太低）",
+            "tone": "neutral",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [],
         "execution": {
           "summary_text": "尚未执行任何操作。",
@@ -7567,6 +7887,676 @@
       }
     }
   },
+  "withdrawn": {
+    "en": {
+      "result": {
+        "decision": {
+          "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+          "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+          "lifecycle": "counter_ready",
+          "status_text": "Counter ready",
+          "id": "deal:OFF-f806f79b6c21",
+          "family": "DEAL",
+          "state": "RESPONSE_READY",
+          "state_text": "Counter recommended",
+          "state_tone": "warn",
+          "terminal": false,
+          "headline": "Offer from Foshan Home Retail Co.",
+          "counterparty_name": "Foshan Home Retail Co.",
+          "amount_display": null,
+          "opened_when": "today",
+          "updated_when": "today",
+          "waiting_for": {
+            "code": "OWNER_RESPONSE",
+            "party": "owner",
+            "party_name": null,
+            "day": null,
+            "when": null,
+            "text": "Waiting for your response."
+          },
+          "residual": null,
+          "source": {
+            "kind": "OFFER",
+            "offer_id": "OFF-f806f79b6c21",
+            "version": 1,
+            "counterparty_name": "Foshan Home Retail Co.",
+            "doc_ids": [
+              "EX01-msg"
+            ],
+            "received_day": 0,
+            "received_when": "today"
+          },
+          "interpretation": {
+            "terms": [
+              "The buyer may pay early and take 1.20% off the ¥420,000.00 invoice to Foshan Home Retail Co. (one time)",
+              "The buyer gets 60-day payment terms on future invoices (ongoing, no end date)",
+              "A rebate of 1.00% on purchases in the period if its conditions are met (one time)"
+            ]
+          },
+          "evaluation": {
+            "verdict_id": "VER-a899ca66120c",
+            "outcome": "REJECT",
+            "business_action": "counter",
+            "business_action_text": "Counter recommended",
+            "clarification": null,
+            "evaluated_day": 0,
+            "evaluated_when": "today"
+          },
+          "response": {
+            "counters": [
+              {
+                "id": "CTR-193394b6ba8b",
+                "label": "Option A",
+                "label_text": "Option A",
+                "supplier_cost_display": "¥3,027.77",
+                "forward_value_display": "¥0.00"
+              },
+              {
+                "id": "CTR-6b07cbf70441",
+                "label": "Option B",
+                "label_text": "Option B",
+                "supplier_cost_display": "¥0.00",
+                "forward_value_display": "¥0.00"
+              }
+            ],
+            "recommended_counter_id": "CTR-193394b6ba8b",
+            "sent": null,
+            "accepted_as_asked": null
+          },
+          "quote": null,
+          "authorization": null,
+          "agreement": null,
+          "outbound": null,
+          "history": [
+            {
+              "day": 0,
+              "when": "today",
+              "date": "1 October 2026",
+              "kind": "received",
+              "text": "Foshan Home Retail Co. sent their request",
+              "tone": "neutral",
+              "source": "buyer"
+            },
+            {
+              "day": 0,
+              "when": "today",
+              "date": "1 October 2026",
+              "kind": "checked",
+              "text": "FLOW checked it against your books",
+              "tone": "neutral",
+              "source": "flow"
+            },
+            {
+              "day": 0,
+              "when": "today",
+              "date": "1 October 2026",
+              "kind": "offered",
+              "text": "You marked Option A as sent, open until 3 October 2026",
+              "tone": "waiting",
+              "source": "owner"
+            },
+            {
+              "day": 0,
+              "when": "today",
+              "date": "1 October 2026",
+              "kind": "withdrawn",
+              "text": "You corrected it: Option A was not sent",
+              "tone": "neutral",
+              "source": "owner"
+            }
+          ],
+          "reply_to": null,
+          "operations": [],
+          "execution": {
+            "summary_text": "Nothing has been executed yet.",
+            "requested_fen": 0,
+            "requested_display": null,
+            "landed_fen": 0,
+            "landed_display": null,
+            "in_transit_fen": 0,
+            "in_transit_display": null
+          },
+          "settlement": [],
+          "receipts": [],
+          "promises": [],
+          "remaining_task": {
+            "text": "Waiting for your response.",
+            "code": "OWNER_RESPONSE",
+            "links": []
+          },
+          "recorded": {
+            "evaluated": true,
+            "sent": false,
+            "quoted": false
+          }
+        },
+        "status": "withdrawn",
+        "message_when": "Corrected: the message is not marked as sent. Nothing else changed."
+      },
+      "decision": {
+        "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+        "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+        "lifecycle": "counter_ready",
+        "status_text": "Counter ready",
+        "id": "deal:OFF-f806f79b6c21",
+        "family": "DEAL",
+        "state": "RESPONSE_READY",
+        "state_text": "Counter recommended",
+        "state_tone": "warn",
+        "terminal": false,
+        "headline": "Offer from Foshan Home Retail Co.",
+        "counterparty_name": "Foshan Home Retail Co.",
+        "amount_display": null,
+        "opened_when": "today",
+        "updated_when": "today",
+        "waiting_for": {
+          "code": "OWNER_RESPONSE",
+          "party": "owner",
+          "party_name": null,
+          "day": null,
+          "when": null,
+          "text": "Waiting for your response."
+        },
+        "residual": null,
+        "source": {
+          "kind": "OFFER",
+          "offer_id": "OFF-f806f79b6c21",
+          "version": 1,
+          "counterparty_name": "Foshan Home Retail Co.",
+          "doc_ids": [
+            "EX01-msg"
+          ],
+          "received_day": 0,
+          "received_when": "today"
+        },
+        "interpretation": {
+          "terms": [
+            "The buyer may pay early and take 1.20% off the ¥420,000.00 invoice to Foshan Home Retail Co. (one time)",
+            "The buyer gets 60-day payment terms on future invoices (ongoing, no end date)",
+            "A rebate of 1.00% on purchases in the period if its conditions are met (one time)"
+          ]
+        },
+        "evaluation": {
+          "verdict_id": "VER-a899ca66120c",
+          "outcome": "REJECT",
+          "business_action": "counter",
+          "business_action_text": "Counter recommended",
+          "clarification": null,
+          "evaluated_day": 0,
+          "evaluated_when": "today"
+        },
+        "response": {
+          "counters": [
+            {
+              "id": "CTR-193394b6ba8b",
+              "label": "Option A",
+              "label_text": "Option A",
+              "supplier_cost_display": "¥3,027.77",
+              "forward_value_display": "¥0.00"
+            },
+            {
+              "id": "CTR-6b07cbf70441",
+              "label": "Option B",
+              "label_text": "Option B",
+              "supplier_cost_display": "¥0.00",
+              "forward_value_display": "¥0.00"
+            }
+          ],
+          "recommended_counter_id": "CTR-193394b6ba8b",
+          "sent": null,
+          "accepted_as_asked": null
+        },
+        "quote": null,
+        "authorization": null,
+        "agreement": null,
+        "outbound": null,
+        "history": [
+          {
+            "day": 0,
+            "when": "today",
+            "date": "1 October 2026",
+            "kind": "received",
+            "text": "Foshan Home Retail Co. sent their request",
+            "tone": "neutral",
+            "source": "buyer"
+          },
+          {
+            "day": 0,
+            "when": "today",
+            "date": "1 October 2026",
+            "kind": "checked",
+            "text": "FLOW checked it against your books",
+            "tone": "neutral",
+            "source": "flow"
+          },
+          {
+            "day": 0,
+            "when": "today",
+            "date": "1 October 2026",
+            "kind": "offered",
+            "text": "You marked Option A as sent, open until 3 October 2026",
+            "tone": "waiting",
+            "source": "owner"
+          },
+          {
+            "day": 0,
+            "when": "today",
+            "date": "1 October 2026",
+            "kind": "withdrawn",
+            "text": "You corrected it: Option A was not sent",
+            "tone": "neutral",
+            "source": "owner"
+          }
+        ],
+        "reply_to": null,
+        "operations": [],
+        "execution": {
+          "summary_text": "Nothing has been executed yet.",
+          "requested_fen": 0,
+          "requested_display": null,
+          "landed_fen": 0,
+          "landed_display": null,
+          "in_transit_fen": 0,
+          "in_transit_display": null
+        },
+        "settlement": [],
+        "receipts": [],
+        "promises": [],
+        "remaining_task": {
+          "text": "Waiting for your response.",
+          "code": "OWNER_RESPONSE",
+          "links": []
+        },
+        "recorded": {
+          "evaluated": true,
+          "sent": false,
+          "quoted": false
+        },
+        "context": {
+          "customer": "BUYER-1",
+          "decision": "deal:OFF-f806f79b6c21",
+          "path": null,
+          "invoice": null,
+          "scenario": null,
+          "back": null,
+          "irrelevant_text": null
+        },
+        "lifecycle_stages": [
+          {
+            "key": "received",
+            "label": "Received",
+            "state": "done",
+            "state_text": "Done",
+            "when_text": "today"
+          },
+          {
+            "key": "analysed",
+            "label": "Analysed",
+            "state": "done",
+            "state_text": "Done",
+            "when_text": null
+          },
+          {
+            "key": "reply_ready",
+            "label": "Reply ready",
+            "state": "now",
+            "state_text": "Now",
+            "when_text": null
+          },
+          {
+            "key": "sent",
+            "label": "Sent",
+            "state": "todo",
+            "state_text": "Still to come",
+            "when_text": null
+          },
+          {
+            "key": "agreed",
+            "label": "Agreed",
+            "state": "todo",
+            "state_text": "Still to come",
+            "when_text": null
+          }
+        ],
+        "buyer_history_text": null,
+        "buyer_history_title": null
+      }
+    },
+    "zh": {
+      "result": {
+        "decision": {
+          "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+          "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · OFF-f806f79b6c21",
+          "lifecycle": "counter_ready",
+          "status_text": "还价已就绪",
+          "id": "deal:OFF-f806f79b6c21",
+          "family": "DEAL",
+          "state": "RESPONSE_READY",
+          "state_text": "建议还价",
+          "state_tone": "warn",
+          "terminal": false,
+          "headline": "来自Foshan Home Retail Co.的报价",
+          "counterparty_name": "Foshan Home Retail Co.",
+          "amount_display": null,
+          "opened_when": "今天",
+          "updated_when": "今天",
+          "waiting_for": {
+            "code": "OWNER_RESPONSE",
+            "party": "owner",
+            "party_name": null,
+            "day": null,
+            "when": null,
+            "text": "等待您的回复。"
+          },
+          "residual": null,
+          "source": {
+            "kind": "OFFER",
+            "offer_id": "OFF-f806f79b6c21",
+            "version": 1,
+            "counterparty_name": "Foshan Home Retail Co.",
+            "doc_ids": [
+              "EX01-msg"
+            ],
+            "received_day": 0,
+            "received_when": "今天"
+          },
+          "interpretation": {
+            "terms": [
+              "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票 减免 1.20%（一次性）",
+              "今后的发票 的账期改为 60 天（长期有效，无截止日）",
+              "满足条件时，本期采购 返利 1.00%（一次性）"
+            ]
+          },
+          "evaluation": {
+            "verdict_id": "VER-a899ca66120c",
+            "outcome": "REJECT",
+            "business_action": "counter",
+            "business_action_text": "建议还价",
+            "clarification": null,
+            "evaluated_day": 0,
+            "evaluated_when": "今天"
+          },
+          "response": {
+            "counters": [
+              {
+                "id": "CTR-193394b6ba8b",
+                "label": "Option A",
+                "label_text": "方案 A",
+                "supplier_cost_display": "¥3,027.77",
+                "forward_value_display": "¥0.00"
+              },
+              {
+                "id": "CTR-6b07cbf70441",
+                "label": "Option B",
+                "label_text": "方案 B",
+                "supplier_cost_display": "¥0.00",
+                "forward_value_display": "¥0.00"
+              }
+            ],
+            "recommended_counter_id": "CTR-193394b6ba8b",
+            "sent": null,
+            "accepted_as_asked": null
+          },
+          "quote": null,
+          "authorization": null,
+          "agreement": null,
+          "outbound": null,
+          "history": [
+            {
+              "day": 0,
+              "when": "今天",
+              "date": "2026年10月1日",
+              "kind": "received",
+              "text": "Foshan Home Retail Co.发来请求",
+              "tone": "neutral",
+              "source": "buyer"
+            },
+            {
+              "day": 0,
+              "when": "今天",
+              "date": "2026年10月1日",
+              "kind": "checked",
+              "text": "FLOW 已对照您的账目核查",
+              "tone": "neutral",
+              "source": "flow"
+            },
+            {
+              "day": 0,
+              "when": "今天",
+              "date": "2026年10月1日",
+              "kind": "offered",
+              "text": "您将方案 A标记为已发送，有效至2026年10月3日",
+              "tone": "waiting",
+              "source": "owner"
+            },
+            {
+              "day": 0,
+              "when": "今天",
+              "date": "2026年10月1日",
+              "kind": "withdrawn",
+              "text": "您已更正：方案 A并未发送",
+              "tone": "neutral",
+              "source": "owner"
+            }
+          ],
+          "reply_to": null,
+          "operations": [],
+          "execution": {
+            "summary_text": "尚未执行任何操作。",
+            "requested_fen": 0,
+            "requested_display": null,
+            "landed_fen": 0,
+            "landed_display": null,
+            "in_transit_fen": 0,
+            "in_transit_display": null
+          },
+          "settlement": [],
+          "receipts": [],
+          "promises": [],
+          "remaining_task": {
+            "text": "等待您的回复。",
+            "code": "OWNER_RESPONSE",
+            "links": []
+          },
+          "recorded": {
+            "evaluated": true,
+            "sent": false,
+            "quoted": false
+          }
+        },
+        "status": "withdrawn",
+        "message_when": "已更正：这条消息不再标记为已发送。其他均未改变。"
+      },
+      "decision": {
+        "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+        "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · OFF-f806f79b6c21",
+        "lifecycle": "counter_ready",
+        "status_text": "还价已就绪",
+        "id": "deal:OFF-f806f79b6c21",
+        "family": "DEAL",
+        "state": "RESPONSE_READY",
+        "state_text": "建议还价",
+        "state_tone": "warn",
+        "terminal": false,
+        "headline": "来自Foshan Home Retail Co.的报价",
+        "counterparty_name": "Foshan Home Retail Co.",
+        "amount_display": null,
+        "opened_when": "今天",
+        "updated_when": "今天",
+        "waiting_for": {
+          "code": "OWNER_RESPONSE",
+          "party": "owner",
+          "party_name": null,
+          "day": null,
+          "when": null,
+          "text": "等待您的回复。"
+        },
+        "residual": null,
+        "source": {
+          "kind": "OFFER",
+          "offer_id": "OFF-f806f79b6c21",
+          "version": 1,
+          "counterparty_name": "Foshan Home Retail Co.",
+          "doc_ids": [
+            "EX01-msg"
+          ],
+          "received_day": 0,
+          "received_when": "今天"
+        },
+        "interpretation": {
+          "terms": [
+            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票 减免 1.20%（一次性）",
+            "今后的发票 的账期改为 60 天（长期有效，无截止日）",
+            "满足条件时，本期采购 返利 1.00%（一次性）"
+          ]
+        },
+        "evaluation": {
+          "verdict_id": "VER-a899ca66120c",
+          "outcome": "REJECT",
+          "business_action": "counter",
+          "business_action_text": "建议还价",
+          "clarification": null,
+          "evaluated_day": 0,
+          "evaluated_when": "今天"
+        },
+        "response": {
+          "counters": [
+            {
+              "id": "CTR-193394b6ba8b",
+              "label": "Option A",
+              "label_text": "方案 A",
+              "supplier_cost_display": "¥3,027.77",
+              "forward_value_display": "¥0.00"
+            },
+            {
+              "id": "CTR-6b07cbf70441",
+              "label": "Option B",
+              "label_text": "方案 B",
+              "supplier_cost_display": "¥0.00",
+              "forward_value_display": "¥0.00"
+            }
+          ],
+          "recommended_counter_id": "CTR-193394b6ba8b",
+          "sent": null,
+          "accepted_as_asked": null
+        },
+        "quote": null,
+        "authorization": null,
+        "agreement": null,
+        "outbound": null,
+        "history": [
+          {
+            "day": 0,
+            "when": "今天",
+            "date": "2026年10月1日",
+            "kind": "received",
+            "text": "Foshan Home Retail Co.发来请求",
+            "tone": "neutral",
+            "source": "buyer"
+          },
+          {
+            "day": 0,
+            "when": "今天",
+            "date": "2026年10月1日",
+            "kind": "checked",
+            "text": "FLOW 已对照您的账目核查",
+            "tone": "neutral",
+            "source": "flow"
+          },
+          {
+            "day": 0,
+            "when": "今天",
+            "date": "2026年10月1日",
+            "kind": "offered",
+            "text": "您将方案 A标记为已发送，有效至2026年10月3日",
+            "tone": "waiting",
+            "source": "owner"
+          },
+          {
+            "day": 0,
+            "when": "今天",
+            "date": "2026年10月1日",
+            "kind": "withdrawn",
+            "text": "您已更正：方案 A并未发送",
+            "tone": "neutral",
+            "source": "owner"
+          }
+        ],
+        "reply_to": null,
+        "operations": [],
+        "execution": {
+          "summary_text": "尚未执行任何操作。",
+          "requested_fen": 0,
+          "requested_display": null,
+          "landed_fen": 0,
+          "landed_display": null,
+          "in_transit_fen": 0,
+          "in_transit_display": null
+        },
+        "settlement": [],
+        "receipts": [],
+        "promises": [],
+        "remaining_task": {
+          "text": "等待您的回复。",
+          "code": "OWNER_RESPONSE",
+          "links": []
+        },
+        "recorded": {
+          "evaluated": true,
+          "sent": false,
+          "quoted": false
+        },
+        "context": {
+          "customer": "BUYER-1",
+          "decision": "deal:OFF-f806f79b6c21",
+          "path": null,
+          "invoice": null,
+          "scenario": null,
+          "back": null,
+          "irrelevant_text": null
+        },
+        "lifecycle_stages": [
+          {
+            "key": "received",
+            "label": "已收到",
+            "state": "done",
+            "state_text": "已完成",
+            "when_text": "今天"
+          },
+          {
+            "key": "analysed",
+            "label": "已分析",
+            "state": "done",
+            "state_text": "已完成",
+            "when_text": null
+          },
+          {
+            "key": "reply_ready",
+            "label": "回复已就绪",
+            "state": "now",
+            "state_text": "进行中",
+            "when_text": null
+          },
+          {
+            "key": "sent",
+            "label": "已发送",
+            "state": "todo",
+            "state_text": "尚未开始",
+            "when_text": null
+          },
+          {
+            "key": "agreed",
+            "label": "已达成",
+            "state": "todo",
+            "state_text": "尚未开始",
+            "when_text": null
+          }
+        ],
+        "buyer_history_text": null,
+        "buyer_history_title": null
+      }
+    }
+  },
   "no_terms": {
     "en": {
       "code": "NO_TERMS_IN_REPLY",
@@ -7596,7 +8586,7 @@
           "reply-8a809ca33e2db84b"
         ],
         "received_day": 0,
-        "status": "ABSTAINED",
+        "status": "COMPILED",
         "obligations": [
           {
             "id": "OFF-3e92827af02f-O1",
@@ -7629,9 +8619,7 @@
               }
             ],
             "confidence": 0.9,
-            "unresolved": [
-              "scope"
-            ],
+            "unresolved": [],
             "rate_display": "1.20%"
           },
           {
@@ -7669,27 +8657,7 @@
             ]
           }
         ],
-        "abstentions": [
-          {
-            "field": "IMMEDIATE_DISCOUNT.base.receivable_id",
-            "reason": "unresolved scope: the discount names several invoices, so no single invoice can be bound; clarification needed, nothing booked",
-            "spans": [
-              {
-                "doc_id": "reply-8a809ca33e2db84b",
-                "start": 7,
-                "end": 67,
-                "text": "pay the 420,000 invoice early, but only with a 1.2% discount"
-              },
-              {
-                "doc_id": "reply-8a809ca33e2db84b",
-                "start": 104,
-                "end": 112,
-                "text": "invoices"
-              }
-            ],
-            "reason_when": "unresolved scope: the discount names several invoices, so no single invoice can be bound; clarification needed, nothing booked"
-          }
-        ],
+        "abstentions": [],
         "data_requests": [],
         "authority_claims": [],
         "funding_claims": [],
@@ -7697,9 +8665,6 @@
         "prompt_version": "offer-v4",
         "autonomy_eligible": false,
         "autonomy_notes": [
-          "the compilation is ABSTAINED, not clean",
-          "a term was not read (IMMEDIATE_DISCOUNT.base.receivable_id)",
-          "IMMEDIATE_DISCOUNT leaves scope unresolved",
           "TERMS_EXTENSION leaves current_terms_days unresolved",
           "reply-8a809ca33e2db84b holds a request beyond the extracted terms",
           "reply-8a809ca33e2db84b holds a other topic beyond the extracted terms",
@@ -7722,7 +8687,7 @@
           "reply-8a809ca33e2db84b"
         ],
         "received_day": 0,
-        "status": "ABSTAINED",
+        "status": "COMPILED",
         "obligations": [
           {
             "id": "OFF-3e92827af02f-O1",
@@ -7755,9 +8720,7 @@
               }
             ],
             "confidence": 0.9,
-            "unresolved": [
-              "scope"
-            ],
+            "unresolved": [],
             "rate_display": "1.20%"
           },
           {
@@ -7795,27 +8758,7 @@
             ]
           }
         ],
-        "abstentions": [
-          {
-            "field": "IMMEDIATE_DISCOUNT.base.receivable_id",
-            "reason": "unresolved scope: the discount names several invoices, so no single invoice can be bound; clarification needed, nothing booked",
-            "spans": [
-              {
-                "doc_id": "reply-8a809ca33e2db84b",
-                "start": 7,
-                "end": 67,
-                "text": "pay the 420,000 invoice early, but only with a 1.2% discount"
-              },
-              {
-                "doc_id": "reply-8a809ca33e2db84b",
-                "start": 104,
-                "end": 112,
-                "text": "invoices"
-              }
-            ],
-            "reason_when": "unresolved scope: the discount names several invoices, so no single invoice can be bound; clarification needed, nothing booked"
-          }
-        ],
+        "abstentions": [],
         "data_requests": [],
         "authority_claims": [],
         "funding_claims": [],
@@ -7823,9 +8766,6 @@
         "prompt_version": "offer-v4",
         "autonomy_eligible": false,
         "autonomy_notes": [
-          "the compilation is ABSTAINED, not clean",
-          "a term was not read (IMMEDIATE_DISCOUNT.base.receivable_id)",
-          "IMMEDIATE_DISCOUNT leaves scope unresolved",
           "TERMS_EXTENSION leaves current_terms_days unresolved",
           "reply-8a809ca33e2db84b holds a request beyond the extracted terms",
           "reply-8a809ca33e2db84b holds a other topic beyond the extracted terms",
@@ -7885,6 +8825,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -7927,7 +8868,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "today",
@@ -7941,16 +8882,21 @@
           "terms": [
             "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "You sent Option A on 1 October 2026, in English",
+          "sent_text": "You marked Option A as sent on 1 October 2026, in English",
+          "provenance_text": "Marked sent by you · FLOW cannot confirm delivery",
           "answer": "countered",
           "tone": "waiting",
           "links": [
             {
-              "label": "Answer their new request",
+              "label": "Evaluate their proposal",
               "href": "/deals?decision=deal:OFF-3e92827af02f",
               "primary": true
+            },
+            {
+              "label": "View customer",
+              "href": "/customers/BUYER-1"
             }
           ],
           "actions": null,
@@ -7959,9 +8905,26 @@
             "when": "today",
             "date": "1 October 2026"
           },
-          "title_text": "Foshan Home Retail Co. countered on 1 October 2026",
-          "text": "Their reply is a new request: FLOW checks it like any other.",
-          "reply_quote": "We can pay the 420,000 invoice early, but only with a 1.2% discount, and we need 60-day terms on future invoices."
+          "title_text": "Foshan Home Retail Co. proposed different terms on 1 October 2026",
+          "text": "You pasted their reply; FLOW reads it as the next request in this negotiation.",
+          "reply_quote": "We can pay the 420,000 invoice early, but only with a 1.2% discount, and we need 60-day terms on future invoices.",
+          "changes": [
+            {
+              "key": "payment_terms",
+              "label": "Payment terms",
+              "ours_text": "45 days",
+              "theirs_text": "60 days",
+              "changed": true
+            },
+            {
+              "key": "early_payment",
+              "label": "Early payment",
+              "ours_text": "0.85% off ¥257,200.00",
+              "theirs_text": "1.20% off ¥420,000.00",
+              "changed": true
+            }
+          ],
+          "reply_state_text": "FLOW has not evaluated their reply yet."
         },
         "history": [
           {
@@ -7970,7 +8933,8 @@
             "date": "1 October 2026",
             "kind": "received",
             "text": "Foshan Home Retail Co. sent their request",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -7978,25 +8942,29 @@
             "date": "1 October 2026",
             "kind": "checked",
             "text": "FLOW checked it against your books",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "offered",
-            "text": "You sent Option A, open until 3 October 2026",
-            "tone": "waiting"
+            "text": "You marked Option A as sent, open until 3 October 2026",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 0,
             "when": "today",
             "date": "1 October 2026",
             "kind": "countered",
-            "text": "Foshan Home Retail Co. countered with new terms",
-            "tone": "waiting"
+            "text": "Foshan Home Retail Co. proposed different terms; you pasted their reply",
+            "tone": "waiting",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [],
         "execution": {
           "summary_text": "Nothing has been executed yet.",
@@ -8441,7 +9409,7 @@
               "read_text": null,
               "headline_short": null,
               "headline_note": null,
-              "action_text": "The buyer needs to clarify first.",
+              "action_text": "FLOW has not read it yet.",
               "cost_display": null,
               "cost_window_text": null,
               "limit_fen": 500000,
@@ -8452,12 +9420,12 @@
                 {
                   "key": "received",
                   "label": "Received",
-                  "state": "done"
+                  "state": "now"
                 },
                 {
                   "key": "analysed",
                   "label": "Analysed",
-                  "state": "now"
+                  "state": "todo"
                 },
                 {
                   "key": "reply_ready",
@@ -8475,10 +9443,10 @@
                   "state": "todo"
                 }
               ],
-              "tone": "info"
+              "tone": "warn"
             },
-            "needs_you": false,
-            "needs_you_text": null
+            "needs_you": true,
+            "needs_you_text": "An offer is waiting for your reply"
           },
           {
             "counterparty_id": "BUYER-2",
@@ -8493,15 +9461,15 @@
         ],
         "queue": {
           "counts": {
-            "needs_you": 0,
-            "waiting": 1,
+            "needs_you": 1,
+            "waiting": 0,
             "agreements": 0,
             "customers": 2
           },
-          "headline_text": "A funding plan is ready. 1 waiting on others.",
+          "headline_text": "1 task needs you; a funding plan is ready.",
           "deals": {
-            "needs_you": 0,
-            "waiting": 1,
+            "needs_you": 1,
+            "waiting": 0,
             "agreements": 0,
             "closed": 0,
             "awaiting_payment": 0,
@@ -8519,22 +9487,21 @@
               "href": "/"
             }
           },
-          "needs_you": [],
-          "waiting": [
+          "needs_you": [
             {
-              "key": "buyer-reply:OFF-3e92827af02f",
-              "kind": "BUYER_REPLY",
-              "tier": "WAITING",
+              "key": "deal:OFF-3e92827af02f",
+              "kind": "DECISION",
+              "tier": "NEEDS_YOU",
               "customer_id": "BUYER-1",
               "customer_short": "Foshan",
               "subject_text": "Foshan · 60-day terms on future invoices and 1 more term",
               "subject_demo_text": "Foshan · 60-day terms on future invoices and 1 more term · OFF-3e92827af02f",
-              "lifecycle": "more_information",
+              "lifecycle": "owner_review",
               "topic_text": "Payment terms",
               "last_activity_day": 0,
               "last_activity_text": "today",
-              "status_text": "More information needed",
-              "consequence_text": "Asked today. Nothing to resend.",
+              "status_text": "Owner review needed",
+              "consequence_text": "FLOW has not read the offer yet, so its effect on your cash is not known.",
               "severity": "NORMAL",
               "deadline_day": null,
               "expected_day": null,
@@ -8547,6 +9514,7 @@
               "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-3e92827af02f"
             }
           ],
+          "waiting": [],
           "agreements": [],
           "needs_you_empty_text": "Nothing else needs you.",
           "waiting_empty_text": "Nothing is waiting on anyone else.",
@@ -8579,44 +9547,47 @@
           }
         },
         "counts": {
-          "needs_you": 0,
-          "waiting": 1,
+          "needs_you": 1,
+          "waiting": 0,
           "agreements": 0,
           "customers": 2
         },
-        "needs_you": [],
-        "needs_you_empty_text": "Nothing else needs you.",
-        "waiting": [
+        "needs_you": [
           {
-            "key": "buyer-reply:OFF-3e92827af02f",
-            "kind": "BUYER_REPLY",
+            "key": "deal:OFF-3e92827af02f",
+            "kind": "DECISION",
             "customer_id": "BUYER-1",
+            "customer_short": "Foshan",
             "subject_text": "Foshan · 60-day terms on future invoices and 1 more term",
             "subject_demo_text": "Foshan · 60-day terms on future invoices and 1 more term · OFF-3e92827af02f",
-            "lifecycle": "more_information",
+            "lifecycle": "owner_review",
             "topic_text": "Payment terms",
             "last_activity_day": 0,
             "last_activity_text": "today",
-            "status_text": "More information needed",
-            "consequence_text": "Asked today. Nothing to resend.",
-            "since_day": 0,
-            "expected_day": null,
-            "owner": "WAITING",
+            "status_text": "Owner review needed",
+            "consequence_text": "FLOW has not read the offer yet, so its effect on your cash is not known.",
+            "owner": "NEEDS_YOU",
             "severity": "NORMAL",
-            "href": "/?customer=BUYER-1"
+            "deadline_day": null,
+            "differentiator_text": null,
+            "why_first_text": "Why first: nothing here is urgent.",
+            "href": "/?customer=BUYER-1&deal=deal%3AOFF-3e92827af02f",
+            "is_new": false
           }
         ],
+        "needs_you_empty_text": "Nothing else needs you.",
+        "waiting": [],
         "customers": [
           {
             "customer_id": "BUYER-1",
             "short": "Foshan",
             "name": "Foshan Home Retail Co.",
             "negotiations_count": 1,
-            "needs_you_count": 0,
+            "needs_you_count": 1,
             "outstanding_display": "¥420,000",
             "share_text": "100% of what you are owed",
             "tone": "neutral",
-            "status_text": "1 open negotiation · 1 waiting",
+            "status_text": "1 open negotiation · 1 needs you",
             "detail_text": "¥420,000 outstanding · 100% of what you are owed",
             "href": "/?customer=BUYER-1"
           },
@@ -8639,13 +9610,13 @@
       "reply_decision": {
         "subject_text": "Foshan · 60-day terms on future invoices and 1 more term",
         "subject_demo_text": "Foshan · 60-day terms on future invoices and 1 more term · OFF-3e92827af02f",
-        "lifecycle": "more_information",
-        "status_text": "More information needed",
+        "lifecycle": "owner_review",
+        "status_text": "Owner review needed",
         "id": "deal:OFF-3e92827af02f",
         "family": "DEAL",
-        "state": "NEEDS_CLARIFICATION",
-        "state_text": "Needs clarification from the buyer",
-        "state_tone": "info",
+        "state": "RECEIVED",
+        "state_text": "Received; not evaluated yet",
+        "state_tone": "warn",
         "terminal": false,
         "headline": "Offer from Foshan Home Retail Co.",
         "counterparty_name": "Foshan Home Retail Co.",
@@ -8653,12 +9624,12 @@
         "opened_when": "today",
         "updated_when": "today",
         "waiting_for": {
-          "code": "BUYER_CLARIFICATION",
-          "party": "buyer",
-          "party_name": "Foshan Home Retail Co.",
+          "code": "OWNER_RESPONSE",
+          "party": "owner",
+          "party_name": null,
           "day": null,
           "when": null,
-          "text": "Waiting for Foshan Home Retail Co. to clarify the offer."
+          "text": "Waiting for your response."
         },
         "residual": null,
         "source": {
@@ -8691,9 +9662,18 @@
             "date": "1 October 2026",
             "kind": "received",
             "text": "Foshan Home Retail Co. sent their request",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           }
         ],
+        "reply_to": {
+          "decision_id": "deal:OFF-f806f79b6c21",
+          "href": "/deals?decision=deal:OFF-f806f79b6c21",
+          "title_text": "In reply to Option A you sent on 1 October 2026",
+          "terms": [
+            "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+          ]
+        },
         "operations": [],
         "execution": {
           "summary_text": "Nothing has been executed yet.",
@@ -8708,8 +9688,8 @@
         "receipts": [],
         "promises": [],
         "remaining_task": {
-          "text": "Waiting for Foshan Home Retail Co. to clarify the offer.",
-          "code": "BUYER_CLARIFICATION",
+          "text": "Waiting for your response.",
+          "code": "OWNER_RESPONSE",
           "links": []
         },
         "recorded": {
@@ -8730,20 +9710,20 @@
           {
             "key": "received",
             "label": "Received",
-            "state": "done",
-            "state_text": "Done",
-            "when_text": "today"
-          },
-          {
-            "key": "analysed",
-            "label": "Analysed",
             "state": "now",
             "state_text": "Now",
             "when_text": null
           },
           {
+            "key": "analysed",
+            "label": "Analysed",
+            "state": "todo",
+            "state_text": "Still to come",
+            "when_text": null
+          },
+          {
             "key": "reply_ready",
-            "label": "Reply ready",
+            "label": "Owner review needed",
             "state": "todo",
             "state_text": "Still to come",
             "when_text": null
@@ -8775,7 +9755,7 @@
             "reply-8a809ca33e2db84b"
           ],
           "received_day": 0,
-          "status": "ABSTAINED",
+          "status": "COMPILED",
           "obligations": [
             {
               "id": "OFF-3e92827af02f-O1",
@@ -8808,9 +9788,7 @@
                 }
               ],
               "confidence": 0.9,
-              "unresolved": [
-                "scope"
-              ],
+              "unresolved": [],
               "rate_display": "1.20%"
             },
             {
@@ -8848,27 +9826,7 @@
               ]
             }
           ],
-          "abstentions": [
-            {
-              "field": "IMMEDIATE_DISCOUNT.base.receivable_id",
-              "reason": "unresolved scope: the discount names several invoices, so no single invoice can be bound; clarification needed, nothing booked",
-              "spans": [
-                {
-                  "doc_id": "reply-8a809ca33e2db84b",
-                  "start": 7,
-                  "end": 67,
-                  "text": "pay the 420,000 invoice early, but only with a 1.2% discount"
-                },
-                {
-                  "doc_id": "reply-8a809ca33e2db84b",
-                  "start": 104,
-                  "end": 112,
-                  "text": "invoices"
-                }
-              ],
-              "reason_when": "unresolved scope: the discount names several invoices, so no single invoice can be bound; clarification needed, nothing booked"
-            }
-          ],
+          "abstentions": [],
           "data_requests": [],
           "authority_claims": [],
           "funding_claims": [],
@@ -8876,9 +9834,6 @@
           "prompt_version": "offer-v4",
           "autonomy_eligible": false,
           "autonomy_notes": [
-            "the compilation is ABSTAINED, not clean",
-            "a term was not read (IMMEDIATE_DISCOUNT.base.receivable_id)",
-            "IMMEDIATE_DISCOUNT leaves scope unresolved",
             "TERMS_EXTENSION leaves current_terms_days unresolved",
             "reply-8a809ca33e2db84b holds a request beyond the extracted terms",
             "reply-8a809ca33e2db84b holds a other topic beyond the extracted terms",
@@ -8961,6 +9916,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -9003,7 +9959,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "今天",
@@ -9017,16 +9973,21 @@
           "terms": [
             "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "您于2026年10月1日以英文发出了方案 A",
+          "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
+          "provenance_text": "由您标记为已发送 · FLOW 无法确认对方已收到",
           "answer": "countered",
           "tone": "waiting",
           "links": [
             {
-              "label": "答复对方的新请求",
+              "label": "评估对方的提议",
               "href": "/deals?decision=deal:OFF-3e92827af02f",
               "primary": true
+            },
+            {
+              "label": "查看客户",
+              "href": "/customers/BUYER-1"
             }
           ],
           "actions": null,
@@ -9035,9 +9996,26 @@
             "when": "今天",
             "date": "2026年10月1日"
           },
-          "title_text": "Foshan Home Retail Co.于2026年10月1日提出还价",
-          "text": "对方的回复是一项新请求：FLOW 会像其他请求一样核查。",
-          "reply_quote": "We can pay the 420,000 invoice early, but only with a 1.2% discount, and we need 60-day terms on future invoices."
+          "title_text": "Foshan Home Retail Co.于2026年10月1日提出了不同条款",
+          "text": "您粘贴了对方的回复；FLOW 将其作为本次谈判中的下一项请求读取。",
+          "reply_quote": "We can pay the 420,000 invoice early, but only with a 1.2% discount, and we need 60-day terms on future invoices.",
+          "changes": [
+            {
+              "key": "payment_terms",
+              "label": "账期",
+              "ours_text": "45 天",
+              "theirs_text": "60 天",
+              "changed": true
+            },
+            {
+              "key": "early_payment",
+              "label": "提前付款",
+              "ours_text": "¥257,200.00 减免 0.85%",
+              "theirs_text": "¥420,000.00 减免 1.20%",
+              "changed": true
+            }
+          ],
+          "reply_state_text": "FLOW 尚未评估对方的回复。"
         },
         "history": [
           {
@@ -9046,7 +10024,8 @@
             "date": "2026年10月1日",
             "kind": "received",
             "text": "Foshan Home Retail Co.发来请求",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -9054,25 +10033,29 @@
             "date": "2026年10月1日",
             "kind": "checked",
             "text": "FLOW 已对照您的账目核查",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "offered",
-            "text": "您发出了方案 A，有效至2026年10月3日",
-            "tone": "waiting"
+            "text": "您将方案 A标记为已发送，有效至2026年10月3日",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 0,
             "when": "今天",
             "date": "2026年10月1日",
             "kind": "countered",
-            "text": "Foshan Home Retail Co.以新条款还价",
-            "tone": "waiting"
+            "text": "Foshan Home Retail Co.提出了不同条款；由您粘贴其回复",
+            "tone": "waiting",
+            "source": "owner"
           }
         ],
+        "reply_to": null,
         "operations": [],
         "execution": {
           "summary_text": "尚未执行任何操作。",
@@ -9517,7 +10500,7 @@
               "read_text": null,
               "headline_short": null,
               "headline_note": null,
-              "action_text": "需要买方先澄清。",
+              "action_text": "FLOW 尚未读取。",
               "cost_display": null,
               "cost_window_text": null,
               "limit_fen": 500000,
@@ -9528,12 +10511,12 @@
                 {
                   "key": "received",
                   "label": "已收到",
-                  "state": "done"
+                  "state": "now"
                 },
                 {
                   "key": "analysed",
                   "label": "已分析",
-                  "state": "now"
+                  "state": "todo"
                 },
                 {
                   "key": "reply_ready",
@@ -9551,10 +10534,10 @@
                   "state": "todo"
                 }
               ],
-              "tone": "info"
+              "tone": "warn"
             },
-            "needs_you": false,
-            "needs_you_text": null
+            "needs_you": true,
+            "needs_you_text": "有一份报价等待您答复"
           },
           {
             "counterparty_id": "BUYER-2",
@@ -9569,15 +10552,15 @@
         ],
         "queue": {
           "counts": {
-            "needs_you": 0,
-            "waiting": 1,
+            "needs_you": 1,
+            "waiting": 0,
             "agreements": 0,
             "customers": 2
           },
-          "headline_text": "一项融资方案已准备好。1 项在等待他人。",
+          "headline_text": "1 项任务需要您处理；一项融资方案已准备好。",
           "deals": {
-            "needs_you": 0,
-            "waiting": 1,
+            "needs_you": 1,
+            "waiting": 0,
             "agreements": 0,
             "closed": 0,
             "awaiting_payment": 0,
@@ -9595,22 +10578,21 @@
               "href": "/"
             }
           },
-          "needs_you": [],
-          "waiting": [
+          "needs_you": [
             {
-              "key": "buyer-reply:OFF-3e92827af02f",
-              "kind": "BUYER_REPLY",
-              "tier": "WAITING",
+              "key": "deal:OFF-3e92827af02f",
+              "kind": "DECISION",
+              "tier": "NEEDS_YOU",
               "customer_id": "BUYER-1",
               "customer_short": "Foshan",
               "subject_text": "Foshan · 60 天账期（今后的发票），另有 1 项条款",
               "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 1 项条款 · OFF-3e92827af02f",
-              "lifecycle": "more_information",
+              "lifecycle": "owner_review",
               "topic_text": "付款账期",
               "last_activity_day": 0,
               "last_activity_text": "今天",
-              "status_text": "需要更多信息",
-              "consequence_text": "今天提出。无需重新发送。",
+              "status_text": "需要您审核",
+              "consequence_text": "FLOW 尚未读取这份报价，所以还不知道它对现金的影响。",
               "severity": "NORMAL",
               "deadline_day": null,
               "expected_day": null,
@@ -9623,6 +10605,7 @@
               "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-3e92827af02f"
             }
           ],
+          "waiting": [],
           "agreements": [],
           "needs_you_empty_text": "没有其他事项需要您处理。",
           "waiting_empty_text": "目前没有在等待他人的事项。",
@@ -9655,44 +10638,47 @@
           }
         },
         "counts": {
-          "needs_you": 0,
-          "waiting": 1,
+          "needs_you": 1,
+          "waiting": 0,
           "agreements": 0,
           "customers": 2
         },
-        "needs_you": [],
-        "needs_you_empty_text": "没有其他事项需要您处理。",
-        "waiting": [
+        "needs_you": [
           {
-            "key": "buyer-reply:OFF-3e92827af02f",
-            "kind": "BUYER_REPLY",
+            "key": "deal:OFF-3e92827af02f",
+            "kind": "DECISION",
             "customer_id": "BUYER-1",
+            "customer_short": "Foshan",
             "subject_text": "Foshan · 60 天账期（今后的发票），另有 1 项条款",
             "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 1 项条款 · OFF-3e92827af02f",
-            "lifecycle": "more_information",
+            "lifecycle": "owner_review",
             "topic_text": "付款账期",
             "last_activity_day": 0,
             "last_activity_text": "今天",
-            "status_text": "需要更多信息",
-            "consequence_text": "今天提出。无需重新发送。",
-            "since_day": 0,
-            "expected_day": null,
-            "owner": "WAITING",
+            "status_text": "需要您审核",
+            "consequence_text": "FLOW 尚未读取这份报价，所以还不知道它对现金的影响。",
+            "owner": "NEEDS_YOU",
             "severity": "NORMAL",
-            "href": "/?customer=BUYER-1"
+            "deadline_day": null,
+            "differentiator_text": null,
+            "why_first_text": "优先处理的原因：这里没有紧急事项。",
+            "href": "/?customer=BUYER-1&deal=deal%3AOFF-3e92827af02f",
+            "is_new": false
           }
         ],
+        "needs_you_empty_text": "没有其他事项需要您处理。",
+        "waiting": [],
         "customers": [
           {
             "customer_id": "BUYER-1",
             "short": "Foshan",
             "name": "Foshan Home Retail Co.",
             "negotiations_count": 1,
-            "needs_you_count": 0,
+            "needs_you_count": 1,
             "outstanding_display": "¥420,000",
             "share_text": "占您应收款的 100%",
             "tone": "neutral",
-            "status_text": "1 项进行中的谈判 · 1 项在等待",
+            "status_text": "1 项进行中的谈判 · 1 项需要您处理",
             "detail_text": "未收 ¥420,000 · 占您应收款的 100%",
             "href": "/?customer=BUYER-1"
           },
@@ -9715,13 +10701,13 @@
       "reply_decision": {
         "subject_text": "Foshan · 60 天账期（今后的发票），另有 1 项条款",
         "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 1 项条款 · OFF-3e92827af02f",
-        "lifecycle": "more_information",
-        "status_text": "需要更多信息",
+        "lifecycle": "owner_review",
+        "status_text": "需要您审核",
         "id": "deal:OFF-3e92827af02f",
         "family": "DEAL",
-        "state": "NEEDS_CLARIFICATION",
-        "state_text": "需要买方澄清",
-        "state_tone": "info",
+        "state": "RECEIVED",
+        "state_text": "已收到，尚未评估",
+        "state_tone": "warn",
         "terminal": false,
         "headline": "来自Foshan Home Retail Co.的报价",
         "counterparty_name": "Foshan Home Retail Co.",
@@ -9729,12 +10715,12 @@
         "opened_when": "今天",
         "updated_when": "今天",
         "waiting_for": {
-          "code": "BUYER_CLARIFICATION",
-          "party": "buyer",
-          "party_name": "Foshan Home Retail Co.",
+          "code": "OWNER_RESPONSE",
+          "party": "owner",
+          "party_name": null,
           "day": null,
           "when": null,
-          "text": "等待Foshan Home Retail Co.澄清报价。"
+          "text": "等待您的回复。"
         },
         "residual": null,
         "source": {
@@ -9767,9 +10753,18 @@
             "date": "2026年10月1日",
             "kind": "received",
             "text": "Foshan Home Retail Co.发来请求",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           }
         ],
+        "reply_to": {
+          "decision_id": "deal:OFF-f806f79b6c21",
+          "href": "/deals?decision=deal:OFF-f806f79b6c21",
+          "title_text": "回复您于2026年10月1日发出的方案 A",
+          "terms": [
+            "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+          ]
+        },
         "operations": [],
         "execution": {
           "summary_text": "尚未执行任何操作。",
@@ -9784,8 +10779,8 @@
         "receipts": [],
         "promises": [],
         "remaining_task": {
-          "text": "等待Foshan Home Retail Co.澄清报价。",
-          "code": "BUYER_CLARIFICATION",
+          "text": "等待您的回复。",
+          "code": "OWNER_RESPONSE",
           "links": []
         },
         "recorded": {
@@ -9806,20 +10801,20 @@
           {
             "key": "received",
             "label": "已收到",
-            "state": "done",
-            "state_text": "已完成",
-            "when_text": "今天"
-          },
-          {
-            "key": "analysed",
-            "label": "已分析",
             "state": "now",
             "state_text": "进行中",
             "when_text": null
           },
           {
+            "key": "analysed",
+            "label": "已分析",
+            "state": "todo",
+            "state_text": "尚未开始",
+            "when_text": null
+          },
+          {
             "key": "reply_ready",
-            "label": "回复已就绪",
+            "label": "需要您审核",
             "state": "todo",
             "state_text": "尚未开始",
             "when_text": null
@@ -9851,7 +10846,7 @@
             "reply-8a809ca33e2db84b"
           ],
           "received_day": 0,
-          "status": "ABSTAINED",
+          "status": "COMPILED",
           "obligations": [
             {
               "id": "OFF-3e92827af02f-O1",
@@ -9884,9 +10879,7 @@
                 }
               ],
               "confidence": 0.9,
-              "unresolved": [
-                "scope"
-              ],
+              "unresolved": [],
               "rate_display": "1.20%"
             },
             {
@@ -9924,27 +10917,7 @@
               ]
             }
           ],
-          "abstentions": [
-            {
-              "field": "IMMEDIATE_DISCOUNT.base.receivable_id",
-              "reason": "unresolved scope: the discount names several invoices, so no single invoice can be bound; clarification needed, nothing booked",
-              "spans": [
-                {
-                  "doc_id": "reply-8a809ca33e2db84b",
-                  "start": 7,
-                  "end": 67,
-                  "text": "pay the 420,000 invoice early, but only with a 1.2% discount"
-                },
-                {
-                  "doc_id": "reply-8a809ca33e2db84b",
-                  "start": 104,
-                  "end": 112,
-                  "text": "invoices"
-                }
-              ],
-              "reason_when": "unresolved scope: the discount names several invoices, so no single invoice can be bound; clarification needed, nothing booked"
-            }
-          ],
+          "abstentions": [],
           "data_requests": [],
           "authority_claims": [],
           "funding_claims": [],
@@ -9952,9 +10925,6 @@
           "prompt_version": "offer-v4",
           "autonomy_eligible": false,
           "autonomy_notes": [
-            "the compilation is ABSTAINED, not clean",
-            "a term was not read (IMMEDIATE_DISCOUNT.base.receivable_id)",
-            "IMMEDIATE_DISCOUNT leaves scope unresolved",
             "TERMS_EXTENSION leaves current_terms_days unresolved",
             "reply-8a809ca33e2db84b holds a request beyond the extracted terms",
             "reply-8a809ca33e2db84b holds a other topic beyond the extracted terms",
@@ -10039,6 +11009,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "3 days ago"
         },
@@ -10081,7 +11052,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "Option A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "3 days ago",
@@ -10095,16 +11066,25 @@
           "terms": [
             "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective yesterday; one time)"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "You sent Option A on 1 October 2026, in English",
+          "sent_text": "You marked Option A as sent on 1 October 2026, in English",
+          "provenance_text": "Marked sent by you · FLOW cannot confirm delivery",
           "answer": "no_answer",
           "tone": "neutral",
           "links": [
             {
-              "label": "Review funding in Cash",
-              "href": "/cash#cash-options",
+              "label": "Review your cash outlook",
+              "href": "/cash",
               "primary": true
+            },
+            {
+              "label": "View customer",
+              "href": "/customers/BUYER-1"
+            },
+            {
+              "label": "Back to Deals",
+              "href": "/deals"
             }
           ],
           "actions": null,
@@ -10113,8 +11093,8 @@
             "when": "yesterday",
             "date": "3 October 2026"
           },
-          "title_text": "No answer by 3 October 2026",
-          "text": "The offer closed on its own. Nothing was agreed and no money moved."
+          "title_text": "No response by 3 October 2026",
+          "text": "The offer expired with no agreement. Their invoice stays due on its existing terms; no money moved."
         },
         "history": [
           {
@@ -10123,7 +11103,8 @@
             "date": "1 October 2026",
             "kind": "received",
             "text": "Foshan Home Retail Co. sent their request",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -10131,25 +11112,29 @@
             "date": "1 October 2026",
             "kind": "checked",
             "text": "FLOW checked it against your books",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "3 days ago",
             "date": "1 October 2026",
             "kind": "offered",
-            "text": "You sent Option A, open until 3 October 2026",
-            "tone": "waiting"
+            "text": "You marked Option A as sent, open until 3 October 2026",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 2,
             "when": "yesterday",
             "date": "3 October 2026",
             "kind": "no_answer",
-            "text": "No answer by 3 October 2026; the offer closed",
-            "tone": "neutral"
+            "text": "No response by 3 October 2026; the offer expired",
+            "tone": "neutral",
+            "source": "flow"
           }
         ],
+        "reply_to": null,
         "operations": [],
         "execution": {
           "summary_text": "Nothing has been executed yet.",
@@ -10767,6 +11752,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "3 天前"
         },
@@ -10809,7 +11795,7 @@
           "verdict_id": "VER-a899ca66120c",
           "label_text": "方案 A",
           "lang": "en",
-          "message_hash": "3d6d75a368e378d5c9a113e9889acdde4efa4f7cb87ceafdfa92f9d6f4744ab5",
+          "message_hash": "193b16cf6021640b145d4fa2a8f71f7af3fcece3c5582826ed24a03aaaf93605",
           "sent": {
             "day": 0,
             "when": "3 天前",
@@ -10823,16 +11809,25 @@
           "terms": [
             "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（昨天生效；一次性）"
           ],
-          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\nEarly payment of the ¥420,000 invoice issued on 18 September 2026: if you pay up to ¥257,200 of it on or before 3 October 2026, we will accept that payment less a 0.85% discount.\n\nEverything else stays as it is. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
+          "message_text": "Dear Foshan Home Retail Co.,\n\nThank you for your request. We can offer the following:\n\n1. Early payment of the ¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026: we will accept early settlement of up to ¥257,200 of it at a 0.85% discount if paid on or before 3 October 2026. Paying ¥255,013.80 by then settles ¥257,200 of the invoice. Any amount not settled early, including the other ¥162,800, stays due on 2 November 2026 under the existing terms.\n2. Payment terms on future invoices stay at 45 days.\n3. We are not able to offer the rebate you asked for.\n\nNo other terms change. This offer is open until 3 October 2026. Please reply to confirm.\n\nKind regards",
           "message_same": true,
-          "sent_text": "您于2026年10月1日以英文发出了方案 A",
+          "sent_text": "您于2026年10月1日将方案 A标记为已发送（英文）",
+          "provenance_text": "由您标记为已发送 · FLOW 无法确认对方已收到",
           "answer": "no_answer",
           "tone": "neutral",
           "links": [
             {
-              "label": "在现金页查看融资",
-              "href": "/cash#cash-options",
+              "label": "查看您的现金展望",
+              "href": "/cash",
               "primary": true
+            },
+            {
+              "label": "查看客户",
+              "href": "/customers/BUYER-1"
+            },
+            {
+              "label": "返回交易",
+              "href": "/deals"
             }
           ],
           "actions": null,
@@ -10842,7 +11837,7 @@
             "date": "2026年10月3日"
           },
           "title_text": "截至2026年10月3日未获答复",
-          "text": "报价已自动关闭。未达成任何协议，也未动用资金。"
+          "text": "报价已到期，未达成协议。其发票仍按原条款到期；未动用任何资金。"
         },
         "history": [
           {
@@ -10851,7 +11846,8 @@
             "date": "2026年10月1日",
             "kind": "received",
             "text": "Foshan Home Retail Co.发来请求",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "buyer"
           },
           {
             "day": 0,
@@ -10859,25 +11855,29 @@
             "date": "2026年10月1日",
             "kind": "checked",
             "text": "FLOW 已对照您的账目核查",
-            "tone": "neutral"
+            "tone": "neutral",
+            "source": "flow"
           },
           {
             "day": 0,
             "when": "3 天前",
             "date": "2026年10月1日",
             "kind": "offered",
-            "text": "您发出了方案 A，有效至2026年10月3日",
-            "tone": "waiting"
+            "text": "您将方案 A标记为已发送，有效至2026年10月3日",
+            "tone": "waiting",
+            "source": "owner"
           },
           {
             "day": 2,
             "when": "昨天",
             "date": "2026年10月3日",
             "kind": "no_answer",
-            "text": "截至2026年10月3日未获答复；报价已关闭",
-            "tone": "neutral"
+            "text": "截至2026年10月3日未获答复；报价已到期",
+            "tone": "neutral",
+            "source": "flow"
           }
         ],
+        "reply_to": null,
         "operations": [],
         "execution": {
           "summary_text": "尚未执行任何操作。",

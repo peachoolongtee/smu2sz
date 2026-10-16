@@ -197,6 +197,8 @@ interface Store {
   securityScene: boolean;
   /** The message sent outside FLOW: where its walk stands (absent until the owner marks one sent). */
   buyerMessage?: buyerMessage.BuyerMessageStage | null;
+  /** A mark was withdrawn ("marked sent by mistake"): the counter-ready record keeps both events. */
+  messageWithdrawn?: boolean;
 }
 
 const emptyStore = (): Store => ({
@@ -693,9 +695,11 @@ async function decisionContextNow(): Promise<decisions.DecisionContext> {
   const m = await messageStage();
   if (m) ctx.recorded = buyerMessage.recordedDecisions(m.rec, m.at, m.stage);
   else if (openOfferStage() === "evaluated") {
-    // The package offer read and not answered: the message recording's read of the same moment, which carries the deal's history (the same record as decisions.json's `ready.ex01` otherwise).
+    // The package offer read and not answered: the message recording's read of the same moment, which carries the deal's history (the same record as decisions.json's `ready.ex01` otherwise);
+    // after a mark withdrawn, the record that keeps both events.
     const rec = await buyerMessage.buyerMessageRecording();
-    ctx.recorded = { [rec.ready.en.id]: rec.ready };
+    const read = load().messageWithdrawn ? { en: rec.withdrawn.en.decision, zh: rec.withdrawn.zh.decision } : rec.ready;
+    ctx.recorded = { [read.en.id]: read };
   }
   return ctx;
 }
@@ -905,10 +909,7 @@ export async function buyerAccepted(offerId: string, counterId: string, req: Buy
   return rec.buyer_accepted[getLang()];
 }
 
-/**
- * POST .../offered/withdraw: the owner marked it sent by mistake. The mock holds no recording of it until the server serves the route (round three); the walk is undone and the deal reads
- * as a counter ready again, from the recording of that moment.
- */
+/** POST .../offered/withdraw: the owner marked it sent by mistake. The walk is undone and the deal reads as a counter ready again, its record the recording after the withdraw. */
 export async function withdrawOffered(offerId: string, counterId: string, req: WithdrawRequest): Promise<WithdrawResult> {
   void req;
   await delay();
@@ -916,8 +917,9 @@ export async function withdrawOffered(offerId: string, counterId: string, req: W
   const rec = await buyerMessage.buyerMessageRecording();
   const s = load();
   s.buyerMessage = null;
+  s.messageWithdrawn = true;
   save();
-  return { decision: rec.ready[getLang()] };
+  return rec.withdrawn[getLang()].result;
 }
 
 /** POST .../buyer-declined: the buyer's no (the recording of the walked reply, declined with a reason; the reason on screen is the recording's). Refused once the offer has closed. */

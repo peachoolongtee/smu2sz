@@ -58,6 +58,14 @@ test("the recording holds together: the message marked sent is the one shown, ev
     assert.equal(rec.replied[lang].reply_decision.id, rec.buyer_reply[lang].reply_decision_id);
     for (const refusal of ["message_changed", "no_terms", "no_simulated_buyer", "offer_sent_outside", "offer_expired"]) assert.ok(rec[refusal][lang].message_when, `${refusal} ${lang} carries the server's sentence`);
   }
+  for (const lang of ["en", "zh"]) {
+    assert.equal(rec.withdrawn[lang].result.status, "withdrawn");
+    assert.ok(rec.withdrawn[lang].result.message_when);
+    assert.equal(rec.withdrawn[lang].decision.state, "RESPONSE_READY", "a mark withdrawn is a counter ready again");
+    const kinds = rec.withdrawn[lang].decision.history.map((h) => h.kind);
+    assert.ok(kinds.includes("offered") && kinds.includes("withdrawn"), "the history keeps the mark beside the correction");
+    assert.ok(rec.accepted[lang].decision.outbound.evidence_quote, "the buyer's message pasted as evidence");
+  }
   assert.equal(rec.offer_sent_outside.en.code, "OFFER_SENT_OUTSIDE");
   assert.equal(rec.offer_expired.en.code, "OFFER_EXPIRED");
   assert.ok(rec.no_answer.en.decision.history.some((h) => h.kind === "no_answer"));

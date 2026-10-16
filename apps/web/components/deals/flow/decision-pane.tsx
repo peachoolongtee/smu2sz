@@ -18,7 +18,7 @@ import { useMode } from "@/lib/mode";
 import type { DecisionView, NegotiationView, OfferedResult, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
 import { AcceptBlock, type AcceptOutcome } from "./accept-block";
 import { HistoryStrip } from "./deal-history";
-import { arrivalText, EndingStep, reviewRows, StepHeading, TermSentences, TermsRows, WaitingStep, Workspace } from "./workspace";
+import { arrivalText, EndingStep, reviewRows, StepHeading, TermSentences, TermsRows, Timeline, WaitingStep, Workspace } from "./workspace";
 import { paneStatus, tabsOf, viewIn, type DealViewKey } from "./deal-model";
 import { quietLink } from "./flow-parts";
 import { CashTab } from "./cash-tab";
@@ -257,6 +257,8 @@ export function DecisionPane({
   const [outcome, setOutcome] = useState<AcceptOutcome | null>(null);
   // The message to the buyer marked sent: the server's answer, kept beside the record that moved on (what came of it is the record's `outbound`).
   const [marked, setMarked] = useState<OfferedResult | null>(null);
+  // A mark withdrawn ("I marked it sent by mistake"): the server's sentence, said on the counter-ready deal it returns to.
+  const [withdrawn, setWithdrawn] = useState<string | null>(null);
   // A buyer's reply pasted on the deal it answered: that deal's sentence, said here on the reply's own deal.
   const [arrived] = useState(() => arrivalText(decision));
   const [openedState, setOpenedState] = useState<string | null>(null);
@@ -521,7 +523,16 @@ export function DecisionPane({
         {waitsOnApproval ? <div className="mt-4">{approvalsButton}</div> : null}
       </>
     ) : awaitingBuyer && outbound ? (
-      <WaitingStep offerId={offer.offer.offer_id} outbound={outbound} marked={marked?.message_when ?? null} onBusy={setBusyBoth} />
+      <WaitingStep
+        offerId={offer.offer.offer_id}
+        outbound={outbound}
+        marked={marked?.message_when ?? null}
+        onWithdrawn={(text) => {
+          setMarked(null);
+          setWithdrawn(text);
+        }}
+        onBusy={setBusyBoth}
+      />
     ) : clarifying ? (
       <div className="space-y-3" data-testid="deal-clarify">
         <StepHeading testId="deal-clarify-title">{record.waiting_for?.text ?? t("biz.deals.cannotEvaluate")}</StepHeading>
@@ -648,6 +659,11 @@ export function DecisionPane({
                 </Link>
               </p>
             ) : null}
+            {withdrawn ? (
+              <p role="status" className="flow-card px-5 py-3 text-[15px] text-ink sm:px-7" data-testid="deal-withdrawn">
+                {withdrawn}
+              </p>
+            ) : null}
             {sent ? <SendResult n={sent} /> : null}
             {outcome ? <AcceptResult outcome={outcome} /> : null}
             {abstentions}
@@ -695,6 +711,12 @@ export function DecisionPane({
                 ) : null
               }
             />
+            {/* The deal's one timeline, in this state too (a mark withdrawn stays on it beside the correction). */}
+            {record?.history?.length ? (
+              <div className="rounded-[24px] bg-card px-5 py-5 shadow-(--shadow-f) sm:px-7 sm:py-6">
+                <Timeline entries={record.history} />
+              </div>
+            ) : null}
             {sectionNav(
               tabs.filter((k) => k !== "overview"),
               lastItem,

@@ -129,6 +129,8 @@ test("day 34 without the receipt: the line and the agreements card say the early
   const deal = await checked(page);
   await openReview(page);
   await sendCounter(page.locator("#counters"));
+  // The send has landed (the deal is agreed) before the clock moves.
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await advanceTo(page, 34);
   await page.goto(deal);
   const steps = page.getByTestId("deal-state-chip");

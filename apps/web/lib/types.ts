@@ -1076,6 +1076,10 @@ export interface BuyerMessageView {
   channel?: { kind: "manual" | string; label: string; text: string | null } | null;
   /** Round three: whose authority the reply goes out under ("Within your mandate…"). */
   authority_text?: string | null;
+  /** Round three: the copy's outcome and the way out, in the page's language. */
+  copied_text?: string;
+  copy_failed_text?: string;
+  back_label?: string;
   offered: { recorded: true; lang: "en" | "zh"; message_hash: string; valid_until_day: Day; valid_until_when: string; same_message: boolean } | null;
   notice_text: string;
   copy_label: string;
@@ -1094,8 +1098,10 @@ export interface OutboundReview {
   authority: string | null;
   authority_text: string | null;
   needs_owner: boolean | null;
-  /** What is funded if the buyer refuses (the picture's `if_refused_text`). */
-  if_declined_text: string | null;
+  /** What is funded if the buyer refuses (the picture's `if_refused_text`); round three removed it. */
+  if_declined_text?: string | null;
+  /** Round three: the cost in one sentence ("Estimated one-time cost: ¥3,027.77"). */
+  cost_text?: string | null;
 }
 
 /** A day on the record, in three forms: the day number, the distance from today ("in 2 days") and the calendar date. */
@@ -1107,6 +1113,8 @@ export interface RecordDay {
 
 /** One line of a deal's history (`history` of the record), oldest first: what happened, on which day, in the server's words, with its tone. */
 export interface DealHistoryEntry extends RecordDay {
+  /** Round three: who did it (the buyer, FLOW, the owner, the simulated buyer). */
+  source?: "buyer" | "flow" | "owner" | "simulator" | string;
   kind: "received" | "checked" | "simulated" | "offered" | "accepted" | "countered" | "declined" | "no_answer" | "accepted_as_asked" | string;
   text: string;
   tone: "neutral" | "waiting" | "ok" | string;
@@ -1147,13 +1155,17 @@ export interface OutboundView {
   /** Round three, accepted: who recorded it and from what, the buyer's words when pasted, and what follows (sentences). */
   provenance_text?: string | null;
   evidence_quote?: string | null;
-  consequences?: string[];
+  consequences_title_text?: string | null;
+  consequences?: string[] | null;
   /** Round three, countered: our last offer against their reply, term by term, and where their reply stands now. */
-  changes?: { key: string; label: string; ours_text: string | null; theirs_text: string | null; changed: boolean }[];
+  changes?: { key: string; label: string; ours_text: string | null; theirs_text: string | null; changed: boolean }[] | null;
   reply_state_text?: string | null;
   links: { label: string; href: string; primary?: boolean }[];
   actions: {
     question_text: string;
+    /** Round three: the waiting step's two buttons. */
+    record_label?: string;
+    view_message_label?: string;
     accept: {
       label: string;
       hint_text: string;
@@ -1161,10 +1173,12 @@ export interface OutboundView {
       terms: string[];
       review: OutboundReview | null;
       authority_text: string | null;
-      /** Round three: what recording it binds, and the optional evidence box. */
+      /** Round three: the confirmation's title, what recording it binds, and the optional evidence box. */
+      title_text?: string | null;
       binding_text?: string | null;
       evidence_label?: string | null;
       evidence_placeholder?: string | null;
+      evidence_hint_text?: string | null;
     };
     counter: { label: string; hint_text: string; confirm_label: string; placeholder_text: string; effect_text: string };
     /** Round three: the buyer's answer is unclear or a question: pasted like a counter, read as a request of its own. */
@@ -1217,6 +1231,8 @@ export interface WithdrawRequest {
 
 export interface WithdrawResult {
   decision: DecisionView;
+  status: "withdrawn";
+  message_when: string;
 }
 
 /** POST /offers/{id}/buyer-reply: the buyer's reply as the owner pasted it (at most 4000 characters). */

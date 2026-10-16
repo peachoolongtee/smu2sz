@@ -166,7 +166,12 @@ export function BuyerMessage({
           })}
         </dl>
         <dl className="m-0 space-y-2 text-sm">
-          {review?.cost_display ? (
+          {review?.cost_text ? (
+            <div data-testid="buyer-message-cost" data-within={review.needs_owner ? "false" : "true"}>
+              <dt className="sr-only">{t("bm.cost")}</dt>
+              <dd className={`m-0 font-semibold ${review.needs_owner ? "text-ink" : "text-f-green-ink"}`}>{review.cost_text}</dd>
+            </div>
+          ) : review?.cost_display ? (
             <div data-testid="buyer-message-cost" data-within={review.needs_owner ? "false" : "true"}>
               <dt className="text-supporting font-semibold text-ink-3">{t("bm.cost")}</dt>
               <dd className="m-0">
@@ -202,7 +207,7 @@ export function BuyerMessage({
               <Segmented<Lang> label={t("bm.lang")} name={`${uid}-lang`} value={buyerLang} onChange={pickLang} options={languages.map((l) => ({ value: l.code, label: l.label }))} />
             </div>
             {words.channel?.label ? (
-              <p className="w-full text-supporting text-ink-3 sm:w-auto" data-testid="buyer-message-channel" data-kind={words.channel.kind}>
+              <p className="w-full text-supporting font-semibold text-ink-3 sm:w-auto" data-testid="buyer-message-channel" data-kind={words.channel.kind}>
                 {words.channel.label}
               </p>
             ) : null}
@@ -222,8 +227,9 @@ export function BuyerMessage({
           ) : null}
         </div>
         <div className="space-y-1">
+          {/* How it goes out, in the server's words: the channel's own sentence when it sends one, else the notice. */}
           <p className="max-w-[72ch] text-sm text-ink-2" data-testid="buyer-message-notice">
-            {words.notice_text}
+            {words.channel?.text ?? words.notice_text}
           </p>
           <p className="flex max-w-[72ch] items-center gap-1.5 text-supporting text-ink-3" data-testid="buyer-message-provenance" data-via={words.provenance.via ?? ""} data-verified={words.provenance.verified ? "true" : "false"}>
             {words.provenance.verified ? <ShieldCheckIcon width={16} height={16} className="shrink-0 text-f-green-ink" /> : null}
@@ -240,7 +246,7 @@ export function BuyerMessage({
                 {words.mark_sent_label}
               </Button>
               <span role="status" aria-live="polite" className="text-sm text-ink-2" data-testid="buyer-message-copy-status" data-state={copied}>
-                {copied === "copied" ? t("biz.chase.copied") : copied === "failed" ? t("bm.copyfailed") : ""}
+                {copied === "copied" ? (words.copied_text ?? t("biz.chase.copied")) : copied === "failed" ? (words.copy_failed_text ?? t("bm.copyfailed")) : ""}
               </span>
             </ActionGroup>
             <p className="max-w-[72ch] text-sm text-ink-2" data-testid="buyer-message-effect">
