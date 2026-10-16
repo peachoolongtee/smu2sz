@@ -121,16 +121,16 @@ def test_ex01_offers_option_b_at_55_days(offer_id):
       ¥1,247.53 → smallest whole-5bp rate 0.30% (420,000 × 0.30% = ¥1,260.00; 0.25% gives ¥1,050.00). Over the 13
       invoices of the window: extension 13 × 1,247.5342 = 16,217.945 → ¥16,217.95; price 13 × 1,260 = ¥16,380.00;
       net −¥162.05, so supplier cost and forward value are 0.
-    Counter A is unchanged: ¥257,200 at 0.85%, discount ¥2,186.20 + line 149,986.20 × 6.4% × 32/365 = ¥841.57 =
-    ¥3,027.77."""
+    Counter A is unchanged (its face rounded to ¥10,000 since R-10): ¥260,000 at 0.85%, discount ¥2,210.00 + line 147,210.00 × 6.4% × 32/365 = ¥825.99 =
+    ¥3,035.99."""
     v = bundle(offer_id).verdict
     assert v.outcome == Outcome.REJECT
     assert [x.code.value for x in v.violations] == [
         "AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"]
     a, b = v.counters
     (disc,) = a.obligations
-    assert (disc.base.amount_fen, disc.rate_bp, a.supplier_cost_fen) == (25_720_000, 85, 302_777)
-    assert post(bp(85) * 25_720_000) + 84_157 == 302_777
+    assert (disc.base.amount_fen, disc.rate_bp, a.supplier_cost_fen) == (26_000_000, 85, 303_599)
+    assert post(bp(85) * 26_000_000) + 82_599 == 303_599
     terms, price = b.obligations
     assert (b.label, terms.days_delta, price.rate_bp, price.base.amount_fen) == ("Option B", 10, 30, 42_000_000)
     assert b.text == "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate."

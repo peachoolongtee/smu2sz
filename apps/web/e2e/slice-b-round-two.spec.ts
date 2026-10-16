@@ -32,7 +32,7 @@ test.describe("mock", () => {
   test("the choices table's cost and lowest-cash cells say each choice's figures in the server's words, and Escape clears the selection (there is no rail to bring back)", async ({ page }) => {
     await checkedDeal(page);
     await expect(page.getByTestId("deal-choice-cell-cost-asked")).toContainText("¥28,326.92");
-    await expect(page.getByTestId("deal-choice-cell-cost-reply").first()).toContainText("¥3,027.77");
+    await expect(page.getByTestId("deal-choice-cell-cost-reply").first()).toContainText("¥3,035.99");
     await expect(page.getByTestId("deal-choice-cell-lowest-reply").first()).toContainText("¥300k");
     await expect(page.getByTestId("deal-choice-cell-lowest-asked")).toContainText("¥165k");
     await page.keyboard.press("Escape");

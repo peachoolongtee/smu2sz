@@ -176,3 +176,28 @@ buyer's early-pay facility or a bill. A plan that needs one of those legs is fla
   is accepted and ¥3,150.00 (0.75%) is countered, exactly as the rates are. Counter A names its day ("paid on or
   before day 2"), and any portion of its face paid by that day earns the rate
   (`services/api/tests/verifier/test_redteam_e.py`, `services/api/tests/operations/test_redteam_e.py`).
+
+## Addendum, 16 Oct 2026 (the counter's face no longer reveals the gap, R-10)
+
+**Why.** Counter A said "up to ¥257,200 at 0.85%", and 257,200 × (1 − 0.85%) ≈ ¥255,000, the owner's funding gap
+to the ¥100 (`docs/security/FINDINGS_REGISTER.md` R-10). FLOW now prepares messages the owner sends to real buyers,
+so the face is on a real outbound channel. The owner chose to round the face (16 Oct).
+
+**Rule.** The early-pay counter's face is the gap net of the committed line, grossed up at the counter's rate as
+before, rounded **up** to a step of two significant figures of the invoice's outstanding amount (step = 10^(digits
+of the outstanding fen − 2): ¥10,000 for an invoice of ¥100,000 to ¥999,999.99), and never above the outstanding
+amount (it was capped at the face). The rounded counter must pass every check the old one passed: the router's
+committed plan with it must be admissible, it must beat the standing plan (test 3), and it must pass its own
+re-check (FINANCIAL_SEMANTICS §7a). If it fails, the whole outstanding amount is tried under the same checks; if
+that fails too, no early-pay counter is offered and the summary says why. It never falls back to the ¥100 rounding.
+
+**Golden figures.** ¥255,000 / (1 − 0.85%) = ¥257,186.08 → **¥260,000**: discount ¥2,210.00, cash ¥257,790.00, the
+line carries ¥147,210.00 (× 6.4% × 32/365 = ¥825.99), Counter A ¥3,035.99, still below C0 ¥3,113.93. A buyer can
+place the gap only between ¥247,875 and ¥257,790. The whole invoice (rule b) was rejected: ¥3,570.00 at 0.85% is
+dearer than C0, so it would have removed Option A from the golden story.
+
+**Consequences, not a change of policy.** A buyer who pays the whole face pays ¥2,790 more early, so ¥160,000 of
+RCV-A stays owed (was ¥162,800) and ¥2,790 of the line is left unused. On day 34 of the missed-receipt story the
+router therefore draws that ¥2,790 on the line (6.40%, under the 15.00% ceiling, Tier 1) before the invoice advances,
+the second advance is ¥117,210 (was ¥120,000) and the plan costs ¥1,702.20 (was ¥1,706.10). The advances still need
+the owner (APR-000001, 16.26% and 32.53% against 15.00%), and the demo's day-34 cure (¥200,000, 32.52%) is unchanged.

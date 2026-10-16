@@ -69,7 +69,7 @@ test("the send names its option, says the reply is simulated, and carries what w
   const send = response.getByTestId("deal-send");
   await expect(send).toHaveText("Send Option A to Foshan");
   await expect(response.getByTestId("receipt-line-authorizes")).toContainText("FLOW records it as a proposed agreement that stands only if Foshan accepts.");
-  await expect(response.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥841.57 for the draw");
+  await expect(response.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥825.99 for the draw");
   await expect(response.getByTestId("deal-send-confirm-box")).toContainText("The buyer's reply is simulated");
   await backToDealsAndReturn(page);
   // Option B is a path of its own: picking it in the comparison makes it the reply under review, with its own send; Option A's gives way, never two at once.
@@ -163,10 +163,10 @@ test("the execution summary is the record's: the agreement in its words, what ra
   // The Demo verdict page shares the card with Deals.
   await page.goto("/verdict");
   const summary = page.getByTestId("execution-summary");
-  await expect(summary.getByTestId("execution-text")).toContainText("Funding of ¥149,986.20 was requested and has landed.");
+  await expect(summary.getByTestId("execution-text")).toContainText("Funding of ¥147,210.00 was requested and has landed.");
   await expect(summary.getByTestId("execution-agreement")).toContainText("Agreed");
   await expect(summary.getByTestId("execution-settlement")).toContainText("Waiting for Foshan Home Retail Co. to pay");
-  await expect(summary.getByTestId("execution-funding")).toContainText("¥149,986.20 drawn on the Bank credit line");
+  await expect(summary.getByTestId("execution-funding")).toContainText("¥147,210.00 drawn on the Bank credit line");
   await expect(summary.getByTestId("execution-lots")).toContainText("Cash received today");
 });
 

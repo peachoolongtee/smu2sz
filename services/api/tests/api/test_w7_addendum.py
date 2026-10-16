@@ -50,13 +50,13 @@ def test_the_send_has_lines_with_the_router_plans_own_figures_in_both_languages(
     (en, offer), (zh, _) = _evaluate(client, "en"), _evaluate(client, "zh")
     assert en["workspace"]["priced_response"]["send_scope_lines"] == [
         "Send the exact Option A counter to Foshan; FLOW records it as a proposed agreement that stands only if Foshan accepts.",
-        "Draws ¥149,986.20 on the Bank credit line today",
-        "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"]
+        "Draws ¥147,210.00 on the Bank credit line today",
+        "Funding cost ¥825.99 for the draw (already inside the ¥3,035.99 above)"]
     assert zh["workspace"]["priced_response"]["send_scope_lines"] == [
-        "向Foshan原样发送方案 A 的还价；FLOW 将其记为拟议中的协议，只有Foshan接受后才成立。", "从Bank credit line提款 ¥149,986.20，今天到账",
-        "融资成本 ¥841.57（已计入上方的 ¥3,027.77）"]
+        "向Foshan原样发送方案 A 的还价；FLOW 将其记为拟议中的协议，只有Foshan接受后才成立。", "从Bank credit line提款 ¥147,210.00，今天到账",
+        "融资成本 ¥825.99（已计入上方的 ¥3,035.99）"]
     sent = client.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()
-    assert sent["plan"]["total_cost_display"] == "¥841.57" and sent["plan"]["actions"][0]["amount_fen"] == 14_998_620  # the lines are what runs
+    assert sent["plan"]["total_cost_display"] == "¥825.99" and sent["plan"]["actions"][0]["amount_fen"] == 14_721_000  # the lines are what runs
     assert "send_scope" in en["workspace"]["priced_response"]  # the sentence stays beside the lines
 
 
@@ -180,7 +180,7 @@ def test_activity_and_the_home_changes_say_whether_the_forecast_line_changed(cli
 def test_the_lowest_point_says_if_nothing_more_is_done_only_after_the_owner_has_acted(client):
     _walk(client)
     before = client.get("/home").json()
-    assert before["worst"] == "Worst point: −¥155k in 8 days if you do nothing."
+    assert before["worst"] == "Worst point: −¥158k in 8 days if you do nothing."
     _act(client)
     client.post(f"/approvals/{_queue(client)[0]['id']}", json={"decision": "APPROVE"})
     en, zh = client.get("/home").json(), client.get("/home", params={"lang": "zh"}).json()
@@ -231,15 +231,15 @@ def test_the_funding_cost_line_says_whether_it_is_inside_the_counters_cost_or_in
 
     en, _ = _evaluate(client, "en")
     a = en["counters"][0]
-    assert a["supplier_cost_display"] == "¥3,027.77" and "¥841.57" in a["formula"]  # Option A's cost is the discount plus this funding
+    assert a["supplier_cost_display"] == "¥3,035.99" and "¥825.99" in a["formula"]  # Option A's cost is the discount plus this funding
     state = get_runtime().store.get_state()
-    action = SimpleNamespace(kind=SimpleNamespace(value="DRAW"), facility_id="FAC-LINE", amount_fen=14_998_620, lands_day=0)
-    plan = SimpleNamespace(actions=[action], executable_now=True, total_cost_fen=84_157)
+    action = SimpleNamespace(kind=SimpleNamespace(value="DRAW"), facility_id="FAC-LINE", amount_fen=14_721_000, lands_day=0)
+    plan = SimpleNamespace(actions=[action], executable_now=True, total_cost_fen=82_599)
     inside = send_scope_lines(state, "Foshan Home Retail Co.", plan, 0, "en", a)
-    assert inside[-1] == "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"
+    assert inside[-1] == "Funding cost ¥825.99 for the draw (already inside the ¥3,035.99 above)"
     other = {"supplier_cost_display": "¥1,000.00", "formula": "extension ¥900.00 + firm credit ¥100.00 = ¥1,000.00"}  # a price adjustment's cost
-    assert send_scope_lines(state, "Foshan Home Retail Co.", plan, 0, "en", other)[-1] == "Funding cost ¥841.57 in addition"
-    assert send_scope_lines(state, "Foshan Home Retail Co.", plan, 0, "zh", other)[-1] == "融资成本 ¥841.57（另计）"
+    assert send_scope_lines(state, "Foshan Home Retail Co.", plan, 0, "en", other)[-1] == "Funding cost ¥825.99 in addition"
+    assert send_scope_lines(state, "Foshan Home Retail Co.", plan, 0, "zh", other)[-1] == "融资成本 ¥825.99（另计）"
     assert all("Estimated cost" not in line for line in en["workspace"]["priced_response"]["send_scope_lines"])
 
 

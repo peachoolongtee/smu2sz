@@ -13,7 +13,7 @@
       "terminal": false,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥257,200.00",
+      "amount_display": "¥260,000.00",
       "opened_when": "today",
       "updated_when": "today",
       "waiting_for": {
@@ -58,7 +58,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "Option A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -94,14 +94,14 @@
             }
           ],
           "economics": {
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00",
             "funding_cost_display": "¥0.00",
             "offset_display": "¥0.00",
             "net_display": "¥0.00",
             "net_fen": 0,
             "basis_facility_name": "Invoice financing (onboarded platform)",
-            "quoted_cost_display": "¥3,027.77",
+            "quoted_cost_display": "¥3,035.99",
             "quoted_cost_label_text": "Cost quoted when sent (one-off)",
             "net_label_text": "Forward cost beyond the one-off, over 12 months, priced at the Invoice financing (onboarded platform) rate"
           },
@@ -118,11 +118,11 @@
         "expires_day": null,
         "expires_when": null,
         "terms": [
-          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+          "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
         ],
         "receipt": {
-          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
-          "executes_now_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
+          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
+          "executes_now_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥147,210.00 was requested and has landed.",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
           "gross_display": null,
@@ -131,7 +131,7 @@
           "when_text": "In force.",
           "assumptions_text": null,
           "authority_text": null,
-          "remaining_text": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+          "remaining_text": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
         }
       },
       "outbound": null,
@@ -182,7 +182,7 @@
           "kind": "DRAW_FACILITY",
           "kind_text": "Credit line drawn",
           "status": "EXECUTED",
-          "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received today.",
+          "event_text": "¥147,210.00 drawn on the Bank credit line. Cash received today.",
           "day": 0,
           "when": "today",
           "approval_id": null,
@@ -190,11 +190,11 @@
         }
       ],
       "execution": {
-        "summary_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
-        "requested_fen": 14998620,
-        "requested_display": "¥149,986.20",
-        "landed_fen": 14998620,
-        "landed_display": "¥149,986.20",
+        "summary_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥147,210.00 was requested and has landed.",
+        "requested_fen": 14721000,
+        "requested_display": "¥147,210.00",
+        "landed_fen": 14721000,
+        "landed_display": "¥147,210.00",
         "in_transit_fen": 0,
         "in_transit_display": null
       },
@@ -202,7 +202,7 @@
         {
           "lot_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "facility_name": "Bank credit line",
-          "principal_display": "¥149,986.20",
+          "principal_display": "¥147,210.00",
           "request_when": "today",
           "arrival_day": 0,
           "arrival_when": "today",
@@ -217,17 +217,17 @@
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
           "promised_day": 2,
-          "face_fen": 25720000,
-          "discount_fen": 218620,
-          "expected_fen": 25501380,
+          "face_fen": 26000000,
+          "discount_fen": 221000,
+          "expected_fen": 25779000,
           "status": "AWAITED",
           "receipt_seq": null,
-          "detail": "¥255,013.80 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
-          "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-          "face_display": "¥257,200.00",
-          "discount_display": "¥2,186.20",
-          "expected_display": "¥255,013.80",
-          "detail_when": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+          "detail": "¥257,790.00 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
+          "formula": "¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+          "face_display": "¥260,000.00",
+          "discount_display": "¥2,210.00",
+          "expected_display": "¥257,790.00",
+          "detail_when": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
         }
       ],
       "remaining_task": {
@@ -302,7 +302,7 @@
       "terminal": false,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥257,200.00",
+      "amount_display": "¥260,000.00",
       "opened_when": "今天",
       "updated_when": "今天",
       "waiting_for": {
@@ -347,7 +347,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "方案 A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -383,14 +383,14 @@
             }
           ],
           "economics": {
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00",
             "funding_cost_display": "¥0.00",
             "offset_display": "¥0.00",
             "net_display": "¥0.00",
             "net_fen": 0,
             "basis_facility_name": "Invoice financing (onboarded platform)",
-            "quoted_cost_display": "¥3,027.77",
+            "quoted_cost_display": "¥3,035.99",
             "quoted_cost_label_text": "发送时报出的成本（一次性）",
             "net_label_text": "一次性成本之外的远期成本，12 个月内，按Invoice financing (onboarded platform)的利率计算"
           },
@@ -407,11 +407,11 @@
         "expires_day": null,
         "expires_when": null,
         "terms": [
-          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）"
         ],
         "receipt": {
-          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）。",
-          "executes_now_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥149,986.20 的融资，并已到账。",
+          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（2 天后生效；一次性）。",
+          "executes_now_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥147,210.00 的融资，并已到账。",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
           "gross_display": null,
@@ -420,7 +420,7 @@
           "when_text": "已生效。",
           "assumptions_text": null,
           "authority_text": null,
-          "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
+          "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥257,790.00 应在2 天内到账；约定日尚未过。"
         }
       },
       "outbound": null,
@@ -471,7 +471,7 @@
           "kind": "DRAW_FACILITY",
           "kind_text": "信用额度已提款",
           "status": "EXECUTED",
-          "event_text": "已从Bank credit line提取 ¥149,986.20。资金今天已到账。",
+          "event_text": "已从Bank credit line提取 ¥147,210.00。资金今天已到账。",
           "day": 0,
           "when": "今天",
           "approval_id": null,
@@ -479,11 +479,11 @@
         }
       ],
       "execution": {
-        "summary_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥149,986.20 的融资，并已到账。",
-        "requested_fen": 14998620,
-        "requested_display": "¥149,986.20",
-        "landed_fen": 14998620,
-        "landed_display": "¥149,986.20",
+        "summary_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥147,210.00 的融资，并已到账。",
+        "requested_fen": 14721000,
+        "requested_display": "¥147,210.00",
+        "landed_fen": 14721000,
+        "landed_display": "¥147,210.00",
         "in_transit_fen": 0,
         "in_transit_display": null
       },
@@ -491,7 +491,7 @@
         {
           "lot_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "facility_name": "Bank credit line",
-          "principal_display": "¥149,986.20",
+          "principal_display": "¥147,210.00",
           "request_when": "今天",
           "arrival_day": 0,
           "arrival_when": "今天",
@@ -506,17 +506,17 @@
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
           "promised_day": 2,
-          "face_fen": 25720000,
-          "discount_fen": 218620,
-          "expected_fen": 25501380,
+          "face_fen": 26000000,
+          "discount_fen": 221000,
+          "expected_fen": 25779000,
           "status": "AWAITED",
           "receipt_seq": null,
-          "detail": "¥255,013.80 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
-          "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-          "face_display": "¥257,200.00",
-          "discount_display": "¥2,186.20",
-          "expected_display": "¥255,013.80",
-          "detail_when": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
+          "detail": "¥257,790.00 promised for RCV-A by day 2 under commitment CMT-a78afaa5becb5273; the day has not passed",
+          "formula": "¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+          "face_display": "¥260,000.00",
+          "discount_display": "¥2,210.00",
+          "expected_display": "¥257,790.00",
+          "detail_when": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥257,790.00 应在2 天内到账；约定日尚未过。"
         }
       ],
       "remaining_task": {
@@ -2311,9 +2311,9 @@
       "state_text": "Funded, reserve still short",
       "state_tone": "warn",
       "terminal": false,
-      "headline": "Finance ¥155,013.80 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+      "headline": "Finance ¥157,790.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥155,013.80",
+      "amount_display": "¥157,790.00",
       "opened_when": "4 days ago",
       "updated_when": "4 days ago",
       "waiting_for": {
@@ -2348,13 +2348,13 @@
         "quoted_when": "4 days ago",
         "lines": [
           {
-            "label": "Finance ¥155,013.80 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+            "label": "Finance ¥157,790.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
             "op_id": "alert:ALERT-RESERVE-34:v6:0",
             "kind": "SUBMIT_INVOICE_FOR_FINANCING",
-            "amount_fen": 15501380,
-            "amount_display": "¥155,013.80",
-            "cost_fen": 138132,
-            "cost_display": "¥1,381.32",
+            "amount_fen": 15779000,
+            "amount_display": "¥157,790.00",
+            "cost_fen": 140607,
+            "cost_display": "¥1,406.07",
             "rate_text": "32.5%",
             "cost_days": 10,
             "lands_day": 37,
@@ -2362,8 +2362,8 @@
             "above_ceiling": true
           }
         ],
-        "total_fen": 138132,
-        "total_display": "¥1,381.32",
+        "total_fen": 140607,
+        "total_display": "¥1,406.07",
         "cost_note": null,
         "rate_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
         "lands_day": 37,
@@ -2375,7 +2375,7 @@
         "actual": [
           {
             "op_id": "alert:ALERT-RESERVE-34:v6:0",
-            "amount_display": "¥155,013.80",
+            "amount_display": "¥157,790.00",
             "request_day": 34,
             "arrival_day": 37,
             "arrival_when": "yesterday",
@@ -2402,7 +2402,7 @@
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
           "kind_text": "Invoice financing requested",
           "status": "EXECUTED",
-          "event_text": "You approved ¥155,013.80 of invoice financing. Cash received yesterday.",
+          "event_text": "You approved ¥157,790.00 of invoice financing. Cash received yesterday.",
           "day": 34,
           "when": "4 days ago",
           "approval_id": "APR-000001",
@@ -2410,11 +2410,11 @@
         }
       ],
       "execution": {
-        "summary_text": "Funding of ¥155,013.80 was requested and has landed.",
-        "requested_fen": 15501380,
-        "requested_display": "¥155,013.80",
-        "landed_fen": 15501380,
-        "landed_display": "¥155,013.80",
+        "summary_text": "Funding of ¥157,790.00 was requested and has landed.",
+        "requested_fen": 15779000,
+        "requested_display": "¥157,790.00",
+        "landed_fen": 15779000,
+        "landed_display": "¥157,790.00",
         "in_transit_fen": 0,
         "in_transit_display": null
       },
@@ -2422,7 +2422,7 @@
         {
           "lot_id": "alert:ALERT-RESERVE-34:v6:0",
           "facility_name": "Invoice financing (onboarded platform)",
-          "principal_display": "¥155,013.80",
+          "principal_display": "¥157,790.00",
           "request_when": "4 days ago",
           "arrival_day": 37,
           "arrival_when": "yesterday",
@@ -2475,9 +2475,9 @@
       "state_text": "已融资，储备仍有缺口",
       "state_tone": "warn",
       "terminal": false,
-      "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥155,013.80",
+      "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥157,790.00",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥155,013.80",
+      "amount_display": "¥157,790.00",
       "opened_when": "4 天前",
       "updated_when": "4 天前",
       "waiting_for": {
@@ -2512,13 +2512,13 @@
         "quoted_when": "4 天前",
         "lines": [
           {
-            "label": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥155,013.80",
+            "label": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥157,790.00",
             "op_id": "alert:ALERT-RESERVE-34:v6:0",
             "kind": "SUBMIT_INVOICE_FOR_FINANCING",
-            "amount_fen": 15501380,
-            "amount_display": "¥155,013.80",
-            "cost_fen": 138132,
-            "cost_display": "¥1,381.32",
+            "amount_fen": 15779000,
+            "amount_display": "¥157,790.00",
+            "cost_fen": 140607,
+            "cost_display": "¥1,406.07",
             "rate_text": "32.5%",
             "cost_days": 10,
             "lands_day": 37,
@@ -2526,8 +2526,8 @@
             "above_ceiling": true
           }
         ],
-        "total_fen": 138132,
-        "total_display": "¥1,381.32",
+        "total_fen": 140607,
+        "total_display": "¥1,406.07",
         "cost_note": null,
         "rate_basis": "发票融资按整 30 天计费，直至发票付清。",
         "lands_day": 37,
@@ -2539,7 +2539,7 @@
         "actual": [
           {
             "op_id": "alert:ALERT-RESERVE-34:v6:0",
-            "amount_display": "¥155,013.80",
+            "amount_display": "¥157,790.00",
             "request_day": 34,
             "arrival_day": 37,
             "arrival_when": "昨天",
@@ -2566,7 +2566,7 @@
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
           "kind_text": "已申请发票融资",
           "status": "EXECUTED",
-          "event_text": "您已批准¥155,013.80 的发票融资。资金已于昨天到账。",
+          "event_text": "您已批准¥157,790.00 的发票融资。资金已于昨天到账。",
           "day": 34,
           "when": "4 天前",
           "approval_id": "APR-000001",
@@ -2574,11 +2574,11 @@
         }
       ],
       "execution": {
-        "summary_text": "已提交 ¥155,013.80 的融资，并已到账。",
-        "requested_fen": 15501380,
-        "requested_display": "¥155,013.80",
-        "landed_fen": 15501380,
-        "landed_display": "¥155,013.80",
+        "summary_text": "已提交 ¥157,790.00 的融资，并已到账。",
+        "requested_fen": 15779000,
+        "requested_display": "¥157,790.00",
+        "landed_fen": 15779000,
+        "landed_display": "¥157,790.00",
         "in_transit_fen": 0,
         "in_transit_display": null
       },
@@ -2586,7 +2586,7 @@
         {
           "lot_id": "alert:ALERT-RESERVE-34:v6:0",
           "facility_name": "Invoice financing (onboarded platform)",
-          "principal_display": "¥155,013.80",
+          "principal_display": "¥157,790.00",
           "request_when": "4 天前",
           "arrival_day": 37,
           "arrival_when": "昨天",
@@ -2929,7 +2929,7 @@
       "terminal": true,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥257,200.00",
+      "amount_display": "¥260,000.00",
       "opened_when": "34 days ago",
       "updated_when": "34 days ago",
       "waiting_for": {
@@ -2974,7 +2974,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "Option A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -3010,14 +3010,14 @@
             }
           ],
           "economics": {
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00",
             "funding_cost_display": "¥0.00",
             "offset_display": "¥0.00",
             "net_display": "¥0.00",
             "net_fen": 0,
             "basis_facility_name": "Invoice financing (onboarded platform)",
-            "quoted_cost_display": "¥3,027.77",
+            "quoted_cost_display": "¥3,035.99",
             "quoted_cost_label_text": "Cost quoted when sent (one-off)",
             "net_label_text": "Forward cost beyond the one-off, over 12 months, priced at the Invoice financing (onboarded platform) rate"
           },
@@ -3034,11 +3034,11 @@
         "expires_day": 7,
         "expires_when": "27 days ago",
         "terms": [
-          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
+          "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
         ],
         "receipt": {
-          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
-          "executes_now_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
+          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
+          "executes_now_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥147,210.00 was requested and has landed.",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
           "gross_display": null,
@@ -3098,7 +3098,7 @@
           "kind": "DRAW_FACILITY",
           "kind_text": "Credit line drawn",
           "status": "EXECUTED",
-          "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
+          "event_text": "¥147,210.00 drawn on the Bank credit line. Cash received 34 days ago.",
           "day": 0,
           "when": "34 days ago",
           "approval_id": null,
@@ -3106,11 +3106,11 @@
         }
       ],
       "execution": {
-        "summary_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
-        "requested_fen": 14998620,
-        "requested_display": "¥149,986.20",
-        "landed_fen": 14998620,
-        "landed_display": "¥149,986.20",
+        "summary_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥147,210.00 was requested and has landed.",
+        "requested_fen": 14721000,
+        "requested_display": "¥147,210.00",
+        "landed_fen": 14721000,
+        "landed_display": "¥147,210.00",
         "in_transit_fen": 0,
         "in_transit_display": null
       },
@@ -3118,7 +3118,7 @@
         {
           "lot_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "facility_name": "Bank credit line",
-          "principal_display": "¥149,986.20",
+          "principal_display": "¥147,210.00",
           "request_when": "34 days ago",
           "arrival_day": 0,
           "arrival_when": "34 days ago",
@@ -3133,23 +3133,23 @@
           "day": 2,
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
-          "received_fen": 25501380,
+          "received_fen": 25779000,
           "face_fen": 42000000,
-          "agreed_discount_fen": 218620,
-          "expected_fen": 25501380,
+          "agreed_discount_fen": 221000,
+          "expected_fen": 25779000,
           "difference_fen": 0,
           "commitment_id": "CMT-a78afaa5becb5273",
           "bank_reference": "DEMO-RCPT-1",
           "status": "MATCHED",
           "flagged": false,
-          "detail": "agreed early payment for ¥257,200.00 of face (commitment CMT-a78afaa5becb5273)",
-          "formula": "P − post(d × P) = received, paid by day 2 (day 2): ¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-          "received_display": "¥255,013.80",
+          "detail": "agreed early payment for ¥260,000.00 of face (commitment CMT-a78afaa5becb5273)",
+          "formula": "P − post(d × P) = received, paid by day 2 (day 2): ¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+          "received_display": "¥257,790.00",
           "face_display": "¥420,000.00",
-          "agreed_discount_display": "¥2,186.20",
-          "expected_display": "¥255,013.80",
+          "agreed_discount_display": "¥2,210.00",
+          "expected_display": "¥257,790.00",
           "difference_display": "¥0.00",
-          "detail_when": "agreed early payment for ¥257,200.00 of the invoice"
+          "detail_when": "agreed early payment for ¥260,000.00 of the invoice"
         }
       ],
       "promises": [
@@ -3159,17 +3159,17 @@
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
           "promised_day": 2,
-          "face_fen": 25720000,
-          "discount_fen": 218620,
-          "expected_fen": 25501380,
+          "face_fen": 26000000,
+          "discount_fen": 221000,
+          "expected_fen": 25779000,
           "status": "RECEIVED",
           "receipt_seq": 7,
-          "detail": "the agreed ¥255,013.80 for RCV-A arrived (commitment CMT-a78afaa5becb5273)",
-          "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-          "face_display": "¥257,200.00",
-          "discount_display": "¥2,186.20",
-          "expected_display": "¥255,013.80",
-          "detail_when": "The agreed ¥255,013.80 for the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago, arrived."
+          "detail": "the agreed ¥257,790.00 for RCV-A arrived (commitment CMT-a78afaa5becb5273)",
+          "formula": "¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+          "face_display": "¥260,000.00",
+          "discount_display": "¥2,210.00",
+          "expected_display": "¥257,790.00",
+          "detail_when": "The agreed ¥257,790.00 for the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago, arrived."
         }
       ],
       "remaining_task": {
@@ -3244,7 +3244,7 @@
       "terminal": true,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥257,200.00",
+      "amount_display": "¥260,000.00",
       "opened_when": "34 天前",
       "updated_when": "34 天前",
       "waiting_for": {
@@ -3289,7 +3289,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "方案 A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -3325,14 +3325,14 @@
             }
           ],
           "economics": {
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00",
             "funding_cost_display": "¥0.00",
             "offset_display": "¥0.00",
             "net_display": "¥0.00",
             "net_fen": 0,
             "basis_facility_name": "Invoice financing (onboarded platform)",
-            "quoted_cost_display": "¥3,027.77",
+            "quoted_cost_display": "¥3,035.99",
             "quoted_cost_label_text": "发送时报出的成本（一次性）",
             "net_label_text": "一次性成本之外的远期成本，12 个月内，按Invoice financing (onboarded platform)的利率计算"
           },
@@ -3349,11 +3349,11 @@
         "expires_day": 7,
         "expires_when": "27 天前",
         "terms": [
-          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（32 天前生效；一次性）"
         ],
         "receipt": {
-          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
-          "executes_now_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥149,986.20 的融资，并已到账。",
+          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（32 天前生效；一次性）。",
+          "executes_now_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥147,210.00 的融资，并已到账。",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
           "gross_display": null,
@@ -3413,7 +3413,7 @@
           "kind": "DRAW_FACILITY",
           "kind_text": "信用额度已提款",
           "status": "EXECUTED",
-          "event_text": "已从Bank credit line提取 ¥149,986.20。资金已于34 天前到账。",
+          "event_text": "已从Bank credit line提取 ¥147,210.00。资金已于34 天前到账。",
           "day": 0,
           "when": "34 天前",
           "approval_id": null,
@@ -3421,11 +3421,11 @@
         }
       ],
       "execution": {
-        "summary_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥149,986.20 的融资，并已到账。",
-        "requested_fen": 14998620,
-        "requested_display": "¥149,986.20",
-        "landed_fen": 14998620,
-        "landed_display": "¥149,986.20",
+        "summary_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥147,210.00 的融资，并已到账。",
+        "requested_fen": 14721000,
+        "requested_display": "¥147,210.00",
+        "landed_fen": 14721000,
+        "landed_display": "¥147,210.00",
         "in_transit_fen": 0,
         "in_transit_display": null
       },
@@ -3433,7 +3433,7 @@
         {
           "lot_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "facility_name": "Bank credit line",
-          "principal_display": "¥149,986.20",
+          "principal_display": "¥147,210.00",
           "request_when": "34 天前",
           "arrival_day": 0,
           "arrival_when": "34 天前",
@@ -3448,23 +3448,23 @@
           "day": 2,
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
-          "received_fen": 25501380,
+          "received_fen": 25779000,
           "face_fen": 42000000,
-          "agreed_discount_fen": 218620,
-          "expected_fen": 25501380,
+          "agreed_discount_fen": 221000,
+          "expected_fen": 25779000,
           "difference_fen": 0,
           "commitment_id": "CMT-a78afaa5becb5273",
           "bank_reference": "DEMO-RCPT-1",
           "status": "MATCHED",
           "flagged": false,
-          "detail": "agreed early payment for ¥257,200.00 of face (commitment CMT-a78afaa5becb5273)",
-          "formula": "P − post(d × P) = received, paid by day 2 (day 2): ¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-          "received_display": "¥255,013.80",
+          "detail": "agreed early payment for ¥260,000.00 of face (commitment CMT-a78afaa5becb5273)",
+          "formula": "P − post(d × P) = received, paid by day 2 (day 2): ¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+          "received_display": "¥257,790.00",
           "face_display": "¥420,000.00",
-          "agreed_discount_display": "¥2,186.20",
-          "expected_display": "¥255,013.80",
+          "agreed_discount_display": "¥2,210.00",
+          "expected_display": "¥257,790.00",
           "difference_display": "¥0.00",
-          "detail_when": "约定的提前付款，对应发票 ¥257,200.00"
+          "detail_when": "约定的提前付款，对应发票 ¥260,000.00"
         }
       ],
       "promises": [
@@ -3474,17 +3474,17 @@
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
           "promised_day": 2,
-          "face_fen": 25720000,
-          "discount_fen": 218620,
-          "expected_fen": 25501380,
+          "face_fen": 26000000,
+          "discount_fen": 221000,
+          "expected_fen": 25779000,
           "status": "RECEIVED",
           "receipt_seq": 7,
-          "detail": "the agreed ¥255,013.80 for RCV-A arrived (commitment CMT-a78afaa5becb5273)",
-          "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-          "face_display": "¥257,200.00",
-          "discount_display": "¥2,186.20",
-          "expected_display": "¥255,013.80",
-          "detail_when": "Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）约定的 ¥255,013.80 已到账。"
+          "detail": "the agreed ¥257,790.00 for RCV-A arrived (commitment CMT-a78afaa5becb5273)",
+          "formula": "¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+          "face_display": "¥260,000.00",
+          "discount_display": "¥2,210.00",
+          "expected_display": "¥257,790.00",
+          "detail_when": "Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）约定的 ¥257,790.00 已到账。"
         }
       ],
       "remaining_task": {
@@ -3561,7 +3561,7 @@
       "terminal": true,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥257,200.00",
+      "amount_display": "¥260,000.00",
       "opened_when": "34 days ago",
       "updated_when": "34 days ago",
       "waiting_for": {
@@ -3606,7 +3606,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "Option A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -3642,14 +3642,14 @@
             }
           ],
           "economics": {
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00",
             "funding_cost_display": "¥0.00",
             "offset_display": "¥0.00",
             "net_display": "¥0.00",
             "net_fen": 0,
             "basis_facility_name": "Invoice financing (onboarded platform)",
-            "quoted_cost_display": "¥3,027.77",
+            "quoted_cost_display": "¥3,035.99",
             "quoted_cost_label_text": "Cost quoted when sent (one-off)",
             "net_label_text": "Forward cost beyond the one-off, over 12 months, priced at the Invoice financing (onboarded platform) rate"
           },
@@ -3666,11 +3666,11 @@
         "expires_day": 7,
         "expires_when": "27 days ago",
         "terms": [
-          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
+          "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
         ],
         "receipt": {
-          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
-          "executes_now_text": "Funding of ¥149,986.20 was requested and has landed.",
+          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
+          "executes_now_text": "Funding of ¥147,210.00 was requested and has landed.",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
           "gross_display": null,
@@ -3730,7 +3730,7 @@
           "kind": "DRAW_FACILITY",
           "kind_text": "Credit line drawn",
           "status": "EXECUTED",
-          "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
+          "event_text": "¥147,210.00 drawn on the Bank credit line. Cash received 34 days ago.",
           "day": 0,
           "when": "34 days ago",
           "approval_id": null,
@@ -3738,11 +3738,11 @@
         }
       ],
       "execution": {
-        "summary_text": "Funding of ¥149,986.20 was requested and has landed.",
-        "requested_fen": 14998620,
-        "requested_display": "¥149,986.20",
-        "landed_fen": 14998620,
-        "landed_display": "¥149,986.20",
+        "summary_text": "Funding of ¥147,210.00 was requested and has landed.",
+        "requested_fen": 14721000,
+        "requested_display": "¥147,210.00",
+        "landed_fen": 14721000,
+        "landed_display": "¥147,210.00",
         "in_transit_fen": 0,
         "in_transit_display": null
       },
@@ -3750,7 +3750,7 @@
         {
           "lot_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "facility_name": "Bank credit line",
-          "principal_display": "¥149,986.20",
+          "principal_display": "¥147,210.00",
           "request_when": "34 days ago",
           "arrival_day": 0,
           "arrival_when": "34 days ago",
@@ -3765,23 +3765,23 @@
           "day": 2,
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
-          "received_fen": 12750690,
+          "received_fen": 12889500,
           "face_fen": 42000000,
-          "agreed_discount_fen": 109310,
-          "expected_fen": 12750690,
+          "agreed_discount_fen": 110500,
+          "expected_fen": 12889500,
           "difference_fen": 0,
           "commitment_id": "CMT-a78afaa5becb5273",
           "bank_reference": "DEMO-RCPT-1",
           "status": "MATCHED",
           "flagged": false,
-          "detail": "agreed early payment for ¥128,600.00 of face (commitment CMT-a78afaa5becb5273); up to ¥128,600.00 more may be settled early by day 2",
-          "formula": "P − post(d × P) = received, paid by day 2 (day 2): ¥128,600.00 × 85 bp = ¥1,093.10; ¥128,600.00 − ¥1,093.10 = ¥127,506.90",
-          "received_display": "¥127,506.90",
+          "detail": "agreed early payment for ¥130,000.00 of face (commitment CMT-a78afaa5becb5273); up to ¥130,000.00 more may be settled early by day 2",
+          "formula": "P − post(d × P) = received, paid by day 2 (day 2): ¥130,000.00 × 85 bp = ¥1,105.00; ¥130,000.00 − ¥1,105.00 = ¥128,895.00",
+          "received_display": "¥128,895.00",
           "face_display": "¥420,000.00",
-          "agreed_discount_display": "¥1,093.10",
-          "expected_display": "¥127,506.90",
+          "agreed_discount_display": "¥1,105.00",
+          "expected_display": "¥128,895.00",
           "difference_display": "¥0.00",
-          "detail_when": "agreed early payment for ¥128,600.00 of the invoice; the early-payment window for the other ¥128,600.00 ended 32 days ago"
+          "detail_when": "agreed early payment for ¥130,000.00 of the invoice; the early-payment window for the other ¥130,000.00 ended 32 days ago"
         }
       ],
       "promises": [
@@ -3791,17 +3791,17 @@
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
           "promised_day": 2,
-          "face_fen": 12860000,
-          "discount_fen": 109310,
-          "expected_fen": 12750690,
+          "face_fen": 13000000,
+          "discount_fen": 110500,
+          "expected_fen": 12889500,
           "status": "RECEIVED",
           "receipt_seq": 7,
-          "detail": "the agreed ¥127,506.90 for ¥128,600.00 of the ¥257,200.00 agreed for early settlement of RCV-A arrived (commitment CMT-a78afaa5becb5273); the other ¥128,600.00 is due on the invoice's own day",
-          "formula": "¥128,600.00 × 85 bp = ¥1,093.10; ¥128,600.00 − ¥1,093.10 = ¥127,506.90",
-          "face_display": "¥128,600.00",
-          "discount_display": "¥1,093.10",
-          "expected_display": "¥127,506.90",
-          "detail_when": "The agreed ¥127,506.90 for ¥128,600.00 of the ¥257,200.00 agreed for early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago, arrived; the other ¥128,600.00 is due on the invoice's own day."
+          "detail": "the agreed ¥128,895.00 for ¥130,000.00 of the ¥260,000.00 agreed for early settlement of RCV-A arrived (commitment CMT-a78afaa5becb5273); the other ¥130,000.00 is due on the invoice's own day",
+          "formula": "¥130,000.00 × 85 bp = ¥1,105.00; ¥130,000.00 − ¥1,105.00 = ¥128,895.00",
+          "face_display": "¥130,000.00",
+          "discount_display": "¥1,105.00",
+          "expected_display": "¥128,895.00",
+          "detail_when": "The agreed ¥128,895.00 for ¥130,000.00 of the ¥260,000.00 agreed for early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago, arrived; the other ¥130,000.00 is due on the invoice's own day."
         }
       ],
       "remaining_task": {
@@ -3876,7 +3876,7 @@
       "terminal": true,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥257,200.00",
+      "amount_display": "¥260,000.00",
       "opened_when": "34 天前",
       "updated_when": "34 天前",
       "waiting_for": {
@@ -3921,7 +3921,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "方案 A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -3957,14 +3957,14 @@
             }
           ],
           "economics": {
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00",
             "funding_cost_display": "¥0.00",
             "offset_display": "¥0.00",
             "net_display": "¥0.00",
             "net_fen": 0,
             "basis_facility_name": "Invoice financing (onboarded platform)",
-            "quoted_cost_display": "¥3,027.77",
+            "quoted_cost_display": "¥3,035.99",
             "quoted_cost_label_text": "发送时报出的成本（一次性）",
             "net_label_text": "一次性成本之外的远期成本，12 个月内，按Invoice financing (onboarded platform)的利率计算"
           },
@@ -3981,11 +3981,11 @@
         "expires_day": 7,
         "expires_when": "27 天前",
         "terms": [
-          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（32 天前生效；一次性）"
         ],
         "receipt": {
-          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
-          "executes_now_text": "已提交 ¥149,986.20 的融资，并已到账。",
+          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（32 天前生效；一次性）。",
+          "executes_now_text": "已提交 ¥147,210.00 的融资，并已到账。",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
           "gross_display": null,
@@ -4045,7 +4045,7 @@
           "kind": "DRAW_FACILITY",
           "kind_text": "信用额度已提款",
           "status": "EXECUTED",
-          "event_text": "已从Bank credit line提取 ¥149,986.20。资金已于34 天前到账。",
+          "event_text": "已从Bank credit line提取 ¥147,210.00。资金已于34 天前到账。",
           "day": 0,
           "when": "34 天前",
           "approval_id": null,
@@ -4053,11 +4053,11 @@
         }
       ],
       "execution": {
-        "summary_text": "已提交 ¥149,986.20 的融资，并已到账。",
-        "requested_fen": 14998620,
-        "requested_display": "¥149,986.20",
-        "landed_fen": 14998620,
-        "landed_display": "¥149,986.20",
+        "summary_text": "已提交 ¥147,210.00 的融资，并已到账。",
+        "requested_fen": 14721000,
+        "requested_display": "¥147,210.00",
+        "landed_fen": 14721000,
+        "landed_display": "¥147,210.00",
         "in_transit_fen": 0,
         "in_transit_display": null
       },
@@ -4065,7 +4065,7 @@
         {
           "lot_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "facility_name": "Bank credit line",
-          "principal_display": "¥149,986.20",
+          "principal_display": "¥147,210.00",
           "request_when": "34 天前",
           "arrival_day": 0,
           "arrival_when": "34 天前",
@@ -4080,23 +4080,23 @@
           "day": 2,
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
-          "received_fen": 12750690,
+          "received_fen": 12889500,
           "face_fen": 42000000,
-          "agreed_discount_fen": 109310,
-          "expected_fen": 12750690,
+          "agreed_discount_fen": 110500,
+          "expected_fen": 12889500,
           "difference_fen": 0,
           "commitment_id": "CMT-a78afaa5becb5273",
           "bank_reference": "DEMO-RCPT-1",
           "status": "MATCHED",
           "flagged": false,
-          "detail": "agreed early payment for ¥128,600.00 of face (commitment CMT-a78afaa5becb5273); up to ¥128,600.00 more may be settled early by day 2",
-          "formula": "P − post(d × P) = received, paid by day 2 (day 2): ¥128,600.00 × 85 bp = ¥1,093.10; ¥128,600.00 − ¥1,093.10 = ¥127,506.90",
-          "received_display": "¥127,506.90",
+          "detail": "agreed early payment for ¥130,000.00 of face (commitment CMT-a78afaa5becb5273); up to ¥130,000.00 more may be settled early by day 2",
+          "formula": "P − post(d × P) = received, paid by day 2 (day 2): ¥130,000.00 × 85 bp = ¥1,105.00; ¥130,000.00 − ¥1,105.00 = ¥128,895.00",
+          "received_display": "¥128,895.00",
           "face_display": "¥420,000.00",
-          "agreed_discount_display": "¥1,093.10",
-          "expected_display": "¥127,506.90",
+          "agreed_discount_display": "¥1,105.00",
+          "expected_display": "¥128,895.00",
           "difference_display": "¥0.00",
-          "detail_when": "约定的提前付款，对应发票 ¥128,600.00；另外 ¥128,600.00 的提前付款期限已于32 天前结束"
+          "detail_when": "约定的提前付款，对应发票 ¥130,000.00；另外 ¥130,000.00 的提前付款期限已于32 天前结束"
         }
       ],
       "promises": [
@@ -4106,17 +4106,17 @@
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
           "promised_day": 2,
-          "face_fen": 12860000,
-          "discount_fen": 109310,
-          "expected_fen": 12750690,
+          "face_fen": 13000000,
+          "discount_fen": 110500,
+          "expected_fen": 12889500,
           "status": "RECEIVED",
           "receipt_seq": 7,
-          "detail": "the agreed ¥127,506.90 for ¥128,600.00 of the ¥257,200.00 agreed for early settlement of RCV-A arrived (commitment CMT-a78afaa5becb5273); the other ¥128,600.00 is due on the invoice's own day",
-          "formula": "¥128,600.00 × 85 bp = ¥1,093.10; ¥128,600.00 − ¥1,093.10 = ¥127,506.90",
-          "face_display": "¥128,600.00",
-          "discount_display": "¥1,093.10",
-          "expected_display": "¥127,506.90",
-          "detail_when": "Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）已约定提前结算的 ¥257,200.00 中，¥128,600.00 对应的约定款项 ¥127,506.90 已到账；另外 ¥128,600.00 在发票自己的到期日支付。"
+          "detail": "the agreed ¥128,895.00 for ¥130,000.00 of the ¥260,000.00 agreed for early settlement of RCV-A arrived (commitment CMT-a78afaa5becb5273); the other ¥130,000.00 is due on the invoice's own day",
+          "formula": "¥130,000.00 × 85 bp = ¥1,105.00; ¥130,000.00 − ¥1,105.00 = ¥128,895.00",
+          "face_display": "¥130,000.00",
+          "discount_display": "¥1,105.00",
+          "expected_display": "¥128,895.00",
+          "detail_when": "Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）已约定提前结算的 ¥260,000.00 中，¥130,000.00 对应的约定款项 ¥128,895.00 已到账；另外 ¥130,000.00 在发票自己的到期日支付。"
         }
       ],
       "remaining_task": {
@@ -4238,7 +4238,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "Option A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -4484,7 +4484,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "方案 A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -4687,7 +4687,7 @@
       "terminal": true,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥257,200.00",
+      "amount_display": "¥260,000.00",
       "opened_when": "34 days ago",
       "updated_when": "34 days ago",
       "waiting_for": {
@@ -4732,7 +4732,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "Option A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -4768,14 +4768,14 @@
             }
           ],
           "economics": {
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00",
             "funding_cost_display": "¥0.00",
             "offset_display": "¥0.00",
             "net_display": "¥0.00",
             "net_fen": 0,
             "basis_facility_name": "Invoice financing (onboarded platform)",
-            "quoted_cost_display": "¥3,027.77",
+            "quoted_cost_display": "¥3,035.99",
             "quoted_cost_label_text": "Cost quoted when sent (one-off)",
             "net_label_text": "Forward cost beyond the one-off, over 12 months, priced at the Invoice financing (onboarded platform) rate"
           },
@@ -4792,11 +4792,11 @@
         "expires_day": 7,
         "expires_when": "27 days ago",
         "terms": [
-          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
+          "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
         ],
         "receipt": {
-          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
-          "executes_now_text": "Funding of ¥149,986.20 was requested and has landed.",
+          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
+          "executes_now_text": "Funding of ¥147,210.00 was requested and has landed.",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
           "gross_display": null,
@@ -4856,7 +4856,7 @@
           "kind": "DRAW_FACILITY",
           "kind_text": "Credit line drawn",
           "status": "EXECUTED",
-          "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
+          "event_text": "¥147,210.00 drawn on the Bank credit line. Cash received 34 days ago.",
           "day": 0,
           "when": "34 days ago",
           "approval_id": null,
@@ -4864,11 +4864,11 @@
         }
       ],
       "execution": {
-        "summary_text": "Funding of ¥149,986.20 was requested and has landed.",
-        "requested_fen": 14998620,
-        "requested_display": "¥149,986.20",
-        "landed_fen": 14998620,
-        "landed_display": "¥149,986.20",
+        "summary_text": "Funding of ¥147,210.00 was requested and has landed.",
+        "requested_fen": 14721000,
+        "requested_display": "¥147,210.00",
+        "landed_fen": 14721000,
+        "landed_display": "¥147,210.00",
         "in_transit_fen": 0,
         "in_transit_display": null
       },
@@ -4876,7 +4876,7 @@
         {
           "lot_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "facility_name": "Bank credit line",
-          "principal_display": "¥149,986.20",
+          "principal_display": "¥147,210.00",
           "request_when": "34 days ago",
           "arrival_day": 0,
           "arrival_when": "34 days ago",
@@ -4891,17 +4891,17 @@
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
           "promised_day": 2,
-          "face_fen": 25720000,
-          "discount_fen": 218620,
-          "expected_fen": 25501380,
+          "face_fen": 26000000,
+          "discount_fen": 221000,
+          "expected_fen": 25779000,
           "status": "LAPSED",
           "receipt_seq": null,
-          "detail": "¥255,013.80 promised for day 2 under commitment CMT-a78afaa5becb5273 did not arrive; ¥420,000.00 of RCV-A is still outstanding and falls back to its original due day, day 32",
-          "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-          "face_display": "¥257,200.00",
-          "discount_display": "¥2,186.20",
-          "expected_display": "¥255,013.80",
-          "detail_when": "¥255,013.80 promised as an early payment due 32 days ago under the agreement with Foshan Home Retail Co. did not arrive; ¥420,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is still outstanding and falls back to its original due day, 2 days ago."
+          "detail": "¥257,790.00 promised for day 2 under commitment CMT-a78afaa5becb5273 did not arrive; ¥420,000.00 of RCV-A is still outstanding and falls back to its original due day, day 32",
+          "formula": "¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+          "face_display": "¥260,000.00",
+          "discount_display": "¥2,210.00",
+          "expected_display": "¥257,790.00",
+          "detail_when": "¥257,790.00 promised as an early payment due 32 days ago under the agreement with Foshan Home Retail Co. did not arrive; ¥420,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is still outstanding and falls back to its original due day, 2 days ago."
         }
       ],
       "remaining_task": {
@@ -4976,7 +4976,7 @@
       "terminal": true,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥257,200.00",
+      "amount_display": "¥260,000.00",
       "opened_when": "34 天前",
       "updated_when": "34 天前",
       "waiting_for": {
@@ -5021,7 +5021,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "方案 A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -5057,14 +5057,14 @@
             }
           ],
           "economics": {
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00",
             "funding_cost_display": "¥0.00",
             "offset_display": "¥0.00",
             "net_display": "¥0.00",
             "net_fen": 0,
             "basis_facility_name": "Invoice financing (onboarded platform)",
-            "quoted_cost_display": "¥3,027.77",
+            "quoted_cost_display": "¥3,035.99",
             "quoted_cost_label_text": "发送时报出的成本（一次性）",
             "net_label_text": "一次性成本之外的远期成本，12 个月内，按Invoice financing (onboarded platform)的利率计算"
           },
@@ -5081,11 +5081,11 @@
         "expires_day": 7,
         "expires_when": "27 天前",
         "terms": [
-          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（32 天前生效；一次性）"
         ],
         "receipt": {
-          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
-          "executes_now_text": "已提交 ¥149,986.20 的融资，并已到账。",
+          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（32 天前生效；一次性）。",
+          "executes_now_text": "已提交 ¥147,210.00 的融资，并已到账。",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
           "gross_display": null,
@@ -5145,7 +5145,7 @@
           "kind": "DRAW_FACILITY",
           "kind_text": "信用额度已提款",
           "status": "EXECUTED",
-          "event_text": "已从Bank credit line提取 ¥149,986.20。资金已于34 天前到账。",
+          "event_text": "已从Bank credit line提取 ¥147,210.00。资金已于34 天前到账。",
           "day": 0,
           "when": "34 天前",
           "approval_id": null,
@@ -5153,11 +5153,11 @@
         }
       ],
       "execution": {
-        "summary_text": "已提交 ¥149,986.20 的融资，并已到账。",
-        "requested_fen": 14998620,
-        "requested_display": "¥149,986.20",
-        "landed_fen": 14998620,
-        "landed_display": "¥149,986.20",
+        "summary_text": "已提交 ¥147,210.00 的融资，并已到账。",
+        "requested_fen": 14721000,
+        "requested_display": "¥147,210.00",
+        "landed_fen": 14721000,
+        "landed_display": "¥147,210.00",
         "in_transit_fen": 0,
         "in_transit_display": null
       },
@@ -5165,7 +5165,7 @@
         {
           "lot_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "facility_name": "Bank credit line",
-          "principal_display": "¥149,986.20",
+          "principal_display": "¥147,210.00",
           "request_when": "34 天前",
           "arrival_day": 0,
           "arrival_when": "34 天前",
@@ -5180,17 +5180,17 @@
           "receivable_id": "RCV-A",
           "counterparty_id": "BUYER-1",
           "promised_day": 2,
-          "face_fen": 25720000,
-          "discount_fen": 218620,
-          "expected_fen": 25501380,
+          "face_fen": 26000000,
+          "discount_fen": 221000,
+          "expected_fen": 25779000,
           "status": "LAPSED",
           "receipt_seq": null,
-          "detail": "¥255,013.80 promised for day 2 under commitment CMT-a78afaa5becb5273 did not arrive; ¥420,000.00 of RCV-A is still outstanding and falls back to its original due day, day 32",
-          "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
-          "face_display": "¥257,200.00",
-          "discount_display": "¥2,186.20",
-          "expected_display": "¥255,013.80",
-          "detail_when": "¥255,013.80 promised as an early payment due 32 days ago under the agreement with Foshan Home Retail Co. did not arrive; ¥420,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is still outstanding and falls back to its original due day, 2 days ago."
+          "detail": "¥257,790.00 promised for day 2 under commitment CMT-a78afaa5becb5273 did not arrive; ¥420,000.00 of RCV-A is still outstanding and falls back to its original due day, day 32",
+          "formula": "¥260,000.00 × 85 bp = ¥2,210.00; ¥260,000.00 − ¥2,210.00 = ¥257,790.00",
+          "face_display": "¥260,000.00",
+          "discount_display": "¥2,210.00",
+          "expected_display": "¥257,790.00",
+          "detail_when": "¥257,790.00 promised as an early payment due 32 days ago under the agreement with Foshan Home Retail Co. did not arrive; ¥420,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is still outstanding and falls back to its original due day, 2 days ago."
         }
       ],
       "remaining_task": {
@@ -5620,7 +5620,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "Option A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -5790,7 +5790,7 @@
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
             "label_text": "方案 A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -5962,7 +5962,7 @@
             "id": "CTR-72a07f7c0f50",
             "label": "Option A",
             "label_text": "Option A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {
@@ -6132,7 +6132,7 @@
             "id": "CTR-72a07f7c0f50",
             "label": "Option A",
             "label_text": "方案 A",
-            "supplier_cost_display": "¥3,027.77",
+            "supplier_cost_display": "¥3,035.99",
             "forward_value_display": "¥0.00"
           },
           {

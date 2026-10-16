@@ -300,11 +300,11 @@ test("day 34: Chase payment opens the handoff, Copy copies the request, Escape r
   const dialog = page.getByTestId(`chase-detail-CHASE-dialog-${overdue.receivable_id}`);
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("heading", { name: "Chase payment: Foshan Home Retail Co." })).toBeVisible();
-  await expect(dialog.getByTestId("chase-fact-outstanding")).toContainText("¥162,800.00");
+  await expect(dialog.getByTestId("chase-fact-outstanding")).toContainText("¥160,000.00");
   await expect(dialog.getByTestId("chase-fact-late")).toContainText("2 days");
-  await expect(dialog.getByTestId("chase-fact-promise-0")).toContainText("¥255,013.80");
+  await expect(dialog.getByTestId("chase-fact-promise-0")).toContainText("¥257,790.00");
   const request = dialog.getByTestId("chase-request");
-  await expect(request).toContainText("¥162,800.00 remains outstanding");
+  await expect(request).toContainText("¥160,000.00 remains outstanding");
   const asked = await request.innerText();
   expect(asked).not.toMatch(/CMT-|RCV-|\bday \d/);
   await dialog.getByTestId("chase-copy").click();
@@ -326,7 +326,7 @@ test("day 34 in Chinese: the chase handoff and the request are the server's Chin
 test("day 34: what was promised early and what arrived stay under the layers, in the layers' heading style", async ({ page }) => {
   await advanceTo34(page);
   await expect(page.getByRole("heading", { name: "Expected early payments" })).toBeVisible();
-  await expect(page.getByTestId("promised-RCV-A")).toContainText("¥255,013.80");
+  await expect(page.getByTestId("promised-RCV-A")).toContainText("¥257,790.00");
   await expect(page.getByTestId("promised-RCV-A")).toHaveAttribute("data-status", "RECEIVED");
   await expect(page.getByRole("heading", { name: "Payments received" })).toBeVisible();
   await expect(page.getByTestId("receipt-rec-receipt-1")).toContainText("Foshan Home Retail Co.");
@@ -347,10 +347,10 @@ test("day 34 after the half receipt: the receipt names its four facts and the ch
   await dialog.getByTestId("chase-close").click();
   await expect(dialog).toBeHidden();
   const facts = page.getByTestId("receipt-facts-rec-receipt-1");
-  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-received")).toContainText("¥127,506.90");
-  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-cleared")).toContainText("¥128,600.00");
-  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-discount")).toContainText("¥1,093.10");
-  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining")).toContainText("¥291,400.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-received")).toContainText("¥128,895.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-cleared")).toContainText("¥130,000.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-discount")).toContainText("¥1,105.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining")).toContainText("¥290,000.00");
   await expect(facts).toContainText("The early-payment window has ended");
 });
 

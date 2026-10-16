@@ -82,15 +82,14 @@ const part = (key: string, target: string, extra?: Step["extra"]): Step => ({ ta
 /** The steps of each page, in reading order: every section, and what its buttons do. A step whose part is not on screen is left out. */
 const STEPS: Record<string, Step[]> = {
   "/": [
-    part("home.status", tid("home-status")),
+    // The page's order: the outlook (the recommendation inside it), the worklist, then the side column. The headline is for a screen reader only, so it is no step.
+    part("home.outlook", tid("hv2-outlook-card")),
+    part("home.action", tid("hv2-action")),
+    part("home.worklist", tid("home-worklist-panel")),
     part("home.cash", tid("hv2-cash-card")),
     part("home.mix", '[data-tour="home-mix"]'),
-    part("home.action", tid("hv2-action")),
-    part("home.outlook", tid("hv2-outlook-card")),
-    part("home.worklist", tid("home-worklist-panel")),
     part("home.upcoming", tid("hv2-upcoming")),
     part("home.owed", tid("hv2-owed-card")),
-    part("home.tools", '[data-tour="home-tools"]'),
     part("shell.ask", tid("ask-header")),
     NAV,
     part("shell.account", tid("account-menu")),
@@ -108,13 +107,14 @@ const STEPS: Record<string, Step[]> = {
   "/cash": [
     part("cash.status", "#cash-answer"),
     part("cash.summary", '[data-tour="cash-summary"]'),
+    // "Your funding" is the second card (from lg). It is taller than the screen leaves room for beside a card: the ring stands for it (none without a source to draw), else its first row or its empty line.
+    part("cash.sources", '#cash-sources-now [data-testid="home-mix-ring"], #cash-sources-now [data-testid^="cash-facility-"], #cash-sources-now [data-testid="cash-current-row"], #cash-sources-now [data-testid="cash-current-none"]'),
     part("cash.plan", tid("home-next-action")),
     part("cash.chart", tid("cash-forecast")),
     part("cash.markers", '[data-testid^="picture-marker-"]'),
     part("cash.try", tid("cash-try")),
     part("cash.more", tid("cash-more")),
     part("cash.options", tid("cash-options-all")),
-    part("cash.sources", '#cash-sources-now [data-testid^="cash-facility-"]'), // the funding card is taller than the screen leaves room for beside a card: the first source stands for it
     part("cash.readings", tid("cash-readings")),
   ],
   "/whatif": [part("sandbox.pick", tid("whatif-ask")), part("sandbox.controls", "#whatif-controls"), part("sandbox.outcome", tid("whatif-outcome"))],
@@ -182,7 +182,18 @@ function visibleTarget(selector: string): HTMLElement | null {
 /** The steps this page can show now: its own, those whose part is on the page, else the sections step. */
 function stepsFor(pathname: string): Step[] {
   const own = (STEPS[pathname] ?? []).filter((s) => visibleTarget(s.target));
-  return own.length ? own : [NAV];
+  if (!own.length) return [NAV];
+  if (!window.matchMedia("(max-width: 63.999rem)").matches) return own;
+  // On a narrow screen the page is one column and some parts are moved below the rest (Cash's figures and funding follow its plan): the page's parts are walked top to bottom
+  // as they stand, so the tour never jumps down the page and back; the shell's steps (outside main) keep their place at the end.
+  const top = (s: Step) => {
+    const el = visibleTarget(s.target);
+    return el?.closest("main") ? el.getBoundingClientRect().top + window.scrollY : Number.POSITIVE_INFINITY;
+  };
+  return own
+    .map((s, i) => ({ s, i, y: top(s) }))
+    .sort((a, b) => (a.y === b.y ? a.i - b.i : a.y - b.y))
+    .map((x) => x.s);
 }
 
 /**
@@ -324,7 +335,7 @@ function TourCard({ steps, path, seenKey }: { steps: Step[]; path: string; seenK
 
   const pad = 6;
   const hole = rect ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 } : null;
-  // Where the card goes: beside the spotlight when the screen is wide enough, else below it, else above it, else pinned to
+  // Where the card goes: beside the spotlight (right, else left) when the screen is wide enough, else below it, else above it, else pinned to
   // the bottom of the screen (a tall part such as the home card), clear of the phone's tab bar.
   const CARD_W = 384;
   let place: CSSProperties = { top: "50%", left: "50%", translate: "-50% -50%" };
@@ -335,6 +346,8 @@ function TourCard({ steps, path, seenKey }: { steps: Step[]; path: string; seenK
     const width = Math.min(CARD_W, window.innerWidth - 32);
     const left = Math.min(Math.max(16, hole.left + hole.width / 2 - width / 2), window.innerWidth - width - 16);
     if (right > CARD_W + 32) place = { left: hole.left + hole.width + 16, top: Math.min(Math.max(16, hole.top), window.innerHeight - cardH - 16) };
+    // A part at the right of a wide card (Home's recommendation inside the outlook): the card goes to its left.
+    else if (hole.left > CARD_W + 32) place = { left: hole.left - CARD_W - 16, top: Math.min(Math.max(16, hole.top), window.innerHeight - cardH - 16) };
     else if (below > cardH + 16) place = { top: hole.top + hole.height + 16, left };
     else if (hole.top > cardH + 16) place = { top: hole.top - cardH - 16, left };
     else place = { bottom: 88, left: "50%", translate: "-50% 0" };

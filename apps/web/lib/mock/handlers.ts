@@ -132,6 +132,7 @@ import homeApprovalPending from "../../mocks/home_approval_pending.json";
 import homeApprovalApprovedZh from "../../mocks/home_approval_approved_zh.json";
 import homeApprovalPendingZh from "../../mocks/home_approval_pending_zh.json";
 import { getLang } from "../i18n";
+import { en, zh } from "../dictionary";
 import homeApprove from "../../mocks/home_approve.json";
 import ledgerApproved from "../../mocks/home_ledger_approved.json";
 import ledgerDay34 from "../../mocks/home_ledger_day34.json";
@@ -1068,7 +1069,7 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
   const counter = openOfferStage() === "evaluated";
@@ -1097,7 +1098,7 @@ export async function getWorklist(lang: "en" | "zh"): Promise<WorklistView | nul
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const m = await messageStage();
   if (m) return buyerMessage.recordedReads(m.rec, m.stage, lang).worklist;
@@ -1109,7 +1110,7 @@ export async function getHomeInvoices(lang: "en" | "zh"): Promise<ReceivablesRea
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   return homeV2.mockInvoices(homeV2Point(), lang);
 }
@@ -1151,7 +1152,7 @@ export async function getCustomers(lang: "en" | "zh"): Promise<CustomersView | n
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const view = await homeV2.mockCustomers(homeV2Point(), lang);
   return view && typeof window !== "undefined" ? withCustomersPatch(view) : view;
@@ -1193,7 +1194,7 @@ export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
   return receivablesMock.mockReceivables(dealt, lang);
@@ -1432,7 +1433,7 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
   // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   checkGuard(guard);
   // The mock holds one recorded set of books; the busy company is the two Slice D reads recorded on it.
@@ -1744,7 +1745,8 @@ const SETUP_LIVE_ONLY = "Setting up your own books needs the full app (live mode
 
 export async function getSetupStatus(): Promise<SetupStatus> {
   await delay();
-  return { books: "demo", scenario: "golden_sme", can_open: false, can_open_text: SETUP_LIVE_ONLY, opened: null };
+  // The sentence in the owner's language (the dictionary's own words for this refusal), never the English one on a Chinese screen.
+  return { books: "demo", scenario: "golden_sme", can_open: false, can_open_text: getLang() === "zh" ? zh["err.mock_setup"] : en["err.mock_setup"], opened: null };
 }
 
 export async function getSetupDocuments(): Promise<SetupDocument[]> {

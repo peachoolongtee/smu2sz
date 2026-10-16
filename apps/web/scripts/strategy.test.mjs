@@ -94,11 +94,11 @@ test("the recordings carry the server's strings the pages show, and no 'day N' i
   }
   assert.equal(recording("worth_day34").rows[0].action, "call_now");
   // The offer row leads with the limit and names the lower rate as the buyer's choice; the wait row says it in one sentence.
-  assert.equal(recording("worth_day0").rows[0].worth_text, "Saves ¥86.16 at the 0.85% limit; ¥1,250.06 if they take 0.40%");
-  assert.match(recording("worth_day0").rows[0].reason_sentence, /^At the 0\.85% limit it saves you ¥86\.16 against the cheapest funding plan; at 0\.40% ¥1,250\.06\. /);
+  assert.equal(recording("worth_day0").rows[0].worth_text, "Saves ¥77.94 at the 0.85% limit; ¥1,254.51 if they take 0.40%");
+  assert.match(recording("worth_day0").rows[0].reason_sentence, /^At the 0\.85% limit it saves you ¥77\.94 against the cheapest funding plan; at 0\.40% ¥1,254\.51\. /);
   const wait = recording("worth_day34").rows.find((r) => r.action === "wait");
   assert.equal(wait.worth_text, "Saves nothing extra now");
-  assert.equal(wait.reason_sentence, "Collected today it would save you ¥1,706.10 and clear the shortfall, but the invoices due before it already cover what you need, so chasing it adds nothing.");
+  assert.equal(wait.reason_sentence, "Collected today it would save you ¥1,702.20 and clear the shortfall, but the invoices due before it already cover what you need, so chasing it adds nothing.");
 });
 
 test("the envelope recordings are BUYER-1's, carry the server's sentences and the zone, and say no 'day N'", () => {
@@ -118,10 +118,10 @@ test("the envelope recordings are BUYER-1's, carry the server's sentences and th
   assert.equal(day0.levers.length, 6);
   assert.match(day0.reason, /^60 days without an early payment leaves a shortfall in 47 days that no fix covers; the ¥5,000\.00 budget buys no terms without a price rise\.$/);
   // The lever table, the package lines and the zone rows are the server's strings: the card composes none of them.
-  assert.deepEqual(day0.levers.map((l) => l.maximum_display), ["45 days", "55 days", "55 days, price up 0.30%", "0.70% on ¥420,000.00", "0.85% on ¥257,200.00", "1.25%"]);
+  assert.deepEqual(day0.levers.map((l) => l.maximum_display), ["45 days", "55 days", "55 days, price up 0.30%", "0.70% on ¥420,000.00", "0.85% on ¥260,000.00", "1.25%"]);
   assert.equal(day0.levers[0].next_step_sentence, "50 days: over your limits; its funding cannot run today");
   assert.equal(day0.levers[0].wall_words, "your budget for what you give buyers");
-  assert.deepEqual(day0.packages.map((p) => p.summary), ["45-day terms · early payment 0.85% on ¥257,200.00", "55-day terms · price up 0.30%", "45-day terms · rebate 1.25%"]);
+  assert.deepEqual(day0.packages.map((p) => p.summary), ["45-day terms · early payment 0.85% on ¥260,000.00", "55-day terms · price up 0.30%", "45-day terms · rebate 1.25%"]);
   assert.deepEqual(day0.zone.slice(0, 5).map((z) => z.lowest_price_words), ["no price rise needed", "no price rise needed", "no price rise needed", "no price rise needed", "0.10%"]);
   assert.equal(day0.zone.at(-1).lowest_price_words, "none works");
   assert.equal(day0.zone.at(-1).min_price_bp, null);

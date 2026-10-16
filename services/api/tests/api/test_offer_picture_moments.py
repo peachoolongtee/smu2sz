@@ -107,7 +107,7 @@ def test_each_value_carries_the_short_figure_the_tone_and_its_difference_from_th
                 assert v["vs_asked_tone"] == ("ok" if v["vs_asked_fen"] > 0 else "bad" if v["vs_asked_fen"] < 0 else "neutral")
     first = {v["key"]: v for v in pic["moments"][0]["values"]}
     a, b = pic["paths"][1]["key"], pic["paths"][2]["key"]
-    assert (first[a]["vs_asked_short"], first[b]["vs_asked_short"], first[a]["closing_short"]) == ("+¥150k", "+¥90k", "¥550k")
+    assert (first[a]["vs_asked_short"], first[b]["vs_asked_short"], first[a]["closing_short"]) == ("+¥147k", "+¥90k", "¥547k")
     second = {v["key"]: v for v in pic["moments"][1]["values"]}
     assert second[a]["vs_asked_short"] == second[b]["vs_asked_short"] == "−¥10k" and second[a]["vs_asked_tone"] == "bad"
     decisive = {v["key"]: v for v in next(m for m in pic["moments"] if m["decisive"])["values"]}
@@ -137,13 +137,13 @@ def test_what_moved_cash_on_a_day_is_each_paths_events_in_words_with_their_amoun
     a, b = keys[1], keys[2]
     by_day = {m["day"]: m["events_text"] for m in pic["moments"]}
     assert all(list(m["events_text"]) == keys for m in pic["moments"])
-    assert by_day[0] == {"asked": [], a: ["Credit line draw ¥149,986.20"], b: ["Credit line draw ¥90,000.00"]}
+    assert by_day[0] == {"asked": [], a: ["Credit line draw ¥147,210.00"], b: ["Credit line draw ¥90,000.00"]}
     assert by_day[47]["asked"] == ["Operating bill −¥100,000.00"]
     assert by_day[47][a] == ["Receipt from Foshan Home Retail Co. ¥420,000.00", "Operating bill −¥100,000.00"]
     assert by_day[62] == {"asked": ["Receipt from Foshan Home Retail Co. ¥420,000.00"], a: [], b: []}
     assert by_day[66] == {"asked": [], a: [], b: []}
     zh = client.get(f"/offers/{oid}/picture", params={"lang": "zh"}).json()["moments"]
-    assert zh[0]["events_text"][a] != by_day[0][a] and "¥149,986.20" in zh[0]["events_text"][a][0]
+    assert zh[0]["events_text"][a] != by_day[0][a] and "¥147,210.00" in zh[0]["events_text"][a][0]
 
 
 def test_an_accepted_offer_walks_today_its_lowest_point_and_the_end(client):

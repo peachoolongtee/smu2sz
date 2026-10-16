@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field, replace
 from fractions import Fraction
 from itertools import permutations
@@ -978,6 +979,14 @@ class Search:
         idx = [i for i, a in enumerate(actions) if a.facility_id == ref]
         if not idx:
             return None
+        # A draw is charged only its own lot (owner, 16 Oct): a posting whose formula names another principal on the same
+        # facility ("147,210.00 × 6.4% × 47/365", a balance drawn before) is not this draw's cost; it stays in the plan's
+        # total and reads as the change in other interest and fees.
+        principal = re.match(r"(-?[\d,]+\.\d\d) ×", formula or "")
+        if principal is not None:
+            idx = [i for i in idx if actions[i].kind != FundingActionKind.DRAW or y(actions[i].amount_fen) == principal.group(1)]
+            if not idx:
+                return None
         if len(idx) == 1:
             return idx[0]
         # the engine's posting formula names the principal it is charged on first ("<amount> × <rate> ..."): that

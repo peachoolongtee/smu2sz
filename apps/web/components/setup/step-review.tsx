@@ -3,8 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Callout, ErrorState, LoadingBlock } from "@/components/ui";
-import { openBooks, previewSetup } from "@/lib/api";
+import { demoReset, getDemoStory, openBooks, previewSetup } from "@/lib/api";
+import { changeBooks } from "@/lib/books-guard";
+import { API_MODE } from "@/lib/config";
 import { bump, resetSession } from "@/lib/demo-store";
+import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { clearDraft } from "@/lib/setup-draft";
 import type { SetupDraft, SetupPreview, SetupStatus } from "@/lib/types";
@@ -39,10 +42,41 @@ export function StepReview({ draft, status, goTo }: { draft: SetupDraft; status:
       bump();
       router.push("/");
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorText(e, t));
       setBusy(false);
     }
   }
+
+  // Opening replaces only blank books. When other books are open the owner can start again from blank ones here, through the same guard as every reset: the dialog lists
+  // what the books on the server lose (from a fresh read) and its confirm is the one thing that replaces them. The draft in this browser is kept.
+  const [resetting, setResetting] = useState(false);
+  const [blankDone, setBlankDone] = useState(false);
+  async function toBlank() {
+    setResetting(true);
+    setError(null);
+    try {
+      const story = await getDemoStory(lang, null);
+      await changeBooks(
+        story.books,
+        async (guard) => {
+          await demoReset("blank", guard);
+          // A new session on the new books: every read (the setup's status included) is taken again.
+          resetSession();
+          setBlankDone(true);
+        },
+        {
+          always: true,
+          labels: { title: t("setup.blank.title"), confirm: t("setup.blank.confirm"), cancel: t("demo.load.cancel"), keeps: story.books.reset_keeps_text },
+          gives: { heading: t("demo.alt.get"), text: t("demo.card.blank.help") },
+        },
+      );
+    } catch (e) {
+      setError(errorText(e, t));
+    } finally {
+      setResetting(false);
+    }
+  }
+  const canReset = API_MODE === "live" && status !== undefined && status.books !== "blank";
 
   return (
     <div className="space-y-6">
@@ -52,6 +86,18 @@ export function StepReview({ draft, status, goTo }: { draft: SetupDraft; status:
         <Callout tone="warn">{status.books === "own" && status.opened ? t("setup.replace.own", { text: status.opened.text }) : t("setup.replace.demo")}</Callout>
       ) : null}
       {status && !status.can_open && status.can_open_text ? <Callout tone="warn">{status.can_open_text}</Callout> : null}
+      {canReset ? (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2" data-testid="setup-blank">
+          <Button loading={resetting} onClick={() => void toBlank()} data-testid="setup-blank-reset">
+            {t("setup.blank.button")}
+          </Button>
+          <p className="min-w-0 flex-[1_1_18rem] text-sm text-ink-3">{t("setup.blank.hint")}</p>
+        </div>
+      ) : blankDone && status?.books === "blank" ? (
+        <p role="status" className="text-sm font-medium text-ok-fg" data-testid="setup-blank-done">
+          {t("setup.blank.done")}
+        </p>
+      ) : null}
       <section className="flex flex-wrap items-end gap-4 rounded-card border-2 border-brand-600 bg-brand-50 p-5" data-testid="setup-sign">
         <div className="min-w-0 flex-[999_1_320px] space-y-1">
           <h3 className="text-base font-bold text-ink">{t("setup.s6.sign.title")}</h3>

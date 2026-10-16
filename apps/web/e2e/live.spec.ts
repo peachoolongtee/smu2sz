@@ -674,7 +674,7 @@ test("Deals: the negotiation is the API's, in its order, with the costs it price
   await openCompare(page);
   await expect(page.getByTestId("deal-rec-reason")).toContainText("Recommended because it is within your mandate");
   await expect(page.getByTestId("deal-choice-cell-cost-asked")).toContainText("¥28,326.92");
-  await expect(page.getByTestId("deal-choice-cell-cost-reply").first()).toContainText("¥3,027.77");
+  await expect(page.getByTestId("deal-choice-cell-cost-reply").first()).toContainText("¥3,035.99");
   await post("/demo/reset", {});
 });
 

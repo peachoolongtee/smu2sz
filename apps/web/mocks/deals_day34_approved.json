@@ -238,21 +238,21 @@
           "when": "34 days ago",
           "actor": "AGENT",
           "label": "Agent replied",
-          "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due 32 days ago; Option B: payment terms to 55 days and a price change of 0.30%"
+          "text": "Rejected. Offered Option A: early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due 32 days ago; Option B: payment terms to 55 days and a price change of 0.30%"
         },
         {
           "day": 0,
           "when": "34 days ago",
           "actor": "BUYER",
           "label": "Buyer accepted",
-          "text": "early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due 32 days ago; booked by the agent within your limits"
+          "text": "early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due 32 days ago; booked by the agent within your limits"
         },
         {
           "day": 2,
           "when": "32 days ago",
           "actor": "BANK",
           "label": "Bank feed",
-          "text": "¥255,013.80 received on the ¥420,000.00 invoice to Foshan Home Retail Co. (the agreed early payment)"
+          "text": "¥257,790.00 received on the ¥420,000.00 invoice to Foshan Home Retail Co. (the agreed early payment)"
         }
       ],
       "in_force": [
@@ -277,7 +277,7 @@
         {
           "key": "early_payment",
           "label": "Early payment",
-          "value_display": "early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due 32 days ago",
+          "value_display": "early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due 32 days ago",
           "vs_contract": "DIFFERENT",
           "vs_contract_text": "Differs from the contract",
           "contract_display": "The buyer may settle early at 1.20% off, within 2 days",
@@ -303,13 +303,13 @@
           "due_when": "2 days ago",
           "amount_fen": 42000000,
           "amount_display": "¥420,000.00",
-          "outstanding_fen": 16280000,
-          "outstanding_display": "¥162,800.00",
+          "outstanding_fen": 16000000,
+          "outstanding_display": "¥160,000.00",
           "status": "LATE",
           "status_text": "2 days late",
           "tone": "bad",
           "notes": [
-            "¥257,200.00 settled early 32 days ago"
+            "¥260,000.00 settled early 32 days ago"
           ]
         },
         {
@@ -411,12 +411,12 @@
         }
       ],
       "next_action": {
-        "text": "Chase the ¥162,800.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago.",
+        "text": "Chase the ¥160,000.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago.",
         "items": [
           {
             "kind": "CHASE",
             "receivable_id": "RCV-A",
-            "amount_display": "¥162,800.00",
+            "amount_display": "¥160,000.00",
             "late_days": 2
           }
         ],
@@ -469,7 +469,7 @@
         "tier": "NEEDS_YOU",
         "customer_id": "BUYER-1",
         "customer_short": "Foshan",
-        "subject_text": "Foshan · ¥163k overdue",
+        "subject_text": "Foshan · ¥160k overdue",
         "subject_demo_text": null,
         "lifecycle": null,
         "topic_text": null,

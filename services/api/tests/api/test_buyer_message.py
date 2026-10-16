@@ -82,12 +82,12 @@ def test_the_message_names_the_invoice_and_real_dates_in_either_language(api: Te
     assert en["copyable"] and en["blocked"] is None and en["provenance"]["via"] == "owner"
     text = en["text"]
     assert text.startswith("Dear Foshan Home Retail Co.,")
-    for said in ("¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026", "up to ¥257,200", "on or before 3 October 2026",
-                 "0.85% discount", "Paying ¥255,013.80 by then settles ¥257,200 of the invoice",
-                 "including the other ¥162,800, stays due on 2 November 2026", "No other terms change", "open until 3 October 2026"):
+    for said in ("¥420,000 invoice issued on 18 September 2026 and due on 2 November 2026", "up to ¥260,000", "on or before 3 October 2026",
+                 "0.85% discount", "Paying ¥257,790 by then settles ¥260,000 of the invoice",
+                 "including the other ¥160,000, stays due on 2 November 2026", "No other terms change", "open until 3 October 2026"):
         assert said in text
     assert "day 2" not in text and "this invoice" not in text  # the engine's own record of the terms is not the message
-    assert "2026年9月18日开具、2026年11月2日到期的 ¥420,000 发票" in zh["text"] and "支付 ¥255,013.80" in zh["text"] and "0.85%" in zh["text"]
+    assert "2026年9月18日开具、2026年11月2日到期的 ¥420,000 发票" in zh["text"] and "支付 ¥257,790" in zh["text"] and "0.85%" in zh["text"]
     assert en["terms_hash"] == zh["terms_hash"] and en["message_hash"] != zh["message_hash"]
     assert en["valid_until_date"] == "3 October 2026" and en["offered"] is None
 
@@ -318,7 +318,7 @@ def test_the_review_beside_the_message_is_the_pictures_and_the_words_follow_the_
     assert m["notice_text"].startswith("FLOW does not send this message") and m["valid_until_date"] == "3 October 2026"
     assert m["provenance"]["verified"] is True and [x["code"] for x in m["languages"]] == ["en", "zh"]
     early = next(r for r in m["review"]["terms"] if r["key"] == "early_payment")
-    assert early["value_text"] == "0.85% off ¥257,200.00" and early["instead_of_text"] == "instead of 1.50% off ¥420,000.00"
+    assert early["value_text"] == "0.85% off ¥260,000.00" and early["instead_of_text"] == "instead of 1.50% off ¥420,000.00"
     assert m["review"]["cost_display"] and m["review"]["needs_owner"] is False
 
 
@@ -383,8 +383,8 @@ def test_the_buyers_yes_reads_as_what_happened(api: TestClient, rt: Runtime) -> 
     assert out["title_text"] == "Buyer acceptance recorded" and out["actions"] is None
     assert out["text"] == "You confirmed that Foshan Home Retail Co. accepted Option A on 1 October 2026."
     assert out["provenance_text"] == "Source: recorded by you; no buyer message attached" and out["evidence_quote"] is None
-    assert out["consequences"] == ["Foshan Home Retail Co. can settle ¥257,200.00 of the invoice by paying ¥255,013.80 by 3 October 2026.",
-                                   "The other ¥162,800.00 stays due on 2 November 2026.",
+    assert out["consequences"] == ["Foshan Home Retail Co. can settle ¥260,000.00 of the invoice by paying ¥257,790.00 by 3 October 2026.",
+                                   "The other ¥160,000.00 stays due on 2 November 2026.",
                                    "No cash has been received yet; FLOW reconciles the payment when it arrives."]
     assert [x["href"] for x in out["links"]] == ["/receivables#RCV-A", "/customers/BUYER-1"]
 
@@ -481,11 +481,11 @@ def test_a_yes_with_the_buyers_message_says_where_it_came_from(api: TestClient, 
     oid, v, m = _sent(api)
     r = api.post(f"/offers/{oid}/counters/{m['counter_id']}/buyer-accepted",
                  json={"verdict_id": v["id"], "state_version": rt.store.get_state().state_version, "message_hash": m["message_hash"],
-                       "evidence_text": "Agreed, we will pay ¥255,013.80 by 3 October."})
+                       "evidence_text": "Agreed, we will pay ¥257,790.00 by 3 October."})
     assert r.status_code == 200, r.text
     out = _decision(api, oid)["outbound"]
     assert out["provenance_text"] == "Source: recorded by you, with the buyer's message"
-    assert out["evidence_quote"] == "Agreed, we will pay ¥255,013.80 by 3 October."
+    assert out["evidence_quote"] == "Agreed, we will pay ¥257,790.00 by 3 October."
     assert _decision(api, oid)["history"][-1]["text"] == "You recorded that Foshan Home Retail Co. accepted, with their message"
 
 
@@ -591,5 +591,5 @@ def test_an_offer_that_ended_unagreed_lists_what_was_offered_never_as_in_force(a
     assert api.post("/clock/advance", json={"to_day": 3}).status_code == 200
     out = _decision(api, oid)["outbound"]
     assert out["terms_title_text"] == "What you offered (not agreed)"
-    assert out["terms"] == ["Payment terms: 45 days", "Early payment: 0.85% off ¥257,200.00", "Rebate or price: Not offered"]
+    assert out["terms"] == ["Payment terms: 45 days", "Early payment: 0.85% off ¥260,000.00", "Rebate or price: Not offered"]
     assert not any("effective" in line for line in out["terms"])
