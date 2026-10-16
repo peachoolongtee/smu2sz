@@ -29,6 +29,7 @@
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
 //   - offer_exposure_ex01.json (only with --exposure): `computed_in_seconds` and each `capacity[*].spare.seconds` -> 0 (timings).
+//   - home_v2/exposure*.json: the same two timings -> 0.
 //   - slice_d/*.json (only with --slice-d): every `loss_token` (a fingerprint of the books, which includes the restore history the API accumulates) becomes a fixed token by order of first appearance; the books' state version at the end of a funding decision's id (alert:ALERT-RESERVE-42:v<n>) becomes v7, the id the
 //     mock's decision recordings use for the same record; `alternate.history` is trimmed (see trimRestoreHistory).
 //   - strategy/*.json (only with --strategy): `computed_in_seconds` -> 0 (the time the call took; a cache hit differs from a miss).
@@ -302,6 +303,18 @@ function normalise(name, value) {
     } else if (node && typeof node === "object") for (const v of Object.values(node)) rechain(v);
   };
   if (name.startsWith("strategy/") || name.startsWith("receivables/") || name.startsWith("buyer_exposure")) out.computed_in_seconds = 0;
+  if (name.startsWith("home_v2/exposure")) {
+    // the exposure read inside Home's recordings carries the same timings as offer_exposure_ex01.json, in both languages
+    const zero = (node) => {
+      if (Array.isArray(node)) node.forEach(zero);
+      else if (node && typeof node === "object") {
+        if ("computed_in_seconds" in node) node.computed_in_seconds = 0;
+        if (node.spare && typeof node.spare === "object" && "seconds" in node.spare) node.spare.seconds = 0;
+        Object.values(node).forEach(zero);
+      }
+    };
+    zero(out);
+  }
   if (RECHAIN.has(name)) rechain(out);
   if (RECHAIN_BY_APPEARANCE.has(name)) rechainByAppearance(name, out);
   if (name.startsWith("slice_d/")) trimRestoreHistory(name, out);
