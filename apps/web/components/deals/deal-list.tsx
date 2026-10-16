@@ -218,7 +218,7 @@ export function ListCard({ row: r, index, label, quote, testId }: { row: ListCar
     <Link
       href={r.href}
       aria-label={label}
-      className="motion-press group flex items-center gap-4 rounded-[var(--radius-f-card)] bg-panel p-4 shadow-(--shadow-f) transition-shadow hover:shadow-(--shadow-lift) focus-visible:shadow-(--shadow-lift) sm:gap-5 sm:p-5"
+      className="motion-press group flex items-center gap-4 rounded-[var(--radius-f-card)] bg-panel p-4 shadow-(--shadow-f) outline outline-2 -outline-offset-2 outline-transparent transition-[box-shadow,outline-color] hover:shadow-(--shadow-lift) hover:outline-brand-600 focus-visible:shadow-(--shadow-lift) focus-visible:outline-brand-600 sm:gap-5 sm:p-5"
       data-testid={testId}
       data-buyer={r.buyerId}
       data-group={r.group}

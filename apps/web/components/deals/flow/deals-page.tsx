@@ -202,11 +202,14 @@ export function DealsPage() {
   };
 
   // ---- the state sentence under the stable title
-  const counts = queue ? dealTabCounts(queue) : undefined;
+  // A company opened from the list (`?customer=`, no deal selected): the page is that company's deals only.
+  const focus = !decision ? (sel.customer ?? params.get("buyer") ?? null) : null;
+  const focusRows = focus ? rows.filter((x) => x.row.customer_id === focus) : null;
+  const counts = queue ? (focusRows ? focusCounts(focusRows) : dealTabCounts(queue)) : undefined;
   // The server's sentence counts every task that needs the owner (an approval and a payment to chase too); the tabs count the negotiations listed here. When the two differ the page
   // says how many of them are the deals below and where the others wait, so "7 tasks need you" never sits over "Needs you 5" unexplained.
-  const outside = queue && counts && queue.counts.needs_you > counts.needs_you ? ` ${t("deals.state.outside", { n: counts.needs_you })}` : "";
-  const subtitle = !counts ? undefined : queue?.headline_text ? queue.headline_text + outside : counts.needs_you > 0 ? t("deals.state.needs", { n: counts.needs_you, w: counts.waiting }) : counts.waiting > 0 ? t("deals.state.waiting", { w: counts.waiting }) : t("deals.state.none");
+  const outside = !focus && queue && counts && queue.counts.needs_you > counts.needs_you ? ` ${t("deals.state.outside", { n: counts.needs_you })}` : "";
+  const subtitle = !counts ? undefined : focus ? (counts.needs_you > 0 ? t("deals.state.needs", { n: counts.needs_you, w: counts.waiting }) : counts.waiting > 0 ? t("deals.state.waiting", { w: counts.waiting }) : t("deals.state.none")) : queue?.headline_text ? queue.headline_text + outside : counts.needs_you > 0 ? t("deals.state.needs", { n: counts.needs_you, w: counts.waiting }) : counts.waiting > 0 ? t("deals.state.waiting", { w: counts.waiting }) : t("deals.state.none");
   const back = deals.data?.context?.back ?? openOffer?.context?.back ?? null;
   const irrelevantText = opened.decision === decision ? (deals.data?.context?.irrelevant_text ?? null) : null;
 
@@ -258,6 +261,7 @@ export function DealsPage() {
         )}
         {inboxOpen ? (
           <InboxList
+            onlyCounterparty={sel.customer ?? params.get("buyer") ?? null}
             currentDocId={decision ? (demo.offers[offerOf(decision) ?? ""]?.documents[0]?.doc_id ?? null) : null}
             readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
             known={known}
@@ -350,7 +354,7 @@ export function DealsPage() {
 
   return (
     <div className="flow-f min-w-0" data-testid="deals-page">
-      {decision ? null : <PageHeader section="deals" title={t("nav.deals")} subtitle={subtitle} />}
+      {decision ? null : <PageHeader section="deals" title={focus ? buyerName(focus) : t("nav.deals")} subtitle={subtitle} />}
       {back ? (
         <Link href={back.href} className="mb-3 inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-back">
           ‹ {back.label}
@@ -395,7 +399,7 @@ export function DealsPage() {
           <div className="min-w-0 space-y-6" data-testid="deals-side">
             {tableMode ? null : QUEUE_NODE}
             {/* The buying side (ADR-0013) sits between the selling list and the buyers' messages: selling stays first. */}
-            {purchases ? <BuyingCard purchases={purchases} /> : null}
+            {purchases && !focus ? <BuyingCard purchases={purchases} /> : null}
             {INBOX_SLOT}
           </div>
         </div>
@@ -405,7 +409,7 @@ export function DealsPage() {
             today={clock.data?.day ?? books.data?.day ?? 0}
             buyerName={(id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? deals.data?.deals.find((d) => d.counterparty_id === id)?.counterparty_name ?? id}
             hideEmpty
-            agreed={(deals.data?.deals ?? []).filter(isAgreed)}
+            agreed={(deals.data?.deals ?? []).filter((d) => isAgreed(d) && (!focus || d.counterparty_id === focus))}
             dealsDay={deals.data?.day ?? null}
             dealsError={dealsError}
             onRetryDeals={deals.reload}
@@ -451,6 +455,12 @@ function DealTopBar({ total, walk, locked, onAll, onWalk }: { total: number; wal
       ) : null}
     </div>
   );
+}
+
+/** The tab counts of one company's rows (the server's counts are the whole queue's). */
+function focusCounts(rows: ReturnType<typeof negotiationRows>): Record<DealTab, number> {
+  const n = (tier: DealTab) => rows.filter((x) => x.tier === tier).length;
+  return { all: rows.length, needs_you: n("needs_you"), waiting: n("waiting"), agreements: n("agreements") };
 }
 
 /** The two label sentences the fallback agreement rows are written with (the words around the server's terms and contract reference). */
