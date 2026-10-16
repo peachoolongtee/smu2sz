@@ -32,7 +32,7 @@ SUSPECTED = code reading only. Severity is for the stated scope; **S** = hackath
 | SETUP-1..7 | (capex branch) setup feature: see `CERTIFICATIONS.md`; SETUP-1, 4, 5, 7 fixed on `b6d1e519`, SETUP-2, 3, 6 open (Low/Info) | Low-Med to Info | CONFIRMED / reviewer | partly fixed |
 | SEC-23 | Red team d F1 test patched a function the code no longer called after `c51a7284`, so the no-deal guard was untested (guard itself intact) | Low (coverage) | CONFIRMED | **fixed** `1b58291f`, merged in `bbbfb7ce` |
 | SEC-06 | No runnable production configuration (compose cannot start; web build points at localhost) | n/a / High | CONFIRMED (code) | open |
-| SEC-07 | `DEMO_MODE` defaults on; published credentials and committed demo signing key = owner takeover outside compose | Info / High | CONFIRMED (code) | open |
+| SEC-07 | `DEMO_MODE` defaults on; published credentials and committed demo signing key = owner takeover outside compose | Info / High | CONFIRMED (code) | **fixed, certified on `0f92d433`** (default off) |
 | SEC-08 | Audit trail not tamper-evident (R-13): truncation/rewrite verify; approvals and security events unguarded; approval flip executes a rejected op | Medium / High | CONFIRMED (SQLite) | open |
 | SEC-09 | Bank-feed key moves the clock without bound: expires the mandate, posts debt service, logged as SYSTEM | Medium / Medium | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
 | SEC-10 | Unauthenticated callers grow `security_events` without bound; each refusal reads the whole table | Medium / Medium | REVIEWER-CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** (401 rate limit at the proxy remains) |
@@ -43,8 +43,8 @@ SUSPECTED = code reading only. Severity is for the stated scope; **S** = hackath
 | SEC-15 | Container and secret hygiene: root containers, unpinned bases, `uv:latest`, no `.dockerignore`, placeholder secrets accepted | Info / Low | REVIEWER-CONFIRMED (code) | open |
 | R-2 | One owner credential + one signing key; accept route queues and approves in one call | Info / Medium | open (accepted risk, re-confirmed in code) | design |
 | R-3 | Persuaded-but-authorised agent: Tier 1 inside the mandate, no aggregate draw limit | Medium / Medium | open (re-confirmed in code) | design |
-| R-10 | Buyer threshold probing: one keyed message reveals the counter cap (0.85%), and the counter's face (¥257,200) reveals the owner's funding gap; no per-buyer attempt budget | Medium / High | REVIEWER-CONFIRMED (`r2.py`); anonymous callers get no oracle | open: pricing design (Fable) |
-| R-11 | Agent key reads cash, floor, DSCR/leverage limits, concession cap, break-even and full verdict JSON through `/nl` (wider than documented) | Medium / High | REVIEWER-CONFIRMED (`r1.py`, `r2.py`) | open: decide what the agent channel is for |
+| R-10 | Buyer threshold probing: one keyed message reveals the counter cap (0.85%), and the counter's face (¥257,200) reveals the owner's funding gap; no per-buyer attempt budget | Medium / High | REVIEWER-CONFIRMED (`r2.py`); anonymous callers get no oracle | **mitigated, certified on `0f92d433`** (5 per buyer per day); residual: one message reveals the counter cap and the gap |
+| R-11 | Agent key reads cash, floor, DSCR/leverage limits, concession cap, break-even and full verdict JSON through `/nl` (wider than documented) | Medium / High | REVIEWER-CONFIRMED (`r1.py`, `r2.py`) | **fixed, certified on `0f92d433`** (agent allow-list) |
 
 Unverified areas and blockers are listed at the end; they are not passes.
 
