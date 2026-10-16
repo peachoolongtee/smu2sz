@@ -34,6 +34,16 @@ DEEPSEEK_MODEL = "deepseek-flash"
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 MAX_TOKENS = 16_000
+DEEPSEEK_MAX_TOKENS = 8_000
+DEEPSEEK_RETRY_MAX_TOKENS = 16_000  # the one retry after an answer cut at DEEPSEEK_MAX_TOKENS
+DEEPSEEK_COMPACT = (
+    "\nThe previous answer was cut off. Answer compactly: omit the DELIVERABLE and AMENDMENT terms, which are only "
+    "shown to the owner, and keep every other term."
+)
+# deepseek-flash thinks before it answers unless told not to, and the thinking is paid for out of max_tokens: on a
+# two-page Chinese contract it used all 8,000 tokens and left an empty answer (finish_reason "length"). Reading a
+# contract into a schema needs no reasoning, so it is switched off: the same answer comes back in about 5 s.
+DEEPSEEK_NO_THINKING = {"thinking": {"type": "disabled"}}
 HARD_CHARS = 1_500  # longer inputs, multi-document offers and term sheets go to the hard model
 
 
@@ -174,14 +184,16 @@ class DeepSeekBackend:
             + json.dumps(output_schema(schema_model), ensure_ascii=False)
         )
         last = "no attempt"
+        max_tokens = DEEPSEEK_MAX_TOKENS
         for _attempt in range(self.retries + 1):
             try:
                 resp = self.client.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "system", "content": sys_msg}, {"role": "user", "content": user}],
                     response_format={"type": "json_object"},
-                    max_tokens=8_000,
+                    max_tokens=max_tokens,
                     temperature=0,
+                    extra_body=DEEPSEEK_NO_THINKING,
                 )
             except BackendError:
                 raise
@@ -189,11 +201,19 @@ class DeepSeekBackend:
                 last = f"call failed: {type(e).__name__}"
                 continue
             try:
-                content = resp.choices[0].message.content
+                choice = resp.choices[0]
+                content = choice.message.content
             except (AttributeError, IndexError):
-                content = None
+                choice, content = None, None
+            finish = getattr(choice, "finish_reason", None)
+            if finish == "length":  # cut at max_tokens: ask once more, for more room and a compact answer
+                last = f"output cut at max_tokens={max_tokens} (finish_reason=length)"
+                if max_tokens < DEEPSEEK_RETRY_MAX_TOKENS:
+                    max_tokens = DEEPSEEK_RETRY_MAX_TOKENS
+                    sys_msg += DEEPSEEK_COMPACT
+                continue
             if not content or not content.strip():
-                last = "empty content"
+                last = f"empty content (finish_reason={finish})"
                 continue
             try:
                 return schema_model.model_validate_json(content)
