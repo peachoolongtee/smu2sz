@@ -28,18 +28,18 @@ import structlog
 
 from app.compiler.backends import ClaudeBackend, DeepSeekBackend
 from app.compiler.base import BackendError, ContractResult, LLMBackend, OfferResult, TermSheetResult
-from app.compiler.cache import CacheBackend
+from app.compiler.cache import CACHE_MODEL_ID, CacheBackend
 from app.compiler.contract import MAX_CHUNKS, ContractTooLong, build_contract, chunk_document, chunk_source
 from app.compiler.cross_check import check_against_rules
 from app.compiler.grounding import build_offer, build_term_sheet, docs_hash
 from app.compiler.prompts import CONTRACT_PROMPT_VERSION, PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
-from app.compiler.rules import RulesBackend
+from app.compiler.rules import RULES_MODEL_ID, RulesBackend
 from app.config import Settings, get_settings
 from app.domain.models import CompiledContract, CompiledOffer, CompiledTermSheet, SourceDocument
 
 log = structlog.get_logger("termsledger.compiler")
 R = TypeVar("R", OfferResult, TermSheetResult, ContractResult)
-UNCHECKED = {"cache", "rules"}  # backends whose answer is a recorded reading or the rules grammar's own
+UNCHECKED = {CACHE_MODEL_ID, RULES_MODEL_ID}  # a recorded reading, or the rules grammar's own: nothing to check it against
 
 
 def _extract_contract(backend: LLMBackend, chunk: SourceDocument) -> ContractResult:
@@ -82,10 +82,6 @@ class Compiler:
             self.backends.append(RulesBackend())  # the chain always ends in a backend that cannot fail
 
     def _run(self, call: Callable[[LLMBackend], R], prompt_version: str, doc_hash: str) -> R:
-        return self._answer(call, prompt_version, doc_hash)[0]
-
-    def _answer(self, call: Callable[[LLMBackend], R], prompt_version: str, doc_hash: str) -> tuple[R, LLMBackend]:
-        """The first backend's result that does not fail, and that backend."""
         last: Exception | None = None
         for b in self.backends:
             t0 = time.perf_counter()
@@ -100,16 +96,16 @@ class Compiler:
             log.info("compiler.call", backend=b.name, model=res.model_id, outcome="ok",
                      prompt_version=prompt_version, doc_hash=doc_hash,
                      latency_ms=round((time.perf_counter() - t0) * 1000, 1))
-            return res, b
+            return res
         raise RuntimeError("no compiler backend produced an extraction") from last
 
     def compile_offer(self, docs: list[SourceDocument], counterparty_id: str) -> CompiledOffer:
         if not docs:
             raise ValueError("compile_offer needs at least one document")
         h = docs_hash(docs)
-        res, answered = self._answer(lambda b: b.extract_offer(docs), PROMPT_VERSION, h)
+        res = self._run(lambda b: b.extract_offer(docs), PROMPT_VERSION, h)
         offer = build_offer(docs, counterparty_id, res.extraction, res.model_id, PROMPT_VERSION)
-        if self.cross_check and answered.name not in UNCHECKED:
+        if self.cross_check and res.model_id not in UNCHECKED:
             offer = self._checked(docs, counterparty_id, offer, h)
         return offer
 
