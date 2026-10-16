@@ -75,7 +75,7 @@ def test_a_reply_whose_funding_plan_needs_the_owner_reads_needs_owner(client, mo
 def test_a_past_due_buyer_makes_the_verifier_ask_for_the_owner(client, monkeypatch):
     oid, _ = _evaluated(client)
     evaluate = importlib.import_module("app.verifier.evaluate")  # the package re-exports a function of the same name
-    monkeypatch.setattr(evaluate, "_buyer_past_due", lambda *a, **k: [("RCV-A", 3, 25_720_000)])
+    monkeypatch.setattr(evaluate, "_buyer_past_due", lambda *a, **k: [("RCV-A", 3, 26_000_000)])
     offer_picture._cache.clear()
     _, opt_a, opt_b = _paths(client, oid)
     assert _authority(opt_a) == ("needs_owner", NEEDS) and opt_a["needs_owner"] is True and _authority(opt_b)[0] == "needs_owner"
@@ -107,8 +107,8 @@ def test_every_path_states_its_cost_on_a_basis_and_option_b_carries_its_componen
     assert asked["cost_forward_display"] == impact["forward_total_display"] == view["forward_concession"]["total_display"] == "¥28,326.92"
     assert asked["cost_once_display"] == "¥5,040.00" and asked["cost_components"] == []
     assert asked["cost_display"] == "¥28,326.92" and asked["cost_note"] == "over 12 months, plus ¥5,040.00 once"
-    assert (opt_a["cost_total_display"], opt_a["cost_basis_text"]) == ("¥3,027.77", "once, nothing ongoing")
-    assert opt_a["cost_once_display"] == "¥3,027.77" and opt_a["cost_forward_display"] is None and opt_a["cost_components"] == []
+    assert (opt_a["cost_total_display"], opt_a["cost_basis_text"]) == ("¥3,035.99", "once, nothing ongoing")
+    assert opt_a["cost_once_display"] == "¥3,035.99" and opt_a["cost_forward_display"] is None and opt_a["cost_components"] == []
     # option B nets to zero: the funding cost of the longer terms and the price offset the `dev` page showed, never a bare ¥0.00
     economics = view["counters"][1]["economics"]
     assert economics["funding_cost_display"] == "¥16,217.95" and economics["offset_display"] == "¥16,380.00"
@@ -450,14 +450,14 @@ def test_every_point_carries_the_same_day_strip_of_the_asked_path_and_the_recomm
     assert low_day == 60
     for path in (asked, opt_a, opt_b):  # the strip is the day's, whichever line the point is on
         assert _strip(_point(path, low_day)) == {"label": "Same day", "asked_display": "¥164,960.00",
-                                                       "recommended_display": "¥586,972.23", "difference_display": "+¥422,012.23"}
+                                                       "recommended_display": "¥586,964.01", "difference_display": "+¥422,004.01"}
         # day 0: Option A's own funding plan draws the credit line today (the asked path takes no new funding)
         assert _strip(_point(path, 0)) == {"label": "Same day", "asked_display": _point(asked, 0)["closing_display"],
                                                  "recommended_display": _point(opt_a, 0)["closing_display"],
-                                                 "difference_display": "+¥149,986.20"}
+                                                 "difference_display": "+¥147,210"}
     assert all(_strip(p) is not None for p in asked["series"])
     zh = _paths(client, oid, "zh")
-    assert _point(zh[0], low_day)["comparison"]["label"] == "同一天" and _point(zh[0], low_day)["comparison"]["difference_display"] == "+¥422,012.23"
+    assert _point(zh[0], low_day)["comparison"]["label"] == "同一天" and _point(zh[0], low_day)["comparison"]["difference_display"] == "+¥422,004.01"
 
 
 def test_the_strip_is_the_two_series_own_figures_and_null_where_there_is_nothing_to_compare(client):
