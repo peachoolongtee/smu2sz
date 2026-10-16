@@ -381,6 +381,10 @@ a BUYER_DECLINED fact gives NO_DEAL;
 agreement rules (1 to 6), the owner's decline and the approval rules come first, so the buyer's yes recorded by the owner reads as AGREED or
 AUTHORIZATION_REQUIRED like any agreement. Waiting (section 6): AWAITING_BUYER waits for the buyer (`BUYER_ANSWER`, the day the offer closes).
 
+A refused record of the buyer's yes (the executor refused the owner's AcceptOffer, `buyer-yes-...`) does not make the deal FAILED: it stays AWAITING_BUYER with the refusal shown and can be recorded again while the window is open, and is NO_DEAL after it.
+
+A reply pasted after the offer's window has closed is not refused (a buyer may write late): it is stored as a new request, compiled and verified on its own, but it does not mark the closed offer REPLIED (that offer stays NO_DEAL), while the buyer's yes and no are refused as `OFFER_EXPIRED`.
+
 Marking an offer sent writes OFFERED and nothing else: no commitment, no operation, no funding. The buyer's yes is the owner's AcceptOffer on the
 offered verdict's counter (screened, re-verified on today's books, Tier 2 queued); nothing a buyer writes reaches an operation.
 

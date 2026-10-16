@@ -48,9 +48,7 @@ from app.decisions.facts import (
     parse_fact,
 )
 from app.decisions.identity import deal_id
-from app.decisions.state import (
-    BUYER_YES,  # the op id prefix of the owner's AcceptOffer that records a buyer's yes
-)
+from app.decisions.state import BUYER_YES
 from app.domain.models import (
     AcceptOffer,
     Actor,
@@ -496,15 +494,24 @@ def buyer_reply(offer_id: str, body: ReplyIn, lang: str = "en") -> dict[str, Any
         raise _conflict("NO_TERMS_IN_REPLY", offer_id, "FLOW found no terms in this reply, so nothing was stored. If the buyer agreed, record their acceptance instead.",
                         "FLOW 在这条回复中没有找到任何条款，因此未保存。如果买方已同意，请改为记录其接受。", said)
     with rt.lock:  # again, after the compile: the buyer's yes or another reply may have been recorded meanwhile
-        _sent_counter(rt, offer_id, body.verdict_id, body.counter_id, None, said)
+        _offer, sent = _sent_counter(rt, offer_id, body.verdict_id, body.counter_id, None, said)
+        late = rt.day > sent.valid_until_day  # a buyer may write after the offer closed: a request of its own, which answers nothing
         stored = store_compiled(rt, [doc], compiled, said, via="buyer_reply", in_reply_to=offer_id)
-        record_fact(rt, deal_id(offer_id), compiled.offer_id,
-                    RepliedFact(offer_id=offer_id, verdict_id=body.verdict_id, counter_id=body.counter_id, reply_offer_id=compiled.offer_id),
-                    state_version=rt.store.get_state().state_version, day=rt.day)
+        if not late:  # the closed offer stays closed without an answer (NO_DEAL), not REPLIED
+            recorded = record_fact(rt, deal_id(offer_id), compiled.offer_id,
+                                   RepliedFact(offer_id=offer_id, verdict_id=body.verdict_id, counter_id=body.counter_id,
+                                               reply_offer_id=compiled.offer_id),
+                                   state_version=rt.store.get_state().state_version, day=rt.day)
+            if recorded is False:
+                raise HTTPException(500, {"code": "NOT_RECORDED", "offer_id": offer_id,
+                                          "message_when": t(said, "FLOW could not record the buyer's reply; try again.", "FLOW 未能记录买方的回复；请重试。")})
     reply_decision = deal_id(compiled.offer_id)
     return {
         "offer_id": offer_id, "decision_id": deal_id(offer_id), "reply_offer_id": compiled.offer_id, "reply_decision_id": reply_decision,
         "reply_href": f"/deals?decision={reply_decision}", "offer": stored["offer"],
-        "message_when": t(said, "The buyer's reply is now a request of its own. Read it to answer.", "买方的回复已作为一项新请求。请阅读后答复。"),
+        "offer_closed": late,
+        "message_when": (t(said, "The offer you sent had closed. The buyer's reply is a new request of its own; read it to answer.",
+                           "您发出的报价已截止。买方的回复是一项新请求；请阅读后答复。") if late else
+                         t(said, "The buyer's reply is now a request of its own. Read it to answer.", "买方的回复已作为一项新请求。请阅读后答复。")),
     }
 

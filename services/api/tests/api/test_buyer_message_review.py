@@ -61,3 +61,23 @@ def test_a_refused_yes_after_the_window_is_no_deal_and_a_later_yes_is_expired(ap
     assert d["state"] == "NO_DEAL" and d["outbound"]["answer"] == "no_answer"
     late = _accepted(api, oid, v, m, rt)
     assert late.status_code == 409 and late.json()["detail"]["code"] == "OFFER_EXPIRED"
+
+
+# ================================================================ F3: a reply after the offer closed is a request of its own and answers nothing
+
+
+def test_a_reply_after_the_window_is_a_new_request_and_does_not_mark_the_expired_offer_replied(api: TestClient, rt: Runtime) -> None:
+    oid, v, m = _sent(api)
+    assert api.post("/clock/advance", json={"to_day": m["valid_until_day"] + 1}).status_code == 200
+    assert _decision(api, oid)["state"] == "NO_DEAL"
+    r = api.post(f"/offers/{oid}/buyer-reply", json={"verdict_id": v["id"], "counter_id": m["counter_id"],
+                                                     "text": "Could you do 50-day terms instead?"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["offer_closed"] is True and "had closed" in body["message_when"]
+    stored = rt.store.get_offer(body["reply_offer_id"])
+    assert stored is not None and stored.counterparty_id == "BUYER-1" and stored.obligations  # compiled on its own, from the deal's buyer
+    assert _decision(api, body["reply_offer_id"])["state"] == "RECEIVED"
+    old = _decision(api, oid)
+    assert old["state"] == "NO_DEAL" and old["outbound"]["answer"] == "no_answer"  # not REPLIED
+    assert not any(f.fact == "REPLIED" for f in rt.store.decision_facts(f"deal:{oid}"))
