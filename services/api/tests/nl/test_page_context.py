@@ -137,7 +137,7 @@ def test_option_a_is_explained_with_its_price_and_the_original_for_comparison(cl
     oid, _ = _evaluated(client)
     r = Chat(client, "w4-opt").say("Why is Option A cheaper?", context={"page": "/deals", "offer_id": oid})
     assert r["intent"] == "EXPLAIN"
-    assert "Option A:" in r["reply"] and "costs you ¥3,027.77 now" in r["reply"]
+    assert "Option A:" in r["reply"] and "costs you ¥3,035.99 now" in r["reply"]
     assert "cheaper than financing the invoice" in r["reply"]  # the counter's own rationale
     assert "Their original terms, for comparison:" in r["reply"] and "¥6,508.05" in r["reply"]
     b = Chat(client, "w4-optb").say("Why is Option B cheaper?", context={"page": "/deals", "offer_id": oid})
@@ -162,7 +162,7 @@ def test_the_missed_receipt_questions_are_answered_from_the_home_read(client, rt
     _day34_missed_receipt(client)
     waiting = Chat(client, "w4-wait").say("What are we waiting for?")
     assert waiting["intent"] == "SHOW_STATUS" and waiting["operations"] == []
-    assert "Waiting for your decision: Request ¥155,013.80 of invoice financing." in waiting["reply"]
+    assert "Waiting for your decision: Request ¥157,790 of invoice financing." in waiting["reply"]
     assert "Waiting for payment: Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago." in waiting["reply"]
     money = Chat(client, "w4-money").say("When does the money arrive?")
     assert money["intent"] == "SHOW_STATUS" and "If you approve today, the cash lands in 3 days." in money["reply"]
@@ -206,12 +206,12 @@ def test_what_changed_after_the_day_34_walk_lists_each_event_its_status_the_cons
     lines = r["reply"].splitlines()
     assert lines[0] == "Since your last visit 34 days ago:"
     assert "- Time moved forward 34 days, to today." in lines  # the clock move
-    assert any(x.startswith("- Waiting for your approval: ¥155,013.80 of invoice financing") and x.endswith(
+    assert any(x.startswith("- Waiting for your approval: ¥157,790.00 of invoice financing") and x.endswith(
         "Status: still waiting for your decision.") for x in lines)  # the pending approval, its status
     assert any("early payment promised" in x and "did not arrive" in x and x.endswith("Status: still unpaid.") for x in lines)  # the missed receipt
     assert any(x.startswith("What it means for your cash: Below reserve today.") and "goes below zero in 8 days" in x for x in lines)
     assert "Still to do:" in lines  # the remaining tasks
-    assert "- Request ¥155,013.80 of invoice financing. It costs ¥1,381.32. If you approve today, the cash lands in 3 days. " \
+    assert "- Request ¥157,790 of invoice financing. It costs ¥1,406.07. If you approve today, the cash lands in 3 days. " \
            "If you decline, cash goes below zero in 8 days." in lines
     assert "- Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago." in lines
     assert "APR-" not in r["reply"] and "CMT-" not in r["reply"]  # business words, no record ids

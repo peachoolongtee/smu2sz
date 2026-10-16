@@ -55,20 +55,22 @@ def test_the_chat_fund_the_gap_plan_is_stored_as_the_quote_and_a_later_approval_
     assert plan["awaiting_confirmation"] is True and "decision_id" not in plan  # proposing records nothing
     before = facts()
     done = say(client, "go ahead", "q1")
-    assert [(o["kind"], o["status"]) for o in done["operations"]] == [("SUBMIT_INVOICE_FOR_FINANCING", "PENDING_APPROVAL")]
+    # the rounded early-pay face (R-10) leaves ¥2,790 of the line unused: the plan draws it first (6.40%, Tier 1)
+    assert [(o["kind"], o["status"]) for o in done["operations"]] == [("DRAW_FACILITY", "EXECUTED"),
+                                                                      ("SUBMIT_INVOICE_FOR_FINANCING", "PENDING_APPROVAL")]
     did = done["decision_id"]
     assert did.startswith("nl:q1:") and done["decision_recorded"] is True
     assert len(facts()) == len(before) + 1
 
     fact = quoted(did)
     assert [(leg.amount_fen, leg.cost_fen, leg.lands_day, leg.above_ceiling) for leg in fact.legs] == [
-        (8_000_000, 142_575, 37, True), (12_000_000, 106_932, 37, True)]
-    assert fact.total_cost_fen == 170_610 and fact.needs_owner is True and fact.alert_id == did
+        (279_000, 121_953, 34, False), (8_000_000, 142_575, 37, True), (11_721_000, 104_446, 37, True)]  # R-10: the line's ¥2,790 first
+    assert fact.total_cost_fen == 170_220 and fact.needs_owner is True and fact.alert_id == did
     assert fact.restores_reserve is True and fact.alert_kind == "OPERATION"
 
     row = _queue(client)[0]
     assert row["decision_id"] == did and row["decision_state"] == "AUTHORIZATION_REQUIRED"
-    assert row["quote"]["recorded"] is True and row["quote"]["total_display"] == "¥1,706.10"
+    assert row["quote"]["recorded"] is True and row["quote"]["total_display"] == "¥1,702.20"
     assert [x["rate_text"] for x in row["quote"]["lines"]] == ["16.26%", "32.53%"]
     assert row["quote"]["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
 
@@ -78,7 +80,7 @@ def test_the_chat_fund_the_gap_plan_is_stored_as_the_quote_and_a_later_approval_
     assert decided["quote"]["recorded"] is True and decided["quote"]["text"] is None
     assert decided["quote"]["text"] != "The quoted cost was not recorded."
     assert decided["presentation"]["cost_display"] == "¥1,425.75" and decided["presentation"]["rate_text"] == "16.26%"
-    assert decided["quote"]["total_display"] == "¥1,706.10"
+    assert decided["quote"]["total_display"] == "¥1,702.20"
     record = detail(client, did)
     assert record["recorded"]["quoted"] is True and record["source"] == {"kind": "OPERATION"}
     assert record["quote"]["recorded"] is True
@@ -91,7 +93,7 @@ def test_a_repeat_of_the_confirmation_changes_nothing_in_the_record(client, rt):
     stored = facts()
     again = say(client, "go ahead", "q2")  # nothing is waiting any more: no second quote
     assert "decision_id" not in again and facts() == stored
-    assert quoted(first["decision_id"]).total_cost_fen == 170_610
+    assert quoted(first["decision_id"]).total_cost_fen == 170_220
 
 
 def test_a_chat_alert_cure_is_stored_with_the_alerts_own_figures(client, rt):
@@ -165,7 +167,8 @@ def test_a_failing_write_leaves_every_route_200_and_the_decision_unquoted(client
     monkeypatch.setattr(rt.store, "add_decision_fact", boom)
     say(client, "fund the gap", "q4")
     done = say(client, "go ahead", "q4")  # the route answers 200 (say asserts it) and the executor still queued the leg
-    assert done["operations"][0]["status"] == "PENDING_APPROVAL" and done["decision_recorded"] is False
+    assert next(o for o in done["operations"] if o["kind"] == "SUBMIT_INVOICE_FOR_FINANCING")["status"] == "PENDING_APPROVAL"
+    assert done["decision_recorded"] is False
     direct = client.post("/operations", headers=AGENT, json=_direct_op(rt))
     assert direct.status_code == 200 and direct.json()["result"]["status"] == "PENDING_APPROVAL"
     assert direct.json()["decision_recorded"] is False
@@ -189,5 +192,6 @@ def test_a_plan_whose_quote_could_not_be_built_still_runs(client, rt, monkeypatc
     plan = say(client, "fund the gap", "q5")
     assert plan["awaiting_confirmation"] is True
     done = say(client, "go ahead", "q5")
-    assert done["operations"][0]["status"] == "PENDING_APPROVAL" and "decision_id" not in done
+    assert next(o for o in done["operations"] if o["kind"] == "SUBMIT_INVOICE_FOR_FINANCING")["status"] == "PENDING_APPROVAL"
+    assert "decision_id" not in done
     assert [f for f in facts() if f.fact == "QUOTED"] == []
