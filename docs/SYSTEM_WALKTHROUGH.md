@@ -223,10 +223,12 @@ and approvals, and only the owner-token demo reset replaces them (`tests/api/tes
 Input: one or more documents and the sender's id. Output: a `CompiledOffer`.
 
 1. **Backend chain.** `LLM_MODE=cache` (default, used in tests and the demo): a recorded-output cache keyed by
-   `sha256(prompt version + canonical documents)`, then the rules grammar on a miss. `LLM_MODE=live`: Claude
-   (`claude-sonnet-5-5`, or `claude-opus-5-5` for more than one document, more than 1,500 characters or any term
-   sheet), then DeepSeek, then rules. A failing backend falls to the next. The model sees only the documents and
-   the output schema; never the mandate, limits or other buyers.
+   `sha256(prompt version + canonical documents)`, then the rules grammar on a miss. `LLM_MODE=live`: the same
+   recorded reading first, then Claude (`claude-sonnet-5-5`, or `claude-opus-5-5` for more than one document, more
+   than 1,500 characters or any term sheet), then DeepSeek, then rules. A failing backend falls to the next. A
+   model's reading of a buyer message is checked against the rules grammar's: a term the two read differently is
+   abstained on (`offer.readers_disagree.<TYPE>`). `LLM_LIVE_RAW=1` turns the recording and the check off, to measure
+   a model alone. The model sees only the documents and the output schema; never the mandate, limits or other buyers.
 2. **Grounding** (`grounding.py`). Every obligation must quote text found verbatim in its document (exact, then
    whitespace-insensitive). A quote that is not found drops the obligation and records a material abstention, so
    the offer becomes ABSTAINED. A value outside its own quote is dropped. Two sources that disagree on a
@@ -849,7 +851,7 @@ invoice, facility or operation is created from one, and the language model sets 
 2. **Reading a buyer contract** (`compiler/contract.py`, prompt `contract-v1`). The text is split at its section
    headings into chunks of at most 6,000 characters, and each chunk goes through the same backend chain as an offer:
    with `LLM_MODE=cache` a recorded reading, then the rules grammar (`compiler/contract_rules.py`, recorded as
-   `rules-v1`); live, Claude, then DeepSeek, then rules. The schema has 18 fields: the parties, the agreement number,
+   `rules-v1`); live, a recorded reading, then Claude, then DeepSeek, then rules. The schema has 18 fields: the parties, the agreement number,
    the signed, start and end dates, the duration, the price and its unit, the invoicing cadence, scheduled invoices,
    the payment terms and what they count from (invoice, delivery, acceptance, month end), early payment, milestones,
    retention, late-payment interest, deliverables, the documents payment depends on, and how the contract is amended.

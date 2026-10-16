@@ -86,6 +86,9 @@ class Settings:
     claude_model: str = field(default_factory=lambda: os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5"))
     claude_hard_model: str = field(default_factory=lambda: os.environ.get("CLAUDE_HARD_MODEL", "claude-opus-5-5"))
     deepseek_model: str = field(default_factory=lambda: os.environ.get("DEEPSEEK_MODEL", "deepseek-flash"))
+    # Live mode replays a recorded reading before calling a model, and checks a model's reading of a buyer message against the
+    # rules grammar's (app/compiler/service.py). LLM_LIVE_RAW=1 turns both off, to measure a model on its own.
+    llm_live_raw: bool = field(default_factory=lambda: _flag("LLM_LIVE_RAW", default=False))
     fixture_dir: str = field(
         default_factory=lambda: os.environ.get(
             "FIXTURE_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "..", "fixtures")
