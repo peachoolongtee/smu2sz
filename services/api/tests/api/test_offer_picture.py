@@ -129,7 +129,7 @@ def test_paths_are_the_offer_as_asked_then_each_reply_in_the_verdicts_order(clie
     assert (opt_a["tag_text"], opt_a["tag_tone"]) == ("FLOW recommends", "info")
     assert (opt_b["tag_text"], opt_b["tag_tone"]) == ("Needs your approval", "warn")
     assert asked["decides_text"] == "Cannot be accepted within your signed limits."
-    assert opt_a["decides_text"] == "FLOW can send it. Your approval is not needed."
+    assert opt_a["decides_text"] == "Within your mandate: no approval needed."
     assert opt_b["decides_text"] == "It changes your terms, so you approve it first."
     # the earlier fields are kept as they were
     assert pic["asked"]["series"] == asked["series"] and [r["series"] for r in pic["replies"]] == [opt_a["series"], opt_b["series"]]
@@ -182,7 +182,7 @@ def test_an_accepted_offer_is_one_sendable_recommended_path(client):
     p = pic["paths"][0]
     assert (p["recommended"], p["sendable"], p["needs_owner"]) == (True, True, False)
     assert (p["tag_text"], p["tag_tone"]) == ("FLOW recommends", "info")
-    assert p["decides_text"] == "FLOW can send it. Your approval is not needed." and p["band_text"] is None
+    assert p["decides_text"] == "Within your mandate: no approval needed." and p["band_text"] is None
     assert p["cost_display"] == "¥2,520.00" and p["cost_note"] == "once; nothing ongoing"
     assert [t["instead_of_text"] for t in p["terms"]] == [None, None, None]
     moments = pic["moments"]
@@ -249,7 +249,7 @@ def test_a_moments_text_says_what_every_path_has_once_then_what_differs_then_who
                         "If you accept their request, cash is below your minimum.")
     assert text[60] == "On every path: Debt service −¥45k. If you accept their request, cash is below your minimum."
     assert text[0] == ("Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k. "
-                       "Who decides: Option A: FLOW can send it; Option B: needs your approval.")
+                       "Who decides: Option A: within your mandate; Option B: needs your approval.")
     assert opt_a not in " ".join(text.values())
 
 

@@ -248,6 +248,7 @@ def outbound_view(ctx: Any, ds: Any, inp: Any, lang: str) -> dict[str, Any] | No
                                           "该标记会与您的更正一同保留在记录中，交易将恢复为待发送。")},
         }
         view["authority_text"] = authority_words(review.get("needs_owner"), lang) if review is not None else None
+        view["terms_title_text"] = t(lang, "What you offered", "您提出的条款")
         return view
     answer_row = next(((r, f) for r, f in reversed(rows) if isinstance(f, BuyerAcceptedFact | RepliedFact | BuyerDeclinedFact)), None)
     when = _day_words(ctx, answer_row[0].day, lang) if answer_row is not None else closes
@@ -319,7 +320,20 @@ def outbound_view(ctx: Any, ds: Any, inp: Any, lang: str) -> dict[str, Any] | No
         view["text"] = t(lang, "The offer expired with no agreement. Their invoice stays due on its existing terms; no money moved.",
                          "报价已到期，未达成协议。其发票仍按原条款到期；未动用任何资金。")
         view["links"] = [{"label": t(lang, "Review your cash outlook", "查看您的现金展望"), "href": "/cash", "primary": True}, customer, deals]
+    if answer == "accepted":
+        view["terms_title_text"] = t(lang, "What was agreed", "达成的条款")
+    else:  # an offer that ended without an agreement: what was offered, never said as obligations in force ("effective yesterday")
+        view["terms"] = _offered_rows(ctx, counter, o.counterparty_id, lang)
+        view["terms_title_text"] = t(lang, "What you offered (not agreed)", "您提出的条款（未达成）")
     return view
+
+
+def _offered_rows(ctx: Any, counter: Any, buyer: str | None, lang: str) -> list[str]:
+    """The counter's terms as offered, one line per row of the offer picture ("Early payment: 0.85% off ¥257,200.00"), with no effective day."""
+    from app.api.offer_picture import _TERM_ROWS, _term_rows  # the picture's reading of terms; it reads the record, so imported here
+
+    rows = _term_rows(ctx.state, list(counter.obligations) if counter is not None else [], buyer, lang)
+    return [f"{t(lang, en, zh)}{t(lang, ': ', '：')}{rows[key][0] or t(lang, 'Not offered', '未提供')}" for key, en, zh in _TERM_ROWS]
 
 
 def reply_to_view(ctx: Any, ds: Any, inp: Any, lang: str) -> dict[str, Any] | None:

@@ -17,7 +17,7 @@ from tests.api.test_offer_picture import _accepted, _evaluated
 
 OVER = "Over a limit you signed: only a new mandate changes that"
 NEEDS = "Needs your approval"
-MAY = "FLOW can send it"
+MAY = "Within your mandate"
 OLD_OVER = "Cannot be accepted within your signed limits."
 
 
@@ -45,10 +45,10 @@ def test_each_path_says_who_decides_in_three_classes_in_both_languages(client):
     asked, opt_a, opt_b = _paths(client, oid)
     assert _authority(asked) == ("over_limit", OVER) and _authority(opt_a) == ("flow_may", MAY) and _authority(opt_b) == ("needs_owner", NEEDS)
     z_asked, z_a, z_b = _paths(client, oid, "zh")
-    assert [p["authority_text"] for p in (z_asked, z_a, z_b)] == ["超出您签署的上限：只有签署新的授权才能改变", "FLOW 可以直接发送", "需要您批准"]
+    assert [p["authority_text"] for p in (z_asked, z_a, z_b)] == ["超出您签署的上限：只有签署新的授权才能改变", "在您的授权范围内", "需要您批准"]
     assert [p["authority"] for p in (z_asked, z_a, z_b)] == ["over_limit", "flow_may", "needs_owner"]
     # the old sentences the page of `dev` reads are kept
-    assert asked["decides_text"] == OLD_OVER and opt_a["decides_text"] == "FLOW can send it. Your approval is not needed."
+    assert asked["decides_text"] == OLD_OVER and opt_a["decides_text"] == "Within your mandate: no approval needed."
     assert opt_b["decides_text"] == "It changes your terms, so you approve it first."
 
 
@@ -391,10 +391,10 @@ def test_only_the_recommended_path_says_why_and_by_the_rule_the_engine_applies(c
     oid, _ = _evaluated(client)
     asked, opt_a, opt_b = _paths(client, oid)
     assert opt_a["recommended"] is True
-    assert opt_a["recommended_reason_text"] == "Recommended because FLOW can send it within your mandate without your approval."
+    assert opt_a["recommended_reason_text"] == "Recommended because it is within your mandate and needs no approval."
     assert asked["recommended_reason_text"] is None and opt_b["recommended_reason_text"] is None
     z_asked, z_a, z_b = _paths(client, oid, "zh")
-    assert z_a["recommended_reason_text"] == "推荐原因：FLOW 可以在您的授权范围内直接发送，无需您批准。"
+    assert z_a["recommended_reason_text"] == "推荐原因：它在您的授权范围内，无需批准。"
     assert z_asked["recommended_reason_text"] is None and z_b["recommended_reason_text"] is None
     assert "cost" not in opt_a["recommended_reason_text"] and "成本" not in z_a["recommended_reason_text"]
 

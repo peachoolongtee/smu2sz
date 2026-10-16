@@ -134,7 +134,7 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
     assert d["eyebrow"] == "One commercial decision waits for you"
     assert d["text"] == ("Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. "
                          "FLOW recommends countering with Option A, ¥3,027.77 once if accepted.")
-    assert (d["headline_short"], d["authority_text"]) == ("Counter instead of accepting their request", "FLOW can send this counter without your approval.")
+    assert (d["headline_short"], d["authority_text"]) == ("Counter instead of accepting their request", "This counter is within your mandate: no approval needed.")
     picture = api.get(f"/offers/{offer_id}/picture").json()
     recommended = next(p for p in picture["paths"] if p["recommended"])
     assert d["primary"] == {"label": "Review the counter",
@@ -244,7 +244,7 @@ def test_the_chinese_page_has_the_same_figures_and_no_english_left(api, rt):
     assert zh["figures"][1]["note"] == "32 天后到期，没有逾期"
     assert zh["figures"][3]["note"] == "占当前未收应收款的 100%"
     assert zh["decision"]["eyebrow"] == "有一项商务决定等待您处理"
-    assert zh["decision"]["primary"]["label"] == "查看还价" and zh["decision"]["authority_text"] == "FLOW 可以在无需您批准的情况下发送这份还价。"
+    assert zh["decision"]["primary"]["label"] == "查看还价" and zh["decision"]["authority_text"] == "这份还价在您的授权范围内：无需批准。"
     assert "FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价" in zh["decision"]["text"]
     assert [r["value_display"] for r in zh["economics"][:3]] == ["¥5,460,000", "20%", "约 ¥1,092,000"]
     assert zh["economics"][0]["note"] == "根据您的账目推算" and zh["economics"][1]["note"] == "为演示而假设，尚未经您确认"
