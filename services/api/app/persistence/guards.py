@@ -31,6 +31,7 @@ from sqlalchemy import Connection
 PROTECTED_TABLES = ("operations", "used_nonces")
 PG_FUNCTION = "termsledger_append_only"
 PG_RESET_SETTING = "termsledger.allow_reset"
+PG_INSTALL_LOCK = 0x544C4755  # "TLGU": the advisory-lock key the guard installers serialise on
 
 
 def _sqlite_trigger(table: str, action: str) -> tuple[str, str]:
@@ -88,8 +89,25 @@ def install(conn: Connection) -> None:
         for _name, create in SQLITE_TRIGGERS:
             conn.exec_driver_sql(create)
     elif dialect == "postgresql":
+        # Every store re-installs the guard when it opens. Two processes opening at once raced on the catalog ("tuple concurrently
+        # updated") and one failed to start; a transaction-scoped advisory lock makes the installers take turns.
+        conn.exec_driver_sql(f"SELECT pg_advisory_xact_lock({PG_INSTALL_LOCK})")
+        if _pg_installed(conn):
+            return  # already in place: no DDL, so no table lock that a crashed worker's open transaction could hold up
         for stmt in pg_trigger_statements():
             conn.exec_driver_sql(stmt)
+
+
+def _pg_installed(conn: Connection) -> bool:
+    """Whether the guard function (with this exact body) and every trigger are already in place."""
+    body = PG_FUNCTION_SQL.split("$$")[1]
+    current = conn.exec_driver_sql("SELECT prosrc FROM pg_proc WHERE proname = %(f)s", {"f": PG_FUNCTION}).scalar()
+    if current != body:
+        return False
+    names = [f"trg_{t}_{kind}" for t in PROTECTED_TABLES for kind in ("append_only", "no_truncate")]
+    found = conn.exec_driver_sql("SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname = ANY(%(n)s)",
+                                 {"n": names}).scalar()
+    return found == len(names)
 
 
 @contextmanager
