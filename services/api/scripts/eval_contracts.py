@@ -182,8 +182,7 @@ def summary(rows: dict[str, dict[str, tuple[int, int, int]]], groups: dict[str, 
             k, m = sum(v[0] for v in vals), sum(v[1] for v in vals)
             cells.append(f"{m}/{k} {m / k:.0%}" if k else "-")
         lines.append(f"| {f} | " + " | ".join(cells) + " |")
-    return "
-".join(lines)
+    return "\n".join(lines)
 
 
 def table(rows: dict[str, dict[str, tuple[int, int, int]]]) -> str:
