@@ -43,6 +43,7 @@ from app.nl.models import Intent, Slots
 from app.nl.offers import buyer_options, owner_doc_for, verdict_line
 from app.nl.pipeline import (
     Steps,
+    counter_line,
     accept,
     committed_plan,
     funding_ops,
@@ -436,7 +437,7 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
                     + (" " + flagged if flagged else ""))
     counter = zero[0]
     gv = v
-    steps.add("COUNTER_OFFER", f"{counter.label}: {counter.text}", "PROPOSED")
+    steps.add("COUNTER_OFFER", counter_line(ctx, counter.label, counter.text), "PROPOSED")
     steps.add("NEGOTIATE", t(ctx, f"Bounded rounds with {cp}", f"与 {cp} 有限轮次谈判"))
     steps.add("ACCEPT_OFFER", t(ctx, "Record the commitment (nonce, expiry)", "记录承诺（随机数、到期日）"),
               condition=t(ctx, "if the buyer accepts", "若买方接受"))
@@ -501,7 +502,7 @@ def run_accelerate(ctx: NlContext, pending: PendingPlan) -> Turn:
     reply: list[str] = []
     if neg.accepted is not None:
         r = accept(ctx, run, gv, neg.accepted)
-        reply.append(t(ctx, f"{cp} accepted {counter.label}: {counter.text}", f"{cp} 接受了 {counter.label}：{counter.text}"))
+        reply.append(t(ctx, f"{cp} accepted {counter.label}: {counter.text}", f"{cp} 接受了 {counter_line(ctx, counter.label, counter.text)}"))
         if r is not None and r.status.value in ("EXECUTED", "PENDING_APPROVAL", "DUPLICATE") and d["accept_ops"]:
             lines, _ok = run_legs(ctx, run, d["accept_ops"], t(ctx, "remaining gap after early settlement", "提前结算后剩余缺口"))
             reply += lines

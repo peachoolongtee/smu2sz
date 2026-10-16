@@ -10,9 +10,9 @@ import re
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from app.compiler.contract_parsing import parse_date
+from app.compiler.contract_parsing import CN_COUNT, COUNT_PAT, cn_int, parse_count, parse_date
 from app.compiler.parsing import find_money
-from app.domain.models import Abstention, ContractField, ContractTerm, SourceDocument, SourceSpan
+from app.domain.models import Abstention, ContractField, ContractTerm, PaymentBasis, SourceDocument, SourceSpan
 
 F = ContractField
 
@@ -72,6 +72,152 @@ def derived_dates(doc: SourceDocument, terms: list[ContractTerm], abst: list[Abs
         out.append(ContractTerm(field=F.END_DATE, span=span, value_text=m.group(0), date=end,
                                 text=DERIVED + f"the signing date plus {days} days"))
     return out
+
+
+# ---------------------------------------------------------------- per-stage payment schedule
+#
+# A milestone's quote states the stage's condition and its deadline ("交付成果经甲方验收合格并出具书面验收报告后15日内",
+# "payable within 30 days after acceptance"). Code reads the days, their unit and the trigger from that quote alone.
+# `PaymentBasis` has no value for signing, a quarter, an audit or the end of a warranty, and the engine's domain models
+# are frozen, so the trigger is classified here, on demand, from the quote; only INVOICE, DELIVERY and ACCEPTANCE are
+# also written to the term's `basis`.
+
+TRIGGERS = ("sign", "delivery", "acceptance", "invoice", "quarter", "audit", "warranty_end", "milestone")
+_BASIS_OF_TRIGGER = {"invoice": PaymentBasis.INVOICE, "delivery": PaymentBasis.DELIVERY,
+                     "acceptance": PaymentBasis.ACCEPTANCE}
+
+_ZH_DEADLINE = re.compile(
+    rf"(?:(?:后|起|之日起)\s*(?P<a>\d{{1,4}}|{CN_COUNT})\s*(?P<ua>个?工作日|个?自然日|日|天)(?:内|之内|以内)?"
+    rf"|(?P<b>\d{{1,4}}|{CN_COUNT})\s*(?P<ub>个?工作日|个?自然日|日|天)(?:内|之内|以内))")
+_EN_DEADLINE = re.compile(
+    rf"(?<![\w-])(?P<n>{COUNT_PAT})\s+(?P<w>(?:business|working|banking)\s+)?days?\b", re.IGNORECASE)
+_CJK = re.compile(r"[一-鿿]")
+
+
+def _squash(text: str) -> str:
+    """Whitespace a PDF puts inside a Chinese phrase (a line break in the middle of 验收报告, or the spaces around a
+    table bar) taken out; the spaces between two Latin words or figures stay."""
+    return re.sub(r"(?<![A-Za-z0-9])\s+|\s+(?![A-Za-z0-9])", "", text)
+
+
+@dataclass(frozen=True)
+class StageDeadline:
+    days: int | None  # None when the quote states no days, or two different ones
+    working: bool = False  # counted in working days (个工作日 / business days)
+    status: str = "ok"  # ok | none | conflict
+    end: int = 0  # offset in the squashed quote where the (first) deadline begins
+
+
+def _zh_deadlines(squashed: str) -> list[tuple[int, bool, int]]:
+    found: list[tuple[int, bool, int]] = []
+    for m in _ZH_DEADLINE.finditer(squashed):
+        raw, unit = (m.group("a"), m.group("ua")) if m.group("a") else (m.group("b"), m.group("ub"))
+        n = int(raw) if raw.isdigit() else cn_int(raw)
+        if n is not None:
+            found.append((n, "工作日" in unit, m.start()))
+    return found
+
+
+def _en_deadlines(text: str) -> list[tuple[int, bool, int]]:
+    found: list[tuple[int, bool, int]] = []
+    for m in _EN_DEADLINE.finditer(text):
+        n = parse_count(m.group("n"))
+        if n.ok and isinstance(n.value, int):
+            found.append((n.value, m.group("w") is not None, m.start()))
+    return found
+
+
+def stage_deadline(quote: str) -> StageDeadline:
+    """The payment deadline a stage's quote states: days and unit (日/天 calendar, 个工作日 working; days / business days).
+    No days, or two different deadlines in one quote, is no value: the caller notes it and never guesses."""
+    if _CJK.search(quote):
+        squashed = _squash(quote)
+        found = _zh_deadlines(squashed)
+    else:
+        squashed = re.sub(r"\s+", " ", quote)
+        found = _en_deadlines(squashed)
+    distinct = {(n, w) for n, w, _ in found}
+    if not distinct:
+        return StageDeadline(None, status="none")
+    if len(distinct) > 1:
+        return StageDeadline(None, status="conflict", end=min(p for _, _, p in found))
+    (n, w), = distinct
+    return StageDeadline(n, w, "ok", min(p for _, _, p in found))
+
+
+_ZH_TRIGGERS: tuple[tuple[str, re.Pattern[str]], ...] = tuple((k, re.compile(p)) for k, p in (
+    ("warranty_end", r"质保期(?:满|届满|结束|终止)|质量保证期(?:满|届满|结束)|缺陷责任期(?:满|届满)|保修期(?:满|届满|结束)|质保(?:期)?到期"),
+    ("audit", r"审计|决算|结算审核|审减"),
+    ("quarter", r"每季度|每个季度|按季|季度(?:服务)?考核|每季"),
+    ("milestone", r"阶段(?:性)?成果|里程碑|节点"),
+    ("acceptance", r"验收|终验|初验"),
+    ("invoice", r"(?:收到|取得|接到|收讫|收妥|提交)[^，。；|]{0,14}发票|发票(?:收到|送达|无误)"),
+    ("delivery", r"交付|交货|到货|送达|签收|收货|供货完成"),
+    ("sign", r"签订|签署|签约|生效"),
+))
+_EN_TRIGGERS: tuple[tuple[str, re.Pattern[str]], ...] = tuple((k, re.compile(p, re.IGNORECASE)) for k, p in (
+    ("warranty_end", r"warranty\s+(?:period\s+)?(?:ends?|expires?|expiry|has\s+expired)|(?:end|expiry|expiration)\s+of\s+"
+                     r"(?:the\s+)?(?:warranty|defects?\s+liability)|defects?\s+liability\s+period"),
+    ("audit", r"\baudit"),
+    ("quarter", r"\bquarter(?:ly)?\b|\bper\s+quarter\b"),
+    ("milestone", r"\bmilestones?\b"),
+    ("acceptance", r"\baccept"),
+    ("invoice", r"\binvoices?\b"),
+    ("delivery", r"\bdeliver|\breceipt\s+of\s+(?:the\s+)?(?:goods|products)"),
+    ("sign", r"\bsign(?:ing|ed|ature)\b|\bexecution\b|\beffective\s+date\b|\bcommencement\b"),
+))
+
+
+def _classify(text: str) -> str | None:
+    table = _ZH_TRIGGERS if _CJK.search(text) else _EN_TRIGGERS
+    return next((k for k, rx_ in table if rx_.search(text)), None)
+
+
+def stage_trigger(quote: str, text: str | None = None) -> str | None:
+    """What a stage's payment waits for, one of `TRIGGERS`, read from the words that lead to its deadline: the table cell
+    or the clause before the days ("本合同签订生效后15日内" is sign; "经甲方验收合格后30日内" is acceptance). Falls back to the
+    stage's whole quote, then to the trigger text the reading gave. None when the words name none of them."""
+    deadline = stage_deadline(quote)
+    squashed = _squash(quote) if _CJK.search(quote) else re.sub(r"\s+", " ", quote)
+    # Chinese puts the condition before its days; English puts it after ("within 30 days after acceptance")
+    head = squashed[:deadline.end] if deadline.status != "none" and _CJK.search(quote) else squashed
+    clause = re.split(r"[|：:。；;]", head)[-1] if head else ""
+    # a cell holding only the deadline ("30日内") has its condition in the cell before it
+    cells = [c for c in re.split(r"[|：:。；;]", head) if c]
+    for candidate in (clause, cells[-2] if len(cells) > 1 and len(clause) < 4 else "", head, squashed, text or ""):
+        if candidate and (found := _classify(candidate)):
+            return found
+    return None
+
+
+# The end of a table row in extracted text: a blank line before the next row ("2 进度款 ..."), a table header, the page footer,
+# the paragraph that follows the table ("乙方应在每期付款前...") or the next clause.
+_ROW_END = re.compile(
+    r"\n[ \t]*\n(?=[ \t]*(?:\d{1,2}[ \t|]+[^\d\s]|期次|序号|合同编号|第\s*\d+\s*页|[甲乙]方(?:应|收款|指定|账户)|备注|[一二三四五六七八九十]+、"
+    r"|第[一二三四五六七八九十]+条|\d+[.．]\s))")
+_ROW_START = re.compile(r"\d{1,2}[ \t|]+\S")
+MAX_ROW_REACH = 200
+
+
+def widen_to_row(text: str, start: int, end: int) -> int:
+    """The end of a payment-table row whose quote stops short of its deadline. PDF text breaks a table row across lines
+    ("...验收报" / "告后20个工作日内 银行转账"), and a reading may quote only the first cell ("1 预付款 30%"). When the quote
+    starts a row, states no deadline and the rest of the row (up to the next row, header, footer or paragraph) does,
+    this is the row's end; otherwise `end` unchanged."""
+    quote = text[start:end]
+    at_line_start = start == 0 or text[start - 1] == "\n"
+    if not _CJK.search(quote) or not at_line_start or not _ROW_START.match(quote) or stage_deadline(quote).status != "none":
+        return end
+    m = _ROW_END.search(text, end, min(len(text), end + MAX_ROW_REACH))
+    row_end = m.start() if m else -1
+    if row_end <= end or stage_deadline(text[start:row_end]).status != "ok":
+        return end
+    return row_end
+
+
+def stage_basis(trigger: str | None) -> PaymentBasis | None:
+    """The `PaymentBasis` a trigger corresponds to; None for the triggers PaymentBasis has no value for."""
+    return _BASIS_OF_TRIGGER.get(trigger or "")
 
 
 @dataclass(frozen=True)
