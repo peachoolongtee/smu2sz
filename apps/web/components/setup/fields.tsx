@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { inputClass } from "@/components/ui";
 
 /**
@@ -107,6 +107,25 @@ export function AddButton({ onClick, children, testId }: { onClick: () => void; 
     <button type="button" onClick={onClick} data-testid={testId} className="motion-press inline-flex min-h-10 items-center rounded-control border border-brand-600 px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50">
       {children}
     </button>
+  );
+}
+
+/**
+ * A setup table that becomes a card per row when its column is narrower than the table (a container query in globals.css, `.setup-rows`): no row scrolls sideways and no
+ * column (such as "Agreed with lender") hides off the edge. In the card each cell is labelled with its column's heading, copied from the table's own head (dictionary words).
+ */
+export function RowsTable({ label, children }: { label: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const heads = [...el.querySelectorAll("thead th")].map((th) => th.textContent?.trim() ?? "");
+    el.querySelectorAll("tbody tr").forEach((tr) => [...tr.children].forEach((td, i) => (heads[i] ? td.setAttribute("data-label", heads[i]) : td.removeAttribute("data-label"))));
+  });
+  return (
+    <div ref={ref} role="region" aria-label={label} className="setup-rows-wrap overflow-x-auto rounded-card border border-line bg-surface">
+      {children}
+    </div>
   );
 }
 
