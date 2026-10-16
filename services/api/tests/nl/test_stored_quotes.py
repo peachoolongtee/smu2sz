@@ -71,7 +71,7 @@ def test_the_chat_fund_the_gap_plan_is_stored_as_the_quote_and_a_later_approval_
     row = _queue(client)[0]
     assert row["decision_id"] == did and row["decision_state"] == "AUTHORIZATION_REQUIRED"
     assert row["quote"]["recorded"] is True and row["quote"]["total_display"] == "¥1,702.20"
-    assert [x["rate_text"] for x in row["quote"]["lines"]] == ["16.26%", "32.53%"]
+    assert [x["rate_text"] for x in row["quote"]["lines"]] == [None, "16.26%", "32.53%"]  # the line draw states no rate
     assert row["quote"]["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
 
     approved = approve(client, row["id"])
