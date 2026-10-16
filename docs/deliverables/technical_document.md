@@ -192,6 +192,8 @@ TermsLedger is a **modular monolith** (ADR-0001): one FastAPI service (`services
 
 The model sees only the documents and the output schema. Mandate values, facility limits, reservation values and other buyers' terms never enter a prompt; a test checks the compiler package's imports to keep it that way. Only a document hash and timing are logged per call, never the text.
 
+**What is redacted before the model.** In live mode, before any text goes to Claude or DeepSeek (offers, term sheets, contract chunks and the `/nl` classifier), `app/compiler/redaction.py` replaces the identifiers FLOW never reads with stable placeholders such as `⟦ACCOUNT_1⟧`: bank account and card numbers, phone numbers, email addresses, the 18-character unified social credit code, national ID and passport numbers, and street addresses where a label says so (住所, 地址, Address:). Party names, amounts, dates, rates, percentages, contract and invoice numbers and the clauses are sent unchanged, because FLOW reads them. The redaction keeps an offset map: the model quotes the redacted text, and each quote is mapped back to the original document's own words before grounding, so every stored span and offset refers to the original. Recorded readings are looked up, and the rules grammar and the cross-check read, by the original text; none of them leaves the machine. `LLM_REDACT` (on by default) controls it, and only counts per kind are logged (`model.redaction`). Tests: `tests/compiler/test_redaction.py`.
+
 **Tools (the agent's typed interface).** Every tool is an HTTP route with a strict Pydantic schema (`extra="forbid"`):
 
 | Tool | Route |

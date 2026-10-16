@@ -237,7 +237,9 @@ def _backends(args: argparse.Namespace) -> list[Any]:
     if cache is not None:
         chain.append(CacheBackend(cache))
     if args.live:
-        deepseek = DeepSeekBackend(retries=args.deepseek_retries)
+        from app.compiler.redaction import RedactingBackend
+
+        deepseek = RedactingBackend(DeepSeekBackend(retries=args.deepseek_retries))  # privacy before the model
 
         class Live:
             name = "deepseek"
