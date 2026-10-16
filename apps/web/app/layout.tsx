@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
 import { PRE_HYDRATION } from "@/lib/pre-hydration";
@@ -15,11 +16,13 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // SEC-12: the pre-hydration script carries this request's CSP nonce (proxy.ts), the only way an inline script may run
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: PRE_HYDRATION }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: PRE_HYDRATION }} />
       </head>
       <body>
         <AppShell>{children}</AppShell>

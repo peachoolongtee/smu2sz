@@ -7,8 +7,7 @@ const nextConfig = {
   reactStrictMode: true,
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // Security register SEC-12: the owner console is never framed (approve and accept buttons), never sniffed, and sends no referrer.
-  // A full Content-Security-Policy (script-src with the pre-hydration script's hash, connect-src the API origin) is the next step;
-  // it needs a browser run before it ships.
+  // The full Content-Security-Policy, with a nonce per request, is set by proxy.ts on every page; this one also covers the static files.
   async headers() {
     return [{
       source: "/:path*",
