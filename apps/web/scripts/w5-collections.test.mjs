@@ -47,7 +47,7 @@ test("the chase dictionary lines exist in both languages", () => {
 });
 
 test("the recorded handoffs hold the server's figures for every open invoice, in both languages, with no record ids", () => {
-  for (const [file, outstanding, late] of [["chase_day34.json", "¥162,800.00", 2], ["chase_day34_half.json", "¥291,400.00", 2], ["chase_day0.json", "¥420,000.00", 0]]) {
+  for (const [file, outstanding, late] of [["chase_day34.json", "¥160,000.00", 2], ["chase_day34_half.json", "¥290,000.00", 2], ["chase_day0.json", "¥420,000.00", 0]]) {
     const rec = mock(file);
     assert.deepEqual(Object.keys(rec.en), Object.keys(rec.zh), file);
     const a = rec.en["RCV-A"];
@@ -64,9 +64,9 @@ test("the recorded reconciliations carry the four facts on the receipt row", () 
   const half = mock("home_reconciliation_day34_half.json").receipts[0];
   assert.deepEqual(
     [half.received_display, half.face_cleared_display, half.discount_display, half.remaining_display, half.window_state],
-    ["¥127,506.90", "¥128,600.00", "¥1,093.10", "¥291,400.00", "ended"],
+    ["¥128,895.00", "¥130,000.00", "¥1,105.00", "¥290,000.00", "ended"],
   );
   const full = mock("home_reconciliation_day34.json").receipts[0];
   assert.equal(full.window_state, "ended");
-  assert.equal(full.remaining_display, "¥162,800.00");
+  assert.equal(full.remaining_display, "¥160,000.00");
 });
