@@ -9,6 +9,7 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
 | 16 Oct | `081541d1` via dev head `a6de32a2` | SEC-12/13 headers as merged; all security fixes as they stand on dev with round three and Dylan's UI | **CERTIFIED** (one stale test fixed on `sec/redteam-d-patch-target`) |
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
+| 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
 
 ## `0ba8e4c1`: CERTIFIED
 
@@ -37,6 +38,23 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
   `app.api.decide.plan`, so it ran the real (runnable) plan and failed without testing the guard. Patched at the new site it passes, and
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
+
+## `0f92d433` (dev with the owner's decisions): CERTIFIED, 16 Oct
+
+- Contents verified: `b6d1e519`, `0ba8e4c1`, `081541d1`, `1b58291f`, `a6de32a2` and `sec/owner-decisions-16oct` are ancestors.
+- **R-11** (`r11_check.py`): 24 agent-key `/nl` questions (en, zh), every field of each response scanned for cash, the floor, the
+  shortfall, line headroom, the concession cap, break-even, counter cap, DSCR, leverage and the rate ceiling. Pure reads answer the
+  sign-in sentence; `verdict` and `negotiation` null; counters read "Counter the offer"; the only figures are the agent's own operation
+  amounts. Owner chat unchanged. Verified as decided. Residual by design: the agent's own amounts imply line headroom and the gap.
+- **R-10** (`r10_check.py`): the sixth keyed message of the day on either route is 429 `BUYER_BUDGET_EXHAUSTED`; one `SEC-BUDGET-`
+  event per buyer per day; another buyer unaffected; reset when the day moves; keyless stays proposal-only. Verified as decided.
+  Residual: one keyed message at 0.86% still answers "up to ¥257,200 … at 0.85%" (counter cap and, through the size, the funding gap).
+- **SEC-07**: `DEMO_MODE` off unless set (`app/config.py`); every dev, test and browser entry point opts in; sweep with `DEMO_MODE`
+  unset (`authz_sweep_v3.py`, `sweep_unset.json`): 94 API routes, no non-owner passes, `/docs` 404, demo credentials refused.
+- Sweeps in three modes: no non-owner role passes an owner route; the demo owner token is anonymous outside demo mode.
+- Every 14 Oct reproduction refused; attack catalogue 126 API + 133 NL, 0 with harm; 33 shards all exit 0 except
+  `tests/books/test_modules_on_books.py:207` (#161). `tests/deals` now passes (the Chinese-names fix).
+- Evidence: `evidence/2026-10-16/dev-0f92d433/`.
 
 ## `b6d1e519` (capex merge): CERTIFIED, 16 Oct
 

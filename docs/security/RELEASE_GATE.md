@@ -20,6 +20,7 @@ it lapses when either changes. It is never a claim of absolute security or zero 
 | `0ba8e4c1` / `081541d1` (dev, security fixes merged) | **GO** (certified 16 Oct, `CERTIFICATIONS.md`) | **CONDITIONAL GO**: needs SEC-19/20 and the S-net conditions | **NO-GO** |
 | `a6de32a2` (dev head, 16 Oct) | **GO** (certified 16 Oct) | CONDITIONAL GO, as above | **NO-GO** |
 | `b6d1e519` (`int/capex-fixes`, capex buy side + dev) | **GO** (certified 16 Oct) | CONDITIONAL GO, as above | **NO-GO** |
+| `0f92d433` (dev, owner's decisions) | **GO** (certified 16 Oct) | CONDITIONAL GO, as above | **NO-GO** |
 
 **Conditions for S on `e8e270f8`:** loopback only; nobody but the presenter holds the demo credentials; the presenter does not approve
 a second agreement for a request already agreed (SEC-02 is fixed only on the branch); results shown are simulation results.

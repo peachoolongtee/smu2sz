@@ -34,6 +34,8 @@ SUITES = ["offers", "financial", "funding", "covenants", "security", "intent", "
 
 def _bootstrap(live: bool) -> None:
     os.environ["LLM_MODE"] = "live" if live else "cache"
+    if live:  # measure the model on its own: no recorded reading first, no check against the rules grammar
+        os.environ.setdefault("LLM_LIVE_RAW", "1")
     if not live:
         os.environ["TERMSLEDGER_NO_DOTENV"] = "1"  # offline: never read developer keys
     sys.path.insert(0, str(API))
