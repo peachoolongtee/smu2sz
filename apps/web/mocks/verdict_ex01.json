@@ -5922,7 +5922,7 @@
         "net_display": null,
         "when_text": "As soon as you confirm.",
         "assumptions_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first. Runs when you send, whether or not the buyer agrees. If the buyer declines, it is sized to the gap as it stands without the agreement: Draws ¥150,000.00 on the Bank credit line today; Requests ¥255,000.00 of invoice financing, arriving in 3 days.",
-        "authority_text": "FLOW can send it. Your approval is not needed.",
+        "authority_text": "Within your mandate: no approval needed.",
         "remaining_text": "The terms take effect only when Foshan accepts; no payment and no financing settles because the counter is sent."
       },
       "supplier_cost_display": "¥3,027.77",
@@ -5952,7 +5952,7 @@
           "net_display": null,
           "when_text": "As soon as you confirm.",
           "assumptions_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first. Runs when you send, whether or not the buyer agrees. If the buyer declines, it is sized to the gap as it stands without the agreement: Draws ¥150,000.00 on the Bank credit line today; Requests ¥255,000.00 of invoice financing, arriving in 3 days.",
-          "authority_text": "FLOW can send it. Your approval is not needed.",
+          "authority_text": "Within your mandate: no approval needed.",
           "remaining_text": "The terms take effect only when Foshan accepts; no payment and no financing settles because the counter is sent."
         },
         "supplier_cost_display": "¥3,027.77",

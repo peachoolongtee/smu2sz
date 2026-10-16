@@ -666,13 +666,13 @@ test("Deals: the negotiation is the API's, in its order, with the costs it price
   await expect(page.getByTestId("queue-heading")).toContainText(/Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   // Every sentence below is the server's: the deal's subject, the recommendation and its reason, the costs with their basis.
   await expect(page.getByTestId("queue-heading")).toContainText("Foshan · ");
-  await expect(page.getByTestId("deal-rec-reason")).toContainText("FLOW can send it within your mandate");
+  await expect(page.getByTestId("deal-rec-reason")).toContainText("Recommended because it is within your mandate and needs no approval.");
   const tops = await page.evaluate(() => ["queue-heading", "queue-recommends", "deal-choices"].map((id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
   await page.getByTestId("deal-tab-messages").click();
   await expect(page.getByTestId("deal-ask-quote-messages")).toContainText("We'll settle the ¥420k early at 1.2%");
   await openCompare(page);
-  await expect(page.getByTestId("deal-rec-reason")).toContainText("Recommended because FLOW can send it");
+  await expect(page.getByTestId("deal-rec-reason")).toContainText("Recommended because it is within your mandate");
   await expect(page.getByTestId("deal-choice-cell-cost-asked")).toContainText("¥28,326.92");
   await expect(page.getByTestId("deal-choice-cell-cost-reply").first()).toContainText("¥3,027.77");
   await post("/demo/reset", {});

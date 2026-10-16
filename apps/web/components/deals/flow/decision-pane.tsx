@@ -584,7 +584,7 @@ export function DecisionPane({
       <TermSentences terms={record.interpretation.terms} />
     ) : null;
   const workspace = workspaceStep ? (
-    <Workspace record={record} terms={workspaceTerms} original={originalAsk} focusKey={`${stateCode}:${outbound?.answer ?? ""}`} focusOnMount={stateMoved}>
+    <Workspace record={record} terms={workspaceTerms} termsTitle={outbound?.terms_title_text ?? null} original={originalAsk} focusKey={`${stateCode}:${outbound?.answer ?? ""}`} focusOnMount={stateMoved}>
       {workspaceStep}
       {waitsOnApproval ? null : (
         <div className="mt-5">

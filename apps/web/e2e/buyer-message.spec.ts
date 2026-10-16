@@ -141,6 +141,7 @@ test("mark sent: refused when the message changed, then the deal waits for the b
   await expect(page.getByTestId("outbound-sent-message-text")).toHaveText(waiting.message_text!);
   // The workspace: the terms rows and the one timeline; the Messages section is gone (the original ask is its own fold).
   await expect(page.getByTestId("deal-terms-section")).toBeVisible();
+  await expect(page.getByTestId("deal-terms-title")).toHaveText(waiting.terms_title_text!);
   // "They asked" is the ask itself (the picture's asked cells), never the server's "instead of …".
   await expect(page.getByTestId("deal-terms-section").getByTestId("term-asked").first()).not.toContainText("instead of");
   await expect(page.getByTestId("deal-terms-section").getByTestId("term-row-payment_terms").getByTestId("term-asked")).toContainText("60 days");
@@ -266,6 +267,10 @@ test("they declined: the reason chips and what it leaves, then no agreement, the
   await expect(ending.getByTestId("outbound-ending-primary")).toHaveText(done.outbound!.links.find((l) => "primary" in l && l.primary)!.label);
   await expect(ending.getByTestId("outbound-ending-links").getByRole("link")).toHaveCount(done.outbound!.links.length);
   await expect(ending).not.toContainText("will fund");
+  // What was offered, in the server's words and under its heading: offered terms, not agreed ones.
+  await expect(page.getByTestId("deal-terms-title")).toHaveText(done.outbound!.terms_title_text!);
+  for (const term of done.outbound!.terms) await expect(page.getByTestId("deal-terms-section")).toContainText(term);
+  await expect(page.getByTestId("deal-terms-section")).not.toContainText("effective");
   await expect(page.getByTestId("deal-history-declined")).toContainText(done.history!.find((h) => h.kind === "declined")!.text);
   await expect(page.getByTestId("deal-state-chip")).toHaveText(done.state_text);
   await expect(page.getByTestId("history-step-answer")).toContainText("Declined");

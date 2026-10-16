@@ -1135,6 +1135,8 @@ export interface OutboundView {
   sent: RecordDay;
   closes: RecordDay;
   terms: string[];
+  /** The terms section's heading: "What you offered" while waiting, "What was agreed" once accepted, "What you offered (not agreed)" once it ended without agreement. */
+  terms_title_text?: string | null;
   /** The message as it was sent, when re-rendering it gives the very message (`message_same`); else null. */
   message_text: string | null;
   message_same: boolean;

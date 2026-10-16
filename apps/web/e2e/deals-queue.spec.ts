@@ -1,7 +1,11 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import subject from "../mocks/buyer_message.json";
+import picture from "../mocks/offer_picture_ex01.json";
 import { expect, test } from "./fixtures";
+
+/** The recommended reply's words as the server wrote them (the mandate's words, round four). */
+const optionA = picture.en.paths.find((p) => p.kind === "reply" && p.recommended)!;
 import { backToDealsAndReturn, checkedDeal, demoMode, filledBrand, openInbox, openReview } from "./helpers";
 
 /**
@@ -87,10 +91,10 @@ test("Overview: the server's subject is the deal's name, FLOW recommends first w
   await expect(page.getByTestId("deal-recommends-title")).toHaveText("FLOW recommends");
   await expect(page.getByTestId("deal-rec-label")).toHaveText("Option A");
   await expect(page.getByTestId("queue-option")).toContainText("Terms stay at 45 days, no rebate.");
-  await expect(page.getByTestId("deal-rec-reason")).toHaveText("Recommended because FLOW can send it within your mandate without your approval.");
+  await expect(page.getByTestId("deal-rec-reason")).toHaveText(optionA.recommended_reason_text!);
   await expect(page.getByTestId("deal-fact-cash")).toContainText("Held, no buffer at the lowest point");
   await expect(page.getByTestId("deal-fact-cost")).toContainText("¥3,027.77");
-  await expect(page.getByTestId("deal-fact-decides")).toContainText("FLOW can send");
+  await expect(page.getByTestId("deal-fact-decides")).toContainText(optionA.authority_short_text!);
   await expect(page.getByTestId("deal-rec-why")).toContainText("Breached by ¥135k for 15 days");
   // The buyer's own words are in the Messages section.
   await page.getByTestId("deal-tab-messages").click();

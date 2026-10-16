@@ -60,6 +60,7 @@ const sectionTitle = "text-supporting font-bold uppercase tracking-wide text-ink
 export function Workspace({
   record,
   terms,
+  termsTitle,
   original,
   focusKey,
   focusOnMount = false,
@@ -68,6 +69,8 @@ export function Workspace({
   record: DecisionView | null;
   /** The relevant terms section's body; nothing when there are none. */
   terms?: ReactNode;
+  /** The terms section's heading in the server's words (`terms_title_text`); "Terms" when it sends none. */
+  termsTitle?: string | null;
   /** The original ask's fold. */
   original?: ReactNode;
   /** Changes when the state changes: the current step's heading then takes the focus (a screen reader hears the new state). */
@@ -101,8 +104,10 @@ export function Workspace({
         {children}
       </div>
       {terms ? (
-        <section className={`${section} border-t border-line`} aria-label={t("ws.terms")} data-testid="deal-terms-section">
-          <h3 className={sectionTitle}>{t("ws.terms")}</h3>
+        <section className={`${section} border-t border-line`} aria-label={termsTitle ?? t("ws.terms")} data-testid="deal-terms-section">
+          <h3 className={sectionTitle} data-testid="deal-terms-title">
+            {termsTitle ?? t("ws.terms")}
+          </h3>
           <div className="mt-3">{terms}</div>
         </section>
       ) : null}
