@@ -18,7 +18,7 @@ import { useMode } from "@/lib/mode";
 import type { DecisionView, NegotiationView, OfferedResult, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
 import { AcceptBlock, type AcceptOutcome } from "./accept-block";
 import { HistoryStrip } from "./deal-history";
-import { arrivalText, OutboundEnding, OutboundWaiting } from "./outbound";
+import { arrivalText, EndingStep, reviewRows, StepHeading, TermSentences, TermsRows, WaitingStep, Workspace } from "./workspace";
 import { paneStatus, tabsOf, viewIn, type DealViewKey } from "./deal-model";
 import { quietLink } from "./flow-parts";
 import { CashTab } from "./cash-tab";
@@ -114,15 +114,6 @@ function AcceptResult({ outcome }: { outcome: AcceptOutcome }) {
     <div role={outcome.kind === "refused" ? "alert" : "status"} className="mt-5 rounded-tile border border-line bg-subtle px-4 py-3 text-sm text-ink" data-testid={outcome.kind === "accepted" ? "deal-accepted" : "deal-accept-refused"}>
       <p data-testid={outcome.kind === "accepted" ? "deal-accepted-ran" : undefined}>{text}</p>
     </div>
-  );
-}
-
-/** The owner marked the message to the buyer sent: the server's sentence for what was recorded (what marking it does was said under the button). */
-function MarkedResult({ r }: { r: OfferedResult }) {
-  return (
-    <p role="status" className="m-0 rounded-tile border border-line bg-card px-4 py-3 text-sm font-semibold text-ink" data-testid="deal-marked-sent">
-      {r.message_when}
-    </p>
   );
 }
 
@@ -268,6 +259,7 @@ export function DecisionPane({
   const [marked, setMarked] = useState<OfferedResult | null>(null);
   // A buyer's reply pasted on the deal it answered: that deal's sentence, said here on the reply's own deal.
   const [arrived] = useState(() => arrivalText(decision));
+  const [openedState, setOpenedState] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -371,6 +363,12 @@ export function DecisionPane({
       <CustomerName id={buyerId} decision={decision} className="font-bold text-ink" testId="deal-selected-customer">
         {buyerName}
       </CustomerName>
+      {outbound && !outbound.answer && !outbound.status_text && outbound.closes_text ? (
+        <span data-testid="deal-deadline">
+          <span aria-hidden>· </span>
+          {outbound.closes_text}
+        </span>
+      ) : null}
       {shareClause ? (
         <span data-testid="deal-share-clause">
           <span aria-hidden>· </span>
@@ -423,6 +421,7 @@ export function DecisionPane({
             // The review is gone with the send: it cannot report that its flight ended.
             setBusyBoth(false);
           }}
+          onBack={onClose}
           onMarked={(r) => {
             setMarked(r);
             // The review is gone with the mark (the deal now waits for the buyer): it cannot report that it closed.
@@ -500,6 +499,85 @@ export function DecisionPane({
   const sectionNav = (items: DealViewKey[], extra: SectionItem[] = []) => <SectionNav label={t("deals.sec.nav")} items={[...nav(items), ...extra]} busy={busy} />;
   const lastItem: SectionItem[] = history ? [{ key: "last", label: t("deals.sec.last", { buyer: buyerShort }), expanded: lastOpen, onClick: () => setLastOpen((x) => !x) }] : [];
 
+  // The state the deal was opened in: a workspace that appears because the state moved since (a mark, an answer recorded) takes the focus.
+  if (record && openedState === null) setOpenedState(stateCode);
+  const stateMoved = openedState !== null && openedState !== stateCode;
+  // ---- round three: one negotiation, one workspace (an offer sent outside FLOW, a request that needs clarifying, a buyer's reply to a counter), the same skeleton in every state
+  const clarifying = stateCode === "NEEDS_CLARIFICATION";
+  const workspaceOn = Boolean(record && (outbound || clarifying || record.reply_to)) && !(stateCode === "RESPONSE_READY" && !outbound);
+  // What is unclear, in the owner's words: an abstention the server words plainly (its `reason_when` is a sentence of its own, not the engine's reason).
+  const plain = offer.offer.abstentions.filter((a) => a.reason_when && a.reason_when !== a.reason);
+  const approvalsButton = (
+    <ActionGroup testId="deal-actions" label={t("deals.actions")}>
+      <ButtonLink href={approvalId ? `/approvals#approval-${encodeURIComponent(approvalId)}` : "/approvals"} variant="primary" data-testid="deal-approvals-link">
+        {t("next.toApprovals")}
+      </ButtonLink>
+    </ActionGroup>
+  );
+  const workspaceStep: ReactNode =
+    !workspaceOn || !record ? null : ended ? (
+      <>
+        <EndingStep outbound={ended} receipt={record.agreement?.receipt ?? null} decision={decision} />
+        {waitsOnApproval ? <div className="mt-4">{approvalsButton}</div> : null}
+      </>
+    ) : awaitingBuyer && outbound ? (
+      <WaitingStep offerId={offer.offer.offer_id} outbound={outbound} marked={marked?.message_when ?? null} onBusy={setBusyBoth} />
+    ) : clarifying ? (
+      <div className="space-y-3" data-testid="deal-clarify">
+        <StepHeading testId="deal-clarify-title">{record.waiting_for?.text ?? t("biz.deals.cannotEvaluate")}</StepHeading>
+        {plain.length ? (
+          <ul className="m-0 list-disc space-y-1 pl-5 text-[15px] text-ink" data-testid="deal-clarify-points">
+            {plain.map((a) => (
+              <li key={a.field}>{a.reason_when}</li>
+            ))}
+          </ul>
+        ) : null}
+        <ActionGroup testId="deal-actions" label={t("deals.actions")}>
+          <ButtonLink variant="primary" href={`/chat?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}`} data-testid="deal-clarify-action">
+            {t("biz.deals.clarify")}
+          </ButtonLink>
+        </ActionGroup>
+      </div>
+    ) : stateCode === "RECEIVED" ? (
+      <div className="space-y-3" data-testid="next-step">
+        <StepHeading>{record.state_text}</StepHeading>
+        <p className="max-w-[60ch] text-sm text-ink-2" data-testid="queue-check">
+          {t("deals.check.body")}
+        </p>
+        <ActionGroup testId="deal-actions" label={t("deals.actions")}>
+          <Button variant="primary" loading={checking} onClick={() => void check()} data-testid="queue-check-button">
+            {t("biz.deals.check")}
+          </Button>
+        </ActionGroup>
+        {error ? <ErrorState error={error} /> : null}
+      </div>
+    ) : (
+      <div className="space-y-3">
+        <StepHeading>{record.state_text}</StepHeading>
+        <RecordBlock record={record} decision={decision} />
+      </div>
+    );
+  const workspaceTerms: ReactNode =
+    !workspaceOn || !record ? null : awaitingBuyer && outbound && !ended ? (
+      outbound.actions?.accept.review?.terms?.length ? <TermsRows rows={reviewRows(outbound.actions.accept.review.terms)} /> : <TermSentences terms={outbound.terms} />
+    ) : ended ? (
+      ended.changes?.length ? null : <TermSentences terms={ended.terms} />
+    ) : record.interpretation?.terms?.length ? (
+      <TermSentences terms={record.interpretation.terms} />
+    ) : null;
+  const workspace = workspaceStep ? (
+    <Workspace record={record} terms={workspaceTerms} original={originalAsk} focusKey={`${stateCode}:${outbound?.answer ?? ""}`} focusOnMount={stateMoved}>
+      {workspaceStep}
+      {waitsOnApproval ? null : (
+        <div className="mt-5">
+          <RecordLink decision={decision} />
+        </div>
+      )}
+    </Workspace>
+  ) : null;
+  // The workspace's history replaces the separate Messages section (the original ask is its own fold).
+  const workspaceTabs = tabs.filter((k) => k !== "overview" && k !== "messages");
+
   const pane = (
     <section aria-labelledby={`${uid}-title`} className="min-w-0" data-testid="deal-pane" data-decision={decision} data-state={stateCode} data-view={current}>
       <Canonical want={view.view} have={current} onGo={onGo} />
@@ -511,7 +589,7 @@ export function DecisionPane({
             <p data-testid="deal-state-chip" data-state={stateCode}>
               <StatusPill tone={status.tone}>{status.text}</StatusPill>
             </p>
-            <StableTitle id={`${uid}-title`} ask={askTitle} fallback={nameFallback} />
+            <StableTitle id={`${uid}-title`} ask={record?.subject_text ?? (outbound || record?.reply_to ? (row?.subject_text ?? askTitle) : askTitle)} fallback={nameFallback} />
             {customerLine}
           </header>
           {agreedView && trackerRead?.next ? (
@@ -522,7 +600,7 @@ export function DecisionPane({
             </div>
           ) : null}
           {/* The deal's four steps (the request, the counter sent, the buyer's answer, what came of it) once a counter went out outside FLOW, and before any send; an agreement made otherwise keeps its lifecycle. */}
-          {record && (outbound || (!agreedDeal && record.history?.length)) ? <HistoryStrip record={record} scroll={!isMd} /> : agreedDeal ? <LifecycleStrip stages={lifeStages} scroll={!isMd} /> : null}
+          {record && (outbound || (!agreedDeal && record.history?.length)) ? <HistoryStrip record={record} /> : agreedDeal ? <LifecycleStrip stages={lifeStages} scroll={!isMd} /> : null}
         </div>
 
         {arrived ? (
@@ -536,24 +614,16 @@ export function DecisionPane({
 
         {current === "overview" && (reviewSlot || sent || outcome) ? (
           <div className="space-y-3" data-testid="deal-review-slot">
-            <div className={reviewing && (canSend || acceptMounted) ? "flow-card p-5 sm:p-7" : ""}>{reviewSlot}</div>
+            <div className={reviewing && (canSend || acceptMounted) ? "rounded-[24px] bg-card p-5 shadow-(--shadow-f) sm:p-7" : ""}>{reviewSlot}</div>
           </div>
         ) : null}
 
         {current === "overview" && (agreedView || agreedLoading) ? (
           <div className="space-y-5">
+          {workspace}
           <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview" data-agreed="true">
             {outcome ? <AcceptResult outcome={outcome} /> : null}
             {sent ? <SendResult n={sent} /> : null}
-            {ended && record ? (
-              <div className="mb-6">
-                <OutboundEnding outbound={ended} history={record.history}>
-                  {record.agreement?.receipt ? (
-                    <CommitmentReceipt receipt={record.agreement.receipt} id={`${decision}-agreement-receipt`.replace(/[^A-Za-z0-9_-]/g, "-")} title={t("receipt.title.agreed")} testId="deal-agreement-receipt" />
-                  ) : null}
-                </OutboundEnding>
-              </div>
-            ) : null}
             {agreedView && trackerRead ? (
               <div className="flex flex-col gap-6" data-testid="deal-tracker">
                 <TrackerBody d={trackerRead} mode="deal" />
@@ -571,6 +641,13 @@ export function DecisionPane({
           </div>
         ) : current === "overview" && ready ? (
           <div id={`${uid}-panel-overview`} className="space-y-5" data-testid="deal-panel-overview">
+            {record?.reply_to ? (
+              <p className="flow-card px-5 py-3 text-sm sm:px-7" data-testid="deal-reply-to">
+                <Link href={record.reply_to.href} className={`${quietLink} px-0`}>
+                  {record.reply_to.title_text}
+                </Link>
+              </p>
+            ) : null}
             {sent ? <SendResult n={sent} /> : null}
             {outcome ? <AcceptResult outcome={outcome} /> : null}
             {abstentions}
@@ -628,6 +705,12 @@ export function DecisionPane({
               </p>
             ) : null}
           </div>
+        ) : current === "overview" && workspace ? (
+          <div id={`${uid}-panel-overview`} className="space-y-5" data-testid="deal-panel-overview">
+            {outcome ? <AcceptResult outcome={outcome} /> : null}
+            {workspace}
+            {workspaceTabs.length ? sectionNav(workspaceTabs) : null}
+          </div>
         ) : current === "overview" ? (
           <div className="space-y-5">
           <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview">
@@ -637,31 +720,10 @@ export function DecisionPane({
               {done || waitsOnApproval || stateCode === "NEEDS_CLARIFICATION" || awaitingBuyer ? (
                 <>
                   {outcome ? <AcceptResult outcome={outcome} /> : null}
-                  {awaitingBuyer && outbound && !ended && offer ? (
-                    <>
-                      {marked ? <MarkedResult r={marked} /> : null}
-                      <OutboundWaiting offerId={offer.offer.offer_id} outbound={outbound} onAccepted={() => setBusyBoth(false)} onDeclined={() => setBusyBoth(false)} onReplied={() => setBusyBoth(false)} onBusy={setBusyBoth} />
-                      <RecordLink decision={decision} />
-                    </>
-                  ) : ended && record ? (
-                    <>
-                      <OutboundEnding outbound={ended} history={record.history}>
-                        {record.agreement?.receipt ? (
-                          <CommitmentReceipt receipt={record.agreement.receipt} id={`${decision}-agreement-receipt`.replace(/[^A-Za-z0-9_-]/g, "-")} title={t("receipt.title.agreed")} testId="deal-agreement-receipt" />
-                        ) : null}
-                      </OutboundEnding>
-                      {waitsOnApproval ? null : <RecordLink decision={decision} />}
-                    </>
-                  ) : record ? (
+                  {record ? (
                     <RecordBlock record={record} decision={decision} />
                   ) : null}
-                  {waitsOnApproval ? (
-                    <ActionGroup testId="deal-actions" label={t("deals.actions")}>
-                      <ButtonLink href={approvalId ? `/approvals#approval-${encodeURIComponent(approvalId)}` : "/approvals"} variant="primary" data-testid="deal-approvals-link">
-                        {t("next.toApprovals")}
-                      </ButtonLink>
-                    </ActionGroup>
-                  ) : null}
+                  {waitsOnApproval ? approvalsButton : null}
                   {sent ? <SendResult n={sent} /> : null}
                 </>
               ) : picture === undefined && n.error ? (

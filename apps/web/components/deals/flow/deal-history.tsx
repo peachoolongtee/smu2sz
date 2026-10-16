@@ -2,7 +2,7 @@
 
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
-import type { DealHistoryEntry, DecisionView, OutboundAnswer, OutboundView } from "@/lib/types";
+import type { DecisionView, OutboundAnswer, OutboundView } from "@/lib/types";
 
 /** The dot of a step or a history line by the server's tone: green agreed, lavender the buyer's turn, ink done, hairline still to come. */
 const DOT: Record<string, string> = {
@@ -37,7 +37,8 @@ export function historySteps(record: DecisionView, t: (k: DictKey) => string): S
     return steps;
   }
   if (o.answer === null) {
-    steps.push({ key: "answer", label: t("hist.answer"), value: o.closes_text ?? o.closes.date, tone: "waiting", current: true }, { key: "outcome", label: t("hist.outcome"), value: null, tone: "todo" });
+    // The buyer's turn: the deadline is said once, in the identity or the waiting line, not again here.
+    steps.push({ key: "answer", label: t("hist.answer"), value: null, tone: "waiting", current: true }, { key: "outcome", label: t("hist.outcome"), value: null, tone: "todo" });
     return steps;
   }
   const answerDay = o.answer === "no_answer" ? o.closes : (o.answered ?? o.closes);
@@ -65,27 +66,5 @@ export function HistoryStrip({ record, scroll = false }: { record: DecisionView;
         </li>
       ))}
     </ol>
-  );
-}
-
-/** The deal's history, oldest first: each line's date and the server's sentence, with its tone. */
-export function HistoryList({ entries }: { entries: DealHistoryEntry[] | undefined }) {
-  const { t } = useI18n();
-  if (!entries?.length) return null;
-  return (
-    <section aria-labelledby="deal-history-title" className="space-y-2" data-testid="deal-history">
-      <h3 id="deal-history-title" className="text-supporting font-bold text-ink-3">
-        {t("hist.title")}
-      </h3>
-      <ol className="m-0 list-none space-y-2 p-0">
-        {entries.map((h, i) => (
-          <li key={`${h.kind}-${i}`} className="flex items-start gap-3 text-sm" data-testid={`deal-history-${h.kind}`}>
-            <span aria-hidden className={`mt-1.5 size-2.5 shrink-0 rounded-pill border-2 ${DOT[h.tone] ?? DOT.done}`} />
-            <span className="w-32 shrink-0 tabular-nums text-ink-3">{h.date}</span>
-            <span className="min-w-0 text-ink">{h.text}</span>
-          </li>
-        ))}
-      </ol>
-    </section>
   );
 }

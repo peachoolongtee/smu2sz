@@ -22,6 +22,8 @@ import type {
   BuyerReplyResult,
   OfferedRequest,
   OfferedResult,
+  WithdrawRequest,
+  WithdrawResult,
   DeclineResult,
   ActivityView,
   DemoRestoreResult,
@@ -901,6 +903,21 @@ export async function buyerAccepted(offerId: string, counterId: string, req: Buy
   load().buyerMessage = { ...at, stage: "accepted" };
   save();
   return rec.buyer_accepted[getLang()];
+}
+
+/**
+ * POST .../offered/withdraw: the owner marked it sent by mistake. The mock holds no recording of it until the server serves the route (round three); the walk is undone and the deal reads
+ * as a counter ready again, from the recording of that moment.
+ */
+export async function withdrawOffered(offerId: string, counterId: string, req: WithdrawRequest): Promise<WithdrawResult> {
+  void req;
+  await delay();
+  await waitingFor(offerId, counterId);
+  const rec = await buyerMessage.buyerMessageRecording();
+  const s = load();
+  s.buyerMessage = null;
+  save();
+  return { decision: rec.ready[getLang()] };
 }
 
 /** POST .../buyer-declined: the buyer's no (the recording of the walked reply, declined with a reason; the reason on screen is the recording's). Refused once the offer has closed. */

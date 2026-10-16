@@ -663,9 +663,9 @@ test("Deals: the negotiation is the API's, in its order, with the costs it price
   await checkedDeal(page);
   // The heading is the buyer's ask from the first read, so the check is done when the recommendation is there.
   await page.getByTestId("queue-recommends").waitFor();
-  await expect(page.getByTestId("queue-heading")).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
-  // Every sentence below is the server's: the ask in the buyer's words, the recommendation and its reason, the costs with their basis.
-  await expect(page.getByTestId("queue-heading")).toContainText("early settlement of ¥420,000.00 at 1.20%");
+  await expect(page.getByTestId("queue-heading")).toContainText(/Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
+  // Every sentence below is the server's: the deal's subject, the recommendation and its reason, the costs with their basis.
+  await expect(page.getByTestId("queue-heading")).toContainText("Foshan · ");
   await expect(page.getByTestId("deal-rec-reason")).toContainText("FLOW can send it within your mandate");
   const tops = await page.evaluate(() => ["queue-heading", "queue-recommends", "deal-choices"].map((id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));

@@ -145,6 +145,19 @@ export async function openReview(page: Page): Promise<void> {
   await page.getByTestId("queue-review").waitFor();
 }
 
+/**
+ * "Back to Deals" (round three: it replaced "Not now") closes the deal and its review; the list is there. Then the deal is opened again at the address it had, without a picked reply
+ * (the recommended one is focused), so a spec can review another reply. Nothing was sent.
+ */
+export async function backToDealsAndReturn(page: Page): Promise<void> {
+  const url = new URL(page.url());
+  await page.getByTestId("queue-review-close").click();
+  await expect(page.getByTestId("deal-pane")).toHaveCount(0);
+  url.searchParams.delete("path");
+  await page.goto(url.pathname + url.search);
+  await page.getByTestId("queue-recommends").waitFor();
+}
+
 /** The choices table (Deals redesign: it replaced the Compare responses tab) is the Overview's: goes to the Overview when another section is open and waits for the table, or the stacked cards on a phone. */
 export async function openCompare(page: Page): Promise<void> {
   const tab = page.getByTestId("deal-tab-overview");

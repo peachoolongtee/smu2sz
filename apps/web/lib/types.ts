@@ -1072,6 +1072,10 @@ export interface BuyerMessageView {
   /** The buyer's languages the message can be written in, labelled in the page's language. */
   languages?: { code: "en" | "zh"; label: string }[];
   send_title_text?: string;
+  /** Round three: how the message goes out (today always by hand: `kind` "manual", "Manual sending · No channel connected"). */
+  channel?: { kind: "manual" | string; label: string; text: string | null } | null;
+  /** Round three: whose authority the reply goes out under ("Within your mandate…"). */
+  authority_text?: string | null;
   offered: { recorded: true; lang: "en" | "zh"; message_hash: string; valid_until_day: Day; valid_until_when: string; same_message: boolean } | null;
   notice_text: string;
   copy_label: string;
@@ -1138,11 +1142,35 @@ export interface OutboundView {
   reason_code?: string | null;
   reason_text?: string | null;
   reply_quote?: string | null;
+  /** Round three: the waiting one-liner with its provenance ("Option A · marked sent by you on 1 Oct · FLOW cannot confirm delivery · expires 3 Oct (in 2 days)"). */
+  status_text?: string | null;
+  /** Round three, accepted: who recorded it and from what, the buyer's words when pasted, and what follows (sentences). */
+  provenance_text?: string | null;
+  evidence_quote?: string | null;
+  consequences?: string[];
+  /** Round three, countered: our last offer against their reply, term by term, and where their reply stands now. */
+  changes?: { key: string; label: string; ours_text: string | null; theirs_text: string | null; changed: boolean }[];
+  reply_state_text?: string | null;
   links: { label: string; href: string; primary?: boolean }[];
   actions: {
     question_text: string;
-    accept: { label: string; hint_text: string; confirm_label: string; terms: string[]; review: OutboundReview | null; authority_text: string | null };
+    accept: {
+      label: string;
+      hint_text: string;
+      confirm_label: string;
+      terms: string[];
+      review: OutboundReview | null;
+      authority_text: string | null;
+      /** Round three: what recording it binds, and the optional evidence box. */
+      binding_text?: string | null;
+      evidence_label?: string | null;
+      evidence_placeholder?: string | null;
+    };
     counter: { label: string; hint_text: string; confirm_label: string; placeholder_text: string; effect_text: string };
+    /** Round three: the buyer's answer is unclear or a question: pasted like a counter, read as a request of its own. */
+    unclear?: { label: string; hint_text: string; confirm_label: string; placeholder_text: string; effect_text: string } | null;
+    /** Round three: "I marked it sent by mistake". */
+    withdraw?: { label: string; confirm_label: string; effect_text: string } | null;
     decline: { label: string; hint_text: string; confirm_label: string; reasons_label_text: string; reasons: { code: DeclineReason; text: string }[]; effect_text: string };
   } | null;
 }
@@ -1177,6 +1205,18 @@ export interface BuyerAcceptedRequest {
   verdict_id: string;
   state_version: number;
   message_hash: string;
+  /** Round three: the buyer's message as the owner pasted it, as evidence (at most 4000 characters). */
+  evidence_text?: string;
+}
+
+/** Round three: POST .../offered/withdraw: the owner marked it sent by mistake; the deal is back to a counter ready (the history keeps both events). */
+export interface WithdrawRequest {
+  verdict_id: string;
+  message_hash: string;
+}
+
+export interface WithdrawResult {
+  decision: DecisionView;
 }
 
 /** POST /offers/{id}/buyer-reply: the buyer's reply as the owner pasted it (at most 4000 characters). */
@@ -4103,6 +4143,10 @@ export interface DecisionView extends DecisionSummary, DealLifeWords {
   outbound?: OutboundView | null;
   /** A deal's history, oldest first (absent from an older server). */
   history?: DealHistoryEntry[];
+  /** Round three: on a request that is a buyer's reply to a counter the owner sent, the deal it answers. */
+  reply_to?: { decision_id: string; href: string; title_text: string; terms: string[] } | null;
+  /** Round three: the deal's short name (e.g. "Foshan · Early settlement and payment terms"), the queue's own. */
+  subject_text?: string | null;
 }
 
 /** The detail of a 404 DECISION_NOT_FOUND. */

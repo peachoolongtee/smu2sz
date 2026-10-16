@@ -9,7 +9,6 @@ import homeAfter from "../mocks/home_v2/home_after_fund.json";
 import worklistDay0 from "../mocks/home_v2/worklist_day0.json";
 import worklistOffer from "../mocks/home_v2/worklist_offer.json";
 import worklistAfter from "../mocks/home_v2/worklist_after_fund.json";
-import evaluated from "../mocks/deals_day0_evaluated.json";
 import focusOfferRec from "../mocks/home_v2/focus_offer.json";
 import customersOffer from "../mocks/home_v2/customers_offer.json";
 import receivablesAfter from "../mocks/home_v2/receivables_after_fund.json";
@@ -42,11 +41,9 @@ async function open(page: Page, { lang = "en", offer = false }: { lang?: Lang; o
     await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
     await page.getByTestId("queue-check-button").click();
     // The queue names the offer once FLOW has read it: only then is the offer open on the books the Home reads.
-    // The deal's name is the buyer's ask in words (the server's `asks_text`), not the verdict's short heading.
-    const asks = evaluated.deals.find((d) => d.open_offer)!.open_offer!.asks_text;
-    // The title is the ask from the first read, so the check is done when the recommendation is there.
+    // The deal's name is the server's short subject (round three); the check is done when the recommendation is there.
     await page.getByTestId("queue-recommends").waitFor();
-    await expect(page.getByTestId("queue-heading")).toContainText(asks);
+    await expect(page.getByTestId("queue-heading")).toContainText("Foshan · ");
   }
   await page.goto("/");
   await expect(page.getByTestId("home-v2")).toBeVisible();

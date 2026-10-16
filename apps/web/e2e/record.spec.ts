@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
-import { checkedDeal, demoMode, openCompare, openOperatorTools, openReview, runPlan, sendCounter } from "./helpers";
+import { backToDealsAndReturn, checkedDeal, demoMode, openCompare, openOperatorTools, openReview, runPlan, sendCounter } from "./helpers";
 
 /**
  * Wave 2 (map #65), mock mode: the pages read the durable decision record (ADR-0011). Each state is a recording of GET /decisions/{id} from the
@@ -71,7 +71,7 @@ test("the send names its option, says the reply is simulated, and carries what w
   await expect(response.getByTestId("receipt-line-authorizes")).toContainText("FLOW records it as a proposed agreement that stands only if Foshan accepts.");
   await expect(response.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥841.57 for the draw");
   await expect(response.getByTestId("deal-send-confirm-box")).toContainText("The buyer's reply is simulated");
-  await page.getByTestId("queue-review-close").click();
+  await backToDealsAndReturn(page);
   // Option B is a path of its own: picking it in the comparison makes it the reply under review, with its own send; Option A's gives way, never two at once.
   await openCompare(page);
   await expect(page.getByTestId("deal-choice-cell-decides-reply").nth(1)).toContainText("Needs your approval");

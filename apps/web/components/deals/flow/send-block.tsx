@@ -48,6 +48,7 @@ export function SendBlock({
   recordHref,
   onSent,
   onMarked,
+  onBack,
   onBusy,
   openSignal = 0,
   hideTrigger = false,
@@ -64,6 +65,8 @@ export function SendBlock({
   onSent: (n: NegotiationView) => void;
   /** Told with the server's answer once the owner marked the message to the buyer sent (the page reads the deal again). */
   onMarked?: (r: OfferedResult) => void;
+  /** "Back to Deals": closes the deal (the page's list); without it the review closes in place. */
+  onBack?: () => void;
   /** Told whenever a send or a check is in flight: the page holds the selection then. */
   onBusy: (busy: boolean) => void;
   /** The deal header's [Review the counter] opens the review from outside: each press raises this number. */
@@ -281,9 +284,10 @@ export function SendBlock({
               ) : null}
             </section>
           ) : null}
-          <p className="m-0">
-            <button type="button" onClick={() => setReviewing(false)} disabled={inFlight} className={`${quietLink} disabled:opacity-50`} data-testid="queue-review-close">
-              {t("dq.review.close")}
+          <p className="m-0 border-t border-line pt-4">
+            {/* Round three: the way out of the send review is back to the deals (the review is not a page of its own to dismiss). */}
+            <button type="button" onClick={() => (onBack ? onBack() : setReviewing(false))} disabled={inFlight} className={`${quietLink} disabled:opacity-50`} data-testid="queue-review-close">
+              {t("ws.backToDeals")}
             </button>
           </p>
         </div>

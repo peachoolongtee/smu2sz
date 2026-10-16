@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, demoMode, openCompare, openInbox, openOperatorTools, openReview, resetBooks } from "./helpers";
+import { backToDealsAndReturn, checkedDeal, demoMode, openCompare, openInbox, openOperatorTools, openReview, resetBooks } from "./helpers";
 
 /**
  * Slice B of the overhaul map #121 (tickets #126 to #132, #134, #143), the contract end to end: a row's link and the origin, a deep link that hydrates a fresh session,
@@ -370,7 +370,7 @@ test.describe("live", () => {
     await expect(receipt).toBeVisible();
     const recommended = (await receipt.textContent())!;
     const recommendedLabel = (await page.getByTestId("deal-send").textContent())!;
-    await page.getByTestId("queue-review-close").click();
+    await backToDealsAndReturn(page);
     await openCompare(page);
     // The first reply that is not the recommended one.
     // (The picked reply's review opens from its own column in one step.)

@@ -1,5 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
-import { checkedDeal, demoMode, openInbox, openReview, sendCounter, switchMode, walkAway } from "./helpers";
+import { backToDealsAndReturn, checkedDeal, demoMode, openInbox, openReview, sendCounter, switchMode, walkAway } from "./helpers";
 
 /**
  * Deals in Business mode, the flows around the queue (map #121, Slice B): the buyer messages that wait in the inbox (one thread per buyer, only senders the books
@@ -97,9 +97,10 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   // The simulated buyer's lean is the Demo row's control.
   await expect(box.getByLabel("Open to a counter")).toHaveCount(1);
   await expect(box.getByLabel("Holds firm")).toHaveCount(1);
-  // Not now closes the review and nothing was sent.
-  await page.getByTestId("queue-review-close").click();
+  // Back to Deals leaves the review and the deal; nothing was sent, and the deal is still a reply ready.
+  await backToDealsAndReturn(page);
   await expect(page.getByTestId("queue-review")).toHaveCount(0);
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
   await openReview(page);
   // One press sends: the receipt on screen is the review, there is no second confirmation.
   await sendCounter(page);

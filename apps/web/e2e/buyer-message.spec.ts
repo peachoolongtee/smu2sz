@@ -5,10 +5,11 @@ import { expect, test } from "./fixtures";
 import { checkedDeal, openOperatorTools, openReview } from "./helpers";
 
 /**
- * The message the owner sends the buyer outside FLOW (ADR-0011 addendum, round two): FLOW transmits nothing. The deal is ONE state, whatever the server says happened.
- *   Send (RESPONSE_READY): what they asked beside what the owner offers, then the letter in the buyer's language; Copy is the filled button until copied, then "I've sent it".
- *   Waiting (AWAITING_BUYER): the lavender banner, what was sent, and "What did {buyer} say?" with three tiles: accept, counter, decline.
- *   Endings: accepted (the agreement and its receipt), countered (a request of its own), declined (with a reason), no answer (the clock past the day it was open until).
+ * The message the owner sends the buyer outside FLOW (ADR-0011 addendum, round three): FLOW transmits nothing. One negotiation, one workspace: the same skeleton in every state
+ * (identity, the current step with one filled action, the terms, the one timeline, the original ask).
+ *   Send (RESPONSE_READY): the composer: the verified terms on the left, the letter at full width on the right; Copy is the filled button until copied, then "Mark as sent".
+ *   Waiting (AWAITING_BUYER): "Waiting for …", one line of what was sent, [View sent message] and [Record their response], whose compact choice reveals one form.
+ *   Endings: accepted (the agreement, its receipt folded), countered (a request of its own), declined (with a reason), no answer (the clock past the day it was open until).
  * Mock mode, on the API's own recordings (scripts/record-mocks.mjs --buyer-message): every sentence below is the server's, read from that file. The test hooks are sessionStorage keys:
  *   tl-mock-message-changed = 1     the next mark is refused with the recorded 409 MESSAGE_CHANGED
  *   tl-mock-no-simulated-buyer = 1  the next simulated send is refused with the recorded 409 NO_SIMULATED_BUYER
@@ -59,18 +60,18 @@ test("send: what they asked beside what you offer, the letter in the buyer's lan
   await expect(page.getByTestId("history-step-sent")).toHaveAttribute("data-tone", "todo");
 
   const offer = page.getByTestId("buyer-message-offer");
-  await expect(offer).toContainText("They asked");
   await expect(offer).toContainText(`You offer · ${before.en.counter_label_when}`);
   for (const term of before.en.review!.terms!) await expect(offer.getByTestId(`buyer-message-term-${term.key}`).getByTestId("buyer-message-term-offer")).toHaveText(literal(term.cell_text!));
   await expect(offer.getByTestId("buyer-message-cost")).toContainText(before.en.review!.cost_display!);
   await expect(offer.getByTestId("buyer-message-cost")).toHaveAttribute("data-within", "true");
   await expect(offer.getByTestId("buyer-message-decides")).toHaveText(before.en.review!.decides_text!);
 
-  await expect(panel.getByRole("heading", { name: before.en.send_title_text })).toBeVisible();
+  await expect(panel.getByRole("heading", { name: before.en.send_title_text })).toBeAttached();
+  await expect(panel.getByTestId("buyer-message-recipient")).toContainText(before.en.buyer_name);
   await expect(panel.getByTestId("buyer-message-notice")).toHaveText(before.en.notice_text);
   await expect(panel.getByTestId("buyer-message-provenance")).toHaveText(before.en.provenance.text);
   await expect(panel.getByTestId("buyer-message-provenance")).toHaveAttribute("data-verified", "true");
-  await expect(panel.getByTestId("buyer-message-until")).toHaveText(`To ${before.en.buyer_name} · open until ${before.en.valid_until_date}`);
+  await expect(offer.getByTestId("buyer-message-until")).toContainText(before.en.valid_until_date);
   await expect(panel.getByTestId("buyer-message-text")).toHaveText(before.en.text!);
   await expect(panel.getByTestId("buyer-message-effect")).toHaveText(before.en.mark_sent_effect_text);
   // Copy is the filled button until the message has been copied; then "I've sent it to the buyer" is.
@@ -112,18 +113,22 @@ test("mark sent: refused when the message changed, then the deal waits for the b
   await expect(page.getByTestId("queue-review")).toHaveCount(0);
   await expect(page.getByTestId("history-step-sent")).toContainText(waiting.label_text!);
   await expect(page.getByTestId("history-step-answer")).toHaveAttribute("data-tone", "waiting");
-  await expect(page.getByTestId("history-step-answer")).toContainText(waiting.closes_text!);
 
-  const banner = page.getByTestId("outbound-banner");
-  await expect(banner).toContainText(waiting.title_text);
-  await expect(banner.getByTestId("outbound-closes")).toHaveText(waiting.closes_text!);
-  await expect(banner.getByTestId("outbound-text")).toHaveText(waiting.text);
-  await expect(banner.getByTestId("outbound-progress")).toHaveAttribute("aria-valuenow", String(Math.round(waiting.progress! * 100)));
-  const sent = page.getByTestId("outbound-sent");
-  await expect(sent.getByTestId("outbound-sent-text")).toHaveText(waiting.sent_text);
-  await expect(sent.getByTestId("outbound-sent-terms")).toContainText(waiting.terms[0]);
-  await sent.getByTestId("outbound-sent-message").locator("summary").click();
-  await expect(sent.getByTestId("outbound-sent-message-text")).toHaveText(waiting.message_text!);
+  // The current step: the server's "Waiting for …" and its one line, the deadline said once (in the identity, while the line does not carry it), no progress bar.
+  await expect(page.getByTestId("outbound-title")).toHaveText(waiting.title_text);
+  await expect(page.getByTestId("outbound-title")).toBeFocused();
+  const statusText = (waiting as { status_text?: string | null }).status_text ?? null;
+  await expect(page.getByTestId("outbound-status")).toHaveText(statusText ?? waiting.sent_text);
+  if (!statusText) await expect(page.getByTestId("deal-deadline")).toContainText(waiting.closes_text!);
+  await expect(page.locator('[role="progressbar"]')).toHaveCount(0);
+  await expect(page.getByTestId("outbound-record")).toHaveAttribute("aria-expanded", "false");
+  await page.getByTestId("outbound-view-sent").click();
+  await expect(page.getByTestId("outbound-sent-message-text")).toHaveText(waiting.message_text!);
+  // The workspace: the terms rows and the one timeline; the Messages section is gone (the original ask is its own fold).
+  await expect(page.getByTestId("deal-terms-section")).toBeVisible();
+  await expect(page.getByTestId("deal-history-offered")).toContainText(rec.awaiting.en.decision.history!.find((h) => h.kind === "offered")!.text);
+  await expect(page.getByTestId("deal-tab-messages")).toHaveCount(0);
+  await page.getByTestId("outbound-record").click();
   await expect(page.getByTestId("outbound-answer")).toContainText(waiting.actions!.question_text);
   for (const k of ["accept", "counter", "decline"] as const) await expect(page.getByTestId(`outbound-tile-${k}`)).toContainText(waiting.actions![k].label);
   await scan(page, "waiting for the buyer");
@@ -134,10 +139,12 @@ test("mark sent: refused when the message changed, then the deal waits for the b
   await expect(page.getByTestId("record-sent-outside")).toHaveText((rec.awaiting.en.decision.response!.sent as { text: string }).text);
 });
 
-test("they accepted: the terms, cost and authority, then the agreement with its receipt and the history", async ({ page }) => {
+test("they accepted: the terms, cost and authority, then the agreement with its receipt folded and the history", async ({ page }) => {
   await markedSent(page);
+  await page.getByTestId("outbound-record").click();
   await page.getByTestId("outbound-tile-accept").click();
-  await expect(page.getByTestId("outbound-tile-accept")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("outbound-tile-accept")).toHaveAttribute("data-selected", "true");
+  await expect(page.getByTestId("outbound-confirm-counter")).toHaveCount(0);
   const confirm = page.getByTestId("outbound-confirm-accept");
   await expect(confirm.getByTestId("outbound-accept-cost")).toContainText(waiting.actions!.accept.review!.cost_display!);
   await expect(confirm.getByTestId("outbound-accept-authority")).toHaveText(waiting.actions!.accept.authority_text!);
@@ -148,7 +155,9 @@ test("they accepted: the terms, cost and authority, then the agreement with its 
   await expect(ending).toHaveAttribute("data-answer", "accepted");
   await expect(ending.getByTestId("outbound-ending-title")).toHaveText(done.outbound!.title_text);
   await expect(ending.getByTestId("outbound-ending-text")).toHaveText(done.outbound!.text);
-  await expect(ending.getByTestId("deal-history-accepted")).toContainText(done.history!.find((h) => h.kind === "accepted")!.text);
+  await expect(page.getByTestId("deal-history-accepted")).toContainText(done.history!.find((h) => h.kind === "accepted")!.text);
+  await expect(ending.getByTestId("deal-agreement-receipt")).toBeHidden();
+  await ending.getByTestId("outbound-agreement-details").locator("summary").click();
   await expect(ending.getByTestId("deal-agreement-receipt")).toBeVisible();
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await expect(page.getByTestId("history-step-outcome")).toHaveAttribute("data-tone", "ok");
@@ -157,6 +166,7 @@ test("they accepted: the terms, cost and authority, then the agreement with its 
 
 test("they countered: refused with no terms, then their reply is a request of its own, and the deal it answered says so", async ({ page }) => {
   await markedSent(page);
+  await page.getByTestId("outbound-record").click();
   await page.getByTestId("outbound-tile-counter").click();
   const confirm = page.getByTestId("outbound-confirm-counter");
   const box = confirm.getByTestId("outbound-reply-text");
@@ -191,6 +201,7 @@ test("they countered: refused with no terms, then their reply is a request of it
 
 test("they declined: the reason chips, what is funded instead, then no deal with the reason and the way to Cash", async ({ page }) => {
   await markedSent(page);
+  await page.getByTestId("outbound-record").click();
   await page.getByTestId("outbound-tile-decline").click();
   const confirm = page.getByTestId("outbound-confirm-decline");
   await expect(confirm).toContainText(waiting.actions!.decline.reasons_label_text);
@@ -206,7 +217,7 @@ test("they declined: the reason chips, what is funded instead, then no deal with
   await expect(ending.getByTestId("outbound-ending-title")).toHaveText(done.outbound!.title_text);
   await expect(ending.getByTestId("outbound-ending-reason")).toHaveText(done.outbound!.reason_text!);
   await expect(ending.getByTestId("outbound-ending-primary")).toHaveText(done.outbound!.links[0].label);
-  await expect(ending.getByTestId("deal-history-declined")).toContainText(done.history!.find((h) => h.kind === "declined")!.text);
+  await expect(page.getByTestId("deal-history-declined")).toContainText(done.history!.find((h) => h.kind === "declined")!.text);
   await expect(page.getByTestId("deal-state-chip")).toHaveText(done.state_text);
   await expect(page.getByTestId("history-step-answer")).toContainText("Declined");
   await expect(page.getByTestId("history-step-outcome")).toContainText("No deal");
@@ -229,7 +240,7 @@ test("no answer: once the clock passes the day the offer was open until, it clos
   await expect(ending).toHaveAttribute("data-answer", "no_answer");
   await expect(ending.getByTestId("outbound-ending-title")).toHaveText(done.outbound!.title_text);
   await expect(ending.getByTestId("outbound-ending-text")).toHaveText(done.outbound!.text);
-  await expect(ending.getByTestId("deal-history-no_answer")).toContainText(done.history!.find((h) => h.kind === "no_answer")!.text);
+  await expect(page.getByTestId("deal-history-no_answer")).toContainText(done.history!.find((h) => h.kind === "no_answer")!.text);
   await expect(page.getByTestId("deal-state-chip")).toHaveText(done.state_text);
   await expect(page.getByTestId("outbound-waiting")).toHaveCount(0);
 });
@@ -253,7 +264,7 @@ test("the page in Chinese: the panel's words, the waiting state and its answers 
   await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
   const panel = await messagePanel(page);
   const zh = rec.message[COUNTER as keyof typeof rec.message].zh;
-  await expect(panel.getByRole("heading", { name: zh.zh.send_title_text })).toBeVisible();
+  await expect(panel.getByRole("heading", { name: zh.zh.send_title_text })).toBeAttached();
   await expect(panel.getByTestId("buyer-message-notice")).toHaveText(zh.zh.notice_text);
   // The buyer's language starts at the page's; the owner can still pick English, and the words stay Chinese.
   await expect(panel.getByTestId("buyer-message-text")).toHaveText(zh.zh.text!);
@@ -263,5 +274,6 @@ test("the page in Chinese: the panel's words, the waiting state and its answers 
   await panel.getByTestId("buyer-message-mark-sent").click();
   await expect(page.getByTestId("deal-marked-sent")).toHaveText(rec.offered.zh.message_when);
   await expect(page.getByTestId("deal-state-chip")).toHaveText(rec.awaiting.zh.decision.state_text);
+  await page.getByTestId("outbound-record").click();
   await expect(page.getByTestId("outbound-answer")).toContainText(rec.awaiting.zh.decision.outbound!.actions!.question_text);
 });

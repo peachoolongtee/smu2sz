@@ -22,6 +22,8 @@ import type {
   BuyerReplyResult,
   OfferedRequest,
   OfferedResult,
+  WithdrawRequest,
+  WithdrawResult,
   DeclineResult,
   ActivityView,
   DemoRestoreResult,
@@ -197,6 +199,8 @@ export const live = {
   markOffered: (offerId: string, counterId: string, req: OfferedRequest) => http<OfferedResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/offered`, { body: req }),
   buyerAccepted: (offerId: string, counterId: string, req: BuyerAcceptedRequest) =>
     http<BuyerAcceptedResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/buyer-accepted`, { body: req }),
+  withdrawOffered: (offerId: string, counterId: string, req: WithdrawRequest) =>
+    http<WithdrawResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/offered/withdraw`, { body: req }),
   buyerDeclined: (offerId: string, counterId: string, req: BuyerDeclinedRequest) =>
     http<BuyerDeclinedResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/buyer-declined`, { body: req }),
   buyerReply: (offerId: string, req: BuyerReplyRequest) => http<BuyerReplyResult>("POST", `/offers/${enc(offerId)}/buyer-reply`, { body: req }),

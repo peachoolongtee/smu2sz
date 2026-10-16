@@ -24,6 +24,8 @@ import type {
   BuyerReplyResult,
   OfferedRequest,
   OfferedResult,
+  WithdrawRequest,
+  WithdrawResult,
   AcceptResult,
   DeclineResult,
   ActivityView,
@@ -180,6 +182,11 @@ export async function markOffered(offerId: string, counterId: string, req: Offer
 /** POST .../buyer-accepted: the owner records the buyer's yes to the counter they sent; the agreement is made (or queued for approval) under the owner's authority. */
 export async function buyerAccepted(offerId: string, counterId: string, req: BuyerAcceptedRequest): Promise<BuyerAcceptedResult> {
   return isMock ? (await mock()).buyerAccepted(offerId, counterId, req) : (await live()).buyerAccepted(offerId, counterId, req);
+}
+
+/** POST .../offered/withdraw: the owner marked it sent by mistake; the deal is a counter ready again, and its history keeps both events. */
+export async function withdrawOffered(offerId: string, counterId: string, req: WithdrawRequest): Promise<WithdrawResult> {
+  return isMock ? (await mock()).withdrawOffered(offerId, counterId, req) : (await live()).withdrawOffered(offerId, counterId, req);
 }
 
 /** POST .../buyer-declined: the owner records the buyer's no, with the reason they gave as a code. Nothing is agreed or funded; the deal ends as no deal. */

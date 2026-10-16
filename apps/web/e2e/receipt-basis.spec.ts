@@ -19,7 +19,7 @@ const OWED_32 = "owed: invoiced 13 days ago, due in 32 days";
 /** /receivables lists the customers (with the summary); a customer's page holds the invoices and their basis words. */
 const RECV = "/receivables?customer=BUYER-1";
 const SCHEDULED = "scheduled: not yet invoiced";
-const AFTER_CHECK = /Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/;
+const AFTER_CHECK = /Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/;
 
 async function lang(page: Page, l: "en" | "zh") {
   await page.addInitScript((v) => localStorage.setItem("tl-lang", JSON.stringify({ lang: v })), l);

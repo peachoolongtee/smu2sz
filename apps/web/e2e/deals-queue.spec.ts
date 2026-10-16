@@ -1,7 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
+import subject from "../mocks/buyer_message.json";
 import { expect, test } from "./fixtures";
-import { checkedDeal, demoMode, filledBrand, openInbox, openReview } from "./helpers";
+import { backToDealsAndReturn, checkedDeal, demoMode, filledBrand, openInbox, openReview } from "./helpers";
 
 /**
  * Deals (map #121, Slice B; tickets #126 to #132): the queue (one row per task, five tabs with the server's counts, a search), the selected negotiation in three levels
@@ -78,9 +79,10 @@ test("with one negotiation the tabs, the search and the controls are not offered
   await page.goto(`${new URL(page.url()).pathname}${new URL(page.url()).search}&tab=waiting`);
   await expect(page.getByTestId("queue-row")).toHaveCount(1);
 });
-test("Overview: the buyer's ask is the deal's name, FLOW recommends first with its reason and three facts, then one table of the choices; who decides and the costs are cells of it", async ({ page }) => {
+test("Overview: the server's subject is the deal's name, FLOW recommends first with its reason and three facts, then one table of the choices; who decides and the costs are cells of it", async ({ page }) => {
   await checkedDeal(page);
-  await expect(page.getByTestId("queue-heading")).toHaveText("Foshan asks for early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate.");
+  // Round three: the title is the server's short subject (`subject_text`), never the buyer's long request sentence.
+  await expect(page.getByTestId("queue-heading")).toHaveText(subject.ready.en.subject_text!);
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.getByTestId("deal-recommends-title")).toHaveText("FLOW recommends");
   await expect(page.getByTestId("deal-rec-label")).toHaveText("Option A");
@@ -176,7 +178,7 @@ test("Your choices: a reply is picked and reviewed from its own column, and the 
   // The review reads Option B's own receipt (the server priced every sendable reply), not Option A's and not words composed from the path.
   const receiptB = (await page.getByTestId("commitment-receipt").textContent())!;
   await expect(page.getByTestId("deal-unpriced")).toHaveCount(0);
-  await page.getByTestId("queue-review-close").click();
+  await backToDealsAndReturn(page);
   await page.getByTestId("queue-review-open").click();
   await page.getByTestId("queue-review").waitFor();
   await expect(page.getByTestId("deal-send")).toHaveText("Send Option A to Foshan");
