@@ -7,7 +7,8 @@ the demo never touch a network.
 The model may only *choose*: one intent from a closed list and typed slots from a strict schema. It
 cannot name an operation, an amount to move or an approval. Its raw output is checked for canaries
 (a canary in the output means hidden context leaked) and validated with Pydantic; anything else is
-discarded and the request falls back to OUT_OF_SCOPE. APPROVE/REJECT and COUNTERPARTY_MESSAGE are not
+discarded and the request falls back to OUT_OF_SCOPE. A live model receives the message with the identifiers FLOW never
+reads replaced by placeholders (`compiler.redaction`, LLM_REDACT); the recorded classifications are keyed by the original. APPROVE/REJECT and COUNTERPARTY_MESSAGE are not
 in its vocabulary: owner decisions must be phrased explicitly, and the actor is set by the caller.
 """
 
@@ -23,6 +24,7 @@ from typing import Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app.compiler.redaction import json_escape, log_counts, redact_text
 from app.egress import canary, canary_tripped
 
 PROMPT_VERSION = "nl-intent-v1"
@@ -117,20 +119,26 @@ class CallableBackend:
     """A live model behind a plain `complete(system, user, schema) -> str` callable (Claude or DeepSeek
     in live mode; a stub in tests)."""
 
-    def __init__(self, name: str, model_id: str, complete: Callable[[str, str, dict], str]) -> None:
+    def __init__(self, name: str, model_id: str, complete: Callable[[str, str, dict], str], *, redact: bool = False) -> None:
         self.name = name
         self.model_id = model_id
         self._complete = complete
+        self.redact = redact
 
     def classify(self, text: str) -> tuple[str, str]:
+        sent, redactor = redact_text(text) if self.redact else (text, None)
+        if redactor is not None:
+            log_counts(self.name, "nl_intent", redactor.counts)
         try:
-            raw = self._complete(SYSTEM_PROMPT, text, IntentClassification.model_json_schema())
+            raw = self._complete(SYSTEM_PROMPT, sent, IntentClassification.model_json_schema())
         except ClassifierError:
             raise
         except Exception as e:
             raise ClassifierError(f"{self.name} call failed: {type(e).__name__}") from e
         if not isinstance(raw, str) or not raw.strip():
             raise ClassifierError(f"{self.name} returned nothing")
+        if redactor is not None and redactor.counts:  # a slot that quotes a placeholder reads as the original
+            raw = redactor.substitute(raw, json_escape)
         return raw, self.model_id
 
 
@@ -169,8 +177,8 @@ def default_backends() -> list[IntentBackend]:
     s = get_settings()
     chain: list[IntentBackend] = [CacheBackend()]
     if s.llm_mode == "live":
-        claude = CallableBackend("claude", s.claude_model, _claude_complete(s.claude_model))
-        deepseek = CallableBackend("deepseek", s.deepseek_model, _deepseek_complete(s.deepseek_model))
+        claude = CallableBackend("claude", s.claude_model, _claude_complete(s.claude_model), redact=s.llm_redact)
+        deepseek = CallableBackend("deepseek", s.deepseek_model, _deepseek_complete(s.deepseek_model), redact=s.llm_redact)
         chain += [deepseek, claude] if s.llm_primary == "deepseek" else [claude, deepseek]
     return chain
 

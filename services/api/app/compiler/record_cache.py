@@ -22,6 +22,7 @@ from app.compiler.cache import write_entry
 from app.compiler.contract import chunk_document, chunk_source, contract_document
 from app.compiler.contract_rules import rules_contract
 from app.compiler.prompts import CONTRACT_PROMPT_VERSION, PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
+from app.compiler.redaction import redacting
 from app.compiler.rules import RULES_MODEL_ID, rules_offer, rules_term_sheet
 from app.compiler.service import cache_dir
 from app.config import get_settings
@@ -54,7 +55,7 @@ def contract_documents(fixture_dir: Path) -> list[tuple[str, DocumentKind, Sourc
 
 
 def _live(call):  # type: ignore[no-untyped-def]
-    for b in (ClaudeBackend(), DeepSeekBackend()):
+    for b in redacting((ClaudeBackend(), DeepSeekBackend()), get_settings().llm_redact):
         try:
             return call(b)
         except BackendError:
