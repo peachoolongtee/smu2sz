@@ -1,0 +1,2675 @@
+{
+ "generated_from": "services/api/app/api (AST scan)",
+ "baseline": "684d25b8",
+ "routes": [
+  {
+   "method": "POST",
+   "path": "/offers/{offer_id}/accept",
+   "file": "services/api/app/api/accept.py",
+   "line": 349,
+   "handler": "accept_as_asked",
+   "router_dependencies": [
+    "Depends(require_owner)",
+    "Depends(require_feature('terms_guard'))"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/offers/{offer_id}/decline",
+   "file": "services/api/app/api/accept.py",
+   "line": 381,
+   "handler": "decline_request",
+   "router_dependencies": [
+    "Depends(require_owner)",
+    "Depends(require_feature('terms_guard'))"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/activity",
+   "file": "services/api/app/api/activity.py",
+   "line": 276,
+   "handler": "get_activity",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_selection_context.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/alerts",
+   "file": "services/api/app/api/alerts.py",
+   "line": 115,
+   "handler": "get_alerts",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag (module)",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/alerts/test_api.py",
+    "services/api/tests/alerts/test_cure_cost.py",
+    "services/api/tests/alerts/test_funding_in_transit.py",
+    "services/api/tests/alerts/test_repay_alert.py",
+    "services/api/tests/alerts/test_review_gaps.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_api_gaps.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_truth_fields.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_wave8a_words.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/books/test_capex_borrower_alerts_on_books.py",
+    "services/api/tests/books/test_modules_on_books.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/operations/test_redteam_d.py",
+    "services/api/tests/strategy/conftest.py",
+    "services/api/tests/verifier/test_counter_a_floor.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/alerts/{alert_id}/act",
+   "file": "services/api/app/api/alerts.py",
+   "line": 151,
+   "handler": "act_on_alert",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag (module)",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/alerts/test_funding_in_transit.py",
+    "services/api/tests/alerts/test_repay_alert.py",
+    "services/api/tests/alerts/test_review_gaps.py",
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_api_gaps.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_wave8a_words.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/operations/test_redteam_d.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/reconciliation",
+   "file": "services/api/app/api/alerts.py",
+   "line": 279,
+   "handler": "get_reconciliation",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag (module)",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_api.py",
+    "services/api/tests/alerts/test_reconcile_promises.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_demo_bank_receipt.py",
+    "services/api/tests/api/test_forecast_basis.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w7_language.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/borrower-file",
+   "file": "services/api/app/api/borrower_file.py",
+   "line": 94,
+   "handler": "post_borrower_file",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag (module)",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/books/test_capex_borrower_alerts_on_books.py",
+    "services/api/tests/borrower_file/test_api.py",
+    "services/api/tests/nl/test_capabilities.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/borrower-file/{file_id}.html",
+   "file": "services/api/app/api/borrower_file.py",
+   "line": 121,
+   "handler": "get_borrower_file_html",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/books/test_capex_borrower_alerts_on_books.py",
+    "services/api/tests/borrower_file/test_api.py",
+    "services/api/tests/nl/test_capabilities.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/borrower-file/{file_id}.docx",
+   "file": "services/api/app/api/borrower_file.py",
+   "line": 127,
+   "handler": "get_borrower_file_docx",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/books/test_capex_borrower_alerts_on_books.py",
+    "services/api/tests/borrower_file/test_api.py",
+    "services/api/tests/nl/test_capabilities.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/borrower-file/{file_id}.pdf",
+   "file": "services/api/app/api/borrower_file.py",
+   "line": 133,
+   "handler": "get_borrower_file_pdf",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/books/test_capex_borrower_alerts_on_books.py",
+    "services/api/tests/borrower_file/test_api.py",
+    "services/api/tests/nl/test_capabilities.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/borrower-file/{file_id}",
+   "file": "services/api/app/api/borrower_file.py",
+   "line": 142,
+   "handler": "get_borrower_file",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/borrower_file/test_api.py",
+    "services/api/tests/nl/test_capabilities.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/capex/evaluate",
+   "file": "services/api/app/api/capex.py",
+   "line": 54,
+   "handler": "post_capex_evaluate",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/books/test_capex_borrower_alerts_on_books.py",
+    "services/api/tests/capex/test_api.py",
+    "services/api/tests/nl/test_capabilities.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/capex/apply",
+   "file": "services/api/app/api/capex.py",
+   "line": 78,
+   "handler": "post_capex_apply",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/capex/test_api.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/clock",
+   "file": "services/api/app/api/clock.py",
+   "line": 26,
+   "handler": "get_clock",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/alerts/test_cure_cost.py",
+    "services/api/tests/alerts/test_funding_in_transit.py",
+    "services/api/tests/alerts/test_repay_alert.py",
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_approval_refused_terminal.py",
+    "services/api/tests/api/test_approval_terms.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_clock.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_bank_receipt.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_forecast_basis.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_remaining_task.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_intake_cap.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_negotiate_binding.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_startup_hydrate.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w8_cold.py",
+    "services/api/tests/api/test_write_conflict_409.py",
+    "services/api/tests/deals/test_supersession.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/nl/test_business_replies.py",
+    "services/api/tests/nl/test_capabilities.py",
+    "services/api/tests/nl/test_landing.py",
+    "services/api/tests/nl/test_page_context.py",
+    "services/api/tests/nl/test_plan_binding.py",
+    "services/api/tests/nl/test_review_gaps_opener.py",
+    "services/api/tests/operations/test_admission.py",
+    "services/api/tests/operations/test_redteam_c.py",
+    "services/api/tests/operations/test_redteam_d.py",
+    "services/api/tests/operations/test_redteam_e.py",
+    "services/api/tests/pilot/test_journal_routes.py",
+    "services/api/tests/security/test_intake_cap.py",
+    "services/api/tests/strategy/conftest.py",
+    "services/api/tests/verifier/test_redteam_e.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "NONE FOUND BY SCAN - VERIFY"
+  },
+  {
+   "method": "POST",
+   "path": "/clock/advance",
+   "file": "services/api/app/api/clock.py",
+   "line": 31,
+   "handler": "advance_clock",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "bank-feed key",
+    "logs PRIVILEGE_ESCALATION on refusal",
+    "owner token (checked in handler)"
+   ],
+   "credential_headers": [
+    "x_owner_token",
+    "x_bank_feed_key"
+   ],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/alerts/test_cure_cost.py",
+    "services/api/tests/alerts/test_funding_in_transit.py",
+    "services/api/tests/alerts/test_repay_alert.py",
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_approval_refused_terminal.py",
+    "services/api/tests/api/test_approval_terms.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_clock.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_bank_receipt.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_forecast_basis.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_remaining_task.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_intake_cap.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_negotiate_binding.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_startup_hydrate.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w8_cold.py",
+    "services/api/tests/api/test_write_conflict_409.py",
+    "services/api/tests/deals/test_supersession.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/nl/test_business_replies.py",
+    "services/api/tests/nl/test_capabilities.py",
+    "services/api/tests/nl/test_landing.py",
+    "services/api/tests/nl/test_page_context.py",
+    "services/api/tests/nl/test_plan_binding.py",
+    "services/api/tests/nl/test_review_gaps_opener.py",
+    "services/api/tests/operations/test_admission.py",
+    "services/api/tests/operations/test_redteam_c.py",
+    "services/api/tests/operations/test_redteam_d.py",
+    "services/api/tests/operations/test_redteam_e.py",
+    "services/api/tests/pilot/test_journal_routes.py",
+    "services/api/tests/security/test_intake_cap.py",
+    "services/api/tests/strategy/conftest.py",
+    "services/api/tests/verifier/test_redteam_e.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/receivables/{receivable_id}/chase",
+   "file": "services/api/app/api/collections.py",
+   "line": 155,
+   "handler": "get_chase",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_w7_language.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/buyers/{buyer_id}/inputs",
+   "file": "services/api/app/api/customer_inputs.py",
+   "line": 126,
+   "handler": "post_buyer_input",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_customer_inputs.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "POST",
+   "path": "/firm/inputs",
+   "file": "services/api/app/api/customer_inputs.py",
+   "line": 132,
+   "handler": "post_firm_input",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_customer_inputs.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "GET",
+   "path": "/buyers/{buyer_id}/inputs",
+   "file": "services/api/app/api/customer_inputs.py",
+   "line": 138,
+   "handler": "get_buyer_inputs",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_customer_inputs.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "GET",
+   "path": "/firm/inputs",
+   "file": "services/api/app/api/customer_inputs.py",
+   "line": 164,
+   "handler": "get_firm_inputs",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_customer_inputs.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "GET",
+   "path": "/customers/{customer_id}/overview",
+   "file": "services/api/app/api/customer_overview.py",
+   "line": 1404,
+   "handler": "get_overview",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_customer_inputs.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/decisions/{decision_id}/tracker",
+   "file": "services/api/app/api/deal_tracker.py",
+   "line": 820,
+   "handler": "get_tracker",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_deal_tracker.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/deals",
+   "file": "services/api/app/api/deals.py",
+   "line": 40,
+   "handler": "list_deals",
+   "router_dependencies": [
+    "Depends(require_owner)",
+    "Depends(require_feature('contracts'))"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_chat_scope.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_demo_busy.py",
+    "services/api/tests/api/test_demo_documents.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/deals/test_lang.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/deals/test_supersession.py",
+    "services/api/tests/nl/test_page_context.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/deals/{counterparty_id}",
+   "file": "services/api/app/api/deals.py",
+   "line": 49,
+   "handler": "get_deal",
+   "router_dependencies": [
+    "Depends(require_owner)",
+    "Depends(require_feature('contracts'))"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/deals/test_lang.py",
+    "services/api/tests/deals/test_supersession.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/offers/{offer_id}/evaluate",
+   "file": "services/api/app/api/decide.py",
+   "line": 173,
+   "handler": "evaluate_offer",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [
+    "Depends(require_feature('terms_guard'))"
+   ],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/alerts/test_api.py",
+    "services/api/tests/alerts/test_repay_alert.py",
+    "services/api/tests/api/conftest.py",
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_advanced_fold_language.py",
+    "services/api/tests/api/test_axis.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_chat_scope.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_compare.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_customers_list.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_deals_workspace.py",
+    "services/api/tests/api/test_decide.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_bank_receipt.py",
+    "services/api/tests/api/test_demo_busy.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_forecast_basis.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_remaining_task.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_negotiate_binding.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_owner_view_fields.py",
+    "services/api/tests/api/test_owner_words.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_slice_b_words.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_truth_fields.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/books/test_capex_borrower_alerts_on_books.py",
+    "services/api/tests/books/test_modules_on_books.py",
+    "services/api/tests/capex/test_api.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/evals/test_suites_smoke.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/nl/test_capabilities.py",
+    "services/api/tests/nl/test_page_context.py",
+    "services/api/tests/operations/test_admission.py",
+    "services/api/tests/operations/test_redteam_d.py",
+    "services/api/tests/operations/test_redteam_e.py",
+    "services/api/tests/operations/test_state_binding.py",
+    "services/api/tests/security/test_scoreboard.py",
+    "services/api/tests/strategy/conftest.py",
+    "services/api/tests/strategy/test_concentration.py",
+    "services/api/tests/verifier/test_counter_a_floor.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/negotiate/{offer_id}",
+   "file": "services/api/app/api/decide.py",
+   "line": 393,
+   "handler": "negotiate_offer",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [
+    "Depends(require_feature('terms_guard'))",
+    "Depends(require_feature('buyer_negotiation'))"
+   ],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/alerts/test_repay_alert.py",
+    "services/api/tests/api/conftest.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_deals_workspace.py",
+    "services/api/tests/api/test_decide.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_bank_receipt.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_forecast_basis.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_negotiate_binding.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_owner_view_fields.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/books/test_modules_on_books.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/nl/test_capabilities.py",
+    "services/api/tests/nl/test_page_context.py",
+    "services/api/tests/operations/test_admission.py",
+    "services/api/tests/operations/test_redteam_d.py",
+    "services/api/tests/operations/test_redteam_e.py",
+    "services/api/tests/operations/test_state_binding.py",
+    "services/api/tests/security/test_scoreboard.py",
+    "services/api/tests/strategy/conftest.py",
+    "services/api/tests/verifier/test_counter_a_floor.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/router/plan",
+   "file": "services/api/app/api/decide.py",
+   "line": 629,
+   "handler": "router_plan",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [
+    "Depends(require_feature('debt_desk'))"
+   ],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_api_gaps.py",
+    "services/api/tests/api/test_axis.py",
+    "services/api/tests/api/test_comparison_contract.py",
+    "services/api/tests/api/test_decide.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_owner_view_fields.py",
+    "services/api/tests/api/test_router_series.py",
+    "services/api/tests/api/test_slice_b_words.py",
+    "services/api/tests/api/test_truth_fields.py",
+    "services/api/tests/api/test_wave8a_words.py",
+    "services/api/tests/books/test_modules_on_books.py",
+    "services/api/tests/funding/test_planner_executor_agree.py",
+    "services/api/tests/nl/test_capabilities.py",
+    "services/api/tests/operations/test_redteam_d.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/decisions",
+   "file": "services/api/app/api/decisions.py",
+   "line": 708,
+   "handler": "list_decisions",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_approval_refused_terminal.py",
+    "services/api/tests/api/test_approval_terms.py",
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_compare.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_deals_workspace.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_home_change_ids.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_remaining_task.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_negotiate_binding.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_slice_b_words.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_w8_cold.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/nl/test_stored_quotes.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/decisions/{decision_id}",
+   "file": "services/api/app/api/decisions.py",
+   "line": 737,
+   "handler": "get_decision",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_approval_refused_terminal.py",
+    "services/api/tests/api/test_approval_terms.py",
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_compare.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_deals_workspace.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_remaining_task.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_negotiate_binding.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_w8_cold.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/nl/test_stored_quotes.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/demo/bank-receipt",
+   "file": "services/api/app/api/demo_bank.py",
+   "line": 28,
+   "handler": "demo_bank_receipt",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "demo mode only",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_demo_bank_receipt.py",
+    "services/api/tests/api/test_demo_story.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/demo/story",
+   "file": "services/api/app/api/demo_story.py",
+   "line": 585,
+   "handler": "get_demo_story",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_demo_story.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/demo/restore",
+   "file": "services/api/app/api/demo_story.py",
+   "line": 592,
+   "handler": "demo_restore",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_demo_story.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/documents",
+   "file": "services/api/app/api/documents.py",
+   "line": 72,
+   "handler": "post_document",
+   "router_dependencies": [
+    "Depends(require_owner)",
+    "Depends(require_feature('contracts'))"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_demo_documents.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_document_decision_atomicity.py",
+    "services/api/tests/api/test_documents.py",
+    "services/api/tests/api/test_ledger_words.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/compiler/test_backends.py",
+    "services/api/tests/contracts/test_golden_equality.py",
+    "services/api/tests/deals/test_lang.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/deals/test_supersession.py",
+    "services/api/tests/nl/test_show_deal.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/documents",
+   "file": "services/api/app/api/documents.py",
+   "line": 136,
+   "handler": "list_documents",
+   "router_dependencies": [
+    "Depends(require_owner)",
+    "Depends(require_feature('contracts'))"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_demo_documents.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_document_decision_atomicity.py",
+    "services/api/tests/api/test_documents.py",
+    "services/api/tests/api/test_ledger_words.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/compiler/test_backends.py",
+    "services/api/tests/contracts/test_golden_equality.py",
+    "services/api/tests/deals/test_lang.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/deals/test_supersession.py",
+    "services/api/tests/nl/test_show_deal.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/documents/{document_id}",
+   "file": "services/api/app/api/documents.py",
+   "line": 143,
+   "handler": "get_document",
+   "router_dependencies": [
+    "Depends(require_owner)",
+    "Depends(require_feature('contracts'))"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_documents.py",
+    "services/api/tests/api/test_ledger_words.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/contracts/test_golden_equality.py",
+    "services/api/tests/deals/test_lang.py",
+    "services/api/tests/deals/test_supersession.py",
+    "services/api/tests/nl/test_show_deal.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/documents/{document_id}/confirm",
+   "file": "services/api/app/api/documents.py",
+   "line": 175,
+   "handler": "confirm_document",
+   "router_dependencies": [
+    "Depends(require_owner)",
+    "Depends(require_feature('contracts'))"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_documents.py",
+    "services/api/tests/api/test_ledger_words.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/contracts/test_golden_equality.py",
+    "services/api/tests/deals/test_lang.py",
+    "services/api/tests/deals/test_supersession.py",
+    "services/api/tests/nl/test_show_deal.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/documents/{document_id}/reject",
+   "file": "services/api/app/api/documents.py",
+   "line": 180,
+   "handler": "reject_document",
+   "router_dependencies": [
+    "Depends(require_owner)",
+    "Depends(require_feature('contracts'))"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_documents.py",
+    "services/api/tests/api/test_ledger_words.py",
+    "services/api/tests/deals/test_lang.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/fixtures/contracts",
+   "file": "services/api/app/api/documents.py",
+   "line": 204,
+   "handler": "list_contract_fixtures",
+   "router_dependencies": [
+    "Depends(require_owner)",
+    "Depends(require_feature('contracts'))"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_documents.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/home",
+   "file": "services/api/app/api/home.py",
+   "line": 1116,
+   "handler": "get_home",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_approval_lines.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_approval_refused_terminal.py",
+    "services/api/tests/api/test_axis.py",
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_chat_home_reads.py",
+    "services/api/tests/api/test_comparison_contract.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_forecast_basis.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_change_ids.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_receivables_headline.py",
+    "services/api/tests/api/test_home_remaining_task.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_owner_words.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_router_series.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_truth_fields.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_w8_cold.py",
+    "services/api/tests/api/test_wave8a_words.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/strategy/test_capacity.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/nav/counts",
+   "file": "services/api/app/api/nav.py",
+   "line": 18,
+   "handler": "nav_counts",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_nav_counts.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/nl",
+   "file": "services/api/app/api/nl.py",
+   "line": 120,
+   "handler": "post_nl",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "agent key (checked in handler)",
+    "buyer channel key",
+    "buyer channel key header",
+    "owner token (checked in handler)"
+   ],
+   "credential_headers": [
+    "x_owner_token",
+    "x_agent_key",
+    "x_counterparty_key"
+   ],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_cure_cost.py",
+    "services/api/tests/api/test_chat_home_reads.py",
+    "services/api/tests/api/test_chat_scope.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_intake_cap.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/certification/test_language_boundary.py",
+    "services/api/tests/compiler/test_coverage_fail_closed.py",
+    "services/api/tests/nl/conftest.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/nl/test_autonomy_e2e.py",
+    "services/api/tests/nl/test_boundary.py",
+    "services/api/tests/nl/test_boundary_abstentions.py",
+    "services/api/tests/nl/test_business_replies.py",
+    "services/api/tests/nl/test_consent.py",
+    "services/api/tests/nl/test_counterparty_channel.py",
+    "services/api/tests/nl/test_heldout3_classes.py",
+    "services/api/tests/nl/test_intents.py",
+    "services/api/tests/nl/test_owner_verdict_fields.py",
+    "services/api/tests/nl/test_page_context.py",
+    "services/api/tests/nl/test_plan_flags.py",
+    "services/api/tests/nl/test_repay_opener.py",
+    "services/api/tests/nl/test_review_gaps_opener.py",
+    "services/api/tests/nl/test_security.py",
+    "services/api/tests/nl/test_stored_quotes.py",
+    "services/api/tests/operations/test_redteam_c.py",
+    "services/api/tests/operations/test_redteam_d.py",
+    "services/api/tests/security/test_intake_cap.py",
+    "services/api/tests/security/test_nl_attacks.py",
+    "services/api/tests/security/test_scoreboard.py",
+    "services/api/tests/verifier/test_early_pay_rule.py",
+    "services/api/tests/verifier/test_owner_constraints.py",
+    "services/api/tests/verifier/test_redteam_e.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/nl/reset",
+   "file": "services/api/app/api/nl.py",
+   "line": 170,
+   "handler": "post_nl_reset",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (checked in handler)"
+   ],
+   "credential_headers": [
+    "x_owner_token"
+   ],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/nl/test_security.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/nl/opener",
+   "file": "services/api/app/api/nl.py",
+   "line": 186,
+   "handler": "post_nl_opener",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (checked in handler)"
+   ],
+   "credential_headers": [
+    "x_owner_token"
+   ],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_cure_cost.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/nl/test_page_context.py",
+    "services/api/tests/nl/test_repay_opener.py",
+    "services/api/tests/nl/test_review_gaps_opener.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/offers/{offer_id}/picture",
+   "file": "services/api/app/api/offer_picture.py",
+   "line": 1079,
+   "handler": "get_picture",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_axis.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_offer_picture_authority.py",
+    "services/api/tests/api/test_offer_picture_moments.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_slice_b_words.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/offers",
+   "file": "services/api/app/api/offers.py",
+   "line": 65,
+   "handler": "post_offer",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "agent key (checked in handler)",
+    "buyer channel key",
+    "buyer channel key header",
+    "owner token (checked in handler)"
+   ],
+   "credential_headers": [
+    "x_owner_token",
+    "x_agent_key",
+    "x_counterparty_key"
+   ],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/alerts/test_api.py",
+    "services/api/tests/alerts/test_repay_alert.py",
+    "services/api/tests/api/conftest.py",
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_advanced_fold_language.py",
+    "services/api/tests/api/test_axis.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_chat_scope.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_compare.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_customers_list.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_deals_workspace.py",
+    "services/api/tests/api/test_decide.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_bank_receipt.py",
+    "services/api/tests/api/test_demo_busy.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_forecast_basis.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_remaining_task.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_intake_cap.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_negotiate_binding.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_offer_picture_authority.py",
+    "services/api/tests/api/test_offer_picture_moments.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_owner_view_fields.py",
+    "services/api/tests/api/test_owner_words.py",
+    "services/api/tests/api/test_read.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_slice_b_words.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_truth_fields.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_whatif_address.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/books/test_modules_on_books.py",
+    "services/api/tests/compiler/test_offers.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/evals/test_heldout_alternate.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/nl/test_capabilities.py",
+    "services/api/tests/nl/test_page_context.py",
+    "services/api/tests/operations/test_admission.py",
+    "services/api/tests/operations/test_redteam_d.py",
+    "services/api/tests/operations/test_redteam_e.py",
+    "services/api/tests/operations/test_state_binding.py",
+    "services/api/tests/security/test_scoreboard.py",
+    "services/api/tests/strategy/conftest.py",
+    "services/api/tests/strategy/test_concentration.py",
+    "services/api/tests/verifier/test_counter_a_floor.py",
+    "services/api/tests/verifier/test_offers_expect.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/offers/{offer_id}",
+   "file": "services/api/app/api/offers.py",
+   "line": 100,
+   "handler": "get_offer",
+   "router_dependencies": [],
+   "route_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/alerts/test_api.py",
+    "services/api/tests/alerts/test_repay_alert.py",
+    "services/api/tests/api/conftest.py",
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_advanced_fold_language.py",
+    "services/api/tests/api/test_axis.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_chat_scope.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_compare.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_customers_list.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_deals_workspace.py",
+    "services/api/tests/api/test_decide.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_bank_receipt.py",
+    "services/api/tests/api/test_demo_busy.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_forecast_basis.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_remaining_task.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_negotiate_binding.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_offer_picture_authority.py",
+    "services/api/tests/api/test_offer_picture_moments.py",
+    "services/api/tests/api/test_owner_view_fields.py",
+    "services/api/tests/api/test_owner_words.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_slice_b_words.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_truth_fields.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/books/test_modules_on_books.py",
+    "services/api/tests/compiler/test_offers.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/nl/test_capabilities.py",
+    "services/api/tests/nl/test_page_context.py",
+    "services/api/tests/operations/test_admission.py",
+    "services/api/tests/operations/test_redteam_d.py",
+    "services/api/tests/operations/test_redteam_e.py",
+    "services/api/tests/operations/test_state_binding.py",
+    "services/api/tests/security/test_scoreboard.py",
+    "services/api/tests/strategy/conftest.py",
+    "services/api/tests/strategy/test_concentration.py",
+    "services/api/tests/verifier/test_counter_a_floor.py",
+    "services/api/tests/verifier/test_offers_expect.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/facilities/compile",
+   "file": "services/api/app/api/offers.py",
+   "line": 119,
+   "handler": "post_term_sheet",
+   "router_dependencies": [],
+   "route_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_read.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/fixtures/offers",
+   "file": "services/api/app/api/offers.py",
+   "line": 127,
+   "handler": "list_offer_fixtures",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_operations.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "NONE FOUND BY SCAN - VERIFY"
+  },
+  {
+   "method": "POST",
+   "path": "/operations",
+   "file": "services/api/app/api/operations.py",
+   "line": 68,
+   "handler": "post_operation",
+   "router_dependencies": [],
+   "route_dependencies": [
+    "Depends(require_owner_or_agent)"
+   ],
+   "auth_markers": [
+    "bank-feed key",
+    "owner token (checked in handler)",
+    "owner token (dependency)",
+    "owner token or agent key"
+   ],
+   "credential_headers": [
+    "x_owner_token",
+    "x_bank_feed_key"
+   ],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/alerts/test_api.py",
+    "services/api/tests/alerts/test_cure_cost.py",
+    "services/api/tests/alerts/test_repay_alert.py",
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_clock.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_forecast_basis.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_startup_hydrate.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/api/test_write_conflict_409.py",
+    "services/api/tests/borrower_file/test_api.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/nl/test_boundary.py",
+    "services/api/tests/nl/test_consent.py",
+    "services/api/tests/nl/test_intents.py",
+    "services/api/tests/nl/test_security.py",
+    "services/api/tests/nl/test_stored_quotes.py",
+    "services/api/tests/operations/test_admission.py",
+    "services/api/tests/operations/test_circuit_scope.py",
+    "services/api/tests/operations/test_redteam_c.py",
+    "services/api/tests/operations/test_redteam_d.py",
+    "services/api/tests/operations/test_redteam_e.py",
+    "services/api/tests/security/test_attacks.py",
+    "services/api/tests/security/test_scoreboard.py",
+    "services/api/tests/strategy/conftest.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/approvals/queue",
+   "file": "services/api/app/api/operations.py",
+   "line": 189,
+   "handler": "approvals_queue",
+   "router_dependencies": [],
+   "route_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_api_gaps.py",
+    "services/api/tests/api/test_approval_lines.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_axis.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_change_ids.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_w8_cold.py",
+    "services/api/tests/api/test_wave8a_words.py",
+    "services/api/tests/borrower_file/test_api.py",
+    "services/api/tests/capex/test_api.py",
+    "services/api/tests/nl/test_stored_quotes.py",
+    "services/api/tests/verifier/test_redteam_e.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/approvals/{approval_id}",
+   "file": "services/api/app/api/operations.py",
+   "line": 329,
+   "handler": "decide",
+   "router_dependencies": [],
+   "route_dependencies": [
+    "Depends(require_owner_or_agent)"
+   ],
+   "auth_markers": [
+    "logs PRIVILEGE_ESCALATION on refusal",
+    "owner token (checked in handler)",
+    "owner token (dependency)",
+    "owner token or agent key"
+   ],
+   "credential_headers": [
+    "x_owner_token"
+   ],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/alerts/test_act.py",
+    "services/api/tests/alerts/test_repay_alert.py",
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_api_gaps.py",
+    "services/api/tests/api/test_approval_lines.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_approval_refused_terminal.py",
+    "services/api/tests/api/test_approval_terms.py",
+    "services/api/tests/api/test_axis.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_decide.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_change_ids.py",
+    "services/api/tests/api/test_home_remaining_task.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_w8_cold.py",
+    "services/api/tests/api/test_wave8a_words.py",
+    "services/api/tests/api/test_worklist.py",
+    "services/api/tests/borrower_file/test_api.py",
+    "services/api/tests/capex/test_api.py",
+    "services/api/tests/nl/test_alerts_opener.py",
+    "services/api/tests/nl/test_stored_quotes.py",
+    "services/api/tests/operations/test_admission.py",
+    "services/api/tests/operations/test_redteam_d.py",
+    "services/api/tests/operations/test_redteam_e.py",
+    "services/api/tests/security/test_attacks.py",
+    "services/api/tests/verifier/test_redteam_e.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/circuit/{counterparty_id}/reset",
+   "file": "services/api/app/api/operations.py",
+   "line": 358,
+   "handler": "reset_circuit",
+   "router_dependencies": [],
+   "route_dependencies": [
+    "Depends(require_owner_or_agent)"
+   ],
+   "auth_markers": [
+    "owner token (checked in handler)",
+    "owner token (dependency)",
+    "owner token or agent key"
+   ],
+   "credential_headers": [
+    "x_owner_token"
+   ],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_advanced_fold_language.py",
+    "services/api/tests/api/test_api_gaps.py",
+    "services/api/tests/api/test_axis.py",
+    "services/api/tests/api/test_chat_home_reads.py",
+    "services/api/tests/api/test_chat_scope.py",
+    "services/api/tests/api/test_clock.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_customer_inputs.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_workspace.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_busy.py",
+    "services/api/tests/api/test_demo_documents.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_receivables_headline.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_intake_cap.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_ledger_words.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_read.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_router_series.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_slice_b_words.py",
+    "services/api/tests/api/test_startup_hydrate.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_whatif_address.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/nl/test_security.py",
+    "services/api/tests/pilot/test_journal_routes.py",
+    "services/api/tests/security/test_attacks.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/security/summary",
+   "file": "services/api/app/api/operations.py",
+   "line": 366,
+   "handler": "get_security_summary",
+   "router_dependencies": [],
+   "route_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/commitments/{commitment_id}/revoke",
+   "file": "services/api/app/api/operations.py",
+   "line": 371,
+   "handler": "revoke_commitment",
+   "router_dependencies": [],
+   "route_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/pilot/journal",
+   "file": "services/api/app/api/pilot.py",
+   "line": 36,
+   "handler": "post_journal",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [
+    "Depends(_flag_on)"
+   ],
+   "auth_markers": [
+    "feature flag (module)",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/pilot/test_journal_file.py",
+    "services/api/tests/pilot/test_journal_routes.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/pilot/journal",
+   "file": "services/api/app/api/pilot.py",
+   "line": 48,
+   "handler": "get_journal",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [
+    "Depends(_flag_on)"
+   ],
+   "auth_markers": [
+    "feature flag (module)",
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/pilot/test_journal_file.py",
+    "services/api/tests/pilot/test_journal_routes.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/state",
+   "file": "services/api/app/api/read.py",
+   "line": 116,
+   "handler": "get_state",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_api_gaps.py",
+    "services/api/tests/api/test_demo_documents.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/deals/test_lang.py",
+    "services/api/tests/pilot/test_journal_routes.py",
+    "services/api/tests/security/test_nl_attacks.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/mandate",
+   "file": "services/api/app/api/read.py",
+   "line": 124,
+   "handler": "get_mandate",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_approval_lines.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_forecast_basis.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_read.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_router_series.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w7_language.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/trajectory",
+   "file": "services/api/app/api/read.py",
+   "line": 152,
+   "handler": "get_trajectory",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_read.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/books/test_modules_on_books.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/ledger",
+   "file": "services/api/app/api/read.py",
+   "line": 181,
+   "handler": "get_ledger",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_api_gaps.py",
+    "services/api/tests/api/test_approval_quote.py",
+    "services/api/tests/api/test_business_dates.py",
+    "services/api/tests/api/test_decide.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_bank_receipt.py",
+    "services/api/tests/api/test_demo_documents.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_documents.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_change_ids.py",
+    "services/api/tests/api/test_ledger_events.py",
+    "services/api/tests/api/test_ledger_words.py",
+    "services/api/tests/api/test_negotiate_binding.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_owner_view_fields.py",
+    "services/api/tests/api/test_read.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_addendum.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_w8_cold.py",
+    "services/api/tests/api/test_wave8a_words.py",
+    "services/api/tests/nl/test_stored_quotes.py",
+    "services/api/tests/pilot/test_journal_routes.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/audit",
+   "file": "services/api/app/api/read.py",
+   "line": 225,
+   "handler": "get_audit",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_activity_causality.py",
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_decide.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/security/test_scoreboard.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/evidence",
+   "file": "services/api/app/api/read.py",
+   "line": 255,
+   "handler": "get_evidence",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_read.py",
+    "services/api/tests/commitments/test_terms_hash.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/demo/reset",
+   "file": "services/api/app/api/read.py",
+   "line": 268,
+   "handler": "demo_reset",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_advanced_fold_language.py",
+    "services/api/tests/api/test_api_gaps.py",
+    "services/api/tests/api/test_axis.py",
+    "services/api/tests/api/test_chat_home_reads.py",
+    "services/api/tests/api/test_chat_scope.py",
+    "services/api/tests/api/test_clock.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_customer_inputs.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_workspace.py",
+    "services/api/tests/api/test_decisions_flow.py",
+    "services/api/tests/api/test_demo_busy.py",
+    "services/api/tests/api/test_demo_documents.py",
+    "services/api/tests/api/test_demo_story.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_home.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_receivables_headline.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_intake_cap.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_ledger_words.py",
+    "services/api/tests/api/test_nav_counts.py",
+    "services/api/tests/api/test_offer_picture.py",
+    "services/api/tests/api/test_operations.py",
+    "services/api/tests/api/test_read.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_router_series.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_slice_b_words.py",
+    "services/api/tests/api/test_startup_hydrate.py",
+    "services/api/tests/api/test_time_semantics.py",
+    "services/api/tests/api/test_w2_review.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/api/test_whatif_address.py",
+    "services/api/tests/deals/test_open_offer.py",
+    "services/api/tests/pilot/test_journal_routes.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/receivables",
+   "file": "services/api/app/api/receivables.py",
+   "line": 150,
+   "handler": "get_receivables",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_activity_read.py",
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_collections.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_demo_busy.py",
+    "services/api/tests/api/test_home_hybrid.py",
+    "services/api/tests/api/test_home_receivables_headline.py",
+    "services/api/tests/api/test_home_remaining_task.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_receipt.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_receivables_net.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_w7_language.py",
+    "services/api/tests/nl/test_page_context.py",
+    "services/api/tests/pilot/test_public_sme.py",
+    "services/api/tests/pilot/test_public_sme_no_plan.py",
+    "services/api/tests/strategy/test_collections.py",
+    "services/api/tests/strategy/test_routes.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/receivables/worth",
+   "file": "services/api/app/api/strategy_collections.py",
+   "line": 48,
+   "handler": "get_receivables_worth",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_home_receivables_headline.py",
+    "services/api/tests/pilot/test_public_sme.py",
+    "services/api/tests/pilot/test_public_sme_no_plan.py",
+    "services/api/tests/strategy/test_collections.py",
+    "services/api/tests/strategy/test_routes.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "GET",
+   "path": "/offers/{offer_id}/compare",
+   "file": "services/api/app/api/strategy_compare.py",
+   "line": 83,
+   "handler": "get_offer_compare",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_compare.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "GET",
+   "path": "/decisions/{decision_id}/compare",
+   "file": "services/api/app/api/strategy_compare.py",
+   "line": 95,
+   "handler": "get_decision_compare",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_compare.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "GET",
+   "path": "/cash/price-curve",
+   "file": "services/api/app/api/strategy_curve.py",
+   "line": 47,
+   "handler": "get_price_curve",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/pilot/test_public_sme.py",
+    "services/api/tests/pilot/test_public_sme_no_plan.py",
+    "services/api/tests/strategy/test_price_curve.py",
+    "services/api/tests/strategy/test_routes.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "GET",
+   "path": "/buyers/{buyer_id}/envelope",
+   "file": "services/api/app/api/strategy_envelope.py",
+   "line": 57,
+   "handler": "get_envelope",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/pilot/test_public_sme.py",
+    "services/api/tests/pilot/test_public_sme_no_plan.py",
+    "services/api/tests/strategy/test_envelope.py",
+    "services/api/tests/strategy/test_envelope_ask.py",
+    "services/api/tests/strategy/test_envelope_authority.py",
+    "services/api/tests/strategy/test_envelope_economics.py",
+    "services/api/tests/strategy/test_envelope_scan.py",
+    "services/api/tests/strategy/test_envelope_words.py",
+    "services/api/tests/strategy/test_routes.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "GET",
+   "path": "/offers/{offer_id}/exposure",
+   "file": "services/api/app/api/strategy_exposure.py",
+   "line": 162,
+   "handler": "get_offer_exposure",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_slice_b_round_two.py"
+   ],
+   "attack_catalogue_mentions_prefix": true,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "GET",
+   "path": "/decisions/{decision_id}/exposure",
+   "file": "services/api/app/api/strategy_exposure.py",
+   "line": 175,
+   "handler": "get_decision_exposure",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [
+    "feature flag"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_slice_b_round_two.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "feature flag"
+  },
+  {
+   "method": "GET",
+   "path": "/buyers/{buyer_id}/exposure",
+   "file": "services/api/app/api/strategy_exposure.py",
+   "line": 221,
+   "handler": "get_buyer_exposure",
+   "router_dependencies": [],
+   "route_dependencies": [],
+   "auth_markers": [],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_receipt_basis.py",
+    "services/api/tests/api/test_slice_b_round_two.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "NONE FOUND BY SCAN - VERIFY"
+  },
+  {
+   "method": "GET",
+   "path": "/whatif/presets",
+   "file": "services/api/app/api/whatif.py",
+   "line": 151,
+   "handler": "get_presets",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_whatif_address.py",
+    "services/api/tests/whatif/test_api.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "POST",
+   "path": "/whatif",
+   "file": "services/api/app/api/whatif.py",
+   "line": 176,
+   "handler": "post_whatif",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": false,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_whatif_address.py",
+    "services/api/tests/books/test_modules_on_books.py",
+    "services/api/tests/whatif/test_api.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/worklist",
+   "file": "services/api/app/api/worklist.py",
+   "line": 799,
+   "handler": "get_worklist",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_customers_list.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_demo_busy.py",
+    "services/api/tests/api/test_home_v2.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py",
+    "services/api/tests/api/test_worklist.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  },
+  {
+   "method": "GET",
+   "path": "/customers",
+   "file": "services/api/app/api/worklist.py",
+   "line": 807,
+   "handler": "get_customers",
+   "router_dependencies": [
+    "Depends(require_owner)"
+   ],
+   "route_dependencies": [],
+   "auth_markers": [
+    "owner token (dependency)"
+   ],
+   "credential_headers": [],
+   "new_since_baseline": true,
+   "tests_mentioning_path": [
+    "services/api/tests/api/test_accept_as_asked.py",
+    "services/api/tests/api/test_buyer_exposure.py",
+    "services/api/tests/api/test_chat_scope.py",
+    "services/api/tests/api/test_customer_inputs.py",
+    "services/api/tests/api/test_customer_overview.py",
+    "services/api/tests/api/test_customers_list.py",
+    "services/api/tests/api/test_deal_tracker.py",
+    "services/api/tests/api/test_deals_queue.py",
+    "services/api/tests/api/test_deals_queue_words.py",
+    "services/api/tests/api/test_demo_busy.py",
+    "services/api/tests/api/test_exposure_routes.py",
+    "services/api/tests/api/test_lapsed_offers.py",
+    "services/api/tests/api/test_selection_context.py",
+    "services/api/tests/api/test_slice_b_fix_words.py",
+    "services/api/tests/api/test_slice_b_patch.py",
+    "services/api/tests/api/test_slice_b_round_two.py"
+   ],
+   "attack_catalogue_mentions_prefix": false,
+   "auth_summary": "OWNER"
+  }
+ ],
+ "generated_at_commit": "e8e270f8",
+ "caveat": "AST scan of route decorators and handler text; strategy sub-routers inherit require_owner from app/api/strategy.py; verify every row by request before relying on it"
+}
