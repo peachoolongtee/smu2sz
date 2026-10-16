@@ -333,9 +333,16 @@ _LATE_PAYMENT = rx(
     r"|pays?\s+(?:\w+\s+){0,4}late|interest\s+on\s+(?:any\s+)?(?:overdue|late|unpaid)", I)
 
 
+# "乙方逾期履行的，每逾期一日，按逾期部分价款的0.2%向甲方支付违约金": 乙方 performing late, a penalty (违约金), no late payment.
+_SUPPLIER_LATE_PERFORMANCE = rx(r"乙方\s*(?:逾期|延期|延迟|迟延)\s*(?:履行|交付|交货|完成|履约)")
+
+
 def supplier_late_delivery_penalty(quote: str) -> bool:
-    """True when the quote is the supplier's penalty for late delivery and says nothing of the buyer paying late."""
-    return _LATE_DELIVERY.search(quote) is not None and _LATE_PAYMENT.search(quote) is None
+    """True when the quote is the supplier's penalty for late delivery (or 乙方's late performance with a 违约金) and says
+    nothing of the buyer paying late."""
+    late = _LATE_DELIVERY.search(quote) is not None or (
+        _SUPPLIER_LATE_PERFORMANCE.search(quote) is not None and "违约金" in quote)
+    return late and _LATE_PAYMENT.search(quote) is None
 
 
 # RETENTION is money withheld from a payment. A performance bond or guarantee the supplier posts is a different thing

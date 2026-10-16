@@ -156,3 +156,33 @@ def test_two_different_retention_deadlines_still_conflict():
     row = "4 保留金 5% 保修期满后30日内"
     c = _retentions(row, CLAUSE, "5%", "5%")
     assert _all(c, F.RETENTION) == []
+
+
+# ---------------------------------------------------------------- late interest is the payer's
+
+def _late(quote: str, rate: str):  # type: ignore[no-untyped-def]
+    return _compile(_lines("测试合同", "第八条 违约责任", quote), [_x(F.LATE_INTEREST, quote, value_text=rate,
+                                                                      period_text="每逾期一日")])
+
+
+@pytest.mark.parametrize("quote, rate", [
+    ("乙方逾期履行的，每逾期一日，按逾期部分价款的0.4%向甲方支付违约金，违约金累计不超过合同总价的8%。", "0.4%"),
+    ("乙方延迟完成的，每逾期一日，按未完成部分价款的0.15%向甲方支付违约金。", "0.15%"),
+])
+def test_the_second_partys_late_performance_penalty_is_not_late_interest(quote, rate):
+    c = _late(quote, rate)
+    assert _all(c, F.LATE_INTEREST) == []
+    assert any(a.field == "LATE_INTEREST" and "penalty" in a.reason for a in c.abstentions)
+
+
+@pytest.mark.parametrize("quote, rate, bp", [
+    ("甲方逾期付款的，每逾期一日，应按逾期未付金额的0.04%向乙方支付逾期利息。", "0.04%", 4),
+    ("乙方逾期付款的，每逾期一日，按逾期金额的0.06%向甲方支付违约金。", "0.06%", 6),  # 乙方 is the payer here
+])
+def test_a_late_payment_charge_is_kept_whoever_the_payer_is(quote, rate, bp):
+    assert _one(_late(quote, rate), F.LATE_INTEREST).rate_bp == bp
+
+
+def test_late_performance_without_a_penalty_word_is_not_dropped_by_this_rule():
+    quote = "乙方逾期履行的，每逾期一日，按逾期部分价款的0.4%计收利息。"
+    assert _one(_late(quote, "0.4%"), F.LATE_INTEREST).rate_bp == 40
