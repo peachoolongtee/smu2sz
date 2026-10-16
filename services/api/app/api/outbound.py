@@ -48,6 +48,9 @@ from app.decisions.facts import (
     parse_fact,
 )
 from app.decisions.identity import deal_id
+from app.decisions.state import (
+    BUYER_YES,  # the op id prefix of the owner's AcceptOffer that records a buyer's yes
+)
 from app.domain.models import (
     AcceptOffer,
     Actor,
@@ -69,7 +72,6 @@ router = APIRouter(tags=["offers"], dependencies=[Depends(require_owner), Depend
                                                   Depends(require_feature("buyer_negotiation"))])
 
 KNOWN_SENDERS = frozenset({"owner", "agent", "buyer_key", "buyer_reply"})
-BUYER_YES = "buyer-yes-"  # the op id of the owner's AcceptOffer that records a buyer's yes (Activity words it as that, not "as asked")
 REPLY_MAX = 4000  # a buyer's message, as POST /offers bounds one document (SEC-17)
 
 _BLOCKED = {
