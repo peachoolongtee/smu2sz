@@ -123,7 +123,9 @@ def predict(compiled: Any, doc_id: str, filename: str) -> dict[str, Any]:
 
 
 def _multiset(items: list[Any]) -> Counter:
-    return Counter(json.dumps(i, ensure_ascii=False, sort_keys=True) for i in items)
+    """Items counted without regard to order; 30 and 30.0 are the same percent."""
+    return Counter(json.dumps(round(i, 4) if isinstance(i, float) else i, ensure_ascii=False)
+                   if not (isinstance(i, float) and i == int(i)) else str(int(i)) for i in items)
 
 
 def _close(a: Any, b: Any) -> bool:
