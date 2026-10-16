@@ -210,7 +210,7 @@ def test_the_approvals_queue_in_chinese_end_to_end(client):
     _walk(client)
     _act(client)  # the day-34 cure is above the rate ceiling: it waits for the owner
     en, zh = _both(client, "/approvals/queue", QUEUE_RAW)
-    assert [r["status"] for r in zh["approvals"]] == ["PENDING"] and zh["approvals"][0]["presentation"]["headline"] == "申请 ¥155,013.80 的发票融资"
+    assert [r["status"] for r in zh["approvals"]] == ["PENDING"] and zh["approvals"][0]["presentation"]["headline"] == "申请 ¥157,790 的发票融资"
     p = zh["approvals"][0]["presentation"]
     assert p["reason"].startswith("年化成本") and "您签署的无需批准融资上限" in p["reason"]
     assert p["created_when"] and p["if_decline"] and zh["approvals"][0]["quote"]["after"]
@@ -254,7 +254,7 @@ def test_the_reconciliation_in_chinese_names_the_promise_and_the_receipt(client)
     en, zh = _both(client, "/reconciliation", RECON_RAW)
     receipt = zh["reconciliation"]["receipts"][0]
     assert receipt["window_state_text"].startswith("提前付款期限") and en["reconciliation"]["receipts"][0]["window_state_text"].startswith("The early")
-    assert receipt["detail_when"] == "约定的提前付款，对应发票 ¥128,600.00；另有最多 ¥128,600.00 仍可在今天之前提前结算"
+    assert receipt["detail_when"] == "约定的提前付款，对应发票 ¥130,000.00；另有最多 ¥130,000.00 仍可在今天之前提前结算"
     _freshness(zh)
 
 

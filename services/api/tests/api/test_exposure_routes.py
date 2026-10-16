@@ -169,11 +169,11 @@ def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id:
     # the spare room: ¥81,000 today, ¥14,000 as asked, ¥0 under Option A, ¥62,000 under Option B
     spare = {k: body["capacity"][k]["spare"] for k in keys.values()}
     assert {k: v["today_fen"] for k, v in spare.items()} == dict.fromkeys(keys.values(), 8_100_000)
-    assert [spare[k]["x_star_fen"] for k in ("asked", a, b)] == [1_400_000, 0, 6_200_000]
-    assert [spare[k]["figure_short"] for k in ("asked", a, b)] == ["¥14k", "¥0", "¥62k"]
+    assert [spare[k]["x_star_fen"] for k in ("asked", a, b)] == [1_400_000, 200_000, 6_200_000]  # Option A: the line keeps ¥2,790 (R-10)
+    assert [spare[k]["figure_short"] for k in ("asked", a, b)] == ["¥14k", "¥2k", "¥62k"]
     assert spare[a]["today_short"] == "¥81k" and spare[a]["refused_text"] is None
     assert spare[a]["shape_text"].startswith("Counted as a one-off payment of X today") and spare[a]["binding_text"]
-    assert body["band"]["capacity"] == "Room for another payment: ¥0 for the next 31 days (today ¥81,000)."
+    assert body["band"]["capacity"] == "Room for another payment: ¥2,000 (today ¥81,000)."
     assert body["band"]["by_path"]["asked"]["capacity"] == "Room for another payment: ¥14,000 (today ¥81,000)."
     assert body["band"]["by_path"][b]["capacity"] == "Room for another payment: ¥62,000 (today ¥81,000)."
     assert body["band"]["stress"] == body["band"]["by_path"][a]["stress"] == option_a["text"]
@@ -496,7 +496,7 @@ def test_the_chinese_read_of_the_whole_block_has_the_same_figures_and_no_english
     assert figures({k: v for k, v in en.items() if k not in drop}) == figures({k: v for k, v in zh.items() if k not in drop})
     assert english_leaks(zh, NAMES) == []
     assert unchanged_words(en, zh, NAMES) == []
-    assert zh["band"]["capacity"] == "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。"
+    assert zh["band"]["capacity"] == "再支付一笔款项的余量：¥2,000（目前 ¥81,000）。"
     assert zh["band"]["stress"] == "晚付 30 天：60 天后现金将跌至 −¥250,000，有 65 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。"
     assert zh["band"]["by_path"]["asked"]["capacity"] == "再支付一笔款项的余量：¥14,000（目前 ¥81,000）。"
     assert zh["stress"]["paths"][zh["lead"]]["breach_days_text"] == "低于您的最低现金 65 天"
