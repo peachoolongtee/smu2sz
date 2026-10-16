@@ -108,7 +108,7 @@ const STEPS: Record<string, Step[]> = {
     part("cash.status", "#cash-answer"),
     part("cash.summary", '[data-tour="cash-summary"]'),
     // "Your funding" is the second card (from lg). It is taller than the screen leaves room for beside a card: the ring stands for it (none without a source to draw), else its first row or its empty line.
-    part("cash.sources", '#cash-sources-now [data-testid="home-mix"], #cash-sources-now [data-testid^="cash-facility-"], #cash-sources-now [data-testid="cash-current-row"], #cash-sources-now [data-testid="cash-current-none"]'),
+    part("cash.sources", '#cash-sources-now [data-testid="home-mix-ring"], #cash-sources-now [data-testid^="cash-facility-"], #cash-sources-now [data-testid="cash-current-row"], #cash-sources-now [data-testid="cash-current-none"]'),
     part("cash.plan", tid("home-next-action")),
     part("cash.chart", tid("cash-forecast")),
     part("cash.markers", '[data-testid^="picture-marker-"]'),
@@ -182,7 +182,18 @@ function visibleTarget(selector: string): HTMLElement | null {
 /** The steps this page can show now: its own, those whose part is on the page, else the sections step. */
 function stepsFor(pathname: string): Step[] {
   const own = (STEPS[pathname] ?? []).filter((s) => visibleTarget(s.target));
-  return own.length ? own : [NAV];
+  if (!own.length) return [NAV];
+  if (!window.matchMedia("(max-width: 63.999rem)").matches) return own;
+  // On a narrow screen the page is one column and some parts are moved below the rest (Cash's figures and funding follow its plan): the page's parts are walked top to bottom
+  // as they stand, so the tour never jumps down the page and back; the shell's steps (outside main) keep their place at the end.
+  const top = (s: Step) => {
+    const el = visibleTarget(s.target);
+    return el?.closest("main") ? el.getBoundingClientRect().top + window.scrollY : Number.POSITIVE_INFINITY;
+  };
+  return own
+    .map((s, i) => ({ s, i, y: top(s) }))
+    .sort((a, b) => (a.y === b.y ? a.i - b.i : a.y - b.y))
+    .map((x) => x.s);
 }
 
 /**
