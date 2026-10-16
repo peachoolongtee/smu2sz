@@ -43,6 +43,7 @@ _COMMIT = {
     REPAY: ("Authorize the repayment", "授权还款"),
     DRAW: ("Authorize the draw", "授权提款"),
     FINANCE: ("Authorize the financing request", "授权融资申请"),
+    "COMMIT_PURCHASE": ("Authorize the purchase", "授权该采购"),  # ADR-0013
 }
 _AUTHORIZE = {
     APPLY: ("Approval sends an application to the lender. It does not mean the loan is approved or that funds have arrived.",
@@ -50,6 +51,9 @@ _AUTHORIZE = {
     DRAW: ("Approval draws on the facility. The cash is not in hand until it lands.", "批准后将在额度内提款。资金到账之前，不算在手现金。"),
     FINANCE: ("Approval sends the invoice to be financed. The advance is not cash until it lands.", "批准后，发票将提交融资。预付款到账之前，不算现金。"),
     REPAY: ("Approval repays the facility from your cash.", "批准后，将用您的现金偿还该融资额度。"),
+    "COMMIT_PURCHASE": (("Approval books the contract's payments to the vendor on their days. It does not arrange any "
+                         "financing: apply for that separately."),
+                        "批准后，合同对供应商的各笔付款将按到期日记入账簿。这不会安排任何融资：融资需另行申请。"),
 }
 _NOT_CONFIRMED = ("Loan terms are not yet confirmed: you are authorizing an application, not accepting a financing offer.",
                   "贷款条款尚未确认：您授权的是一份申请，而不是接受一项融资报价。")

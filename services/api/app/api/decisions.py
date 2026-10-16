@@ -532,8 +532,15 @@ def _evaluation(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | 
         return None
     code = business_action(v.outcome.value, len(v.counters))
     row = next((r for r in ctx.facts if r.decision_id == ds.decision_id and r.fact == "EVALUATED" and r.fact_key == v.id), None)
+    from app.api.presentation import clarification_words
+
+    try:
+        offer = ctx.rt.store.get_offer(v.offer_id)
+    except Exception:  # noqa: BLE001  a missing offer leaves the reason in general terms
+        offer = None
     return {"verdict_id": v.id, "outcome": v.outcome.value, "business_action": code,
             "business_action_text": business_action_text(code, lang),
+            "clarification": clarification_words(ctx.state, offer, v, lang) if code == "cannot" else None,
             "evaluated_day": row.day if row is not None else None,
             "evaluated_when": when_text(row.day, ctx.today, lang) if row is not None else t(lang, "date not recorded", "日期未记录")}
 

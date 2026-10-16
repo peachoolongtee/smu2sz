@@ -43,10 +43,22 @@ import type {
   BuyerExposureView,
   CompareView,
   ChaseView,
+  AddToMenuResult,
+  BuyEstimate,
+  BuySideEvaluationView,
+  BuyTimeline,
   CapexApplyRequest,
   CapexApplyResult,
+  CapexPlansRequest,
+  CapexPlansView,
   CapexRequest,
   CapexView,
+  EligibilityView,
+  FinanceHealthView,
+  HealthInputsRequest,
+  PurchaseCommitResult,
+  PurchaseRow,
+  PurchasesView,
   ClockView,
   ContractFixture,
   CustomerOverviewView,
@@ -93,6 +105,11 @@ import type {
   WhatIfScope,
   WhatIfUnscoped,
   WorklistView,
+  SetupDocument,
+  SetupDraft,
+  SetupOpenResult,
+  SetupPreview,
+  SetupStatus,
 } from "./types";
 
 export { ApiError };
@@ -586,4 +603,83 @@ export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Pro
 /** POST /demo/restore?lang= (owner, demo mode): puts the main books back after the alternate scenario was loaded. */
 export async function restoreDemo(lang: "en" | "zh", guard?: BooksGuard): Promise<DemoRestoreResult> {
   return isMock ? (await mock()).restoreDemo(lang, guard) : (await live()).restoreDemo(lang, guard);
+}
+
+// ------------------------------------------------------------------ the buy side (ADR-0013, FEATURE_CAPEX_CONTRACTS)
+// Owner only, every route. Reads are read-only; a commitment and an add-to-menu are queued for the owner's approval (Tier 2).
+
+/** GET /purchases?lang=: every capex contract, where it stands and the one thing to do next. */
+export async function getPurchases(lang: "en" | "zh" = "en"): Promise<PurchasesView> {
+  return isMock ? (await mock()).getPurchases(lang) : (await live()).getPurchases(lang);
+}
+
+/** GET /purchases/{id}?lang=: one capex contract's row. */
+export async function getPurchase(id: string, lang: "en" | "zh" = "en"): Promise<PurchaseRow> {
+  return isMock ? (await mock()).getPurchase(id, lang) : (await live()).getPurchase(id, lang);
+}
+
+/** GET /fixtures/capex-contracts: the demo vendor contracts (synthetic). */
+export async function getCapexContractFixtures(): Promise<ContractFixture[]> {
+  return isMock ? (await mock()).getCapexContractFixtures() : (await live()).getCapexContractFixtures();
+}
+
+/** POST /capex/contracts/{id}/evaluate: the contract's payment schedule on the owner's timeline, the capex screen on it, and the vendor's early-payment discount. Writes nothing. */
+export async function evaluateContract(id: string, timeline: BuyTimeline, estimate: BuyEstimate = {}): Promise<BuySideEvaluationView> {
+  return isMock ? (await mock()).evaluateContract(id, timeline) : (await live()).evaluateContract(id, timeline, estimate);
+}
+
+/** POST /capex/contracts/{id}/commit: queues the owner's Tier-2 commitment to the schedule shown (refused 409 if it changed). */
+export async function commitContract(id: string, timeline: BuyTimeline, scheduleHash: string, takeEarlyPay: boolean): Promise<PurchaseCommitResult> {
+  return isMock ? (await mock()).commitContract(id, timeline, scheduleHash, takeEarlyPay) : (await live()).commitContract(id, timeline, scheduleHash, takeEarlyPay);
+}
+
+/** GET/POST /finance/health: cash, the 90-day cash coverage, the current and quick ratios on the owner's entries, covenant room and borrowing capacity. */
+export async function getFinanceHealth(inputs: HealthInputsRequest | null = null): Promise<FinanceHealthView> {
+  return isMock ? (await mock()).getFinanceHealth(inputs) : (await live()).getFinanceHealth(inputs);
+}
+
+/** GET/POST /lending/eligibility: indicative eligibility against a synthetic catalogue. */
+export async function getEligibility(inputs: { months_trading?: number | null; amount_fen?: number | null } | null = null): Promise<EligibilityView> {
+  return isMock ? (await mock()).getEligibility(inputs) : (await live()).getEligibility(inputs);
+}
+
+/** POST /lending/products/{id}/add-to-menu: queues the owner's own AddFacility (Tier 2). */
+export async function addProductToMenu(productId: string, amountFen: number | null = null): Promise<AddToMenuResult> {
+  return isMock ? (await mock()).addProductToMenu(productId, amountFen) : (await live()).addProductToMenu(productId, amountFen);
+}
+
+/** POST /capex/plans: ranked permutations of purchases, start months and financing (a monthly estimate). */
+export async function runCapexPlans(req: CapexPlansRequest): Promise<CapexPlansView> {
+  return isMock ? (await mock()).runCapexPlans(req) : (await live()).runCapexPlans(req);
+}
+
+// ------------------------------------------------------------------ set up your books (ADR-0013)
+// Owner only. The live server checks the draft, signs the limits and opens the books; the mock build cannot open books.
+
+/** GET /setup/status: which books are loaded (blank, demo or the owner's own) and whether they can be opened here. */
+export async function getSetupStatus(lang: "en" | "zh" = "en"): Promise<SetupStatus> {
+  return isMock ? (await mock()).getSetupStatus() : (await live()).getSetupStatus(lang);
+}
+
+/** GET /setup/documents: the confirmed contracts and agreements a setup row can be filled from, for the start date given. */
+export async function getSetupDocuments(startDate: string, lang: "en" | "zh" = "en"): Promise<SetupDocument[]> {
+  return isMock ? (await mock()).getSetupDocuments() : (await live()).getSetupDocuments(startDate, lang);
+}
+
+/** POST /setup/documents: read a contract or lender agreement during setup; it waits, unconfirmed, until the books are opened. */
+export async function readSetupDocument(
+  body: { kind: "BUYER_CONTRACT" | "LENDER_AGREEMENT"; filename?: string; content_base64?: string; text?: string; title?: string; start_date?: string },
+  lang: "en" | "zh" = "en",
+): Promise<SetupDocument> {
+  return isMock ? (await mock()).readSetupDocument() : (await live()).readSetupDocument(body, lang);
+}
+
+/** POST /setup/preview: the issues to fix, what to look at, the summary and a first forecast. Writes nothing. */
+export async function previewSetup(draft: SetupDraft, lang: "en" | "zh" = "en"): Promise<SetupPreview> {
+  return isMock ? (await mock()).previewSetup() : (await live()).previewSetup(draft, lang);
+}
+
+/** POST /setup/open: the owner signs the limits with their sign-in and opens the books (this replaces the books loaded now). */
+export async function openBooks(draft: SetupDraft, password: string, lang: "en" | "zh" = "en"): Promise<SetupOpenResult> {
+  return isMock ? (await mock()).openBooks() : (await live()).openBooks(draft, password, lang);
 }

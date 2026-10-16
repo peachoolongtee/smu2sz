@@ -1,0 +1,6761 @@
+{
+  "horizon_months": 60,
+  "combinations": 272,
+  "admissible_count": 66,
+  "best": [
+    {
+      "rank": 1,
+      "choices": [
+        {
+          "project_id": "line",
+          "label": "Die-cutting line",
+          "included": true,
+          "start_offset_months": 0,
+          "option": "FAC-LEASE",
+          "option_label": "Equipment lease",
+          "first_payment_day": 20,
+          "principal_fen": 60000000,
+          "monthly_payment_fen": 1442349,
+          "principal_display": "¥600,000.00",
+          "monthly_payment_display": "¥14,423.49"
+        },
+        {
+          "project_id": "robot",
+          "label": "Packing robot",
+          "included": true,
+          "start_offset_months": 0,
+          "option": "FAC-ETL",
+          "option_label": "Equipment term loan",
+          "first_payment_day": 0,
+          "principal_fen": 40000000,
+          "monthly_payment_fen": 1209644,
+          "principal_display": "¥400,000.00",
+          "monthly_payment_display": "¥12,096.44"
+        }
+      ],
+      "npv_fen": 71809709,
+      "financing_charges_fen": 12779811,
+      "lowest_headroom_fen": 29744030,
+      "lowest_month": 4,
+      "admissible": true,
+      "first_failure": null,
+      "months": [
+        {
+          "month": 1,
+          "cash_fen": 86500000,
+          "baseline_cash_fen": 44500000,
+          "dscr": {
+            "num": 2,
+            "den": 1,
+            "text": "2.00",
+            "display": "2.00×"
+          },
+          "leverage": {
+            "num": 491,
+            "den": 216,
+            "text": "2.27",
+            "display": "2.27×"
+          },
+          "cash_display": "¥865,000.00",
+          "baseline_cash_display": "¥445,000.00"
+        },
+        {
+          "month": 2,
+          "cash_fen": 88348010,
+          "baseline_cash_fen": 49000000,
+          "dscr": {
+            "num": 900000,
+            "den": 715199,
+            "text": "1.26",
+            "display": "1.26×"
+          },
+          "leverage": {
+            "num": 8847951,
+            "den": 4000000,
+            "text": "2.21",
+            "display": "2.21×"
+          },
+          "cash_display": "¥883,480.10",
+          "baseline_cash_display": "¥490,000.00"
+        },
+        {
+          "month": 3,
+          "cash_fen": 90196020,
+          "baseline_cash_fen": 53500000,
+          "dscr": {
+            "num": 900000,
+            "den": 715199,
+            "text": "1.26",
+            "display": "1.26×"
+          },
+          "leverage": {
+            "num": 116139043,
+            "den": 54000000,
+            "text": "2.15",
+            "display": "2.15×"
+          },
+          "cash_display": "¥901,960.20",
+          "baseline_cash_display": "¥535,000.00"
+        },
+        {
+          "month": 4,
+          "cash_fen": 59744030,
+          "baseline_cash_fen": 58000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 37608361,
+            "den": 18000000,
+            "text": "2.09",
+            "display": "2.09×"
+          },
+          "cash_display": "¥597,440.30",
+          "baseline_cash_display": "¥580,000.00"
+        },
+        {
+          "month": 5,
+          "cash_fen": 65292040,
+          "baseline_cash_fen": 62500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 43802171,
+            "den": 21600000,
+            "text": "2.03",
+            "display": "2.03×"
+          },
+          "cash_display": "¥652,920.40",
+          "baseline_cash_display": "¥625,000.00"
+        },
+        {
+          "month": 6,
+          "cash_fen": 70840050,
+          "baseline_cash_fen": 67000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 70786697,
+            "den": 36000000,
+            "text": "1.97",
+            "display": "1.97×"
+          },
+          "cash_display": "¥708,400.50",
+          "baseline_cash_display": "¥670,000.00"
+        },
+        {
+          "month": 7,
+          "cash_fen": 76388060,
+          "baseline_cash_fen": 71500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 51424453,
+            "den": 27000000,
+            "text": "1.90",
+            "display": "1.90×"
+          },
+          "cash_display": "¥763,880.60",
+          "baseline_cash_display": "¥715,000.00"
+        },
+        {
+          "month": 8,
+          "cash_fen": 81936070,
+          "baseline_cash_fen": 76000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 39804791,
+            "den": 21600000,
+            "text": "1.84",
+            "display": "1.84×"
+          },
+          "cash_display": "¥819,360.70",
+          "baseline_cash_display": "¥760,000.00"
+        },
+        {
+          "month": 9,
+          "cash_fen": 87484080,
+          "baseline_cash_fen": 80500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 96169229,
+            "den": 54000000,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "cash_display": "¥874,840.80",
+          "baseline_cash_display": "¥805,000.00"
+        },
+        {
+          "month": 10,
+          "cash_fen": 93032090,
+          "baseline_cash_fen": 85000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 61880419,
+            "den": 36000000,
+            "text": "1.72",
+            "display": "1.72×"
+          },
+          "cash_display": "¥930,320.90",
+          "baseline_cash_display": "¥850,000.00"
+        },
+        {
+          "month": 11,
+          "cash_fen": 98580100,
+          "baseline_cash_fen": 89500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 178932289,
+            "den": 108000000,
+            "text": "1.66",
+            "display": "1.66×"
+          },
+          "cash_display": "¥985,801.00",
+          "baseline_cash_display": "¥895,000.00"
+        },
+        {
+          "month": 12,
+          "cash_fen": 104128110,
+          "baseline_cash_fen": 94000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 172211489,
+            "den": 108000000,
+            "text": "1.59",
+            "display": "1.59×"
+          },
+          "cash_display": "¥1,041,281.10",
+          "baseline_cash_display": "¥940,000.00"
+        },
+        {
+          "month": 13,
+          "cash_fen": 109676120,
+          "baseline_cash_fen": 98500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 165478793,
+            "den": 108000000,
+            "text": "1.53",
+            "display": "1.53×"
+          },
+          "cash_display": "¥1,096,761.20",
+          "baseline_cash_display": "¥985,000.00"
+        },
+        {
+          "month": 14,
+          "cash_fen": 115224130,
+          "baseline_cash_fen": 103000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 52911379,
+            "den": 36000000,
+            "text": "1.47",
+            "display": "1.47×"
+          },
+          "cash_display": "¥1,152,241.30",
+          "baseline_cash_display": "¥1,030,000.00"
+        },
+        {
+          "month": 15,
+          "cash_fen": 114772140,
+          "baseline_cash_fen": 107500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 30395491,
+            "den": 21600000,
+            "text": "1.41",
+            "display": "1.41×"
+          },
+          "cash_display": "¥1,147,721.40",
+          "baseline_cash_display": "¥1,075,000.00"
+        },
+        {
+          "month": 16,
+          "cash_fen": 120320150,
+          "baseline_cash_fen": 112000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 8067149,
+            "den": 6000000,
+            "text": "1.34",
+            "display": "1.34×"
+          },
+          "cash_display": "¥1,203,201.50",
+          "baseline_cash_display": "¥1,120,000.00"
+        },
+        {
+          "month": 17,
+          "cash_fen": 125868160,
+          "baseline_cash_fen": 116500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 5767823,
+            "den": 4500000,
+            "text": "1.28",
+            "display": "1.28×"
+          },
+          "cash_display": "¥1,258,681.60",
+          "baseline_cash_display": "¥1,165,000.00"
+        },
+        {
+          "month": 18,
+          "cash_fen": 131416170,
+          "baseline_cash_fen": 121000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 131634599,
+            "den": 108000000,
+            "text": "1.22",
+            "display": "1.22×"
+          },
+          "cash_display": "¥1,314,161.70",
+          "baseline_cash_display": "¥1,210,000.00"
+        },
+        {
+          "month": 19,
+          "cash_fen": 136964180,
+          "baseline_cash_fen": 125500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 41609719,
+            "den": 36000000,
+            "text": "1.16",
+            "display": "1.16×"
+          },
+          "cash_display": "¥1,369,641.80",
+          "baseline_cash_display": "¥1,255,000.00"
+        },
+        {
+          "month": 20,
+          "cash_fen": 142512190,
+          "baseline_cash_fen": 130000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 118011359,
+            "den": 108000000,
+            "text": "1.09",
+            "display": "1.09×"
+          },
+          "cash_display": "¥1,425,121.90",
+          "baseline_cash_display": "¥1,300,000.00"
+        },
+        {
+          "month": 21,
+          "cash_fen": 148060200,
+          "baseline_cash_fen": 134500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 37060379,
+            "den": 36000000,
+            "text": "1.03",
+            "display": "1.03×"
+          },
+          "cash_display": "¥1,480,602.00",
+          "baseline_cash_display": "¥1,345,000.00"
+        },
+        {
+          "month": 22,
+          "cash_fen": 153608210,
+          "baseline_cash_fen": 139000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 104338423,
+            "den": 108000000,
+            "text": "0.97",
+            "display": "0.97×"
+          },
+          "cash_display": "¥1,536,082.10",
+          "baseline_cash_display": "¥1,390,000.00"
+        },
+        {
+          "month": 23,
+          "cash_fen": 159156220,
+          "baseline_cash_fen": 143500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 97483151,
+            "den": 108000000,
+            "text": "0.90",
+            "display": "0.90×"
+          },
+          "cash_display": "¥1,591,562.20",
+          "baseline_cash_display": "¥1,435,000.00"
+        },
+        {
+          "month": 24,
+          "cash_fen": 164704230,
+          "baseline_cash_fen": 148000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 90615251,
+            "den": 108000000,
+            "text": "0.84",
+            "display": "0.84×"
+          },
+          "cash_display": "¥1,647,042.30",
+          "baseline_cash_display": "¥1,480,000.00"
+        },
+        {
+          "month": 25,
+          "cash_fen": 170252240,
+          "baseline_cash_fen": 152500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 16746931,
+            "den": 21600000,
+            "text": "0.78",
+            "display": "0.78×"
+          },
+          "cash_display": "¥1,702,522.40",
+          "baseline_cash_display": "¥1,525,000.00"
+        },
+        {
+          "month": 26,
+          "cash_fen": 175800250,
+          "baseline_cash_fen": 157000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 76841293,
+            "den": 108000000,
+            "text": "0.71",
+            "display": "0.71×"
+          },
+          "cash_display": "¥1,758,002.50",
+          "baseline_cash_display": "¥1,570,000.00"
+        },
+        {
+          "month": 27,
+          "cash_fen": 181348260,
+          "baseline_cash_fen": 161500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 8741887,
+            "den": 13500000,
+            "text": "0.65",
+            "display": "0.65×"
+          },
+          "cash_display": "¥1,813,482.60",
+          "baseline_cash_display": "¥1,615,000.00"
+        },
+        {
+          "month": 28,
+          "cash_fen": 186896270,
+          "baseline_cash_fen": 166000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 12603199,
+            "den": 21600000,
+            "text": "0.58",
+            "display": "0.58×"
+          },
+          "cash_display": "¥1,868,962.70",
+          "baseline_cash_display": "¥1,660,000.00"
+        },
+        {
+          "month": 29,
+          "cash_fen": 192444280,
+          "baseline_cash_fen": 170500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 28041959,
+            "den": 54000000,
+            "text": "0.52",
+            "display": "0.52×"
+          },
+          "cash_display": "¥1,924,442.80",
+          "baseline_cash_display": "¥1,705,000.00"
+        },
+        {
+          "month": 30,
+          "cash_fen": 197992290,
+          "baseline_cash_fen": 175000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 9827759,
+            "den": 21600000,
+            "text": "0.45",
+            "display": "0.45×"
+          },
+          "cash_display": "¥1,979,922.90",
+          "baseline_cash_display": "¥1,750,000.00"
+        },
+        {
+          "month": 31,
+          "cash_fen": 203540300,
+          "baseline_cash_fen": 179500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 10545139,
+            "den": 27000000,
+            "text": "0.39",
+            "display": "0.39×"
+          },
+          "cash_display": "¥2,035,403.00",
+          "baseline_cash_display": "¥1,795,000.00"
+        },
+        {
+          "month": 32,
+          "cash_fen": 209088310,
+          "baseline_cash_fen": 184000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 35209129,
+            "den": 108000000,
+            "text": "0.33",
+            "display": "0.33×"
+          },
+          "cash_display": "¥2,090,883.10",
+          "baseline_cash_display": "¥1,840,000.00"
+        },
+        {
+          "month": 33,
+          "cash_fen": 214636320,
+          "baseline_cash_fen": 188500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 3136049,
+            "den": 12000000,
+            "text": "0.26",
+            "display": "0.26×"
+          },
+          "cash_display": "¥2,146,363.20",
+          "baseline_cash_display": "¥1,885,000.00"
+        },
+        {
+          "month": 34,
+          "cash_fen": 220184330,
+          "baseline_cash_fen": 193000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 24226421,
+            "den": 108000000,
+            "text": "0.22",
+            "display": "0.22×"
+          },
+          "cash_display": "¥2,201,843.30",
+          "baseline_cash_display": "¥1,930,000.00"
+        },
+        {
+          "month": 35,
+          "cash_fen": 230232340,
+          "baseline_cash_fen": 202000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 265199,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 1809583,
+            "den": 9000000,
+            "text": "0.20",
+            "display": "0.20×"
+          },
+          "cash_display": "¥2,302,323.40",
+          "baseline_cash_display": "¥2,020,000.00"
+        },
+        {
+          "month": 36,
+          "cash_fen": 240280350,
+          "baseline_cash_fen": 211000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 265199,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 4797523,
+            "den": 27000000,
+            "text": "0.18",
+            "display": "0.18×"
+          },
+          "cash_display": "¥2,402,803.50",
+          "baseline_cash_display": "¥2,110,000.00"
+        },
+        {
+          "month": 37,
+          "cash_fen": 250328357,
+          "baseline_cash_fen": 220000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 2651993,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 8325817,
+            "den": 54000000,
+            "text": "0.15",
+            "display": "0.15×"
+          },
+          "cash_display": "¥2,503,283.57",
+          "baseline_cash_display": "¥2,200,000.00"
+        },
+        {
+          "month": 38,
+          "cash_fen": 261586008,
+          "baseline_cash_fen": 229000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1020613,
+            "den": 7200000,
+            "text": "0.14",
+            "display": "0.14×"
+          },
+          "cash_display": "¥2,615,860.08",
+          "baseline_cash_display": "¥2,290,000.00"
+        },
+        {
+          "month": 39,
+          "cash_fen": 272843659,
+          "baseline_cash_fen": 238000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 13958701,
+            "den": 108000000,
+            "text": "0.13",
+            "display": "0.13×"
+          },
+          "cash_display": "¥2,728,436.59",
+          "baseline_cash_display": "¥2,380,000.00"
+        },
+        {
+          "month": 40,
+          "cash_fen": 284101310,
+          "baseline_cash_fen": 247000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1575013,
+            "den": 13500000,
+            "text": "0.12",
+            "display": "0.12×"
+          },
+          "cash_display": "¥2,841,013.10",
+          "baseline_cash_display": "¥2,470,000.00"
+        },
+        {
+          "month": 41,
+          "cash_fen": 295358961,
+          "baseline_cash_fen": 256000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 936113,
+            "den": 9000000,
+            "text": "0.10",
+            "display": "0.10×"
+          },
+          "cash_display": "¥2,953,589.61",
+          "baseline_cash_display": "¥2,560,000.00"
+        },
+        {
+          "month": 42,
+          "cash_fen": 306616612,
+          "baseline_cash_fen": 265000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 9858407,
+            "den": 108000000,
+            "text": "0.09",
+            "display": "0.09×"
+          },
+          "cash_display": "¥3,066,166.12",
+          "baseline_cash_display": "¥2,650,000.00"
+        },
+        {
+          "month": 43,
+          "cash_fen": 317874263,
+          "baseline_cash_fen": 274000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1059401,
+            "den": 13500000,
+            "text": "0.08",
+            "display": "0.08×"
+          },
+          "cash_display": "¥3,178,742.63",
+          "baseline_cash_display": "¥2,740,000.00"
+        },
+        {
+          "month": 44,
+          "cash_fen": 329131914,
+          "baseline_cash_fen": 283000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 708371,
+            "den": 10800000,
+            "text": "0.07",
+            "display": "0.07×"
+          },
+          "cash_display": "¥3,291,319.14",
+          "baseline_cash_display": "¥2,830,000.00"
+        },
+        {
+          "month": 45,
+          "cash_fen": 340389565,
+          "baseline_cash_fen": 292000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1894621,
+            "den": 36000000,
+            "text": "0.05",
+            "display": "0.05×"
+          },
+          "cash_display": "¥3,403,895.65",
+          "baseline_cash_display": "¥2,920,000.00"
+        },
+        {
+          "month": 46,
+          "cash_fen": 351647216,
+          "baseline_cash_fen": 301000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 4275617,
+            "den": 108000000,
+            "text": "0.04",
+            "display": "0.04×"
+          },
+          "cash_display": "¥3,516,472.16",
+          "baseline_cash_display": "¥3,010,000.00"
+        },
+        {
+          "month": 47,
+          "cash_fen": 362904867,
+          "baseline_cash_fen": 310000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 52943,
+            "den": 2000000,
+            "text": "0.03",
+            "display": "0.03×"
+          },
+          "cash_display": "¥3,629,048.67",
+          "baseline_cash_display": "¥3,100,000.00"
+        },
+        {
+          "month": 48,
+          "cash_fen": 374162518,
+          "baseline_cash_fen": 319000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 53101,
+            "den": 4000000,
+            "text": "0.01",
+            "display": "0.01×"
+          },
+          "cash_display": "¥3,741,625.18",
+          "baseline_cash_display": "¥3,190,000.00"
+        },
+        {
+          "month": 49,
+          "cash_fen": 385420189,
+          "baseline_cash_fen": 328000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442329,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥3,854,201.89",
+          "baseline_cash_display": "¥3,280,000.00"
+        },
+        {
+          "month": 50,
+          "cash_fen": 398120189,
+          "baseline_cash_fen": 337000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥3,981,201.89",
+          "baseline_cash_display": "¥3,370,000.00"
+        },
+        {
+          "month": 51,
+          "cash_fen": 410820189,
+          "baseline_cash_fen": 346000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,108,201.89",
+          "baseline_cash_display": "¥3,460,000.00"
+        },
+        {
+          "month": 52,
+          "cash_fen": 423520189,
+          "baseline_cash_fen": 355000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,235,201.89",
+          "baseline_cash_display": "¥3,550,000.00"
+        },
+        {
+          "month": 53,
+          "cash_fen": 436220189,
+          "baseline_cash_fen": 364000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,362,201.89",
+          "baseline_cash_display": "¥3,640,000.00"
+        },
+        {
+          "month": 54,
+          "cash_fen": 448920189,
+          "baseline_cash_fen": 373000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,489,201.89",
+          "baseline_cash_display": "¥3,730,000.00"
+        },
+        {
+          "month": 55,
+          "cash_fen": 461620189,
+          "baseline_cash_fen": 382000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,616,201.89",
+          "baseline_cash_display": "¥3,820,000.00"
+        },
+        {
+          "month": 56,
+          "cash_fen": 474320189,
+          "baseline_cash_fen": 391000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,743,201.89",
+          "baseline_cash_display": "¥3,910,000.00"
+        },
+        {
+          "month": 57,
+          "cash_fen": 487020189,
+          "baseline_cash_fen": 400000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,870,201.89",
+          "baseline_cash_display": "¥4,000,000.00"
+        },
+        {
+          "month": 58,
+          "cash_fen": 499720189,
+          "baseline_cash_fen": 409000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,997,201.89",
+          "baseline_cash_display": "¥4,090,000.00"
+        },
+        {
+          "month": 59,
+          "cash_fen": 512420189,
+          "baseline_cash_fen": 418000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥5,124,201.89",
+          "baseline_cash_display": "¥4,180,000.00"
+        },
+        {
+          "month": 60,
+          "cash_fen": 525120189,
+          "baseline_cash_fen": 427000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥5,251,201.89",
+          "baseline_cash_display": "¥4,270,000.00"
+        }
+      ],
+      "text": "Die-cutting line now, with the Equipment lease (¥14,423.49 a month); Packing robot now, with the Equipment term loan (¥12,096.44 a month). NPV ¥718,097.09; lowest headroom ¥297,440.30 in month 4.",
+      "npv_display": "¥718,097.09",
+      "financing_charges_display": "¥127,798.11",
+      "lowest_headroom_display": "¥297,440.30"
+    },
+    {
+      "rank": 2,
+      "choices": [
+        {
+          "project_id": "line",
+          "label": "Die-cutting line",
+          "included": true,
+          "start_offset_months": 0,
+          "option": "FAC-ETL",
+          "option_label": "Equipment term loan",
+          "first_payment_day": 20,
+          "principal_fen": 60000000,
+          "monthly_payment_fen": 1814462,
+          "principal_display": "¥600,000.00",
+          "monthly_payment_display": "¥18,144.62"
+        },
+        {
+          "project_id": "robot",
+          "label": "Packing robot",
+          "included": true,
+          "start_offset_months": 3,
+          "option": "FAC-LEASE",
+          "option_label": "Equipment lease",
+          "first_payment_day": 90,
+          "principal_fen": 40000000,
+          "monthly_payment_fen": 961566,
+          "principal_display": "¥400,000.00",
+          "monthly_payment_display": "¥9,615.66"
+        }
+      ],
+      "npv_fen": 71396868,
+      "financing_charges_fen": 11475768,
+      "lowest_headroom_fen": 29795048,
+      "lowest_month": 4,
+      "admissible": true,
+      "first_failure": null,
+      "months": [
+        {
+          "month": 1,
+          "cash_fen": 86500000,
+          "baseline_cash_fen": 44500000,
+          "dscr": {
+            "num": 2,
+            "den": 1,
+            "text": "2.00",
+            "display": "2.00×"
+          },
+          "leverage": {
+            "num": 137,
+            "den": 72,
+            "text": "1.90",
+            "display": "1.90×"
+          },
+          "cash_display": "¥865,000.00",
+          "baseline_cash_display": "¥445,000.00"
+        },
+        {
+          "month": 2,
+          "cash_fen": 89185538,
+          "baseline_cash_fen": 49000000,
+          "dscr": {
+            "num": 4500000,
+            "den": 3157231,
+            "text": "1.43",
+            "display": "1.43×"
+          },
+          "leverage": {
+            "num": 99732769,
+            "den": 54000000,
+            "text": "1.85",
+            "display": "1.85×"
+          },
+          "cash_display": "¥891,855.38",
+          "baseline_cash_display": "¥490,000.00"
+        },
+        {
+          "month": 3,
+          "cash_fen": 91871076,
+          "baseline_cash_fen": 53500000,
+          "dscr": {
+            "num": 4500000,
+            "den": 3157231,
+            "text": "1.43",
+            "display": "1.43×"
+          },
+          "leverage": {
+            "num": 46684783,
+            "den": 21600000,
+            "text": "2.16",
+            "display": "2.16×"
+          },
+          "cash_display": "¥918,710.76",
+          "baseline_cash_display": "¥535,000.00"
+        },
+        {
+          "month": 4,
+          "cash_fen": 59795048,
+          "baseline_cash_fen": 58000000,
+          "dscr": {
+            "num": 2800000,
+            "den": 1819007,
+            "text": "1.54",
+            "display": "1.54×"
+          },
+          "leverage": {
+            "num": 56663383,
+            "den": 27000000,
+            "text": "2.10",
+            "display": "2.10×"
+          },
+          "cash_display": "¥597,950.48",
+          "baseline_cash_display": "¥580,000.00"
+        },
+        {
+          "month": 5,
+          "cash_fen": 63719020,
+          "baseline_cash_fen": 62500000,
+          "dscr": {
+            "num": 2800000,
+            "den": 1819007,
+            "text": "1.54",
+            "display": "1.54×"
+          },
+          "leverage": {
+            "num": 27483949,
+            "den": 13500000,
+            "text": "2.04",
+            "display": "2.04×"
+          },
+          "cash_display": "¥637,190.20",
+          "baseline_cash_display": "¥625,000.00"
+        },
+        {
+          "month": 6,
+          "cash_fen": 67642992,
+          "baseline_cash_fen": 67000000,
+          "dscr": {
+            "num": 2800000,
+            "den": 1819007,
+            "text": "1.54",
+            "display": "1.54×"
+          },
+          "leverage": {
+            "num": 42615607,
+            "den": 21600000,
+            "text": "1.97",
+            "display": "1.97×"
+          },
+          "cash_display": "¥676,429.92",
+          "baseline_cash_display": "¥670,000.00"
+        },
+        {
+          "month": 7,
+          "cash_fen": 73066964,
+          "baseline_cash_fen": 71500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 206272801,
+            "den": 108000000,
+            "text": "1.91",
+            "display": "1.91×"
+          },
+          "cash_display": "¥730,669.64",
+          "baseline_cash_display": "¥715,000.00"
+        },
+        {
+          "month": 8,
+          "cash_fen": 78490936,
+          "baseline_cash_fen": 76000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 19945583,
+            "den": 10800000,
+            "text": "1.85",
+            "display": "1.85×"
+          },
+          "cash_display": "¥784,909.36",
+          "baseline_cash_display": "¥760,000.00"
+        },
+        {
+          "month": 9,
+          "cash_fen": 83914908,
+          "baseline_cash_fen": 80500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 192627061,
+            "den": 108000000,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "cash_display": "¥839,149.08",
+          "baseline_cash_display": "¥805,000.00"
+        },
+        {
+          "month": 10,
+          "cash_fen": 89338880,
+          "baseline_cash_fen": 85000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 6880979,
+            "den": 4000000,
+            "text": "1.72",
+            "display": "1.72×"
+          },
+          "cash_display": "¥893,388.80",
+          "baseline_cash_display": "¥850,000.00"
+        },
+        {
+          "month": 11,
+          "cash_fen": 94762852,
+          "baseline_cash_fen": 89500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 14911157,
+            "den": 9000000,
+            "text": "1.66",
+            "display": "1.66×"
+          },
+          "cash_display": "¥947,628.52",
+          "baseline_cash_display": "¥895,000.00"
+        },
+        {
+          "month": 12,
+          "cash_fen": 100186824,
+          "baseline_cash_fen": 94000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 86034677,
+            "den": 54000000,
+            "text": "1.59",
+            "display": "1.59×"
+          },
+          "cash_display": "¥1,001,868.24",
+          "baseline_cash_display": "¥940,000.00"
+        },
+        {
+          "month": 13,
+          "cash_fen": 105610796,
+          "baseline_cash_fen": 98500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 2753213,
+            "den": 1800000,
+            "text": "1.53",
+            "display": "1.53×"
+          },
+          "cash_display": "¥1,056,107.96",
+          "baseline_cash_display": "¥985,000.00"
+        },
+        {
+          "month": 14,
+          "cash_fen": 111034768,
+          "baseline_cash_fen": 103000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 1583041,
+            "den": 1080000,
+            "text": "1.47",
+            "display": "1.47×"
+          },
+          "cash_display": "¥1,110,347.68",
+          "baseline_cash_display": "¥1,030,000.00"
+        },
+        {
+          "month": 15,
+          "cash_fen": 110458740,
+          "baseline_cash_fen": 107500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 37850813,
+            "den": 27000000,
+            "text": "1.40",
+            "display": "1.40×"
+          },
+          "cash_display": "¥1,104,587.40",
+          "baseline_cash_display": "¥1,075,000.00"
+        },
+        {
+          "month": 16,
+          "cash_fen": 115882712,
+          "baseline_cash_fen": 112000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 36122543,
+            "den": 27000000,
+            "text": "1.34",
+            "display": "1.34×"
+          },
+          "cash_display": "¥1,158,827.12",
+          "baseline_cash_display": "¥1,120,000.00"
+        },
+        {
+          "month": 17,
+          "cash_fen": 121306684,
+          "baseline_cash_fen": 116500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 137564797,
+            "den": 108000000,
+            "text": "1.27",
+            "display": "1.27×"
+          },
+          "cash_display": "¥1,213,066.84",
+          "baseline_cash_display": "¥1,165,000.00"
+        },
+        {
+          "month": 18,
+          "cash_fen": 126730656,
+          "baseline_cash_fen": 121000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 16328383,
+            "den": 13500000,
+            "text": "1.21",
+            "display": "1.21×"
+          },
+          "cash_display": "¥1,267,306.56",
+          "baseline_cash_display": "¥1,210,000.00"
+        },
+        {
+          "month": 19,
+          "cash_fen": 132154628,
+          "baseline_cash_fen": 125500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 10306409,
+            "den": 9000000,
+            "text": "1.15",
+            "display": "1.15×"
+          },
+          "cash_display": "¥1,321,546.28",
+          "baseline_cash_display": "¥1,255,000.00"
+        },
+        {
+          "month": 20,
+          "cash_fen": 137578600,
+          "baseline_cash_fen": 130000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 58357133,
+            "den": 54000000,
+            "text": "1.08",
+            "display": "1.08×"
+          },
+          "cash_display": "¥1,375,786.00",
+          "baseline_cash_display": "¥1,300,000.00"
+        },
+        {
+          "month": 21,
+          "cash_fen": 143002572,
+          "baseline_cash_fen": 134500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 36579691,
+            "den": 36000000,
+            "text": "1.02",
+            "display": "1.02×"
+          },
+          "cash_display": "¥1,430,025.72",
+          "baseline_cash_display": "¥1,345,000.00"
+        },
+        {
+          "month": 22,
+          "cash_fen": 148426544,
+          "baseline_cash_fen": 139000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 3210977,
+            "den": 3375000,
+            "text": "0.95",
+            "display": "0.95×"
+          },
+          "cash_display": "¥1,484,265.44",
+          "baseline_cash_display": "¥1,390,000.00"
+        },
+        {
+          "month": 23,
+          "cash_fen": 153850516,
+          "baseline_cash_fen": 143500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 47875387,
+            "den": 54000000,
+            "text": "0.89",
+            "display": "0.89×"
+          },
+          "cash_display": "¥1,538,505.16",
+          "baseline_cash_display": "¥1,435,000.00"
+        },
+        {
+          "month": 24,
+          "cash_fen": 159274488,
+          "baseline_cash_fen": 148000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 29579179,
+            "den": 36000000,
+            "text": "0.82",
+            "display": "0.82×"
+          },
+          "cash_display": "¥1,592,744.88",
+          "baseline_cash_display": "¥1,480,000.00"
+        },
+        {
+          "month": 25,
+          "cash_fen": 164698460,
+          "baseline_cash_fen": 152500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 638371,
+            "den": 843750,
+            "text": "0.76",
+            "display": "0.76×"
+          },
+          "cash_display": "¥1,646,984.60",
+          "baseline_cash_display": "¥1,525,000.00"
+        },
+        {
+          "month": 26,
+          "cash_fen": 170122432,
+          "baseline_cash_fen": 157000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 933407,
+            "den": 1350000,
+            "text": "0.69",
+            "display": "0.69×"
+          },
+          "cash_display": "¥1,701,224.32",
+          "baseline_cash_display": "¥1,570,000.00"
+        },
+        {
+          "month": 27,
+          "cash_fen": 175546404,
+          "baseline_cash_fen": 161500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 13524137,
+            "den": 21600000,
+            "text": "0.63",
+            "display": "0.63×"
+          },
+          "cash_display": "¥1,755,464.04",
+          "baseline_cash_display": "¥1,615,000.00"
+        },
+        {
+          "month": 28,
+          "cash_fen": 180970376,
+          "baseline_cash_fen": 166000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 60555797,
+            "den": 108000000,
+            "text": "0.56",
+            "display": "0.56×"
+          },
+          "cash_display": "¥1,809,703.76",
+          "baseline_cash_display": "¥1,660,000.00"
+        },
+        {
+          "month": 29,
+          "cash_fen": 186394348,
+          "baseline_cash_fen": 170500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 5347783,
+            "den": 10800000,
+            "text": "0.50",
+            "display": "0.50×"
+          },
+          "cash_display": "¥1,863,943.48",
+          "baseline_cash_display": "¥1,705,000.00"
+        },
+        {
+          "month": 30,
+          "cash_fen": 191818320,
+          "baseline_cash_fen": 175000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 9277343,
+            "den": 21600000,
+            "text": "0.43",
+            "display": "0.43×"
+          },
+          "cash_display": "¥1,918,183.20",
+          "baseline_cash_display": "¥1,750,000.00"
+        },
+        {
+          "month": 31,
+          "cash_fen": 197242292,
+          "baseline_cash_fen": 179500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 818383,
+            "den": 2250000,
+            "text": "0.36",
+            "display": "0.36×"
+          },
+          "cash_display": "¥1,972,422.92",
+          "baseline_cash_display": "¥1,795,000.00"
+        },
+        {
+          "month": 32,
+          "cash_fen": 202666264,
+          "baseline_cash_fen": 184000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 32164769,
+            "den": 108000000,
+            "text": "0.30",
+            "display": "0.30×"
+          },
+          "cash_display": "¥2,026,662.64",
+          "baseline_cash_display": "¥1,840,000.00"
+        },
+        {
+          "month": 33,
+          "cash_fen": 208090236,
+          "baseline_cash_fen": 188500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 25033801,
+            "den": 108000000,
+            "text": "0.23",
+            "display": "0.23×"
+          },
+          "cash_display": "¥2,080,902.36",
+          "baseline_cash_display": "¥1,885,000.00"
+        },
+        {
+          "month": 34,
+          "cash_fen": 213514208,
+          "baseline_cash_fen": 193000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 2088941,
+            "den": 10800000,
+            "text": "0.19",
+            "display": "0.19×"
+          },
+          "cash_display": "¥2,135,142.08",
+          "baseline_cash_display": "¥1,930,000.00"
+        },
+        {
+          "month": 35,
+          "cash_fen": 223438180,
+          "baseline_cash_fen": 202000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 694007,
+            "text": "4.57",
+            "display": "4.57×"
+          },
+          "leverage": {
+            "num": 759647,
+            "den": 4500000,
+            "text": "0.17",
+            "display": "0.17×"
+          },
+          "cash_display": "¥2,234,381.80",
+          "baseline_cash_display": "¥2,020,000.00"
+        },
+        {
+          "month": 36,
+          "cash_fen": 233362152,
+          "baseline_cash_fen": 211000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 694007,
+            "text": "4.57",
+            "display": "4.57×"
+          },
+          "leverage": {
+            "num": 3890021,
+            "den": 27000000,
+            "text": "0.14",
+            "display": "0.14×"
+          },
+          "cash_display": "¥2,333,621.52",
+          "baseline_cash_display": "¥2,110,000.00"
+        },
+        {
+          "month": 37,
+          "cash_fen": 243286142,
+          "baseline_cash_fen": 220000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 277601,
+            "text": "4.57",
+            "display": "4.57×"
+          },
+          "leverage": {
+            "num": 6437513,
+            "den": 54000000,
+            "text": "0.12",
+            "display": "0.12×"
+          },
+          "cash_display": "¥2,432,861.42",
+          "baseline_cash_display": "¥2,200,000.00"
+        },
+        {
+          "month": 38,
+          "cash_fen": 255024576,
+          "baseline_cash_fen": 229000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 1199071,
+            "den": 10800000,
+            "text": "0.11",
+            "display": "0.11×"
+          },
+          "cash_display": "¥2,550,245.76",
+          "baseline_cash_display": "¥2,290,000.00"
+        },
+        {
+          "month": 39,
+          "cash_fen": 266763010,
+          "baseline_cash_fen": 238000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 346909,
+            "den": 3375000,
+            "text": "0.10",
+            "display": "0.10×"
+          },
+          "cash_display": "¥2,667,630.10",
+          "baseline_cash_display": "¥2,380,000.00"
+        },
+        {
+          "month": 40,
+          "cash_fen": 278501444,
+          "baseline_cash_fen": 247000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 3402043,
+            "den": 36000000,
+            "text": "0.09",
+            "display": "0.09×"
+          },
+          "cash_display": "¥2,785,014.44",
+          "baseline_cash_display": "¥2,470,000.00"
+        },
+        {
+          "month": 41,
+          "cash_fen": 290239878,
+          "baseline_cash_fen": 256000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 46529,
+            "den": 540000,
+            "text": "0.09",
+            "display": "0.09×"
+          },
+          "cash_display": "¥2,902,398.78",
+          "baseline_cash_display": "¥2,560,000.00"
+        },
+        {
+          "month": 42,
+          "cash_fen": 301978312,
+          "baseline_cash_fen": 265000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 933341,
+            "den": 12000000,
+            "text": "0.08",
+            "display": "0.08×"
+          },
+          "cash_display": "¥3,019,783.12",
+          "baseline_cash_display": "¥2,650,000.00"
+        },
+        {
+          "month": 43,
+          "cash_fen": 313716746,
+          "baseline_cash_fen": 274000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 2496301,
+            "den": 36000000,
+            "text": "0.07",
+            "display": "0.07×"
+          },
+          "cash_display": "¥3,137,167.46",
+          "baseline_cash_display": "¥2,740,000.00"
+        },
+        {
+          "month": 44,
+          "cash_fen": 325455180,
+          "baseline_cash_fen": 283000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 657227,
+            "den": 10800000,
+            "text": "0.06",
+            "display": "0.06×"
+          },
+          "cash_display": "¥3,254,551.80",
+          "baseline_cash_display": "¥2,830,000.00"
+        },
+        {
+          "month": 45,
+          "cash_fen": 337193614,
+          "baseline_cash_fen": 292000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 2825069,
+            "den": 54000000,
+            "text": "0.05",
+            "display": "0.05×"
+          },
+          "cash_display": "¥3,371,936.14",
+          "baseline_cash_display": "¥2,920,000.00"
+        },
+        {
+          "month": 46,
+          "cash_fen": 348932048,
+          "baseline_cash_fen": 301000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 4722473,
+            "den": 108000000,
+            "text": "0.04",
+            "display": "0.04×"
+          },
+          "cash_display": "¥3,489,320.48",
+          "baseline_cash_display": "¥3,010,000.00"
+        },
+        {
+          "month": 47,
+          "cash_fen": 360670482,
+          "baseline_cash_fen": 310000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 1894621,
+            "den": 54000000,
+            "text": "0.04",
+            "display": "0.04×"
+          },
+          "cash_display": "¥3,606,704.82",
+          "baseline_cash_display": "¥3,100,000.00"
+        },
+        {
+          "month": 48,
+          "cash_fen": 372408916,
+          "baseline_cash_fen": 319000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 950137,
+            "den": 36000000,
+            "text": "0.03",
+            "display": "0.03×"
+          },
+          "cash_display": "¥3,724,089.16",
+          "baseline_cash_display": "¥3,190,000.00"
+        },
+        {
+          "month": 49,
+          "cash_fen": 384147350,
+          "baseline_cash_fen": 328000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 1905947,
+            "den": 108000000,
+            "text": "0.02",
+            "display": "0.02×"
+          },
+          "cash_display": "¥3,841,473.50",
+          "baseline_cash_display": "¥3,280,000.00"
+        },
+        {
+          "month": 50,
+          "cash_fen": 395885784,
+          "baseline_cash_fen": 337000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 955817,
+            "den": 108000000,
+            "text": "0.01",
+            "display": "0.01×"
+          },
+          "cash_display": "¥3,958,857.84",
+          "baseline_cash_display": "¥3,370,000.00"
+        },
+        {
+          "month": 51,
+          "cash_fen": 407624232,
+          "baseline_cash_fen": 346000000,
+          "dscr": {
+            "num": 793750,
+            "den": 60097,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,076,242.32",
+          "baseline_cash_display": "¥3,460,000.00"
+        },
+        {
+          "month": 52,
+          "cash_fen": 420324232,
+          "baseline_cash_fen": 355000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,203,242.32",
+          "baseline_cash_display": "¥3,550,000.00"
+        },
+        {
+          "month": 53,
+          "cash_fen": 433024232,
+          "baseline_cash_fen": 364000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,330,242.32",
+          "baseline_cash_display": "¥3,640,000.00"
+        },
+        {
+          "month": 54,
+          "cash_fen": 445724232,
+          "baseline_cash_fen": 373000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,457,242.32",
+          "baseline_cash_display": "¥3,730,000.00"
+        },
+        {
+          "month": 55,
+          "cash_fen": 458424232,
+          "baseline_cash_fen": 382000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,584,242.32",
+          "baseline_cash_display": "¥3,820,000.00"
+        },
+        {
+          "month": 56,
+          "cash_fen": 471124232,
+          "baseline_cash_fen": 391000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,711,242.32",
+          "baseline_cash_display": "¥3,910,000.00"
+        },
+        {
+          "month": 57,
+          "cash_fen": 483824232,
+          "baseline_cash_fen": 400000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,838,242.32",
+          "baseline_cash_display": "¥4,000,000.00"
+        },
+        {
+          "month": 58,
+          "cash_fen": 496524232,
+          "baseline_cash_fen": 409000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,965,242.32",
+          "baseline_cash_display": "¥4,090,000.00"
+        },
+        {
+          "month": 59,
+          "cash_fen": 509224232,
+          "baseline_cash_fen": 418000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥5,092,242.32",
+          "baseline_cash_display": "¥4,180,000.00"
+        },
+        {
+          "month": 60,
+          "cash_fen": 521924232,
+          "baseline_cash_fen": 427000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥5,219,242.32",
+          "baseline_cash_display": "¥4,270,000.00"
+        }
+      ],
+      "text": "Die-cutting line now, with the Equipment term loan (¥18,144.62 a month); Packing robot 3 months later, with the Equipment lease (¥9,615.66 a month). NPV ¥713,968.68; lowest headroom ¥297,950.48 in month 4.",
+      "npv_display": "¥713,968.68",
+      "financing_charges_display": "¥114,757.68",
+      "lowest_headroom_display": "¥297,950.48"
+    },
+    {
+      "rank": 3,
+      "choices": [
+        {
+          "project_id": "line",
+          "label": "Die-cutting line",
+          "included": true,
+          "start_offset_months": 0,
+          "option": "FAC-LEASE",
+          "option_label": "Equipment lease",
+          "first_payment_day": 20,
+          "principal_fen": 60000000,
+          "monthly_payment_fen": 1442349,
+          "principal_display": "¥600,000.00",
+          "monthly_payment_display": "¥14,423.49"
+        },
+        {
+          "project_id": "robot",
+          "label": "Packing robot",
+          "included": true,
+          "start_offset_months": 3,
+          "option": "FAC-ETL",
+          "option_label": "Equipment term loan",
+          "first_payment_day": 90,
+          "principal_fen": 40000000,
+          "monthly_payment_fen": 1209644,
+          "principal_display": "¥400,000.00",
+          "monthly_payment_display": "¥12,096.44"
+        }
+      ],
+      "npv_fen": 71141250,
+      "financing_charges_fen": 12779811,
+      "lowest_headroom_fen": 30663312,
+      "lowest_month": 4,
+      "admissible": true,
+      "first_failure": null,
+      "months": [
+        {
+          "month": 1,
+          "cash_fen": 86500000,
+          "baseline_cash_fen": 44500000,
+          "dscr": {
+            "num": 2,
+            "den": 1,
+            "text": "2.00",
+            "display": "2.00×"
+          },
+          "leverage": {
+            "num": 137,
+            "den": 72,
+            "text": "1.90",
+            "display": "1.90×"
+          },
+          "cash_display": "¥865,000.00",
+          "baseline_cash_display": "¥445,000.00"
+        },
+        {
+          "month": 2,
+          "cash_fen": 89557651,
+          "baseline_cash_fen": 49000000,
+          "dscr": {
+            "num": 1000000,
+            "den": 660261,
+            "text": "1.51",
+            "display": "1.51×"
+          },
+          "leverage": {
+            "num": 66639217,
+            "den": 36000000,
+            "text": "1.85",
+            "display": "1.85×"
+          },
+          "cash_display": "¥895,576.51",
+          "baseline_cash_display": "¥490,000.00"
+        },
+        {
+          "month": 3,
+          "cash_fen": 92615302,
+          "baseline_cash_fen": 53500000,
+          "dscr": {
+            "num": 1000000,
+            "den": 660261,
+            "text": "1.51",
+            "display": "1.51×"
+          },
+          "leverage": {
+            "num": 29291101,
+            "den": 13500000,
+            "text": "2.17",
+            "display": "2.17×"
+          },
+          "cash_display": "¥926,153.02",
+          "baseline_cash_display": "¥535,000.00"
+        },
+        {
+          "month": 4,
+          "cash_fen": 60663312,
+          "baseline_cash_fen": 58000000,
+          "dscr": {
+            "num": 1120000,
+            "den": 715199,
+            "text": "1.57",
+            "display": "1.57×"
+          },
+          "leverage": {
+            "num": 12650581,
+            "den": 6000000,
+            "text": "2.11",
+            "display": "2.11×"
+          },
+          "cash_display": "¥606,633.12",
+          "baseline_cash_display": "¥580,000.00"
+        },
+        {
+          "month": 5,
+          "cash_fen": 64711322,
+          "baseline_cash_fen": 62500000,
+          "dscr": {
+            "num": 1120000,
+            "den": 715199,
+            "text": "1.57",
+            "display": "1.57×"
+          },
+          "leverage": {
+            "num": 110540381,
+            "den": 54000000,
+            "text": "2.05",
+            "display": "2.05×"
+          },
+          "cash_display": "¥647,113.22",
+          "baseline_cash_display": "¥625,000.00"
+        },
+        {
+          "month": 6,
+          "cash_fen": 68759332,
+          "baseline_cash_fen": 67000000,
+          "dscr": {
+            "num": 1120000,
+            "den": 715199,
+            "text": "1.57",
+            "display": "1.57×"
+          },
+          "leverage": {
+            "num": 35739943,
+            "den": 18000000,
+            "text": "1.99",
+            "display": "1.99×"
+          },
+          "cash_display": "¥687,593.32",
+          "baseline_cash_display": "¥670,000.00"
+        },
+        {
+          "month": 7,
+          "cash_fen": 74307342,
+          "baseline_cash_fen": 71500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 51946771,
+            "den": 27000000,
+            "text": "1.92",
+            "display": "1.92×"
+          },
+          "cash_display": "¥743,073.42",
+          "baseline_cash_display": "¥715,000.00"
+        },
+        {
+          "month": 8,
+          "cash_fen": 79855352,
+          "baseline_cash_fen": 76000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 201122977,
+            "den": 108000000,
+            "text": "1.86",
+            "display": "1.86×"
+          },
+          "cash_display": "¥798,553.52",
+          "baseline_cash_display": "¥760,000.00"
+        },
+        {
+          "month": 9,
+          "cash_fen": 85403362,
+          "baseline_cash_fen": 80500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 7777891,
+            "den": 4320000,
+            "text": "1.80",
+            "display": "1.80×"
+          },
+          "cash_display": "¥854,033.62",
+          "baseline_cash_display": "¥805,000.00"
+        },
+        {
+          "month": 10,
+          "cash_fen": 90951372,
+          "baseline_cash_fen": 85000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 37551983,
+            "den": 21600000,
+            "text": "1.74",
+            "display": "1.74×"
+          },
+          "cash_display": "¥909,513.72",
+          "baseline_cash_display": "¥850,000.00"
+        },
+        {
+          "month": 11,
+          "cash_fen": 96499382,
+          "baseline_cash_fen": 89500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 90530417,
+            "den": 54000000,
+            "text": "1.68",
+            "display": "1.68×"
+          },
+          "cash_display": "¥964,993.82",
+          "baseline_cash_display": "¥895,000.00"
+        },
+        {
+          "month": 12,
+          "cash_fen": 102047392,
+          "baseline_cash_fen": 94000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 174349967,
+            "den": 108000000,
+            "text": "1.61",
+            "display": "1.61×"
+          },
+          "cash_display": "¥1,020,473.92",
+          "baseline_cash_display": "¥940,000.00"
+        },
+        {
+          "month": 13,
+          "cash_fen": 107595402,
+          "baseline_cash_fen": 98500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 167627251,
+            "den": 108000000,
+            "text": "1.55",
+            "display": "1.55×"
+          },
+          "cash_display": "¥1,075,954.02",
+          "baseline_cash_display": "¥985,000.00"
+        },
+        {
+          "month": 14,
+          "cash_fen": 113143412,
+          "baseline_cash_fen": 103000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 160892621,
+            "den": 108000000,
+            "text": "1.49",
+            "display": "1.49×"
+          },
+          "cash_display": "¥1,131,434.12",
+          "baseline_cash_display": "¥1,030,000.00"
+        },
+        {
+          "month": 15,
+          "cash_fen": 112691422,
+          "baseline_cash_fen": 107500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 12845501,
+            "den": 9000000,
+            "text": "1.43",
+            "display": "1.43×"
+          },
+          "cash_display": "¥1,126,914.22",
+          "baseline_cash_display": "¥1,075,000.00"
+        },
+        {
+          "month": 16,
+          "cash_fen": 118239432,
+          "baseline_cash_fen": 112000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 147387359,
+            "den": 108000000,
+            "text": "1.36",
+            "display": "1.36×"
+          },
+          "cash_display": "¥1,182,394.32",
+          "baseline_cash_display": "¥1,120,000.00"
+        },
+        {
+          "month": 17,
+          "cash_fen": 123787442,
+          "baseline_cash_fen": 116500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 35154149,
+            "den": 27000000,
+            "text": "1.30",
+            "display": "1.30×"
+          },
+          "cash_display": "¥1,237,874.42",
+          "baseline_cash_display": "¥1,165,000.00"
+        },
+        {
+          "month": 18,
+          "cash_fen": 129335452,
+          "baseline_cash_fen": 121000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 66916829,
+            "den": 54000000,
+            "text": "1.24",
+            "display": "1.24×"
+          },
+          "cash_display": "¥1,293,354.52",
+          "baseline_cash_display": "¥1,210,000.00"
+        },
+        {
+          "month": 19,
+          "cash_fen": 134883462,
+          "baseline_cash_fen": 125500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 63519239,
+            "den": 54000000,
+            "text": "1.18",
+            "display": "1.18×"
+          },
+          "cash_display": "¥1,348,834.62",
+          "baseline_cash_display": "¥1,255,000.00"
+        },
+        {
+          "month": 20,
+          "cash_fen": 140431472,
+          "baseline_cash_fen": 130000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 12023099,
+            "den": 10800000,
+            "text": "1.11",
+            "display": "1.11×"
+          },
+          "cash_display": "¥1,404,314.72",
+          "baseline_cash_display": "¥1,300,000.00"
+        },
+        {
+          "month": 21,
+          "cash_fen": 145979482,
+          "baseline_cash_fen": 134500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 56705563,
+            "den": 54000000,
+            "text": "1.05",
+            "display": "1.05×"
+          },
+          "cash_display": "¥1,459,794.82",
+          "baseline_cash_display": "¥1,345,000.00"
+        },
+        {
+          "month": 22,
+          "cash_fen": 151527492,
+          "baseline_cash_fen": 139000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 11842091,
+            "den": 12000000,
+            "text": "0.99",
+            "display": "0.99×"
+          },
+          "cash_display": "¥1,515,274.92",
+          "baseline_cash_display": "¥1,390,000.00"
+        },
+        {
+          "month": 23,
+          "cash_fen": 157075502,
+          "baseline_cash_fen": 143500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 49867001,
+            "den": 54000000,
+            "text": "0.92",
+            "display": "0.92×"
+          },
+          "cash_display": "¥1,570,755.02",
+          "baseline_cash_display": "¥1,435,000.00"
+        },
+        {
+          "month": 24,
+          "cash_fen": 162623512,
+          "baseline_cash_fen": 148000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 46438303,
+            "den": 54000000,
+            "text": "0.86",
+            "display": "0.86×"
+          },
+          "cash_display": "¥1,626,235.12",
+          "baseline_cash_display": "¥1,480,000.00"
+        },
+        {
+          "month": 25,
+          "cash_fen": 168171522,
+          "baseline_cash_fen": 152500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 86006563,
+            "den": 108000000,
+            "text": "0.80",
+            "display": "0.80×"
+          },
+          "cash_display": "¥1,681,715.22",
+          "baseline_cash_display": "¥1,525,000.00"
+        },
+        {
+          "month": 26,
+          "cash_fen": 173719532,
+          "baseline_cash_fen": 157000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 26374601,
+            "den": 36000000,
+            "text": "0.73",
+            "display": "0.73×"
+          },
+          "cash_display": "¥1,737,195.32",
+          "baseline_cash_display": "¥1,570,000.00"
+        },
+        {
+          "month": 27,
+          "cash_fen": 179267542,
+          "baseline_cash_fen": 161500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 4012681,
+            "den": 6000000,
+            "text": "0.67",
+            "display": "0.67×"
+          },
+          "cash_display": "¥1,792,675.42",
+          "baseline_cash_display": "¥1,615,000.00"
+        },
+        {
+          "month": 28,
+          "cash_fen": 184815552,
+          "baseline_cash_fen": 166000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 1209627,
+            "den": 2000000,
+            "text": "0.60",
+            "display": "0.60×"
+          },
+          "cash_display": "¥1,848,155.52",
+          "baseline_cash_display": "¥1,660,000.00"
+        },
+        {
+          "month": 29,
+          "cash_fen": 190363562,
+          "baseline_cash_fen": 170500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 58398533,
+            "den": 108000000,
+            "text": "0.54",
+            "display": "0.54×"
+          },
+          "cash_display": "¥1,903,635.62",
+          "baseline_cash_display": "¥1,705,000.00"
+        },
+        {
+          "month": 30,
+          "cash_fen": 195911572,
+          "baseline_cash_fen": 175000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 12866053,
+            "den": 27000000,
+            "text": "0.48",
+            "display": "0.48×"
+          },
+          "cash_display": "¥1,959,115.72",
+          "baseline_cash_display": "¥1,750,000.00"
+        },
+        {
+          "month": 31,
+          "cash_fen": 201459582,
+          "baseline_cash_fen": 179500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 5564603,
+            "den": 13500000,
+            "text": "0.41",
+            "display": "0.41×"
+          },
+          "cash_display": "¥2,014,595.82",
+          "baseline_cash_display": "¥1,795,000.00"
+        },
+        {
+          "month": 32,
+          "cash_fen": 207007592,
+          "baseline_cash_fen": 184000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 37556299,
+            "den": 108000000,
+            "text": "0.35",
+            "display": "0.35×"
+          },
+          "cash_display": "¥2,070,075.92",
+          "baseline_cash_display": "¥1,840,000.00"
+        },
+        {
+          "month": 33,
+          "cash_fen": 212555602,
+          "baseline_cash_fen": 188500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 6116513,
+            "den": 21600000,
+            "text": "0.28",
+            "display": "0.28×"
+          },
+          "cash_display": "¥2,125,556.02",
+          "baseline_cash_display": "¥1,885,000.00"
+        },
+        {
+          "month": 34,
+          "cash_fen": 218103612,
+          "baseline_cash_fen": 193000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 531911,
+            "den": 2160000,
+            "text": "0.25",
+            "display": "0.25×"
+          },
+          "cash_display": "¥2,181,036.12",
+          "baseline_cash_display": "¥1,930,000.00"
+        },
+        {
+          "month": 35,
+          "cash_fen": 228151622,
+          "baseline_cash_fen": 202000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 265199,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 8031727,
+            "den": 36000000,
+            "text": "0.22",
+            "display": "0.22×"
+          },
+          "cash_display": "¥2,281,516.22",
+          "baseline_cash_display": "¥2,020,000.00"
+        },
+        {
+          "month": 36,
+          "cash_fen": 238199632,
+          "baseline_cash_fen": 211000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 265199,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 1438759,
+            "den": 7200000,
+            "text": "0.20",
+            "display": "0.20×"
+          },
+          "cash_display": "¥2,381,996.32",
+          "baseline_cash_display": "¥2,110,000.00"
+        },
+        {
+          "month": 37,
+          "cash_fen": 248247642,
+          "baseline_cash_fen": 220000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 265199,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 705707,
+            "den": 4000000,
+            "text": "0.18",
+            "display": "0.18×"
+          },
+          "cash_display": "¥2,482,476.42",
+          "baseline_cash_display": "¥2,200,000.00"
+        },
+        {
+          "month": 38,
+          "cash_fen": 258295652,
+          "baseline_cash_fen": 229000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 265199,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 825661,
+            "den": 5400000,
+            "text": "0.15",
+            "display": "0.15×"
+          },
+          "cash_display": "¥2,582,956.52",
+          "baseline_cash_display": "¥2,290,000.00"
+        },
+        {
+          "month": 39,
+          "cash_fen": 268343659,
+          "baseline_cash_fen": 238000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 2651993,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 13958701,
+            "den": 108000000,
+            "text": "0.13",
+            "display": "0.13×"
+          },
+          "cash_display": "¥2,683,436.59",
+          "baseline_cash_display": "¥2,380,000.00"
+        },
+        {
+          "month": 40,
+          "cash_fen": 279601310,
+          "baseline_cash_fen": 247000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1575013,
+            "den": 13500000,
+            "text": "0.12",
+            "display": "0.12×"
+          },
+          "cash_display": "¥2,796,013.10",
+          "baseline_cash_display": "¥2,470,000.00"
+        },
+        {
+          "month": 41,
+          "cash_fen": 290858961,
+          "baseline_cash_fen": 256000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 936113,
+            "den": 9000000,
+            "text": "0.10",
+            "display": "0.10×"
+          },
+          "cash_display": "¥2,908,589.61",
+          "baseline_cash_display": "¥2,560,000.00"
+        },
+        {
+          "month": 42,
+          "cash_fen": 302116612,
+          "baseline_cash_fen": 265000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 9858407,
+            "den": 108000000,
+            "text": "0.09",
+            "display": "0.09×"
+          },
+          "cash_display": "¥3,021,166.12",
+          "baseline_cash_display": "¥2,650,000.00"
+        },
+        {
+          "month": 43,
+          "cash_fen": 313374263,
+          "baseline_cash_fen": 274000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1059401,
+            "den": 13500000,
+            "text": "0.08",
+            "display": "0.08×"
+          },
+          "cash_display": "¥3,133,742.63",
+          "baseline_cash_display": "¥2,740,000.00"
+        },
+        {
+          "month": 44,
+          "cash_fen": 324631914,
+          "baseline_cash_fen": 283000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 708371,
+            "den": 10800000,
+            "text": "0.07",
+            "display": "0.07×"
+          },
+          "cash_display": "¥3,246,319.14",
+          "baseline_cash_display": "¥2,830,000.00"
+        },
+        {
+          "month": 45,
+          "cash_fen": 335889565,
+          "baseline_cash_fen": 292000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1894621,
+            "den": 36000000,
+            "text": "0.05",
+            "display": "0.05×"
+          },
+          "cash_display": "¥3,358,895.65",
+          "baseline_cash_display": "¥2,920,000.00"
+        },
+        {
+          "month": 46,
+          "cash_fen": 347147216,
+          "baseline_cash_fen": 301000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 4275617,
+            "den": 108000000,
+            "text": "0.04",
+            "display": "0.04×"
+          },
+          "cash_display": "¥3,471,472.16",
+          "baseline_cash_display": "¥3,010,000.00"
+        },
+        {
+          "month": 47,
+          "cash_fen": 358404867,
+          "baseline_cash_fen": 310000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 52943,
+            "den": 2000000,
+            "text": "0.03",
+            "display": "0.03×"
+          },
+          "cash_display": "¥3,584,048.67",
+          "baseline_cash_display": "¥3,100,000.00"
+        },
+        {
+          "month": 48,
+          "cash_fen": 369662518,
+          "baseline_cash_fen": 319000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 53101,
+            "den": 4000000,
+            "text": "0.01",
+            "display": "0.01×"
+          },
+          "cash_display": "¥3,696,625.18",
+          "baseline_cash_display": "¥3,190,000.00"
+        },
+        {
+          "month": 49,
+          "cash_fen": 380920189,
+          "baseline_cash_fen": 328000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442329,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥3,809,201.89",
+          "baseline_cash_display": "¥3,280,000.00"
+        },
+        {
+          "month": 50,
+          "cash_fen": 393620189,
+          "baseline_cash_fen": 337000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥3,936,201.89",
+          "baseline_cash_display": "¥3,370,000.00"
+        },
+        {
+          "month": 51,
+          "cash_fen": 406320189,
+          "baseline_cash_fen": 346000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,063,201.89",
+          "baseline_cash_display": "¥3,460,000.00"
+        },
+        {
+          "month": 52,
+          "cash_fen": 419020189,
+          "baseline_cash_fen": 355000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,190,201.89",
+          "baseline_cash_display": "¥3,550,000.00"
+        },
+        {
+          "month": 53,
+          "cash_fen": 431720189,
+          "baseline_cash_fen": 364000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,317,201.89",
+          "baseline_cash_display": "¥3,640,000.00"
+        },
+        {
+          "month": 54,
+          "cash_fen": 444420189,
+          "baseline_cash_fen": 373000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,444,201.89",
+          "baseline_cash_display": "¥3,730,000.00"
+        },
+        {
+          "month": 55,
+          "cash_fen": 457120189,
+          "baseline_cash_fen": 382000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,571,201.89",
+          "baseline_cash_display": "¥3,820,000.00"
+        },
+        {
+          "month": 56,
+          "cash_fen": 469820189,
+          "baseline_cash_fen": 391000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,698,201.89",
+          "baseline_cash_display": "¥3,910,000.00"
+        },
+        {
+          "month": 57,
+          "cash_fen": 482520189,
+          "baseline_cash_fen": 400000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,825,201.89",
+          "baseline_cash_display": "¥4,000,000.00"
+        },
+        {
+          "month": 58,
+          "cash_fen": 495220189,
+          "baseline_cash_fen": 409000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,952,201.89",
+          "baseline_cash_display": "¥4,090,000.00"
+        },
+        {
+          "month": 59,
+          "cash_fen": 507920189,
+          "baseline_cash_fen": 418000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥5,079,201.89",
+          "baseline_cash_display": "¥4,180,000.00"
+        },
+        {
+          "month": 60,
+          "cash_fen": 520620189,
+          "baseline_cash_fen": 427000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥5,206,201.89",
+          "baseline_cash_display": "¥4,270,000.00"
+        }
+      ],
+      "text": "Die-cutting line now, with the Equipment lease (¥14,423.49 a month); Packing robot 3 months later, with the Equipment term loan (¥12,096.44 a month). NPV ¥711,412.50; lowest headroom ¥306,633.12 in month 4.",
+      "npv_display": "¥711,412.50",
+      "financing_charges_display": "¥127,798.11",
+      "lowest_headroom_display": "¥306,633.12"
+    },
+    {
+      "rank": 4,
+      "choices": [
+        {
+          "project_id": "line",
+          "label": "Die-cutting line",
+          "included": true,
+          "start_offset_months": 3,
+          "option": "FAC-ETL",
+          "option_label": "Equipment term loan",
+          "first_payment_day": 110,
+          "principal_fen": 60000000,
+          "monthly_payment_fen": 1814462,
+          "principal_display": "¥600,000.00",
+          "monthly_payment_display": "¥18,144.62"
+        },
+        {
+          "project_id": "robot",
+          "label": "Packing robot",
+          "included": true,
+          "start_offset_months": 0,
+          "option": "FAC-LEASE",
+          "option_label": "Equipment lease",
+          "first_payment_day": 0,
+          "principal_fen": 40000000,
+          "monthly_payment_fen": 961566,
+          "principal_display": "¥400,000.00",
+          "monthly_payment_display": "¥9,615.66"
+        }
+      ],
+      "npv_fen": 71035224,
+      "financing_charges_fen": 11475768,
+      "lowest_headroom_fen": 14500000,
+      "lowest_month": 1,
+      "admissible": true,
+      "first_failure": null,
+      "months": [
+        {
+          "month": 1,
+          "cash_fen": 44500000,
+          "baseline_cash_fen": 44500000,
+          "dscr": {
+            "num": 2,
+            "den": 1,
+            "text": "2.00",
+            "display": "2.00×"
+          },
+          "leverage": {
+            "num": 371,
+            "den": 216,
+            "text": "1.72",
+            "display": "1.72×"
+          },
+          "cash_display": "¥445,000.00",
+          "baseline_cash_display": "¥445,000.00"
+        },
+        {
+          "month": 2,
+          "cash_fen": 48038434,
+          "baseline_cash_fen": 49000000,
+          "dscr": {
+            "num": 1500000,
+            "den": 910261,
+            "text": "1.65",
+            "display": "1.65×"
+          },
+          "leverage": {
+            "num": 90139217,
+            "den": 54000000,
+            "text": "1.67",
+            "display": "1.67×"
+          },
+          "cash_display": "¥480,384.34",
+          "baseline_cash_display": "¥490,000.00"
+        },
+        {
+          "month": 3,
+          "cash_fen": 51576868,
+          "baseline_cash_fen": 53500000,
+          "dscr": {
+            "num": 1500000,
+            "den": 910261,
+            "text": "1.65",
+            "display": "1.65×"
+          },
+          "leverage": {
+            "num": 175052539,
+            "den": 108000000,
+            "text": "1.62",
+            "display": "1.62×"
+          },
+          "cash_display": "¥515,768.68",
+          "baseline_cash_display": "¥535,000.00"
+        },
+        {
+          "month": 4,
+          "cash_fen": 98615302,
+          "baseline_cash_fen": 58000000,
+          "dscr": {
+            "num": 1750000,
+            "den": 910261,
+            "text": "1.92",
+            "display": "1.92×"
+          },
+          "leverage": {
+            "num": 14363893,
+            "den": 6750000,
+            "text": "2.13",
+            "display": "2.13×"
+          },
+          "cash_display": "¥986,153.02",
+          "baseline_cash_display": "¥580,000.00"
+        },
+        {
+          "month": 5,
+          "cash_fen": 101839274,
+          "baseline_cash_fen": 62500000,
+          "dscr": {
+            "num": 2625000,
+            "den": 1819007,
+            "text": "1.44",
+            "display": "1.44×"
+          },
+          "leverage": {
+            "num": 111526597,
+            "den": 54000000,
+            "text": "2.07",
+            "display": "2.07×"
+          },
+          "cash_display": "¥1,018,392.74",
+          "baseline_cash_display": "¥625,000.00"
+        },
+        {
+          "month": 6,
+          "cash_fen": 105063246,
+          "baseline_cash_fen": 67000000,
+          "dscr": {
+            "num": 2625000,
+            "den": 1819007,
+            "text": "1.44",
+            "display": "1.44×"
+          },
+          "leverage": {
+            "num": 216272531,
+            "den": 108000000,
+            "text": "2.00",
+            "display": "2.00×"
+          },
+          "cash_display": "¥1,050,632.46",
+          "baseline_cash_display": "¥670,000.00"
+        },
+        {
+          "month": 7,
+          "cash_fen": 74487218,
+          "baseline_cash_fen": 71500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 2618503,
+            "den": 1350000,
+            "text": "1.94",
+            "display": "1.94×"
+          },
+          "cash_display": "¥744,872.18",
+          "baseline_cash_display": "¥715,000.00"
+        },
+        {
+          "month": 8,
+          "cash_fen": 79911190,
+          "baseline_cash_fen": 76000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 10133813,
+            "den": 5400000,
+            "text": "1.88",
+            "display": "1.88×"
+          },
+          "cash_display": "¥799,111.90",
+          "baseline_cash_display": "¥760,000.00"
+        },
+        {
+          "month": 9,
+          "cash_fen": 85335162,
+          "baseline_cash_fen": 80500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 195860531,
+            "den": 108000000,
+            "text": "1.81",
+            "display": "1.81×"
+          },
+          "cash_display": "¥853,351.62",
+          "baseline_cash_display": "¥805,000.00"
+        },
+        {
+          "month": 10,
+          "cash_fen": 90759134,
+          "baseline_cash_fen": 85000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 5907281,
+            "den": 3375000,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "cash_display": "¥907,591.34",
+          "baseline_cash_display": "¥850,000.00"
+        },
+        {
+          "month": 11,
+          "cash_fen": 96183106,
+          "baseline_cash_fen": 89500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 30365597,
+            "den": 18000000,
+            "text": "1.69",
+            "display": "1.69×"
+          },
+          "cash_display": "¥961,831.06",
+          "baseline_cash_display": "¥895,000.00"
+        },
+        {
+          "month": 12,
+          "cash_fen": 101607078,
+          "baseline_cash_fen": 94000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 6494157,
+            "den": 4000000,
+            "text": "1.62",
+            "display": "1.62×"
+          },
+          "cash_display": "¥1,016,070.78",
+          "baseline_cash_display": "¥940,000.00"
+        },
+        {
+          "month": 13,
+          "cash_fen": 107031050,
+          "baseline_cash_fen": 98500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 9359939,
+            "den": 6000000,
+            "text": "1.56",
+            "display": "1.56×"
+          },
+          "cash_display": "¥1,070,310.50",
+          "baseline_cash_display": "¥985,000.00"
+        },
+        {
+          "month": 14,
+          "cash_fen": 112455022,
+          "baseline_cash_fen": 103000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 13466959,
+            "den": 9000000,
+            "text": "1.50",
+            "display": "1.50×"
+          },
+          "cash_display": "¥1,124,550.22",
+          "baseline_cash_display": "¥1,030,000.00"
+        },
+        {
+          "month": 15,
+          "cash_fen": 117878994,
+          "baseline_cash_fen": 107500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 30943199,
+            "den": 21600000,
+            "text": "1.43",
+            "display": "1.43×"
+          },
+          "cash_display": "¥1,178,789.94",
+          "baseline_cash_display": "¥1,075,000.00"
+        },
+        {
+          "month": 16,
+          "cash_fen": 123302966,
+          "baseline_cash_fen": 112000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 147816301,
+            "den": 108000000,
+            "text": "1.37",
+            "display": "1.37×"
+          },
+          "cash_display": "¥1,233,029.66",
+          "baseline_cash_display": "¥1,120,000.00"
+        },
+        {
+          "month": 17,
+          "cash_fen": 128726938,
+          "baseline_cash_fen": 116500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 70452181,
+            "den": 54000000,
+            "text": "1.30",
+            "display": "1.30×"
+          },
+          "cash_display": "¥1,287,269.38",
+          "baseline_cash_display": "¥1,165,000.00"
+        },
+        {
+          "month": 18,
+          "cash_fen": 128150910,
+          "baseline_cash_fen": 121000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 26796023,
+            "den": 21600000,
+            "text": "1.24",
+            "display": "1.24×"
+          },
+          "cash_display": "¥1,281,509.10",
+          "baseline_cash_display": "¥1,210,000.00"
+        },
+        {
+          "month": 19,
+          "cash_fen": 133574882,
+          "baseline_cash_fen": 125500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 1764493,
+            "den": 1500000,
+            "text": "1.18",
+            "display": "1.18×"
+          },
+          "cash_display": "¥1,335,748.82",
+          "baseline_cash_display": "¥1,255,000.00"
+        },
+        {
+          "month": 20,
+          "cash_fen": 138998854,
+          "baseline_cash_fen": 130000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 120094441,
+            "den": 108000000,
+            "text": "1.11",
+            "display": "1.11×"
+          },
+          "cash_display": "¥1,389,988.54",
+          "baseline_cash_display": "¥1,300,000.00"
+        },
+        {
+          "month": 21,
+          "cash_fen": 144422826,
+          "baseline_cash_fen": 134500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 18855481,
+            "den": 18000000,
+            "text": "1.05",
+            "display": "1.05×"
+          },
+          "cash_display": "¥1,444,228.26",
+          "baseline_cash_display": "¥1,345,000.00"
+        },
+        {
+          "month": 22,
+          "cash_fen": 149846798,
+          "baseline_cash_fen": 139000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 7077251,
+            "den": 7200000,
+            "text": "0.98",
+            "display": "0.98×"
+          },
+          "cash_display": "¥1,498,467.98",
+          "baseline_cash_display": "¥1,390,000.00"
+        },
+        {
+          "month": 23,
+          "cash_fen": 155270770,
+          "baseline_cash_fen": 143500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 19834403,
+            "den": 21600000,
+            "text": "0.92",
+            "display": "0.92×"
+          },
+          "cash_display": "¥1,552,707.70",
+          "baseline_cash_display": "¥1,435,000.00"
+        },
+        {
+          "month": 24,
+          "cash_fen": 160694742,
+          "baseline_cash_fen": 148000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 92172569,
+            "den": 108000000,
+            "text": "0.85",
+            "display": "0.85×"
+          },
+          "cash_display": "¥1,606,947.42",
+          "baseline_cash_display": "¥1,480,000.00"
+        },
+        {
+          "month": 25,
+          "cash_fen": 166118714,
+          "baseline_cash_fen": 152500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 28386787,
+            "den": 36000000,
+            "text": "0.79",
+            "display": "0.79×"
+          },
+          "cash_display": "¥1,661,187.14",
+          "baseline_cash_display": "¥1,525,000.00"
+        },
+        {
+          "month": 26,
+          "cash_fen": 171542686,
+          "baseline_cash_fen": 157000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 3125413,
+            "den": 4320000,
+            "text": "0.72",
+            "display": "0.72×"
+          },
+          "cash_display": "¥1,715,426.86",
+          "baseline_cash_display": "¥1,570,000.00"
+        },
+        {
+          "month": 27,
+          "cash_fen": 176966658,
+          "baseline_cash_fen": 161500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 5924783,
+            "den": 9000000,
+            "text": "0.66",
+            "display": "0.66×"
+          },
+          "cash_display": "¥1,769,666.58",
+          "baseline_cash_display": "¥1,615,000.00"
+        },
+        {
+          "month": 28,
+          "cash_fen": 182390630,
+          "baseline_cash_fen": 166000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 32023253,
+            "den": 54000000,
+            "text": "0.59",
+            "display": "0.59×"
+          },
+          "cash_display": "¥1,823,906.30",
+          "baseline_cash_display": "¥1,660,000.00"
+        },
+        {
+          "month": 29,
+          "cash_fen": 187814602,
+          "baseline_cash_fen": 170500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 4748549,
+            "den": 9000000,
+            "text": "0.53",
+            "display": "0.53×"
+          },
+          "cash_display": "¥1,878,146.02",
+          "baseline_cash_display": "¥1,705,000.00"
+        },
+        {
+          "month": 30,
+          "cash_fen": 193238574,
+          "baseline_cash_fen": 175000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 24952787,
+            "den": 54000000,
+            "text": "0.46",
+            "display": "0.46×"
+          },
+          "cash_display": "¥1,932,385.74",
+          "baseline_cash_display": "¥1,750,000.00"
+        },
+        {
+          "month": 31,
+          "cash_fen": 198662546,
+          "baseline_cash_fen": 179500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 10703849,
+            "den": 27000000,
+            "text": "0.40",
+            "display": "0.40×"
+          },
+          "cash_display": "¥1,986,625.46",
+          "baseline_cash_display": "¥1,795,000.00"
+        },
+        {
+          "month": 32,
+          "cash_fen": 204086518,
+          "baseline_cash_fen": 184000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 17855993,
+            "den": 54000000,
+            "text": "0.33",
+            "display": "0.33×"
+          },
+          "cash_display": "¥2,040,865.18",
+          "baseline_cash_display": "¥1,840,000.00"
+        },
+        {
+          "month": 33,
+          "cash_fen": 209510490,
+          "baseline_cash_fen": 188500000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 7148819,
+            "den": 27000000,
+            "text": "0.26",
+            "display": "0.26×"
+          },
+          "cash_display": "¥2,095,104.90",
+          "baseline_cash_display": "¥1,885,000.00"
+        },
+        {
+          "month": 34,
+          "cash_fen": 214934462,
+          "baseline_cash_fen": 193000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 1819007,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "leverage": {
+            "num": 6116299,
+            "den": 27000000,
+            "text": "0.23",
+            "display": "0.23×"
+          },
+          "cash_display": "¥2,149,344.62",
+          "baseline_cash_display": "¥1,930,000.00"
+        },
+        {
+          "month": 35,
+          "cash_fen": 224858434,
+          "baseline_cash_fen": 202000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 694007,
+            "text": "4.57",
+            "display": "4.57×"
+          },
+          "leverage": {
+            "num": 21821677,
+            "den": 108000000,
+            "text": "0.20",
+            "display": "0.20×"
+          },
+          "cash_display": "¥2,248,584.34",
+          "baseline_cash_display": "¥2,020,000.00"
+        },
+        {
+          "month": 36,
+          "cash_fen": 234782406,
+          "baseline_cash_fen": 211000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 694007,
+            "text": "4.57",
+            "display": "4.57×"
+          },
+          "leverage": {
+            "num": 383293,
+            "den": 2160000,
+            "text": "0.18",
+            "display": "0.18×"
+          },
+          "cash_display": "¥2,347,824.06",
+          "baseline_cash_display": "¥2,110,000.00"
+        },
+        {
+          "month": 37,
+          "cash_fen": 244706378,
+          "baseline_cash_fen": 220000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 694007,
+            "text": "4.57",
+            "display": "4.57×"
+          },
+          "leverage": {
+            "num": 4123511,
+            "den": 27000000,
+            "text": "0.15",
+            "display": "0.15×"
+          },
+          "cash_display": "¥2,447,063.78",
+          "baseline_cash_display": "¥2,200,000.00"
+        },
+        {
+          "month": 38,
+          "cash_fen": 254630350,
+          "baseline_cash_fen": 229000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 694007,
+            "text": "4.57",
+            "display": "4.57×"
+          },
+          "leverage": {
+            "num": 1380979,
+            "den": 10800000,
+            "text": "0.13",
+            "display": "0.13×"
+          },
+          "cash_display": "¥2,546,303.50",
+          "baseline_cash_display": "¥2,290,000.00"
+        },
+        {
+          "month": 39,
+          "cash_fen": 264554322,
+          "baseline_cash_fen": 238000000,
+          "dscr": {
+            "num": 3175000,
+            "den": 694007,
+            "text": "4.57",
+            "display": "4.57×"
+          },
+          "leverage": {
+            "num": 1388977,
+            "den": 13500000,
+            "text": "0.10",
+            "display": "0.10×"
+          },
+          "cash_display": "¥2,645,543.22",
+          "baseline_cash_display": "¥2,380,000.00"
+        },
+        {
+          "month": 40,
+          "cash_fen": 274478312,
+          "baseline_cash_fen": 247000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 277601,
+            "text": "4.57",
+            "display": "4.57×"
+          },
+          "leverage": {
+            "num": 933341,
+            "den": 12000000,
+            "text": "0.08",
+            "display": "0.08×"
+          },
+          "cash_display": "¥2,744,783.12",
+          "baseline_cash_display": "¥2,470,000.00"
+        },
+        {
+          "month": 41,
+          "cash_fen": 286216746,
+          "baseline_cash_fen": 256000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 2496301,
+            "den": 36000000,
+            "text": "0.07",
+            "display": "0.07×"
+          },
+          "cash_display": "¥2,862,167.46",
+          "baseline_cash_display": "¥2,560,000.00"
+        },
+        {
+          "month": 42,
+          "cash_fen": 297955180,
+          "baseline_cash_fen": 265000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 657227,
+            "den": 10800000,
+            "text": "0.06",
+            "display": "0.06×"
+          },
+          "cash_display": "¥2,979,551.80",
+          "baseline_cash_display": "¥2,650,000.00"
+        },
+        {
+          "month": 43,
+          "cash_fen": 309693614,
+          "baseline_cash_fen": 274000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 2825069,
+            "den": 54000000,
+            "text": "0.05",
+            "display": "0.05×"
+          },
+          "cash_display": "¥3,096,936.14",
+          "baseline_cash_display": "¥2,740,000.00"
+        },
+        {
+          "month": 44,
+          "cash_fen": 321432048,
+          "baseline_cash_fen": 283000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 4722473,
+            "den": 108000000,
+            "text": "0.04",
+            "display": "0.04×"
+          },
+          "cash_display": "¥3,214,320.48",
+          "baseline_cash_display": "¥2,830,000.00"
+        },
+        {
+          "month": 45,
+          "cash_fen": 333170482,
+          "baseline_cash_fen": 292000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 1894621,
+            "den": 54000000,
+            "text": "0.04",
+            "display": "0.04×"
+          },
+          "cash_display": "¥3,331,704.82",
+          "baseline_cash_display": "¥2,920,000.00"
+        },
+        {
+          "month": 46,
+          "cash_fen": 344908916,
+          "baseline_cash_fen": 301000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 950137,
+            "den": 36000000,
+            "text": "0.03",
+            "display": "0.03×"
+          },
+          "cash_display": "¥3,449,089.16",
+          "baseline_cash_display": "¥3,010,000.00"
+        },
+        {
+          "month": 47,
+          "cash_fen": 356647350,
+          "baseline_cash_fen": 310000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 1905947,
+            "den": 108000000,
+            "text": "0.02",
+            "display": "0.02×"
+          },
+          "cash_display": "¥3,566,473.50",
+          "baseline_cash_display": "¥3,100,000.00"
+        },
+        {
+          "month": 48,
+          "cash_fen": 368385784,
+          "baseline_cash_fen": 319000000,
+          "dscr": {
+            "num": 6350000,
+            "den": 480783,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 955817,
+            "den": 108000000,
+            "text": "0.01",
+            "display": "0.01×"
+          },
+          "cash_display": "¥3,683,857.84",
+          "baseline_cash_display": "¥3,190,000.00"
+        },
+        {
+          "month": 49,
+          "cash_fen": 380124232,
+          "baseline_cash_fen": 328000000,
+          "dscr": {
+            "num": 793750,
+            "den": 60097,
+            "text": "13.21",
+            "display": "13.21×"
+          },
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥3,801,242.32",
+          "baseline_cash_display": "¥3,280,000.00"
+        },
+        {
+          "month": 50,
+          "cash_fen": 392824232,
+          "baseline_cash_fen": 337000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥3,928,242.32",
+          "baseline_cash_display": "¥3,370,000.00"
+        },
+        {
+          "month": 51,
+          "cash_fen": 405524232,
+          "baseline_cash_fen": 346000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,055,242.32",
+          "baseline_cash_display": "¥3,460,000.00"
+        },
+        {
+          "month": 52,
+          "cash_fen": 418224232,
+          "baseline_cash_fen": 355000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,182,242.32",
+          "baseline_cash_display": "¥3,550,000.00"
+        },
+        {
+          "month": 53,
+          "cash_fen": 430924232,
+          "baseline_cash_fen": 364000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,309,242.32",
+          "baseline_cash_display": "¥3,640,000.00"
+        },
+        {
+          "month": 54,
+          "cash_fen": 443624232,
+          "baseline_cash_fen": 373000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,436,242.32",
+          "baseline_cash_display": "¥3,730,000.00"
+        },
+        {
+          "month": 55,
+          "cash_fen": 456324232,
+          "baseline_cash_fen": 382000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,563,242.32",
+          "baseline_cash_display": "¥3,820,000.00"
+        },
+        {
+          "month": 56,
+          "cash_fen": 469024232,
+          "baseline_cash_fen": 391000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,690,242.32",
+          "baseline_cash_display": "¥3,910,000.00"
+        },
+        {
+          "month": 57,
+          "cash_fen": 481724232,
+          "baseline_cash_fen": 400000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,817,242.32",
+          "baseline_cash_display": "¥4,000,000.00"
+        },
+        {
+          "month": 58,
+          "cash_fen": 494424232,
+          "baseline_cash_fen": 409000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,944,242.32",
+          "baseline_cash_display": "¥4,090,000.00"
+        },
+        {
+          "month": 59,
+          "cash_fen": 507124232,
+          "baseline_cash_fen": 418000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥5,071,242.32",
+          "baseline_cash_display": "¥4,180,000.00"
+        },
+        {
+          "month": 60,
+          "cash_fen": 519824232,
+          "baseline_cash_fen": 427000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥5,198,242.32",
+          "baseline_cash_display": "¥4,270,000.00"
+        }
+      ],
+      "text": "Die-cutting line 3 months later, with the Equipment term loan (¥18,144.62 a month); Packing robot now, with the Equipment lease (¥9,615.66 a month). NPV ¥710,352.24; lowest headroom ¥145,000.00 in month 1.",
+      "npv_display": "¥710,352.24",
+      "financing_charges_display": "¥114,757.68",
+      "lowest_headroom_display": "¥145,000.00"
+    },
+    {
+      "rank": 5,
+      "choices": [
+        {
+          "project_id": "line",
+          "label": "Die-cutting line",
+          "included": true,
+          "start_offset_months": 3,
+          "option": "FAC-LEASE",
+          "option_label": "Equipment lease",
+          "first_payment_day": 110,
+          "principal_fen": 60000000,
+          "monthly_payment_fen": 1442349,
+          "principal_display": "¥600,000.00",
+          "monthly_payment_display": "¥14,423.49"
+        },
+        {
+          "project_id": "robot",
+          "label": "Packing robot",
+          "included": true,
+          "start_offset_months": 0,
+          "option": "FAC-ETL",
+          "option_label": "Equipment term loan",
+          "first_payment_day": 0,
+          "principal_fen": 40000000,
+          "monthly_payment_fen": 1209644,
+          "principal_display": "¥400,000.00",
+          "monthly_payment_display": "¥12,096.44"
+        }
+      ],
+      "npv_fen": 70804921,
+      "financing_charges_fen": 12779811,
+      "lowest_headroom_fen": 14500000,
+      "lowest_month": 1,
+      "admissible": true,
+      "first_failure": null,
+      "months": [
+        {
+          "month": 1,
+          "cash_fen": 44500000,
+          "baseline_cash_fen": 44500000,
+          "dscr": {
+            "num": 2,
+            "den": 1,
+            "text": "2.00",
+            "display": "2.00×"
+          },
+          "leverage": {
+            "num": 371,
+            "den": 216,
+            "text": "1.72",
+            "display": "1.72×"
+          },
+          "cash_display": "¥445,000.00",
+          "baseline_cash_display": "¥445,000.00"
+        },
+        {
+          "month": 2,
+          "cash_fen": 47790359,
+          "baseline_cash_fen": 49000000,
+          "dscr": {
+            "num": 9000000,
+            "den": 5709641,
+            "text": "1.58",
+            "display": "1.58×"
+          },
+          "leverage": {
+            "num": 29996171,
+            "den": 18000000,
+            "text": "1.67",
+            "display": "1.67×"
+          },
+          "cash_display": "¥477,903.59",
+          "baseline_cash_display": "¥490,000.00"
+        },
+        {
+          "month": 3,
+          "cash_fen": 51080718,
+          "baseline_cash_fen": 53500000,
+          "dscr": {
+            "num": 9000000,
+            "den": 5709641,
+            "text": "1.58",
+            "display": "1.58×"
+          },
+          "leverage": {
+            "num": 87224639,
+            "den": 54000000,
+            "text": "1.62",
+            "display": "1.62×"
+          },
+          "cash_display": "¥510,807.18",
+          "baseline_cash_display": "¥535,000.00"
+        },
+        {
+          "month": 4,
+          "cash_fen": 97871077,
+          "baseline_cash_fen": 58000000,
+          "dscr": {
+            "num": 1500000,
+            "den": 815663,
+            "text": "1.84",
+            "display": "1.84×"
+          },
+          "leverage": {
+            "num": 38152789,
+            "den": 18000000,
+            "text": "2.12",
+            "display": "2.12×"
+          },
+          "cash_display": "¥978,710.77",
+          "baseline_cash_display": "¥580,000.00"
+        },
+        {
+          "month": 5,
+          "cash_fen": 101219087,
+          "baseline_cash_fen": 62500000,
+          "dscr": {
+            "num": 1050000,
+            "den": 715199,
+            "text": "1.47",
+            "display": "1.47×"
+          },
+          "leverage": {
+            "num": 111148511,
+            "den": 54000000,
+            "text": "2.06",
+            "display": "2.06×"
+          },
+          "cash_display": "¥1,012,190.87",
+          "baseline_cash_display": "¥625,000.00"
+        },
+        {
+          "month": 6,
+          "cash_fen": 104567097,
+          "baseline_cash_fen": 67000000,
+          "dscr": {
+            "num": 1050000,
+            "den": 715199,
+            "text": "1.47",
+            "display": "1.47×"
+          },
+          "leverage": {
+            "num": 8626639,
+            "den": 4320000,
+            "text": "2.00",
+            "display": "2.00×"
+          },
+          "cash_display": "¥1,045,670.97",
+          "baseline_cash_display": "¥670,000.00"
+        },
+        {
+          "month": 7,
+          "cash_fen": 74115107,
+          "baseline_cash_fen": 71500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 209023531,
+            "den": 108000000,
+            "text": "1.94",
+            "display": "1.94×"
+          },
+          "cash_display": "¥741,151.07",
+          "baseline_cash_display": "¥715,000.00"
+        },
+        {
+          "month": 8,
+          "cash_fen": 79663117,
+          "baseline_cash_fen": 76000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 67456543,
+            "den": 36000000,
+            "text": "1.87",
+            "display": "1.87×"
+          },
+          "cash_display": "¥796,631.17",
+          "baseline_cash_display": "¥760,000.00"
+        },
+        {
+          "month": 9,
+          "cash_fen": 85211127,
+          "baseline_cash_fen": 80500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 97852103,
+            "den": 54000000,
+            "text": "1.81",
+            "display": "1.81×"
+          },
+          "cash_display": "¥852,111.27",
+          "baseline_cash_display": "¥805,000.00"
+        },
+        {
+          "month": 10,
+          "cash_fen": 90759137,
+          "baseline_cash_fen": 85000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 59071,
+            "den": 33750,
+            "text": "1.75",
+            "display": "1.75×"
+          },
+          "cash_display": "¥907,591.37",
+          "baseline_cash_display": "¥850,000.00"
+        },
+        {
+          "month": 11,
+          "cash_fen": 96307147,
+          "baseline_cash_fen": 89500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 182338547,
+            "den": 108000000,
+            "text": "1.69",
+            "display": "1.69×"
+          },
+          "cash_display": "¥963,071.47",
+          "baseline_cash_display": "¥895,000.00"
+        },
+        {
+          "month": 12,
+          "cash_fen": 101855157,
+          "baseline_cash_fen": 94000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 35127637,
+            "den": 21600000,
+            "text": "1.63",
+            "display": "1.63×"
+          },
+          "cash_display": "¥1,018,551.57",
+          "baseline_cash_display": "¥940,000.00"
+        },
+        {
+          "month": 13,
+          "cash_fen": 107403167,
+          "baseline_cash_fen": 98500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 18769561,
+            "den": 12000000,
+            "text": "1.56",
+            "display": "1.56×"
+          },
+          "cash_display": "¥1,074,031.67",
+          "baseline_cash_display": "¥985,000.00"
+        },
+        {
+          "month": 14,
+          "cash_fen": 112951177,
+          "baseline_cash_fen": 103000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 18022453,
+            "den": 12000000,
+            "text": "1.50",
+            "display": "1.50×"
+          },
+          "cash_display": "¥1,129,511.77",
+          "baseline_cash_display": "¥1,030,000.00"
+        },
+        {
+          "month": 15,
+          "cash_fen": 118499187,
+          "baseline_cash_fen": 107500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 77733101,
+            "den": 54000000,
+            "text": "1.44",
+            "display": "1.44×"
+          },
+          "cash_display": "¥1,184,991.87",
+          "baseline_cash_display": "¥1,075,000.00"
+        },
+        {
+          "month": 16,
+          "cash_fen": 124047197,
+          "baseline_cash_fen": 112000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 74359181,
+            "den": 54000000,
+            "text": "1.38",
+            "display": "1.38×"
+          },
+          "cash_display": "¥1,240,471.97",
+          "baseline_cash_display": "¥1,120,000.00"
+        },
+        {
+          "month": 17,
+          "cash_fen": 129595207,
+          "baseline_cash_fen": 116500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 14195849,
+            "den": 10800000,
+            "text": "1.31",
+            "display": "1.31×"
+          },
+          "cash_display": "¥1,295,952.07",
+          "baseline_cash_display": "¥1,165,000.00"
+        },
+        {
+          "month": 18,
+          "cash_fen": 129143217,
+          "baseline_cash_fen": 121000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 22531087,
+            "den": 18000000,
+            "text": "1.25",
+            "display": "1.25×"
+          },
+          "cash_display": "¥1,291,432.17",
+          "baseline_cash_display": "¥1,210,000.00"
+        },
+        {
+          "month": 19,
+          "cash_fen": 134691227,
+          "baseline_cash_fen": 125500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 42800797,
+            "den": 36000000,
+            "text": "1.19",
+            "display": "1.19×"
+          },
+          "cash_display": "¥1,346,912.27",
+          "baseline_cash_display": "¥1,255,000.00"
+        },
+        {
+          "month": 20,
+          "cash_fen": 140239237,
+          "baseline_cash_fen": 130000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 2533459,
+            "den": 2250000,
+            "text": "1.13",
+            "display": "1.13×"
+          },
+          "cash_display": "¥1,402,392.37",
+          "baseline_cash_display": "¥1,300,000.00"
+        },
+        {
+          "month": 21,
+          "cash_fen": 145787247,
+          "baseline_cash_fen": 134500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 57398689,
+            "den": 54000000,
+            "text": "1.06",
+            "display": "1.06×"
+          },
+          "cash_display": "¥1,457,872.47",
+          "baseline_cash_display": "¥1,345,000.00"
+        },
+        {
+          "month": 22,
+          "cash_fen": 151335257,
+          "baseline_cash_fen": 139000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 53988181,
+            "den": 54000000,
+            "text": "1.00",
+            "display": "1.00×"
+          },
+          "cash_display": "¥1,513,352.57",
+          "baseline_cash_display": "¥1,390,000.00"
+        },
+        {
+          "month": 23,
+          "cash_fen": 156883267,
+          "baseline_cash_fen": 143500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 1873017,
+            "den": 2000000,
+            "text": "0.94",
+            "display": "0.94×"
+          },
+          "cash_display": "¥1,568,832.67",
+          "baseline_cash_display": "¥1,435,000.00"
+        },
+        {
+          "month": 24,
+          "cash_fen": 162431277,
+          "baseline_cash_fen": 148000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 5893561,
+            "den": 6750000,
+            "text": "0.87",
+            "display": "0.87×"
+          },
+          "cash_display": "¥1,624,312.77",
+          "baseline_cash_display": "¥1,480,000.00"
+        },
+        {
+          "month": 25,
+          "cash_fen": 167979287,
+          "baseline_cash_fen": 152500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 8743847,
+            "den": 10800000,
+            "text": "0.81",
+            "display": "0.81×"
+          },
+          "cash_display": "¥1,679,792.87",
+          "baseline_cash_display": "¥1,525,000.00"
+        },
+        {
+          "month": 26,
+          "cash_fen": 173527297,
+          "baseline_cash_fen": 157000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 26855777,
+            "den": 36000000,
+            "text": "0.75",
+            "display": "0.75×"
+          },
+          "cash_display": "¥1,735,272.97",
+          "baseline_cash_display": "¥1,570,000.00"
+        },
+        {
+          "month": 27,
+          "cash_fen": 179075307,
+          "baseline_cash_fen": 161500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 73683491,
+            "den": 108000000,
+            "text": "0.68",
+            "display": "0.68×"
+          },
+          "cash_display": "¥1,790,753.07",
+          "baseline_cash_display": "¥1,615,000.00"
+        },
+        {
+          "month": 28,
+          "cash_fen": 184623317,
+          "baseline_cash_fen": 166000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 208709,
+            "den": 337500,
+            "text": "0.62",
+            "display": "0.62×"
+          },
+          "cash_display": "¥1,846,233.17",
+          "baseline_cash_display": "¥1,660,000.00"
+        },
+        {
+          "month": 29,
+          "cash_fen": 190171327,
+          "baseline_cash_fen": 170500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 14969357,
+            "den": 27000000,
+            "text": "0.55",
+            "display": "0.55×"
+          },
+          "cash_display": "¥1,901,713.27",
+          "baseline_cash_display": "¥1,705,000.00"
+        },
+        {
+          "month": 30,
+          "cash_fen": 195719337,
+          "baseline_cash_fen": 175000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 26477533,
+            "den": 54000000,
+            "text": "0.49",
+            "display": "0.49×"
+          },
+          "cash_display": "¥1,957,193.37",
+          "baseline_cash_display": "¥1,750,000.00"
+        },
+        {
+          "month": 31,
+          "cash_fen": 201267347,
+          "baseline_cash_fen": 179500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 1840789,
+            "den": 4320000,
+            "text": "0.43",
+            "display": "0.43×"
+          },
+          "cash_display": "¥2,012,673.47",
+          "baseline_cash_display": "¥1,795,000.00"
+        },
+        {
+          "month": 32,
+          "cash_fen": 206815357,
+          "baseline_cash_fen": 184000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 39071333,
+            "den": 108000000,
+            "text": "0.36",
+            "display": "0.36×"
+          },
+          "cash_display": "¥2,068,153.57",
+          "baseline_cash_display": "¥1,840,000.00"
+        },
+        {
+          "month": 33,
+          "cash_fen": 212363367,
+          "baseline_cash_fen": 188500000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 16054909,
+            "den": 54000000,
+            "text": "0.30",
+            "display": "0.30×"
+          },
+          "cash_display": "¥2,123,633.67",
+          "baseline_cash_display": "¥1,885,000.00"
+        },
+        {
+          "month": 34,
+          "cash_fen": 217911377,
+          "baseline_cash_fen": 193000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 715199,
+            "text": "1.78",
+            "display": "1.78×"
+          },
+          "leverage": {
+            "num": 937837,
+            "den": 3600000,
+            "text": "0.26",
+            "display": "0.26×"
+          },
+          "cash_display": "¥2,179,113.77",
+          "baseline_cash_display": "¥1,930,000.00"
+        },
+        {
+          "month": 35,
+          "cash_fen": 227959387,
+          "baseline_cash_fen": 202000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 265199,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 25647137,
+            "den": 108000000,
+            "text": "0.24",
+            "display": "0.24×"
+          },
+          "cash_display": "¥2,279,593.87",
+          "baseline_cash_display": "¥2,020,000.00"
+        },
+        {
+          "month": 36,
+          "cash_fen": 238007397,
+          "baseline_cash_fen": 211000000,
+          "dscr": {
+            "num": 1270000,
+            "den": 265199,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 11572913,
+            "den": 54000000,
+            "text": "0.21",
+            "display": "0.21×"
+          },
+          "cash_display": "¥2,380,073.97",
+          "baseline_cash_display": "¥2,110,000.00"
+        },
+        {
+          "month": 37,
+          "cash_fen": 248055404,
+          "baseline_cash_fen": 220000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 2651993,
+            "text": "4.79",
+            "display": "4.79×"
+          },
+          "leverage": {
+            "num": 20631103,
+            "den": 108000000,
+            "text": "0.19",
+            "display": "0.19×"
+          },
+          "cash_display": "¥2,480,554.04",
+          "baseline_cash_display": "¥2,200,000.00"
+        },
+        {
+          "month": 38,
+          "cash_fen": 259313055,
+          "baseline_cash_fen": 229000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 19312541,
+            "den": 108000000,
+            "text": "0.18",
+            "display": "0.18×"
+          },
+          "cash_display": "¥2,593,130.55",
+          "baseline_cash_display": "¥2,290,000.00"
+        },
+        {
+          "month": 39,
+          "cash_fen": 270570706,
+          "baseline_cash_fen": 238000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 17986067,
+            "den": 108000000,
+            "text": "0.17",
+            "display": "0.17×"
+          },
+          "cash_display": "¥2,705,707.06",
+          "baseline_cash_display": "¥2,380,000.00"
+        },
+        {
+          "month": 40,
+          "cash_fen": 281828357,
+          "baseline_cash_fen": 247000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 8325817,
+            "den": 54000000,
+            "text": "0.15",
+            "display": "0.15×"
+          },
+          "cash_display": "¥2,818,283.57",
+          "baseline_cash_display": "¥2,470,000.00"
+        },
+        {
+          "month": 41,
+          "cash_fen": 293086008,
+          "baseline_cash_fen": 256000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1020613,
+            "den": 7200000,
+            "text": "0.14",
+            "display": "0.14×"
+          },
+          "cash_display": "¥2,930,860.08",
+          "baseline_cash_display": "¥2,560,000.00"
+        },
+        {
+          "month": 42,
+          "cash_fen": 304343659,
+          "baseline_cash_fen": 265000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 13958701,
+            "den": 108000000,
+            "text": "0.13",
+            "display": "0.13×"
+          },
+          "cash_display": "¥3,043,436.59",
+          "baseline_cash_display": "¥2,650,000.00"
+        },
+        {
+          "month": 43,
+          "cash_fen": 315601310,
+          "baseline_cash_fen": 274000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1575013,
+            "den": 13500000,
+            "text": "0.12",
+            "display": "0.12×"
+          },
+          "cash_display": "¥3,156,013.10",
+          "baseline_cash_display": "¥2,740,000.00"
+        },
+        {
+          "month": 44,
+          "cash_fen": 326858961,
+          "baseline_cash_fen": 283000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 936113,
+            "den": 9000000,
+            "text": "0.10",
+            "display": "0.10×"
+          },
+          "cash_display": "¥3,268,589.61",
+          "baseline_cash_display": "¥2,830,000.00"
+        },
+        {
+          "month": 45,
+          "cash_fen": 338116612,
+          "baseline_cash_fen": 292000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 9858407,
+            "den": 108000000,
+            "text": "0.09",
+            "display": "0.09×"
+          },
+          "cash_display": "¥3,381,166.12",
+          "baseline_cash_display": "¥2,920,000.00"
+        },
+        {
+          "month": 46,
+          "cash_fen": 349374263,
+          "baseline_cash_fen": 301000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1059401,
+            "den": 13500000,
+            "text": "0.08",
+            "display": "0.08×"
+          },
+          "cash_display": "¥3,493,742.63",
+          "baseline_cash_display": "¥3,010,000.00"
+        },
+        {
+          "month": 47,
+          "cash_fen": 360631914,
+          "baseline_cash_fen": 310000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 708371,
+            "den": 10800000,
+            "text": "0.07",
+            "display": "0.07×"
+          },
+          "cash_display": "¥3,606,319.14",
+          "baseline_cash_display": "¥3,100,000.00"
+        },
+        {
+          "month": 48,
+          "cash_fen": 371889565,
+          "baseline_cash_fen": 319000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 1894621,
+            "den": 36000000,
+            "text": "0.05",
+            "display": "0.05×"
+          },
+          "cash_display": "¥3,718,895.65",
+          "baseline_cash_display": "¥3,190,000.00"
+        },
+        {
+          "month": 49,
+          "cash_fen": 383147216,
+          "baseline_cash_fen": 328000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 4275617,
+            "den": 108000000,
+            "text": "0.04",
+            "display": "0.04×"
+          },
+          "cash_display": "¥3,831,472.16",
+          "baseline_cash_display": "¥3,280,000.00"
+        },
+        {
+          "month": 50,
+          "cash_fen": 394404867,
+          "baseline_cash_fen": 337000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 52943,
+            "den": 2000000,
+            "text": "0.03",
+            "display": "0.03×"
+          },
+          "cash_display": "¥3,944,048.67",
+          "baseline_cash_display": "¥3,370,000.00"
+        },
+        {
+          "month": 51,
+          "cash_fen": 405662518,
+          "baseline_cash_fen": 346000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442349,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 53101,
+            "den": 4000000,
+            "text": "0.01",
+            "display": "0.01×"
+          },
+          "cash_display": "¥4,056,625.18",
+          "baseline_cash_display": "¥3,460,000.00"
+        },
+        {
+          "month": 52,
+          "cash_fen": 416920189,
+          "baseline_cash_fen": 355000000,
+          "dscr": {
+            "num": 12700000,
+            "den": 1442329,
+            "text": "8.81",
+            "display": "8.81×"
+          },
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,169,201.89",
+          "baseline_cash_display": "¥3,550,000.00"
+        },
+        {
+          "month": 53,
+          "cash_fen": 429620189,
+          "baseline_cash_fen": 364000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,296,201.89",
+          "baseline_cash_display": "¥3,640,000.00"
+        },
+        {
+          "month": 54,
+          "cash_fen": 442320189,
+          "baseline_cash_fen": 373000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,423,201.89",
+          "baseline_cash_display": "¥3,730,000.00"
+        },
+        {
+          "month": 55,
+          "cash_fen": 455020189,
+          "baseline_cash_fen": 382000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,550,201.89",
+          "baseline_cash_display": "¥3,820,000.00"
+        },
+        {
+          "month": 56,
+          "cash_fen": 467720189,
+          "baseline_cash_fen": 391000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,677,201.89",
+          "baseline_cash_display": "¥3,910,000.00"
+        },
+        {
+          "month": 57,
+          "cash_fen": 480420189,
+          "baseline_cash_fen": 400000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,804,201.89",
+          "baseline_cash_display": "¥4,000,000.00"
+        },
+        {
+          "month": 58,
+          "cash_fen": 493120189,
+          "baseline_cash_fen": 409000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥4,931,201.89",
+          "baseline_cash_display": "¥4,090,000.00"
+        },
+        {
+          "month": 59,
+          "cash_fen": 505820189,
+          "baseline_cash_fen": 418000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥5,058,201.89",
+          "baseline_cash_display": "¥4,180,000.00"
+        },
+        {
+          "month": 60,
+          "cash_fen": 518520189,
+          "baseline_cash_fen": 427000000,
+          "dscr": null,
+          "leverage": {
+            "num": 0,
+            "den": 1,
+            "text": "0.00",
+            "display": "0.00×"
+          },
+          "cash_display": "¥5,185,201.89",
+          "baseline_cash_display": "¥4,270,000.00"
+        }
+      ],
+      "text": "Die-cutting line 3 months later, with the Equipment lease (¥14,423.49 a month); Packing robot now, with the Equipment term loan (¥12,096.44 a month). NPV ¥708,049.21; lowest headroom ¥145,000.00 in month 1.",
+      "npv_display": "¥708,049.21",
+      "financing_charges_display": "¥127,798.11",
+      "lowest_headroom_display": "¥145,000.00"
+    }
+  ],
+  "best_unconstrained": {
+    "rank": null,
+    "choices": [
+      {
+        "project_id": "line",
+        "label": "Die-cutting line",
+        "included": true,
+        "start_offset_months": 0,
+        "option": "FAC-ETL",
+        "option_label": "Equipment term loan",
+        "first_payment_day": 20,
+        "principal_fen": 60000000,
+        "monthly_payment_fen": 1814462,
+        "principal_display": "¥600,000.00",
+        "monthly_payment_display": "¥18,144.62"
+      },
+      {
+        "project_id": "robot",
+        "label": "Packing robot",
+        "included": true,
+        "start_offset_months": 0,
+        "option": "FAC-ETL",
+        "option_label": "Equipment term loan",
+        "first_payment_day": 0,
+        "principal_fen": 40000000,
+        "monthly_payment_fen": 1209644,
+        "principal_display": "¥400,000.00",
+        "monthly_payment_display": "¥12,096.44"
+      }
+    ],
+    "npv_fen": 72553126,
+    "financing_charges_fen": 8867693,
+    "lowest_headroom_fen": 28627691,
+    "lowest_month": 4,
+    "admissible": false,
+    "first_failure": "Equipment term loan would lend ¥1,000,000.00, above the ¥600,000.00 left on it",
+    "months": [
+      {
+        "month": 1,
+        "cash_fen": 86500000,
+        "baseline_cash_fen": 44500000,
+        "dscr": {
+          "num": 2,
+          "den": 1,
+          "text": "2.00",
+          "display": "2.00×"
+        },
+        "leverage": {
+          "num": 491,
+          "den": 216,
+          "text": "2.27",
+          "display": "2.27×"
+        },
+        "cash_display": "¥865,000.00",
+        "baseline_cash_display": "¥445,000.00"
+      },
+      {
+        "month": 2,
+        "cash_fen": 87975897,
+        "baseline_cash_fen": 49000000,
+        "dscr": {
+          "num": 9000000,
+          "den": 7524103,
+          "text": "1.20",
+          "display": "1.20×"
+        },
+        "leverage": {
+          "num": 59610641,
+          "den": 27000000,
+          "text": "2.21",
+          "display": "2.21×"
+        },
+        "cash_display": "¥879,758.97",
+        "baseline_cash_display": "¥490,000.00"
+      },
+      {
+        "month": 3,
+        "cash_fen": 89451794,
+        "baseline_cash_fen": 53500000,
+        "dscr": {
+          "num": 9000000,
+          "den": 7524103,
+          "text": "1.20",
+          "display": "1.20×"
+        },
+        "leverage": {
+          "num": 231373193,
+          "den": 108000000,
+          "text": "2.14",
+          "display": "2.14×"
+        },
+        "cash_display": "¥894,517.94",
+        "baseline_cash_display": "¥535,000.00"
+      },
+      {
+        "month": 4,
+        "cash_fen": 58627691,
+        "baseline_cash_fen": 58000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 9345493,
+          "den": 4500000,
+          "text": "2.08",
+          "display": "2.08×"
+        },
+        "cash_display": "¥586,276.91",
+        "baseline_cash_display": "¥580,000.00"
+      },
+      {
+        "month": 5,
+        "cash_fen": 63803588,
+        "baseline_cash_fen": 62500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 27149803,
+          "den": 13500000,
+          "text": "2.01",
+          "display": "2.01×"
+        },
+        "cash_display": "¥638,035.88",
+        "baseline_cash_display": "¥625,000.00"
+      },
+      {
+        "month": 6,
+        "cash_fen": 68979485,
+        "baseline_cash_fen": 67000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 105046457,
+          "den": 54000000,
+          "text": "1.95",
+          "display": "1.95×"
+        },
+        "cash_display": "¥689,794.85",
+        "baseline_cash_display": "¥670,000.00"
+      },
+      {
+        "month": 7,
+        "cash_fen": 74155382,
+        "baseline_cash_fen": 71500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 50743811,
+          "den": 27000000,
+          "text": "1.88",
+          "display": "1.88×"
+        },
+        "cash_display": "¥741,553.82",
+        "baseline_cash_display": "¥715,000.00"
+      },
+      {
+        "month": 8,
+        "cash_fen": 79331279,
+        "baseline_cash_fen": 76000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 195845359,
+          "den": 108000000,
+          "text": "1.81",
+          "display": "1.81×"
+        },
+        "cash_display": "¥793,312.79",
+        "baseline_cash_display": "¥760,000.00"
+      },
+      {
+        "month": 9,
+        "cash_fen": 84507176,
+        "baseline_cash_fen": 80500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 62901067,
+          "den": 36000000,
+          "text": "1.75",
+          "display": "1.75×"
+        },
+        "cash_display": "¥845,071.76",
+        "baseline_cash_display": "¥805,000.00"
+      },
+      {
+        "month": 10,
+        "cash_fen": 89683073,
+        "baseline_cash_fen": 85000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 181548713,
+          "den": 108000000,
+          "text": "1.68",
+          "display": "1.68×"
+        },
+        "cash_display": "¥896,830.73",
+        "baseline_cash_display": "¥850,000.00"
+      },
+      {
+        "month": 11,
+        "cash_fen": 94858970,
+        "baseline_cash_fen": 89500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 58127279,
+          "den": 36000000,
+          "text": "1.61",
+          "display": "1.61×"
+        },
+        "cash_display": "¥948,589.70",
+        "baseline_cash_display": "¥895,000.00"
+      },
+      {
+        "month": 12,
+        "cash_fen": 100034867,
+        "baseline_cash_fen": 94000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 13933543,
+          "den": 9000000,
+          "text": "1.55",
+          "display": "1.55×"
+        },
+        "cash_display": "¥1,000,348.67",
+        "baseline_cash_display": "¥940,000.00"
+      },
+      {
+        "month": 13,
+        "cash_fen": 105210764,
+        "baseline_cash_fen": 98500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 53336897,
+          "den": 36000000,
+          "text": "1.48",
+          "display": "1.48×"
+        },
+        "cash_display": "¥1,052,107.64",
+        "baseline_cash_display": "¥985,000.00"
+      },
+      {
+        "month": 14,
+        "cash_fen": 110386661,
+        "baseline_cash_fen": 103000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 10187087,
+          "den": 7200000,
+          "text": "1.41",
+          "display": "1.41×"
+        },
+        "cash_display": "¥1,103,866.61",
+        "baseline_cash_display": "¥1,030,000.00"
+      },
+      {
+        "month": 15,
+        "cash_fen": 109562558,
+        "baseline_cash_fen": 107500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 24264883,
+          "den": 18000000,
+          "text": "1.35",
+          "display": "1.35×"
+        },
+        "cash_display": "¥1,095,625.58",
+        "baseline_cash_display": "¥1,075,000.00"
+      },
+      {
+        "month": 16,
+        "cash_fen": 114738455,
+        "baseline_cash_fen": 112000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 34589903,
+          "den": 27000000,
+          "text": "1.28",
+          "display": "1.28×"
+        },
+        "cash_display": "¥1,147,384.55",
+        "baseline_cash_display": "¥1,120,000.00"
+      },
+      {
+        "month": 17,
+        "cash_fen": 119914352,
+        "baseline_cash_fen": 116500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 43705729,
+          "den": 36000000,
+          "text": "1.21",
+          "display": "1.21×"
+        },
+        "cash_display": "¥1,199,143.52",
+        "baseline_cash_display": "¥1,165,000.00"
+      },
+      {
+        "month": 18,
+        "cash_fen": 125090249,
+        "baseline_cash_fen": 121000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 30965491,
+          "den": 27000000,
+          "text": "1.15",
+          "display": "1.15×"
+        },
+        "cash_display": "¥1,250,902.49",
+        "baseline_cash_display": "¥1,210,000.00"
+      },
+      {
+        "month": 19,
+        "cash_fen": 130266146,
+        "baseline_cash_fen": 125500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 116593883,
+          "den": 108000000,
+          "text": "1.08",
+          "display": "1.08×"
+        },
+        "cash_display": "¥1,302,661.46",
+        "baseline_cash_display": "¥1,255,000.00"
+      },
+      {
+        "month": 20,
+        "cash_fen": 135442043,
+        "baseline_cash_fen": 130000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 21862577,
+          "den": 21600000,
+          "text": "1.01",
+          "display": "1.01×"
+        },
+        "cash_display": "¥1,354,420.43",
+        "baseline_cash_display": "¥1,300,000.00"
+      },
+      {
+        "month": 21,
+        "cash_fen": 140617940,
+        "baseline_cash_fen": 134500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 34006303,
+          "den": 36000000,
+          "text": "0.94",
+          "display": "0.94×"
+        },
+        "cash_display": "¥1,406,179.40",
+        "baseline_cash_display": "¥1,345,000.00"
+      },
+      {
+        "month": 22,
+        "cash_fen": 145793837,
+        "baseline_cash_fen": 139000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 47355947,
+          "den": 54000000,
+          "text": "0.88",
+          "display": "0.88×"
+        },
+        "cash_display": "¥1,457,938.37",
+        "baseline_cash_display": "¥1,390,000.00"
+      },
+      {
+        "month": 23,
+        "cash_fen": 150969734,
+        "baseline_cash_fen": 143500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 4369589,
+          "den": 5400000,
+          "text": "0.81",
+          "display": "0.81×"
+        },
+        "cash_display": "¥1,509,697.34",
+        "baseline_cash_display": "¥1,435,000.00"
+      },
+      {
+        "month": 24,
+        "cash_fen": 156145631,
+        "baseline_cash_fen": 148000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 16011701,
+          "den": 21600000,
+          "text": "0.74",
+          "display": "0.74×"
+        },
+        "cash_display": "¥1,561,456.31",
+        "baseline_cash_display": "¥1,480,000.00"
+      },
+      {
+        "month": 25,
+        "cash_fen": 161321528,
+        "baseline_cash_fen": 152500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 72712009,
+          "den": 108000000,
+          "text": "0.67",
+          "display": "0.67×"
+        },
+        "cash_display": "¥1,613,215.28",
+        "baseline_cash_display": "¥1,525,000.00"
+      },
+      {
+        "month": 26,
+        "cash_fen": 166497425,
+        "baseline_cash_fen": 157000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 65352229,
+          "den": 108000000,
+          "text": "0.61",
+          "display": "0.61×"
+        },
+        "cash_display": "¥1,664,974.25",
+        "baseline_cash_display": "¥1,570,000.00"
+      },
+      {
+        "month": 27,
+        "cash_fen": 171673322,
+        "baseline_cash_fen": 161500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 57979103,
+          "den": 108000000,
+          "text": "0.54",
+          "display": "0.54×"
+        },
+        "cash_display": "¥1,716,733.22",
+        "baseline_cash_display": "¥1,615,000.00"
+      },
+      {
+        "month": 28,
+        "cash_fen": 176849219,
+        "baseline_cash_fen": 166000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 50592569,
+          "den": 108000000,
+          "text": "0.47",
+          "display": "0.47×"
+        },
+        "cash_display": "¥1,768,492.19",
+        "baseline_cash_display": "¥1,660,000.00"
+      },
+      {
+        "month": 29,
+        "cash_fen": 182025116,
+        "baseline_cash_fen": 170500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 10798141,
+          "den": 27000000,
+          "text": "0.40",
+          "display": "0.40×"
+        },
+        "cash_display": "¥1,820,251.16",
+        "baseline_cash_display": "¥1,705,000.00"
+      },
+      {
+        "month": 30,
+        "cash_fen": 187201013,
+        "baseline_cash_fen": 175000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 5963171,
+          "den": 18000000,
+          "text": "0.33",
+          "display": "0.33×"
+        },
+        "cash_display": "¥1,872,010.13",
+        "baseline_cash_display": "¥1,750,000.00"
+      },
+      {
+        "month": 31,
+        "cash_fen": 192376910,
+        "baseline_cash_fen": 179500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 7087973,
+          "den": 27000000,
+          "text": "0.26",
+          "display": "0.26×"
+        },
+        "cash_display": "¥1,923,769.10",
+        "baseline_cash_display": "¥1,795,000.00"
+      },
+      {
+        "month": 32,
+        "cash_fen": 197552807,
+        "baseline_cash_fen": 184000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 3485183,
+          "den": 18000000,
+          "text": "0.19",
+          "display": "0.19×"
+        },
+        "cash_display": "¥1,975,528.07",
+        "baseline_cash_display": "¥1,840,000.00"
+      },
+      {
+        "month": 33,
+        "cash_fen": 202728704,
+        "baseline_cash_fen": 188500000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 672829,
+          "den": 5400000,
+          "text": "0.12",
+          "display": "0.12×"
+        },
+        "cash_display": "¥2,027,287.04",
+        "baseline_cash_display": "¥1,885,000.00"
+      },
+      {
+        "month": 34,
+        "cash_fen": 207904601,
+        "baseline_cash_fen": 193000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 7524103,
+          "text": "1.69",
+          "display": "1.69×"
+        },
+        "leverage": {
+          "num": 4494137,
+          "den": 54000000,
+          "text": "0.08",
+          "display": "0.08×"
+        },
+        "cash_display": "¥2,079,046.01",
+        "baseline_cash_display": "¥1,930,000.00"
+      },
+      {
+        "month": 35,
+        "cash_fen": 217580498,
+        "baseline_cash_fen": 202000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 3024103,
+          "text": "4.20",
+          "display": "4.20×"
+        },
+        "leverage": {
+          "num": 1501529,
+          "den": 27000000,
+          "text": "0.06",
+          "display": "0.06×"
+        },
+        "cash_display": "¥2,175,804.98",
+        "baseline_cash_display": "¥2,020,000.00"
+      },
+      {
+        "month": 36,
+        "cash_fen": 227256395,
+        "baseline_cash_fen": 211000000,
+        "dscr": {
+          "num": 12700000,
+          "den": 3024103,
+          "text": "4.20",
+          "display": "4.20×"
+        },
+        "leverage": {
+          "num": 111483,
+          "den": 4000000,
+          "text": "0.03",
+          "display": "0.03×"
+        },
+        "cash_display": "¥2,272,563.95",
+        "baseline_cash_display": "¥2,110,000.00"
+      },
+      {
+        "month": 37,
+        "cash_fen": 236932307,
+        "baseline_cash_fen": 220000000,
+        "dscr": {
+          "num": 1587500,
+          "den": 378011,
+          "text": "4.20",
+          "display": "4.20×"
+        },
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥2,369,323.07",
+        "baseline_cash_display": "¥2,200,000.00"
+      },
+      {
+        "month": 38,
+        "cash_fen": 249632307,
+        "baseline_cash_fen": 229000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥2,496,323.07",
+        "baseline_cash_display": "¥2,290,000.00"
+      },
+      {
+        "month": 39,
+        "cash_fen": 262332307,
+        "baseline_cash_fen": 238000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥2,623,323.07",
+        "baseline_cash_display": "¥2,380,000.00"
+      },
+      {
+        "month": 40,
+        "cash_fen": 275032307,
+        "baseline_cash_fen": 247000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥2,750,323.07",
+        "baseline_cash_display": "¥2,470,000.00"
+      },
+      {
+        "month": 41,
+        "cash_fen": 287732307,
+        "baseline_cash_fen": 256000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥2,877,323.07",
+        "baseline_cash_display": "¥2,560,000.00"
+      },
+      {
+        "month": 42,
+        "cash_fen": 300432307,
+        "baseline_cash_fen": 265000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥3,004,323.07",
+        "baseline_cash_display": "¥2,650,000.00"
+      },
+      {
+        "month": 43,
+        "cash_fen": 313132307,
+        "baseline_cash_fen": 274000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥3,131,323.07",
+        "baseline_cash_display": "¥2,740,000.00"
+      },
+      {
+        "month": 44,
+        "cash_fen": 325832307,
+        "baseline_cash_fen": 283000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥3,258,323.07",
+        "baseline_cash_display": "¥2,830,000.00"
+      },
+      {
+        "month": 45,
+        "cash_fen": 338532307,
+        "baseline_cash_fen": 292000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥3,385,323.07",
+        "baseline_cash_display": "¥2,920,000.00"
+      },
+      {
+        "month": 46,
+        "cash_fen": 351232307,
+        "baseline_cash_fen": 301000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥3,512,323.07",
+        "baseline_cash_display": "¥3,010,000.00"
+      },
+      {
+        "month": 47,
+        "cash_fen": 363932307,
+        "baseline_cash_fen": 310000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥3,639,323.07",
+        "baseline_cash_display": "¥3,100,000.00"
+      },
+      {
+        "month": 48,
+        "cash_fen": 376632307,
+        "baseline_cash_fen": 319000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥3,766,323.07",
+        "baseline_cash_display": "¥3,190,000.00"
+      },
+      {
+        "month": 49,
+        "cash_fen": 389332307,
+        "baseline_cash_fen": 328000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥3,893,323.07",
+        "baseline_cash_display": "¥3,280,000.00"
+      },
+      {
+        "month": 50,
+        "cash_fen": 402032307,
+        "baseline_cash_fen": 337000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥4,020,323.07",
+        "baseline_cash_display": "¥3,370,000.00"
+      },
+      {
+        "month": 51,
+        "cash_fen": 414732307,
+        "baseline_cash_fen": 346000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥4,147,323.07",
+        "baseline_cash_display": "¥3,460,000.00"
+      },
+      {
+        "month": 52,
+        "cash_fen": 427432307,
+        "baseline_cash_fen": 355000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥4,274,323.07",
+        "baseline_cash_display": "¥3,550,000.00"
+      },
+      {
+        "month": 53,
+        "cash_fen": 440132307,
+        "baseline_cash_fen": 364000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥4,401,323.07",
+        "baseline_cash_display": "¥3,640,000.00"
+      },
+      {
+        "month": 54,
+        "cash_fen": 452832307,
+        "baseline_cash_fen": 373000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥4,528,323.07",
+        "baseline_cash_display": "¥3,730,000.00"
+      },
+      {
+        "month": 55,
+        "cash_fen": 465532307,
+        "baseline_cash_fen": 382000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥4,655,323.07",
+        "baseline_cash_display": "¥3,820,000.00"
+      },
+      {
+        "month": 56,
+        "cash_fen": 478232307,
+        "baseline_cash_fen": 391000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥4,782,323.07",
+        "baseline_cash_display": "¥3,910,000.00"
+      },
+      {
+        "month": 57,
+        "cash_fen": 490932307,
+        "baseline_cash_fen": 400000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥4,909,323.07",
+        "baseline_cash_display": "¥4,000,000.00"
+      },
+      {
+        "month": 58,
+        "cash_fen": 503632307,
+        "baseline_cash_fen": 409000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥5,036,323.07",
+        "baseline_cash_display": "¥4,090,000.00"
+      },
+      {
+        "month": 59,
+        "cash_fen": 516332307,
+        "baseline_cash_fen": 418000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥5,163,323.07",
+        "baseline_cash_display": "¥4,180,000.00"
+      },
+      {
+        "month": 60,
+        "cash_fen": 529032307,
+        "baseline_cash_fen": 427000000,
+        "dscr": null,
+        "leverage": {
+          "num": 0,
+          "den": 1,
+          "text": "0.00",
+          "display": "0.00×"
+        },
+        "cash_display": "¥5,290,323.07",
+        "baseline_cash_display": "¥4,270,000.00"
+      }
+    ],
+    "text": "Die-cutting line now, with the Equipment term loan (¥18,144.62 a month); Packing robot now, with the Equipment term loan (¥12,096.44 a month). NPV ¥725,531.26; lowest headroom ¥286,276.91 in month 4; fails: Equipment term loan would lend ¥1,000,000.00, above the ¥600,000.00 left on it.",
+    "npv_display": "¥725,531.26",
+    "financing_charges_display": "¥88,676.93",
+    "lowest_headroom_display": "¥286,276.91"
+  },
+  "never_admissible": [
+    "line / FAC-GGL"
+  ],
+  "baseline_lowest_headroom_fen": 14500000,
+  "daily_checks": [
+    {
+      "project_id": "line",
+      "document_id": "DOC-000004",
+      "selected_id": "loan_36m",
+      "plan_option_passes": true,
+      "text": "Die-cutting line: the plan's Equipment lease passes the daily test."
+    }
+  ],
+  "evidence": "OWNER_ESTIMATE",
+  "assumptions": [
+    "A monthly estimate, not the conservative daily test: before the plan, each month's free cash is monthly EBITDA less the existing debt service and less the payments of purchases already committed, from today's cash; the timing of receipts within a month is ignored. The first 120 days of each contract are tested day by day by the capex screen (the best plan's contracts are re-run through it below).",
+    "A financed option borrows the project's whole price, requested its lead time before the first payment falls due (never before today), so the proceeds land when they are needed; its service starts the month after they land. Uncommitted facilities are used as if granted, exactly as the capex screen does: applying for them is still the owner's step.",
+    "A month fails on cash only where the plan makes it lower than without it; DSCR counts the owner's uplift (an estimate) and leverage does not; the strictest limits apply, including every used facility's own covenants.",
+    "Plans are ranked on NPV to the owner at the hurdle of all their cash flows (payments, uplift, proceeds, service and fees) over every month they run, then on the higher lowest headroom."
+  ],
+  "baseline_lowest_headroom_display": "¥145,000.00"
+}

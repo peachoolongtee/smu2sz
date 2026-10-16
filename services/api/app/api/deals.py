@@ -13,7 +13,9 @@ from app.api.exposure_words import customer_back, query_buyer
 from app.api.runtime import get_runtime
 from app.api.selection import Selection, build_context, selection
 from app.api.worklist import queue
+from app.config import get_settings
 from app.deals import deal_summary, deals
+from app.deals.purchases import purchases
 from app.decisions.identity import deal_id
 
 router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature("contracts"))])
@@ -42,7 +44,13 @@ def list_deals(lang: Literal["en", "zh"] = "en", *, sel: Annotated[Selection, De
     with rt.lock:
         rows = with_offers(rt, deals(rt.store, rt.day, lang), lang)
         _with_back(rt, rows, lang, sel.customer, sel.invoice, sel.path)
-        return {"day": rt.day, "lang": lang, "deals": rows, "queue": queue(rt, lang), "context": build_context(rt, lang, sel, page="deals")}
+        out = {"day": rt.day, "lang": lang, "deals": rows, "queue": queue(rt, lang),
+               "context": build_context(rt, lang, sel, page="deals")}
+        if get_settings().features.capex_contracts:  # ADR-0013: the buying side, only when it is switched on and only
+            bought = purchases(rt.store, rt.day, lang)  # when there is a capex contract, so every other read is unchanged
+            if bought:
+                out["purchases"] = bought
+        return out
 
 
 @router.get("/deals/{counterparty_id}")

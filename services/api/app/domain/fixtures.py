@@ -79,3 +79,22 @@ def contract_fixture_bytes(fixture_id: str, fmt: str | None = None) -> tuple[str
     if fmt is not None:
         path = path.with_suffix(f".{fmt}")
     return path.name, path.read_bytes()
+
+
+CAPEX = FIXTURES / "capex"
+
+
+def load_capex_contract_fixtures() -> dict[str, dict]:
+    """Demo capex contracts (fixtures/capex/contracts.yaml, ADR-0013), keyed by id. Synthetic. Kept apart from the
+    contract fixtures, which the demo confirms at start; a capex contract is never confirmed for the owner."""
+    data = yaml.safe_load((CAPEX / "contracts.yaml").read_text(encoding="utf-8"))
+    return {c["id"]: c for c in data["contracts"]}
+
+
+def capex_contract_fixture_bytes(fixture_id: str, fmt: str | None = None) -> tuple[str, bytes]:
+    """(file name, raw bytes) of a demo capex contract: its canonical text file, or a generated `fmt` copy."""
+    c = load_capex_contract_fixtures()[fixture_id]
+    path = CAPEX / c["file"]
+    if fmt is not None:
+        path = path.with_suffix(f".{fmt}")
+    return path.name, path.read_bytes()

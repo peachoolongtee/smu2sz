@@ -417,6 +417,21 @@ export function ApprovalCard({
         {/* A priced request keeps its three facts (what you get, what it costs, when it lands); the summary's six rows follow. */}
         {priced || !summary ? factsBlock : null}
         {summary}
+        {/* CAPEX-2: a purchase shows the schedule it commits to (the server's words: vendor, contract, each payment, the early-payment choice, the total). */}
+        {a.schedule_rows?.length || a.schedule_note ? (
+          <section aria-label={a.schedule_title ?? undefined} data-testid={`approval-schedule-${a.id}`}>
+            {a.schedule_title ? <h3 className="mb-1 text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">{a.schedule_title}</h3> : null}
+            {a.schedule_note ? <p className="mb-1 text-sm font-medium text-warn-fg" data-testid={`approval-schedule-note-${a.id}`}>{a.schedule_note}</p> : null}
+            <dl className="divide-y divide-line border-y border-line">
+              {(a.schedule_rows ?? []).filter((r) => r.value_text).map((r, i) => (
+                <div key={i} className="grid gap-x-4 gap-y-0.5 py-2.5 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]">
+                  <dt className="text-supporting font-bold text-ink-3">{r.label}</dt>
+                  <dd className="m-0 min-w-0 break-words text-[15px] leading-snug text-ink">{r.value_text}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
         {/* A real quote's terms are shown while the request waits, not folded (the server's `terms_rows`); a stored quote with no terms of its own stays in the application details. */}
         {words.terms.length && !priced ? (
           <dl className="divide-y divide-line border-y border-line" aria-label={t("appr.quoted.title")} data-testid={`approval-terms-rows-${a.id}`}>

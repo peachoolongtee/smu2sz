@@ -1,0 +1,336 @@
+{
+  "day": 0,
+  "state_version": 1,
+  "products": [
+    {
+      "product": {
+        "id": "PRD-LESSOR1-LEASE-60",
+        "lender_id": "LESSOR-1",
+        "lender_name": "Equipment lessor",
+        "name": "Equipment finance lease, 60 months",
+        "facility_kind": "EQUIPMENT_LEASE",
+        "repayment": "AMORTISING",
+        "rate_bp": 690,
+        "upfront_fee_bp": 0,
+        "term_months": 60,
+        "lead_time_days": 14,
+        "min_amount_fen": 10000000,
+        "max_amount_fen": 200000000,
+        "collateral": false,
+        "personal_guarantee": false,
+        "criteria": {
+          "min_dscr_bp": 11500,
+          "max_leverage_bp": 35000,
+          "min_coverage_bp": null,
+          "max_buyer_concentration_bp": null,
+          "min_months_trading": null,
+          "min_dscr_display": "1.15×",
+          "max_leverage_display": "3.50×"
+        },
+        "rate_display": "6.90%",
+        "upfront_fee_display": "0.00%",
+        "min_amount_display": "¥100,000.00",
+        "max_amount_display": "¥2,000,000.00"
+      },
+      "facility_id": "FAC-LESSOR1-LEASE-60",
+      "on_menu": false,
+      "status": "ELIGIBLE_UP_TO",
+      "max_eligible_fen": 168374472,
+      "requested_fen": null,
+      "requested_passes": null,
+      "criteria": [
+        {
+          "name": "DSCR with the loan",
+          "required": "≥ 1.15×",
+          "observed": "1.15× = ¥90,000.00 / (¥45,000.00 + ¥33,260.86)",
+          "passes": true,
+          "moves_with_amount": true
+        },
+        {
+          "name": "Leverage with the loan",
+          "required": "≤ 3.50×",
+          "observed": "2.91× = (¥1,455,000.00 + ¥1,683,744.72) / (12 × ¥90,000.00)",
+          "passes": true,
+          "moves_with_amount": true
+        }
+      ],
+      "monthly_payment_fen": 3326086,
+      "all_in_rate": {
+        "num": 69,
+        "den": 1000,
+        "text": "0.07"
+      },
+      "all_in_rate_formula": "6.9% simple",
+      "own_limits_max_fen": 124500000,
+      "own_limits_binding": "LEVERAGE",
+      "tier3": [],
+      "text": "Equipment finance lease, 60 months (Equipment lessor): eligible up to ¥1,683,744.72 at ¥33,260.86 a month, all-in 6.90% a year. Your own limits allow ¥1,245,000.00 (set by your leverage maximum).",
+      "max_eligible_display": "¥1,683,744.72",
+      "monthly_payment_display": "¥33,260.86",
+      "own_limits_max_display": "¥1,245,000.00",
+      "requested_display": null,
+      "all_in_rate_display": "6.90%"
+    },
+    {
+      "product": {
+        "id": "PRD-BANK1-TERM-60",
+        "lender_id": "BANK-1",
+        "lender_name": "Main bank",
+        "name": "Equipment term loan, 60 months",
+        "facility_kind": "EQUIPMENT_TERM_LOAN",
+        "repayment": "AMORTISING",
+        "rate_bp": 520,
+        "upfront_fee_bp": 50,
+        "term_months": 60,
+        "lead_time_days": 21,
+        "min_amount_fen": 20000000,
+        "max_amount_fen": 300000000,
+        "collateral": false,
+        "personal_guarantee": false,
+        "criteria": {
+          "min_dscr_bp": 13000,
+          "max_leverage_bp": 30000,
+          "min_coverage_bp": 10000,
+          "max_buyer_concentration_bp": null,
+          "min_months_trading": 24,
+          "min_dscr_display": "1.30×",
+          "max_leverage_display": "3.00×",
+          "min_coverage_display": "100.00%"
+        },
+        "rate_display": "5.20%",
+        "upfront_fee_display": "0.50%",
+        "min_amount_display": "¥200,000.00",
+        "max_amount_display": "¥3,000,000.00"
+      },
+      "facility_id": "FAC-BANK1-TERM-60",
+      "on_menu": false,
+      "status": "UNKNOWN",
+      "max_eligible_fen": 127778422,
+      "requested_fen": null,
+      "requested_passes": null,
+      "criteria": [
+        {
+          "name": "DSCR with the loan",
+          "required": "≥ 1.30×",
+          "observed": "1.30× = ¥90,000.00 / (¥45,000.00 + ¥24,230.76)",
+          "passes": true,
+          "moves_with_amount": true
+        },
+        {
+          "name": "Leverage with the loan",
+          "required": "≤ 3.00×",
+          "observed": "2.53× = (¥1,455,000.00 + ¥1,277,784.22) / (12 × ¥90,000.00)",
+          "passes": true,
+          "moves_with_amount": true
+        },
+        {
+          "name": "90-day cash coverage",
+          "required": "≥ 1.00×",
+          "observed": "2.55×",
+          "passes": true,
+          "moves_with_amount": false
+        },
+        {
+          "name": "Months trading",
+          "required": "≥ 24",
+          "observed": "not given: tell FLOW how long the company has traded",
+          "passes": null,
+          "moves_with_amount": false
+        }
+      ],
+      "monthly_payment_fen": 2423076,
+      "all_in_rate": {
+        "num": 53,
+        "den": 1000,
+        "text": "0.05"
+      },
+      "all_in_rate_formula": "5.2% + 0.5% × 12/60 = 5.3%",
+      "own_limits_max_fen": 124500000,
+      "own_limits_binding": "LEVERAGE",
+      "tier3": [],
+      "text": "Equipment term loan, 60 months (Main bank): up to ¥1,277,784.22 on the ratios, but it also needs months trading, which only you can give. Your own limits allow ¥1,245,000.00 (set by your leverage maximum).",
+      "max_eligible_display": "¥1,277,784.22",
+      "monthly_payment_display": "¥24,230.76",
+      "own_limits_max_display": "¥1,245,000.00",
+      "requested_display": null,
+      "all_in_rate_display": "5.30%"
+    },
+    {
+      "product": {
+        "id": "PRD-LENDERNB-SECURED-84",
+        "lender_id": "LENDER-NB",
+        "lender_name": "Regional commercial bank",
+        "name": "Secured expansion loan, 84 months",
+        "facility_kind": "EQUIPMENT_TERM_LOAN",
+        "repayment": "AMORTISING",
+        "rate_bp": 480,
+        "upfront_fee_bp": 75,
+        "term_months": 84,
+        "lead_time_days": 45,
+        "min_amount_fen": 100000000,
+        "max_amount_fen": 800000000,
+        "collateral": true,
+        "personal_guarantee": true,
+        "criteria": {
+          "min_dscr_bp": 14000,
+          "max_leverage_bp": 30000,
+          "min_coverage_bp": null,
+          "max_buyer_concentration_bp": null,
+          "min_months_trading": 36,
+          "min_dscr_display": "1.40×",
+          "max_leverage_display": "3.00×"
+        },
+        "rate_display": "4.80%",
+        "upfront_fee_display": "0.75%",
+        "min_amount_display": "¥1,000,000.00",
+        "max_amount_display": "¥8,000,000.00"
+      },
+      "facility_id": "FAC-LENDERNB-SECURED-84",
+      "on_menu": false,
+      "status": "UNKNOWN",
+      "max_eligible_fen": 137361117,
+      "requested_fen": null,
+      "requested_passes": null,
+      "criteria": [
+        {
+          "name": "DSCR with the loan",
+          "required": "≥ 1.40×",
+          "observed": "1.40× = ¥90,000.00 / (¥45,000.00 + ¥19,285.71)",
+          "passes": true,
+          "moves_with_amount": true
+        },
+        {
+          "name": "Leverage with the loan",
+          "required": "≤ 3.00×",
+          "observed": "2.62× = (¥1,455,000.00 + ¥1,373,611.17) / (12 × ¥90,000.00)",
+          "passes": true,
+          "moves_with_amount": true
+        },
+        {
+          "name": "Months trading",
+          "required": "≥ 36",
+          "observed": "not given: tell FLOW how long the company has traded",
+          "passes": null,
+          "moves_with_amount": false
+        }
+      ],
+      "monthly_payment_fen": 1928571,
+      "all_in_rate": {
+        "num": 687,
+        "den": 14000,
+        "text": "0.05"
+      },
+      "all_in_rate_formula": "4.8% + 0.75% × 12/84 = ≈4.9071%",
+      "own_limits_max_fen": 124500000,
+      "own_limits_binding": "LEVERAGE",
+      "tier3": [
+        "TIER3_PERSONAL_GUARANTEE",
+        "TIER3_COLLATERAL"
+      ],
+      "text": "Secured expansion loan, 84 months (Regional commercial bank): up to ¥1,373,611.17 on the ratios, but it also needs months trading, which only you can give. Your own limits allow ¥1,245,000.00 (set by your leverage maximum). It needs a personal guarantee and collateral: a Tier-3 step FLOW never takes; only you can.",
+      "max_eligible_display": "¥1,373,611.17",
+      "monthly_payment_display": "¥19,285.71",
+      "own_limits_max_display": "¥1,245,000.00",
+      "requested_display": null,
+      "all_in_rate_display": "4.91%"
+    },
+    {
+      "product": {
+        "id": "PRD-BANK2-GGL-36",
+        "lender_id": "BANK-2",
+        "lender_name": "Guaranteed-loan bank",
+        "name": "Government-guaranteed growth loan, 36 months",
+        "facility_kind": "GOV_GUARANTEED_LOAN",
+        "repayment": "AMORTISING",
+        "rate_bp": 420,
+        "upfront_fee_bp": 100,
+        "term_months": 36,
+        "lead_time_days": 30,
+        "min_amount_fen": 10000000,
+        "max_amount_fen": 100000000,
+        "collateral": false,
+        "personal_guarantee": false,
+        "criteria": {
+          "min_dscr_bp": 12000,
+          "max_leverage_bp": 25000,
+          "min_coverage_bp": null,
+          "max_buyer_concentration_bp": 8000,
+          "min_months_trading": 12,
+          "min_dscr_display": "1.20×",
+          "max_leverage_display": "2.50×",
+          "max_buyer_concentration_display": "80.00%"
+        },
+        "rate_display": "4.20%",
+        "upfront_fee_display": "1.00%",
+        "min_amount_display": "¥100,000.00",
+        "max_amount_display": "¥1,000,000.00"
+      },
+      "facility_id": "FAC-BANK2-GGL-36",
+      "on_menu": false,
+      "status": "NOT_ELIGIBLE",
+      "max_eligible_fen": 100000000,
+      "requested_fen": null,
+      "requested_passes": null,
+      "criteria": [
+        {
+          "name": "DSCR with the loan",
+          "required": "≥ 1.20×",
+          "observed": "1.21× = ¥90,000.00 / (¥45,000.00 + ¥29,613.04)",
+          "passes": true,
+          "moves_with_amount": true
+        },
+        {
+          "name": "Leverage with the loan",
+          "required": "≤ 2.50×",
+          "observed": "2.27× = (¥1,455,000.00 + ¥1,000,000.00) / (12 × ¥90,000.00)",
+          "passes": true,
+          "moves_with_amount": true
+        },
+        {
+          "name": "Largest buyer's share of receivables",
+          "required": "≤ 80.00%",
+          "observed": "100.00% (BUYER-1)",
+          "passes": false,
+          "moves_with_amount": false
+        },
+        {
+          "name": "Months trading",
+          "required": "≥ 12",
+          "observed": "not given: tell FLOW how long the company has traded",
+          "passes": null,
+          "moves_with_amount": false
+        }
+      ],
+      "monthly_payment_fen": 2961304,
+      "all_in_rate": {
+        "num": 17,
+        "den": 375,
+        "text": "0.05"
+      },
+      "all_in_rate_formula": "4.2% + 1% × 12/36 = ≈4.5333%",
+      "own_limits_max_fen": 91175925,
+      "own_limits_binding": "DSCR",
+      "tier3": [],
+      "text": "Government-guaranteed growth loan, 36 months (Guaranteed-loan bank): not eligible on its stated criteria: largest buyer's share of receivables. Your own limits allow ¥911,759.25 (set by your DSCR minimum).",
+      "max_eligible_display": "¥1,000,000.00",
+      "monthly_payment_display": "¥29,613.04",
+      "own_limits_max_display": "¥911,759.25",
+      "requested_display": null,
+      "all_in_rate_display": "4.53%"
+    }
+  ],
+  "buyer_concentration": {
+    "num": 1,
+    "den": 1,
+    "text": "1.00"
+  },
+  "largest_buyer_id": "BUYER-1",
+  "indicative": "Indicative only: read from a synthetic catalogue's stated criteria against your books, not a lender's decision.",
+  "assumptions": [
+    "Indicative only: read from a synthetic catalogue's stated criteria against your books, not a lender's decision.",
+    "Each product is read on its own, with only its loan added to the worst projected month's debt service and debt; two loans together leave less room than either alone.",
+    "A product's DSCR and leverage criteria are the lender's; your own mandate's limits are shown beside them as the amount your own limits allow.",
+    "The largest buyer's share is read on the open receivables' outstanding face; months trading is what you say."
+  ],
+  "buyer_concentration_display": "100.00%"
+}

@@ -1,5 +1,10 @@
 # Slice B round three: the selected deal as one comparison (owner's review of 14 Oct 2026, golden books, 1440)
 
+> **Superseded (16 Oct 2026).** Round three was built from this brief, reviewed by the owner on 15 Oct and redesigned under #160
+> (a deal as its own page; see `docs/handover/18_round_three_checkpoint_2026-10-15.md`, `docs/research/deals-flow-audit-2026-10-15.md`
+> and DESIGN.md "Deals, the redesign of 15 October"). §11's entry points and the tracker fold landed; the tabs, rail, breadcrumb, chips,
+> outcome table, headroom plot and per-day inspector did not. Kept for the record; do not build from it.
+
 Source: the owner's review of the Deals workspace on dev (after round two). Verdict: "you've organized the page around the
 financial engine's outputs instead of the owner's decision"; the owner wants to answer three questions on the first screen
 (which response is best for my business, why, what if I choose something else) and verify on the deeper screens.

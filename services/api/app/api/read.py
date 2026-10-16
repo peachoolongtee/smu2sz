@@ -92,6 +92,11 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
                                             lang=lang)
             v["document_id"] = op.get("document_id")
             v["message_when"] = " ".join(x for x in (words["event_text"], words["event_detail"]) if x)
+        if o.kind == "OPEN_BOOKS" and isinstance(op, dict):
+            from app.api.setup import open_books_words
+
+            words = open_books_words(op, lang)
+            v["message_when"] = " ".join(x for x in (words["event_text"], words["event_detail"]) if x)
         text = words["event_text"] or v["message_when"]
         detail = words["event_detail"]
         if o.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and res.get("status") == "EXECUTED":
@@ -261,7 +266,7 @@ def get_evidence() -> str:
 
 
 # The scenarios fixtures/scenarios/ holds for the demo; a name outside it never reaches the reset, which wipes the books first.
-DEMO_SCENARIOS = ("golden_sme", "short_facilities", "public_sme", "busy")
+DEMO_SCENARIOS = ("golden_sme", "short_facilities", "public_sme", "busy", "blank")
 
 
 @router.post("/demo/reset")

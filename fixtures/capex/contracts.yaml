@@ -1,0 +1,13 @@
+# Demo capex contracts (ADR-0013, docs/capex_handover.md). Synthetic: each was written to match
+# fixtures/scenarios/golden_sme.json and the capex case of app/capex (a ¥600,000 die-cutting line), and says so in its text.
+# Kept apart from fixtures/contracts/contracts.yaml on purpose: the demo confirms every document listed there at start,
+# and a capex contract must never be confirmed (or committed) for the owner by the demo.
+# `counterparty_id` is the vendor's registry id. The vendor need not be on the registry yet: committing the purchase adds
+# it as a SUPPLIER. `counterparty_name` is the name it is registered under.
+contracts:
+  - id: GZPM_EQUIPMENT_PURCHASE
+    kind: CAPEX_CONTRACT
+    counterparty_id: VENDOR-GZPM
+    counterparty_name: Guangzhou Precision Machinery Co., Ltd.
+    title: Equipment purchase contract GZPM-2026-114
+    file: gzpm-2026-114-equipment-purchase.md

@@ -43,6 +43,9 @@ CASES = [
     (op(m.AddFacility, actor=Actor.AGENT, facility=LINE), Tier.TIER_3),
     (op(m.AddFacility, actor=Actor.COUNTERPARTY, facility=LINE), Tier.TIER_3),
     (op(m.AddFacility, actor=Actor.SYSTEM, facility=LINE), Tier.TIER_3),
+    # ADR-0013: committing to a purchase is always the owner's decision, whoever asks
+    (op(m.CommitPurchase, document_id="DOC-1", doc_hash="h", schedule_hash="s", amount_fen=1), Tier.TIER_2),
+    (op(m.CommitPurchase, actor=Actor.OWNER, document_id="DOC-1", doc_hash="h", schedule_hash="s", amount_fen=1), Tier.TIER_2),
 ]
 
 

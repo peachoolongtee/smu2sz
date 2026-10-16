@@ -393,6 +393,12 @@ class CompiledContract(Contract):
 class DocumentKind(StrEnum):
     BUYER_CONTRACT = "BUYER_CONTRACT"
     LENDER_AGREEMENT = "LENDER_AGREEMENT"
+    # ADR-0013: a capital-equipment contract in which the SME is the buyer and the counterparty a vendor (SUPPLIER).
+    # Read with the contract reader; confirming it books nothing, only the owner-approved CommitPurchase does.
+    CAPEX_CONTRACT = "CAPEX_CONTRACT"
+
+
+CONTRACT_READING_KINDS = frozenset({DocumentKind.BUYER_CONTRACT, DocumentKind.CAPEX_CONTRACT})  # read as a contract
 
 
 class DocumentStatus(StrEnum):
@@ -429,7 +435,7 @@ class ContractRecord(Contract):
     doc_hash: str  # sha256 of document.text (UTF-8): what the owner's decision is bound to
     source: str  # "fixture:<id>", "upload:<filename>" or "text"
     uploaded_day: Day
-    contract: CompiledContract | None = None  # BUYER_CONTRACT
+    contract: CompiledContract | None = None  # BUYER_CONTRACT, CAPEX_CONTRACT
     term_sheet: CompiledTermSheet | None = None  # LENDER_AGREEMENT
     flags: list[DocumentFlag] = Field(default_factory=list)
     suggested_facility_id: str | None = None  # LENDER_AGREEMENT: the existing facility it appears to describe
@@ -441,11 +447,12 @@ class ContractRecord(Contract):
 
     @model_validator(mode="after")
     def _reading_matches_kind(self) -> ContractRecord:
-        if self.kind == DocumentKind.BUYER_CONTRACT and (self.contract is None or self.term_sheet is not None):
-            raise ValueError("a buyer contract record holds a contract reading and no term sheet")
+        if self.kind in CONTRACT_READING_KINDS and (self.contract is None or self.term_sheet is not None):
+            raise ValueError(f"a {self.kind.value.lower().replace('_', ' ')} record holds a contract reading and no "
+                             f"term sheet")
         if self.kind == DocumentKind.LENDER_AGREEMENT and (self.term_sheet is None or self.contract is not None):
             raise ValueError("a lender agreement record holds a term-sheet reading and no contract")
-        if self.kind == DocumentKind.BUYER_CONTRACT and (self.linked_facility_id or self.suggested_facility_id):
+        if self.kind in CONTRACT_READING_KINDS and (self.linked_facility_id or self.suggested_facility_id):
             raise ValueError("only a lender agreement links to a facility")
         return self
 
@@ -505,6 +512,7 @@ class FlowKind(StrEnum):
     RECEIVABLE = "RECEIVABLE"
     DEBT_SERVICE = "DEBT_SERVICE"
     OTHER = "OTHER"
+    CAPEX = "CAPEX"  # ADR-0013: a committed capex contract's payment to its vendor (id "CAPEX:<document id>:<n>")
 
 
 class CashFlow(Contract):
@@ -1028,6 +1036,24 @@ class ApplyForFacility(_OpBase):
     term_months: int | None = None
 
 
+class CommitPurchase(_OpBase):
+    """ADR-0013: commit to a confirmed capex contract's payment schedule. Always Tier 2: the owner approves. On approval
+    the executor re-derives the schedule from the stored record and the timeline below, refuses unless it hashes to
+    `schedule_hash` (the schedule the owner was shown), and books each payment as a scheduled CAPEX flow."""
+
+    kind: Literal["COMMIT_PURCHASE"] = "COMMIT_PURCHASE"
+    document_id: str
+    doc_hash: str
+    schedule_hash: str
+    amount_fen: Fen = Field(gt=0)  # what the schedule pays in all (the price, less an early-payment discount taken)
+    signing_day: Day | None = None
+    delivery_day: Day | None = None
+    acceptance_day: Day | None = None
+    invoice_day: Day | None = None
+    retention_release_day: Day | None = None
+    take_early_pay: bool = False  # book the schedule with the vendor's early-payment discount taken
+
+
 class SignPersonalGuarantee(_OpBase):
     kind: Literal["SIGN_PERSONAL_GUARANTEE"] = "SIGN_PERSONAL_GUARANTEE"
     facility_id: str
@@ -1070,7 +1096,8 @@ Operation = Annotated[
     | PledgeCollateral
     | IssueEquity
     | ChangeMandate
-    | AddFacility,
+    | AddFacility
+    | CommitPurchase,
     Field(discriminator="kind"),
 ]
 

@@ -48,6 +48,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "Counter recommended",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "today"
       },
@@ -305,6 +306,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "建议还价",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "今天"
       },
@@ -2846,6 +2848,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "Counter recommended",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "34 days ago"
       },
@@ -3129,6 +3132,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "建议还价",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "34 天前"
       },
@@ -3414,6 +3418,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "Counter recommended",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "34 days ago"
       },
@@ -3697,6 +3702,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "建议还价",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "34 天前"
       },
@@ -3982,6 +3988,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "Counter recommended",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "today"
       },
@@ -4196,6 +4203,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "建议还价",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "今天"
       },
@@ -4412,6 +4420,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "Counter recommended",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "34 days ago"
       },
@@ -4669,6 +4678,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "建议还价",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "34 天前"
       },
@@ -4926,6 +4936,7 @@
         "outcome": "ACCEPT",
         "business_action": "accept",
         "business_action_text": "Acceptable, awaiting agreement",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "today"
       },
@@ -5056,6 +5067,7 @@
         "outcome": "ACCEPT",
         "business_action": "accept",
         "business_action_text": "可接受，等待达成协议",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "今天"
       },
@@ -5190,6 +5202,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "Counter recommended",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "today"
       },
@@ -5337,6 +5350,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "建议还价",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "今天"
       },
@@ -5486,6 +5500,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "Counter recommended",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "today"
       },
@@ -5633,6 +5648,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "建议还价",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "今天"
       },
@@ -5780,6 +5796,7 @@
         "outcome": "REJECT",
         "business_action": "decline",
         "business_action_text": "Decline recommended",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "today"
       },
@@ -5910,6 +5927,7 @@
         "outcome": "REJECT",
         "business_action": "decline",
         "business_action_text": "建议拒绝",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "今天"
       },

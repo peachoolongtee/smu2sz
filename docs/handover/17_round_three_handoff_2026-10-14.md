@@ -1,5 +1,8 @@
 # Handoff 17 (14 Oct 2026, evening): Slice B round three, to be built on the second machine
 
+> **Done and superseded (16 Oct 2026).** Round three was built on the second machine, paused at the owner's review (handoff 18) and
+> merged as the Deals redesign (#160, 31058785). See handoff 19 for the state of dev after it.
+
 Read in this order: handoff 14 (protocol, gates, run commands), handoff 16 "overhaul plan" (the whole plan and the owner's
 decisions not to re-open), then the brief this handoff executes: `docs/design/flow-mockup-2026-10-13/05_slice_b_round_three.md`
 (with its §11, the deal tracker folded into Deals). Handoff 16 "slice D and tracker" is the second machine's own notes.

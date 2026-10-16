@@ -9,6 +9,7 @@ import { getOwnerToken, requestSignIn } from "../auth";
 import { MOCK_LATENCY_MS } from "../config";
 import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
+import type { SetupDocument, SetupOpenResult, SetupPreview, SetupStatus } from "../types";
 import type {
   AcceptRequest,
   AcceptResult,
@@ -94,6 +95,7 @@ import type {
 
 import type { CustomerContext } from "../customer-href";
 import * as buyerMessage from "./buyer-message";
+import * as buyside from "./buyside";
 import * as documents from "./documents";
 import * as decisions from "./decisions";
 import * as trackerMock from "./tracker"; // Deal tracker
@@ -104,6 +106,7 @@ import * as receivablesMock from "./receivables";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
+import commitApprovalRows from "../../mocks/buyside/commit_approval.json";
 import navCountsJson from "../../mocks/nav_counts.json";
 import offerPictureJson from "../../mocks/offer_picture_ex01.json";
 import offerPictureExposureJson from "../../mocks/offer_picture_ex01_exposure.json";
@@ -598,7 +601,14 @@ function seedApprovalStory(): void {
 function inChinese(rows: ApprovalView[]): ApprovalView[] {
   if (getLang() !== "zh") return rows;
   const op = cast<ApprovalView>(homeApprovalPending).op_id;
-  return rows.map((r) => (r.op_id === op ? { ...clone(cast<ApprovalView>(r.status === "PENDING" ? homeApprovalPendingZh : homeApprovalApprovedZh)), id: r.id } : r));
+  const purchase = cast<Pair<ApprovalView>>(commitApprovalRows);
+  return rows.map((r) =>
+    r.op_id === op
+      ? { ...clone(cast<ApprovalView>(r.status === "PENDING" ? homeApprovalPendingZh : homeApprovalApprovedZh)), id: r.id }
+      : r.op_id === purchase.en.op_id && r.status === "PENDING"
+        ? { ...clone(purchase.zh), id: r.id }
+        : r,
+  );
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
@@ -1412,6 +1422,7 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
   save();
   home.resetHome();
   documents.resetDocuments();
+  buyside.resetBuyside();
 }
 
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
@@ -1683,4 +1694,53 @@ export async function decideDocument(id: string, decision: "confirm" | "reject",
 export async function getContractFixtures(): Promise<ContractFixture[]> {
   await delay();
   return documents.mockContractFixtures();
+}
+
+/** Committing a purchase queues its CommitPurchase for the owner: the recorded queue row (with the schedule the owner approves) joins the queue once. */
+export async function commitContract(...args: Parameters<typeof buyside.commitContract>): ReturnType<typeof buyside.commitContract> {
+  const result = await buyside.commitContract(...args);
+  const s = load();
+  const row = cast<Pair<ApprovalView>>(commitApprovalRows).en;
+  if (!s.approvals.some((a) => a.id === row.id)) {
+    s.approvals.push(clone(row));
+    save();
+  }
+  return result;
+}
+
+// ------------------------------------------------------------------ the buy side (ADR-0013): mocks/buyside, see lib/mock/buyside.ts
+export {
+  addProductToMenu,
+  evaluateContract,
+  getCapexContractFixtures,
+  getEligibility,
+  getFinanceHealth,
+  getPurchase,
+  getPurchases,
+  runCapexPlans,
+} from "./buyside";
+
+// set up your books (ADR-0013): the mock build shows the demo books and cannot open new ones (that needs the live API).
+const SETUP_LIVE_ONLY = "Setting up your own books needs the full app (live mode), where the API checks, signs and opens them.";
+
+export async function getSetupStatus(): Promise<SetupStatus> {
+  await delay();
+  return { books: "demo", scenario: "golden_sme", can_open: false, can_open_text: SETUP_LIVE_ONLY, opened: null };
+}
+
+export async function getSetupDocuments(): Promise<SetupDocument[]> {
+  await delay();
+  return [];
+}
+
+export async function readSetupDocument(): Promise<SetupDocument> {
+  throw new ApiError(0, SETUP_LIVE_ONLY, undefined, "mock_setup");
+}
+
+export async function previewSetup(): Promise<SetupPreview> {
+  throw new ApiError(0, SETUP_LIVE_ONLY, undefined, "mock_setup");
+}
+
+export async function openBooks(): Promise<SetupOpenResult> {
+  throw new ApiError(0, SETUP_LIVE_ONLY, undefined, "mock_setup");
 }

@@ -37,10 +37,22 @@ import type {
   BorrowerFileView,
   BuyerExposureView,
   ChaseView,
+  AddToMenuResult,
+  BuyEstimate,
+  BuySideEvaluationView,
+  BuyTimeline,
   CapexApplyRequest,
   CapexApplyResult,
+  CapexPlansRequest,
+  CapexPlansView,
   CapexRequest,
   CapexView,
+  EligibilityView,
+  FinanceHealthView,
+  HealthInputsRequest,
+  PurchaseCommitResult,
+  PurchaseRow,
+  PurchasesView,
   CompareView,
   DealsContext,
   EnvelopeView,
@@ -87,6 +99,11 @@ import type {
   WhatIfUnscoped,
   WorklistView,
   ApprovalDecision,
+  SetupDocument,
+  SetupDraft,
+  SetupOpenResult,
+  SetupPreview,
+  SetupStatus,
 } from "../types";
 import * as approvals from "./approvals";
 import * as decisions from "./decisions";
@@ -328,6 +345,26 @@ export const live = {
     }),
   getContractFixtures: async (): Promise<ContractFixture[]> => (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/contracts")).contracts,
 
+  // the buy side (ADR-0013, FEATURE_CAPEX_CONTRACTS): every route needs the owner token; the responses already have the page's shape
+  getPurchases: (lang: "en" | "zh" = "en") => http<PurchasesView>("GET", `/purchases${lang === "zh" ? "?lang=zh" : ""}`),
+  getPurchase: async (id: string, lang: "en" | "zh" = "en"): Promise<PurchaseRow> =>
+    (await http<{ purchase: PurchaseRow }>("GET", `/purchases/${enc(id)}${lang === "zh" ? "?lang=zh" : ""}`)).purchase,
+  getCapexContractFixtures: async (): Promise<ContractFixture[]> =>
+    (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/capex-contracts")).contracts,
+  evaluateContract: (id: string, timeline: BuyTimeline, estimate: BuyEstimate = {}) =>
+    http<BuySideEvaluationView>("POST", `/capex/contracts/${enc(id)}/evaluate`, { body: { timeline, estimate } }),
+  commitContract: (id: string, timeline: BuyTimeline, scheduleHash: string, takeEarlyPay: boolean) =>
+    http<PurchaseCommitResult>("POST", `/capex/contracts/${enc(id)}/commit`, {
+      body: { timeline, schedule_hash: scheduleHash, take_early_pay: takeEarlyPay },
+    }),
+  getFinanceHealth: (inputs: HealthInputsRequest | null = null) =>
+    inputs ? http<FinanceHealthView>("POST", "/finance/health", { body: { inputs } }) : http<FinanceHealthView>("GET", "/finance/health"),
+  getEligibility: (inputs: { months_trading?: number | null; amount_fen?: number | null } | null = null) =>
+    inputs ? http<EligibilityView>("POST", "/lending/eligibility", { body: { inputs } }) : http<EligibilityView>("GET", "/lending/eligibility"),
+  addProductToMenu: (productId: string, amountFen: number | null = null) =>
+    http<AddToMenuResult>("POST", `/lending/products/${enc(productId)}/add-to-menu`, { body: amountFen ? { amount_fen: amountFen } : {} }),
+  runCapexPlans: (req: CapexPlansRequest) => http<CapexPlansView>("POST", "/capex/plans", { body: req }),
+
   /** GET /nav/counts: numbers only (deals needing the owner, approvals pending, late invoices). */
   getNavCounts: (lang: "en" | "zh" = "en") => http<NavCounts>("GET", `/nav/counts?lang=${lang}`),
   /** GET /offers/{id}/picture: the offer's cash line as asked and of each reply ready. */
@@ -342,6 +379,16 @@ export const live = {
 
   saveInput: (id: string | null, body: InputSaveRequest, lang: "en" | "zh") =>
     http<InputSaveResult>("POST", `${id === null ? "/firm/inputs" : `/buyers/${enc(id)}/inputs`}?lang=${lang}`, { body }),
+
+  // set up your books (ADR-0013)
+  getSetupStatus: (lang: "en" | "zh") => http<SetupStatus>("GET", `/setup/status?lang=${lang}`, { silent: true }),
+  getSetupDocuments: async (startDate: string, lang: "en" | "zh"): Promise<SetupDocument[]> =>
+    (await http<{ documents: SetupDocument[] }>("GET", `/setup/documents?lang=${lang}${startDate ? `&start_date=${enc(startDate)}` : ""}`)).documents,
+  readSetupDocument: async (body: Record<string, unknown>, lang: "en" | "zh"): Promise<SetupDocument> =>
+    (await http<{ document: SetupDocument }>("POST", `/setup/documents?lang=${lang}`, { body, timeoutMs: 60_000 })).document,
+  previewSetup: (draft: SetupDraft, lang: "en" | "zh") => http<SetupPreview>("POST", `/setup/preview?lang=${lang}`, { body: { draft } }),
+  openBooks: (draft: SetupDraft, password: string, lang: "en" | "zh") =>
+    http<SetupOpenResult>("POST", `/setup/open?lang=${lang}`, { body: { draft, password }, timeoutMs: 60_000, silent: true }),
 
   /** Owner action: close a counterparty's circuit breaker. The server checks X-Owner-Token. */
   resetCircuit: async (counterpartyId: string): Promise<{ status: string; message: string }> => {

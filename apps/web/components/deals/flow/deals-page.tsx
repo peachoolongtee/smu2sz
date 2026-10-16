@@ -4,13 +4,14 @@ import "@/app/flow-look.css";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { BuyingCard } from "@/components/deals/buying-card";
 import { ActiveCommitments, type AgreementGroups } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
 import { Button, ErrorState, PageHeader } from "@/components/ui";
 import { WorklistAlertLine } from "@/components/ui/worklist-rows";
 import { contractsOff } from "@/components/documents";
-import { getClock, getCustomers, getDeals, getLedger, getState, getWorklist, submitOffer } from "@/lib/api";
+import { getClock, getCustomers, getDeals, getLedger, getPurchases, getState, getWorklist, submitOffer } from "@/lib/api";
 import { dealRecordId } from "@/lib/decision";
 import { recordOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -58,6 +59,22 @@ export function DealsPage() {
   // A server that does not send the queue yet is read through today's worklist.
   const needWorklist = deals.data !== undefined && !deals.data.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang) : Promise.resolve(null)), [lang, needWorklist]);
+  // The buying side (ADR-0013): its card shows on the list only when the server answers (the feature can be switched off).
+  // It is read once when the list is on screen, not with the page's other reads: those are read again after every write (an accept, a send), and on a server that
+  // answers one request at a time this card's read would stand in the queue before the open deal's own record. With a deal open (the list is hidden) nothing is read.
+  const [purchases, setPurchases] = useState<NonNullable<Awaited<ReturnType<typeof getPurchases>>>["purchases"] | null>(null);
+  const listOpen = decision === null;
+  useEffect(() => {
+    if (!listOpen) return;
+    let live = true;
+    getPurchases(lang).then(
+      (v) => live && setPurchases(v.purchases),
+      () => live && setPurchases(null),
+    );
+    return () => {
+      live = false;
+    };
+  }, [lang, listOpen]);
   const customers = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
   const queue = deals.data === undefined ? undefined : deals.data.queue ? buildQueue(deals.data, null, customers.data, WORDS(t)) : worklist.data === undefined ? undefined : buildQueue(deals.data, worklist.data, customers.data, WORDS(t));
   const rows = queue ? negotiationRows(queue) : [];
@@ -318,6 +335,8 @@ export function DealsPage() {
         <div className="grid gap-6" data-testid="deals-grid">
           <div className="min-w-0 space-y-6" data-testid="deals-side">
             {tableMode ? null : QUEUE_NODE}
+            {/* The buying side (ADR-0013) sits between the selling list and the buyers' messages: selling stays first. */}
+            {purchases ? <BuyingCard purchases={purchases} /> : null}
             {INBOX_SLOT}
           </div>
         </div>

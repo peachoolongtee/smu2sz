@@ -8,10 +8,20 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SerializerFunctionWrapHandler, model_serializer, model_validator
 
 from app.domain.models import Contract, Tier, Violation
 from app.domain.money import Ratio
+
+
+def _omit_unset(data: object, model: Contract, names: tuple[str, ...]) -> object:
+    """ADR-0013 fields are left out of the serialised form while unset, so a request or result without a payment
+    schedule serialises (and hashes: the application key) exactly as it did before."""
+    if isinstance(data, dict):
+        for n in names:
+            if getattr(model, n) is None:
+                data.pop(n, None)
+    return data
 
 StructureKind = Literal["CASH_LINE", "LOAN", "LEASE"]
 StructureResult = Literal["SELECTED", "ADMISSIBLE", "REJECTED", "INFEASIBLE"]
@@ -34,6 +44,14 @@ DEFAULT_CANDIDATES = (
 )
 
 
+class CapexPayment(Contract):
+    """One dated payment of the purchase price (ADR-0013): a row of a capex contract's derived payment schedule."""
+
+    day: int = Field(ge=0)
+    amount_fen: int = Field(gt=0)
+    label: str = ""
+
+
 class CapexRequest(Contract):
     """The owner's question and estimate. Defaults are the spec §7.7 case: a ¥600,000 line earning
     +¥22,000 a month from month 4 over 5 years, 10% hurdle, 36-month payback limit."""
@@ -51,6 +69,22 @@ class CapexRequest(Contract):
     # (spec §6, 45 → 60) and funded permanently. None leaves it out.
     extension_target_terms_days: int | None = Field(default=60, ge=0)
     extension_counterparty_id: str | None = None  # None: the only recurring invoice's buyer
+    # ADR-0013: the purchase paid on these days (a capex contract's schedule) instead of all at once. They must sum to
+    # `price_fen`. None: the original single payment (on the day the financing lands, or today from cash).
+    payments: list[CapexPayment] | None = None
+
+    @model_validator(mode="after")
+    def _payments_sum_to_the_price(self) -> CapexRequest:
+        if self.payments is not None:
+            if not self.payments:
+                raise ValueError("payments, when given, list at least one payment")
+            if sum(p.amount_fen for p in self.payments) != self.price_fen:
+                raise ValueError("the payments must sum to price_fen exactly")
+        return self
+
+    @model_serializer(mode="wrap")
+    def _serialise(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]
+        return _omit_unset(handler(self), self, ("payments",))
 
 
 class Working(Contract):
@@ -120,3 +154,11 @@ class CapexResult(Contract):
     as_of_day: int = 0  # the day the books were read: this result is a snapshot of that day
     mandate_version: int
     state_version: int
+    # ADR-0013, only with a payment schedule (omitted otherwise): the last day the daily cash test sees, and what the
+    # schedule pays after it, which no structure's daily cash test covers.
+    horizon_end_day: int | None = None
+    beyond_horizon_fen: int | None = None
+
+    @model_serializer(mode="wrap")
+    def _serialise(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]
+        return _omit_unset(handler(self), self, ("horizon_end_day", "beyond_horizon_fen"))
