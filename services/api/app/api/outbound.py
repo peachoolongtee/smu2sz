@@ -33,7 +33,7 @@ from app.api.accept import PROPOSAL_DAYS, _answer, _conflict, _not_recorded, _st
 from app.api.auth import require_feature, require_owner
 from app.api.decide import _counter_allow, _counter_changed
 from app.api.decisions import lapsed_conflict, latest_verdict_for, record_fact
-from app.api.offers import _unclaimed, store_compiled
+from app.api.offers import SENDER_RANK, _unclaimed, store_compiled
 from app.api.presentation import option_label, party_name, t, when_text
 from app.api.runtime import Runtime, get_runtime
 from app.commitments import terms_hash
@@ -107,8 +107,9 @@ def _facts(rt: Runtime, offer_id: str) -> list[Any]:
 
 
 def _received(rt: Runtime, offer: CompiledOffer) -> ReceivedFact | None:
-    return next((f for f in reversed(_facts(rt, offer.offer_id))
-                 if isinstance(f, ReceivedFact) and f.offer_id == offer.offer_id and f.offer_version == offer.version), None)
+    """How this request arrived: the strongest sender that filed it (a later, stronger filing upgrades an earlier, weaker one; see `received_key`)."""
+    held = [f for f in _facts(rt, offer.offer_id) if isinstance(f, ReceivedFact) and f.offer_id == offer.offer_id and f.offer_version == offer.version]
+    return max(held, key=lambda f: SENDER_RANK[f.via], default=None)
 
 
 def _offered(rt: Runtime, offer_id: str, verdict_id: str, counter_id: str) -> OfferedFact | None:
@@ -294,6 +295,14 @@ def mark_offered(offer_id: str, counter_id: str, body: OfferedIn, lang: str = "e
         if view["blocked"] is not None:
             raise _conflict(view["blocked"]["code"], offer_id, _BLOCKED[view["blocked"]["code"]][0], _BLOCKED[view["blocked"]["code"]][1], said)
         if body.message_hash != view["message_hash"]:
+            other: Literal["en", "zh"] = "zh" if body.lang == "en" else "en"
+            if body.message_hash == _message_view(rt, offer, verdict, counter, other)["message_hash"]:  # the other language's words were copied
+                names = {"en": ("English", "英文"), "zh": ("Chinese", "中文")}
+                raise _conflict("MESSAGE_LANGUAGE", offer_id,
+                                f"You copied the {names[other][0]} message, but are marking the {names[body.lang][0]} one as sent; copy the "
+                                f"{names[body.lang][0]} message first.",
+                                f"您复制的是{names[other][1]}消息，但标记为已发送的是{names[body.lang][1]}消息；请先复制{names[body.lang][1]}消息。",
+                                said, message_hash=view["message_hash"])
             raise _conflict("MESSAGE_CHANGED", offer_id, "The message changed since you copied it; copy it again before marking it sent.",
                             "您复制之后消息已有变化；请重新复制后再标记为已发送。", said, message_hash=view["message_hash"])
         fact = OfferedFact(offer_id=offer_id, verdict_id=verdict.id, counter_id=counter.id, counterparty_id=offer.counterparty_id,
@@ -402,10 +411,18 @@ def buyer_accepted(offer_id: str, counter_id: str, body: AcceptedIn, lang: str =
         result = rt.executor.execute(op)
         if result.status not in (OperationStatus.EXECUTED, OperationStatus.PENDING_APPROVAL):
             raise _not_recorded(rt, offer_id, result, said, accepting=True)
-        record_fact(rt, deal_id(offer_id), f"accept-{commitment.id}",
-                    BuyerAcceptedFact(offer_id=offer_id, verdict_id=verdict.id, counter_id=counter.id, message_hash=sent.message_hash,
-                                      commitment_id=commitment.id, accept_op_id=op.op_id),
-                    state_version=rt.store.get_state().state_version, day=rt.day)
+        yes = BuyerAcceptedFact(offer_id=offer_id, verdict_id=verdict.id, counter_id=counter.id, message_hash=sent.message_hash,
+                                commitment_id=commitment.id, accept_op_id=op.op_id)
+        for _try in range(2):  # insert-if-absent, so a second try is safe
+            recorded = record_fact(rt, deal_id(offer_id), f"accept-{commitment.id}", yes,
+                                   state_version=rt.store.get_state().state_version, day=rt.day)
+            if recorded is not False:
+                break
+        else:  # the agreement ran, but the record that it came from the buyer's yes did not: say so, not "recorded"
+            raise HTTPException(500, {"code": "NOT_RECORDED", "offer_id": offer_id, "decision_id": deal_id(offer_id),
+                                      "message_when": t(said, "The agreement went through, but FLOW could not record that the buyer accepted. "
+                                                              "Open the deal to check it before you do anything else.",
+                                                        "协议已生效，但 FLOW 未能记录买方已接受。请先打开这笔交易核对，再进行其他操作。")})
         out = _answer(rt, offer_id, said, accepting=True)
         out["status"] = "agreed" if result.status == OperationStatus.EXECUTED else "waiting_approval"
         out["approval_id"] = result.approval_id
@@ -506,10 +523,9 @@ def buyer_reply(offer_id: str, body: ReplyIn, lang: str = "en") -> dict[str, Any
                 raise HTTPException(500, {"code": "NOT_RECORDED", "offer_id": offer_id,
                                           "message_when": t(said, "FLOW could not record the buyer's reply; try again.", "FLOW 未能记录买方的回复；请重试。")})
     reply_decision = deal_id(compiled.offer_id)
-    return {
+    return {**({"offer_closed": True} if late else {}),
         "offer_id": offer_id, "decision_id": deal_id(offer_id), "reply_offer_id": compiled.offer_id, "reply_decision_id": reply_decision,
         "reply_href": f"/deals?decision={reply_decision}", "offer": stored["offer"],
-        "offer_closed": late,
         "message_when": (t(said, "The offer you sent had closed. The buyer's reply is a new request of its own; read it to answer.",
                            "您发出的报价已截止。买方的回复是一项新请求；请阅读后答复。") if late else
                          t(said, "The buyer's reply is now a request of its own. Read it to answer.", "买方的回复已作为一项新请求。请阅读后答复。")),

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import Mapping
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
@@ -17,7 +17,7 @@ from app.api.presentation import abstention_words, business_text
 from app.api.runtime import Runtime, get_runtime
 from app.api.selection import Selection, build_context, selection
 from app.compiler import compile_offer, compile_term_sheet
-from app.decisions.facts import ReceivedFact, Via
+from app.decisions.facts import ReceivedFact, Via, parse_fact
 from app.decisions.identity import deal_id
 from app.domain.fixtures import load_offers, offer_documents
 from app.domain.models import CompiledOffer, SourceDocument
@@ -132,6 +132,25 @@ def intake_offer(rt: Runtime, body: OfferIn, lang: str = "en", *, via: Via = "ow
     return store_compiled(rt, docs, compile_offer(docs, cp), lang, via=via, in_reply_to=in_reply_to)
 
 
+# How much a sender vouches for a request: a stronger sender may upgrade how the same request arrived, never the other way (F4).
+SENDER_RANK: dict[str, int] = {"anonymous": 0, "agent": 1, "buyer_key": 2, "buyer_reply": 2, "owner": 3}
+
+
+def received_key(rt: Runtime, offer: CompiledOffer, via: Via) -> str | None:
+    """The fact key to record how this request (offer, version) arrived: the plain key when nothing is recorded; a key naming the sender
+    when `via` is stronger than every sender recorded so far (facts are append-only, the stronger one is a new fact that the reader prefers);
+    None when an equal or stronger sender already filed it. Call under `rt.lock`."""
+    base = f"{offer.offer_id}:v{offer.version}"
+    store: Any = rt.store
+    held = [f for f in (parse_fact(r) for r in store.decision_facts(deal_id(offer.offer_id)))
+            if isinstance(f, ReceivedFact) and f.offer_id == offer.offer_id and f.offer_version == offer.version]
+    if not held:
+        return base
+    if SENDER_RANK[via] <= max(SENDER_RANK[f.via] for f in held):
+        return None
+    return f"{base}:{via}"
+
+
 def store_compiled(rt: Runtime, docs: list[SourceDocument], offer: CompiledOffer, lang: str = "en", *, via: Via,
                    in_reply_to: str | None = None) -> dict:
     """Store a compiled offer and its documents, with how it reached FLOW (its RECEIVED fact). `intake_offer` and the buyer's pasted reply
@@ -144,10 +163,12 @@ def store_compiled(rt: Runtime, docs: list[SourceDocument], offer: CompiledOffer
             raise HTTPException(409, {"code": "OFFER_VERSION_CONFLICT", "offer_id": offer.offer_id}) from None
         for d in docs:
             rt.documents[d.doc_id] = d
-        record_fact(rt, deal_id(offer.offer_id), f"{offer.offer_id}:v{offer.version}",
-                    ReceivedFact(offer_id=offer.offer_id, offer_version=offer.version, counterparty_id=offer.counterparty_id, via=via,
-                                 in_reply_to_offer_id=in_reply_to),
-                    state_version=rt.store.get_state().state_version, day=rt.day)
+        key = received_key(rt, offer, via)
+        if key is not None:
+            record_fact(rt, deal_id(offer.offer_id), key,
+                        ReceivedFact(offer_id=offer.offer_id, offer_version=offer.version, counterparty_id=offer.counterparty_id, via=via,
+                                     in_reply_to_offer_id=in_reply_to),
+                        state_version=rt.store.get_state().state_version, day=rt.day)
     return {"offer": _offer_view(rt, offer, {d.doc_id: d.channel for d in docs}, lang),
             "documents": [json.loads(d.model_dump_json()) for d in docs]}
 
