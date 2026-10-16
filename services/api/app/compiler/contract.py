@@ -33,7 +33,7 @@ from app.compiler.contract_parsing import (
     unit_of,
 )
 from app.compiler.grounding import locate
-from app.compiler.parsing import rx
+from app.compiler.parsing import find_money, rx
 from app.compiler.schema import ContractExtraction, XAuthorityClaim, XContractTerm, XDataRequest
 from app.domain.models import (
     MULTI_VALUED_CONTRACT_FIELDS,
@@ -328,6 +328,19 @@ def supplier_late_delivery_penalty(quote: str) -> bool:
     return _LATE_DELIVERY.search(quote) is not None and _LATE_PAYMENT.search(quote) is None
 
 
+# RETENTION is money withheld from a payment. A performance bond or guarantee the supplier posts is a different thing
+# (it is returned after acceptance, nothing is withheld), so a quote about a bond with no word of withholding is dropped.
+_BOND = rx(r"履约保证金|履约保函|履约担保|保函|履约保证|performance\s+(?:bond|guarantee|security)|security\s+deposit"
+           r"|(?:bank|bid|tender)\s+guarantee", I)
+_WITHHELD = rx(r"质保金|质量保证金|保留金|尾款|扣留|扣除|暂扣|预留|retention|retain(?:s|ed|ing)?|withh[eo]ld(?:s|ing)?"
+               r"|withheld|holdback|deduct(?:s|ed|ion)?", I)
+
+
+def is_performance_bond(quote: str) -> bool:
+    """True when the quote is about a performance bond or guarantee and says nothing of money withheld."""
+    return _BOND.search(quote) is not None and _WITHHELD.search(quote) is None
+
+
 def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDocument) -> ContractTerm | None:
     sp = locate({chunk_doc.doc_id: chunk_doc}, chunk_doc.doc_id, x.quote)
     if sp is None:
@@ -342,6 +355,10 @@ def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDoc
         frags[name] = v  # type: ignore[assignment]
     if x.field == F.LATE_INTEREST and supplier_late_delivery_penalty(span.text):
         _drop(ctx, x.field, "term dropped: the clause is the supplier's penalty, not interest owed by the buyer", [span])
+        return None
+    if x.field == F.RETENTION and is_performance_bond(span.text):
+        _drop(ctx, x.field, "term dropped: the clause is a performance bond the supplier posts, not money withheld "
+              "from payments", [span])
         return None
     need = _REQUIRED[x.field]
     if frags[need] is None:
@@ -430,6 +447,27 @@ def _key(t: ContractTerm) -> tuple[object, ...]:
     return (t.amount_fen, t.rate_bp, t.days, t.months, t.date, t.basis, t.unit, t.reference, text)
 
 
+def _without_line_items(group: list[ContractTerm], abst: list[Abstention]) -> list[ContractTerm]:
+    """A price that is a line of the contract total is read inside it, not against it: the row that states the total
+    (quantity, unit price, total), or lines that add up to it. A different amount stays a conflict."""
+    amounts = [t.amount_fen for t in group if t.amount_fen is not None]
+    if len(set(amounts)) < 2:
+        return group
+    total = max(group, key=lambda t: t.amount_fen or 0)
+    lines = [t for t in group if t.amount_fen != total.amount_fen]
+    stated = [t for t in lines if total.amount_fen in {f.value for f in find_money(t.span.text)}]
+    rest = [t for t in lines if t not in stated]
+    summed = bool(rest) and sum(t.amount_fen or 0 for t in rest) == total.amount_fen
+    if not stated and not summed:
+        return group
+    gone = stated + (rest if summed else [])
+    if len(gone) != len(lines):
+        return group
+    abst.append(Abstention(field=F.PRICE.value, spans=[t.span for t in gone], reason=(
+        "note: this amount is a line of the contract total and is read inside it")))
+    return [t for t in group if t not in gone]
+
+
 def _merge(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[ContractTerm], bool]:
     """Read a term stated twice once; drop a one-valued field stated with different values (CONFLICTING_SOURCES)."""
     kept: list[ContractTerm] = []
@@ -438,6 +476,9 @@ def _merge(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[Cont
     for t in terms:
         by_field.setdefault(t.field, []).append(t)
     for field, group in by_field.items():
+        if field == F.PRICE:
+            group = _without_line_items(group, abst)
+            by_field[field] = group
         distinct: dict[tuple[object, ...], ContractTerm] = {}
         for t in group:
             distinct.setdefault(_key(t), t)
