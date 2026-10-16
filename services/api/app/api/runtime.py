@@ -187,8 +187,11 @@ class Runtime:
             self.intake_day, self.intake_count = 0, 0
             self.buyer_attempts.clear()
             self.buyer_refusals.clear()
+            from app.api.offer_picture import clear_cache as clear_picture_cache
+
             reset_sessions()
-            clear_exposure_cache()
+            clear_exposure_cache()  # the answers were computed on the books that were just replaced
+            clear_picture_cache()  # as were the pictures (keyed by the state version, which a reset can bring back to the same number)
 
     def reset_demo(self, scenario: str = "golden_sme") -> None:
         """POST /demo/reset: the scenario's books (`reset`), then, on the golden books, the demo documents read by the

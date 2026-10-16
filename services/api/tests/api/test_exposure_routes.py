@@ -414,9 +414,9 @@ def test_spare_zero_skips_the_search_and_a_later_read_pays_only_for_it(api: Test
     assert len(searches) == 4 and full["spare_read"] is True  # the books as they stand, then each of the three paths
     api.get(f"/offers/{offer_id}/exposure")
     api.get(f"/decisions/deal:{offer_id}/exposure?spare=1")  # the decision read can ask for it too, and finds it searched
-    assert len(searches) == 12  # asked for each time, answered by the capacity cache (the next test counts the real runs)
+    assert len(searches) == 4  # the repeated reads are answered by the route's own cache before they ask again (the next test counts the real runs)
     api.get(f"/decisions/deal:{offer_id}/exposure")  # but by default it does not
-    assert len(searches) == 12
+    assert len(searches) == 4
     assert api.get(f"/offers/{offer_id}/exposure?spare=2").status_code == 422
 
 
