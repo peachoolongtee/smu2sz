@@ -368,16 +368,24 @@ owner copies it and sends it by their own channel (`app/api/outbound.py`). Four 
 | OFFERED | `{verdict_id}:{counter_id}` | `POST .../counters/{id}/offered` ("I've sent it") | the verdict, counter, books' state version, `terms_hash`, `message_hash`, template version, language and the last day the offer is open |
 | BUYER_ACCEPTED | `accept-{commitment_id}` | `POST .../counters/{id}/buyer-accepted`, after the owner's AcceptOffer ran or queued | the counter, the message hash, the commitment and the accept's op id |
 | REPLIED | the reply's offer id | `POST /offers/{id}/buyer-reply`, after the reply was stored as a new offer | the counter answered and the new request |
+| BUYER_DECLINED | `declined:{verdict_id}:{counter_id}` | `POST .../counters/{id}/buyer-declined` | the counter refused and the buyer's reason as a code (`DISCOUNT_TOO_LOW`, `WANTED_LONGER_TERMS`, `NO_LONGER_NEEDED`, `NO_REASON`), never their words |
 
 The rule "no sentence, no buyer text" stands. The message is not stored: `message_hash` = sha256 of the template version, the language, the
 terms' hash and the exact words, so the record proves which words were shown for which terms; the words themselves can be re-rendered only while
 the inputs (the buyer's name, the invoice) are unchanged. A buyer's pasted reply is a document of a new offer, like any buyer message (channel
 `email`, its sender the deal's buyer, `parent_doc_id` the request it answers), not a fact.
 
-States (section 5), after rule 9 and before rule 10: **9a** a REPLIED fact gives REPLIED (terminal: the reply is a request of its own);
+States (section 5), after rule 9 and before rule 10: **9a** a REPLIED fact gives REPLIED (terminal: the reply is a request of its own),
+a BUYER_DECLINED fact gives NO_DEAL;
 **9b** an OFFERED fact gives AWAITING_BUYER while `today` is on or before the latest day an offered counter is open, NO_DEAL after it. The
 agreement rules (1 to 6), the owner's decline and the approval rules come first, so the buyer's yes recorded by the owner reads as AGREED or
 AUTHORIZATION_REQUIRED like any agreement. Waiting (section 6): AWAITING_BUYER waits for the buyer (`BUYER_ANSWER`, the day the offer closes).
 
 Marking an offer sent writes OFFERED and nothing else: no commitment, no operation, no funding. The buyer's yes is the owner's AcceptOffer on the
 offered verdict's counter (screened, re-verified on today's books, Tier 2 queued); nothing a buyer writes reaches an operation.
+
+The record reads what came of the offer as `buyer_answer`: accepted (a BUYER_ACCEPTED fact names the agreement), countered, declined, no
+answer (NO_DEAL with an OFFERED fact and neither of the others), or none while the buyer may still answer. `GET /decisions/{id}` carries it in
+`outbound` (what was sent, the message re-rendered and checked against its hash, the closing day, and the answers the owner can record) and every
+deal carries `history` (the request, FLOW's check, each send and the answer, each with its day and calendar date). The state words for NO_DEAL
+follow the answer ("Declined by the buyer", "Closed without an answer"), and the lifecycle adds `no_answer`.

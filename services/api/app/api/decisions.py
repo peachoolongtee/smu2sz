@@ -64,7 +64,7 @@ from app.decisions import (
 )
 from app.decisions.facts import Fact, record_for
 from app.decisions.identity import deal_id, decision_id_for, family_of, offer_id_of
-from app.decisions.state import RESERVE_ALERT, RecordIndex, derive, newest_reserve_decision
+from app.decisions.state import RESERVE_ALERT, RecordIndex, buyer_answer, derive, newest_reserve_decision
 from app.domain.models import CommitmentStatus, CompiledOffer, FinancialState, Mandate, Mode, OperationStatus
 from app.domain.money import fmt_yuan
 from app.financial import EngineError, project
@@ -96,6 +96,22 @@ def record_fact(rt: Runtime, decision_id: str, fact_key: str, fact: Fact | Calla
     except Exception:
         log.exception("decision fact for %s could not be recorded", decision_id)
         return False
+
+
+def sent_outside_conflict(rt: Runtime, offer_id: str, lang: str) -> HTTPException | None:
+    """409 OFFER_SENT_OUTSIDE when the owner sent a counter on this request to the buyer themself (an OFFERED fact): the buyer's answer is
+    then recorded on the deal (accepted, countered, declined), and neither the simulated buyer nor the owner's own accept or decline of the
+    request as asked may answer it as well. Call under `rt.lock`."""
+    from app.decisions.facts import OfferedFact, parse_fact
+    from app.decisions.identity import deal_id
+
+    store: Any = rt.store
+    if not any(isinstance(parse_fact(r), OfferedFact) for r in store.decision_facts(deal_id(offer_id))):
+        return None
+    said = t(lang, "You sent the buyer a counter yourself; record their answer on the deal instead.",
+             "您已亲自向买方发出还价；请改为在这笔交易上记录对方的答复。")
+    return HTTPException(409, detail={"code": "OFFER_SENT_OUTSIDE", "offer_id": offer_id, "decision_id": deal_id(offer_id),
+                                      "message": said, "message_when": said})
 
 
 def latest_verdict_for(rt: Runtime, offer_id: str):
@@ -404,7 +420,8 @@ def decision_summary(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang:
         "status_text": lifecycle_text(lifecycle, lang) if lifecycle is not None else None,
         "id": ds.decision_id, "family": ds.family, "state": ds.state.value,
         "state_text": decision_state_text(ds.family, ds.state.value, lang, response=_response_code(ds), residual=residual,
-                                          lapsed_by_agreement=ctx.lapsed_by.get(ds.decision_id, True)),
+                                          lapsed_by_agreement=ctx.lapsed_by.get(ds.decision_id, True),
+                                          answer=buyer_answer(ds) if deal else None),
         "state_tone": decision_state_tone(ds.state.value, awaited=waiting["party"] == Party.OWNER.value, residual=residual),
         "terminal": ds.terminal, "headline": _headline(ctx, ds, lang), "counterparty_name": _counterparty(ctx, ds),
         "amount_display": _amount_display(ctx, ds),
@@ -682,6 +699,32 @@ def remaining_links(ctx: Context, ds: DecisionState, lang: str) -> list[dict[str
     return links
 
 
+def _outbound(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> dict[str, Any] | None:
+    """An offer the owner sent outside FLOW and what came of it (`app.api.outbound_record`); None for any other decision. A supporting read:
+    when it cannot be built the record says nothing of it rather than fail."""
+    if ds.family != "DEAL" or ds.offered is None:
+        return None
+    from app.api.outbound_record import outbound_view  # it reads the outbound routes, which read this module
+
+    try:
+        return outbound_view(ctx, ds, inp, lang)
+    except Exception:
+        log.exception("the outbound block could not be built for %s", ds.decision_id)
+        return None
+
+
+def _history(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> list[dict[str, Any]]:
+    if ds.family != "DEAL":
+        return []
+    from app.api.outbound_record import deal_history
+
+    try:
+        return deal_history(ctx, ds, inp, lang)
+    except Exception:
+        log.exception("the history could not be built for %s", ds.decision_id)
+        return []
+
+
 def decision_detail(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> dict[str, Any]:
     summary = decision_summary(ctx, ds, inp, lang)
     receipts, promises = _receipts(ctx, ds, lang)
@@ -713,6 +756,8 @@ def decision_detail(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: 
                        "terms": _agreed_terms(ctx, c, lang),
                        "receipt": _agreement_receipt(ctx, ds, c, promises, lang)}
                       if c is not None else None),
+        "outbound": _outbound(ctx, ds, inp, lang),
+        "history": _history(ctx, ds, inp, lang),
         "operations": _operations(ctx, ds, lang),
         "execution": execution_view(ctx, ds, lang),
         "settlement": _settlement(ctx, ds, lang),

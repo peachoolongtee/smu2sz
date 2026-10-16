@@ -18,7 +18,7 @@ from app.domain.money import Ratio
 from app.persistence.records import DecisionFactRecord
 
 Family = Literal["DEAL", "FUNDING"]
-FactName = Literal["EVALUATED", "SENT", "QUOTED", "RECEIVED", "OFFERED", "BUYER_ACCEPTED", "REPLIED"]
+FactName = Literal["EVALUATED", "SENT", "QUOTED", "RECEIVED", "OFFERED", "BUYER_ACCEPTED", "REPLIED", "BUYER_DECLINED"]
 
 
 class EvaluatedFact(Contract):
@@ -191,12 +191,27 @@ class RepliedFact(Contract):
     reply_offer_id: str
 
 
-Fact = EvaluatedFact | SentFact | QuotedFact | ReceivedFact | OfferedFact | BuyerAcceptedFact | RepliedFact
+DeclineReason = Literal["DISCOUNT_TOO_LOW", "WANTED_LONGER_TERMS", "NO_LONGER_NEEDED", "NO_REASON"]
+
+
+class BuyerDeclinedFact(Contract):
+    """BUYER_DECLINED (DEAL; fact_key = "declined:{verdict_id}:{counter_id}"). The owner recorded that the buyer said no to the offered counter,
+    with the reason they gave as a code (never their words). Nothing was agreed or run; the deal ends as no deal."""
+
+    offer_id: str
+    verdict_id: str
+    counter_id: str
+    message_hash: str
+    reason: DeclineReason
+
+
+Fact = EvaluatedFact | SentFact | QuotedFact | ReceivedFact | OfferedFact | BuyerAcceptedFact | RepliedFact | BuyerDeclinedFact
 
 _MODELS: dict[str, type[Contract]] = {"EVALUATED": EvaluatedFact, "SENT": SentFact, "QUOTED": QuotedFact, "RECEIVED": ReceivedFact,
-                                      "OFFERED": OfferedFact, "BUYER_ACCEPTED": BuyerAcceptedFact, "REPLIED": RepliedFact}
+                                      "OFFERED": OfferedFact, "BUYER_ACCEPTED": BuyerAcceptedFact, "REPLIED": RepliedFact,
+                                      "BUYER_DECLINED": BuyerDeclinedFact}
 FAMILY_OF: dict[str, Family] = {"EVALUATED": "DEAL", "SENT": "DEAL", "QUOTED": "FUNDING", "RECEIVED": "DEAL", "OFFERED": "DEAL",
-                                "BUYER_ACCEPTED": "DEAL", "REPLIED": "DEAL"}
+                                "BUYER_ACCEPTED": "DEAL", "REPLIED": "DEAL", "BUYER_DECLINED": "DEAL"}
 
 
 def body_json(fact: Fact) -> str:
@@ -223,7 +238,8 @@ def parse_fact(record: DecisionFactRecord) -> Fact | None:
         parsed = model.model_validate_json(record.body_json)
     except (ValidationError, ValueError):
         return None
-    assert isinstance(parsed, (EvaluatedFact, SentFact, QuotedFact, ReceivedFact, OfferedFact, BuyerAcceptedFact, RepliedFact))
+    assert isinstance(parsed, (EvaluatedFact, SentFact, QuotedFact, ReceivedFact, OfferedFact, BuyerAcceptedFact, RepliedFact,
+                               BuyerDeclinedFact))
     return parsed
 
 
@@ -238,8 +254,10 @@ class DecisionFactStore(Protocol):
 __all__ = [
     "FAMILY_OF",
     "BuyerAcceptedFact",
+    "BuyerDeclinedFact",
     "CounterEconomics",
     "DecisionFactStore",
+    "DeclineReason",
     "EvaluatedFact",
     "Fact",
     "GapLeg",

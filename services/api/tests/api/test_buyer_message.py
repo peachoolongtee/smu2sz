@@ -303,3 +303,128 @@ def test_with_two_counters_out_the_deal_closes_on_the_later_day(api: TestClient)
     assert api.post("/clock/advance", json={"to_day": 5}).status_code == 200
     d = _decision(api, oid)
     assert d["state"] == "AWAITING_BUYER" and "closes in 2 days" in d["waiting_for"]["text"]
+
+
+# ================================================================ the buyer's answer on the record (phase 3 backend, 16 Oct)
+
+
+def test_the_review_beside_the_message_is_the_pictures_and_the_words_follow_the_page(api: TestClient) -> None:
+    oid, v = _evaluate(api, EX02)
+    m = api.get(f"/offers/{oid}/counters/{v['counters'][0]['id']}/message", params={"lang": "zh", "ui_lang": "en"}).json()
+    assert m["text"].startswith("Foshan Home Retail Co.：") and m["lang"] == "zh" and m["ui_lang"] == "en"
+    assert m["notice_text"].startswith("FLOW does not send this message") and m["valid_until_date"] == "3 October 2026"
+    assert m["provenance"]["verified"] is True and [x["code"] for x in m["languages"]] == ["en", "zh"]
+    early = next(r for r in m["review"]["terms"] if r["key"] == "early_payment")
+    assert early["value_text"] == "0.85% off ¥257,200.00" and early["instead_of_text"] == "instead of 1.50% off ¥420,000.00"
+    assert m["review"]["cost_display"] and m["review"]["needs_owner"] is False
+
+
+def test_the_record_says_what_was_sent_and_how_each_answer_is_recorded(api: TestClient) -> None:
+    oid, _v, m = _sent(api)
+    d = _decision(api, oid)
+    out = d["outbound"]
+    assert out["answer"] is None and out["tone"] == "waiting" and out["label_text"] == "Option A"
+    assert out["message_same"] and out["message_text"] == m["text"]
+    assert out["closes"] == {"day": 2, "when": "in 2 days", "date": "3 October 2026"} and out["progress"] == 0.0
+    assert out["title_text"] == "Waiting for Foshan Home Retail Co.'s answer"
+    acts = out["actions"]
+    assert [acts[k]["label"] for k in ("accept", "counter", "decline")] == ["They accepted", "They countered", "They declined"]
+    assert acts["accept"]["authority_text"] == "Within your limits: in force when you record it."
+    assert [r["code"] for r in acts["decline"]["reasons"]] == ["DISCOUNT_TOO_LOW", "WANTED_LONGER_TERMS", "NO_LONGER_NEEDED", "NO_REASON"]
+    assert [h["kind"] for h in d["history"]] == ["received", "checked", "offered"]
+    assert _decision(api, oid, "zh")["outbound"]["title_text"] == "等待Foshan Home Retail Co.答复"
+
+
+def test_the_buyers_no_closes_the_deal_with_its_reason_and_moves_nothing(api: TestClient, rt: Runtime) -> None:
+    oid, v, m = _sent(api)
+    ops, commitments = len(rt.store.operations()), len(rt.store.commitments())
+    r = api.post(f"/offers/{oid}/counters/{m['counter_id']}/buyer-declined",
+                 json={"verdict_id": v["id"], "message_hash": m["message_hash"], "reason": "DISCOUNT_TOO_LOW"})
+    assert r.status_code == 200, r.text
+    d = r.json()["decision"]
+    assert (d["state"], d["state_text"], d["lifecycle"], d["terminal"]) == ("NO_DEAL", "Declined by the buyer", "declined", True)
+    assert d["outbound"]["answer"] == "declined" and d["outbound"]["reason_text"] == "The discount was too low"
+    assert d["history"][-1]["text"] == "Foshan Home Retail Co. declined: the discount was too low"
+    assert (len(rt.store.operations()), len(rt.store.commitments())) == (ops, commitments)
+    for path, body in ((f"/offers/{oid}/counters/{m['counter_id']}/buyer-declined", {"verdict_id": v["id"], "message_hash": m["message_hash"]}),
+                       (f"/offers/{oid}/counters/{m['counter_id']}/buyer-accepted",
+                        {"verdict_id": v["id"], "state_version": rt.store.get_state().state_version, "message_hash": m["message_hash"]}),
+                       (f"/offers/{oid}/buyer-reply", {"verdict_id": v["id"], "counter_id": m["counter_id"], "text": "Could you do 50-day terms?"})):
+        again = api.post(path, json=body)
+        assert again.status_code == 409 and again.json()["detail"]["code"] == "ALREADY_DECLINED_BY_BUYER", path
+    assert _decision(api, oid, "zh")["state_text"] == "买方已拒绝"
+
+
+def test_an_offer_that_closes_unanswered_says_so(api: TestClient) -> None:
+    oid, _v, _m = _sent(api)
+    assert api.post("/clock/advance", json={"to_day": 3}).status_code == 200
+    d = _decision(api, oid)
+    assert (d["state"], d["state_text"], d["lifecycle"]) == ("NO_DEAL", "Closed without an answer", "no_answer")
+    assert d["outbound"]["answer"] == "no_answer" and d["outbound"]["title_text"] == "No answer by 3 October 2026"
+    assert d["history"][-1]["kind"] == "no_answer"
+
+
+def test_the_buyers_yes_reads_as_what_happened(api: TestClient, rt: Runtime) -> None:
+    oid, v, m = _sent(api)
+    assert _accepted(api, oid, v, m, rt).status_code == 200
+    out = _decision(api, oid)["outbound"]
+    assert out["answer"] == "accepted" and out["tone"] == "ok" and out["text"] == "The agreement is in force."
+    assert out["title_text"] == "Foshan Home Retail Co. accepted Option A on 1 October 2026" and out["actions"] is None
+
+
+def test_their_counter_reads_as_a_new_request_to_answer(api: TestClient) -> None:
+    oid2, v2, m2 = _sent(api, EX01, counter=1)
+    r = api.post(f"/offers/{oid2}/buyer-reply", json={"verdict_id": v2["id"], "counter_id": m2["counter_id"], "text": "Could you do 50-day terms instead?"})
+    out2 = _decision(api, oid2)["outbound"]
+    assert out2["answer"] == "countered" and out2["reply_quote"] == "Could you do 50-day terms instead?"
+    assert out2["links"][0]["href"] == f"/deals?decision=deal:{r.json()['reply_offer_id']}"
+
+
+# ================================================================ the verifier's findings on the answer (16 Oct, second round)
+
+
+def test_once_an_offer_is_sent_outside_neither_the_simulator_nor_accept_as_asked_answers_it(api: TestClient, rt: Runtime) -> None:
+    """Finding 1: the buyer's answer is recorded on the deal; the simulated buyer and the owner's own accept do not answer it as well."""
+    oid, v, m = _sent(api)
+    sim = api.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"})
+    assert sim.status_code == 409 and sim.json()["detail"]["code"] == "OFFER_SENT_OUTSIDE"
+    assert api.post(f"/offers/{oid}/counters/{m['counter_id']}/buyer-declined",
+                    json={"verdict_id": v["id"], "message_hash": m["message_hash"]}).status_code == 200
+    ops = len(rt.store.operations())
+    for path, body in ((f"/negotiate/{oid}", {"buyer_profile": "cooperative"}),
+                       (f"/offers/{oid}/accept", {"verdict_id": v["id"], "state_version": rt.store.get_state().state_version})):
+        r = api.post(path, json=body)
+        assert r.status_code == 409 and r.json()["detail"]["code"] in ("OFFER_SENT_OUTSIDE", "NOT_ACCEPTABLE"), (path, r.text)
+    assert len(rt.store.operations()) == ops and _decision(api, oid)["outbound"]["answer"] == "declined"
+
+
+def test_a_no_to_one_of_two_counters_names_that_counter(api: TestClient) -> None:
+    """Finding 2: the title names the counter the buyer refused, not the latest one sent."""
+    oid, v = _evaluate(api, EX01)
+    b, a = (_message(api, oid, c["id"]) for c in (v["counters"][1], v["counters"][0]))
+    assert _offered(api, oid, v, b).status_code == 200 and _offered(api, oid, v, a).status_code == 200
+    r = api.post(f"/offers/{oid}/counters/{a['counter_id']}/buyer-declined", json={"verdict_id": v["id"], "message_hash": a["message_hash"]})
+    assert r.status_code == 200
+    assert r.json()["decision"]["outbound"]["title_text"].startswith("Foshan Home Retail Co. declined Option A on")
+
+
+def test_a_yes_whose_approval_you_rejected_says_nothing_is_in_force_and_takes_no_other_answer(api: TestClient, rt: Runtime) -> None:
+    """Finding 3: the record follows the approval; after the yes, no other answer is recorded."""
+    oid, v, m = _sent(api, EX01, counter=1)
+    yes = _accepted(api, oid, v, m, rt)
+    assert yes.status_code == 200 and yes.json()["status"] == "waiting_approval"
+    assert _decision(api, oid)["outbound"]["text"] == "The agreement waits for your approval."
+    assert api.post(f"/approvals/{yes.json()['approval_id']}", json={"decision": "REJECT"}).status_code == 200
+    out = _decision(api, oid)["outbound"]
+    assert out["answer"] == "accepted" and out["text"] == "You declined the agreement at approval: nothing is in force." and out["tone"] == "neutral"
+    no = api.post(f"/offers/{oid}/counters/{m['counter_id']}/buyer-declined", json={"verdict_id": v["id"], "message_hash": m["message_hash"]})
+    assert no.status_code == 409 and no.json()["detail"]["code"] == "ALREADY_ANSWERED"
+
+
+def test_a_no_after_the_offer_closed_is_refused(api: TestClient) -> None:
+    """Finding 5: like a late yes, a late no is not recorded; the offer already closed unanswered."""
+    oid, v, m = _sent(api)
+    assert api.post("/clock/advance", json={"to_day": 3}).status_code == 200
+    r = api.post(f"/offers/{oid}/counters/{m['counter_id']}/buyer-declined", json={"verdict_id": v["id"], "message_hash": m["message_hash"]})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "OFFER_EXPIRED"
+    assert _decision(api, oid)["outbound"]["answer"] == "no_answer"

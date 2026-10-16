@@ -17,7 +17,14 @@ from pydantic import BaseModel
 from app.alerts import Severity, alerts
 from app.api.accept import accept_block, answered_block
 from app.api.auth import require_feature, require_owner
-from app.api.decisions import execution_view, lapsed_conflict, latest_verdict_for, load_context, record_fact
+from app.api.decisions import (
+    execution_view,
+    lapsed_conflict,
+    latest_verdict_for,
+    load_context,
+    record_fact,
+    sent_outside_conflict,
+)
 from app.api.display import displayed
 from app.api.home import _alert_actions, _series, next_action
 from app.api.presentation import (
@@ -449,6 +456,8 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str =
     profile = simulated_profile(offer.counterparty_id, body.buyer_profile)
     if profile is None:  # every send used to negotiate against BUYER-1's reservation, whoever asked
         raise _no_simulated_buyer(offer, body.buyer_profile, lang)
+    if (outside := sent_outside_conflict(rt, offer_id, lang)) is not None:
+        raise outside  # the real buyer has the counter: the simulated one does not answer it as well
     chosen: CounterProposal | None = None
     with rt.lock:
         bound = body.verdict_id is not None or body.counter_id is not None or body.state_version is not None

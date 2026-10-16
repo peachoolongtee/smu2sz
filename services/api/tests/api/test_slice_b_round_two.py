@@ -198,13 +198,15 @@ def test_a_negotiation_row_keeps_its_coarse_topic_for_a_sentence_that_names_it(a
 # ---------------------------------------------------------------- 3. lifecycle
 
 
-def test_the_lifecycle_vocabulary_is_nine_keys_in_both_languages() -> None:
+def test_the_lifecycle_vocabulary_is_ten_keys_in_both_languages() -> None:
     # round three adds "closed" (an agreed deal that is over); the copied offer adds "answered" (the buyer replied with terms of their own)
-    assert LIFECYCLE == ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed", "closed", "answered")
+    # and "no_answer" (it closed on its day unanswered)
+    assert LIFECYCLE == ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed", "closed", "answered",
+                         "no_answer")
     assert [lifecycle_text(k, "en") for k in LIFECYCLE] == ["Counter ready", "Owner review needed", "Awaiting buyer", "More information needed",
-                                                          "Agreed", "Declined", "Lapsed", "Closed", "Answered with new terms"]
+                                                          "Agreed", "Declined", "Lapsed", "Closed", "Answered with new terms", "No answer"]
     assert [lifecycle_text(k, "zh") for k in LIFECYCLE] == ["还价已就绪", "需要您审核", "等待买方回复", "需要更多信息", "已达成", "已拒绝", "已失效", "已结束",
-                                                          "对方已提出新条款"]
+                                                          "对方已提出新条款", "未获答复"]
 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
