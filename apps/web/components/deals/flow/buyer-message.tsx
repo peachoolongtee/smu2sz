@@ -49,7 +49,7 @@ function Letter({ text }: { text: string }) {
  *     request arrived (a shield when the sender is verified), the message as a letter, and the two steps: Copy (the filled button until it has been copied), then "I've sent it to the
  *     buyer" (filled once copied), with what marking it does underneath.
  * Marking it sent records that and nothing else, bound to the verdict, the books and the exact message shown; a refusal (409) records nothing and says the server's `message_when`.
- * MESSAGE_CHANGED reads the message again; COUNTER_CHANGED is the send review's own refusal (`onCounterChanged`: its "Check again"). When FLOW prepares no message its reason is shown.
+ * "I've sent it" waits for a copy of the message on screen (a copy of the other language does not count) and sends the hash of what was copied. MESSAGE_CHANGED reads the message again; COUNTER_CHANGED is the send review's own refusal (`onCounterChanged`: its "Check again"). When FLOW prepares no message its reason is shown.
  */
 export function BuyerMessage({
   offerId,
@@ -80,6 +80,8 @@ export function BuyerMessage({
   if (read.data && read.data !== kept) setKept(read.data);
   const words = msg ?? kept;
   const [copied, setCopied] = useState<"idle" | "copied" | "failed">("idle");
+  // The message the owner copied (the server's hash of its words, and its language): "I've sent it" records that message, and only after this language's was copied.
+  const [copiedMsg, setCopiedMsg] = useState<{ lang: Lang; hash: string } | null>(null);
   const [marking, setMarking] = useState(false);
   const [refused, setRefused] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -92,26 +94,29 @@ export function BuyerMessage({
   const pickLang = (l: Lang) => {
     setBuyerLang(l);
     setCopied("idle");
+    setCopiedMsg(null);
   };
 
   const copyMessage = async () => {
-    if (!msg?.text) return;
+    if (!msg?.text || !msg.message_hash) return;
+    const mine = { lang: buyerLang, hash: msg.message_hash };
     try {
       await navigator.clipboard.writeText(msg.text);
       setCopied("copied");
     } catch {
-      setCopied("failed");
+      setCopied("failed"); // the text is on screen to select and copy by hand
     }
+    setCopiedMsg(mine);
   };
 
   const markSent = async () => {
-    if (!msg?.message_hash) return;
+    if (!msg?.message_hash || copiedMsg?.lang !== buyerLang) return;
     setMarking(true);
     setRefused(null);
     setError(null);
     try {
-      // What the owner was shown: the verdict, the books' version and the message in the buyer's language.
-      const r = await markOffered(offerId, counterId, { verdict_id: msg.verdict_id, state_version: msg.state_version, message_hash: msg.message_hash, lang: buyerLang });
+      // What the owner copied: the verdict, the books' version, the hash of the message copied and the buyer's language on screen (the server refuses the one for the other).
+      const r = await markOffered(offerId, counterId, { verdict_id: msg.verdict_id, state_version: msg.state_version, message_hash: copiedMsg.hash, lang: buyerLang });
       onMarked(r);
       bump();
     } catch (e) {
@@ -120,8 +125,9 @@ export function BuyerMessage({
       if (moved) onCounterChanged(moved);
       else if (no) {
         setRefused(no.message_when ?? no.message);
-        if (no.code === "MESSAGE_CHANGED") {
+        if (no.code === "MESSAGE_CHANGED" || no.code === "MESSAGE_LANGUAGE") {
           setCopied("idle");
+          setCopiedMsg(null);
           read.reload();
         }
       } else setError(errorText(e, t));
@@ -220,7 +226,7 @@ export function BuyerMessage({
               <Button variant={hasCopied ? "secondary" : "primary"} onClick={() => void copyMessage()} data-testid="buyer-message-copy" data-filled={hasCopied ? "false" : "true"}>
                 {words.copy_label}
               </Button>
-              <Button variant={hasCopied ? "primary" : "secondary"} loading={marking} disabled={!msg.message_hash} onClick={() => void markSent()} data-testid="buyer-message-mark-sent" data-filled={hasCopied ? "true" : "false"}>
+              <Button variant={hasCopied ? "primary" : "secondary"} loading={marking} disabled={!msg.message_hash || copiedMsg?.lang !== buyerLang} onClick={() => void markSent()} data-testid="buyer-message-mark-sent" data-filled={hasCopied ? "true" : "false"}>
                 {words.mark_sent_label}
               </Button>
               <span role="status" aria-live="polite" className="text-sm text-ink-2" data-testid="buyer-message-copy-status">
