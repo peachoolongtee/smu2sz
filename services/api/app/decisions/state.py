@@ -550,6 +550,8 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
     )
 
 
+BUYER_YES = "buyer-yes-"  # the op id prefix of the owner's AcceptOffer that records a buyer's yes (app.api.outbound)
+
 _DEAL_TERMINAL = frozenset({
     DealState.REVOKED, DealState.FULFILLED, DealState.MISSED, DealState.EXPIRED, DealState.DECLINED, DealState.FAILED,
     DealState.NO_DEAL, DealState.REPLIED,
@@ -585,7 +587,9 @@ def _deal_state(
         return DealState.AUTHORIZATION_REQUIRED
     if a is not None and a.status == ApprovalStatus.REJECTED:  # 8
         return DealState.DECLINED
-    if x is not None and x.status == OperationStatus.REFUSED:  # 9
+    if x is not None and x.status == OperationStatus.REFUSED and not (  # 9
+        x.op_id.startswith(BUYER_YES) and offered_until is not None
+    ):  # 9: the owner's record of a buyer's yes that the executor refused does not end the deal: rule 9b decides it (waiting while the offer is open, no deal after it)
         return DealState.FAILED
     if replied:  # 9a: the buyer answered the offer sent outside FLOW with terms of their own, now a request of its own
         return DealState.REPLIED

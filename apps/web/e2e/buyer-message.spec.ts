@@ -46,6 +46,7 @@ async function messagePanel(page: Page) {
 /** Marked sent: the deal waits for the buyer. */
 async function markedSent(page: Page) {
   const panel = await messagePanel(page);
+  await panel.getByTestId("buyer-message-copy").click();
   await panel.getByTestId("buyer-message-mark-sent").click();
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AWAITING_BUYER");
   await expect(page.getByTestId("outbound-waiting")).toBeVisible();
@@ -87,6 +88,7 @@ test("send: what they asked beside what you offer, the letter in the buyer's lan
   // Copy is the filled button until the message has been copied; then "I've sent it to the buyer" is.
   await expect(panel.getByTestId("buyer-message-copy")).toHaveAttribute("data-filled", "true");
   await expect(panel.getByTestId("buyer-message-mark-sent")).toHaveAttribute("data-filled", "false");
+  await expect(panel.getByTestId("buyer-message-mark-sent")).toBeDisabled(); // nothing copied yet
   await panel.getByTestId("buyer-message-copy").click();
   await expect(panel.getByTestId("buyer-message-copy-status")).toHaveText(before.en.copied_text!);
   expect(await clipboard(page)).toBe(before.en.text);
@@ -99,8 +101,10 @@ test("send: what they asked beside what you offer, the letter in the buyer's lan
   await expect(panel.getByTestId("buyer-message-notice")).toHaveText(before.zh.channel!.text!);
   expect(before.zh.channel!.text).toBe(before.en.channel!.text);
   await expect(panel.getByTestId("buyer-message-copy")).toHaveAttribute("data-filled", "true");
+  await expect(panel.getByTestId("buyer-message-mark-sent")).toBeDisabled(); // the English copy is not this message
   await panel.getByTestId("buyer-message-copy").click();
   expect(await clipboard(page)).toBe(before.zh.text);
+  await expect(panel.getByTestId("buyer-message-mark-sent")).toBeEnabled();
 
   // Business mode has no simulated send (the owner's choice): the simulator is the Demo's.
   await expect(page.getByTestId("deal-demo-send")).toHaveCount(0);
@@ -112,9 +116,13 @@ test("send: what they asked beside what you offer, the letter in the buyer's lan
 test("mark sent: refused when the message changed, then the deal waits for the buyer, in one lavender state", async ({ page }) => {
   const panel = await messagePanel(page);
   await page.evaluate(() => sessionStorage.setItem("tl-mock-message-changed", "1"));
+  await panel.getByTestId("buyer-message-copy").click();
   await panel.getByTestId("buyer-message-mark-sent").click();
   await expect(panel.getByTestId("buyer-message-refused")).toHaveText(rec.message_changed.en.message_when);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
+  // The message changed: what was copied is stale, so it is copied again before it can be marked.
+  await expect(panel.getByTestId("buyer-message-mark-sent")).toBeDisabled();
+  await panel.getByTestId("buyer-message-copy").click();
 
   await panel.getByTestId("buyer-message-mark-sent").click();
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AWAITING_BUYER");
@@ -342,6 +350,7 @@ test("the page in Chinese: the panel's words, the waiting state and its answers 
   await panel.getByTestId("buyer-message-lang").getByText(zh.zh.languages![0].label).click();
   await expect(panel.getByTestId("buyer-message-text")).toHaveText(zh.en.text!);
   await expect(panel.getByTestId("buyer-message-notice")).toHaveText(zh.en.channel!.text!);
+  await panel.getByTestId("buyer-message-copy").click();
   await panel.getByTestId("buyer-message-mark-sent").click();
   await expect(page.getByTestId("deal-marked-sent")).toHaveText(rec.offered.zh.message_when);
   await expect(page.getByTestId("deal-state-chip")).toHaveText(rec.awaiting.zh.decision.state_text);

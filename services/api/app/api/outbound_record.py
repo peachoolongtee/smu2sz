@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from app.api.presentation import obligation_sentence, option_label, party_name, t, when_text
+from app.api.presentation import business_text, obligation_sentence, option_label, party_name, t, when_text
 from app.decisions.facts import (
     BuyerAcceptedFact,
     BuyerDeclinedFact,
@@ -30,8 +30,8 @@ from app.decisions.facts import (
     parse_fact,
 )
 from app.decisions.identity import deal_id
-from app.decisions.state import DealState, buyer_answer
-from app.domain.models import CommitmentStatus, CompileStatus, ObligationType
+from app.decisions.state import BUYER_YES, DealState, buyer_answer
+from app.domain.models import CommitmentStatus, CompileStatus, ObligationType, OperationStatus
 from app.domain.money import fmt_yuan
 from app.outbound import NoWording, calendar_date
 from app.outbound.message import early_settlement, remainder_fen
@@ -195,6 +195,8 @@ def outbound_view(ctx: Any, ds: Any, inp: Any, lang: str) -> dict[str, Any] | No
                  "closed": "neutral"}[answer],
         "links": [], "actions": None,
     }
+    if answer in (None, "no_answer") and (refusal := _refused_yes(ctx, inp, o.offer_id, lang, still_open=answer is None)) is not None:
+        view["refusal_text"] = refusal  # the owner's record of the buyer's yes was refused: the offer stayed open, or closed without it
     if answer is None:
         view["title_text"] = t(lang, f"Waiting for {buyer}'s response", f"等待{buyer}答复")
         view["status_text"] = t(lang, f"{label} · marked sent by you on {sent['date']} · FLOW cannot confirm delivery · expires {closes['date']} "
@@ -326,6 +328,21 @@ def outbound_view(ctx: Any, ds: Any, inp: Any, lang: str) -> dict[str, Any] | No
         view["terms"] = _offered_rows(ctx, counter, o.counterparty_id, lang)
         view["terms_title_text"] = t(lang, "What you offered (not agreed)", "您提出的条款（未达成）")
     return view
+
+
+def _refused_yes(ctx: Any, inp: Any, offer_id: str, lang: str, *, still_open: bool) -> str | None:
+    """In the owner's words, why the executor refused the owner's last record of the buyer's yes, or None when it was not refused (or none was
+    made). While the offer is open it says they can record it again."""
+    runs = [e for e in inp.log if e.payload.get("offer_id") == offer_id and str(e.payload.get("op_id") or e.result.op_id).startswith(BUYER_YES)
+            and e.result.status != OperationStatus.DUPLICATE]
+    if not runs or runs[-1].result.status != OperationStatus.REFUSED:
+        return None
+    r = runs[-1].result
+    reason = business_text(ctx.state, "; ".join(v.message for v in r.violations) or r.message.removeprefix("Refused: "), ctx.today, lang) or ""
+    en = f"FLOW could not record their yes: nothing is in force. {reason}".strip()
+    zh = f"FLOW 未能记录对方的接受：没有任何协议生效。{reason}".strip()
+    return t(lang, en + (" Check your books, then record it again while the offer is open." if still_open else ""),
+             zh + (" 请检查您的账目，并在报价有效期内再次记录。" if still_open else ""))
 
 
 def _offered_rows(ctx: Any, counter: Any, buyer: str | None, lang: str) -> list[str]:

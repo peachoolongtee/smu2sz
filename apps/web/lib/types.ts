@@ -1263,13 +1263,15 @@ export interface BuyerReplyResult {
   reply_offer_id: string;
   reply_decision_id: string;
   reply_href: string;
+  /** Set when the offer had already closed: the reply is a request of its own and answers nothing. */
+  offer_closed?: boolean;
   offer: OfferView["offer"];
   message_when: string;
 }
 
 /**
  * The detail of a 409 from the message routes: nothing was recorded. `message_when` is the server's sentence in the page's language. The codes: MESSAGE_CHANGED (copy it again; `message_hash`
- * is the current one), COUNTER_CHANGED, the blocks above, NOT_OFFERED, OFFER_EXPIRED, OFFER_LAPSED, BOOKS_CHANGED, ALREADY_ANSWERED, NO_TERMS_IN_REPLY, NO_SIMULATED_BUYER (a simulated send
+ * is the current one), MESSAGE_LANGUAGE (the other language's message was copied), COUNTER_CHANGED, the blocks above, NOT_OFFERED, OFFER_EXPIRED, OFFER_LAPSED, BOOKS_CHANGED, ALREADY_ANSWERED, NO_TERMS_IN_REPLY, NO_SIMULATED_BUYER (a simulated send
  * for a buyer with no simulated profile).
  */
 export interface BuyerMessageRefusal {
