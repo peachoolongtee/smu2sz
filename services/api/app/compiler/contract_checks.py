@@ -190,6 +190,31 @@ def stage_trigger(quote: str, text: str | None = None) -> str | None:
     return None
 
 
+# The end of a table row in extracted text: a blank line before the next row ("2 进度款 ..."), a table header, the page footer,
+# the paragraph that follows the table ("乙方应在每期付款前...") or the next clause.
+_ROW_END = re.compile(
+    r"\n[ \t]*\n(?=[ \t]*(?:\d{1,2}[ \t|]+[^\d\s]|期次|序号|合同编号|第\s*\d+\s*页|[甲乙]方(?:应|收款|指定|账户)|备注|[一二三四五六七八九十]+、"
+    r"|第[一二三四五六七八九十]+条|\d+[.．]\s))")
+_ROW_START = re.compile(r"\d{1,2}[ \t|]+\S")
+MAX_ROW_REACH = 200
+
+
+def widen_to_row(text: str, start: int, end: int) -> int:
+    """The end of a payment-table row whose quote stops short of its deadline. PDF text breaks a table row across lines
+    ("...验收报" / "告后20个工作日内 银行转账"), and a reading may quote only the first cell ("1 预付款 30%"). When the quote
+    starts a row, states no deadline and the rest of the row (up to the next row, header, footer or paragraph) does,
+    this is the row's end; otherwise `end` unchanged."""
+    quote = text[start:end]
+    at_line_start = start == 0 or text[start - 1] == "\n"
+    if not _CJK.search(quote) or not at_line_start or not _ROW_START.match(quote) or stage_deadline(quote).status != "none":
+        return end
+    m = _ROW_END.search(text, end, min(len(text), end + MAX_ROW_REACH))
+    row_end = m.start() if m else -1
+    if row_end <= end or stage_deadline(text[start:row_end]).status != "ok":
+        return end
+    return row_end
+
+
 def stage_basis(trigger: str | None) -> PaymentBasis | None:
     """The `PaymentBasis` a trigger corresponds to; None for the triggers PaymentBasis has no value for."""
     return _BASIS_OF_TRIGGER.get(trigger or "")

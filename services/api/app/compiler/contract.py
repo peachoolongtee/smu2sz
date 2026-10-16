@@ -28,6 +28,7 @@ from app.compiler.contract_checks import (
     stage_basis,
     stage_deadline,
     stage_trigger,
+    widen_to_row,
 )
 from app.compiler.contract_parsing import (
     Parsed,
@@ -349,14 +350,44 @@ def is_performance_bond(quote: str) -> bool:
     return _BOND.search(quote) is not None and _WITHHELD.search(quote) is None
 
 
+_WITHHOLDING_MONEY = rx(r"质保金|质量保证金|保留金")
+_PAYS = rx(r"支付|付款|付给|给付")
+
+
+def _stage_or_retention(ctx: _Ctx, x: XContractTerm, span: SourceSpan) -> XContractTerm:
+    """A Chinese payment row filed under the wrong one of RETENTION and MILESTONE is moved to the right one, by its words.
+    The warranty money (质保金), paid when the warranty ends, is the retention; a payment that waits for an audit, an
+    acceptance, a quarter or a delivery and holds back nothing is a stage, whatever the reading called it."""
+    if not _has_cjk(span.text):
+        return x
+    if x.field == F.MILESTONE and _WITHHOLDING_MONEY.search(span.text) and stage_trigger(span.text) == "warranty_end":
+        _drop(ctx, F.RETENTION, "note: a warranty-money row read as a stage is read as the retention", [span])
+        return x.model_copy(update={"field": F.RETENTION})
+    if (x.field == F.RETENTION and not _WITHHELD.search(span.text) and _PAYS.search(span.text)
+            and stage_trigger(span.text) not in (None, "warranty_end")):
+        _drop(ctx, F.MILESTONE, "note: a payment stage read as a retention is read as a stage", [span])
+        return x.model_copy(update={"field": F.MILESTONE})
+    return x
+
+
 def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDocument) -> ContractTerm | None:
     sp = locate({chunk_doc.doc_id: chunk_doc}, chunk_doc.doc_id, x.quote)
     if sp is None:
         _drop(ctx, x.field, "term dropped: its quote is not found verbatim in the document")
         return None
     span = SourceSpan(doc_id=ctx.doc.doc_id, start=chunk.start + sp.start, end=chunk.start + sp.end, text=sp.text)
+    if x.field in (F.MILESTONE, F.RETENTION):  # a payment-table row quoted short of its deadline is read to the row's end
+        end = widen_to_row(ctx.doc.text, span.start, span.end)
+        if end != span.end:
+            span = SourceSpan(doc_id=ctx.doc.doc_id, start=span.start, end=end, text=ctx.doc.text[span.start:end])
     frags: dict[str, str | None] = {}
     for name in ("value_text", "date_text", "period_text", "basis_text", "unit_text", "trigger_text", "reference_text"):
+        if name == "trigger_text" and x.field == F.MILESTONE and (x.trigger_text or "").strip() not in span.text:
+            # the label of a stage is not one of its values (the share and the days come from the quote): a label the
+            # reading wrote in its own words is left out, the stage is kept
+            _drop(ctx, x.field, "note: the stage's trigger wording is not inside its quote and is not shown", [span])
+            frags[name] = None
+            continue
         v = _fragment(ctx, x, span, name)
         if v is False:
             return None
@@ -368,6 +399,7 @@ def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDoc
         _drop(ctx, x.field, "term dropped: the clause is a performance bond the supplier posts, not money withheld "
               "from payments", [span])
         return None
+    x = _stage_or_retention(ctx, x, span)
     need = _REQUIRED[x.field]
     if frags[need] is None:
         _drop(ctx, x.field, f"term dropped: no {need.removesuffix('_text').replace('_', ' ')} is stated in its quote",
@@ -448,6 +480,10 @@ def _ground_term(ctx: _Ctx, x: XContractTerm, chunk: Chunk, chunk_doc: SourceDoc
         elif f == F.MILESTONE:
             out["text"] = frags["trigger_text"]
             _stage_schedule(ctx, out, span)
+    if f == F.RETENTION and _has_cjk(span.text) and out.get("months") is None:
+        d = stage_deadline(span.text)  # "质保期满且无质量问题后30个工作日内": the days of its release, working or calendar
+        if d.status == "ok" and out.get("days") in (None, d.days):
+            out["days"], out["business_days"] = d.days, d.working
     return ContractTerm.model_validate(out)
 
 
@@ -463,6 +499,10 @@ def _stage_schedule(ctx: _Ctx, out: dict[str, object], span: SourceSpan) -> None
     else:
         out["days"], out["business_days"] = d.days, d.working
         out["basis"] = stage_basis(stage_trigger(span.text, out.get("text") if isinstance(out.get("text"), str) else None))
+
+
+def _has_cjk(text: str) -> bool:
+    return re.search(r"[一-鿿]", text) is not None
 
 
 def _key(t: ContractTerm) -> tuple[object, ...]:

@@ -46,7 +46,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.compiler.contract_checks import stage_deadline, stage_trigger  # noqa: E402
+from app.compiler.contract_checks import stage_trigger  # noqa: E402
 
 DOTENV = Path("C:/Users/ian/Documents/Projects/smu2sz/.env")
 
@@ -103,15 +103,15 @@ def predict(compiled: Any, doc_id: str, filename: str) -> dict[str, Any]:
                   "trigger": TRIGGER_OF_BASIS.get(t.basis.value) if t.basis else stage_trigger(t.span.text)} for t in pay]
     for i, p in enumerate(pay_terms):
         if i < len(stages):
-            for k, v in p.items():  # a stage's own reading is never overwritten by a contract-wide term
-                stages[i].setdefault(k, v)
+            if not any(m.days is not None for m in milestones):  # stages that state their own days never take another's
+                stages[i].update(p)
         else:
             stages.append({"seq": len(stages) + 1, "percent": None, **p})
     ret = first("RETENTION")
-    if ret is not None and ret.rate_bp is not None and (deadline := stage_deadline(ret.span.text)).days is not None:
+    if ret is not None and ret.rate_bp is not None and ret.days is not None and ret.months is None:
         stages.append({"seq": len(stages) + 1, "percent": ret.rate_bp / 100, "trigger_text": ret.span.text,
-                       "trigger": stage_trigger(ret.span.text), "days_after_trigger": deadline.days,
-                       "days_unit": "working" if deadline.working else "calendar"})
+                       "trigger": stage_trigger(ret.span.text), "days_after_trigger": ret.days,
+                       "days_unit": "working" if ret.business_days else "calendar"})
     late = first("LATE_INTEREST")
     interest: dict[str, Any] = {"type": "not_specified"}
     if late is not None and late.rate_bp is not None:
