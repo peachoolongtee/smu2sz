@@ -94,7 +94,9 @@ _STEP = {  # id -> (label en, label zh, description en, description zh, the cont
 }
 _STATE_TEXT = {"done": ("Done", "已完成"), "current": ("Now", "进行中"), "next": ("Next", "下一步"), "locked": ("Later", "稍后")}
 _SCENARIO_TITLE = {"busy": ("Busy company", "繁忙的公司"), "golden_sme": ("The main books", "主账目"),
-                   "short_facilities": ("Short facilities", "额度不足"), "public_sme": ("Public company", "上市公司")}
+                   "short_facilities": ("Short facilities", "额度不足"), "public_sme": ("Public company", "上市公司"),
+                   "blank": ("Blank books", "空白账目"), "own": ("Your own books", "您自己的账目")}
+OWN = "own"  # the books the owner opened through the setup (`app.api.setup`): never a demo scenario, and never called one
 _HINT = {  # id -> (en, zh): where the control takes you or what it does (never the step's own description)
     "ask": ("Opens Deals on the buyer's message.", "在交易页面打开买方的消息。"),
     "decide": ("Opens Deals with FLOW's reading of the offer.", "在交易页面打开 FLOW 对报价的解读。"),
@@ -271,7 +273,15 @@ def _results_and_proof(rt: Runtime, books: _Books, scenes: dict[str, str], lang:
     return result, proof
 
 
-def _next(lang: str, available: bool, cur: int | None, books: _Books, rejected: bool) -> dict[str, Any]:
+def _next(lang: str, available: bool, cur: int | None, books: _Books, rejected: bool, scenario: str | None = None) -> dict[str, Any]:
+    if not available and scenario == "blank":
+        return {"label": t(lang, "Set up your books", "设置您的账目"), "action": None, "href": "/setup",
+                "hint_text": t(lang, "Blank books hold nothing yet. The setup takes you through your business and opens them as your own.",
+                               "空白账目里还没有任何内容。设置向导会带您录入您的业务，并把它们开立为您自己的账目。"), "owner": False}
+    if not available and scenario == OWN:
+        return {"label": t(lang, "Open Home on your books", "在您的账目上打开首页"), "action": None, "href": "/",
+                "hint_text": t(lang, "These are your own books. The story runs on the demo's main books; restoring them replaces yours.",
+                               "这些是您自己的账目。故事在演示的主账目上进行；恢复主账目会替换您的账目。"), "owner": False}
     if not available:
         return {"label": t(lang, "Open Home on these books", "在这些账目上打开首页"), "action": None, "href": "/",
                 "hint_text": t(lang, "The story runs on the main books. These alternate books are for looking around; restore the main books to run the story.",
@@ -519,6 +529,9 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
                            "主账目上还没有做任何事，所以加载备用场景不会损失任何内容。") if block["nothing_to_lose"]
                          else t(lang, f"Loading it replaces the main books. You would lose: {' '.join(loss_items)} Restoring puts the main books back at the start of the story, not where you left them.",
                                 f"加载它会替换主账目。您将失去：{' '.join(loss_items)}恢复主账目会回到故事的起点，而不是您离开时的状态。"))
+        elif rt.scenario == OWN:
+            loss_text = t(lang, "Restoring replaces your own books with the main books at the start of the story. Your books are not kept.",
+                          "恢复会用故事起点的主账目替换您自己的账目。您的账目不会保留。")
         else:
             loss_text = t(lang, "Restoring replaces these books with the main books at the start of the story. What you did here is not kept.",
                           "恢复会用故事起点的主账目替换这些账目。您在这里做过的事不会保留。")
@@ -533,6 +546,22 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
         alt_title = t(lang, *_SCENARIO_TITLE[ALTERNATE])
         history = _history(rt, lang)
         scenario = rt.scenario
+        # The banner over books that are not the main ones. The owner's own books and the blank books are never called "the alternate books" or a demo scenario.
+        if main:
+            loaded_text = None
+        elif scenario == OWN:
+            loaded_text = t(lang, f"You are on your own books. {scope} The story runs on the demo's main books; restoring them replaces yours.",
+                            f"您正在使用您自己的账目。{scope}故事在演示的主账目上进行；恢复主账目会替换您的账目。")
+        elif scenario == "blank":
+            loaded_text = t(lang, "You are on blank books, ready to set up as your own. The story runs on the demo's main books; restore them to run it.",
+                            "您正在使用空白账目，可以设置为您自己的账目。故事在演示的主账目上进行；恢复主账目才能运行故事。")
+        else:
+            loaded_text = t(lang, f"You are on the alternate books ({alt_title if scenario == ALTERNATE else t(lang, *_SCENARIO_TITLE.get(scenario, ('another scenario', '另一个场景')))}). {scope} The main books are not here; restore them to run the story.",
+                            f"您正在备用账目上。{scope}主账目不在这里；恢复它才能运行故事。")
+        restore_text = (t(lang, "Puts the main books back at the start of the story. Your own books are not kept.", "让主账目回到故事的起点。您自己的账目不会保留。")
+                        if scenario == OWN else
+                        t(lang, "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
+                          "让主账目回到故事的起点。您在备用账目上做过的事不会保留。"))
     cur_step = STEPS[cur] if cur is not None else None
     return {
         "lang": lang, "scenario": scenario, "main": main,
@@ -554,7 +583,7 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
                      "owner_text": (t(lang, "The approval is your own click. This story never presses it for you; open the approval and decide.",
                                       "批准是您自己的一次点击。这个故事绝不会代您点击；请打开批准事项并作出决定。") if cur_step[3] else None)}
                     if cur_step is not None and main else None),
-        "next": _next(lang, main, cur, books, rejected),
+        "next": _next(lang, main, cur, books, rejected, scenario),
         "alternate": {
             "label": t(lang, "Load alternate scenario", "加载备用场景"), "scenario": ALTERNATE, "title_text": alt_title, "scope_text": scope,
             "loss_title_text": t(lang, "What the main books lose", "主账目会失去什么"), "loss_items": loss_items, "nothing_to_lose": block["nothing_to_lose"], "loss_token": block["loss_token"], "loss_preview_text": loss_text,
@@ -563,11 +592,9 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
             "confirm_title_text": t(lang, f"Load the {alt_title.lower()}?", f"加载“{alt_title}”？"),
             "confirm_label": t(lang, f"Load the {alt_title.lower()}", f"加载“{alt_title}”"),
             "cancel_label": t(lang, "Keep the main books", "保留主账目"), "loaded": not main,
-            "loaded_text": (None if main else t(lang, f"You are on the alternate books ({alt_title if scenario == ALTERNATE else t(lang, *_SCENARIO_TITLE.get(scenario, ('another scenario', '另一个场景')))}). {scope} The main books are not here; restore them to run the story.",
-                                                f"您正在备用账目上。{scope}主账目不在这里；恢复它才能运行故事。")),
+            "loaded_text": loaded_text,
             "restore_label": t(lang, "Restore the main books", "恢复主账目"),
-            "restore_text": t(lang, "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
-                              "让主账目回到故事的起点。您在备用账目上做过的事不会保留。"),
+            "restore_text": restore_text,
             "history": history},
         "books": block,
         "operator_tools": {

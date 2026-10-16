@@ -67,7 +67,8 @@ export function BooksDialog() {
           e.preventDefault();
           cancelPending();
         }}
-        className="flow-f m-auto w-[min(34rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/40"
+        // Pinned to the viewport whatever page opened it (the Load buttons sit below the fold): fixed, centred, and scrolling inside itself rather than past the window.
+        className="flow-f fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(34rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/40"
       >
         {pending && books ? (
           <>

@@ -139,7 +139,7 @@ function renumber<T>(value: T, from: string, to: string): T {
 function requireOwner(): void {
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.");
   }
 }
 

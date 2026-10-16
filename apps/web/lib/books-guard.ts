@@ -127,9 +127,12 @@ export function clearNotice(): void {
   guardStore.set((s) => ({ ...s, notice: null }));
 }
 
-/** Reset the books to a scenario (the main books by default), then start the session over. */
-export const resetTo = (scenario: string | undefined, push: (route: string) => void) => async (guard: BooksGuard) => {
+/** Reset the books to a scenario (the main books by default), then start the session over and open `route` (the Demo page by default; the setup for blank books). */
+export const resetTo = (scenario: string | undefined, push: (route: string) => void, route = "/demo") => async (guard: BooksGuard) => {
   await demoReset(scenario, guard);
   resetSession();
-  push("/demo");
+  push(route);
 };
+
+/** The scenario a "reset these books" goes to: the owner's own books are not a scenario the server can reset to, so resetting them starts blank books. */
+export const resetScenarioOf = (books: Books): string | undefined => (books.main ? undefined : books.scenario === "own" ? "blank" : books.scenario);
