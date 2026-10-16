@@ -1,0 +1,9 @@
+sweep demo exit=0
+sweep prod exit=0
+r3 exit=1
+r4_bounded exit=0
+repro1 exit=1
+repro2 exit=0
+repro3 exit=1
+attacks exit=0
+shards done
