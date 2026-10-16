@@ -18,6 +18,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.api.agent_view import agent_view
 from app.api.auth import counterparty_for_key, is_agent
 from app.api.decisions import record_fact
 from app.api.display import displayed
@@ -106,6 +107,13 @@ def _record_shown_quote(rt, pending: PendingPlan, operations: list[dict[str, Any
         return None
 
 
+def _session_ops(session_id: str | None) -> list[Any]:
+    """The typed operations of the plan a session holds, if any (their amounts are what an agent turn acts on)."""
+    session = SESSIONS.get(session_id) if session_id else None
+    pending = session.pending_plan if session is not None else None
+    return list(pending.ops) if pending is not None else []
+
+
 def _security_event(rt, kind: str, claimed: str | None, action: str, detail: str) -> None:
     import hashlib
 
@@ -146,9 +154,11 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
             with rt.lock:
                 _security_event(rt, "wrong-key", body.counterparty_id, "treated as an unauthenticated proposal; nothing executed",
                                 "counterparty message with an unknown X-Counterparty-Key")
+    agent_turn = not is_counterparty and not rt.is_owner(x_owner_token)  # the agent key alone (R-11)
     with rt.lock:
         token = COUNTERPARTY_AUTHENTICATED.set(channel_authenticated)
         shown = _confirmable(body, rt.is_owner(x_owner_token)) if not is_counterparty else None
+        held_before = _session_ops(body.session_id) if agent_turn else []
         try:
             resp = handle(body, store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex,
                           owner_authenticated=rt.is_owner(x_owner_token),
@@ -157,7 +167,9 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
         finally:
             COUNTERPARTY_AUTHENTICATED.reset(token)
         recorded = _record_shown_quote(rt, shown, list(resp.operations)) if shown is not None else None
-    out = resp.model_dump(mode="json")
+        out = resp.model_dump(mode="json")
+        if agent_turn:  # R-11: the agent's chat does not read cash and limits; an allow-list, built under the lock
+            return agent_view(out, rt, [*held_before, *_session_ops(resp.session_id)])
     if recorded is not None:
         out["decision_id"], out["decision_recorded"] = recorded
     if is_counterparty:

@@ -99,7 +99,8 @@ def test_the_context_is_for_the_owner_only(client, rt):
     oid, _ = _evaluated(client)
     ctx = {"page": "/deals", "offer_id": oid}
     agent = Chat(client, "w4-agent", owner=False).say("Why are we countering this?", context=ctx)
-    assert agent["reply"] == NO_VERDICT and agent["context_echo"] is None
+    # R-11 (16 Oct): an explanation is a read the agent key does not get; nor does it get the page context
+    assert agent["reply"] == "This needs the owner's sign-in." and agent["context_echo"] is None
     buyer = Chat(client, "w4-buyer", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(
         "We can pay this one early at 1.5%. Nothing else changes.", context=ctx)
     assert "context_echo" not in buyer  # the buyer's view is an allow-list of keys
