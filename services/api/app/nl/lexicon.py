@@ -156,7 +156,7 @@ STATUS_QUESTION = _re(
     # (not a deal: "are we OK to accept this offer?" names an offer, an invoice or a buyer and stays out)
     r"^(?!.*\b(?:offers?|deals?|accept\w*|buyers?|invoices?|approv\w*|contracts?|quotes?|terms)\b)\s*"
     r"(?:am|are|is|will|would|can|could)\s+(?:i|we|our|my)\b.{0,40}\b(?:safe|ok|okay|fine|covered|comfortable|alright)\b",
-    r"\bcash runway\b", r"\brunway\b", r"\bhow is (?:our |the |my )?cash\b",
+    r"\bcash runway\b", r"\brunway\b", r"\bhow is (?:our|the|my) cash\b",
     r"\bhow long (?:will|does|can|would) (?:our |the |my )?(?:cash|money|runway)\b",
     r"\b(?:will|do|would) (?:we|i) have enough (?:cash|money)\b",
     r"^\s*(?:我们?|咱们?|公司|本公司)[^，。？?！!]{0,8}安全吗", r"(?:现金|资金|钱)(?:够不够|够吗|够用吗|充足吗|紧张吗|安全吗|还够)",
