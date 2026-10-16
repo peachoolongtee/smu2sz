@@ -1,0 +1,81 @@
+......FFFF                                                               [100%]
+================================== FAILURES ===================================
+E   AssertionError: worker 0 failed:
+    Traceback (most recent call last):
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1943, in _exec_single_context
+        self.dialect.do_execute(
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 1180, in do_execute
+        cursor.execute(statement, parameters)
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+        raise ex.with_traceback(None)
+    psycopg.errors.InternalError_: tuple concurrently updated
+    
+    The above exception was the direct cause of the following exception:
+    
+    Traceback (most recent call last):
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\tests\concurrency\harness.py", line 280, in _worker_loop
+        outbox.put(("ok", globals()[name](barrier=barrier, **kwargs)))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\tests\concurrency\harness.py", line 243, in task_hydrate_and_decide
+        rt = rt_mod.get_runtime()
+             ^^^^^^^^^^^^^^^^^^^^
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\app\api\runtime.py", line 299, in get_runtime
+        store: LedgerStore = InMemoryLedgerStore() if s.database_url == "memory" else SqlLedgerStore(s.database_url)
+                                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\app\persistence\sql_store.py", line 213, in __init__
+        guards.install(conn)
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\app\persistence\guards.py", line 92, in install
+        conn.exec_driver_sql(stmt)
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1755, in exec_driver_sql
+        ret = self._execute_context(
+              ^^^^^^^^^^^^^^^^^^^^^^
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1822, in _execute_context
+        return self._exec_single_context(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1962, in _exec_single_context
+        self._handle_dbapi_exception(
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2332, in _handle_dbapi_exception
+        raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1943, in _exec_single_context
+        self.dialect.do_execute(
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 1180, in do_execute
+        cursor.execute(statement, parameters)
+      File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+        raise ex.with_traceback(None)
+    sqlalchemy.exc.InternalError: (psycopg.errors.InternalError_) tuple concurrently updated
+    [SQL: 
+    CREATE OR REPLACE FUNCTION termsledger_append_only() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path = pg_catalog
+    AS $$
+    BEGIN
+        IF current_setting('termsledger.allow_reset', true) = 'on' THEN
+            RETURN COALESCE(NEW, OLD);
+        END IF;
+        RAISE EXCEPTION USING
+            MESSAGE = TG_TABLE_NAME || ' is append-only; ' || TG_OP || ' refused',
+            ERRCODE = 'insufficient_privilege';
+    END;
+    $$
+    ]
+    (Background on this error at: https://sqlalche.me/e/21/2j85)
+C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\tests\concurrency\harness.py:306: AssertionError: worker 0 failed:
+E   KeyError: 'read'
+C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\tests\concurrency\test_invariants.py:322: KeyError: 'read'
+E   KeyError: 'outcomes'
+C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\tests\concurrency\test_invariants.py:339: KeyError: 'outcomes'
+E   AssertionError: the books are not one serial order
+C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-capex\services\api\tests\concurrency\harness.py:427: AssertionError: the books are not one serial order
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/concurrency/test_invariants.py::test_1_two_draws_against_the_last_room_execute_once[postgres]
+PASSED tests/concurrency/test_invariants.py::test_2_receipt_and_financing_on_one_invoice_conserve_in_either_order[postgres]
+PASSED tests/concurrency/test_invariants.py::test_3_accept_versus_revoke_books_the_concession_at_most_once[postgres]
+PASSED tests/concurrency/test_invariants.py::test_4a_the_same_idempotency_key_twice_counts_cash_once[postgres]
+PASSED tests/concurrency/test_invariants.py::test_4b_the_same_bank_reference_under_two_keys_counts_cash_once[postgres]
+PASSED tests/concurrency/test_invariants.py::test_5_a_failed_log_append_keeps_nothing_and_the_retry_executes_once[postgres]
+FAILED tests/concurrency/test_invariants.py::test_6_a_process_killed_mid_approval_and_a_hydrated_runtime_decides_once[postgres]
+FAILED tests/concurrency/test_invariants.py::test_7_two_writers_of_the_same_state_version_one_wins_the_other_is_refused[postgres]
+FAILED tests/concurrency/test_invariants.py::test_7b_two_executors_on_one_state_version_lose_no_update[postgres]
+FAILED tests/concurrency/test_invariants.py::test_8_a_burst_from_two_processes_keeps_one_contiguous_explained_chain[postgres]
+4 failed, 6 passed, 20 deselected in 8.61s

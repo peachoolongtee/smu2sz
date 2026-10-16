@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, resetBooks } from "./helpers";
+import { checkedDeal, demoMode, resetBooks } from "./helpers";
 
 /**
  * Accept as asked (map #121): a negotiation whose buyer request needs the owner's review and has no counter (the busy books' Zhuhai 75-day terms and Dongguan rebate,
@@ -45,6 +45,7 @@ test.describe("mock", () => {
   });
 
   test("the golden EX01 asked path is over the mandate: the comparison says it is outside the mandate, the server's reason is said once in full, and no accept button is offered", async ({ page }) => {
+    await demoMode(page); // the simulated send is the Demo's only
     await checkedDeal(page);
     await expect(page.getByTestId("deal-choice-cell-decides-asked")).toContainText("Outside mandate");
     await expect(page.getByTestId("deal-rec-why")).toContainText(/signed limits/i);

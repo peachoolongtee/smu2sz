@@ -296,11 +296,16 @@ def _deal_rows(rt: Runtime, ctx: Context, lang: Lang, deals: list[tuple[dict[str
         subject, subject_demo = subject_for(ctx, offer, lang)
         subject = subject or f"{who} · {_topic(offer, lang)}"
         lifecycle = deal_lifecycle(ds)
-        if st == DealState.NEEDS_CLARIFICATION:
-            asked = (t(lang, f"Asked {when_text(ds.updated_day, ctx.today, lang)}. ", f"{when_text(ds.updated_day, ctx.today, lang)}提出。")
-                     if ds.updated_day is not None else "")
+        if st in (DealState.NEEDS_CLARIFICATION, DealState.AWAITING_BUYER):
+            if st == DealState.AWAITING_BUYER and ds.offered is not None:  # an offer the owner sent outside FLOW, open until its day
+                closes = when_text(ds.offered.valid_until_day, ctx.today, lang)
+                detail = t(lang, f"You sent an offer; it closes {closes}.", f"您已发出报价，将于{closes}截止。")
+            else:
+                asked = (t(lang, f"Asked {when_text(ds.updated_day, ctx.today, lang)}. ", f"{when_text(ds.updated_day, ctx.today, lang)}提出。")
+                         if ds.updated_day is not None else "")
+                detail = asked + t(lang, "Nothing to resend.", "无需重新发送。")
             waits.append(_wait_row(f"buyer-reply:{view['offer_id']}", "BUYER_REPLY", cid, subject,
-                                   lifecycle_text(lifecycle, lang), asked + t(lang, "Nothing to resend.", "无需重新发送。"), NORMAL,
+                                   lifecycle_text(lifecycle, lang), detail, NORMAL,
                                    ds.updated_day, None, _focus(cid), lifecycle=lifecycle, subject_demo=subject_demo,
                                    topic=_topic(offer, lang), activity=_activity(_latest(ds, offer), ctx.today, lang)))
             continue

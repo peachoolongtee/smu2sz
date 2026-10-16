@@ -208,9 +208,17 @@ class SqlLedgerStore:
         self._local = threading.local()
         event.listen(self.engine, "before_execute", _guard_append_only)
         if create_tables:
-            t.metadata.create_all(self.engine)
-            with self.engine.begin() as conn:
-                guards.install(conn)
+            if self.engine.dialect.name == "postgresql":
+                # Two processes opening a store at once raced on the catalog (creating the tables, re-installing the guard) and one
+                # failed to start: one transaction under the guard installers' advisory lock makes them take turns.
+                with self.engine.begin() as conn:
+                    conn.exec_driver_sql(f"SELECT pg_advisory_xact_lock({guards.PG_INSTALL_LOCK})")
+                    t.metadata.create_all(conn)
+                    guards.install(conn)
+            else:
+                t.metadata.create_all(self.engine)
+                with self.engine.begin() as conn:
+                    guards.install(conn)
 
     def dispose(self) -> None:
         self.engine.dispose()

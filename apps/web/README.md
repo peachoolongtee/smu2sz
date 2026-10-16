@@ -32,7 +32,12 @@ steps, the two servers and the database choices are in the root `README.md`; thi
 
 ### Running live locally
 
-Two terminals, both starting at the repository root:
+The simplest way, on any shell including PowerShell: `pnpm demo` (here or at the repository root) starts both servers with the
+safe settings below and picks the CORS origin for you; `pnpm demo --web-port 3141 --api-port 8041` for other ports,
+`pnpm demo:mock` for this app alone on the mocks. `pnpm dev:live` / `pnpm dev:mock` start this app alone in either mode on any
+shell (`dev:live` reads `NEXT_PUBLIC_API_URL`, default `http://localhost:8000`).
+
+By hand (bash syntax), two terminals, both starting at the repository root:
 
 ```
 cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 uv run uvicorn app.main:app --port 8000

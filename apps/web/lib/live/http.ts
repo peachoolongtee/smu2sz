@@ -79,7 +79,7 @@ function detailMessage(detail: unknown, fallback: string): string {
  */
 const LANG_ROUTES = [
   /^\/home$/, /^\/alerts$/, /^\/alerts\/[^/]+\/act$/, /^\/reconciliation$/, /^\/approvals\/queue$/, /^\/approvals\/[^/]+$/, /^\/ledger$/, /^\/audit$/,
-  /^\/offers\/[^/]+\/(evaluate|accept|decline)$/, /^\/negotiate\/[^/]+$/, /^\/router\/plan$/, /^\/decisions(\/.*)?$/, /^\/receivables\/[^/]+\/chase$/,
+  /^\/offers\/[^/]+\/(evaluate|accept|decline)$/, /^\/offers\/[^/]+\/counters\/[^/]+\/(message|offered|offered\/withdraw|buyer-accepted|buyer-declined)$/, /^\/offers\/[^/]+\/buyer-reply$/, /^\/negotiate\/[^/]+$/, /^\/router\/plan$/, /^\/decisions(\/.*)?$/, /^\/receivables\/[^/]+\/chase$/,
   /^\/receivables$/, /^\/receivables\/worth$/, /^\/cash\/price-curve$/, /^\/buyers\/[^/]+\/envelope$/,
 ];
 

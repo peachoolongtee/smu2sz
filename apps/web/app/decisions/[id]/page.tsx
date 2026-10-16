@@ -117,6 +117,11 @@ function RecordBody({ d }: { d: DecisionView }) {
             <p className="text-meta font-medium text-ink-3">{t("rec.sent")}</p>
             {sent === null ? (
               <p className="text-sm text-ink-2">{t("rec.sent.none")}</p>
+            ) : sent.recorded && sent.outside_flow ? (
+              // The owner sent it outside FLOW: the server's sentence says so (and, once recorded, that the buyer accepted it); nothing was simulated.
+              <p className="text-sm text-ink" data-testid="record-sent-outside">
+                {sent.text}
+              </p>
             ) : sent.recorded ? (
               <div className="text-sm text-ink">
                 <p>

@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal as readDeal, openCashOptions, openCompare, openOperatorTools, openReview, runPlan, sendCounter, walkStory } from "./helpers";
+import { checkedDeal as readDeal, demoMode, openCashOptions, openCompare, openOperatorTools, openReview, runPlan, sendCounter, walkStory } from "./helpers";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
@@ -527,6 +527,7 @@ const ownerPost = (request: APIRequestContext): Post => async (path, data, heade
 };
 
 test("Deals: Send carries what was shown, and the record's state follows: Agreed, then Fulfilled once the receipt came", async ({ page, request }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   const post = ownerPost(request);
   await post("/demo/reset", {});
   const sends: { buyer_profile?: string; verdict_id?: string; counter_id?: string; state_version?: unknown }[] = [];
@@ -569,6 +570,7 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
 });
 
 test("Deals: with no receipt on day 2 the line says the early payment did not arrive, and the agreement stays listed", async ({ page, request }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   const post = ownerPost(request);
   await post("/demo/reset", {});
   const pictures: string[] = [];
@@ -597,6 +599,7 @@ test("Deals: with no receipt on day 2 the line says the early payment did not ar
 });
 
 test("Deals: if the books moved after the proposal was shown, Send is refused, nothing is sent, and Check again gets a current one", async ({ page, request }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   const post = ownerPost(request);
   await post("/demo/reset", {});
   await checkedDeal(page);
@@ -660,16 +663,16 @@ test("Deals: the negotiation is the API's, in its order, with the costs it price
   await checkedDeal(page);
   // The heading is the buyer's ask from the first read, so the check is done when the recommendation is there.
   await page.getByTestId("queue-recommends").waitFor();
-  await expect(page.getByTestId("queue-heading")).toContainText(/Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
-  // Every sentence below is the server's: the ask in the buyer's words, the recommendation and its reason, the costs with their basis.
-  await expect(page.getByTestId("queue-heading")).toContainText("early settlement of ¥420,000.00 at 1.20%");
-  await expect(page.getByTestId("deal-rec-reason")).toContainText("FLOW can send it within your mandate");
+  await expect(page.getByTestId("queue-heading")).toContainText(/Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
+  // Every sentence below is the server's: the deal's subject, the recommendation and its reason, the costs with their basis.
+  await expect(page.getByTestId("queue-heading")).toContainText("Foshan · ");
+  await expect(page.getByTestId("deal-rec-reason")).toContainText("Recommended because it is within your mandate and needs no approval.");
   const tops = await page.evaluate(() => ["queue-heading", "queue-recommends", "deal-choices"].map((id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
   await page.getByTestId("deal-tab-messages").click();
   await expect(page.getByTestId("deal-ask-quote-messages")).toContainText("We'll settle the ¥420k early at 1.2%");
   await openCompare(page);
-  await expect(page.getByTestId("deal-rec-reason")).toContainText("Recommended because FLOW can send it");
+  await expect(page.getByTestId("deal-rec-reason")).toContainText("Recommended because it is within your mandate");
   await expect(page.getByTestId("deal-choice-cell-cost-asked")).toContainText("¥28,326.92");
   await expect(page.getByTestId("deal-choice-cell-cost-reply").first()).toContainText("¥3,027.77");
   await post("/demo/reset", {});
