@@ -87,7 +87,7 @@ export function Workspace({
           <Timeline entries={record.history} />
         </section>
       ) : null}
-      {original ? <div className="border-t border-line px-5 pb-2 sm:px-7">{original}</div> : null}
+      {original ? <div className="border-t border-line px-5 pb-2 sm:px-7 [&>*]:mt-0 [&>*]:border-t-0">{original}</div> : null}
     </div>
   );
 }
