@@ -6,8 +6,29 @@ import { DEMO_TOKEN } from "./fixtures";
  * the second sends the bound act. The alerts page's own button sends at once and does not use this.
  */
 export async function runPlan(scope: Page | Locator, alertId: string): Promise<void> {
+  // The Home's card opens the plan on Cash & funding ("Check funding plan"); the two presses are there. The owner comes back to the page they started on.
+  if ("goto" in scope) {
+    const check = scope.getByTestId("home-check-plan");
+    if (await check.isVisible().catch(() => false)) {
+      const from = scope.url();
+      await check.click();
+      await scope.waitForURL(/\/cash/);
+      await scope.getByTestId(`fix-open-${alertId}`).click();
+      await scope.getByTestId(`fix-${alertId}`).click();
+      await expect(scope.getByTestId(`fix-${alertId}`)).toHaveCount(0);
+      await scope.goto(from);
+      return;
+    }
+  }
   await scope.getByTestId(`fix-open-${alertId}`).click();
   await scope.getByTestId(`fix-${alertId}`).click();
+}
+
+/** Cash keeps the plans it weighed in a fold (closed until asked for): "Every option considered" when a gap is open, "Other plans considered" once covered. Open it so the list can be read. */
+export async function openCashOptions(page: Page): Promise<void> {
+  const fold = page.getByTestId("cash-options-all").or(page.getByTestId("cash-options")).first();
+  await expect(fold).toBeAttached();
+  if (!(await fold.evaluate((el) => el.hasAttribute("open")))) await fold.locator("summary").first().click();
 }
 
 /**
@@ -87,7 +108,18 @@ export async function walkAway(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/verdict/);
 }
 
-/** Send, from the open review: the receipt on screen is the review and the one commit button sends (the page's "Review and send the counter" opens it first; `openReview`). `scope` holds the button. */
+/** Demo mode from the first page on (the stored mode, as the shell's switch keeps it): the simulated send, its receipt and its buyer's lean are the Demo's only (ADR-0011 addendum, round two). Call before the first `goto`. */
+export async function demoMode(page: Page): Promise<void> {
+  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "demo" })));
+}
+
+/** The stored mode switched in place (the page is reloaded at the same address; the session's books stay): a spec that reads Business mode and then sends to the simulated buyer. */
+export async function switchMode(page: Page, mode: "demo" | "business"): Promise<void> {
+  await page.evaluate((m) => localStorage.setItem("tl-mode", JSON.stringify({ mode: m })), mode);
+  await page.reload();
+}
+
+/** Send to the simulated buyer, from the open review's Demo-only row (the page must be in Demo mode: `demoMode`; "Review and send the counter" opens the review first: `openReview`). `scope` holds the button. */
 export async function sendCounter(scope: Page | Locator): Promise<void> {
   await scope.getByTestId("deal-send").click();
 }
@@ -113,12 +145,24 @@ export async function openReview(page: Page): Promise<void> {
   await page.getByTestId("queue-review").waitFor();
 }
 
-/** "Compare responses" opens the full table of every response under the two panes; opens it when it is closed. */
+/**
+ * "Back to Deals" (round three: it replaced "Not now") closes the deal and its review; the list is there. Then the deal is opened again at the address it had, without a picked reply
+ * (the recommended one is focused), so a spec can review another reply. Nothing was sent.
+ */
+export async function backToDealsAndReturn(page: Page): Promise<void> {
+  const url = new URL(page.url());
+  await page.getByTestId("queue-review-close").click();
+  await expect(page.getByTestId("deal-pane")).toHaveCount(0);
+  url.searchParams.delete("path");
+  await page.goto(url.pathname + url.search);
+  await page.getByTestId("queue-recommends").waitFor();
+}
+
+/** The choices table (Deals redesign: it replaced the Compare responses tab) is the Overview's: goes to the Overview when another section is open and waits for the table, or the stacked cards on a phone. */
 export async function openCompare(page: Page): Promise<void> {
-  const toggle = page.getByTestId("deal-compare-toggle");
-  await toggle.waitFor();
-  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
-  await page.getByTestId("deal-compare-table").or(page.getByTestId("deal-compare-stack")).first().waitFor();
+  const tab = page.getByTestId("deal-tab-overview");
+  if (await tab.count()) await tab.click();
+  await page.locator('[data-testid="deal-choices-table"]:visible, [data-testid="deal-choices-stack"]:visible').first().waitFor();
 }
 
 /** The inbox card opens on Deals while nothing needs the owner and no negotiation is selected, and folds to one row otherwise: opens it when it is folded. */

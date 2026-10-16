@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, proseOf, test } from "./fixtures";
-import { checkedDeal, filledBrand, openCompare, openStoryFold, resetBooks, runPlan, openOperatorTools } from "./helpers";
+import { checkedDeal, filledBrand, openStoryFold, resetBooks, runPlan, openOperatorTools } from "./helpers";
 
 /**
  * The strategy MVP surfaces (wayfinder map #47, Wave 5): the cash price sentence on Cash & funding, the collections worth on
@@ -72,10 +72,10 @@ async function advanceTo34(page: Page, request: APIRequestContext) {
   else await advanceMockTo34(page);
 }
 
-/** The package offer read and checked on Deals, and the full comparison opened: the envelope sits at the foot of it. */
+/** The package offer read and checked on Deals, and Cash impact opened: the envelope sits at the foot of it. */
 async function openEnvelope(page: Page) {
   await checkedDeal(page);
-  await openCompare(page);
+  await page.getByTestId("deal-tab-cash").click();
   await expect(page.getByTestId("deal-envelope-packages")).toBeVisible({ timeout: 30_000 });
 }
 
@@ -172,7 +172,7 @@ test.describe("desktop", () => {
     // The classes in the verifier's own order: what FLOW may send, what the owner approves first. A class with nothing in it is not drawn.
     await expect(env.getByTestId("envelope-class-flow_may")).toContainText("FLOW may send these");
     await expect(env.getByTestId("envelope-class-flow_may").getByTestId("envelope-package")).toHaveCount(1);
-    await expect(env.getByTestId("envelope-class-flow_may")).toContainText("early payment 0.85% on ¥257,200.00");
+    await expect(env.getByTestId("envelope-class-flow_may")).toContainText("early payment 0.85% on ¥260,000.00");
     const owner = env.getByTestId("envelope-class-needs_owner");
     await expect(owner).toContainText("You approve these first");
     // The first three of a class are listed; the rest are one fold away, said with their count.

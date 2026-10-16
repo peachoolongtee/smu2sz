@@ -104,7 +104,8 @@ export default defineConfig({
                   // A server already on :8000 could hold state from a previous run or point at a real database.
                   reuseExistingServer: false,
                   // FEATURE_EXPOSURE: the Deals page is the decision queue once the open offer has its exposure read.
-                  env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: databaseUrl, LLM_MODE: "cache", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, FEATURE_EXPOSURE: "1", ...strategyApi },
+                  // DEMO_MODE=1: the live suite signs in with the published demo credentials (DEMO_MODE is off by default).
+                  env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: databaseUrl, LLM_MODE: "cache", DEMO_MODE: "1", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, FEATURE_EXPOSURE: "1", ...strategyApi },
                 },
               ]),
           {

@@ -322,7 +322,7 @@ def _path(authority: str | None, text: str = "fragment") -> Any:
 
 def test_the_overview_authority_is_a_full_sentence_by_the_pictures_class() -> None:
     say = overview._authority_sentence
-    assert say(_path("flow_may"), "counter", "en") == "FLOW can send this counter without your approval."
+    assert say(_path("flow_may"), "counter", "en") == "This counter is within your mandate: no approval needed."
     assert say(_path("needs_owner"), "counter", "en") == "This counter needs your approval before it is sent."
     assert say(_path("over_limit"), "counter", "en") == "This counter is over a limit you signed: only a new mandate changes that."
     assert say(_path("over_limit"), "request", "en") == "This request is over a limit you signed: only a new mandate changes that."
@@ -334,9 +334,9 @@ def test_the_overview_authority_is_a_full_sentence_by_the_pictures_class() -> No
 def test_the_overview_decision_reads_the_sentence(api: TestClient) -> None:
     _offer(api)
     d = api.get("/customers/BUYER-1/overview").json()["decision"]
-    assert d["authority_text"] == "FLOW can send this counter without your approval."
+    assert d["authority_text"] == "This counter is within your mandate: no approval needed."
     zh = api.get("/customers/BUYER-1/overview", params={"lang": "zh"}).json()["decision"]
-    assert zh["authority_text"] == "FLOW 可以在无需您批准的情况下发送这份还价。"
+    assert zh["authority_text"] == "这份还价在您的授权范围内：无需批准。"
 
 
 # ---------------------------------------------------------------- the do_nothing path carries words only
@@ -404,7 +404,7 @@ def test_each_path_states_what_its_line_assumes(api: TestClient) -> None:
     assert paths["asked"]["scenario_assumption_text"] == "Assumes the buyer accepts this offer and FLOW takes no new funding."
     assert paths["do_nothing"]["scenario_assumption_text"] == "The books as they stand, no new funding."
     assert paths["A"]["scenario_assumption_text"] == (
-        "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥150k credit-line draw today); without the plan, cash falls lower.")
+        "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥147k credit-line draw today); without the plan, cash falls lower.")
     assert paths["B"]["scenario_assumption_text"] == (
         "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥90k credit-line draw today, ¥315k invoice financing in 3 days); "
         "without the plan, cash falls lower.")
@@ -414,7 +414,7 @@ def test_each_path_states_what_its_line_assumes(api: TestClient) -> None:
     zh = _paths(_read(api, offer_id, "zh"))
     assert zh["asked"]["scenario_assumption_text"] == "假设买方接受此报价，且 FLOW 不新增融资。"
     assert zh["do_nothing"]["scenario_assumption_text"] == "当前账目，未新增融资。"
-    assert zh["A"]["scenario_assumption_text"] == "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥150k（今天））；没有该方案，现金会更低。"
+    assert zh["A"]["scenario_assumption_text"] == "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥147k（今天））；没有该方案，现金会更低。"
     assert zh["B"]["scenario_assumption_text"] == (
         "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥90k（今天）、发票融资 ¥315k（3 天后））；没有该方案，现金会更低。")
 

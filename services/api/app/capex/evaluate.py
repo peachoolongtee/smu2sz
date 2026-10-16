@@ -20,7 +20,15 @@ from fractions import Fraction
 from typing import NamedTuple
 
 from app.books import Books, current_books
-from app.capex.appraisal import effective_monthly_rate_text, npv_fen, payback_month, uplift_in_month
+from app.capex.appraisal import (
+    effective_monthly_rate_text,
+    npv_fen,
+    npv_schedule_fen,
+    payback_month,
+    payback_month_schedule,
+    payment_month,
+    uplift_in_month,
+)
 from app.capex.models import (
     CHARGES_BASIS,
     OWNER_ESTIMATE,
@@ -125,6 +133,15 @@ def _term_rows(f: Facility, amount: int, term: int) -> list[_Row]:
     i_level, i_rest = divmod(interest, term)
     return [_Row(m, level + (rest if m == term else 0), i_level + (i_rest if m == term else 0))
             for m in range(1, term + 1)]
+
+
+# Public names for the buy side's other readers (ADR-0013: `app.health` sizes borrowing capacity on the same service rule).
+is_term_facility = _is_term_facility
+
+
+def term_service(f: Facility, amount: int, term: int) -> list[int]:
+    """The contractual monthly service on `amount` borrowed on `f` over `term` months (ADR-0008), month 1 first."""
+    return [r.payment for r in _term_rows(f, amount, term)]
 
 
 def _carried_service(f: Facility) -> tuple[list[int], int]:
@@ -258,6 +275,14 @@ class _Base:
                          f"{fmt_yuan(extra_debt)}")
 
 
+def existing_debt_service(books: Books, mandate: Mandate, months: int) -> list[int]:
+    """ADR-0013: the existing monthly debt service in months 1..`months` from today, on the capex screen's own rule
+    (`_Base.debt_service`: each existing debt's fixed service until its schedule clears it, plus the contractual service
+    on every balance already drawn), for the long-term plan's monthly estimate."""
+    base = _Base(books, mandate)
+    return [base.debt_service(m) for m in range(1, months + 1)]
+
+
 class _Leverage(NamedTuple):
     """One leverage reading: the ratio (None when EBITDA <= 0), its month, the month-end debt, and its basis."""
 
@@ -359,6 +384,33 @@ def _no_ratio_violation(base: _Base) -> Violation:
         inputs={"EBITDA_m": fmt_yuan(base.ebitda), "debt": fmt_yuan(base.lev_basis.total_debt_fen)})
 
 
+def _purchase_flows(request: CapexRequest, day: int) -> list[CashFlow]:
+    """The purchase as cash out: one payment of the price on `day`, or (ADR-0013) the contract's dated payments."""
+    label = f"Capex purchase: {request.label}"
+    if request.payments is None:
+        return [CashFlow(id="CAPEX-PURCHASE", day=day, amount_fen=-request.price_fen, kind=FlowKind.OTHER, label=label)]
+    return [CashFlow(id=f"CAPEX-PURCHASE-{i + 1}", day=p.day, amount_fen=-p.amount_fen, kind=FlowKind.OTHER,
+                     label=f"{label}, payment {i + 1}" + (f" ({p.label})" if p.label else ""))
+            for i, p in enumerate(request.payments)]
+
+
+def _purchase_text(request: CapexRequest, day: int) -> str:
+    """How the purchase is paid, for the sentences and formulas."""
+    if request.payments is None:
+        return f"the {fmt_yuan(request.price_fen)} purchase on day {day}"
+    days = [p.day for p in request.payments]
+    return (f"the {fmt_yuan(request.price_fen)} purchase paid in {len(days)} payment{'s' if len(days) > 1 else ''} "
+            f"on days {', '.join(str(d) for d in days)}")
+
+
+def _due_in_horizon(request: CapexRequest, today: int, mandate: Mandate) -> int:
+    """What the purchase pays inside the daily projection: the whole price, or the scheduled payments up to its end."""
+    if request.payments is None:
+        return request.price_fen
+    end = today + mandate.horizon_days
+    return sum(p.amount_fen for p in request.payments if p.day <= end)
+
+
 def _liquidity(
     f: Facility, term: int, fee: int, request: CapexRequest, state: FinancialState, mandate: Mandate, base: _Base,
 ) -> tuple[list[Violation], list[Working], Trajectory | None]:
@@ -372,10 +424,9 @@ def _liquidity(
     today = state.as_of_day
     land = today + f.lead_time_days
     granted = f.model_copy(update={"status": FacilityStatus.COMMITTED, "owner_approved": True, "term_months": term})
-    purchase = CashFlow(id="CAPEX-PURCHASE", day=land, amount_fen=-price, kind=FlowKind.OTHER,
-                        label=f"Capex purchase: {request.label}")
     draw = FundingAction(kind=FundingActionKind.DRAW, facility_id=f.id, day=today, amount_fen=price)
-    scenario = state.model_copy(update={"flows": [*state.flows, purchase],
+    paid = _purchase_text(request, land)
+    scenario = state.model_copy(update={"flows": [*state.flows, *_purchase_flows(request, land)],
                                         "facilities": [granted if x.id == f.id else x for x in state.facilities]})
     try:
         traj = project(scenario, base.obligations, [draw], Mode.CONSERVATIVE, mandate.horizon_days,
@@ -387,12 +438,12 @@ def _liquidity(
     days = [p for p in traj.days if p.day >= today]
     low = min(days, key=lambda p: (p.closing_fen, p.day))
     inputs = {"price": fmt_yuan(price), "proceeds": fmt_yuan(price), "upfront_fee": fmt_yuan(fee),
-              "purchase_day": str(land), "min_cash": fmt_yuan(mandate.min_cash_fen),
-              "live_obligations": str(len(base.obligations))}
+              "purchase_day": str(land) if request.payments is None else ", ".join(str(p.day) for p in request.payments),
+              "min_cash": fmt_yuan(mandate.min_cash_fen), "live_obligations": str(len(base.obligations))}
     working = Working(
         label="Lowest projected cash", value=fmt_yuan(low.closing_fen),
-        formula=(f"min over days {today}..{days[-1].day} of the conservative closing cash on current books with the "
-                 f"{fmt_yuan(price)} purchase on day {land}, the {fmt_yuan(price)} proceeds and {fmt_yuan(fee)} "
+        formula=(f"min over days {today}..{days[-1].day} of the conservative closing cash on current books with "
+                 f"{paid}, the {fmt_yuan(price)} proceeds and {fmt_yuan(fee)} "
                  f"upfront fee, and the scheduled payments (the owner's uplift is not counted as cash)"),
         inputs={**inputs, "day": str(low.day)})
     breach_day = base.breach_day(days)
@@ -400,11 +451,16 @@ def _liquidity(
         return [], [working], traj
     closing = next(p.closing_fen for p in days if p.day == breach_day)
     before = base.baseline_close(breach_day)
+    # ADR-0013: on a contract's schedule, a breach before the proceeds land is a payment the loan cannot reach yet
+    early = (f"The breach on day {breach_day} comes before the {f.name} proceeds land on day {land}: that day's payment "
+             f"is paid from cash. A timeline that moves it to day {land} or later may avoid it."
+             if request.payments is not None and breach_day < land else None)
     return [Violation(
-        code=ViolationCode.RESERVE_BREACH,
+        code=ViolationCode.RESERVE_BREACH, cure_note=early,
         message=(f"Cash falls to {fmt_yuan(closing)} on day {breach_day}, below the "
-                 f"{fmt_yuan(mandate.min_cash_fen)} reserve, once the {fmt_yuan(price)} purchase, the loan "
-                 f"proceeds, the {fmt_yuan(fee)} upfront fee and the scheduled payments are counted."
+                 f"{fmt_yuan(mandate.min_cash_fen)} reserve, once "
+                 + (f"the {fmt_yuan(price)} purchase" if request.payments is None else paid)
+                 + f", the loan proceeds, the {fmt_yuan(fee)} upfront fee and the scheduled payments are counted."
                  f"{base.books_note()}"),
         day=breach_day, observed=fmt_yuan(closing), limit=f"≥ {fmt_yuan(mandate.min_cash_fen)}",
         curable=False,
@@ -630,7 +686,8 @@ def _cash_line(
     line_available = sum(f.limit_fen - f.drawn_fen for f in lines)
     cash_above = state.cash_fen - mandate.min_cash_fen
     available = cash_above + line_available
-    need_from_line = min(line_available, max(0, price - max(0, cash_above)))
+    due = _due_in_horizon(request, today, mandate)  # the price, or what a schedule pays inside the daily projection
+    need_from_line = min(line_available, max(0, due - max(0, cash_above)))
 
     actions: list[FundingAction] = []
     used: list[tuple[Facility, int]] = []
@@ -641,14 +698,15 @@ def _cash_line(
             actions.append(FundingAction(kind=FundingActionKind.DRAW, facility_id=f.id, day=today, amount_fen=amt))
             used.append((f, amt))
             remaining -= amt
-    purchase = CashFlow(id="CAPEX-PURCHASE", day=today, amount_fen=-price, kind=FlowKind.OTHER,
-                        label=f"Capex purchase: {request.label}")
     inputs = {"cash": fmt_yuan(state.cash_fen), "min_cash": fmt_yuan(mandate.min_cash_fen),
               "line_available": fmt_yuan(line_available), "available_above_reserve": fmt_yuan(available),
               "price": fmt_yuan(price)}
+    if request.payments is not None:
+        inputs["due_in_projection"] = fmt_yuan(due)
     violations: list[Violation] = []
     try:
-        traj = project(state.model_copy(update={"flows": [*state.flows, purchase]}), base.obligations, actions,
+        traj = project(state.model_copy(update={"flows": [*state.flows, *_purchase_flows(request, today)]}),
+                       base.obligations, actions,
                        Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     except EngineError as exc:
         traj = None
@@ -661,8 +719,9 @@ def _cash_line(
         violations.append(Violation(
             code=ViolationCode.RESERVE_BREACH,
             message=(f"Only {fmt_yuan(available)} is available above the {fmt_yuan(mandate.min_cash_fen)} reserve "
-                     f"(cash plus the {fmt_yuan(line_available)} line) for a {fmt_yuan(price)} price; "
-                     f"cash falls to {fmt_yuan(closing)} {when}."),
+                     f"(cash plus the {fmt_yuan(line_available)} line) for a {fmt_yuan(price)} price"
+                     + (f" ({fmt_yuan(due)} of it paid inside the projection)" if request.payments is not None else "")
+                     + f"; cash falls to {fmt_yuan(closing)} {when}."),
             day=day, observed=fmt_yuan(closing), limit=f"≥ {fmt_yuan(mandate.min_cash_fen)}", curable=False,
             formula=(f"(cash − min_cash) + line_available ≥ price: ({fmt_yuan(state.cash_fen)} − "
                      f"{fmt_yuan(mandate.min_cash_fen)}) + {fmt_yuan(line_available)} = {fmt_yuan(available)} "
@@ -683,8 +742,9 @@ def _cash_line(
         low = min((p for p in traj.days if p.day >= today), key=lambda p: (p.closing_fen, p.day))
         lowest.append(Working(
             label="Lowest projected cash", value=fmt_yuan(low.closing_fen),
-            formula=f"min over days {today}..{traj.days[-1].day} of the conservative closing cash on current books, "
-                    f"with the purchase on day {today}",
+            formula=(f"min over days {today}..{traj.days[-1].day} of the conservative closing cash on current books, "
+                     + (f"with the purchase on day {today}" if request.payments is None
+                        else "with " + _purchase_text(request, today).removeprefix("the "))),
             inputs={"day": str(low.day), "min_cash": fmt_yuan(mandate.min_cash_fen),
                     "live_obligations": str(len(base.obligations))}))
     feasible = not violations
@@ -746,9 +806,18 @@ def evaluate_capex(
     base = _Base(current_books(state, commitments), mandate)
     price = request.price_fen
 
-    npv = npv_fen(price, request.monthly_uplift_fen, request.uplift_start_month, request.life_months,
-                  request.hurdle_bp)
-    payback = payback_month(price, request.monthly_uplift_fen, request.uplift_start_month, request.life_months)
+    if request.payments is None:
+        npv = npv_fen(price, request.monthly_uplift_fen, request.uplift_start_month, request.life_months,
+                      request.hurdle_bp)
+        payback = payback_month(price, request.monthly_uplift_fen, request.uplift_start_month, request.life_months)
+    else:  # ADR-0013: each payment discounted from the month it falls in
+        if any(p.day < state.as_of_day for p in request.payments):
+            raise ValueError(f"a scheduled payment is dated before today (day {state.as_of_day})")
+        by_month = [(payment_month(p.day, state.as_of_day), p.amount_fen) for p in request.payments]
+        npv = npv_schedule_fen(by_month, request.monthly_uplift_fen, request.uplift_start_month, request.life_months,
+                               request.hurdle_bp)
+        payback = payback_month_schedule(by_month, request.monthly_uplift_fen, request.uplift_start_month,
+                                         request.life_months)
     payback_ok = payback is not None and payback <= request.payback_limit_months
     worth = npv >= 0 and payback_ok
     estimate = (f"Owner's estimate, not observed by the system: +{fmt_yuan(request.monthly_uplift_fen)} a month of "
@@ -820,15 +889,22 @@ def evaluate_capex(
     base_debt = base.lev_basis.total_debt_fen
     workings = [
         Working(label="NPV at the hurdle", value=fmt_yuan(npv),
-                formula=(f"−price + Σ_(m={request.uplift_start_month}..{request.life_months}) uplift / (1 + r_m)^m, "
+                formula=(("−price" if request.payments is None else
+                          "−Σ_k payment_k / (1 + r_m)^(month_k)")
+                         + f" + Σ_(m={request.uplift_start_month}..{request.life_months}) uplift / (1 + r_m)^m, "
                          f"r_m = (1 + {fmt_pct(bp(request.hurdle_bp))})^(1/12) − 1 = "
-                         f"{effective_monthly_rate_text(request.hurdle_bp)}; 50-digit Decimal, rounded once"),
+                         f"{effective_monthly_rate_text(request.hurdle_bp)}; 50-digit Decimal, rounded once"
+                         + ("" if request.payments is None else
+                            "; month_k = ceil((day_k − today) / 30), 0 for a payment today")),
                 inputs={"price": fmt_yuan(price), "uplift": fmt_yuan(request.monthly_uplift_fen),
                         "start_month": str(request.uplift_start_month), "life_months": str(request.life_months),
                         "hurdle": fmt_pct(bp(request.hurdle_bp))},
                 evidence=OWNER_ESTIMATE),
         Working(label="Simple payback", value=f"month {payback}" if payback else "not within the life",
-                formula=(f"first month m with −price + Σ_(k≤m) uplift_k ≥ 0; limit {request.payback_limit_months} "
+                formula=(("first month m with −price + Σ_(k≤m) uplift_k ≥ 0" if request.payments is None else
+                          "first month m from which Σ_(k≤m) (uplift_k − payments_k) ≥ 0 in every later month of the "
+                          "life")
+                         + f"; limit {request.payback_limit_months} "
                          f"months → {'within' if payback_ok else 'outside'} the limit"),
                 inputs={"price": fmt_yuan(price), "uplift": fmt_yuan(request.monthly_uplift_fen),
                         "start_month": str(request.uplift_start_month),
@@ -851,13 +927,35 @@ def evaluate_capex(
                                                   f"{request.extension_target_terms_days} days, funded permanently"),
                     "max_leverage": x(l_lim)}))
 
+    assumptions = list(ASSUMPTIONS)
+    horizon_end: int | None = None
+    beyond: int | None = None
+    if request.payments is not None:  # ADR-0013: what the daily cash test cannot see is said, never dropped
+        horizon_end = state.as_of_day + mandate.horizon_days
+        late = [p for p in request.payments if p.day > horizon_end]
+        beyond = sum(p.amount_fen for p in late)
+        assumptions.append(
+            "The purchase is paid on the contract's schedule, each payment on its own day; a financed structure draws "
+            "the whole price on the request day (its proceeds land after the lead time), so a payment due before then "
+            "is paid from cash. NPV discounts each payment from the month it falls in.")
+        workings.append(Working(
+            label="Paid after the daily projection", value=fmt_yuan(beyond),
+            formula=(f"Σ payments dated after day {horizon_end} (today + the mandate's {mandate.horizon_days}-day "
+                     f"projection): no structure's daily cash test covers them"
+                     + (f"; days {', '.join(str(p.day) for p in late)}" if late else "")),
+            inputs={"horizon_end_day": str(horizon_end), "payments_after": str(len(late))}))
+        if beyond:
+            assumptions.append(
+                f"{fmt_yuan(beyond)} of the price is paid after day {horizon_end}, beyond the daily projection: the "
+                f"cash tests above do not cover it; the long-term plan (monthly estimate) does.")
     return CapexResult(
         request=request, npv_fen=npv, payback_month=payback, npv_positive=npv >= 0, payback_within_limit=payback_ok,
         worth_doing=worth, estimate_note=estimate, structures=final, selected_id=selected.id if selected else None,
         selected_facility_id=sel_fac, leverage_financed=lev_fin, leverage_with_extension=lev_ext,
         extension_extra_receivables_fen=ext, dscr_limit_bp=_to_bp(d_lim), leverage_limit_bp=_to_bp(l_lim),
-        required_tier=tier, recommendation=recommendation, workings=workings, assumptions=list(ASSUMPTIONS),
-        as_of_day=state.as_of_day, mandate_version=mandate.version, state_version=state.state_version)
+        required_tier=tier, recommendation=recommendation, workings=workings, assumptions=assumptions,
+        as_of_day=state.as_of_day, mandate_version=mandate.version, state_version=state.state_version,
+        horizon_end_day=horizon_end, beyond_horizon_fen=beyond)
 
 
 def _to_bp(r: Fraction) -> int:

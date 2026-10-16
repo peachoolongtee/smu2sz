@@ -135,8 +135,8 @@ def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id:
     verdict = api.post(f"/offers/{offer_id}/evaluate", json=EX01).json()
     body = api.get(f"/offers/{offer_id}/exposure?response=counter:0").json()
     keys = _by_label(body)
-    assert list(keys) == ["As they asked", "Option A", "Option B"]
-    assert keys["As they asked"] == "asked" and [keys["Option A"], keys["Option B"]] == [c["id"] for c in verdict["counters"]]
+    assert list(keys) == ["Accept their request", "Option A", "Option B"]
+    assert keys["Accept their request"] == "asked" and [keys["Option A"], keys["Option B"]] == [c["id"] for c in verdict["counters"]]
     a, b = keys["Option A"], keys["Option B"]
     assert body["partial"] is False and body["economics"] is None and body["loss"] is None and body["spare_read"] is True
     assert body["lead"] == a and set(body["capacity"]) - {"do_nothing"} == set(body["stress"]["paths"]) - {"do_nothing"} == set(keys.values())
@@ -169,11 +169,11 @@ def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id:
     # the spare room: ¥81,000 today, ¥14,000 as asked, ¥0 under Option A, ¥62,000 under Option B
     spare = {k: body["capacity"][k]["spare"] for k in keys.values()}
     assert {k: v["today_fen"] for k, v in spare.items()} == dict.fromkeys(keys.values(), 8_100_000)
-    assert [spare[k]["x_star_fen"] for k in ("asked", a, b)] == [1_400_000, 0, 6_200_000]
-    assert [spare[k]["figure_short"] for k in ("asked", a, b)] == ["¥14k", "¥0", "¥62k"]
+    assert [spare[k]["x_star_fen"] for k in ("asked", a, b)] == [1_400_000, 200_000, 6_200_000]  # Option A: the line keeps ¥2,790 (R-10)
+    assert [spare[k]["figure_short"] for k in ("asked", a, b)] == ["¥14k", "¥2k", "¥62k"]
     assert spare[a]["today_short"] == "¥81k" and spare[a]["refused_text"] is None
     assert spare[a]["shape_text"].startswith("Counted as a one-off payment of X today") and spare[a]["binding_text"]
-    assert body["band"]["capacity"] == "Room for another payment: ¥0 for the next 31 days (today ¥81,000)."
+    assert body["band"]["capacity"] == "Room for another payment: ¥2,000 (today ¥81,000)."
     assert body["band"]["by_path"]["asked"]["capacity"] == "Room for another payment: ¥14,000 (today ¥81,000)."
     assert body["band"]["by_path"][b]["capacity"] == "Room for another payment: ¥62,000 (today ¥81,000)."
     assert body["band"]["stress"] == body["band"]["by_path"][a]["stress"] == option_a["text"]
@@ -191,7 +191,7 @@ def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id:
     assumed = [w for w in cap["after"]["windows"] if w["recovery_assumed"]]
     assert assumed and all(w["recovery_assumed_text"].endswith("(an assumption, not a record).") for w in assumed)
     line = next(w for w in cap["after"]["windows"] if w["dimension"] == "credit_line")
-    assert (line["today_fen"], line["today_short"], line["through_when"], line["recovers_when"]) == (1_380, "¥13.80", "in 31 days", "in 32 days")
+    assert (line["today_fen"], line["today_short"], line["through_when"], line["recovers_when"]) == (279_000, "¥3k", "in 31 days", "in 32 days")  # the line keeps ¥2,790 (R-10)
     assert line["after_short"] == "¥150k" and line["facility_name"] == "Bank credit line" and line["over_by"] is False
     before = next(w for w in cap["before"]["windows"] if w["dimension"] == "credit_line")
     assert before["today_fen"] == 0 and before["label"] == "Credit line room"
@@ -327,9 +327,9 @@ def test_a_refusal_names_the_package_when_the_package_causes_it() -> None:
         return SpareCapacity(shape="S1", criterion="R-TODAY", step_fen=100_000, x_star_fen=x, plan_at_x=None, plan_next=None,
                              binding_reason="", shape_text="", refused_text=None, ceiling_fen=0, evaluations=0, scanned=False, seconds=0)
 
-    asked = _Path("asked", "asked", "As they asked", "Accepting as asked", "按对方要求接受后", None)
+    asked = _Path("asked", "asked", "Accept their request", "accepting their request", "接受对方的要求后", None)
     reply = _Path("C1", "reply", "Option A", "Option A", "采用Option A 后", None)
-    assert _refused_text(asked, spare(8_100_000), "en") == "none: accepting as asked would leave the books needing you or a new facility"
+    assert _refused_text(asked, spare(8_100_000), "en") == "none: accepting their request would leave the books needing you or a new facility"
     assert _refused_text(reply, spare(8_100_000), "en") == "none: Option A would leave the books needing you or a new facility"
     assert _refused_text(reply, spare(8_100_000), "zh") == "无：采用Option A 后，账面将需要您出面或新增融资额度"
     assert _refused_text(reply, spare(None), "en") == "none: today's books already need the owner or a new facility"  # not the package's doing
@@ -414,9 +414,9 @@ def test_spare_zero_skips_the_search_and_a_later_read_pays_only_for_it(api: Test
     assert len(searches) == 4 and full["spare_read"] is True  # the books as they stand, then each of the three paths
     api.get(f"/offers/{offer_id}/exposure")
     api.get(f"/decisions/deal:{offer_id}/exposure?spare=1")  # the decision read can ask for it too, and finds it searched
-    assert len(searches) == 12  # asked for each time, answered by the capacity cache (the next test counts the real runs)
+    assert len(searches) == 4  # the repeated reads are answered by the route's own cache before they ask again (the next test counts the real runs)
     api.get(f"/decisions/deal:{offer_id}/exposure")  # but by default it does not
-    assert len(searches) == 12
+    assert len(searches) == 4
     assert api.get(f"/offers/{offer_id}/exposure?spare=2").status_code == 422
 
 
@@ -496,7 +496,7 @@ def test_the_chinese_read_of_the_whole_block_has_the_same_figures_and_no_english
     assert figures({k: v for k, v in en.items() if k not in drop}) == figures({k: v for k, v in zh.items() if k not in drop})
     assert english_leaks(zh, NAMES) == []
     assert unchanged_words(en, zh, NAMES) == []
-    assert zh["band"]["capacity"] == "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。"
+    assert zh["band"]["capacity"] == "再支付一笔款项的余量：¥2,000（目前 ¥81,000）。"
     assert zh["band"]["stress"] == "晚付 30 天：60 天后现金将跌至 −¥250,000，有 65 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。"
     assert zh["band"]["by_path"]["asked"]["capacity"] == "再支付一笔款项的余量：¥14,000（目前 ¥81,000）。"
     assert zh["stress"]["paths"][zh["lead"]]["breach_days_text"] == "低于您的最低现金 65 天"

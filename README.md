@@ -1,61 +1,155 @@
-# TermsLedger v2
+# FLOW (TermsLedger v2)
 
-An agent owned by a small supplier that controls both of its debt books under an owner-signed mandate. **Terms Guard** covers the credit the supplier gives buyers through payment terms. **Debt Desk** covers the credit it takes from lenders to survive those terms. It's our FinTechathon 2026 entry, International track, Topic E: SME Finance Copilot.
+Source code: https://github.com/peachoolongtee/smu2sz · FinTechathon 2026, International track, Topic E: SME Finance Copilot.
 
-The language model only interprets text. Deterministic code decides and executes: a buyer's offer becomes typed obligations, then a dated cash and debt trajectory, then a funding plan, then covenant and mandate checks, then a verdict, then typed operations in a hash-chained log. The agent may accept a buyer's offer on its own only when it can prove it read every figure and request in it (ADR-0005); everything else waits for the owner. It does not stop at the decision: on current books and a simulated clock it watches for a late receipt, tells the owner first, and proposes a cure inside the mandate with its cost. Free text executes only as a closed affirmative command, and a plan is proposed first and run only on the owner's "go ahead", as exactly the operations shown. A cure that costs more a year than the mandate's ceiling is queued, and runs only when the owner approves it as a second step (in the demo: go ahead, approve, and the cash lands on day 37).
+Contents: [1. What FLOW is](#1-what-flow-is) · [2. Run it locally](#2-run-it-locally-mock-mode-and-live-mode) · [3. Deploy](#3-deploy) · [4. Run the tests](#4-run-the-tests) · [5. Verify the evidence and evaluate](#5-verify-the-evidence-and-evaluate) · [Features and flags](#features-and-flags) · [Credentials](#credentials) · [Map](#map) · [Data, compliance and licence](#data-compliance-and-licence)
+
+## 1. What FLOW is
+
+FLOW is an agent owned by a small supplier that controls both of its debt books under an owner-signed mandate. **Terms Guard** covers the credit the supplier gives buyers through payment terms. **Debt Desk** covers the credit it takes from lenders to survive those terms. The language model only interprets text; deterministic code decides and executes. A buyer's offer becomes typed obligations, then a dated cash and debt trajectory, then a funding plan, then covenant and mandate checks, then a verdict, then typed operations in a hash-chained log. The agent may accept a buyer's offer on its own only when it can prove it read every figure and request in it (ADR-0005); everything else waits for the owner. It does not stop at the decision: on current books and a simulated clock it watches for a late receipt, tells the owner first, and proposes a cure inside the mandate with its cost. Free text executes only as a closed affirmative command, and a plan is proposed first and run only on the owner's "go ahead", as exactly the operations shown. A cure that costs more a year than the mandate's ceiling is queued, and runs only when the owner approves it as a second step (in the demo: go ahead, approve, and the cash lands on day 37).
 
 All data is synthetic (`fixtures/`). This is a simulation: the agent is decision support under the owner's own limits, not a lender, broker or adviser, and it executes no real payment; every facility, the buyer and the bank feed are simulated. It screens the entered obligations only, and it makes no claim of bank-covenant compliance. Nothing below needs an API key or the network once dependencies are installed: the default `LLM_MODE=cache` replays recorded model outputs and falls back to a deterministic rules grammar.
 
-## Quickstart for judges
+The stack: a FastAPI service (`services/api`, Python 3.12) with SQLite, in-memory or PostgreSQL storage, and a Next.js 16 web app (`apps/web`, TypeScript) that runs on recorded mocks or against the API.
 
-Requirements: Python 3.12 with [`uv`](https://docs.astral.sh/uv/); for the web app, Node with `pnpm`. Open a terminal at the repository root. The step 1 command runs from the root; the commands in steps 2 and 3 that start with `cd` run from that directory, and the others run from the root.
+## For judges
 
-**1. Verify the submitted evidence** (standard library only, no install):
+One command runs everything offline, free and deterministic (recorded model readings, in-memory books, no network, no key) and writes a report you can read in a browser or an editor:
+
+```bash
+uv run --project services/api python scripts/judge_eval.py     # 2 to 4 minutes; writes services/api/evals/judge/judge-report.md and .json
+```
+
+It runs the 49 scripted conversations, the 259-attack catalogue (126 through the API, 133 through the chat), the demo walk, and a hash-chain check of the walk's log with a tampered copy that must fail. The report opens with one headline line, then a table per task area and per attack class, then every task and attack with its prompt, expected and actual outcome. The exit status is non-zero on any failure. Eight questions to ask FLOW live, with the exact input and the real answer: [`docs/deliverables/JUDGING_QUESTIONS.md`](docs/deliverables/JUDGING_QUESTIONS.md).
+
+## 2. Run it locally (mock mode and live mode)
+
+Requirements: Python 3.12 with [`uv`](https://docs.astral.sh/uv/); Node 22 or newer with `pnpm` for the web app. Open a terminal at the repository root and clone first:
+
+```bash
+git clone https://github.com/peachoolongtee/smu2sz.git && cd smu2sz
+```
+
+One command, the same in PowerShell, cmd, macOS and Linux, from the repository root (install the web packages once first):
+
+```powershell
+cd apps/web; pnpm install; cd ../..     # once
+pnpm demo                               # API on :8000 + UI on :3000 against it; open http://localhost:3000
+pnpm demo:blank                         # the same, opening on a new business with no books (the setup wizard)
+pnpm demo:mock                          # UI alone on the recorded mocks: no API, no Python
+pnpm demo --web-port 3141 --api-port 8041   # other ports, if 3000 or 8000 is taken
+```
+
+The launcher (`scripts/demo.mjs`, Node only) starts the API with in-memory books (`DATABASE_URL=memory`), the repo-root `.env` ignored (`TERMSLEDGER_NO_DOTENV=1`), the demo credentials, cached LLM outputs and every feature flag, and tells it to allow the web port it uses. It checks both ports first, waits for the API before starting the web app, prints the address to open, and stops both on Ctrl+C. The first run installs the API's Python packages (a minute or two).
+
+**"localhost refused to connect"** means nothing is listening on that port, or the web app came up on another port the API does not allow: run `pnpm demo` and open the address it prints; if it says a port is taken, pass `--web-port` / `--api-port` as it suggests.
+
+Or by hand, two terminals (PowerShell; in bash write `NAME=value` before the command instead of the `$env:` lines). Always set `TERMSLEDGER_NO_DOTENV=1` and `DATABASE_URL=memory`, or the API reads the repo-root `.env`:
+
+```powershell
+# terminal 1, from services/api
+$env:TERMSLEDGER_NO_DOTENV="1"; $env:DATABASE_URL="memory"; $env:DEMO_MODE="1"; $env:LLM_MODE="cache"; $env:CORS_ORIGINS="http://localhost:3000"; $env:FEATURE_ENVELOPE="1"; $env:FEATURE_PRICE_CURVE="1"; $env:FEATURE_COLLECTIONS_WORTH="1"; $env:FEATURE_EXPOSURE="1"
+uv run uvicorn app.main:app --port 8000
+# terminal 2, from apps/web
+$env:NEXT_PUBLIC_API_URL="http://localhost:8000"; pnpm dev:live        # or `pnpm dev:mock` for the recorded mocks alone
+```
+
+Switch to **Demo** in the header, click **Start demo** and sign in as the owner when asked (the local demo token is `demo-owner-token`; `NEXT_PUBLIC_DEMO=1` prefills it). The chat panel opens from the header on every page, and the owner home at `/` shows the day, the agent's opener and what is waiting.
+
+**The whole path without the UI** (17 steps, in process, exit 0: the deal, the agreed early payment, the late residual on day 34, the cure that takes two steps, go ahead then approve, landing on day 37, the repaid credit line, an attack through chat):
+
+```bash
+DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py
+```
+
+Without `DEMO_MODE=1` it stops with a message saying so. Its output from this commit is in `docs/deliverables/evidence/demo_run_output.txt`.
+
+- **Where the data lives.** Without `DATABASE_URL` the API uses the SQLite file `termsledger.db` in the directory it was started from (`services/api/termsledger.db`; the `*.db` pattern is git-ignored). The app creates the file and its tables itself the first time it opens the store (the first request, not at start); there is no Alembic step for local use. `DATABASE_URL=memory` keeps everything in the process and writes no file. For another file use the absolute form `DATABASE_URL=sqlite:////absolute/path/to/file.db` (four slashes: the scheme's three plus the leading `/` of the path).
+- **A repo-root `.env`.** The API reads `.env` at the repository root if one exists, and fills in only what the shell has not set. Set `TERMSLEDGER_NO_DOTENV=1` to skip it (the tests and the e2e config do).
+- **Other ports.** `pnpm demo --web-port <n> --api-port <n>` handles this for you. The API allows the web origin `http://localhost:3000` by default. For any other web port, start the API with `CORS_ORIGINS=<web origin>` (without it the browser's preflight is refused and every request fails) and the web app with `NEXT_PUBLIC_API_URL=<API origin>`, for example `TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory DEMO_MODE=1 CORS_ORIGINS=http://localhost:3141 uv run uvicorn app.main:app --port 8041` and `NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8041 pnpm dev -p 3141`.
+- **Files `pnpm dev` writes.** Next.js 16 writes `apps/web/AGENTS.md` and `apps/web/CLAUDE.md` when the dev server starts; both are git-ignored.
+- More on the web app, the live mode and the e2e switches is in `apps/web/README.md`.
+
+## 3. Deploy
+
+`infra/docker-compose.yml` runs three services: `postgres` (16), `api` (built from `infra/api.Dockerfile`) and `web` (built from `infra/web.Dockerfile`). Secrets come from `infra/.env`, which is never committed; `infra/.env.example` lists them.
+
+**What to set in `infra/.env`** (copy the example first: `cp infra/.env.example infra/.env`):
+
+| Variable | Value |
+| --- | --- |
+| `POSTGRES_PASSWORD` | a random password |
+| `OWNER_TOKEN` | a random secret, for example `openssl rand -hex 32` (the owner's header `X-Owner-Token`) |
+| `AGENT_KEY` | a different random secret (`X-Agent-Key`) |
+| `BANK_FEED_KEY` | a third one (`X-Bank-Feed-Key`, the simulated bank's receipt feed) |
+| `CORS_ORIGINS` | the web origin the browser uses, for example `https://flow.example.com` |
+| `LLM_MODE` | `cache` (default) replays recorded outputs; `live` also needs `ANTHROPIC_API_KEY` or `DEEPSEEK_API_KEY` |
+
+**`DEMO_MODE=0` in production.** The compose file hard-codes `DEMO_MODE: "0"`. With it off, the published demo credentials (`demo-owner-token` and the rest) are rejected, the owner and agent routes answer 503 until `OWNER_TOKEN` and `AGENT_KEY` are set, and the demo books are never seeded. The API binds to `127.0.0.1:8000` so that it sits behind a TLS reverse proxy; do not publish it on `0.0.0.0`.
+
+**Database: the bundled Postgres, or Supabase.**
+
+1. Create the schema with Alembic **before the API's first start**. The migrations are in `services/api/migrations/versions/` (`0001` to **`0008`**, the head). `0002` enables row-level security on every table and `0003` makes `operations` and `used_nonces` append-only in the database itself; a database the app created for itself (`metadata.create_all`) has neither.
+
+   ```bash
+   # bundled Postgres
+   docker compose -f infra/docker-compose.yml up -d postgres
+   docker compose -f infra/docker-compose.yml run --rm api uv run --no-dev alembic upgrade head
+
+   # or any Postgres / Supabase, from a checkout: use the session-pooler (IPv4) connection string
+   cd services/api && uv sync
+   DATABASE_URL='postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME' uv run alembic upgrade head
+   alembic current          # expect: 0008 (head)
+   ```
+
+   For Supabase, take the connection string from the project's database settings and write it with the `postgresql+psycopg://` scheme (when only `SUPABASE_DB_URL` is set, the API rewrites `postgres://` to that scheme itself). In the compose file replace the `api` service's `DATABASE_URL` and drop the `postgres` service.
+2. Start the stack: `docker compose -f infra/docker-compose.yml up -d --build`. The web app is on :3000, the API on 127.0.0.1:8000, health at `/health`.
+
+**Not yet a one-command production deployment (open finding SEC-06, `docs/SECURITY_SELF_ASSESSMENT.md`).** Reading the files: with `DEMO_MODE=0` the API also needs `OWNER_PUBLIC_KEY_HEX` (the owner's Ed25519 public key, 64 hex characters) and a store that already holds books and an owner-signed mandate, because the demo fixture is never seeded outside `DEMO_MODE`; the compose file does not pass the key, and no provisioning command exists yet, so the API refuses to start rather than run on demo values. Counterparty channel keys come from `COUNTERPARTY_KEYS` (`BUYER-1=key,BUYER-2=key`); with none set no buyer can authenticate. The web image bakes `NEXT_PUBLIC_API_URL=http://localhost:8000` at build time and compose passes no build argument, so a web app served from a domain needs `build.args` added. The mandate in `fixtures/` is signed with a published key labelled DEMO ONLY.
+
+**What we ran.** `docker` is not installed on the machine this section was checked on, so the compose file, both Dockerfiles and the compose commands above were read, not run. What was run: `alembic upgrade head` from `services/api` on a fresh SQLite file (it applied `0001` through `0008` and `alembic current` printed `0008 (head)`); the API started on that file with `DEMO_MODE=1` (`/state` answered 200 with the demo owner token and 401 without it); the API started with `DEMO_MODE=0` and made-up `OWNER_TOKEN` and `AGENT_KEY` (it answered `/health` and then failed closed on the first owner route with the `OWNER_PUBLIC_KEY_HEX` message above). No PostgreSQL or Supabase database was used.
+
+**For an evaluation stack on a private network** (synthetic data, published demo credentials, never on the internet): run the two commands of section 2 on the host, or against a migrated database with `DATABASE_URL` set as in step 1 and `DEMO_MODE=1`.
+
+## 4. Run the tests
+
+Run each block from the directory named. The full catalogue by area, with file globs, counts and what each suite proves, is in [`docs/deliverables/TEST_CASES.md`](docs/deliverables/TEST_CASES.md). Last full gate, on `dev` at `0f92d433` (16 Oct 2026): **API 8,556 passed with 1 known failure** (#161, a hash that differs by machine), **Playwright mock 435/435, live 141/141, web unit 163**, `tsc` and `eslint` clean.
+
+```bash
+# API: 8,598 tests collected (about 25 minutes in full; Windows gate had SKIP_PERF_BENCH=1)
+cd services/api && SKIP_PERF_BENCH=1 uv run pytest
+cd services/api && uv run pytest tests/mandate tests/verifier        # one area, seconds to minutes
+
+# web: lint, types, unit tests (163)
+cd apps/web && pnpm install && pnpm lint && pnpm typecheck && pnpm test:unit
+
+# end to end (Playwright)
+cd apps/web && pnpm exec playwright install chromium   # once
+cd apps/web && pnpm test:e2e:mock                    # no backend: 496 listed, 435 run in the gate
+cd apps/web && pnpm test:e2e:live                    # needs uv; starts its own API (in-memory) and web build: 191 listed, 141 run in the gate
+```
+
+`pytest` needs no environment variables: `tests/conftest.py` sets `TERMSLEDGER_NO_DOTENV=1` and `DEMO_MODE=1` itself. Some listed Playwright tests skip themselves; the strategy specs run only with `E2E_STRATEGY=1`. The live project starts an API on :8000 and a web build on :3000 itself, so those ports must be free; `E2E_API_PORT`, `E2E_LIVE_PORT` and `E2E_PORT` (mock, default 3100) move them. Two switches change the live API: `E2E_DATABASE_URL=sqlite:////absolute/path/e2e.db` makes the API that Playwright starts use that file instead of `memory`, and `E2E_REUSE_API=1` starts no API and runs against one already listening on `E2E_API_PORT` (start it yourself with `CORS_ORIGINS` set to the live web origin; then `E2E_DATABASE_URL` is ignored). `DEMO_MODE=1` for the live API is set by the Playwright config. Details in `apps/web/README.md`.
+
+Known failures and flakes: #161 (one API test whose hash differs by machine) and #157 (a few Playwright specs, for example the two write-conflict retries in `live.spec.ts`, which can fail on this tree). Both are described in `TEST_CASES.md`.
+
+## 5. Verify the evidence and evaluate
+
+**Verify the submitted evidence** (standard library only, no install). Each file is one scripted task's hash chain; the script recomputes every `entry_hash = sha256(prev_hash + payload_json + result_json)`. Expect 49 lines starting `VALID`, one per task (the concatenated `evidence.jsonl` holds 49 separate chains, so verify the per-task files):
 
 ```bash
 for f in services/api/evals/e2e/latest/evidence/*.jsonl; do python3 scripts/verify_evidence.py "$f"; done
 ```
 
-Expect 49 lines starting `VALID`, one per scripted task. Each file is one task's hash chain; the script recomputes every `entry_hash = sha256(prev_hash + payload_json + result_json)`. (The concatenated `evidence.jsonl` holds 49 separate chains, so verify the per-task files.)
+A fresh evidence pack from this commit (the demo run, the 49 tasks, the full-walk operations log with its verification, four security refusals) is in [`docs/deliverables/evidence/`](docs/deliverables/evidence/README.md); the narrative is `docs/deliverables/execution_evidence.md`.
 
-**2. Run it.** Two servers, one terminal each, both starting at the repository root:
-
-```bash
-cd services/api && uv sync && uv run uvicorn app.main:app --reload      # API on :8000 (demo credentials, cache mode)
-cd apps/web && pnpm install && NEXT_PUBLIC_API_MODE=live pnpm dev        # UI on :3000; omit the variable for offline mock mode
-
-# Or one command for either mode (the API with in-memory books, the Demo scenarios and cached LLM outputs):
-scripts/dev.sh live     # API on :8000 + UI on :3000 against it, the owner sign-in prefilled
-scripts/dev.sh mock     # UI alone on the recorded mocks (the default)
-```
-
-- **Where the data lives.** Without `DATABASE_URL` the API uses the SQLite file `termsledger.db` in the directory it was started from (`services/api/termsledger.db` with the command above; the `*.db` pattern is git-ignored). The app creates the file and its tables itself the first time it opens the store (the first request, not at start); there is no Alembic step for local use. `DATABASE_URL=memory` keeps everything in the process and writes no file. For another file use the absolute form `DATABASE_URL=sqlite:////absolute/path/to/file.db` (four slashes: the scheme's three plus the leading `/` of the path).
-- **A repo-root `.env`.** The API reads `.env` at the repository root if one exists, and fills in only what the shell has not set. Set `TERMSLEDGER_NO_DOTENV=1` to skip it (the tests and the e2e config do).
-- **Other ports.** The API allows the web origin `http://localhost:3000` by default. For any other web port, start the API with `CORS_ORIGINS=<web origin>` (without it the browser's preflight is refused and every request fails) and the web app with `NEXT_PUBLIC_API_URL=<API origin>`, for example `CORS_ORIGINS=http://localhost:3141 uv run uvicorn app.main:app --port 8041` and `NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8041 pnpm dev -p 3141`.
-- **Files `pnpm dev` writes.** Next.js 16 writes `apps/web/AGENTS.md` and `apps/web/CLAUDE.md` when the dev server starts; both are git-ignored.
-- More on the web app, the live mode and the e2e switches is in `apps/web/README.md`.
-
-Switch to **Demo** in the header, click **Start demo** and sign in as the owner when asked (the local demo token is `demo-owner-token`; add `NEXT_PUBLIC_DEMO=1` to prefill it). The chat panel opens from the header on every page, and the owner home at `/` shows the day, the agent's opener and what is waiting. To see the whole path from the deal to the repaid credit line without the UI (17 steps, in process, exit 0; the day-34 cure takes two steps, go ahead then approve, and lands on day 37): `PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py`.
-
-**3. Test.**
+**Evaluate.**
 
 ```bash
-cd services/api && uv run pytest                     # 6,895 passed, 37 skipped on 12 Oct 2026 (dev after the UI overhaul and the Deals page; Windows, SKIP_PERF_BENCH=1, about 25 minutes; 6,813 on macOS before it)
-cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit
-cd apps/web && pnpm exec playwright install chromium   # once
-cd apps/web && pnpm test:e2e:mock                    # no backend: 211 passed, 41 skipped (221 and 31 with E2E_STRATEGY=1; 12 Oct 2026, after the UI overhaul and the Deals page)
-cd apps/web && pnpm test:e2e:live                    # needs uv; starts its own API (in-memory) and web build: 96 passed, 14 skipped (104 and 6 with E2E_STRATEGY=1; 12 Oct 2026, after the UI overhaul and the Deals page)
-```
-
-All 12 live skips are strategy tests (11 in `strategy.spec.ts` and the price-curve test in `slow.spec.ts`), which run only with `E2E_STRATEGY=1`; the mock skips include the same ones. The live project starts an API on :8000 and a web build on :3000 itself, so those ports must be free; `E2E_API_PORT`, `E2E_LIVE_PORT` and `E2E_PORT` (mock, default 3100) move them. Two switches change the live API: `E2E_DATABASE_URL=sqlite:////absolute/path/e2e.db` makes the API that Playwright starts use that file instead of `memory`, and `E2E_REUSE_API=1` starts no API and runs against one already listening on `E2E_API_PORT` (start it yourself with `CORS_ORIGINS` set to the live web origin; then `E2E_DATABASE_URL` is ignored). In my runs of `live.spec.ts` and of the whole live project on a SQLite file, the file ended with the seed state (the `operations` table empty), because the specs reset the books. Details in `apps/web/README.md`.
-
-**4. Evaluate.**
-
-```bash
-python3 scripts/run_scenarios.py --inproc                         # 49 scripted /nl tasks + evidence → services/api/evals/e2e/latest/
-cd services/api && uv run python -m app.security.attacks --report # 259 attacks (126 API + 133 chat, including the NL-CS consent attacks, each buyer attack with and without the buyer's key, and four on contract ingestion), 0 with harm
-PYTHONUTF8=1 uv run --project services/api python scripts/evaluate_contracts.py   # held-out contract readings → services/api/evals/contracts_heldout_report.md (the set is pending, so the report says so)
-uv run --project services/api python scripts/evaluate.py          # full offline evaluation (about 5 min) → services/api/evals/latest_report.md
+python3 scripts/run_scenarios.py --inproc                         # 49 scripted /nl tasks + evidence → services/api/evals/e2e/latest/ (add --out DIR to keep the committed run)
+cd services/api && uv run python -m app.security.attacks --report # 259 attacks (126 API + 133 chat, including the NL-CS consent attacks, each buyer attack with and without the buyer's key, and four on contract ingestion), 0 with harm; rewrites services/api/evals/security/latest_report.*
+DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/evaluate_contracts.py   # held-out contract readings → services/api/evals/contracts_heldout_report.md (the set is pending, so the report says so)
+DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py          # full offline evaluation (about 5 min) → services/api/evals/latest_report.md
 uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout3   # the independent held-out set
 PYTHONUTF8=1 uv run --project services/api python scripts/certify_language_boundary.py --backend cache   # 231-item language-boundary certification; also --backend fake; WRONG_MATERIAL 0 in both. --backend live is pending an API key
 cd services/api && SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider tests/concurrency   # two-process invariants on SQLite; the PostgreSQL cases run when TERMSLEDGER_TEST_DATABASE_URL is set (pending a database URL)
@@ -63,7 +157,7 @@ cd services/api && SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cachepro
 
 What we claim about the compiler, and what we don't, is in `services/api/evals/accuracy_summary.md`. In short: since ADR-0005 there are 0 wrong autonomous accepts on the held-out sets and both compiler paths, and text the compiler cannot fully read fails closed and goes to the owner. The figures behind that, unchanged: on the only set nobody had tuned for, the first run (before ADR-0005) accepted 8 offers without the owner and 4 were wrong, and about 1 message in 3 is still decided differently from the labels (it goes to the owner, a counter or a clarification).
 
-**5. Rebuild the submission documents.**
+**Rebuild the submission documents.**
 
 ```bash
 uv run --project services/api python scripts/build_deliverables.py --refresh-evidence   # → docs/deliverables/out/*.docx
@@ -99,15 +193,11 @@ Other switches: `LLM_MODE=cache|live`, `LLM_PRIMARY=claude|deepseek`, `DATABASE_
 | Agent key | `X-Agent-Key` | `AGENT_KEY` | `demo-agent-key` |
 | Bank-feed key | `X-Bank-Feed-Key` | `BANK_FEED_KEY` | `demo-bank-feed-key` |
 
-The demo values work only while `DEMO_MODE` is on (the default for local runs). The mandate is signed with a published key labelled DEMO ONLY (`fixtures/keys/`).
-
-## Deploy
-
-Copy `infra/.env.example` to `infra/.env`, set `POSTGRES_PASSWORD`, `OWNER_TOKEN` and `AGENT_KEY` to random values, then run `docker compose -f infra/docker-compose.yml up --build`. Compose sets **`DEMO_MODE=0`**, so the demo credentials are rejected and the owner and agent routes fail closed until real ones are set. The API binds to `127.0.0.1:8000`, to sit behind a TLS reverse proxy. Postgres can be the bundled container or Supabase via `DATABASE_URL`; the Alembic migrations enable row-level security on every table and make the operations log append-only.
+The demo values work only with `DEMO_MODE=1`, which is off by default (since 16 Oct 2026): every local run command here sets it. A deployment sets `OWNER_TOKEN`, `AGENT_KEY` and `BANK_FEED_KEY` itself (section 3). The mandate is signed with a published key labelled DEMO ONLY (`fixtures/keys/`).
 
 ## Map
 
-- `docs/deliverables/`: the submission documents (technical document, execution evidence, demo video script, deck outline) and their `.docx` builds in `out/`
+- `docs/deliverables/`: the submission documents (technical document, execution evidence, test cases, demo video script, deck outline), the evidence pack in `evidence/`, and the `.docx` builds in `out/`
 - `docs/SECURITY_SELF_ASSESSMENT.md`: permission model, attack results, privacy, risk register
 - `docs/ARCHITECTURE.md`: modules, contracts, engine and verdict rules, and the API
 - `docs/INVARIANTS.md`: the security laws

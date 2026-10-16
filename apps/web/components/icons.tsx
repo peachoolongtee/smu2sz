@@ -26,6 +26,11 @@ export const XIcon = (p: P) => (
     <path d="M4 4l8 8M12 4l-8 8" />
   </svg>
 );
+export const RefreshIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M13 8a5 5 0 1 1-1.46-3.54M13 2.5v2.5h-2.5" />
+  </svg>
+);
 export const MenuIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" />
@@ -114,6 +119,19 @@ export const CheckCircleIcon = (p: P) => (
   <svg {...base(p)}>
     <circle cx="8" cy="8" r="5.5" />
     <path d="M5.4 8.2l1.8 1.8 3.4-3.6" />
+  </svg>
+);
+/** Two arrows that pass each other (a counter-offer: terms going back the other way). */
+export const ArrowsExchangeIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M3 5.5h10M10 2.5l3 3-3 3M13 10.5H3M6 7.5l-3 3 3 3" />
+  </svg>
+);
+/** A circle with a cross (an offer the buyer declined). */
+export const XCircleIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" />
+    <path d="M6 6l4 4M10 6l-4 4" />
   </svg>
 );
 export const HourglassIcon = (p: P) => (

@@ -68,7 +68,7 @@ def test_a_receipt_names_the_buyer_and_keeps_the_figure(client):
         "requested_by": "SYSTEM", "receivable_id": promised["receivable_id"], "amount_fen": promised["expected_fen"],
         "bank_reference": "T-RCPT-9"})
     receipt = next(o for o in _ops(client) if o["kind"] == "RECEIVE_PAYMENT")
-    assert receipt["event_text"] == "Received ¥255,013.80 from Foshan Home Retail Co."
+    assert receipt["event_text"] == "Received ¥257,790.00 from Foshan Home Retail Co."
     assert receipt["event_detail"] is None or "day " not in receipt["event_detail"]
 
 

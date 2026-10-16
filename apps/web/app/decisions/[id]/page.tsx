@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { QuoteBlock } from "@/components/approval-card";
-import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, textLinkClass, type Tone } from "@/components/ui";
+import { Badge, Button, ButtonLink, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, textLinkClass, type Tone } from "@/components/ui";
 import { StateWord } from "@/components/ui/state-word";
 import { OpStatusBadge } from "@/components/badges";
 import { ReceiptFacts } from "@/components/receipt-facts";
@@ -96,6 +97,7 @@ function RecordBody({ d }: { d: DecisionView }) {
           <p className="text-sm font-semibold text-ink" data-testid="record-action">
             {d.evaluation.business_action_text}
           </p>
+          {d.evaluation.clarification ? <Clarification c={d.evaluation.clarification} /> : null}
           {d.response?.counters.length ? (
             <ul className="mt-3 divide-y divide-line text-sm">
               {d.response.counters.map((c) => (
@@ -115,12 +117,27 @@ function RecordBody({ d }: { d: DecisionView }) {
             <p className="text-meta font-medium text-ink-3">{t("rec.sent")}</p>
             {sent === null ? (
               <p className="text-sm text-ink-2">{t("rec.sent.none")}</p>
+            ) : sent.recorded && sent.outside_flow ? (
+              // The owner sent it outside FLOW: the server's sentence says so (and, once recorded, that the buyer accepted it); nothing was simulated.
+              <p className="text-sm text-ink" data-testid="record-sent-outside">
+                {sent.text}
+              </p>
             ) : sent.recorded ? (
               <div className="text-sm text-ink">
                 <p>
                   {sent.chosen_label ? t("rec.sent.chosen", { label: sent.chosen_label_text ?? sent.chosen_label }) : t("rec.sent.unbound")} {t("rec.sent.simulated")}
                 </p>
-                {sent.economics ? (
+                {sent.economics?.quoted_cost_label_text && sent.economics.net_label_text ? (
+                  // The server words both figures: the cost quoted when sent, and what the net measures (a label and its value are separate elements).
+                  <dl className="m-0 mt-1 space-y-1 text-meta text-ink-2" data-testid="record-sent-economics">
+                    <div>
+                      <dt className="inline">{sent.economics.quoted_cost_label_text}</dt> <dd className="ml-1 inline tabular-nums text-ink">{sent.economics.quoted_cost_display}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline">{sent.economics.net_label_text}</dt> <dd className="ml-1 inline tabular-nums text-ink">{sent.economics.net_display}</dd>
+                    </div>
+                  </dl>
+                ) : sent.economics ? (
                   <p className="mt-0.5 text-meta text-ink-2">
                     {t("biz.deals.netCost")} {sent.economics.net_display}
                     {sent.economics.basis_facility_name ? ` · ${sent.economics.basis_facility_name}` : ""}
@@ -226,6 +243,34 @@ function RecordBody({ d }: { d: DecisionView }) {
  * authorization, the agreement, what ran and what has landed. It is where a record with no page of its own is read (a funding request from
  * Home or Activity). Every sentence and figure is the server's, in the language on screen.
  */
+/** Why the offer cannot be decided yet, in the server's words, and the question to send the buyer (copied, never sent from here). */
+function Clarification({ c }: { c: NonNullable<DecisionView["evaluation"]>["clarification"] & object }) {
+  const { t } = useI18n();
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-3 space-y-3" data-testid="record-clarification">
+      <Callout tone="warn">{c.text}</Callout>
+      {c.ask_buyer_text ? (
+        <div className="rounded-tile border border-line bg-surface p-3">
+          <p className="text-meta font-medium text-ink-3">{t("rec.clarify.ask")}</p>
+          <p className="mt-1 text-sm text-ink" data-testid="record-clarification-ask">
+            {c.ask_buyer_text}
+          </p>
+          <Button
+            size="sm"
+            className="mt-2"
+            onClick={() => {
+              void navigator.clipboard?.writeText(c.ask_buyer_text ?? "").then(() => setCopied(true), () => setCopied(false));
+            }}
+          >
+            {copied ? t("rec.clarify.copied") : t("rec.clarify.copy")}
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function DecisionPage() {
   const { t } = useI18n();
   const params = useParams<{ id: string }>();

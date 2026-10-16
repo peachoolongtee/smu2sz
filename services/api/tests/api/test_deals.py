@@ -93,13 +93,13 @@ def test_the_golden_demo_on_day_34_matches_the_prototype(client):
     assert [(e["day"], e["label"]) for e in deal["changes"]] == [
         (0, "You confirmed"), (0, "Buyer asked"), (0, "Agent replied"), (0, "Buyer accepted"), (2, "Bank feed")]
     assert deal["changes"][3]["text"] == (
-        "early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due "
+        "early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due "
         "32 days ago; booked by the agent within your limits")
-    assert deal["changes"][4]["text"] == "¥255,013.80 received on the ¥420,000.00 invoice to Foshan Home Retail Co. (the agreed early payment)"
+    assert deal["changes"][4]["text"] == "¥257,790.00 received on the ¥420,000.00 invoice to Foshan Home Retail Co. (the agreed early payment)"
     rcv = deal["invoices"][0]
     assert (rcv["id"], rcv["outstanding_display"], rcv["due_day"], rcv["status"], rcv["status_text"]) == (
-        "RCV-A", "¥162,800.00", 32, "LATE", "2 days late")
-    assert rcv["notes"] == ["¥257,200.00 settled early 32 days ago"]
+        "RCV-A", "¥160,000.00", 32, "LATE", "2 days late")
+    assert rcv["notes"] == ["¥260,000.00 settled early 32 days ago"]
     second = deal["invoices"][1]
     assert (second["label"], second["status"], second["notes"]) == (
         "Invoice issued 32 days ago", "ADVANCE_WAITING", ["¥200,000.00 advance waiting for your approval"])
@@ -110,7 +110,7 @@ def test_the_golden_demo_on_day_34_matches_the_prototype(client):
     assert all(x["status"] == "ok" for x in deal["checks"])
     assert any("0.85% early payment is within the contract's 1.20%" in x["text"] for x in deal["checks"])
     assert deal["next_action"]["text"] == (
-        "Chase the ¥162,800.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago. Review the "
+        "Chase the ¥160,000.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago. Review the "
         "¥200,000.00 advance on the invoice issued 32 days ago to stay above your floor in 8 days.")
     assert [a["href"] for a in deal["next_action"]["actions"]] == ["/approvals", "/reconciliation"]
     assert [d["text"] for d in deal["owed_by_us"]["documents"]] == [

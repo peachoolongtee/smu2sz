@@ -5,10 +5,17 @@ import { openCompare, openStoryFold, STORY_STEPS, verdictHeading, walkStory, ope
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
 const ENGINE_ROUTES = ["/demo", "/chat", "/mandate", "/inbox", "/documents", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
-const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits", "/customers/BUYER-1", "/customers/BUYER-1/inputs"];
+const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits", "/customers/BUYER-1", "/customers/BUYER-1/inputs", "/buy", "/finance", "/plans"];
 
 async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+}
+
+/** Cash keeps the plans it weighed in a fold (closed until asked for); open it so the list can be measured. */
+async function openCashOptions(page: Page) {
+  const fold = page.getByTestId("cash-options-all").or(page.getByTestId("cash-options")).first();
+  await expect(fold).toBeAttached();
+  if (!(await fold.evaluate((el) => el.hasAttribute("open")))) await fold.locator("summary").first().click();
 }
 
 test("no page overflows horizontally after the demo has run", async ({ page }) => {
@@ -35,7 +42,9 @@ test("the Business home puts the status and the next action in the first screen,
   await page.goto("/");
   const status = page.getByTestId("home-status");
   await expect(status).toBeInViewport();
-  await expect(page.getByTestId("home-headline")).toBeInViewport();
+  // The headline is for a screen reader since the final UI fold; on screen the outlook's lowest figure says where the cash stands.
+  await expect(page.getByTestId("home-headline")).toHaveText(/./);
+  await expect(page.getByTestId("home-kpi-lowest-value")).toBeInViewport();
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
@@ -49,15 +58,17 @@ test("the Business home puts the status and the next action in the first screen,
   await expect(page).toHaveURL(/\/cash/);
 });
 
-test("Business navigation: five pills on a desktop, the same five tabs on a phone, the mode switch and Ask FLOW always visible", async ({ page }) => {
+test("Business navigation: the sections and the two doors (Sandbox, Capex) in the rail on a desktop, the six sections as tabs on a phone, the mode switch and Ask FLOW always visible", async ({ page }) => {
   await page.goto("/");
   const phone = (page.viewportSize()?.width ?? 1440) < 1024;
-  const names = ["Home", "Deals", "Cash & funding", "Receivables", "Activity"];
+  // The rail holds the sections and the doors to the sandbox and the old capex screen; a phone's bar keeps the six sections (the doors are reached from Cash there).
+  const names = ["Home", "Deals", "Attach deals", "Cash & funding", "Sandbox", "Capex", "Receivables", "Activity"];
+  const phoneNames = ["Home", "Deals", "Attach deals", "Cash & funding", "Receivables", "Activity"];
   const bar = page.getByTestId(phone ? "tab-bar" : "nav-pills");
   await expect(bar).toBeVisible();
   await expect(page.getByTestId(phone ? "nav-pills" : "tab-bar")).toBeHidden();
-  await expect(bar.getByRole("link")).toHaveText(phone ? ["Home", "Deals", "Cash", "Receivables", "Activity"] : names);
-  for (const n of names) await expect(bar.getByRole("link", { name: n, exact: true })).toBeVisible();
+  await expect(bar.getByRole("link")).toHaveText(phone ? ["Home", "Deals", "Attach", "Cash", "Receivables", "Activity"] : names);
+  for (const n of phone ? phoneNames : names) await expect(bar.getByRole("link", { name: n, exact: true })).toBeVisible();
   await expect(bar.locator('[aria-current="page"]')).toHaveText(phone ? "Home" : "Home");
   // Buy equipment and What-if are doors from Cash & funding, not sections; no hamburger in Business mode.
   await expect(page.getByRole("button", { name: "Open navigation" })).toHaveCount(0);
@@ -97,6 +108,7 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
       page.evaluate(() => {
       window.scrollTo(0, document.documentElement.scrollHeight);
       const chat = document.querySelector('[data-testid="chat-open"]')!.getBoundingClientRect();
+      const chatInHeader = Boolean(document.querySelector('[data-testid="chat-open"]')!.closest("header"));
       const bar = document.querySelector('[data-testid="tab-bar"]');
       const barTop = bar && getComputedStyle(bar).display !== "none" ? bar.getBoundingClientRect().top : innerHeight;
       // Every control in main, at the end of the page, sits above the bar and outside the Ask FLOW box.
@@ -105,7 +117,8 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
       return Array.from(document.querySelectorAll("main a[href], main button, main summary, main input")).filter((el) => {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0 || folded(el)) return false;
-        const hitsChat = r.left < chat.right && r.right > chat.left && r.top < chat.bottom && r.bottom > chat.top;
+        // Ask FLOW sits in the sticky header on a desktop (content scrolls under the header, which is not the pill covering it); on a phone it is a cell of the bar, where it must not cover a control.
+        const hitsChat = !chatInHeader && r.left < chat.right && r.right > chat.left && r.top < chat.bottom && r.bottom > chat.top;
         return hitsChat || r.bottom > barTop;
       }).length;
     });
@@ -162,11 +175,23 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
           const cy = r.y + r.height / 2;
           const okW = r.width >= 44 || (hit(el, cx - 21, cy) && hit(el, cx + 21, cy));
           const okH = r.height >= 44 || (hit(el, cx, cy - 21) && hit(el, cx, cy + 21));
+          // On a phone the forecast's numbered markers are a drawing (aria-hidden, no pointer events): each move is read in the list under the chart, whose rows are checked below.
+          if (el.closest("[aria-hidden=true]")) return false;
           return !(okW && okH);
         })
         .map((el) => `${el.tagName}:${(el.textContent ?? "").trim().slice(0, 24)}`);
     });
     expect(short, `${route}: controls a finger cannot hit at 44 px`).toEqual([]);
+    if (route === "/cash") {
+      // Every marker's move is also a 44 px row of the list.
+      const markers = await page.locator('[data-testid^="picture-marker-"]').count();
+      const rows = page.getByTestId("picture-move");
+      expect(markers).toBeGreaterThan(0);
+      await page.getByTestId("picture-moves-fold").locator("summary").click(); // the list is a fold: its summary is a 44 px target too
+      expect((await page.getByTestId("picture-moves-fold").locator("summary").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await expect(rows).toHaveCount(markers);
+      for (const row of await rows.all()) expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
   }
 });
 
@@ -215,38 +240,38 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
-  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
+  // The heading is the buyer's ask from the first read, so the check is done when the recommendation is there.
+  await page.getByTestId("queue-recommends").waitFor();
+  await expect(verdictHeading(page)).toContainText(/Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
+  // The buyer's messages are the deal's Messages tab: no inbox card is under the queue while a deal is selected.
+  await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
+  // The page's order on the Overview: the verdict, what they ask, FLOW's reply, the terms by scope.
+  // (The ask is one line when the deals read has the open offer, else the buyer's own message.)
+  const overview = ["queue-heading", "queue-recommends", "deal-choices"];
+  await page.getByTestId("deal-choices").waitFor();
+  const orderTops = await page.evaluate((list) => list.map((id) => (document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1e9) + scrollY), overview);
+  expect(orderTops.every((y) => y >= 0)).toBe(true);
+  expect(orderTops).toEqual([...orderTops].sort((a, b) => a - b));
   await openCompare(page);
   expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
-  // One order per width (the DOM order is the visual order): the verdict (the heading), what they ask, the recommendation, the consequence; below the two-pane width
-  // the negotiation comes first and the queue's cards (the folded inbox row among them) after it; from `xl` they are the left pane, and only the negotiation's parts are in one column.
-  const twoPanes = (page.viewportSize()?.width ?? 1440) >= 1280;
-  const detail = ["queue-heading", "deal-ask-quote", "queue-recommends", "deal-level-consequence"];
-  const ids = twoPanes ? detail : [...detail, "inbox-collapsed"];
-  const tops = await page.evaluate((list) => list.map((id) => {
-    const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
-    if (!el) return -1;
-    // From `xl` the negotiation scrolls on its own (round two): its parts are placed within that scroller; below it the window's scroll is the page's.
-    const box = document.querySelector('[data-testid="deals-detail"]');
-    const own = box && getComputedStyle(box).overflowY === "auto" && box.contains(el);
-    return own ? el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop : el.getBoundingClientRect().top + scrollY;
-  }), ids);
-  expect(tops.every((y) => y >= 0)).toBe(true);
-  expect(tops).toEqual([...tops].sort((a, b) => a - b));
+  await page.getByTestId("deal-tab-cash").click();
+  await expect(page.getByTestId("deal-chart")).toBeVisible();
+  expect(await overflowX(page), "/deals cash impact overflows horizontally").toBeLessThanOrEqual(1);
   await page.goto("/cash");
+  await openCashOptions(page);
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   expect(await overflowX(page), "/cash overflows horizontally").toBeLessThanOrEqual(1);
   const narrow = (page.viewportSize()?.width ?? 1440) < 1024;
   if (narrow) {
-    for (const [route, ready] of [["/deals", "inbox-collapsed"], ["/cash", "cash-options-list"]] as const) {
+    for (const [route, ready] of [["/deals", "deals-inbox"], ["/cash", "cash-options-list"]] as const) {
       await page.goto(route);
+      if (ready === "cash-options-list") await openCashOptions(page);
       await expect(page.getByTestId(ready)).toBeVisible();
       const short = await page.evaluate(() =>
         Array.from(document.querySelectorAll("main a, main button, main summary"))
           .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
           // The horizon pills keep a compact look with a 44 px hit area (covered by the controls test above).
-          .filter((el) => el.getBoundingClientRect().height < 44 && !el.matches("a:not([class*=button]), summary") && !el.closest("[role=group], [role=radiogroup]"))
+          .filter((el) => el.getBoundingClientRect().height < 44 && !el.matches("a:not([class*=button]), summary") && !el.closest("[role=group], [role=radiogroup]") && !el.matches(".hit"))
           .map((el) => `${el.tagName}:${(el.textContent ?? "").trim().slice(0, 24)}`),
       );
       expect(short, `${route}: buttons under 44 px`).toEqual([]);
@@ -275,7 +300,8 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   // Home: the status, then the priced action with its button above the tab bar, with no scroll.
   await page.goto("/");
   const alertId = await page.getByTestId("home-next-action").getAttribute("data-alert");
-  const run = page.getByTestId(`fix-open-${alertId}`);
+  // The Home's card opens the plan on Cash & funding ("Check funding plan"); the plan's own two presses are on Cash.
+  const run = page.getByTestId("home-check-plan");
   await expect(run).toBeVisible();
   const box = (await run.boundingBox())!;
   const tab = (await page.getByTestId("tab-bar").boundingBox())!;
@@ -288,23 +314,26 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  // The heading is the buyer's ask from the first read, so the check is done when the recommendation is there.
+  await page.getByTestId("queue-recommends").waitFor();
+  await expect(verdictHeading(page)).toContainText(/Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
   const rec = (await topOf(page, "queue-heading"))!;
   const send = await page.getByTestId("queue-review-open").boundingBox();
-  const inbox = (await topOf(page, "inbox-collapsed"))!;
-  const asks = (await topOf(page, "deal-ask-quote"))!;
-  expect(inbox.top, "the inbox is one folded row, after the deal on a phone").toBeGreaterThan((await topOf(page, "queue-recommends"))!.top);
+  const asks = (await topOf(page, "queue-heading"))!;
+  // The buyer's messages are the deal's Messages tab: no inbox row is under the queue while a deal is selected.
+  await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
   await expect(page.getByTestId("deal-steps")).toHaveCount(0);
   await expect(page.getByTestId("deal-state-chip")).toContainText("Counter ready");
   expect(rec.top, "the recommendation card starts in the first screen").toBeLessThan(915);
   expect(send, "the review button is on the page").not.toBeNull();
   expect(send!.y + send!.height, "the review button is inside the first 915 px").toBeLessThanOrEqual(915);
   expect(send!.y + send!.height, "and above the tab bar").toBeLessThanOrEqual(tab.y);
-  expect(asks.top, "the ask comes before the reply card (the board's order)").toBeLessThan(send!.y);
-  measured.deals = { recommendation: rec, send: { top: Math.round(send!.y), bottom: Math.round(send!.y + send!.height) }, inbox, asks, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
+  expect(asks.top, "the ask comes before the reply card (the board's order)").toBeLessThan((await topOf(page, "queue-recommends"))!.top);
+  measured.deals = { recommendation: rec, send: { top: Math.round(send!.y), bottom: Math.round(send!.y + send!.height) }, asks, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
 
   // Cash: the answer, the plan, the picture, then the comparison; its options list starts inside the first three screens.
   await page.goto("/cash");
+  await openCashOptions(page);
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   const options = (await topOf(page, "cash-options-list"))!;
   const plan = (await topOf(page, "home-next-action"))!;
@@ -330,17 +359,24 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   }
 });
 
-test("on a desktop the queue is the left pane and the negotiation the right one, side by side", async ({ page }, testInfo) => {
+test("on a desktop the deal is its own full-width page: no queue beside it, All deals at its top, and the list comes back in the same place", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "a desktop check");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
-  const queue = (await page.getByTestId("deals-queue").boundingBox())!;
+  await page.getByTestId("queue-recommends").waitFor();
+  await expect(verdictHeading(page)).toContainText(/Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/);
+  // The list is not beside the deal (it is kept hidden), and the deal's page takes the content's width.
+  await expect(page.getByTestId("deals-queue")).toBeHidden();
+  const top = (await page.getByTestId("deal-topbar").boundingBox())!;
   const pane = (await page.getByTestId("deal-pane").boundingBox())!;
-  expect(pane.x, "the negotiation is to the right of the queue").toBeGreaterThan(queue.x + queue.width - 1);
-  expect(Math.abs(pane.y - queue.y), "and starts at the same height").toBeLessThan(4);
+  expect(pane.width, "the deal takes the content's width, not a side pane's").toBeGreaterThan(900);
+  expect(Math.abs(pane.x - top.x), "under its top line, left-aligned with it").toBeLessThan(2);
+  expect(top.y, "All deals is above the deal").toBeLessThan(pane.y);
+  await page.getByTestId("deal-back-all").click();
+  await expect(page.getByTestId("deals-queue")).toBeVisible();
+  await expect(page.getByTestId("deal-pane")).toHaveCount(0);
 });
 
 /**
@@ -371,7 +407,7 @@ test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash)
   await toDay34(page);
   await page.goto("/");
   const alert34 = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
-  expect(await bottomOf(page, `fix-open-${alert34}`), "Home day 34").toBeLessThanOrEqual(840);
+  expect(await bottomOf(page, "home-check-plan"), "Home day 34").toBeLessThanOrEqual(840);
   await page.goto("/cash");
   await expect(page.getByTestId(`fix-open-${alert34}`)).toBeVisible();
   expect(await bottomOf(page, `fix-open-${alert34}`), "Cash day 34").toBeLessThanOrEqual(840);
@@ -396,11 +432,10 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   test.skip(testInfo.project.name === "phone", "a laptop check");
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/");
-  const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
-  expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
-  // The three cards are one row in the page's flow (not sticky) and the whole row, today's cash among them, is inside the first screen.
+  expect(await bottomOf(page, "home-check-plan")).toBeLessThanOrEqual(700);
+  // Since the final UI fold the outlook is the page's main card: its figure and the recommendation inside it are in the first screen; today's cash heads the side column below.
   await expect(page.getByTestId("home-kpi-cash-value")).toBeVisible();
-  for (const id of ["hv2-cash-card", "hv2-action", "hv2-outlook-card"]) {
+  for (const id of ["home-kpi-lowest-value", "hv2-action"]) {
     const box = (await page.getByTestId(id).boundingBox())!;
     expect(box.y + box.height, id).toBeLessThanOrEqual(768);
   }
@@ -409,8 +444,8 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
 test("at tablet width (820) the open invoices are one card each, so no column is clipped", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "the phone has its own check");
   await page.setViewportSize({ width: 820, height: 1180 });
-  await page.goto("/receivables");
-  await expect(page.getByTestId("recv3-list")).toBeVisible();
+  await page.goto("/receivables?customer=BUYER-1"); // /receivables is the customer list; the customer's page holds the open invoices
+  await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
   await expect(page.getByRole("columnheader").first()).toBeHidden();
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });

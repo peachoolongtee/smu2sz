@@ -39,7 +39,7 @@ test("verdict figures are the golden values, server-formatted", () => {
   // Counter ids are the server's (CTR-<hash>), so the cards are found by label.
   const a = v.counters.find((c) => c.label === "Option A");
   assert.equal(a.supplier_cost_fen, golden.counter_a_total);
-  assert.equal(a.supplier_cost_display, "¥3,027.77");
+  assert.equal(a.supplier_cost_display, "¥3,035.99");
   const b = v.counters.find((c) => c.label === "Option B");
   assert.equal(b.supplier_cost_display, "¥0.00");
   // EX01 Option B is now 55-day terms at 0.30% (0.30% x 420,000.00 = 1,260.00 per invoice). fixtures/golden still holds the old
@@ -56,7 +56,7 @@ test("the EX01 verdict, the counters and the buyer turns are the live API's, as 
   );
   assert.equal(
     v.counters.find((c) => c.label === "Option A").text,
-    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
   );
   assert.ok(Array.isArray(v.passed_checks) && v.autonomy && v.annualised);
   // Leverage is one definition now (actual drawn debt): the pro forma is 1.47x and the inputs name the month, the debt and the basis.
@@ -255,7 +255,7 @@ test("the deal summary: the confirmed contract once the buyer agrees, then the d
   assert.deepEqual(deal.stages.map((s) => s.state), ["done", "done", "done", "now", "todo"]);
   assert.ok(deal.changes.some((c) => c.label === "Buyer accepted" && c.text.includes(fmtYuan(golden.counter_a_face))));
   const rcvA = deal.invoices.find((i) => i.id === "RCV-A");
-  assert.deepEqual([rcvA.status, rcvA.outstanding_display, rcvA.status_text], ["LATE", "¥162,800.00", "2 days late"]);
+  assert.deepEqual([rcvA.status, rcvA.outstanding_display, rcvA.status_text], ["LATE", "¥160,000.00", "2 days late"]);
   assert.equal(deal.invoices.find((i) => i.status === "ADVANCE_WAITING").label, "Invoice issued 32 days ago");
   // The sentence says the approval in words; the ids stay in their own fields.
   assert.ok(deal.next_action.text.includes("advance on the invoice issued 32 days ago"));

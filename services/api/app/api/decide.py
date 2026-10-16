@@ -17,7 +17,14 @@ from pydantic import BaseModel
 from app.alerts import Severity, alerts
 from app.api.accept import accept_block, answered_block
 from app.api.auth import require_feature, require_owner
-from app.api.decisions import execution_view, lapsed_conflict, latest_verdict_for, load_context, record_fact
+from app.api.decisions import (
+    execution_view,
+    lapsed_conflict,
+    latest_verdict_for,
+    load_context,
+    record_fact,
+    sent_outside_conflict,
+)
 from app.api.display import displayed
 from app.api.home import _alert_actions, _series, next_action
 from app.api.presentation import (
@@ -41,6 +48,7 @@ from app.api.presentation import (
     t,
     with_roles,
 )
+from app.api.refusal import refusal_plan, runnable
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import owner_verdict_extras, trajectory_view
 from app.api.workspace import build as build_workspace
@@ -48,6 +56,7 @@ from app.books import Books, current_books
 from app.commitments import terms_hash
 from app.config import get_settings
 from app.counterparties import negotiate
+from app.counterparties.profiles import load_buyer_profiles
 from app.decisions import derive
 from app.decisions.facts import CounterEconomics, EvaluatedFact, GapLeg, GapPlan, SentFact
 from app.decisions.identity import deal_id
@@ -98,7 +107,22 @@ from app.verifier import evaluate
 router = APIRouter(dependencies=[Depends(require_owner)])
 _t = t  # `negotiate` binds a local `t` (the transcript)
 
-PROFILES = {"cooperative": "BUYER-1", "hard_line": "BUYER-1-HARDLINE"}
+BUYER_MODES = ("cooperative", "hard_line")
+
+
+def simulated_profile(counterparty_id: str, mode: str) -> str | None:
+    """The simulated buyer a send negotiates against: the offer's own buyer's profile, its hard-line variant for `hard_line`; None when
+    that buyer has no simulated profile (a send then has no simulated reply, and never borrows another buyer's reservation)."""
+    pid = counterparty_id if mode == "cooperative" else f"{counterparty_id}-HARDLINE"
+    p = load_buyer_profiles().get(pid)
+    return pid if p is not None and p.counterparty_id == counterparty_id else None
+
+
+def _no_simulated_buyer(offer: CompiledOffer, mode: str, lang: str) -> HTTPException:
+    said = t(lang, "This buyer has no simulated reply in this environment; nothing was sent. Copy the message to the buyer instead.",
+             "此环境中没有该买方的模拟回复；未发送任何内容。请改为复制发给买方的消息。")
+    return HTTPException(409, detail={"code": "NO_SIMULATED_BUYER", "offer_id": offer.offer_id, "buyer_profile": mode,
+                                      "counterparty_id": offer.counterparty_id, "message": said, "message_when": said})
 
 
 def _owner_declared(offer_id_hint: str | None) -> dict[str, Any] | None:
@@ -346,17 +370,7 @@ def _ops_for_plan(rt: Runtime, actions: list[FundingAction], key: str) -> list[d
     return results
 
 
-def _runnable(gap_plan) -> str | None:
-    """Why the gap plan is not run today ('' never): the router's own "cannot run today" reason, or a leg no
-    operation can run. None when every leg can be sent."""
-    if not gap_plan.actions:
-        return None
-    if not gap_plan.executable_now:
-        return gap_plan.not_executable_reason or "it cannot run today"
-    if any(a.kind not in (FundingActionKind.DRAW, FundingActionKind.FINANCE_INVOICE) or
-           (a.kind == FundingActionKind.FINANCE_INVOICE and not a.receivable_id) for a in gap_plan.actions):
-        return "it relies on a step no operation can run (a buyer paying early or a bill discount)"
-    return None
+_runnable = runnable  # the refused send's check, shared with the picture (`app.api.refusal`)
 
 
 def _counter_changed(rt: Runtime, offer: CompiledOffer, verdict, state_version: int, why: str, lang: str = "en") -> HTTPException:
@@ -396,11 +410,10 @@ def negotiate_offer(offer_id: str, body: NegotiateIn, lang: str = "en") -> dict:
     `message` and the buyer's own text stay as written."""
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
-    profile = PROFILES.get(body.buyer_profile)
-    if profile is None:
+    if body.buyer_profile not in BUYER_MODES:
         raise HTTPException(422, "buyer_profile must be cooperative or hard_line")
     with rt.lock:  # one critical section from the binding check to the last write: what was checked is what runs
-        return _negotiate_locked(rt, offer_id, body, profile, lang)
+        return _negotiate_locked(rt, offer_id, body, lang)
 
 
 def _open_agreement(rt: Runtime, verdict, counter: CounterProposal):
@@ -431,7 +444,7 @@ def _approval_names(a, c) -> bool:
     return op.get("nonce") == c.nonce or op.get("commitment_id") == c.id
 
 
-def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: str, lang: str = "en") -> dict:
+def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str = "en") -> dict:
     vid = rt.latest_verdict.get(offer_id)
     verdict = rt.store.get_verdict(vid) if vid else None
     if verdict is None and (body.verdict_id or body.counter_id or body.state_version is not None):
@@ -440,6 +453,11 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
         raise HTTPException(409, "evaluate the offer first")
     offer = rt.store.get_offer(offer_id)
     assert offer is not None
+    profile = simulated_profile(offer.counterparty_id, body.buyer_profile)
+    if profile is None:  # every send used to negotiate against BUYER-1's reservation, whoever asked
+        raise _no_simulated_buyer(offer, body.buyer_profile, lang)
+    if (outside := sent_outside_conflict(rt, offer_id, lang)) is not None:
+        raise outside  # the real buyer has the counter: the simulated one does not answer it as well
     chosen: CounterProposal | None = None
     with rt.lock:
         bound = body.verdict_id is not None or body.counter_id is not None or body.state_version is not None
@@ -512,8 +530,7 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
                           f"{accepted_label or '还价'}已被接受，协议已记录")
             funded_when = _t(lang, "the remaining gap is funded.", "其余缺口已融资。")
         else:
-            books = current_books(state, rt.store.commitments())
-            gap_plan = plan(books.state, books.with_([]), mandate)
+            gap_plan = refusal_plan(state, rt.store.commitments(), mandate)
             message = "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap."
             head_when = _t(lang, "No deal after the buyer's replies", "买方回复后未能成交")
             funded_when = _t(lang, "the near-term gap is funded another way.", "近期缺口将通过其他方式融资。")

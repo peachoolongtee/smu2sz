@@ -1,6 +1,6 @@
 """Run the held-out contract set and write its report (brief 03 §6.8).
 
-    PYTHONUTF8=1 uv run --project services/api python scripts/evaluate_contracts.py
+    DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/evaluate_contracts.py
 
 Reads `fixtures/contracts_heldout/labels.yaml`, reads each contract with the configured compiler chain (offline by
 default: a recorded reading if there is one, else the rules grammar; LLM_MODE=live for the model) and writes
@@ -17,6 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 os.environ.setdefault("LLM_MODE", "cache")
+os.environ.setdefault("LLM_LIVE_RAW", "1")  # live, the model on its own: no recorded reading first
 os.environ.setdefault("TERMSLEDGER_NO_DOTENV", "1")
 sys.path.insert(0, str(ROOT / "services" / "api"))
 

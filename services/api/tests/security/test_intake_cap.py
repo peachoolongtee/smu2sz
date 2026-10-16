@@ -67,7 +67,7 @@ def test_credentialed_buyer_turns_are_never_capped(anon, headers):
     for _ in range(CAP):
         assert anon.post("/nl", json=TURN).status_code == 200
     assert anon.post("/nl", json=TURN).status_code == 429
-    for _ in range(CAP + 4):
+    for _ in range(CAP + 2):  # a keyed buyer is past the anonymous cap but within its own daily budget (R-10, test_buyer_budget)
         assert anon.post("/nl", headers=headers, json=TURN).status_code == 200
     assert len(events("SEC-INTAKE-")) == 1
 

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+import secrets
 from collections.abc import Mapping
 from typing import Any, cast
 
@@ -35,6 +36,7 @@ from app.api.decisions import (
     lapsed_conflict,
     latest_verdict_for,
     load_context,
+    sent_outside_conflict,
 )
 from app.api.presentation import business_text, party_name, request_of, t
 from app.api.receipt import receipt
@@ -76,7 +78,7 @@ FLOW_MAY, NEEDS_OWNER, OVER_LIMIT = "flow_may", "needs_owner", "over_limit"  # t
 
 
 def commit_label(lang: str) -> str:
-    return t(lang, "Accept as asked", "按对方要求接受")
+    return t(lang, "Accept their request", "接受对方的要求")
 
 
 def decline_label(lang: str) -> str:
@@ -89,7 +91,7 @@ def over_limit_text(lang: str) -> str:
 
 
 def not_acceptable_text(lang: str) -> str:
-    return t(lang, "FLOW cannot accept this as asked.", "FLOW 无法按对方的要求接受。")
+    return t(lang, "FLOW cannot accept their request.", "FLOW 无法接受对方的要求。")
 
 
 def asked_authority(verdict: Verdict) -> str | None:
@@ -131,8 +133,8 @@ def _cash_text(cost: Mapping[str, Any], lang: str) -> str | None:
     if not band:
         return None
     start = (f", starting {when}" if when else "") if lang != "zh" else (f"（最早{' ' if str(when)[:1].isdigit() else ''}{when}）" if when else "")
-    return t(lang, f"As asked: {str(band)[:1].lower() + str(band)[1:]}{start}. Accepting runs no funding, so that gap stays open.",
-             f"按对方要求：{band}{start}。接受不会办理融资，缺口仍然存在。")
+    return t(lang, f"If you accept their request: {str(band)[:1].lower() + str(band)[1:]}{start}. Accepting runs no funding, so that gap stays open.",
+             f"如果接受对方的要求：{band}{start}。接受不会办理融资，缺口仍然存在。")
 
 
 def accept_receipt(lang: str, state: Any, verdict: Verdict, *, buyer: str, authority: str, cost: Mapping[str, Any] | None, months: int) -> dict[str, str | None]:
@@ -144,8 +146,8 @@ def accept_receipt(lang: str, state: Any, verdict: Verdict, *, buyer: str, autho
     asked = request_of(buyer, lang)
     fees, future = _cost_lines(cost or {}, months, lang)
     return {**receipt(
-        authorizes_text=(t(lang, f"Accept {asked} as asked: {asks}; FLOW records the agreement under your authority.",
-                           f"按对方要求接受{asked}：{asks}；FLOW 将在您的授权下记录这份协议。") if asks else None),
+        authorizes_text=(t(lang, f"Accept {asked}: {asks}; FLOW records the agreement under your authority.",
+                           f"接受{asked}：{asks}；FLOW 将在您的授权下记录这份协议。") if asks else None),
         executes_now_text=t(lang, "Records the agreement now; no payment and no funding moves.", "立即记录协议；不会有付款，也不会办理融资。"),
         others_must_agree_text=t(lang, "Nobody else: these are the buyer's own terms.", "无需其他方同意：这些就是买方自己提出的条款。"),
         in_hand_vs_future_text=future,
@@ -304,6 +306,8 @@ def _bound(rt: Runtime, offer_id: str, body: AcceptIn, lang: str, *, accepting: 
         raise _changed(rt, offer, latest, version, "VERDICT_CHANGED", lang, accepting=accepting)
     if (standing := _standing(rt, offer_id, lang)) is not None:
         raise standing  # whatever the books have done since, the owner learns the request is answered
+    if (outside := sent_outside_conflict(rt, offer_id, lang)) is not None:
+        raise outside  # the buyer has the owner's counter: their answer is recorded on the deal
     if (closed := lapsed_conflict(rt, offer_id, latest, lang)) is not None:
         raise closed
     if body.state_version != version or latest.state_version != version:
@@ -312,6 +316,17 @@ def _bound(rt: Runtime, offer_id: str, body: AcceptIn, lang: str, *, accepting: 
     if MandatePolicyImpl(trusted_public_key_hex=rt.owner_key_hex).check_validity(mandate, rt.day, mandate.version):
         raise over_mandate(offer_id, lang, why="mandate")
     return offer, latest
+
+
+def _open_proposal(rt: Runtime, offer: CompiledOffer, verdict: Verdict) -> Commitment | None:
+    """The PROPOSED commitment an earlier refused accept of this verdict left (its accept never queued nor ran), still unexpired, else None.
+    Reusing it keeps a refused click from leaving one more proposal behind each time (SEC-03). Call under `rt.lock`."""
+    want = committable(list(verdict.bound_obligations))
+    entries, _ = read_entries(rt.store.operations())
+    used = {e.idempotency_key for e in entries if e.result.status in (OperationStatus.EXECUTED, OperationStatus.PENDING_APPROVAL)}
+    return next((c for c in rt.store.commitments()
+                 if c.offer_id == offer.offer_id and c.verdict_id == verdict.id and c.status == CommitmentStatus.PROPOSED
+                 and c.expires_day >= rt.day and list(c.obligations) == want and f"accept-{c.id}" not in used), None)
 
 
 def _not_recorded(rt: Runtime, offer_id: str, result: OperationResult, lang: str, *, accepting: bool) -> HTTPException:
@@ -357,12 +372,13 @@ def accept_as_asked(offer_id: str, body: AcceptIn, lang: str = "en") -> dict[str
         if authority == OVER_LIMIT:
             raise over_mandate(offer_id, lang)
         if authority is None:
-            raise _conflict("NOT_ACCEPTABLE", offer_id, "FLOW cannot accept this request as asked; nothing was accepted.",
+            raise _conflict("NOT_ACCEPTABLE", offer_id, "FLOW cannot accept their request; nothing was accepted.",
                             "FLOW 无法按对方的要求接受该请求；未接受任何内容。", lang)
         try:
-            commitment = rt.executor.propose_commitment(verdict.id, expires_day=rt.day + PROPOSAL_DAYS)  # the verdict's own bound terms, no counter
+            # the verdict's own bound terms, no counter; an earlier refused attempt's proposal is reused, never a new one per click (SEC-03)
+            commitment = _open_proposal(rt, offer, verdict) or rt.executor.propose_commitment(verdict.id, expires_day=rt.day + PROPOSAL_DAYS)
         except (LookupError, ValueError):
-            raise _conflict("NOT_ACCEPTABLE", offer_id, "FLOW cannot accept this request as asked; nothing was accepted.",
+            raise _conflict("NOT_ACCEPTABLE", offer_id, "FLOW cannot accept their request; nothing was accepted.",
                             "FLOW 无法按对方的要求接受该请求；未接受任何内容。", lang) from None
         mandate = rt.store.get_mandate()
         op = AcceptOffer(op_id=f"accept-{commitment.id}", idempotency_key=f"accept-{commitment.id}", mandate_version=mandate.version,
@@ -386,7 +402,9 @@ def decline_request(offer_id: str, body: DeclineIn, lang: str = "en") -> dict[st
         offer, verdict = _bound(rt, offer_id, body, lang, accepting=False)
         codes = list(dict.fromkeys(v.code for v in verdict.violations))
         mandate = rt.store.get_mandate()
-        op = RejectOffer(op_id=f"decline-{offer_id}-{verdict.id}", idempotency_key=f"decline-{offer_id}-{verdict.id}", mandate_version=mandate.version,
+        # SEC-04: a server-side random part, so no other credential can claim this key first; a second click is ALREADY_DECLINED (`_standing`)
+        key = f"decline-{offer_id}-{verdict.id}-{secrets.token_hex(6)}"
+        op = RejectOffer(op_id=key, idempotency_key=key, mandate_version=mandate.version,
                          requested_by=Actor.OWNER, source_verdict_id=verdict.id, day=rt.day, offer_id=offer.offer_id, reason_codes=codes)
         result = rt.executor.execute(op)
         if result.status != OperationStatus.EXECUTED:

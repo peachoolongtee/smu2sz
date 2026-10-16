@@ -355,3 +355,50 @@ on a 200.
   without ids, tier words or codes (`app/nl/business.py`). The raw replies stay for the Demo. A pending approval is approved with "Yes, do it" (the
   closed bare-confirm grammar takes that and "yes", not "yes, run it"); a pending plan with "Yes, run it".
 
+
+## Offers the owner sends outside FLOW (16 Oct 2026, negotiation communication)
+
+FLOW transmits nothing to a buyer. For one verified counter it prepares a message (`app/outbound`: deterministic, from the counter's typed
+obligations, the books' dates with `FinancialState.as_of` as day 0, and the buyer's name; no model writes it; the egress guard reads it), and the
+owner copies it and sends it by their own channel (`app/api/outbound.py`). Four DEAL facts record what the stores cannot re-derive:
+
+| Fact | fact_key | Written by | Holds |
+|---|---|---|---|
+| RECEIVED | `{offer_id}:v{version}` | intake (`POST /offers`, the demo seed, a pasted buyer reply) | how the request arrived: `owner`, `agent`, `buyer_key`, `anonymous` or `buyer_reply` (and the deal a reply answers) |
+| OFFERED | `{verdict_id}:{counter_id}` | `POST .../counters/{id}/offered` ("I've sent it") | the verdict, counter, books' state version, `terms_hash`, `message_hash`, template version, language and the last day the offer is open |
+| BUYER_ACCEPTED | `accept-{commitment_id}` | `POST .../counters/{id}/buyer-accepted`, after the owner's AcceptOffer ran or queued | the counter, the message hash, the commitment and the accept's op id |
+| REPLIED | the reply's offer id | `POST /offers/{id}/buyer-reply`, after the reply was stored as a new offer | the counter answered and the new request |
+| BUYER_DECLINED | `declined:{verdict_id}:{counter_id}` | `POST .../counters/{id}/buyer-declined` | the counter refused and the buyer's reason as a code (`DISCOUNT_TOO_LOW`, `WANTED_LONGER_TERMS`, `NO_LONGER_NEEDED`, `NO_REASON`), never their words |
+| OFFER_WITHDRAWN | `withdrawn:{verdict_id}:{counter_id}:{n}` | `POST .../counters/{id}/offered/withdraw` ("I marked it sent by mistake") | the correction of a mark; the mark stays beside it. A counter's mark stands while it has more marks than corrections; a new mark after a correction takes the key `{verdict_id}:{counter_id}:{n}` |
+
+The rule "no sentence, no buyer text" stands. The message is not stored: `message_hash` = sha256 of the template version, the language, the
+terms' hash and the exact words, so the record proves which words were shown for which terms; the words themselves can be re-rendered only while
+the inputs (the buyer's name, the invoice) are unchanged. A buyer's pasted reply is a document of a new offer, like any buyer message (channel
+`email`, its sender the deal's buyer, `parent_doc_id` the request it answers), not a fact.
+
+States (section 5), after rule 9 and before rule 10: **9a** a REPLIED fact gives REPLIED (terminal: the reply is a request of its own),
+a BUYER_DECLINED fact gives NO_DEAL;
+**9b** an OFFERED fact gives AWAITING_BUYER while `today` is on or before the latest day an offered counter is open, NO_DEAL after it. The
+agreement rules (1 to 6), the owner's decline and the approval rules come first, so the buyer's yes recorded by the owner reads as AGREED or
+AUTHORIZATION_REQUIRED like any agreement. Waiting (section 6): AWAITING_BUYER waits for the buyer (`BUYER_ANSWER`, the day the offer closes).
+
+A refused record of the buyer's yes (the executor refused the owner's AcceptOffer, `buyer-yes-...`) does not make the deal FAILED: it stays AWAITING_BUYER with the refusal shown and can be recorded again while the window is open, and is NO_DEAL after it.
+
+A reply pasted after the offer's window has closed is not refused (a buyer may write late): it is stored as a new request, compiled and verified on its own, but it does not mark the closed offer REPLIED (that offer stays NO_DEAL), while the buyer's yes and no are refused as `OFFER_EXPIRED`.
+
+Marking an offer sent writes OFFERED and nothing else: no commitment, no operation, no funding. The buyer's yes is the owner's AcceptOffer on the
+offered verdict's counter (screened, re-verified on today's books, Tier 2 queued); nothing a buyer writes reaches an operation.
+
+The record reads what came of the offer as `buyer_answer`: accepted (a BUYER_ACCEPTED fact names the agreement), countered, declined, no
+answer (NO_DEAL with an OFFERED fact and neither of the others), or none while the buyer may still answer. `GET /decisions/{id}` carries it in
+`outbound` (what was sent, the message re-rendered and checked against its hash, the closing day, and the answers the owner can record) and every
+deal carries `history` (the request, FLOW's check, each send and the answer, each with its day and calendar date). The state words for NO_DEAL
+follow the answer ("Declined by the buyer", "Closed without an answer"), and the lifecycle adds `no_answer`.
+
+Round four (16 Oct, after the owner's UX audit). The message is template `buyer-message-v2`: besides the counter's own terms it answers every term
+the buyer asked for that the counter does not offer (payment terms stay at the terms in force, no rebate, no discount), and an early payment says
+the net that settles its face and that the rest of the invoice stays due on its due day; "Everything else stays as it is" is gone. The words keep
+two things apart: the mandate (who decides: "Within your mandate") and the channel (manual: FLOW sends nothing and cannot confirm delivery). A mark
+is the owner's report, a recorded yes is the owner's report (BUYER_ACCEPTED may name `evidence_doc_id`, the buyer's own message the owner pasted,
+kept as a document of the deal, never in the fact), and recording a real buyer's no runs nothing (the simulated send's "FLOW will fund the gap"
+sentence is not shown for it). Each history entry carries its `source` (buyer, flow, owner, simulator).

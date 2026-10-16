@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 
-export type PillTone = "amber" | "lavender" | "green" | "neutral";
+export type PillTone = "amber" | "lavender" | "green" | "neutral" | "bad";
 
 const TONE: Record<PillTone, string> = {
   amber: "bg-f-amber text-f-amber-ink",
   lavender: "bg-f-purple-soft text-f-purple-ink",
   green: "bg-f-green text-f-green-ink",
   neutral: "bg-subtle text-ink-2",
+  /** The tracker's bad tone (an agreed deal whose payment is late): the risk fill and ink, always with the server's word. */
+  bad: "bg-bad-bg text-bad-fg",
 };
 
 /**

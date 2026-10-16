@@ -11,6 +11,7 @@ from typing import Any
 
 import pytest
 
+from app.strategy.words import buyer_short
 from tests.api.conftest import _walk, english_leaks, figures
 from tests.api.test_deals import (
     _confirm_edited,
@@ -26,6 +27,7 @@ RAW = (
     r".*\.document\.text", r".*\.quote", r".*\.title", r".*\.reference", r".*\.source", r".*\.note_raw", r".*\.reason_raw",
     r".*\.terms\[\]\.text", r".*\.contract_terms\[\]\.text", r".*\.owed_by_us\..*\.text", r".*\.clauses\[\]\.value_text",
     r".*\.compiler", r".*\.prompt_version", r".*\.clause",
+    r".*\.href",  # an address inside the app, not a sentence
 )
 RAW_RE = [re.compile(p) for p in RAW]
 DAY_NUMBER = re.compile(r"\bday \d+\b|第 ?\d+ ?天", re.IGNORECASE)
@@ -47,8 +49,11 @@ def _without_the_contracts_words(x: Any) -> Any:
 
 
 def _names(client) -> list[str]:  # type: ignore[no-untyped-def]
+    """Names stay as the books write them on a Chinese page (owner, 16 Oct): a party's full name and the short name an owner says
+    aloud ("Foshan"), and every facility's name."""
     state = client.get("/state").json()["state"]
-    return [*(c["name"] for c in state["counterparties"]), *(f["name"] for f in state["facilities"])]
+    parties = [c["name"] for c in state["counterparties"]]
+    return [*parties, *(buyer_short(n) for n in parties), *(f["name"] for f in state["facilities"])]
 
 
 def _business_strings(data: Any) -> list[tuple[str, str]]:
@@ -85,10 +90,10 @@ def test_the_chinese_deal_card_says_the_same_things_in_chinese(day34):
     assert [(s["label"], s["note"]) for s in deal["stages"]] == [
         ("合同已读取", "34 天前"), ("条款已谈判", "34 天前"), ("提前付款到账", "32 天前"), ("催收中", "已逾期 2 天"),
         ("已履行完毕", "300 天后")]
-    assert deal["changes"][3]["text"].startswith("提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥257,200.00，折扣 0.85%")
+    assert deal["changes"][3]["text"].startswith("提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥260,000.00，折扣 0.85%")
     assert "应于32 天前付款" in deal["changes"][3]["text"] and deal["changes"][3]["text"].endswith("由代理在您设定的限额内入账")
     assert deal["next_action"]["text"] == (
-        "催收 Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）中未收的 ¥162,800.00。审批：针对32 天前开具的发票，"
+        "催收 Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）中未收的 ¥160,000.00。审批：针对32 天前开具的发票，"
         "垫款 ¥200,000.00，以保证8 天后的现金不低于您的底线。")
     assert deal["invoices"][0]["label"] == "Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）"
     assert deal["invoices"][1]["label"] == "32 天前开具的发票"

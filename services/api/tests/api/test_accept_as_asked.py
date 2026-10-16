@@ -123,9 +123,9 @@ def test_the_picture_and_the_workspace_carry_one_accept_block_for_a_request_that
 def test_the_receipt_of_accepting_zhuhai_says_what_it_does_in_the_words_of_the_brief(busy: TestClient) -> None:
     _, v = _evaluate(busy, ZHUHAI)
     block = v["workspace"]["accept"]
-    assert block["commit_label"] == "Accept as asked" and block["decline_label"] == "Decline the request"
+    assert block["commit_label"] == "Accept their request" and block["decline_label"] == "Decline the request"
     r = block["receipt"]
-    assert r["authorizes_text"] == ("Accept Zhuhai's request as asked: 75-day terms on the next invoice; "
+    assert r["authorizes_text"] == ("Accept Zhuhai's request: 75-day terms on the next invoice; "
                                     "FLOW records the agreement under your authority.")
     assert r["executes_now_text"] == "Records the agreement now; no payment and no funding moves."
     assert r["others_must_agree_text"] == "Nobody else: these are the buyer's own terms."
@@ -145,9 +145,9 @@ def test_the_chinese_receipt_is_the_same_receipt_in_chinese(busy: TestClient) ->
     a, b = en["workspace"]["accept"], zh["workspace"]["accept"]
     assert {k: v for k, v in a.items() if k not in ("reason_text", "receipt", "commit_label", "decline_label")} == {
         k: v for k, v in b.items() if k not in ("reason_text", "receipt", "commit_label", "decline_label")}
-    assert b["commit_label"] == "按对方要求接受" and b["decline_label"] == "拒绝该请求"
+    assert b["commit_label"] == "接受对方的要求" and b["decline_label"] == "拒绝该请求"
     assert [k for k, v in a["receipt"].items() if v is None] == [k for k, v in b["receipt"].items() if v is None]
-    assert "您" in b["receipt"]["authority_text"] and b["receipt"]["authorizes_text"].startswith("按对方要求接受Zhuhai的请求：")
+    assert "您" in b["receipt"]["authority_text"] and b["receipt"]["authorizes_text"].startswith("接受Zhuhai的请求：")
 
 
 def test_a_request_over_a_signed_limit_is_not_available_and_says_why(busy: TestClient) -> None:
@@ -165,7 +165,7 @@ def test_a_counter_outcome_cannot_be_accepted_as_asked(busy: TestClient) -> None
     _, v = _evaluate(busy, FOSHAN_3)
     assert v["outcome"] == Outcome.COUNTER.value
     block = v["workspace"]["accept"]
-    assert block["available"] is False and block["reason_text"] == "FLOW cannot accept this as asked." and block["receipt"] is None
+    assert block["available"] is False and block["reason_text"] == "FLOW cannot accept their request." and block["receipt"] is None
 
 
 def test_a_lapsed_offers_block_says_the_offer_lapsed(busy: TestClient) -> None:
@@ -531,7 +531,7 @@ def test_a_request_for_review_names_the_act_in_the_queue(busy: TestClient, lang:
     review = [r for r in rows if r.get("lifecycle") == "owner_review"]
     assert len(review) == 2 and all(r["consequence_text"].endswith(act) for r in review)
     # the cash effect is still the first thing said
-    assert all(r["consequence_text"].startswith(("As asked", "按对方要求")) for r in review)
+    assert all(r["consequence_text"].startswith(("If you accept their request", "如果接受对方的要求")) for r in review)
     others = [r for r in rows if r["kind"] == "DECISION" and r.get("lifecycle") != "owner_review"]
     assert others and not any(act in r["consequence_text"] for r in others)
     wl = busy.get("/worklist", params={"lang": lang}).json()["needs_you"]
@@ -651,8 +651,8 @@ def test_a_proposal_still_waiting_keeps_its_acceptance_window(busy: TestClient, 
 
 
 @pytest.mark.parametrize(("lang", "cash"), [
-    ("en", "As asked: below your minimum for 35 days, starting in 12 days. Accepting runs no funding, so that gap stays open."),
-    ("zh", "按对方要求：低于您的最低现金储备 35 天（最早 12 天后）。接受不会办理融资，缺口仍然存在。"),
+    ("en", "If you accept their request: below your minimum for 35 days, starting in 12 days. Accepting runs no funding, so that gap stays open."),
+    ("zh", "如果接受对方的要求：低于您的最低现金储备 35 天（最早 12 天后）。接受不会办理融资，缺口仍然存在。"),
 ])
 def test_the_accept_review_says_what_the_asked_terms_do_to_cash(busy: TestClient, lang: str, cash: str) -> None:
     offer_id, v = _evaluate(busy, ZHUHAI, lang)
@@ -660,7 +660,7 @@ def test_the_accept_review_says_what_the_asked_terms_do_to_cash(busy: TestClient
     assert receipt["cash_text"] == cash
     # the queue row warns with the same words
     row = next(r for r in busy.get("/deals", params={"lang": lang}).json()["queue"]["needs_you"] if r["key"] == f"deal:{offer_id}")
-    assert row["consequence_text"].startswith("As asked: below your minimum for 35 days" if lang == "en" else "按对方要求：低于您的最低现金储备 35 天")
+    assert row["consequence_text"].startswith("If you accept their request: below your minimum for 35 days" if lang == "en" else "如果接受对方的要求：低于您的最低现金储备 35 天")
     assert busy.get(f"/offers/{offer_id}/picture", params={"lang": lang}).json()["accept"]["receipt"]["cash_text"] == cash
 
 

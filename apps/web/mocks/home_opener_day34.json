@@ -1,7 +1,7 @@
 {
   "session_id": "rec-home-en",
   "turn": 1,
-  "reply": "Day 34. Foshan Home Retail Co.'s ¥162,800.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above your 15.00% yearly ceiling for funding (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. A cheaper plan exists, ¥1,706.10 in all, but it would need 2 separate approvals; this one needs one. Go ahead?",
+  "reply": "Day 34. Foshan Home Retail Co.'s ¥160,000.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above your 15.00% yearly ceiling for funding (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. A cheaper plan exists, ¥1,702.20 in all, but it would need 2 separate approvals; this one needs one. Go ahead?",
   "intent": "SHOW_ALERTS",
   "lang": "en",
   "plan": [

@@ -1,0 +1,225 @@
+/* The landing page only (/welcome): a module, so nothing here reaches another page. */
+
+.root {
+  --l-sand: #f3eadf;
+  --l-sand-2: #e7d8c5;
+  --l-brown-deep: #3d2e22;
+  --l-cta: #9252dc;
+  --l-cta-hover: #7b3cc6;
+  --l-ink: #151515;
+  --l-ink-2: #5f6663;
+  --l-ink-3: #9aa09d;
+  --l-line: #ececea;
+  --l-panel: #f3f3f1;
+  background: #fff;
+  color: var(--l-ink);
+  min-height: 100dvh;
+  font-family: var(--font-sans);
+}
+
+.serif {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "Songti SC", "STSong", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+/* The hero: light brown, with the app's flowing lines drawn over it in warm browns (FlowLines reads these three colours). */
+.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(180deg, var(--l-sand) 0%, #eee2d3 55%, var(--l-sand-2) 100%);
+  color: var(--l-ink);
+  --sec: #a07a55;
+  --color-f-purple: #b97a3e;
+  --color-chart-teal: #7f5c3d;
+}
+.lines {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.heroTitle {
+  font-size: clamp(3.25rem, 9vw, 8.25rem);
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+/* The one call to action: solid and bright, never see-through. */
+.bright {
+  background: var(--l-cta);
+  color: #fff;
+  box-shadow:
+    0 1px 2px rgba(61, 46, 34, 0.18),
+    0 10px 24px -10px rgba(146, 82, 220, 0.6);
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.bright:hover {
+  background: var(--l-cta-hover);
+}
+.bright .dot {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Preview: the second button beside it, solid white (never see-through) with a hairline. */
+.light {
+  background: #fff;
+  color: var(--l-ink);
+  box-shadow:
+    inset 0 0 0 1px rgba(61, 46, 34, 0.14),
+    0 1px 2px rgba(61, 46, 34, 0.08);
+  transition: background-color 160ms ease;
+}
+.light:hover {
+  background: #faf6f1;
+}
+
+/* The hero's copy eases in once, on load, one line after another (--d). */
+.enter {
+  animation: enter 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The scroll animations (useReveal): an element below the fold waits lowered and transparent, then rises into place; --d staggers a group. */
+.root [data-reveal] {
+  transition:
+    opacity 760ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 760ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--d, 0ms);
+}
+.root [data-reveal="pending"] {
+  opacity: 0;
+  transform: translateY(28px);
+}
+.root [data-reveal="pending"][data-kind="zoom"] {
+  transform: translateY(44px) scale(0.96);
+}
+
+.dot {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  transition: transform 160ms ease;
+}
+a:hover > .dot {
+  transform: translateX(2px);
+}
+
+.h2 {
+  font-size: clamp(2.5rem, 5.6vw, 4.5rem);
+}
+
+.rule {
+  border-top: 1px solid var(--l-line);
+}
+
+.question {
+  color: #b7bcb9;
+  font-size: clamp(1.75rem, 3.4vw, 2.75rem);
+}
+
+/* The feature list beside its picture: the chosen one is ink, the others wait in grey. */
+.panel {
+  background: var(--l-panel);
+}
+.shot {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 18px 40px -18px rgba(0, 0, 0, 0.28);
+}
+.feature {
+  color: #c4c8c6;
+  transition: color 220ms ease;
+}
+.feature[aria-pressed="true"],
+.feature:hover {
+  color: var(--l-ink);
+}
+.feature .body {
+  color: #cfd3d1;
+  transition: color 220ms ease;
+}
+.feature[aria-pressed="true"] .body {
+  color: var(--l-ink-2);
+}
+.featureTitle {
+  font-size: clamp(1.5rem, 2.6vw, 2.25rem);
+  letter-spacing: -0.03em;
+}
+.fade {
+  animation: fade 360ms ease both;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stage {
+  background: linear-gradient(160deg, var(--l-sand), var(--l-sand-2));
+}
+
+.quote {
+  font-size: clamp(1.6rem, 3.2vw, 2.6rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.stepNo {
+  font-size: clamp(4rem, 8vw, 6.5rem);
+  letter-spacing: -0.06em;
+}
+
+.security {
+  background: var(--l-brown-deep);
+  color: #fff;
+}
+.badgeIcon {
+  color: #c4a684;
+}
+
+.muted {
+  color: var(--l-ink-2);
+}
+.faint {
+  color: var(--l-ink-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade,
+  .enter {
+    animation: none;
+  }
+  .root [data-reveal] {
+    transition: none;
+  }
+  .bright,
+  .light,
+  .dot,
+  .feature,
+  .feature .body {
+    transition: none;
+  }
+}

@@ -1,0 +1,814 @@
+{
+  "en": {
+    "customers": {
+      "BUYER-1": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "en",
+        "day": 0,
+        "state_version": 3,
+        "summary_text": "What this relationship is worth, and what it puts at risk.",
+        "figures": [
+          {
+            "key": "value",
+            "label": "Relationship value",
+            "value_display": "about ¥1.09m",
+            "note": "a year, estimated contribution; margin assumed for the Demo, not confirmed by you",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "key": "outstanding",
+            "label": "Outstanding",
+            "value_display": "¥420,000",
+            "note": "¥257,790 promised in 2 days; otherwise due in 32 days",
+            "tone": "neutral",
+            "state": "current",
+            "state_text": "Not due yet"
+          },
+          {
+            "key": "financing",
+            "label": "Financing linked",
+            "value_display": null,
+            "note": "nothing is financed against Foshan's invoices",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "key": "share",
+            "label": "Share of what you are owed",
+            "value_display": "100%",
+            "note": "100% of currently open receivables",
+            "tone": "warn",
+            "state": "none",
+            "state_text": "",
+            "proportion": 1
+          }
+        ],
+        "relationship_text": "Foshan contributes an estimated ¥1.09m a year, owes ¥420k (100% of your open receivables), and has no open negotiation.",
+        "receivable_flow": [
+          {
+            "key": "owed",
+            "label": "Foshan owes you",
+            "amount_display": "¥420,000.00",
+            "when_text": null,
+            "note": null,
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          },
+          {
+            "key": "customer_pays",
+            "label": "Foshan pays the invoice",
+            "amount_display": "¥420,000.00",
+            "when_text": "due in 32 days",
+            "note": null,
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          }
+        ],
+        "links": [
+          {
+            "label": "The invoice",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          },
+          {
+            "label": "Payment status: Not due yet",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          }
+        ],
+        "exposure_comparison": {
+          "columns": [
+            {
+              "key": "expected",
+              "label": "Expected payment"
+            },
+            {
+              "key": "late",
+              "label": "30 days late"
+            }
+          ],
+          "rows": [
+            {
+              "label": "Lowest cash",
+              "expected_text": "¥300,000 in 30 days",
+              "late_text": "−¥102,790 in 60 days"
+            },
+            {
+              "label": "Reserve breach",
+              "expected_text": "None",
+              "late_text": "Below your minimum for 50 days, starting in 12 days"
+            },
+            {
+              "label": "Maximum shortfall",
+              "expected_text": "None",
+              "late_text": "¥402,790"
+            },
+            {
+              "label": "Additional funding needed",
+              "expected_text": "None",
+              "late_text": "¥402,790 uncovered"
+            }
+          ]
+        },
+        "open_negotiations": [],
+        "primary_decision": null,
+        "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+            "lifecycle": "agreed",
+            "state_word": "Waiting for the buyer",
+            "state_tone": "neutral",
+            "after_group": "awaiting_payment",
+            "after_group_label": "Awaiting payment",
+            "summary_text": "Agreed today",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
+        "decision": null,
+        "none_text": "No commercial decision is waiting for you with Foshan.",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "View the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "Stress-test payment",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "Annual sales",
+            "value_display": "¥5,460,000",
+            "note": "projected from your books",
+            "tone": "neutral",
+            "entered": true
+          },
+          {
+            "key": "gross_margin",
+            "label": "Gross margin",
+            "value_display": "20%",
+            "note": "assumed for the Demo, not confirmed by you",
+            "tone": "warn",
+            "entered": true
+          },
+          {
+            "key": "contribution",
+            "label": "Contribution a year",
+            "value_display": "about ¥1,092,000",
+            "note": "under today's terms",
+            "tone": "neutral",
+            "entered": true
+          },
+          {
+            "key": "classification",
+            "label": "Classed as",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral",
+            "entered": false
+          }
+        ],
+        "economics_note": "None of this changes what FLOW may do on its own.",
+        "edit_label": "Edit these facts",
+        "edit_href": null,
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "Payment behaviour",
+              "value_display": "not enough history yet",
+              "note": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "financing",
+              "label": "Financing",
+              "value_display": "none against this customer's invoices",
+              "note": null,
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "stress",
+              "label": "Paid 30 days late",
+              "value_display": "−¥102,790 in 60 days; 50 days below your minimum; ¥402,790 uncovered",
+              "note": null,
+              "tone": "bad",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "capacity",
+              "label": "Spare capacity",
+              "value_display": "¥2,000 today",
+              "note": null,
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            }
+          ],
+          "same_figures_note": "The same figures as on the deal, on Receivables and on Cash: one comparison, read once."
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "Today",
+            "text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
+            "href": "/decisions/deal%3AOFF-f806f79b6c21",
+            "link_label": "The agreement",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "when_text": "In force",
+            "text": "Agreed: ¥260,000 of this invoice may be paid early at 0.85% off, in 2 days; the agreement lapses if payment comes later. Otherwise payment is due 45 days from the invoice date",
+            "href": "/documents",
+            "link_label": "The terms",
+            "state": "none",
+            "state_text": ""
+          }
+        ],
+        "partial": null,
+        "context": {
+          "customer": "BUYER-1",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
+          "back": {
+            "label": "Back to Deals",
+            "href": "/deals"
+          },
+          "irrelevant_text": null,
+          "deal": null
+        }
+      },
+      "BUYER-2": {
+        "customer_id": "BUYER-2",
+        "name": "Dongguan Office Supplies Ltd.",
+        "lang": "en",
+        "day": 0,
+        "state_version": 3,
+        "summary_text": "What this relationship is worth, and what it puts at risk.",
+        "figures": [
+          {
+            "key": "value",
+            "label": "Relationship value",
+            "value_display": "Not known yet",
+            "note": "enter annual sales and gross margin to estimate it",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "key": "outstanding",
+            "label": "Outstanding",
+            "value_display": "¥0",
+            "note": "nothing is owed by them",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "key": "financing",
+            "label": "Financing linked",
+            "value_display": null,
+            "note": "nothing is financed against Dongguan's invoices",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "key": "share",
+            "label": "Share of what you are owed",
+            "value_display": "0%",
+            "note": "0% of currently open receivables",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": "",
+            "proportion": 0
+          }
+        ],
+        "relationship_text": "Dongguan owes you nothing and has no open negotiation.",
+        "receivable_flow": [],
+        "links": [],
+        "exposure_comparison": null,
+        "open_negotiations": [],
+        "primary_decision": null,
+        "other_open_count": 0,
+        "deals_history": [],
+        "decision": null,
+        "none_text": "No commercial decision is waiting for you with Dongguan.",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "View the invoices",
+            "href": "/receivables?customer=BUYER-2"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "Annual sales",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral",
+            "entered": false
+          },
+          {
+            "key": "gross_margin",
+            "label": "Gross margin",
+            "value_display": "20%",
+            "note": "assumed for the Demo, not confirmed by you",
+            "tone": "warn",
+            "entered": true
+          },
+          {
+            "key": "classification",
+            "label": "Classed as",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral",
+            "entered": false
+          }
+        ],
+        "economics_note": "None of this changes what FLOW may do on its own.",
+        "edit_label": "Edit these facts",
+        "edit_href": null,
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "Payment behaviour",
+              "value_display": "not enough history yet",
+              "note": "FLOW has no completed payments from Dongguan in the last 12 months, too few to say how Dongguan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "financing",
+              "label": "Financing",
+              "value_display": "none against this customer's invoices",
+              "note": null,
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "stress",
+              "label": "Paid 30 days late",
+              "value_display": "No late-payment test for Dongguan: no open invoice is left to pay late.",
+              "note": null,
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "capacity",
+              "label": "Spare capacity",
+              "value_display": "¥2,000 today",
+              "note": null,
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            }
+          ],
+          "same_figures_note": "The same figures as on the deal, on Receivables and on Cash: one comparison, read once."
+        },
+        "note": null,
+        "history": [],
+        "partial": null,
+        "context": {
+          "customer": "BUYER-2",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
+          "back": {
+            "label": "Back to Deals",
+            "href": "/deals"
+          },
+          "irrelevant_text": null,
+          "deal": null
+        }
+      }
+    },
+    "deals": {}
+  },
+  "zh": {
+    "customers": {
+      "BUYER-1": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "zh",
+        "day": 0,
+        "state_version": 3,
+        "summary_text": "这段客户关系的价值，以及它带来的风险。",
+        "figures": [
+          {
+            "key": "value",
+            "label": "客户关系价值",
+            "value_display": "约 ¥109万",
+            "note": "每年，估算的贡献；毛利率为演示而假设，尚未经您确认",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "key": "outstanding",
+            "label": "未收款",
+            "value_display": "¥420,000",
+            "note": "已承诺 2 天后支付 ¥257,790；否则 32 天后到期",
+            "tone": "neutral",
+            "state": "current",
+            "state_text": "未到期"
+          },
+          {
+            "key": "financing",
+            "label": "已关联的融资",
+            "value_display": null,
+            "note": "没有以Foshan的发票做融资",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "key": "share",
+            "label": "占您应收款的比例",
+            "value_display": "100%",
+            "note": "占当前未收应收款的 100%",
+            "tone": "warn",
+            "state": "none",
+            "state_text": "",
+            "proportion": 1
+          }
+        ],
+        "relationship_text": "Foshan每年估计贡献 ¥109万，应付 ¥420k（占您未收应收款的 100%），目前没有进行中的谈判。",
+        "receivable_flow": [
+          {
+            "key": "owed",
+            "label": "Foshan应付给您",
+            "amount_display": "¥420,000.00",
+            "when_text": null,
+            "note": null,
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          },
+          {
+            "key": "customer_pays",
+            "label": "Foshan支付发票",
+            "amount_display": "¥420,000.00",
+            "when_text": "32 天后到期",
+            "note": null,
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          }
+        ],
+        "links": [
+          {
+            "label": "发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          },
+          {
+            "label": "付款状态：未到期",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          }
+        ],
+        "exposure_comparison": {
+          "columns": [
+            {
+              "key": "expected",
+              "label": "按期付款"
+            },
+            {
+              "key": "late",
+              "label": "晚付 30 天"
+            }
+          ],
+          "rows": [
+            {
+              "label": "最低现金",
+              "expected_text": "30 天后为 ¥300,000",
+              "late_text": "60 天后降至 −¥102,790"
+            },
+            {
+              "label": "储备缺口",
+              "expected_text": "没有低于最低现金",
+              "late_text": "低于您的最低现金 50 天，自 12 天后起"
+            },
+            {
+              "label": "最大缺口",
+              "expected_text": "无",
+              "late_text": "¥402,790"
+            },
+            {
+              "label": "需要额外融资",
+              "expected_text": "无",
+              "late_text": "¥402,790 缺口无法覆盖"
+            }
+          ]
+        },
+        "open_negotiations": [],
+        "primary_decision": null,
+        "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+            "lifecycle": "agreed",
+            "state_word": "等待买方",
+            "state_tone": "neutral",
+            "after_group": "awaiting_payment",
+            "after_group_label": "等待付款",
+            "summary_text": "今天达成协议",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
+        "decision": null,
+        "none_text": "目前没有需要您对Foshan作出的商务决定。",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "查看发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "测试晚付的影响",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "年销售额",
+            "value_display": "¥5,460,000",
+            "note": "根据您的账目推算",
+            "tone": "neutral",
+            "entered": true
+          },
+          {
+            "key": "gross_margin",
+            "label": "毛利率",
+            "value_display": "20%",
+            "note": "为演示而假设，尚未经您确认",
+            "tone": "warn",
+            "entered": true
+          },
+          {
+            "key": "contribution",
+            "label": "每年贡献",
+            "value_display": "约 ¥1,092,000",
+            "note": "按现行条款",
+            "tone": "neutral",
+            "entered": true
+          },
+          {
+            "key": "classification",
+            "label": "客户分类",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral",
+            "entered": false
+          }
+        ],
+        "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
+        "edit_label": "修改这些信息",
+        "edit_href": null,
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "付款表现",
+              "value_display": "付款记录还不够",
+              "note": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "financing",
+              "label": "融资",
+              "value_display": "没有以该客户发票做的融资",
+              "note": null,
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "stress",
+              "label": "晚付 30 天",
+              "value_display": "60 天后降至 −¥102,790；有 50 天低于您的最低现金；¥402,790 缺口无法覆盖",
+              "note": null,
+              "tone": "bad",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "capacity",
+              "label": "可用余量",
+              "value_display": "今天 ¥2,000",
+              "note": null,
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            }
+          ],
+          "same_figures_note": "与交易、应收款和现金页面上的数字相同：同一项比较，只读取一次。"
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "今天",
+            "text": "已记录与Foshan Home Retail Co.的协议；已计入您预算的让步：¥0.00。",
+            "href": "/decisions/deal%3AOFF-f806f79b6c21",
+            "link_label": "协议",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "when_text": "现行",
+            "text": "已约定：这张发票的 ¥260,000 可提前付款，折扣 0.85%（2 天后）；如果更晚才付款，该约定即告失效。否则账期为自开票日起 45 天",
+            "href": "/documents",
+            "link_label": "条款",
+            "state": "none",
+            "state_text": ""
+          }
+        ],
+        "partial": null,
+        "context": {
+          "customer": "BUYER-1",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
+          "back": {
+            "label": "返回交易",
+            "href": "/deals"
+          },
+          "irrelevant_text": null,
+          "deal": null
+        }
+      },
+      "BUYER-2": {
+        "customer_id": "BUYER-2",
+        "name": "Dongguan Office Supplies Ltd.",
+        "lang": "zh",
+        "day": 0,
+        "state_version": 3,
+        "summary_text": "这段客户关系的价值，以及它带来的风险。",
+        "figures": [
+          {
+            "key": "value",
+            "label": "客户关系价值",
+            "value_display": "暂不清楚",
+            "note": "填写年销售额和毛利率后即可估算",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "key": "outstanding",
+            "label": "未收款",
+            "value_display": "¥0",
+            "note": "目前没有应收款",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "key": "financing",
+            "label": "已关联的融资",
+            "value_display": null,
+            "note": "没有以Dongguan的发票做融资",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": ""
+          },
+          {
+            "key": "share",
+            "label": "占您应收款的比例",
+            "value_display": "0%",
+            "note": "占当前未收应收款的 0%",
+            "tone": "neutral",
+            "state": "none",
+            "state_text": "",
+            "proportion": 0
+          }
+        ],
+        "relationship_text": "Dongguan目前没有应付给您的款项，目前没有进行中的谈判。",
+        "receivable_flow": [],
+        "links": [],
+        "exposure_comparison": null,
+        "open_negotiations": [],
+        "primary_decision": null,
+        "other_open_count": 0,
+        "deals_history": [],
+        "decision": null,
+        "none_text": "目前没有需要您对Dongguan作出的商务决定。",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "查看发票",
+            "href": "/receivables?customer=BUYER-2"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "年销售额",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral",
+            "entered": false
+          },
+          {
+            "key": "gross_margin",
+            "label": "毛利率",
+            "value_display": "20%",
+            "note": "为演示而假设，尚未经您确认",
+            "tone": "warn",
+            "entered": true
+          },
+          {
+            "key": "classification",
+            "label": "客户分类",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral",
+            "entered": false
+          }
+        ],
+        "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
+        "edit_label": "修改这些信息",
+        "edit_href": null,
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "付款表现",
+              "value_display": "付款记录还不够",
+              "note": "FLOW 在过去 12 个月内没有Dongguan的已完成付款，不足以判断Dongguan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "financing",
+              "label": "融资",
+              "value_display": "没有以该客户发票做的融资",
+              "note": null,
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "stress",
+              "label": "晚付 30 天",
+              "value_display": "无法对Dongguan做晚付测试：没有可晚付的未收发票。",
+              "note": null,
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            },
+            {
+              "key": "capacity",
+              "label": "可用余量",
+              "value_display": "今天 ¥2,000",
+              "note": null,
+              "tone": "neutral",
+              "state": "none",
+              "state_text": ""
+            }
+          ],
+          "same_figures_note": "与交易、应收款和现金页面上的数字相同：同一项比较，只读取一次。"
+        },
+        "note": null,
+        "history": [],
+        "partial": null,
+        "context": {
+          "customer": "BUYER-2",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
+          "back": {
+            "label": "返回交易",
+            "href": "/deals"
+          },
+          "irrelevant_text": null,
+          "deal": null
+        }
+      }
+    },
+    "deals": {}
+  }
+}

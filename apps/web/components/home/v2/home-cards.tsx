@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { DocumentIcon, ShieldCheckIcon } from "@/components/icons";
-import { segments, r1 } from "@/components/business/cash-picture";
+import type { ReactNode } from "react";
 import { Breakdown } from "@/components/home/v2/breakdown";
+import { CashMix } from "@/components/home/v2/cash-mix";
+import { OutlookChart } from "@/components/home/v2/company-chart";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useI18n } from "@/lib/i18n";
-import type { HomeSeriesPoint, HomeV2, HomeView, WorklistCustomer } from "@/lib/types";
+import type { HomeV2, HomeV2Chart, HomeView, WorklistCustomer } from "@/lib/types";
 
 /** The card's title: the display face, 20 px, sentence case, never an uppercase eyebrow. */
 export const cardTitle = "font-display text-[16px] font-bold leading-tight tracking-[-0.01em] text-ink";
@@ -15,7 +16,17 @@ export const cardTitle = "font-display text-[16px] font-bold leading-tight track
  * "Cash available today" (the mockup's first card): the server's figure, its note ("¥100k above your ¥300k minimum"), and the reserve bar: a track to the minimum and a green part for
  * the buffer above it (a risk-red fill and "Short by" when the cash is below the minimum). The fen only size the two parts; every word is the server's or a label.
  */
-export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
+export function CashCard({
+  kpis,
+  h,
+  customers,
+}: {
+  kpis: HomeV2["kpis"];
+  /** The full Home read: with it, the card also says where the cash comes from (the ring). */
+  h?: HomeView;
+  /** The customers read (names and short names), to name a customer's early payment in the ring. */
+  customers?: { name: string; short: string }[];
+}) {
   const { t } = useI18n();
   const cash = kpis.cash_available;
   const b = cash.buffer;
@@ -36,6 +47,7 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
           {cash.note}
         </p>
       ) : null}
+      {h ? <CashMix h={h} customers={customers} withPlan={false} /> : null}
       <div className="mt-auto pt-3 sm:pt-4" data-testid="home-buffer" data-min={b.min_fen} data-cash={b.cash_fen}>
         <div className="flex items-baseline justify-between gap-3 text-sm text-ink-3">
           <span data-testid="home-buffer-min-text">
@@ -59,113 +71,60 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
   );
 }
 
-const WINDOW_FALLBACK = 30;
-
-interface MiniLine {
-  key: string;
-  points: HomeSeriesPoint[];
-  cls: string;
-  width: number;
-  dash?: string;
-  testId: string;
-}
-
 /**
- * The outlook card's small chart: step lines (the company's current books in purple and the plan that is ready as a grey dashed one; or, in a deal, the request in grey and the recommended reply in
- * purple), the minimum as a hairline and one dot; no axes (the expanded forecast has them). Marks only: days and fen place them, every word is outside it.
+ * "Company cash outlook", the main card of the Home, the full width of the page: the lowest cash ahead as the figure (the one risk red when it is below the minimum), "Without new funding",
+ * the plan's cash ("With plan ¥300,000"), the pill that says when the lowest point is, and the company cash forecast; "What we recommend" sits inside it, at its right on a wide screen and
+ * between the figures and the forecast on a narrow one (its primary in a phone's first screen).
  */
-function MiniChart({ lines, floor, today, window, dotDay, dotCls, mainKey }: { lines: MiniLine[]; floor: number; today: number; window: number; dotDay: number; dotCls: string; mainKey: string }) {
-  const W = 320;
-  const H = 80;
-  const pad = 6;
-  const end = today + window;
-  const drawn = lines.map((l) => ({ ...l, segs: segments(l.points.filter((p) => p.day >= today), end) }));
-  const levels = [floor, ...drawn.flatMap((l) => l.segs.map((q) => q.v))];
-  const lo = Math.min(...levels);
-  const hi = Math.max(...levels);
-  const span = Math.max(end - today, 1);
-  const x = (d: number) => r1(pad + ((Math.min(Math.max(d, today), end) - today) / span) * (W - pad * 2));
-  const y = (v: number) => r1(pad + ((hi - v) / Math.max(hi - lo, 1)) * (H - pad * 2));
-  const path = (s: { d0: number; d1: number; v: number }[]) => s.map((q, i) => (i === 0 ? `M${x(q.d0)},${y(q.v)}` : `H${x(q.d0)}V${y(q.v)}`)).join("") + (s.length ? `H${x(s[s.length - 1].d1)}` : "");
-  const main = drawn.find((l) => l.key === mainKey)?.segs ?? [];
-  const dotV = main.find((q) => dotDay >= q.d0 && dotDay < q.d1)?.v ?? main[main.length - 1]?.v ?? floor;
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden className="block h-14 w-full overflow-visible" data-testid="hv2-mini">
-      <line x1={pad} x2={W - pad} y1={y(floor)} y2={y(floor)} className="stroke-line-strong" strokeWidth={1} vectorEffect="non-scaling-stroke" />
-      {drawn.map((l) => (
-        <path key={l.key} d={path(l.segs)} fill="none" strokeLinejoin="miter" strokeDasharray={l.dash} strokeWidth={l.width} vectorEffect="non-scaling-stroke" className={l.cls} data-testid={l.testId} />
-      ))}
-      <line x1={x(dotDay)} x2={x(dotDay)} y1={y(dotV)} y2={y(dotV)} strokeWidth={8} strokeLinecap="round" vectorEffect="non-scaling-stroke" className={dotCls} />
-    </svg>
-  );
-}
-
-function MiniOutlook({ cash, today, plan }: { cash: HomeView["cash"]; today: number; plan: HomeSeriesPoint[] | null }) {
-  // The plan is drawn first, the current books over it (the dot sits on the current line).
-  const lines: MiniLine[] = [];
-  if (plan) lines.push({ key: "plan", points: plan, cls: "stroke-ink-3", width: 1.75, dash: "4 3", testId: "hv2-mini-plan" });
-  lines.push({ key: "base", points: cash.series, cls: "stroke-chart-base", width: 2.25, testId: "hv2-mini-current" });
-  return <MiniChart lines={lines} mainKey="base" floor={cash.floor_fen} today={today} window={Math.max(cash.picture_days || WINDOW_FALLBACK, cash.events_rail_days ?? 0)} dotDay={cash.lowest_day} dotCls="stroke-chart-base" />;
-}
-
-const ExpandIcon = ({ open }: { open: boolean }) => (
-  <svg aria-hidden viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-    {open ? <path d="m4 10 4-4 4 4" /> : <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9" />}
-  </svg>
-);
-
-/**
- * "Company cash outlook" (the mockup's third card): the lowest cash ahead as the figure (the one risk red when it is below the minimum), "Without new funding", the small step chart,
- * the plan's cash ("With plan ¥300,000") and Expand, which opens the full forecast in place under the cards (`?expand=1`; Close restores). The pill says when the lowest point is.
- */
-export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h: HomeView; kpis: HomeV2["kpis"]; plan: HomeSeriesPoint[] | null; expanded: boolean; onExpand: (open: boolean) => void; controls?: string }) {
+export function OutlookCard({ h, kpis, chart, recommendation }: { h: HomeView; kpis: HomeV2["kpis"]; chart: HomeV2Chart; recommendation: ReactNode }) {
   const { t } = useI18n();
   const low = kpis.lowest_ahead;
   const withPlan = low.with_plan ?? null;
   return (
-    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-outlook-card">
-      <div className="flex items-start justify-between gap-3">
-        <h2 id="hv2-outlook-title" className={cardTitle} data-testid="hv2-metric-lowest-label">
-          {t("hv2.card.outlook")}
-        </h2>
-        {h.cash.lowest_when ? (
-          <StatusPill tone="amber" testId="hv2-outlook-when">
-            {h.cash.lowest_when}
-          </StatusPill>
-        ) : null}
-      </div>
-      <p className={`mt-3 font-display text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums ${low.tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
-        {low.value_display}
-      </p>
-      <p className="mt-1.5 text-sm text-ink-3">
-        {t("hv2.card.without")}
-        {low.short_note ?? low.note ? (
-          <span className="sr-only" data-testid="home-kpi-lowest-note">
-            {" "}
-            {low.short_note ?? low.note}
-          </span>
-        ) : null}
-      </p>
-      <div className="mt-2 max-sm:max-w-xs">
-        <MiniOutlook cash={h.cash} today={h.day} plan={plan} />
-      </div>
-      <div className="mt-auto flex items-center justify-between gap-3 pt-2 text-sm text-ink">
-        {withPlan?.label && withPlan.value_text ? (
-          <p className="tabular-nums" data-testid="home-kpi-lowest-plan">
-            <span className="inline-block first-letter:uppercase">{withPlan.label}</span> {withPlan.value_text}
-          </p>
-        ) : (
-          <span />
-        )}
-        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-8 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
-          {expanded ? t("hv2.card.close") : t("hv2.card.expand")}
-          <ExpandIcon open={expanded} />
-        </button>
+    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card min-w-0 p-4 sm:p-5 lg:p-6" data-testid="hv2-outlook-card">
+      {/* From lg: the head and the forecast on the left, the recommendation at the right across both. Below lg the recommendation comes before the forecast, so its one primary is in a phone's first screen. */}
+      <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(19rem,1fr)] lg:grid-rows-[auto_1fr] lg:gap-x-6">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+          <div className="flex items-start justify-between gap-3">
+            <h2 id="hv2-outlook-title" className="font-display text-[20px] font-bold leading-tight tracking-[-0.01em] text-ink sm:text-[22px]" data-testid="hv2-metric-lowest-label">
+              {t("hv2.card.outlook")}
+            </h2>
+            {h.cash.lowest_when ? (
+              <StatusPill tone="amber" testId="hv2-outlook-when">
+                {h.cash.lowest_when}
+              </StatusPill>
+            ) : null}
+          </div>
+          <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-2">
+            <div>
+              <p className={`font-display text-[36px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-[40px] ${low.tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
+                {low.value_display}
+              </p>
+              <p className="mt-1.5 text-sm text-ink-3">
+                {t("hv2.card.without")}
+                {low.short_note ?? low.note ? (
+                  <span className="sr-only" data-testid="home-kpi-lowest-note">
+                    {" "}
+                    {low.short_note ?? low.note}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+            {withPlan?.label && withPlan.value_text ? (
+              <p className="pb-0.5 text-sm text-ink-3 tabular-nums" data-testid="home-kpi-lowest-plan">
+                <span className="inline-block first-letter:uppercase">{withPlan.label}</span> <b className="font-display text-[18px] font-bold text-ink">{withPlan.value_text}</b>
+              </p>
+            ) : null}
+          </div>
+        </div>
+        <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1">{recommendation}</div>
+        <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+          <OutlookChart h={h} chart={chart} />
+        </div>
       </div>
     </section>
   );
 }
-
 
 /** The number and its percent sign in a share word ("19.5% of what you are owed", "占您应收款的 19.5%" are "19.5%"): the centre of the owed donut says the figure, the legend keeps the server's whole phrase. */
 const percentOf = (share: string | null | undefined): string | null => /(\d+(?:\.\d+)?\s*%)/.exec(share ?? "")?.[1] ?? null;
@@ -190,13 +149,13 @@ export function OwedCard({ customers, selected, onSelect }: { customers: Worklis
   if (rows.length === 1) {
     const only = rows[0];
     return (
-      <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-owed-card" data-ring="false">
-        <h2 id="hv2-owed-title" className={cardTitle} data-testid="hv2-owed-title">
+      <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-3.5" data-testid="hv2-owed-card" data-ring="false">
+        <h2 id="hv2-owed-title" className="font-display text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-owed-title">
           {t("hv2.owed.title")}
         </h2>
         <button type="button" aria-pressed={selected === only.customer_id} onClick={() => onSelect(only.customer_id)} className="motion-press mt-2 block w-full rounded-control px-1 py-1 text-left hover:bg-subtle touch:min-h-11" data-testid="hv2-owed-one">
-          <b className="block font-display text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums text-ink">{only.outstanding_display}</b>
-          <span className="mt-1 block text-sm text-ink-2">{only.name}</span>
+          <b className="block font-display text-[20px] font-bold leading-none tracking-[-0.02em] tabular-nums text-ink">{only.outstanding_display}</b>
+          <span className="mt-1 block text-[13px] text-ink-2">{only.name}</span>
           <span className="block text-supporting text-ink-3">{only.share_text}</span>
         </button>
       </section>
@@ -205,13 +164,13 @@ export function OwedCard({ customers, selected, onSelect }: { customers: Worklis
   const at = rows.findIndex((c) => c.customer_id === selected);
   const on = at >= 0 ? rows[at] : null;
   return (
-    <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-owed-card">
-      <h2 id="hv2-owed-title" className={cardTitle} data-testid="hv2-owed-title">
+    <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-3.5" data-testid="hv2-owed-card">
+      <h2 id="hv2-owed-title" className="font-display text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-owed-title">
         {t("hv2.owed.title")}
       </h2>
       <Breakdown
         stacked
-        size={128}
+        size={104}
         testId="hv2-owed"
         rows={rows.map((c) => ({ label: c.name, amount_display: c.outstanding_display, share_text: c.share_text as string }))}
         lifted={at >= 0 ? at : null}
@@ -245,19 +204,19 @@ export function UpcomingCard({ h, overdue }: { h: HomeView; overdue?: { short: s
         .slice(0, 3)
         .map((e) => ({ key: e.key, label: e.label_short ?? e.label, amount: e.amount_short, when: e.when, kind: (e.amount_fen ?? 0) < 0 ? "outflow" : "inflow" }));
   return (
-    <section aria-labelledby="hv2-upcoming-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-upcoming">
-      <h2 id="hv2-upcoming-title" className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink">
+    <section aria-labelledby="hv2-upcoming-title" className="motion-reveal f-card min-w-0 p-3.5" data-testid="hv2-upcoming">
+      <h2 id="hv2-upcoming-title" className="font-display text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink">
         {t("hv2.upcoming.title")}
       </h2>
       {events.length || overdue ? (
-        <ul className="mt-3 divide-y divide-line" data-testid="hv2-upcoming-list">
+        <ul className="mt-2 divide-y divide-line" data-testid="hv2-upcoming-list">
           {events.map((e) => (
-            <li key={e.key} className="flex min-h-11 items-center justify-between gap-4 py-1.5 first:pt-0" data-testid="hv2-upcoming-row" data-kind={e.kind}>
-              <span className="min-w-0 text-[15px] text-ink">
+            <li key={e.key} className="flex min-h-9 items-center justify-between gap-3 py-1 first:pt-0" data-testid="hv2-upcoming-row" data-kind={e.kind}>
+              <span className="min-w-0 text-[13px] text-ink">
                 <span className="block leading-tight first-letter:uppercase">{e.label}</span>
                 <span className="block text-supporting text-ink-3 first-letter:uppercase">{e.when}</span>
               </span>
-              <b className="shrink-0 font-semibold tabular-nums text-ink">{e.amount}</b>
+              <b className="shrink-0 text-[13px] font-semibold tabular-nums text-ink">{e.amount}</b>
             </li>
           ))}
           {overdue ? (
@@ -277,40 +236,9 @@ export function UpcomingCard({ h, overdue }: { h: HomeView; overdue?: { short: s
           {t("hv2.upcoming.none")}
         </p>
       )}
-      <Link href="/cash" className="motion-press mt-3 inline-flex min-h-10 items-center gap-1.5 text-[15px] font-semibold text-ink hover:underline hover:underline-offset-[3px] touch:min-h-11" data-testid="home-chart-full">
+      <Link href="/cash" className="motion-press mt-2 inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-ink hover:underline hover:underline-offset-[3px] touch:min-h-11" data-testid="home-chart-full">
         {t("hv2.upcoming.explore")} <span aria-hidden>↗</span>
       </Link>
     </section>
-  );
-}
-
-const FOOT = [
-  { href: "/documents", key: "hv2.foot.documents", Icon: DocumentIcon },
-  { href: "/whatif", key: "hv2.foot.whatif", Icon: ShieldCheckIcon },
-  { href: "/capex", key: "hv2.foot.capex", Icon: ShieldCheckIcon },
-  { href: "/approvals", key: "hv2.foot.approvals", Icon: ShieldCheckIcon },
-] as const;
-
-/** The footer row: the four secondary destinations of the mockup, linking to the existing routes (their pages change in their own slices). */
-export function FooterLinks({ separate = false }: { separate?: boolean }) {
-  const { t } = useI18n();
-  return (
-    <nav aria-label={t("hv2.foot")} className="mt-6 border-t border-line pt-3" data-testid="home-v2-links">
-      <ul className="flex flex-wrap gap-x-7 gap-y-1">
-        {FOOT.map(({ href, key, Icon }) => (
-          <li key={href}>
-            <Link href={href} className="motion-press inline-flex min-h-11 items-center gap-2 text-[15px] font-medium text-ink hover:underline hover:underline-offset-[3px]" data-testid={`hv2-foot-${href.slice(1)}`}>
-              <Icon width={18} height={18} aria-hidden className="text-ink-2" />
-              {t(key)}
-            </Link>
-          </li>
-        ))}
-      </ul>
-      {separate ? (
-        <p className="mt-1 pb-1 text-supporting text-ink-3" data-testid="hv2-foot-separate">
-          {t("hv2.foot.separate")}
-        </p>
-      ) : null}
-    </nav>
   );
 }

@@ -98,7 +98,7 @@ def test_a_send_on_rcv_a_agrees_one_deal_and_the_waiting_count_leaves_the_promis
     [promise] = [r for r in w["waiting"] if r["kind"] == "PROMISE"]
     assert promise["key"].startswith(f"promise:{agreement.id}:")
     q = api.get("/deals").json()["queue"]
-    assert w["counts"] == q["counts"] == {"needs_you": 4, "waiting": 1, "agreements": 2, "customers": 3}
+    assert w["counts"] == q["counts"] == {"needs_you": 4, "waiting": 1, "agreements": 1, "customers": 3}
     assert len(w["waiting"]) == 2 and w["counts"]["waiting"] == len(w["waiting"]) - 1
 
 
@@ -201,7 +201,7 @@ def test_any_other_name_is_a_422_that_wipes_nothing(api: TestClient, rt: Runtime
     r = api.post("/demo/reset", params={"scenario": name})
     assert r.status_code == 422
     detail = r.json()["detail"]
-    assert detail["code"] == "UNKNOWN_SCENARIO" and detail["scenarios"] == ["golden_sme", "short_facilities", "public_sme", "busy"]
+    assert detail["code"] == "UNKNOWN_SCENARIO" and detail["scenarios"] == ["golden_sme", "short_facilities", "public_sme", "busy", "blank"]
     assert "Nothing was reset" in detail["message"] and "没有名为" in api.post("/demo/reset", params={"scenario": name, "lang": "zh"}).json()["detail"]["message_when"]
     assert (len(rt.store.verdicts()), len(rt.store.commitments()), len(rt.store.approvals("PENDING"))) == before
     assert rt.scenario == "busy"

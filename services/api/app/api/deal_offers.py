@@ -23,7 +23,8 @@ from app.persistence import ApprovalStatus
 _STAGES = (("received", "Received", "已收到"), ("analysed", "Analysed", "已分析"), ("reply_ready", "Reply ready", "回复已就绪"),
            ("sent", "Sent", "已发送"), ("agreed", "Agreed", "已达成"))
 # An offer whose reply waits for the owner's approval has not been sent: it stands at "Reply ready" (the owner owes the next step), never "Sent".
-_NOW = {DealState.RECEIVED: 0, DealState.NEEDS_CLARIFICATION: 1, DealState.RESPONSE_READY: 2, DealState.AUTHORIZATION_REQUIRED: 2}
+_NOW = {DealState.RECEIVED: 0, DealState.NEEDS_CLARIFICATION: 1, DealState.RESPONSE_READY: 2, DealState.AUTHORIZATION_REQUIRED: 2,
+        DealState.AWAITING_BUYER: 3}  # an offer the owner sent outside FLOW stands at "Sent" until the buyer answers
 OPEN = tuple(_NOW)
 OWNER_WAITS = (DealState.RECEIVED, DealState.RESPONSE_READY, DealState.AUTHORIZATION_REQUIRED)
 _COUNT_WORDS = {1: ("One reply is", "一份回复"), 2: ("Two replies are", "两份回复"), 3: ("Three replies are", "三份回复")}
@@ -40,12 +41,12 @@ def _read_text(ds: Any, action: str, cost: str, window: tuple[str, str], limit: 
     rel_en, rel_zh = (f"above your {limit} limit", f"高于您 {limit} 的上限") if over else (f"within your {limit} limit", f"在您 {limit} 的上限内")
     if action == "cannot":
         return say(lang, "FLOW cannot decide on this offer yet.", "FLOW 暂时无法就此报价作出判断。")
-    lead = {"accept": ("You can accept it", "可以接受"), "counter": ("Don't accept as asked", "不要按对方要求接受"),
+    lead = {"accept": ("You can accept it", "可以接受"), "counter": ("Don't accept their request", "不要接受对方的要求"),
             "decline": ("Don't accept it", "不要接受"), "needs_owner": ("This needs your decision", "需要您来决定")}[action]
     return say(lang, f"{lead[0]}: {cost_en}, {rel_en}.", f"{lead[1]}：{cost_zh}，{rel_zh}。")
 
 
-_SHORT = {"accept": ("Accept as asked", "按对方要求接受"), "counter": ("Counter instead of accepting as asked", "还价，不按对方要求接受"),
+_SHORT = {"accept": ("Accept their request", "接受对方的要求"), "counter": ("Counter instead of accepting their request", "还价，不接受对方的要求"),
           "decline": ("No deal", "不成交"), "needs_owner": ("Accept, with your approval", "经您批准后接受"),
           "cannot": ("Not safe to act on", "暂不宜据此行动")}
 _CLARIFY = ("Clarify before deciding", "先澄清，再决定")
@@ -61,7 +62,7 @@ def _headline_note(action: str, cost: str, window: tuple[str, str], limit: str, 
     if action == "cannot":
         return None
     rel_en, rel_zh = (f"above your {limit} limit", f"高于您 {limit} 的上限") if over else (f"within your {limit} limit", f"在您 {limit} 的上限内")
-    en, zh = f"As asked costs {cost} {window[0]}, {rel_en}.", f"按对方要求，成本将为{cost}（{window[1]}），{rel_zh}。"
+    en, zh = f"Accepting their request costs {cost} {window[0]}, {rel_en}.", f"接受对方的要求，成本将为{cost}（{window[1]}），{rel_zh}。"
     if action == "counter" and replies:
         w_en, w_zh = _COUNT_WORDS.get(replies, (f"{replies} replies are", f"{replies} 份回复"))
         en, zh = f"{en} {w_en} ready to send.", f"{zh}{w_zh}已可发送。"
@@ -75,6 +76,8 @@ def _action_text(state: DealState, action: str | None, replies: int, lang: str) 
         return say(lang, "The buyer needs to clarify first.", "需要买方先澄清。")
     if state == DealState.AUTHORIZATION_REQUIRED:  # the decision record's own words for this state
         return say(lang, "Waiting for your approval.", "等待您批准。")
+    if state == DealState.AWAITING_BUYER:
+        return say(lang, "You sent an offer; waiting for the buyer's answer.", "您已发出报价，等待买方答复。")
     if action == "needs_owner":
         return say(lang, "Needs your approval.", "需要您批准。")
     if action == "accept":

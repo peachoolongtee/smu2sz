@@ -17,7 +17,7 @@ from tests.api.test_offer_picture import _accepted, _evaluated
 
 OVER = "Over a limit you signed: only a new mandate changes that"
 NEEDS = "Needs your approval"
-MAY = "FLOW can send it"
+MAY = "Within your mandate"
 OLD_OVER = "Cannot be accepted within your signed limits."
 
 
@@ -45,10 +45,10 @@ def test_each_path_says_who_decides_in_three_classes_in_both_languages(client):
     asked, opt_a, opt_b = _paths(client, oid)
     assert _authority(asked) == ("over_limit", OVER) and _authority(opt_a) == ("flow_may", MAY) and _authority(opt_b) == ("needs_owner", NEEDS)
     z_asked, z_a, z_b = _paths(client, oid, "zh")
-    assert [p["authority_text"] for p in (z_asked, z_a, z_b)] == ["超出您签署的上限：只有签署新的授权才能改变", "FLOW 可以直接发送", "需要您批准"]
+    assert [p["authority_text"] for p in (z_asked, z_a, z_b)] == ["超出您签署的上限：只有签署新的授权才能改变", "在您的授权范围内", "需要您批准"]
     assert [p["authority"] for p in (z_asked, z_a, z_b)] == ["over_limit", "flow_may", "needs_owner"]
     # the old sentences the page of `dev` reads are kept
-    assert asked["decides_text"] == OLD_OVER and opt_a["decides_text"] == "FLOW can send it. Your approval is not needed."
+    assert asked["decides_text"] == OLD_OVER and opt_a["decides_text"] == "Within your mandate: no approval needed."
     assert opt_b["decides_text"] == "It changes your terms, so you approve it first."
 
 
@@ -75,7 +75,7 @@ def test_a_reply_whose_funding_plan_needs_the_owner_reads_needs_owner(client, mo
 def test_a_past_due_buyer_makes_the_verifier_ask_for_the_owner(client, monkeypatch):
     oid, _ = _evaluated(client)
     evaluate = importlib.import_module("app.verifier.evaluate")  # the package re-exports a function of the same name
-    monkeypatch.setattr(evaluate, "_buyer_past_due", lambda *a, **k: [("RCV-A", 3, 25_720_000)])
+    monkeypatch.setattr(evaluate, "_buyer_past_due", lambda *a, **k: [("RCV-A", 3, 26_000_000)])
     offer_picture._cache.clear()
     _, opt_a, opt_b = _paths(client, oid)
     assert _authority(opt_a) == ("needs_owner", NEEDS) and opt_a["needs_owner"] is True and _authority(opt_b)[0] == "needs_owner"
@@ -107,8 +107,8 @@ def test_every_path_states_its_cost_on_a_basis_and_option_b_carries_its_componen
     assert asked["cost_forward_display"] == impact["forward_total_display"] == view["forward_concession"]["total_display"] == "¥28,326.92"
     assert asked["cost_once_display"] == "¥5,040.00" and asked["cost_components"] == []
     assert asked["cost_display"] == "¥28,326.92" and asked["cost_note"] == "over 12 months, plus ¥5,040.00 once"
-    assert (opt_a["cost_total_display"], opt_a["cost_basis_text"]) == ("¥3,027.77", "once, nothing ongoing")
-    assert opt_a["cost_once_display"] == "¥3,027.77" and opt_a["cost_forward_display"] is None and opt_a["cost_components"] == []
+    assert (opt_a["cost_total_display"], opt_a["cost_basis_text"]) == ("¥3,035.99", "once, nothing ongoing")
+    assert opt_a["cost_once_display"] == "¥3,035.99" and opt_a["cost_forward_display"] is None and opt_a["cost_components"] == []
     # option B nets to zero: the funding cost of the longer terms and the price offset the `dev` page showed, never a bare ¥0.00
     economics = view["counters"][1]["economics"]
     assert economics["funding_cost_display"] == "¥16,217.95" and economics["offset_display"] == "¥16,380.00"
@@ -197,7 +197,7 @@ def test_a_counter_from_an_owner_goal_breach_reads_flow_counters_instead(client,
 def test_a_hard_reject_with_no_counter_is_not_called_a_mandate_breach(client, monkeypatch):
     oid, _ = _evaluated(client)
     (asked,) = _with_verdict(client, monkeypatch, oid, outcome=Outcome.REJECT, counters=[], violations=[_violation(ViolationCode.RESERVE_BREACH)])
-    assert asked["authority"] is None and asked["authority_text"] == "FLOW cannot accept this as asked" and OLD_OVER not in asked["decides_text"]
+    assert asked["authority"] is None and asked["authority_text"] == "FLOW cannot accept their request" and OLD_OVER not in asked["decides_text"]
 
 
 @pytest.mark.parametrize("outcome", [Outcome.NEEDS_OWNER_APPROVAL, Outcome.ACCEPT])
@@ -391,10 +391,10 @@ def test_only_the_recommended_path_says_why_and_by_the_rule_the_engine_applies(c
     oid, _ = _evaluated(client)
     asked, opt_a, opt_b = _paths(client, oid)
     assert opt_a["recommended"] is True
-    assert opt_a["recommended_reason_text"] == "Recommended because FLOW can send it within your mandate without your approval."
+    assert opt_a["recommended_reason_text"] == "Recommended because it is within your mandate and needs no approval."
     assert asked["recommended_reason_text"] is None and opt_b["recommended_reason_text"] is None
     z_asked, z_a, z_b = _paths(client, oid, "zh")
-    assert z_a["recommended_reason_text"] == "推荐原因：FLOW 可以在您的授权范围内直接发送，无需您批准。"
+    assert z_a["recommended_reason_text"] == "推荐原因：它在您的授权范围内，无需批准。"
     assert z_asked["recommended_reason_text"] is None and z_b["recommended_reason_text"] is None
     assert "cost" not in opt_a["recommended_reason_text"] and "成本" not in z_a["recommended_reason_text"]
 
@@ -434,21 +434,30 @@ def _point(path, day):
     return next(p for p in path["series"] if p["day"] == day)
 
 
+STRIP = ("label", "asked_display", "recommended_display", "difference_display")
+
+
+def _strip(point):
+    """The round-two strip, which round three keeps beside the per-reply map in `comparison` (the page of round two reads it)."""
+    c = point["comparison"]
+    return None if c is None or "recommended_display" not in c else {k: c[k] for k in STRIP}
+
+
 def test_every_point_carries_the_same_day_strip_of_the_asked_path_and_the_recommended_reply(client):
     oid, _ = _evaluated(client)
     asked, opt_a, opt_b = _paths(client, oid)
     low_day = min(asked["series"], key=lambda p: (p["closing_fen"], p["day"]))["day"]
     assert low_day == 60
     for path in (asked, opt_a, opt_b):  # the strip is the day's, whichever line the point is on
-        assert _point(path, low_day)["comparison"] == {"label": "Same day", "asked_display": "¥164,960.00",
-                                                       "recommended_display": "¥586,972.23", "difference_display": "+¥422,012.23"}
+        assert _strip(_point(path, low_day)) == {"label": "Same day", "asked_display": "¥164,960.00",
+                                                       "recommended_display": "¥586,964.01", "difference_display": "+¥422,004.01"}
         # day 0: Option A's own funding plan draws the credit line today (the asked path takes no new funding)
-        assert _point(path, 0)["comparison"] == {"label": "Same day", "asked_display": _point(asked, 0)["closing_display"],
+        assert _strip(_point(path, 0)) == {"label": "Same day", "asked_display": _point(asked, 0)["closing_display"],
                                                  "recommended_display": _point(opt_a, 0)["closing_display"],
-                                                 "difference_display": "+¥149,986.20"}
-    assert all(p["comparison"] is not None for p in asked["series"])
+                                                 "difference_display": "+¥147,210"}
+    assert all(_strip(p) is not None for p in asked["series"])
     zh = _paths(client, oid, "zh")
-    assert _point(zh[0], low_day)["comparison"]["label"] == "同一天" and _point(zh[0], low_day)["comparison"]["difference_display"] == "+¥422,012.23"
+    assert _point(zh[0], low_day)["comparison"]["label"] == "同一天" and _point(zh[0], low_day)["comparison"]["difference_display"] == "+¥422,004.01"
 
 
 def test_the_strip_is_the_two_series_own_figures_and_null_where_there_is_nothing_to_compare(client):
@@ -456,7 +465,7 @@ def test_the_strip_is_the_two_series_own_figures_and_null_where_there_is_nothing
     asked, opt_a, _ = _paths(client, oid)
     for pt in asked["series"]:
         mine = next((q for q in opt_a["series"] if q["day"] == pt["day"]), None)
-        c = pt["comparison"]
+        c = _strip(pt)
         if mine is None:
             assert c is None
             continue
@@ -470,7 +479,7 @@ def test_with_no_recommended_reply_there_is_no_strip(client, monkeypatch):
     oid, _ = _evaluated(client)
     _recheck_as(monkeypatch, outcome=Outcome.REJECT, violations=[])
     offer_picture._cache.clear()
-    assert all(p["comparison"] is None for path in _paths(client, oid) for p in path["series"])
+    assert all(_strip(p) is None for path in _paths(client, oid) for p in path["series"])  # no strip of the recommended reply (the per-reply map is round three's)
 
 
 # ---------------------------------------------------------------- what each line assumes

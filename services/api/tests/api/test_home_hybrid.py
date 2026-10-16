@@ -181,7 +181,7 @@ def test_the_foshan_deal_is_the_primary_once_the_plan_has_run(client):
     assert deal["title"] == ("Foshan asked for 60-day terms, a 1% rebate and a 1.2% discount for paying early. "
                              "FLOW recommends countering with Option B.")
     assert deal["facts"] == [{"label": "Cost of Option B", "value": "¥0.00, the price rise pays for the longer terms", "tone": "neutral"},
-                             {"label": "As asked", "value": "over your ¥5,000 limit", "tone": "warn"}]
+                             {"label": "If you accept their request", "value": "over your ¥5,000 limit", "tone": "warn"}]
     assert deal["primary"] == {"label": "Review the counter", "href": "/deals?buyer=BUYER-1"}
     assert deal["secondary"] == {"label": "Why this?", "href": "/decisions/deal%3A" + deal["key"].removeprefix("deal:")}
     landing = att["items"][1]
@@ -203,10 +203,10 @@ def test_the_funding_recommendation_leads_while_cash_is_unsafe_and_the_deal_foll
         ("Authority", "within your signed limits", "ok")]
     assert funding["facts"][1]["value"] == h["next_action"]["lands_when"]  # the plain landing fact the page pins (`next-action-lands`)
     assert funding["primary"]["href"] == "/cash#cash-options"
-    # the deal reads from the picture the Deals page draws: Option A, once, ¥3,027.77
+    # the deal reads from the picture the Deals page draws: Option A, once, ¥3,035.99
     assert deal["title"].endswith("FLOW recommends countering with Option A.")
-    assert deal["facts"][0] == {"label": "Cost of Option A", "value": "¥3,027.77, once; nothing ongoing", "tone": "neutral"}
-    assert deal["facts"][1] == {"label": "As asked", "value": "over your ¥5,000 limit", "tone": "warn"}
+    assert deal["facts"][0] == {"label": "Cost of Option A", "value": "¥3,035.99, once; nothing ongoing", "tone": "neutral"}
+    assert deal["facts"][1] == {"label": "If you accept their request", "value": "over your ¥5,000 limit", "tone": "warn"}
     assert len(deal["facts"]) == 2  # the exposure fact is only named when the exposure layer is on
 
 
@@ -284,7 +284,7 @@ def test_the_queue_is_ranked_funding_deal_approval_collection_landing(monkeypatc
 def test_the_exposure_fact_is_named_only_with_the_flag_and_the_layer(client, monkeypatch):
     _before(client)
     off = next(i for i in client.get("/home").json()["attention"]["items"] if i["kind"] == "deal")
-    assert [f["label"] for f in off["facts"]] == ["Cost of Option A", "As asked"]
+    assert [f["label"] for f in off["facts"]] == ["Cost of Option A", "If you accept their request"]
     if importlib.util.find_spec("app.strategy.concentration") is None:
         pytest.skip("the exposure layer is not on this branch")
     monkeypatch.setattr(home_hybrid, "_exposure_on", lambda rt: True)
@@ -567,7 +567,7 @@ def test_the_deals_card_is_one_row_per_deal_without_stages(client):
     row_before = _before(client)["deals_card"]["rows"]
     assert row_before == [{"buyer": "Foshan Home Retail Co.", "buyer_id": "BUYER-1", "status_text": "Your response needed",
                            "request_text": "60-day terms + 1% rebate + 1.2% off for early payment",
-                           "recommendation_text": "Counter with Option A, estimated cost ¥3,027.77", "href": "/deals?buyer=BUYER-1"}]
+                           "recommendation_text": "Counter with Option A, estimated cost ¥3,035.99", "href": "/deals?buyer=BUYER-1"}]
     client.post("/demo/reset", json={})
     card = _after(client)["deals_card"]
     [row] = card["rows"]

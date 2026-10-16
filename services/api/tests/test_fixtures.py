@@ -39,10 +39,11 @@ def test_oracle_documented_differences_from_spec():
     # spec: ¥2,712.95 for line + ¥210,000 advance; the day-30 debt payment makes the advance ¥255,000:
     # 841.64 + 2,272.29 = 3,113.93
     assert g["v2_optimum_total"] == 311393
-    # Counter A: face = 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole 100 = 257,200; discount
-    # 257,200 × 0.85% = 2,186.20; the line carries 405,000 − (257,200 − 2,186.20) = 149,986.20 for 32 days at 6.4%:
-    # 149,986.20 × 6.4% × 32/365 = 841.5664 -> 841.57; total 2,186.20 + 841.57 = 3,027.77
-    # (spec: ¥2,641.95 with the old face ¥211,800 and no debt payment in the gap)
-    assert g["counter_a_face"] == 25_720_000 and g["counter_a_discount"] == 218620
-    assert g["counter_a_total"] == 302777
+    # Counter A: face = 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥10,000 (two significant figures of
+    # RCV-A's outstanding 420,000, so the face does not reveal the gap: R-10, ADR-0007 addendum) = 260,000; discount
+    # 260,000 × 0.85% = 2,210.00; the line carries 405,000 − (260,000 − 2,210.00) = 147,210.00 for 32 days at 6.4%:
+    # 147,210 × 6.4% × 32/365 = 825.9945 -> 825.99; total 2,210.00 + 825.99 = 3,035.99
+    # (spec: ¥2,641.95 with the old face ¥211,800 and no debt payment in the gap; ¥3,027.77 with the ¥100 face 257,200)
+    assert g["counter_a_face"] == 26_000_000 and g["counter_a_discount"] == 221000
+    assert g["counter_a_total"] == 303599
     assert g["capex"]["loan_36m"]["total_interest"] == 5320614  # spec: ¥53,206.17

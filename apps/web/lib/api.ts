@@ -14,6 +14,18 @@ import { ApiError } from "./errors";
 import type { CustomerContext } from "./customer-href";
 import type {
   AcceptRequest,
+  BuyerAcceptedRequest,
+  BuyerAcceptedResult,
+  BuyerDeclinedRequest,
+  BuyerDeclinedResult,
+  BuyerMessageRefusal,
+  BuyerMessageView,
+  BuyerReplyRequest,
+  BuyerReplyResult,
+  OfferedRequest,
+  OfferedResult,
+  WithdrawRequest,
+  WithdrawResult,
   AcceptResult,
   DeclineResult,
   ActivityView,
@@ -33,10 +45,22 @@ import type {
   BuyerExposureView,
   CompareView,
   ChaseView,
+  AddToMenuResult,
+  BuyEstimate,
+  BuySideEvaluationView,
+  BuyTimeline,
   CapexApplyRequest,
   CapexApplyResult,
+  CapexPlansRequest,
+  CapexPlansView,
   CapexRequest,
   CapexView,
+  EligibilityView,
+  FinanceHealthView,
+  HealthInputsRequest,
+  PurchaseCommitResult,
+  PurchaseRow,
+  PurchasesView,
   ClockView,
   ContractFixture,
   CustomerOverviewView,
@@ -62,6 +86,7 @@ import type {
   NlRequest,
   NlResponse,
   OfferPictureView,
+  PictureScenario,
   OfferView,
   PlanRequest,
   DealsContext,
@@ -82,6 +107,11 @@ import type {
   WhatIfScope,
   WhatIfUnscoped,
   WorklistView,
+  SetupDocument,
+  SetupDraft,
+  SetupOpenResult,
+  SetupPreview,
+  SetupStatus,
 } from "./types";
 
 export { ApiError };
@@ -137,6 +167,43 @@ export async function acceptOffer(offerId: string, req: AcceptRequest): Promise<
 /** POST /offers/{id}/decline: the owner declines the request; nothing moves and the request closes. */
 export async function declineOffer(offerId: string, req: AcceptRequest): Promise<DeclineResult> {
   return isMock ? (await mock()).declineOffer(offerId, req) : (await live()).declineOffer(offerId, req);
+}
+
+/** GET /offers/{id}/counters/{counter}/message?lang=&ui_lang=: the message to the buyer for one counter, written in the buyer's language `lang`, every word around it in the page's `uiLang` (ADR-0011 addendum). FLOW sends nothing. */
+export async function getBuyerMessage(offerId: string, counterId: string, lang: "en" | "zh", uiLang: "en" | "zh"): Promise<BuyerMessageView> {
+  return isMock ? (await mock()).getBuyerMessage(offerId, counterId, lang, uiLang) : (await live()).getBuyerMessage(offerId, counterId, lang, uiLang);
+}
+
+/** POST .../offered: the owner sent the message themself. Records that and nothing else (no agreement, no money); a 409 records nothing and carries the server's words. */
+export async function markOffered(offerId: string, counterId: string, req: OfferedRequest): Promise<OfferedResult> {
+  return isMock ? (await mock()).markOffered(offerId, counterId, req) : (await live()).markOffered(offerId, counterId, req);
+}
+
+/** POST .../buyer-accepted: the owner records the buyer's yes to the counter they sent; the agreement is made (or queued for approval) under the owner's authority. */
+export async function buyerAccepted(offerId: string, counterId: string, req: BuyerAcceptedRequest): Promise<BuyerAcceptedResult> {
+  return isMock ? (await mock()).buyerAccepted(offerId, counterId, req) : (await live()).buyerAccepted(offerId, counterId, req);
+}
+
+/** POST .../offered/withdraw: the owner marked it sent by mistake; the deal is a counter ready again, and its history keeps both events. */
+export async function withdrawOffered(offerId: string, counterId: string, req: WithdrawRequest): Promise<WithdrawResult> {
+  return isMock ? (await mock()).withdrawOffered(offerId, counterId, req) : (await live()).withdrawOffered(offerId, counterId, req);
+}
+
+/** POST .../buyer-declined: the owner records the buyer's no, with the reason they gave as a code. Nothing is agreed or funded; the deal ends as no deal. */
+export async function buyerDeclined(offerId: string, counterId: string, req: BuyerDeclinedRequest): Promise<BuyerDeclinedResult> {
+  return isMock ? (await mock()).buyerDeclined(offerId, counterId, req) : (await live()).buyerDeclined(offerId, counterId, req);
+}
+
+/** POST /offers/{id}/buyer-reply: the buyer answered with terms of their own; the reply becomes a request of its own and this deal closes as answered. */
+export async function buyerReply(offerId: string, req: BuyerReplyRequest): Promise<BuyerReplyResult> {
+  return isMock ? (await mock()).buyerReply(offerId, req) : (await live()).buyerReply(offerId, req);
+}
+
+/** The structured refusal of a message route (409 with a `code`), else null. */
+export function messageRefusal(e: unknown): BuyerMessageRefusal | null {
+  if (!(e instanceof ApiError) || e.status !== 409) return null;
+  const d = e.detail as { code?: unknown } | undefined;
+  return d && typeof d === "object" && typeof d.code === "string" ? (d as BuyerMessageRefusal) : null;
 }
 
 /**
@@ -293,6 +360,11 @@ export async function getEnvelope(buyerId: string, lang: "en" | "zh", zone = fal
  * GET /offers/{offer_id}/exposure (flag `exposure`): what the open deal does to the exposure to its buyer, for every path at once. Null when
  * the server has the feature off or lacks the offer, so the Deals page keeps its current form. Call it only behind STRATEGY_MVP.
  */
+/** The scenarios behind Cash impact's Business consequences (their own read: composing them is slow on a cold start). An empty list is a server with the exposure off. */
+export async function getOfferScenarios(offerId: string, lang: "en" | "zh"): Promise<PictureScenario[]> {
+  return isMock ? (await mock()).getOfferScenarios(offerId, lang) : (await live()).getOfferScenarios(offerId, lang);
+}
+
 export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
   return isMock ? (await mock()).getOfferExposure(offerId, lang) : (await live()).getOfferExposure(offerId, lang);
 }
@@ -538,4 +610,83 @@ export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Pro
 /** POST /demo/restore?lang= (owner, demo mode): puts the main books back after the alternate scenario was loaded. */
 export async function restoreDemo(lang: "en" | "zh", guard?: BooksGuard): Promise<DemoRestoreResult> {
   return isMock ? (await mock()).restoreDemo(lang, guard) : (await live()).restoreDemo(lang, guard);
+}
+
+// ------------------------------------------------------------------ the buy side (ADR-0013, FEATURE_CAPEX_CONTRACTS)
+// Owner only, every route. Reads are read-only; a commitment and an add-to-menu are queued for the owner's approval (Tier 2).
+
+/** GET /purchases?lang=: every capex contract, where it stands and the one thing to do next. */
+export async function getPurchases(lang: "en" | "zh" = "en"): Promise<PurchasesView> {
+  return isMock ? (await mock()).getPurchases(lang) : (await live()).getPurchases(lang);
+}
+
+/** GET /purchases/{id}?lang=: one capex contract's row. */
+export async function getPurchase(id: string, lang: "en" | "zh" = "en"): Promise<PurchaseRow> {
+  return isMock ? (await mock()).getPurchase(id, lang) : (await live()).getPurchase(id, lang);
+}
+
+/** GET /fixtures/capex-contracts: the demo vendor contracts (synthetic). */
+export async function getCapexContractFixtures(): Promise<ContractFixture[]> {
+  return isMock ? (await mock()).getCapexContractFixtures() : (await live()).getCapexContractFixtures();
+}
+
+/** POST /capex/contracts/{id}/evaluate: the contract's payment schedule on the owner's timeline, the capex screen on it, and the vendor's early-payment discount. Writes nothing. */
+export async function evaluateContract(id: string, timeline: BuyTimeline, estimate: BuyEstimate = {}): Promise<BuySideEvaluationView> {
+  return isMock ? (await mock()).evaluateContract(id, timeline) : (await live()).evaluateContract(id, timeline, estimate);
+}
+
+/** POST /capex/contracts/{id}/commit: queues the owner's Tier-2 commitment to the schedule shown (refused 409 if it changed). */
+export async function commitContract(id: string, timeline: BuyTimeline, scheduleHash: string, takeEarlyPay: boolean): Promise<PurchaseCommitResult> {
+  return isMock ? (await mock()).commitContract(id, timeline, scheduleHash, takeEarlyPay) : (await live()).commitContract(id, timeline, scheduleHash, takeEarlyPay);
+}
+
+/** GET/POST /finance/health: cash, the 90-day cash coverage, the current and quick ratios on the owner's entries, covenant room and borrowing capacity. */
+export async function getFinanceHealth(inputs: HealthInputsRequest | null = null): Promise<FinanceHealthView> {
+  return isMock ? (await mock()).getFinanceHealth(inputs) : (await live()).getFinanceHealth(inputs);
+}
+
+/** GET/POST /lending/eligibility: indicative eligibility against a synthetic catalogue. */
+export async function getEligibility(inputs: { months_trading?: number | null; amount_fen?: number | null } | null = null): Promise<EligibilityView> {
+  return isMock ? (await mock()).getEligibility(inputs) : (await live()).getEligibility(inputs);
+}
+
+/** POST /lending/products/{id}/add-to-menu: queues the owner's own AddFacility (Tier 2). */
+export async function addProductToMenu(productId: string, amountFen: number | null = null): Promise<AddToMenuResult> {
+  return isMock ? (await mock()).addProductToMenu(productId, amountFen) : (await live()).addProductToMenu(productId, amountFen);
+}
+
+/** POST /capex/plans: ranked permutations of purchases, start months and financing (a monthly estimate). */
+export async function runCapexPlans(req: CapexPlansRequest): Promise<CapexPlansView> {
+  return isMock ? (await mock()).runCapexPlans(req) : (await live()).runCapexPlans(req);
+}
+
+// ------------------------------------------------------------------ set up your books (ADR-0013)
+// Owner only. The live server checks the draft, signs the limits and opens the books; the mock build cannot open books.
+
+/** GET /setup/status: which books are loaded (blank, demo or the owner's own) and whether they can be opened here. */
+export async function getSetupStatus(lang: "en" | "zh" = "en"): Promise<SetupStatus> {
+  return isMock ? (await mock()).getSetupStatus() : (await live()).getSetupStatus(lang);
+}
+
+/** GET /setup/documents: the confirmed contracts and agreements a setup row can be filled from, for the start date given. */
+export async function getSetupDocuments(startDate: string, lang: "en" | "zh" = "en"): Promise<SetupDocument[]> {
+  return isMock ? (await mock()).getSetupDocuments() : (await live()).getSetupDocuments(startDate, lang);
+}
+
+/** POST /setup/documents: read a contract or lender agreement during setup; it waits, unconfirmed, until the books are opened. */
+export async function readSetupDocument(
+  body: { kind: "BUYER_CONTRACT" | "LENDER_AGREEMENT"; filename?: string; content_base64?: string; text?: string; title?: string; start_date?: string },
+  lang: "en" | "zh" = "en",
+): Promise<SetupDocument> {
+  return isMock ? (await mock()).readSetupDocument() : (await live()).readSetupDocument(body, lang);
+}
+
+/** POST /setup/preview: the issues to fix, what to look at, the summary and a first forecast. Writes nothing. */
+export async function previewSetup(draft: SetupDraft, lang: "en" | "zh" = "en"): Promise<SetupPreview> {
+  return isMock ? (await mock()).previewSetup() : (await live()).previewSetup(draft, lang);
+}
+
+/** POST /setup/open: the owner signs the limits with their sign-in and opens the books (this replaces the books loaded now). */
+export async function openBooks(draft: SetupDraft, password: string, lang: "en" | "zh" = "en"): Promise<SetupOpenResult> {
+  return isMock ? (await mock()).openBooks() : (await live()).openBooks(draft, password, lang);
 }

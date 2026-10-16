@@ -5,16 +5,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PartialRead } from "@/components/business/freshness";
 import { FixResult, type useFixAlert } from "@/components/home/fix-alert";
 import { HomeV2ActionBar } from "@/components/home/v2/action-bar";
-import { CompanyChart } from "@/components/home/v2/company-chart";
 import { ContextCard } from "@/components/home/v2/context-card";
 import { CustomerFocusPanel } from "@/components/home/v2/customer-focus";
-import { DealFocusPanel } from "@/components/home/v2/deal-focus";
-import { CashCard, FooterLinks, OutlookCard, OwedCard, UpcomingCard } from "@/components/home/v2/home-cards";
-import { fromWarm, key } from "@/components/home/v2/prefetch";
+import { CashCard, OutlookCard, OwedCard, UpcomingCard } from "@/components/home/v2/home-cards";
 import { WorklistPanel } from "@/components/home/v2/worklist";
+import { RefreshIcon } from "@/components/icons";
 import { ErrorState } from "@/components/ui";
-import { getCustomers, getDealPicture, getWorklist } from "@/lib/api";
-import { type HomeDealView, type HomeSelection, NO_SELECTION, offerOfDecision, readDealView, readSelection, selectionHref } from "@/lib/home-v2-href";
+import { getCustomers, getWorklist } from "@/lib/api";
+import { bump } from "@/lib/demo-store";
+import { dealOpenHref, type HomeSelection, NO_SELECTION, readSelection, selectionHref } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
 import type { HomeView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -22,11 +21,11 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
 
 
 /**
- * Home V2, the Home, in the owner's mockup language (docs/design/flow-mockup-2026-10-13): the headline sentence, the server's one-line summary and the state pill; three cards (cash
- * available today with the reserve bar, what we recommend, the company cash outlook with Expand); then the worklist as a table beside the upcoming cash movements; the footer row.
- * A selected row replaces the three cards with the selected item's card (the outlook stays) and the upcoming movements with its context; Dismiss or Escape restores the overview and
- * clears the address. Expand opens the full forecast in place under the cards. When the server could not read `home_v2` the header stays with Retry and nothing else. Every word and
- * figure is the server's or the dictionary's.
+ * Home V2, the Home, in the owner's mockup language (docs/design/flow-mockup-2026-10-13): a small Refresh button at the top (the headline is for a screen reader); the company cash
+ * outlook as the page's main card, the full width, with its forecast and "What we recommend" inside it; then the worklist as a table beside a side column (cash available today with the
+ * reserve bar, the upcoming cash movements, what is owed). A selected customer replaces the outlook with the customer's card and the side column's cash and movements with its context;
+ * Dismiss or Escape restores the overview and clears the address. A deal is not opened here: its row leads to the Deals page (`from=home` brings the owner back). When the server could
+ * not read `home_v2` the header stays with Retry and nothing else. Every word and figure is the server's or the dictionary's.
  */
 export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer: ReturnType<typeof useFixAlert>; loading: boolean; onRetry: () => void }) {
   const { lang, t } = useI18n();
@@ -34,21 +33,18 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const v2 = h.home_v2;
   const worklist = useAsync(() => getWorklist(lang, h.since_day), [lang]);
   const customers = useAsync(() => getCustomers(lang), [lang]);
-  // The selections (customer, decision) and the deal's view are the address and nothing else: a row sets them, back and forward restore them, Escape clears them.
+  // The selected customer is the address and nothing else: a row sets it, back and forward restore it, Escape clears it.
   const router = useRouter();
   const params = useSearchParams();
   const selection = readSelection(params);
-  const dealView = readDealView(params);
   const focusing = selection.customer !== null;
-  // One small view of the Home is in the address too: the expanded forecast (`expand=1`).
-  const expanded = params.get("expand") === "1";
-  const setFlag = (key: "expand", on: boolean) => {
-    const q = new URLSearchParams(params.toString());
-    if (on) q.set(key, "1");
-    else q.delete(key);
-    router.replace(q.size ? `/?${q.toString()}` : "/", { scroll: false });
-  };
-  const go = (next: Partial<HomeSelection>, view: Partial<HomeDealView> = {}, how: "push" | "replace" = "push") => router[how](selectionHref(next, view), { scroll: false });
+  const go = (next: Partial<HomeSelection>) => router.push(selectionHref(next), { scroll: false });
+  // An older address that names a deal (`/?customer=...&decision=...`) is opened where deals are opened.
+  const legacyDeal = selection.decision;
+  const legacyCustomer = selection.customer;
+  useEffect(() => {
+    if (legacyDeal) router.replace(dealOpenHref(legacyCustomer, legacyDeal), { scroll: false });
+  }, [legacyDeal, legacyCustomer, router]);
   const clear = useCallback(
     (back: "row" | "action" = "row") => {
       const opener = document.querySelector<HTMLElement>('[data-testid="home-worklist-row"] a[aria-current="true"]');
@@ -60,24 +56,18 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
     },
     [router],
   );
-  // Escape restores the overview: it closes the expanded forecast first, then the selection (not while a dialog is open or a search box holds text).
-  const closeExpand = useCallback(() => {
-    const q = new URLSearchParams(window.location.search);
-    q.delete("expand");
-    router.replace(q.size ? `/?${q.toString()}` : "/", { scroll: false });
-  }, [router]);
+  // Escape restores the overview: it clears the selection (not while a dialog is open or a search box holds text).
   useEffect(() => {
-    if (!focusing && !expanded) return;
+    if (!focusing) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.defaultPrevented || document.querySelector("dialog[open]")) return;
       const el = e.target instanceof HTMLInputElement ? e.target : null;
       if (el && el.value) return; // Escape in a search box with text clears that text first
-      if (expanded) closeExpand();
-      else clear();
+      clear();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [focusing, expanded, clear, closeExpand]);
+  }, [focusing, clear]);
   // The overview and the selected view crossfade (opacity only, 200 ms in all: the old one fades out in 100 ms, the new one in): the stage holds what is shown, the address says what is wanted. The selection
   // the stage shows is kept while the overview fades back in, so a Dismiss does not blank the card before it fades.
   const want = focusing ? "sel" : "ov";
@@ -94,7 +84,6 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [want, selKey]);
   const shown = stage.mode === "sel" ? (focusing ? selection : stage.selection) : null;
-  // The deal's own picture, one read for the deal card and the cash-impact card beside it.
   // A selection lands at the top of what changed, on every width: the company line and the selected card's top edge under the sticky header (smooth unless reduced motion), whenever the selection
   // changes (a click, Enter, the browser's Back or Forward between two selections), never when nothing changed (a slice press). Leaving the selection scrolls back to the headline.
   const landed = useRef(selKey);
@@ -126,30 +115,33 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       for (const e of events) window.removeEventListener(e, touch);
     };
   }, [focusing, stage.mode, selKey, reduced]);
-  const dealPicture = useAsync(() => (shown?.decision ? fromWarm(key.picture(offerOfDecision(shown.decision), lang), () => getDealPicture(offerOfDecision(shown.decision as string), lang)) : Promise.resolve(null)), [shown?.decision, lang]);
   const cash = h.cash;
   const headline = cash.headline_conditional || h.headline;
-  // "FLOW action ready" is said once, by the recommendation card: the line under the headline keeps the server's count sentence and drops its first sentence ("One funding action ready.")
-  // when the card carries the plan's control; the worklist's alert row is shown only on a Home that renders no recommendation card (no title and no control), whatever the funding state.
+  // "FLOW action ready" is said once, by the recommendation card: the server's count sentence drops its first sentence ("One funding action ready.") when the card carries the plan's control.
   const summary = v2?.summary_text ? (v2.action.control ? v2.summary_text.replace(/^[^.。]*[.。]\s*/, "") : v2.summary_text) : null;
+  // The page's heading stays for a screen reader (the status and the server's headline); on screen the top of the page is one small Refresh button, which reads everything again
+  // (the Home read, the worklist and the customers: every read of the page follows the store's version). Its title says when the figures were last read.
   const header = (
-    <header className="motion-reveal mb-3 grid grid-cols-1 items-start gap-y-1.5 sm:mb-5" data-testid="home-status" data-status={h.status}>
-      <h1 className="font-display text-[24px] font-bold leading-[1.12] tracking-[-0.03em] text-ink sm:text-[28px] lg:text-[32px]" data-testid="hv2-headline">
-        <span className="sr-only" data-testid="home-status-word">
-          {cash.status_word ?? h.status_text}
-        </span>
-        <span data-testid="home-headline">{headline}</span>
+    <header className="motion-reveal mb-3 flex items-center justify-end" data-testid="home-status" data-status={h.status}>
+      <h1 className="sr-only" data-testid="hv2-headline">
+        <span data-testid="home-status-word">{cash.status_word ?? h.status_text}</span> <span data-testid="home-headline">{headline}</span>
       </h1>
       {summary ? (
-        <p className="text-pretty text-[15px] text-ink-3" data-testid="hv2-summary">
+        <p className="sr-only" data-testid="hv2-summary">
           {summary}
         </p>
       ) : null}
-      {cash.last_read_when ? (
-        <p className="text-supporting text-ink-3" aria-label={t("biz.readWhen", { when: cash.last_read_when })} data-testid="home-read-when">
-          {t("hv2.updated")}
-        </p>
-      ) : null}
+      <button
+        type="button"
+        onClick={() => bump()}
+        disabled={loading}
+        aria-label={t("hv2.refresh")}
+        title={cash.last_read_when ? t("biz.readWhen", { when: cash.last_read_when }) : t("hv2.refresh")}
+        className="motion-press inline-flex size-9 items-center justify-center rounded-pill border border-line-ui bg-card text-ink-2 shadow-(--shadow-f) transition-colors hover:bg-subtle hover:text-ink disabled:cursor-wait touch:size-11"
+        data-testid="home-refresh"
+      >
+        <RefreshIcon width={16} height={16} className={loading ? "motion-safe:animate-spin" : ""} />
+      </button>
     </header>
   );
   // The block the server could not read: the status stays, and the page says so with Retry (never an empty page).
@@ -161,33 +153,31 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
         {h.partial?.missing?.length ? null : <ErrorState error={t("hv2.unread")} onRetry={onRetry} />}
       </div>
     );
-  const plan = v2.chart.legend.some((l) => l.kind === "planned" || l.kind === "proposed") && cash.plan_series?.length ? cash.plan_series : null;
   const customerRow = shown?.customer ? (worklist.data?.customers.find((c) => c.customer_id === shown.customer) ?? null) : null;
-  const buyer = customerRow?.short ?? "";
-  const row = shown?.decision ? ([...(worklist.data?.needs_you ?? []), ...(worklist.data?.waiting ?? [])].find((r) => rowDecision(r) === shown.decision) ?? null) : null;
   // A worklist the server does not have (null) leaves the page without the table; a failed one says so in the card, with Retry.
   const hasWorklist = worklist.data !== null;
   const hasCard = Boolean(v2.action.title || v2.action.control);
   // "What you are owed, by customer" is a card of its own in the right column, directly under the upcoming movements (or the context panel): the same place on the default page and on every selection.
   const owedRows = customers.data?.customers ?? null;
-  const outlook = <OutlookCard h={h} kpis={v2.kpis} plan={plan} expanded={expanded} onExpand={(on) => setFlag("expand", on)} controls="hv2-forecast" />;
   const owedCard = <OwedCard customers={owedRows} selected={shown?.customer ?? null} onSelect={(id) => go({ customer: id })} />;
   // The last upcoming row: what customers owe past due (the hybrid read's own short word) and how many customers have a collection row (the server's rows, one per customer, counted); none when nothing is overdue.
   const overdueCount = (worklist.data?.needs_you ?? []).filter((r) => r.kind === "COLLECTION").length;
   const overdue = overdueCount > 0 && h.receivables_card?.overdue_short ? { short: h.receivables_card.overdue_short, count: overdueCount } : null;
   const fade = { opacity: fading ? 0 : 1, transition: "opacity 100ms ease-out" } as const;
-  const bar = (
+  const bar = (embedded = false) => (
     <HomeV2ActionBar
+      embedded={embedded}
       action={v2.action}
       kpis={v2.kpis}
       nextAction={h.next_action}
-      stateVersion={h.state_version}
-      fixer={fixer}
+      alarm={h.next_action && cash.lowest_fen < 0 && cash.lowest_short ? { amount: cash.lowest_short, when: cash.lowest_when ?? "" } : null}
+      covered={!h.next_action && cash.first_breach_day == null && !cash.below_reserve_today}
       line={cash.headline_note}
       fundingTotal={v2.kpis.funding.value_display}
       onBack={shown ? () => clear("action") : undefined}
     />
   );
+  const cashCard = <CashCard kpis={v2.kpis} h={h} customers={customers.data?.customers} />;
   return (
     <div aria-busy={loading} data-testid="home-v2" className="home-f min-w-0">
       {header}
@@ -196,60 +186,42 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       <div style={fade} id="hv2-stage" data-testid="hv2-stage" data-mode={stage.mode} data-fading={fading} className="scroll-mt-20">
         {shown ? (
           <>
-            <div className="mb-3">{bar}</div>
-            {shown.decision ? (
-              // A deal: the deal card and ONE card beside it, "Cash impact of this deal" (the panel draws both, on one height).
-              <DealFocusPanel
-                customerId={shown.customer as string}
-                buyer={buyer}
-                decision={shown.decision}
-                row={row}
-                customer={customerRow}
-                h={h}
-                picture={dealPicture}
-                view={dealView}
-                onView={(patch) => go({ customer: shown.customer, decision: shown.decision }, { ...dealView, ...patch }, "replace")}
-                onAll={() => clear()}
-                onCustomer={() => go({ customer: shown.customer })}
-              />
-            ) : (
-              // A customer: the customer card beside the company's cash card (the default's left pair); the owed donut stays below the movements.
-              <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
-                <CustomerFocusPanel customerId={shown.customer as string} worklist={worklist.data} selection={selection} onAll={() => clear()} />
-                <CashCard kpis={v2.kpis} />
-              </div>
-            )}
+            <div className="mb-3">{bar()}</div>
+            {/* A customer: the customer card beside the company's cash card; the owed donut stays below the movements. */}
+            <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+              <CustomerFocusPanel customerId={shown.customer as string} worklist={worklist.data} selection={selection} onAll={() => clear()} />
+              {cashCard}
+            </div>
           </>
         ) : (
-          <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
-            <CashCard kpis={v2.kpis} />
-            {bar}
-            {outlook}
-          </div>
+          <OutlookCard h={h} kpis={v2.kpis} chart={v2.chart} recommendation={bar(true)} />
         )}
       </div>
-      {expanded ? (
-        <div className="mt-4">
-          <CompanyChart h={h} chart={v2.chart} onClose={() => setFlag("expand", false)} />
+      {/* The worklist is the page's working area (the wide column); cash available today, the upcoming movements and what is owed are a quiet side column. */}
+      {/* The worklist runs down beside the side column, to the foot of its last card. */}
+      <div className="mt-4 grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[minmax(0,2.4fr)_minmax(17rem,1fr)]">
+        <div className="flex min-w-0 flex-col [&>section]:flex-1">
+          {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} showAlert={!hasCard} /> : null}
         </div>
-      ) : null}
-      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)]">
-        {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} showAlert={!hasCard} /> : <span />}
         <div className="grid min-w-0 content-start gap-4">
-          <div style={fade} className="min-w-0">
-            {shown ? <ContextCard customerId={shown.customer as string} decision={shown.decision} row={row} customer={customerRow} onBack={() => clear()} /> : <UpcomingCard h={h} overdue={overdue} />}
+          <div style={fade} className="grid min-w-0 gap-4">
+            {shown ? (
+              <ContextCard customerId={shown.customer as string} customer={customerRow} onBack={() => clear()} />
+            ) : (
+              <>
+                {cashCard}
+                <UpcomingCard h={h} overdue={overdue} />
+              </>
+            )}
           </div>
           {owedCard}
         </div>
       </div>
-      <FooterLinks separate={Boolean(shown && !shown.decision)} />
+      {shown ? (
+        <p className="mt-4 text-supporting text-ink-3" data-testid="hv2-foot-separate">
+          {t("hv2.foot.separate")}
+        </p>
+      ) : null}
     </div>
   );
-}
-
-/** The decision a row stands for: the deal's record id (`deal:<offer>`), from its key or, for a buyer's reply it waits on, from its key's offer. */
-function rowDecision(r: { key: string }): string | null {
-  if (r.key.startsWith("deal:")) return r.key;
-  if (r.key.startsWith("buyer-reply:")) return `deal:${r.key.slice("buyer-reply:".length)}`;
-  return null;
 }

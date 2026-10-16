@@ -1,0 +1,106 @@
+# Checks on every push, so a break shows within minutes instead of at integration (owner, 15 Oct 2026).
+# Nothing here reads .env, a real database or a model API: the API runs on the in-memory store with the recorded model cache.
+#   - web:      typecheck, lint, unit tests (includes the mock check), on every push and pull request (about 3 minutes).
+#   - api:      ruff and the whole pytest suite in eight shards; e2e-mock: the full mock browser suite (desktop and phone).
+#               Both are heavy (the repository is private, so they spend Actions minutes): they run on pushes to dev, int/* and ci/*,
+#               on pull requests into dev, and by hand (Actions > checks > Run workflow), not on every feature push.
+# The live browser suite stays with the lead's integration gate (it is serial and needs a running API).
+name: checks
+
+on:
+  push:
+  pull_request:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TERMSLEDGER_NO_DOTENV: "1"
+  DATABASE_URL: memory
+  LLM_MODE: cache
+  DEMO_MODE: "1"  # off by default since 16 Oct (SEC-07); the API suite runs on the demo books and credentials
+  SKIP_PERF_BENCH: "1"
+  PYTHONUTF8: "1"
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.11.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test:unit
+
+  api:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/heads/int/') || startsWith(github.ref, 'refs/heads/ci/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --project . --frozen
+      - name: ruff (reports only until the 51 existing findings on dev are cleared; then remove continue-on-error)
+        if: matrix.shard == 0
+        continue-on-error: true
+        run: uv run --project . ruff check app tests
+      - name: pytest (shard ${{ matrix.shard }} of 8, by test file)
+        run: |
+          files=$(find tests -name 'test_*.py' | sort | awk -v n=8 -v i=${{ matrix.shard }} '(NR - 1) % n == i')
+          uv run --project . pytest -o addopts= -p no:cacheprovider -q $files
+
+  e2e-mock:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/heads/int/') || startsWith(github.ref, 'refs/heads/ci/')
+    needs: web
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.11.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: mock browser suite (desktop and phone)
+        run: pnpm exec playwright test --workers=2
+        env:
+          CI: "1"
+          E2E_TARGET: mock
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: apps/web/test-results
+          retention-days: 7

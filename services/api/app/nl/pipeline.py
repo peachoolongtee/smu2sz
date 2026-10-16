@@ -45,6 +45,17 @@ def t(ctx: NlContext, en: str, zh: str) -> str:
     return zh if ctx.lang == "zh" else en
 
 
+def counter_line(ctx: NlContext, label: str, text: str) -> str:
+    """A counter as one line, "Option A: <terms>", in the reader's language. The counter's English text is the engine's (it is what
+    the log holds and the egress guard scanned); in Chinese the line is that same text through the translation layer, so a Chinese
+    buyer or owner reads "方案 A：<条款>" with the same figures."""
+    if ctx.lang != "zh":
+        return f"{label}: {text}"
+    from app.api.engine_zh import translate
+    from app.api.presentation import option_label
+    return f"{option_label(label, 'zh')}：{translate(text)}"
+
+
 @dataclass
 class Steps:
     """Accumulates plan steps with running numbers."""
@@ -150,7 +161,7 @@ def send_counters(ctx: NlContext, steps: Steps, verdict: Verdict, counters: Sequ
         op = CounterOffer(**ctx.base("COUNTER_OFFER"), source_verdict_id=verdict.id, offer_id=verdict.offer_id,
                           counter_id=c.id)
         r = ctx.execute(op)
-        steps.result("COUNTER_OFFER", f"{c.label}: {text}", r)
+        steps.result("COUNTER_OFFER", counter_line(ctx, c.label, text), r)
         if r.status in LIVE_STATUSES:
             sent.append((c, text))
     return sent

@@ -223,7 +223,14 @@ test.describe("live", () => {
     const list = (await (await request.get(`${API}/decisions?family=DEAL&lang=en`, { headers })).json()) as { decisions: { id: string }[] };
     expect(list.decisions.length).toBeGreaterThan(0);
     const id = list.decisions[0].id;
-    const read = (await (await request.get(`${API}/decisions/${encodeURIComponent(id)}/tracker?lang=en`, { headers })).json()) as TrackerView;
+    // The approval's effect lands a moment after the click: wait for the tracker's actual-cost line to carry it (the tone is neutral until then), then read.
+    let read!: TrackerView;
+    await expect
+      .poll(async () => {
+        read = (await (await request.get(`${API}/decisions/${encodeURIComponent(id)}/tracker?lang=en`, { headers })).json()) as TrackerView;
+        return read.cost?.actual.tone;
+      }, { timeout: 45_000 })
+      .toBe("bad");
     expect(read.available).toBe(true);
     await page.goto(trackerUrl(id));
     await expectRead(page, read);

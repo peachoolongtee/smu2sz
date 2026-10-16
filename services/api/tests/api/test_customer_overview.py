@@ -1,6 +1,6 @@
 """GET /customers/{id}/overview (map #88, ticket #108, the server half): the Customer overview read.
 
-Golden day 0: the Foshan offer (60-day terms, a 1% rebate, early payment) is evaluated, and FLOW's plan (a ¥150k credit-line draw and
+Golden day 0: the Foshan offer (60-day terms, a 1% rebate, early payment) is evaluated, and FLOW's plan (a ¥147k credit-line draw and
 ¥255k of invoice financing) is either waiting or has run. The read is composed from reads the other pages make, so the figures asserted
 here are theirs: the receivable rows' financing words, the exposure block's stress and capacity, the offer picture's recommended path.
 The owner's inputs are written by the test (the Demo seeds none)."""
@@ -133,8 +133,8 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
     d = b["decision"]
     assert d["eyebrow"] == "One commercial decision waits for you"
     assert d["text"] == ("Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. "
-                         "FLOW recommends countering with Option A, ¥3,027.77 once if accepted.")
-    assert (d["headline_short"], d["authority_text"]) == ("Counter instead of accepting as asked", "FLOW can send this counter without your approval.")
+                         "FLOW recommends countering with Option A, ¥3,035.99 once if accepted.")
+    assert (d["headline_short"], d["authority_text"]) == ("Counter instead of accepting their request", "This counter is within your mandate: no approval needed.")
     picture = api.get(f"/offers/{offer_id}/picture").json()
     recommended = next(p for p in picture["paths"] if p["recommended"])
     assert d["primary"] == {"label": "Review the counter",
@@ -147,7 +147,7 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
         ("annual_sales", "¥5,460,000", "projected from your books", "neutral"),
         ("gross_margin", "20%", "assumed for the Demo, not confirmed by you", "warn"),
         ("contribution", "about ¥1,092,000", "under today's terms", "neutral"),
-        ("open_request", "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once", "the cost of keeping the same sales on softer terms, not profit gained", "neutral"),
+        ("open_request", "about 2.6% of it if you accept their request, over 12 months, plus ¥5,040.00 once", "the cost of keeping the same sales on softer terms, not profit gained", "neutral"),
         ("classification", "Normal", "context only", "neutral")]
     assert b["economics_note"] == ("A customer worth ¥1.09m a year does not by itself justify a ¥28,330 concession over 12 months; the question is how "
                                    "much of that is at risk if you counter. None of this changes what FLOW may do on its own.")
@@ -167,7 +167,7 @@ def test_before_the_plan_the_exposure_rows_are_the_exposure_layers_own(api, rt):
     assert (rows[2]["label"], rows[2]["value_display"], rows[2]["tone"]) == (
         "Paid 30 days late", "−¥250,000 in 60 days; 65 days below your minimum; ¥550,000 uncovered", "bad")
     assert (rows[3]["value_display"], rows[3]["note"]) == (
-        "¥81,000 today; ¥0 if Foshan accepts Option A", "Room for another payment: ¥0 for the next 31 days (today ¥81,000).")
+        "¥81,000 today; ¥2,000 if Foshan accepts Option A", "Room for another payment: ¥2,000 (today ¥81,000).")  # the line's ¥2,790 (R-10)
     assert b["exposure"]["same_figures_note"].startswith("The same figures as on the deal")
     # the numbers are the deal's own: the exposure route says the same of the recommended path
     ex = api.get(f"/offers/{offer_id}/exposure", params={"lang": "en", "response": "counter:0"}).json()
@@ -244,8 +244,8 @@ def test_the_chinese_page_has_the_same_figures_and_no_english_left(api, rt):
     assert zh["figures"][1]["note"] == "32 天后到期，没有逾期"
     assert zh["figures"][3]["note"] == "占当前未收应收款的 100%"
     assert zh["decision"]["eyebrow"] == "有一项商务决定等待您处理"
-    assert zh["decision"]["primary"]["label"] == "查看还价" and zh["decision"]["authority_text"] == "FLOW 可以在无需您批准的情况下发送这份还价。"
-    assert "FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价" in zh["decision"]["text"]
+    assert zh["decision"]["primary"]["label"] == "查看还价" and zh["decision"]["authority_text"] == "这份还价在您的授权范围内：无需批准。"
+    assert "FLOW 建议以方案 A（如被接受，一次性成本 ¥3,035.99）还价" in zh["decision"]["text"]
     assert [r["value_display"] for r in zh["economics"][:3]] == ["¥5,460,000", "20%", "约 ¥1,092,000"]
     assert zh["economics"][0]["note"] == "根据您的账目推算" and zh["economics"][1]["note"] == "为演示而假设，尚未经您确认"
     assert zh["economics"][4]["value_display"] == "普通"
@@ -254,7 +254,7 @@ def test_the_chinese_page_has_the_same_figures_and_no_english_left(api, rt):
     assert stress["label"] == "晚付 30 天" and stress["value_display"].startswith("60 天后降至 −¥250,000；有 65 天低于您的最低现金")
     assert zh["history"][1]["text"].startswith("尚无已确认的协议；账期为自开票日起 45 天")
     assert zh["context"]["back"]["label"] == "返回交易"
-    assert zh["economics"][3]["value_display"] == "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00"
+    assert zh["economics"][3]["value_display"] == "如果接受对方的要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00"
 
 
 def test_the_chinese_page_after_the_plan_has_no_english_left(api, rt):
@@ -580,7 +580,7 @@ def test_an_offer_FLOW_may_accept_carries_the_asked_paths_authority(api, rt):
 
     _accepted(api)
     d = _get(api)["decision"]
-    assert d["headline_short"] == "Accept as asked"
+    assert d["headline_short"] == "Accept their request"
     assert d["authority_text"] == "FLOW can accept this request without your approval."
     assert d["primary"]["label"] == "Review the request"
     assert _get(api, lang="zh")["decision"]["authority_text"] == "FLOW 可以在无需您批准的情况下接受这项请求。"
@@ -678,9 +678,9 @@ def _request(r: Any) -> dict[str, Any] | None:
 
 def test_a_concession_above_the_whole_years_contribution_is_said_in_words_not_capped_at_100_percent():
     row = _request(_ask_read(forward_fen=350_000_000, once=None))  # ¥3.5m over 12 months against a ¥1m contribution
-    assert row is not None and row["value_display"] == "more than the whole year's contribution as asked, over 12 months"
+    assert row is not None and row["value_display"] == "more than the whole year's contribution if you accept their request, over 12 months"
     zh = _request(_ask_read(forward_fen=350_000_000, once=None, lang="zh"))
-    assert zh is not None and zh["value_display"] == "按对方要求，12 个月内超过其一整年的贡献"
+    assert zh is not None and zh["value_display"] == "如果接受对方的要求，12 个月内超过其一整年的贡献"
     assert "100%" not in row["value_display"]
 
 
@@ -695,8 +695,8 @@ def test_a_discount_only_request_is_a_one_off_with_no_share_and_no_zero_concessi
 def test_the_open_requests_share_is_on_a_twelve_month_basis_whatever_the_horizon():
     year = _request(_ask_read(forward_fen=10_000_000, once=None))  # ¥100,000 over 12 months against ¥1m
     half = _request(_ask_read(forward_fen=10_000_000, once=None, horizon_days=182))  # ¥100,000 over 6 months is ¥200,000 a year
-    assert year is not None and year["value_display"] == "about 10.0% of it as asked, over 12 months"
-    assert half is not None and half["value_display"] == "about 20.0% of it as asked, over 12 months"
+    assert year is not None and year["value_display"] == "about 10.0% of it if you accept their request, over 12 months"
+    assert half is not None and half["value_display"] == "about 20.0% of it if you accept their request, over 12 months"
 
 
 def test_no_request_no_row_and_no_share():
@@ -747,7 +747,7 @@ def test_when_the_offer_picture_fails_the_decision_reads_from_the_deals_words_an
 
     monkeypatch.setattr(overview, "cached_picture", broken)
     d = _get(api)["decision"]
-    assert d["text"].endswith("Counter instead of accepting as asked.") and d["primary"]["label"] == "Review the request"
+    assert d["text"].endswith("Counter instead of accepting their request.") and d["primary"]["label"] == "Review the request"
     assert "&path=" not in d["primary"]["href"] and d["authority_text"] is None
     _get(api)
     assert calls == ["built", "built"]

@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, resetBooks } from "./helpers";
+import { checkedDeal, demoMode, resetBooks } from "./helpers";
 
 /**
  * Accept as asked (map #121): a negotiation whose buyer request needs the owner's review and has no counter (the busy books' Zhuhai 75-day terms and Dongguan rebate,
@@ -44,10 +44,12 @@ test.describe("mock", () => {
     test.skip(live(testInfo), "mock-mode: the recorded reads");
   });
 
-  test("the golden EX01 asked path is over the mandate: the server's reason is said under the ask and no accept button is offered", async ({ page }) => {
+  test("the golden EX01 asked path is over the mandate: the comparison says it is outside the mandate, the server's reason is said once in full, and no accept button is offered", async ({ page }) => {
+    await demoMode(page); // the simulated send is the Demo's only
     await checkedDeal(page);
-    await expect(page.getByTestId("accept-reason-asked")).toBeVisible();
-    await expect(page.getByTestId("accept-reason-asked")).toContainText(/mandate/i);
+    await expect(page.getByTestId("deal-choice-cell-decides-asked")).toContainText("Outside mandate");
+    await expect(page.getByTestId("deal-rec-why")).toContainText(/signed limits/i);
+    await expect(page.getByTestId("deal-review-request")).toHaveCount(0);
     await expect(page.getByTestId("accept-go")).toHaveCount(0);
     await expect(page.getByTestId("accept-review-open")).toHaveCount(0);
     // The one filled button is still the send's, and its review has no fourth statement: "What it does to your cash" belongs to accepting as asked, and only when the server writes it.
@@ -62,11 +64,16 @@ test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-only: the busy company on a real API");
   });
+  // The busy books are loaded by these specs: the golden books go back through the API when each one is done, so a later spec (the Demo story, which starts on the golden books) never finds them.
+  test.afterEach(async ({ request }) => {
+    await resetBooks(request);
+  });
 
   test("the golden books' EX01 asked path is over the mandate: the server's reason is said and no accept button is offered", async ({ page, request }) => {
     await resetBooks(request);
     await checkedDeal(page);
-    await expect(page.getByTestId("accept-reason-asked")).toContainText(/mandate/i);
+    await expect(page.getByTestId("deal-choice-cell-decides-asked")).toContainText("Outside mandate");
+    await expect(page.getByTestId("deal-rec-why")).toContainText(/limit|mandate/i);
     await expect(page.getByTestId("accept-go")).toHaveCount(0);
     await expect(page.getByTestId("accept-review-open")).toHaveCount(0);
   });
@@ -75,7 +82,8 @@ test.describe("live", () => {
     await busy(request);
     await selectRequest(page, "Zhuhai");
     const none = page.getByTestId("deal-no-reply");
-    await expect(none).toBeVisible();
+    // (The busy books' first picture read is the server's slow one, about nine seconds: the Overview says Loading until it is there.)
+    await expect(none).toBeVisible({ timeout: 45_000 });
     await expect(page.getByTestId("accept-review")).toHaveCount(0);
     // One outline button leads; nothing is filled until the review is open.
     const open = page.getByTestId("accept-review-open");
@@ -93,7 +101,7 @@ test.describe("live", () => {
     // The one filled button names the act; the decline is quiet beside it.
     const go = page.getByTestId("accept-go");
     await expect(go).toBeEnabled();
-    await expect(go).toHaveText("Accept as asked");
+    await expect(go).toHaveText("Accept their request");
     await expect(page.getByTestId("accept-decline")).toHaveText("Decline the request");
     expect(await go.evaluate((el) => getComputedStyle(el).backgroundColor), "the one filled button is the ink primary").toBe("rgb(23, 29, 30)");
     expect(await page.getByTestId("accept-decline").evaluate((el) => getComputedStyle(el).backgroundColor), "the decline is quiet").toBe("rgba(0, 0, 0, 0)");
@@ -101,6 +109,7 @@ test.describe("live", () => {
     // The server's own account of what ran, then the record: Agreed, with the agreement's receipt.
     await expect(page.getByTestId("deal-accepted-ran")).not.toBeEmpty();
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
+    await page.getByTestId("deal-tab-terms").click();
     await expect(page.getByTestId("deal-record")).toBeVisible();
     await expect(page.getByTestId("deal-state-chip")).toContainText("Agreed");
     await expect(page.getByTestId("accept-go")).toHaveCount(0);
@@ -134,13 +143,14 @@ test.describe("live", () => {
     // The Deals pane: the record's agreement line and the agreement receipt.
     await page.goto(`/deals?decision=${encodeURIComponent(decision)}`);
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
+    await page.getByTestId("deal-tab-terms").click();
     await clean(page.getByTestId("deal-agreement"), "the agreement line");
     await expect(page.getByTestId("deal-agreement")).toHaveText(/\S/);
     await expect(page.getByTestId("deal-agreement-receipt")).toContainText("In force.");
     await clean(page.getByTestId("deal-record"), "the record block");
     // The Agreements tab's row for it, and the section under the panes.
     await page.goto("/deals?tab=agreements");
-    await expect(page.getByTestId("queue-list")).toBeVisible();
+    await expect(page.getByTestId("queue-after-list").first()).toBeVisible();
     await clean(page.getByTestId("deals-queue"), "the Agreements tab");
     await clean(page.getByTestId("deals-agreements"), "the agreements section");
     // The decision record page.
@@ -188,7 +198,7 @@ test.describe("live", () => {
     });
   }
 
-  test("Home's selected deal card and the Customer page lead to the Deals pane with the review open on arrival, and the queue row says the server's own consequence", async ({ page, request }) => {
+  test("Home's deal row and the Customer page lead to the Deals pane with the review open on arrival, and the queue row says the server's own consequence", async ({ page, request }) => {
     await busy(request);
     const offer = await offerOfRow(request, "Zhuhai");
     const decision = `deal:${offer}`;
@@ -205,12 +215,14 @@ test.describe("live", () => {
     await primary.click();
     await expect(page.getByTestId("accept-review")).toBeVisible();
     await expect(page.getByTestId("accept-go")).toBeEnabled();
-    // Home: the selected deal card's primary.
-    await page.goto(`/?customer=BUYER-3&decision=${encodeURIComponent(decision)}`);
-    const card = page.getByTestId("deal-primary");
-    await expect(card).toHaveText("Review the request");
-    await expect(card).toHaveAttribute("href", /review=1/);
-    await card.click();
+    // Home: a deal row opens the deal on the Deals page (the Home keeps no deal card of its own), with the way back to the Home; the review opens from its one button.
+    await page.goto("/");
+    const row = page.getByTestId("home-worklist-row").filter({ hasText: "Zhuhai" }).first();
+    await expect(row.getByRole("link")).toHaveAttribute("href", `/deals?customer=BUYER-3&decision=${encodeURIComponent(decision)}&from=home`);
+    await row.getByRole("link").click();
+    await expect(page.getByTestId("deal-page")).toBeVisible();
+    await expect(page.getByTestId("queue-back")).toContainText("Back to Home");
+    await page.getByTestId("accept-review-open").click();
     await expect(page.getByTestId("accept-review")).toBeVisible();
   });
 

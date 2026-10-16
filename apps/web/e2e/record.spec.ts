@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
-import { checkedDeal, openCompare, openReview, runPlan, sendCounter, openOperatorTools } from "./helpers";
+import { backToDealsAndReturn, checkedDeal, demoMode, openCompare, openOperatorTools, openReview, runPlan, sendCounter } from "./helpers";
 
 /**
  * Wave 2 (map #65), mock mode: the pages read the durable decision record (ADR-0011). Each state is a recording of GET /decisions/{id} from the
@@ -34,6 +34,7 @@ async function advanceTo(page: Page, day: number) {
 }
 
 test("the steps follow the record: Response ready names the recommendation, a send moves it to Sent and Agreed", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("deal-pane")).toBeVisible();
@@ -48,8 +49,9 @@ test("the steps follow the record: Response ready names the recommendation, a se
   await expect(steps).toContainText("Counter ready");
   await expect(steps).not.toContainText("Agreed");
   // The inbox row says the record's state in the server's words (the inbox is one row until it is asked for).
-  await page.getByTestId("inbox-back").click();
+  await page.getByTestId("deal-tab-messages").click();
   await expect(page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01")).toContainText("Showing below");
+  await page.getByTestId("deal-tab-overview").click();
 
   await openReview(page);
   await sendCounter(page.locator("#counters"));
@@ -60,22 +62,22 @@ test("the steps follow the record: Response ready names the recommendation, a se
 });
 
 test("the send names its option, says the reply is simulated, and carries what was shown; Option B is reviewed on its own", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await checked(page);
   await openReview(page);
   const response = page.locator("#counters");
   const send = response.getByTestId("deal-send");
   await expect(send).toHaveText("Send Option A to Foshan");
   await expect(response.getByTestId("receipt-line-authorizes")).toContainText("FLOW records it as a proposed agreement that stands only if Foshan accepts.");
-  await expect(response.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥841.57 for the draw");
+  await expect(response.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥825.99 for the draw");
   await expect(response.getByTestId("deal-send-confirm-box")).toContainText("The buyer's reply is simulated");
-  await page.getByTestId("queue-review-close").click();
+  await backToDealsAndReturn(page);
   // Option B is a path of its own: picking it in the comparison makes it the reply under review, with its own send; Option A's gives way, never two at once.
   await openCompare(page);
+  await expect(page.getByTestId("deal-choice-cell-decides-reply").nth(1)).toContainText("Needs your approval");
   await page.locator('[data-testid^="deal-use-CTR-"]:visible').last().click();
-  await expect(page.getByTestId("queue-recommends")).toContainText("Option B");
-  await expect(page.getByTestId("queue-authority")).toContainText("Needs your approval");
-  await openReview(page);
-  await expect(page.getByRole("button", { name: "Send Option B to Foshan" })).toBeVisible();
+  await page.getByTestId("queue-review").waitFor();
+  await expect(page.getByRole("button", { name: "Approve and send Option B to Foshan" })).toBeVisible();
   await expect(page.getByTestId("deal-send")).toHaveCount(1);
   // Its own receipt, the server's block on Option B's priced response (not Option A's, and not words composed from the path): its own funding and its own authority.
   await expect(page.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥3,706.46 in addition");
@@ -84,6 +86,7 @@ test("the send names its option, says the reply is simulated, and carries what w
 
 for (const story of ["replaced", "moved"] as const) {
   test(`COUNTER_CHANGED, ${story === "moved" ? "the books moved" : "the verdict was replaced"}: nothing was sent, and Check again is the explicit step to a current proposal`, async ({ page }) => {
+    await demoMode(page); // the simulated send is the Demo's only
     await checked(page);
     await hook(page, "tl-mock-counter-changed", story);
     await openReview(page);
@@ -107,37 +110,42 @@ for (const story of ["replaced", "moved"] as const) {
 }
 
 test("day 34: the deal's steps say Fulfilled with the receipt and 'Early payment did not arrive' without it, never Agreed", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   const deal = await checked(page);
   await openReview(page);
   await sendCounter(page.locator("#counters"));
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await advanceTo(page, 34);
   await page.goto(deal);
+  // (The chip is the queue row's word when the server names one for it: the tracker's own state word.)
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "FULFILLED");
-  await expect(page.getByTestId("deal-state-chip")).toContainText("Fulfilled");
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Fulfilled");
 });
 
 test("day 34 without the receipt: the line and the agreements card say the early payment did not arrive", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await page.goto("/");
   await hook(page, "tl-mock-no-receipt", "1");
   const deal = await checked(page);
   await openReview(page);
   await sendCounter(page.locator("#counters"));
+  // The send has landed (the deal is agreed) before the clock moves.
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await advanceTo(page, 34);
   await page.goto(deal);
   const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toHaveAttribute("data-state", "MISSED");
-  await expect(page.getByTestId("deal-state-chip")).toContainText("Early payment did not arrive");
   await expect(steps).not.toContainText("Agreed");
   // A lapsed agreement stays on the page, with its word, instead of disappearing.
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Early payment did not arrive");
   await expect(page.locator("#commitments")).toContainText("Agreement expired");
   // The missed payment's card carries the two ways forward the record has: compare the funding options, and chase the payment.
+  await page.getByTestId("deal-tab-terms").click();
   const links = page.getByTestId("deal-left-links");
   await expect(links.getByRole("link", { name: "Compare your funding options" })).toHaveAttribute("href", /\/cash/);
   await expect(links.getByRole("button", { name: /Chase payment/ })).toBeVisible();
-  // The original ask is history: its cost, the most the owner could give and the first breach sit folded under one heading.
+  // The original ask is history: its cost, the most the owner could give and the first breach sit folded under one heading (on the Terms tab, with the record's account).
+  await page.getByTestId("deal-tab-terms").click();
   const original = page.getByTestId("deal-original");
   await expect(original.locator("> summary")).toHaveText("The original ask (not agreed)");
   await expect(original).not.toHaveAttribute("open", "");
@@ -147,6 +155,7 @@ test("day 34 without the receipt: the line and the agreements card say the early
 });
 
 test("the execution summary is the record's: the agreement in its words, what ran, what has landed", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await checked(page);
   await openReview(page);
   await sendCounter(page.locator("#counters"));
@@ -154,16 +163,16 @@ test("the execution summary is the record's: the agreement in its words, what ra
   // The Demo verdict page shares the card with Deals.
   await page.goto("/verdict");
   const summary = page.getByTestId("execution-summary");
-  await expect(summary.getByTestId("execution-text")).toContainText("Funding of ¥149,986.20 was requested and has landed.");
+  await expect(summary.getByTestId("execution-text")).toContainText("Funding of ¥147,210.00 was requested and has landed.");
   await expect(summary.getByTestId("execution-agreement")).toContainText("Agreed");
   await expect(summary.getByTestId("execution-settlement")).toContainText("Waiting for Foshan Home Retail Co. to pay");
-  await expect(summary.getByTestId("execution-funding")).toContainText("¥149,986.20 drawn on the Bank credit line");
+  await expect(summary.getByTestId("execution-funding")).toContainText("¥147,210.00 drawn on the Bank credit line");
   await expect(summary.getByTestId("execution-lots")).toContainText("Cash received today");
 });
 
 test("the approval card shows what was quoted, and once decided what happened and how it differs", async ({ page }) => {
   await advanceTo(page, 34);
-  await page.goto("/");
+  await page.goto("/cash");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   const card = page.locator("#approval-APR-000001");
@@ -213,15 +222,15 @@ test("a refused approval ends in the record's words: it could not run, no money 
 
 test("after the cure is approved, Home's strip says the funding is on its way; the approval links to its record; Activity links each row to its record", async ({ page }) => {
   await advanceTo(page, 34);
-  await page.goto("/");
+  await page.goto("/cash");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await page.locator("#approval-APR-000001").getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.locator("#approval-APR-000001").getByTestId("approval-decided-APR-000001")).toBeVisible();
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
-  // The strip's funding cell says what is on its way (from the server's recording of the approved cure).
-  await expect(page.getByTestId("home-kpi-funding-value")).toBeVisible();
-  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
+  // Where the cash comes from says what is on its way (from the server's recording of the approved cure); with nothing left to fund the card is the covered one.
+  await expect(page.getByTestId("home-mix")).toBeVisible();
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
   await page.goto("/approvals");
   await page.getByTestId("approval-record-APR-000001").click();
   await expect(page).toHaveURL(/\/decisions\/alert%3AALERT-RESERVE-42/);

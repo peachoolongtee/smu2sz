@@ -13,6 +13,26 @@ Deals, Customer, Activity, Demo or the tracker (the PC's). The one seam into Dea
 (§4). The Cash chart (§3.5) reuses the component round three is changing, so it is built LAST, after round three's chart lands
 on dev.
 
+## 0. Amended 16 Oct, after Dylan's redesign of Cash and Receivables landed on dev (a6de32a2)
+The brief was written against the pages of 14 Oct. Dylan's pages are the base now (handoff 19 §1); the brief applies to them:
+- **Receivables (§2)**: the customer list first is kept (it is Dylan's structure and the owner merged it); §2.1's three cards
+  stay on the list page; §2.2's table, lifecycle pill, tabs and `from` apply to the customer view (`?customer=`); §2.3's net
+  bar replaces the `<dl>` breakdown in `invoice-detail.tsx`; §2.4 (the reminder with its receipt and recorded event) and §2.5
+  (promised and received, last) stand. Dylan's reconciliation tiles live on Activity's Reconciliation tab; §2.5 does not
+  duplicate them: Receivables keeps the receipts-vs-promises rows, Activity keeps the tiles, and each links to the other.
+- **Cash (§3)**: Dylan already put the plan before the chart at every width (§3 order: done). §3.1 adds the lowest point's
+  cause and the reserve pill to his `CashFigures`; §3.2 keeps his run bar and adds the three-statement review on the run and
+  the quiet "Compare this scenario"; §3.3 (compare, read-only, `GET /cash/scenarios`, `?scenario=`) is new; §3.4 splits his
+  "Your funding" list into committed facilities and conditional options (a buyer's early payment is never "available");
+  §3.5 (the full timeline) is last and is the only part that waits on the chart component. His "Try other terms" and "More
+  funding" cards stay where he put them. The anchors of §3.4 are added and #163's dangling `#cash-options` is fixed first.
+- **Home words and links (§5)**: the recommendation card no longer runs the plan (it goes to Cash), so its buttons link to
+  `#cash-plan`; the owed-by-customer donut and the worklist are unchanged.
+- **The design of record** for both pages is dev as merged (the No Rail Rule with the alarm-card exception, the section hue
+  and backdrop, `home-f` on every main); the brief's "Home's cards" means the cards as Dylan restyled them.
+- **Rules**: `docs/agents/integration.md` applies (small branches from dev, the full mock suite before hand-in, the lead
+  merges). The Cash chart (§3.5) no longer waits on round three (merged); it waits only on its own design.
+
 ## 1. What each page is for
 | | Question | Decision it owns |
 |---|---|---|

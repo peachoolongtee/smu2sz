@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, proseOf, test } from "./fixtures";
-import { openReview, resetBooks, runPlan, sendCounter, openOperatorTools } from "./helpers";
+import { demoMode, openOperatorTools, openReview, resetBooks, runPlan, sendCounter, switchMode } from "./helpers";
 
 /**
  * Contract ingestion (brief 03) in the redesigned UI. The demo opens on the three demo documents read by the agent and
@@ -37,9 +37,13 @@ async function agreeFoshanDeal(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  // The simulated send is the Demo's only: the deal is agreed in Demo mode, and the page goes back to the mode it was in.
+  const mode = await page.evaluate(() => JSON.parse(localStorage.getItem("tl-mode") ?? '{"mode":"business"}').mode as "demo" | "business");
+  if (mode !== "demo") await switchMode(page, "demo");
   await openReview(page);
   await sendCounter(page);
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A");
+  if (mode !== "demo") await switchMode(page, mode);
 }
 
 /** The Business header keeps the language switch and sign-out inside the account menu; open it when it is there. */
@@ -58,9 +62,14 @@ test("Deals: no summary before a deal is agreed; once the buyer agrees, the conf
   await expect(page.getByTestId("next-step")).toHaveCount(0);
   await expect(page.locator("#deal-summary")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Deal summary" })).toHaveCount(0);
+  // The agreements in force are under the list; the agreed deal's own page is the tracker, and All deals brings the list back.
+  await page.getByTestId("deal-back-all").click();
   const agreements = page.locator("#commitments");
   await expect(agreements.getByRole("heading", { name: "Your agreements", level: 2 })).toBeVisible();
   const deal = agreements.getByTestId("deal-summary-BUYER-1");
+  // Each agreement is a folded row; opened, it shows its terms and the deal summary (open them all: which row holds this buyer's summary depends on the books).
+  await expect(agreements.getByTestId("commitment-toggle").first()).toBeVisible();
+  for (const toggle of await agreements.getByTestId("commitment-toggle").all()) await toggle.click();
   await expect(deal).toBeVisible();
   // The headline, two to four facts and one action are visible; the rest is behind one fold.
   await expect(deal.getByTestId("deal-pills")).toContainText("On track");
@@ -94,9 +103,10 @@ test("Deals: no summary before a deal is agreed; once the buyer agrees, the conf
   await expect(page).toHaveURL(/\/documents\?id=DOC-000001$/);
   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
-  // A detail page of Deals: the way back names it.
-  await expect(page.getByTestId("back-to-deals")).toHaveText("Back to Deals");
-  await page.getByTestId("back-to-deals").click();
+  // Documents is a section of its own now ("Attach deals" in the rail), not a detail page of Deals: the rail names where the owner is, and Deals is one press away.
+  await expect(page.getByTestId("back-to-deals")).toHaveCount(0);
+  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Attach deals", exact: true })).toHaveAttribute("aria-current", "page");
+  await page.getByTestId("nav-pills").getByRole("link", { name: "Deals", exact: true }).click();
   await expect(page).toHaveURL(/\/deals$/);
 });
 
@@ -250,16 +260,17 @@ test("day 34: the deal summary tells the story and points at the approval", asyn
   await expect(deal.getByTestId("deal-stages").locator('li[data-state="now"]')).toContainText("Collecting");
   const rcvA = deal.getByTestId("deal-invoice-RCV-A");
   await expect(rcvA).toHaveAttribute("data-status", "LATE");
-  await expect(rcvA).toContainText("¥162,800.00");
+  await expect(rcvA).toContainText("¥160,000.00");
   await expect(rcvA).toContainText("2 days late");
-  await expect(deal.getByTestId("deal-changes")).toContainText("¥255,013.80 received on the ¥420,000.00 invoice to Foshan Home Retail Co.");
-  await expect(deal.getByTestId("deal-next")).toContainText("Chase the ¥162,800.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago.");
+  await expect(deal.getByTestId("deal-changes")).toContainText("¥257,790.00 received on the ¥420,000.00 invoice to Foshan Home Retail Co.");
+  await expect(deal.getByTestId("deal-next")).toContainText("Chase the ¥160,000.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago.");
 
   // The owner lets the agent fix the reserve alert from the home: the fix waits for approval, and the summary says so.
-  await page.goto("/");
+  await page.goto("/cash");
   await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();
   await page.goto("/deals");
+  await page.locator("#commitments").getByTestId("commitment-toggle").first().click();
   await expect(deal.getByTestId("deal-pills")).toContainText("1 approval waiting");
   await expect(deal.getByTestId("deal-invoice-RI:BUYER-1:2")).toHaveAttribute("data-status", "ADVANCE_WAITING");
   await expect(deal.getByTestId("deal-next")).toContainText("Review the ¥200,000.00 advance on the invoice issued 32 days ago");
@@ -268,10 +279,12 @@ test("day 34: the deal summary tells the story and points at the approval", asyn
 });
 
 test("Chinese: the deal summary and the review screen", async ({ page }, testInfo) => {
+  await demoMode(page); // the simulated send is the Demo's only
   test.skip(testInfo.project.name === "live", "the strings are the same in both modes; checked once");
   await agreeFoshanDeal(page);
   await openAccountMenu(page);
   await page.getByLabel("中文").check();
+  await page.getByTestId("deal-back-all").click();
   await expect(page.locator("#commitments").getByRole("heading", { name: "您的协议", level: 2 })).toBeVisible();
   await expect(page.getByTestId("deal-summary-BUYER-1")).toContainText("合同约定");
   await expect(page.getByTestId("deal-summary-BUYER-1")).toContainText("由代理读取，经您确认");

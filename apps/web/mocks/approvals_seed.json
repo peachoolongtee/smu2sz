@@ -144,6 +144,9 @@
         "value_text": "Nothing runs; the request is closed."
       }
     ],
+    "schedule_title": null,
+    "schedule_rows": null,
+    "schedule_note": null,
     "deadline_text": null,
     "deadline_day": null,
     "title_text": "Apply for ¥600,000 in equipment financing",
@@ -257,6 +260,9 @@
       }
     ],
     "summary_rows": null,
+    "schedule_title": null,
+    "schedule_rows": null,
+    "schedule_note": null,
     "deadline_text": null,
     "deadline_day": null,
     "title_text": "Apply for ¥600,000 in equipment financing",
@@ -355,6 +361,9 @@
     "terms_rows": [],
     "lifecycle": null,
     "summary_rows": null,
+    "schedule_title": null,
+    "schedule_rows": null,
+    "schedule_note": null,
     "deadline_text": null,
     "deadline_day": null,
     "title_text": "Apply for ¥600,000 in equipment financing",

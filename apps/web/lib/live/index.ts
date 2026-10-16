@@ -13,6 +13,17 @@ import { serverScenario } from "../selection";
 import type {
   AcceptRequest,
   AcceptResult,
+  BuyerAcceptedRequest,
+  BuyerAcceptedResult,
+  BuyerDeclinedRequest,
+  BuyerDeclinedResult,
+  BuyerMessageView,
+  BuyerReplyRequest,
+  BuyerReplyResult,
+  OfferedRequest,
+  OfferedResult,
+  WithdrawRequest,
+  WithdrawResult,
   DeclineResult,
   ActivityView,
   DemoRestoreResult,
@@ -28,10 +39,22 @@ import type {
   BorrowerFileView,
   BuyerExposureView,
   ChaseView,
+  AddToMenuResult,
+  BuyEstimate,
+  BuySideEvaluationView,
+  BuyTimeline,
   CapexApplyRequest,
   CapexApplyResult,
+  CapexPlansRequest,
+  CapexPlansView,
   CapexRequest,
   CapexView,
+  EligibilityView,
+  FinanceHealthView,
+  HealthInputsRequest,
+  PurchaseCommitResult,
+  PurchaseRow,
+  PurchasesView,
   CompareView,
   DealsContext,
   EnvelopeView,
@@ -58,6 +81,7 @@ import type {
   NlRequest,
   NlResponse,
   OfferPictureView,
+  PictureScenario,
   OfferView,
   OperationView,
   PlanRequest,
@@ -77,6 +101,11 @@ import type {
   WhatIfUnscoped,
   WorklistView,
   ApprovalDecision,
+  SetupDocument,
+  SetupDraft,
+  SetupOpenResult,
+  SetupPreview,
+  SetupStatus,
 } from "../types";
 import * as approvals from "./approvals";
 import * as decisions from "./decisions";
@@ -163,6 +192,19 @@ export const live = {
   acceptOffer: (offerId: string, req: AcceptRequest) => http<AcceptResult>("POST", `/offers/${enc(offerId)}/accept`, { body: req }),
   declineOffer: (offerId: string, req: AcceptRequest) => http<DeclineResult>("POST", `/offers/${enc(offerId)}/decline`, { body: req }),
 
+  /** The message to the buyer for one counter (ADR-0011 addendum): `lang` is the buyer's language (the message), `uiLang` the page's (every word around it). */
+  getBuyerMessage: (offerId: string, counterId: string, lang: "en" | "zh", uiLang: "en" | "zh") =>
+    http<BuyerMessageView>("GET", `/offers/${enc(offerId)}/counters/${enc(counterId)}/message?lang=${lang}&ui_lang=${uiLang}`),
+  /** "I've sent it to the buyer": bound to the verdict, the books and the exact message the owner copied; a 409 refuses with the server's words and records nothing. */
+  markOffered: (offerId: string, counterId: string, req: OfferedRequest) => http<OfferedResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/offered`, { body: req }),
+  buyerAccepted: (offerId: string, counterId: string, req: BuyerAcceptedRequest) =>
+    http<BuyerAcceptedResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/buyer-accepted`, { body: req }),
+  withdrawOffered: (offerId: string, counterId: string, req: WithdrawRequest) =>
+    http<WithdrawResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/offered/withdraw`, { body: req }),
+  buyerDeclined: (offerId: string, counterId: string, req: BuyerDeclinedRequest) =>
+    http<BuyerDeclinedResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/buyer-declined`, { body: req }),
+  buyerReply: (offerId: string, req: BuyerReplyRequest) => http<BuyerReplyResult>("POST", `/offers/${enc(offerId)}/buyer-reply`, { body: req }),
+
   planFunding: (req: PlanRequest, lang: "en" | "zh" = "en") => http<FundingView>("POST", lang === "zh" ? "/router/plan?lang=zh" : "/router/plan", { body: req }),
 
   getTrajectory: (mode: Mode, verdict?: VerdictView | null): Promise<TrajectoryView> => trajectory.getTrajectory(mode, verdict),
@@ -234,6 +276,8 @@ export const live = {
     nullWhenOff(() => http<EnvelopeView>("GET", `/buyers/${enc(buyerId)}/envelope?lang=${lang}${zone ? "&zone=1" : ""}`)),
 
   /** GET /offers/{offer_id}/exposure (flag `exposure`). Null when the feature is off, the offer is unknown or the route is absent. One read carries every path. */
+  /** GET /offers/{id}/scenarios: the Cash impact tab's Business consequences (empty with the exposure off); its own read, not the picture's. */
+  getOfferScenarios: async (offerId: string, lang: "en" | "zh"): Promise<PictureScenario[]> => (await http<{ scenarios: PictureScenario[] }>("GET", `/offers/${enc(offerId)}/scenarios?lang=${lang}`)).scenarios ?? [],
   getOfferExposure: (offerId: string, lang: "en" | "zh") => nullWhenOff(() => http<ExposureView>("GET", `/offers/${enc(offerId)}/exposure?lang=${lang}`)),
 
   /** GET /offers/{offer_id}/compare (flag `exposure`). Null when the feature is off, the route is absent or the offer has no verdict yet (404). */
@@ -305,6 +349,26 @@ export const live = {
     }),
   getContractFixtures: async (): Promise<ContractFixture[]> => (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/contracts")).contracts,
 
+  // the buy side (ADR-0013, FEATURE_CAPEX_CONTRACTS): every route needs the owner token; the responses already have the page's shape
+  getPurchases: (lang: "en" | "zh" = "en") => http<PurchasesView>("GET", `/purchases${lang === "zh" ? "?lang=zh" : ""}`),
+  getPurchase: async (id: string, lang: "en" | "zh" = "en"): Promise<PurchaseRow> =>
+    (await http<{ purchase: PurchaseRow }>("GET", `/purchases/${enc(id)}${lang === "zh" ? "?lang=zh" : ""}`)).purchase,
+  getCapexContractFixtures: async (): Promise<ContractFixture[]> =>
+    (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/capex-contracts")).contracts,
+  evaluateContract: (id: string, timeline: BuyTimeline, estimate: BuyEstimate = {}) =>
+    http<BuySideEvaluationView>("POST", `/capex/contracts/${enc(id)}/evaluate`, { body: { timeline, estimate } }),
+  commitContract: (id: string, timeline: BuyTimeline, scheduleHash: string, takeEarlyPay: boolean) =>
+    http<PurchaseCommitResult>("POST", `/capex/contracts/${enc(id)}/commit`, {
+      body: { timeline, schedule_hash: scheduleHash, take_early_pay: takeEarlyPay },
+    }),
+  getFinanceHealth: (inputs: HealthInputsRequest | null = null) =>
+    inputs ? http<FinanceHealthView>("POST", "/finance/health", { body: { inputs } }) : http<FinanceHealthView>("GET", "/finance/health"),
+  getEligibility: (inputs: { months_trading?: number | null; amount_fen?: number | null } | null = null) =>
+    inputs ? http<EligibilityView>("POST", "/lending/eligibility", { body: { inputs } }) : http<EligibilityView>("GET", "/lending/eligibility"),
+  addProductToMenu: (productId: string, amountFen: number | null = null) =>
+    http<AddToMenuResult>("POST", `/lending/products/${enc(productId)}/add-to-menu`, { body: amountFen ? { amount_fen: amountFen } : {} }),
+  runCapexPlans: (req: CapexPlansRequest) => http<CapexPlansView>("POST", "/capex/plans", { body: req }),
+
   /** GET /nav/counts: numbers only (deals needing the owner, approvals pending, late invoices). */
   getNavCounts: (lang: "en" | "zh" = "en") => http<NavCounts>("GET", `/nav/counts?lang=${lang}`),
   /** GET /offers/{id}/picture: the offer's cash line as asked and of each reply ready. */
@@ -319,6 +383,16 @@ export const live = {
 
   saveInput: (id: string | null, body: InputSaveRequest, lang: "en" | "zh") =>
     http<InputSaveResult>("POST", `${id === null ? "/firm/inputs" : `/buyers/${enc(id)}/inputs`}?lang=${lang}`, { body }),
+
+  // set up your books (ADR-0013)
+  getSetupStatus: (lang: "en" | "zh") => http<SetupStatus>("GET", `/setup/status?lang=${lang}`, { silent: true }),
+  getSetupDocuments: async (startDate: string, lang: "en" | "zh"): Promise<SetupDocument[]> =>
+    (await http<{ documents: SetupDocument[] }>("GET", `/setup/documents?lang=${lang}${startDate ? `&start_date=${enc(startDate)}` : ""}`)).documents,
+  readSetupDocument: async (body: Record<string, unknown>, lang: "en" | "zh"): Promise<SetupDocument> =>
+    (await http<{ document: SetupDocument }>("POST", `/setup/documents?lang=${lang}`, { body, timeoutMs: 60_000 })).document,
+  previewSetup: (draft: SetupDraft, lang: "en" | "zh") => http<SetupPreview>("POST", `/setup/preview?lang=${lang}`, { body: { draft } }),
+  openBooks: (draft: SetupDraft, password: string, lang: "en" | "zh") =>
+    http<SetupOpenResult>("POST", `/setup/open?lang=${lang}`, { body: { draft, password }, timeoutMs: 60_000, silent: true }),
 
   /** Owner action: close a counterparty's circuit breaker. The server checks X-Owner-Token. */
   resetCircuit: async (counterpartyId: string): Promise<{ status: string; message: string }> => {

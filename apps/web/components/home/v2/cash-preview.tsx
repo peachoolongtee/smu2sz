@@ -15,6 +15,21 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
  */
 export type LineStyle = "base" | "plan" | "option" | "request";
 
+/**
+ * A cash move drawn on the chart as a numbered marker (the expanded forecast): its day, its number, money out or in, whether it sits on FLOW's plan line (a leg that lands
+ * only if the plan runs) or on today's, and the words its callout says, every one the server's.
+ */
+export interface ChartMarker {
+  day: number;
+  n: number;
+  out: boolean;
+  onPlan: boolean;
+  when: string;
+  label: string;
+  amount: string;
+  explain?: string | null;
+}
+
 export interface PreviewLine {
   key: string;
   label: string;
@@ -40,13 +55,14 @@ export interface InspectorWords {
 
 const STROKE: Record<LineStyle, { cls: string; width: number; dash?: string }> = {
   base: { cls: "stroke-chart-base", width: 2.25 },
-  plan: { cls: "stroke-ink-3", width: 1.5, dash: "5 4" },
+  // FLOW's plan is the better line: solid, bolder and in the agreed green.
+  plan: { cls: "stroke-ok-solid", width: 3.25 },
   option: { cls: "stroke-brand-600", width: 2.25 },
   request: { cls: "stroke-ink-3", width: 2.25 },
 };
 const LEGEND_LINE: Record<LineStyle | "below" | "reserve", string> = {
   base: "border-t-[2.25px] border-chart-base",
-  plan: "border-t-2 border-dashed border-ink-3",
+  plan: "border-t-[3.25px] border-ok-solid",
   option: "border-t-[2.25px] border-brand-600",
   request: "border-t-[2.25px] border-ink-3",
   below: "border-t-[2.25px] border-bad-solid",
@@ -106,6 +122,8 @@ export function CashPreview({
   headExtra,
   chosenDay,
   onChoose,
+  draw = false,
+  markers,
 }: {
   cash: HomeView["cash"];
   today: number;
@@ -128,6 +146,10 @@ export function CashPreview({
   /** The inspector strip is open or closed (a press on the lowest point, `?inspect=1`); undefined keeps it always open (the deal's chart). */
   inspectOpen?: boolean;
   onInspect?: (open: boolean) => void;
+  /** The lines draw themselves in once, on mount (the expanded forecast): the current line first, then FLOW's plan. */
+  draw?: boolean;
+  /** The cash moves as numbered markers on their line: a pointer or focus on one opens its callout, a click keeps it open and moves the chart's day there. */
+  markers?: ChartMarker[];
   testId?: string;
   chartTestId?: string;
   id?: string;
@@ -154,6 +176,9 @@ export function CashPreview({
   };
   const [hover, setHover] = useState<number | null>(null);
   const [chosenWindow, setChosenWindow] = useState<number | null>(null);
+  // The marker whose callout is open: the one under the pointer or keyboard, else the one the owner clicked.
+  const [pinned, setPinned] = useState<number | null>(null);
+  const [peek, setPeek] = useState<number | null>(null);
   const floor = cash.floor_fen;
 
   const base = cash.picture_days || 30;
@@ -287,12 +312,23 @@ export function CashPreview({
             {days.includes(day) || hover !== null ? <line x1={cx} x2={cx} y1={pt} y2={pb} className="stroke-ink-3" strokeWidth={1} data-testid="home-cursor" data-day={day} /> : null}
             {segs.map((l) => (
               <g key={l.key}>
-                <path data-testid={`home-line-${l.style === "base" ? "plan" : l.style === "plan" ? "counter" : l.style}`} d={pathOf(l.segs)} fill="none" strokeLinejoin="miter" strokeDasharray={STROKE[l.style].dash} strokeWidth={STROKE[l.style].width} className={STROKE[l.style].cls} />
-                {l.style === "base" || l.style === "request" ? <path d={redPath(l.segs)} fill="none" strokeLinejoin="miter" strokeWidth={2.25} className="stroke-bad-solid" data-testid={`hv2-below-${l.style}`} /> : null}
+                <path
+                  data-testid={`home-line-${l.style === "base" ? "plan" : l.style === "plan" ? "counter" : l.style}`}
+                  d={pathOf(l.segs)}
+                  pathLength={draw ? 1 : undefined}
+                  fill="none"
+                  strokeLinejoin="miter"
+                  strokeDasharray={draw ? undefined : STROKE[l.style].dash}
+                  strokeWidth={STROKE[l.style].width}
+                  className={`${STROKE[l.style].cls} ${draw ? `picture-draw ${l.style === "plan" ? "picture-draw-second" : ""}` : ""}`}
+                />
+                {l.style === "base" || l.style === "request" ? (
+                  <path d={redPath(l.segs)} pathLength={draw ? 1 : undefined} fill="none" strokeLinejoin="miter" strokeWidth={2.25} className={`stroke-bad-solid ${draw ? "picture-draw" : ""}`} data-testid={`hv2-below-${l.style}`} />
+                ) : null}
               </g>
             ))}
             {segs.map((l) => (
-              <circle key={`dot-${l.key}`} cx={cx} cy={yOf(valueAt(l.segs, day))} r={4.5} strokeWidth={2} className={`stroke-surface ${l.style === "plan" ? "fill-ink-3" : l.style === "request" ? "fill-ink-3" : "fill-brand-600"}`} data-testid="home-dot" />
+              <circle key={`dot-${l.key}`} cx={cx} cy={yOf(valueAt(l.segs, day))} r={4.5} strokeWidth={2} className={`stroke-surface ${l.style === "plan" ? "fill-ok-solid" : l.style === "request" ? "fill-ink-3" : "fill-brand-600"}`} data-testid="home-dot" />
             ))}
             {lowest !== null ? <circle cx={xOf(lowest)} cy={yOf(valueAt(mainSegs, lowest))} r={6} strokeWidth={2.25} className="fill-surface stroke-bad-solid" data-testid="home-lowest-mark" /> : null}
             {xTicks.map((d, i) => (
@@ -302,6 +338,77 @@ export function CashPreview({
             ))}
           </svg>
         ) : null}
+        {/* The cash moves: a numbered marker on its line (red for money out, green for in); the callout says what happens that day and why. */}
+        {W > 0 && markers?.length
+          ? markers
+              .filter((m) => m.day >= today && m.day <= end)
+              .map((m) => {
+                const line = m.onPlan ? (segs.find((x) => x.style === "plan")?.segs ?? mainSegs) : mainSegs;
+                const x = Math.min(Math.max(xOf(m.day), 12), W - 12);
+                const y = yOf(valueAt(line, m.day));
+                const on = pinned === m.day;
+                const lit = on || peek === m.day;
+                // On a phone's narrow chart the markers sit too close for a finger: a drawing (as on Cash), the moves read in the list beside it and on Cash & funding.
+                const drawing = W < 440;
+                return (
+                  <button
+                    key={m.day}
+                    type="button"
+                    aria-hidden={drawing || undefined}
+                    tabIndex={drawing ? -1 : undefined}
+                    aria-pressed={on}
+                    aria-label={`${m.n}. ${m.when}: ${m.label} ${m.amount}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPinned(on ? null : m.day);
+                      setChosen(m.day);
+                    }}
+                    onPointerEnter={() => setPeek(m.day)}
+                    onPointerLeave={() => setPeek(null)}
+                    onFocus={() => setPeek(m.day)}
+                    onBlur={() => setPeek(null)}
+                    className={`${drawing ? "pointer-events-none" : "hit"} motion-press absolute z-10 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill border-2 text-[13px] font-bold leading-none tabular-nums shadow-(--shadow-f) transition-transform duration-(--dur-fast) hover:scale-110 ${
+                      lit ? (m.out ? "border-bad-solid bg-bad-solid text-white" : "border-ok-solid bg-ok-solid text-white") : m.out ? "border-bad-solid bg-card text-bad-fg" : "border-ok-solid bg-card text-ok-fg"
+                    } ${draw ? "picture-fade" : ""}`}
+                    style={{ left: x, top: y, ...(draw ? { animationDelay: "900ms" } : {}) }}
+                    data-testid={`hv2-marker-${m.n}`}
+                    data-day={m.day}
+                  >
+                    {m.n}
+                  </button>
+                );
+              })
+          : null}
+        {W > 0 && markers?.length
+          ? (() => {
+              const m = markers.find((x) => x.day === (peek ?? pinned));
+              if (!m) return null;
+              const line = m.onPlan ? (segs.find((x) => x.style === "plan")?.segs ?? mainSegs) : mainSegs;
+              const x = xOf(m.day);
+              const y = yOf(valueAt(line, m.day));
+              const width = Math.min(300, W - 8);
+              const left = Math.min(Math.max(x - width / 2, 4), W - width - 4);
+              const above = y > 150;
+              return (
+                <div
+                  role="status"
+                  className="motion-pop pointer-events-none absolute z-20 rounded-tile border border-line bg-card p-3 text-sm shadow-(--shadow-lift)"
+                  style={{ left, width, ...(above ? { bottom: H - y + 18 } : { top: y + 18 }) }}
+                  data-testid="hv2-marker-callout"
+                  data-day={m.day}
+                >
+                  <p className="text-supporting font-semibold text-ink-3 first-letter:uppercase">
+                    {m.n} · {m.when}
+                  </p>
+                  <p className="mt-0.5 flex items-baseline justify-between gap-3">
+                    <span className="font-semibold text-ink first-letter:uppercase">{m.label}</span>
+                    <strong className={`shrink-0 tabular-nums ${m.out ? "text-bad-fg" : "text-ok-fg"}`}>{m.amount}</strong>
+                  </p>
+                  {m.explain ? <p className="mt-1.5 border-t border-line pt-1.5 text-supporting text-ink-2">{m.explain}</p> : null}
+                </div>
+              );
+            })()
+          : null}
         {lowest !== null && W > 0 ? (
           <button
             type="button"

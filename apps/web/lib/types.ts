@@ -1038,6 +1038,250 @@ export interface AcceptRefusedDetail {
   message_when?: string | null;
 }
 
+// ------------------------------------------------------------------ the message the owner sends the buyer outside FLOW (ADR-0011 addendum)
+
+/**
+ * GET /offers/{offer_id}/counters/{counter_id}/message?lang=en|zh: the message for one counter of the latest verdict, written in `lang`. The words beside it (`notice_text`, the
+ * labels, `blocked.text`, `provenance.text`, `valid_until_date`) are in that language too, so the page reads it twice when the buyer's language is not the page's: the text and its hash
+ * from the buyer's read, everything else from the page's. `text` is null when FLOW prepares none (`blocked` says why). `offered` is the record that the owner marked it sent.
+ */
+export interface BuyerMessageView {
+  offer_id: string;
+  decision_id: string;
+  verdict_id: string;
+  counter_id: string;
+  counter_label_when: string | null;
+  state_version: number;
+  counterparty_id: string;
+  buyer_name: string;
+  lang: "en" | "zh";
+  /** The language every word around the message is in (`ui_lang` of the read: the page's). */
+  ui_lang?: "en" | "zh";
+  text: string | null;
+  message_hash: string | null;
+  terms_hash: string;
+  template_version: string;
+  copyable: boolean;
+  blocked: { code: BuyerMessageBlock; text: string } | null;
+  valid_until_day: Day;
+  valid_until_when: string;
+  valid_until_date: string;
+  provenance: { via: string | null; text: string; /** The sender is known (the owner, the agent, the buyer's own key or a pasted reply). */ verified?: boolean };
+  /** What the owner reads beside the message, in the offer picture's words: the reply's terms against the ask, its cost, who decides it. Null when the picture has no such reply. */
+  review?: OutboundReview | null;
+  /** The buyer's languages the message can be written in, labelled in the page's language. */
+  languages?: { code: "en" | "zh"; label: string }[];
+  send_title_text?: string;
+  /** Round three: how the message goes out (today always by hand: `kind` "manual", "Manual sending · No channel connected"). */
+  channel?: { kind: "manual" | string; label: string; text: string | null } | null;
+  /** Round three: whose authority the reply goes out under ("Within your mandate…"). */
+  authority_text?: string | null;
+  /** Round three: the copy's outcome and the way out, in the page's language. */
+  copied_text?: string;
+  copy_failed_text?: string;
+  back_label?: string;
+  offered: { recorded: true; lang: "en" | "zh"; message_hash: string; valid_until_day: Day; valid_until_when: string; same_message: boolean } | null;
+  notice_text: string;
+  copy_label: string;
+  mark_sent_label: string;
+  mark_sent_effect_text: string;
+  accepted_label: string;
+  reply_label: string;
+}
+
+/** The reply's terms against the ask, its cost and who decides it: the offer picture's own words for one reply (`review` of the message read; `actions.accept.review` of the record). */
+export interface OutboundReview {
+  terms: PathTerm[] | null;
+  cost_display: string | null;
+  cost_note: string | null;
+  decides_text: string | null;
+  authority: string | null;
+  authority_text: string | null;
+  needs_owner: boolean | null;
+  /** What is funded if the buyer refuses (the picture's `if_refused_text`); round three removed it. */
+  if_declined_text?: string | null;
+  /** Round three: the cost in one sentence ("Estimated one-time cost: ¥3,027.77"). */
+  cost_text?: string | null;
+}
+
+/** A day on the record, in three forms: the day number, the distance from today ("in 2 days") and the calendar date. */
+export interface RecordDay {
+  day: Day;
+  when: string;
+  date: string;
+}
+
+/** One line of a deal's history (`history` of the record), oldest first: what happened, on which day, in the server's words, with its tone. */
+export interface DealHistoryEntry extends RecordDay {
+  /** Round three: who did it (the buyer, FLOW, the owner, the simulated buyer). */
+  source?: "buyer" | "flow" | "owner" | "simulator" | string;
+  kind: "received" | "checked" | "simulated" | "offered" | "accepted" | "countered" | "declined" | "no_answer" | "accepted_as_asked" | string;
+  text: string;
+  tone: "neutral" | "waiting" | "ok" | string;
+}
+
+export type OutboundAnswer = "accepted" | "countered" | "declined" | "no_answer" | "closed";
+
+/**
+ * `outbound` of the record: the offer the owner sent outside FLOW and what came of it. While the buyer has not answered (`answer` null) it carries the waiting words, the progress
+ * toward the day it closes and the three answers the owner can record (`actions`); once answered, the ending's title, text and links.
+ */
+export interface OutboundView {
+  counter_id: string;
+  verdict_id: string;
+  label_text: string | null;
+  lang: "en" | "zh";
+  message_hash: string;
+  sent: RecordDay;
+  closes: RecordDay;
+  terms: string[];
+  /** The terms section's heading: "What you offered" while waiting, "What was agreed" once accepted, "What you offered (not agreed)" once it ended without agreement. */
+  terms_title_text?: string | null;
+  /** The message as it was sent, when re-rendering it gives the very message (`message_same`); else null. */
+  message_text: string | null;
+  message_same: boolean;
+  sent_text: string;
+  answer: OutboundAnswer | null;
+  tone: "waiting" | "ok" | "neutral" | string;
+  title_text: string;
+  text: string;
+  closes_text?: string;
+  /** From the day it was sent (0) to the day it closes (1). */
+  progress?: number;
+  answered?: RecordDay;
+  reason_code?: string | null;
+  reason_text?: string | null;
+  reply_quote?: string | null;
+  /** Round three: the waiting one-liner with its provenance ("Option A · marked sent by you on 1 Oct · FLOW cannot confirm delivery · expires 3 Oct (in 2 days)"). */
+  status_text?: string | null;
+  /** Round three, accepted: who recorded it and from what, the buyer's words when pasted, and what follows (sentences). */
+  provenance_text?: string | null;
+  evidence_quote?: string | null;
+  consequences_title_text?: string | null;
+  consequences?: string[] | null;
+  /** Round three, countered: our last offer against their reply, term by term, and where their reply stands now. */
+  changes?: { key: string; label: string; ours_text: string | null; theirs_text: string | null; changed: boolean }[] | null;
+  reply_state_text?: string | null;
+  links: { label: string; href: string; primary?: boolean }[];
+  actions: {
+    question_text: string;
+    /** Round three: the waiting step's two buttons. */
+    record_label?: string;
+    view_message_label?: string;
+    accept: {
+      label: string;
+      hint_text: string;
+      confirm_label: string;
+      terms: string[];
+      review: OutboundReview | null;
+      authority_text: string | null;
+      /** Round three: the confirmation's title, what recording it binds, and the optional evidence box. */
+      title_text?: string | null;
+      binding_text?: string | null;
+      evidence_label?: string | null;
+      evidence_placeholder?: string | null;
+      evidence_hint_text?: string | null;
+    };
+    counter: { label: string; hint_text: string; confirm_label: string; placeholder_text: string; effect_text: string };
+    /** Round three: the buyer's answer is unclear or a question: pasted like a counter, read as a request of its own. */
+    unclear?: { label: string; hint_text: string; confirm_label: string; placeholder_text: string; effect_text: string } | null;
+    /** Round three: "I marked it sent by mistake". */
+    withdraw?: { label: string; confirm_label: string; effect_text: string } | null;
+    decline: { label: string; hint_text: string; confirm_label: string; reasons_label_text: string; reasons: { code: DeclineReason; text: string }[]; effect_text: string };
+  } | null;
+}
+
+export type DeclineReason = "DISCOUNT_TOO_LOW" | "WANTED_LONGER_TERMS" | "NO_LONGER_NEEDED" | "NO_REASON" | string;
+
+/** POST .../buyer-declined. */
+export interface BuyerDeclinedRequest {
+  verdict_id: string;
+  message_hash: string;
+  reason: DeclineReason;
+}
+
+export interface BuyerDeclinedResult {
+  decision: DecisionView;
+  status: "declined";
+}
+
+/** Why FLOW prepares no message for a counter. */
+export type BuyerMessageBlock = "UNVERIFIED_SENDER" | "NOT_SENDABLE" | "NO_WORDING" | "OUTBOUND_BLOCKED" | "WINDOW_PASSED";
+
+/** POST .../offered: what the owner was shown (the verdict, the books' version, the message's hash) and the buyer's language the message was written in. */
+export interface OfferedRequest {
+  verdict_id: string;
+  state_version: number;
+  message_hash: string;
+  lang: "en" | "zh";
+}
+
+/** POST .../buyer-accepted: the offered counter the owner names, by the message they sent. */
+export interface BuyerAcceptedRequest {
+  verdict_id: string;
+  state_version: number;
+  message_hash: string;
+  /** Round three: the buyer's message as the owner pasted it, as evidence (at most 4000 characters). */
+  evidence_text?: string;
+}
+
+/** Round three: POST .../offered/withdraw: the owner marked it sent by mistake; the deal is back to a counter ready (the history keeps both events). */
+export interface WithdrawRequest {
+  verdict_id: string;
+  message_hash: string;
+}
+
+export interface WithdrawResult {
+  decision: DecisionView;
+  status: "withdrawn";
+  message_when: string;
+}
+
+/** POST /offers/{id}/buyer-reply: the buyer's reply as the owner pasted it (at most 4000 characters). */
+export interface BuyerReplyRequest {
+  verdict_id: string;
+  counter_id: string;
+  text: string;
+}
+
+/** POST .../offered: the message view again, in the page's language, with the server's sentence for what was recorded. */
+export interface OfferedResult extends BuyerMessageView {
+  already_recorded: boolean;
+  message_when: string;
+}
+
+/** POST .../buyer-accepted: the decision record as it stands, the agreement's receipt, and whether it is agreed or waits for the owner's approval. */
+export interface BuyerAcceptedResult extends AcceptResult {
+  status: "agreed" | "waiting_approval";
+  approval_id: string | null;
+}
+
+/** POST /offers/{id}/buyer-reply: the buyer's reply is a request of its own; `reply_href` opens it in Deals. */
+export interface BuyerReplyResult {
+  offer_id: string;
+  decision_id: string;
+  reply_offer_id: string;
+  reply_decision_id: string;
+  reply_href: string;
+  /** Set when the offer had already closed: the reply is a request of its own and answers nothing. */
+  offer_closed?: boolean;
+  offer: OfferView["offer"];
+  message_when: string;
+}
+
+/**
+ * The detail of a 409 from the message routes: nothing was recorded. `message_when` is the server's sentence in the page's language. The codes: MESSAGE_CHANGED (copy it again; `message_hash`
+ * is the current one), MESSAGE_LANGUAGE (the other language's message was copied), COUNTER_CHANGED, the blocks above, NOT_OFFERED, OFFER_EXPIRED, OFFER_LAPSED, BOOKS_CHANGED, ALREADY_ANSWERED, NO_TERMS_IN_REPLY, NO_SIMULATED_BUYER (a simulated send
+ * for a buyer with no simulated profile).
+ */
+export interface BuyerMessageRefusal {
+  code: string;
+  message: string;
+  message_when?: string | null;
+  message_hash?: string;
+  reply_decision_id?: string;
+}
+
 /** One row of the Debt Desk comparison table. */
 export interface MenuRow {
   facility: Displayed<Facility>;
@@ -1422,6 +1666,10 @@ export interface ApprovalDetail {
   lifecycle?: ApprovalLifecycleStage[] | null;
   summary_rows?: ApprovalSummaryRow[] | null;
   terms_rows?: ApprovalSummaryRow[] | null;
+  /** A purchase commitment (COMMIT_PURCHASE) only: the schedule the owner approves, in the server's words (vendor, contract, each payment, the early-payment choice, the total); `schedule_note` says when it cannot be shown or has changed. */
+  schedule_title?: string | null;
+  schedule_rows?: ApprovalSummaryRow[] | null;
+  schedule_note?: string | null;
   deadline_text?: string | null;
   deadline_day?: number | null;
   title_text?: string | null;
@@ -2639,6 +2887,29 @@ export interface HomePending {
   }[];
 }
 
+/** The request against the recommended reply on one day, as an older server wrote it. */
+export interface PointComparisonLegacy {
+  label: string;
+  asked_display: string;
+  recommended_display: string;
+  difference_display: string;
+}
+
+/** Two responses on one day (round three, section 6): each one's figure, the signed difference and the cause of it in words (the events up to that day present on one line and not the other). For a pair of replies `asked_display` is the first of the pair and `reply_display` the second. */
+export interface PointComparison {
+  asked_display: string;
+  reply_display: string;
+  difference_display: string;
+  cause_text?: string | null;
+  /** The same cause as a list per line: `{label: "Option A", items: ["Credit line draw ¥150k today", ...]}`, one entry per line of the pair, one item per event. The server splits it; the browser never does. */
+  cause_lines?: CauseLine[] | null;
+}
+
+export interface CauseLine {
+  label: string;
+  items: string[];
+}
+
 /** One day of a projection the server already ran: closing cash (fen for the axis only) and the events that moved it. */
 export interface HomeSeriesPoint {
   day: Day;
@@ -2648,7 +2919,10 @@ export interface HomeSeriesPoint {
   display?: string;
   when?: string;
   /** On a deal's picture series: the same day's figures for the request and the recommended reply, and the server's signed difference (never computed here). */
-  comparison?: { label: string; asked_display: string; recommended_display: string; difference_display: string } | null;
+  /** Round three: a map keyed by the reply's id (an older server: the request against the recommended reply, one strip). The words are the server's; the browser subtracts nothing. */
+  comparison?: PointComparisonLegacy | Record<string, PointComparison> | null;
+  /** Round three: the same day's words for a pair of two replies, keyed `<a>:<b>`. */
+  comparison_pairs?: Record<string, PointComparison> | null;
   events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string; basis?: ReceiptBasis | null; basis_text?: string | null }[];
   /** The day's net movement as the server added it (a day with several events is labelled by this, never by its largest component). */
   net_fen?: Fen;
@@ -2810,6 +3084,8 @@ export interface HomeRailEvent {
   label_short?: string;
   amount_fen?: Fen;
   amount_short: string;
+  /** The amount in full ("¥257,200.00"), beside the short one. */
+  amount_display?: string;
   cash_after_short?: string;
   room_after_short?: string | null;
   tone?: HomeTone;
@@ -3242,7 +3518,8 @@ export interface HomeView {
 
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
 
-export type DocumentKind = "BUYER_CONTRACT" | "LENDER_AGREEMENT";
+/** CAPEX_CONTRACT (ADR-0013): a vendor contract for equipment the SME buys, read like a buyer contract. */
+export type DocumentKind = "BUYER_CONTRACT" | "LENDER_AGREEMENT" | "CAPEX_CONTRACT";
 export type DocumentStatus = "PROPOSED" | "CONFIRMED" | "REJECTED";
 export type ContractFieldName =
   | "PARTY_SUPPLIER" | "PARTY_BUYER" | "CONTRACT_REFERENCE" | "SIGNED_DATE" | "START_DATE" | "END_DATE" | "DURATION"
@@ -3559,6 +3836,9 @@ export interface QueueRowView {
   why_first_text?: string | null;
   /** The negotiation's lifecycle key (round two): counter_ready, owner_review, awaiting_buyer, more_info, agreed, declined, lapsed. `status_text` is then the lifecycle word alone. Absent from an older server (the tier decides the pill's tone and `status_text` is "state . who acts"). */
   lifecycle?: string | null;
+  /** Round three, section 11: the Agreements tier's three groups, in this order: payment_late, awaiting_payment, closed. A deal with money still owed is never closed. The label is the server's word ("Payment late"). */
+  after_group?: "payment_late" | "awaiting_payment" | "closed" | null;
+  after_group_label?: string | null;
   /** The subject with the offer's id appended: the Demo view's (Business never shows an id). */
   subject_demo_text?: string | null;
   /** The day of the negotiation's latest activity (round two) and the server's words for it ("today", "3 days ago"): the "Latest activity" sort. Absent: that sort is not offered. */
@@ -3571,11 +3851,40 @@ export interface QueueRowView {
   why_first?: never;
 }
 
-/** The counts of the negotiations the Deals queue lists (round two). */
-export type DealsCounts = Partial<Record<"all" | "total" | "needs_you" | "waiting" | "agreements", number>>;
+/** The counts of the negotiations the Deals queue lists (round two). `agreements` counts the agreements in force; `closed` the agreed deals that are over (round three, section 11). */
+export type DealsCounts = Partial<Record<"all" | "total" | "needs_you" | "waiting" | "agreements" | "closed" | "awaiting_payment" | "payment_late", number>>;
+
+/** One step of a deal's whole life (round three, section 11): the offer's stages before agreement (Received, Analysed, Reply ready or Owner review, Sent, Agreed), the contract stages after it. `state_text` is the server's word for the state; `when_text` says when a done stage happened. A stage the deal does not have is absent. */
+export interface LifecycleStageView {
+  key: string;
+  label: string;
+  state: "done" | "now" | "todo" | "missed" | "part";
+  state_text: string;
+  when_text?: string | null;
+}
+
+/** What the deal workspace reads add for section 11: the lifecycle strip, and the sentence about the buyer's last agreed or ended deal (context only; `buyer_history_title` says so). */
+export interface DealLifeWords {
+  lifecycle_stages?: LifecycleStageView[] | null;
+  buyer_history_text?: string | null;
+  buyer_history_title?: string | null;
+}
+
+/** One of a buyer's agreed or closed deals on the Customer page (round three, section 11): the subject, the tracker's state word, the close-out (or the agreed sentence) and the link into Deals. */
+export interface DealsHistoryRow {
+  decision_id: string;
+  subject_text: string;
+  lifecycle: "agreed" | "closed" | string;
+  state_word: string;
+  state_tone: "ok" | "warn" | "bad" | "neutral" | string;
+  summary_text: string | null;
+  href: string;
+}
 
 /** GET /deals `queue`: the three tiers of tasks and the counts the tabs show (Needs you = distinct tasks, Waiting = distinct pending outcomes, Agreements = agreements and their promises, Customers = unique relationships; the company alert is counted nowhere). The customers themselves are `GET /customers`. */
 export interface DealsQueue {
+  /** The page's one sentence ("Nothing needs you today."), written by the server from the same rows as the list. Absent from an older server: the page then says it from the counts. */
+  headline_text?: string | null;
   counts: { needs_you: number; waiting: number; agreements: number; customers: number };
   alert: WorklistAlert | null;
   needs_you: QueueRowView[];
@@ -3668,6 +3977,8 @@ export type DecisionState =
   | "FULFILLED"
   | "REVOKED"
   | "LAPSED"
+  | "AWAITING_BUYER"
+  | "REPLIED"
   | "PARTIALLY_EXECUTED"
   | "SETTLEMENT_PENDING"
   | "SETTLED"
@@ -3676,6 +3987,7 @@ export type DecisionState =
 export type DecisionWaitCode =
   | "OWNER_RESPONSE"
   | "BUYER_CLARIFICATION"
+  | "BUYER_ANSWER"
   | "OWNER_APPROVAL"
   | "BANK_RECEIPT"
   | "INVOICE_ISSUE"
@@ -3758,6 +4070,19 @@ export interface DecisionSettlementLot {
 export type DecisionSent =
   | { recorded: false; text: string }
   | {
+      /** The owner sent the counter outside FLOW (ADR-0011 addendum): nothing simulated; `text` is the server's sentence for what was sent and, once recorded, the buyer's yes. */
+      recorded: true;
+      outside_flow: true;
+      outcome: "DEAL" | null;
+      simulated: false;
+      chosen_counter_id: string;
+      chosen_label: string | null;
+      chosen_label_text: string | null;
+      accepted_counter_id: string | null;
+      text: string;
+    }
+  | {
+      outside_flow?: undefined;
       recorded: true;
       outcome: "DEAL" | "NO_DEAL" | string;
       simulated: boolean;
@@ -3778,12 +4103,16 @@ export type DecisionSent =
         net_display: string;
         net_fen: Fen;
         basis_facility_name: string | null;
+        /** The cost quoted when the reply was sent and the server's words for it and for the net ("Cost of the terms over 12 months, priced at the ... rate"). Absent from an older server (the old line is drawn). */
+        quoted_cost_display?: string;
+        quoted_cost_label_text?: string;
+        net_label_text?: string;
       } | null;
       funding_blocked: string | null;
     };
 
 /** GET /decisions/{id}: the summary plus everything the record holds. Every sentence and figure is the server's. */
-export interface DecisionView extends DecisionSummary {
+export interface DecisionView extends DecisionSummary, DealLifeWords {
   source: {
     kind: "OFFER" | "ALERT" | "OPERATION";
     offer_id?: string;
@@ -3802,6 +4131,8 @@ export interface DecisionView extends DecisionSummary {
     outcome: Outcome;
     business_action: BusinessAction;
     business_action_text: string;
+    /** Why the offer cannot be decided yet and the question to put to the buyer (an invoice named only by amount when several match). Absent from an older server. */
+    clarification?: { kind: string; text: string; ask_buyer_text: string | null; options: { receivable_id: string; sent_text: string; due_text: string; face_display: string }[] } | null;
     evaluated_day: Day | null;
     evaluated_when: string;
   } | null;
@@ -3828,6 +4159,14 @@ export interface DecisionView extends DecisionSummary {
   promises: { detail?: string | null; detail_when?: string | null; status?: string; [k: string]: unknown }[];
   remaining_task: { text: string; code: DecisionWaitCode; links: { label: string; href: string }[] };
   recorded: { evaluated: boolean; sent: boolean; quoted: boolean };
+  /** A deal whose counter the owner sent outside FLOW: what was sent and what came of it. Null otherwise (and absent from an older server). */
+  outbound?: OutboundView | null;
+  /** A deal's history, oldest first (absent from an older server). */
+  history?: DealHistoryEntry[];
+  /** Round three: on a request that is a buyer's reply to a counter the owner sent, the deal it answers. */
+  reply_to?: { decision_id: string; href: string; title_text: string; terms: string[] } | null;
+  /** Round three: the deal's short name (e.g. "Foshan · Early settlement and payment terms"), the queue's own. */
+  subject_text?: string | null;
 }
 
 /** The detail of a 404 DECISION_NOT_FOUND. */
@@ -3869,7 +4208,7 @@ export interface OfferPictureLine {
 }
 
 /** GET /offers/{offer_id}/picture: the offer as asked and one line per reply FLOW has ready. Display only. */
-export interface OfferPictureView {
+export interface OfferPictureView extends DealLifeWords {
   offer_id: string;
   verdict_id: string | null;
   lang: "en" | "zh";
@@ -3896,6 +4235,12 @@ export interface OfferPictureView {
   unavailable_text?: string | null;
   /** Accept as asked (a request that needs the owner's review and has no counter): whether the owner may accept it, the server's reason when not, the labels and the receipt. Absent from an older server. */
   accept?: AcceptBlock | null;
+  /** Round three: the recommendation in words. Absent from an older server. */
+  recommendation?: PictureRecommendation | null;
+  /** Round three, section 4: the consequences apart from the responses (keys `no_new_agreement`, `late_30`, `customer_loss`). Declared ahead of the server's batch. */
+  scenarios?: PictureScenario[] | null;
+  /** Why there is no further reply, one entry per kind withheld. Absent or empty: no line is drawn. */
+  withheld?: PictureWithheld[] | null;
 }
 
 /** One term of a path, as the owner would say it: what it is now and, for a reply, what it replaces. */
@@ -3905,6 +4250,46 @@ export interface PathTerm {
   /** Null when the reply or the ask has nothing to say for this term: the line is omitted (never the word "None"). */
   value_text: string | null;
   instead_of_text: string | null;
+  /** Round three: the scope the term belongs to and the server's word for it ("Existing invoice", "Future invoices", "Next quarter"). Absent from an older server. */
+  scope?: TermScopeKey | null;
+  scope_label?: string | null;
+  /** Round three: the cell's one word, always present: the value, "Not offered" or "Unchanged" (`value_text` stays null for an untouched row, so the cell reads this). */
+  cell_text?: string | null;
+}
+
+/** One row of a scenario card: its label and words; a late-payment row is one response's lowest cash under the delay (`key` is the response's key, never shown). */
+export interface PictureScenarioRow {
+  key: string;
+  label: string;
+  text: string;
+  lowest_short?: string | null;
+  lowest_when?: string | null;
+  breach_days_text?: string | null;
+}
+
+/** One scenario card (round three, section 4), every word the server's: the assumption sentence first, then its rows. The customer loss also names its four sentences apart (the rows repeat them in order). */
+export interface PictureScenario {
+  key: "no_new_agreement" | "late_30" | "customer_loss" | string;
+  label: string;
+  assumption_text: string | null;
+  /** False when the scenario cannot be drawn on today's books: `unavailable_text` says why. */
+  available?: boolean;
+  unavailable_text?: string | null;
+  lost_billings_text?: string | null;
+  lost_contribution_text?: string | null;
+  cash_effect_text?: string | null;
+  invoice_remains_text?: string | null;
+  rows?: PictureScenarioRow[] | null;
+}
+
+/** The three scopes of a deal's terms (round three). */
+export type TermScopeKey = "existing_invoice" | "future_invoices" | "next_quarter";
+
+/** The recommendation in two sentences and the rule (round three): the first reply FLOW may send within the mandate, another that needs the owner (null when there is none), and the rule said once. */
+export interface PictureRecommendation {
+  mandate_text: string;
+  alternative_text: string | null;
+  rule_text: string;
 }
 
 /** One path on the offer's picture. `key` is "asked" or a counter's id (never shown); every word is the server's. */
@@ -3963,10 +4348,28 @@ export interface PicturePath {
   recommended_reason_kind?: string | null;
   /** Whether the company plan is assumed to run in this path's cash and that the offer is assumed accepted, in one sentence. */
   scenario_assumption_text?: string | null;
+  /** Round three, the comparison's cells in the server's short words. `authority_short_text` is null when the response cannot be sent at all. `lowest_day` is for plotting only and is never shown. */
+  authority_short_text?: string | null;
+  reserve_state_text?: string | null;
+  headroom_short?: string | null;
+  lowest_day?: Day | null;
+  financing_needed_text?: string | null;
+  buyer_status_text?: string | null;
+  economic_headline_text?: string | null;
+  economic_basis_text?: string | null;
+  economic_sentence_text?: string | null;
   /** The asked path only: what the invoice becomes under the ask (after the buyer's discount, the requested discount), each with its share of the face in the server's words; null or empty without an immediate discount. */
   ask_breakdown?: { label: string; amount_display: string; share_text: string }[] | null;
   /** The asked path only: the deal card's three facts in the server's words; any may be null. */
   ask_facts?: { invoice_value_display: string | null; requested_discount_display: string | null; requested_term_text: string | null } | null;
+  /** A reply only: what happens if the buyer refuses it, in the server's words (null on the request). Absent or null: the review says nothing about a refusal. */
+  if_refused_text?: string | null;
+}
+
+/** Why the picture has no further reply: one server sentence for each kind of counter the engine considered and did not offer (`kind`, e.g. the lever, is never shown). Empty when nothing was withheld. */
+export interface PictureWithheld {
+  kind: string;
+  text: string;
 }
 
 /** Who decides, in the verifier's three classes. */
@@ -4295,6 +4698,8 @@ export interface CustomerOverviewView {
   summary_text?: string;
   /** Round two: the one sentence first ("Foshan contributes an estimated ¥1.09m a year, owes ¥420k (54.5% of your open receivables), and has three negotiations that could change your cash."). */
   relationship_text?: string | null;
+  /** Round three, section 11: the buyer's agreed and closed deals, newest first. */
+  deals_history?: DealsHistoryRow[] | null;
   figures?: OverviewFigure[];
   /** Round two: the receivable-to-financing-to-net-collection flow for the customer's largest open invoice. */
   receivable_flow?: ReceivableFlow | FlowStep[] | null;
@@ -4422,6 +4827,8 @@ export interface ActivityRow {
   decision_id: string | null;
   href: string | null;
   href_label: string | null;
+  /** Round three: `href` leads to Deals for an agreed or ended deal; the decision record stays reachable here. */
+  record_href?: string | null;
   evidence_href: string;
   evidence_label: string;
   /** Lower-cased words of the row, for the page's search box. */
@@ -4552,4 +4959,513 @@ export interface DemoRestoreResult {
   day: number;
   restored_text: string;
   story: DemoStoryView;
+}
+
+// ------------------------------------------------------------------ the buy side (ADR-0013, docs/capex_handover.md)
+//
+// Read-only views of the API's buy side (FEATURE_CAPEX_CONTRACTS): the owner's capex contracts, the screen on a contract's
+// payment schedule, financial health, indicative loan eligibility and long-term plans. Every money figure arrives with
+// its `*_display`; ratios arrive with `display` ("2.55×") or as a percentage string the server wrote.
+
+/** A ratio the buy side says as a multiple: the exact fraction, `text` ("2.55") and `display` ("2.55×"). */
+export interface MultipleRatio extends Ratio {
+  display?: string;
+}
+
+export type PurchaseStage = "REVIEW" | "READY" | "AWAITING_APPROVAL" | "COMMITTED" | "PAID" | "REJECTED";
+
+export interface PurchasePayment {
+  n: number;
+  day: Day;
+  amount_fen: Fen;
+  amount_display: string;
+  label: string;
+  paid: boolean;
+  when: string;
+}
+
+/** GET /purchases, GET /purchases/{id}: one capex contract, where it stands and the one thing to do next. */
+export interface PurchaseRow {
+  direction: "BUY";
+  document_id: string;
+  title: string;
+  vendor_id: string;
+  vendor_name: string;
+  vendor_registered: boolean;
+  document_status: "PROPOSED" | "CONFIRMED" | "REJECTED";
+  stage: PurchaseStage;
+  next_action: string;
+  price_fen: Fen | null;
+  price_display: string | null;
+  approval_id: string | null;
+  committed_seq: number | null;
+  payments: PurchasePayment[];
+  paid_display: string;
+  to_pay_display: string;
+}
+
+export interface PurchasesView {
+  day: Day;
+  lang: string;
+  purchases: PurchaseRow[];
+}
+
+/** The owner's expected days for the events a contract cannot fix (day numbers on the books' clock). */
+export interface BuyTimeline {
+  signing_day?: number | null;
+  delivery_day?: number | null;
+  acceptance_day?: number | null;
+  invoice_day?: number | null;
+  retention_release_day?: number | null;
+}
+
+export interface BuyEstimate {
+  monthly_uplift_fen?: Fen;
+  uplift_start_month?: number | null;
+  life_months?: number;
+  hurdle_bp?: Bp;
+  payback_limit_months?: number;
+}
+
+export interface ScheduledPaymentView {
+  n: number;
+  day: Day;
+  amount_fen: Fen;
+  amount_display: string;
+  share_bp: Bp;
+  share_display: string;
+  kind: "MILESTONE" | "PAYMENT_TERMS" | "RETENTION";
+  event: "SIGNING" | "DELIVERY" | "ACCEPTANCE" | "INVOICE" | null;
+  offset_days: number;
+  label: string;
+  clause: string | null;
+  quote: string;
+  day_formula: string;
+  owner_dated: boolean;
+}
+
+export interface EarlyPayOptionView {
+  payment_n: number;
+  rate_bp: Bp;
+  rate_display: string;
+  window_days: number;
+  pay_by_day: Day;
+  due_day: Day;
+  days_earlier: number;
+  discount_fen: Fen;
+  discount_display: string;
+  pay_early_fen: Fen;
+  pay_early_display: string;
+  implied_annual_rate: Ratio | null;
+  implied_annual_rate_display?: string | null;
+  clause: string | null;
+  quote: string;
+  formula: string;
+}
+
+export interface PaymentScheduleView {
+  price_fen: Fen;
+  price_display: string;
+  payments: ScheduledPaymentView[];
+  early_pay: EarlyPayOptionView | null;
+  early_pay_note: string | null;
+  assumptions: string[];
+  schedule_hash: string;
+}
+
+export interface ScheduleResultView {
+  derivable: boolean;
+  schedule: PaymentScheduleView | null;
+  reasons: string[];
+  needs: string[];
+}
+
+export interface EarlyPayDecisionView {
+  option: EarlyPayOptionView;
+  worth_it: boolean;
+  liquidity_ok: boolean;
+  take: boolean;
+  text: string;
+  formula: string;
+  return_share_display: string | null;
+  cost_share_display: string | null;
+  marginal_rate_display: string | null;
+  marginal_facility_id: string | null;
+}
+
+/** The capex screen's result on a schedule: the existing CapexView plus what the daily projection cannot see. */
+export type BuyCapexView = CapexView & {
+  horizon_end_day?: Day;
+  beyond_horizon_fen?: Fen;
+  beyond_horizon_display?: string;
+};
+
+/** POST /capex/contracts/{id}/evaluate: the contract's schedule, the capex screen on it and the vendor's early-payment discount. */
+export interface BuySideEvaluationView {
+  document_id: string;
+  doc_hash: string;
+  title: string;
+  counterparty_id: string;
+  reading_confirmed: boolean;
+  timeline: BuyTimeline;
+  uplift_start_month: number | null;
+  uplift_start_basis: string | null;
+  schedule: ScheduleResultView;
+  evaluation: BuyCapexView | null;
+  early_pay: EarlyPayDecisionView | null;
+  early_pay_evaluation: BuyCapexView | null;
+  early_pay_schedule: PaymentScheduleView | null;
+  summary: string;
+}
+
+/** POST /capex/contracts/{id}/commit: the Tier-2 commitment queued for the owner. */
+export interface PurchaseCommitResult {
+  approval_id: string | null;
+  status: string;
+  result: { status: string; tier: Tier; kind: string; message: string };
+  schedule: PaymentScheduleView;
+}
+
+export interface HealthInputsRequest {
+  inventory_fen?: Fen | null;
+  other_current_assets_fen?: Fen | null;
+  trade_payables_fen?: Fen | null;
+  other_current_liabilities_fen?: Fen | null;
+}
+
+export interface FacilityCapacityView {
+  facility_id: string;
+  name: string;
+  status: string;
+  counts_now: boolean;
+  rate_bp: Bp;
+  rate_display: string;
+  term_months: number;
+  room_fen: Fen;
+  room_display: string;
+  capacity_fen: Fen;
+  capacity_display: string;
+  binding: "LIMIT" | "DSCR" | "LEVERAGE" | "NONE";
+  monthly_payment_fen: Fen | null;
+  monthly_payment_display: string | null;
+  text: string;
+}
+
+/** GET/POST /finance/health: cash, the 90-day cash coverage, the owner-input ratios, covenant room and borrowing capacity. */
+export interface FinanceHealthView {
+  day: Day;
+  state_version: number;
+  cash: {
+    cash_display: string;
+    reserve_display: string;
+    headroom_fen: Fen;
+    headroom_display: string;
+    lowest_display: string;
+    lowest_day: Day;
+    lowest_headroom_fen: Fen;
+    lowest_headroom_display: string;
+    first_breach_day: Day | null;
+    status: "OK" | "SHORT";
+    plan_admissible: boolean | null;
+    plan_cost_display: string | null;
+    text: string;
+  };
+  coverage: {
+    window_days: number;
+    ratio: MultipleRatio | null;
+    out_display: string;
+    operating_in_display: string;
+    funding_in_display: string;
+    capex_out_display: string;
+    text: string;
+    formula: string;
+  };
+  liquidity: {
+    available: boolean;
+    needs: string[];
+    debt_due_12m_display: string;
+    capex_due_12m_display: string;
+    receivables_display: string;
+    current_ratio: MultipleRatio | null;
+    quick_ratio: MultipleRatio | null;
+    current_assets_display: string | null;
+    current_liabilities_display: string | null;
+    evidence: string | null;
+    text: string;
+    formula: string;
+  };
+  covenants: {
+    worst_dscr: MultipleRatio | null;
+    min_dscr: MultipleRatio;
+    worst_leverage: MultipleRatio | null;
+    max_leverage: MultipleRatio;
+    dscr_ok: boolean;
+    leverage_ok: boolean;
+    dscr_room_monthly_display: string;
+    leverage_room_display: string;
+    text: string;
+    formula: string;
+  } | null;
+  capacity: FacilityCapacityView[];
+  summary: string;
+  assumptions: string[];
+}
+
+export interface EligibilityCriterion {
+  name: string;
+  required: string;
+  observed: string;
+  passes: boolean | null;
+  moves_with_amount: boolean;
+}
+
+export interface LoanProductView {
+  id: string;
+  lender_id: string;
+  lender_name: string;
+  name: string;
+  facility_kind: string;
+  rate_display: string;
+  term_months: number;
+  min_amount_display: string;
+  max_amount_display: string;
+  collateral: boolean;
+  personal_guarantee: boolean;
+}
+
+export interface ProductEligibilityView {
+  product: LoanProductView;
+  facility_id: string;
+  on_menu: boolean;
+  status: "ELIGIBLE" | "ELIGIBLE_UP_TO" | "NOT_ELIGIBLE" | "UNKNOWN";
+  max_eligible_fen: Fen | null;
+  max_eligible_display: string | null;
+  requested_passes: boolean | null;
+  criteria: EligibilityCriterion[];
+  monthly_payment_display: string | null;
+  all_in_rate_display: string;
+  own_limits_max_display: string;
+  own_limits_binding: string;
+  tier3: string[];
+  text: string;
+}
+
+/** GET/POST /lending/eligibility: indicative, against a synthetic catalogue. */
+export interface EligibilityView {
+  day: Day;
+  products: ProductEligibilityView[];
+  buyer_concentration_display?: string;
+  largest_buyer_id: string | null;
+  indicative: string;
+  assumptions: string[];
+}
+
+export interface AddToMenuResult {
+  approval_id: string | null;
+  status: string;
+  facility_id: string;
+  amount_display: string;
+}
+
+export interface PlanProjectRequest {
+  id: string;
+  label?: string;
+  document_id?: string | null;
+  timeline?: BuyTimeline | null;
+  price_fen?: Fen | null;
+  monthly_uplift_fen?: Fen;
+  uplift_start_month?: number | null;
+  life_months?: number;
+  start_offsets?: number[];
+  options?: string[] | null;
+  optional?: boolean;
+}
+
+export interface CapexPlansRequest {
+  projects: PlanProjectRequest[];
+  horizon_months?: number;
+  hurdle_bp?: Bp;
+}
+
+export interface PlanChoiceView {
+  project_id: string;
+  label: string;
+  included: boolean;
+  start_offset_months: number;
+  option: string;
+  option_label: string;
+  first_payment_day: Day | null;
+  principal_display: string | null;
+  monthly_payment_display: string | null;
+}
+
+export interface PlanMonthView {
+  month: number;
+  cash_fen: Fen;
+  cash_display: string;
+  baseline_cash_fen: Fen;
+  dscr: MultipleRatio | null;
+  leverage: MultipleRatio | null;
+}
+
+export interface RankedPlanView {
+  rank: number | null;
+  choices: PlanChoiceView[];
+  npv_fen: Fen;
+  npv_display: string;
+  financing_charges_display: string;
+  lowest_headroom_fen: Fen;
+  lowest_headroom_display: string;
+  lowest_month: number;
+  admissible: boolean;
+  first_failure: string | null;
+  months: PlanMonthView[];
+  text: string;
+}
+
+/** POST /capex/plans: a monthly estimate, never a hard constraint. */
+export interface CapexPlansView {
+  horizon_months: number;
+  combinations: number;
+  admissible_count: number;
+  best: RankedPlanView[];
+  best_unconstrained: RankedPlanView | null;
+  never_admissible: string[];
+  baseline_lowest_headroom_display: string;
+  daily_checks: { project_id: string; document_id: string; selected_id: string | null; plan_option_passes: boolean | null; text: string }[];
+  evidence: string;
+  assumptions: string[];
+}
+// ------------------------------------------------------------------ set up your books (ADR-0013)
+// The owner's own starting position, typed in six steps. Amounts travel as the text the owner typed; the server parses them.
+
+/** GET /setup/status */
+export interface SetupStatus {
+  books: "blank" | "demo" | "own";
+  scenario: string | null;
+  can_open: boolean;
+  can_open_text: string | null;
+  opened: { company_name: string; start_date: string; start_text: string; seq: number; text: string } | null;
+}
+
+export type SetupBorrowKind = "CREDIT_LINE" | "INVOICE_FINANCING" | "LOAN_TO_APPLY";
+export type SetupBillKind = "PAYROLL" | "RENT" | "SUPPLIER" | "TAX" | "OTHER";
+export type SetupRepeats = "ONCE" | "MONTHLY" | "QUARTERLY" | "YEARLY";
+
+export interface SetupBorrow {
+  name: string;
+  kind: SetupBorrowKind;
+  limit: string;
+  drawn: string;
+  rate_pct: string;
+  fee_pct: string;
+  advance_pct: string;
+  lead_time_days: number | null;
+  agreed: boolean;
+  clean_down_days: number | null;
+  term_months: number | null;
+  document_id: string | null;
+}
+
+export interface SetupLoan {
+  label: string;
+  owed: string;
+  repayment: string;
+  every: "MONTHLY" | "QUARTERLY";
+  next_payment_date: string;
+  rate_pct: string;
+}
+
+export interface SetupInvoice {
+  sent_on: string;
+  amount: string;
+  terms_days: number | null;
+  paid: string;
+  financed_amount: string;
+  financed_by: number | null;
+}
+
+export interface SetupContract {
+  amount: string;
+  every_days: number | null;
+  terms_days: number | null;
+  next_invoice_date: string;
+  document_id: string | null;
+}
+
+export interface SetupCustomer {
+  name: string;
+  contract: SetupContract | null;
+  invoices: SetupInvoice[];
+}
+
+export interface SetupBill {
+  label: string;
+  kind: SetupBillKind;
+  amount: string;
+  next_date: string;
+  repeats: SetupRepeats;
+  until: string;
+}
+
+export interface SetupLimits {
+  min_cash: string;
+  max_apr_pct: string;
+  concession_cap: string;
+  approval_above: string;
+  valid_days: number | null;
+  min_dscr: string;
+  max_leverage: string;
+}
+
+export interface SetupDraft {
+  business: { company_name: string; what_you_sell: string; start_date: string; cash: string; monthly_sales: string; monthly_costs: string };
+  borrowing: SetupBorrow[];
+  loans: SetupLoan[];
+  customers: SetupCustomer[];
+  bills: SetupBill[];
+  limits: SetupLimits;
+}
+
+export interface SetupIssue {
+  step: number;
+  path: string;
+  text: string;
+}
+
+/** POST /setup/preview */
+export interface SetupPreview {
+  ok: boolean;
+  errors: SetupIssue[];
+  warnings: SetupIssue[];
+  summary: { step: number; label: string; value: string; detail: string | null }[] | null;
+  first_look: {
+    headline: string;
+    detail: string;
+    breach_day: number | null;
+    min_cash_fen: number;
+    min_cash_display: string;
+    points: { day: number; cash_fen: number; date_text: string; cash_display: string }[];
+  } | null;
+}
+
+/** A document the setup can fill a row from (GET/POST /setup/documents). */
+export interface SetupDocument {
+  document_id: string;
+  title: string;
+  kind: "BUYER_CONTRACT" | "LENDER_AGREEMENT";
+  status: string;
+  from_setup: boolean;
+  row: (Partial<SetupCustomer> & Partial<SetupBorrow>) | null;
+  facts: string[];
+  progress?: { sent: number; total: number; next_date: string | null; slots: ("sent" | "future")[]; text: string; assumed_text?: string | null; earlier_paid_text: string | null } | null;
+}
+
+/** POST /setup/open */
+export interface SetupOpenResult {
+  ok: boolean;
+  seq: number;
+  entry_hash: string;
+  confirmed_documents: string[];
+  text: string;
 }

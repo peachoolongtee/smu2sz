@@ -70,19 +70,21 @@ export default function CapexPage() {
 
   return (
     <>
-      <PageHeader title={t("capex.title")} subtitle={t("capex.subtitle")} />
+      <PageHeader section="capex" title={t("capex.title")} subtitle={t("capex.subtitle")} />
       {error ? <ErrorState error={error} /> : null}
 
       {!capex ? (
-        <EmptyState
-          title={t("capex.empty.title")}
-          body={t("capex.empty.body")}
-          action={
-            <Button variant="primary" loading={busy === "capex"} onClick={() => void run("capex")}>
-              {t("capex.evaluate")}
-            </Button>
-          }
-        />
+        <div data-tour="capex-start">
+          <EmptyState
+            title={t("capex.empty.title")}
+            body={t("capex.empty.body")}
+            action={
+              <Button variant="primary" loading={busy === "capex"} onClick={() => void run("capex")}>
+                {t("capex.evaluate")}
+              </Button>
+            }
+          />
+        </div>
       ) : (
         <div className="space-y-6">
           <Callout tone={worth ? "info" : "warn"}>

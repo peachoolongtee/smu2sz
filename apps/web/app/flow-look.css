@@ -15,7 +15,7 @@
   --color-subtle: color-mix(in srgb, var(--color-f-line) 45%, var(--color-panel));
   --color-track: color-mix(in srgb, var(--color-f-line) 55%, var(--color-panel));
   --color-brand-600: var(--color-f-btn);
-  --color-brand-700: var(--color-f-ink);
+  --color-brand-700: var(--color-f-purple-ink);
   --color-brand-50: var(--color-f-purple-soft);
   --color-brand-100: var(--color-f-purple-soft);
   --color-info-line: color-mix(in srgb, var(--color-f-purple) 35%, var(--color-f-line));
@@ -56,6 +56,11 @@
   transition:
     background-color var(--dur) var(--ease-ui),
     box-shadow var(--dur) var(--ease-ui);
+}
+/* Round three (section 9): the Deals queue's selected row is lighter, the tint of the panel and no ring; the 1 px edge that joins it to the workspace is drawn by the row itself. */
+.flow-row.flow-row-light[aria-current="true"] {
+  background: color-mix(in srgb, var(--color-f-purple-soft) 42%, var(--color-card));
+  box-shadow: none;
 }
 .flow-row[aria-current="true"] {
   background: var(--color-f-purple-soft);

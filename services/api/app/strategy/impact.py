@@ -35,6 +35,7 @@ from app.financial import project
 from app.financial.invoices import InvoiceRef, issue_terms
 from app.funding import plan
 from app.funding.router import shared_runs
+from app.strategy.cache import AnswerCache, cache_key
 from app.strategy.capacity import Package, books_with, resolve_package
 from app.strategy.types import MarginalImpact, ScenarioState, StressRow
 from app.strategy.words import buyer_short, invoice_label, invoice_labels, whole_yuan
@@ -169,9 +170,23 @@ class Reading:
     lowest_day: int = 0
 
 
+_KERNEL: AnswerCache[Reading] = AnswerCache(256)  # the reading has no words, so the English and the Chinese read of one set of books share it
+
+
+def clear_cache() -> None:
+    _KERNEL.clear()
+
+
 def _read_kernel(state: FinancialState, obs: list[Obligation], mandate: Mandate) -> Reading:
     """The router's committed plan and the CONSERVATIVE unfunded trajectory of one set of books (no alerts: they need the
-    ledger store). The one place these figures are taken, for `read_books` and the stress."""
+    ledger store). The one place these figures are taken, for `read_books` and the stress. Pure in (state, obligations, mandate), so
+    it is cached by them with single-flight (`Reading` is frozen): a stress read in the other language, or for another offer on the
+    same books, takes the router's answer instead of searching again."""
+    key = cache_key(state, mandate, state.as_of_day, (), "read-kernel", "|".join(o.model_dump_json() for o in obs))
+    return _KERNEL.get_or_compute(key, lambda: _read_kernel_uncached(state, obs, mandate))
+
+
+def _read_kernel_uncached(state: FinancialState, obs: list[Obligation], mandate: Mandate) -> Reading:
     p = plan(state, obs, mandate)
     tr = project(state, obs, [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     floor = mandate.min_cash_fen
@@ -442,6 +457,26 @@ def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *
         assumption=" ".join([head, *notes]), source_state_version=state.state_version, day=max(day, today))
 
 
+def customer_loss_kept(state: FinancialState, buyer_id: str, today: int, lang: str) -> str:
+    """What a buyer's stopping leaves as it is, in one sentence: the invoices already issued stay owed and paid as the books count them
+    ("the ¥420,000 already invoiced (due in 32 days) is still paid."), and any already past due stay as the books count them."""
+    open_ = [r for r in state.receivables if r.counterparty_id == buyer_id and r.status in _OPEN and r.outstanding_fen > 0]
+    owed = sorted((r for r in open_ if r.due_day >= today), key=lambda r: (r.due_day, r.id))
+    late = sorted(r.id for r in open_ if r.due_day < today)  # past due: the conservative projection counts nothing from them
+    if owed:
+        total = whole_yuan(sum(r.outstanding_fen for r in owed))
+        dues_en = "; ".join(f"due {when_text(r.due_day, today, 'en')}" for r in owed)
+        dues_zh = "；".join(f"{when_text(r.due_day, today, 'zh')}到期" for r in owed)
+        kept = t(lang, f"the {total} already invoiced ({dues_en}) is still paid.", f"已开票的 {total}（{dues_zh}）仍会照付。")
+    else:
+        kept = t(lang, "nothing already invoiced is left to pay.", "没有已开票但尚未支付的款项。")
+    if late:
+        kept += t(lang, f" {_capital(invoice_labels(state, late, today, 'en'))} {'is' if len(late) == 1 else 'are'} already past due "
+                        f"and {'stays' if len(late) == 1 else 'stay'} as the books count it.",
+                  f"{invoice_labels(state, late, today, 'zh')} 已经逾期，保持账面原有的计算方式。")
+    return kept
+
+
 def scenario_customer_loss(books: Books, buyer_id: str, day: int, *, lang: str = "en") -> ScenarioState:
     """The buyer stops buying after today (a scenario, not a prediction; brief D.1 and D.3): a labelled copy of the books.
 
@@ -462,21 +497,8 @@ def scenario_customer_loss(books: Books, buyer_id: str, day: int, *, lang: str =
     scenario = state.model_copy(update={
         "recurring_invoices": [ri for ri in state.recurring_invoices if ri.counterparty_id != buyer_id],
         "expected_orders": [o for o in state.expected_orders if o.counterparty_id != buyer_id]})
-    open_ = [r for r in state.receivables if r.counterparty_id == buyer_id and r.status in _OPEN and r.outstanding_fen > 0]
-    owed = sorted((r for r in open_ if r.due_day >= today), key=lambda r: (r.due_day, r.id))
-    late = sorted(r.id for r in open_ if r.due_day < today)  # past due: the conservative projection counts nothing from them
     who = buyer_short(name) if lang != "zh" else name
-    if owed:
-        total = whole_yuan(sum(r.outstanding_fen for r in owed))
-        dues_en = "; ".join(f"due {when_text(r.due_day, today, 'en')}" for r in owed)
-        dues_zh = "；".join(f"{when_text(r.due_day, today, 'zh')}到期" for r in owed)
-        kept = t(lang, f"the {total} already invoiced ({dues_en}) is still paid.", f"已开票的 {total}（{dues_zh}）仍会照付。")
-    else:
-        kept = t(lang, "nothing already invoiced is left to pay.", "没有已开票但尚未支付的款项。")
-    if late:
-        kept += t(lang, f" {_capital(invoice_labels(state, late, today, 'en'))} {'is' if len(late) == 1 else 'are'} already past due "
-                        f"and {'stays' if len(late) == 1 else 'stay'} as the books count it.",
-                  f"{invoice_labels(state, late, today, 'zh')} 已经逾期，保持账面原有的计算方式。")
+    kept = customer_loss_kept(state, buyer_id, today, lang)
     assumption = t(lang, f"Scenario assumes {who} stops buying from you after today; {kept} This is not a prediction.",
                    f"本情景假设{who}从今天以后不再向您采购；{kept}这不是预测。")
     return ScenarioState(state=scenario, label=t(lang, f"{who} stops buying", f"{who}停止采购"), assumption=assumption,
@@ -531,5 +553,5 @@ def stress(books: Books, mandate: Mandate, buyer_id: str, delays: Sequence[int] 
     return rows
 
 
-__all__ = ["DEFAULT_HORIZON_DAYS", "Reading", "funding_text", "marginal_impact", "read_books", "scenario_customer_loss",
+__all__ = ["DEFAULT_HORIZON_DAYS", "Reading", "clear_cache", "funding_text", "marginal_impact", "read_books", "scenario_customer_loss",
            "scenario_inflow", "scenario_paid_late", "scenario_received", "stress"]

@@ -5,6 +5,8 @@ import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
 import { offerOf } from "@/lib/selection";
 import type { DecisionView, ExposureView, OfferPictureView, OfferView } from "@/lib/types";
+import { useEffect, useMemo, useRef } from "react";
+import { useDemo } from "@/lib/demo-store";
 import { useAsync } from "@/lib/use-async";
 import { useDecision } from "@/lib/use-decision";
 
@@ -28,9 +30,12 @@ export interface Negotiation {
   reload: () => void;
 }
 
+/** The record states of an agreement in force or one that is over: the deal tracker is its Overview. */
+export const AGREED_RECORD_STATES: ReadonlySet<string> = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED"]);
+
 const isMissing = (e: unknown) => e instanceof ApiError && e.status === 404;
 
-export function useNegotiation(decision: string | null): Negotiation {
+export function useNegotiation(decision: string | null, opts: { agreedPicture?: boolean } = {}): Negotiation {
   const { lang } = useI18n();
   const offerId = offerOf(decision);
   const offerRead = useAsync(async () => (offerId ? { offerId, offer: await getOffer(offerId, lang).catch((e: unknown) => (isMissing(e) ? null : Promise.reject(e))) } : null), [offerId, lang]);
@@ -40,12 +45,46 @@ export function useNegotiation(decision: string | null): Negotiation {
   const hasOffer = Boolean(offer);
   // The picture and the exposure are read only while the owner has a reply to read (RESPONSE_READY): a deal not yet checked has none (404), and once it has an outcome, or waits on the buyer
   // or the approval, the record says where it stands and the cash lines are history. They wait for the record, so no read is wasted.
-  const wantRead = hasOffer && record.data !== undefined && (record.data === null || record.data.state === "RESPONSE_READY");
+  // An agreed deal's picture is read too (its Terms tab quotes the agreed response); a read that fails there is no picture, never an error on the page.
+  // (Only while the Terms tab is open: an agreed deal's Overview is the tracker and reads no picture.)
+  const agreedState = Boolean(opts.agreedPicture) && AGREED_RECORD_STATES.has(record.data?.state ?? "");
+  const wantRead = hasOffer && record.data !== undefined && (record.data === null || record.data.state === "RESPONSE_READY" || agreedState);
+  // After a write every read of the page is made again at once. The picture and the exposure are the server's slow ones (seconds on the busy books), and a server that answers one
+  // request at a time would keep the deal's own record waiting behind them, so the owner would not see "Agreed" for as long as they take. They therefore wait here until the
+  // record has been read again, and then read only if it still says there is a reply to read (an accepted deal needs neither). The page keeps showing the earlier ones meanwhile.
+  const { version } = useDemo();
+  const gate = useMemo(() => {
+    const gate = { settled: Promise.resolve(), open: () => {} };
+    gate.settled = new Promise<void>((resolve) => {
+      gate.open = resolve;
+    });
+    return gate;
+  }, [version, lang, decision]); // eslint-disable-line react-hooks/exhaustive-deps
+  const wanted = useRef({ read: false, agreed: false });
+  useEffect(() => {
+    wanted.current = { read: wantRead, agreed: agreedState };
+  });
+  useEffect(() => {
+    if (!record.loading) gate.open();
+  }, [record.loading, gate]);
   const pictureRead = useAsync(
-    async () => (offerId && wantRead ? { offerId, picture: await getOfferPicture(offerId, lang).catch((e: unknown) => (isMissing(e) ? null : Promise.reject(e))) } : null),
+    async () => {
+      if (!offerId || !wantRead) return null;
+      await gate.settled;
+      if (!wanted.current.read) return null;
+      return { offerId, picture: await getOfferPicture(offerId, lang).catch((e: unknown) => (isMissing(e) || wanted.current.agreed ? null : Promise.reject(e))) };
+    },
     [offerId, wantRead, lang, offerFor?.offer?.latest_verdict_id ?? null],
   );
-  const exposureRead = useAsync(async () => (offerId && wantRead ? { offerId, view: await getOfferExposure(offerId, lang) } : null), [offerId, wantRead, lang, offerFor?.offer?.latest_verdict_id ?? null]);
+  const exposureRead = useAsync(
+    async () => {
+      if (!offerId || !wantRead || agreedState) return null;
+      await gate.settled;
+      if (!wanted.current.read || wanted.current.agreed) return null;
+      return { offerId, view: await getOfferExposure(offerId, lang) };
+    },
+    [offerId, wantRead, lang, offerFor?.offer?.latest_verdict_id ?? null],
+  );
   const pictureFor = pictureRead.data && pictureRead.data.offerId === offerId ? pictureRead.data : undefined;
   const exposureFor = exposureRead.data && exposureRead.data.offerId === offerId ? exposureRead.data : undefined;
   const error = offerRead.error ?? pictureRead.error ?? exposureRead.error ?? record.error;

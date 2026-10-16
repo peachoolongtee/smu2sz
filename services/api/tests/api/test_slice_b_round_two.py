@@ -86,7 +86,7 @@ def test_deals_counts_are_the_negotiations_only_and_the_other_counts_stay(api: T
     _busy(api)
     q = _queue(api)
     # five decisions (Zhuhai, Dongguan, Foshan x3) and the Foshan clarification; the collection and the approval are Home's, in `counts` only
-    assert q["deals"] == {"needs_you": 5, "waiting": 1, "agreements": 0}
+    assert q["deals"] == {"needs_you": 5, "waiting": 1, "agreements": 0, "closed": 0, "awaiting_payment": 0, "payment_late": 0}
     assert q["counts"] == {"needs_you": 7, "waiting": 1, "agreements": 0, "customers": 3}
     assert q["deals"]["needs_you"] == sum(1 for r in q["needs_you"] if r["kind"] == "DECISION")
     assert {r["kind"] for r in q["needs_you"]} == {"DECISION", "COLLECTION", "APPROVAL"}  # the tiers still hold them for Home
@@ -98,14 +98,14 @@ def test_an_agreement_and_its_promise_are_counted_under_agreements(api: TestClie
     agree_on_rcv_a(api)
     q = _queue(api)
     agreements = [r for r in q["agreements"]]
-    assert {r["kind"] for r in agreements} == {"AGREEMENT", "PROMISE"}
+    assert {r["kind"] for r in agreements} == {"AGREEMENT"}  # the promise is folded into its deal's row
     assert q["deals"]["agreements"] == len(agreements) == q["counts"]["agreements"]
     assert all(r["lifecycle"] == "agreed" and r["status_text"] == "Agreed" for r in agreements if r["kind"] == "AGREEMENT")
 
 
 def test_the_golden_story_has_one_decision(api: TestClient) -> None:
     _golden(api)
-    assert _queue(api)["deals"] == {"needs_you": 1, "waiting": 0, "agreements": 0}
+    assert _queue(api)["deals"] == {"needs_you": 1, "waiting": 0, "agreements": 0, "closed": 0, "awaiting_payment": 0, "payment_late": 0}
 
 
 # ---------------------------------------------------------------- 2. subjects
@@ -198,11 +198,15 @@ def test_a_negotiation_row_keeps_its_coarse_topic_for_a_sentence_that_names_it(a
 # ---------------------------------------------------------------- 3. lifecycle
 
 
-def test_the_lifecycle_vocabulary_is_seven_keys_in_both_languages() -> None:
-    assert LIFECYCLE == ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed")
+def test_the_lifecycle_vocabulary_is_ten_keys_in_both_languages() -> None:
+    # round three adds "closed" (an agreed deal that is over); the copied offer adds "answered" (the buyer replied with terms of their own)
+    # and "no_answer" (it closed on its day unanswered)
+    assert LIFECYCLE == ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed", "closed", "answered",
+                         "no_answer")
     assert [lifecycle_text(k, "en") for k in LIFECYCLE] == ["Counter ready", "Owner review needed", "Awaiting buyer", "More information needed",
-                                                          "Agreed", "Declined", "Lapsed"]
-    assert [lifecycle_text(k, "zh") for k in LIFECYCLE] == ["还价已就绪", "需要您审核", "等待买方回复", "需要更多信息", "已达成", "已拒绝", "已失效"]
+                                                          "Agreed", "Declined", "Lapsed", "Closed", "Answered with new terms", "No answer"]
+    assert [lifecycle_text(k, "zh") for k in LIFECYCLE] == ["还价已就绪", "需要您审核", "等待买方回复", "需要更多信息", "已达成", "已拒绝", "已失效", "已结束",
+                                                          "对方已提出新条款", "未获答复"]
 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
@@ -255,8 +259,8 @@ def test_each_path_says_its_funding_assumption_and_its_terms_days(api: TestClien
     asked, a, b = pic["paths"]
     assert (asked["terms_days"], a["terms_days"], b["terms_days"]) == (60, 45, 55)
     assert asked["funding_assumption_text"] == {"en": "No new funding", "zh": "不新增融资"}[lang]
-    assert a["funding_assumption_text"] == {"en": "Funding plan required: ¥150k credit-line draw today",
-                                            "zh": "需要融资方案：信用额度提款 ¥150k（今天）"}[lang]
+    assert a["funding_assumption_text"] == {"en": "Funding plan required: ¥147k credit-line draw today",
+                                            "zh": "需要融资方案：信用额度提款 ¥147k（今天）"}[lang]
     assert b["funding_assumption_text"].startswith({"en": "Funding plan required: ", "zh": "需要融资方案："}[lang])
     if lang == "zh":
         assert not english_leaks({"p": [p["funding_assumption_text"] for p in pic["paths"]]}, NAMES)
@@ -335,9 +339,9 @@ def test_the_send_receipt_has_three_exact_statements_specific_to_this_send(api: 
     assert r["remaining_text"] == GOLDEN_RECEIPT[lang]["remaining_text"]
     assert "（" not in r["authorizes_text"] and "(" not in r["authorizes_text"]  # no parenthetical about approval
     assert "approval" not in r["authorizes_text"] and "批准" not in r["authorizes_text"]  # authority is said once, in `authority_text`
-    assert r["authority_text"] == {"en": "FLOW can send it. Your approval is not needed.", "zh": "FLOW 可以发送。无需您批准。"}[lang]
+    assert r["authority_text"] == {"en": "Within your mandate: no approval needed.", "zh": "在您的授权范围内：无需批准。"}[lang]
     assert r["executes_now_text"] == ("; " if lang == "en" else "；").join(pr["send_scope_lines"][1:])  # the gap plan's draw, then its cost
-    assert ("Draws ¥149,986.20" if lang == "en" else "提款 ¥149,986.20") in r["executes_now_text"]
+    assert ("Draws ¥147,210.00" if lang == "en" else "提款 ¥147,210.00") in r["executes_now_text"]
     if lang == "zh":
         assert not english_leaks({"receipt": r}, NAMES)
 
@@ -398,7 +402,7 @@ def test_cost_rows_are_table_rows_with_the_totals_basis_as_it_is_today(api: Test
     assert [ra[k]["amount_display"] for k in ("immediate_discount", "payment_terms", "rebate", "funding", "total")] == [
         "¥5,040.00", "¥24,326.92", "¥4,000.00", None, None]  # the asked path: two horizons, never added, no total
     assert [rb[k]["amount_display"] for k in ("immediate_discount", "payment_terms", "rebate", "funding", "total")] == [
-        "¥2,186.20", None, None, "¥841.57", "¥3,027.77"]  # Option A: the discount and the funding add up to its once-cost
+        "¥2,210.00", None, None, "¥825.99", "¥3,035.99"]  # Option A: the discount and the funding add up to its once-cost
     assert rb["total"]["basis_text"] == {"en": "once, nothing ongoing", "zh": "一次性，之后无持续成本"}[lang]
     assert ra["total"]["basis_text"] == {"en": "two parts: once, and over 12 months", "zh": "两部分：一次性，以及 12 个月内"}[lang]
     assert ra["payment_terms"]["basis_text"] == {"en": "over 12 months", "zh": "12 个月内"}[lang]  # a horizon is said, never normalised
@@ -655,12 +659,12 @@ def test_other_kinds_are_named_by_what_they_do() -> None:
 
 
 def test_a_quote_with_terms_shows_them_and_drops_the_not_confirmed_sentence() -> None:
-    quote_with_terms = {"total_fen": 84157, "total_display": "¥841.57", "lands_when": "in 3 days", "rate_basis": "11.2% a year",
-                        "lines": [{"amount_display": "¥150,000.00", "cost_fen": 84157, "cost_display": "¥841.57", "rate_text": "11.2%",
+    quote_with_terms = {"total_fen": 84157, "total_display": "¥825.99", "lands_when": "in 3 days", "rate_basis": "11.2% a year",
+                        "lines": [{"amount_display": "¥150,000.00", "cost_fen": 84157, "cost_display": "¥825.99", "rate_text": "11.2%",
                                    "lands_when": "in 3 days"}]}
     got = approval_review("en", item={"kind": "APPLY_FOR_FACILITY", "status": "PENDING", "quote": quote_with_terms, "presentation": {}, "receipt": None})
     assert got["terms_state_text"] is None
-    assert got["terms_rows"] == [{"label": "Amount", "value_text": "¥150,000.00"}, {"label": "Cost", "value_text": "¥841.57"},
+    assert got["terms_rows"] == [{"label": "Amount", "value_text": "¥150,000.00"}, {"label": "Cost", "value_text": "¥825.99"},
                                  {"label": "Rate", "value_text": "11.2%"}, {"label": "Cash lands", "value_text": "in 3 days"},
                                  {"label": "Basis", "value_text": "11.2% a year"}]
     assert approval_review("en", item={"kind": "APPLY_FOR_FACILITY", "status": "PENDING", "quote": {"lines": [{"amount_display": "¥1"}]},
@@ -937,4 +941,4 @@ def test_a_funding_cost_the_send_will_not_run_says_so_in_the_table(api: TestClie
 def test_a_funding_cost_that_runs_on_send_carries_no_note(api: TestClient) -> None:
     offer_id, _ = _golden(api)
     a = api.get(f"/offers/{offer_id}/picture").json()["paths"][1]
-    assert _rows(a)["funding"]["amount_display"] == "¥841.57" and all(r["note"] is None for r in a["cost_rows"])
+    assert _rows(a)["funding"]["amount_display"] == "¥825.99" and all(r["note"] is None for r in a["cost_rows"])

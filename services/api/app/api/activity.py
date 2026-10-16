@@ -23,6 +23,7 @@ from app.alerts import reconcile
 from app.api.auth import require_owner
 from app.api.causality import Causality, chain_fields, mark_changed
 from app.api.decisions import Reconciled, load_context
+from app.api.lifecycle import AGREED_STATES, deal_href
 from app.api.presentation import bank_note, last_read, live_windows, offer_buyers, party_name, t, when_text
 from app.api.read import _forecast_now, _op_view
 from app.api.runtime import get_runtime
@@ -37,7 +38,7 @@ _CATEGORY = {
     "ACCEPT_OFFER": "deals", "RECORD_COMMITMENT": "deals", "COUNTER_OFFER": "deals", "REJECT_OFFER": "deals", "REVOKE_COMMITMENT": "deals",
     "DRAW_FACILITY": "cash", "REPAY_FACILITY": "cash", "SUBMIT_INVOICE_FOR_FINANCING": "cash", "APPLY_FOR_FACILITY": "cash",
     "ADD_FACILITY": "cash",
-    "RECEIVE_PAYMENT": "receivables",
+    "RECEIVE_PAYMENT": "receivables", "OPEN_BOOKS": "cash",
     "CONFIRM_DOCUMENT": "documents", "REJECT_DOCUMENT": "documents",
 }
 _LABELS = {
@@ -130,6 +131,12 @@ def _op_rows(rt: Any, lang: str, today: int) -> list[dict[str, Any]]:
         buyer = _buyer_of(state, payload, commitments, v, rt.store)
         link = v.get("decision_link")
         href, href_label = (link["href"], t(lang, "Open this decision", "查看这项决定")) if link else _own_link(payload, buyer, category, lang)
+        record_href = None
+        found_deal = ctx.states().get(v.get("decision_id")) if link and ctx is not None and v.get("decision_id") else None
+        if found_deal is not None and found_deal[0].family == "DEAL" and found_deal[0].state in AGREED_STATES:  # an agreed or ended deal is followed in Deals
+            owner_of = found_deal[0].commitment.counterparty_id if found_deal[0].commitment is not None else buyer
+            if owner_of:
+                record_href, href = link["href"], deal_href(owner_of, str(v["decision_id"]), "activity")
         why = v.get("why_it_matters")
         # The guided Demo's receipt names its bank reference (DEMO-RCPT-n): the Business sentence says the amount and the payer, the reference stays in the evidence fold.
         ref = payload.get("bank_reference")
@@ -145,7 +152,7 @@ def _op_rows(rt: Any, lang: str, today: int) -> list[dict[str, Any]]:
             "why_changed": bool(v.get("why_it_matters_changed")), "remaining_text": v.get("what_remains"),
             "actor": actor, "actor_text": actor_text, "status_word": word, "tone": "neutral" if category == "system" and tone == "ok" else tone,
             "customer_id": buyer, "customer_name": party_name(state, buyer) if buyer else None,
-            "decision_id": v.get("decision_id") if link else None, "href": href, "href_label": href_label,
+            "decision_id": v.get("decision_id") if link else None, "href": href, "href_label": href_label, "record_href": record_href,
             "evidence_href": f"/trust?view=evidence&entry={o.seq}&from=activity", "evidence_label": t(lang, "Evidence", "证据"),
             "record": {"seq": o.seq, "entry_hash": o.entry_hash, "prev_hash": o.prev_hash, "kind_text": v["kind_text"],
                        "message": v["summary"], **({"reference_text": bank_note(lang, ref)} if ref else {})},

@@ -238,14 +238,14 @@
           "when": "today",
           "actor": "AGENT",
           "label": "Agent replied",
-          "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
+          "text": "Rejected. Offered Option A: early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
         },
         {
           "day": 0,
           "when": "today",
           "actor": "BUYER",
           "label": "Buyer accepted",
-          "text": "early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; booked by the agent within your limits"
+          "text": "early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days; booked by the agent within your limits"
         }
       ],
       "in_force": [
@@ -270,7 +270,7 @@
         {
           "key": "early_payment",
           "label": "Early payment",
-          "value_display": "early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days",
+          "value_display": "early settlement of ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due in 2 days",
           "vs_contract": "DIFFERENT",
           "vs_contract_text": "Differs from the contract",
           "contract_display": "The buyer may settle early at 1.20% off, within 2 days",
@@ -392,13 +392,17 @@
     "counts": {
       "needs_you": 0,
       "waiting": 0,
-      "agreements": 2,
+      "agreements": 1,
       "customers": 2
     },
+    "headline_text": "Nothing needs you today.",
     "deals": {
       "needs_you": 0,
       "waiting": 0,
-      "agreements": 2
+      "agreements": 1,
+      "closed": 0,
+      "awaiting_payment": 1,
+      "payment_late": 0
     },
     "alert": null,
     "needs_you": [],
@@ -417,7 +421,7 @@
         "last_activity_day": 0,
         "last_activity_text": "today",
         "status_text": "Agreed",
-        "consequence_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)",
+        "consequence_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time). The buyer has promised ¥258k in 2 days; it is not counted as cash until it arrives.",
         "severity": "NORMAL",
         "deadline_day": null,
         "expected_day": null,
@@ -425,30 +429,16 @@
         "decision_id": "deal:OFF-f806f79b6c21",
         "invoice_id": null,
         "approval_id": null,
-        "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21"
-      },
-      {
-        "key": "promise:CMT-a78afaa5becb5273:CTR-193394b6ba8b-O2",
-        "kind": "PROMISE",
-        "tier": "AGREEMENTS",
-        "customer_id": "BUYER-1",
-        "customer_short": "Foshan",
-        "subject_text": "Foshan · Payment promised",
-        "subject_demo_text": null,
-        "lifecycle": null,
-        "topic_text": null,
-        "last_activity_day": null,
-        "last_activity_text": null,
-        "status_text": "Expected in 2 days · ¥255k",
-        "consequence_text": "Not counted as cash until it arrives.",
-        "severity": "CAUTION",
-        "deadline_day": null,
-        "expected_day": 2,
-        "differentiator_text": null,
-        "decision_id": "deal:OFF-f806f79b6c21",
-        "invoice_id": "RCV-A",
-        "approval_id": null,
-        "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21&invoice=RCV-A"
+        "after_group": "awaiting_payment",
+        "after_group_label": "Awaiting payment",
+        "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21",
+        "promises": [
+          {
+            "status_text": "Expected in 2 days · ¥258k",
+            "invoice_id": "RCV-A",
+            "expected_day": 2
+          }
+        ]
       }
     ],
     "needs_you_empty_text": "Nothing needs a decision from you.",

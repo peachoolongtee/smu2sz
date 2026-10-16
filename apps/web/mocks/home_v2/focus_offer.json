@@ -130,7 +130,7 @@
           "rows": [
             {
               "label": "Lowest cash",
-              "expected_text": "¥150,013.80 in 30 days",
+              "expected_text": "¥152,790 in 30 days",
               "late_text": "−¥250,000 in 60 days"
             },
             {
@@ -140,12 +140,12 @@
             },
             {
               "label": "Maximum shortfall",
-              "expected_text": "¥149,986.20",
+              "expected_text": "¥147,210",
               "late_text": "¥550,000"
             },
             {
               "label": "Additional funding needed",
-              "expected_text": "¥149,986.20 covered by FLOW's committed plan",
+              "expected_text": "¥147,210 covered by FLOW's committed plan",
               "late_text": "¥550,000 uncovered"
             }
           ]
@@ -168,12 +168,13 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
-          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
-          "headline_short": "Counter instead of accepting as asked",
-          "authority_text": "FLOW can send this counter without your approval.",
+          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,035.99 once if accepted.",
+          "headline_short": "Counter instead of accepting their request",
+          "authority_text": "This counter is within your mandate: no approval needed.",
           "primary": {
             "label": "Review the counter",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
@@ -232,7 +233,7 @@
           {
             "key": "open_request",
             "label": "The open request",
-            "value_display": "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once",
+            "value_display": "about 2.6% of it if you accept their request, over 12 months, plus ¥5,040.00 once",
             "note": "the cost of keeping the same sales on softer terms, not profit gained",
             "tone": "neutral",
             "entered": true
@@ -281,8 +282,8 @@
             {
               "key": "capacity",
               "label": "Spare capacity",
-              "value_display": "¥81,000 today; ¥0 if Foshan accepts Option A",
-              "note": "Room for another payment: ¥0 for the next 31 days (today ¥81,000).",
+              "value_display": "¥81,000 today; ¥2,000 if Foshan accepts Option A",
+              "note": "Room for another payment: ¥2,000 (today ¥81,000).",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -377,6 +378,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Dongguan.",
         "actions": [
@@ -604,7 +606,7 @@
           "rows": [
             {
               "label": "Lowest cash",
-              "expected_text": "¥150,013.80 in 30 days",
+              "expected_text": "¥152,790 in 30 days",
               "late_text": "−¥250,000 in 60 days"
             },
             {
@@ -614,12 +616,12 @@
             },
             {
               "label": "Maximum shortfall",
-              "expected_text": "¥149,986.20",
+              "expected_text": "¥147,210",
               "late_text": "¥550,000"
             },
             {
               "label": "Additional funding needed",
-              "expected_text": "¥149,986.20 covered by FLOW's committed plan",
+              "expected_text": "¥147,210 covered by FLOW's committed plan",
               "late_text": "¥550,000 uncovered"
             }
           ]
@@ -642,12 +644,13 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
-          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
-          "headline_short": "Counter instead of accepting as asked",
-          "authority_text": "FLOW can send this counter without your approval.",
+          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,035.99 once if accepted.",
+          "headline_short": "Counter instead of accepting their request",
+          "authority_text": "This counter is within your mandate: no approval needed.",
           "primary": {
             "label": "Review the counter",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
@@ -706,7 +709,7 @@
           {
             "key": "open_request",
             "label": "The open request",
-            "value_display": "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once",
+            "value_display": "about 2.6% of it if you accept their request, over 12 months, plus ¥5,040.00 once",
             "note": "the cost of keeping the same sales on softer terms, not profit gained",
             "tone": "neutral",
             "entered": true
@@ -755,8 +758,8 @@
             {
               "key": "capacity",
               "label": "Spare capacity",
-              "value_display": "¥81,000 today; ¥0 if Foshan accepts Option A",
-              "note": "Room for another payment: ¥0 for the next 31 days (today ¥81,000).",
+              "value_display": "¥81,000 today; ¥2,000 if Foshan accepts Option A",
+              "note": "Room for another payment: ¥2,000 (today ¥81,000).",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -927,7 +930,7 @@
           "rows": [
             {
               "label": "Lowest cash",
-              "expected_text": "¥150,013.80 in 30 days",
+              "expected_text": "¥152,790 in 30 days",
               "late_text": "−¥250,000 in 60 days"
             },
             {
@@ -937,12 +940,12 @@
             },
             {
               "label": "Maximum shortfall",
-              "expected_text": "¥149,986.20",
+              "expected_text": "¥147,210",
               "late_text": "¥550,000"
             },
             {
               "label": "Additional funding needed",
-              "expected_text": "¥149,986.20 covered by FLOW's committed plan",
+              "expected_text": "¥147,210 covered by FLOW's committed plan",
               "late_text": "¥550,000 uncovered"
             }
           ]
@@ -965,12 +968,13 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
-          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
-          "headline_short": "Counter instead of accepting as asked",
-          "authority_text": "FLOW can send this counter without your approval.",
+          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,035.99 once if accepted.",
+          "headline_short": "Counter instead of accepting their request",
+          "authority_text": "This counter is within your mandate: no approval needed.",
           "primary": {
             "label": "Review the counter",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
@@ -1029,7 +1033,7 @@
           {
             "key": "open_request",
             "label": "The open request",
-            "value_display": "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once",
+            "value_display": "about 2.6% of it if you accept their request, over 12 months, plus ¥5,040.00 once",
             "note": "the cost of keeping the same sales on softer terms, not profit gained",
             "tone": "neutral",
             "entered": true
@@ -1078,8 +1082,8 @@
             {
               "key": "capacity",
               "label": "Spare capacity",
-              "value_display": "¥81,000 today; ¥0 if Foshan accepts Option A",
-              "note": "Room for another payment: ¥0 for the next 31 days (today ¥81,000).",
+              "value_display": "¥81,000 today; ¥2,000 if Foshan accepts Option A",
+              "note": "Room for another payment: ¥2,000 (today ¥81,000).",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -1250,7 +1254,7 @@
           "rows": [
             {
               "label": "Lowest cash",
-              "expected_text": "¥150,013.80 in 30 days",
+              "expected_text": "¥152,790 in 30 days",
               "late_text": "−¥250,000 in 60 days"
             },
             {
@@ -1260,12 +1264,12 @@
             },
             {
               "label": "Maximum shortfall",
-              "expected_text": "¥149,986.20",
+              "expected_text": "¥147,210",
               "late_text": "¥550,000"
             },
             {
               "label": "Additional funding needed",
-              "expected_text": "¥149,986.20 covered by FLOW's committed plan",
+              "expected_text": "¥147,210 covered by FLOW's committed plan",
               "late_text": "¥550,000 uncovered"
             }
           ]
@@ -1288,12 +1292,13 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
-          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
-          "headline_short": "Counter instead of accepting as asked",
-          "authority_text": "FLOW can send this counter without your approval.",
+          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,035.99 once if accepted.",
+          "headline_short": "Counter instead of accepting their request",
+          "authority_text": "This counter is within your mandate: no approval needed.",
           "primary": {
             "label": "Review the counter",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
@@ -1352,7 +1357,7 @@
           {
             "key": "open_request",
             "label": "The open request",
-            "value_display": "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once",
+            "value_display": "about 2.6% of it if you accept their request, over 12 months, plus ¥5,040.00 once",
             "note": "the cost of keeping the same sales on softer terms, not profit gained",
             "tone": "neutral",
             "entered": true
@@ -1401,8 +1406,8 @@
             {
               "key": "capacity",
               "label": "Spare capacity",
-              "value_display": "¥81,000 today; ¥0 if Foshan accepts Option A",
-              "note": "Room for another payment: ¥0 for the next 31 days (today ¥81,000).",
+              "value_display": "¥81,000 today; ¥2,000 if Foshan accepts Option A",
+              "note": "Room for another payment: ¥2,000 (today ¥81,000).",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -1577,7 +1582,7 @@
           "rows": [
             {
               "label": "最低现金",
-              "expected_text": "30 天后降至 ¥150,013.80",
+              "expected_text": "30 天后降至 ¥152,790",
               "late_text": "60 天后降至 −¥250,000"
             },
             {
@@ -1587,12 +1592,12 @@
             },
             {
               "label": "最大缺口",
-              "expected_text": "¥149,986.20",
+              "expected_text": "¥147,210",
               "late_text": "¥550,000"
             },
             {
               "label": "需要额外融资",
-              "expected_text": "¥149,986.20 的缺口由 FLOW 已承诺的方案覆盖",
+              "expected_text": "¥147,210 的缺口由 FLOW 已承诺的方案覆盖",
               "late_text": "¥550,000 缺口无法覆盖"
             }
           ]
@@ -1615,12 +1620,13 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
-          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
-          "headline_short": "还价，不按对方要求接受",
-          "authority_text": "FLOW 可以在无需您批准的情况下发送这份还价。",
+          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,035.99）还价。",
+          "headline_short": "还价，不接受对方的要求",
+          "authority_text": "这份还价在您的授权范围内：无需批准。",
           "primary": {
             "label": "查看还价",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
@@ -1679,7 +1685,7 @@
           {
             "key": "open_request",
             "label": "当前的请求",
-            "value_display": "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
+            "value_display": "如果接受对方的要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
             "note": "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润",
             "tone": "neutral",
             "entered": true
@@ -1728,8 +1734,8 @@
             {
               "key": "capacity",
               "label": "可用余量",
-              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥0",
-              "note": "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。",
+              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥2,000",
+              "note": "再支付一笔款项的余量：¥2,000（目前 ¥81,000）。",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -1824,6 +1830,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "目前没有需要您对Dongguan作出的商务决定。",
         "actions": [
@@ -2051,7 +2058,7 @@
           "rows": [
             {
               "label": "最低现金",
-              "expected_text": "30 天后降至 ¥150,013.80",
+              "expected_text": "30 天后降至 ¥152,790",
               "late_text": "60 天后降至 −¥250,000"
             },
             {
@@ -2061,12 +2068,12 @@
             },
             {
               "label": "最大缺口",
-              "expected_text": "¥149,986.20",
+              "expected_text": "¥147,210",
               "late_text": "¥550,000"
             },
             {
               "label": "需要额外融资",
-              "expected_text": "¥149,986.20 的缺口由 FLOW 已承诺的方案覆盖",
+              "expected_text": "¥147,210 的缺口由 FLOW 已承诺的方案覆盖",
               "late_text": "¥550,000 缺口无法覆盖"
             }
           ]
@@ -2089,12 +2096,13 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
-          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
-          "headline_short": "还价，不按对方要求接受",
-          "authority_text": "FLOW 可以在无需您批准的情况下发送这份还价。",
+          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,035.99）还价。",
+          "headline_short": "还价，不接受对方的要求",
+          "authority_text": "这份还价在您的授权范围内：无需批准。",
           "primary": {
             "label": "查看还价",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
@@ -2153,7 +2161,7 @@
           {
             "key": "open_request",
             "label": "当前的请求",
-            "value_display": "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
+            "value_display": "如果接受对方的要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
             "note": "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润",
             "tone": "neutral",
             "entered": true
@@ -2202,8 +2210,8 @@
             {
               "key": "capacity",
               "label": "可用余量",
-              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥0",
-              "note": "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。",
+              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥2,000",
+              "note": "再支付一笔款项的余量：¥2,000（目前 ¥81,000）。",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -2374,7 +2382,7 @@
           "rows": [
             {
               "label": "最低现金",
-              "expected_text": "30 天后降至 ¥150,013.80",
+              "expected_text": "30 天后降至 ¥152,790",
               "late_text": "60 天后降至 −¥250,000"
             },
             {
@@ -2384,12 +2392,12 @@
             },
             {
               "label": "最大缺口",
-              "expected_text": "¥149,986.20",
+              "expected_text": "¥147,210",
               "late_text": "¥550,000"
             },
             {
               "label": "需要额外融资",
-              "expected_text": "¥149,986.20 的缺口由 FLOW 已承诺的方案覆盖",
+              "expected_text": "¥147,210 的缺口由 FLOW 已承诺的方案覆盖",
               "late_text": "¥550,000 缺口无法覆盖"
             }
           ]
@@ -2412,12 +2420,13 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
-          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
-          "headline_short": "还价，不按对方要求接受",
-          "authority_text": "FLOW 可以在无需您批准的情况下发送这份还价。",
+          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,035.99）还价。",
+          "headline_short": "还价，不接受对方的要求",
+          "authority_text": "这份还价在您的授权范围内：无需批准。",
           "primary": {
             "label": "查看还价",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
@@ -2476,7 +2485,7 @@
           {
             "key": "open_request",
             "label": "当前的请求",
-            "value_display": "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
+            "value_display": "如果接受对方的要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
             "note": "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润",
             "tone": "neutral",
             "entered": true
@@ -2525,8 +2534,8 @@
             {
               "key": "capacity",
               "label": "可用余量",
-              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥0",
-              "note": "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。",
+              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥2,000",
+              "note": "再支付一笔款项的余量：¥2,000（目前 ¥81,000）。",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -2697,7 +2706,7 @@
           "rows": [
             {
               "label": "最低现金",
-              "expected_text": "30 天后降至 ¥150,013.80",
+              "expected_text": "30 天后降至 ¥152,790",
               "late_text": "60 天后降至 −¥250,000"
             },
             {
@@ -2707,12 +2716,12 @@
             },
             {
               "label": "最大缺口",
-              "expected_text": "¥149,986.20",
+              "expected_text": "¥147,210",
               "late_text": "¥550,000"
             },
             {
               "label": "需要额外融资",
-              "expected_text": "¥149,986.20 的缺口由 FLOW 已承诺的方案覆盖",
+              "expected_text": "¥147,210 的缺口由 FLOW 已承诺的方案覆盖",
               "late_text": "¥550,000 缺口无法覆盖"
             }
           ]
@@ -2735,12 +2744,13 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
-          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
-          "headline_short": "还价，不按对方要求接受",
-          "authority_text": "FLOW 可以在无需您批准的情况下发送这份还价。",
+          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,035.99）还价。",
+          "headline_short": "还价，不接受对方的要求",
+          "authority_text": "这份还价在您的授权范围内：无需批准。",
           "primary": {
             "label": "查看还价",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
@@ -2799,7 +2809,7 @@
           {
             "key": "open_request",
             "label": "当前的请求",
-            "value_display": "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
+            "value_display": "如果接受对方的要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
             "note": "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润",
             "tone": "neutral",
             "entered": true
@@ -2848,8 +2858,8 @@
             {
               "key": "capacity",
               "label": "可用余量",
-              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥0",
-              "note": "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。",
+              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥2,000",
+              "note": "再支付一笔款项的余量：¥2,000（目前 ¥81,000）。",
               "tone": "neutral",
               "state": "none",
               "state_text": ""

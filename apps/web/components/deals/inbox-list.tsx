@@ -57,6 +57,7 @@ export function InboxList({
   onExpand,
   onCollapse,
   refusals,
+  onlyCounterparty,
 }: {
   currentDocId: string | null;
   readDocIds: (string | undefined)[];
@@ -78,13 +79,15 @@ export function InboxList({
   onCollapse?: () => void;
   /** The books' refusal block (`GET /ledger`); null or absent until it has loaded, and then no set-aside line is drawn. */
   refusals?: RefusalBlock | null;
+  /** The selected deal's Messages tab: only this buyer's thread. */
+  onlyCounterparty?: string | null;
 }) {
   const { t, te } = useI18n();
   const business = mode === "business";
   const unknown = (m: InboxMessage) => (known ? !known.has(m.counterparty_id) : false);
-  const shown = business ? INBOX.filter((m) => !unknown(m)) : INBOX;
+  const shown = (business ? INBOX.filter((m) => !unknown(m)) : INBOX).filter((m) => !onlyCounterparty || m.counterparty_id === onlyCounterparty);
   // Business mode hides the senders the books do not know; the example line is only for a list that actually hides one.
-  const hidden = business ? INBOX.length - shown.length : 0;
+  const hidden = business && !onlyCounterparty ? INBOX.length - shown.length : 0;
   const all = threads(shown);
   const current = all.find((th) => th.messages.some((m) => m.document.doc_id === currentDocId)) ?? null;
   const others = current ? all.filter((th) => th !== current) : all;

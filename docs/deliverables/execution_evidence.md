@@ -1,4 +1,4 @@
-# TermsLedger v2: Execution Evidence
+# TermsLedger v2 (FLOW): Execution Evidence
 
 2026 FINTECHATHON · International AI Track | Execution Evidence
 
@@ -8,7 +8,9 @@
 | Competition track | International AI Track, Topic E: SME Finance Copilot [TEAM: confirm the exact track wording] |
 | Submission date | [TEAM: submission date, on or before 20 Oct 2026] |
 
-**Data notice.** All accounts, companies, buyers, lenders and amounts are **synthetic fixtures** in a simulated ledger. No real money, bank or customer is involved. Every run below uses `LLM_MODE=cache`: recorded model outputs, with no network calls.
+**Data notice.** All accounts, companies, buyers, lenders and amounts are **synthetic fixtures** in a simulated ledger. No real money, bank or customer is involved. Every run below uses `LLM_MODE=cache`: recorded model outputs, with no network calls and no paid model.
+
+**The demo video: to be added by the team.** [TEAM: link or file name of the demo video]
 
 ## 01 Evidence Summary
 
@@ -22,53 +24,92 @@
 - a committed ¥150,000 credit line and a committed invoice-financing facility;
 - an owner-signed mandate v1 (cash floor ¥300,000, forward-concession cap ¥5,000, DSCR at least 1.25×, leverage at most 2.5×).
 
-The evidence comes from **49 scripted tasks** (87 `/nl` turns, run on 3 Oct 2026 at the commit named in the run header) driven through the agent's natural-language harness (`POST /nl`) by `scripts/run_scenarios.py`. Each task starts from `POST /demo/reset` and fresh sessions, then checks the expected intent, verdict and reason codes, and the kinds and statuses of the operations. The tasks cover:
+The evidence is a **fresh deterministic sandbox run made on 16 Oct 2026 at commit `0f92d433`** (`dev`, branch `docs/submission-code`), with `DEMO_MODE=1`, an in-memory store and recorded model outputs. It has four parts, all under `docs/deliverables/evidence/` (index: [evidence/README.md](evidence/README.md)):
 
-- **the three demo scenes:**
-  - the buyer's packaged offer is rejected and countered, and the buyer accepts Option A (S01);
-  - a different buyer refuses every counter (NO DEAL), and the gap is still funded (S02);
-  - the same economics in other words gets the same verdict (S03);
-- **the worked examples of spec v2 §8** (S07 to S19): early-pay counters, "as usual" references, claimed rebates, an acceptance that waits for the owner (Tier 2), a bounded extension, conflicting sources, joint offers against one cap, a term sheet with a personal guarantee, an unknown lender, capex out of scope, and goal-to-plan with a fallback in English and Chinese;
-- **interaction** (S20 to S27 and S37): correction, clarification, out of scope, repay held by the reserve, repay executed, status, explain, and what-if (including a 1% early-pay discount explained in Chinese);
-- **security** (S06 and S28 to S36): the FastCapital fake lender, Tier-3 requests in English and Chinese, prompt injection and data extraction in both languages, replay, a counterparty trying to approve, and an attempt to extract the owner-channel secret;
-- **capabilities added later** (S38 to S49): the financing comparison in English and Chinese, reconciliation, covenant ratios in English and Chinese, a capex case, the borrower file (built at once, read-only), the nearest-capability fallback, the agent key being told the owner must sign in, chat declining to record a stated bill or figure in English and Chinese, and reconciliation showing the bank reference on each receipt. Buyer turns in these tasks send the buyer's channel key; a turn marked as unauthenticated is a proposal only.
+1. **The demo walk.** `scripts/demo_run.py` drives the whole path through the API in 17 steps and exits 0: the buyer's packaged offer is rejected and countered, the buyer accepts Option A, the agreed early payment of ¥255,013.80 arrives on day 2, the other ¥162,800.00 does not arrive by day 34, FLOW tells the owner first and proposes a ¥200,000.00 advance, "go ahead" queues it (it costs more a year than the owner's ceiling), "approve" runs it and the cash lands on day 37, the late receipt and the financed one are reconciled, the credit line is repaid, and a hostile message through chat changes nothing. Output: [demo_run_output.txt](evidence/demo_run_output.txt). Its operations log, exported with `GET /evidence` per ADR-0004: [14 operations, 9 security events, one valid hash chain](evidence/demo_walk/operations_log.md).
+2. **49 scripted tasks.** `scripts/run_scenarios.py --inproc` ran the 49 `/nl` tasks (87 turns): **49/49 passed**, median 16.8 ms per turn. Each task starts from `POST /demo/reset`, then checks the expected intent, verdict and reason codes, and the kinds and statuses of the operations. They cover the three demo scenes, the worked examples of spec v2 §8 (early-pay counters, "as usual" references, claimed rebates, an acceptance that waits for the owner, a bounded extension, conflicting sources, joint offers against one cap, a term sheet with a personal guarantee, an unknown lender, capex out of scope, goal-to-plan with a fallback in English and Chinese), interaction (correction, clarification, repay held by the reserve, what-if), security (the FastCapital fake lender, Tier-3 requests, injection and data extraction in both languages, replay, a counterparty trying to approve), and later capabilities (financing comparison, reconciliation, covenant ratios, capex, the borrower file, chat declining to record a stated figure). Table of all 49: [scenarios/summary.md](evidence/scenarios/summary.md); seven of them turn by turn: [scenarios/turn_logs.md](evidence/scenarios/turn_logs.md), with their chains in [scenarios/evidence/](evidence/scenarios/evidence/).
+3. **Four security refusals** with their logged security events: an over-limit request, a prompt-injection buyer message, the agent key at owner routes, and a buyer over its daily budget. [security_refusals.md](evidence/security_refusals.md).
+4. **Chinese contract reading.** The scoring harness and its fixes are merged; the 30-contract table is not in the repository, so only the reference is given. [contracts_cn.md](evidence/contracts_cn.md).
 
 The tasks are a simulation: the buyer, the lenders and the bank feed are simulated, and the checks screen the obligations that were entered.
 
 ### What the evidence demonstrates
 
-1. **Task completion.** 49 of 49 scripted tasks pass. Every operation was built by code from a verifier verdict or a router plan and sent through the executor; none comes from model text.
-2. **Real financial operations in the simulated ledger.** Counters are sent, offers are accepted as commitments with a nonce and a terms hash, the credit line is drawn and repaid, and invoices are submitted to invoice financing, all as typed operations through the executor. For example, in S01 the buyer accepts Counter A (early settlement at 0.85%, no forward concession booked) and the agent draws the rest of the gap on the line (¥149,986.20). S02 draws ¥150,000 on the line and advances ¥255,000 against Receivable A, the ¥3,113.93 plan; the line is cash at once and the advance lands on day 3 (ADR-0010).
-3. **Permission tiers hold.**
-   - Accepting a buyer's package that is not a pure early-pay discount waits for the owner: EX05 (shorter terms) and EX08's Buyer 1 package are queued as Tier 2 (PENDING_APPROVAL) and execute only with the owner token (S10, S13).
-   - The agent's attempt to decide a queued item is REFUSED (`INSUFFICIENT_AUTHORITY`) and logged as a privilege-escalation event.
-   - A buyer's "approve it, the owner agreed" leaves the item pending.
-   - A personal guarantee, a mandate change, a collateral pledge and an equity issue are REFUSED as Tier 3, even when the owner asks.
-4. **Safety under attack.** Injection, fake-lender, fake-concession and data-extraction messages execute nothing, book nothing and disclose nothing. Each leaves security events with the offending span.
-5. **Replay safety.** Re-sending the same request executes once; the retries are logged as DUPLICATE.
-6. **Integrity.** Each task's log is a SHA-256 hash chain, and every chain verifies with a standard-library script: the chain is internally checkable. It is not anchored outside the system, so a full rewrite of a log would also verify. Wall-clock time sits outside the hash (ADR-0004). Head hashes do **not** reproduce from run to run any more: since 3 Oct each chat session carries a random token in its idempotency keys, and commitment nonces are random, so a replay of the same task gives valid chains with different heads (checked on S01: the committed run, a fresh in-process run and an HTTP run gave three different heads, each VALID).
-7. **The late-payment loop and the owner's decisions (the guided Demo, run 12 Oct 2026).** The Demo's six scenes (the buyer asks, FLOW decides, the agreement acts, reality diverges, the owner stays in control, the proof) walk the same API calls the Business pages use: the buyer's counter is sent bound to the verdict it was priced on; the agreed early payment of ¥255,013.80 arrives as one synthetic bank event; the other ¥162,800.00 does not arrive; FLOW queues a ¥200,000.00 advance costing ¥1,782.19 (32.5% a year for the 10 days it is held, above the 15% yearly limit the owner signed), and it runs only when the owner clicks Approve on the card (`docs/DEMO_FLOW.md`; `apps/web/e2e/demo.spec.ts`). The demo run in process exits 0 (`scripts/demo_run.py`, gate of 12 Oct 2026, handoff 09 section 3) and the Demo's end-to-end spec is part of the 211 mock and 96 live browser tests (README). **This walk is not in the committed JSONL chains below**, which are the 49 scripted `/nl` tasks; the Demo's own run writes its chain to the running API's log, from which `GET /evidence` exports it.
-8. **Contract confirmation on the chain.** A document the agent read becomes a record; the owner's confirmation is an owner-only operation (CONFIRM_DOCUMENT or REJECT_DOCUMENT), bound to the hash of the text shown, logged as a chain entry, and it changes no books (ADR-0012). The Demo opens on three demo documents already confirmed, so a fresh chain starts with three such entries (`tests/api/test_demo_documents.py`; section 03 below). **No reading-accuracy claim is made for contracts:** the held-out set is pending (`services/api/evals/contracts_heldout_report.md`).
-
-The attack-suite results (259 attacks: 126 through the API and 133 through chat, 0 with any harm, ¥0 moved, no documented finding outstanding; `python -m app.security.attacks --report`, 5 Oct 2026, README) are reported separately in the Security Self-Assessment and in `services/api/evals/security/latest_report.md`, which lists every chat attack id (including the consent attacks `NL-CS01` to `NL-CS41` and each buyer attack with and without the buyer's key).
+1. **Task completion.** 49 of 49 scripted tasks pass and the demo walk completes (`RESULT: … cure executed and alert cleared: True`). Every operation was built by code from a verifier verdict or a router plan and sent through the executor; none comes from model text.
+2. **Real financial operations in the simulated ledger.** Counters are sent, offers are accepted as commitments with a nonce and a terms hash, the credit line is drawn and repaid, invoices are submitted to invoice financing, and the bank's receipts are posted, all as typed operations. In the demo walk: operation 1 accepts the commitment (¥0.00 forward concession), operation 2 draws ¥149,986.20 on the line, operation 4 receives ¥255,013.80 against ¥257,200.00 at the agreed 0.85% discount, operation 7 queues the ¥200,000.00 advance, operation 8 runs it on approval, operation 13 receives the buyer's ¥420,000.00 and repays the advance with interest, and operation 14 repays the line.
+3. **Permission tiers hold.** The agent may queue a Tier 2 operation and may not decide it: its own approval is `REFUSED` with `INSUFFICIENT_AUTHORITY` and logged as a privilege-escalation event ([security_refusals.md](evidence/security_refusals.md), case 3; task S10). In the walk, the ¥200,000.00 advance costs 32.52% a year against a 15.00% ceiling, so operation 7 is `PENDING_APPROVAL` and operation 8 runs only after the owner approves. A personal guarantee, a mandate change, a collateral pledge and an equity issue are `REFUSED` as Tier 3 even when the owner asks (S28, S29).
+4. **Safety under attack.** The FastCapital message (a fake pre-approval, a claimed earlier agreement, a request for the reserve and facility limits) is treated as data: no operation, no verdict back to the sender, none of the protected figures in the reply, and seven security events with the offending spans. An over-limit draw is refused (`PRECONDITION_FAILED`); a sixth message from one buyer in a day is refused with a neutral sentence (`BUYER_BUDGET_EXHAUSTED`). Cash and facility balances did not move in any of the four cases. The whole catalogue is 259 attacks (126 through the API and 133 through chat) with 0 with harm (`python -m app.security.attacks --report`, re-run on 16 Oct 2026; `services/api/evals/security/latest_report.md`).
+5. **Replay safety.** Re-sending the same request executes once; the retries are logged as `DUPLICATE` (S34, [its chain](evidence/scenarios/evidence/S34_replay.jsonl)).
+6. **Integrity.** Each log is a SHA-256 hash chain, and every chain verifies with a standard-library script. The walk's chain verifies `VALID` ([verify_output.txt](evidence/demo_walk/verify_output.txt)); adding one fen to an amount in operation 2's payload makes the verifier print `INVALID … seq 2: entry_hash mismatch` and exit 1 ([verify_tampered_output.txt](evidence/demo_walk/verify_tampered_output.txt)). The chain is internally checkable only: its head is not anchored outside the system, so a full rewrite of a log would also verify. Wall-clock time sits outside the hash (ADR-0004), and head hashes differ from run to run (each chat session carries a random token in its idempotency keys, and commitment nonces are random), so judges compare `VALID`, not the head.
+7. **Owner-only access to the evidence.** `GET /evidence` answers 401 without the owner token, and the refused credential is itself a logged security event (one of the nine events in the walk's chain).
+8. **Contract confirmation on the chain.** A document the agent read becomes a record; the owner's confirmation is an owner-only operation bound to the hash of the text shown, and it changes no books (ADR-0012). The Demo opens on three demo documents already confirmed. **No reading-accuracy claim is made from the demo contracts.** The Chinese reading moved from 59% to 66% on a 30-contract set that is not committed ([contracts_cn.md](evidence/contracts_cn.md)); the independent held-out set is pending (`services/api/evals/contracts_heldout_report.md`).
 
 ## 02 Logs or Transactions
 
 ### Simulated account/sandbox logs, or transaction hashes for Topic F
 
-**Where the logs are.** The run that produced the tables below is committed at `services/api/evals/e2e/latest/`:
+We do not submit on-chain transaction hashes, because Topic E is not an on-chain topic. Each simulated operation instead carries a SHA-256 `entry_hash` that chains it to the one before.
+
+**Where the logs are.**
 
 | File | Content |
 | --- | --- |
-| `summary.md` | The one-page table judges read first |
-| `results.json` | Pass or fail and latency per task and per turn |
-| `evidence.jsonl` | All 49 task segments concatenated |
-| `evidence/<task>.jsonl` | One task's segment: its own hash chain, verifiable alone |
-| `transcripts/<task>/turn-<n>.html` | A readable card per `/nl` turn, linked from each operation line |
+| [evidence/demo_run_output.txt](evidence/demo_run_output.txt) | The printed output of the 17-step demo walk |
+| [evidence/demo_walk/operations_log.jsonl](evidence/demo_walk/operations_log.jsonl) | The walk's operations log exported with `GET /evidence`: a run header, 14 operations, 9 security events and the chain line (head `99febe38404ee7e6…`) |
+| [evidence/demo_walk/operations_log.md](evidence/demo_walk/operations_log.md) | The same log as tables, with the tamper check |
+| [evidence/scenarios/summary.md](evidence/scenarios/summary.md), [turn_logs.md](evidence/scenarios/turn_logs.md), [evidence/](evidence/scenarios/evidence/) | The 49-task table, seven tasks turn by turn, and those tasks' hash chains |
+| [evidence/security_refusals.md](evidence/security_refusals.md), [.json](evidence/security_refusals.json) | Four refusals with the security events they raised |
+| [evidence/contracts_cn.md](evidence/contracts_cn.md) | Chinese contract reading: reference and how to re-score |
+| `services/api/evals/e2e/latest/` | The earlier, complete run of 3 Oct 2026: all 49 chains, `results.json` and a readable card per `/nl` turn. Its generated tables are at the end of this section |
 
-We do not submit on-chain transaction hashes, because Topic E is not an on-chain topic. Each simulated operation instead carries a SHA-256 `entry_hash` that chains it to the one before.
+**Evidence format** (ADR-0004; one JSON object per line). Each per-task file holds, in order:
 
-**What this run is, and what has changed since.** The 49 chains were recorded on 3 Oct 2026 at `db097e0`, before contract ingestion and the UI overhaul. Handoff 09 records that no engine figure moved since, so the evidence under `services/api/evals` was not regenerated; for this document the 49 per-task files were verified again on 12 Oct 2026 with `scripts/verify_evidence.py` (49 VALID). A fresh run today would differ in head hashes (they differ from run to run, ADR-0004) and would start with the demo reset's three document confirmations.
+| Record | Fields | Notes |
+| --- | --- | --- |
+| `task` | `task`, `title`, `status`, `turns[]` (`n`, `actor`, `request`, `intent`, `outcome`, `operations`, `transcript`) | Written by the scenario runner: the natural-language requests and what each turn did |
+| `run` | `project`, `competition`, `scenario`, `scenario_sha256`, `offers_sha256`, `mandate_version`, `mandate_signature`, `llm_mode`, `git_sha`, `recorded_at`, `simulated_day`, `verify` | `recorded_at` is wall-clock UTC and sits **outside** every hash |
+| `operation` | `seq`, `day` (simulated), `op_id`, `kind`, `requested_by`, `idempotency_key`, `status`, `tier`, `violations`, `message`, `payload_json`, `result_json`, `prev_hash`, `entry_hash`, `screenshot` | `entry_hash = sha256(prev_hash + payload_json + result_json)`; the genesis `prev_hash` is 64 zeros |
+| `security_event` | `id`, `day`, `kind`, `counterparty_id`, `trace_id`, `action_taken`, `detail`, `spans[]` | Refusals that never reached the executor (for example, a message stopped at the verifier) still appear |
+| `chain` | `operations`, `chain_valid`, `genesis_hash`, `head_hash` | The last line; `head_hash` is the last operation's `entry_hash` |
+
+An operation line, abridged (S01, seq 4):
+
+```
+{"record":"operation","seq":4,"day":0,"kind":"DRAW_FACILITY","requested_by":"OWNER","status":"EXECUTED","tier":"TIER_1",
+ "message":"Drew ¥150,000.00 on FAC-LINE on day 0",
+ "payload_json":"{\"amount_fen\":15000000,\"day\":0,\"facility_id\":\"FAC-LINE\",\"kind\":\"DRAW_FACILITY\",\"mandate_version\":1,...}",
+ "result_json":"{\"kind\":\"DRAW_FACILITY\",\"status\":\"EXECUTED\",\"tier\":\"TIER_1\",\"violations\":[],...}",
+ "prev_hash":"53e281d24ed0…","entry_hash":"b1b135fd2964…","screenshot":"transcripts/S01_scene1_counter_accept/turn-2.html"}
+```
+
+### Timestamp, action, result and relevant screenshot/link
+
+The timestamp is the **simulated day** of the ledger; wall-clock time is in the `run` header, outside every hash. Links are relative to this file in the repository. The demo walk's operations, in order ([full table with hashes and the security events](evidence/demo_walk/operations_log.md)):
+
+| Seq | Simulated day | Action | Result | Link |
+| --- | --- | --- | --- | --- |
+| 1 | Day 0 | `ACCEPT_OFFER` (by AGENT) | **EXECUTED**, Tier 1: Commitment CMT-b431e32e1be3d805 is ACTIVE; forward concession ¥0.00 booked | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 2 | Day 0 | `DRAW_FACILITY` (by AGENT) | **EXECUTED**, Tier 1: Drew ¥149,986.20 on FAC-LINE on day 0 | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 3 | Day 2 | `ADVANCE_CLOCK` (by SYSTEM) | **EXECUTED**, Tier 1: Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 4 | Day 2 | `RECEIVE_PAYMENT` (by SYSTEM) | **EXECUTED**, Tier 1: Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on… | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 5 | Day 30 | `ADVANCE_CLOCK` (by SYSTEM) | **EXECUTED**, Tier 1: Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) e… | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 6 | Day 34 | `ADVANCE_CLOCK` (by SYSTEM) | **EXECUTED**, Tier 1: Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired… | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 7 | Day 34 | `SUBMIT_INVOICE_FOR_FINANCING` (by AGENT) | **PENDING_APPROVAL**, Tier 2: Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the… | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 8 | Day 34 | `SUBMIT_INVOICE_FOR_FINANCING` (by AGENT) | **EXECUTED**, Tier 2: Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 9 | Day 36 | `ADVANCE_CLOCK` (by SYSTEM) | **EXECUTED**, Tier 1: Clock moved from day 34 to day 36: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 10 | Day 36 | `RECEIVE_PAYMENT` (by SYSTEM) | **EXECUTED**, Tier 1: Received ¥162,800.00 on RCV-A | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 11 | Day 38 | `ADVANCE_CLOCK` (by SYSTEM) | **EXECUTED**, Tier 1: Clock moved from day 36 to day 38: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired… | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 12 | Day 47 | `ADVANCE_CLOCK` (by SYSTEM) | **EXECUTED**, Tier 1: Clock moved from day 38 to day 47: 1 scheduled flow(s) posted (net −¥200,000.00), 0 invoice(s) issued, 0 commitment(s) … | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 13 | Day 47 | `RECEIVE_PAYMENT` (by SYSTEM) | **EXECUTED**, Tier 1: Received ¥420,000.00 on RI:BUYER-1:2; repaid advance ¥200,000.00 + interest ¥1,282.19 + fee ¥500.00 (10 days billed as … | [operations_log.md](evidence/demo_walk/operations_log.md) |
+| 14 | Day 47 | `REPAY_FACILITY` (by AGENT) | **EXECUTED**, Tier 1: Repaid ¥149,986.20 on FAC-LINE with interest ¥1,236.05 (¥149,986.20 × 640bp × 47/365 = ¥1,236.05) | [operations_log.md](evidence/demo_walk/operations_log.md) |
+
+The nine security events of the walk are: seven from the FastCapital message sent to chat as a counterparty (the injection spans "URGENT", "pre-approved", "Reply ACCEPT" and "you already agreed", an unknown counterparty, an unevidenced prior concession, and a data-extraction request for the reserve, facility limits and Buyer B's terms); one when the owner pastes the same text into chat (ignored, nothing approved); and the refused anonymous `GET /evidence`. The four refusals with their events and the books before and after: [security_refusals.md](evidence/security_refusals.md).
+
+**Screenshots.** Each `/nl` turn of the committed 3 Oct run has a readable card (`services/api/evals/e2e/latest/transcripts/<task>/turn-<n>.html`), linked from the table below. The demo video is to be added by the team.
+
+#### The committed run of 3 Oct 2026 (generated tables)
+
+All 49 chains were recorded on 3 Oct 2026 at `db097e0`, before contract ingestion and the UI overhaul; they were verified again on 16 Oct 2026 (49 VALID). The tables below are written by `uv run --project services/api python scripts/build_deliverables.py --refresh-evidence` from `services/api/evals/e2e/latest/`; the fresh run of 16 Oct is the one summarised above.
 
 **Run header** (from the `run` records):
 
@@ -145,29 +186,7 @@ We do not submit on-chain transaction hashes, because Topic E is not an on-chain
 | `S49_reconcile_shows_bank_reference` | The bank feed sends a reference with each receipt; the same reference under a new key is refused and reconciliation sho… | 1 / 2 | 0 | PASSED | [evidence](../../services/api/evals/e2e/latest/evidence/S49_reconcile_shows_bank_reference.jsonl) |
 <!-- END:evidence-tasks -->
 
-**Evidence format** (ADR-0004; one JSON object per line). Each per-task file holds, in order:
-
-| Record | Fields | Notes |
-| --- | --- | --- |
-| `task` | `task`, `title`, `status`, `turns[]` (`n`, `actor`, `request`, `intent`, `outcome`, `operations`, `transcript`) | Written by the scenario runner: the natural-language requests and what each turn did |
-| `run` | `project`, `competition`, `scenario`, `scenario_sha256`, `offers_sha256`, `mandate_version`, `mandate_signature`, `llm_mode`, `git_sha`, `recorded_at`, `simulated_day`, `verify` | `recorded_at` is wall-clock UTC and sits **outside** every hash |
-| `operation` | `seq`, `day` (simulated), `op_id`, `kind`, `requested_by`, `idempotency_key`, `status`, `tier`, `violations`, `message`, `payload_json`, `result_json`, `prev_hash`, `entry_hash`, `screenshot` | `entry_hash = sha256(prev_hash + payload_json + result_json)`; the genesis `prev_hash` is 64 zeros |
-| `security_event` | `id`, `day`, `kind`, `counterparty_id`, `trace_id`, `action_taken`, `detail`, `spans[]` | Refusals that never reached the executor (for example, a message stopped at the verifier) still appear |
-| `chain` | `operations`, `chain_valid`, `genesis_hash`, `head_hash` | The last line; `head_hash` is the last operation's `entry_hash` |
-
-An operation line, abridged (S01, seq 4):
-
-```
-{"record":"operation","seq":4,"day":0,"kind":"DRAW_FACILITY","requested_by":"OWNER","status":"EXECUTED","tier":"TIER_1",
- "message":"Drew ¥150,000.00 on FAC-LINE on day 0",
- "payload_json":"{\"amount_fen\":15000000,\"day\":0,\"facility_id\":\"FAC-LINE\",\"kind\":\"DRAW_FACILITY\",\"mandate_version\":1,...}",
- "result_json":"{\"kind\":\"DRAW_FACILITY\",\"status\":\"EXECUTED\",\"tier\":\"TIER_1\",\"violations\":[],...}",
- "prev_hash":"53e281d24ed0…","entry_hash":"b1b135fd2964…","screenshot":"transcripts/S01_scene1_counter_accept/turn-2.html"}
-```
-
-### Timestamp, action, result and relevant screenshot/link
-
-The timestamp is the **simulated day** of the ledger. Every task starts from a reset at day 0 and acts on its decision day, so all entries read Day 0. Future effects, such as the day-32 repayment from Receivable A, are scheduled in the trajectory rather than logged as separate operations. The wall-clock time of the run is in the run header above. Links are relative to this file in the repository.
+**Operations of the committed run, with links to the turn cards.**
 
 <!-- BEGIN:evidence-log -->
 | Task | Timestamp (simulated day) | Seq | Action | Result | Link |
@@ -275,40 +294,55 @@ The timestamp is the **simulated day** of the ledger. Every task starts from a r
 | `S49_reconcile_shows_bank_reference` | Day 0 | 2 | `RECEIVE_PAYMENT` RCV-A ¥50,000.00 (by OWNER) | **REFUSED**, Tier 1: Refused: Duplicate bank event: reference BANK-S49-1 on RCV-A was already booked as setup-rcpt-1 (se… | [turn card](../../services/api/evals/e2e/latest/evidence/S49_reconcile_shows_bank_reference.jsonl) |
 <!-- END:evidence-log -->
 
-The run above was recorded with `python3 scripts/run_scenarios.py --inproc --screenshots services/api/evals/e2e/latest/transcripts --out services/api/evals/e2e/latest`, and these tables were then regenerated with `uv run --project services/api python scripts/build_deliverables.py --refresh-evidence`. The "screenshot/link" for each entry is the HTML card of the `/nl` turn that produced it; the runner writes no PNG images. [TEAM: if any code changes after this run, re-run both commands at the submission commit so the tables, the code version and a judge's re-run agree.]
-
 ## 03 Reproduction Guide
 
 ### Steps required for judges to reproduce or verify the evidence
 
-**Requirements:** Python 3.12 and [`uv`](https://docs.astral.sh/uv/); no API key and no network after the dependencies are installed. Clone the repository at [TEAM: repository URL and the submitted commit or tag], then work from its root.
+**Requirements:** Python 3.12 and [`uv`](https://docs.astral.sh/uv/); no API key and no network after the dependencies are installed. Clone https://github.com/peachoolongtee/smu2sz at [TEAM: the submitted commit or tag], then work from its root. The runs below use the published demo credentials, so they need `DEMO_MODE=1` (it is off by default). `PYTHONUTF8=1` keeps the Windows console from mangling ¥.
 
 **A. Verify the submitted evidence without installing our code** (standard library only):
 
 ```
-python3 scripts/verify_evidence.py services/api/evals/e2e/latest/evidence/S01_scene1_counter_accept.jsonl
+python3 scripts/verify_evidence.py docs/deliverables/evidence/demo_walk/operations_log.jsonl
+for f in docs/deliverables/evidence/scenarios/evidence/*.jsonl; do python3 scripts/verify_evidence.py "$f"; done
 for f in services/api/evals/e2e/latest/evidence/*.jsonl; do python3 scripts/verify_evidence.py "$f"; done
 ```
 
-Expected: every file prints `VALID: <n> operations, <m> security events, head <hash>…` and exits 0; 49 files, 49 VALID. The script recomputes every `entry_hash` from `prev_hash + payload_json + result_json`, checks the links and the sequence, and compares the chain line's `head_hash`. Editing any payload, result or hash makes it print `INVALID` and exit 1.
+Expected: every file prints `VALID: <n> operations, <m> security events, head <hash>…` and exits 0; the first line reads `VALID: 14 operations, 9 security events, head 99febe38404ee7e6…`, the seven task files are VALID, and the last loop prints 49 VALID. The script recomputes every `entry_hash` from `prev_hash + payload_json + result_json`, checks the links and the sequence, and compares the chain line's `head_hash`. Editing any payload, result or hash makes it print `INVALID` and exit 1. Verify the per-task files, not the concatenated `evidence.jsonl` (49 independent chains one after another).
 
-Verify the per-task files, not the concatenated `evidence.jsonl`. That file holds 49 independent chains one after another, so the verifier (which expects one chain) reports it as INVALID.
-
-**B. Re-run everything in-process** (reset → run → export → verify in one command; each task resets itself):
+**B. Re-run the demo walk, export its log and verify it** (in process, about a minute):
 
 ```
-cd services/api && uv sync && cd ../..
-python3 scripts/run_scenarios.py --inproc --out /tmp/tl-e2e
+uv sync --project services/api
+DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py
+DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/export_demo_evidence.py /tmp/walk.jsonl
+python3 scripts/verify_evidence.py /tmp/walk.jsonl
+```
+
+Expected: the first command ends with `RESULT: … cure executed and alert cleared: True` and exits 0; the second prints `GET /evidence: 200 with the owner token, 401 without`; the third prints `VALID: 14 operations, 9 security events, head <hash>…`. The head differs from run to run.
+
+**C. Re-run the 49 scripted tasks** (in process; each task resets itself):
+
+```
+DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/run_scenarios.py --inproc --out /tmp/tl-e2e
 for f in /tmp/tl-e2e/evidence/*.jsonl; do python3 scripts/verify_evidence.py "$f"; done
 ```
 
-Expected: `49/49 scenarios passed (0 skipped)`, then 49 VALID lines. Wall-clock timestamps, latencies and head hashes differ from run to run (ADR-0004, note of 3 Oct); every chain still verifies.
+Expected: `49/49 scenarios passed (0 skipped), 87 turns`, then 49 VALID lines. Leave `--out` out and the run overwrites the committed one in `services/api/evals/e2e/latest/`.
 
-**C. Against a running server** (the same path a harness or the web app uses):
+**D. The four security refusals:**
+
+```
+DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/security_refusals_evidence.py /tmp/security_refusals.json
+```
+
+Expected: a JSON file with four cases, each with `books_moved: false`; it matches [security_refusals.json](evidence/security_refusals.json) apart from generated identifiers.
+
+**E. Against a running server** (the same path a harness or the web app uses):
 
 ```
 # terminal 1: the API in demo mode, cache-mode model, in-memory store
-cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache uv run uvicorn app.main:app --port 8000
+cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 uv run uvicorn app.main:app --port 8000
 
 # terminal 2: reset, run one task, export, verify
 curl -X POST -H "X-Owner-Token: demo-owner-token" http://localhost:8000/demo/reset
@@ -317,27 +351,15 @@ curl -H "X-Owner-Token: demo-owner-token" http://localhost:8000/evidence > /tmp/
 python3 scripts/verify_evidence.py /tmp/s01_export.jsonl
 ```
 
-Expected:
-- `1/1 scenarios passed`;
-- `VALID: 7 operations, 0 security events, head <hash>…`: the demo reset's three document confirmations (the demo opens on the
-  confirmed demo documents, brief 03), then S01's four operations;
-- a chain that matches `/tmp/tl-s01/evidence/S01_scene1_counter_accept.jsonl` in length and structure. The head hash differs from run to run (each session's idempotency keys carry a random token), so compare the verifier's VALID result, not the head.
+Expected: `1/1 scenarios passed`, then `VALID: 7 operations, 0 security events, head <hash>…` (the demo reset's three document confirmations, then S01's four operations). Running all 49 tasks over HTTP (`--base-url` without `--only`) gives `44/44 scenarios passed (5 skipped)`; the runner skips S10, S21, S26, S35 and S49 over HTTP because they need in-process set-up, so use run C for the full set. `GET /evidence` requires the owner token (401 without it). `demo-owner-token` is a published **demo-only** credential, accepted only while `DEMO_MODE=1`; the Docker Compose deployment turns it off.
 
-`GET /evidence` requires the owner token (it returns 401 without it). `demo-owner-token` is a published **demo-only** credential, accepted only while `DEMO_MODE` is on (the default for local runs; the Docker Compose deployment turns it off).
+**Reference values from our own check** (16 Oct 2026, Windows, `dev` at `0f92d433`): runs A to E above were made as written (E on a non-default port); the demo walk, the 49 tasks (49/49, 87 turns) and the HTTP run (44/44, 5 skipped) passed, and every chain verified.
 
-Running all 49 tasks over HTTP gives `44/44 passed, 5 skipped` (checked on 3 Oct 2026 at `1bc96ba` against a server on port 8011; not repeated at `db097e0`). The runner skips S10, S21, S26, S35 and S49 over HTTP because they need in-process set-up; use run B for the full set.
-
-**Reference values from our own check** (3 Oct 2026, branch `docs/gate-checkpoint`; the application code is that of `dev` at `db097e0`):
-
-- all 49 per-task files in `evals/e2e/latest/evidence/` verify (49 VALID), checked again on 12 Oct 2026 on `dev` at 86123a3c (the files are those of 3 Oct);
-- run C against a live server gave S01 a VALID chain of 4 operations with its own head, and a fresh in-process run gave another VALID chain with a different head (heads are not reproducible, see ADR-0004); this was checked on 3 Oct at `1bc96ba` and not repeated at `db097e0`, where only the in-process run was made;
-- changing one amount in S01's payload makes the verifier print `INVALID … entry_hash mismatch` and exit 1.
-
-**D. Other checks** (optional):
+**F. Other checks** (optional):
 
 ```
-cd services/api && uv run pytest                       # the full API test suite: 6,895 passed, 37 skipped on 12 Oct 2026 (dev after the UI overhaul and the Deals page; Windows, `SKIP_PERF_BENCH=1`, about 25 minutes; README)
+cd services/api && uv run pytest                           # the API test suite: 8,556 passed, 1 known failure on dev 0f92d433 (docs/deliverables/TEST_CASES.md)
 cd services/api && uv run python -m app.security.attacks   # the 126-attack catalogue plus the 133 chat attacks (259); prints the zero-harm metrics
 ```
 
-For the second command, expect every zero-harm metric at 0, a detection rate of 98.4% (124 of 126) and a security-event rate of 73.0% (for the 126 API attacks, `LLM_MODE=cache`; `services/api/evals/security/latest_report.md`), and 0 with harm among the 133 chat attacks. It exits 0, and 1 if any attack causes harm that is not a documented finding. `--report` also rewrites `services/api/evals/security/latest_report.{json,md}`.
+For the second command, expect every zero-harm metric at 0 and 0 with harm among the 133 chat attacks (126 API attacks, 43 as the owner, 64 as a counterparty and 26 with the agent key through chat). `--report` also rewrites `services/api/evals/security/latest_report.{json,md}`. The test catalogue is [TEST_CASES.md](TEST_CASES.md).

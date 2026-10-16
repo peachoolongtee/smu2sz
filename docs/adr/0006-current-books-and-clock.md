@@ -36,6 +36,10 @@ commitment.
   4. sets `as_of_day`, bumps `state_version`, logs one `ADVANCE_CLOCK` entry on the hash chain.
   It never records a receipt. Receipts come only from the bank feed (`ReceivePayment`), which is what
   makes a missing receipt detectable.
+- **Amended 15 Oct 2026 (SEC-09, `sec/authority-boundaries`):** only the owner may move the clock
+  (`POST /clock/advance`). The bank-feed key keeps its one job, recording receipts as SYSTEM, and no
+  longer advances time. Before this, a leaked feed key could jump the books forward and expire every
+  commitment.
 
 ### 3. Live obligations
 

@@ -44,9 +44,9 @@ function ownerHeaders(opts: Pick<HttpOptions, "auth" | "token"> = {}): Record<st
   return token ? { "X-Owner-Token": token } : {};
 }
 
-const UNAUTHORIZED = "Owner sign-in required (401). Sign in with the owner token to use this.";
-const REJECTED = "The API rejected the owner token (401). Sign in again with the correct token.";
-export const NOT_CONFIGURED = "Server credentials not configured (503). Set OWNER_TOKEN and AGENT_KEY on the API, or run it in demo mode.";
+const UNAUTHORIZED = "Owner sign-in required. Sign in with the owner token to use this.";
+const REJECTED = "The API rejected the owner token. Sign in again with the correct token.";
+export const NOT_CONFIGURED = "Server credentials not configured. Set OWNER_TOKEN and AGENT_KEY on the API, or run it in demo mode.";
 const unreachable = () => new ApiError(0, `Cannot reach the API at ${API_URL}. Is the service running?`, undefined, "unreachable", { url: API_URL });
 
 function unauthorized(opts: Pick<HttpOptions, "auth" | "token" | "silent">): ApiError {
@@ -79,7 +79,7 @@ function detailMessage(detail: unknown, fallback: string): string {
  */
 const LANG_ROUTES = [
   /^\/home$/, /^\/alerts$/, /^\/alerts\/[^/]+\/act$/, /^\/reconciliation$/, /^\/approvals\/queue$/, /^\/approvals\/[^/]+$/, /^\/ledger$/, /^\/audit$/,
-  /^\/offers\/[^/]+\/(evaluate|accept|decline)$/, /^\/negotiate\/[^/]+$/, /^\/router\/plan$/, /^\/decisions(\/.*)?$/, /^\/receivables\/[^/]+\/chase$/,
+  /^\/offers\/[^/]+\/(evaluate|accept|decline)$/, /^\/offers\/[^/]+\/counters\/[^/]+\/(message|offered|offered\/withdraw|buyer-accepted|buyer-declined)$/, /^\/offers\/[^/]+\/buyer-reply$/, /^\/negotiate\/[^/]+$/, /^\/router\/plan$/, /^\/decisions(\/.*)?$/, /^\/receivables\/[^/]+\/chase$/,
   /^\/receivables$/, /^\/receivables\/worth$/, /^\/cash\/price-curve$/, /^\/buyers\/[^/]+\/envelope$/,
 ];
 

@@ -149,6 +149,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -428,6 +429,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [
@@ -728,6 +730,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "offer_received",
           "eyebrow": "One offer waits to be read",
@@ -833,7 +836,7 @@
             {
               "key": "capacity",
               "label": "Spare capacity",
-              "value_display": "¥81,000 today; ¥81,000 if you accept as asked",
+              "value_display": "¥81,000 today; ¥81,000 if you accept their request",
               "note": "Room for another payment: ¥81,000 (today ¥81,000).",
               "tone": "neutral",
               "state": "none",
@@ -1065,6 +1068,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "offer_received",
           "eyebrow": "有一份报价等待阅读",
@@ -1170,7 +1174,7 @@
             {
               "key": "capacity",
               "label": "可用余量",
-              "value_display": "今天 ¥81,000；如果您按对方要求接受，¥81,000",
+              "value_display": "今天 ¥81,000；如果您接受对方的要求，¥81,000",
               "note": "再支付一笔款项的余量：¥81,000（目前 ¥81,000）。",
               "tone": "neutral",
               "state": "none",
@@ -1366,7 +1370,7 @@
           "rows": [
             {
               "label": "Lowest cash",
-              "expected_text": "¥150,013.80 in 30 days",
+              "expected_text": "¥152,790 in 30 days",
               "late_text": "−¥250,000 in 60 days"
             },
             {
@@ -1376,12 +1380,12 @@
             },
             {
               "label": "Maximum shortfall",
-              "expected_text": "¥149,986.20",
+              "expected_text": "¥147,210",
               "late_text": "¥550,000"
             },
             {
               "label": "Additional funding needed",
-              "expected_text": "¥149,986.20 covered by FLOW's committed plan",
+              "expected_text": "¥147,210 covered by FLOW's committed plan",
               "late_text": "¥550,000 uncovered"
             }
           ]
@@ -1404,12 +1408,13 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
-          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
-          "headline_short": "Counter instead of accepting as asked",
-          "authority_text": "FLOW can send this counter without your approval.",
+          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,035.99 once if accepted.",
+          "headline_short": "Counter instead of accepting their request",
+          "authority_text": "This counter is within your mandate: no approval needed.",
           "primary": {
             "label": "Review the counter",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
@@ -1468,7 +1473,7 @@
           {
             "key": "open_request",
             "label": "The open request",
-            "value_display": "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once",
+            "value_display": "about 2.6% of it if you accept their request, over 12 months, plus ¥5,040.00 once",
             "note": "the cost of keeping the same sales on softer terms, not profit gained",
             "tone": "neutral",
             "entered": true
@@ -1517,8 +1522,8 @@
             {
               "key": "capacity",
               "label": "Spare capacity",
-              "value_display": "¥81,000 today; ¥0 if Foshan accepts Option A",
-              "note": "Room for another payment: ¥0 for the next 31 days (today ¥81,000).",
+              "value_display": "¥81,000 today; ¥2,000 if Foshan accepts Option A",
+              "note": "Room for another payment: ¥2,000 (today ¥81,000).",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -1721,7 +1726,7 @@
           "rows": [
             {
               "label": "最低现金",
-              "expected_text": "30 天后降至 ¥150,013.80",
+              "expected_text": "30 天后降至 ¥152,790",
               "late_text": "60 天后降至 −¥250,000"
             },
             {
@@ -1731,12 +1736,12 @@
             },
             {
               "label": "最大缺口",
-              "expected_text": "¥149,986.20",
+              "expected_text": "¥147,210",
               "late_text": "¥550,000"
             },
             {
               "label": "需要额外融资",
-              "expected_text": "¥149,986.20 的缺口由 FLOW 已承诺的方案覆盖",
+              "expected_text": "¥147,210 的缺口由 FLOW 已承诺的方案覆盖",
               "late_text": "¥550,000 缺口无法覆盖"
             }
           ]
@@ -1759,12 +1764,13 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
-          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
-          "headline_short": "还价，不按对方要求接受",
-          "authority_text": "FLOW 可以在无需您批准的情况下发送这份还价。",
+          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,035.99）还价。",
+          "headline_short": "还价，不接受对方的要求",
+          "authority_text": "这份还价在您的授权范围内：无需批准。",
           "primary": {
             "label": "查看还价",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
@@ -1823,7 +1829,7 @@
           {
             "key": "open_request",
             "label": "当前的请求",
-            "value_display": "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
+            "value_display": "如果接受对方的要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
             "note": "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润",
             "tone": "neutral",
             "entered": true
@@ -1872,8 +1878,8 @@
             {
               "key": "capacity",
               "label": "可用余量",
-              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥0",
-              "note": "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。",
+              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥2,000",
+              "note": "再支付一笔款项的余量：¥2,000（目前 ¥81,000）。",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -2097,6 +2103,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -2393,6 +2400,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [
@@ -2563,8 +2571,8 @@
           {
             "key": "outstanding",
             "label": "Outstanding",
-            "value_display": "¥1,002,800",
-            "note": "¥162,800 overdue; next due in 13 days",
+            "value_display": "¥1,000,000",
+            "note": "¥160,000 overdue; next due in 13 days",
             "tone": "bad",
             "state": "overdue",
             "state_text": "Overdue"
@@ -2589,7 +2597,7 @@
             "proportion": 1
           }
         ],
-        "relationship_text": "Foshan contributes an estimated ¥1.01m a year, owes ¥1,003k (100% of your open receivables), and has no open negotiation.",
+        "relationship_text": "Foshan contributes an estimated ¥1.01m a year, owes ¥1,000k (100% of your open receivables), and has no open negotiation.",
         "receivable_flow": [
           {
             "key": "owed",
@@ -2691,6 +2699,19 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+            "lifecycle": "agreed",
+            "state_word": "Payment late",
+            "state_tone": "bad",
+            "after_group": "payment_late",
+            "after_group_label": "Payment late",
+            "summary_text": "Agreed 34 days ago",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -2787,7 +2808,7 @@
         "history": [
           {
             "when_text": "32 days ago",
-            "text": "The receipt of ¥255,013.80 against the ¥420,000 invoice came in.",
+            "text": "The receipt of ¥257,790 against the ¥420,000 invoice came in.",
             "href": null,
             "link_label": null,
             "state": "overdue",
@@ -2858,8 +2879,8 @@
           {
             "key": "outstanding",
             "label": "未收款",
-            "value_display": "¥1,002,800",
-            "note": "其中 ¥162,800 已逾期；下一笔13 天后到期",
+            "value_display": "¥1,000,000",
+            "note": "其中 ¥160,000 已逾期；下一笔13 天后到期",
             "tone": "bad",
             "state": "overdue",
             "state_text": "已逾期"
@@ -2884,7 +2905,7 @@
             "proportion": 1
           }
         ],
-        "relationship_text": "Foshan每年估计贡献 ¥101万，应付 ¥1,003k（占您未收应收款的 100%），目前没有进行中的谈判。",
+        "relationship_text": "Foshan每年估计贡献 ¥101万，应付 ¥1,000k（占您未收应收款的 100%），目前没有进行中的谈判。",
         "receivable_flow": [
           {
             "key": "owed",
@@ -2986,6 +3007,19 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+            "lifecycle": "agreed",
+            "state_word": "付款逾期",
+            "state_tone": "bad",
+            "after_group": "payment_late",
+            "after_group_label": "付款逾期",
+            "summary_text": "34 天前达成协议",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [
@@ -3082,7 +3116,7 @@
         "history": [
           {
             "when_text": "32 天前",
-            "text": "已收到 ¥255,013.80，对应 ¥420,000 的发票。",
+            "text": "已收到 ¥257,790，对应 ¥420,000 的发票。",
             "href": null,
             "link_label": null,
             "state": "overdue",
@@ -3155,8 +3189,8 @@
           {
             "key": "outstanding",
             "label": "Outstanding",
-            "value_display": "¥1,002,800",
-            "note": "¥162,800 overdue; next due in 13 days",
+            "value_display": "¥1,000,000",
+            "note": "¥160,000 overdue; next due in 13 days",
             "tone": "bad",
             "state": "overdue",
             "state_text": "Overdue"
@@ -3181,7 +3215,7 @@
             "proportion": 1
           }
         ],
-        "relationship_text": "Foshan contributes an estimated ¥1.01m a year, owes ¥1,003k (100% of your open receivables), and has no open negotiation.",
+        "relationship_text": "Foshan contributes an estimated ¥1.01m a year, owes ¥1,000k (100% of your open receivables), and has no open negotiation.",
         "receivable_flow": [
           {
             "key": "owed",
@@ -3283,6 +3317,19 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+            "lifecycle": "agreed",
+            "state_word": "Payment late",
+            "state_tone": "bad",
+            "after_group": "payment_late",
+            "after_group_label": "Payment late",
+            "summary_text": "Agreed 34 days ago",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -3375,7 +3422,7 @@
             {
               "key": "capacity",
               "label": "Spare capacity",
-              "value_display": "¥0 today",
+              "value_display": "¥2,000 today",
               "note": null,
               "tone": "neutral",
               "state": "none",
@@ -3396,7 +3443,7 @@
           },
           {
             "when_text": "32 days ago",
-            "text": "The receipt of ¥255,013.80 against the ¥420,000 invoice came in.",
+            "text": "The receipt of ¥257,790 against the ¥420,000 invoice came in.",
             "href": null,
             "link_label": null,
             "state": "overdue",
@@ -3467,8 +3514,8 @@
           {
             "key": "outstanding",
             "label": "未收款",
-            "value_display": "¥1,002,800",
-            "note": "其中 ¥162,800 已逾期；下一笔13 天后到期",
+            "value_display": "¥1,000,000",
+            "note": "其中 ¥160,000 已逾期；下一笔13 天后到期",
             "tone": "bad",
             "state": "overdue",
             "state_text": "已逾期"
@@ -3493,7 +3540,7 @@
             "proportion": 1
           }
         ],
-        "relationship_text": "Foshan每年估计贡献 ¥101万，应付 ¥1,003k（占您未收应收款的 100%），目前没有进行中的谈判。",
+        "relationship_text": "Foshan每年估计贡献 ¥101万，应付 ¥1,000k（占您未收应收款的 100%），目前没有进行中的谈判。",
         "receivable_flow": [
           {
             "key": "owed",
@@ -3595,6 +3642,19 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+            "lifecycle": "agreed",
+            "state_word": "付款逾期",
+            "state_tone": "bad",
+            "after_group": "payment_late",
+            "after_group_label": "付款逾期",
+            "summary_text": "34 天前达成协议",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [
@@ -3687,7 +3747,7 @@
             {
               "key": "capacity",
               "label": "可用余量",
-              "value_display": "今天 ¥0",
+              "value_display": "今天 ¥2,000",
               "note": null,
               "tone": "neutral",
               "state": "none",
@@ -3708,7 +3768,7 @@
           },
           {
             "when_text": "32 天前",
-            "text": "已收到 ¥255,013.80，对应 ¥420,000 的发票。",
+            "text": "已收到 ¥257,790，对应 ¥420,000 的发票。",
             "href": null,
             "link_label": null,
             "state": "overdue",

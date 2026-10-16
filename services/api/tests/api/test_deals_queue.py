@@ -27,7 +27,8 @@ NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "D
          "Bank credit line", "Invoice financing (onboarded platform)", "Buyer early-payment offer",
          "Government-guaranteed working-capital loan"]
 ROW = {"key", "kind", "tier", "customer_id", "customer_short", "subject_text", "subject_demo_text", "lifecycle", "topic_text", "last_activity_day", "last_activity_text", "status_text", "consequence_text",
-       "severity", "deadline_day", "expected_day", "differentiator_text", "decision_id", "invoice_id", "approval_id", "href"}
+       "severity", "deadline_day", "expected_day", "differentiator_text", "decision_id", "invoice_id", "approval_id", "href",
+       "after_group", "after_group_label"}
 
 
 @pytest.fixture
@@ -134,9 +135,9 @@ def test_every_row_links_to_its_own_task_and_never_to_another_rows_context(api: 
     assert collection["href"] == f"/receivables?customer=BUYER-2&invoice={collection['invoice_id']}&from=deals"
     reply = by_kind["BUYER_REPLY"]
     assert reply["href"] == f"/deals?customer=BUYER-1&decision={quote(reply['decision_id'], safe='')}"
-    agreement, promise = by_kind["AGREEMENT"], by_kind["PROMISE"]
-    assert agreement["decision_id"] == promise["decision_id"] and agreement["decision_id"].startswith("deal:")
-    assert promise["invoice_id"] == "RCV-A" and promise["href"].endswith("&invoice=RCV-A") and promise["expected_day"] is not None
+    agreement = by_kind["AGREEMENT"]
+    assert "PROMISE" not in by_kind and "has promised" in agreement["consequence_text"]  # the promise is folded into its deal's row
+    assert agreement["decision_id"].startswith("deal:") and agreement["href"].endswith(quote(agreement["decision_id"], safe=""))
     assert agreement["status_text"] == "Agreed" and agreement["consequence_text"]
 
 

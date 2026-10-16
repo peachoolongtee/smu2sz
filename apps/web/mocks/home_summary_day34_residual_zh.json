@@ -37,8 +37,8 @@
     "funding_lots": [
       {
         "facility_name": "Bank credit line",
-        "amount_display": "¥149,986.20",
-        "remaining_display": "¥149,986.20",
+        "amount_display": "¥147,210.00",
+        "remaining_display": "¥147,210.00",
         "landed": true,
         "opening": false,
         "arrival_day": 0,
@@ -48,8 +48,8 @@
       },
       {
         "facility_name": "Invoice financing (onboarded platform)",
-        "amount_display": "¥155,013.80",
-        "remaining_display": "¥155,013.80",
+        "amount_display": "¥157,790.00",
+        "remaining_display": "¥157,790.00",
         "landed": true,
         "opening": false,
         "arrival_day": 37,
@@ -173,8 +173,8 @@
       },
       {
         "day": 47,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [
           {
             "kind": "RECEIPT",
@@ -198,169 +198,169 @@
             "kind": "INTEREST",
             "label": "利息：Invoice financing (onboarded platform)（Foshan Home Retail Co. 的 ¥420,000.00 发票（9 天后到期））",
             "label_short": "利息",
-            "amount_fen": -99379,
-            "amount_display": "−¥993.79",
-            "amount_short": "−¥993.79"
+            "amount_fen": -101159,
+            "amount_display": "−¥1,011.59",
+            "amount_short": "−¥1k"
           },
           {
             "kind": "FEE",
             "label": "费用：Invoice financing (onboarded platform)（Foshan Home Retail Co. 的 ¥420,000.00 发票（9 天后到期））",
             "label_short": "费用",
-            "amount_fen": -38753,
-            "amount_display": "−¥387.53",
-            "amount_short": "−¥387.53"
+            "amount_fen": -39448,
+            "amount_display": "−¥394.48",
+            "amount_short": "−¥394.48"
           },
           {
             "kind": "REPAYMENT",
             "label": "偿还Foshan Home Retail Co. 的 ¥420,000.00 发票（9 天后到期）的融资款",
             "label_short": "还款",
-            "amount_fen": -15501380,
-            "amount_display": "−¥155,013.80",
-            "amount_short": "−¥155k"
+            "amount_fen": -15779000,
+            "amount_display": "−¥157,790.00",
+            "amount_short": "−¥158k"
           }
         ],
-        "net_fen": 16360488,
-        "net_display": "¥163,604.88",
-        "net_short": "¥164k",
+        "net_fen": 16080393,
+        "net_display": "¥160,803.93",
+        "net_short": "¥161k",
         "when": "9 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 48,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "10 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 49,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "11 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 50,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "12 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 51,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "13 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 52,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "14 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 53,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "15 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 54,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "16 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 55,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "17 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 56,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "18 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 57,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "19 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 58,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "20 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 59,
-        "closing_fen": 16360488,
-        "closing_display": "¥163,604.88",
+        "closing_fen": 16080393,
+        "closing_display": "¥160,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "21 天后",
-        "display": "¥163,604.88"
+        "display": "¥160,803.93"
       },
       {
         "day": 60,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [
           {
             "kind": "FLOW",
@@ -375,188 +375,188 @@
         "net_display": "−¥45,000.00",
         "net_short": "−¥45k",
         "when": "22 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 61,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "23 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 62,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "24 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 63,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "25 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 64,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "26 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 65,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "27 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 66,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "28 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 67,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "29 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 68,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "30 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 69,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "31 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 70,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "32 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 71,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "33 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 72,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "34 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 73,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "35 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 74,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "36 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 75,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "37 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 76,
-        "closing_fen": 11860488,
-        "closing_display": "¥118,604.88",
+        "closing_fen": 11580393,
+        "closing_display": "¥115,803.93",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "38 天后",
-        "display": "¥118,604.88"
+        "display": "¥115,803.93"
       },
       {
         "day": 77,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [
           {
             "kind": "RECEIPT",
@@ -572,161 +572,161 @@
             "kind": "INTEREST",
             "label": "利息：Bank credit line",
             "label_short": "利息",
-            "amount_fen": -202502,
-            "amount_display": "−¥2,025.02",
+            "amount_fen": -198754,
+            "amount_display": "−¥1,987.54",
             "amount_short": "−¥2k"
           },
           {
             "kind": "REPAYMENT",
             "label": "向Bank credit line还款",
             "label_short": "还款",
-            "amount_fen": -14998620,
-            "amount_display": "−¥149,986.20",
-            "amount_short": "−¥150k"
+            "amount_fen": -14721000,
+            "amount_display": "−¥147,210.00",
+            "amount_short": "−¥147k"
           }
         ],
-        "net_fen": 26798878,
-        "net_display": "¥267,988.78",
-        "net_short": "¥268k",
+        "net_fen": 27080246,
+        "net_display": "¥270,802.46",
+        "net_short": "¥271k",
         "when": "39 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 78,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "40 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 79,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "41 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 80,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "42 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 81,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "43 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 82,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "44 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 83,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "45 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 84,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "46 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 85,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "47 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 86,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "48 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 87,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "49 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 88,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "50 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 89,
-        "closing_fen": 38659366,
-        "closing_display": "¥386,593.66",
+        "closing_fen": 38660639,
+        "closing_display": "¥386,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "51 天后",
-        "display": "¥386,593.66"
+        "display": "¥386,606.39"
       },
       {
         "day": 90,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [
           {
             "kind": "FLOW",
@@ -741,188 +741,188 @@
         "net_display": "−¥45,000.00",
         "net_short": "−¥45k",
         "when": "52 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 91,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "53 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 92,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "54 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 93,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "55 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 94,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "56 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 95,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "57 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 96,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "58 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 97,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "59 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 98,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "60 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 99,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "61 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 100,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "62 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 101,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "63 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 102,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "64 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 103,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "65 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 104,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "66 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 105,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "67 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 106,
-        "closing_fen": 34159366,
-        "closing_display": "¥341,593.66",
+        "closing_fen": 34160639,
+        "closing_display": "¥341,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "68 天后",
-        "display": "¥341,593.66"
+        "display": "¥341,606.39"
       },
       {
         "day": 107,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [
           {
             "kind": "RECEIPT",
@@ -939,144 +939,144 @@
         "net_display": "¥420,000.00",
         "net_short": "¥420k",
         "when": "69 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 108,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "70 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 109,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "71 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 110,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "72 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 111,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "73 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 112,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "74 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 113,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "75 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 114,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "76 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 115,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "77 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 116,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "78 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 117,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "79 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 118,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "80 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 119,
-        "closing_fen": 76159366,
-        "closing_display": "¥761,593.66",
+        "closing_fen": 76160639,
+        "closing_display": "¥761,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "81 天后",
-        "display": "¥761,593.66"
+        "display": "¥761,606.39"
       },
       {
         "day": 120,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [
           {
             "kind": "FLOW",
@@ -1091,188 +1091,188 @@
         "net_display": "−¥45,000.00",
         "net_short": "−¥45k",
         "when": "82 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 121,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "83 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 122,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "84 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 123,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "85 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 124,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "86 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 125,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "87 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 126,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "88 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 127,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "89 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 128,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "90 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 129,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "91 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 130,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "92 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 131,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "93 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 132,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "94 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 133,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "95 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 134,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "96 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 135,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "97 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 136,
-        "closing_fen": 71659366,
-        "closing_display": "¥716,593.66",
+        "closing_fen": 71660639,
+        "closing_display": "¥716,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "98 天后",
-        "display": "¥716,593.66"
+        "display": "¥716,606.39"
       },
       {
         "day": 137,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [
           {
             "kind": "RECEIPT",
@@ -1289,144 +1289,144 @@
         "net_display": "¥420,000.00",
         "net_short": "¥420k",
         "when": "99 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 138,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "100 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 139,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "101 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 140,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "102 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 141,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "103 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 142,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "104 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 143,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "105 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 144,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "106 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 145,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "107 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 146,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "108 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 147,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "109 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 148,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "110 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 149,
-        "closing_fen": 113659366,
-        "closing_display": "¥1,136,593.66",
+        "closing_fen": 113660639,
+        "closing_display": "¥1,136,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "111 天后",
-        "display": "¥1,136,593.66"
+        "display": "¥1,136,606.39"
       },
       {
         "day": 150,
-        "closing_fen": 109159366,
-        "closing_display": "¥1,091,593.66",
+        "closing_fen": 109160639,
+        "closing_display": "¥1,091,606.39",
         "events": [
           {
             "kind": "FLOW",
@@ -1441,95 +1441,95 @@
         "net_display": "−¥45,000.00",
         "net_short": "−¥45k",
         "when": "112 天后",
-        "display": "¥1,091,593.66"
+        "display": "¥1,091,606.39"
       },
       {
         "day": 151,
-        "closing_fen": 109159366,
-        "closing_display": "¥1,091,593.66",
+        "closing_fen": 109160639,
+        "closing_display": "¥1,091,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "113 天后",
-        "display": "¥1,091,593.66"
+        "display": "¥1,091,606.39"
       },
       {
         "day": 152,
-        "closing_fen": 109159366,
-        "closing_display": "¥1,091,593.66",
+        "closing_fen": 109160639,
+        "closing_display": "¥1,091,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "114 天后",
-        "display": "¥1,091,593.66"
+        "display": "¥1,091,606.39"
       },
       {
         "day": 153,
-        "closing_fen": 109159366,
-        "closing_display": "¥1,091,593.66",
+        "closing_fen": 109160639,
+        "closing_display": "¥1,091,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "115 天后",
-        "display": "¥1,091,593.66"
+        "display": "¥1,091,606.39"
       },
       {
         "day": 154,
-        "closing_fen": 109159366,
-        "closing_display": "¥1,091,593.66",
+        "closing_fen": 109160639,
+        "closing_display": "¥1,091,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "116 天后",
-        "display": "¥1,091,593.66"
+        "display": "¥1,091,606.39"
       },
       {
         "day": 155,
-        "closing_fen": 109159366,
-        "closing_display": "¥1,091,593.66",
+        "closing_fen": 109160639,
+        "closing_display": "¥1,091,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "117 天后",
-        "display": "¥1,091,593.66"
+        "display": "¥1,091,606.39"
       },
       {
         "day": 156,
-        "closing_fen": 109159366,
-        "closing_display": "¥1,091,593.66",
+        "closing_fen": 109160639,
+        "closing_display": "¥1,091,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "118 天后",
-        "display": "¥1,091,593.66"
+        "display": "¥1,091,606.39"
       },
       {
         "day": 157,
-        "closing_fen": 109159366,
-        "closing_display": "¥1,091,593.66",
+        "closing_fen": 109160639,
+        "closing_display": "¥1,091,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "119 天后",
-        "display": "¥1,091,593.66"
+        "display": "¥1,091,606.39"
       },
       {
         "day": 158,
-        "closing_fen": 109159366,
-        "closing_display": "¥1,091,593.66",
+        "closing_fen": 109160639,
+        "closing_display": "¥1,091,606.39",
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
         "net_short": "¥0.00",
         "when": "120 天后",
-        "display": "¥1,091,593.66"
+        "display": "¥1,091,606.39"
       }
     ],
     "plan_series": null,
@@ -1827,13 +1827,13 @@
         "planned": false,
         "amount_fen": 42000000,
         "amount_short": "+¥420k",
-        "net_short": "+¥164k",
-        "cash_after_fen": 16360488,
-        "cash_after_short": "¥164k",
-        "room_after_fen": -13639512,
-        "room_after_short": "比您的最低现金低 ¥136k",
+        "net_short": "+¥161k",
+        "cash_after_fen": 16080393,
+        "cash_after_short": "¥161k",
+        "room_after_fen": -13919607,
+        "room_after_short": "比您的最低现金低 ¥139k",
         "tone": "bad",
-        "explain": "Foshan支付 ¥420k，其中 ¥156k 用于偿还发票融资，剩余 ¥264k。现金从 ¥0 升至 ¥164k，比您的最低现金低 ¥136k。",
+        "explain": "Foshan支付 ¥420k，其中 ¥159k 用于偿还发票融资，剩余 ¥261k。现金从 ¥0 升至 ¥161k，比您的最低现金低 ¥139k。",
         "effect_rows": [
           {
             "label": "此前现金",
@@ -1841,7 +1841,7 @@
           },
           {
             "label": "此后现金",
-            "display": "¥164k"
+            "display": "¥161k"
           },
           {
             "label": "最低现金储备",
@@ -1849,12 +1849,12 @@
           },
           {
             "label": "低于储备的现金",
-            "display": "¥136k"
+            "display": "¥139k"
           }
         ],
         "amount_display": "¥420,000.00",
-        "cash_after_display": "¥163,604.88",
-        "room_after_display": "−¥136,395.12"
+        "cash_after_display": "¥160,803.93",
+        "room_after_display": "−¥139,196.07"
       },
       {
         "key": "day-60",
@@ -1869,20 +1869,20 @@
         "amount_fen": -4500000,
         "amount_short": "−¥45k",
         "net_short": "−¥45k",
-        "cash_after_fen": 11860488,
-        "cash_after_short": "¥119k",
-        "room_after_fen": -18139512,
-        "room_after_short": "比您的最低现金低 ¥181k",
+        "cash_after_fen": 11580393,
+        "cash_after_short": "¥116k",
+        "room_after_fen": -18419607,
+        "room_after_short": "比您的最低现金低 ¥184k",
         "tone": "bad",
-        "explain": "现金从 ¥164k 降至 ¥119k。您的最低现金是 ¥300k，现金比它低 ¥181k。如果没有融资方案，债务还款会使现金降至 −¥30k，低于您的最低现金。",
+        "explain": "现金从 ¥161k 降至 ¥116k。您的最低现金是 ¥300k，现金比它低 ¥184k。如果没有融资方案，债务还款会使现金降至 −¥30k，低于您的最低现金。",
         "effect_rows": [
           {
             "label": "此前现金",
-            "display": "¥164k"
+            "display": "¥161k"
           },
           {
             "label": "此后现金",
-            "display": "¥119k"
+            "display": "¥116k"
           },
           {
             "label": "最低现金储备",
@@ -1890,12 +1890,12 @@
           },
           {
             "label": "低于储备的现金",
-            "display": "¥181k"
+            "display": "¥184k"
           }
         ],
         "amount_display": "−¥45,000.00",
-        "cash_after_display": "¥118,604.88",
-        "room_after_display": "−¥181,395.12"
+        "cash_after_display": "¥115,803.93",
+        "room_after_display": "−¥184,196.07"
       },
       {
         "key": "day-77",
@@ -1909,17 +1909,17 @@
         "planned": false,
         "amount_fen": 42000000,
         "amount_short": "+¥420k",
-        "net_short": "+¥268k",
-        "cash_after_fen": 38659366,
+        "net_short": "+¥271k",
+        "cash_after_fen": 38660639,
         "cash_after_short": "¥387k",
-        "room_after_fen": 8659366,
+        "room_after_fen": 8660639,
         "room_after_short": "比您的最低现金高 ¥87k",
         "tone": "ok",
-        "explain": "Foshan支付 ¥420k。其中 ¥152k 用于偿还Bank credit line。现金从 ¥119k 升至 ¥387k，比您的最低现金高 ¥87k。",
+        "explain": "Foshan支付 ¥420k。其中 ¥149k 用于偿还Bank credit line。现金从 ¥116k 升至 ¥387k，比您的最低现金高 ¥87k。",
         "effect_rows": [
           {
             "label": "此前现金",
-            "display": "¥119k"
+            "display": "¥116k"
           },
           {
             "label": "此后现金",
@@ -1935,12 +1935,12 @@
           }
         ],
         "amount_display": "¥420,000.00",
-        "cash_after_display": "¥386,593.66",
-        "room_after_display": "¥86,593.66"
+        "cash_after_display": "¥386,606.39",
+        "room_after_display": "¥86,606.39"
       }
     ],
     "events_rail_days": 43,
-    "stress_available": false,
+    "stress_available": true,
     "counterfactual_series": [
       {
         "day": 38,
@@ -3373,6 +3373,632 @@
     ],
     "counterfactual_label": "没有 FLOW 融资方案的情形（仅供对比，不是您还能选择的做法）",
     "plan_line_label": "采用 FLOW 的方案",
+    "stress": {
+      "delay_days": 30,
+      "buyer": "Foshan",
+      "buyer_id": "BUYER-1",
+      "series": [
+        {
+          "day": 38,
+          "closing_fen": 20000000,
+          "closing_display": "¥200,000.00"
+        },
+        {
+          "day": 39,
+          "closing_fen": 20000000,
+          "closing_display": "¥200,000.00"
+        },
+        {
+          "day": 40,
+          "closing_fen": 20000000,
+          "closing_display": "¥200,000.00"
+        },
+        {
+          "day": 41,
+          "closing_fen": 20000000,
+          "closing_display": "¥200,000.00"
+        },
+        {
+          "day": 42,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 43,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 44,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 45,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 46,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 47,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 48,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 49,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 50,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 51,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 52,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 53,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 54,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 55,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 56,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 57,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 58,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 59,
+          "closing_fen": -10000000,
+          "closing_display": "−¥100,000.00"
+        },
+        {
+          "day": 60,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 61,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 62,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 63,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 64,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 65,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 66,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 67,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 68,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 69,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 70,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 71,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 72,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 73,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 74,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 75,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 76,
+          "closing_fen": -14500000,
+          "closing_display": "−¥145,000.00"
+        },
+        {
+          "day": 77,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 78,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 79,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 80,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 81,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 82,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 83,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 84,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 85,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 86,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 87,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 88,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 89,
+          "closing_fen": 11439788,
+          "closing_display": "¥114,397.88"
+        },
+        {
+          "day": 90,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 91,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 92,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 93,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 94,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 95,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 96,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 97,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 98,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 99,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 100,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 101,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 102,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 103,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 104,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 105,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 106,
+          "closing_fen": 6939788,
+          "closing_display": "¥69,397.88"
+        },
+        {
+          "day": 107,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 108,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 109,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 110,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 111,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 112,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 113,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 114,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 115,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 116,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 117,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 118,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 119,
+          "closing_fen": 48939788,
+          "closing_display": "¥489,397.88"
+        },
+        {
+          "day": 120,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 121,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 122,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 123,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 124,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 125,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 126,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 127,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 128,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 129,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 130,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 131,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 132,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 133,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 134,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 135,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 136,
+          "closing_fen": 44439788,
+          "closing_display": "¥444,397.88"
+        },
+        {
+          "day": 137,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 138,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 139,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 140,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 141,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 142,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 143,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 144,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 145,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 146,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 147,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 148,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 149,
+          "closing_fen": 86439788,
+          "closing_display": "¥864,397.88"
+        },
+        {
+          "day": 150,
+          "closing_fen": 81939788,
+          "closing_display": "¥819,397.88"
+        },
+        {
+          "day": 151,
+          "closing_fen": 81939788,
+          "closing_display": "¥819,397.88"
+        },
+        {
+          "day": 152,
+          "closing_fen": 81939788,
+          "closing_display": "¥819,397.88"
+        },
+        {
+          "day": 153,
+          "closing_fen": 81939788,
+          "closing_display": "¥819,397.88"
+        },
+        {
+          "day": 154,
+          "closing_fen": 81939788,
+          "closing_display": "¥819,397.88"
+        },
+        {
+          "day": 155,
+          "closing_fen": 81939788,
+          "closing_display": "¥819,397.88"
+        },
+        {
+          "day": 156,
+          "closing_fen": 81939788,
+          "closing_display": "¥819,397.88"
+        },
+        {
+          "day": 157,
+          "closing_fen": 81939788,
+          "closing_display": "¥819,397.88"
+        },
+        {
+          "day": 158,
+          "closing_fen": 66810956,
+          "closing_display": "¥668,109.56"
+        }
+      ],
+      "lowest_fen": -14500000,
+      "lowest_short": "−¥145k",
+      "lowest_when": "22 天后",
+      "breach_days": 69,
+      "need_fen": 44500000,
+      "need_short": "¥445k",
+      "plan_text": "现金有 69 天低于您的最低现金。 没有任何已承诺的方案能覆盖 ¥445,000.00 的缺口：没有您，FLOW 找不到合规的融资办法。",
+      "text": "晚付 30 天：22 天后现金将跌至 −¥145,000，有 69 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥445,000 的缺口。",
+      "funding_text": "现金有 69 天低于您的最低现金。 没有任何已承诺的方案能覆盖 ¥445,000.00 的缺口：没有您，FLOW 找不到合规的融资办法。",
+      "net_later_text": "约 ¥1,099k，一个月后",
+      "assumption_text": "如果 Foshan Home Retail Co. 的每张发票都晚付 30 天（这是压力测试，不是预测）。 Foshan Home Retail Co. 的 ¥420,000.00 发票（9 天后到期）所融资的 ¥157,790 将多持续 30 天：按融资协议计算，费用约增加 ¥1,410。 Foshan Home Retail Co. 的 ¥420,000.00 发票（6 天前到期） 已经逾期，保持账面原有的计算方式。 已去掉Buyer early-payment offer：它需要 Foshan Home Retail Co. 同意。 1 张发票的 ¥420,000.00 移到了 120 天预测期之后。 FLOW 假设这些发票都无法融资；这最多会低估可融资的金额 ¥1,008,000.00。",
+      "window_days_needed": 43,
+      "lowest_display": "−¥145,000.00",
+      "need_display": "¥445,000.00"
+    },
     "cash_display": "¥200,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥0.00",
@@ -3416,10 +4042,10 @@
   },
   "funding_line": {
     "state": "landed",
-    "text": "融资已到账 · ¥155k 发票融资已到账，由Foshan的回款偿还（9 天后）。",
-    "cost_leg_display": "¥1,381.32",
+    "text": "融资已到账 · ¥158k 发票融资已到账，由Foshan的回款偿还（9 天后）。",
+    "cost_leg_display": "¥1,406.07",
     "cost_leg_label": "发票融资部分",
-    "cost_total_display": "¥1,381.32",
+    "cost_total_display": "¥1,406.07",
     "cost_total_label": "整个方案",
     "authority_text": "您已批准此方案：其成本需要您批准。"
   },
@@ -3432,7 +4058,7 @@
     "outstanding_short": "¥1,260k",
     "overdue_short": "¥420k",
     "next_text": "Foshan，9 天后 ¥420k",
-    "financing_note": "Foshan支付 ¥420k，其中 ¥156k 用于偿还发票融资，剩余 ¥264k。",
+    "financing_note": "Foshan支付 ¥420k，其中 ¥159k 用于偿还发票融资，剩余 ¥261k。",
     "href": "/receivables"
   },
   "changes_card": {
@@ -3446,13 +4072,13 @@
       {
         "id": "lot:alert:ALERT-RESERVE-34:v6:0",
         "when": "昨天",
-        "text": "来自Invoice financing (onboarded platform)的 ¥155,013.80 已于昨天到账。",
+        "text": "来自Invoice financing (onboarded platform)的 ¥157,790.00 已于昨天到账。",
         "kind": "LANDED"
       },
       {
         "id": "op:10",
         "when": "4 天前",
-        "text": "您已批准¥155,013.80 的发票融资。资金已于昨天到账。",
+        "text": "您已批准¥157,790.00 的发票融资。资金已于昨天到账。",
         "kind": "OPERATION"
       }
     ],
@@ -3508,7 +4134,7 @@
         "state": "NONE",
         "eyebrow": "融资",
         "value_display": "无",
-        "note": "融资已到账 · ¥155k 发票融资已到账，由Foshan的回款偿还（9 天后）。",
+        "note": "融资已到账 · ¥158k 发票融资已到账，由Foshan的回款偿还（9 天后）。",
         "status_text": null,
         "hint": null
       }
@@ -3589,9 +4215,9 @@
       "state_text": "已融资，储备仍有缺口",
       "state_tone": "warn",
       "terminal": false,
-      "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥155,013.80",
+      "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥157,790.00",
       "counterparty_name": "Foshan Home Retail Co.",
-      "amount_display": "¥155,013.80",
+      "amount_display": "¥157,790.00",
       "opened_when": "4 天前",
       "updated_when": "4 天前",
       "waiting_for": {
@@ -3660,15 +4286,15 @@
       "kind": "LANDED",
       "actor": "",
       "when": "昨天",
-      "text": "来自Invoice financing (onboarded platform)的 ¥155,013.80 已于昨天到账。",
-      "event_text": "来自Invoice financing (onboarded platform)的 ¥155,013.80 已于昨天到账。",
+      "text": "来自Invoice financing (onboarded platform)的 ¥157,790.00 已于昨天到账。",
+      "event_text": "来自Invoice financing (onboarded platform)的 ¥157,790.00 已于昨天到账。",
       "event_detail": null,
       "id": "lot:alert:ALERT-RESERVE-34:v6:0",
       "receivable_id": null,
       "commitment_id": null,
       "decision_id": null,
       "superseded_by": null,
-      "what_changed": "来自Invoice financing (onboarded platform)的 ¥155,013.80 已于昨天到账。",
+      "what_changed": "来自Invoice financing (onboarded platform)的 ¥157,790.00 已于昨天到账。",
       "why_it_matters": "截至现在，现金预测显示今天将比您的最低现金储备低 ¥100,000.00。",
       "why_it_matters_as_of": "现在",
       "what_remains": null,
@@ -3682,8 +4308,8 @@
       "seq": 10,
       "kind": "OPERATION",
       "actor": "AGENT",
-      "text": "已于4 天前以Foshan Home Retail Co. 的 ¥420,000.00 发票（9 天后到期）从Invoice financing (onboarded platform)申请融资 ¥155,013.80（融资已安排）；资金将于昨天到账，不是今天",
-      "event_text": "您已批准¥155,013.80 的发票融资。资金已于昨天到账。",
+      "text": "已于4 天前以Foshan Home Retail Co. 的 ¥420,000.00 发票（9 天后到期）从Invoice financing (onboarded platform)申请融资 ¥157,790.00（融资已安排）；资金将于昨天到账，不是今天",
+      "event_text": "您已批准¥157,790.00 的发票融资。资金已于昨天到账。",
       "event_detail": null,
       "when": "4 天前",
       "id": "op:10",
@@ -3691,7 +4317,7 @@
       "commitment_id": null,
       "decision_id": "alert:ALERT-RESERVE-34:v6",
       "superseded_by": null,
-      "what_changed": "您已批准¥155,013.80 的发票融资。资金已于昨天到账。",
+      "what_changed": "您已批准¥157,790.00 的发票融资。资金已于昨天到账。",
       "why_it_matters": "截至现在，现金预测显示今天将比您的最低现金储备低 ¥100,000.00。",
       "why_it_matters_as_of": "现在",
       "what_remains": "您的最低现金储备仍差 ¥100,000.00，从今天起；没有已承诺的融资能恢复它。这需要您决定。",
@@ -3790,9 +4416,9 @@
       "status": "COMMITTED",
       "limit_display": "¥150,000.00",
       "limit_fen": 15000000,
-      "drawn_fen": 14998620,
-      "drawn_display": "¥149,986.20",
-      "available_display": "¥13.80",
+      "drawn_fen": 14721000,
+      "drawn_display": "¥147,210.00",
+      "available_display": "¥2,790.00",
       "lead_time_days": 0
     },
     {
@@ -3801,9 +4427,9 @@
       "status": "COMMITTED",
       "limit_display": "¥350,000.00",
       "limit_fen": 35000000,
-      "drawn_fen": 15501380,
-      "drawn_display": "¥155,013.80",
-      "available_display": "¥194,986.20",
+      "drawn_fen": 15779000,
+      "drawn_display": "¥157,790.00",
+      "available_display": "¥192,210.00",
       "lead_time_days": 3
     },
     {

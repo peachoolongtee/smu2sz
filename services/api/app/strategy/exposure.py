@@ -58,6 +58,7 @@ from app.strategy.capacity import (
     spare_capacity,
 )
 from app.strategy.concentration import concentration
+from app.strategy.impact import clear_cache as impact_clear_cache
 from app.strategy.impact import scenario_paid_late, stress
 from app.strategy.inputs import CustomerInputs, TypicalDelay
 from app.strategy.payments import (
@@ -74,7 +75,7 @@ from app.strategy.types import (
     SpareCapacity,
     StressRow,
 )
-from app.strategy.words import buyer_short, share_text, whole_yuan
+from app.strategy.words import asked_label, buyer_short, share_text, whole_yuan
 
 MATERIAL_SHARE_BP = 5_000  # a buyer that is at least half of what the supplier is owed is named on Home's open-offer row
 ASKED = "asked"
@@ -87,6 +88,7 @@ _BASE: AnswerCache[dict[str, Any]] = AnswerCache(CACHE_SIZE)
 def clear_cache() -> None:
     _BASE.clear()
     cap.clear_cache()
+    impact_clear_cache()
 
 
 class Source(Protocol):
@@ -111,7 +113,7 @@ class _Path:
 
 
 def _paths(verdict: Verdict | None, lang: str) -> list[_Path]:
-    out = [_Path(ASKED, "asked", t(lang, "As they asked", "按对方要求"), "Accepting as asked", "按对方要求接受后", verdict)]
+    out = [_Path(ASKED, "asked", asked_label(lang), "accepting their request", "接受对方的要求后", verdict)]
     for c in verdict.counters if verdict is not None else []:
         label = option_label(c.label, lang)
         out.append(_Path(c.id, "reply", label, option_label(c.label, "en"), f"采用{option_label(c.label, 'zh')} 后", c))
@@ -296,7 +298,7 @@ def _refused_text(p: _Path, today_s: SpareCapacity, lang: str) -> str:
     cause; when the books already need the owner or a new facility, the general sentence stands."""
     if today_s.x_star_fen is None:
         return cap.refused_sentence(lang)
-    subject = "accepting as asked" if p.kind == "asked" else p.who_en
+    subject = p.who_en
     return t(lang, f"none: {subject} would leave the books needing you or a new facility",
              f"无：{p.who_zh}，账面将需要您出面或新增融资额度")
 

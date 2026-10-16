@@ -126,7 +126,7 @@ test("an offer not yet read: the decision says so and its primary is Read the of
 });
 
 test("after the day-0 plan the financing is linked, in the server's words", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/cash");
   await runPlan(page, "ALERT-RESERVE-12");
   await expect(page.getByTestId("fix-result")).toContainText("2 executed");
   await page.goto("/customers/BUYER-1");
@@ -145,7 +145,7 @@ test("a customer link carries that row's own customer, decision and invoice and 
   const row = page.getByTestId("recv-RCV-A");
   await expect(row).toBeVisible();
   await expect(row.getByRole("link", { name: "Foshan Home Retail Co." }).first()).toHaveAttribute("href", "/customers/BUYER-1?invoice=RCV-A&from=invoice");
-  await page.goto("/receivables");
+  await page.goto("/receivables?customer=BUYER-1"); // the invoice rows are on the customer's page
   await expect(page.getByTestId("recv-RCV-A").getByRole("link", { name: "Foshan Home Retail Co." })).toHaveAttribute("href", "/customers/BUYER-1?invoice=RCV-A&from=invoice");
   // Deals: the selected negotiation's customer carries that negotiation and the origin `deal`; so does the row in the queue.
   await page.goto(`/deals?customer=BUYER-1&decision=${decision}`);

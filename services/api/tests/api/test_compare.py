@@ -80,7 +80,7 @@ def _rows(body: dict[str, Any]) -> dict[str, dict[str, Any]]:
 def test_the_rows_come_in_the_briefs_order(reads):
     body = reads["en"]
     assert [r["kind"] for r in body["rows"]] == ["current", "asked", "reply", "reply", "customer_loss"]
-    assert [r["label"] for r in body["rows"]] == ["Your books as they stand", "As they asked", "Option A", "Option B",
+    assert [r["label"] for r in body["rows"]] == ["Your books as they stand", "Accept their request", "Option A", "Option B",
                                                   "If Foshan stops buying"]
     assert all(r["available"] for r in body["rows"]) and body["hypothetical"] is True and body["late"] == 0
 
@@ -88,14 +88,14 @@ def test_the_rows_come_in_the_briefs_order(reads):
 def test_each_row_says_its_assumption(reads):
     rows = _rows(reads["en"])
     assert rows["current"]["assumption_text"] == "Your books as they stand: Foshan keeps buying on today's terms."
-    assert rows["asked"]["assumption_text"] == "If you accept Foshan's request as asked."
+    assert rows["asked"]["assumption_text"] == "If you accept Foshan's request."
     assert rows["Option A"]["assumption_text"] == "If Foshan accepts Option A."
     assert rows["customer_loss"]["assumption_text"] == (
         "Scenario assumes Foshan stops buying from you after today; the ¥420,000 already invoiced (due in 32 days) is still paid. "
         "This is not a prediction.")
     zh = _rows(reads["zh"])
     assert zh["current"]["assumption_text"] == "您账面的现状：Foshan Home Retail Co.按今天的条款继续采购。"
-    assert zh["asked"]["assumption_text"] == "如果您按对方要求接受Foshan Home Retail Co.的请求。"
+    assert zh["asked"]["assumption_text"] == "如果您接受Foshan Home Retail Co.的请求。"
     assert zh["方案 A"]["assumption_text"] == "如果Foshan Home Retail Co.接受方案 A。"
 
 
@@ -119,17 +119,17 @@ def test_the_demo_rows_as_pinned(reads):
     assert b["outcome"] == "NEEDS_OWNER_APPROVAL" and b["codes"] == ["RESERVE_BREACH"]
     # the forward concession (budget ¥5,000) and the immediate discount, each its own figure
     assert [r["concession_forward_fen"] for r in (cur, asked, a, b, loss)] == [None, 2_832_692, 0, 0, None]
-    assert [r["immediate_discount_fen"] for r in (cur, asked, a, b, loss)] == [None, 504_000, 218_620, 0, None]
+    assert [r["immediate_discount_fen"] for r in (cur, asked, a, b, loss)] == [None, 504_000, 221_000, 0, None]
     # the router's selected plan, never the verdict's cure
-    assert [r["funding_cost_fen"] for r in (cur, asked, a, b)] == [311_393, 146_805, 84_157, 370_646]
+    assert [r["funding_cost_fen"] for r in (cur, asked, a, b)] == [311_393, 146_805, 82_599, 370_646]
     assert loss["funding_cost_fen"] is None and loss["plan_flags"]["admissible"] is False
     assert loss["plan_flags"]["words"] == ["no committed plan covers it"]
     # lowest cash, unfunded, and its day (31 Oct = day 30, 30 Nov = day 60)
     assert [(r["lowest_cash_fen"], r["lowest_day"]) for r in (cur, asked, a, b, loss)] == [
-        (-10_500_000, 30), (16_496_000, 60), (15_001_380, 30), (-10_500_000, 30), (-10_500_000, 30)]
+        (-10_500_000, 30), (16_496_000, 60), (15_279_000, 30), (-10_500_000, 30), (-10_500_000, 30)]
     assert loss["breach_days"] == 94
     # the further payment FLOW could still cover alone (S1, R-TODAY), each row's own
-    assert [r["capacity"]["spare_fen"] for r in (cur, asked, a, b, loss)] == [8_100_000, 1_400_000, 0, 6_200_000, None]
+    assert [r["capacity"]["spare_fen"] for r in (cur, asked, a, b, loss)] == [8_100_000, 1_400_000, 200_000, 6_200_000, None]  # Option A: the line's ¥2,790 (R-10)
 
 
 def test_the_customer_loss_figures_each_once(reads):

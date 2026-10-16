@@ -65,6 +65,7 @@ def test_no_id_in_a_sentence_and_early_payment_names_the_buyer(client):
     for lang in ("en", "zh"):
         pic = client.get(f"/offers/{oid}/picture", params={"lang": lang}).json()
         ctx = pic.pop("context")  # the URL contract's selections are identifiers; its sentences are checked
+        pic.pop("scenarios_href")  # an address, which carries the offer's id by design
         pic["context"] = {"back": ctx["back"] and {"label": ctx["back"]["label"]}, "irrelevant_text": ctx["irrelevant_text"]}
         hits = [s for s in _strings(pic) if CODES.search(s)]
         assert hits == []
@@ -119,7 +120,7 @@ def test_paths_are_the_offer_as_asked_then_each_reply_in_the_verdicts_order(clie
     paths = pic["paths"]
     a, b = view["counters"]
     assert [p["key"] for p in paths] == ["asked", a["id"], b["id"]] and [p["kind"] for p in paths] == ["asked", "reply", "reply"]
-    assert [p["label"] for p in paths] == ["As they asked", "Option A", "Option B"]
+    assert [p["label"] for p in paths] == ["Accept their request", "Option A", "Option B"]
     assert [p["recommended"] for p in paths] == [False, True, False]
     assert [p["needs_owner"] for p in paths] == [False, False, True]
     assert [p["sendable"] for p in paths] == [False, True, True]
@@ -128,7 +129,7 @@ def test_paths_are_the_offer_as_asked_then_each_reply_in_the_verdicts_order(clie
     assert (opt_a["tag_text"], opt_a["tag_tone"]) == ("FLOW recommends", "info")
     assert (opt_b["tag_text"], opt_b["tag_tone"]) == ("Needs your approval", "warn")
     assert asked["decides_text"] == "Cannot be accepted within your signed limits."
-    assert opt_a["decides_text"] == "FLOW can send it. Your approval is not needed."
+    assert opt_a["decides_text"] == "Within your mandate: no approval needed."
     assert opt_b["decides_text"] == "It changes your terms, so you approve it first."
     # the earlier fields are kept as they were
     assert pic["asked"]["series"] == asked["series"] and [r["series"] for r in pic["replies"]] == [opt_a["series"], opt_b["series"]]
@@ -158,7 +159,7 @@ def test_each_path_has_the_three_term_rows_with_what_it_replaces(client):
         return [(t["value_text"], t["instead_of_text"]) for t in p["terms"]]
 
     assert rows(asked) == [("60 days", None), ("1.20% off ¥420,000.00", None), ("1.00% rebate", None)]
-    assert rows(opt_a) == [("45 days", "instead of 60"), ("0.85% off ¥257,200.00", "instead of 1.20% off ¥420,000.00"),
+    assert rows(opt_a) == [("45 days", "instead of 60"), ("0.85% off ¥260,000.00", "instead of 1.20% off ¥420,000.00"),
                            (None, "instead of a 1.00% rebate")]  # a term the path does not carry is null, never the word "None"
     assert rows(opt_b) == [("55 days", "instead of 60"), (None, "instead of 1.20% off ¥420,000.00"),
                            ("0.30% price rise", "instead of a 1.00% rebate")]
@@ -168,8 +169,8 @@ def test_band_text_says_what_each_path_does_against_the_minimum(client):
     oid, _ = _evaluated(client)
     asked, opt_a, opt_b = client.get(f"/offers/{oid}/picture").json()["paths"]
     assert asked["band_text"] == "Below your minimum for 15 days" and asked["first_breach_when"] == "in 47 days"
-    assert opt_a["band_text"] == "The next invoice is paid 15 days sooner than as asked"
-    assert opt_b["band_text"] == "The next invoice is paid 5 days sooner than as asked"
+    assert opt_a["band_text"] == "The next invoice is paid 15 days sooner than if you accept their request"
+    assert opt_b["band_text"] == "The next invoice is paid 5 days sooner than if you accept their request"
     assert opt_a["first_breach_when"] is None and opt_b["first_breach_when"] is None
     assert opt_a["lowest_fen"] >= 30_000_000 and opt_b["lowest_fen"] >= 30_000_000
 
@@ -181,7 +182,7 @@ def test_an_accepted_offer_is_one_sendable_recommended_path(client):
     p = pic["paths"][0]
     assert (p["recommended"], p["sendable"], p["needs_owner"]) == (True, True, False)
     assert (p["tag_text"], p["tag_tone"]) == ("FLOW recommends", "info")
-    assert p["decides_text"] == "FLOW can send it. Your approval is not needed." and p["band_text"] is None
+    assert p["decides_text"] == "Within your mandate: no approval needed." and p["band_text"] is None
     assert p["cost_display"] == "¥2,520.00" and p["cost_note"] == "once; nothing ongoing"
     assert [t["instead_of_text"] for t in p["terms"]] == [None, None, None]
     moments = pic["moments"]
@@ -205,7 +206,7 @@ def test_paths_and_moments_hold_no_id_and_are_said_in_both_languages(client):
     # the outflow's own name ("Operating bill") is the owner's label in the books, not a sentence of ours
     fields = {"paths": [{k: v for k, v in p.items() if k not in ("series", "reply_text")} for p in zh["paths"]],
               "moments": zh["moments"]}
-    assert english_leaks(fields, ["Foshan Home Retail Co.", "Operating bill"]) == []
+    assert english_leaks(fields, ["Foshan Home Retail Co.", "Foshan", "Operating bill"]) == []
 
 
 # ---------------------------------------------------------------- moments: the cursor's stops
@@ -245,10 +246,10 @@ def test_a_moments_text_says_what_every_path_has_once_then_what_differs_then_who
     pic = client.get(f"/offers/{oid}/picture").json()
     text = {m["day"]: m["text"] for m in pic["moments"]}
     assert text[47] == ("On every path: Operating bill −¥100k. Option A: Receipt from Foshan Home Retail Co. ¥420k. "
-                        "As asked, cash is below your minimum.")
-    assert text[60] == "On every path: Debt service −¥45k. As asked, cash is below your minimum."
-    assert text[0] == ("Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k. "
-                       "Who decides: Option A: FLOW can send it; Option B: needs your approval.")
+                        "If you accept their request, cash is below your minimum.")
+    assert text[60] == "On every path: Debt service −¥45k. If you accept their request, cash is below your minimum."
+    assert text[0] == ("Option A: Credit line draw ¥147k. Option B: Credit line draw ¥90k. "
+                       "Who decides: Option A: within your mandate; Option B: needs your approval.")
     assert opt_a not in " ".join(text.values())
 
 
@@ -324,7 +325,7 @@ def test_an_offer_whose_invoice_was_part_settled_since_is_answered_as_unavailabl
     version = client.get("/mandate").json()["mandate"]["version"]
     r = client.post("/operations", headers=BANK, json={
         "kind": "RECEIVE_PAYMENT", "op_id": "rc-1", "idempotency_key": "rc-1", "mandate_version": version, "requested_by": "SYSTEM",
-        "receivable_id": "RCV-A", "amount_fen": 25_720_000, "bank_reference": "BANK-1"})
+        "receivable_id": "RCV-A", "amount_fen": 26_000_000, "bank_reference": "BANK-1"})
     assert r.json()["result"]["status"] == "EXECUTED"
     _assert_unavailable(client, oid, view)
 

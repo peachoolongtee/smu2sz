@@ -85,9 +85,9 @@ def test_the_list_is_ascending_at_most_six_with_one_decisive_and_every_word_in_b
     assert days == sorted(set(days)) and len(days) <= 6 and sum(m["decisive"] for m in en) == 1 and days == [m["day"] for m in zh]
     assert [m["kind"] for m in en] == ["today", "lowest", "reserve_cross", "lowest", "reserve_cross", "end"]
     assert all(m["kind"] in KINDS and m["kind"] == m["kinds"][0] for m in en)
-    assert [m["word"] for m in en] == ["Today", "Lowest, Option A and Option B", "Below the reserve", "Lowest, as asked",
+    assert [m["word"] for m in en] == ["Today", "Lowest, Option A and Option B", "Below the reserve", "Lowest, Accept their request",
                                            "Back above the reserve", "End, in 66 days"]
-    assert [m["word"] for m in zh] == ["今天", "最低点，方案 A、方案 B", "低于储备", "最低点，按对方要求", "回到储备之上", "终点，66 天后"]
+    assert [m["word"] for m in zh] == ["今天", "最低点，方案 A、方案 B", "低于储备", "最低点，接受对方的要求", "回到储备之上", "终点，66 天后"]
     assert next(m for m in en if m["decisive"])["day"] == 47
     assert en[0]["kinds"] == ["today", "paths_part"] and en[2]["kinds"] == ["reserve_cross", "invoice_due"]
     assert [m["day"] for m in en if "invoice_due" in m["kinds"]] == [47] and en[-1]["kinds"] == ["end"]
@@ -107,7 +107,7 @@ def test_each_value_carries_the_short_figure_the_tone_and_its_difference_from_th
                 assert v["vs_asked_tone"] == ("ok" if v["vs_asked_fen"] > 0 else "bad" if v["vs_asked_fen"] < 0 else "neutral")
     first = {v["key"]: v for v in pic["moments"][0]["values"]}
     a, b = pic["paths"][1]["key"], pic["paths"][2]["key"]
-    assert (first[a]["vs_asked_short"], first[b]["vs_asked_short"], first[a]["closing_short"]) == ("+¥150k", "+¥90k", "¥550k")
+    assert (first[a]["vs_asked_short"], first[b]["vs_asked_short"], first[a]["closing_short"]) == ("+¥147k", "+¥90k", "¥547k")
     second = {v["key"]: v for v in pic["moments"][1]["values"]}
     assert second[a]["vs_asked_short"] == second[b]["vs_asked_short"] == "−¥10k" and second[a]["vs_asked_tone"] == "bad"
     decisive = {v["key"]: v for v in next(m for m in pic["moments"] if m["decisive"])["values"]}
@@ -123,8 +123,8 @@ def test_the_parting_moment_names_who_decides_for_each_reply(client):
     oid, _ = _evaluated(client)
     en = client.get(f"/offers/{oid}/picture").json()["moments"]
     zh = client.get(f"/offers/{oid}/picture", params={"lang": "zh"}).json()["moments"]
-    assert en[0]["text"].endswith("Who decides: Option A: FLOW can send it; Option B: needs your approval.")
-    assert zh[0]["text"].endswith("由谁决定：方案 A：FLOW 可以直接发送；方案 B：需要您批准。")
+    assert en[0]["text"].endswith("Who decides: Option A: within your mandate; Option B: needs your approval.")
+    assert zh[0]["text"].endswith("由谁决定：方案 A：在您的授权范围内；方案 B：需要您批准。")
     assert not any("Who decides" in m["text"] for m in en[1:])
     # the Business voice is 您, never 你
     assert "你" not in str(zh) and "你" not in str(client.get(f"/offers/{oid}/picture", params={"lang": "zh"}).json()["paths"])
@@ -137,13 +137,13 @@ def test_what_moved_cash_on_a_day_is_each_paths_events_in_words_with_their_amoun
     a, b = keys[1], keys[2]
     by_day = {m["day"]: m["events_text"] for m in pic["moments"]}
     assert all(list(m["events_text"]) == keys for m in pic["moments"])
-    assert by_day[0] == {"asked": [], a: ["Credit line draw ¥149,986.20"], b: ["Credit line draw ¥90,000.00"]}
+    assert by_day[0] == {"asked": [], a: ["Credit line draw ¥147,210.00"], b: ["Credit line draw ¥90,000.00"]}
     assert by_day[47]["asked"] == ["Operating bill −¥100,000.00"]
     assert by_day[47][a] == ["Receipt from Foshan Home Retail Co. ¥420,000.00", "Operating bill −¥100,000.00"]
     assert by_day[62] == {"asked": ["Receipt from Foshan Home Retail Co. ¥420,000.00"], a: [], b: []}
     assert by_day[66] == {"asked": [], a: [], b: []}
     zh = client.get(f"/offers/{oid}/picture", params={"lang": "zh"}).json()["moments"]
-    assert zh[0]["events_text"][a] != by_day[0][a] and "¥149,986.20" in zh[0]["events_text"][a][0]
+    assert zh[0]["events_text"][a] != by_day[0][a] and "¥147,210.00" in zh[0]["events_text"][a][0]
 
 
 def test_an_accepted_offer_walks_today_its_lowest_point_and_the_end(client):
@@ -163,7 +163,7 @@ def _row(day: int, closing: int) -> dict[str, Any]:
 
 def _path(key: str, kind: str, series: list[dict[str, Any]]) -> dict[str, Any]:
     return {"key": key, "kind": kind, "label": key, "recommended": False, "series": series,
-            "authority_text": "FLOW can send it" if kind == "reply" else "x"}
+            "authority_text": "Within your mandate" if kind == "reply" else "x"}
 
 
 def test_when_more_than_six_days_qualify_the_cap_keeps_today_the_parting_the_asked_lowest_the_first_crossing_and_the_end():
@@ -212,7 +212,7 @@ def test_a_lowest_point_names_its_path_only_when_more_than_one_is_listed():
     reply = [_row(d, 300 - 2 * d if d < 6 else 400) for d in range(8)]  # lowest on day 5
     paths = [_path("asked", "asked", asked), _path("r", "reply", reply)]
     moments, _ = offer_picture._moments(paths, 0, floor, 120, None, "en")
-    assert {m["day"]: m["word"] for m in moments if "lowest" in m["kinds"]} == {3: "Lowest, as asked", 5: "Lowest, r"}
+    assert {m["day"]: m["word"] for m in moments if "lowest" in m["kinds"]} == {3: "Lowest, Accept their request", 5: "Lowest, r"}
     same = [_path("asked", "asked", asked), _path("r", "reply", asked)]
     only, _ = offer_picture._moments(same, 0, floor, 120, None, "en")
     assert [m["word"] for m in only if "lowest" in m["kinds"]] == ["Lowest point"]

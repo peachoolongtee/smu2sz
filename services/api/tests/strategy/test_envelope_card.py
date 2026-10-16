@@ -22,7 +22,7 @@ from app.strategy.envelope import (
 )
 
 GOLDEN_BUYER = "BUYER-1"
-OPTION_A = (45, 0, 85, 25_720_000, 0)
+OPTION_A = (45, 0, 85, 26_000_000, 0)
 OPTION_B = (55, 30, 0, None, 0)
 REBATE_COUNTER = (45, 0, 0, None, 125)  # the verifier's counter to one step past the rebate maximum
 ASKED_60 = (60, 40, 5, 24_020_000, 0)

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { PartialRead } from "@/components/business/freshness";
@@ -10,6 +11,8 @@ import { SelectedStrip } from "@/components/receivables/selected-strip";
 import { inFilter, type RecvFilter } from "@/components/receivables/state";
 import { STRESS_DAYS, StressAside } from "@/components/receivables/stress-aside";
 import { Summary } from "@/components/receivables/summary";
+import { CustomerList } from "@/components/receivables/customer-list";
+import { ArrowLeftIcon } from "@/components/icons";
 import { ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { getBuyerExposure, getDecisionExposure, getReceivables, getReconciliation, getState } from "@/lib/api";
 import { usePageScope } from "@/lib/chat-scope";
@@ -75,7 +78,11 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
   const params = useSearchParams();
   const narrow = useNarrow();
   const reduced = useReducedMotion();
-  const rows = read.rows ?? [];
+  const allRows = read.rows ?? [];
+  // The address names a customer (a card on the list, or a link with `customer`) or an invoice: the page is that customer in full. Otherwise it is the list.
+  const focusBuyer = params.get("buyer") ?? allRows.find((r) => r.receivable_id === params.get("invoice"))?.buyer_id ?? params.get("customer") ?? null;
+  const listMode = !focusBuyer && !params.get("decision") && !params.get("invoice");
+  const rows = focusBuyer ? allRows.filter((r) => r.buyer_id === focusBuyer) : allRows;
   const [filter, setFilter] = useState<RecvFilter>("all");
   const detailRef = useRef<HTMLElement>(null);
   const [scrollTo, setScrollTo] = useState(0);
@@ -114,7 +121,7 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
   useEffect(() => {
     if (typeof window === "undefined" || !window.location.hash || params.get("invoice")) return;
     const id = decodeURIComponent(window.location.hash.slice(1));
-    if (!rows.some((r) => r.receivable_id === id)) return;
+    if (!allRows.some((r) => r.receivable_id === id)) return;
     const q = new URLSearchParams(params.toString());
     q.set("invoice", id);
     router.replace(`/receivables?${q.toString()}${window.location.hash}`, { scroll: false });
@@ -144,12 +151,49 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
   const dealHref = (r: ReceivableRow) =>
     r.pending_counter?.decision_id ? withContext("/deals", params, { decision: r.pending_counter.decision_id, customer: r.buyer_id ?? null, invoice: r.receivable_id }, r.buyer_id ? { buyer: r.buyer_id } : {}) : null;
 
-  return (
-    <div className="space-y-6" data-testid="recv3-page">
-      <div>
-        <Summary read={read} rows={rows} />
+  const history = recon.error ? (
+    <div data-testid="recv3-history-failed">
+      <ErrorState error={recon.error} onRetry={recon.reload} />
+    </div>
+  ) : recon.data ? (
+    <div className="space-y-7" data-testid="recv3-history-sections">
+      <PromisedAndReceived data={recon.data} name={nameOf} />
+    </div>
+  ) : null;
+
+  // The list: what customers owe in total, then every customer as a card; a card opens that customer's invoices in full.
+  if (listMode) {
+    return (
+      <div className="space-y-6" data-testid="recv3-page" data-view="list">
+        <div>
+          <Summary read={read} rows={allRows} />
+        </div>
+        <PartialRead partial={read.partial} onRetry={reload} />
+        <CustomerList rows={allRows} customers={(books.data?.state.counterparties ?? []).filter((c) => c.role === "BUYER").map((c) => ({ id: c.id, name: c.name }))} />
+        {history}
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6" data-testid="recv3-page" data-view="customer">
+      <Link href="/receivables" className="inline-flex min-h-8 items-center gap-1 text-sm font-bold text-brand-700 hover:underline touch:min-h-11" data-testid="recv-list-back">
+        <ArrowLeftIcon width={14} height={14} />
+        {t("recv.list.back")}
+      </Link>
+      <PageHeader
+        title={focusBuyer ? nameOf(focusBuyer) : t("nav.receivables")}
+        subtitle={t("recv.detail.sub")}
+        actions={
+          focusBuyer ? (
+            <Link href={`/customers/${encodeURIComponent(focusBuyer)}?from=receivables`} className="inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline">
+              {t("recv.detail.profile")}
+            </Link>
+          ) : undefined
+        }
+      />
       <PartialRead partial={read.partial} onRetry={reload} />
+      {rows.length === 0 ? <p className="card-flat text-sm text-ink-3">{t("recv.list.none")}</p> : null}
       {narrow && selected ? <SelectedStrip row={selected} customerHref={customerHref(selected)} /> : null}
       <InvoiceList rows={rows} selectedId={selected?.receivable_id ?? null} onSelect={select} filter={filter} onFilter={applyFilter} />
 
@@ -157,7 +201,7 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
         <section
           ref={detailRef}
           aria-labelledby="recv3-detail-eyebrow"
-          className="grid scroll-mt-20 gap-6 card-standard p-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-8"
+          className="grid scroll-mt-20 gap-6 card-flat lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-8"
           data-testid="recv3-selected"
         >
           <p role="status" aria-live="polite" className="sr-only" data-testid="recv3-announce">
@@ -180,15 +224,7 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
         </section>
       ) : null}
 
-      {recon.error ? (
-        <div data-testid="recv3-history-failed">
-          <ErrorState error={recon.error} onRetry={recon.reload} />
-        </div>
-      ) : recon.data ? (
-        <div className="space-y-7" data-testid="recv3-history-sections">
-          <PromisedAndReceived data={recon.data} name={nameOf} />
-        </div>
-      ) : null}
+      {history}
     </div>
   );
 }

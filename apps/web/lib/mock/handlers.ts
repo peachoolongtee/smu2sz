@@ -9,9 +9,21 @@ import { getOwnerToken, requestSignIn } from "../auth";
 import { MOCK_LATENCY_MS } from "../config";
 import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
+import type { SetupDocument, SetupOpenResult, SetupPreview, SetupStatus } from "../types";
 import type {
   AcceptRequest,
   AcceptResult,
+  BuyerAcceptedRequest,
+  BuyerAcceptedResult,
+  BuyerDeclinedRequest,
+  BuyerDeclinedResult,
+  BuyerMessageView,
+  BuyerReplyRequest,
+  BuyerReplyResult,
+  OfferedRequest,
+  OfferedResult,
+  WithdrawRequest,
+  WithdrawResult,
   DeclineResult,
   ActivityView,
   DemoRestoreResult,
@@ -43,6 +55,7 @@ import type {
   DealsView,
   NavCounts,
   OfferPictureView,
+  PictureScenario,
   DocumentDecision,
   DocumentsList,
   DocumentView,
@@ -83,6 +96,8 @@ import type {
 } from "../types";
 
 import type { CustomerContext } from "../customer-href";
+import * as buyerMessage from "./buyer-message";
+import * as buyside from "./buyside";
 import * as documents from "./documents";
 import * as decisions from "./decisions";
 import * as trackerMock from "./tracker"; // Deal tracker
@@ -93,8 +108,10 @@ import * as receivablesMock from "./receivables";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
+import commitApprovalRows from "../../mocks/buyside/commit_approval.json";
 import navCountsJson from "../../mocks/nav_counts.json";
 import offerPictureJson from "../../mocks/offer_picture_ex01.json";
+import offerPictureExposureJson from "../../mocks/offer_picture_ex01_exposure.json";
 import approvalStories from "../../mocks/w1_approval_stories.json";
 import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
@@ -115,6 +132,7 @@ import homeApprovalPending from "../../mocks/home_approval_pending.json";
 import homeApprovalApprovedZh from "../../mocks/home_approval_approved_zh.json";
 import homeApprovalPendingZh from "../../mocks/home_approval_pending_zh.json";
 import { getLang } from "../i18n";
+import { en, zh } from "../dictionary";
 import homeApprove from "../../mocks/home_approve.json";
 import ledgerApproved from "../../mocks/home_ledger_approved.json";
 import ledgerDay34 from "../../mocks/home_ledger_day34.json";
@@ -178,6 +196,10 @@ interface Store {
   commitments: Displayed<Commitment>[];
   approvals: ApprovalView[];
   securityScene: boolean;
+  /** The message sent outside FLOW: where its walk stands (absent until the owner marks one sent). */
+  buyerMessage?: buyerMessage.BuyerMessageStage | null;
+  /** A mark was withdrawn ("marked sent by mistake"): the counter-ready record keeps both events. */
+  messageWithdrawn?: boolean;
 }
 
 const emptyStore = (): Store => ({
@@ -584,7 +606,14 @@ function seedApprovalStory(): void {
 function inChinese(rows: ApprovalView[]): ApprovalView[] {
   if (getLang() !== "zh") return rows;
   const op = cast<ApprovalView>(homeApprovalPending).op_id;
-  return rows.map((r) => (r.op_id === op ? { ...clone(cast<ApprovalView>(r.status === "PENDING" ? homeApprovalPendingZh : homeApprovalApprovedZh)), id: r.id } : r));
+  const purchase = cast<Pair<ApprovalView>>(commitApprovalRows);
+  return rows.map((r) =>
+    r.op_id === op
+      ? { ...clone(cast<ApprovalView>(r.status === "PENDING" ? homeApprovalPendingZh : homeApprovalApprovedZh)), id: r.id }
+      : r.op_id === purchase.en.op_id && r.status === "PENDING"
+        ? { ...clone(purchase.zh), id: r.id }
+        : r,
+  );
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
@@ -661,24 +690,41 @@ function decisionContext(): decisions.DecisionContext {
   };
 }
 
+/** The story's context with the records the message walk holds as recordings of their own. */
+async function decisionContextNow(): Promise<decisions.DecisionContext> {
+  const ctx = decisionContext();
+  const m = await messageStage();
+  if (m) ctx.recorded = buyerMessage.recordedDecisions(m.rec, m.at, m.stage);
+  else if (openOfferStage() === "evaluated") {
+    // The package offer read and not answered: the message recording's read of the same moment, which carries the deal's history (the same record as decisions.json's `ready.ex01` otherwise);
+    // after a mark withdrawn, the record that keeps both events.
+    const rec = await buyerMessage.buyerMessageRecording();
+    const read = load().messageWithdrawn ? { en: rec.withdrawn.en.decision, zh: rec.withdrawn.zh.decision } : rec.ready;
+    ctx.recorded = { [read.en.id]: read };
+  }
+  return ctx;
+}
+
 /** GET /decisions. */
 export async function getDecisions(q: { lang: "en" | "zh"; family?: "DEAL" | "FUNDING"; open?: boolean; limit?: number }): Promise<DecisionList> {
   await delay();
   seedApprovalStory();
-  return decisions.mockDecisions(decisionContext(), q);
+  return decisions.mockDecisions(await decisionContextNow(), q);
 }
 
 /** GET /decisions/{id}: 404 DECISION_NOT_FOUND for a record the story has not made. */
 export async function getDecision(id: string, lang: "en" | "zh"): Promise<DecisionView> {
   await delay();
   seedApprovalStory();
-  return decisions.mockDecision(decisionContext(), id, lang);
+  return decisions.mockDecision(await decisionContextNow(), id, lang);
 }
 
 // Deal tracker (#150): GET /decisions/{id}/tracker, served by lib/mock/tracker.ts.
 export async function getTracker(id: string, lang: "en" | "zh"): Promise<TrackerView> {
   await delay();
   seedApprovalStory();
+  const m = await messageStage();
+  if (m?.stage === "accepted" && id === `deal:${m.at.offerId}`) return m.rec.accepted[lang].tracker;
   return trackerMock.mockTracker(decisionContext(), id, lang);
 }
 
@@ -734,6 +780,13 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
     /* storage unavailable */
   }
   const s = load();
+  if (buyerMessage.takeHook(buyerMessage.NO_SIMULATED_BUYER_KEY)) {
+    const detail = { ...(await buyerMessage.buyerMessageRecording()).no_simulated_buyer[getLang()], offer_id: offerId };
+    throw new ApiError(409, detail.message, detail);
+  }
+  // Once the owner sent a counter outside FLOW, the simulated buyer does not answer it as well (the recorded 409 OFFER_SENT_OUTSIDE).
+  const sentOutside = load().buyerMessage;
+  if (sentOutside?.offerId === offerId) throw refusal({ ...(await buyerMessage.buyerMessageRecording()).offer_sent_outside[getLang()], offer_id: offerId });
   if (req.verdict_id) {
     const story = counterChangedStory();
     if (story) {
@@ -784,6 +837,119 @@ export async function declineOffer(offerId: string, req: AcceptRequest): Promise
   void req;
   await delay();
   throw new ApiError(409, `Offer ${offerId} has no request that can be declined in the mock.`, { code: "OFFER_LAPSED", message: "Not served by the mock." });
+}
+
+// ------------------------------------------------------------------ the message the owner sends the buyer outside FLOW (lib/mock/buyer-message.ts)
+
+/** The package offer, read and evaluated, is the only one with a message recorded; any other is a 404, as the server answers an offer it does not hold. */
+function messageOffer(offerId: string): void {
+  const s = load();
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE")?.view.offer.offer_id;
+  if (offerId !== ex01 || !s.offers[offerId] || !s.evaluated.includes(offerId)) throw new ApiError(404, `Offer ${offerId} not found.`, { code: "OFFER_NOT_FOUND", offer_id: offerId });
+}
+
+const refusal = <T extends { message: string }>(detail: T): ApiError => new ApiError(409, detail.message, detail);
+
+/** Where the message walk stands for the reads (null before anything is marked sent): the clock past the day the offer was open until closes an unanswered one. */
+async function messageStage(): Promise<{ rec: buyerMessage.BuyerMessageRecording; at: buyerMessage.BuyerMessageStage; stage: buyerMessage.ReadStage } | null> {
+  const at = load().buyerMessage;
+  if (!at) return null;
+  const rec = await buyerMessage.buyerMessageRecording();
+  return { rec, at, stage: buyerMessage.readStage(rec, at, home.mockClock().day) };
+}
+
+/** The walk's own reply, still waiting for the buyer: else refused as the server refuses (the offer closed: the recorded OFFER_EXPIRED; otherwise NOT_OFFERED, with no words of the mock's own). */
+async function waitingFor(offerId: string, counterId: string): Promise<buyerMessage.BuyerMessageStage> {
+  const m = await messageStage();
+  if (m?.stage === "no_answer" && m.at.offerId === offerId) throw refusal(m.rec.offer_expired[getLang()]);
+  if (!m || m.at.offerId !== offerId || m.at.counterId !== counterId || m.stage !== "awaiting") throw new ApiError(409, "NOT_OFFERED", { code: "NOT_OFFERED", offer_id: offerId });
+  return m.at;
+}
+
+/** GET .../message?lang=&ui_lang=: the reply's message before it is marked sent; the walked reply's, with `offered`, once it is. */
+export async function getBuyerMessage(offerId: string, counterId: string, lang: "en" | "zh", uiLang: "en" | "zh"): Promise<BuyerMessageView> {
+  await delay();
+  messageOffer(offerId);
+  const rec = await buyerMessage.buyerMessageRecording();
+  const at = load().buyerMessage;
+  if (at?.stage === "awaiting" && counterId === at.counterId) return buyerMessage.awaitingMessage(rec, at, uiLang);
+  const found = rec.message[counterId]?.[uiLang]?.[lang];
+  if (!found) throw new ApiError(409, "COUNTER_CHANGED", { code: "COUNTER_CHANGED", offer_id: offerId, reevaluate: true, counters: [] });
+  return found;
+}
+
+/**
+ * POST .../offered: refused with the recorded 409 MESSAGE_CHANGED when the hash is not the message's (or by the test hook), with the recorded COUNTER_CHANGED by the bound-send hook; else the
+ * walk waits for the buyer (the recordings are of the reply FLOW recommends, whichever reply is marked). A second mark changes nothing.
+ */
+export async function markOffered(offerId: string, counterId: string, req: OfferedRequest): Promise<OfferedResult> {
+  await delay();
+  messageOffer(offerId);
+  const rec = await buyerMessage.buyerMessageRecording();
+  const lang = getLang();
+  const story = counterChangedStory();
+  if (story) throw refusal({ ...cast<Record<"replaced" | "moved", CounterChangedDetail>>(counterChangedJson)[story], offer_id: offerId });
+  const shown = rec.message[counterId]?.en?.[req.lang];
+  if (buyerMessage.takeHook(buyerMessage.MESSAGE_CHANGED_KEY) || !shown || shown.message_hash !== req.message_hash) throw refusal(rec.message_changed[lang]);
+  const s = load();
+  if (!s.buyerMessage) {
+    s.buyerMessage = { offerId, counterId, lang: req.lang, stage: "awaiting" };
+    save();
+  }
+  return rec.offered[lang];
+}
+
+/** POST .../buyer-accepted: the agreement the buyer's yes makes (the recording of the walked reply). */
+export async function buyerAccepted(offerId: string, counterId: string, req: BuyerAcceptedRequest): Promise<BuyerAcceptedResult> {
+  void req;
+  await delay();
+  const at = await waitingFor(offerId, counterId);
+  const rec = await buyerMessage.buyerMessageRecording();
+  load().buyerMessage = { ...at, stage: "accepted" };
+  save();
+  return rec.buyer_accepted[getLang()];
+}
+
+/** POST .../offered/withdraw: the owner marked it sent by mistake. The walk is undone and the deal reads as a counter ready again, its record the recording after the withdraw. */
+export async function withdrawOffered(offerId: string, counterId: string, req: WithdrawRequest): Promise<WithdrawResult> {
+  void req;
+  await delay();
+  await waitingFor(offerId, counterId);
+  const rec = await buyerMessage.buyerMessageRecording();
+  const s = load();
+  s.buyerMessage = null;
+  s.messageWithdrawn = true;
+  save();
+  return rec.withdrawn[getLang()].result;
+}
+
+/** POST .../buyer-declined: the buyer's no (the recording of the walked reply, declined with a reason; the reason on screen is the recording's). Refused once the offer has closed. */
+export async function buyerDeclined(offerId: string, counterId: string, req: BuyerDeclinedRequest): Promise<BuyerDeclinedResult> {
+  void req;
+  await delay();
+  const at = await waitingFor(offerId, counterId);
+  const rec = await buyerMessage.buyerMessageRecording();
+  load().buyerMessage = { ...at, stage: "declined" };
+  save();
+  return rec.buyer_declined[getLang()];
+}
+
+/**
+ * POST /offers/{id}/buyer-reply: the server compiles the text and the mock cannot, so it chooses between its two recordings by whether the text holds a figure (the recorded reply has terms
+ * with figures; the recorded refusal, NO_TERMS_IN_REPLY, has none). The reply's own request joins the offers the mock holds.
+ */
+export async function buyerReply(offerId: string, req: BuyerReplyRequest): Promise<BuyerReplyResult> {
+  await delay();
+  const at = await waitingFor(offerId, req.counter_id);
+  const rec = await buyerMessage.buyerMessageRecording();
+  const lang = getLang();
+  if (!/\d/.test(req.text)) throw refusal(rec.no_terms[lang]);
+  const out = rec.buyer_reply[lang];
+  const s = load();
+  s.buyerMessage = { ...at, stage: "replied" };
+  s.offers[out.reply_offer_id] = rec.replied[lang].reply_offer;
+  save();
+  return out;
 }
 
 const APPROVAL_SEEDS = cast<Record<"apply_loan" | "apply_loan_approved" | "apply_loan_rejected", ApprovalView>>(approvalsSeed);
@@ -903,7 +1069,7 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
   const counter = openOfferStage() === "evaluated";
@@ -932,8 +1098,10 @@ export async function getWorklist(lang: "en" | "zh"): Promise<WorklistView | nul
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
+  const m = await messageStage();
+  if (m) return buyerMessage.recordedReads(m.rec, m.stage, lang).worklist;
   return homeV2.mockWorklist(homeV2Point(), lang);
 }
 
@@ -942,7 +1110,7 @@ export async function getHomeInvoices(lang: "en" | "zh"): Promise<ReceivablesRea
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   return homeV2.mockInvoices(homeV2Point(), lang);
 }
@@ -984,7 +1152,7 @@ export async function getCustomers(lang: "en" | "zh"): Promise<CustomersView | n
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const view = await homeV2.mockCustomers(homeV2Point(), lang);
   return view && typeof window !== "undefined" ? withCustomersPatch(view) : view;
@@ -1026,7 +1194,7 @@ export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
   return receivablesMock.mockReceivables(dealt, lang);
@@ -1155,6 +1323,16 @@ export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Prom
   return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
 }
 
+/** GET /offers/{id}/scenarios: the recording taken with the exposure on, in both languages, while the exposure is on; an empty list (as a server with it off) under the exposure-off hook or for any other offer. */
+export async function getOfferScenarios(offerId: string, lang: "en" | "zh"): Promise<PictureScenario[]> {
+  await delay();
+  if (exposureOff()) return [];
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
+  if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return [];
+  const rec = cast<Record<"en" | "zh", PictureScenario[]>>((await import("../../mocks/offer_scenarios_ex01.json")).default);
+  return clone(rec[lang === "zh" ? "zh" : "en"]);
+}
+
 /** GET /pilot/journal: the mock has no recording (the pilot journal is the shadow pilot's, against a real runtime), so it is absent. */
 export async function getPilotJournal(): Promise<PilotJournalView | null> {
   return null;
@@ -1255,7 +1433,7 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
   // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   checkGuard(guard);
   // The mock holds one recorded set of books; the busy company is the two Slice D reads recorded on it.
@@ -1264,14 +1442,16 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
   save();
   home.resetHome();
   documents.resetDocuments();
+  buyside.resetBuyside();
 }
 
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
 
 // The recordings are English: the mock takes `lang` as the live client does and answers the same recording (re-recorded, not translated by hand).
 export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {}): Promise<DealsView> {
-  void lang;
   await delay();
+  const m = await messageStage();
+  if (m) return buyerMessage.recordedReads(m.rec, m.stage, lang).deals;
   const view = documents.mockDeals(openOfferStage());
   // Opened with `customer` or `invoice`, the server adds `open_offer.context.back`: the recording of that read (deals_day0_evaluated_back.json) lends its words to the open offer.
   if (ctx.customer || ctx.invoice) {
@@ -1280,6 +1460,12 @@ export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {})
       const lent = back.deals.find((d) => d.counterparty_id === row.counterparty_id)?.open_offer?.context;
       if (row.open_offer && lent) row.open_offer.context = clone(lent);
     }
+  }
+  // Opened from the Home (`from=home`) the server's way back is its plain "Back to Home" (services/api/app/api/selection.py, `_PLAIN`); the recordings hold no read taken that way.
+  if (ctx.from === "home") {
+    const back = lang === "zh" ? { label: "返回首页", href: "/" } : { label: "Back to Home", href: "/" };
+    view.context = { ...(view.context ?? {}), back } as typeof view.context;
+    for (const row of view.deals) if (row.open_offer) row.open_offer.context = { ...(row.open_offer.context ?? {}), back } as typeof row.open_offer.context;
   }
   return view;
 }
@@ -1291,7 +1477,7 @@ export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {})
 function openOfferStage(): "received" | "evaluated" | null {
   const s = load();
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE")?.view.offer.offer_id;
-  if (!ex01 || !s.offers[ex01] || s.negotiated[ex01]) return null;
+  if (!ex01 || !s.offers[ex01] || s.negotiated[ex01] || s.buyerMessage) return null;
   return s.evaluated.includes(ex01) ? "evaluated" : "received";
 }
 
@@ -1337,7 +1523,8 @@ export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en")
   const s = load();
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
   if (!s.offers[offerId] || offerId !== ex01?.view.offer.offer_id) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });
-  const rec = cast<Record<"en" | "zh", OfferPictureView>>(offerPictureJson);
+  // With the exposure read on (the default) the picture is the recording taken with it on (it carries the scenarios); a server with it off answers the plain one.
+  const rec = cast<Record<"en" | "zh", OfferPictureView>>(exposureOff() ? offerPictureJson : offerPictureExposureJson);
   const view = { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
   // A spec can make the offer undrawable, as the server answers one it can no longer draw (200, no paths, no moments, a sentence): the owner must still be able to send.
   try {
@@ -1527,4 +1714,54 @@ export async function decideDocument(id: string, decision: "confirm" | "reject",
 export async function getContractFixtures(): Promise<ContractFixture[]> {
   await delay();
   return documents.mockContractFixtures();
+}
+
+/** Committing a purchase queues its CommitPurchase for the owner: the recorded queue row (with the schedule the owner approves) joins the queue once. */
+export async function commitContract(...args: Parameters<typeof buyside.commitContract>): ReturnType<typeof buyside.commitContract> {
+  const result = await buyside.commitContract(...args);
+  const s = load();
+  const row = cast<Pair<ApprovalView>>(commitApprovalRows).en;
+  if (!s.approvals.some((a) => a.id === row.id)) {
+    s.approvals.push(clone(row));
+    save();
+  }
+  return result;
+}
+
+// ------------------------------------------------------------------ the buy side (ADR-0013): mocks/buyside, see lib/mock/buyside.ts
+export {
+  addProductToMenu,
+  evaluateContract,
+  getCapexContractFixtures,
+  getEligibility,
+  getFinanceHealth,
+  getPurchase,
+  getPurchases,
+  runCapexPlans,
+} from "./buyside";
+
+// set up your books (ADR-0013): the mock build shows the demo books and cannot open new ones (that needs the live API).
+const SETUP_LIVE_ONLY = "Setting up your own books needs the full app (live mode), where the API checks, signs and opens them.";
+
+export async function getSetupStatus(): Promise<SetupStatus> {
+  await delay();
+  // The sentence in the owner's language (the dictionary's own words for this refusal), never the English one on a Chinese screen.
+  return { books: "demo", scenario: "golden_sme", can_open: false, can_open_text: getLang() === "zh" ? zh["err.mock_setup"] : en["err.mock_setup"], opened: null };
+}
+
+export async function getSetupDocuments(): Promise<SetupDocument[]> {
+  await delay();
+  return [];
+}
+
+export async function readSetupDocument(): Promise<SetupDocument> {
+  throw new ApiError(0, SETUP_LIVE_ONLY, undefined, "mock_setup");
+}
+
+export async function previewSetup(): Promise<SetupPreview> {
+  throw new ApiError(0, SETUP_LIVE_ONLY, undefined, "mock_setup");
+}
+
+export async function openBooks(): Promise<SetupOpenResult> {
+  throw new ApiError(0, SETUP_LIVE_ONLY, undefined, "mock_setup");
 }

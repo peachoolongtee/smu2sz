@@ -2,6 +2,11 @@ import { expect, test, type Page } from "@playwright/test";
 import { DEMO_TOKEN } from "./fixtures";
 import { checkedDeal, resetBooks } from "./helpers";
 
+// These start signed out: the landing page (the first page a visitor sees) is taken as seen, so "/" opens Home.
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => sessionStorage.setItem("tl-welcomed", "1"));
+});
+
 /**
  * /chat (POST /nl). Runs in both projects: mock replays replies recorded from the real API, live calls the
  * API. These specs import `test` from @playwright/test (not ./fixtures) because they sign in themselves,
@@ -195,7 +200,7 @@ test("a 401 opens the owner sign-in dialog, and signing in resends the refused m
     // The real API refuses a wrong token and the dialog says so without closing.
     await dialog.getByLabel("Owner token").fill("not-the-token");
     await dialog.getByRole("button", { name: "Sign in" }).click();
-    await expect(dialog.getByRole("alert")).toContainText("rejected");
+    await expect(dialog.getByRole("alert")).toContainText("not accepted"); // the UI audit: plain words, no status code
     await expect(dialog).toBeVisible();
   }
 
@@ -414,7 +419,7 @@ test("the Deals question about the deal explains the verdict the page evaluated,
   await panel.getByTestId("prompt-page-option").click();
   const option = panel.getByTestId("chat-turn").last();
   await expect(option.getByTestId("chat-reply")).toContainText("Option A:");
-  await expect(option.getByTestId("chat-reply")).toContainText("¥3,027.77");
+  await expect(option.getByTestId("chat-reply")).toContainText("¥3,035.99");
 });
 
 test("Home's 'What changed today?' is a read of the books, not a list of what the agent can do", async ({ page, request }) => {

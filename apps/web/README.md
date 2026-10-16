@@ -32,10 +32,15 @@ steps, the two servers and the database choices are in the root `README.md`; thi
 
 ### Running live locally
 
-Two terminals, both starting at the repository root:
+The simplest way, on any shell including PowerShell: `pnpm demo` (here or at the repository root) starts both servers with the
+safe settings below and picks the CORS origin for you; `pnpm demo --web-port 3141 --api-port 8041` for other ports,
+`pnpm demo:mock` for this app alone on the mocks. `pnpm dev:live` / `pnpm dev:mock` start this app alone in either mode on any
+shell (`dev:live` reads `NEXT_PUBLIC_API_URL`, default `http://localhost:8000`).
+
+By hand (bash syntax), two terminals, both starting at the repository root:
 
 ```
-cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache uv run uvicorn app.main:app --port 8000
+cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 uv run uvicorn app.main:app --port 8000
 cd apps/web && NEXT_PUBLIC_API_MODE=live pnpm dev      # must be on :3000, the API's CORS allow-list
 ```
 
@@ -51,7 +56,7 @@ To use other ports, tell the API to allow the web origin and tell the web app wh
 browser's preflight gets a 400 and every request fails):
 
 ```
-cd services/api && CORS_ORIGINS=http://localhost:3141 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache uv run uvicorn app.main:app --port 8041
+cd services/api && CORS_ORIGINS=http://localhost:3141 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 uv run uvicorn app.main:app --port 8041
 cd apps/web && NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8041 pnpm dev -p 3141
 ```
 
@@ -82,7 +87,7 @@ is recorded, none is written by hand. To re-record all of them (the chat script,
 trajectory, what-if and the rest) start the API on port 8011 and run one command:
 
 ```
-cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run uvicorn app.main:app --port 8011
+cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8011
 cd apps/web && node scripts/record-mocks.mjs --api http://localhost:8011      # or: pnpm mocks:record
 ```
 

@@ -8,9 +8,11 @@
     "buyer_name": "Foshan Home Retail Co.",
     "agreed_when": "2 days ago",
     "agreed_text": "Agreed 2 days ago",
-    "terms_text": "0.85% off up to ¥257,200.00 if paid early",
+    "terms_text": "0.85% off up to ¥260,000.00 if paid early",
     "headline_text": "This deal is on the agreed terms so far",
     "state_word": "On plan",
+    "state_key": "on_plan",
+    "ended": false,
     "state_tone": "ok",
     "state_text": "The buyer paid the early part it promised. The rest of the invoice falls due in 30 days.",
     "stages": [
@@ -18,44 +20,86 @@
         "key": "read",
         "label": "Contract read",
         "state": "done",
-        "state_text": "Done"
+        "state_text": "Done",
+        "when_text": null
       },
       {
         "key": "negotiated",
         "label": "Terms negotiated",
         "state": "done",
-        "state_text": "Done"
+        "state_text": "Done",
+        "when_text": "2 days ago"
       },
       {
         "key": "early_payment",
         "label": "Early payment in",
         "state": "done",
-        "state_text": "Done"
+        "state_text": "Done",
+        "when_text": null
       },
       {
         "key": "collecting",
         "label": "Collecting",
         "state": "now",
-        "state_text": "Now"
+        "state_text": "Now",
+        "when_text": null
       },
       {
         "key": "fulfilled",
         "label": "Fulfilled",
         "state": "todo",
-        "state_text": "Still to come"
+        "state_text": "Still to come",
+        "when_text": null
+      }
+    ],
+    "lifecycle_stages": [
+      {
+        "key": "read",
+        "label": "Contract read",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": null
+      },
+      {
+        "key": "negotiated",
+        "label": "Terms negotiated",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": "2 days ago"
+      },
+      {
+        "key": "early_payment",
+        "label": "Early payment in",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": null
+      },
+      {
+        "key": "collecting",
+        "label": "Collecting",
+        "state": "now",
+        "state_text": "Now",
+        "when_text": null
+      },
+      {
+        "key": "fulfilled",
+        "label": "Fulfilled",
+        "state": "todo",
+        "state_text": "Still to come",
+        "when_text": null
       }
     ],
     "cost": {
       "expected": {
-        "amount_fen": 302777,
-        "amount_display": "¥3,027.77",
-        "basis_text": "0.85% off up to ¥257,200.00 if paid early",
+        "amount_fen": 303599,
+        "amount_display": "¥3,035.99",
+        "basis_text": "0.85% off up to ¥260,000.00 if paid early",
         "certainty": "QUOTED"
       },
       "actual": {
-        "amount_fen": 302777,
-        "amount_display": "¥3,027.77",
-        "note_text": "Includes ¥841.57 of funding planned when you agreed.",
+        "amount_fen": 303599,
+        "amount_display": "¥3,035.99",
+        "note_text": "Includes ¥825.99 of funding planned when you agreed.",
         "tone": "neutral"
       },
       "to_come": {
@@ -73,10 +117,10 @@
         {
           "key": "terms",
           "label": "The terms you gave the buyer",
-          "expected_fen": 218620,
-          "expected_display": "¥2,186.20",
-          "actual_fen": 218620,
-          "actual_display": "¥2,186.20",
+          "expected_fen": 221000,
+          "expected_display": "¥2,210.00",
+          "actual_fen": 221000,
+          "actual_display": "¥2,210.00",
           "actual_note_text": null,
           "certainty": "RECORDED",
           "certainty_text": "Booked: the discount the bank receipts under this agreement gave, the face they settled less the cash received. The expected figure is the one FLOW quoted when you agreed.",
@@ -84,17 +128,17 @@
           "evidence_href": "/trust?view=evidence&entry=7&from=tracker",
           "relation": null,
           "counted": true,
-          "figure_fen": 218620,
-          "figure_display": "¥2,186.20",
+          "figure_fen": 221000,
+          "figure_display": "¥2,210.00",
           "counted_note_text": null
         },
         {
           "key": "planned_funding",
           "label": "Funding planned when you agreed",
-          "expected_fen": 84157,
-          "expected_display": "¥841.57",
-          "actual_fen": 84157,
-          "actual_display": "¥841.57",
+          "expected_fen": 82599,
+          "expected_display": "¥825.99",
+          "actual_fen": 82599,
+          "actual_display": "¥825.99",
           "actual_note_text": null,
           "certainty": "QUOTED",
           "certainty_text": "The cost FLOW planned for funding the rest of the gap when you agreed; the charge itself is not yet booked.",
@@ -102,8 +146,8 @@
           "evidence_href": null,
           "relation": null,
           "counted": true,
-          "figure_fen": 84157,
-          "figure_display": "¥841.57",
+          "figure_fen": 82599,
+          "figure_display": "¥825.99",
           "counted_note_text": null
         }
       ],
@@ -113,8 +157,8 @@
       {
         "party": "buyer",
         "party_text": "The buyer",
-        "title_text": "Pay ¥255,013.80 early",
-        "detail_text": "The agreed ¥255,013.80 for the ¥420,000.00 invoice to Foshan Home Retail Co., due in 30 days, arrived.",
+        "title_text": "Pay ¥257,790.00 early",
+        "detail_text": "The agreed ¥257,790.00 for the ¥420,000.00 invoice to Foshan Home Retail Co., due in 30 days, arrived.",
         "state": "kept",
         "state_word": "Kept",
         "tone": "ok",
@@ -124,7 +168,7 @@
         "party": "buyer",
         "party_text": "The buyer",
         "title_text": "Pay the invoice by its due date",
-        "detail_text": "¥162,800.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. falls due in 30 days.",
+        "detail_text": "¥160,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. falls due in 30 days.",
         "state": "awaited",
         "state_word": "Awaited",
         "tone": "neutral",
@@ -134,7 +178,7 @@
         "party": "you",
         "party_text": "You",
         "title_text": "Allow 0.85% off if paid early",
-        "detail_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective today; one time)",
+        "detail_text": "The buyer may pay early and take 0.85% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective today; one time)",
         "state": "kept",
         "state_word": "Kept",
         "tone": "ok",
@@ -145,7 +189,9 @@
       "buyer_kept": 1,
       "buyer_total": 2,
       "buyer_paid_late": 0,
-      "text": "The buyer has kept one of two promises on this deal."
+      "buyer_due": 1,
+      "buyer_to_come": 1,
+      "text": "The buyer has kept one of one promise due so far; one more is still to come."
     },
     "buyer": {
       "text": null,
@@ -177,9 +223,11 @@
     "buyer_name": "Foshan Home Retail Co.",
     "agreed_when": "2 天前",
     "agreed_text": "2 天前达成协议",
-    "terms_text": "提前付款可减 0.85%，最高 ¥257,200.00",
+    "terms_text": "提前付款可减 0.85%，最高 ¥260,000.00",
     "headline_text": "到目前为止，这笔交易按约定的条款进行",
     "state_word": "按计划进行",
+    "state_key": "on_plan",
+    "ended": false,
     "state_tone": "ok",
     "state_text": "买方已支付它承诺提前支付的部分。发票余款将于30 天后到期。",
     "stages": [
@@ -187,44 +235,86 @@
         "key": "read",
         "label": "合同已读取",
         "state": "done",
-        "state_text": "已完成"
+        "state_text": "已完成",
+        "when_text": null
       },
       {
         "key": "negotiated",
         "label": "条款已谈判",
         "state": "done",
-        "state_text": "已完成"
+        "state_text": "已完成",
+        "when_text": "2 天前"
       },
       {
         "key": "early_payment",
         "label": "提前付款到账",
         "state": "done",
-        "state_text": "已完成"
+        "state_text": "已完成",
+        "when_text": null
       },
       {
         "key": "collecting",
         "label": "催收中",
         "state": "now",
-        "state_text": "进行中"
+        "state_text": "进行中",
+        "when_text": null
       },
       {
         "key": "fulfilled",
         "label": "已履行完毕",
         "state": "todo",
-        "state_text": "尚未开始"
+        "state_text": "尚未开始",
+        "when_text": null
+      }
+    ],
+    "lifecycle_stages": [
+      {
+        "key": "read",
+        "label": "合同已读取",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": null
+      },
+      {
+        "key": "negotiated",
+        "label": "条款已谈判",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": "2 天前"
+      },
+      {
+        "key": "early_payment",
+        "label": "提前付款到账",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": null
+      },
+      {
+        "key": "collecting",
+        "label": "催收中",
+        "state": "now",
+        "state_text": "进行中",
+        "when_text": null
+      },
+      {
+        "key": "fulfilled",
+        "label": "已履行完毕",
+        "state": "todo",
+        "state_text": "尚未开始",
+        "when_text": null
       }
     ],
     "cost": {
       "expected": {
-        "amount_fen": 302777,
-        "amount_display": "¥3,027.77",
-        "basis_text": "提前付款可减 0.85%，最高 ¥257,200.00",
+        "amount_fen": 303599,
+        "amount_display": "¥3,035.99",
+        "basis_text": "提前付款可减 0.85%，最高 ¥260,000.00",
         "certainty": "QUOTED"
       },
       "actual": {
-        "amount_fen": 302777,
-        "amount_display": "¥3,027.77",
-        "note_text": "其中包含达成协议时计划的 ¥841.57 融资成本。",
+        "amount_fen": 303599,
+        "amount_display": "¥3,035.99",
+        "note_text": "其中包含达成协议时计划的 ¥825.99 融资成本。",
         "tone": "neutral"
       },
       "to_come": {
@@ -242,10 +332,10 @@
         {
           "key": "terms",
           "label": "您给买方的条款",
-          "expected_fen": 218620,
-          "expected_display": "¥2,186.20",
-          "actual_fen": 218620,
-          "actual_display": "¥2,186.20",
+          "expected_fen": 221000,
+          "expected_display": "¥2,210.00",
+          "actual_fen": 221000,
+          "actual_display": "¥2,210.00",
           "actual_note_text": null,
           "certainty": "RECORDED",
           "certainty_text": "已入账：这份协议下银行收款实际给出的折扣，即所结清的面额减去收到的现金。预期数字是您达成协议时 FLOW 报出的数字。",
@@ -253,17 +343,17 @@
           "evidence_href": "/trust?view=evidence&entry=7&from=tracker",
           "relation": null,
           "counted": true,
-          "figure_fen": 218620,
-          "figure_display": "¥2,186.20",
+          "figure_fen": 221000,
+          "figure_display": "¥2,210.00",
           "counted_note_text": null
         },
         {
           "key": "planned_funding",
           "label": "达成协议时计划的融资",
-          "expected_fen": 84157,
-          "expected_display": "¥841.57",
-          "actual_fen": 84157,
-          "actual_display": "¥841.57",
+          "expected_fen": 82599,
+          "expected_display": "¥825.99",
+          "actual_fen": 82599,
+          "actual_display": "¥825.99",
           "actual_note_text": null,
           "certainty": "QUOTED",
           "certainty_text": "达成协议时 FLOW 为弥补其余缺口计划的融资成本；费用本身尚未入账。",
@@ -271,8 +361,8 @@
           "evidence_href": null,
           "relation": null,
           "counted": true,
-          "figure_fen": 84157,
-          "figure_display": "¥841.57",
+          "figure_fen": 82599,
+          "figure_display": "¥825.99",
           "counted_note_text": null
         }
       ],
@@ -282,8 +372,8 @@
       {
         "party": "buyer",
         "party_text": "买方",
-        "title_text": "提前支付 ¥255,013.80",
-        "detail_text": "已收到约定的 ¥255,013.80 提前付款。",
+        "title_text": "提前支付 ¥257,790.00",
+        "detail_text": "已收到约定的 ¥257,790.00 提前付款。",
         "state": "kept",
         "state_word": "已兑现",
         "tone": "ok",
@@ -293,7 +383,7 @@
         "party": "buyer",
         "party_text": "买方",
         "title_text": "按期支付发票款项",
-        "detail_text": "Foshan Home Retail Co. 的 ¥420,000.00 发票应付 ¥162,800.00，将于30 天后到期。",
+        "detail_text": "Foshan Home Retail Co. 的 ¥420,000.00 发票应付 ¥160,000.00，将于30 天后到期。",
         "state": "awaited",
         "state_word": "等待中",
         "tone": "neutral",
@@ -303,7 +393,7 @@
         "party": "you",
         "party_text": "您",
         "title_text": "提前付款可减 0.85%",
-        "detail_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（今天生效；一次性）",
+        "detail_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥260,000.00 减免 0.85%（今天生效；一次性）",
         "state": "kept",
         "state_word": "已履行",
         "tone": "ok",
@@ -314,7 +404,9 @@
       "buyer_kept": 1,
       "buyer_total": 2,
       "buyer_paid_late": 0,
-      "text": "买方在这笔交易的 2 项承诺中已兑现 1 项。"
+      "buyer_due": 1,
+      "buyer_to_come": 1,
+      "text": "买方已到期的 1 项承诺中已兑现 1 项；另有 1 项尚未到期。"
     },
     "buyer": {
       "text": null,

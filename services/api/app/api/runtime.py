@@ -56,6 +56,8 @@ class Runtime:
     documents: dict[str, Any] = field(default_factory=dict)  # doc_id -> SourceDocument (inbound, untrusted)
     intake_day: int = 0  # the simulated day `intake_count` belongs to (R04, R05; in memory, like the caches above)
     intake_count: int = 0  # offers and buyer turns admitted without a channel key on `intake_day`
+    buyer_attempts: dict[str, tuple[int, int]] = field(default_factory=dict)  # R-10: keyed buyer -> (day, attempts that day)
+    buyer_refusals: dict[str, tuple[int, int]] = field(default_factory=dict)  # R-10: keyed buyer -> (day, refusals that day)
     # The Demo's swaps to another scenario and restores of the main one (`app.api.demo_story`); in memory, and kept across `reset`
     # because a reset wipes the operations log, which therefore cannot hold the entry that says the books were replaced.
     demo_history: list[dict[str, Any]] = field(default_factory=list)
@@ -109,6 +111,26 @@ class Runtime:
             self.intake_count += 1
             return True
 
+    def take_buyer_slot(self, counterparty_id: str) -> bool:
+        """Count one offer or message from a keyed buyer against its own daily budget (R-10). False, without counting,
+        once the budget is spent. The count restarts when the simulated day changes."""
+        with self.lock:
+            day, used = self.buyer_attempts.get(counterparty_id, (self.day, 0))
+            if day != self.day:
+                used = 0
+            if used >= self.settings.buyer_attempts_per_day:
+                return False
+            self.buyer_attempts[counterparty_id] = (self.day, used + 1)
+            return True
+
+    def count_buyer_refusal(self, counterparty_id: str) -> int:
+        """Count one budget refusal for this buyer today and return how many it has had today (1 for the first)."""
+        with self.lock:
+            day, n = self.buyer_refusals.get(counterparty_id, (self.day, 0))
+            n = n + 1 if day == self.day else 1
+            self.buyer_refusals[counterparty_id] = (self.day, n)
+            return n
+
     def hydrate(self) -> None:
         """Read the clock and the seeded scenario from the stored books (start-up; nothing is written)."""
         state = self.store.get_state()
@@ -151,14 +173,25 @@ class Runtime:
             _seed(self.store, scenario)
             self.day = 0
             self.scenario = scenario
+            self.clear_session_caches()
+
+    def clear_session_caches(self) -> None:
+        """Forget what was computed on books that have just been replaced: verdicts, inbound documents, the intake count, the NL
+        sessions and the exposure answers (shared by `reset` and Set up your books)."""
+        from app.api.strategy_exposure import clear_cache as clear_exposure_cache
+        from app.nl import reset_sessions
+
+        with self.lock:
             self.latest_verdict.clear()
             self.documents.clear()
             self.intake_day, self.intake_count = 0, 0
-            from app.api.strategy_exposure import clear_cache as clear_exposure_cache
-            from app.nl import reset_sessions
+            self.buyer_attempts.clear()
+            self.buyer_refusals.clear()
+            from app.api.offer_picture import clear_cache as clear_picture_cache
 
             reset_sessions()
             clear_exposure_cache()  # the answers were computed on the books that were just replaced
+            clear_picture_cache()  # as were the pictures (keyed by the state version, which a reset can bring back to the same number)
 
     def reset_demo(self, scenario: str = "golden_sme") -> None:
         """POST /demo/reset: the scenario's books (`reset`), then, on the golden books, the demo documents read by the
@@ -221,6 +254,16 @@ def _seed(store: LedgerStore, scenario: str = "golden_sme") -> None:
         seed_demo_inputs(store, state)
 
 
+def _start_scenario() -> str:
+    """The scenario an empty demo store starts on: DEMO_SCENARIO ("blank" opens on a new business with no books), else the golden books."""
+    import os
+
+    from app.domain.fixtures import FIXTURES
+
+    name = os.environ.get("DEMO_SCENARIO", "").strip() or "golden_sme"
+    return name if (FIXTURES / "scenarios" / f"{name}.json").is_file() and "/" not in name and "\\" not in name else "golden_sme"
+
+
 def _has(read: Any) -> bool:
     try:
         read()
@@ -242,9 +285,17 @@ def _owner_key_hex(s: Settings, demo: bool) -> str:
 
 
 _runtime: Runtime | None = None
+# Opening the books happens once. Calls that arrive while they open wait for that opening and share what it opened, or the error it
+# failed with (each used to open a copy of its own, and in live mode each copy read the demo documents through the model); the next
+# call after a failure opens them again. A call made on the opening thread itself (code inside the opening asking for the runtime it
+# is building) fails at once instead of waiting for itself. The opening must not wait for another thread that asks for the runtime.
+_opening = threading.RLock()
+_opener: int | None = None  # the thread opening the books, while it does
+_openings = 0  # openings finished, failed or not
+_failure: Exception | None = None  # the last opening's error, until an opening succeeds
 
 
-def get_runtime() -> Runtime:
+def _open_runtime() -> Runtime:
     """Open the configured store and hydrate from it. Never deletes; seeds only an empty store, in DEMO_MODE."""
     global _runtime
     if _runtime is None:
@@ -262,7 +313,7 @@ def get_runtime() -> Runtime:
                                    "(a financial state and an owner-signed mandate); the demo fixture is not seeded "
                                    "into a non-demo deployment.")
             if not has_state:
-                _seed(store)
+                _seed(store, _start_scenario())
             elif not has_mandate:
                 if not seedable:
                     raise StartupError("the store holds a financial state but no mandate: provision the "
@@ -281,7 +332,37 @@ def get_runtime() -> Runtime:
     return _runtime
 
 
+def get_runtime() -> Runtime:
+    """The process's runtime, opened by the first call (`_open_runtime`). Calls that arrive while it opens wait and share it, or share
+    the error it failed with; the next call after a failure opens it again."""
+    global _opener, _openings, _failure
+    rt = _runtime
+    if rt is not None:
+        return rt
+    if _opener == threading.get_ident():
+        raise StartupError("get_runtime() was called while this thread was opening the books: the opening must use the runtime "
+                           "it is building, not ask for it")
+    seen = _openings
+    with _opening:
+        if _runtime is not None:
+            return _runtime
+        if _openings != seen and _failure is not None:  # the opening this call waited for failed: its error, not another attempt
+            raise StartupError(f"the books could not be opened: {type(_failure).__name__}: {_failure}") from _failure
+        _opener, _failure = threading.get_ident(), None
+        try:
+            rt = _open_runtime()
+        except Exception as e:
+            _failure = e
+            raise
+        finally:
+            _opener = None
+            _openings += 1
+        return rt
+
+
 def set_runtime(rt: Runtime | None) -> None:
     """Tests inject an in-memory runtime."""
-    global _runtime
-    _runtime = rt
+    global _runtime, _failure
+    with _opening:
+        _runtime = rt
+        _failure = None

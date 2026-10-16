@@ -7,7 +7,7 @@
     "counts": {
       "needs_you": 1,
       "waiting": 1,
-      "agreements": 0,
+      "agreements": 1,
       "customers": 2
     },
     "needs_you": [
@@ -16,7 +16,7 @@
         "kind": "COLLECTION",
         "customer_id": "BUYER-1",
         "customer_short": "Foshan",
-        "subject_text": "Foshan · ¥163k overdue",
+        "subject_text": "Foshan · ¥160k overdue",
         "subject_demo_text": null,
         "lifecycle": null,
         "topic_text": null,
@@ -61,11 +61,11 @@
         "name": "Foshan Home Retail Co.",
         "negotiations_count": 0,
         "needs_you_count": 1,
-        "outstanding_display": "¥1,002,800",
+        "outstanding_display": "¥1,000,000",
         "share_text": "100% of what you are owed",
         "tone": "warn",
         "status_text": "1 needs you",
-        "detail_text": "¥1,002,800 outstanding · 100% of what you are owed",
+        "detail_text": "¥1,000,000 outstanding · 100% of what you are owed",
         "href": "/?customer=BUYER-1"
       },
       {
@@ -92,7 +92,7 @@
     "counts": {
       "needs_you": 1,
       "waiting": 1,
-      "agreements": 0,
+      "agreements": 1,
       "customers": 2
     },
     "needs_you": [
@@ -101,7 +101,7 @@
         "kind": "COLLECTION",
         "customer_id": "BUYER-1",
         "customer_short": "Foshan",
-        "subject_text": "Foshan · 逾期 ¥163k",
+        "subject_text": "Foshan · 逾期 ¥160k",
         "subject_demo_text": null,
         "lifecycle": null,
         "topic_text": null,
@@ -146,11 +146,11 @@
         "name": "Foshan Home Retail Co.",
         "negotiations_count": 0,
         "needs_you_count": 1,
-        "outstanding_display": "¥1,002,800",
+        "outstanding_display": "¥1,000,000",
         "share_text": "占您应收款的 100%",
         "tone": "warn",
         "status_text": "1 项需要您处理",
-        "detail_text": "未收 ¥1,002,800 · 占您应收款的 100%",
+        "detail_text": "未收 ¥1,000,000 · 占您应收款的 100%",
         "href": "/?customer=BUYER-1"
       },
       {

@@ -1,0 +1,73 @@
+{
+  "note": "Synthetic loan catalogue for the TermsLedger demo (ADR-0013, docs/capex_handover.md D7). Every product is illustrative: it is not a real lender's offer, its rates and criteria were written for the demo scenario, and an eligibility read against it is indicative only, never a lender's decision. Amounts are fen; rates and ratio limits are basis points.",
+  "products": [
+    {
+      "id": "PRD-BANK1-TERM-60",
+      "lender_id": "BANK-1",
+      "lender_name": "Main bank",
+      "name": "Equipment term loan, 60 months",
+      "facility_kind": "EQUIPMENT_TERM_LOAN",
+      "repayment": "AMORTISING",
+      "rate_bp": 520,
+      "upfront_fee_bp": 50,
+      "term_months": 60,
+      "lead_time_days": 21,
+      "min_amount_fen": 20000000,
+      "max_amount_fen": 300000000,
+      "collateral": false,
+      "personal_guarantee": false,
+      "criteria": {"min_dscr_bp": 13000, "max_leverage_bp": 30000, "min_coverage_bp": 10000, "min_months_trading": 24}
+    },
+    {
+      "id": "PRD-BANK2-GGL-36",
+      "lender_id": "BANK-2",
+      "lender_name": "Guaranteed-loan bank",
+      "name": "Government-guaranteed growth loan, 36 months",
+      "facility_kind": "GOV_GUARANTEED_LOAN",
+      "repayment": "AMORTISING",
+      "rate_bp": 420,
+      "upfront_fee_bp": 100,
+      "term_months": 36,
+      "lead_time_days": 30,
+      "min_amount_fen": 10000000,
+      "max_amount_fen": 100000000,
+      "collateral": false,
+      "personal_guarantee": false,
+      "criteria": {"min_dscr_bp": 12000, "max_leverage_bp": 25000, "min_months_trading": 12, "max_buyer_concentration_bp": 8000}
+    },
+    {
+      "id": "PRD-LESSOR1-LEASE-60",
+      "lender_id": "LESSOR-1",
+      "lender_name": "Equipment lessor",
+      "name": "Equipment finance lease, 60 months",
+      "facility_kind": "EQUIPMENT_LEASE",
+      "repayment": "AMORTISING",
+      "rate_bp": 690,
+      "upfront_fee_bp": 0,
+      "term_months": 60,
+      "lead_time_days": 14,
+      "min_amount_fen": 10000000,
+      "max_amount_fen": 200000000,
+      "collateral": false,
+      "personal_guarantee": false,
+      "criteria": {"min_dscr_bp": 11500, "max_leverage_bp": 35000}
+    },
+    {
+      "id": "PRD-LENDERNB-SECURED-84",
+      "lender_id": "LENDER-NB",
+      "lender_name": "Regional commercial bank",
+      "name": "Secured expansion loan, 84 months",
+      "facility_kind": "EQUIPMENT_TERM_LOAN",
+      "repayment": "AMORTISING",
+      "rate_bp": 480,
+      "upfront_fee_bp": 75,
+      "term_months": 84,
+      "lead_time_days": 45,
+      "min_amount_fen": 100000000,
+      "max_amount_fen": 800000000,
+      "collateral": true,
+      "personal_guarantee": true,
+      "criteria": {"min_dscr_bp": 14000, "max_leverage_bp": 30000, "min_months_trading": 36}
+    }
+  ]
+}

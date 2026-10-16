@@ -35,11 +35,11 @@ function defaultHorizon(h: HomeView): Horizon {
   return HORIZONS.find((n) => span <= n) ?? 120;
 }
 
-function Fact({ label, children, caption, testId }: { label: string; children: ReactNode; caption?: ReactNode; testId?: string }) {
+function Fact({ label, children, caption, testId, big = false }: { label: string; children: ReactNode; caption?: ReactNode; testId?: string; big?: boolean }) {
   return (
-    <div className="min-w-0">
+    <div className={`min-w-0 ${big ? "rounded-tile bg-card px-4 py-3 shadow-(--shadow-f)" : ""}`}>
       <dt className="text-supporting font-semibold text-ink-3">{label}</dt>
-      <dd className="font-display text-lg font-extrabold tabular-nums tracking-[-0.01em] text-ink" data-testid={testId}>
+      <dd className={`font-display font-extrabold tabular-nums tracking-[-0.01em] text-ink ${big ? "mt-1 text-[26px] leading-tight" : "text-lg"}`} data-testid={testId}>
         {children}
       </dd>
       {caption ? <dd className="text-supporting text-ink-3">{caption}</dd> : null}
@@ -47,9 +47,12 @@ function Fact({ label, children, caption, testId }: { label: string; children: R
   );
 }
 
-export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | null }) {
+/**
+ * The cash in four figures, the server's: cash today, the minimum (and how far above it), when the cash first becomes unsafe (or never in the horizon) and the lowest point ahead
+ * (or, when the first breach is the worst, that point). `big` is the summary at the top of Cash & funding (four tiles); without it the row in the chart's header.
+ */
+export function CashFigures({ h, big = false }: { h: HomeView; big?: boolean }) {
   const { t } = useI18n();
-  const [horizon, setHorizon] = useState<Horizon>(() => defaultHorizon(h));
   const cash = h.cash;
   const unsafe = cash.first_breach_day !== null && cash.first_breach_day !== undefined;
   const breachIsWorst = unsafe && cash.first_breach_day === cash.lowest_day;
@@ -57,21 +60,13 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
   const shortToday = cash.below_reserve_today && cash.headroom_short !== undefined ? versusMinimum(cash.headroom_short, cash.headroom_fen, false).amount : null;
   const headroom = cash.headroom_short !== undefined ? versusMinimum(cash.headroom_short, cash.headroom_fen, false, true) : null;
   const lowestHeadroom = cash.lowest_headroom_short !== undefined ? versusMinimum(cash.lowest_headroom_short, cash.lowest_headroom_fen, true) : null;
-
-  // The alternative line: the chosen plan's own series; until the plans are read, the home's plan line.
-  const alternative = chosen ? chosen.series : cash.plan_series;
-  const alternativeLabel = chosen ? chosen.label : t("biz.picture.plan");
-  const hasAlternative = linesDiffer(cash.series, alternative);
-  // With no plan beside it the line is simply the projection, not "if you do nothing" (funded books carry the funded numbers).
-  const baselineLabel = cash.plan_series || chosen?.series ? t("biz.forecast.nothing") : t("biz.forecast.projected");
-  const lowestLabel = t("biz.picture.lowest", { amount: cash.lowest_short });
-
-  const figures = (
-    <dl className="mt-2 flex flex-wrap gap-x-8 gap-y-3" data-testid="cash-figures">
-      <Fact label={t("biz.cashToday")} testId="cash-today">
+  return (
+    <dl className={big ? "grid grid-cols-2 gap-3 lg:grid-cols-4" : "mt-2 flex flex-wrap gap-x-8 gap-y-3"} data-testid="cash-figures">
+      <Fact big={big} label={t("biz.cashToday")} testId="cash-today">
         {cash.cash_short}
       </Fact>
       <Fact
+          big={big}
         label={t("biz.picture.minimum")}
         caption={headroom ? <span className="font-semibold tabular-nums text-ink-2" data-testid="cash-headroom">{t(headroom.key, { amount: headroom.amount })}</span> : undefined}
       >
@@ -79,6 +74,7 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
       </Fact>
       {breachIsWorst ? (
         <Fact
+          big={big}
           label={cash.below_reserve_today ? t("biz.shortToday") : t("biz.firstBreachIsWorst")}
           testId="cash-unsafe-when"
           caption={
@@ -94,6 +90,7 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
       ) : (
         <>
           <Fact
+          big={big}
             label={cash.below_reserve_today ? t("biz.shortToday") : t("biz.firstUnsafeDay")}
             testId="cash-unsafe-when"
             caption={shortToday ? t("biz.cashNow", { amount: cash.cash_short }) : undefined}
@@ -101,6 +98,7 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
             {cash.below_reserve_today ? (shortToday ?? cash.first_breach_cash_short) : (cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: cash.horizon_days }))}
           </Fact>
           <Fact
+          big={big}
             label={unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}
             caption={
               <>
@@ -115,6 +113,20 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
       )}
     </dl>
   );
+}
+
+export function CashForecast({ h, chosen, figures = true }: { h: HomeView; chosen: ChosenLine | null; /** The four figures in the chart's header; false where the page already shows them (the summary at the top of Cash & funding). */ figures?: boolean }) {
+  const { t } = useI18n();
+  const [horizon, setHorizon] = useState<Horizon>(() => defaultHorizon(h));
+  const cash = h.cash;
+  // The alternative line: the chosen plan's own series; until the plans are read, the home's plan line.
+  const alternative = chosen ? chosen.series : cash.plan_series;
+  const alternativeLabel = chosen ? chosen.label : t("biz.picture.plan");
+  const hasAlternative = linesDiffer(cash.series, alternative);
+  // With no plan beside it the line is simply the projection, not "if you do nothing" (funded books carry the funded numbers).
+  const baselineLabel = cash.plan_series || chosen?.series ? t("biz.forecast.nothing") : t("biz.forecast.projected");
+  const lowestLabel = t("biz.picture.lowest", { amount: cash.lowest_short });
+
 
   return (
     <figure className="space-y-3" data-testid="cash-forecast" data-horizon={horizon} data-lowest={cash.lowest_fen} data-alternative={chosen?.key ?? ""}>
@@ -148,7 +160,7 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
             <h2 id="cash-picture-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
               {t("biz.picture.title")}
             </h2>
-            {figures}
+            {figures ? <CashFigures h={h} /> : null}
           </>
         }
       />

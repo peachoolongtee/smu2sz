@@ -113,7 +113,7 @@ def test_f3_a_restart_hydrates_the_scenario_and_applies_only_its_events(rt: Runt
 # ================================================================ F4: the early-pay promise names its day; portions
 
 
-FACE_A = 25_720_000  # Counter A: up to ¥257,200 of RCV-A at 0.85%, paid on or before day 2
+FACE_A = 26_000_000  # Counter A: up to ¥260,000 of RCV-A at 0.85%, paid on or before day 2
 
 
 def _counter_a(client: TestClient, rt: Runtime) -> Any:
@@ -144,11 +144,11 @@ def _early_events(rt: Runtime) -> list[tuple[int, str, int]]:
 def test_f4_counter_a_names_its_day_and_keeps_its_figures(client: TestClient, rt: Runtime) -> None:
     cm, ep = _counter_a(client, rt)
     assert (ep.rate_bp, ep.base.amount_fen, ep.effective_day) == (85, FACE_A, 2)
-    assert ep.spans[0].text == ("We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on "
+    assert ep.spans[0].text == ("We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on "
                                 "or before day 2.")
     v = rt.store.get_verdict(cm.verdict_id)
     a = next(k for k in v.counters if k.label == "Option A")
-    assert "¥2,186.20" in a.formula and "¥3,027.77" in a.formula
+    assert "¥2,210.00" in a.formula and "¥3,035.99" in a.formula
 
 
 def test_f4_a_portion_paid_early_settles_its_face_and_the_rest_may_follow_by_the_day(client: TestClient,
@@ -161,12 +161,12 @@ def test_f4_a_portion_paid_early_settles_its_face_and_the_rest_may_follow_by_the
     a = rcv(rt)
     assert (a.settled_fen, a.outstanding_fen, a.early_paid_fen) == (10_000_000, 32_000_000, {ep.id: 10_000_000})
     assert rt.store.get_commitment(cm.id).status.value == "ACTIVE"
-    # the projection carries the rest of the promise: ¥157,200 on day 2 less post(0.85% × 157,200) = ¥1,336.20
-    assert _early_events(rt) == [(2, "EARLY_RECEIPT", 15_720_000), (2, "DISCOUNT", -133_620),
-                                 (32, "RECEIPT", 16_280_000)]
+    # the projection carries the rest of the promise: ¥160,000 on day 2 less post(0.85% × 160,000) = ¥1,360.00
+    assert _early_events(rt) == [(2, "EARLY_RECEIPT", 16_000_000), (2, "DISCOUNT", -136_000),
+                                 (32, "RECEIPT", 16_000_000)]
     move(client, 2)
-    r2 = _bank(client, rt, "rx-part-2", 15_720_000 - 133_620)
-    assert r2["status"] == "EXECUTED" and "settles ¥157,200.00" in r2["message"]
+    r2 = _bank(client, rt, "rx-part-2", 16_000_000 - 136_000)
+    assert r2["status"] == "EXECUTED" and "settles ¥160,000.00" in r2["message"]
     a = rcv(rt)
     assert (a.settled_fen, a.early_paid_fen) == (FACE_A, {ep.id: FACE_A})
     assert _early_events(rt) == [(32, "RECEIPT", 42_000_000 - FACE_A)]
@@ -174,10 +174,10 @@ def test_f4_a_portion_paid_early_settles_its_face_and_the_rest_may_follow_by_the
 
     rep = reconcile(rt.store, day=rt.day)
     assert [m.status for m in rep.receipts] == [MatchStatus.MATCHED, MatchStatus.MATCHED]
-    assert [m.agreed_discount_fen for m in rep.receipts] == [85_000, 133_620]
+    assert [m.agreed_discount_fen for m in rep.receipts] == [85_000, 136_000]
     [row] = rep.promised
     assert (row.status, row.face_fen, row.discount_fen, row.receipt_seq) == (
-        PromiseStatus.RECEIVED, FACE_A, 218_620, rep.receipts[-1].seq)
+        PromiseStatus.RECEIVED, FACE_A, 221_000, rep.receipts[-1].seq)
 
 
 def test_f4_a_partial_promise_row_shows_the_portion_received(client: TestClient, rt: Runtime) -> None:
@@ -189,16 +189,16 @@ def test_f4_a_partial_promise_row_shows_the_portion_received(client: TestClient,
     [row] = reconcile(rt.store, day=rt.day).promised
     assert (row.status, row.face_fen, row.discount_fen, row.expected_fen) == (
         PromiseStatus.RECEIVED, 10_000_000, 85_000, 9_915_000)
-    assert "¥157,200.00 may still be settled early by day 2" in row.detail
+    assert "¥160,000.00 may still be settled early by day 2" in row.detail
 
 
 def test_f4_after_the_named_day_the_agreed_amount_is_a_plain_receipt(client: TestClient, rt: Runtime) -> None:
     _counter_a(client, rt)
     move(client, 5)
-    r = _bank(client, rt, "rx-late", FACE_A - 218_620)
+    r = _bank(client, rt, "rx-late", FACE_A - 221_000)
     assert r["status"] == "EXECUTED" and "early-payment" not in r["message"]
     a = rcv(rt)
-    assert (a.settled_fen, a.early_paid_fen) == (FACE_A - 218_620, {})
+    assert (a.settled_fen, a.early_paid_fen) == (FACE_A - 221_000, {})
 
 
 # ================================================================ F5: the owner repays after the mandate expired
@@ -232,7 +232,7 @@ def test_f5_the_owner_repays_after_expiry_and_the_agent_may_not(client: TestClie
 def test_f6_an_on_time_report_approved_late_earns_the_discount(client: TestClient, rt: Runtime) -> None:
     cm, ep = _counter_a(client, rt)
     move(client, 2)
-    agreed = FACE_A - 218_620
+    agreed = FACE_A - 221_000
     q = post_op(client, rt, AGENT, {"kind": "RECEIVE_PAYMENT", "op_id": "agent-rx", "requested_by": "AGENT",
                                     "receivable_id": "RCV-A", "amount_fen": agreed})
     assert q["status"] == "PENDING_APPROVAL"
@@ -241,7 +241,7 @@ def test_f6_an_on_time_report_approved_late_earns_the_discount(client: TestClien
     cash0 = rt.store.get_state().cash_fen
     d = client.post(f"/approvals/{q['approval_id']}", json={"decision": "APPROVE"}, headers=OWNER).json()["result"]
     assert d["status"] == "EXECUTED"
-    assert "reported on day 2, booked on day 3" in d["message"] and "settles ¥257,200.00" in d["message"]
+    assert "reported on day 2, booked on day 3" in d["message"] and "settles ¥260,000.00" in d["message"]
     a = rcv(rt)
     assert (a.settled_fen, a.outstanding_fen, a.early_paid_fen) == (FACE_A, 42_000_000 - FACE_A, {ep.id: FACE_A})
     assert rt.store.get_state().cash_fen == cash0 + agreed  # cash on the approval day
@@ -254,7 +254,7 @@ def test_f6_an_on_time_report_approved_late_earns_the_discount(client: TestClien
 
     rep = reconcile(rt.store, day=rt.day)
     [m] = [m for m in rep.receipts if m.status != MatchStatus.UNMATCHED]
-    assert m.status == MatchStatus.MATCHED and m.agreed_discount_fen == 218_620 and m.day == 3
+    assert m.status == MatchStatus.MATCHED and m.agreed_discount_fen == 221_000 and m.day == 3
     [row] = rep.promised
     assert row.status == PromiseStatus.RECEIVED and row.face_fen == FACE_A
 
@@ -263,7 +263,7 @@ def test_f6_a_request_may_not_carry_its_own_reported_day(client: TestClient, rt:
     _counter_a(client, rt)
     move(client, 5)
     r = post_op(client, rt, BANK, {"kind": "RECEIVE_PAYMENT", "op_id": "rx-backdated", "requested_by": "SYSTEM",
-                                   "receivable_id": "RCV-A", "amount_fen": FACE_A - 218_620, "reported_day": 1})
+                                   "receivable_id": "RCV-A", "amount_fen": FACE_A - 221_000, "reported_day": 1})
     assert r["status"] == "REFUSED" and rcv(rt).settled_fen == 0
 
 
@@ -271,7 +271,7 @@ def test_f6_an_agent_cannot_backdate_a_queued_report(client: TestClient, rt: Run
     _counter_a(client, rt)
     move(client, 5)
     q = post_op(client, rt, AGENT, {"kind": "RECEIVE_PAYMENT", "op_id": "agent-bd", "requested_by": "AGENT",
-                                    "receivable_id": "RCV-A", "amount_fen": FACE_A - 218_620, "reported_day": 1})
+                                    "receivable_id": "RCV-A", "amount_fen": FACE_A - 221_000, "reported_day": 1})
     assert q["status"] == "PENDING_APPROVAL"
     d = client.post(f"/approvals/{q['approval_id']}", json={"decision": "APPROVE"}, headers=OWNER).json()["result"]
     assert d["status"] == "EXECUTED" and "early-payment" not in d["message"]  # dated to day 5, the day it was queued

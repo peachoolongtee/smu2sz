@@ -1,0 +1,33 @@
+{
+  "document_id": "DOC-000004",
+  "doc_hash": "704f16e616e7c19648b5a3cc7903797baa0f80e9775a693a7d114452d0af17c0",
+  "title": "Equipment purchase contract GZPM-2026-114",
+  "counterparty_id": "VENDOR-GZPM",
+  "reading_confirmed": true,
+  "timeline": {
+    "signing_day": null,
+    "delivery_day": null,
+    "acceptance_day": null,
+    "invoice_day": null,
+    "retention_release_day": null
+  },
+  "uplift_start_month": 4,
+  "uplift_start_basis": "the default (no delivery or acceptance day given)",
+  "schedule": {
+    "derivable": false,
+    "schedule": null,
+    "reasons": [
+      "Give the delivery day and the acceptance day to date the payments that wait for them."
+    ],
+    "reasons_zh": [],
+    "needs": [
+      "delivery_day",
+      "acceptance_day"
+    ]
+  },
+  "evaluation": null,
+  "early_pay": null,
+  "early_pay_evaluation": null,
+  "early_pay_schedule": null,
+  "summary": "No payment schedule: Give the delivery day and the acceptance day to date the payments that wait for them."
+}

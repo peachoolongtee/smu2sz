@@ -370,10 +370,14 @@
       "agreements": 0,
       "customers": 2
     },
+    "headline_text": "A funding plan is ready.",
     "deals": {
       "needs_you": 0,
       "waiting": 0,
-      "agreements": 0
+      "agreements": 0,
+      "closed": 0,
+      "awaiting_payment": 0,
+      "payment_late": 0
     },
     "alert": {
       "key": "company-cash",

@@ -1,7 +1,7 @@
 {
   "session_id": "rec-home-pending",
   "turn": 1,
-  "reply": "Day 34. Foshan Home Retail Co.'s ¥162,800.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. The cure is already waiting for your approval (APR-000001) to finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37). It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days, above your 15.00% ceiling. I have not run it. To approve it, say \"approve APR-000001\" or use the approval card.",
+  "reply": "Day 34. Foshan Home Retail Co.'s ¥160,000.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. The cure is already waiting for your approval (APR-000001) to finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37). It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days, above your 15.00% ceiling. I have not run it. To approve it, say \"approve APR-000001\" or use the approval card.",
   "intent": "SHOW_ALERTS",
   "lang": "en",
   "plan": [],

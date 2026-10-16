@@ -52,7 +52,7 @@ def test_why_it_matters_and_what_flow_recommends(client, rt):
     ws = v["workspace"]
     assert ws["why_it_matters"]["reasons"] == [
         "The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit.",
-        "Accepted as asked, cash would fall below your minimum in 47 days."]
+        "If you accept their request, cash would fall below your minimum in 47 days."]
     assert ws["recommends"] == {"action": "counter", "text": "Counter recommended"} and v["business_action"] == "counter"
 
 
@@ -102,7 +102,7 @@ def test_every_sendable_reply_has_its_own_plan_and_receipt_with_the_first_kept_a
     a, b = rs
     assert a["counter_id"] != b["counter_id"] and a["verdict_id"] == b["verdict_id"] and a["state_version"] == b["state_version"]
     # Option A is unchanged: one draw, today
-    assert a["send_scope_lines"][1] == "Draws ¥149,986.20 on the Bank credit line today"
+    assert a["send_scope_lines"][1] == "Draws ¥147,210.00 on the Bank credit line today"
     assert a["receipt"]["executes_now_text"] == "; ".join(a["send_scope_lines"][1:])
     # Option B runs its own funding: a draw and an invoice-financing request, said with the amounts and when they land
     assert b["send_scope_lines"][1:3] == ["Draws ¥90,000.00 on the Bank credit line today",
@@ -111,7 +111,7 @@ def test_every_sendable_reply_has_its_own_plan_and_receipt_with_the_first_kept_a
     assert "¥90,000.00" in ex and "today" in ex and "¥315,000.00" in ex and ex != a["receipt"]["executes_now_text"]
     # Option B costs the supplier ¥0.00 (its price adjustment offsets what it gives away) and its funding is not inside that figure
     assert b["send_scope_lines"][3] == "Funding cost ¥3,706.46 in addition" and "already inside" not in ex
-    assert a["send_scope_lines"][2].endswith("(already inside the ¥3,027.77 above)")
+    assert a["send_scope_lines"][2].endswith("(already inside the ¥3,035.99 above)")
     assert b["receipt"]["in_hand_vs_future_text"].startswith("The funding arrives in 3 days.")
     assert b["receipt"]["authority_text"] == "It changes your terms, so you approve it first."  # its own authority, not A's
     # the three statements are specific to each send, and authority is said only in `authority_text` (Option B needs approval, A does not)

@@ -58,6 +58,7 @@ test("in Chinese the approvals queue and the decision record read in Chinese wit
   await toDay34(page, request);
   await page.goto("/");
   const alertId = await page.getByTestId("home-next-action").getAttribute("data-alert");
+  await page.goto("/cash"); // the plan is run on Cash & funding
   await runPlan(page, alertId!);
   await expect(page.getByTestId(`alert-waiting-${alertId}`)).toBeVisible();
   await page.goto("/approvals");

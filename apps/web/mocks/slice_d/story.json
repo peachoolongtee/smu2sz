@@ -599,7 +599,12 @@
               "owner": false
             }
           ],
-          "proof": []
+          "proof": [
+            {
+              "label": "The deal's decision record",
+              "href": "/decisions/deal:OFF-f806f79b6c21"
+            }
+          ]
         },
         {
           "id": "decision",
@@ -887,7 +892,12 @@
               "owner": false
             }
           ],
-          "proof": []
+          "proof": [
+            {
+              "label": "这笔交易的决定记录",
+              "href": "/decisions/deal:OFF-f806f79b6c21"
+            }
+          ]
         },
         {
           "id": "decision",
@@ -2443,6 +2453,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -2758,6 +2772,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -3075,6 +3093,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -3392,6 +3414,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -3711,6 +3737,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -3720,7 +3750,7 @@
           "label": "Reality diverges",
           "state": "done",
           "state_text": "Done",
-          "result_text": "Received ¥255,013.80 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
+          "result_text": "Received ¥257,790.00 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
           "steps": [
             {
               "id": "bank",
@@ -4037,6 +4067,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -4046,7 +4080,7 @@
           "label": "现实与承诺出现偏差",
           "state": "done",
           "state_text": "已完成",
-          "result_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。 随后时间流逝，第二笔付款没有到账。",
+          "result_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。 随后时间流逝，第二笔付款没有到账。",
           "steps": [
             {
               "id": "bank",
@@ -4365,6 +4399,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -4374,7 +4412,7 @@
           "label": "Reality diverges",
           "state": "done",
           "state_text": "Done",
-          "result_text": "Received ¥255,013.80 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
+          "result_text": "Received ¥257,790.00 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
           "steps": [
             {
               "id": "bank",
@@ -4693,6 +4731,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -4702,7 +4744,7 @@
           "label": "现实与承诺出现偏差",
           "state": "done",
           "state_text": "已完成",
-          "result_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。 随后时间流逝，第二笔付款没有到账。",
+          "result_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。 随后时间流逝，第二笔付款没有到账。",
           "steps": [
             {
               "id": "bank",
@@ -5023,6 +5065,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -5032,7 +5078,7 @@
           "label": "Reality diverges",
           "state": "done",
           "state_text": "Done",
-          "result_text": "Received ¥255,013.80 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
+          "result_text": "Received ¥257,790.00 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
           "steps": [
             {
               "id": "bank",
@@ -5351,6 +5397,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -5360,7 +5410,7 @@
           "label": "现实与承诺出现偏差",
           "state": "done",
           "state_text": "已完成",
-          "result_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。 随后时间流逝，第二笔付款没有到账。",
+          "result_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。 随后时间流逝，第二笔付款没有到账。",
           "steps": [
             {
               "id": "bank",
@@ -5681,6 +5731,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -5690,7 +5744,7 @@
           "label": "Reality diverges",
           "state": "done",
           "state_text": "Done",
-          "result_text": "Received ¥255,013.80 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
+          "result_text": "Received ¥257,790.00 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
           "steps": [
             {
               "id": "bank",
@@ -6022,6 +6076,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -6031,7 +6089,7 @@
           "label": "现实与承诺出现偏差",
           "state": "done",
           "state_text": "已完成",
-          "result_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。 随后时间流逝，第二笔付款没有到账。",
+          "result_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。 随后时间流逝，第二笔付款没有到账。",
           "steps": [
             {
               "id": "bank",
@@ -6365,6 +6423,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -6374,7 +6436,7 @@
           "label": "Reality diverges",
           "state": "done",
           "state_text": "Done",
-          "result_text": "Received ¥255,013.80 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
+          "result_text": "Received ¥257,790.00 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
           "steps": [
             {
               "id": "bank",
@@ -6706,6 +6768,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -6715,7 +6781,7 @@
           "label": "现实与承诺出现偏差",
           "state": "done",
           "state_text": "已完成",
-          "result_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。 随后时间流逝，第二笔付款没有到账。",
+          "result_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。 随后时间流逝，第二笔付款没有到账。",
           "steps": [
             {
               "id": "bank",
@@ -7049,6 +7115,10 @@
             {
               "label": "The deal's decision record",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -7058,7 +7128,7 @@
           "label": "Reality diverges",
           "state": "done",
           "state_text": "Done",
-          "result_text": "Received ¥255,013.80 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
+          "result_text": "Received ¥257,790.00 from Foshan Home Retail Co. Time then passed and the second payment did not arrive.",
           "steps": [
             {
               "id": "bank",
@@ -7155,6 +7225,10 @@
             {
               "label": "Security",
               "href": "/trust?view=security&from=demo"
+            },
+            {
+              "label": "Track the deal",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         }
@@ -7392,6 +7466,10 @@
             {
               "label": "这笔交易的决定记录",
               "href": "/decisions/deal:OFF-f806f79b6c21"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         },
@@ -7401,7 +7479,7 @@
           "label": "现实与承诺出现偏差",
           "state": "done",
           "state_text": "已完成",
-          "result_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。 随后时间流逝，第二笔付款没有到账。",
+          "result_text": "已收到Foshan Home Retail Co.的 ¥257,790.00。 随后时间流逝，第二笔付款没有到账。",
           "steps": [
             {
               "id": "bank",
@@ -7498,6 +7576,10 @@
             {
               "label": "安全",
               "href": "/trust?view=security&from=demo"
+            },
+            {
+              "label": "跟踪这笔交易",
+              "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=demo"
             }
           ]
         }

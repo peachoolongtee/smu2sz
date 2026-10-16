@@ -6,7 +6,7 @@ import { ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import { StatusPill, type PillTone } from "@/components/ui/status-pill";
 import { UnderlineTabs, WORKLIST_COLUMNS, WorklistAlertLine, WorklistEmpty, WorklistRow, WorklistSearch } from "@/components/ui/worklist-rows";
 import { warmSelection } from "@/components/home/v2/prefetch";
-import { type HomeSelection, NO_SELECTION, rowHref, rowSelection, selectionHref } from "@/lib/home-v2-href";
+import { dealOpenHref, type HomeSelection, NO_SELECTION, rowHref, rowSelection, selectionHref } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
 import type { CustomersView, HomeTone, WorklistCustomer, WorklistNeedsRow, WorklistSeverity, WorklistView, WorklistWaitingRow } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
@@ -45,6 +45,9 @@ function useSettled<T>(fresh: T | undefined) {
 }
 
 /** The severity word, for a screen reader (the pill carries the status for the eye): the state vocabulary's word, colour is never the only channel. */
+/** How a row's severity shows for the eye: the red edge, tint and words for what is critical, the amber ones for what needs care; a normal row stays plain. */
+const SEVERITY_TONE: Partial<Record<WorklistSeverity, "bad" | "warn">> = { CRITICAL: "bad", CAUTION: "warn" };
+
 function Severity({ severity }: { severity: WorklistSeverity }) {
   const { t } = useI18n();
   if (severity === "NORMAL") return null;
@@ -63,23 +66,26 @@ function isSelected(sel: Partial<HomeSelection> | null, current: HomeSelection):
 /** A row of Needs you or Waiting: "Customer · Decision", the status (who acts), the one consequence; a quoted differentiator only when the server sends one for two alike subjects. */
 export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: WorklistNeedsRow | WorklistWaitingRow; selection?: HomeSelection; onLeave?: () => void }) {
   const { t, lang } = useI18n();
-  // A row that is the Home's own selection opens in place (the address changes, nothing else); any other row leads where the server says.
+  // A deal row opens that deal on the Deals page (the selection keys and `from=home`); a customer row is the Home's own selection; any other row leads where the server says.
   const sel = rowSelection(row);
+  const deal = sel?.decision ? dealOpenHref(sel.customer, sel.decision) : null;
   return (
     <WorklistRow
       testId="home-worklist-row"
       data={{ "data-kind": row.kind, "data-owner": row.owner, "data-key": row.key }}
-      href={sel ? selectionHref(sel) : rowHref(row)}
-      selected={isSelected(sel, selection)}
-      onClick={onLeave}
+      href={deal ?? (sel ? selectionHref(sel) : rowHref(row))}
+      selected={deal ? false : isSelected(sel, selection)}
+      onClick={deal ? undefined : onLeave}
       subject={row.subject_text}
       isNew={"is_new" in row && row.is_new}
       newLabel={t("hv2.work.new")}
       qualifier={"differentiator_text" in row ? row.differentiator_text : null}
-      onWarm={() => (sel ? warmSelection(sel, lang) : undefined)}
+      onWarm={() => (sel && !deal ? warmSelection(sel, lang) : undefined)}
       nextStep={row.consequence_text}
       pill={row.status_text ? <StatusPill tone={OWNER_PILL[row.owner] ?? "lavender"} testId="home-row-status">{row.status_text}</StatusPill> : null}
       severity={<Severity severity={row.severity} />}
+      tone={SEVERITY_TONE[row.severity] ?? null}
+      tag={row.severity === "CRITICAL" || row.severity === "CAUTION" ? t(`hv2.sev.${row.severity}` as const) : null}
     />
   );
 }
@@ -100,6 +106,7 @@ export function CustomerRow({ customer, selection = NO_SELECTION, onLeave }: { c
       nextStep={customer.detail_text}
       pill={customer.status_text ? <StatusPill tone={CUSTOMER_PILL[customer.tone]} testId="home-row-status">{customer.status_text}</StatusPill> : null}
       severity={<Severity severity={TONE_SEVERITY[customer.tone]} />}
+      tone={SEVERITY_TONE[TONE_SEVERITY[customer.tone]] ?? null}
     />
   );
 }
@@ -116,7 +123,21 @@ function scrollToAction(reduced: boolean) {
  * together), a search over the rows already fetched (by the customers' `search_terms`; nothing is computed), a header row (Customer / deal, Next step, Status), the rows and the way to the
  * full list. A row opens its item in place. The same body is the desktop table and the phone list.
  */
-export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECTION, onLeave, showAlert = true }: { read: WorklistView; customers: CustomersView | null; onAlertGo?: () => void; selection?: HomeSelection; onLeave?: () => void; showAlert?: boolean }) {
+export function WorklistBody({
+  read,
+  customers,
+  onAlertGo,
+  selection = NO_SELECTION,
+  onLeave,
+  showAlert = true,
+}: {
+  read: WorklistView;
+  customers: CustomersView | null;
+  onAlertGo?: () => void;
+  selection?: HomeSelection;
+  onLeave?: () => void;
+  showAlert?: boolean;
+}) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const uid = useId();
@@ -245,24 +266,43 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
  * The worklist card (`f-card`): "Your worklist" with its count, "All deals ↗" at the right, then the table. `read` null is a server that does not have the worklist; the page then has no
  * card. A read in flight is a loading block, a read that failed is the error state with Retry. A fresh read does not reorder the list while focus is in it.
  */
-export function WorklistPanel({ read, customers, loading, error, onRetry, onAlertGo, selection, showAlert }: { read: WorklistView | null | undefined; customers: CustomersView | null | undefined; loading: boolean; error: Error | undefined; onRetry: () => void; onAlertGo?: () => void; selection?: HomeSelection; showAlert?: boolean }) {
+export function WorklistPanel({
+  read,
+  customers,
+  loading,
+  error,
+  onRetry,
+  onAlertGo,
+  selection,
+  showAlert,
+}: {
+  read: WorklistView | null | undefined;
+  customers: CustomersView | null | undefined;
+  loading: boolean;
+  error: Error | undefined;
+  onRetry: () => void;
+  onAlertGo?: () => void;
+  selection?: HomeSelection;
+  showAlert?: boolean;
+}) {
   const { t } = useI18n();
   const [settled, handlers] = useSettled(read ?? undefined);
   const titleId = useId();
   return (
     <section aria-labelledby={titleId} {...handlers} data-testid="home-worklist-panel" className="motion-reveal f-card min-w-0 p-4">
-      <div className="flex items-center justify-between gap-3">
+      {/* The title is the card's own band, in Home's purple, so the worklist reads as a titled section and not as one more card. */}
+      <div className="-mx-4 -mt-4 flex items-center justify-between gap-3 rounded-t-[var(--radius-f-card)] bg-f-purple-soft px-4 py-3" data-testid="hv2-worklist-head">
         <div className="flex min-w-0 items-center gap-3">
-          <h2 id={titleId} className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-worklist-title">
+          <h2 id={titleId} className="font-display text-[20px] font-bold leading-tight tracking-[-0.01em] text-f-purple-ink" data-testid="hv2-worklist-title">
             {t("hv2.work.title")}
           </h2>
           {settled ? (
-            <span aria-hidden className="inline-flex min-w-7 items-center justify-center rounded-control border border-line-ui px-1.5 text-supporting font-medium tabular-nums text-ink-2" data-testid="hv2-worklist-count">
+            <span aria-hidden className="inline-flex min-w-7 items-center justify-center rounded-control bg-f-purple px-1.5 text-supporting font-bold tabular-nums text-f-btn-ink" data-testid="hv2-worklist-count">
               {settled.counts.needs_you + settled.counts.waiting}
             </span>
           ) : null}
         </div>
-        <Link href="/deals" className="motion-press inline-flex min-h-10 items-center gap-1.5 text-[15px] font-semibold text-ink hover:underline hover:underline-offset-[3px] touch:min-h-11" data-testid="home-worklist-all">
+        <Link href="/deals" className="motion-press inline-flex min-h-10 items-center gap-1.5 text-[15px] font-semibold text-f-purple-ink hover:underline hover:underline-offset-[3px] touch:min-h-11" data-testid="home-worklist-all">
           {t("hv2.work.all.deals")} <span aria-hidden>↗</span>
         </Link>
       </div>

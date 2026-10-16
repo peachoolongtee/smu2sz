@@ -90,6 +90,8 @@ def _check_href(api: TestClient, rt: Runtime, href: str) -> None:
         assert int(re.search(r"entry=(\d+)", href).group(1)) in {o.seq for o in rt.store.operations()}  # type: ignore[union-attr]
     elif href.startswith("/decisions/"):
         assert api.get(f"/decisions/{unquote(href[len('/decisions/'):])}").status_code == 200
+    elif href.startswith("/deals?") and "&from=demo" in href:  # round three: "Track the deal" lands on a decision that exists
+        assert api.get(f"/decisions/{unquote(re.search(r'decision=([^&]+)', href).group(1))}").status_code == 200  # type: ignore[union-attr]
     elif href.startswith("/approvals#approval-"):
         assert rt.store.get_approval(href.split("approval-", 1)[1]) is not None
     else:

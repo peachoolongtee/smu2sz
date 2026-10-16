@@ -2,6 +2,11 @@ import { expect, test as signedOut, type Locator } from "@playwright/test";
 import { proseOf, test } from "./fixtures";
 import { filledBrand, runPlan, openOperatorTools } from "./helpers";
 
+// These start signed out: the landing page (the first page a visitor sees) is taken as seen, so "/" opens Home.
+signedOut.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => sessionStorage.setItem("tl-welcomed", "1"));
+});
+
 /**
  * Mock-mode specs for the owner's decision surfaces: no tier badge on a REJECT, the approval card, the autonomy proof
  * on a Tier 1 ACCEPT, and the demo stepper resuming after sign-in. The Tier 1 offer is recorded from the live API
@@ -101,7 +106,7 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toContainText("34");
-  await page.goto("/");
+  await page.goto("/cash");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
@@ -167,7 +172,7 @@ async function toPendingCure(page: import("@playwright/test").Page) {
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toContainText("34");
-  await page.goto("/");
+  await page.goto("/cash");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);

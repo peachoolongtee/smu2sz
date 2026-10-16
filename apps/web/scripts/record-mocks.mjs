@@ -15,6 +15,8 @@
 //   - whatif_presets.json: every entry's `compute_ms` -> 0 and `cached` -> false (timing and cache state of the call).
 //   - the commitment id (CMT-<16 hex>) and its nonce, which the API draws at random for every deal: replaced by one fixed
 //     id and nonce wherever they appear (negotiation_accept.json, ops.json, home_act.json, home_goahead.json).
+//   - the SEC-<KIND>-<16 hex> security event ids (SEC-OPS, SEC-AUTH, ...) (random per event) and the chat's recorded decision ids (nl:<topic>:t<n>:<12 hex>, from a random
+//     session nonce): fixed ids by order of first appearance.
 //   - nl_script.json and state_after_fund.json: the NL-<16 hex> operation and lot ids, which the API derives from a random
 //     per-session nonce, become fixed ids by order of first appearance; nl_script.json, home_reconciliation_day34.json and the two
 //     home ledgers (home_ledger_day34.json, home_ledger_approved.json) and the receipts inside decisions.json are
@@ -27,6 +29,7 @@
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
 //   - offer_exposure_ex01.json (only with --exposure): `computed_in_seconds` and each `capacity[*].spare.seconds` -> 0 (timings).
+//   - home_v2/exposure*.json: the same two timings -> 0.
 //   - slice_d/*.json (only with --slice-d): every `loss_token` (a fingerprint of the books, which includes the restore history the API accumulates) becomes a fixed token by order of first appearance; the books' state version at the end of a funding decision's id (alert:ALERT-RESERVE-42:v<n>) becomes v7, the id the
 //     mock's decision recordings use for the same record; `alternate.history` is trimmed (see trimRestoreHistory).
 //   - strategy/*.json (only with --strategy): `computed_in_seconds` -> 0 (the time the call took; a cache hit differs from a miss).
@@ -66,7 +69,7 @@
 //
 // home_summary_day0_counter[_zh].json is GET /home on the opening books with the package offer read and no reply sent (cash.pending and its legend; ticket #116).
 //
-// --exposure records ONLY apps/web/mocks/offer_exposure_ex01.json and deals_day0_evaluated_back.json (the deals read opened with a customer: `open_offer.context.back`) and exits: { en, zh } of GET /offers/{id}/exposure?lang= for the package offer (EX01) after
+// --exposure records ONLY apps/web/mocks/offer_exposure_ex01.json, offer_picture_ex01_exposure.json and offer_scenarios_ex01.json (the scenarios of the Business consequences) and deals_day0_evaluated_back.json (the deals read opened with a customer: `open_offer.context.back`) and exits: { en, zh } of GET /offers/{id}/exposure?lang= for the package offer (EX01) after
 // FLOW has read it, on the opening books. One read carries every path (the sentences of every path are in `band.by_path`), so there is no per-response file. The API needs
 // FEATURE_EXPOSURE=1 (and FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 as above):
 //   node scripts/record-mocks.mjs --api http://localhost:8193 --exposure
@@ -101,10 +104,11 @@
 //   node scripts/record-mocks.mjs --api http://localhost:8197 --inputs
 // and, against an API started WITHOUT FEATURE_CUSTOMER_ECONOMICS, `--inputs --economics-off` records buyer_inputs_off.json ({ en, zh }: the sheet
 // with the economics fields refused and the server's sentence for it), which the mock serves while the spec's hook key is set.
-// --home-v2 records ONLY apps/web/mocks/home_v2/*.json and exits (Home V2 wave 2; the existing Home recordings stay for the flag-off page): for each of six
+// --home-v2 records ONLY apps/web/mocks/home_v2/*.json and exits (Home V2 wave 2; the existing Home recordings stay for the flag-off page): for each of seven
 // moments the mock chooses among (lib/mock/home-v2.ts), { en, zh } of GET /home (the full read, with its `home_v2` block), GET /worklist and GET /customers:
 //   day0        the opening books, nothing read, the plan ready and not run (worklist: the alert, no rows, two customers)
 //   offer       the opening books with the package offer received and read by FLOW (Needs you holds the Foshan decision; the plan still ready)
+//   deal        the deal made on day 0 (FLOW's counter sent and Foshan accepted it), nothing else moved yet: the books the Home shows once Foshan has agreed
 //   after_fund  the day-0 plan has run (FUNDING ARRANGED; Waiting holds the invoice financing not yet landed)
 //   day34       the deal made, the day-2 receipt, the clock at day 34 (the late invoice; the reserve alert open with its cure)
 //   pending     the day-34 cure queued for the owner's approval
@@ -116,6 +120,24 @@
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8182
 //   node scripts/record-mocks.mjs --api http://localhost:8182 --home-v2
 //
+// --buyside records ONLY apps/web/mocks/buyside/*.json and exits (ADR-0013, docs/capex_handover.md): the buy side's reads on the opening books
+// with the demo capex contract (fixtures/capex), in the order an owner walks it:
+//   fixtures.json                      GET /fixtures/capex-contracts
+//   purchases_{review,ready,awaiting,committed}.json   { en, zh } of GET /purchases after the upload, the confirmation, the commitment
+//                                      (queued) and the owner's approval of it
+//   evaluate.json                      POST /capex/contracts/{id}/evaluate on the timeline signing day 20, delivery 60, acceptance 80
+//   evaluate_day7.json                 the same with no signing day (the contract's own date, day 7: the deposit falls before any loan lands)
+//   evaluate_needs.json                the same with no timeline (the schedule asks for the delivery and acceptance days)
+//   commit.json                        POST /capex/contracts/{id}/commit (Tier 2, queued)
+//   commit_approval.json               { en, zh } of the commitment's row in GET /approvals/queue while it waits (carries the schedule rows the owner approves)
+//   health.json, health_inputs.json    GET /finance/health; POST with the owner's balance-sheet entries
+//   eligibility.json, eligibility_48.json   GET /lending/eligibility; POST with 48 months trading
+//   plans.json                         POST /capex/plans for the contract and an optional ¥400,000 robot
+//   add_to_menu.json                   POST /lending/products/PRD-BANK1-TERM-60/add-to-menu (queued; recorded last: it changes the menu)
+// The API needs FEATURE_CAPEX_CONTRACTS=1 and the other flags as above:
+//   cd services/api && FEATURE_CAPEX_CONTRACTS=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8233
+//   node scripts/record-mocks.mjs --api http://localhost:8233 --buyside
+//
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
 //
 // --tracker records ONLY apps/web/mocks/tracker/<moment>.json, { en, zh } of GET /decisions/{id}/tracker for the story's deal (Deal tracker, map #148), and exits.
@@ -124,6 +146,25 @@
 // settled (day 38) and ended (the rest of the invoice paid through the bank feed, so every invoice on the deal is paid: the close-out). lib/mock/tracker.ts chooses among them by the mock's own story state. The API needs the recording environment above:
 //   cd services/api && SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8241
 //   node scripts/record-mocks.mjs --api http://localhost:8241 --tracker
+
+// --buyer-message records ONLY apps/web/mocks/buyer_message.json and exits (the message the owner sends the buyer outside FLOW, ADR-0011 addendum). Each walk starts
+// on fresh books with the package offer (EX01) read and evaluated, and runs once with the page in each language (`en`, `zh`); every entry is { en, zh } by the page's language:
+//   message            { <counter>: { <page>: { en, zh } } }  GET .../counters/<counter>/message?lang=<buyer>&ui_lang=<page> for every reply, before anything is marked sent
+//   ready              GET /decisions/deal:<id> before anything is marked sent (the deal's history so far)
+//   message_changed    the 409 MESSAGE_CHANGED of a mark with a hash that is not the message's
+//   offered            POST .../offered for the recommended reply (the message in English)
+//   awaiting           { decision, deals, worklist, message }: the reads once it is marked sent (`message` is the offered reply's, with `offered`)
+//   offer_sent_outside the 409 OFFER_SENT_OUTSIDE of the simulated send once the offer is out
+//   buyer_accepted     POST .../buyer-accepted with the buyer's message pasted as evidence; accepted { decision, deals, worklist, tracker }: the reads after it
+//   buyer_declined     POST .../buyer-declined with reason DISCOUNT_TOO_LOW; declined { decision, deals, worklist }
+//   withdrawn          { result, decision }: POST .../offered/withdraw (marked sent by mistake) and the deal's record after it
+//   no_terms           the 409 NO_TERMS_IN_REPLY of a reply with no terms in it
+//   buyer_reply        POST /offers/<id>/buyer-reply with the section's REPLY_TEXT; replied { decision, deals, worklist, reply_decision, reply_offer }
+//   no_answer          { decision, deals, worklist } once the clock is past the day the offer was open until; offer_expired: the 409 OFFER_EXPIRED of a no recorded then
+//   no_simulated_buyer the 409 NO_SIMULATED_BUYER of the simulated send for a buyer with no simulated profile (EX09, BUYER-3)
+// The API needs the recording environment above:
+//   cd services/api && SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8531
+//   node scripts/record-mocks.mjs --api http://localhost:8531 --buyer-message
 
 import { createHash } from "node:crypto";
 import { register } from "node:module";
@@ -138,7 +179,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --tracker]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --buyside | --tracker | --buyer-message]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
@@ -152,6 +193,8 @@ const TRACKER = process.argv.includes("--tracker");
 const NO_EXPOSURE = process.argv.includes("--no-exposure");
 const INPUTS = process.argv.includes("--inputs");
 const SLICE_D = process.argv.includes("--slice-d");
+const BUYER_MESSAGE = process.argv.includes("--buyer-message");
+const BUYSIDE = process.argv.includes("--buyside");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -175,19 +218,26 @@ const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_act_d
 
 // Files whose operations are chained by first appearance (every other chained file uses `rechain` below): the chat script, whose
 // operation ids and commitment ids come from a per-session random nonce, and the day-34 reconciliation (one receipt).
+let recordingLang = "en";
+/** The language `inLang` is recording in, for a read that takes the language as an argument. */
+const getLangForRecording = () => recordingLang;
 /** Runs `read` with the UI language set to `lang` (the adapters add it to every route that takes one), then puts English back. */
 async function inLang(lang, read) {
   setLang(lang);
+  recordingLang = lang;
   try {
     return await read();
   } finally {
     setLang("en");
+    recordingLang = "en";
   }
 }
 
 const RECHAIN_BY_APPEARANCE = new Set(["slice_d/activity.json", "slice_d/story.json", "slice_d/restore.json", "nl_script.json", "home_reconciliation_day2.json", "bank_receipt.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
 const lossTokens = new Map(); // slice_d file -> its loss tokens, by order of first appearance
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
+const secIds = new Map(); // SEC-<KIND>-<16 hex> security event ids, random per event since the security fixes -> a fixed id by first appearance
+const nlDecisionIds = new Map(); // nl:<topic>:t<n>:<12 hex> recorded chat decisions, keyed by a random session nonce -> a fixed id by first appearance
 
 function rechainByAppearance(name, root) {
   const memo = new Map();
@@ -250,6 +300,14 @@ function normalise(name, value) {
     .replace(/NL-[0-9a-f]{16}/g, (id) => {
       if (!nlIds.has(id)) nlIds.set(id, `NL-${sha(`recorded nl id ${nlIds.size}`).slice(0, 16)}`);
       return nlIds.get(id);
+    })
+    .replace(/SEC-([A-Z]+)-([0-9a-f]{16})/g, (id, kind) => {
+      if (!secIds.has(id)) secIds.set(id, `SEC-${kind}-${sha(`recorded security event ${secIds.size}`).slice(0, 16)}`);
+      return secIds.get(id);
+    })
+    .replace(/(nl:[a-z0-9-]+:t\d+:)([0-9a-f]{12})/g, (m, head) => {
+      if (!nlDecisionIds.has(m)) nlDecisionIds.set(m, `${head}${sha(`recorded nl decision ${nlDecisionIds.size}`).slice(0, 12)}`);
+      return nlDecisionIds.get(m);
     });
   const out = JSON.parse(text, (k, v) => (k === "nonce" && typeof v === "string" && /^[0-9a-f]{32}$/.test(v) ? FIXED_NONCE : v));
   const rechain = (node) => {
@@ -265,6 +323,18 @@ function normalise(name, value) {
     } else if (node && typeof node === "object") for (const v of Object.values(node)) rechain(v);
   };
   if (name.startsWith("strategy/") || name.startsWith("receivables/") || name.startsWith("buyer_exposure")) out.computed_in_seconds = 0;
+  if (name.startsWith("home_v2/exposure")) {
+    // the exposure read inside Home's recordings carries the same timings as offer_exposure_ex01.json, in both languages
+    const zero = (node) => {
+      if (Array.isArray(node)) node.forEach(zero);
+      else if (node && typeof node === "object") {
+        if ("computed_in_seconds" in node) node.computed_in_seconds = 0;
+        if (node.spare && typeof node.spare === "object" && "seconds" in node.spare) node.spare.seconds = 0;
+        Object.values(node).forEach(zero);
+      }
+    };
+    zero(out);
+  }
   if (RECHAIN.has(name)) rechain(out);
   if (RECHAIN_BY_APPEARANCE.has(name)) rechainByAppearance(name, out);
   if (name.startsWith("slice_d/")) trimRestoreHistory(name, out);
@@ -365,6 +435,50 @@ async function recvRead(point) {
   }
 }
 
+// --buyside: the buy side's recordings and nothing else (see the header).
+if (BUYSIDE) {
+  const TIMELINE = { signing_day: 20, delivery_day: 60, acceptance_day: 80 };
+  const both = async (read) => ({ en: await inLang("en", read), zh: await inLang("zh", read) });
+  mkdirSync(join(OUT, "buyside"), { recursive: true });
+  await reset();
+  const fixtures = await live.getCapexContractFixtures().catch(() => null);
+  if (!fixtures) throw new Error("the buy side is off: start the API with FEATURE_CAPEX_CONTRACTS=1");
+  files["buyside/fixtures.json"] = fixtures;
+  const doc = await live.submitDocument({ fixture_id: fixtures[0].id });
+  files["buyside/purchases_review.json"] = await both(() => live.getPurchases(getLangForRecording()));
+  await live.decideDocument(doc.id, "confirm", doc.doc_hash, null);
+  files["buyside/purchases_ready.json"] = await both(() => live.getPurchases(getLangForRecording()));
+  const ev = await live.evaluateContract(doc.id, TIMELINE);
+  files["buyside/evaluate.json"] = ev;
+  files["buyside/evaluate_day7.json"] = await live.evaluateContract(doc.id, { delivery_day: 60, acceptance_day: 80 });
+  files["buyside/evaluate_needs.json"] = await live.evaluateContract(doc.id, {});
+  files["buyside/health.json"] = await live.getFinanceHealth();
+  files["buyside/health_inputs.json"] = await live.getFinanceHealth({
+    inventory_fen: 30000000, other_current_assets_fen: 0, trade_payables_fen: 25000000, other_current_liabilities_fen: 5000000,
+  });
+  files["buyside/eligibility.json"] = await live.getEligibility();
+  files["buyside/eligibility_48.json"] = await live.getEligibility({ months_trading: 48 });
+  files["buyside/plans.json"] = await live.runCapexPlans({
+    projects: [
+      { id: "line", label: "Die-cutting line", document_id: doc.id, timeline: TIMELINE, monthly_uplift_fen: 2200000 },
+      { id: "robot", label: "Packing robot", price_fen: 40000000, monthly_uplift_fen: 1500000, uplift_start_month: 4, optional: true },
+    ],
+  });
+  const commit = await live.commitContract(doc.id, TIMELINE, ev.schedule.schedule.schedule_hash, false);
+  if (commit.status !== "PENDING_APPROVAL") throw new Error("the purchase commitment no longer waits for the owner");
+  files["buyside/commit.json"] = commit;
+  files["buyside/purchases_awaiting.json"] = await both(() => live.getPurchases(getLangForRecording()));
+  // the commitment's row in the Approvals queue, with the schedule the owner approves (CAPEX-2)
+  files["buyside/commit_approval.json"] = await both(async () => (await live.getApprovals()).find((a) => a.id === commit.approval_id));
+  await live.decideApproval(commit.approval_id, "APPROVE");
+  files["buyside/purchases_committed.json"] = await both(() => live.getPurchases(getLangForRecording()));
+  files["buyside/add_to_menu.json"] = await live.addProductToMenu("PRD-BANK1-TERM-60", 60000000);
+  await live.demoReset();
+  for (const name of Object.keys(files).sort()) write(name, files[name]);
+  console.log(`recorded ${written.length} buy-side files into ${join(OUT, "buyside")} from ${API}`);
+  process.exit(0);
+}
+
 // --buyer-exposure: buyer_exposure[_zh].json and nothing else, on the opening books.
 if (BUYER_EXPOSURE) {
   await live.demoReset();
@@ -432,6 +546,10 @@ if (EXPOSURE) {
   const pic = await live.getOfferPicture(id, "en");
   const recommended = pic.paths?.find((p) => p.recommended)?.key;
   files["deals_day0_evaluated_back.json"] = await live.getDeals("en", { customer: "BUYER-1", path: recommended });
+  // The same offer's picture with the exposure read on (round three: its `scenarios[]` are composed from the exposure and compare reads); the mock serves it while the exposure is on.
+  files["offer_picture_ex01_exposure.json"] = { en: pic, zh: await live.getOfferPicture(id, "zh") };
+  // The scenarios behind Cash impact's Business consequences are their own read now (GET /offers/{id}/scenarios).
+  files["offer_scenarios_ex01.json"] = { en: await live.getOfferScenarios(id, "en"), zh: await live.getOfferScenarios(id, "zh") };
   await live.demoReset();
   for (const name of Object.keys(files)) write(name, files[name]);
   console.log(`recorded ${written.join(", ")} into ${OUT} from ${API}`);
@@ -669,6 +787,117 @@ if (TRACKER) {
   process.exit(0);
 }
 
+// --buyer-message: the message to the buyer, marked sent, and each way the offer can end, and nothing else (see the header).
+if (BUYER_MESSAGE) {
+  const { getTracker } = await import("../lib/tracker.ts");
+  const REPLY_TEXT = "We can pay the 420,000 invoice early, but only with a 1.2% discount, and we need 60-day terms on future invoices.";
+  const EVIDENCE_TEXT = "Agreed. We will pay ¥257,200 of the September invoice by 3 October, less the 0.85% discount.";
+  const LANGS = ["en", "zh"];
+  /** The 409 detail of a call the story needs refused, with its code; a failure when the API accepted it. */
+  const refused = async (code, call) => {
+    try {
+      await call();
+    } catch (e) {
+      if (e?.status === 409 && e.detail?.code === code) return e.detail;
+      throw e;
+    }
+    throw new Error(`the API accepted a call the story needs refused with ${code}`);
+  };
+  /** Fresh books with the package offer read and evaluated: its id, the verdict, and the reply FLOW recommends. */
+  const fresh = async () => {
+    await reset();
+    const offerId = await submitSample("EX01");
+    await evaluate(offerId);
+    const verdict = demoStore.get().verdicts[offerId];
+    const picture = await live.getOfferPicture(offerId, "en");
+    const replies = picture.paths.filter((p) => p.kind === "reply");
+    const rec = replies.find((p) => p.recommended) ?? replies[0];
+    if (!verdict || !rec) throw new Error("the package offer has no verdict or no reply: the demo path has changed");
+    return { offerId, verdict, replies, rec };
+  };
+  /** Fresh books with the recommended reply marked sent (the message in English), the page in `lang`. */
+  const sentOne = async (lang) => {
+    const f = await fresh();
+    const msg = await live.getBuyerMessage(f.offerId, f.rec.key, "en", "en");
+    if (!msg.message_hash) throw new Error(`no message for ${f.rec.key}: ${msg.blocked?.code}`);
+    const offered = await inLang(lang, () =>
+      live.markOffered(f.offerId, f.rec.key, { verdict_id: f.verdict.id, state_version: f.verdict.state_version, message_hash: msg.message_hash, lang: "en" }),
+    );
+    return { ...f, offered, hash: msg.message_hash };
+  };
+  const reads = async (offerId, lang, more = {}) => ({
+    decision: await live.getDecision(dealId(offerId), lang),
+    deals: await inLang(lang, () => live.getDeals(lang)),
+    worklist: await inLang(lang, () => live.getWorklist(lang)),
+    ...more,
+  });
+  const out = {
+    message: {}, ready: {}, message_changed: {}, offered: {}, awaiting: {}, offer_sent_outside: {}, buyer_accepted: {}, accepted: {}, buyer_declined: {}, declined: {}, withdrawn: {},
+    no_terms: {}, buyer_reply: {}, replied: {}, no_answer: {}, offer_expired: {}, no_simulated_buyer: {},
+  };
+  for (const lang of LANGS) {
+    // The send review: the message of every reply, the page in `lang`, the buyer in either language; a mark with a hash that is not the message's is refused.
+    const { offerId, verdict, replies, rec } = await fresh();
+    for (const p of replies) {
+      out.message[p.key] ??= {};
+      out.message[p.key][lang] = { en: await live.getBuyerMessage(offerId, p.key, "en", lang), zh: await live.getBuyerMessage(offerId, p.key, "zh", lang) };
+    }
+    out.ready[lang] = await live.getDecision(dealId(offerId), lang);
+    out.message_changed[lang] = await refused("MESSAGE_CHANGED", () =>
+      inLang(lang, () => live.markOffered(offerId, rec.key, { verdict_id: verdict.id, state_version: verdict.state_version, message_hash: "0".repeat(64), lang: "en" })),
+    );
+  }
+  for (const lang of LANGS) {
+    // Marked sent, then the buyer's yes. A simulated send once the offer is out is refused.
+    const { offerId, verdict, rec, offered, hash } = await sentOne(lang);
+    out.offered[lang] = offered;
+    out.awaiting[lang] = await reads(offerId, lang, { message: await live.getBuyerMessage(offerId, rec.key, "en", lang) });
+    out.offer_sent_outside[lang] = await refused("OFFER_SENT_OUTSIDE", () => inLang(lang, () => live.negotiate(offerId, { buyer_profile: "cooperative" })));
+    out.buyer_accepted[lang] = await inLang(lang, () =>
+      live.buyerAccepted(offerId, rec.key, { verdict_id: verdict.id, state_version: out.awaiting[lang].message.state_version, message_hash: hash, evidence_text: EVIDENCE_TEXT }),
+    );
+    out.accepted[lang] = await reads(offerId, lang, { tracker: await getTracker(dealId(offerId), lang) });
+  }
+  for (const lang of LANGS) {
+    // Marked sent, then the buyer's no, with a reason.
+    const { offerId, verdict, rec, hash } = await sentOne(lang);
+    out.buyer_declined[lang] = await inLang(lang, () => live.buyerDeclined(offerId, rec.key, { verdict_id: verdict.id, message_hash: hash, reason: "DISCOUNT_TOO_LOW" }));
+    out.declined[lang] = await reads(offerId, lang);
+  }
+  for (const lang of LANGS) {
+    // Marked sent by mistake: the mark is withdrawn and the deal is a counter ready again, its history keeping both events.
+    const { offerId, verdict, rec, hash } = await sentOne(lang);
+    const result = await inLang(lang, () => live.withdrawOffered(offerId, rec.key, { verdict_id: verdict.id, message_hash: hash }));
+    out.withdrawn[lang] = { result, decision: await live.getDecision(dealId(offerId), lang) };
+  }
+  for (const lang of LANGS) {
+    // Marked sent, then the buyer's reply: refused with no terms in it, then read as a request of its own.
+    const { offerId, verdict, rec } = await sentOne(lang);
+    out.no_terms[lang] = await refused("NO_TERMS_IN_REPLY", () => inLang(lang, () => live.buyerReply(offerId, { verdict_id: verdict.id, counter_id: rec.key, text: "Thanks, sounds good." })));
+    out.buyer_reply[lang] = await inLang(lang, () => live.buyerReply(offerId, { verdict_id: verdict.id, counter_id: rec.key, text: REPLY_TEXT }));
+    const reply = out.buyer_reply[lang];
+    out.replied[lang] = await reads(offerId, lang, { reply_decision: await live.getDecision(reply.reply_decision_id, lang), reply_offer: await live.getOffer(reply.reply_offer_id, lang) });
+  }
+  for (const lang of LANGS) {
+    // Marked sent and never answered: the clock moves past the day the offer is open until, and the offer closes as no deal; a no recorded after it is refused.
+    const { offerId, verdict, rec, offered, hash } = await sentOne(lang);
+    await live.advanceClock(offered.offered.valid_until_day + 1);
+    out.no_answer[lang] = await reads(offerId, lang);
+    out.offer_expired[lang] = await refused("OFFER_EXPIRED", () => inLang(lang, () => live.buyerDeclined(offerId, rec.key, { verdict_id: verdict.id, message_hash: hash, reason: "NO_REASON" })));
+  }
+  {
+    // A buyer with no simulated profile (EX09 is BUYER-3's): the simulated send is refused and nothing is sent.
+    await reset();
+    const other = (await live.submitOffer({ fixture_id: "EX09_TERMS_BUYER3" })).offer.offer_id;
+    await live.evaluateOffer(other, "EX09_TERMS_BUYER3", "en");
+    for (const lang of LANGS) out.no_simulated_buyer[lang] = await refused("NO_SIMULATED_BUYER", () => inLang(lang, () => live.negotiate(other, { buyer_profile: "cooperative" })));
+  }
+  write("buyer_message.json", out);
+  await live.demoReset();
+  console.log(`recorded ${written.join(", ")} into ${OUT} from ${API}`);
+  process.exit(0);
+}
+
 // --home-v2: the Home V2 reads at six moments and nothing else (see the header).
 if (HOME_V2) {
   mkdirSync(join(OUT, "home_v2"), { recursive: true });
@@ -709,6 +938,9 @@ if (HOME_V2) {
   await step("inbox").run();
   await step("trajectory").run();
   keep("offer", await reads());
+  // The deal made on day 0: the counter sent and accepted (the same step the day-34 walk takes), read before the clock moves.
+  await step("negotiate").run();
+  keep("deal", await reads());
   // The day-0 plan, as the home's "Go ahead" runs it on the opening books.
   await reset();
   {

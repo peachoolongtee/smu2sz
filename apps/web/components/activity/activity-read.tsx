@@ -9,6 +9,7 @@ import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StatusPill } from "@/components/ui/status-pill";
 import { WorklistSearch } from "@/components/ui/worklist-rows";
 import { useI18n } from "@/lib/i18n";
+import { selectionHref } from "@/lib/selection";
 import type { ActivityRecord, ActivityRow, ActivityView } from "@/lib/types";
 
 const linkCls = "motion-press hit inline-flex min-h-8 items-center rounded-pill px-1 text-sm font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50 touch:min-h-11";
@@ -79,6 +80,8 @@ function Labelled({ label, text, testId }: { label: string; text: string; testId
 
 function BusinessRow({ row }: { row: ActivityRow }) {
   const { t } = useI18n();
+  // A deal's row always reaches the deal: the server's own link when it leads to Deals, else the deal opened in place from its record id.
+  const dealHref = row.decision_id?.startsWith("deal:") && !row.href?.startsWith("/deals") ? selectionHref("/deals", { customer: row.customer_id, decision: row.decision_id, invoice: null, from: "activity" }) : null;
   return (
     <li className="grid gap-x-5 gap-y-1 py-4 sm:grid-cols-[7rem_minmax(0,1fr)]" data-testid="activity-row" data-kind={row.kind} data-category={row.category}>
       <p className="text-supporting font-medium text-ink-3 first-letter:uppercase" data-testid="activity-when">
@@ -92,6 +95,17 @@ function BusinessRow({ row }: { row: ActivityRow }) {
           {row.href && row.href_label ? (
             <Link href={row.href} className={linkCls} data-testid="activity-open-decision">
               {row.href_label}
+            </Link>
+          ) : null}
+          {dealHref ? (
+            <Link href={dealHref} className={linkCls} data-testid="activity-open-deal">
+              {t("deals.history.open")}
+            </Link>
+          ) : null}
+          {/* An agreed or ended deal opens in Deals (`href`); the decision record stays one link away. */}
+          {row.record_href ? (
+            <Link href={row.record_href} className={linkCls} data-testid="activity-open-record">
+              {t("deals.record")}
             </Link>
           ) : null}
         </div>
@@ -175,7 +189,7 @@ export function ActivityRead({ view }: { view: ActivityView }) {
       ) : null}
 
       {business.length ? (
-        <section aria-label={t("activity.changed")} data-testid="activity-list">
+        <section aria-label={t("activity.changed")} className="card-flat !py-2 sm:!py-2" data-testid="activity-list">
           <ul className="divide-y divide-line">
             {business.map((r) => (
               <BusinessRow key={r.id} row={r} />
@@ -185,7 +199,7 @@ export function ActivityRead({ view }: { view: ActivityView }) {
       ) : null}
 
       {showSecurity ? (
-        <section id="activity-refused" aria-labelledby="activity-security-title" data-testid="activity-security" className="border-t border-line pt-4">
+        <section id="activity-refused" aria-labelledby="activity-security-title" data-testid="activity-security" className="card-flat">
           <h2 id="activity-security-title" className="type-section text-ink">
             {t("activity.security")}
           </h2>

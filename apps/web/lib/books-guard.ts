@@ -38,6 +38,8 @@ export interface Pending {
   note: string | null;
   perform: (guard: BooksGuard) => Promise<unknown>;
   options: DialogOptions;
+  /** The control that asked, taken before anything awaits (it may be disabled while the fresh read runs): the dialog gives the focus back to it. */
+  opener?: HTMLElement | null;
 }
 
 export const guardStore = createStore<{ pending: Pending | null; notice: string | null }>({ pending: null, notice: null });
@@ -68,6 +70,7 @@ export async function changeBooks(books: Books, perform: Pending["perform"], opt
     await attempt(books, perform, null, options, books.loss_title_text);
     return;
   }
+  const opener = typeof document !== "undefined" && document.activeElement instanceof HTMLElement ? document.activeElement : null;
   // The list on the dialog is the books' as they stand now, not as the page last read them.
   let items = options.alternate ? [] : books.loss_items;
   let token: string | null = books.loss_token ?? null;
@@ -86,7 +89,7 @@ export async function changeBooks(books: Books, perform: Pending["perform"], opt
   } else if (options.alternate) {
     items = [];
   }
-  guardStore.set({ pending: { books, items, lossTitle: title, token, note: null, perform, options }, notice: null });
+  guardStore.set({ pending: { books, items, lossTitle: title, token, note: null, perform, options, opener }, notice: null });
 }
 
 async function attempt(books: Books, perform: Pending["perform"], token: string | null, options: DialogOptions, lossTitle: string): Promise<void> {
@@ -107,7 +110,7 @@ async function attempt(books: Books, perform: Pending["perform"], token: string 
     }
     // The list the dialog showed is not the books' list any more: the dialog stays, with the server's list, its token and its sentence, and needs a new click.
     guardStore.set({
-      pending: { books, items: g.loss_items ?? [], lossTitle, token: g.loss_token ?? null, note: g.message_when ?? g.message ?? null, perform, options },
+      pending: { books, items: g.loss_items ?? [], lossTitle, token: g.loss_token ?? null, note: g.message_when ?? g.message ?? null, perform, options, opener: guardStore.get().pending?.opener ?? null },
       notice: null,
     });
   }
@@ -127,9 +130,12 @@ export function clearNotice(): void {
   guardStore.set((s) => ({ ...s, notice: null }));
 }
 
-/** Reset the books to a scenario (the main books by default), then start the session over. */
-export const resetTo = (scenario: string | undefined, push: (route: string) => void) => async (guard: BooksGuard) => {
+/** Reset the books to a scenario (the main books by default), then start the session over and open `route` (the Demo page by default; the setup for blank books). */
+export const resetTo = (scenario: string | undefined, push: (route: string) => void, route = "/demo") => async (guard: BooksGuard) => {
   await demoReset(scenario, guard);
   resetSession();
-  push("/demo");
+  push(route);
 };
+
+/** The scenario a "reset these books" goes to: the owner's own books are not a scenario the server can reset to, so resetting them starts blank books. */
+export const resetScenarioOf = (books: Books): string | undefined => (books.main ? undefined : books.scenario === "own" ? "blank" : books.scenario);

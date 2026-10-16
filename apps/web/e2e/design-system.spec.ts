@@ -106,7 +106,7 @@ test("three card types: a standard card has a hairline and no shadow, the decisi
   // The plan bar on Cash & funding is the decision card: solid, one soft shadow, no frost.
   expect(styles.live?.shadow).toBe(styles.decision.shadow);
   expect(styles.live?.blur).toBe("none");
-  expect(styles.live?.bg).toBe("rgb(255, 255, 255)");
+  expect(styles.live?.bg).toBe("rgb(248, 249, 249)"); // the panel tone of the owner's mockup
 });
 
 /** Visible text smaller than 13 px that carries a figure (an amount, a rate, a multiple, a thousands group): the floor for a financial qualification is 13 px. */
@@ -179,7 +179,7 @@ test("type scale: the roles are variables, the headline steps with the screen, a
   expect(found).toEqual({ Home: [], Cash: [], Receivables: [], Customer: [], Deals: [] });
 });
 
-const NAV = ["Home", "Deals", "Cash & funding", "Receivables", "Activity"];
+const NAV = ["Home", "Deals", "Attach deals", "Cash & funding", "Sandbox", "Capex", "Receivables", "Activity"];
 type Pg = import("@playwright/test").Page;
 /** The rail's grid column (the aside) and the panel that opens over the page. */
 const railColumn = (page: Pg) => page.getByTestId("nav-rail").evaluate((el) => Math.round(el.getBoundingClientRect().width));
@@ -196,8 +196,8 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     expect(await railColumn(page), `${width}`).toBe(56);
     expect(await panelWidth(page)).toBe(56);
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "closed");
-    for (const name of NAV) await expect(nav.getByRole("link", { name })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "0");
+    for (const name of NAV) await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Deals", exact: true }).locator(".side-label")).toHaveCSS("opacity", "0");
     const before = await mainBox(page);
 
     // Collapsed, the rail shows icons and the pin only: no text of any kind is visible in it (the Demo note, the words, the count's number), and the Ask FLOW pill is its icon.
@@ -219,10 +219,10 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     expect(await visibleText(), `${width} collapsed rail text`).toEqual([]);
     await expect(page.getByTestId("chat-open").locator(".ask-label")).toBeHidden();
     // The pointer on the rail opens the panel to 200 px over the page: the main column neither moves nor changes width.
-    await nav.getByRole("link", { name: "Deals" }).hover();
+    await nav.getByRole("link", { name: "Deals", exact: true }).hover();
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "open");
     await expect.poll(() => panelWidth(page)).toBe(200);
-    await expect(nav.getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "1");
+    await expect(nav.getByRole("link", { name: "Deals", exact: true }).locator(".side-label")).toHaveCSS("opacity", "1");
     expect(await railColumn(page)).toBe(56);
     expect(await mainBox(page)).toEqual(before);
     expect((await visibleText()).length, "the open rail says its words").toBeGreaterThan(3);
@@ -246,7 +246,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "open");
     for (const name of NAV.slice(1)) {
       await page.keyboard.press("Tab");
-      await expect(nav.getByRole("link", { name })).toBeFocused();
+      await expect(nav.getByRole("link", { name, exact: true })).toBeFocused();
     }
     expect(await mainBox(page)).toEqual(before);
     await page.locator("main").focus();
@@ -259,10 +259,10 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
     await expect(page.getByTestId("home-headline")).toBeVisible({ timeout: 15_000 });
-    const primary = page.locator('[data-testid^="fix-open-"]').first();
+    const primary = page.getByTestId("home-check-plan");
     await expect(primary).toBeVisible();
     expect((await primary.boundingBox())!.x, `${width} collapsed`).toBeGreaterThan(56);
-    await page.getByTestId("nav-pills").getByRole("link", { name: "Deals" }).hover();
+    await page.getByTestId("nav-pills").getByRole("link", { name: "Deals", exact: true }).hover();
     await expect.poll(() => panelWidth(page)).toBe(200);
     // The open rail reads as a layer: a soft shadow, and only while it is open.
     expect(await page.getByTestId("nav-rail-panel").evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe("none");
@@ -276,7 +276,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
   await page.getByTestId("sidebar-toggle").click();
   await expect(page.getByTestId("sidebar-toggle")).toHaveAttribute("aria-pressed", "true");
   await page.mouse.move(900, 600);
-  const pinnedPrimary = page.locator('[data-testid^="fix-open-"]').first();
+  const pinnedPrimary = page.getByTestId("home-check-plan");
   await expect(pinnedPrimary).toBeVisible();
   expect((await pinnedPrimary.boundingBox())!.x, "1280 pinned").toBeGreaterThan(200);
   await page.getByTestId("sidebar-toggle").click();
@@ -295,7 +295,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
   await page.mouse.move(900, 600);
   expect(await railColumn(page)).toBe(200);
   expect(await panelWidth(page)).toBe(200);
-  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "1");
+  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Deals", exact: true }).locator(".side-label")).toHaveCSS("opacity", "1");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-sidebar", "pinned");
   expect(await railColumn(page)).toBe(200);
@@ -348,7 +348,7 @@ test("rail: reduced motion opens it at once, and axe finds nothing serious on th
 
 test("SegmentedTabs: the pill never leaves the track, and choosing never scrolls the page (Deals' queue is underline tabs: the control lives on Home, Receivables and the deal's timing)", async ({ page }) => {
   // The pill stays inside the track across a jump between options (no overshoot): Home's window control, the compact form.
-  await page.goto("/?expand=1");
+  await page.goto("/"); // the window control is in the outlook card's forecast
   await expect(page.getByTestId("home-window-60")).toBeVisible({ timeout: 15_000 });
   const inside = () =>
     page.evaluate(() => {
@@ -372,10 +372,13 @@ test("SegmentedTabs: the pill never leaves the track, and choosing never scrolls
   expect((await poll).every(Boolean)).toBe(true);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/?expand=1");
+  await page.goto("/"); // the window control is in the outlook card's forecast
   await expect(page.getByTestId("home-window-60")).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId("home-window-60").scrollIntoViewIfNeeded();
-  await page.evaluate(() => window.scrollBy(0, -60));
+  // The control sits in the outlook card near the top of the page: scroll down a little so the page has a scroll to keep, with the control still on screen.
+  await page.evaluate(() => {
+    const top = document.querySelector('[data-testid="home-window-60"]')!.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo(0, Math.max(60, top - 300));
+  });
   const y = await page.evaluate(() => window.scrollY);
   expect(y).toBeGreaterThan(0);
   await page.getByTestId("home-window-60").click();
@@ -446,10 +449,12 @@ test("the owner's mockup tokens: the canvas app-wide, the palette and its dark p
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible({ timeout: 15_000 });
   for (const id of ["hv2-cash-card", "hv2-action", "hv2-outlook-card", "home-worklist-panel", "hv2-upcoming"]) {
     const card = await page.getByTestId(id).evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, radius: getComputedStyle(el).borderTopLeftRadius, shadow: getComputedStyle(el).boxShadow }));
-    expect(card, id).toMatchObject({ bg: "rgb(248, 249, 249)", radius: "24px" });
-    expect(card.shadow, id).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
+    // The recommendation is tinted with the risk red while the cash would go negative (the alarm card): only its radius is pinned then.
+    // It sits inside the outlook card (the final UI fold), so it takes the inner radius, 20 px.
+    expect(card, id).toMatchObject(id === "hv2-action" ? { radius: "20px" } : { bg: "rgb(248, 249, 249)", radius: "24px" });
+    if (id !== "hv2-action") expect(card.shadow, id).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
   }
-  expect(await page.getByTestId("fix-open-ALERT-RESERVE-12").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(23, 29, 30)");
+  expect(await page.getByTestId("home-check-plan").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(23, 29, 30)");
   // The page is light only unless the dark hook is set.
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe("light");
 });
@@ -463,14 +468,41 @@ test("cards: a page has one decision card, and a chosen row, invoice or path is 
     expect(await decisionCards(), path).toBeLessThanOrEqual(1);
   }
   const selected = (loc: import("@playwright/test").Locator) => loc.evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, rule: getComputedStyle(el).borderLeftWidth, ruleColor: getComputedStyle(el).borderLeftColor }));
-  const want = { bg: "rgb(230, 241, 255)", rule: "3px", ruleColor: "rgb(3, 104, 233)" };
-  await page.goto("/receivables");
+  // The owner's mockup selection: a lavender tint with a 3 px ink rule (the rule is why the selection is never colour alone).
+  const want = { bg: "rgb(235, 222, 250)", rule: "3px", ruleColor: "rgb(23, 29, 30)" };
+  await page.goto("/receivables?customer=BUYER-1"); // /receivables lists customers; the customer's page holds the invoices
   await expect(page.getByTestId("recv-RCV-A")).toBeVisible({ timeout: 15_000 });
   expect(await selected(page.getByTestId("recv-RCV-A"))).toEqual(want);
+  // Every text on the selected row keeps 4.5:1 against the tint; the chosen row also says so to assistive tools (aria-current) besides the rule.
+  await expect(page.getByTestId("recv-RCV-A").locator('[aria-current="true"]')).toHaveCount(1);
+  const worst = await page.getByTestId("recv-RCV-A").evaluate((row) => {
+    const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true })!;
+    const rgb = (css: string) => {
+      c.clearRect(0, 0, 1, 1);
+      c.fillStyle = "#000";
+      c.fillStyle = css;
+      c.fillRect(0, 0, 1, 1);
+      return Array.from(c.getImageData(0, 0, 1, 1).data.slice(0, 3));
+    };
+    const lum = ([r, g, b]: number[]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    const lin = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    const bg = lum(rgb(getComputedStyle(row).backgroundColor));
+    let min = 21;
+    for (const el of Array.from(row.querySelectorAll("*"))) {
+      if (![...el.childNodes].some((n) => n.nodeType === 3 && (n.textContent ?? "").trim())) continue;
+      const fg = lum(rgb(getComputedStyle(el).color));
+      min = Math.min(min, (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05));
+    }
+    return min;
+  });
+  expect(worst, "the lowest text contrast on the selected row").toBeGreaterThanOrEqual(4.5);
   // Deals takes the owner's mockup look (a lavender row with a purple edge for the selection); the page raises no decision card.
   await checkedDeal(page);
   expect(await decisionCards()).toBe(0);
-  await expect(page.locator('[data-testid="queue-row"][data-selected="true"] > div[aria-current="true"]')).toBeVisible();
+  // The deal is its own page, so the list is hidden while it is open; the open deal's row is still the one selected style there (the lavender tint), and it is what All deals comes back to.
+  const chosen = page.locator('[data-testid="queue-row"][data-selected="true"] > div[aria-current="true"]');
+  await expect(chosen).toHaveCount(1);
+  expect(await chosen.evaluate((el) => getComputedStyle(el).backgroundColor), "a tinted row").not.toBe("rgba(0, 0, 0, 0)");
 });
 
 test("rail: a bad stored value cannot skip the language, and the folds open at once under reduced motion", async ({ page }) => {
@@ -575,7 +607,7 @@ test("rail: on every page the collapsed rail covers no content, the open panel i
       expect(open.left, `${at} open left`).toBe(0);
       expect(open.right, `${at} open right`).toBe(200);
       expect(open.bottom, `${at} open bottom within the window`).toBeLessThanOrEqual(open.vh);
-      expect(open.labels.length, `${at} five labels`).toBe(5);
+      expect(open.labels.length, `${at} eight labels`).toBe(8); // the sections and the doors to the sandbox and the old capex screen
       for (const l of open.labels) {
         expect(l.ok, `${at} label ${l.text} is on top (${l.why})`).toBe(true);
         expect(l.clippedByPanel, `${at} label ${l.text} fits the panel`).toBe(false);
