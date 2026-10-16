@@ -8,11 +8,12 @@ The owner's chat is unchanged."""
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
-from app.api.agent_view import operation_amounts
-from app.egress import protected_for, scan
+from app.api.agent_view import _clean, operation_amounts
+from app.egress import AllowedValue, protected_for, scan
 from app.nl.sessions import SESSIONS
 from tests.nl.conftest import Chat
 
@@ -96,3 +97,47 @@ def test_a_refusal_comes_back_in_words(client, rt):
     refused = Chat(client, "ag-ref", owner=False).say("approve APR-000001")
     assert [o["status"] for o in refused["operations"]] == ["REFUSED"]
     assert refused["reply"].startswith("Refused: only the owner") and _labels(rt, refused) == []
+
+
+# ---------------------------------------------------------------- the verifier's review of 16 Oct: figures are an allow-list
+
+
+MONEY = re.compile(r"[¥￥]\s*(\d[\d,]*(?:\.\d{1,2})?)")
+
+
+def _fen(text: str) -> int:
+    whole, _, frac = text.replace(",", "").partition(".")
+    return int(whole) * 100 + int((frac + "00")[:2])
+
+
+@pytest.mark.parametrize("text", [
+    "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.",  # a counter's face and cap
+    "Refused: it would take projected cash to ¥150,013.80, below the owner's reserve.",  # a search for the reserve
+    "Refused: ¥100,000.00 exceeds FAC-LINE's available ¥0.00.",  # a facility's headroom
+    "DSCR 1.25x", "discount 1.5%", "reserve 30万元",
+])
+def test_a_figure_that_is_not_the_operations_own_is_never_kept(rt, text):
+    assert _clean(text, protected_for(rt.store), [AllowedValue.money(10_000_000)]) is None
+
+
+def test_the_operations_own_amount_is_kept(rt):
+    text = "Drew ¥100,000.00 on FAC-LINE on day 0"
+    assert _clean(text, protected_for(rt.store), [AllowedValue.money(10_000_000)]) == text
+
+
+@pytest.mark.parametrize("script", [
+    ["Get paid early on RCV-A", "go ahead"], [EX12, "go ahead"],
+    ["Draw ¥150,000 on the credit line", "Draw ¥100,000 on the credit line"],
+    ["Draw ¥150,000 on the credit line", "Repay ¥100,000 on the credit line", "go ahead"],
+    ["Draw ¥99,999,999 on the credit line"], ["Repay ¥99,999,999 on the credit line"],
+])
+def test_every_amount_an_agent_turn_states_is_its_own_operations(client, rt, script):
+    chat = Chat(client, f"ag-fig-{abs(hash(tuple(script))) % 10_000}", owner=False)
+    for text in script:
+        r = chat.say(text)
+        own = {int(a.value) for a in _allowed(rt, r)}
+        body = json.dumps({k: r[k] for k in ("reply", "plan", "operations", "clarification")}, ensure_ascii=False)
+        assert "%" not in body and "％" not in body, body
+        assert {_fen(m) for m in MONEY.findall(body)} <= own, body
+        assert all(s["description"] == "Counter the offer" for s in r["plan"] if s["kind"] == "COUNTER_OFFER")
+        assert all(o["message"] is None for o in r["operations"] if o["kind"] == "COUNTER_OFFER")

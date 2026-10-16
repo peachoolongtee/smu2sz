@@ -41,6 +41,8 @@ OPERATION_KINDS = frozenset({
     "SIGN_PERSONAL_GUARANTEE", "PLEDGE_COLLATERAL", "ISSUE_EQUITY", "CHANGE_MANDATE", "ADD_FACILITY",
 })
 
+_WORDS_ONLY = frozenset({"COUNTER_OFFER"})  # steps and messages always in words, whatever their text
+
 _OUTCOME_WORDS = {
     "ACCEPT": ("accept", "接受"),
     "COUNTER": ("counter", "还价"),
@@ -92,16 +94,12 @@ def _status_words(status: str, lang: str) -> str:
 
 
 def _fen_values(obj: Any) -> Iterable[int]:
-    """Every integer *_fen field of a typed operation (nested), the amounts the operation itself carries."""
+    """The operation's own amounts: its top-level integer *_fen fields (a draw's, a repayment's, an advance's amount). Nested
+    figures (an offer's obligations, a counter's face) are never the agent's to state."""
     if isinstance(obj, dict):
         for k, v in obj.items():
             if isinstance(v, int) and not isinstance(v, bool) and k.endswith("_fen") and v:
                 yield abs(v)
-            elif isinstance(v, dict | list):
-                yield from _fen_values(v)
-    elif isinstance(obj, list):
-        for v in obj:
-            yield from _fen_values(v)
 
 
 def operation_amounts(store: Any, op_ids: Iterable[str], pending_ops: Iterable[Any] = ()) -> list[AllowedValue]:
@@ -124,11 +122,29 @@ def operation_amounts(store: Any, op_ids: Iterable[str], pending_ops: Iterable[A
     return [AllowedValue.money(a) for a in sorted(amounts)]
 
 
+_MONEY = re.compile(r"[¥￥]\s*(\d[\d,]*(?:\.\d{1,2})?)")
+# Any rate, ratio or Chinese-unit figure: none is ever the agent's (the verifier's review of 16 Oct, R-11 follow-up).
+_FIGURE = re.compile(r"[%％]|\d\s*(?:bp|个基点|万|元)|\d(?:\.\d+)?\s*[x×倍]")
+
+
+def _fen(text: str) -> int | None:
+    try:
+        whole, _, frac = text.replace(",", "").partition(".")
+        return int(whole) * 100 + int((frac + "00")[:2])
+    except ValueError:
+        return None
+
+
 def _clean(text: str | None, pset: Any, allow: list[AllowedValue]) -> str | None:
-    """The text if it states no protected value beyond the allowed amounts, else None."""
+    """The text if every ¥ amount in it is one of the operation's own amounts, it states no rate, ratio or other figure, and the
+    egress guard finds no protected value in it; else None. An allow-list on figures, not a deny-list."""
     if not text:
         return None
-    return None if scan(str(text), pset, recipient_id=AGENT_RECIPIENT, allow=allow) else str(text)
+    text = str(text)
+    own = {int(a.value) for a in allow}
+    if _FIGURE.search(text) or any(_fen(m) not in own for m in _MONEY.findall(text)):
+        return None
+    return None if scan(text, pset, recipient_id=AGENT_RECIPIENT, allow=allow) else text
 
 
 def agent_view(out: dict, rt: Any, pending_ops: Iterable[Any] = ()) -> dict:
@@ -154,7 +170,8 @@ def agent_view(out: dict, rt: Any, pending_ops: Iterable[Any] = ()) -> dict:
     steps: list[dict[str, Any]] = []
     for s in plan:
         kind, status = str(s.get("kind") or ""), str(s.get("status") or "")
-        desc = _clean(s.get("description"), pset, allow) if kind in OPERATION_KINDS else None
+        # A counter's words state its face and rate, which derive from the owner's gap and cap: never the agent's (R-11).
+        desc = _clean(s.get("description"), pset, allow) if kind in OPERATION_KINDS and kind not in _WORDS_ONLY else None
         if desc is None:
             desc = (_kind_words(kind, lang) if kind in OPERATION_KINDS
                     else t(lang, "Checked against the mandate; the figures need the owner's sign-in.",
@@ -169,7 +186,7 @@ def agent_view(out: dict, rt: Any, pending_ops: Iterable[Any] = ()) -> dict:
     for o in operations:
         kind, status = str(o.get("kind") or ""), str(o.get("status") or "")
         codes = [str(v.get("code")) for v in (o.get("violations") or []) if isinstance(v, dict) and v.get("code")]
-        message = _clean(o.get("message"), pset, allow)
+        message = None if kind in _WORDS_ONLY else _clean(o.get("message"), pset, allow)
         ops_view.append({"op_id": o.get("op_id"), "kind": kind, "status": status, "tier": o.get("tier"),
                          "approval_id": o.get("approval_id"), "effective_day": o.get("effective_day"),
                          "violations": [{"code": c} for c in codes], "message": message})
@@ -201,6 +218,8 @@ def agent_view(out: dict, rt: Any, pending_ops: Iterable[Any] = ()) -> dict:
     else:
         # A held or refused request, a question back: the reply's sentences that state nothing protected (the reason in
         # words), else the sign-in sentence.
+        # A sentence with any figure that is not the operation's own (projected cash, headroom, a rate) is dropped, so a refusal
+        # cannot be used to search for the reserve or a facility's headroom.
         kept = [x for x in _SENTENCE.split(str(out.get("reply") or "")) if _clean(x.strip(), pset, allow)]
         reply = " ".join(x.strip() for x in kept).strip() or sign_in(lang)
     if view["outcome"] and not operations:  # the outcome word of the verdict, never its figures
