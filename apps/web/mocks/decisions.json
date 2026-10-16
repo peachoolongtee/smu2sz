@@ -134,6 +134,33 @@
           "remaining_text": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
         }
       },
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "checked",
+          "text": "FLOW checked it against your books",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "simulated",
+          "text": "Sent to the simulated buyer: agreed",
+          "tone": "neutral"
+        }
+      ],
       "operations": [
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
@@ -392,6 +419,33 @@
           "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
         }
       },
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "checked",
+          "text": "FLOW 已对照您的账目核查",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "simulated",
+          "text": "已发给模拟买方：已成交",
+          "tone": "neutral"
+        }
+      ],
       "operations": [
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
@@ -573,6 +627,8 @@
         "decided_when": "today"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
@@ -673,6 +729,8 @@
         "decided_when": "今天"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
@@ -775,6 +833,8 @@
         "decided_when": null
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
@@ -875,6 +935,8 @@
         "decided_when": null
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
@@ -977,6 +1039,8 @@
         "decided_when": "today"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
@@ -1077,6 +1141,8 @@
         "decided_when": "今天"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
@@ -1208,6 +1274,8 @@
         "decided_when": "today"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
@@ -1347,6 +1415,8 @@
         "decided_when": "今天"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
@@ -1484,6 +1554,8 @@
       },
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-12:v1:plan:0",
@@ -1639,6 +1711,8 @@
       },
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-12:v1:plan:0",
@@ -1791,6 +1865,8 @@
         "decided_when": "today"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
@@ -1911,6 +1987,8 @@
         "decided_when": "今天"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
@@ -2031,6 +2109,8 @@
         "decided_when": null
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
@@ -2149,6 +2229,8 @@
         "decided_when": null
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
@@ -2289,6 +2371,8 @@
         "decided_when": "4 days ago"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-34:v6:0",
@@ -2450,6 +2534,8 @@
         "decided_when": "4 天前"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-34:v6:0",
@@ -2604,6 +2690,8 @@
         "decided_when": "4 days ago"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
@@ -2743,6 +2831,8 @@
         "decided_when": "4 天前"
       },
       "agreement": null,
+      "outbound": null,
+      "history": [],
       "operations": [
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
@@ -2934,6 +3024,33 @@
           "remaining_text": null
         }
       },
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "34 days ago",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 days ago",
+          "date": "1 October 2026",
+          "kind": "checked",
+          "text": "FLOW checked it against your books",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 days ago",
+          "date": "1 October 2026",
+          "kind": "simulated",
+          "text": "Sent to the simulated buyer: agreed",
+          "tone": "neutral"
+        }
+      ],
       "operations": [
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
@@ -3218,6 +3335,33 @@
           "remaining_text": null
         }
       },
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "34 天前",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 天前",
+          "date": "2026年10月1日",
+          "kind": "checked",
+          "text": "FLOW 已对照您的账目核查",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 天前",
+          "date": "2026年10月1日",
+          "kind": "simulated",
+          "text": "已发给模拟买方：已成交",
+          "tone": "neutral"
+        }
+      ],
       "operations": [
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
@@ -3504,6 +3648,33 @@
           "remaining_text": null
         }
       },
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "34 days ago",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 days ago",
+          "date": "1 October 2026",
+          "kind": "checked",
+          "text": "FLOW checked it against your books",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 days ago",
+          "date": "1 October 2026",
+          "kind": "simulated",
+          "text": "Sent to the simulated buyer: agreed",
+          "tone": "neutral"
+        }
+      ],
       "operations": [
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
@@ -3788,6 +3959,33 @@
           "remaining_text": null
         }
       },
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "34 天前",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 天前",
+          "date": "2026年10月1日",
+          "kind": "checked",
+          "text": "FLOW 已对照您的账目核查",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 天前",
+          "date": "2026年10月1日",
+          "kind": "simulated",
+          "text": "已发给模拟买方：已成交",
+          "tone": "neutral"
+        }
+      ],
       "operations": [
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
@@ -4041,6 +4239,33 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "checked",
+          "text": "FLOW checked it against your books",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "simulated",
+          "text": "Sent to the simulated buyer: no deal",
+          "tone": "neutral"
+        }
+      ],
       "operations": [
         {
           "op_id": "fund-OFF-f806f79b6c21-hard_line-0",
@@ -4256,6 +4481,33 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "checked",
+          "text": "FLOW 已对照您的账目核查",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "simulated",
+          "text": "已发给模拟买方：未成交",
+          "tone": "neutral"
+        }
+      ],
       "operations": [
         {
           "op_id": "fund-OFF-f806f79b6c21-hard_line-0",
@@ -4506,6 +4758,33 @@
           "remaining_text": null
         }
       },
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "34 days ago",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 days ago",
+          "date": "1 October 2026",
+          "kind": "checked",
+          "text": "FLOW checked it against your books",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 days ago",
+          "date": "1 October 2026",
+          "kind": "simulated",
+          "text": "Sent to the simulated buyer: agreed",
+          "tone": "neutral"
+        }
+      ],
       "operations": [
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
@@ -4764,6 +5043,33 @@
           "remaining_text": null
         }
       },
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "34 天前",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 天前",
+          "date": "2026年10月1日",
+          "kind": "checked",
+          "text": "FLOW 已对照您的账目核查",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "34 天前",
+          "date": "2026年10月1日",
+          "kind": "simulated",
+          "text": "已发给模拟买方：已成交",
+          "tone": "neutral"
+        }
+      ],
       "operations": [
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
@@ -4949,6 +5255,25 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "checked",
+          "text": "FLOW checked it against your books",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "Nothing has been executed yet.",
@@ -5080,6 +5405,25 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "checked",
+          "text": "FLOW 已对照您的账目核查",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "尚未执行任何操作。",
@@ -5230,6 +5574,25 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "checked",
+          "text": "FLOW checked it against your books",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "Nothing has been executed yet.",
@@ -5378,6 +5741,25 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "checked",
+          "text": "FLOW 已对照您的账目核查",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "尚未执行任何操作。",
@@ -5528,6 +5910,25 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "checked",
+          "text": "FLOW checked it against your books",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "Nothing has been executed yet.",
@@ -5676,6 +6077,25 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "checked",
+          "text": "FLOW 已对照您的账目核查",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "尚未执行任何操作。",
@@ -5809,6 +6229,25 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "FASTCAPITAL sent their request",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "checked",
+          "text": "FLOW checked it against your books",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "Nothing has been executed yet.",
@@ -5940,6 +6379,25 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "FASTCAPITAL发来请求",
+          "tone": "neutral"
+        },
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "checked",
+          "text": "FLOW 已对照您的账目核查",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "尚未执行任何操作。",
@@ -6060,6 +6518,17 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "Nothing has been executed yet.",
@@ -6178,6 +6647,17 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "尚未执行任何操作。",
@@ -6300,6 +6780,17 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "Nothing has been executed yet.",
@@ -6420,6 +6911,17 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "尚未执行任何操作。",
@@ -6542,6 +7044,17 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "Foshan Home Retail Co. sent their request",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "Nothing has been executed yet.",
@@ -6662,6 +7175,17 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "Foshan Home Retail Co.发来请求",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "尚未执行任何操作。",
@@ -6782,6 +7306,17 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "today",
+          "date": "1 October 2026",
+          "kind": "received",
+          "text": "FASTCAPITAL sent their request",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "Nothing has been executed yet.",
@@ -6900,6 +7435,17 @@
       "quote": null,
       "authorization": null,
       "agreement": null,
+      "outbound": null,
+      "history": [
+        {
+          "day": 0,
+          "when": "今天",
+          "date": "2026年10月1日",
+          "kind": "received",
+          "text": "FASTCAPITAL发来请求",
+          "tone": "neutral"
+        }
+      ],
       "operations": [],
       "execution": {
         "summary_text": "尚未执行任何操作。",

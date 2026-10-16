@@ -599,7 +599,12 @@
               "owner": false
             }
           ],
-          "proof": []
+          "proof": [
+            {
+              "label": "The deal's decision record",
+              "href": "/decisions/deal:OFF-f806f79b6c21"
+            }
+          ]
         },
         {
           "id": "decision",
@@ -887,7 +892,12 @@
               "owner": false
             }
           ],
-          "proof": []
+          "proof": [
+            {
+              "label": "这笔交易的决定记录",
+              "href": "/decisions/deal:OFF-f806f79b6c21"
+            }
+          ]
         },
         {
           "id": "decision",

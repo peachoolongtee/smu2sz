@@ -718,6 +718,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "Counter recommended",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "today"
       },
@@ -884,6 +885,7 @@
         "outcome": "REJECT",
         "business_action": "counter",
         "business_action_text": "建议还价",
+        "clarification": null,
         "evaluated_day": 0,
         "evaluated_when": "今天"
       },
@@ -1253,6 +1255,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -2206,6 +2209,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -3177,6 +3181,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -3427,6 +3432,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -3679,6 +3685,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -4698,6 +4705,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -5719,6 +5727,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -5907,6 +5916,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -6097,6 +6107,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -6856,6 +6867,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -7885,6 +7897,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "today"
         },
@@ -8961,6 +8974,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "今天"
         },
@@ -10039,6 +10053,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "Counter recommended",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "3 days ago"
         },
@@ -10767,6 +10782,7 @@
           "outcome": "REJECT",
           "business_action": "counter",
           "business_action_text": "建议还价",
+          "clarification": null,
           "evaluated_day": 0,
           "evaluated_when": "3 天前"
         },
