@@ -16,8 +16,8 @@ F = ContractField
 
 
 def _x(field: ContractField, quote: str, **frags: str) -> XContractTerm:
-    base = dict(value_text=None, date_text=None, period_text=None, basis_text=None, unit_text=None, trigger_text=None,
-                reference_text=None)
+    base: dict[str, str | None] = {"value_text": None, "date_text": None, "period_text": None, "basis_text": None,
+                                   "unit_text": None, "trigger_text": None, "reference_text": None}
     return XContractTerm(field=field, quote=quote, confidence=0.9, **{**base, **frags})  # type: ignore[arg-type]
 
 

@@ -70,9 +70,10 @@ def derived_dates(doc: SourceDocument, terms: list[ContractTerm], abst: list[Abs
             abst.append(Abstention(field=F.END_DATE.value, spans=[span], reason=(
                 "note: a second period follows the one counted from signing, so no end date is derived")))
             return []
-        end, how = said, "the date by which the sentence says all the work is done"
-        at = _bounds(doc.text, m.start())[0] + stated.start()  # type: ignore[union-attr]
-        end_span = SourceSpan(doc_id=doc.doc_id, start=at, end=at + len(stated.group(0)), text=stated.group(0))  # type: ignore[union-attr]
+        end, how = str(said), "the date by which the sentence says all the work is done"
+        assert stated is not None  # a stated date was read from it
+        at = _bounds(doc.text, m.start())[0] + stated.start()
+        end_span = SourceSpan(doc_id=doc.doc_id, start=at, end=at + len(stated.group(0)), text=stated.group(0))
     elif said is not None:
         if said != end:
             abst.append(Abstention(field=F.END_DATE.value, spans=[span], reason=(
