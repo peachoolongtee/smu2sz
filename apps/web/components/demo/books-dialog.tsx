@@ -31,7 +31,8 @@ export function BooksDialog() {
     const d = ref.current;
     if (!d) return;
     if (open && !d.open) {
-      opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      // The control that asked, as the guard took it before the fresh read (a Load button is disabled while it runs, so the focus has left it by now).
+      opener.current = guardStore.get().pending?.opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
       d.showModal();
       // The safe choice takes the focus (React's autoFocus runs before the dialog is open, so it is set here).
       d.querySelector<HTMLElement>("[data-cancel]")?.focus();
