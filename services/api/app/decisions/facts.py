@@ -18,7 +18,7 @@ from app.domain.money import Ratio
 from app.persistence.records import DecisionFactRecord
 
 Family = Literal["DEAL", "FUNDING"]
-FactName = Literal["EVALUATED", "SENT", "QUOTED", "RECEIVED", "OFFERED", "BUYER_ACCEPTED", "REPLIED", "BUYER_DECLINED"]
+FactName = Literal["EVALUATED", "SENT", "QUOTED", "RECEIVED", "OFFERED", "BUYER_ACCEPTED", "REPLIED", "BUYER_DECLINED", "OFFER_WITHDRAWN"]
 
 
 class EvaluatedFact(Contract):
@@ -179,6 +179,9 @@ class BuyerAcceptedFact(Contract):
     message_hash: str
     commitment_id: str
     accept_op_id: str
+    # the buyer's own message the owner pasted as evidence of the yes (a document of the deal, never stored here); None when the owner
+    # recorded the yes on their word alone
+    evidence_doc_id: str | None = None
 
 
 class RepliedFact(Contract):
@@ -191,7 +194,7 @@ class RepliedFact(Contract):
     reply_offer_id: str
 
 
-DeclineReason = Literal["DISCOUNT_TOO_LOW", "WANTED_LONGER_TERMS", "NO_LONGER_NEEDED", "NO_REASON"]
+DeclineReason = Literal["DISCOUNT_TOO_LOW", "WANTED_LONGER_TERMS", "NO_LONGER_NEEDED", "OTHER", "NO_REASON"]
 
 
 class BuyerDeclinedFact(Contract):
@@ -205,13 +208,25 @@ class BuyerDeclinedFact(Contract):
     reason: DeclineReason
 
 
-Fact = EvaluatedFact | SentFact | QuotedFact | ReceivedFact | OfferedFact | BuyerAcceptedFact | RepliedFact | BuyerDeclinedFact
+class OfferWithdrawnFact(Contract):
+    """OFFER_WITHDRAWN (DEAL; fact_key = "withdrawn:{verdict_id}:{counter_id}:{n}"). The owner corrected an OFFERED mark (it was not sent after
+    all). Append-only: the mark stays on the record beside its correction, and the deal is ready for the owner's response again."""
+
+    offer_id: str
+    verdict_id: str
+    counter_id: str
+    message_hash: str
+
+
+Fact = (EvaluatedFact | SentFact | QuotedFact | ReceivedFact | OfferedFact | BuyerAcceptedFact | RepliedFact | BuyerDeclinedFact
+        | OfferWithdrawnFact)
 
 _MODELS: dict[str, type[Contract]] = {"EVALUATED": EvaluatedFact, "SENT": SentFact, "QUOTED": QuotedFact, "RECEIVED": ReceivedFact,
                                       "OFFERED": OfferedFact, "BUYER_ACCEPTED": BuyerAcceptedFact, "REPLIED": RepliedFact,
-                                      "BUYER_DECLINED": BuyerDeclinedFact}
+                                      "BUYER_DECLINED": BuyerDeclinedFact, "OFFER_WITHDRAWN": OfferWithdrawnFact}
 FAMILY_OF: dict[str, Family] = {"EVALUATED": "DEAL", "SENT": "DEAL", "QUOTED": "FUNDING", "RECEIVED": "DEAL", "OFFERED": "DEAL",
-                                "BUYER_ACCEPTED": "DEAL", "REPLIED": "DEAL", "BUYER_DECLINED": "DEAL"}
+                                "BUYER_ACCEPTED": "DEAL", "REPLIED": "DEAL", "BUYER_DECLINED": "DEAL",
+                                "OFFER_WITHDRAWN": "DEAL"}
 
 
 def body_json(fact: Fact) -> str:
@@ -239,7 +254,7 @@ def parse_fact(record: DecisionFactRecord) -> Fact | None:
     except (ValidationError, ValueError):
         return None
     assert isinstance(parsed, (EvaluatedFact, SentFact, QuotedFact, ReceivedFact, OfferedFact, BuyerAcceptedFact, RepliedFact,
-                               BuyerDeclinedFact))
+                               BuyerDeclinedFact, OfferWithdrawnFact))
     return parsed
 
 
@@ -263,6 +278,7 @@ __all__ = [
     "GapLeg",
     "GapPlan",
     "IfDecline",
+    "OfferWithdrawnFact",
     "OfferedFact",
     "QuotedFact",
     "QuotedLeg",

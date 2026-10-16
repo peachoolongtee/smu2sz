@@ -22,6 +22,7 @@ from app.decisions.facts import (
     BuyerDeclinedFact,
     EvaluatedFact,
     OfferedFact,
+    OfferWithdrawnFact,
     QuotedFact,
     RepliedFact,
     SentFact,
@@ -437,6 +438,23 @@ def _reserve_alert(i: DecisionInputs) -> AlertLike | None:
 # ---------------------------------------------------------------- DEAL
 
 
+def active_offers(facts: Sequence[Any]) -> list[OfferedFact]:
+    """The OFFERED marks that stand, oldest first: for each counter, its latest mark when it has more marks than corrections
+    (OFFER_WITHDRAWN). A corrected mark stays on the record; it no longer makes the deal wait for the buyer."""
+    marks: dict[tuple[str, str], list[OfferedFact]] = {}
+    undone: dict[tuple[str, str], int] = {}
+    order: list[tuple[str, str]] = []
+    for f in facts:
+        if isinstance(f, OfferedFact):
+            key = (f.verdict_id, f.counter_id)
+            if key not in marks:
+                order.append(key)
+            marks.setdefault(key, []).append(f)
+        elif isinstance(f, OfferWithdrawnFact):
+            undone[(f.verdict_id, f.counter_id)] = undone.get((f.verdict_id, f.counter_id), 0) + 1
+    return [marks[k][-1] for k in order if len(marks[k]) > undone.get(k, 0)]
+
+
 def buyer_answer(state: DecisionState) -> str | None:
     """What became of an offer the owner sent outside FLOW: "countered", "accepted" (the buyer's yes the owner recorded, whatever its approval
     then did), "declined", "no_answer" (it closed unanswered), "closed" (the deal ended another way: the agreement could not run, or it was
@@ -483,7 +501,7 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
     facts = _facts(i)
     sents = [f for _, f in facts if isinstance(f, SentFact)]
     latest_sent = sents[-1] if sents else None
-    offers_sent = [f for _, f in facts if isinstance(f, OfferedFact)]
+    offers_sent = active_offers([f for _, f in facts])
     # the offer stays open until the latest day any counter sent outside FLOW is open (two counters may be out at once): that one is the
     # deal's offer, so the state, what it waits for and the day it closes are read from one fact
     latest_offered = max(reversed(offers_sent), key=lambda f: f.valid_until_day) if offers_sent else None

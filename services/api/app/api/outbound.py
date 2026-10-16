@@ -24,6 +24,7 @@ key, or a reply the owner pasted), never for one filed anonymously under a buyer
 from __future__ import annotations
 
 import hashlib
+import secrets
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -43,11 +44,13 @@ from app.decisions.facts import (
     BuyerDeclinedFact,
     DeclineReason,
     OfferedFact,
+    OfferWithdrawnFact,
     ReceivedFact,
     RepliedFact,
     parse_fact,
 )
 from app.decisions.identity import deal_id
+from app.decisions.state import active_offers
 from app.domain.models import (
     AcceptOffer,
     Actor,
@@ -55,15 +58,18 @@ from app.domain.models import (
     CommitmentStatus,
     CompiledOffer,
     CounterProposal,
+    ObligationType,
     OperationStatus,
     SourceDocument,
     Verdict,
 )
 from app.egress import guard, protected_for
+from app.egress.values import AllowedValue
 from app.mandate import MandatePolicyImpl
 from app.operations.executor import committable
 from app.operations.log import read_entries
-from app.outbound import NoWording, calendar_date, render, valid_until
+from app.outbound import TEMPLATE_VERSION, NoWording, calendar_date, render, valid_until
+from app.outbound.message import BuyerMessage, early_settlement, remainder_fen
 
 router = APIRouter(tags=["offers"], dependencies=[Depends(require_owner), Depends(require_feature("terms_guard")),
                                                   Depends(require_feature("buyer_negotiation"))])
@@ -112,8 +118,19 @@ def _received(rt: Runtime, offer: CompiledOffer) -> ReceivedFact | None:
 
 
 def _offered(rt: Runtime, offer_id: str, verdict_id: str, counter_id: str) -> OfferedFact | None:
-    return next((f for f in _facts(rt, offer_id)
-                 if isinstance(f, OfferedFact) and f.verdict_id == verdict_id and f.counter_id == counter_id), None)
+    """The OFFERED mark that stands for this counter (a corrected mark does not), else None."""
+    return next((f for f in active_offers(_facts(rt, offer_id)) if f.verdict_id == verdict_id and f.counter_id == counter_id), None)
+
+
+def sent_doc_id(message_hash: str) -> str:
+    """Where the words of a message marked sent are kept for the session: the owner's own text (channel "owner"), never a buyer document."""
+    return f"sent-{message_hash[:24]}"
+
+
+def _corrections(rt: Runtime, offer_id: str, verdict_id: str, counter_id: str) -> int:
+    """How many times the owner corrected a mark of this counter: each new mark and correction takes the next key."""
+    return sum(1 for f in _facts(rt, offer_id)
+               if isinstance(f, OfferWithdrawnFact) and f.verdict_id == verdict_id and f.counter_id == counter_id)
 
 
 def _replied(rt: Runtime, offer_id: str) -> RepliedFact | None:
@@ -170,6 +187,37 @@ def _current(rt: Runtime, offer_id: str, counter_id: str, lang: str) -> tuple[Co
     return offer, verdict, counter
 
 
+def current_terms(state: Any, counterparty_id: str) -> int | None:
+    """The payment terms the buyer's next invoice is issued with (the counters' own reading), else the terms of their open invoice."""
+    from app.financial.invoices import terms_in_force
+
+    terms = terms_in_force(state, counterparty_id)
+    if terms is not None:
+        return terms
+    open_ = [r for r in state.receivables if r.status == "OPEN" and r.counterparty_id == counterparty_id]
+    return open_[0].terms_days if open_ else None
+
+
+def render_for(state: Any, offer: CompiledOffer, verdict: Verdict, counter: CounterProposal, *, terms_hash: str, valid_until_day: int,
+               lang: Literal["en", "zh"]) -> BuyerMessage:
+    """The message for `counter`, answering every term the buyer asked for (the verdict's bound obligations). Raises `NoWording`."""
+    return render(counter, state, buyer_name=party_name(state, offer.counterparty_id), terms_hash=terms_hash, valid_until_day=valid_until_day,
+                  lang=lang, asked=list(verdict.bound_obligations), current_terms_days=current_terms(state, offer.counterparty_id))
+
+
+def message_allow(counter: CounterProposal, state: Any) -> list[AllowedValue]:
+    """What the message may state: the counter's own figures, and for an early payment the net that settles its face and the rest of the
+    invoice (both the buyer's own invoice, derived from the counter's terms)."""
+    allow = list(_counter_allow(counter))
+    for o in counter.obligations:
+        if o.type == ObligationType.IMMEDIATE_DISCOUNT and o.base.amount_fen:
+            _cap, net = early_settlement(o)
+            allow.append(AllowedValue.money(net))
+            if rest := remainder_fen(o, state):
+                allow.append(AllowedValue.money(rest))
+    return allow
+
+
 def picture_path(rt: Runtime, offer_id: str, counter_id: str, lang: str) -> dict[str, Any] | None:
     """The offer picture's path for this reply (its terms beside the ask, its cost, who decides, what a refusal leaves), else None. A picture
     that cannot be read gives none. Call under `rt.lock`."""
@@ -184,14 +232,30 @@ def picture_path(rt: Runtime, offer_id: str, counter_id: str, lang: str) -> dict
     return next((p for p in paths if p.get("kind") == "reply" and p.get("key") == counter_id), None)
 
 
-def review_of(path: dict[str, Any] | None) -> dict[str, Any] | None:
-    """What the owner reads beside the message, in the picture's own words: the reply's terms against the ask, its cost, who decides it, and
-    what is funded if the buyer refuses. None when the picture has no such path."""
+def authority_words(needs_owner: bool | None, lang: str) -> str:
+    """Whether the terms are within the owner's signed mandate: what the owner decides, never who sends (FLOW sends nothing here)."""
+    return (t(lang, "Needs your approval before you send it.", "发送前需经您批准。") if needs_owner
+            else t(lang, "Within your mandate: no approval needed.", "在您的授权范围内：无需批准。"))
+
+
+def channel_view(lang: str) -> dict[str, str]:
+    """How the message reaches the buyer: by hand, since no channel is connected, so FLOW cannot confirm where it went or that it arrived."""
+    return {"kind": "manual", "label": t(lang, "Manual sending · No channel connected", "手动发送 · 未连接任何渠道"),
+            "text": t(lang, "FLOW cannot send this or confirm it arrived. Copy it and send it through your usual channel.",
+                      "FLOW 无法发送这条消息，也无法确认对方已收到。请复制后通过您惯用的渠道发送。")}
+
+
+def review_of(path: dict[str, Any] | None, lang: str = "en") -> dict[str, Any] | None:
+    """What the owner reads beside the message: the reply's terms against the ask and its cost in the picture's own words, and whether it is
+    within the owner's mandate (`decides_text`). Nothing about what a refusal funds: the picture's sentence for that is the simulated send's,
+    which funds the gap at once; recording a real buyer's no runs nothing. None when the picture has no such path."""
     if path is None:
         return None
-    return {"terms": path.get("terms"), "cost_display": path.get("cost_display"), "cost_note": path.get("cost_note"),
-            "decides_text": path.get("decides_text"), "authority": path.get("authority"), "authority_text": path.get("authority_text"),
-            "needs_owner": path.get("needs_owner"), "if_declined_text": path.get("if_refused_text")}
+    cost = path.get("cost_display")
+    return {"terms": path.get("terms"), "cost_display": cost, "cost_note": path.get("cost_note"),
+            "cost_text": (t(lang, f"Estimated one-time cost: {cost}", f"预计一次性成本：{cost}") if cost else None),
+            "decides_text": authority_words(path.get("needs_owner"), lang), "authority": path.get("authority"),
+            "needs_owner": path.get("needs_owner")}
 
 
 def _message_view(rt: Runtime, offer: CompiledOffer, verdict: Verdict, counter: CounterProposal, lang: Literal["en", "zh"],
@@ -216,11 +280,11 @@ def _message_view(rt: Runtime, offer: CompiledOffer, verdict: Verdict, counter: 
         blocked = "WINDOW_PASSED"
     else:
         try:
-            msg = render(counter, state, buyer_name=party_name(state, offer.counterparty_id), terms_hash=th, valid_until_day=until, lang=lang)
+            msg = render_for(state, offer, verdict, counter, terms_hash=th, valid_until_day=until, lang=lang)
         except NoWording:
             blocked = "NO_WORDING"
         else:
-            g = guard(msg.text, protected_for(rt.store), recipient_id=offer.counterparty_id, allow=_counter_allow(counter), day=rt.day,
+            g = guard(msg.text, protected_for(rt.store), recipient_id=offer.counterparty_id, allow=message_allow(counter, state), day=rt.day,
                       lang=lang)
             if g.security_event:
                 rt.store.add_security_event(g.security_event)
@@ -234,24 +298,29 @@ def _message_view(rt: Runtime, offer: CompiledOffer, verdict: Verdict, counter: 
         "offer_id": offer.offer_id, "decision_id": deal_id(offer.offer_id), "verdict_id": verdict.id, "counter_id": counter.id,
         "counter_label_when": option_label(counter.label, words), "state_version": state.state_version,
         "counterparty_id": offer.counterparty_id, "buyer_name": buyer, "lang": lang, "ui_lang": words,
-        "text": text, "message_hash": message_hash, "terms_hash": th, "template_version": "buyer-message-v1",
+        "text": text, "message_hash": message_hash, "terms_hash": th, "template_version": TEMPLATE_VERSION,
         "copyable": text is not None,
         "blocked": None if blocked is None else {"code": blocked, "text": t(words, *_BLOCKED[blocked])},
         "valid_until_day": until, "valid_until_when": when_text(until, rt.day, words),
         "valid_until_date": calendar_date(state.as_of, until, words),
         "provenance": {"via": via, "text": _provenance_text(via, words), "verified": via in KNOWN_SENDERS},
-        "review": review_of(path),
+        "review": review_of(path, words),
+        "authority_text": authority_words(path.get("needs_owner") if path else None, words) if path is not None else None,
+        "channel": channel_view(words),
         "languages": [{"code": "en", "label": t(words, "English", "英文")}, {"code": "zh", "label": t(words, "Chinese", "中文")}],
-        "send_title_text": t(words, f"Send it to {buyer} yourself", f"由您亲自发给{buyer}"),
+        "send_title_text": t(words, f"Your response to {buyer}", f"您给{buyer}的答复"),
         "offered": None if sent is None else {
             "recorded": True, "lang": sent.lang, "message_hash": sent.message_hash, "valid_until_day": sent.valid_until_day,
             "valid_until_when": when_text(sent.valid_until_day, rt.day, words), "same_message": sent.message_hash == message_hash},
-        "notice_text": t(words, "FLOW does not send this message. Copy it, send it to the buyer yourself, then mark it as sent.",
-                         "FLOW 不会发送这条消息。请复制后由您亲自发给买方，然后标记为已发送。"),
-        "copy_label": t(words, "Copy the message", "复制消息"),
-        "mark_sent_label": t(words, "I've sent it to the buyer", "我已发给买方"),
-        "mark_sent_effect_text": t(words, "Marking it sent agrees nothing and moves no money: the deal waits for the buyer's answer.",
-                                   "标记为已发送不会达成任何协议，也不会动用资金：这笔交易将等待买方答复。"),
+        "notice_text": t(words, "FLOW does not send this message. Copy it, send it through your usual channel, then mark it as sent.",
+                         "FLOW 不会发送这条消息。请复制后通过您惯用的渠道发送，然后标记为已发送。"),
+        "copy_label": t(words, "Copy response", "复制答复"),
+        "copied_text": t(words, "Copied", "已复制"),
+        "copy_failed_text": t(words, "Could not copy. Select the message and copy it.", "无法复制。请选中消息后复制。"),
+        "mark_sent_label": t(words, "Mark as sent", "标记为已发送"),
+        "mark_sent_effect_text": t(words, "This records that you sent it; FLOW cannot confirm it arrived. Nothing is agreed and no money moves.",
+                                   "这只记录您已发送；FLOW 无法确认对方已收到。不会达成任何协议，也不会动用资金。"),
+        "back_label": t(words, "Back to Deals", "返回交易"),
         "accepted_label": t(words, "The buyer accepted", "买方已接受"),
         "reply_label": t(words, "Paste the buyer's reply", "粘贴买方的回复"),
     }
@@ -299,10 +368,18 @@ def mark_offered(offer_id: str, counter_id: str, body: OfferedIn, lang: str = "e
         fact = OfferedFact(offer_id=offer_id, verdict_id=verdict.id, counter_id=counter.id, counterparty_id=offer.counterparty_id,
                            state_version_shown=version, terms_hash=view["terms_hash"], message_hash=view["message_hash"],
                            template_version=view["template_version"], lang=body.lang, valid_until_day=view["valid_until_day"])
-        recorded = record_fact(rt, deal_id(offer_id), f"{verdict.id}:{counter.id}", fact, state_version=version, day=rt.day)
+        n = _corrections(rt, offer_id, verdict.id, counter.id)
+        if (standing_mark := _offered(rt, offer_id, verdict.id, counter.id)) is not None:  # a second mark of a standing one changes nothing
+            recorded: bool | str = True if standing_mark == fact else "already_recorded_differently"
+        else:
+            recorded = record_fact(rt, deal_id(offer_id), f"{verdict.id}:{counter.id}" + (f":{n}" if n else ""), fact,
+                                   state_version=version, day=rt.day)
         if recorded is False:
             raise HTTPException(500, {"code": "NOT_RECORDED", "offer_id": offer_id,
                                       "message_when": t(said, "FLOW could not record that you sent it; try again.", "FLOW 未能记录您已发送；请重试。")})
+        sent_doc = SourceDocument(doc_id=sent_doc_id(view["message_hash"]), channel="owner", sender_id="OWNER", received_day=rt.day,
+                                  text=view["text"])
+        rt.documents.setdefault(sent_doc.doc_id, sent_doc)
         out = _message_view(rt, offer, verdict, counter, body.lang, said)
         out["already_recorded"] = recorded == "already_recorded_differently"
         closes = out["offered"]["valid_until_when"]
@@ -318,6 +395,8 @@ class AcceptedIn(BaseModel):
     verdict_id: str
     state_version: int
     message_hash: str
+    # the buyer's own words of acceptance, pasted by the owner as evidence (kept as a document of the deal); optional
+    evidence_text: str | None = Field(default=None, max_length=4000)
 
 
 def _sent_counter(rt: Runtime, offer_id: str, verdict_id: str, counter_id: str, message_hash: str | None,
@@ -402,9 +481,15 @@ def buyer_accepted(offer_id: str, counter_id: str, body: AcceptedIn, lang: str =
         result = rt.executor.execute(op)
         if result.status not in (OperationStatus.EXECUTED, OperationStatus.PENDING_APPROVAL):
             raise _not_recorded(rt, offer_id, result, said, accepting=True)
+        evidence_id = None
+        if body.evidence_text and body.evidence_text.strip():  # buyer text, kept as a document like any buyer message, never in the fact
+            doc = SourceDocument(doc_id=f"accept-{secrets.token_hex(12)}", channel="email", sender_id=offer.counterparty_id, received_day=rt.day,
+                                 text=body.evidence_text, parent_doc_id=offer.doc_ids[0] if offer.doc_ids else None)
+            rt.documents[doc.doc_id] = doc  # a fresh random id: no earlier submission can hold it (SEC-16)
+            evidence_id = doc.doc_id
         record_fact(rt, deal_id(offer_id), f"accept-{commitment.id}",
                     BuyerAcceptedFact(offer_id=offer_id, verdict_id=verdict.id, counter_id=counter.id, message_hash=sent.message_hash,
-                                      commitment_id=commitment.id, accept_op_id=op.op_id),
+                                      commitment_id=commitment.id, accept_op_id=op.op_id, evidence_doc_id=evidence_id),
                     state_version=rt.store.get_state().state_version, day=rt.day)
         out = _answer(rt, offer_id, said, accepting=True)
         out["status"] = "agreed" if result.status == OperationStatus.EXECUTED else "waiting_approval"
@@ -413,10 +498,11 @@ def buyer_accepted(offer_id: str, counter_id: str, body: AcceptedIn, lang: str =
 
 
 DECLINE_REASONS: dict[str, tuple[str, str]] = {
-    "DISCOUNT_TOO_LOW": ("The discount was too low", "折扣太低"),
-    "WANTED_LONGER_TERMS": ("They wanted longer terms", "对方想要更长的账期"),
-    "NO_LONGER_NEEDED": ("They no longer need it", "对方已不再需要"),
-    "NO_REASON": ("No reason given", "未说明原因"),
+    "DISCOUNT_TOO_LOW": ("Discount too low", "折扣太低"),
+    "WANTED_LONGER_TERMS": ("Payment terms unacceptable", "付款期限不可接受"),
+    "NO_LONGER_NEEDED": ("No longer interested", "已不再感兴趣"),
+    "OTHER": ("Other", "其他"),
+    "NO_REASON": ("Unknown", "原因不明"),
 }
 
 
@@ -468,6 +554,35 @@ def buyer_declined(offer_id: str, counter_id: str, body: DeclinedIn, lang: str =
             raise HTTPException(500, {"code": "NOT_RECORDED", "offer_id": offer_id,
                                       "message_when": t(said, "FLOW could not record the buyer's answer; try again.", "FLOW 未能记录买方的答复；请重试。")})
         return {"decision": _decision(rt, offer_id, said), "status": "declined"}
+
+
+class WithdrawIn(BaseModel):
+    verdict_id: str
+    message_hash: str
+
+
+@router.post("/offers/{offer_id}/counters/{counter_id}/offered/withdraw")
+def withdraw_offered(offer_id: str, counter_id: str, body: WithdrawIn, lang: str = "en") -> dict[str, Any]:
+    """The owner marked the message sent by mistake. Records the correction (OFFER_WITHDRAWN) beside the mark, never deleting it; the deal is
+    ready for the owner's response again. Only while the buyer's answer is not recorded."""
+    rt = get_runtime()
+    said = "zh" if lang == "zh" else "en"
+    with rt.lock:
+        _offer, sent = _sent_counter(rt, offer_id, body.verdict_id, counter_id, body.message_hash, said)
+        if rt.day > sent.valid_until_day:
+            raise _conflict("OFFER_EXPIRED", offer_id, "The offer you marked sent has already closed; its record stands as it is.",
+                            "您标记为已发送的报价已关闭；其记录保持不变。", said, valid_until_day=sent.valid_until_day)
+        n = _corrections(rt, offer_id, sent.verdict_id, counter_id)
+        recorded = record_fact(rt, deal_id(offer_id), f"withdrawn:{sent.verdict_id}:{counter_id}:{n}",
+                               OfferWithdrawnFact(offer_id=offer_id, verdict_id=sent.verdict_id, counter_id=counter_id,
+                                                  message_hash=sent.message_hash),
+                               state_version=rt.store.get_state().state_version, day=rt.day)
+        if recorded is False:
+            raise HTTPException(500, {"code": "NOT_RECORDED", "offer_id": offer_id,
+                                      "message_when": t(said, "FLOW could not record the correction; try again.", "FLOW 未能记录该更正；请重试。")})
+        return {"decision": _decision(rt, offer_id, said), "status": "withdrawn",
+                "message_when": t(said, "Corrected: the message is not marked as sent. Nothing else changed.",
+                                  "已更正：这条消息不再标记为已发送。其他均未改变。")}
 
 
 class ReplyIn(BaseModel):

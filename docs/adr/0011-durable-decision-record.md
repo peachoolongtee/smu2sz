@@ -369,6 +369,7 @@ owner copies it and sends it by their own channel (`app/api/outbound.py`). Four 
 | BUYER_ACCEPTED | `accept-{commitment_id}` | `POST .../counters/{id}/buyer-accepted`, after the owner's AcceptOffer ran or queued | the counter, the message hash, the commitment and the accept's op id |
 | REPLIED | the reply's offer id | `POST /offers/{id}/buyer-reply`, after the reply was stored as a new offer | the counter answered and the new request |
 | BUYER_DECLINED | `declined:{verdict_id}:{counter_id}` | `POST .../counters/{id}/buyer-declined` | the counter refused and the buyer's reason as a code (`DISCOUNT_TOO_LOW`, `WANTED_LONGER_TERMS`, `NO_LONGER_NEEDED`, `NO_REASON`), never their words |
+| OFFER_WITHDRAWN | `withdrawn:{verdict_id}:{counter_id}:{n}` | `POST .../counters/{id}/offered/withdraw` ("I marked it sent by mistake") | the correction of a mark; the mark stays beside it. A counter's mark stands while it has more marks than corrections; a new mark after a correction takes the key `{verdict_id}:{counter_id}:{n}` |
 
 The rule "no sentence, no buyer text" stands. The message is not stored: `message_hash` = sha256 of the template version, the language, the
 terms' hash and the exact words, so the record proves which words were shown for which terms; the words themselves can be re-rendered only while
@@ -389,3 +390,11 @@ answer (NO_DEAL with an OFFERED fact and neither of the others), or none while t
 `outbound` (what was sent, the message re-rendered and checked against its hash, the closing day, and the answers the owner can record) and every
 deal carries `history` (the request, FLOW's check, each send and the answer, each with its day and calendar date). The state words for NO_DEAL
 follow the answer ("Declined by the buyer", "Closed without an answer"), and the lifecycle adds `no_answer`.
+
+Round four (16 Oct, after the owner's UX audit). The message is template `buyer-message-v2`: besides the counter's own terms it answers every term
+the buyer asked for that the counter does not offer (payment terms stay at the terms in force, no rebate, no discount), and an early payment says
+the net that settles its face and that the rest of the invoice stays due on its due day; "Everything else stays as it is" is gone. The words keep
+two things apart: the mandate (who decides: "Within your mandate") and the channel (manual: FLOW sends nothing and cannot confirm delivery). A mark
+is the owner's report, a recorded yes is the owner's report (BUYER_ACCEPTED may name `evidence_doc_id`, the buyer's own message the owner pasted,
+kept as a document of the deal, never in the fact), and recording a real buyer's no runs nothing (the simulated send's "FLOW will fund the gap"
+sentence is not shown for it). Each history entry carries its `source` (buyer, flow, owner, simulator).
