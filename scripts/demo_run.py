@@ -4,7 +4,9 @@ queued) -> the owner's "approve APR-..." -> the late and the financed receipts -
 reconciliation and ledger -> an attack through the chat (demo steps 1 to 17). Prints what the owner would see. Nothing is written
 outside memory. Run from the repo root:
 
-    PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py
+    DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py
+
+DEMO_MODE=1 is required (it is off by default): the run uses the published demo credentials.
 """
 
 from __future__ import annotations
@@ -15,6 +17,8 @@ from pathlib import Path
 
 os.environ.setdefault("DATABASE_URL", "memory")
 os.environ.setdefault("LLM_MODE", "cache")
+if os.environ.get("DEMO_MODE", "").strip().lower() not in {"1", "true", "yes", "on"}:
+    sys.exit("demo_run.py uses the demo books and credentials: run it with DEMO_MODE=1 (DEMO_MODE is off by default).")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "services" / "api"))
 
 from fastapi.testclient import TestClient  # noqa: E402

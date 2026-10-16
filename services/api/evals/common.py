@@ -104,9 +104,13 @@ class SuiteResult:
 
 
 class InProcApi:
-    """The FastAPI app over a fresh in-memory runtime (same wiring as scripts/run_scenarios.py)."""
+    """The FastAPI app over a fresh in-memory runtime (same wiring as scripts/run_scenarios.py). A dev eval: it signs in with the
+    published demo credentials, so it needs DEMO_MODE=1 (off by default); the eval commands in README.md and scripts/evaluate.py set it."""
 
     def __init__(self) -> None:
+        if os.environ.get("DEMO_MODE", "").strip().lower() not in {"1", "true", "yes", "on"}:
+            raise SystemExit("the in-process eval API uses the demo credentials: run the eval with DEMO_MODE=1 "
+                             "(DEMO_MODE is off by default)")
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
 

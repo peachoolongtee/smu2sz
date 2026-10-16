@@ -100,7 +100,9 @@ def test_oracle_probing_is_reported_and_discloses_no_protected_value(
         assert oracle["accept_counter_flips_seen"] == 0
         assert oracle["accepted_or_pending_up_to_bp"] is None and oracle["countered_from_bp"] is None
         assert oracle["counter_figures_revealed"] == []
-    assert oracle["http_statuses"] == [200]
+    # R-10 (16 Oct): a keyed buyer gets 5 messages a simulated day, so its 12 probes are cut off with 429s; a keyless sender keeps the
+    # anonymous intake cap, which these 12 do not reach
+    assert oracle["http_statuses"] == ([200, 429] if attack_id.endswith("K") else [200])
 
 
 def test_agent_key_reads_are_recorded(observations: dict[str, Observation]) -> None:

@@ -70,6 +70,34 @@ def enforce_intake_cap(rt: Runtime, route: str, claimed: str | None) -> None:
                               "message": "too many unauthenticated submissions today; try again tomorrow or use a channel key"})
 
 
+def enforce_buyer_budget(rt: Runtime, route: str, counterparty_id: str, lang: str = "en") -> None:
+    """R-10: a keyed buyer may send `buyer_attempts_per_day` offers or messages per simulated day. Past it the request is refused
+    (429) in words that say nothing about the terms, and recorded as a security event against that buyer. Owner and agent
+    requests never reach this."""
+    import hashlib
+
+    from app.api.presentation import t
+    from app.domain.models import SecurityEvent, SecurityEventKind
+
+    if rt.take_buyer_slot(counterparty_id):
+        return
+    # One event per buyer per simulated day, with a deterministic id; later refusals that day are counted on the runtime
+    # (`Runtime.buyer_refusals`), not recorded, so a buyer cannot grow the store by retrying.
+    if rt.count_buyer_refusal(counterparty_id) == 1:
+        with rt.lock:
+            eid = "SEC-BUDGET-" + hashlib.sha256(f"buyer-budget {counterparty_id} {rt.day}".encode()).hexdigest()[:12]
+            if not any(e.id == eid for e in rt.store.security_events()):  # a restart on a persistent store
+                rt.store.add_security_event(SecurityEvent(
+                    id=eid, day=rt.day, kind=SecurityEventKind.DATA_EXTRACTION, counterparty_id=counterparty_id,
+                    action_taken="request refused before reaching any module; further refusals today are counted, not recorded",
+                    detail=(f"{counterparty_id} went over its daily budget of {rt.settings.buyer_attempts_per_day} offers and "
+                            f"messages ({route}); repeated attempts in one day can probe the owner's thresholds")))
+    lg = "zh" if lang == "zh" else "en"
+    raise HTTPException(429, {"code": "BUYER_BUDGET_EXHAUSTED",
+                              "message": t(lg, "We have received your messages for today. Please write again tomorrow.",
+                                           "今天的消息我们已收到。请明天再联系。")})
+
+
 @router.post("/offers")
 def post_offer(body: OfferIn, x_owner_token: str | None = Header(default=None),
                x_agent_key: str | None = Header(default=None),
@@ -87,6 +115,8 @@ def post_offer(body: OfferIn, x_owner_token: str | None = Header(default=None),
             body = body.model_copy(update={"counterparty_id": bound})
     if not (owner or is_agent(x_agent_key) or bound):
         enforce_intake_cap(rt, "POST /offers", body.counterparty_id)
+    elif bound is not None and not (owner or is_agent(x_agent_key)):
+        enforce_buyer_budget(rt, "POST /offers", bound, lang)
     return intake_offer(rt, body, lang)
 
 

@@ -56,6 +56,8 @@ class Runtime:
     documents: dict[str, Any] = field(default_factory=dict)  # doc_id -> SourceDocument (inbound, untrusted)
     intake_day: int = 0  # the simulated day `intake_count` belongs to (R04, R05; in memory, like the caches above)
     intake_count: int = 0  # offers and buyer turns admitted without a channel key on `intake_day`
+    buyer_attempts: dict[str, tuple[int, int]] = field(default_factory=dict)  # R-10: keyed buyer -> (day, attempts that day)
+    buyer_refusals: dict[str, tuple[int, int]] = field(default_factory=dict)  # R-10: keyed buyer -> (day, refusals that day)
     # The Demo's swaps to another scenario and restores of the main one (`app.api.demo_story`); in memory, and kept across `reset`
     # because a reset wipes the operations log, which therefore cannot hold the entry that says the books were replaced.
     demo_history: list[dict[str, Any]] = field(default_factory=list)
@@ -108,6 +110,26 @@ class Runtime:
                 return False
             self.intake_count += 1
             return True
+
+    def take_buyer_slot(self, counterparty_id: str) -> bool:
+        """Count one offer or message from a keyed buyer against its own daily budget (R-10). False, without counting,
+        once the budget is spent. The count restarts when the simulated day changes."""
+        with self.lock:
+            day, used = self.buyer_attempts.get(counterparty_id, (self.day, 0))
+            if day != self.day:
+                used = 0
+            if used >= self.settings.buyer_attempts_per_day:
+                return False
+            self.buyer_attempts[counterparty_id] = (self.day, used + 1)
+            return True
+
+    def count_buyer_refusal(self, counterparty_id: str) -> int:
+        """Count one budget refusal for this buyer today and return how many it has had today (1 for the first)."""
+        with self.lock:
+            day, n = self.buyer_refusals.get(counterparty_id, (self.day, 0))
+            n = n + 1 if day == self.day else 1
+            self.buyer_refusals[counterparty_id] = (self.day, n)
+            return n
 
     def hydrate(self) -> None:
         """Read the clock and the seeded scenario from the stored books (start-up; nothing is written)."""
@@ -163,6 +185,8 @@ class Runtime:
             self.latest_verdict.clear()
             self.documents.clear()
             self.intake_day, self.intake_count = 0, 0
+            self.buyer_attempts.clear()
+            self.buyer_refusals.clear()
             reset_sessions()
             clear_exposure_cache()
 

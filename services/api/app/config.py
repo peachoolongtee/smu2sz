@@ -49,6 +49,13 @@ def _int(name: str, default: int) -> int:
         return default
 
 
+def demo_mode() -> bool:
+    """DEMO_MODE: off unless set (SEC-07, the owner's decision of 16 Oct 2026). On, it accepts the published demo credentials,
+    seeds an empty store with the demo books, serves /docs and enables the demo routes. Local demos, the browser suites and the
+    tests opt in with DEMO_MODE=1; a deployment never does."""
+    return _flag("DEMO_MODE", default=False)
+
+
 @dataclass(frozen=True)
 class Features:
     terms_guard: bool = field(default_factory=lambda: _flag("FEATURE_TERMS_GUARD"))
@@ -87,6 +94,8 @@ class Settings:
     features: Features = field(default_factory=Features)
     # Offers and buyer turns that arrive without a channel key, per simulated day (R04, R05).
     intake_cap_per_day: int = field(default_factory=lambda: _int("INTAKE_CAP_PER_DAY", 200))
+    # Offers and messages one keyed buyer (X-Counterparty-Key) may send per simulated day (R-10: threshold probing).
+    buyer_attempts_per_day: int = field(default_factory=lambda: _int("BUYER_ATTEMPTS_PER_DAY", 5))
 
 
 def get_settings() -> Settings:

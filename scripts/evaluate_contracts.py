@@ -1,6 +1,6 @@
 """Run the held-out contract set and write its report (brief 03 §6.8).
 
-    PYTHONUTF8=1 uv run --project services/api python scripts/evaluate_contracts.py
+    DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/evaluate_contracts.py
 
 Reads `fixtures/contracts_heldout/labels.yaml`, reads each contract with the configured compiler chain (offline by
 default: a recorded reading if there is one, else the rules grammar; LLM_MODE=live for the model) and writes

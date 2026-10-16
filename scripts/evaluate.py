@@ -2,11 +2,11 @@
 """Measure the integrated TermsLedger v2 system and write the evaluation report.
 
 Usage (from the repo root):
-  uv run --project services/api python scripts/evaluate.py                 # every suite, offline
-  uv run --project services/api python scripts/evaluate.py --suite offers --only H10b_today_1_6pct
-  uv run --project services/api python scripts/evaluate.py --suite funding --only R01 --workers 1
-  uv run --project services/api python scripts/evaluate.py --live          # the configured LLM backends
-  uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout2
+  DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py                 # every suite, offline
+  DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py --suite offers --only H10b_today_1_6pct
+  DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py --suite funding --only R01 --workers 1
+  DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py --live          # the configured LLM backends
+  DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout2
 
 Suites: offers (E2), financial (E3/E10), funding (E9), covenants, security, intent, e2e (E7), no_deal (E5).
 Offline (default) sets LLM_MODE=cache: recorded compiler outputs where they exist, else the rules grammar.
@@ -130,7 +130,7 @@ def main() -> int:
                "intent": {"only": only, **heldout}, "e2e": {"only": only}}
     partial = bool(args.suite or only or args.fast or args.heldout)
     out = Path(args.out) if args.out else (Path(tempfile.mkdtemp(prefix="tl-eval-")) if partial else None)
-    command = "uv run --project services/api python scripts/evaluate.py " + " ".join(shlex.quote(a) for a in sys.argv[1:])
+    command = "DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py " + " ".join(shlex.quote(a) for a in sys.argv[1:])
     rep, jp, mp = run_eval(suites, options, out, command.strip())
     if "security" in suites:  # the /nl attack group is run here, so its rows are computed, not imported
         from evals.runner import to_markdown

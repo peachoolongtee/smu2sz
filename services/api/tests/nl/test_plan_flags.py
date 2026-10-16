@@ -59,10 +59,11 @@ def test_a_proposal_names_the_rate_and_ceiling_and_the_leg_waits_for_approval(wo
     r = agent.say(GOAL["en"])
     reply = r["reply"]
     assert r["awaiting_confirmation"] and ops(r) == []
-    assert "costs ¥801.99, which is 32.53% a year, above your 15.00% yearly ceiling" in reply
+    # R-11 (16 Oct): the agent's chat never names the owner's ceiling; the owner's session does (below)
+    assert "15.00%" not in reply and "ceiling" not in reply
     assert "will wait for your approval (APR-…) rather than run" in reply
     assert "Submit RCV-A to FAC-IF for a ¥90,000.00 advance" in reply
-    assert "Draw ¥150,000.00 on FAC-LINE" not in reply.split("above your")[0].split("costs ¥801.99")[-1]  # not flagged
+    assert "Draw ¥150,000.00 on FAC-LINE" not in reply.split("After you say go ahead")[-1]  # not flagged
     # go ahead: the line draw runs, the advance is queued, and the reply names the approval and how to approve it
     done = agent.say(GO["en"])
     assert ops(done) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "PENDING_APPROVAL")]
@@ -84,7 +85,7 @@ def test_a_proposal_names_the_rate_and_ceiling_in_chinese(world):
     r = agent.say(GOAL["zh"])
     reply = r["reply"]
     assert r["awaiting_confirmation"]
-    assert "费用 ¥801.99，年化 32.53%，高于您 15.00% 的年度融资成本上限" in reply
+    assert "15.00%" not in reply and "上限" not in reply  # R-11: the ceiling is the owner's
     assert "不会直接执行，而是等待您批准（APR-…）" in reply
     done = agent.say(GO["zh"])
     assert ops(done) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "PENDING_APPROVAL")]
