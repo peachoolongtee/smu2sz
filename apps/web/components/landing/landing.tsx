@@ -19,10 +19,10 @@ const PREVIEW_ID = "preview";
 const WELCOMED_KEY = "tl-welcomed";
 
 const FEATURES: { key: "f1" | "f2" | "f3" | "f4"; src: string; w: number; h: number }[] = [
-  { key: "f1", src: "/landing/offer.png", w: 916, h: 332 },
-  { key: "f2", src: "/landing/cash.png", w: 914, h: 828 },
-  { key: "f3", src: "/landing/recommend.png", w: 915, h: 500 },
-  { key: "f4", src: "/landing/choices.png", w: 915, h: 662 },
+  { key: "f1", src: "/landing/offer.png", w: 1180, h: 352 },
+  { key: "f2", src: "/landing/cash.png", w: 830, h: 540 },
+  { key: "f3", src: "/landing/recommend.png", w: 1180, h: 559 },
+  { key: "f4", src: "/landing/choices.png", w: 1180, h: 649 },
 ];
 
 const BADGES: { key: DictKey; icon: ReactNode }[] = [
@@ -263,7 +263,7 @@ export function Landing() {
             <Cta size="sm" testId="landing-setup-cta" />
           </div>
           <div data-reveal="in" data-kind="zoom" style={delay(3)}>
-            <Image src="/landing/home.png" alt={t("landing.setup.alt")} width={1320} height={370} sizes="(min-width: 1360px) 1200px, 92vw" className={`${s.shot} mx-auto mt-10 h-auto w-full max-w-[1200px] rounded-[14px]`} />
+            <Image src="/landing/home.png" alt={t("landing.setup.alt")} width={1320} height={540} sizes="(min-width: 1360px) 1200px, 92vw" className={`${s.shot} mx-auto mt-10 h-auto w-full max-w-[1200px] rounded-[14px]`} />
           </div>
         </div>
       </section>
