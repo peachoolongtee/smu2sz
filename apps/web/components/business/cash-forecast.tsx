@@ -206,7 +206,7 @@ function ReceiptBasisBlock({ h, horizon }: { h: HomeView; horizon: number }) {
     <div className="space-y-2.5" data-testid="cash-receipt-basis">
       {rows.length ? (
         <>
-          <h3 className="text-sm font-bold text-ink">{t("biz.cash.receipts")}</h3>
+          <h3 className="text-base font-bold text-ink">{t("biz.cash.receipts")}</h3>
           <BasisRows rows={rows} label={t("biz.cash.receipts")} testId="cash-receipts" />
         </>
       ) : null}

@@ -8,6 +8,7 @@ import { useHasAccount } from "@/lib/account";
 import type { DictKey } from "@/lib/dictionary";
 import { setLang, useI18n } from "@/lib/i18n";
 import s from "./landing.module.css";
+import { FlowLogo } from "../flow-logo";
 
 /** Where each button goes: someone who has signed up goes into FLOW (Home asks them to sign in if this tab has not); someone new joins through the setup. */
 const ACCESS_HREF = "/";
@@ -123,8 +124,9 @@ function Nav() {
   return (
     <header className="absolute inset-x-0 top-0 z-10">
       <div className="mx-auto flex max-w-[1360px] items-center justify-between gap-4 px-4 py-5 sm:px-10">
-        <Link href="/welcome" className={`${s.serif} whitespace-nowrap text-[26px] tracking-[-0.02em] text-[#151515]`} data-testid="landing-logo">
-          FLOW 流
+        <Link href="/welcome" className={`${s.serif} inline-flex items-center gap-2 whitespace-nowrap text-[26px] tracking-[-0.02em] text-[#151515]`} data-testid="landing-logo">
+          <FlowLogo className="h-6 w-auto" />
+          FLOW
         </Link>
         <nav className="flex items-center gap-2 sm:gap-5" aria-label={t("landing.nav")}>
           <button type="button" onClick={() => setLang(lang === "zh" ? "en" : "zh")} className="min-h-10 whitespace-nowrap rounded-full px-2 text-sm font-medium text-[#5f6663] hover:text-[#151515]" data-testid="landing-lang">
@@ -334,7 +336,7 @@ export function Landing() {
       <footer className={s.rule}>
         <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-10">
           <div>
-            <p className={`${s.serif} text-2xl`}>FLOW 流</p>
+            <p className={`${s.serif} flex items-center gap-2 text-2xl`}><FlowLogo className="h-6 w-auto" />FLOW</p>
             <p className={`${s.faint} mt-2 text-sm`}>{t("landing.footer.sim")}</p>
           </div>
           <nav className="flex gap-6 text-sm" aria-label={t("landing.footer.nav")}>

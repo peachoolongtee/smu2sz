@@ -108,7 +108,7 @@ export function BorrowerFileSections({ sections }: { sections: BorrowerFileSecti
         const title = lang === "zh" && s.title_zh ? s.title_zh : s.title;
         return (
           <section key={s.key ?? s.title} className="rounded-tile border border-line p-3" data-testid={`file-section-${s.key ?? s.title}`}>
-            <h3 className="mb-2 text-sm font-semibold text-ink">{title}</h3>
+            <h3 className="mb-2 text-base font-semibold text-ink">{title}</h3>
             {s.columns?.length ? <TableSection s={s} title={title} /> : <ListSection s={s} />}
             {s.notes?.length ? (
               <ul className="mt-2 list-disc space-y-1 pl-5 text-supporting text-ink-3">

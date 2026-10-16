@@ -163,7 +163,7 @@ function DemoDocuments({
   const [busy, setBusy] = useState<string | null>(null);
   return (
     <section className="min-w-0">
-      <h3 className="text-sm font-semibold text-ink">{t("docs.demo")}</h3>
+      <h3 className="text-base font-semibold text-ink">{t("docs.demo")}</h3>
       <p className="mt-0.5 text-meta text-ink-3">{t("docs.demo.hint")}</p>
       {fixtures.error ? (
         <div className="mt-3">
@@ -312,7 +312,7 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
   const field = `${inputClass} w-full touch:min-h-11`;
   return (
     <section className="min-w-0">
-      <h3 className="text-sm font-bold text-ink">{t("docs.own")}</h3>
+      <h3 className="text-base font-bold text-ink">{t("docs.own")}</h3>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor={kindId} className="mb-1 block text-meta font-bold text-ink-2">

@@ -100,7 +100,7 @@ export function StepReview({ draft, status, goTo }: { draft: SetupDraft; status:
       ) : null}
       <section className="flex flex-wrap items-end gap-4 rounded-card border-2 border-brand-600 bg-brand-50 p-5" data-testid="setup-sign">
         <div className="min-w-0 flex-[999_1_320px] space-y-1">
-          <h3 className="text-base font-bold text-ink">{t("setup.s6.sign.title")}</h3>
+          <h3 className="text-lg font-bold text-ink">{t("setup.s6.sign.title")}</h3>
           <p className="text-sm text-ink-2">{t("setup.s6.sign.body")}</p>
         </div>
         <label className="flex flex-[1_1_220px] flex-col gap-1.5 text-sm font-semibold text-ink">

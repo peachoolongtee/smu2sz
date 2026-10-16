@@ -7,8 +7,11 @@ import { useEffect, useRef, useState } from "react";
 import { BuyingCard } from "@/components/deals/buying-card";
 import { ActiveCommitments, type AgreementGroups } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
+import { DealList, useDealRows } from "@/components/deals/deal-list";
 import { InboxList } from "@/components/deals/inbox-list";
-import { Button, ErrorState, PageHeader } from "@/components/ui";
+import { DealTools } from "@/components/deals/tools";
+import { FoldCard } from "@/components/business/surface";
+import { Button, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { WorklistAlertLine } from "@/components/ui/worklist-rows";
 import { contractsOff } from "@/components/documents";
 import { getClock, getCustomers, getDeals, getLedger, getPurchases, getState, getWorklist, submitOffer } from "@/lib/api";
@@ -25,6 +28,9 @@ import { type DealView, DecisionPane } from "./decision-pane";
 import { afterGroupCounts, afterGroupOf, dealTabCounts, dealTabOf, dealWalk, type DealWalk, LEGACY_VIEW_KEYS, negotiationRows, sortRows, TABLE_FROM, viewOf, type DealTab } from "./deal-model";
 import { QueuePanel, type QueueLayout } from "./queue-table";
 import { buildQueue, rowDecision, type RowTarget } from "./queue-model";
+
+/** The address names nothing (the Deals tab itself): the page is the list of every deal. Anything it names (a customer, a deal, a tab) opens the queue and the deal in full. */
+const DETAIL_PARAMS = ["customer", "buyer", "decision", "invoice", "path", "tab", "view", "review", "lines", "show", "scenario", "compare", "chart", "investigate"];
 
 /** The keys of round two that opened sections under the page: an address that carries one has the key dropped (the choices table replaced Compare responses). */
 const RETIRED: Record<string, null> = Object.fromEntries(LEGACY_VIEW_KEYS.map((k) => [k, null]));
@@ -244,7 +250,7 @@ export function DealsPage() {
       <div key="inbox" className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
         {inboxOpen ? null : (
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">
-            <h2 className="font-display text-base font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
+            <h2 className="font-display text-lg font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
             <Button size="sm" onClick={() => setInboxPref(true)} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
               {t("deals.inbox.show")}
             </Button>
@@ -291,6 +297,56 @@ export function DealsPage() {
           {decision ? <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onGo={go} inbox={inboxFor} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} /> : null}
         </div>
   );
+
+  const listMode = !DETAIL_PARAMS.some((k) => params.get(k));
+  const today = clock.data?.day ?? books.data?.day ?? 0;
+  const buyerName = (id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? deals.data?.deals.find((d) => d.counterparty_id === id)?.counterparty_name ?? id;
+  const readDocIds = Object.values(demo.offers)
+    .map((o) => o.documents[0]?.doc_id)
+    .filter((d): d is string => Boolean(d));
+  // The list's rows are read from what the page already has: the deals read, the deals' records, the offers read and the inbox.
+  const listRows = useDealRows({
+    deals: deals.data?.deals ?? [],
+    records: records.data?.decisions ?? [],
+    offers: Object.values(demo.offers),
+    negotiations: demo.negotiations,
+    verdicts: demo.verdicts,
+    readDocIds,
+    known,
+    nameOf: buyerName,
+    today,
+  });
+
+  if (listMode)
+    return (
+      <div className="flow-f min-w-0" data-testid="deals-page" data-view="list">
+        <PageHeader section="deals" title={t("nav.deals")} subtitle={t("deals.list.pageSub")} />
+        <div className="space-y-6">
+          <DealTools />
+          {dealsError ? <ErrorState error={dealsError} onRetry={deals.reload} /> : null}
+          {books.error ? <ErrorState error={books.error} onRetry={books.reload} /> : null}
+          {readError ? <ErrorState error={readError} /> : null}
+          {(deals.loading && !deals.data) || (!books.data && !books.error) ? <LoadingBlock rows={3} /> : <DealList rows={listRows} />}
+          {purchases ? <BuyingCard purchases={purchases} /> : null}
+          {/* Every message, as it arrived: a dropdown under the list. Opening one reads it and opens its deal in full. */}
+          <FoldCard title={t("deals.list.messages")} hint={t("deals.list.messages.hint", { n: inboxCount })} testId="deal-list-messages">
+            <InboxList
+              currentDocId={null}
+              readDocIds={readDocIds}
+              known={known}
+              busy={reading}
+              today={today}
+              mode={mode}
+              statusFor={statusFor}
+              onOpen={(m) => void openMessage(m)}
+              loadError={books.error}
+              onRetry={books.reload}
+              refusals={ledger.data?.refusals ?? null}
+            />
+          </FoldCard>
+        </div>
+      </div>
+    );
 
   return (
     <div className="flow-f min-w-0" data-testid="deals-page">
