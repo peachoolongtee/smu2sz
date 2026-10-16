@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
-import { openReview, sendCounter, verdictHeading } from "./helpers";
+import { demoMode, openReview, sendCounter, verdictHeading } from "./helpers";
 import counterEn from "../mocks/home_summary_day0_counter.json";
 import counterZh from "../mocks/home_summary_day0_counter_zh.json";
 import receivablesDay0 from "../mocks/receivables/day0.json";
@@ -19,7 +19,7 @@ const OWED_32 = "owed: invoiced 13 days ago, due in 32 days";
 /** /receivables lists the customers (with the summary); a customer's page holds the invoices and their basis words. */
 const RECV = "/receivables?customer=BUYER-1";
 const SCHEDULED = "scheduled: not yet invoiced";
-const AFTER_CHECK = /Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/;
+const AFTER_CHECK = /Foshan · |Foshan asks for early settlement|Don't accept as asked|Counter instead of accepting as asked/;
 
 async function lang(page: Page, l: "en" | "zh") {
   await page.addInitScript((v) => localStorage.setItem("tl-lang", JSON.stringify({ lang: v })), l);
@@ -97,6 +97,7 @@ test("with the counter ready: Cash draws the pending line dashed at 60%, with it
 });
 
 test("after the buyer accepts: the dashed line is gone and the moved receipts are agreed; Cash and Receivables say the same word", async ({ page }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   await readOffer(page);
   await acceptCounter(page);
   await cash(page);

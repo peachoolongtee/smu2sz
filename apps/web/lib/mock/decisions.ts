@@ -36,6 +36,8 @@ export interface DecisionContext {
   /** Offer ids that have a commitment on the books (the recorded history seeded without the walk counts). */
   commitmentOffers: string[];
   approvals: ApprovalView[];
+  /** Records the story holds as recordings of their own, by id (the message sent outside FLOW: lib/mock/buyer-message.ts); they stand in for the snapshot the story would choose. */
+  recorded?: Record<string, Snap>;
 }
 
 const SUMMARY_KEYS: (keyof DecisionSummary)[] = ["id", "family", "state", "state_text", "terminal", "headline", "counterparty_name", "amount_display", "opened_when", "updated_when", "waiting_for", "residual"];
@@ -98,6 +100,8 @@ function otherKey(snaps: Snaps, ctx: DecisionContext, id: string): string | null
 
 async function resolve(ctx: DecisionContext, id: string, lang: "en" | "zh"): Promise<DecisionView | null> {
   const snaps = await recordings();
+  const own = ctx.recorded?.[id];
+  if (own) return clone(own[lang]);
   if (id.startsWith("deal:")) {
     const offerId = id.slice("deal:".length);
     const found = dealKey(snaps, ctx, offerId);
@@ -131,6 +135,7 @@ export async function mockDecisions(ctx: DecisionContext, q: { lang: "en" | "zh"
   if (ctx.receipt === "residual") add(snaps.cure_residual?.en.id);
   if (ctx.day >= ctx.newsDay && ctx.stage !== "open") add(snaps.cure_pending?.en.id);
   for (const offerId of new Set([...ctx.evaluated, ...ctx.commitmentOffers])) add(`deal:${offerId}`);
+  for (const id of Object.keys(ctx.recorded ?? {})) add(id);
   const rows: DecisionSummary[] = [];
   for (const id of ids) {
     const v = await resolve(ctx, id, q.lang);

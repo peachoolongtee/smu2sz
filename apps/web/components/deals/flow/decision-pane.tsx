@@ -9,14 +9,18 @@ import { ChasePayment } from "@/components/business/chase-payment";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { Button, ButtonLink, Callout, ErrorState, LoadingBlock } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
-import { StatusPill } from "@/components/ui/status-pill";
+import { StatusPill, type PillTone } from "@/components/ui/status-pill";
 import type { DictKey } from "@/lib/dictionary";
+import { getOfferPicture } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
+import { useAsync } from "@/lib/use-async";
 import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
-import type { DecisionView, NegotiationView, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
+import type { DecisionView, NegotiationView, OfferedResult, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
 import { AcceptBlock, type AcceptOutcome } from "./accept-block";
+import { HistoryStrip } from "./deal-history";
+import { arrivalText, EndingStep, reviewRows, StepHeading, TermSentences, TermsRows, Timeline, WaitingStep, Workspace } from "./workspace";
 import { paneStatus, tabsOf, viewIn, type DealViewKey } from "./deal-model";
 import { quietLink } from "./flow-parts";
 import { CashTab } from "./cash-tab";
@@ -41,7 +45,7 @@ export interface DealView {
 }
 
 const AGREED_STATES: ReadonlySet<string> = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED"]);
-const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED", "LAPSED"]);
+const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED", "LAPSED", "REPLIED"]);
 
 const MD = "(min-width: 768px)";
 const subscribeMd = (onChange: () => void) => {
@@ -116,6 +120,18 @@ function AcceptResult({ outcome }: { outcome: AcceptOutcome }) {
 }
 
 /** The record's own account of where a negotiation stands, for one that is out of the owner's hands or finished. */
+/** The quiet link to the deal's decision record. */
+function RecordLink({ decision }: { decision: string }) {
+  const { t } = useI18n();
+  return (
+    <p className="text-sm">
+      <Link href={`/decisions/${encodeURIComponent(decision)}`} className={quietLink} data-testid="deal-record-link">
+        {t("deals.record")}
+      </Link>
+    </p>
+  );
+}
+
 function RecordBlock({ record, decision }: { record: DecisionView; decision: string }) {
   const { t } = useI18n();
   const ex = record.execution;
@@ -230,10 +246,14 @@ export function DecisionPane({
   /** The buyer's thread of the inbox, for the Messages tab (the page reads and opens messages). */
   inbox?: (buyerId: string | null) => ReactNode;
 }) {
-  const { t, te } = useI18n();
+  const { t, te, lang } = useI18n();
   const uid = useId();
   const mode = useMode();
   const n = useNegotiation(decision, { agreedPicture: view.view === "terms" });
+  // While the buyer has the offer, the terms rows say what they asked in the ask's own words: the offer picture's asked path (read for that state only; none is no column, never a guess).
+  const waitingOffer = n.record?.state === "AWAITING_BUYER" && n.record.outbound && !n.record.outbound.answer ? n.offerId : null;
+  const askedRead = useAsync(async () => (waitingOffer ? await getOfferPicture(waitingOffer, lang).catch(() => null) : null), [waitingOffer, lang]);
+  const askedWhileWaiting = askedRead.data?.paths?.find((p) => p.kind === "asked") ?? null;
   const isMd = useMd();
   // An agreed deal's Overview is the tracker (round three, section 11): the same read and the same body as the tracker's own page.
   const agreedNow = AGREED_STATES.has(n.record?.state ?? "");
@@ -241,6 +261,13 @@ export function DecisionPane({
   const [sent, setSent] = useState<NegotiationView | null>(null);
   // The owner's accept or decline of a request as asked, once it has been answered: the review is gone when the record moves on, its words stay beside the record.
   const [outcome, setOutcome] = useState<AcceptOutcome | null>(null);
+  // The message to the buyer marked sent: the server's answer, kept beside the record that moved on (what came of it is the record's `outbound`).
+  const [marked, setMarked] = useState<OfferedResult | null>(null);
+  // A mark withdrawn ("I marked it sent by mistake"): the server's sentence, said on the counter-ready deal it returns to.
+  const [withdrawn, setWithdrawn] = useState<string | null>(null);
+  // A buyer's reply pasted on the deal it answered: that deal's sentence, said here on the reply's own deal.
+  const [arrived] = useState(() => arrivalText(decision));
+  const [openedState, setOpenedState] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -290,6 +317,10 @@ export function DecisionPane({
   const evaluated = record ? record.state !== "RECEIVED" : Boolean(picture);
   const stateCode = record?.state ?? (evaluated ? "RESPONSE_READY" : "RECEIVED");
   const done = RECORD_DONE.has(stateCode);
+  // The owner sent a counter outside FLOW (the record's `outbound`): while the buyer has not answered the owner records their answer; once answered, the ending says what came of it.
+  const awaitingBuyer = stateCode === "AWAITING_BUYER";
+  const outbound = record?.outbound ?? null;
+  const ended = outbound?.answer ? outbound : null;
   const doc = offer.documents[0];
   const paths = (picture?.paths ?? []).filter((p) => p.kind === "asked" || p.kind === "reply");
   const asked = paths.find((p) => p.kind === "asked") ?? null;
@@ -322,7 +353,10 @@ export function DecisionPane({
   const approvalId = record?.authorization?.approval_id ?? null;
   const whatifHref = `/whatif?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}&from=deal`;
 
-  const status = paneStatus(row, record?.state_text, stateCode);
+  // A deal with an offer sent outside FLOW is ONE state, the server's word for it, in the tone of what came of it (lavender the buyer's turn, green agreed, neutral no deal).
+  const status = outbound && record
+    ? { tone: (stateCode === "AUTHORIZATION_REQUIRED" ? "amber" : outbound.answer === null || outbound.tone === "waiting" ? "lavender" : outbound.tone === "ok" ? "green" : "neutral") as PillTone, text: record.state_text }
+    : paneStatus(row, record?.state_text, stateCode);
   const trackerRead = tracker.data;
   const agreedView = AGREED_STATES.has(stateCode) && trackerRead?.available === true;
   const agreedLoading = AGREED_STATES.has(stateCode) && trackerRead === undefined && !tracker.error;
@@ -337,6 +371,12 @@ export function DecisionPane({
       <CustomerName id={buyerId} decision={decision} className="font-bold text-ink" testId="deal-selected-customer">
         {buyerName}
       </CustomerName>
+      {outbound && !outbound.answer && !outbound.status_text && outbound.closes_text ? (
+        <span data-testid="deal-deadline">
+          <span aria-hidden>· </span>
+          {outbound.closes_text}
+        </span>
+      ) : null}
       {shareClause ? (
         <span data-testid="deal-share-clause">
           <span aria-hidden>· </span>
@@ -387,6 +427,13 @@ export function DecisionPane({
           onSent={(r) => {
             setSent(r);
             // The review is gone with the send: it cannot report that its flight ended.
+            setBusyBoth(false);
+          }}
+          onBack={onClose}
+          onMarked={(r) => {
+            setMarked(r);
+            // The review is gone with the mark (the deal now waits for the buyer): it cannot report that it closed.
+            setReviewingSend(false);
             setBusyBoth(false);
           }}
           onBusy={setBusyBoth}
@@ -460,6 +507,95 @@ export function DecisionPane({
   const sectionNav = (items: DealViewKey[], extra: SectionItem[] = []) => <SectionNav label={t("deals.sec.nav")} items={[...nav(items), ...extra]} busy={busy} />;
   const lastItem: SectionItem[] = history ? [{ key: "last", label: t("deals.sec.last", { buyer: buyerShort }), expanded: lastOpen, onClick: () => setLastOpen((x) => !x) }] : [];
 
+  // The state the deal was opened in: a workspace that appears because the state moved since (a mark, an answer recorded) takes the focus.
+  if (record && openedState === null) setOpenedState(stateCode);
+  const stateMoved = openedState !== null && openedState !== stateCode;
+  // ---- round three: one negotiation, one workspace (an offer sent outside FLOW, a request that needs clarifying, a buyer's reply to a counter), the same skeleton in every state
+  const clarifying = stateCode === "NEEDS_CLARIFICATION";
+  const workspaceOn = Boolean(record && (outbound || clarifying || record.reply_to)) && !(stateCode === "RESPONSE_READY" && !outbound);
+  // What is unclear, in the owner's words: an abstention the server words plainly (its `reason_when` is a sentence of its own, not the engine's reason).
+  const plain = offer.offer.abstentions.filter((a) => a.reason_when && a.reason_when !== a.reason);
+  const approvalsButton = (
+    <ActionGroup testId="deal-actions" label={t("deals.actions")}>
+      <ButtonLink href={approvalId ? `/approvals#approval-${encodeURIComponent(approvalId)}` : "/approvals"} variant="primary" data-testid="deal-approvals-link">
+        {t("next.toApprovals")}
+      </ButtonLink>
+    </ActionGroup>
+  );
+  const workspaceStep: ReactNode =
+    !workspaceOn || !record ? null : ended ? (
+      <>
+        <EndingStep outbound={ended} receipt={record.agreement?.receipt ?? null} decision={decision} />
+        {waitsOnApproval ? <div className="mt-4">{approvalsButton}</div> : null}
+      </>
+    ) : awaitingBuyer && outbound ? (
+      <WaitingStep
+        offerId={offer.offer.offer_id}
+        outbound={outbound}
+        asked={askedWhileWaiting}
+        marked={marked?.message_when ?? null}
+        onWithdrawn={(text) => {
+          setMarked(null);
+          setWithdrawn(text);
+        }}
+        onBusy={setBusyBoth}
+      />
+    ) : clarifying ? (
+      <div className="space-y-3" data-testid="deal-clarify">
+        <StepHeading testId="deal-clarify-title">{record.waiting_for?.text ?? t("biz.deals.cannotEvaluate")}</StepHeading>
+        {plain.length ? (
+          <ul className="m-0 list-disc space-y-1 pl-5 text-[15px] text-ink" data-testid="deal-clarify-points">
+            {plain.map((a) => (
+              <li key={a.field}>{a.reason_when}</li>
+            ))}
+          </ul>
+        ) : null}
+        <ActionGroup testId="deal-actions" label={t("deals.actions")}>
+          <ButtonLink variant="primary" href={`/chat?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}`} data-testid="deal-clarify-action">
+            {t("biz.deals.clarify")}
+          </ButtonLink>
+        </ActionGroup>
+      </div>
+    ) : stateCode === "RECEIVED" ? (
+      <div className="space-y-3" data-testid="next-step">
+        <StepHeading>{record.state_text}</StepHeading>
+        <p className="max-w-[60ch] text-sm text-ink-2" data-testid="queue-check">
+          {t("deals.check.body")}
+        </p>
+        <ActionGroup testId="deal-actions" label={t("deals.actions")}>
+          <Button variant="primary" loading={checking} onClick={() => void check()} data-testid="queue-check-button">
+            {t("biz.deals.check")}
+          </Button>
+        </ActionGroup>
+        {error ? <ErrorState error={error} /> : null}
+      </div>
+    ) : (
+      <div className="space-y-3">
+        <StepHeading>{record.state_text}</StepHeading>
+        <RecordBlock record={record} decision={decision} />
+      </div>
+    );
+  const workspaceTerms: ReactNode =
+    !workspaceOn || !record ? null : awaitingBuyer && outbound && !ended ? (
+      outbound.actions?.accept.review?.terms?.length ? <TermsRows rows={reviewRows(outbound.actions.accept.review.terms, askedWhileWaiting)} /> : <TermSentences terms={outbound.terms} />
+    ) : ended ? (
+      ended.changes?.length ? null : <TermSentences terms={ended.terms} />
+    ) : record.interpretation?.terms?.length ? (
+      <TermSentences terms={record.interpretation.terms} />
+    ) : null;
+  const workspace = workspaceStep ? (
+    <Workspace record={record} terms={workspaceTerms} termsTitle={outbound?.terms_title_text ?? null} original={originalAsk} focusKey={`${stateCode}:${outbound?.answer ?? ""}`} focusOnMount={stateMoved}>
+      {workspaceStep}
+      {waitsOnApproval ? null : (
+        <div className="mt-5">
+          <RecordLink decision={decision} />
+        </div>
+      )}
+    </Workspace>
+  ) : null;
+  // The workspace's history replaces the separate Messages section (the original ask is its own fold).
+  const workspaceTabs = tabs.filter((k) => k !== "overview" && k !== "messages");
+
   const pane = (
     <section aria-labelledby={`${uid}-title`} className="min-w-0" data-testid="deal-pane" data-decision={decision} data-state={stateCode} data-view={current}>
       <Canonical want={view.view} have={current} onGo={onGo} />
@@ -471,7 +607,7 @@ export function DecisionPane({
             <p data-testid="deal-state-chip" data-state={stateCode}>
               <StatusPill tone={status.tone}>{status.text}</StatusPill>
             </p>
-            <StableTitle id={`${uid}-title`} ask={askTitle} fallback={nameFallback} />
+            <StableTitle id={`${uid}-title`} ask={record?.subject_text ?? (outbound || record?.reply_to ? (row?.subject_text ?? askTitle) : askTitle)} fallback={nameFallback} />
             {customerLine}
           </header>
           {agreedView && trackerRead?.next ? (
@@ -481,19 +617,28 @@ export function DecisionPane({
               </ButtonLink>
             </div>
           ) : null}
-          {agreedDeal ? <LifecycleStrip stages={lifeStages} scroll={!isMd} /> : null}
+          {/* The deal's four steps (the request, the counter sent, the buyer's answer, what came of it) once a counter went out outside FLOW, and before any send; an agreement made otherwise keeps its lifecycle. */}
+          {record && (outbound || (!agreedDeal && record.history?.length)) ? <HistoryStrip record={record} /> : agreedDeal ? <LifecycleStrip stages={lifeStages} scroll={!isMd} /> : null}
         </div>
+
+        {arrived ? (
+          // A buyer's reply the owner just pasted on the deal it answered: the server's sentence, here on the reply's own request.
+          <p role="status" className="flow-card max-w-full px-5 py-3 text-[15px] leading-snug text-ink sm:px-7" data-testid="deal-reply-arrived">
+            {arrived}
+          </p>
+        ) : null}
 
         {current !== "overview" ? sectionNav(tabs) : null}
 
         {current === "overview" && (reviewSlot || sent || outcome) ? (
           <div className="space-y-3" data-testid="deal-review-slot">
-            <div className={reviewing && (canSend || acceptMounted) ? "flow-card p-5 sm:p-7" : ""}>{reviewSlot}</div>
+            <div className={reviewing && (canSend || acceptMounted) ? "rounded-[24px] bg-card p-5 shadow-(--shadow-f) sm:p-7" : ""}>{reviewSlot}</div>
           </div>
         ) : null}
 
         {current === "overview" && (agreedView || agreedLoading) ? (
           <div className="space-y-5">
+          {workspace}
           <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview" data-agreed="true">
             {outcome ? <AcceptResult outcome={outcome} /> : null}
             {sent ? <SendResult n={sent} /> : null}
@@ -514,9 +659,23 @@ export function DecisionPane({
           </div>
         ) : current === "overview" && ready ? (
           <div id={`${uid}-panel-overview`} className="space-y-5" data-testid="deal-panel-overview">
+            {record?.reply_to ? (
+              <p className="flow-card px-5 py-3 text-sm sm:px-7" data-testid="deal-reply-to">
+                <Link href={record.reply_to.href} className={`${quietLink} px-0`}>
+                  {record.reply_to.title_text}
+                </Link>
+              </p>
+            ) : null}
+            {withdrawn ? (
+              <p role="status" className="flow-card px-5 py-3 text-[15px] text-ink sm:px-7" data-testid="deal-withdrawn">
+                {withdrawn}
+              </p>
+            ) : null}
             {sent ? <SendResult n={sent} /> : null}
             {outcome ? <AcceptResult outcome={outcome} /> : null}
             {abstentions}
+            {/* While the send review is open the offer is said once, in the review; the recommendation card comes back with the plain overview. */}
+            {reviewingSend ? null : (
             <Recommendation
               picture={picture!}
               asked={asked}
@@ -540,6 +699,7 @@ export function DecisionPane({
                 </>
               }
             />
+            )}
             <ChoicesTable
               paths={paths}
               recKey={recommended?.key ?? null}
@@ -561,6 +721,12 @@ export function DecisionPane({
                 ) : null
               }
             />
+            {/* The deal's one timeline, in this state too (a mark withdrawn stays on it beside the correction). */}
+            {record?.history?.length ? (
+              <div className="rounded-[24px] bg-card px-5 py-5 shadow-(--shadow-f) sm:px-7 sm:py-6">
+                <Timeline entries={record.history} />
+              </div>
+            ) : null}
             {sectionNav(
               tabs.filter((k) => k !== "overview"),
               lastItem,
@@ -571,23 +737,25 @@ export function DecisionPane({
               </p>
             ) : null}
           </div>
+        ) : current === "overview" && workspace ? (
+          <div id={`${uid}-panel-overview`} className="space-y-5" data-testid="deal-panel-overview">
+            {outcome ? <AcceptResult outcome={outcome} /> : null}
+            {workspace}
+            {workspaceTabs.length ? sectionNav(workspaceTabs) : null}
+          </div>
         ) : current === "overview" ? (
           <div className="space-y-5">
           <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview">
             <div className="space-y-4" data-testid="deal-level-decide">
               {done ? originalAsk : null}
               {abstentions}
-              {done || waitsOnApproval || stateCode === "NEEDS_CLARIFICATION" ? (
+              {done || waitsOnApproval || stateCode === "NEEDS_CLARIFICATION" || awaitingBuyer ? (
                 <>
                   {outcome ? <AcceptResult outcome={outcome} /> : null}
-                  {record ? <RecordBlock record={record} decision={decision} /> : null}
-                  {waitsOnApproval ? (
-                    <ActionGroup testId="deal-actions" label={t("deals.actions")}>
-                      <ButtonLink href={approvalId ? `/approvals#approval-${encodeURIComponent(approvalId)}` : "/approvals"} variant="primary" data-testid="deal-approvals-link">
-                        {t("next.toApprovals")}
-                      </ButtonLink>
-                    </ActionGroup>
+                  {record ? (
+                    <RecordBlock record={record} decision={decision} />
                   ) : null}
+                  {waitsOnApproval ? approvalsButton : null}
                   {sent ? <SendResult n={sent} /> : null}
                 </>
               ) : picture === undefined && n.error ? (
