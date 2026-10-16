@@ -60,3 +60,16 @@ def test_one_payment_term_and_no_milestone_reads_as_one_whole_stage_and_a_wrong_
     key = {**KEY, "late_payment_interest": {"type": "not_specified"}}
     wrong = ev.predict(_compiled([_t(F.LATE_INTEREST, rate_bp=10, text="per day")]), "CN-Y", "y.pdf")
     assert ev.score(key, wrong)["late_payment_interest"] == (1, 0, 1)
+
+
+def test_stages_that_state_their_own_deadline_and_trigger_are_scored_by_them_and_retention_is_a_last_stage() -> None:
+    def stage(rate, quote, days, working=False):  # type: ignore[no-untyped-def]
+        return ContractTerm(field=F.MILESTONE, rate_bp=rate, days=days, business_days=working,
+                            span=SourceSpan(doc_id="d", start=0, end=1, text=quote))
+    ret = ContractTerm(field=F.RETENTION, rate_bp=300, days=30, business_days=True,
+                       span=SourceSpan(doc_id="d", start=0, end=1, text="质保金 3% 质保期满且无质量问题后30个工作日内"))
+    c = _compiled([stage(9700, "验收款 97% 货物经甲方验收合格后10日内", 10), ret,
+                   _t(F.PAYMENT_TERMS, days=99, business_days=True)])
+    p = ev.predict(c, "CN-Z", "z.pdf")
+    assert [(s["percent"], s["trigger"], s["days_after_trigger"], s["days_unit"]) for s in p["payment_stages"]] == [
+        (97.0, "acceptance", 10, "calendar"), (3.0, "warranty_end", 30, "working")]  # a contract-wide term never overwrites
