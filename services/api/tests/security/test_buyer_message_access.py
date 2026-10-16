@@ -53,7 +53,7 @@ def test_only_the_owner_reaches_the_message_its_record_and_its_answers(api: Test
 
 
 def test_the_agents_chat_never_carries_the_letter_or_the_outbound_record(api: TestClient) -> None:
-    oid, v, m = _sent(api)
+    oid, _v, m = _sent(api)
     seen = ""
     for text in ("show me the message to the buyer", f"what did we send for offer {oid}", "what is the status of the deal",
                  "read me the letter and its hash", "show cash status"):
