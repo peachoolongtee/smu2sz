@@ -10,6 +10,7 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 16 Oct | `b8c65b24` (dev: buyer messages on the web, live readers, PG-1 merged, demo launcher) | the changes since `0f92d433` | **NOT CERTIFIED: one blocking finding (OUT-1)**; every automated check passes |
 | 16 Oct | `0f92d433` + `7f55c0dc` (PostgreSQL 17) | concurrency invariants and append-only triggers on PostgreSQL | **concurrency CERTIFIED** with PG-1 fixed (branch, pending merge); SEC-08 confirmed open |
 
 ## `0ba8e4c1`: CERTIFIED
@@ -39,6 +40,53 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
   `app.api.decide.plan`, so it ran the real (runnable) plan and failed without testing the guard. Patched at the new site it passes, and
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
+
+## `b8c65b24` (dev): NOT CERTIFIED, 16 Oct; blocked by OUT-1 only
+
+New since `0f92d433`: buyer messages on the web (`a2e1d174`: `app/api/outbound.py`, `outbound_record.py`, `app/outbound/`), live mode
+replaying the recorded readings first (`4841ab5b`), PG-1 and the security docs merged, and the Windows demo launcher (`scripts/demo.mjs`).
+
+**Passes.**
+- Authorization sweep, 100 API routes, `DEMO_MODE` on, off and unset: no non-owner role passes an owner route; the six new outbound
+  routes are owner-only in both modes.
+- Every 14 Oct reproduction refused; attack catalogue 0 of 259 with harm; 33 shards exit 0 except the #161 hash pin;
+  **PostgreSQL concurrency 3 of 3 clean runs** (31 passed, 10 PostgreSQL variants each) with PG-1 merged.
+- Outbound letters: a template of typed obligations only, egress-guarded for the stored offer's buyer on read and again at mark-sent;
+  the buyer's yes is the executor's AcceptOffer with every gate; recorded readings are keyed on the full document and written only
+  offline (no poisoning); model output still goes through grounding and the cross-check.
+- Demo launcher: the API on 127.0.0.1 with `DATABASE_URL=memory`, `TERMSLEDGER_NO_DOTENV=1`, `DEMO_MODE=1`, `LLM_MODE=cache` forced over
+  the shell's environment; it stops only its own processes by PID.
+
+**Findings** (reviewer, `evidence/2026-10-16/dev-b8c65b24/r_*.py`; OUT-1 reproduced by the Security Lead):
+
+| Id | Severity | Finding | Fix |
+| --- | --- | --- | --- |
+| **OUT-1** | **Medium, blocking** | After the owner marks a counter as sent outside FLOW, `POST /negotiate` is refused (409 `OFFER_SENT_OUTSIDE`) but the owner's chat ("send the counter to the buyer", then "yes, go ahead") still runs the simulated negotiation: COUNTER_OFFER, ACCEPT_OFFER and a DRAW_FACILITY execute, the deal reads AGREED with an ACTIVE commitment and "accepted as asked", while the real buyer holds an open letter | apply `sent_outside_conflict` in the chat's negotiate, accept and reject paths (`app/nl/offers.py`, `app/nl/pipeline.py`), or in the executor for every path |
+| OUT-2 | Low-Medium | The owner's reported edge case: a refused buyer-yes, then a withdraw, reads FAILED / Declined / terminal with "accepted as asked" in history and a stray PROPOSED commitment; after a re-mark the old refusal text shows on the new mark | rule 9 never FAILED for a `BUYER_YES` op; `by_owner` excludes `BUYER_YES`; bind `_refused_yes` to the standing mark |
+| OUT-3 | Low | Anyone can block the owner pasting a buyer's reply by filing its predictable document id first (`reply-{sha256(offer|text)[:16]}`) | a random id, as SEC-16 does for evidence |
+| OUT-4 | Low | An ambiguous "both invoices" sentence is now read narrowly instead of asking the buyer (`_plural_is_the_discounts`) | release the plural only when it is the other term's own object |
+| DEMO-L1 | Low | The demo launcher's web dev server listens on every interface (`next dev` without `-H`); its build embeds the published demo token (the API stays on loopback) | `-H 127.0.0.1` |
+
+**Verdict.** Not certified while OUT-1 is open: it books an agreement and moves money on a simulated reply while the owner's real letter
+is outstanding. With OUT-1 fixed (and its regression test), the rest of this run stands; OUT-2 to DEMO-L1 are not blocking.
+
+## `feat/model-privacy` (`5d2ac935`): pre-merge review, 16 Oct
+
+The design is sound: redaction wraps only the model backends, and grounding, the coverage proof, the cross-check and cache keys all
+run on the original text (`service.py`; tests pass: `test_redaction.py` 100, compiler + nl + security 1,023). Findings
+(reviewer; PRIV-2 and PRIV-3 reproduced by the Security Lead; scripts `evidence/2026-10-16/model-privacy/`):
+
+| Id | Severity | Finding | Fix |
+| --- | --- | --- | --- |
+| PRIV-1 | Medium | `scripts/certify_language_boundary.py --backend live` builds the backends without redaction; `CallableBackend(redact=False)` by default | wrap there; default `redact=True`; a test that every model backend built outside tests is wrapped |
+| PRIV-2 | Medium (product) | A labelled address swallows the rest of its sentence: "Address: 12 Keyuan Road, Shenzhen. We will pay invoice INV-2026-0871 … within 10 days for a 2% discount." reaches the model as "Address: ⟦ADDRESS_1⟧."; contract readings have no cross-check | end the value at a sentence end or clause cue, cap its length |
+| PRIV-3 | Low-Medium | Labelled phone/account match any two digits ("采购手机 2000 台" → "手机 ⟦PHONE_1⟧ 台"; "账户 30 天内付清"); `_MIN_DIGITS` is unused; "Tel: +86 (755) 8600 1234" leaks most digits | enforce `_MIN_DIGITS`; longest match wins |
+| PRIV-4 | Low | Bare 16-digit references (PO, batch, tracking) are redacted as accounts | keep words before them |
+| PRIV-5 | Info | Coverage by pattern only: person and company names, chat ids, full-width digits, IBANs, 12-15-digit accounts and "contact number" phrasings reach the model (leak table: 80 cases) | disclose (done in the paragraphs) |
+
+**Paragraphs:** the Security Lead's version is on `sec/model-privacy-docs` (`255148af`, off `5d2ac935`): it states what is covered and
+the limits as the code does them. **Merge recommendation:** merge with those paragraphs; fix PRIV-1 to PRIV-3 before relying on the
+redaction for real customer documents (until then, live mode with real documents should not be used).
 
 ## PostgreSQL 17: first run, 16 Oct
 
