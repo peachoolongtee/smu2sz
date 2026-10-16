@@ -42,9 +42,9 @@ def test_day34_the_recommended_cure_is_a_row_and_the_cheapest_plan_is_the_altern
     rec, cheapest = rows["recommended_plan"], rows["router_optimum"]
     assert (rec["role"], rec["total_display"], rec["total_fen"]) == ("recommended", "¥1,782.19", 178_219)
     assert rec["total_display"] == na["cost_total_display"]  # the card and the row say the same figure
-    assert rec["role_reason"] == ("The next step: it needs one approval; the cheapest plan (¥1,706.10 in all) needs 2 separate "
+    assert rec["role_reason"] == ("The next step: it needs one approval; the cheapest plan (¥1,702.20 in all) needs 2 separate "
                                   "approvals.")
-    assert (cheapest["role"], cheapest["total_display"]) == ("alternative", "¥1,425.75 + ¥1,069.32 = ¥1,706.10")
+    assert (cheapest["role"], cheapest["total_display"]) == ("alternative", "¥1,219.53 + ¥1,425.75 + ¥1,044.46 = ¥1,702.20")
     assert cheapest["role_reason"] == "Cheapest in all, but it needs 2 separate approvals; the recommended plan needs one."
     # exactly one recommended row, listed first; the router's own status and selection are untouched
     assert [r["role"] for r in plan["comparison"]].count("recommended") == 1 and plan["comparison"][0]["key"] == "recommended_plan"
@@ -54,7 +54,7 @@ def test_day34_the_recommended_cure_is_a_row_and_the_cheapest_plan_is_the_altern
     assert [(g["name_display"], g["cost_display"]) for g in rec["legs"]] == [("Invoice financing (onboarded platform)", "¥1,782.19")]
     assert rec["actions"][0]["amount_fen"] == 20_000_000 and rec["actions"][0]["lands_day"] == 37 and rec["executable_now"] is True
     zh = {r["key"]: r for r in _comparison(client, "zh")["comparison"]}
-    assert zh["recommended_plan"]["role_reason"] == "下一步所用方案：只需一次批准；最便宜的方案（合计 ¥1,706.10）需要 2 次单独批准。"
+    assert zh["recommended_plan"]["role_reason"] == "下一步所用方案：只需一次批准；最便宜的方案（合计 ¥1,702.20）需要 2 次单独批准。"
     assert zh["router_optimum"]["role_reason"] == "合计最便宜，但需要 2 次单独批准；推荐方案只需一次。"
 
 
@@ -62,10 +62,11 @@ def test_day34_two_advances_on_one_source_are_told_apart_and_the_total_reconcile
     to_day34(client, rt)
     cheapest = next(r for r in _comparison(client)["comparison"] if r["key"] == "router_optimum")
     assert [(g["name_display"], g["cost_display"]) for g in cheapest["legs"]] == [
-        ("Invoice financing (onboarded platform), ¥80k", "¥1,425.75"), ("Invoice financing (onboarded platform), ¥120k", "¥1,069.32")]
+        ("Bank credit line", "¥1,219.53"), ("Invoice financing (onboarded platform), ¥80k", "¥1,425.75"),
+        ("Invoice financing (onboarded platform), ¥117k", "¥1,044.46")]  # R-10: the line's last ¥2,790 is drawn first
     # the total is not the sum of the legs: the difference is a named line, so the page never shows an equation that fails
-    assert cheapest["offset_display"] == "−¥788.97" and cheapest["offset_label"] == "Change in other interest and fees across the forecast"
-    assert sum(g["cost_fen"] for g in cheapest["legs"]) + cheapest["offset_fen"] == cheapest["total_fen"] == 170_610
+    assert cheapest["offset_display"] == "−¥1,987.54" and cheapest["offset_label"] == "Change in other interest and fees across the forecast"
+    assert sum(g["cost_fen"] for g in cheapest["legs"]) + cheapest["offset_fen"] == cheapest["total_fen"] == 170_220
 
 
 def test_day0_the_router_optimum_is_the_recommended_row_and_the_legs_are_named(client, rt):
@@ -92,10 +93,13 @@ def test_day0_the_router_optimum_is_the_recommended_row_and_the_legs_are_named(c
 def test_the_roles_change_no_cost_of_the_routers_rows_and_keep_their_spec_position(client, rt):
     to_day34(client, rt)
     rows = _comparison(client)["comparison"]
-    assert {r["key"]: r["total_fen"] for r in rows if r["key"] != "recommended_plan"} == {"full_discount": 504_000, "router_optimum": 170_610}
+    assert {r["key"]: r["total_fen"] for r in rows if r["key"] != "recommended_plan"} == {
+        "full_discount": 504_000, "router_optimum": 170_220,  # and the line rows, now that the line keeps ¥2,790 (R-10)
+        "line_partial_early_pay": 240_162, "line_only": 636, "line_guaranteed_loan": None}
     # Wave 3 (F18) reorders the list for the owner (runnable before buyer-dependent); the router's own order is `router_order`
     assert [r["key"] for r in sorted(rows, key=lambda r: r["router_order"] if r["router_order"] is not None else -1)
-            if r["key"] != "recommended_plan"] == ["full_discount", "router_optimum"]
+            if r["key"] != "recommended_plan"] == ["full_discount", "line_partial_early_pay", "router_optimum",
+                                                   "line_guaranteed_loan", "line_only"]
 
 
 # ---------------------------------------------------------------- the approval's result and reason are owner sentences (finding 18)

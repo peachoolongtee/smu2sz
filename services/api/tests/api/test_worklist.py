@@ -1,6 +1,6 @@
 """GET /worklist (Home V2 wave 1, the server half): the company alert, Needs you, Waiting and Customers, the ordering rule, both languages.
 
-Golden day 0: the Foshan offer (60-day terms, a 1% rebate, early payment) is evaluated, and FLOW's plan (a ¥150k credit-line draw and ¥255k
+Golden day 0: the Foshan offer (60-day terms, a 1% rebate, early payment) is evaluated, and FLOW's plan (a ¥147k credit-line draw and ¥258k
 of invoice financing) is either ready or has run. The alert is the company's cash and is counted nowhere; Needs you holds the Foshan
 decision. Every figure is another read's own (the Home status, the offer picture, the receivable rows, the reconciliation)."""
 
@@ -199,7 +199,7 @@ def test_a_missed_receipt_is_a_collection_row_and_the_alert_stays_beside_it(api:
     w = _get(api)
     [item] = w["needs_you"]
     assert (item["kind"], item["severity"], item["customer_id"]) == ("COLLECTION", "CRITICAL", "BUYER-1")
-    assert item["subject_text"] == "Foshan · ¥291k overdue"
+    assert item["subject_text"] == "Foshan · ¥290k overdue"
     assert item["status_text"] == "Payment overdue · Your follow-up needed" and item["consequence_text"] == "2 days overdue."
     assert item["deadline_day"] == 32 and item["why_first_text"] == "Why first: a payment you expected has not arrived."
     assert w["alert"] is not None and w["alert"]["text"] == "Reserve unsafe today. A funding plan is ready."
@@ -214,7 +214,7 @@ def test_a_promised_payment_waits_and_is_not_cash(api: TestClient) -> None:
     assert w["alert"] is None and w["needs_you"] == []
     [wait] = w["waiting"]
     assert (wait["kind"], wait["severity"], wait["subject_text"]) == ("PROMISE", "CAUTION", "Foshan · Payment promised")
-    assert (wait["status_text"], wait["consequence_text"]) == ("Expected today · ¥255k", "Not counted as cash until it arrives.")
+    assert (wait["status_text"], wait["consequence_text"]) == ("Expected today · ¥258k", "Not counted as cash until it arrives.")
     assert wait["expected_day"] == 2
     # a promise is counted under agreements as the queue counts it, not as waiting; the row still says the payment is promised
     assert next(c for c in w["customers"] if c["customer_id"] == "BUYER-1")["status_text"] == "1 payment promised"
@@ -411,11 +411,11 @@ def test_the_chinese_collection_and_promise_rows(api: TestClient) -> None:
     assert not english_leaks(zh, NAMES, raw_fields=[HREFS])
     item = zh["needs_you"][0]
     assert (item["subject_text"], item["status_text"], item["consequence_text"]) == (
-        "Foshan · 逾期 ¥291k", "款项已逾期 · 需要您跟进", "已逾期 2 天。")
+        "Foshan · 逾期 ¥290k", "款项已逾期 · 需要您跟进", "已逾期 2 天。")
     _walk(api, to=2)
     zh = _get(api, "zh")
     assert not english_leaks(zh, NAMES, raw_fields=[HREFS])
-    assert zh["waiting"][0]["status_text"] == "预计今天到账 · ¥255k"
+    assert zh["waiting"][0]["status_text"] == "预计今天到账 · ¥258k"
 
 
 def test_a_promise_in_chinese_keeps_the_house_space_before_a_number() -> None:

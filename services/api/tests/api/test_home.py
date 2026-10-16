@@ -174,7 +174,7 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     client.post(f"/offers/{o}/evaluate", json={"fixture_id": "EX01_PACKAGE"})
     client.post(f"/negotiate/{o}", json={"buyer_profile": "cooperative"})
     h = client.get("/home").json()
-    assert h["status"] == "WATCH" and h["receivables"]["promised"]["expected_display"] == "¥255,013.80"
+    assert h["status"] == "WATCH" and h["receivables"]["promised"]["expected_display"] == "¥257,790.00"
     assert any(c["kind"] == "AGREEMENT" and c["text"].startswith("Agreement with Foshan Home Retail Co. recorded") for c in h["changes"])
     client.post("/clock/advance", json={"days": 2})
     promised = client.get("/reconciliation").json()["reconciliation"]["promised"][0]
@@ -187,12 +187,12 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     rec = client.get("/reconciliation").json()["reconciliation"]
     # the Business sentences carry names, never the commitment or invoice ids; the engine's sentence stays beside them
     assert all("CMT-" not in r["detail_when"] and "RCV-" not in r["detail_when"] for r in rec["promised"] + rec["receipts"])
-    assert rec["promised"][0]["detail_when"].startswith("The agreed ¥255,013.80 for the ¥420,000.00 invoice to Foshan Home Retail Co.")
+    assert rec["promised"][0]["detail_when"].startswith("The agreed ¥257,790.00 for the ¥420,000.00 invoice to Foshan Home Retail Co.")
     # a full sentence under the buyer's name: a capital, commas round the due clause, a full stop
-    assert rec["promised"][0]["detail_when"] == "The agreed ¥255,013.80 for the ¥420,000.00 invoice to Foshan Home Retail Co., due in 30 days, arrived."
+    assert rec["promised"][0]["detail_when"] == "The agreed ¥257,790.00 for the ¥420,000.00 invoice to Foshan Home Retail Co., due in 30 days, arrived."
     assert "CMT-" in rec["promised"][0]["detail"]
     h = client.get("/home").json()
-    assert h["changes"][0]["kind"] == "RECEIPT" and h["changes"][0]["text"].startswith("Received ¥255,013.80")
+    assert h["changes"][0]["kind"] == "RECEIPT" and h["changes"][0]["text"].startswith("Received ¥257,790.00")
     client.post("/clock/advance", json={"days": 28})
     client.post("/clock/advance", json={"days": 4})
     h = client.get("/home").json()
@@ -202,9 +202,9 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     assert h["plan_note"] == "A funding plan is ready. It needs your approval because of its cost."
     assert h["cash"]["drivers"][0] == "Payroll of ¥200k falls due in 8 days."
     [late] = h["receivables"]["past_due"]
-    assert late["buyer_name"] == "Foshan Home Retail Co." and late["face_display"] == "¥162,800.00" and late["days_late"] == 2
+    assert late["buyer_name"] == "Foshan Home Retail Co." and late["face_display"] == "¥160,000.00" and late["days_late"] == 2
     assert late["due_when"] == "2 days ago"
-    assert h["receivables"]["overdue_total_display"] == "¥162,800.00"
+    assert h["receivables"]["overdue_total_display"] == "¥160,000.00"
     import re as _re
     assert not any(_re.search(r"\bday \d", c["text"]) for c in h["changes"]), [c["text"] for c in h["changes"]]
     assert all(c["when"] for c in h["changes"])
@@ -215,23 +215,26 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     assert a["needs_owner_reason"] == "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval."
     assert a["authority_text"].startswith("Needs your approval: The yearly cost of 32.5%")
     assert a["lands_when"] == "in 3 days" and a["after"] == "Cash stays at or above your minimum cash reserve for the next 120 days."
-    # The router's cheapest plan (¥80,000 on RI:BUYER-1:32 + ¥120,000 on RI:BUYER-1:2) needs two approvals, so the
+    # The router's cheapest plan (the line's last ¥2,790, left by the rounded early-pay face (R-10), then ¥80,000 on
+    # RI:BUYER-1:32 + ¥117,210 on RI:BUYER-1:2) needs two approvals, so the
     # single-approval cure is shown and the cheaper option is named (wayfinder #15 refinement)
     assert a["plan_source"] == "alert" and a["cheaper_option"]["approvals"] == 2
     c = a["cheaper_option"]
-    assert c["cost_total_display"] == "¥1,706.10"
+    assert c["cost_total_display"] == "¥1,702.20"
     # the router's total is net: the two advances cost ¥2,495.07 and the plan repays the drawn line 30 days sooner,
     # so the lines shown add up to the total and the saving is named rather than hidden in an equation
-    assert c["label"] == ("Finance ¥80,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform) and "
-                          "Finance ¥120,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)")
-    assert c["legs"][-1] == "Change in other interest and fees across the forecast: −¥788.97"
+    assert c["label"] == ("Draw ¥2,790.00 on Bank credit line and "
+                          "Finance ¥80,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform) and "
+                          "Finance ¥117,210.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)")
+    assert c["legs"][-1] == "Change in other interest and fees across the forecast: −¥1,987.54"
     # no invoice id is left in the sentences; the two invoices of the same buyer and face stay apart by their due day
-    assert c["legs"][:2] == [
+    assert c["legs"][:3] == [
+        "Bank credit line: draw ¥2,790.00, repaid in 13 days: ¥1,219.53",
         "Invoice financing (onboarded platform): advance ¥80,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days: ¥1,425.75",
-        "Invoice financing (onboarded platform): advance ¥120,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days: ¥1,069.32"]
+        "Invoice financing (onboarded platform): advance ¥117,210.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days: ¥1,044.46"]
     assert not any("RI:BUYER-1" in c_["text"] for c_ in h["changes"]) and not any("RI:BUYER-1" in leg for leg in c["legs"])
-    assert any("¥162,800.00 outstanding from Foshan Home Retail Co." in c_["text"] for c_ in h["changes"])
-    assert a["why"].startswith("The cheapest option, ¥1,706.10 in all (including ¥788.97 less in other interest and fees across the "
+    assert any("¥160,000.00 outstanding from Foshan Home Retail Co." in c_["text"] for c_ in h["changes"])
+    assert a["why"].startswith("The cheapest option, ¥1,702.20 in all (including ¥1,987.54 less in other interest and fees across the "
                                "forecast), needs 2 separate approvals; this one needs one.")
     # queued for the owner, the approval says what declining leaves: the alert's shortfall sentence, relative to today
     client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})

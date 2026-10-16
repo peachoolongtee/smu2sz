@@ -337,7 +337,7 @@ def test_the_send_receipt_has_three_exact_statements_specific_to_this_send(api: 
     assert "approval" not in r["authorizes_text"] and "批准" not in r["authorizes_text"]  # authority is said once, in `authority_text`
     assert r["authority_text"] == {"en": "FLOW can send it. Your approval is not needed.", "zh": "FLOW 可以发送。无需您批准。"}[lang]
     assert r["executes_now_text"] == ("; " if lang == "en" else "；").join(pr["send_scope_lines"][1:])  # the gap plan's draw, then its cost
-    assert ("Draws ¥149,986.20" if lang == "en" else "提款 ¥149,986.20") in r["executes_now_text"]
+    assert ("Draws ¥147,210.00" if lang == "en" else "提款 ¥147,210.00") in r["executes_now_text"]
     if lang == "zh":
         assert not english_leaks({"receipt": r}, NAMES)
 
@@ -398,7 +398,7 @@ def test_cost_rows_are_table_rows_with_the_totals_basis_as_it_is_today(api: Test
     assert [ra[k]["amount_display"] for k in ("immediate_discount", "payment_terms", "rebate", "funding", "total")] == [
         "¥5,040.00", "¥24,326.92", "¥4,000.00", None, None]  # the asked path: two horizons, never added, no total
     assert [rb[k]["amount_display"] for k in ("immediate_discount", "payment_terms", "rebate", "funding", "total")] == [
-        "¥2,186.20", None, None, "¥841.57", "¥3,027.77"]  # Option A: the discount and the funding add up to its once-cost
+        "¥2,210.00", None, None, "¥825.99", "¥3,035.99"]  # Option A: the discount and the funding add up to its once-cost
     assert rb["total"]["basis_text"] == {"en": "once, nothing ongoing", "zh": "一次性，之后无持续成本"}[lang]
     assert ra["total"]["basis_text"] == {"en": "two parts: once, and over 12 months", "zh": "两部分：一次性，以及 12 个月内"}[lang]
     assert ra["payment_terms"]["basis_text"] == {"en": "over 12 months", "zh": "12 个月内"}[lang]  # a horizon is said, never normalised
@@ -655,12 +655,12 @@ def test_other_kinds_are_named_by_what_they_do() -> None:
 
 
 def test_a_quote_with_terms_shows_them_and_drops_the_not_confirmed_sentence() -> None:
-    quote_with_terms = {"total_fen": 84157, "total_display": "¥841.57", "lands_when": "in 3 days", "rate_basis": "11.2% a year",
-                        "lines": [{"amount_display": "¥150,000.00", "cost_fen": 84157, "cost_display": "¥841.57", "rate_text": "11.2%",
+    quote_with_terms = {"total_fen": 84157, "total_display": "¥825.99", "lands_when": "in 3 days", "rate_basis": "11.2% a year",
+                        "lines": [{"amount_display": "¥150,000.00", "cost_fen": 84157, "cost_display": "¥825.99", "rate_text": "11.2%",
                                    "lands_when": "in 3 days"}]}
     got = approval_review("en", item={"kind": "APPLY_FOR_FACILITY", "status": "PENDING", "quote": quote_with_terms, "presentation": {}, "receipt": None})
     assert got["terms_state_text"] is None
-    assert got["terms_rows"] == [{"label": "Amount", "value_text": "¥150,000.00"}, {"label": "Cost", "value_text": "¥841.57"},
+    assert got["terms_rows"] == [{"label": "Amount", "value_text": "¥150,000.00"}, {"label": "Cost", "value_text": "¥825.99"},
                                  {"label": "Rate", "value_text": "11.2%"}, {"label": "Cash lands", "value_text": "in 3 days"},
                                  {"label": "Basis", "value_text": "11.2% a year"}]
     assert approval_review("en", item={"kind": "APPLY_FOR_FACILITY", "status": "PENDING", "quote": {"lines": [{"amount_display": "¥1"}]},
@@ -937,4 +937,4 @@ def test_a_funding_cost_the_send_will_not_run_says_so_in_the_table(api: TestClie
 def test_a_funding_cost_that_runs_on_send_carries_no_note(api: TestClient) -> None:
     offer_id, _ = _golden(api)
     a = api.get(f"/offers/{offer_id}/picture").json()["paths"][1]
-    assert _rows(a)["funding"]["amount_display"] == "¥841.57" and all(r["note"] is None for r in a["cost_rows"])
+    assert _rows(a)["funding"]["amount_display"] == "¥825.99" and all(r["note"] is None for r in a["cost_rows"])

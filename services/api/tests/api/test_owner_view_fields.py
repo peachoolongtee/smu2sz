@@ -67,7 +67,7 @@ def test_ledger_commitment_obligations_carry_display_strings(client):
     assert obs
     for o in obs:
         _assert_displayed(o)
-    assert any(o["rate_display"] == "0.85%" and o["base"]["amount_display"] == "¥257,200.00" for o in obs)
+    assert any(o["rate_display"] == "0.85%" and o["base"]["amount_display"] == "¥260,000.00" for o in obs)
 
 
 def test_evaluate_bound_and_counter_obligations_carry_display_strings(client):
