@@ -470,14 +470,14 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
         </div>
       ) : null}
       <header className="sticky top-0 z-30 bg-canvas/80 backdrop-blur-md">
-        <div className="flex h-16 items-center justify-between gap-3 px-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:px-6">
+        <div className="flex h-16 items-center justify-between gap-3 px-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_max-content] lg:px-6">
           <Brand href={demo ? "/demo" : "/"} />
           {/* From lg Ask FLOW is the header's centre (the viewport's: the two outer columns are equal); a phone and a tablet have the pill and the bar's "Ask". */}
           {wide ? <AskHeaderInput /> : null}
           <div className="flex items-center justify-end gap-2 whitespace-nowrap lg:col-start-3">
             <ApprovalsBadge />
             {setup?.books === "own" ? null : (
-              <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
+              <span className="hidden sm:inline-flex lg:hidden xl:inline-flex" data-testid="demo-data-indicator">
                 <Badge tone="neutral" title={t("biz.demoData.hint")}>
                   {t("biz.demoData")}
                 </Badge>
