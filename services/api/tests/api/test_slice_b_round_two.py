@@ -255,8 +255,8 @@ def test_each_path_says_its_funding_assumption_and_its_terms_days(api: TestClien
     asked, a, b = pic["paths"]
     assert (asked["terms_days"], a["terms_days"], b["terms_days"]) == (60, 45, 55)
     assert asked["funding_assumption_text"] == {"en": "No new funding", "zh": "不新增融资"}[lang]
-    assert a["funding_assumption_text"] == {"en": "Funding plan required: ¥150k credit-line draw today",
-                                            "zh": "需要融资方案：信用额度提款 ¥150k（今天）"}[lang]
+    assert a["funding_assumption_text"] == {"en": "Funding plan required: ¥147k credit-line draw today",
+                                            "zh": "需要融资方案：信用额度提款 ¥147k（今天）"}[lang]
     assert b["funding_assumption_text"].startswith({"en": "Funding plan required: ", "zh": "需要融资方案："}[lang])
     if lang == "zh":
         assert not english_leaks({"p": [p["funding_assumption_text"] for p in pic["paths"]]}, NAMES)

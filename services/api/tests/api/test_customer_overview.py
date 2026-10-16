@@ -1,7 +1,7 @@
 """GET /customers/{id}/overview (map #88, ticket #108, the server half): the Customer overview read.
 
 Golden day 0: the Foshan offer (60-day terms, a 1% rebate, early payment) is evaluated, and FLOW's plan (a ¥147k credit-line draw and
-¥258k of invoice financing) is either waiting or has run. The read is composed from reads the other pages make, so the figures asserted
+¥255k of invoice financing) is either waiting or has run. The read is composed from reads the other pages make, so the figures asserted
 here are theirs: the receivable rows' financing words, the exposure block's stress and capacity, the offer picture's recommended path.
 The owner's inputs are written by the test (the Demo seeds none)."""
 
@@ -91,7 +91,7 @@ def _before(api: TestClient, rt: Runtime) -> str:
 
 
 def _after(api: TestClient, rt: Runtime) -> str:
-    """Golden day 0 after the plan ran: ¥150k drawn, ¥258k of invoice financing arriving in 3 days."""
+    """Golden day 0 after the plan ran: ¥150k drawn, ¥255k of invoice financing arriving in 3 days."""
     offer_id = _offer(api)
     _run_plan(api)
     _economics(rt)
@@ -126,7 +126,7 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
     assert (value["label"], value["value_display"], value["note"]) == ("Relationship value", "about ¥1.09m", "a year, estimated contribution; margin assumed for the Demo, not confirmed by you")
     assert (owed["value_display"], owed["note"], owed["tone"]) == ("¥420,000", "due in 32 days, nothing overdue", "neutral")
     assert (financing["label"], financing["value_display"], financing["note"]) == (
-        "Financing linked", "¥255,000", "¥258k financing planned against Foshan's invoice · not yet received")  # the plan's advance, planned and not counted
+        "Financing linked", "¥255,000", "¥255k financing planned against Foshan's invoice · not yet received")  # the plan's advance, planned and not counted
     assert (financing["state"], financing["state_text"]) == ("planned", "Planned")
     assert (share["value_display"], share["note"], share["tone"]) == (
         "100%", "100% of currently open receivables", "warn")
@@ -240,7 +240,7 @@ def test_the_chinese_page_has_the_same_figures_and_no_english_left(api, rt):
     assert english_leaks(zh, NAMES, raw_fields=[HREFS]) == []
     assert unchanged_words(en, zh, NAMES, raw_fields=[HREFS]) == []
     assert [f["value_display"] for f in zh["figures"]] == ["约 ¥109万", "¥420,000", "¥255,000", "100%"]
-    assert zh["figures"][2]["note"] == "计划融资 ¥258k，以Foshan的发票做融资 · 尚未到账" and (zh["figures"][2]["state"], zh["figures"][2]["state_text"]) == ("planned", "计划中")
+    assert zh["figures"][2]["note"] == "计划融资 ¥255k，以Foshan的发票做融资 · 尚未到账" and (zh["figures"][2]["state"], zh["figures"][2]["state_text"]) == ("planned", "计划中")
     assert zh["figures"][1]["note"] == "32 天后到期，没有逾期"
     assert zh["figures"][3]["note"] == "占当前未收应收款的 100%"
     assert zh["decision"]["eyebrow"] == "有一项商务决定等待您处理"
@@ -847,8 +847,8 @@ def test_the_financing_figure_moves_planned_arranged_received_in_the_one_vocabul
                                      "share": ("none", "")}
     assert _states(b["exposure"]["rows"])["financing"] == ("planned", planned)  # the plan is ready and has not run: nothing is financed yet
     assert _fig(b, "financing")["value_display"] == "¥255,000"  # the plan's advance, not "None": it reads as planned and is not counted
-    assert _fig(b, "financing")["note"] == ("¥258k financing planned against Foshan's invoice · not yet received" if lang == "en"
-                                            else "计划融资 ¥258k，以Foshan的发票做融资 · 尚未到账")
+    assert _fig(b, "financing")["note"] == ("¥255k financing planned against Foshan's invoice · not yet received" if lang == "en"
+                                            else "计划融资 ¥255k，以Foshan的发票做融资 · 尚未到账")
     _run_plan(api)
     b = _get(api, lang=lang)
     seen.append(_fig(b, "financing")["state_text"])
