@@ -33,6 +33,7 @@ from app.api.offers import router as offers_router
 from app.api.operations import router as operations_router
 from app.api.outbound import router as outbound_router
 from app.api.pilot import router as pilot_router
+from app.api.ratelimit import middleware as rate_limit
 from app.api.read import router as read_router
 from app.api.receivables import router as receivables_router
 from app.api.setup import router as setup_router
@@ -52,6 +53,9 @@ install_error_handlers(app)  # a conflict that survives the retries is a 409 wit
 # SEC-12: every response (the API also serves the borrower file as HTML) is never sniffed, never framed and sends no referrer
 SECURITY_HEADERS = {"X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Content-Security-Policy": "frame-ancestors 'none'",
                     "Referrer-Policy": "no-referrer"}
+
+
+app.middleware("http")(rate_limit)  # SEC-20: per-caller request rate limits (app/api/ratelimit.py); added first, so it runs inside CORS
 
 
 @app.middleware("http")

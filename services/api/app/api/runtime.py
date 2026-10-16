@@ -363,6 +363,9 @@ def get_runtime() -> Runtime:
 def set_runtime(rt: Runtime | None) -> None:
     """Tests inject an in-memory runtime."""
     global _runtime, _failure
+    from app.api import ratelimit
+
     with _opening:
         _runtime = rt
         _failure = None
+        ratelimit.reset()  # a new runtime starts with empty request buckets (SEC-20)
