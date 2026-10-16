@@ -31,9 +31,10 @@ SUSPECTED = code reading only. Severity is for the stated scope; **S** = hackath
 | CAPEX-4b | (capex) a confirmed contract whose buyer party names a real supplier makes later purchases from that supplier refused as "your own business" (fails safe: refuses, never books) | Low | CONFIRMED on `b6d1e519` | open |
 | SETUP-1..7 | (capex branch) setup feature: see `CERTIFICATIONS.md`; SETUP-1, 4, 5, 7 fixed on `b6d1e519`, SETUP-2, 3, 6 open (Low/Info) | Low-Med to Info | CONFIRMED / reviewer | partly fixed |
 | SEC-23 | Red team d F1 test patched a function the code no longer called after `c51a7284`, so the no-deal guard was untested (guard itself intact) | Low (coverage) | CONFIRMED | **fixed** `1b58291f`, merged in `bbbfb7ce` |
+| PG-1 | PostgreSQL: two API processes opening the store at once raced on the catalog (one failed to start), and a crashed worker's open transaction held up the guard's DDL on restart | Low (availability; nothing executed) / Medium if several workers | CONFIRMED (PostgreSQL 17, 16 Oct) | **fixed** `sec/pg-guard-install-lock` 7f55c0dc, pending merge |
 | SEC-06 | No runnable production configuration (compose cannot start; web build points at localhost) | n/a / High | CONFIRMED (code) | open |
 | SEC-07 | `DEMO_MODE` defaults on; published credentials and committed demo signing key = owner takeover outside compose | Info / High | CONFIRMED (code) | **fixed, certified on `0f92d433`** (default off) |
-| SEC-08 | Audit trail not tamper-evident (R-13): truncation/rewrite verify; approvals and security events unguarded; approval flip executes a rejected op | Medium / High | CONFIRMED (SQLite) | open |
+| SEC-08 | Audit trail not tamper-evident (R-13): truncation/rewrite verify; approvals and security events unguarded; approval flip executes a rejected op | Medium / High | CONFIRMED (SQLite 14 Oct; PostgreSQL 17 incl. the reset-setting bypass, 16 Oct) | open |
 | SEC-09 | Bank-feed key moves the clock without bound: expires the mandate, posts debt service, logged as SYSTEM | Medium / Medium | CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** |
 | SEC-10 | Unauthenticated callers grow `security_events` without bound; each refusal reads the whole table | Medium / Medium | REVIEWER-CONFIRMED | **fixed, merged `0ba8e4c1`, certified 16 Oct** (401 rate limit at the proxy remains) |
 | SEC-11 | Multi-process unsafe: stale clock books backdated ops; route checks rely on a per-process lock | Info / High | CONFIRMED (two runtimes, one SQLite) | open |
@@ -286,7 +287,7 @@ Unverified areas and blockers are listed at the end; they are not passes.
 
 | Area | Why unverified | Needed |
 |---|---|---|
-| PostgreSQL concurrency, triggers, GUC bypass (SEC-08) | no Docker, no PostgreSQL; WSL install needs sudo | a throwaway local PostgreSQL 16 and `TERMSLEDGER_TEST_DATABASE_URL` |
+| PostgreSQL concurrency, triggers, GUC bypass (SEC-08) | **done 16 Oct** on a local PostgreSQL 17: concurrency certified with PG-1 fixed; SEC-08 confirmed | — |
 | Live-model language boundary (231 items) and live prompt injection | no model API key available to this session | a test-only key, budget approval |
 | Full attack catalogue on current code | was blocked by SEC-01 | **done** on `sec/attack-harness`: 126 API + 133 NL, 0 harm (covers only the 21 routes the catalogue attacks) |
 | 55 of 76 routes never attacked by the catalogue | catalogue last changed 5 Oct | partially covered by this audit's targeted tests (accept/decline, alerts, demo routes, clock, intake); no catalogue entries yet |
