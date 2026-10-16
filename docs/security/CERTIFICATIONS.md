@@ -7,7 +7,8 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
 |---|---|---|---|
 | 16 Oct | `0ba8e4c1` (dev) | security fixes 1-5 (SEC-01..05, 09, 10, 16..18) as merged | **CERTIFIED** |
 | 16 Oct | `081541d1` via dev head `a6de32a2` | SEC-12/13 headers as merged; all security fixes as they stand on dev with round three and Dylan's UI | **CERTIFIED** (one stale test fixed on `sec/redteam-d-patch-target`) |
-| 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | **pre-merge: GO to merge dev into it**; certification is on the merge commit |
+| 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
+| 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 
 ## `0ba8e4c1`: CERTIFIED
 
@@ -25,7 +26,7 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
 - `sec/headers` (6ed44ba5) is an ancestor of `081541d1`; `081541d1` and `0ba8e4c1` are on `origin/dev`. From `081541d1` to `a6de32a2`
   only `app/api/worklist.py` and `app/nl/reads.py` change in `services/api/app` (6 lines).
 - Evidence on `a6de32a2` (`evidence/2026-10-16/dev-a6de32a2/`):
-  - authorization sweep, 81 routes, `DEMO_MODE` on and off: no non-owner role passes an owner route; `/docs`, `/redoc`, `/openapi.json`
+  - authorization sweep, 78 API routes plus the docs routes, `DEMO_MODE` on and off: no non-owner role passes an owner route; `/docs`, `/redoc`, `/openapi.json`
     404 with `DEMO_MODE=0`; the bank-feed key gets 403 on `/clock/advance`;
   - the 14 Oct reproductions all refused: anonymous document overwrite 409, oversized intake 413, agent-tripped circuit no longer blocks the
     owner's accept, agent pre-claimed decline key no longer blocks the owner's decline, bank-feed clock 403, one live agreement only;
@@ -37,6 +38,25 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
 
+## `b6d1e519` (capex merge): CERTIFIED, 16 Oct
+
+- Contents verified: `8911fb21`, `bbbfb7ce`, `1b58291f` and all of `origin/dev` (`a6de32a2`) are ancestors.
+- CAPEX-1..3 re-run (`evidence/2026-10-14/capex_probe_test.py`, `evidence/2026-10-16/capex-b6d1e519/capex_probe_v3_test.py`): every
+  original exploit refused (150% retention and discount inflows, double commit, agent-queued purchase).
+- CAPEX-4 fixed (company-key comparison): punctuation variant and a changed buyer party refused; different companies, including
+  "Lingnan Homeware Trading Co., Ltd.", accepted. **CAPEX-4b (Low, open):** a confirmed contract whose buyer party names a real supplier
+  makes later purchases from that supplier refused as "your own business" (fails safe: refuses, never books).
+- SETUP-1 fixed (touched blank books refused, nothing erased: 3 ops and 2 security events kept); SETUP-4 (5,000,000-digit amount → 
+  validation error, no 500); SETUP-5 (20,000-bill preview rejected in 0.2 s, 3,000-bill open 422); SETUP-7 (owner preview with
+  `DEMO_MODE=0` → 403 `SETUP_REFUSED`, `evidence/2026-10-16/t10_preview_prod.py`). SETUP-2, 3, 6 open (Low/Info), as the team stated.
+- Authorization sweep, 94 API routes plus the docs routes, `DEMO_MODE` on and off: no non-owner role passes an owner route; the setup
+  routes refuse every non-owner role.
+- 14 Oct reproductions still refused (anonymous overwrite 409, oversized intake 413, owner accept not blocked by an agent-tripped
+  circuit, bank-feed clock 403, one live agreement).
+- Attack catalogue: 126 API + 133 NL attacks, 0 with harm. 31 test shards: all exit 0 except `tests/books` (digest pin) and
+  `tests/deals/test_lang.py` (×2), the three pre-existing dev items tracked in issue #161.
+- Evidence: `evidence/2026-10-16/capex-b6d1e519/`.
+
 ## `8911fb21` (capex buy side): pre-merge review, 16 Oct
 
 Re-ran the 14 Oct exploits (`evidence/2026-10-14/capex_probe_test.py`) and new variants (`evidence/2026-10-16/capex_probe_v2_test.py`):
@@ -47,7 +67,7 @@ Re-ran the 14 Oct exploits (`evidence/2026-10-14/capex_probe_test.py`) and new v
 | CAPEX-2 agent-authored commit, card | **fixed**: agent `COMMIT_PURCHASE` (even claiming OWNER) → REFUSED `INSUFFICIENT_AUTHORITY`, PRIVILEGE_ESCALATION event, nothing queued; card shows vendor, contract, each payment |
 | CAPEX-3 double commit | **fixed**: same text twice → refused; near-copy under another vendor id → refused. Residual: a copy with a changed contract reference (`…114A`) commits as a separate purchase; it shows as a different contract on the card (owner's judgment) |
 | CAPEX-4 vendor = own business | **partly fixed**: exact name refused, but "Lingnan Homeware Manufacturing Co. Ltd" (punctuation variant) and the exact name with the contract's buyer party changed are both registered as the vendor. Low. Fix: compare with punctuation stripped, and against the business's registered name, not only the contract's buyer party |
-| Route authorization | all 97 routes (15 capex/setup) refuse every non-owner role, `DEMO_MODE` on and off; demo credentials refused with `DEMO_MODE=0` (`evidence/2026-10-16/capex_sweep_*.json`) |
+| Route authorization | all 94 API routes (15 capex/setup) and the docs routes refuse every non-owner role, `DEMO_MODE` on and off; demo credentials refused with `DEMO_MODE=0` (`evidence/2026-10-16/capex_sweep_*.json`) |
 | Branch tests | `tests/api/test_capex_security.py`, `test_capex_attacks.py`, `tests/capex`: pass |
 
 New setup feature (reviewer, two items reproduced by the Security Lead; scripts `evidence/2026-10-16/t*.py`). Every item needs the owner
