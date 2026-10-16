@@ -259,8 +259,9 @@ body {
   outline-offset: 2px;
 }
 
-/* The Ask FLOW fields (the header bar and the panel's box) show focus by their own border turning ink, not the ring. */
-.ask-field:focus-visible {
+/* The Ask FLOW fields (the header bar and the panel's box) and the worklist search show focus by their own border turning ink, not the ring. */
+.ask-field:focus-visible,
+.search-field:focus-visible {
   outline: none;
 }
 

@@ -149,7 +149,7 @@ test("in Chinese the title, the search and the tabs are Chinese; at 390 px nothi
   await page.goto("/activity");
   await expect(page.getByTestId("activity-read")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).not.toHaveText("Activity");
-  await expect(page.getByTestId("activity-search")).toHaveAttribute("placeholder", "搜索记录");
+  await expect(page.getByTestId("activity-search")).toHaveAttribute("placeholder", "按客户或事件搜索");
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });
 

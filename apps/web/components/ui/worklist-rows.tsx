@@ -66,10 +66,10 @@ export function UnderlineTabs<T extends string>({ label, value, onChange, tabs, 
   );
 }
 
-/** The search: an icon, the field and one bottom hairline (no box). */
+/** The search: a soft filled pill with the icon and the field (no border); focus lifts it to white with a purple hairline ring. */
 export function WorklistSearch({ value, onChange, label, testId, found, foundTestId }: { value: string; onChange: (v: string) => void; label: string; testId?: string; found?: string; foundTestId?: string }) {
   return (
-    <div className="flex h-10 min-w-0 items-center gap-2 border-b border-line-ui px-0.5 text-ink-3 focus-within:border-ink">
+    <div className="flex h-10 min-w-0 items-center gap-2 rounded-pill bg-subtle px-3.5 text-ink-2 transition-colors duration-(--dur-fast) focus-within:bg-card focus-within:ring-1 focus-within:ring-f-purple">
       <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden className="shrink-0">
         <circle cx="7" cy="7" r="4.75" />
         <path d="m10.6 10.6 3 3" />
@@ -80,7 +80,7 @@ export function WorklistSearch({ value, onChange, label, testId, found, foundTes
         onChange={(e) => onChange(e.target.value)}
         aria-label={label}
         placeholder={label}
-        className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
+        className="search-field h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-2"
         data-testid={testId}
       />
       {found !== undefined ? (
