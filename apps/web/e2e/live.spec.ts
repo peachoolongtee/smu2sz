@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal as readDeal, openCashOptions, openCompare, openOperatorTools, openReview, runPlan, sendCounter, walkStory } from "./helpers";
+import { checkedDeal as readDeal, demoMode, openCashOptions, openCompare, openOperatorTools, openReview, runPlan, sendCounter, walkStory } from "./helpers";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
@@ -527,6 +527,7 @@ const ownerPost = (request: APIRequestContext): Post => async (path, data, heade
 };
 
 test("Deals: Send carries what was shown, and the record's state follows: Agreed, then Fulfilled once the receipt came", async ({ page, request }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   const post = ownerPost(request);
   await post("/demo/reset", {});
   const sends: { buyer_profile?: string; verdict_id?: string; counter_id?: string; state_version?: unknown }[] = [];
@@ -569,6 +570,7 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
 });
 
 test("Deals: with no receipt on day 2 the line says the early payment did not arrive, and the agreement stays listed", async ({ page, request }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   const post = ownerPost(request);
   await post("/demo/reset", {});
   const pictures: string[] = [];
@@ -597,6 +599,7 @@ test("Deals: with no receipt on day 2 the line says the early payment did not ar
 });
 
 test("Deals: if the books moved after the proposal was shown, Send is refused, nothing is sent, and Check again gets a current one", async ({ page, request }) => {
+  await demoMode(page); // the simulated send is the Demo's only
   const post = ownerPost(request);
   await post("/demo/reset", {});
   await checkedDeal(page);

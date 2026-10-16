@@ -692,7 +692,8 @@ def _waiting_eyebrow(r: _Read) -> str:
     """"One commercial decision waits for you" counts the customer's own open decisions the way the Deals queue does (a reply waiting on the buyer or on an
     approval is not one of them): "Three commercial decisions wait for you"."""
     n = max(1, sum(1 for _view, st, ds in open_deals(r.ctx, r.lang)
-                   if ds.offer.counterparty_id == r.buyer_id and st not in (DealState.NEEDS_CLARIFICATION, DealState.AUTHORIZATION_REQUIRED)))
+                   if ds.offer.counterparty_id == r.buyer_id
+                   and st not in (DealState.NEEDS_CLARIFICATION, DealState.AUTHORIZATION_REQUIRED, DealState.AWAITING_BUYER)))
     if n == 1:
         return t(r.lang, "One commercial decision waits for you", "有一项商务决定等待您处理")
     word = _NUMBER_EN[n].capitalize() if n < len(_NUMBER_EN) else str(n)
@@ -722,7 +723,7 @@ def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] |
             "primary": {"label": t(lang, "Read the offer", "阅读报价"), "href": f"/deals?decision={_quoted(r.decision_id() or '')}"},
             "secondary": actions}, none
     said = f"{wants} {offer['action_text']}" if lang != "zh" else f"{wants}{offer['action_text']}"
-    if r.offer_state == DealState.NEEDS_CLARIFICATION:  # the buyer's turn: nothing waits for the owner, as every other read says
+    if r.offer_state in (DealState.NEEDS_CLARIFICATION, DealState.AWAITING_BUYER):  # the buyer's turn: nothing waits for the owner, as every other read says
         return {
             "kind": "awaiting_buyer", "eyebrow": t(lang, "Waiting for the buyer", "等待买方"), "text": said,
             "headline_short": None, "authority_text": None,

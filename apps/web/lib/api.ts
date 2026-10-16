@@ -14,6 +14,16 @@ import { ApiError } from "./errors";
 import type { CustomerContext } from "./customer-href";
 import type {
   AcceptRequest,
+  BuyerAcceptedRequest,
+  BuyerAcceptedResult,
+  BuyerDeclinedRequest,
+  BuyerDeclinedResult,
+  BuyerMessageRefusal,
+  BuyerMessageView,
+  BuyerReplyRequest,
+  BuyerReplyResult,
+  OfferedRequest,
+  OfferedResult,
   AcceptResult,
   DeclineResult,
   ActivityView,
@@ -155,6 +165,38 @@ export async function acceptOffer(offerId: string, req: AcceptRequest): Promise<
 /** POST /offers/{id}/decline: the owner declines the request; nothing moves and the request closes. */
 export async function declineOffer(offerId: string, req: AcceptRequest): Promise<DeclineResult> {
   return isMock ? (await mock()).declineOffer(offerId, req) : (await live()).declineOffer(offerId, req);
+}
+
+/** GET /offers/{id}/counters/{counter}/message?lang=&ui_lang=: the message to the buyer for one counter, written in the buyer's language `lang`, every word around it in the page's `uiLang` (ADR-0011 addendum). FLOW sends nothing. */
+export async function getBuyerMessage(offerId: string, counterId: string, lang: "en" | "zh", uiLang: "en" | "zh"): Promise<BuyerMessageView> {
+  return isMock ? (await mock()).getBuyerMessage(offerId, counterId, lang, uiLang) : (await live()).getBuyerMessage(offerId, counterId, lang, uiLang);
+}
+
+/** POST .../offered: the owner sent the message themself. Records that and nothing else (no agreement, no money); a 409 records nothing and carries the server's words. */
+export async function markOffered(offerId: string, counterId: string, req: OfferedRequest): Promise<OfferedResult> {
+  return isMock ? (await mock()).markOffered(offerId, counterId, req) : (await live()).markOffered(offerId, counterId, req);
+}
+
+/** POST .../buyer-accepted: the owner records the buyer's yes to the counter they sent; the agreement is made (or queued for approval) under the owner's authority. */
+export async function buyerAccepted(offerId: string, counterId: string, req: BuyerAcceptedRequest): Promise<BuyerAcceptedResult> {
+  return isMock ? (await mock()).buyerAccepted(offerId, counterId, req) : (await live()).buyerAccepted(offerId, counterId, req);
+}
+
+/** POST .../buyer-declined: the owner records the buyer's no, with the reason they gave as a code. Nothing is agreed or funded; the deal ends as no deal. */
+export async function buyerDeclined(offerId: string, counterId: string, req: BuyerDeclinedRequest): Promise<BuyerDeclinedResult> {
+  return isMock ? (await mock()).buyerDeclined(offerId, counterId, req) : (await live()).buyerDeclined(offerId, counterId, req);
+}
+
+/** POST /offers/{id}/buyer-reply: the buyer answered with terms of their own; the reply becomes a request of its own and this deal closes as answered. */
+export async function buyerReply(offerId: string, req: BuyerReplyRequest): Promise<BuyerReplyResult> {
+  return isMock ? (await mock()).buyerReply(offerId, req) : (await live()).buyerReply(offerId, req);
+}
+
+/** The structured refusal of a message route (409 with a `code`), else null. */
+export function messageRefusal(e: unknown): BuyerMessageRefusal | null {
+  if (!(e instanceof ApiError) || e.status !== 409) return null;
+  const d = e.detail as { code?: unknown } | undefined;
+  return d && typeof d === "object" && typeof d.code === "string" ? (d as BuyerMessageRefusal) : null;
 }
 
 /**

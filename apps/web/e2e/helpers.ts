@@ -108,7 +108,18 @@ export async function walkAway(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/verdict/);
 }
 
-/** Send, from the open review: the receipt on screen is the review and the one commit button sends (the page's "Review and send the counter" opens it first; `openReview`). `scope` holds the button. */
+/** Demo mode from the first page on (the stored mode, as the shell's switch keeps it): the simulated send, its receipt and its buyer's lean are the Demo's only (ADR-0011 addendum, round two). Call before the first `goto`. */
+export async function demoMode(page: Page): Promise<void> {
+  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "demo" })));
+}
+
+/** The stored mode switched in place (the page is reloaded at the same address; the session's books stay): a spec that reads Business mode and then sends to the simulated buyer. */
+export async function switchMode(page: Page, mode: "demo" | "business"): Promise<void> {
+  await page.evaluate((m) => localStorage.setItem("tl-mode", JSON.stringify({ mode: m })), mode);
+  await page.reload();
+}
+
+/** Send to the simulated buyer, from the open review's Demo-only row (the page must be in Demo mode: `demoMode`; "Review and send the counter" opens the review first: `openReview`). `scope` holds the button. */
 export async function sendCounter(scope: Page | Locator): Promise<void> {
   await scope.getByTestId("deal-send").click();
 }

@@ -13,6 +13,15 @@ import { serverScenario } from "../selection";
 import type {
   AcceptRequest,
   AcceptResult,
+  BuyerAcceptedRequest,
+  BuyerAcceptedResult,
+  BuyerDeclinedRequest,
+  BuyerDeclinedResult,
+  BuyerMessageView,
+  BuyerReplyRequest,
+  BuyerReplyResult,
+  OfferedRequest,
+  OfferedResult,
   DeclineResult,
   ActivityView,
   DemoRestoreResult,
@@ -180,6 +189,17 @@ export const live = {
   /** POST /offers/{id}/accept and /decline (accept as asked): the verdict and books version the owner was shown; a 409 refuses with the server's words and moves nothing. */
   acceptOffer: (offerId: string, req: AcceptRequest) => http<AcceptResult>("POST", `/offers/${enc(offerId)}/accept`, { body: req }),
   declineOffer: (offerId: string, req: AcceptRequest) => http<DeclineResult>("POST", `/offers/${enc(offerId)}/decline`, { body: req }),
+
+  /** The message to the buyer for one counter (ADR-0011 addendum): `lang` is the buyer's language (the message), `uiLang` the page's (every word around it). */
+  getBuyerMessage: (offerId: string, counterId: string, lang: "en" | "zh", uiLang: "en" | "zh") =>
+    http<BuyerMessageView>("GET", `/offers/${enc(offerId)}/counters/${enc(counterId)}/message?lang=${lang}&ui_lang=${uiLang}`),
+  /** "I've sent it to the buyer": bound to the verdict, the books and the exact message the owner copied; a 409 refuses with the server's words and records nothing. */
+  markOffered: (offerId: string, counterId: string, req: OfferedRequest) => http<OfferedResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/offered`, { body: req }),
+  buyerAccepted: (offerId: string, counterId: string, req: BuyerAcceptedRequest) =>
+    http<BuyerAcceptedResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/buyer-accepted`, { body: req }),
+  buyerDeclined: (offerId: string, counterId: string, req: BuyerDeclinedRequest) =>
+    http<BuyerDeclinedResult>("POST", `/offers/${enc(offerId)}/counters/${enc(counterId)}/buyer-declined`, { body: req }),
+  buyerReply: (offerId: string, req: BuyerReplyRequest) => http<BuyerReplyResult>("POST", `/offers/${enc(offerId)}/buyer-reply`, { body: req }),
 
   planFunding: (req: PlanRequest, lang: "en" | "zh" = "en") => http<FundingView>("POST", lang === "zh" ? "/router/plan?lang=zh" : "/router/plan", { body: req }),
 

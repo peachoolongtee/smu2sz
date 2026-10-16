@@ -1,4 +1,4 @@
-"""The durable decision record (ADR-0011): a read model over the canonical stores plus three small stored facts.
+"""The durable decision record (ADR-0011): a read model over the canonical stores plus a few small stored facts.
 
 Pure: this package imports only `app.domain` and `app.persistence.records`. It computes no money, prices no past moment and
 grants no authority. No engine module (`app.financial`, `app.verifier`, `app.funding`, `app.alerts`, `app.operations`,
@@ -6,6 +6,8 @@ grants no authority. No engine module (`app.financial`, `app.verifier`, `app.fun
 """
 
 from app.decisions.facts import (
+    BuyerAcceptedFact,
+    BuyerDeclinedFact,
     CounterEconomics,
     DecisionFactStore,
     EvaluatedFact,
@@ -13,8 +15,11 @@ from app.decisions.facts import (
     GapLeg,
     GapPlan,
     IfDecline,
+    OfferedFact,
     QuotedFact,
     QuotedLeg,
+    ReceivedFact,
+    RepliedFact,
     SentFact,
     body_json,
     parse_fact,
@@ -45,6 +50,8 @@ from app.decisions.state import (
 )
 
 __all__ = [
+    "BuyerAcceptedFact",
+    "BuyerDeclinedFact",
     "CounterEconomics",
     "DealState",
     "DecisionFactStore",
@@ -56,9 +63,12 @@ __all__ = [
     "GapLeg",
     "GapPlan",
     "IfDecline",
+    "OfferedFact",
     "Party",
     "QuotedFact",
     "QuotedLeg",
+    "ReceivedFact",
+    "RepliedFact",
     "Residual",
     "SentFact",
     "WaitCode",
