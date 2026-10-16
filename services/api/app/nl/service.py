@@ -93,12 +93,23 @@ class _TurnContext(NlContext):
         return bundle
 
 
+def _principal(req: NlRequest, owner_authenticated: bool) -> str:
+    """Who is speaking, for binding the session (SEC-21): the owner, the agent (the owner channel without the owner token), a buyer
+    whose channel key the API verified, or an anonymous sender, whatever id it claims."""
+    if req.actor == "OWNER":
+        return "owner" if owner_authenticated else "agent"
+    from app.nl.offers import COUNTERPARTY_AUTHENTICATED
+
+    return f"buyer:{req.counterparty_id}" if COUNTERPARTY_AUTHENTICATED.get() else "anon"
+
+
 def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, owner_key_hex: str,
            owner_authenticated: bool, sessions: SessionStore = SESSIONS,
            classifier_backends: Sequence[clf.IntentBackend] | None = None,
            verdict_extras: VerdictExtras | None = None, owner_reads: page.OwnerReads | None = None) -> NlResponse:
     session, _new = sessions.get_or_create(req.session_id, req.actor,
-                                           owner_auth=owner_authenticated and req.actor == "OWNER")
+                                           owner_auth=owner_authenticated and req.actor == "OWNER",
+                                           principal=_principal(req, owner_authenticated))
     session.turn += 1
     lang = req.lang or lx.detect_lang(req.text)
     session.lang = lang
@@ -178,7 +189,7 @@ def opener(session_id: str | None, lang: str | None, *, store: LedgerStore, exec
     """An agent-initiated turn in the owner's session (the API layer has checked the owner token): the agent says
     what needs the owner, if anything, and proposes the cure as a pending plan. It executes nothing; the owner's
     next direct "go ahead" in this session confirms it. Returns (the response, whether anything needs the owner)."""
-    session, _new = sessions.get_or_create(session_id, "OWNER", owner_auth=True)
+    session, _new = sessions.get_or_create(session_id, "OWNER", owner_auth=True, principal="owner")
     session.turn += 1
     if lang:
         session.lang = lang
