@@ -35,9 +35,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import owner_questions_baseline as base  # noqa: E402  (sets the offline environment before the app is imported)
-import yaml  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+import owner_questions_baseline as base
+import yaml
+from fastapi.testclient import TestClient
 
 GENERAL = base.API / "evals" / "owner_questions" / "general.yaml"
 # Questions whose own answer is a page read (app/nl/reads.py), which the answer module leaves to it (rules._page_read).
