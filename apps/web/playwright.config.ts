@@ -66,7 +66,7 @@ export default defineConfig({
           {
             name: "live",
             // The same demo walk, what-if and document specs as mock mode, plus the live-only checks and the adapter contract tests.
-            testMatch: /(demo|whatif|alerts|contract|live|chat|strategy|slow|lang|documents|slice-b|slice-b-round-two|accept-as-asked|home-v2-states|ask-header-live|activity|trust|tracker)\.spec\.ts/, // Deal tracker: tracker added
+            testMatch: /(demo|whatif|alerts|contract|live|chat|strategy|slow|lang|documents|contract-terms|slice-b|slice-b-round-two|accept-as-asked|home-v2-states|ask-header-live|activity|trust|tracker)\.spec\.ts/, // Deal tracker: tracker added; ADR-0014: contract-terms
             use: { ...desktop, baseURL: `http://localhost:${LIVE_PORT}` },
           },
         ]
@@ -105,7 +105,7 @@ export default defineConfig({
                   reuseExistingServer: false,
                   // FEATURE_EXPOSURE: the Deals page is the decision queue once the open offer has its exposure read.
                   // DEMO_MODE=1: the live suite signs in with the published demo credentials (DEMO_MODE is off by default).
-                  env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: databaseUrl, LLM_MODE: "cache", DEMO_MODE: "1", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, FEATURE_EXPOSURE: "1", ...strategyApi },
+                  env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: databaseUrl, LLM_MODE: "cache", DEMO_MODE: "1", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, FEATURE_EXPOSURE: "1", FEATURE_CONTRACT_TERMS: "1", ...strategyApi },
                 },
               ]),
           {

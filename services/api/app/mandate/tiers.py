@@ -36,13 +36,16 @@ from app.domain.models import (
     RejectOffer,
     RepayFacility,
     RequestOwnerApproval,
+    SetUpContractTerms,
     SignPersonalGuarantee,
     SubmitInvoiceForFinancing,
     Tier,
+    UndoContractTerms,
 )
 
 _ALWAYS_TIER3 = (SignPersonalGuarantee, PledgeCollateral, IssueEquity, ChangeMandate)
-_ALWAYS_TIER2 = (ApplyForFacility, CommitPurchase)  # ADR-0013: buying equipment is always the owner's decision
+# ADR-0013: buying equipment is always the owner's decision; ADR-0014: so is what a contract sets up in the books
+_ALWAYS_TIER2 = (ApplyForFacility, CommitPurchase, SetUpContractTerms, UndoContractTerms)
 _TIER1_BASE = (
     AcceptOffer,
     CounterOffer,

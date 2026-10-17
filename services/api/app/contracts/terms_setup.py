@@ -1,0 +1,342 @@
+"""ADR-0014: what a confirmed customer contract can set up in the books, derived again by code from the stored record.
+
+A confirmed buyer contract may set up exactly one thing, its customer's repeating invoice (`RecurringInvoice`: the price of
+one delivery, the invoicing interval, the next invoice day, the payment days). This module decides whether it can, and with
+what figures, on the books as they are today. It never writes: the preview route shows the result and the executor derives
+it again inside the operation's unit of work (`Executor._set_up_terms`), refusing unless the figures and the hash are those
+the owner was shown.
+
+Only figures that survive every check below are used; anything missing or unchecked blocks, with the reason in words:
+
+- the record is a CONFIRMED buyer contract, not superseded, with no blocking or party flag, and a COMPILED reading;
+- it names the chosen customer as its buyer (PARTY_BUYER), not as its supplier;
+- PRICE (per delivery), INVOICING (a day interval with a first date) and PAYMENT_TERMS (calendar days from the invoice
+  date) are each stated once, each quotes the document verbatim, and each figure is parsed again by the reader's own code
+  from the quoted words; no abstention other than a note, and no failed cross-check, touches them;
+- the contract does not end inside today's forecast window (the engine's repeating invoice has no end).
+
+Pure: no store, no clock, no I/O.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from dataclasses import dataclass, field
+from typing import Literal
+
+from app.compiler.contract_parsing import (
+    DATE_PAT,
+    basis_of,
+    business_days,
+    parse_date,
+    parse_days,
+    parse_money,
+    unit_of,
+)
+from app.contracts.derive import buyer_terms, day_of
+from app.contracts.parties import PARTY_FLAG_KINDS, party_matches, registry_names
+from app.domain.models import (
+    CompileStatus,
+    ContractField,
+    ContractRecord,
+    ContractTerm,
+    Counterparty,
+    DocumentKind,
+    DocumentStatus,
+    FinancialState,
+    PaymentBasis,
+    PriceUnit,
+    RecurringInvoice,
+)
+
+F = ContractField
+Status = Literal["READY", "ALREADY", "CONFLICT", "BLOCKED"]
+
+# The fields whose figures become the repeating invoice, in the order they are shown.
+SET_UP_FIELDS = (F.PRICE, F.INVOICING, F.PAYMENT_TERMS)
+# The party check's flags (`app.contracts.parties.PARTY_FLAG_KINDS`): any of them on a record blocks the set-up.
+_DATE_RE = re.compile(DATE_PAT, re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class Problem:
+    """One reason the set-up cannot be made, in the owner's words, with a stable code for tests and the web."""
+
+    code: str
+    en: str
+    zh: str
+
+
+@dataclass(frozen=True)
+class Source:
+    """A contract term a figure came from: its field, clause number and verbatim quote."""
+
+    field: ContractField
+    clause: str | None
+    quote: str
+    value_text: str
+    start: int
+    end: int
+
+
+@dataclass(frozen=True)
+class TermsSetUp:
+    """What the contract would set up, and whether it can, on the books of `today`."""
+
+    document_id: str
+    doc_hash: str
+    counterparty_id: str
+    status: Status
+    recurring: RecurringInvoice | None  # the repeating invoice the contract gives (None when its figures cannot be read)
+    existing: RecurringInvoice | None  # the customer's repeating invoice in the books today, if any
+    sources: tuple[Source, ...] = ()
+    problems: tuple[Problem, ...] = ()
+    end_day: int | None = None
+    early_payment: ContractTerm | None = None  # read, never set up (an option the forecast does not assume)
+    terms_hash: str | None = None  # set when the figures are read (READY, ALREADY or CONFLICT)
+    notes: tuple[Problem, ...] = field(default_factory=tuple)  # warnings that do not block
+
+    @property
+    def ready(self) -> bool:
+        return self.status == "READY"
+
+
+def terms_hash(document_id: str, doc_hash: str, ri: RecurringInvoice, sources: tuple[Source, ...]) -> str:
+    """sha256 of the canonical JSON of what the owner is shown and approves: the document, its text hash, the customer, the
+    four figures and the span each source term quotes."""
+    body = {"document_id": document_id, "doc_hash": doc_hash, "counterparty_id": ri.counterparty_id,
+            "face_fen": ri.face_fen, "every_days": ri.every_days, "next_issue_day": ri.next_issue_day,
+            "terms_days": ri.terms_days, "sources": [[s.field.value, s.start, s.end] for s in sources]}
+    return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+# ---------------------------------------------------------------- who the contract is with
+#
+# The comparison is the party check's own (`app.contracts.parties`, the owner's rule of 17 Oct): the registry name and its short
+# form against the names the reading found. That check already blocks confirming a document that does not name the chosen
+# counterparty at all; here the contract must name the customer as its BUYER, never as its supplier.
+
+
+def _party_problem(record: ContractRecord, party: Counterparty) -> Problem | None:
+    assert record.contract is not None
+    names = registry_names(party)
+    buyers = [(t.text or t.value_text or "").strip() for t in record.contract.terms if t.field == F.PARTY_BUYER]
+    suppliers = [(t.text or t.value_text or "").strip() for t in record.contract.terms if t.field == F.PARTY_SUPPLIER]
+    if party_matches(suppliers, names) and not party_matches(buyers, names):
+        return Problem("PARTY_IS_SUPPLIER",
+                       f"The contract names {party.name} as the supplier, not the buyer: it is not a contract under which "
+                       f"this customer pays you.",
+                       f"合同把{party.name}列为供货方而非买方：这不是该客户向您付款的合同。")
+    if not [x for x in buyers if x]:
+        return Problem("PARTY_NOT_READ", "The reading found no buyer named in the contract, so it cannot be checked "
+                       "that the contract is with this customer.",
+                       "未从合同中读出买方名称，无法核实合同是与该客户签订的。")
+    if not party_matches(buyers, names):
+        return Problem("PARTY_NOT_THIS_CUSTOMER",
+                       f"The contract's buyer is {buyers[0]}, not {party.name.rstrip('.')}.",
+                       f"合同的买方是{buyers[0]}，而不是{party.name}。")
+    return None
+
+
+# ---------------------------------------------------------------- the terms, checked against their quotes
+
+
+def _quoted(record: ContractRecord, t: ContractTerm) -> bool:
+    """The term quotes the document verbatim and its value fragment sits inside the quote."""
+    text = record.document.text
+    if not (0 <= t.span.start < t.span.end <= len(text)) or text[t.span.start:t.span.end] != t.span.text:
+        return False
+    return bool(t.value_text) and (t.value_text or "") in t.span.text
+
+
+def _dates_in(quote: str) -> set[str]:
+    out: set[str] = set()
+    for m in _DATE_RE.finditer(quote):
+        p = parse_date(m.group(0))
+        if p.ok:
+            out.add(str(p.value))
+    return out
+
+
+_LABEL = {F.PRICE: ("the price", "价格"), F.INVOICING: ("the invoicing interval", "开票间隔"),
+          F.PAYMENT_TERMS: ("the payment terms", "账期")}
+
+
+def _figure_problem(record: ContractRecord, t: ContractTerm) -> Problem | None:
+    """Whether the term's figures are the ones the reader's own code finds in its quoted words."""
+    en, zh = _LABEL[t.field]
+    clause = f" (clause {t.clause})" if t.clause else ""
+    if not _quoted(record, t):
+        return Problem("NOT_QUOTED", f"The reading of {en}{clause} does not quote the contract word for word.",
+                       f"{zh}的读取结果{('（第 ' + t.clause + ' 条）') if t.clause else ''}与合同原文不一致。")
+    v = t.value_text or ""
+    if t.field == F.PRICE:
+        p = parse_money(v)
+        ok = p.ok and p.value == t.amount_fen and (t.amount_fen or 0) > 0
+        if ok and (t.unit != PriceUnit.PER_DELIVERY or unit_of(t.span.text) != PriceUnit.PER_DELIVERY):
+            return Problem("PRICE_NOT_PER_DELIVERY",
+                           f"The price{clause} is not stated per delivery or batch, so it is not the amount of each invoice.",
+                           "合同价格不是按每批或每次交货计算的，不能作为每张发票的金额。")
+    elif t.field == F.INVOICING:
+        if t.months is not None and t.days is None:
+            return Problem("INVOICING_MONTHLY", f"The contract invoices monthly{clause}; the books need an interval in days.",
+                           "合同按月开票；账簿需要以天数表示的开票间隔。")
+        p = parse_days(v)
+        ok = p.ok and p.value == t.days and 1 <= (t.days or 0) <= 366 and t.date is not None and t.date in _dates_in(t.span.text)
+        if ok and business_days(v):
+            return Problem("INVOICING_BUSINESS_DAYS", f"The invoicing interval{clause} is in business days; the books count "
+                           f"calendar days.", "开票间隔以工作日计算；账簿按自然日计算。")
+        if t.date is None:
+            return Problem("NO_FIRST_INVOICE", f"The contract does not say when the first regular invoice is{clause}.",
+                           "合同没有写明第一张定期发票的日期。")
+    else:  # PAYMENT_TERMS
+        if t.basis != PaymentBasis.INVOICE or basis_of(t.span.text) != PaymentBasis.INVOICE:
+            return Problem("TERMS_NOT_FROM_INVOICE",
+                           f"The payment days{clause} do not count from the invoice date, as the books count them.",
+                           "账期不是从发票日期起算的，而账簿从发票日期起算。")
+        if t.business_days or business_days(v):
+            return Problem("TERMS_BUSINESS_DAYS", f"The payment terms{clause} are in business days; the books count "
+                           f"calendar days.", "账期以工作日计算；账簿按自然日计算。")
+        p = parse_days(v)
+        ok = p.ok and p.value == t.days and t.days is not None and 0 <= t.days <= 365
+    if not ok:
+        return Problem("FIGURE_NOT_IN_QUOTE", f"The figure read for {en}{clause} is not the one its quoted words state.",
+                       f"{zh}读出的数字与所引用原文中的数字不一致。")
+    return None
+
+
+def _missing(field_: ContractField, n: int) -> Problem:
+    en, zh = _LABEL[field_]
+    if n == 0:
+        return Problem(f"MISSING_{field_.value}", f"The reading has no {en.removeprefix('the ')}.",
+                       f"读取结果中没有{zh}。")
+    return Problem(f"TWICE_{field_.value}", f"The contract states {en} more than once.", f"合同多次写明{zh}。")
+
+
+def _abstention_problems(record: ContractRecord) -> list[Problem]:
+    """A dropped or conflicting term in a field the set-up needs, or any failed cross-check of the reading."""
+    assert record.contract is not None
+    out: list[Problem] = []
+    needed = {f.value for f in SET_UP_FIELDS}
+    for a in record.contract.abstentions:
+        name = a.field.removeprefix("note:")
+        if a.reason.startswith("check failed"):
+            out.append(Problem("CHECK_FAILED", "A check of the reading failed: " + a.reason.removeprefix("check failed: "),
+                               "读取结果的一项核对未通过。"))
+        elif name in needed and not a.field.startswith("note:"):
+            en, zh = _LABEL[F(name)]
+            out.append(Problem(f"DROPPED_{name}", f"Part of the contract about {en} could not be read exactly.",
+                               f"合同中关于{zh}的部分无法准确读取。"))
+    return out
+
+
+# ---------------------------------------------------------------- the derivation
+
+
+def _recurring_of(state: FinancialState, counterparty_id: str) -> list[RecurringInvoice]:
+    return [r for r in state.recurring_invoices if r.counterparty_id == counterparty_id]
+
+
+def _collides(state: FinancialState, ri: RecurringInvoice) -> bool:
+    """A receivable already holds an id the new schedule would generate (`RI:<buyer>:<day>`)."""
+    prefix = f"RI:{ri.counterparty_id}:"
+    for r in state.receivables:
+        if r.id.startswith(prefix):
+            try:
+                d = int(r.id.rsplit(":", 1)[1])
+            except ValueError:
+                continue
+            if d >= ri.next_issue_day and (d - ri.next_issue_day) % ri.every_days == 0:
+                return True
+    return False
+
+
+def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon_days: int) -> TermsSetUp:
+    """What `record` sets up on the books `state` of day `today`, and whether it can (`status`)."""
+    base = {"document_id": record.id, "doc_hash": record.doc_hash, "counterparty_id": record.counterparty_id}
+    existing_all = _recurring_of(state, record.counterparty_id)
+    existing = existing_all[0] if len(existing_all) == 1 else None
+
+    def blocked(*problems: Problem, **more: object) -> TermsSetUp:
+        return TermsSetUp(status="BLOCKED", recurring=None, existing=existing, problems=tuple(problems), **base, **more)  # type: ignore[arg-type]
+
+    if record.kind != DocumentKind.BUYER_CONTRACT or record.contract is None:
+        return blocked(Problem("NOT_A_CUSTOMER_CONTRACT", "Only a customer's supply contract sets up invoices in the books.",
+                               "只有客户的供货合同才能在账簿中设置发票。"))
+    if record.status != DocumentStatus.CONFIRMED:
+        return blocked(Problem("NOT_CONFIRMED", "Confirm the agent's reading of the contract first.",
+                               "请先确认助手对合同的读取结果。"))
+    if record.superseded_by is not None:
+        return blocked(Problem("SUPERSEDED", "A later contract with this customer replaced this one.",
+                               "该客户后来的合同已取代此合同。"))
+    if record.blocked or any(f.kind.split(":")[0] in PARTY_FLAG_KINDS for f in record.flags):
+        return blocked(Problem("FLAGGED", "The document carries a flag that stops it setting anything up.",
+                               "该文件带有标记，不能据此设置任何内容。"))
+    party = next((c for c in state.counterparties if c.id == record.counterparty_id), None)
+    if party is None or party.role != "BUYER" or not party.known:
+        return blocked(Problem("NOT_A_KNOWN_CUSTOMER", "The contract's customer is not a known customer in your books.",
+                               "合同的客户不是您账簿中的已知客户。"))
+    c = record.contract
+    problems: list[Problem] = []
+    if c.status != CompileStatus.COMPILED:
+        problems.append(Problem("READING_INCOMPLETE", "The reading of this contract is incomplete or conflicting.",
+                                "对该合同的读取不完整或相互矛盾。"))
+    if (p := _party_problem(record, party)) is not None:
+        problems.append(p)
+    sources: list[Source] = []
+    terms: dict[ContractField, ContractTerm] = {}
+    for f in SET_UP_FIELDS:
+        found = [t for t in c.terms if t.field == f]
+        if len(found) != 1:
+            problems.append(_missing(f, len(found)))
+            continue
+        t = found[0]
+        if (p := _figure_problem(record, t)) is not None:
+            problems.append(p)
+            continue
+        terms[f] = t
+        sources.append(Source(field=f, clause=t.clause, quote=t.span.text, value_text=t.value_text or "",
+                              start=t.span.start, end=t.span.end))
+    problems += _abstention_problems(record)
+    early = next(iter(t for t in c.terms if t.field == F.EARLY_PAYMENT), None)
+    ends = [t for t in c.terms if t.field == F.END_DATE and t.date]
+    end_day = day_of(ends[0].date, state.as_of) if len(ends) == 1 and ends[0].date else None  # type: ignore[arg-type]
+    if end_day is not None and end_day < today:
+        problems.append(Problem("CONTRACT_ENDED", "The contract has already ended.", "该合同已经到期。"))
+    elif end_day is not None and end_day <= today + horizon_days:
+        problems.append(Problem("ENDS_IN_FORECAST",
+                                f"The contract ends inside your {horizon_days}-day forecast, and the books cannot yet stop "
+                                f"repeating invoices at a contract's end.",
+                                f"合同在您 {horizon_days} 天的预测期内到期，而账簿目前还不能在合同到期时停止循环发票。"))
+    if len(existing_all) > 1:
+        problems.append(Problem("SEVERAL_REPEATING", "Your books hold more than one repeating invoice for this customer.",
+                                "您的账簿中该客户有不止一项循环发票。"))
+    if problems:
+        return blocked(*problems, sources=tuple(sources), end_day=end_day, early_payment=early)
+    ri = buyer_terms(c, record.counterparty_id, state.as_of).recurring(today)
+    if ri is None:  # every figure was checked above; this is the derivation's own refusal
+        return blocked(Problem("NO_SCHEDULE", "No repeating invoice follows from the contract on today's books.",
+                               "根据今天的账簿，无法从合同得出循环发票。"), sources=tuple(sources), end_day=end_day,
+                       early_payment=early)
+    h = terms_hash(record.id, record.doc_hash, ri, tuple(sources))
+    more: dict[str, object] = {"sources": tuple(sources), "end_day": end_day, "early_payment": early, "terms_hash": h}
+    notes: list[Problem] = []
+    if end_day is None:
+        notes.append(Problem("NO_END_DATE", "The contract states no end date: the books will expect these invoices until "
+                             "you undo the set-up.", "合同未写明到期日：在您撤销设置之前，账簿会一直预计这些发票。"))
+    else:
+        notes.append(Problem("ENDS_LATER", "The books will keep expecting these invoices after the contract ends, until you "
+                             "undo the set-up.", "合同到期后，在您撤销设置之前，账簿仍会预计这些发票。"))
+    if existing is not None:
+        same = (existing.face_fen, existing.every_days, existing.next_issue_day, existing.terms_days) == (
+            ri.face_fen, ri.every_days, ri.next_issue_day, ri.terms_days)
+        return TermsSetUp(status="ALREADY" if same else "CONFLICT", recurring=ri, existing=existing, **base, **more)  # type: ignore[arg-type]
+    if _collides(state, ri):
+        return blocked(Problem("ALREADY_ISSUED", "An invoice on this schedule is already in your books.",
+                               "该计划中的一张发票已在您的账簿中。"), **more)
+    return TermsSetUp(status="READY", recurring=ri, existing=None, notes=tuple(notes), **base, **more)  # type: ignore[arg-type]
+
+
+__all__ = ["PARTY_FLAG_KINDS", "SET_UP_FIELDS", "Problem", "Source", "TermsSetUp", "derive", "terms_hash"]

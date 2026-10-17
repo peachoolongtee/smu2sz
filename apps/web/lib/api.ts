@@ -66,6 +66,8 @@ import type {
   PurchasesView,
   ClockView,
   ContractFixture,
+  ContractTermsResult,
+  ContractTermsView,
   CustomerOverviewView,
   InputSaveRequest,
   InputSaveResult,
@@ -575,6 +577,24 @@ export function existingCustomerId(e: unknown): string | null {
   if (!(e instanceof ApiError) || e.status !== 409) return null;
   const d = e.detail as { code?: unknown; existing_id?: unknown } | undefined;
   return d?.code === "CUSTOMER_EXISTS" && typeof d.existing_id === "string" ? d.existing_id : null;
+}
+
+/**
+ * ADR-0014, GET /documents/{id}/terms?lang=: what a confirmed customer contract would set up in the books, whether it can, and the forecast
+ * before and after (behind FEATURE_CONTRACT_TERMS). Null when the step is switched off or does not apply to this document.
+ */
+export async function getContractTerms(id: string, lang: "en" | "zh" = "en"): Promise<ContractTermsView | null> {
+  return isMock ? (await mock()).getContractTerms(id, lang) : (await live()).getContractTerms(id, lang);
+}
+
+/** POST /documents/{id}/terms: set the contract's repeating invoice up in the books, bound to the document and the terms shown (the owner's Tier-2 operation, logged). */
+export async function setUpContractTerms(id: string, docHash: string, termsHash: string, lang: "en" | "zh" = "en"): Promise<ContractTermsResult> {
+  return isMock ? (await mock()).setUpContractTerms(id, docHash, termsHash, lang) : (await live()).setUpContractTerms(id, docHash, termsHash, lang);
+}
+
+/** POST /documents/{id}/terms/undo: the logged compensating operation of a set-up. */
+export async function undoContractTerms(id: string, setUpOpId: string, lang: "en" | "zh" = "en"): Promise<ContractTermsResult> {
+  return isMock ? (await mock()).undoContractTerms(id, setUpOpId, lang) : (await live()).undoContractTerms(id, setUpOpId, lang);
 }
 
 /** GET /fixtures/contracts: the demo documents (synthetic; each written to match the demo books). */
