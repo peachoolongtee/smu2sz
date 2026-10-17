@@ -1,0 +1,105 @@
+{
+  "cut": "full",
+  "name": "flow-full-tour",
+  "total_seconds": 329.76,
+  "chapters": [
+    {
+      "n": 1,
+      "id": "sign-in",
+      "title": "Sign in",
+      "at": 4.548
+    },
+    {
+      "n": 2,
+      "id": "setup",
+      "title": "Set up your books",
+      "at": 15.706
+    },
+    {
+      "n": 3,
+      "id": "home-gap",
+      "title": "Home: the forecast and the gap",
+      "at": 66.968
+    },
+    {
+      "n": 4,
+      "id": "attach-deal",
+      "title": "Attach a deal",
+      "at": 84.428
+    },
+    {
+      "n": 5,
+      "id": "wrong-company",
+      "title": "Safety: the wrong company",
+      "at": 108.183
+    },
+    {
+      "n": 6,
+      "id": "new-customer",
+      "title": "A new customer",
+      "at": 124.63
+    },
+    {
+      "n": 7,
+      "id": "contract-to-forecast",
+      "title": "From contract to forecast",
+      "at": 134.583
+    },
+    {
+      "n": 8,
+      "id": "lender-agreement",
+      "title": "A lender agreement",
+      "at": 167.836
+    },
+    {
+      "n": 9,
+      "id": "buyer-request",
+      "title": "Deals: a buyer asks for 60 days",
+      "at": 184.607
+    },
+    {
+      "n": 10,
+      "id": "ask-flow",
+      "title": "Ask FLOW",
+      "at": 214.101
+    },
+    {
+      "n": 11,
+      "id": "fund-gap",
+      "title": "Fund the gap",
+      "at": 258.297
+    },
+    {
+      "n": 12,
+      "id": "cash-funding",
+      "title": "Cash & funding",
+      "at": 277.307
+    },
+    {
+      "n": 13,
+      "id": "capex",
+      "title": "Capex & purchases",
+      "at": 283.71
+    },
+    {
+      "n": 14,
+      "id": "receivables",
+      "title": "Receivables",
+      "at": 295.569
+    },
+    {
+      "n": 15,
+      "id": "activity",
+      "title": "Activity and evidence",
+      "at": 303.91
+    },
+    {
+      "n": 16,
+      "id": "end",
+      "title": "FLOW",
+      "at": 321.023
+    }
+  ],
+  "problems": [],
+  "recorded": "2026-10-17"
+}

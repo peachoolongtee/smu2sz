@@ -1,0 +1,75 @@
+{
+  "cut": "5min",
+  "name": "flow-demo-5min",
+  "total_seconds": 242.471,
+  "chapters": [
+    {
+      "n": 1,
+      "id": "sign-in",
+      "title": "Sign in",
+      "at": 4.556
+    },
+    {
+      "n": 2,
+      "id": "setup",
+      "title": "Set up your books",
+      "at": 15.678
+    },
+    {
+      "n": 3,
+      "id": "home-gap",
+      "title": "Home: the forecast and the gap",
+      "at": 67.284
+    },
+    {
+      "n": 4,
+      "id": "attach-deal",
+      "title": "Attach a deal",
+      "at": 79.047
+    },
+    {
+      "n": 5,
+      "id": "wrong-company",
+      "title": "Safety: the wrong company",
+      "at": 99.772
+    },
+    {
+      "n": 6,
+      "id": "contract-to-forecast",
+      "title": "From contract to forecast",
+      "at": 115.563
+    },
+    {
+      "n": 7,
+      "id": "buyer-request",
+      "title": "Deals: a buyer asks for 60 days",
+      "at": 148.898
+    },
+    {
+      "n": 8,
+      "id": "ask-flow",
+      "title": "Ask FLOW",
+      "at": 169.719
+    },
+    {
+      "n": 9,
+      "id": "fund-gap",
+      "title": "Fund the gap",
+      "at": 197.559
+    },
+    {
+      "n": 10,
+      "id": "activity",
+      "title": "Activity and evidence",
+      "at": 216.913
+    },
+    {
+      "n": 11,
+      "id": "end",
+      "title": "FLOW",
+      "at": 233.988
+    }
+  ],
+  "problems": [],
+  "recorded": "2026-10-17"
+}
