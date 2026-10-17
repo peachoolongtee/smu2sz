@@ -51,7 +51,7 @@ export default defineConfig({
       ? [
           {
             name: "desktop",
-            testIgnore: /(live|contract|slow|home-v2-states)\.spec\.ts/,
+            testIgnore: /(live|contract|slow|home-v2-states|home-reset)\.spec\.ts/, // home-reset drives the real API (resets, the clock)
             use: { ...desktop, baseURL: `http://localhost:${MOCK_PORT}` },
           },
           {
