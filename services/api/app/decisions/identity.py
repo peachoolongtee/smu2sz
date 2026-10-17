@@ -38,6 +38,19 @@ def deal_id(offer_id: str) -> str:
     return f"{DEAL_PREFIX}{offer_id}"
 
 
+# Offers FLOW builds only to project the books, never a buyer's request: the "no new terms" baseline a chat plan is priced on
+# (`app.nl.pipeline.status_quo_offer`, NL-...), a what-if (`app.nl.offers`, WHATIF-...) and an offered counter re-checked as the package
+# the buyer would accept (`app.nl.pipeline.package_offer`, {offer_id}-CTR-...). Their verdicts are stored so a plan can name them, but a
+# verdict on one alone opens no negotiation: it is not a deal on Deals, the queue or a buyer's card. An agreement, approval or run on one
+# still is (it reaches the record through those, not through the verdict).
+PROJECTION_PREFIXES = ("NL-", "WHATIF-")
+_PACKAGE = re.compile(r"-CTR-[0-9a-f]+$")
+
+
+def is_projection(offer_id: str) -> bool:
+    return offer_id.startswith(PROJECTION_PREFIXES) or _PACKAGE.search(offer_id) is not None
+
+
 def alert_cure_id(alert_id: str, state_version: int) -> str:
     return f"alert:{alert_id}:v{state_version}"
 

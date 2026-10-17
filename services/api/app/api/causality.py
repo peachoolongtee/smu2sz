@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.api.decisions import Context, decision_summary, quote_for, remaining_task_view
-from app.api.presentation import first_breach_ahead, party_name, t, when_text
+from app.api.presentation import facility_name, first_breach_ahead, invoice_words, party_name, t, when_text
 from app.domain.money import fmt_yuan
 
 log = logging.getLogger("termsledger.decisions")
@@ -112,6 +112,50 @@ def contract_terms_why(kind: str, payload: dict[str, Any], state: Any, lang: str
              f"将{customer}每 {every} 天一张、金额 {fmt_yuan(face)} 的循环发票计入您的预测，付款期 {terms} 天。")
 
 
+# The approvals whose "why it matters" is a funding quote: what the plan was quoted to cost and when its cash lands. With no quote stored,
+# a decided one says the quoted cost was not recorded. Every other kind says what it does instead (`approval_kind_why`).
+FUNDING_QUOTE_KINDS = ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING", "REPAY_FACILITY")
+
+
+def approval_kind_why(kind: str, payload: dict[str, Any], state: Any, lang: str) -> str:
+    """Why an approval that is not a funding quote matters: what approving it does, from the queued operation's own fields. It never
+    speaks of a quoted cost (there is none), and with a field it cannot read it says so in general words rather than guess."""
+    if kind in CONTRACT_TERMS_KINDS:
+        return contract_terms_why(kind, payload, state, lang)
+    amount = payload.get("amount_fen")
+    money = fmt_yuan(amount) if isinstance(amount, int) and amount > 0 else None
+    if kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT"):
+        return t(lang, "Approving it makes the agreement with the buyer; until then nothing is agreed.", "批准后即与买方达成协议；在此之前不达成任何协议。")
+    if kind == "APPLY_FOR_FACILITY":
+        lender = facility_name(state, payload.get("facility_id")) if state is not None else ""
+        if lender and money:
+            return t(lang, f"Applies to {lender} for {money} of new credit; nothing is borrowed until the lender agrees and you draw it.",
+                     f"向{lender}申请 {money} 的新增授信；在贷款方同意并由您提款之前，不借入任何资金。")
+        return t(lang, "Applies for new credit; nothing is borrowed until the lender agrees and you draw it.",
+                 "申请新增授信；在贷款方同意并由您提款之前，不借入任何资金。")
+    if kind == "ADD_FACILITY":
+        f = payload.get("facility") if isinstance(payload.get("facility"), dict) else {}
+        name, limit = f.get("name"), f.get("limit_fen")
+        if isinstance(name, str) and name and isinstance(limit, int):
+            return t(lang, f"Adds {name} as a source FLOW may borrow from, up to {fmt_yuan(limit)}; nothing is borrowed now.",
+                     f"将{name}添加为 FLOW 可借款的来源，额度最高 {fmt_yuan(limit)}；目前不借入任何资金。")
+        return t(lang, "Adds a source FLOW may borrow from; nothing is borrowed now.", "添加一个 FLOW 可借款的来源；目前不借入任何资金。")
+    if kind == "COMMIT_PURCHASE":
+        early = bool(payload.get("take_early_pay"))
+        if money:
+            return t(lang, f"Books the purchase's payments of {money} into your forecast on the contract's schedule"
+                           + (", with the early-payment discount taken." if early else "."),
+                     f"按合同的付款安排将这笔采购的 {money} 付款计入您的预测" + ("，并享受提前付款折扣。" if early else "。"))
+        return t(lang, "Books the purchase's payments into your forecast on the contract's schedule.", "按合同的付款安排将这笔采购的付款计入您的预测。")
+    if kind == "RECEIVE_PAYMENT":
+        invoice = invoice_words(state, payload.get("receivable_id"), lang) if state is not None else ""
+        if invoice and money:
+            return t(lang, f"Records {money} received on {invoice}; your cash changes only if you approve it.",
+                     f"记录{invoice}已收到 {money}；只有在您批准后，现金才会变化。")
+        return t(lang, "Records a payment received; your cash changes only if you approve it.", "记录一笔已收款项；只有在您批准后，现金才会变化。")
+    return t(lang, "Nothing in your books changes unless you approve it.", "除非您批准，否则账目不会有任何变化。")
+
+
 @dataclass
 class Causality:
     """Builds the three causal sentences of an event once the request's decision record and forecast are read."""
@@ -166,8 +210,8 @@ class Causality:
         why: str | None = None
         if status == "REFUSED":
             why = t(self.lang, "No money moved.", "资金未动。")
-        elif status == "PENDING_APPROVAL" and kind in CONTRACT_TERMS_KINDS:
-            why = contract_terms_why(kind, payload or {}, state, self.lang)
+        elif status == "PENDING_APPROVAL" and kind is not None and kind not in FUNDING_QUOTE_KINDS:
+            why = approval_kind_why(kind, payload or {}, state, self.lang)
         elif status == "PENDING_APPROVAL":
             why = self._approval_why(decision_id, decided)
         elif status == "EXECUTED" and self.forecast is not None:

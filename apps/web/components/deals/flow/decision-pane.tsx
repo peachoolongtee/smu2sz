@@ -17,7 +17,7 @@ import { useAsync } from "@/lib/use-async";
 import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
-import type { DecisionView, NegotiationView, OfferedResult, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
+import type { DecisionView, FundingNextStep, NegotiationView, OfferedResult, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
 import { AcceptBlock, type AcceptOutcome } from "./accept-block";
 import { HistoryStrip } from "./deal-history";
 import { arrivalText, EndingStep, reviewRows, StepHeading, TermSentences, TermsRows, Timeline, WaitingStep, Workspace } from "./workspace";
@@ -115,6 +115,20 @@ function AcceptResult({ outcome }: { outcome: AcceptOutcome }) {
   return (
     <div role={outcome.kind === "refused" ? "alert" : "status"} className="mt-5 rounded-tile border border-line bg-subtle px-4 py-3 text-sm text-ink" data-testid={outcome.kind === "accepted" ? "deal-accepted" : "deal-accept-refused"}>
       <p data-testid={outcome.kind === "accepted" ? "deal-accepted-ran" : undefined}>{text}</p>
+    </div>
+  );
+}
+
+/** An agreement the owner made themself funded nothing while a reserve gap is ahead: the server's sentence and the way to FLOW's plan for it (an offer sent outside FLOW says it in its own ending). */
+function FundingNext({ step }: { step: FundingNextStep }) {
+  return (
+    <div role="status" className="mb-5 rounded-tile border border-line bg-subtle px-4 py-3 text-sm text-ink" data-testid="deal-funding-next">
+      <p data-testid="deal-funding-next-text">{step.text}</p>
+      <p className="mt-1.5">
+        <Link href={step.href} className={`${quietLink} px-0`} data-testid="deal-funding-next-link">
+          {step.label}
+        </Link>
+      </p>
     </div>
   );
 }
@@ -642,6 +656,7 @@ export function DecisionPane({
           <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview" data-agreed="true">
             {outcome ? <AcceptResult outcome={outcome} /> : null}
             {sent ? <SendResult n={sent} /> : null}
+            {record?.agreement?.funding_next && !record.outbound ? <FundingNext step={record.agreement.funding_next} /> : null}
             {agreedView && trackerRead ? (
               <div className="flex flex-col gap-6" data-testid="deal-tracker">
                 <TrackerBody d={trackerRead} mode="deal" />

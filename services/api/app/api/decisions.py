@@ -63,7 +63,7 @@ from app.decisions import (
     waiting_for,
 )
 from app.decisions.facts import Fact, record_for
-from app.decisions.identity import deal_id, decision_id_for, family_of, offer_id_of
+from app.decisions.identity import deal_id, decision_id_for, family_of, is_projection, offer_id_of
 from app.decisions.state import RESERVE_ALERT, RecordIndex, buyer_answer, derive, newest_reserve_decision
 from app.domain.models import CommitmentStatus, CompiledOffer, FinancialState, Mandate, Mode, OperationStatus
 from app.domain.money import fmt_yuan
@@ -224,7 +224,8 @@ class Context:
         ids.update(dict.fromkeys(self.index.runs))
         ids.update(dict.fromkeys(self.index.approval_candidates))
         for v in self.verdicts:
-            ids[deal_id(v.offer_id)] = None
+            if not is_projection(v.offer_id):  # a plan's baseline, a what-if or a re-checked counter is no negotiation of its own
+                ids[deal_id(v.offer_id)] = None
         for c in self.commitments:
             ids[deal_id(c.offer_id)] = None
         for f in self.facts:
@@ -707,6 +708,33 @@ def remaining_links(ctx: Context, ds: DecisionState, lang: str) -> list[dict[str
     return links
 
 
+def funding_next_step(ctx: Context, ds: DecisionState, lang: str) -> dict[str, str] | None:
+    """The owner's next step after an agreement they made themself (accept as asked, or the buyer's yes recorded on an offer sent outside
+    FLOW), while today's books still fall below the minimum cash reserve. Those paths make the agreement and nothing else: they run no
+    funding (the design of `app.api.outbound` and `app.api.accept`; only the Demo's simulated send, whose buyer answers at once, funds the
+    gap in the same step). So the record says the gap is still there and where FLOW's plan for it is, which runs only when the owner runs
+    it. None for any other decision, for a deal the simulated send answered (it ran or tried the funding itself), and when no reserve
+    breach is ahead."""
+    if ds.family != "DEAL" or ds.state != DealState.AGREED or ds.sent is not None:
+        return None
+    alert = next((a for a in ctx.open_alerts if a.kind.value == RESERVE_ALERT), None)
+    if alert is None:
+        return None
+    when = when_text(alert.day, ctx.today, lang) if alert.day is not None else ""
+    money = fmt_yuan(alert.amount_fen) if alert.amount_fen else None
+    gap_en = (f"cash still falls {money} below your minimum {when}".strip() if money else f"cash still falls below your minimum {when}".strip())
+    gap_zh = (f"现金仍将于{when}比最低现金储备低 {money}" if money else f"现金仍将于{when}低于最低现金储备")
+    if alert.committed_cure is False:  # no plan on the facilities the owner has agreed: the options, and the owner's decision
+        text = t(lang, f"The agreement ran no funding: {gap_en}. No funding you have agreed covers it, so it needs your decision on "
+                       "Cash & funding.",
+                 f"该协议未执行任何融资：{gap_zh}。您已签约的融资无法补足，需要您在“现金与融资”页作出决定。")
+        return {"text": text, "label": t(lang, "Compare your funding options", "比较您的融资方案"), "href": "/cash#cash-options"}
+    text = t(lang, f"The agreement ran no funding: {gap_en}. FLOW's plan to cover it is ready on Cash & funding; it runs only when "
+                   "you run it.",
+             f"该协议未执行任何融资：{gap_zh}。FLOW 的补足方案已在“现金与融资”页准备好，只有在您执行后才会执行。")
+    return {"text": text, "label": t(lang, "Review the funding plan", "查看融资方案"), "href": "/cash"}
+
+
 def _outbound(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> dict[str, Any] | None:
     """An offer the owner sent outside FLOW and what came of it (`app.api.outbound_record`); None for any other decision. A supporting read:
     when it cannot be built the record says nothing of it rather than fail."""
@@ -775,7 +803,8 @@ def decision_detail(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: 
                        "expires_day": None if _in_force(c) else c.expires_day,
                        "expires_when": None if _in_force(c) else when_text(c.expires_day, ctx.today, lang),
                        "terms": _agreed_terms(ctx, c, lang),
-                       "receipt": _agreement_receipt(ctx, ds, c, promises, lang)}
+                       "receipt": _agreement_receipt(ctx, ds, c, promises, lang),
+                       "funding_next": funding_next_step(ctx, ds, lang)}
                       if c is not None else None),
         "outbound": _outbound(ctx, ds, inp, lang),
         "history": _history(ctx, ds, inp, lang),
