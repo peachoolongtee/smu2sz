@@ -38,7 +38,7 @@ with two owner-authenticated routes, so that moving it (to a file under `docs/pi
 | Routes | `services/api/app/api/pilot.py`, mounted in `app/main.py`; owner token on the router, `require_feature("pilot_journal")` first in each route |
 | Table | `pilot_journal` in `services/api/app/persistence/tables.py`; migration `0005_pilot_journal.py`; a kept table (like telemetry): `reset()` leaves it unless asked to clear telemetry |
 | Stores | `add_pilot_journal(...)` and `pilot_journal()` on `InMemoryLedgerStore` and `SqlLedgerStore`; the record is `PilotJournalRecord` in `app/persistence/records.py`. They are not in the `LedgerStore` port: the routes reach them through a small `PilotJournalStore` protocol |
-| Web | A read-only "Pilot journal" section at the foot of the Activity page, behind `NEXT_PUBLIC_STRATEGY_MVP=1`, live mode only; hidden on a 403 |
+| Web | A read-only "Pilot journal" section at the foot of the Activity page, behind `NEXT_PUBLIC_STRATEGY_MVP=1` and `NEXT_PUBLIC_PILOT_JOURNAL=1` (`PILOT_JOURNAL` in `apps/web/lib/config.ts`; its own flag since the demo builds with the strategy surfaces on and this API flag off), live mode only; hidden on a 403 |
 
 With the flag off both routes answer 403 `FEATURE_DISABLED` and nothing else in the app differs.
 

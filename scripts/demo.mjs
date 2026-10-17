@@ -286,6 +286,11 @@ async function main() {
     ...(opts.mock
       ? { NEXT_PUBLIC_API_MODE: "mock" }
       : { NEXT_PUBLIC_API_MODE: "live", NEXT_PUBLIC_API_URL: apiOrigin, NEXT_PUBLIC_DEMO: "1" }),
+    // The strategy answers the API above switches on: the price of earlier cash on Cash & funding. Read-only; the mock serves its
+    // recordings. Two stay off: the Safe Deal Envelope on a deal (NEXT_PUBLIC_STRATEGY_ENVELOPE; its first read takes about 17 s on
+    // the demo books and 30 s to 80 s on the busy books, past the 20 s the web waits) and the pilot journal (NEXT_PUBLIC_PILOT_JOURNAL,
+    // the pilot's record of real owners, with FEATURE_PILOT_JOURNAL off). See apps/web/lib/config.ts.
+    NEXT_PUBLIC_STRATEGY_MVP: "1",
     // Its own build folder: it never clashes with a `pnpm dev` already running in apps/web, nor mixes mock and live builds.
     NEXT_DIST_DIR: opts.mock ? ".next-demo-mock" : ".next-demo",
   });

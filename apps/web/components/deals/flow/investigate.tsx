@@ -5,7 +5,7 @@ import { ErrorState, LoadingBlock } from "@/components/ui";
 import { OpenSection } from "@/components/ui/open-section";
 import { StateWord } from "@/components/ui/state-word";
 import { getEnvelope } from "@/lib/api";
-import { STRATEGY_MVP } from "@/lib/config";
+import { STRATEGY_ENVELOPE } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import type { EnvelopePackageView, EnvelopeView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -26,9 +26,9 @@ const SHOWN_FIRST = 3;
  */
 export function EnvelopePackages({ buyerId }: { buyerId: string }) {
   const { t, lang } = useI18n();
-  const read = useAsync<EnvelopeView | null>(async () => (STRATEGY_MVP ? await getEnvelope(buyerId, lang, false) : null), [buyerId, lang]);
+  const read = useAsync<EnvelopeView | null>(async () => (STRATEGY_ENVELOPE ? await getEnvelope(buyerId, lang, false) : null), [buyerId, lang]);
   const e = read.data;
-  if (!STRATEGY_MVP) return null;
+  if (!STRATEGY_ENVELOPE) return null;
   if (read.error) return <ErrorState error={t("biz.strategy.envelope.error")} onRetry={read.reload} />;
   if (read.loading && !e) return <LoadingBlock rows={3} label={t("biz.strategy.envelope.loading")} />;
   if (!e || e.refused || !e.packages.length) return null;

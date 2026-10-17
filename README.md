@@ -66,7 +66,17 @@ Open **http://localhost:3000** when the launcher prints `Ready`. The owner sign-
 The launcher (`scripts/demo.mjs`, Node only; `node scripts/demo.mjs --help` lists every option) checks both ports first and
 never stops another program, waits for the API before starting the web app, and stops both on Ctrl+C. It runs the API with
 `DATABASE_URL=memory` (or the `--keep` file), `TERMSLEDGER_NO_DOTENV=1` so a repo-root `.env` is ignored, `DEMO_MODE=1`,
-`LLM_MODE=cache` and every feature flag on.
+`LLM_MODE=cache` and the feature flags on, the default-off ones included: the three strategy answers (`FEATURE_ENVELOPE`,
+`FEATURE_PRICE_CURVE`, `FEATURE_COLLECTIONS_WORTH`), `FEATURE_EXPOSURE`, `FEATURE_CAPEX_CONTRACTS` and `FEATURE_CONTRACT_TERMS`.
+The web app is built with `NEXT_PUBLIC_STRATEGY_MVP=1`, so the price of earlier cash shows on Cash & funding (read-only; it
+changes no books). Two strategy surfaces stay hidden in the demo:
+
+- **The Safe Deal Envelope** on a deal's Cash impact ("The most you can give", "What you could answer instead";
+  `NEXT_PUBLIC_STRATEGY_ENVELOPE=1` on the web). Its first read of a set of books repeats the funding search dozens of times:
+  about 17 s on the demo books and 30 s to 80 s on the busy books, at or past the 20 s the web waits. It shows once that read
+  is faster; the API route stays on, so `GET /buyers/BUYER-1/envelope` answers.
+- **The pilot journal** (`FEATURE_PILOT_JOURNAL`, `NEXT_PUBLIC_PILOT_JOURNAL`): the shadow pilot's record of real owners'
+  decisions, not part of the demo (`docs/pilot/RUNBOOK.md`).
 
 In the app, switch to **Demo** in the header to follow the scripted story, or use the Business pages directly (Home, Deals,
 Attach deals, Cash & funding, Sandbox, Capex, Receivables, Activity). **Ask FLOW** opens the chat from every page.
@@ -262,10 +272,14 @@ Two terminals (bash syntax; in PowerShell set each variable with `$env:NAME="val
 ```bash
 # terminal 1, from services/api
 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory DEMO_MODE=1 LLM_MODE=cache CORS_ORIGINS=http://localhost:3000 \
+  FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 \
   uv run uvicorn app.main:app --port 8000
 # terminal 2, from apps/web
 NEXT_PUBLIC_API_URL=http://localhost:8000 pnpm dev:live      # or: pnpm dev:mock, for the recorded mocks alone
 ```
+
+`pnpm dev:live` builds with the strategy answers on (`NEXT_PUBLIC_STRATEGY_MVP=1`), so the API needs their flags, as above;
+without them those reads answer 403 and the browser console reports each one.
 
 - **Where the data lives.** Without `DATABASE_URL` the API uses `termsledger.db` in the directory it was started from
   (git-ignored) and creates its tables on the first request; no Alembic step is needed locally. `DATABASE_URL=memory` writes no

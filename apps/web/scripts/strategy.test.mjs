@@ -147,7 +147,7 @@ test("the Deals card renders the server's lever, package and zone strings and co
 test("the envelope call is behind the flag at its call site", () => {
   const uses = source("components/deals/before-they-ask.tsx").split("\n").filter((line) => line.includes("getEnvelope("));
   assert.ok(uses.length > 0);
-  for (const line of uses) assert.match(line, /STRATEGY_MVP/, line.trim());
+  for (const line of uses) assert.match(line, /STRATEGY_ENVELOPE/, line.trim());
 });
 
 test("the Deals card says it is the most the owner can give, labels the figure an estimate, and the flag words are not ink-3", () => {
@@ -185,14 +185,34 @@ test("the worth cell is one server figure (net_saving_display, or worth_text whe
 });
 
 test("without the flag the Deals page reads no envelope, and the strategy spec gates as the config does", () => {
-  assert.match(source("components/deals/flow/investigate.tsx"), /STRATEGY_MVP \? await getEnvelope/);
+  assert.match(source("components/deals/flow/investigate.tsx"), /STRATEGY_ENVELOPE \? await getEnvelope/);
+  assert.match(source("components/deals/flow/decision-pane.tsx"), /\{STRATEGY_ENVELOPE \? \(\s*<div className="mt-8" data-testid="deal-before-they-ask">/);
+  // The envelope's flag is the strategy build AND NEXT_PUBLIC_STRATEGY_ENVELOPE=1; the strategy e2e build sets both.
+  assert.match(source("lib/config.ts"), /STRATEGY_ENVELOPE: boolean = STRATEGY_MVP && process\.env\.NEXT_PUBLIC_STRATEGY_ENVELOPE === "1"/);
+  assert.match(source("playwright.config.ts"), /NEXT_PUBLIC_STRATEGY_MVP: "1", NEXT_PUBLIC_STRATEGY_ENVELOPE: "1"/);
   assert.match(source("e2e/strategy.spec.ts"), /test\.skip\(process\.env\.E2E_STRATEGY !== "1"/);
   assert.match(source("playwright.config.ts"), /process\.env\.E2E_STRATEGY === "1"/);
 });
 
-test("the pilot journal (map #58) is read-only and mounted only with the strategy build flag AND a live API: the mock has no journal, the flag-off build reads nothing", () => {
-  // The Activity page mounts it on both conditions, at the foot of the page.
-  assert.match(source("app/activity/page.tsx"), /\{STRATEGY_MVP && API_MODE === "live" \? <PilotJournal \/> : null\}/);
+test("pnpm demo and pnpm dev:live build with the strategy surfaces on, against an API with the three strategy routes on; the envelope and the pilot journal stay off", () => {
+  const demo = source("../../scripts/demo.mjs");
+  assert.match(demo, /NEXT_PUBLIC_STRATEGY_MVP: "1"/);
+  // The envelope's first read is past the web's 20 s on the busy books (lib/config.ts): off in the demo until it is faster.
+  assert.doesNotMatch(demo, /NEXT_PUBLIC_STRATEGY_ENVELOPE: "1"/);
+  assert.doesNotMatch(source("scripts/dev-mode.mjs"), /NEXT_PUBLIC_STRATEGY_ENVELOPE: "1"|NEXT_PUBLIC_PILOT_JOURNAL: "1"/);
+  for (const flag of ["FEATURE_ENVELOPE", "FEATURE_PRICE_CURVE", "FEATURE_COLLECTIONS_WORTH"]) assert.match(demo, new RegExp(`${flag}: "1"`), flag);
+  assert.match(source("scripts/dev-mode.mjs"), /NEXT_PUBLIC_STRATEGY_MVP: "1"/);
+});
+
+test("the pilot journal (map #58) is read-only and mounted only with its own build flag (on top of the strategy one) AND a live API: the mock has no journal, the flag-off build reads nothing", () => {
+  // The Activity page (and its fallback) mounts it on both conditions, at the foot of the page.
+  for (const file of ["app/activity/page.tsx", "components/activity/ledger-fallback.tsx"]) {
+    assert.match(source(file), /\{PILOT_JOURNAL && API_MODE === "live" \? <PilotJournal \/> : null\}/, file);
+  }
+  // Its flag is the strategy build AND NEXT_PUBLIC_PILOT_JOURNAL=1: the demo builds with the strategy surfaces on while the API keeps
+  // FEATURE_PILOT_JOURNAL off, and Activity must not read a route that answers 403 on every visit.
+  assert.match(source("lib/config.ts"), /PILOT_JOURNAL: boolean = STRATEGY_MVP && process\.env\.NEXT_PUBLIC_PILOT_JOURNAL === "1"/);
+  assert.doesNotMatch(source("../../scripts/demo.mjs"), /NEXT_PUBLIC_PILOT_JOURNAL: "1"|FEATURE_PILOT_JOURNAL: "1"/);
   // The component reads through the idle hook (the thunk never runs without the flag) and hides on a null (403 FEATURE_DISABLED, 404).
   const component = source("components/business/pilot-journal.tsx");
   assert.match(component, /useStrategyAsync\(\(\) => getPilotJournal\(\), \[\]\)/);
