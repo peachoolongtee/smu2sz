@@ -288,7 +288,7 @@ test("your own file: the upload form sends a Word, PDF or text file with what it
     await expect(review).toHaveAttribute("data-status", "PROPOSED");
     await expect(page.getByTestId("doc-terms").locator(":scope > li")).toHaveCount(18);
   } else {
-    await expect(form.getByRole("alert")).toContainText("Uploading needs the live server; the Demo reads its three sample documents.");
+    await expect(form.getByRole("alert")).toContainText("Uploading needs the live server: run pnpm demo, not the recorded-data build.");
   }
 });
 
