@@ -150,7 +150,7 @@ export function OwedCard({ customers, selected, onSelect }: { customers: Worklis
     const only = rows[0];
     return (
       <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-3.5" data-testid="hv2-owed-card" data-ring="false">
-        <h2 id="hv2-owed-title" className="font-display text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-owed-title">
+        <h2 id="hv2-owed-title" className="font-display text-lg font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-owed-title">
           {t("hv2.owed.title")}
         </h2>
         <button type="button" aria-pressed={selected === only.customer_id} onClick={() => onSelect(only.customer_id)} className="motion-press mt-2 block w-full rounded-control px-1 py-1 text-left hover:bg-subtle touch:min-h-11" data-testid="hv2-owed-one">
@@ -165,7 +165,7 @@ export function OwedCard({ customers, selected, onSelect }: { customers: Worklis
   const on = at >= 0 ? rows[at] : null;
   return (
     <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-3.5" data-testid="hv2-owed-card">
-      <h2 id="hv2-owed-title" className="font-display text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-owed-title">
+      <h2 id="hv2-owed-title" className="font-display text-lg font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-owed-title">
         {t("hv2.owed.title")}
       </h2>
       <Breakdown
@@ -205,7 +205,7 @@ export function UpcomingCard({ h, overdue }: { h: HomeView; overdue?: { short: s
         .map((e) => ({ key: e.key, label: e.label_short ?? e.label, amount: e.amount_short, when: e.when, kind: (e.amount_fen ?? 0) < 0 ? "outflow" : "inflow" }));
   return (
     <section aria-labelledby="hv2-upcoming-title" className="motion-reveal f-card min-w-0 p-3.5" data-testid="hv2-upcoming">
-      <h2 id="hv2-upcoming-title" className="font-display text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink">
+      <h2 id="hv2-upcoming-title" className="font-display text-lg font-bold leading-tight tracking-[-0.01em] text-ink">
         {t("hv2.upcoming.title")}
       </h2>
       {events.length || overdue ? (

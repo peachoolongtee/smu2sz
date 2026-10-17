@@ -148,7 +148,7 @@ function VerdictBody({
       <AnnualisedCard legs={offerLegs(verdict.annualised, verdict.counters)} />
 
       <section aria-labelledby="violations-title">
-        <h2 id="violations-title" className="mb-2 text-sm font-semibold">
+        <h2 id="violations-title" className="mb-2 text-base font-semibold">
           {t("verdict.violations", { n: verdict.violations.length })}
         </h2>
         {verdict.violations.length ? (
@@ -226,7 +226,7 @@ function VerdictBody({
       ) : null}
 
       <section aria-labelledby="counters-title">
-        <h2 id="counters-title" className="mb-2 text-sm font-semibold">
+        <h2 id="counters-title" className="mb-2 text-base font-semibold">
           {t("verdict.counters", { n: verdict.counters.length })}
         </h2>
         {verdict.counters.length ? (

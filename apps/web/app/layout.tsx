@@ -6,8 +6,8 @@ import "@fontsource-variable/plus-jakarta-sans";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "FLOW 流", template: "%s · FLOW 流" },
-  description: "FLOW 流: the AI working-capital agent that reads buyer terms, protects the cash reserve and funds the gap within the owner's signed limits.",
+  title: { default: "FLOW", template: "%s · FLOW" },
+  description: "FLOW: the AI working-capital agent that reads buyer terms, protects the cash reserve and funds the gap within the owner's signed limits.",
 };
 
 export const viewport: Viewport = {

@@ -247,7 +247,7 @@ export function FixResult({
   return (
     <section aria-label={t("alerts.fix.title")} className={flat ? "space-y-2 border-t border-line-strong pt-3" : "card-standard space-y-2 p-4"} data-testid="fix-result" role="status">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-sm font-semibold text-ink">{t("alerts.fix.title")}</h3>
+        <h3 className="text-base font-semibold text-ink">{t("alerts.fix.title")}</h3>
         {counts}
       </div>
       <OperationList operations={result.results} business={business} />
@@ -270,7 +270,7 @@ function AlertChanged({ changed }: { changed: AlertChangedDetail }) {
       role="alert"
       data-testid="fix-changed"
     >
-      <h3 className="text-sm font-semibold">{t("alerts.changed.title")}</h3>
+      <h3 className="text-base font-semibold">{t("alerts.changed.title")}</h3>
       <p className="text-supporting">{t("alerts.changed.body")}</p>
       {now ? (
         <div className="rounded-tile border border-warn-line bg-surface px-3 py-2 text-ink" data-testid="fix-changed-alert">

@@ -16,8 +16,8 @@ import {
   WhatIfVerdictCard,
 } from "@/components/whatif-results";
 import { Disclosure } from "@/components/business/kit";
-import { AlertIcon, ChevronRightIcon } from "@/components/icons";
-import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
+import { AlertIcon, ChevronRightIcon, SparkIcon } from "@/components/icons";
+import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, ButtonLink } from "@/components/ui";
 import { getClock, getDeals, getOffer, getState, getWorklist, whatIfScope } from "@/lib/api";
 import type { WhatIfResult } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
@@ -50,6 +50,29 @@ function WhatIf() {
   return decision ? <Run key={`${decision}|${lang}`} decision={decision} customer={sel.customer ?? null} /> : <Ask customer={sel.customer ?? null} lang={lang} t={t} />;
 }
 
+/** The page's header, in the dark card of the cash page's "Try different terms" tile: the two cash lines behind, the eyebrow, the title, the line under it and the hypothetical badge. */
+function SandboxHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  const { t } = useI18n();
+  return (
+    <header className="motion-reveal relative isolate mb-6 flex flex-col overflow-hidden rounded-[var(--radius-f-card)] bg-f-btn p-5 text-f-btn-ink shadow-(--shadow-lift) sm:mb-8 sm:p-8" data-testid="sandbox-header">
+      {/* Two cash lines, one moved: decoration only. */}
+      <svg aria-hidden viewBox="0 0 160 64" className="absolute right-6 top-6 -z-10 hidden h-20 w-52 opacity-80 sm:block">
+        <path d="M2 18 H40 V40 H86 V54 H122 V30 H158" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="2.5" strokeDasharray="5 4" />
+        <path d="M2 18 H40 V28 H86 V36 H122 V14 H158" fill="none" stroke="var(--color-f-green)" strokeWidth="3" strokeLinejoin="round" />
+      </svg>
+      <p className="flex items-center gap-1.5 text-supporting font-bold uppercase tracking-[0.08em] text-f-btn-ink/70">
+        <SparkIcon aria-hidden width={14} height={14} />
+        {t("cash.try.eyebrow")}
+      </p>
+      <h1 className="type-headline mt-2 max-w-[24ch] text-balance">{title}</h1>
+      <p className="mt-2 max-w-[60ch] text-pretty text-base text-f-btn-ink/75">{subtitle}</p>
+      <div className="mt-4">
+        <Badge tone="info">{t("whatif.hypothetical")}</Badge>
+      </div>
+    </header>
+  );
+}
+
 /** No negotiation named: ask which one, from the queue's own rows that are negotiations (kind DECISION: a loan approval, a promise or an agreement is not one, though it may carry a record id). */
 function Ask({ customer, lang, t }: { customer: string | null; lang: "en" | "zh"; t: ReturnType<typeof useI18n>["t"] }) {
   const deals = useAsync(() => getDeals(lang, {}).catch(() => null), [lang]);
@@ -59,9 +82,9 @@ function Ask({ customer, lang, t }: { customer: string | null; lang: "en" | "zh"
   const open = queue ? taskRows(queue).filter((x) => x.tier !== "agreements" && (x.row.kind === "DECISION" || x.row.kind === "BUYER_REPLY") && rowDecision(x.row) && (!customer || x.row.customer_id === customer)) : [];
   return (
     <>
-      <PageHeader section="sandbox" title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
-      <section aria-labelledby="whatif-ask-title" className="motion-reveal card-flat max-w-3xl" data-testid="whatif-ask">
-        <h2 id="whatif-ask-title" className="sec-title font-display text-xl font-bold tracking-[-0.01em] text-ink">
+      <SandboxHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} />
+      <section aria-labelledby="whatif-ask-title" className="motion-reveal card-flat mx-auto w-full max-w-5xl" data-testid="whatif-ask">
+        <h2 id="whatif-ask-title" className="sec-title font-display text-2xl font-bold tracking-[-0.01em] text-ink">
           {t("deals.which.title")}
         </h2>
         <p className="mt-1 text-sm text-ink-2">{t("whatif.ask.body")}</p>
@@ -129,8 +152,8 @@ function Run({ decision, customer }: { decision: string; customer: string | null
   const mismatch = Boolean(customer && buyerId && customer !== buyerId);
   const ask = (text: string) => (
     <>
-      <PageHeader section="sandbox" title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
-      <div data-testid="whatif-ask" className="max-w-2xl">
+      <SandboxHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} />
+      <div data-testid="whatif-ask" className="mx-auto w-full max-w-4xl">
         <h2 className="type-section text-ink">{t("deals.which.title")}</h2>
         <p className="mt-1 text-sm text-ink-2" data-testid="whatif-irrelevant">
           {text}
@@ -149,7 +172,7 @@ function Run({ decision, customer }: { decision: string; customer: string | null
     const s = scope.data.scope;
     return (
       <>
-        <PageHeader section="sandbox" title={t("whatif.title")} subtitle={t("whatif.subtitle")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
+        <SandboxHeader title={t("whatif.title")} subtitle={t("whatif.subtitle")} />
         <p className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink-2" data-testid="whatif-scope">
           <span className="font-bold text-ink">{t("whatif.scope")}</span>
           <span>{record.data?.headline ?? record.data?.counterparty_name ?? ""}</span>
@@ -158,7 +181,7 @@ function Run({ decision, customer }: { decision: string; customer: string | null
             {t("whatif.scope.back")}
           </Link>
         </p>
-        <div className="max-w-2xl" data-testid="whatif-unscoped">
+        <div className="mx-auto w-full max-w-4xl" data-testid="whatif-unscoped">
           <Callout tone="warn">{s.scope_text}</Callout>
         </div>
       </>
@@ -184,8 +207,8 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
   if (ran?.irrelevant_text) {
     return (
       <>
-        <PageHeader section="sandbox" title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
-        <div data-testid="whatif-ask" className="max-w-2xl">
+        <SandboxHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} />
+        <div data-testid="whatif-ask" className="mx-auto w-full max-w-4xl">
           <h2 className="type-section text-ink">{t("deals.which.title")}</h2>
           <p className="mt-1 text-sm text-ink-2" data-testid="whatif-irrelevant">
             {ran.irrelevant_text}
@@ -199,7 +222,7 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
   }
   return (
     <>
-      <PageHeader section="sandbox" title={t("whatif.title")} subtitle={t("whatif.subtitle")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
+      <SandboxHeader title={t("whatif.title")} subtitle={t("whatif.subtitle")} />
       <p className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink-2 ${result?.scope_text || result?.compare_text ? "mb-1" : "mb-4"}`} data-testid="whatif-scope">
         <span className="font-bold text-ink">{t("whatif.scope")}</span>
         <span>{title ?? ""}</span>
@@ -221,7 +244,7 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
       ) : null}
 
       {unscoped ? (
-        <div className="max-w-2xl" data-testid="whatif-unscoped">
+        <div className="mx-auto w-full max-w-4xl" data-testid="whatif-unscoped">
           <Callout tone="warn">{unscoped.scope_text}</Callout>
         </div>
       ) : !result ? (

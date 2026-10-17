@@ -109,7 +109,7 @@ function CustomerEditor({ index, cu, draft, issues, docs, onChange, onRemove }: 
 
       <section className="space-y-4 rounded-card border border-line bg-surface p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-bold text-ink">{t("setup.s3.contract")}</h3>
+          <h3 className="text-base font-bold text-ink">{t("setup.s3.contract")}</h3>
           {k?.document_id ? <Badge tone="ok">{doc?.title ?? t("setup.s3.fromDocs")}</Badge> : null}
           <span className="grow" />
           {k ? (
@@ -168,7 +168,7 @@ function CustomerEditor({ index, cu, draft, issues, docs, onChange, onRemove }: 
           </div>
         ) : null}
         <div className="flex flex-wrap items-center gap-3">
-          <h3 className="text-sm font-bold text-ink">{t("setup.s3.invoices")}</h3>
+          <h3 className="text-base font-bold text-ink">{t("setup.s3.invoices")}</h3>
           <span className="grow" />
           <AddButton onClick={() => onChange({ invoices: [...cu.invoices, blankInvoice(k?.terms_days ?? null)] })} testId="setup-add-invoice">
             {t("setup.s3.addInvoice")}

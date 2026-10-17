@@ -37,7 +37,7 @@ export function ReconciliationSection({ today, buyerName }: { today: number; buy
     <section id="activity-reconciliation" aria-labelledby="activity-reconciliation-title" className="space-y-4 scroll-mt-20" data-testid="activity-reconciliation">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="activity-reconciliation-title" className="font-display text-xl font-bold tracking-[-0.01em] text-ink">
+          <h2 id="activity-reconciliation-title" className="font-display text-2xl font-bold tracking-[-0.01em] text-ink">
             {t("recon.title")}
           </h2>
           <p className="text-supporting text-ink-3">{t("biz.recon.sub")}</p>

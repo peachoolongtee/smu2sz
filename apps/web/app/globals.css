@@ -259,9 +259,8 @@ body {
   outline-offset: 2px;
 }
 
-/* The Ask FLOW fields (the header bar and the panel's box) and the worklist search show focus by their own border turning ink, not the ring. */
-.ask-field:focus-visible,
-.search-field:focus-visible {
+/* A field that draws its own focus (a darker border or ring on its wrapper) opts out of the ring. Unlayered like the rule above, so it wins over it. */
+.focus-own:focus-visible {
   outline: none;
 }
 

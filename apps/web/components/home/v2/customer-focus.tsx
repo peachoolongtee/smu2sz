@@ -56,7 +56,7 @@ export function CustomerFocusPanel({ customerId, worklist, selection, onAll }: {
             <>
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <h2 id="home-focus-title" tabIndex={-1} className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="focus-title">
+                  <h2 id="home-focus-title" tabIndex={-1} className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="focus-title">
                     {v.name}
                   </h2>
                   {v.summary_text ? <p className="mt-1.5 text-pretty text-[15px] text-ink-3">{v.summary_text}</p> : null}

@@ -202,7 +202,7 @@ export default function CapexPage() {
           </Card>
 
           <section aria-labelledby="capex-fail-title">
-            <h2 id="capex-fail-title" className="mb-2 text-sm font-semibold">
+            <h2 id="capex-fail-title" className="mb-2 text-base font-semibold">
               {t("capex.why")}
             </h2>
             <ul className="grid gap-4 xl:grid-cols-2">
