@@ -830,7 +830,7 @@ several steps is not, so a plan refused part-way keeps its earlier steps and the
 - **Not advice.** FLOW is decision support inside an owner-signed mandate, not a licensed lender, broker or adviser, and it
   makes no real payment.
 
-<!-- figure: figures/fig7-security-results.png | Figure 8. The attack catalogue as certified in the Security Self-Assessment: 260 stored cases through the API and chat, by class. None violated the defined harm oracles. Every case reached the path it targets; of the 127 API cases, 119 were stopped by the control they name and 8 by another control. On this build the catalogue holds 261 (Table 13). -->
+<!-- figure: figures/fig7-security-results.png | Figure 8. The attack catalogue on this build: 261 stored cases through the API and chat, by class (the Security Self-Assessment certified 260; DOC-05, adding a customer without the owner token, was added since). None violated the defined harm oracles. Every case reached the path it targets; of the 128 API cases, 120 were stopped by the control they name and 8 by another control. -->
 
 **Table 13. Attack results (261 stored cases: 128 through the API, 133 through chat; each in a fresh in-memory runtime, offline, with recorded or scripted model answers; `b4167053`, 18 Oct 2026).**
 
