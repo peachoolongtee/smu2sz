@@ -8,11 +8,14 @@ The five round-two branches and the OUT-1 fix are merged (`719c9dcf`, certified 
 |---|---|---|---|---|
 | `sec/decide-once-log` @ `2ebb59d0` | SEC-08 executor half (owner-approved 17 Oct) | `app/operations/executor.py` (`_decide` only), `tests/operations/test_sec08_decided_in_log.py` | on `int/security-2`: operations 412, verifier 263, security 289, persistence 161, tests/api 1,729 passed / 2 skipped, mock e2e 444 / 61 skipped, typecheck, lint, unit; after merging `719c9dcf`: operations + guard tests 415 passed | **yes** |
 
-Not built (each needs a go-ahead; none is an engine change):
-- **OUT-1b** (Low): refuse AcceptOffer, RejectOffer and CounterOffer in `run_operation` (`app/api/operations.py`) when
-  `sent_outside_conflict` holds, so the raw route matches the chat and the UI routes.
-- **RT-2** (Low): `POST /offers` answers 422, not 500, for a malformed document (`app/api/offers.py` `_docs`).
-- **RT-1** (Medium): `next` 16.3.8 and `source-map-js` 1.2.2 (7 advisories); the team's call under stability mode; needs the full browser gate.
+Built 17 Oct on the integration owner's request, each from dev `719c9dcf`, one concern each, no engine change, merging cleanly into
+dev `eee7ec70`:
+
+| Branch @ head | Finding | Files | Tests | Ready |
+|---|---|---|---|---|
+| `sec/out1b-raw-operations` @ `f3392196` | OUT-1b (Low) | `app/api/operations.py` (`run_operation` applies `sent_outside_conflict` under `rt.lock`; `lang` passed through), `tests/security/test_out1b_raw_operations.py` | regression 8 (7 fail before); security 297, operations 406 (1 skipped), tests/api 1,729 passed / 2 skipped; mock e2e 444 / 61 skipped, typecheck, lint, unit | **yes** |
+| `sec/offers-422` @ `3158c81c` | RT-2 (Low) | `app/api/offers.py` (`_docs`: 422 `DOCUMENT_INVALID` naming the fields, never the values), `tests/security/test_rt2_malformed_documents.py` | regression 8 (8 fail before); security 297, compiler 1,015 (1 skipped), tests/api 1,729 passed / 2 skipped; mock e2e 444 / 61 skipped, typecheck, lint, unit | **yes** |
+| `sec/next-16-3-8` @ `ce7791bd` | RT-1 (Medium) | `apps/web/pnpm-lock.yaml` only: `next` 16.3.7 → 16.3.8 (pinned, not 16.4.2), `source-map-js` 1.2.1 → 1.2.2; `package.json` unchanged | fixes GHSA-cjq9-62q9-8jv4, GHSA-mcj8-r9mp-w47p, GHSA-4jqv-mc3x-m676, GHSA-f87g-xv8r-7p7x, GHSA-3w37-wq28-93x7, GHSA-39w2-rjm5-chcv (next) and GHSA-68fv-2mgg-jv7q (source-map-js); `pnpm audit --prod`: none left; frozen install passes; mock e2e 444 / 61 skipped, typecheck, lint, unit; production build in a browser: 15 pages, sign-in and chat with 0 CSP violations, injections blocked. Remaining in the full audit: `braces` ≤ 3.0.3 (high, no patch) via `eslint-config-next`, lint tooling only | **yes**; the integration owner runs the full mock and live suites before it lands |
 
 ## Round two, 16 Oct: five branches for `dev` (merged in `719c9dcf`)
 
