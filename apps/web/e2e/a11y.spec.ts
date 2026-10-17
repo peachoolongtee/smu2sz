@@ -74,11 +74,14 @@ test("contract ingestion and the send step: the documents and a review, the buye
   await page.goto("/documents");
   await expect(page.getByTestId("doc-dropzone")).toBeVisible();
   await scan(page, "/documents");
-  // The upload's own message (no company typed yet), then a review. The mock reads no uploaded file, so the review is a
+  // A file given before the company (it waits, the company list open with its question), then a review. The mock reads no uploaded file, so the review is a
   // demo document the owner confirmed; a new reading waiting for a decision is covered by documents.spec.ts in the live project.
-  await page.getByTestId("doc-upload").click();
-  await expect(page.locator("#docs-read").getByRole("alert")).toBeVisible();
+  await page.locator("#docs-read").locator('input[type="file"]').setInputFiles({ name: "supply-agreement.md", mimeType: "text/plain", buffer: Buffer.from("A supply agreement.") });
+  await expect(page.getByTestId("doc-ask-who")).toBeVisible();
+  await expect(page.getByTestId("doc-counterparty-list")).toBeVisible();
   await scan(page, "/documents upload message");
+  await page.keyboard.press("Escape"); // the list closes; Remove is under it
+  await page.getByTestId("doc-waiting-remove").click();
   await page.getByTestId("doc-row-DOC-000001").getByRole("button").click();
   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
   await scan(page, "/documents review");

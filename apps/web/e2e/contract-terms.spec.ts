@@ -56,7 +56,8 @@ test.describe("against the live API", () => {
     await page.goto("/documents");
     const form = page.locator("#docs-read");
     // The companies on the books load with the page: choose the file only once the name typed is one of them.
-    await expect(form.locator('datalist option[value="Dongguan Office Supplies Ltd."]')).toHaveCount(1);
+    await form.getByTestId("doc-counterparty").click();
+    await expect(form.getByTestId("doc-counterparty-list").getByRole("option", { name: "Dongguan Office Supplies Ltd." })).toHaveCount(1);
     await form.getByTestId("doc-counterparty").fill("Dongguan Office Supplies Ltd.");
     await expect(form.getByTestId("doc-counterparty")).not.toHaveAttribute("aria-invalid", "true");
     await form.locator('input[type="file"]').setInputFiles({ name: "dgos-supply-agreement.md", mimeType: "text/plain", buffer: DGOS });

@@ -3780,6 +3780,20 @@ export interface ContractTermsResult {
 export type StageState = "done" | "now" | "todo" | "skipped" | "pending" | "missed";
 export type DealTone = "ok" | "warn" | "bad" | "info" | "mute";
 
+/** What a buyer's invoice rows add up to, with the server's one sentence about them (`DealView.open_invoices`, `DealView.contract_status`). */
+export interface OpenInvoices {
+  count: number;
+  due_fen: Fen;
+  due_display: string;
+  late_count: number;
+  late_fen: Fen;
+  late_display: string;
+  next_due_day: Day | null;
+  next_due_when: string | null;
+  text: string;
+  tone: DealTone;
+}
+
 export interface DealView {
   counterparty_id: string;
   counterparty_name: string;
@@ -3842,18 +3856,12 @@ export interface DealView {
    * ones, when the next falls due and the server's one sentence about them ("No contract on file yet. Open invoices: 1, ¥120,000.00 due in 14 days.").
    * Absent with a contract (its own fields say it) and for a buyer with no invoice.
    */
-  open_invoices?: {
-    count: number;
-    due_fen: Fen;
-    due_display: string;
-    late_count: number;
-    late_fen: Fen;
-    late_display: string;
-    next_due_day: Day | null;
-    next_due_when: string | null;
-    text: string;
-    tone: DealTone;
-  };
+  open_invoices?: OpenInvoices;
+  /**
+   * A confirmed contract with no deal agreed on it yet: the same counts as `open_invoices` and the server's one sentence for the row that lists it on
+   * Deals ("Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days."). Absent once a deal is agreed and without a contract.
+   */
+  contract_status?: OpenInvoices;
   owed_by_us?: {
     display_only: boolean;
     deliverables: { text: string | null; clause: string | null; quote: string }[];
