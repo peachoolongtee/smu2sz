@@ -4,8 +4,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { ReceivableRow } from "@/lib/types";
+import type { ReceivableRow, ReceiptWords } from "@/lib/types";
 import { ActionButton, actionsOf } from "./actions";
+import { canRecordPayment, RecordPayment } from "./record-payment";
 import { isFinanced } from "./state";
 
 /**
@@ -21,6 +22,7 @@ export function InvoiceDetail({
   dealHref,
   history,
   primaryHere,
+  onRecorded,
 }: {
   row: ReceivableRow;
   customerHref: string;
@@ -29,6 +31,8 @@ export function InvoiceDetail({
   /** The buyer's payment history in the server's words (from the exposure read), when it has been read for this buyer. */
   history: string | null;
   primaryHere: boolean;
+  /** Takes the server's words for a payment the owner recorded on this invoice; without it the invoice offers no "Record a payment". */
+  onRecorded?: (words: ReceiptWords) => void;
 }) {
   const { t } = useI18n();
   const net = row.net ?? {};
@@ -113,7 +117,7 @@ export function InvoiceDetail({
         {history ? <Fact label={t("recv3.facts.history")} testId="recv3-history">{history}</Fact> : null}
       </dl>
 
-      {actions.length || row.financing_href ? (
+      {actions.length || row.financing_href || (onRecorded && canRecordPayment(row)) ? (
         <div className="space-y-2">
           <div role="group" aria-label={t("recv3.actions")} className="flex flex-wrap gap-2" data-testid="recv3-actions">
             {actions.map((action, i) => (
@@ -126,6 +130,7 @@ export function InvoiceDetail({
                 {t("recv3.actions.financing")}
               </ButtonLink>
             ) : null}
+            {onRecorded ? <RecordPayment row={row} onRecorded={onRecorded} /> : null}
           </div>
           {showNote ? <p className="text-sm text-ink-3" data-testid="recv3-actions-note">{t("recv3.actions.note", { chase: t("biz.chase.button") })}</p> : null}
         </div>

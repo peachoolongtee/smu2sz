@@ -121,6 +121,9 @@ def test_late_invoice_and_customer_without_contract_are_warnings() -> None:
     built = build_books(SetupDraft.model_validate(DRAFT))
     texts = [w.en for w in built.warnings]
     assert any("30 days late" in x for x in texts)
+    # it names where the payment is recorded (the Receivables page's own action, gap 1 of the feature inventory)
+    late = next(w for w in built.warnings if "30 days late" in w.en)
+    assert late.en.endswith("until a payment is recorded (Receivables › Record a payment).") and "应收款 › 记录收款" in late.zh
     assert any("Customer B has no contract" in x for x in texts)
 
 
