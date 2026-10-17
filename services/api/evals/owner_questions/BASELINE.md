@@ -644,3 +644,152 @@ mandate's expiry, counters sent).
 answered, 6 wrong → partial, 12 wrong → can't, 4 partial → partial, 47 can't → can't (the rest unchanged in score and intent).
 The only regressions are two turns, PARTIAL → CANT: COV-07 zh "FLOW的融资方案会违反契约吗？" and "这个方案会不会违反契约？". They
 were answered with the comparison or with today's ratios, neither of which is the plan's pro forma; they now say so.
+
+## 7. After the answer module (branch `feat/ask-books`, 17 Oct 2026)
+
+Sections 1 to 6 are unchanged. This is the same harness, with the same settings, on `feat/ask-books`. That branch joins the
+routing (section 6) with the answer module `app/nl/answers` (the top 30 questions of section 4, read-only), plus these changes:
+- **The top question first** (`rules.py`). A text the answer module matches is ASK_BOOKS before any older read claims it. It is
+  never a fixture, quoted text, an approval, a Tier-3 subject, a not-held subject or a reply to a pending plan.
+- **The page reads keep their questions.** What changed, what we are waiting for, when money arrives, what is overdue, who owes
+  us, what needs me (the alerts and their cure), and a late payment of "this" invoice stay with the reads that know the page's
+  binding. A named late payment ("What if Foshan pays 30 days late?") is the answer module's projection on a copy of the books.
+- **Covenant polarity.** A breach-worded question ("Are we in breach of our covenants?", 我们违反契约了吗) leads with "No. No
+  projected month breaches a covenant" / 没有… (不会… for a question about what will happen). The plan's question ("Would FLOW's
+  funding plan break a covenant?", FLOW的融资方案会违反契约吗) is answered on the projection with the standing plan's legs, Home's
+  own projection after the plan (`metrics.plan_covenant_ratios`, read-only): DSCR 1.87× and leverage 1.72× against 1.25× and 2.50×.
+  With no plan standing it answers on today's books and says so. COV-07 was the one WRONG turn ("满足。…" to a breach question).
+- **Guards on two answers.** CAP-01 answers only for the ¥600,000 case on file: "Can we buy a ¥300k machine?" gets the capex
+  read's "I will not guess", not the ¥600,000 answer. LIQ-01 is the owner's own cash: "Are we OK to accept this offer from
+  Foshan?" and 这份合同安全吗 are not answered with the cash position. The funding-need answer no longer takes 最多能融多少
+  (financing capacity).
+- **Scorer and bank.** A percentage figure such as "7.20%" matches "7.20%" again (the 15% → 15.00% change had made it need
+  "7.2%"). CAP-01 accepts the answer module's "Only financed." / 只能融资购买。 as its direct answer. CUS-07 is scored on
+  `expect_re` "day 62 instead of day 32 | 第 62 天而不是第 32 天", which is the projection the bank's note asks for.
+
+**Totals, business wording (`mode=business`), 503 turns**
+
+| Category | Lang | Answered | Partial | Wrong | Can't | Turns |
+|---|---|---:|---:|---:|---:|---:|
+| liquidity | en | 26 | 3 | 0 | 10 | 39 |
+|  | zh | 25 | 3 | 0 | 8 | 36 |
+|  | **all** | 51 | 6 | 0 | 18 | 75 |
+| debt | en | 15 | 2 | 0 | 13 | 30 |
+|  | zh | 12 | 4 | 0 | 12 | 28 |
+|  | **all** | 27 | 6 | 0 | 25 | 58 |
+| customers | en | 12 | 1 | 0 | 20 | 33 |
+|  | zh | 13 | 4 | 0 | 16 | 33 |
+|  | **all** | 25 | 5 | 0 | 36 | 66 |
+| deals | en | 10 | 2 | 0 | 9 | 21 |
+|  | zh | 7 | 3 | 0 | 10 | 20 |
+|  | **all** | 17 | 5 | 0 | 19 | 41 |
+| funding | en | 11 | 1 | 0 | 9 | 21 |
+|  | zh | 10 | 2 | 0 | 8 | 20 |
+|  | **all** | 21 | 3 | 0 | 17 | 41 |
+| covenants | en | 10 | 3 | 0 | 5 | 18 |
+|  | zh | 11 | 2 | 0 | 5 | 18 |
+|  | **all** | 21 | 5 | 0 | 10 | 36 |
+| capex | en | 11 | 3 | 0 | 2 | 16 |
+|  | zh | 10 | 3 | 0 | 3 | 16 |
+|  | **all** | 21 | 6 | 0 | 5 | 32 |
+| activity | en | 9 | 0 | 0 | 10 | 19 |
+|  | zh | 8 | 0 | 0 | 10 | 18 |
+|  | **all** | 17 | 0 | 0 | 20 | 37 |
+| mandate | en | 7 | 0 | 0 | 14 | 21 |
+|  | zh | 6 | 1 | 0 | 13 | 20 |
+|  | **all** | 13 | 1 | 0 | 27 | 41 |
+| not_in_books | en | 37 | 1 | 0 | 0 | 38 |
+|  | zh | 38 | 0 | 0 | 0 | 38 |
+|  | **all** | 75 | 1 | 0 | 0 | 76 |
+| **ALL** | en | 148 | 16 | 0 | 92 | 256 |
+|  | zh | 140 | 22 | 0 | 85 | 247 |
+|  | **all** | **288 (57%)** | **38 (8%)** | **0 (0%)** | **177 (35%)** | 503 |
+
+| | Answered | Partial | Wrong | Can't |
+|---|---:|---:|---:|---:|
+| Original baseline (section 2) | 92 (18%) | 111 (22%) | 35 (7%) | 265 (53%) |
+| After routing fixes (section 6) | 176 (35%) | 67 (13%) | 0 | 260 (52%) |
+| Joined, before the fixes in this section (commit `3c55b781`) | 270 (54%) | 52 (10%) | 1 | 180 (36%) |
+| **After the answer module** | **288 (57%)** | **38 (8%)** | **0** | **177 (35%)** |
+
+- Main wordings only: 140 answered, 16 partial, 0 wrong, 88 can't (244 turns). Paraphrases: 148 / 22 / 0 / 89 (259).
+- `--mode demo`: 286 / 40 / 0 / 177.
+- Per question (122): 77 answered in every wording, 12 partial at best, 0 wrong, 33 can't in every wording.
+- **The top 30 (section 4): all 135 turns are answered**, in every wording and both languages. No top-30 case is left partial
+  or can't.
+- Safety: no question executed or queued an operation or changed the books. The four turns that append a REFUSED operation are
+  section 0's accepted requests to FLOW (MAN-08 en and zh). Turns proposing a plan that waits for "go ahead": 3. They are
+  "有什么需要我决定的吗？" (the alerts read holds its cure) and DEAL-05's reported 60-day offer (en and zh). Turns storing a
+  verdict: 2 (DEAL-05).
+
+**What is left: the questions that are not answered in every wording.** None of them is in the top 30; the counts are
+answered / partial / wrong / can't over the question's wordings.
+
+| Id | Question (en) | A/P/W/C | Intent of the weakest turn | Why |
+|---|---|---|---|---|
+| LIQ-07 | What is our minimum cash reserve? | 1/0/0/3 | OUT_OF_SCOPE | no rule or answer reads it |
+| LIQ-08 | How much headroom do we have above the reserve? | 0/4/0/0 | SHOW_STATUS | the status read lacks the ¥100,000 headroom |
+| LIQ-11 | What will our cash be in 30 days? | 0/0/0/4 | OUT_OF_SCOPE | `cash_on(day)` has no question |
+| LIQ-12 | Show me the 13-week cash forecast. | 0/2/0/2 | OUT_OF_SCOPE | |
+| LIQ-13 | When does the next money come in? | 3/0/0/1 | OUT_OF_SCOPE | one wording unread |
+| LIQ-16 | Is any money in transit? | 0/0/0/4 | OUT_OF_SCOPE | |
+| LIQ-17 | What happens to cash if we do nothing? | 0/0/0/4 | WHAT_IF | the what-if tests buyer terms only |
+| DEBT-02 | Who do we owe money to? | 0/0/0/4 | OUT_OF_SCOPE | the loan has no lender recorded |
+| DEBT-05 | Is there anything we could repay right now? | 2/0/0/2 | ASK_BOOKS | the zh wordings ask about the loan: "cannot answer yet" |
+| DEBT-07 | How much is drawn on the credit line? | 0/2/0/2 | OUT_OF_SCOPE | |
+| DEBT-09 | Which of our facilities is cheapest to use? | 2/0/0/2 | OUT_OF_SCOPE | |
+| DEBT-10 | When does the credit line have to be at zero? | 0/0/0/4 | OUT_OF_SCOPE | |
+| DEBT-11 | How much interest will we pay over the next four months? | 0/0/0/4 | OUT_OF_SCOPE | |
+| DEBT-12 | What would FLOW's plan do to our debt? | 1/1/0/2 | ASK_BOOKS | "cannot answer yet" |
+| DEBT-13 | What is our cost of funds? | 0/0/0/4 | OUT_OF_SCOPE | |
+| DEBT-14 | Should we draw on the credit line now? | 0/3/0/1 | OUT_OF_SCOPE | the comparison, no yes/no |
+| CUS-02 | How much are we owed in total? | 2/1/0/1 | OUT_OF_SCOPE | |
+| CUS-04 | What is our DSO? | 0/0/0/4 | ASK_BOOKS | no receipt history: "cannot answer yet" |
+| CUS-06 | What do Foshan's payment terms cost us? | 0/1/0/3 | OUT_OF_SCOPE | |
+| CUS-09 | Which invoices are still open? | 0/2/0/2 | OUT_OF_SCOPE | |
+| CUS-10 | When is Foshan's invoice due? | 1/0/0/3 | OUT_OF_SCOPE | |
+| CUS-11 | How much does Dongguan owe us? | 0/1/0/3 | OUT_OF_SCOPE | |
+| CUS-12 | How much will we invoice next month? | 0/0/0/4 | OUT_OF_SCOPE | |
+| CUS-13 | What orders do we expect next quarter? | 0/0/0/4 | OUT_OF_SCOPE | |
+| CUS-14 | Have all expected payments arrived? | 0/0/0/4 | OUT_OF_SCOPE | |
+| CUS-15 | Who are our customers? | 0/0/0/4 | OUT_OF_SCOPE | |
+| CUS-16 | Is Foshan a reliable payer? | 0/0/0/4 | OUT_OF_SCOPE | no receipt history |
+| DEAL-03 | Where are we with Foshan? | 0/3/0/1 | OUT_OF_SCOPE | |
+| DEAL-04 | Is there an open request from a customer? | 2/2/0/0 | SHOW_STATUS | the waiting read has no yes/no |
+| DEAL-05 | Foshan wants 60-day terms. Can we accept? | 2/0/0/2 | OUT_OF_SCOPE | the paraphrases are not read as a reported offer |
+| DEAL-06 | What is the biggest discount I can give a customer? | 0/0/0/4 | OUT_OF_SCOPE | |
+| DEAL-07 | Which contracts have we signed? | 0/0/0/4 | OUT_OF_SCOPE | |
+| DEAL-08 | What payment terms did we agree with Foshan? | 0/0/0/4 | OUT_OF_SCOPE | |
+| DEAL-10 | What did we last offer Foshan? | 0/0/0/4 | ASK_BOOKS | "cannot answer yet" |
+| FUN-01 | What's the cheapest way to raise ¥200,000? | 0/0/0/4 | OUT_OF_SCOPE | the router prices only the projected gap |
+| FUN-05 | How fast can we get money? | 1/0/0/3 | OUT_OF_SCOPE | |
+| FUN-06 | Should we apply for the government-guaranteed loan? | 0/0/0/4 | ASK_BOOKS | "cannot answer yet" |
+| FUN-07 | Can we borrow against the Foshan invoice? | 0/2/0/2 | OUT_OF_SCOPE | the ¥336,000 capacity has no question |
+| FUN-09 | What would a bank need from us for a loan? | 0/0/0/4 | ASK_BOOKS | "cannot answer yet" |
+| FUN-10 | Is equity an option? | 3/1/0/0 | OUT_OF_SCOPE | one wording refused without a nearest read |
+| COV-03 | What is our DSCR? | 3/1/0/0 | ASK_BOOKS | one wording misses the 1.25× limit |
+| COV-04 | What is our leverage? | 2/0/0/2 | ASK_BOOKS | "cannot answer yet" |
+| COV-06 | How much more can we borrow before we break the leverage covenant? | 0/4/0/0 | ASK_BOOKS | the ¥1,245,000 is not stated |
+| COV-08 | Is the credit line clean-down at risk? | 0/0/0/4 | OUT_OF_SCOPE | |
+| COV-09 | What is our EBITDA? | 0/0/0/4 | OUT_OF_SCOPE | |
+| CAP-06 | What would a ¥300,000 machine do to our cash? | 0/3/0/1 | WHAT_IF | only the ¥600,000 case is on file |
+| CAP-07 | Would an equipment loan break our covenants? | 1/3/0/0 | ASK_BOOKS | the breakpoints, not the 18-month loan's 1.13× |
+| CAP-08 | What purchases have we committed to? | 0/0/0/4 | ASK_BOOKS | "cannot answer yet" |
+| ACT-04 | Has anything been refused or blocked? | 0/0/0/4 | OUT_OF_SCOPE | |
+| ACT-05 | Is the audit log intact? | 0/0/0/4 | OUT_OF_SCOPE | |
+| ACT-06 | How much money has FLOW moved? | 0/0/0/4 | ASK_BOOKS | "cannot answer yet" |
+| ACT-07 | Which decisions are still open? | 2/0/0/2 | OUT_OF_SCOPE | |
+| ACT-08 | Did anyone try to change our limits? | 2/0/0/2 | OUT_OF_SCOPE | "Any security incidents?" is unread |
+| ACT-09 | What have we sent to customers? | 0/0/0/4 | OUT_OF_SCOPE | |
+| MAN-03 | When does your mandate expire? | 0/0/0/4 | ASK_BOOKS | "cannot answer yet" |
+| MAN-04 | What's the highest interest rate FLOW may accept? | 0/0/0/4 | OUT_OF_SCOPE | |
+| MAN-05 | How big a discount can FLOW give a customer on its own? | 0/0/0/4 | OUT_OF_SCOPE | |
+| MAN-06 | Is the mandate valid? | 0/0/0/4 | ASK_BOOKS | "cannot answer yet" |
+| MAN-07 | What will FLOW never do? | 0/0/0/4 | OUT_OF_SCOPE | |
+| MAN-09 | What limits did I sign? | 0/0/0/4 | ASK_BOOKS | "cannot answer yet" |
+| MAN-10 | Can FLOW take on new borrowing by itself? | 0/1/0/3 | OUT_OF_SCOPE | |
+| NIB-15 | Should I hire more people? | 3/1/0/0 | OUT_OF_SCOPE | one wording refused without a nearest read |
+
+Most of the can'ts are one metric of section 5 away. `metrics.py` already computes many of them (`in_transit`, `cash_on`,
+`drawn_by_facility`, `mandate_limits_and_validity`, `activity_since`, `invoice_financing_capacity`), but no question in
+`answers.QUESTIONS` reaches them yet.
