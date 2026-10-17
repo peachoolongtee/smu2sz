@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 
 from app.domain.models import (
     CONTRACT_READING_KINDS,
@@ -78,10 +78,19 @@ def short_name(name: str) -> str:
     return buyer_short(name)
 
 
-def registry_names(party: Counterparty) -> list[str]:
-    """The names the registry holds for a counterparty: its name and its short form."""
-    short = short_name(party.name)
-    return [party.name, *([short] if short and short != party.name else [])]
+def registry_names(party: Counterparty, extra: Sequence[str] = ()) -> list[str]:
+    """The names the registry holds for a counterparty: its name and its short form, then any short name the owner gave it
+    when adding it (`extra`, from the ADD_CUSTOMER entry; `app.api.customers.added_short_names`)."""
+    out = [party.name]
+    for n in (short_name(party.name), *extra):
+        if n and n.strip() and normalise(n) not in {normalise(x) for x in out}:
+            out.append(n)
+    return out
+
+
+def taken_names(party: Counterparty, extra: Sequence[str] = ()) -> set[str]:
+    """The normalised names a new customer may not take: a counterparty's name and its short names."""
+    return {normalise(n) for n in registry_names(party, extra) if normalise(n)}
 
 
 def party_matches(found: Iterable[str], names: Sequence[str]) -> bool:
@@ -92,31 +101,57 @@ def party_matches(found: Iterable[str], names: Sequence[str]) -> bool:
     return any(names_match(f, full) or any(_inside(normalise(o), normalise(f)) for o in others) for f in found)
 
 
-def _found(record: ContractRecord) -> list[tuple[str, SourceSpan]]:
-    """The party names the reading found, each with the span it was read from, in document order, distinct."""
-    out: list[tuple[str, SourceSpan]] = []
+_FIELD_ROLE = {ContractField.PARTY_BUYER: "BUYER", ContractField.PARTY_SUPPLIER: "SUPPLIER"}
+
+
+def _found_roles(record: ContractRecord) -> list[tuple[str, SourceSpan, str]]:
+    """The party names the reading found, each with the span it was read from and the role the document gives it (BUYER,
+    SUPPLIER or LENDER), in document order, distinct."""
+    out: list[tuple[str, SourceSpan, str]] = []
     if record.contract is not None:
         for term in record.contract.terms:
             name = (term.text or term.value_text or "").strip()
             if term.field in _PARTY_FIELDS and name:
-                out.append((name, term.span))
+                out.append((name, term.span, _FIELD_ROLE[term.field]))
     elif record.term_sheet is not None:
         name = record.term_sheet.lender_name.strip()
         # The term-sheet reader falls back to the sender (the counterparty id) when it found no lender name in the text.
         at = record.document.text.find(name) if name and name not in (record.document.sender_id, record.counterparty_id) else -1
         if at >= 0:
-            out.append((name, SourceSpan(doc_id=record.document.doc_id, start=at, end=at + len(name), text=name)))
+            out.append((name, SourceSpan(doc_id=record.document.doc_id, start=at, end=at + len(name), text=name), "LENDER"))
     seen: set[str] = set()
-    distinct: list[tuple[str, SourceSpan]] = []
-    for name, span in sorted(out, key=lambda x: x[1].start):
+    distinct: list[tuple[str, SourceSpan, str]] = []
+    for name, span, role in sorted(out, key=lambda x: x[1].start):
         if normalise(name) not in seen:
             seen.add(normalise(name))
-            distinct.append((name, span))
+            distinct.append((name, span, role))
     return distinct
+
+
+def _found(record: ContractRecord) -> list[tuple[str, SourceSpan]]:
+    """The party names the reading found, each with the span it was read from, in document order, distinct."""
+    return [(n, s) for n, s, _ in _found_roles(record)]
 
 
 def found_names(record: ContractRecord) -> list[str]:
     return [n for n, _ in _found(record)]
+
+
+def on_books(name: str, role: str, registry: Sequence[Counterparty],
+             extra: Mapping[str, Sequence[str]] | None = None) -> str | None:
+    """The registry counterparty a party name the document gives is, by the same matcher as the party check: one of the
+    document's role first, then any; None when no registry name matches."""
+    matched = [c for c in registry if party_matches([name], registry_names(c, (extra or {}).get(c.id, ())))]
+    same = [c for c in matched if c.role == role]
+    return (same or matched)[0].id if matched else None
+
+
+def named_parties(record: ContractRecord, registry: Sequence[Counterparty],
+                  extra: Mapping[str, Sequence[str]] | None = None) -> list[dict[str, str | None]]:
+    """The parties the reading found (a contract's PARTY_BUYER and PARTY_SUPPLIER terms, a lender agreement's lender name
+    when it is not the reader's fallback), each with the registry counterparty it is, or None when it is not on the books."""
+    return [{"name": n, "role": role, "on_books_id": on_books(n, role, registry, extra)}
+            for n, _, role in _found_roles(record)]
 
 
 def _joined(names: Sequence[str], lang: str) -> str:
@@ -163,11 +198,17 @@ def party_flags(record: ContractRecord, names: Sequence[str]) -> list[DocumentFl
                          note=not_named_note(record.kind, [n for n, _ in found], names[0], "en"), span=found[0][1])]
 
 
-def with_party_check(record: ContractRecord, party: Counterparty | None) -> ContractRecord:
+def with_party_check(record: ContractRecord, party: Counterparty | None, extra: Sequence[str] = ()) -> ContractRecord:
     """The record with the party check's flags added after the reading's own. `party` is the registry entry the owner
-    chose; a vendor not yet on the registry has none, and is not checked."""
-    flags = party_flags(record, registry_names(party)) if party is not None else []
+    chose (`extra`: the short names the owner gave it); a vendor not yet on the registry has none, and is not checked."""
+    flags = party_flags(record, registry_names(party, extra)) if party is not None else []
     return record.model_copy(update={"flags": [*record.flags, *flags]}) if flags else record
+
+
+def without_party_check(record: ContractRecord) -> ContractRecord:
+    """The record with the party check's flags taken off (the reading's own flags kept), to check it again for another
+    counterparty."""
+    return record.model_copy(update={"flags": [f for f in record.flags if f.kind not in PARTY_FLAG_KINDS]})
 
 
 def party_note(flag: DocumentFlag, record: ContractRecord, chosen: str | None, lang: str) -> str:
@@ -180,5 +221,6 @@ def party_note(flag: DocumentFlag, record: ContractRecord, chosen: str | None, l
     return not_named_note(record.kind, found_names(record), chosen, lang)
 
 
-__all__ = ["PARTY_FLAG_KINDS", "PARTY_NOT_NAMED", "PARTY_UNCHECKED", "found_names", "names_match", "normalise",
-           "party_flags", "party_matches", "party_note", "registry_names", "with_party_check"]
+__all__ = ["PARTY_FLAG_KINDS", "PARTY_NOT_NAMED", "PARTY_UNCHECKED", "found_names", "named_parties", "names_match",
+           "normalise", "on_books", "party_flags", "party_matches", "party_note", "registry_names", "taken_names",
+           "with_party_check", "without_party_check"]

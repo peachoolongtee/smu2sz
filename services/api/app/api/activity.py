@@ -39,7 +39,8 @@ _CATEGORY = {
     "DRAW_FACILITY": "cash", "REPAY_FACILITY": "cash", "SUBMIT_INVOICE_FOR_FINANCING": "cash", "APPLY_FOR_FACILITY": "cash",
     "ADD_FACILITY": "cash",
     "RECEIVE_PAYMENT": "receivables", "OPEN_BOOKS": "cash",
-    "CONFIRM_DOCUMENT": "documents", "REJECT_DOCUMENT": "documents",
+    "CONFIRM_DOCUMENT": "documents", "REJECT_DOCUMENT": "documents", "REFILE_DOCUMENT": "documents",
+    "ADD_CUSTOMER": "deals",
 }
 _LABELS = {
     "all": ("All", "全部"), "deals": ("Deals", "交易"), "cash": ("Cash", "现金"), "receivables": ("Receivables", "应收款"),
@@ -169,7 +170,10 @@ def _payload(o: Any) -> dict[str, Any]:
 
 
 def _buyer_of(state: Any, payload: dict[str, Any], commitments: Any, view: dict[str, Any], store: Any = None) -> str | None:
-    """The customer an operation concerns, when the books say so (a receivable's buyer, an agreement's counterparty)."""
+    """The customer an operation concerns, when the books say so (a receivable's buyer, an agreement's counterparty, the customer
+    the owner added)."""
+    if payload.get("kind") == "ADD_CUSTOMER" and isinstance(payload.get("customer_id"), str):
+        return str(payload["customer_id"])
     rid = payload.get("receivable_id")
     if rid:
         found = next((r.counterparty_id for r in state.receivables if r.id == rid), None)

@@ -92,6 +92,16 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
                                             lang=lang)
             v["document_id"] = op.get("document_id")
             v["message_when"] = " ".join(x for x in (words["event_text"], words["event_detail"]) if x)
+        if o.kind == "REFILE_DOCUMENT" and isinstance(op, dict) and res.get("status") == "EXECUTED":
+            from app.api.presentation import refile_words
+
+            record = (documents or {}).get(op.get("document_id"))
+            words = refile_words(state, title=record.title if record else None, kind=record.kind.value if record else None,
+                                 counterparty_id=op.get("counterparty_id"), lang=lang)
+            v["document_id"] = op.get("new_document_id")
+            v["message_when"] = words["event_text"]
+        if o.kind == "ADD_CUSTOMER" and isinstance(op, dict) and res.get("status") == "EXECUTED":
+            v["message_when"] = words["event_text"] or v["message_when"]
         if o.kind == "OPEN_BOOKS" and isinstance(op, dict):
             from app.api.setup import open_books_words
 
