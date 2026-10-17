@@ -21,6 +21,7 @@ from app.api.decisions import (
     load_context,
     quote_for,
     record_fact,
+    sent_outside_conflict,
     waiting_view,
 )
 from app.api.home import cure_after
@@ -48,7 +49,16 @@ from app.api.receipt import approval_receipt
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
 from app.decisions.identity import decision_id_for
-from app.domain.models import Actor, Operation, OperationResult, OperationStatus, RepayFacility
+from app.domain.models import (
+    AcceptOffer,
+    Actor,
+    CounterOffer,
+    Operation,
+    OperationResult,
+    OperationStatus,
+    RejectOffer,
+    RepayFacility,
+)
 from app.domain.money import fmt_yuan
 from app.financial import EngineError
 from app.funding.recommend import cost_lines_by_leg, runnable_plan
@@ -67,16 +77,16 @@ def _result(r) -> dict:
 
 @router.post("/operations", dependencies=[Depends(require_owner_or_agent)])
 def post_operation(body: dict, x_owner_token: str | None = Header(default=None),
-                   x_bank_feed_key: str | None = Header(default=None)) -> dict:
+                   x_bank_feed_key: str | None = Header(default=None), lang: str = "en") -> dict:
     rt = get_runtime()
     if body.get("requested_by") == Actor.OWNER.value and not rt.is_owner(x_owner_token):
         body = {**body, "requested_by": Actor.AGENT.value}  # unauthenticated owner claim -> agent
     if body.get("requested_by") == Actor.SYSTEM.value and not is_bank_feed(x_bank_feed_key):
         body = {**body, "requested_by": Actor.AGENT.value}  # only the bank feed speaks as SYSTEM (F-02)
-    return run_operation(rt, body)
+    return run_operation(rt, body, lang)
 
 
-def run_operation(rt: Runtime, body: dict) -> dict:
+def run_operation(rt: Runtime, body: dict, lang: str = "en") -> dict:
     """Type the body and hand it to the executor: the part of POST /operations after who is asking is settled. The demo's seed
     replay (`app.api.demo_seed`) calls it with an agent's body, so a seeded operation is queued exactly as the route queues one."""
     body.setdefault("day", rt.day)
@@ -85,6 +95,10 @@ def run_operation(rt: Runtime, body: dict) -> dict:
     except ValidationError as e:  # malformed operations never reach the executor
         raise HTTPException(422, f"not a typed operation: {e.__class__.__name__}") from None
     with rt.lock:
+        # OUT-1b: an answer to a buyer's request the owner sent a counter on themself is refused here as on every chat path and the
+        # accept, decline and simulated-buyer routes; the buyer's own answer is recorded on the deal.
+        if isinstance(op, AcceptOffer | RejectOffer | CounterOffer) and (outside := sent_outside_conflict(rt, op.offer_id, lang)) is not None:
+            raise outside
         result = rt.executor.execute(op)
         recorded = _record_direct_quote(rt, op, result)
     out: dict = {"result": _result(result)}
