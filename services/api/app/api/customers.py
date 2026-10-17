@@ -5,7 +5,15 @@
                       with the request's idempotency key; the same key again answers with the same customer.
 
 Owner only: the agent key, a buyer's channel key or no credential are refused by `require_owner` and logged like every
-refused credential. A buyer message or a document's text never reaches this route, so neither can create a customer.
+refused credential. A buyer message never reaches this route, and nor does a document's text at the API layer: the route takes
+only what the owner types. The web review screen does offer to add a party name taken from the document, so the name can
+begin as document text; it reaches the route only as the owner's own request, and is checked here like any typed name.
+
+A name is refused when it would let one party stand in for another (REG-3): a lookalike of a customer, a lender or the
+business itself (a confusables skeleton, `app.security.names`, so Cyrillic or Greek lookalikes, full-width forms, accents and the
+legal-form suffix do not make a name new), a name that holds or sits inside another company's name, a name whose short form is
+already another's, a name that reads as an identifier ("BUYER-7"), and a name with no letter or digit once its marks are
+removed.
 
 Like the setup's OPEN_BOOKS, this is an owner act with no money effect written at the API layer: the new books (the state with
 one more counterparty, compare-and-swap on its version) and the log entry land in one unit of work, under the runtime lock.
@@ -26,9 +34,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.auth import counterparty_keys, require_owner
 from app.api.presentation import customer_added_words, t
 from app.api.runtime import get_runtime
-from app.contracts.parties import normalise, taken_names
+from app.contracts.parties import normalise, registry_names, short_name, taken_names
 from app.domain.models import Actor, Counterparty, OperationResult, OperationStatus, Tier
 from app.domain.ports import LedgerStore
+from app.operations.party_names import DEMO_BUSINESS_NAME
+from app.security.names import has_letter_or_digit, keys_clash, looks_like_id, name_key
 
 router = APIRouter(dependencies=[Depends(require_owner)])
 Lang = Literal["en", "zh"]
@@ -67,7 +77,7 @@ def _clean(raw: str | None, field: str, limit: int, what: tuple[str, str], lang:
                        f"{what[1]}中含有无法保存的字符（换行、制表符或隐藏符号）。", lang)
     if len(value) > limit:
         raise _invalid(field, f"The {what[0]} can be at most {limit} characters.", f"{what[1]}最多 {limit} 个字符。", lang)
-    if not normalise(value):
+    if not normalise(value) or not has_letter_or_digit(value):
         raise _invalid(field, f"The {what[0]} needs letters or digits.", f"{what[1]}需要包含文字或数字。", lang)
     return value
 
@@ -86,6 +96,65 @@ def added_short_names(store: LedgerStore) -> dict[str, list[str]]:
         if isinstance(p, dict) and isinstance(p.get("customer_id"), str) and isinstance(p.get("short_name"), str):
             out.setdefault(p["customer_id"], []).append(p["short_name"])
     return out
+
+
+def _own_business_names(store: LedgerStore, state: Any) -> list[str]:
+    """The names the books give the business itself: the company the owner registered at OPEN_BOOKS, the own side of every
+    owner-confirmed contract (the supplier of a buyer contract, the buyer of a capex contract) and the demo business when the
+    books are a demo scenario's (the executor's rule for the vendor of a purchase, `app.operations.party_names`)."""
+    names: list[str] = []
+    for r in store.operations():
+        if r.kind == "OPEN_BOOKS":
+            try:
+                p = json.loads(r.payload_json)
+            except ValueError:
+                continue
+            if isinstance(p, dict) and isinstance(p.get("company_name"), str):
+                names.append(p["company_name"])
+    for row in store.contract_guard_rows():
+        if row.status == "CONFIRMED":
+            own = "PARTY_BUYER" if row.kind == "CAPEX_CONTRACT" else "PARTY_SUPPLIER"
+            names.extend(t.text for t in row.terms if t.field.value == own and t.text)
+    if state.scenario not in (None, "blank"):
+        names.append(DEMO_BUSINESS_NAME)
+    return [n for n in names if n and n.strip()]
+
+
+def _conflict(code: str, en: str, zh: str, lang: Lang, **more: Any) -> HTTPException:
+    return HTTPException(409, {"code": code, **more, "message": t(lang, en, zh)})
+
+
+def _refuse_lookalikes(rt: Any, state: Any, extra: dict[str, list[str]], name: str, short: str | None, lang: Lang) -> None:
+    """REG-3: refuse a name that would let one party stand in for another. The exact-name check has run; this compares the
+    names as a reader does (see `app.security.names`)."""
+    known_ids = {c.id for c in state.counterparties} | set(counterparty_keys())
+    for field, value in (("name", name), ("short_name", short)):
+        if value and looks_like_id(value, known_ids):
+            raise _invalid(field, f"The {'name' if field == 'name' else 'short name'} reads as an identifier. Type the company's "
+                           f"own name.", f"{'名称' if field == 'name' else '简称'}看起来像一个编号，请填写公司本身的名称。", lang)
+    key = name_key(name)
+    mine = {k for k in (name_key(short_name(name)), name_key(short) if short else "") if k}
+    own = _own_business_names(rt.store, state)
+    for n in own:
+        if keys_clash(key, name_key(n)):
+            raise _conflict("CUSTOMER_IS_OWN_BUSINESS", "That is your own business, not a customer, so no customer was added.",
+                            "这是您自己的企业，不是客户，因此没有添加客户。", lang)
+    for cp in state.counterparties:
+        if keys_clash(key, name_key(cp.name)):
+            raise _conflict("CUSTOMER_LOOKALIKE", existing_id=cp.id, lang=lang,
+                            en=f"That name is too close to {cp.name}, which is already on your books, so no customer was added.",
+                            zh=f"该名称与账簿中已有的{cp.name}过于相近，因此没有添加客户。")
+    taken = {name_key(n) for n in own} | {name_key(short_name(n)) for n in own}
+    for cp in state.counterparties:
+        taken_by = {name_key(n) for n in registry_names(cp, extra.get(cp.id, ()))}
+        if mine & taken_by:
+            raise _conflict("SHORT_NAME_TAKEN", existing_id=cp.id, lang=lang,
+                            en=f"The short name for this customer is the one {cp.name} already uses, so no customer was added. "
+                               f"Give it a different short name.",
+                            zh=f"该客户的简称与{cp.name}已使用的简称相同，因此没有添加客户。请换一个简称。")
+    if mine & taken:
+        raise _conflict("SHORT_NAME_TAKEN", "The short name for this customer is your own business's, so no customer was "
+                        "added. Give it a different short name.", "该客户的简称与您自己企业的简称相同，因此没有添加客户。请换一个简称。", lang)
 
 
 def _next_buyer_id(rt: Any) -> str:
@@ -122,6 +191,12 @@ def add_customer(body: CustomerIn, lang: Lang = "en") -> dict[str, Any]:
     key = f"{ADD_CUSTOMER_KIND}:{body.idempotency_key}"
     with rt.lock:
         earlier = rt.store.find_by_idempotency_key(key)
+        if earlier is not None and earlier.kind != ADD_CUSTOMER_KIND:
+            # REG-4: the key is another kind of entry's (an agent can write any idempotency key): not this route's request to
+            # replay, and it has no customer to answer with
+            raise HTTPException(409, {"code": "IDEMPOTENCY_KEY_REUSED", "message": t(
+                lang, "That request key was already used for something else. Use a new key to add the customer.",
+                "该请求标识已用于其他操作。请换一个新的标识来添加客户。")})
         if earlier is not None:  # the same request again: the same customer, nothing appended
             return _answer(json.loads(earlier.payload_json), rt.store.get_state(), False, lang)
         state = rt.store.get_state()
@@ -132,6 +207,7 @@ def add_customer(body: CustomerIn, lang: Lang = "en") -> dict[str, Any]:
                 raise HTTPException(409, {"code": "CUSTOMER_EXISTS", "existing_id": cp.id, "message": t(
                     lang, f"{cp.name} is already on your books, so no customer was added.",
                     f"{cp.name}已在您的账簿中，因此没有添加客户。")})
+        _refuse_lookalikes(rt, state, extra, name, short, lang)
         cid = _next_buyer_id(rt)
         customer = Counterparty(id=cid, name=name, role="BUYER", known=True)
         books = state.model_copy(update={"counterparties": [*state.counterparties, customer],

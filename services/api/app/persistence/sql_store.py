@@ -66,7 +66,7 @@ from app.domain.models import (
     SecurityEvent,
     Verdict,
 )
-from app.domain.ports import ContractGuardRow, OperationRecord
+from app.domain.ports import PARTY_NOT_NAMED_FLAG, ContractGuardRow, OperationRecord
 from app.persistence import guards
 from app.persistence import tables as t
 from app.persistence.canonical import canonical_json
@@ -731,7 +731,9 @@ class SqlLedgerStore:
                 decided_seq=d.get("decided_seq"),
                 terms=tuple(ContractTerm.model_validate_json(json.dumps(x)) for x in (d.get("contract") or {}).get("terms", [])),
                 facility=Facility.model_validate_json(json.dumps(facility)) if facility else None,
-                clause_quotes=tuple(c["span"]["text"] for c in (ts or {}).get("clauses", []))))
+                clause_quotes=tuple(c["span"]["text"] for c in (ts or {}).get("clauses", [])),
+                party_not_named=any(f.get("blocking") and f.get("kind") == PARTY_NOT_NAMED_FLAG
+                                    for f in d.get("flags") or [])))
         return out
 
     def close_refiled_record(self, record_id: str, superseded_by: str, day: int, seq: int) -> ContractRecord:
