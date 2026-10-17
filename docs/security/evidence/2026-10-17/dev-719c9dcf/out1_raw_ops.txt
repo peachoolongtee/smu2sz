@@ -1,0 +1,10 @@
+owner proposals after mark: []
+owner RejectOffer: 200 EXECUTED
+owner CounterOffer: 200 EXECUTED
+owner log for offer: [('REJECT_OFFER', 'EXECUTED', 'OWNER'), ('COUNTER_OFFER', 'EXECUTED', 'OWNER')]
+owner decision state: DECLINED
+agent proposals after mark: []
+agent RejectOffer: 200 EXECUTED
+agent CounterOffer: 200 EXECUTED
+agent log for offer: [('REJECT_OFFER', 'EXECUTED', 'AGENT'), ('COUNTER_OFFER', 'EXECUTED', 'AGENT')]
+agent decision state: AWAITING_BUYER
