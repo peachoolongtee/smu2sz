@@ -100,6 +100,27 @@ def test_every_attack_is_defended_or_a_documented_gap(observations: dict[str, Ob
     assert m["not_reached"] == []
 
 
+API_KNOWN_GAPS = {"PI-06", "PI-11", "PI-16", "FH-04", "MX-03", "CB-05", "SE-03", "SE-08"}
+
+
+def test_every_attack_names_the_evidence_of_its_intended_control() -> None:
+    """The loader refuses an attack without `expect`; the untyped `expect_codes` (any code in any category) is gone."""
+    assert all(a.get("expect") for a in CATALOGUE)
+    assert [a["id"] for a in CATALOGUE if "expect_codes" in a] == []
+
+
+def test_the_documented_gaps_are_exactly_the_open_ones(observations: dict[str, Observation]) -> None:
+    """A `known_gap` is a control that does not fire today. The set is pinned, and each gap must still be open: the day the
+    intended evidence appears the outcome would quietly read DETECTED, so this fails and the entry is updated on purpose."""
+    declared = {a["id"] for a in CATALOGUE if "known_gap" in a}
+    assert declared == API_KNOWN_GAPS, "a gap was added or removed: update API_KNOWN_GAPS on purpose"
+    closed = [i for i in declared if not observations[i].gap_open]
+    assert not closed, f"the intended control now fires for {closed}: drop their known_gap and move the evidence into `expect`"
+    assert {i for i, o in observations.items() if o.outcome() == "GAP (no harm)"} == declared
+    for i in declared:  # the gap's own `expect` still holds (the control that did hold) and nothing was harmed
+        assert not observations[i].expectation_failures and not observations[i].harm
+
+
 def test_headline_metrics_are_zero_outside_documented_findings(observations: dict[str, Observation]) -> None:
     m = metrics(list(observations.values()))
     z = m["zero_harm_metrics"]

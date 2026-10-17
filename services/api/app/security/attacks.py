@@ -114,6 +114,8 @@ EXPECT_KEYS = frozenset({
     "tamper",    # true: the hash chain or the append-only guard detected the edit
     "flag",      # prefixes of compiler flags (AUTH:, DATA:, FUNDING:, TIER3:, DOC:)
     "intent",    # /nl: intents the responses carried
+    "outbound",  # a count: at least this many texts that would go to a counterparty were produced and scanned by the egress oracle
+    "no_internal_canary",  # true: no canary in the compiled offer (a compromised model's regurgitation was dropped by grounding)
     "no_ops",    # /nl: true: no response carried an operation
     "plan_pending", "injection_event",  # /nl: session ids whose plan is still pending; INJECTION event required | report
 })
@@ -122,7 +124,9 @@ EXPECT_KEYS = frozenset({
 # ============================================================================ catalogue
 
 
-def load_catalogue(path: Path = CATALOGUE, *, require_expect: bool = False) -> list[dict[str, Any]]:
+def load_catalogue(path: Path = CATALOGUE, *, require_expect: bool = True) -> list[dict[str, Any]]:
+    """The API catalogue. Every attack must carry an `expect` block (the evidence that its intended control fired): an attack
+    added without one fails to load, so a new case cannot pass on "no harm" alone."""
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     attacks = raw["attacks"]
     ids = [a["id"] for a in attacks]
@@ -289,6 +293,10 @@ def unmet_expectations(obs: Observation, expect: dict[str, Any]) -> list[str]:
             if not any(x.startswith(f) for x in flags)]
     if expect.get("tamper") and not obs.tamper_detected:
         out.append("tamper: the edit of the log was not detected")
+    if expect.get("outbound") and obs.outbound_texts < int(expect["outbound"]):
+        out.append(f"outbound: {obs.outbound_texts} text(s) went through the egress oracle, {expect['outbound']} wanted")
+    if expect.get("no_internal_canary") and obs.canaries_internal:
+        out.append(f"no_internal_canary: canary in the compiled offer {sorted(set(obs.canaries_internal))}")
     if expect.get("no_ops") and obs.response_ops:
         out.append(f"no_ops: {obs.response_ops} operation(s) came back in the responses")
     return out
@@ -985,6 +993,12 @@ class AttackRunner:
         spec = dict(arg)
         token = spec.pop("token", None)
         direct = spec.pop("direct", False)
+        if spec.pop("exact", False):  # the captured request again, byte for byte: same op_id, same idempotency key
+            if ctx.last_body is None:
+                self._skip(rec, "no operation was sent before this step, so there is nothing to replay")
+                return
+            self._post_op(ctx, dict(ctx.last_body), token, obs, rec, phase)
+            return
         body = self._body(ctx, spec)
         if direct:  # in-process caller, no API authentication layer
             from pydantic import TypeAdapter

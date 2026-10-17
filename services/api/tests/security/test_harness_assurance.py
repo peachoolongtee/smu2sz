@@ -113,7 +113,7 @@ def _load(doc: dict[str, Any]) -> Any:
     with tempfile.TemporaryDirectory() as d:
         path = Path(d) / "a.yaml"
         path.write_text(yaml.safe_dump(doc), encoding="utf-8")
-        return load_catalogue(path)
+        return load_catalogue(path, require_expect=False)
 
 
 def test_allow_skip_must_give_a_reason_and_keeps_the_skip_listed() -> None:
@@ -180,3 +180,44 @@ def test_a_code_in_the_wrong_category_does_not_satisfy_an_expectation() -> None:
     obs.security_events = ["REPLAY"]
     assert unmet_expectations(obs, {"refusal": ["REPLAY"]})
     assert not unmet_expectations(obs, {"event": ["REPLAY"]})
+
+
+def test_the_loader_refuses_an_attack_without_an_expect_block() -> None:
+    """A new case cannot pass on "no harm" alone: it must say what proves its control."""
+    bare = _attack([GUARANTEE])
+    with tempfile.TemporaryDirectory() as d:
+        path = Path(d) / "a.yaml"
+        path.write_text(yaml.safe_dump({"attacks": [bare]}), encoding="utf-8")
+        with pytest.raises(ValueError, match=r"missing \['expect'\]"):
+            load_catalogue(path)
+        assert load_catalogue(path, require_expect=False)[0]["id"] == "T-REACH"
+        path.write_text(yaml.safe_dump({"attacks": [{**bare, "expect": {"refusal": ["TIER3_PERSONAL_GUARANTEE"]}}]}), encoding="utf-8")
+        assert load_catalogue(path)[0]["expect"] == {"refusal": ["TIER3_PERSONAL_GUARANTEE"]}
+
+
+def test_an_expect_block_with_an_unknown_key_or_nothing_in_it_is_refused() -> None:
+    for bad in ({}, {"refusals": ["REPLAY"]}):
+        with pytest.raises(ValueError, match="expect"):
+            _load({"attacks": [{**_attack([GUARANTEE]), "expect": bad}]})
+
+
+def test_outbound_and_internal_canary_expectations() -> None:
+    obs = _bare()
+    assert unmet_expectations(obs, {"outbound": 1}), "no outbound text was produced, so the egress oracle never ran"
+    obs.outbound_texts = 2
+    assert not unmet_expectations(obs, {"outbound": 2})
+    assert unmet_expectations(obs, {"outbound": 3})
+    obs.canaries_internal = ["canary.system_prompt"]
+    assert unmet_expectations(obs, {"no_internal_canary": True})
+
+
+def test_a_known_gap_is_open_while_the_intended_evidence_is_missing_and_closes_when_it_appears() -> None:
+    attack = _attack([GUARANTEE], expect={"event": ["TIER3"]},
+                     known_gap={"note": "the screen does not fire", "intended": {"verdict": ["DATA_EXTRACTION_REFUSED"]}})
+    obs = AttackRunner([attack]).run(attack)
+    assert obs.gap_open and obs.outcome() == "GAP (no harm)" and not obs.defended
+    obs.verdict_codes.append("DATA_EXTRACTION_REFUSED")
+    AttackRunner._judge(obs, attack)
+    assert not obs.gap_open, "the intended evidence is observed: the gap is closed and the entry should be updated"
+    with pytest.raises(ValueError, match="known_gap"):
+        _load({"attacks": [{**_attack([GUARANTEE]), "known_gap": {"intended": {"event": ["TIER3"]}}}]})
