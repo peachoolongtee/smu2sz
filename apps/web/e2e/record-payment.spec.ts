@@ -107,12 +107,12 @@ test.describe("record a payment", () => {
 
   test("a financed invoice: the receipt repays the lender first", async ({ page, request }) => {
     if (isLive()) {
-      // The day-0 plan finances the invoice; its advance lands on day 3. The owner's receipt then repays the lender first.
+      // The day-0 plan finances the invoice; its advance lands on day 3 and is settled once that day has closed. The owner's receipt then repays the lender first.
       await page.goto("/cash");
       const alerts = await api(request, "GET", "/alerts");
       await runPlan(page, alerts.alerts.find((a: { id: string; actionable: boolean }) => a.id.startsWith("ALERT-RESERVE") && a.actionable).id);
-      await expect.poll(async () => (await api(request, "GET", "/state")).state.lots.length).toBeGreaterThan(0);
-      await api(request, "POST", "/clock/advance", { to_day: 3 });
+      await expect.poll(async () => ((await api(request, "GET", "/state")).state.lots ?? []).length).toBeGreaterThan(0);
+      await api(request, "POST", "/clock/advance", { to_day: 5 });
       await openInvoice(page, "RCV-A");
     } else {
       await page.addInitScript(() => sessionStorage.setItem("tl-mock-home-v4", JSON.stringify({ day: 38, stage: "approved", funded: false, receipted: true, moved: 0 })));
