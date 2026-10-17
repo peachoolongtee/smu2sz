@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app.api.auth import counterparty_for_key, is_agent, require_owner
 from app.api.decisions import latest_verdict_for, record_fact
@@ -48,7 +48,14 @@ def _docs(body: OfferIn) -> tuple[list[SourceDocument], str]:
         return offer_documents(body.fixture_id), fx["counterparty_id"]
     if not body.documents:
         raise HTTPException(422, "documents or fixture_id required")
-    docs = [SourceDocument.model_validate_json(json.dumps(d)) for d in body.documents]
+    try:
+        docs = [SourceDocument.model_validate_json(json.dumps(d)) for d in body.documents]
+    except ValidationError as e:
+        # RT-2: a malformed document is the caller's error (422), never a 500 with a traceback in the log. The answer names the fields,
+        # never the values sent.
+        fields = sorted({".".join(str(x) for x in err["loc"]) for err in e.errors()})
+        raise HTTPException(422, {"code": "DOCUMENT_INVALID", "fields": fields,
+                                  "message": "a document is missing a field or has one of the wrong type"}) from None
     return docs, body.counterparty_id or docs[0].sender_id
 
 
