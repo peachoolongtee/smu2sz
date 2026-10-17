@@ -12,6 +12,10 @@ Every surface form of a value is reduced to one canonical token before matching:
 - Multipliers expand to plain yuan with a currency marker: "30万" / "300k" / "300 thousand" /
   "1.5 million" / "¥1.5m" -> "¥300000" etc.
 - "×", "times", "倍" and a trailing "x" become the ratio suffix "x".
+- Other spellings a value could be smuggled out in (security register SEC-22), each read as well as, not instead of, the
+  text: four-digit and Indian groupings ("30,0000", "3,00,000"), dot, apostrophe and underscore separators ("300.000",
+  "300'000", "300_000"), a bare "m" or an exponent ("0.3m", "3e5"), the "w" (万) and 千 suffixes ("30w", "400千"), per mille
+  ("15‰", "千分之15"), points ("1.5个点", "1.5 points"), and a percentage of 100 or more as a ratio too ("125%" -> also "1.25x").
 
 Canonical numbers carry no trailing zeros: "300,000.00" -> "300000", "6.40%" -> "6.4%".
 """
@@ -68,6 +72,21 @@ _THOUSAND = re.compile(_NUM + r"\s*thousand")
 _MILLION = re.compile(_NUM + r"\s*(?:million|mn)(?![a-z])")
 _CUR_M = re.compile(r"(¥|\$|rmb|cny)(\s*)" + _NUM + r"m(?![a-z])")
 _RATIO = re.compile(r"(?<=\d)(?:\s*×|\s*times(?![a-z])|\s*倍|\s*x(?![a-z]))")
+
+# SEC-22: further spellings of a number. Groupings and separators are removed between digit groups; every other reading (a dot, a
+# bare "m", an exponent, w, 千, per mille, points, a large percentage) is added beside the text, never in place of it, so a value that
+# matched before still matches whatever follows it.
+_GROUP_2_4 = re.compile(r"(?<=\d),(?=\d{2}(?:,\d{2})*,\d{3}(?!\d)|\d{4}(?![\d,]))")  # 3,00,000 and 30,0000
+_SEP = re.compile(r"(?<=\d)['_’](?=\d{3}(?!\d))")  # 300'000, 300_000
+_DOT_GROUPED = re.compile(r"(?<![\d.,])\d{1,3}(?:\.\d{3})+(?![\d.])")  # 300.000, 1.500.000
+_EXP = re.compile(r"(?<![\d.])" + _NUM + r"e\+?(\d{1,2})(?![\d.a-z])")
+_BARE_M = re.compile(r"(?<![¥$\w.])" + _NUM + r"\s?m(?![a-z])")
+_W = re.compile(_NUM + r"\s?w(?![a-z])")
+_QIAN = re.compile(_NUM + r"\s?千(?!分之)")
+_PER_MILLE_OF = re.compile(r"千分之\s*" + _NUM)
+_PER_MILLE = re.compile(_NUM + r"\s*‰")
+_POINTS = re.compile(_NUM + r"\s*(?:个(?:百分)?点|(?:percentage\s+)?points?(?![a-z]))")
+_BIG_PCT = re.compile(r"(?<![\d.])(\d{3,}(?:\.\d+)?)%")
 
 _TOKEN = re.compile(r"(?<![\d.])" + _NUM + r"(?!\d)")
 _PREFIX_MARKERS = ("¥", "$", "rmb", "cny", "人民币")
@@ -200,14 +219,25 @@ def normalise(text: str) -> str:
     t = t.translate(_DAXIE)
     t = _CN_RUN.sub(_cn_number, t)
     t = _PCT_OF.sub(r"\1%", t)
+    t = _PER_MILLE_OF.sub(lambda m: m.group(0) + " " + canon(_dec(m.group(1)) / 10) + "%", t)
+    t = _PER_MILLE.sub(lambda m: m.group(0) + " " + canon(_dec(m.group(1)) / 10) + "%", t)
+    t = _GROUP_2_4.sub("", t)  # before the plain thousands rule, which would split an Indian grouping
+    t = _SEP.sub("", t)
     t = _THOUSANDS.sub("", t)
+    t = _DOT_GROUPED.sub(lambda m: m.group(0).replace(".", "") + " " + m.group(0), t)
+    t = _EXP.sub(lambda m: canon(_dec(m.group(1)) * (10 ** int(m.group(2)))) + " " + m.group(0), t)
     t = _PCT_WORD.sub("%", t)
     t = _BP.sub(lambda m: canon(_dec(m.group(1)) / 100) + "%", t)
+    t = _POINTS.sub(lambda m: m.group(0) + " " + m.group(1) + "%", t)
+    t = _BIG_PCT.sub(lambda m: m.group(0) + " " + canon(_dec(m.group(1)) / 100) + "x", t)
     t = _WAN.sub(_wan, t)
+    t = _W.sub(lambda m: m.group(0) + " ¥" + canon(_dec(m.group(1)) * 10_000), t)
+    t = _QIAN.sub(lambda m: m.group(0) + " ¥" + canon(_dec(m.group(1)) * 1_000), t)
     t = _CUR_M.sub(lambda m: m.group(1) + m.group(2) + canon(_dec(m.group(3)) * 1_000_000), t)
     t = _K.sub(_scaled(1_000), t)
     t = _THOUSAND.sub(_scaled(1_000), t)
     t = _MILLION.sub(_scaled(1_000_000), t)
+    t = _BARE_M.sub(lambda m: m.group(0) + " ¥" + canon(_dec(m.group(1)) * 1_000_000), t)
     t = _RATIO.sub("x", t)
     return t
 

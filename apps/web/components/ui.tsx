@@ -162,7 +162,7 @@ export function Card({
         {title ? (
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <div className="min-w-0">
-              <h2 id={id ? `${id}-title` : undefined} className="sec-title text-balance font-display text-lg font-bold tracking-[-0.01em] text-ink">
+              <h2 id={id ? `${id}-title` : undefined} className="sec-title text-balance font-display text-xl font-bold tracking-[-0.01em] text-ink">
                 {title}
               </h2>
               {subtitle ? <p className="mt-0.5 text-pretty text-supporting text-ink-3">{subtitle}</p> : null}

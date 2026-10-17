@@ -45,6 +45,7 @@ from app.nl.pipeline import (
     reject,
     run_negotiation,
     send_counters,
+    sent_outside,
     span_of,
     status_quo_offer,
     t,
@@ -315,6 +316,11 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
             return [REFUSAL_REPLY_ZH if ctx.lang == "zh" else REFUSAL_REPLY]
         return [t(ctx, "Thank you. We did not find payment terms in your message that we can act on.",
                   "谢谢。贵方消息中没有我方可以处理的付款条款。")]
+    if execute and (said := sent_outside(ctx, v.offer_id)) is not None:
+        # The owner sent the buyer a counter themself: their answer is recorded on the deal. Nothing is accepted, declined or
+        # countered here, and nothing goes to the buyer (OUT-1).
+        steps.add("VERIFY", said, "INFO")
+        return []
     if v.counters:
         if not execute:
             for c in v.counters:
@@ -482,6 +488,8 @@ def execute_decision(ctx: NlContext, verdict_id: str) -> Turn:
     if v is None or offer is None:
         return Turn(intent=Intent.EVALUATE_OFFER, reply=t(ctx, "That verdict is no longer on record.", "该结论已不存在。"),
                     clear_pending=True)
+    if (said := sent_outside(ctx, offer.offer_id)) is not None:  # the buyer's answer is recorded on the deal (OUT-1)
+        return Turn(intent=Intent.EVALUATE_OFFER, reply=said, verdict=v, clear_pending=True)
     b = ctx.evaluate(offer)  # re-verify against the state and mandate in force now
     steps = Steps()
     steps.add("VERIFY", verdict_line(ctx, b.verdict), "DONE")
@@ -519,6 +527,9 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
     offer = ctx.store.get_offer(v.offer_id)
     if offer is None:
         return Turn(intent=Intent.NEGOTIATE, reply=t(ctx, "The offer is no longer on record.", "该报价已不存在。"))
+    if (said := sent_outside(ctx, offer.offer_id)) is not None:
+        # The buyer has the owner's own counter: nothing is sent or proposed to send, and the simulated buyer does not answer (OUT-1).
+        return Turn(intent=Intent.NEGOTIATE, reply=said, verdict=v, clear_pending=True)
     b = ctx.evaluate(offer)  # re-verify now: counters are sent only from a fresh verdict
     v = b.verdict
     steps = Steps()

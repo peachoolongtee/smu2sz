@@ -114,8 +114,10 @@ function ActionBlock({ view, selected }: { view: CustomerOverviewView; selected:
   const { t } = useI18n();
   const decision = view.decision;
   const rest: OverviewAction[] = decision ? decision.secondary : (view.actions ?? []);
+  // The stress link is not prefetched, as on Receivables and the Deals queue: with the per-request CSP nonce every page renders on demand, and
+  // the router's prefetch of `/cash?stress=…` is never read to its end, which leaves a request open (SEC-12).
   const links = rest.map((a) => (
-    <ButtonLink key={a.key} href={a.key === "stress" ? fromCustomer(a.href, view.customer_id) : a.href} data-testid={`customer-action-${a.key}`}>
+    <ButtonLink key={a.key} href={a.key === "stress" ? fromCustomer(a.href, view.customer_id) : a.href} prefetch={a.key === "stress" ? false : undefined} data-testid={`customer-action-${a.key}`}>
       {a.label}
     </ButtonLink>
   ));

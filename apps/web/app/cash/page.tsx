@@ -208,7 +208,7 @@ function Cash() {
       {/* The picture cannot be drawn (the home read has no rail): the late-payment sentences are still said, never dropped. */}
       {late && !stressed ? (
         <div className="space-y-1.5 border-l-2 border-line-strong pl-3" data-testid="cash-stress-fallback">
-          <h2 className="text-sm font-bold text-ink">{t("cash.stress.heading")}</h2>
+          <h2 className="text-base font-bold text-ink">{t("cash.stress.heading")}</h2>
           <p className="text-body-lg font-medium text-ink">{late.sentence}</p>
           {late.lines?.map((line, i) => (
             <p key={i} className="text-body-lg text-ink-2">
@@ -413,7 +413,7 @@ function MoreFundingCard() {
       <span aria-hidden className="grid size-11 place-items-center rounded-pill bg-subtle text-ink">
         <BankIcon width={20} height={20} />
       </span>
-      <h2 id="cash-more-title" className="sec-title mt-3 font-display text-lg font-bold tracking-[-0.01em] text-ink">
+      <h2 id="cash-more-title" className="sec-title mt-3 font-display text-xl font-bold tracking-[-0.01em] text-ink">
         {t("cash.more.title")}
       </h2>
       <p className="mt-1 text-sm text-ink-2">{t("cash.more.body")}</p>

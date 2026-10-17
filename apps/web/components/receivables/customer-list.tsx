@@ -42,7 +42,7 @@ export function CustomerList({ rows, customers }: { rows: ReceivableRow[]; custo
   return (
     <section aria-labelledby="recv-list-title" className="space-y-4" data-testid="recv-customer-list">
       <div>
-        <h2 id="recv-list-title" className="sec-title font-display text-xl font-bold tracking-[-0.01em] text-ink">
+        <h2 id="recv-list-title" className="sec-title font-display text-2xl font-bold tracking-[-0.01em] text-ink">
           {t("recv.list.title")}
         </h2>
         <p className="text-supporting text-ink-3">{t("recv.list.sub")}</p>

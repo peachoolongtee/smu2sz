@@ -103,7 +103,7 @@ export function SecurityView({ embedded = false, event = null }: { embedded?: bo
       {embedded ? (
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="font-display text-xl font-extrabold tracking-[-0.01em] text-ink">{t("sec.title")}</h2>
+            <h2 className="font-display text-2xl font-extrabold tracking-[-0.01em] text-ink">{t("sec.title")}</h2>
             <p className="mt-0.5 max-w-3xl text-supporting text-ink-3">{t("sec.subtitle")}</p>
           </div>
           <Button loading={busy} onClick={() => void run()} data-testid="trust-security-run">
@@ -157,7 +157,7 @@ export function SecurityView({ embedded = false, event = null }: { embedded?: bo
           ) : null}
 
           <section aria-labelledby="sec-scoreboard">
-            <h2 id="sec-scoreboard" className="mb-2 font-display text-base font-extrabold text-ink">
+            <h2 id="sec-scoreboard" className="mb-2 font-display text-lg font-extrabold text-ink">
               {t("sec.scoreboard")}
             </h2>
             <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
