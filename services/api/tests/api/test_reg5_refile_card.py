@@ -6,7 +6,6 @@ superseded by it. The outcome card took the first record superseded by the new o
 
 from __future__ import annotations
 
-from tests.api.test_new_customer import _Reader  # noqa: F401
 from tests.api.test_new_customer import reader  # noqa: F401
 
 FOSHAN = "Foshan Home Retail Co."
