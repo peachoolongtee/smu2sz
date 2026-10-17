@@ -69,8 +69,8 @@ def test_a_refused_payment_books_nothing_and_says_why(client) -> None:
     before = get_runtime().store.get_state()
     w = _receipt(client, 50_000_000, "own-too-much")["receipt"]
     assert w["status"] == "REFUSED" and w["tone"] == "bad" and w["headline_text"] == "Nothing was recorded."
-    assert w["lines"] == ["¥500,000.00 is more than the ¥420,000.00 still open on the ¥420,000.00 invoice to Foshan Home Retail Co.; "
-                          "enter at most ¥420,000.00."]
+    assert w["lines"] == [("¥500,000.00 is more than the ¥420,000.00 still open on the ¥420,000.00 invoice to Foshan Home Retail Co.; "
+                           "enter at most ¥420,000.00.")]
     assert get_runtime().store.get_state().cash_fen == before.cash_fen
     _receipt(client, 42_000_000, "own-all")
     paid = _receipt(client, 100, "own-again", lang="zh")["receipt"]
