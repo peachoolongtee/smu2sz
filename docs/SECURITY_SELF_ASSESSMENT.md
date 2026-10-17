@@ -15,7 +15,7 @@ International AI Track | Security Self-Assessment
 - **Result.** 259 attacks (126 through the API, 133 through chat) caused **0 harmful outcomes** on every certified commit, judged by effect on stored state, not by what the system says.
 - **Independent assurance.** An independent audit and five red-team rounds (39 findings, all closed), an independent Security Lead (14 to 17 Oct: every finding reproduced, fixed with a failing-then-passing regression test, and the merged commit certified), and an external red-team run that included a live DeepSeek tier (16 Oct).
 - **Verdict.** Local simulation: **GO** (certified on `719c9dcf`). Demo over a network: **conditional GO**. Production with real customers, documents or money: **NO-GO**, for the reasons in section 04.
-- **Largest residual risks.** One person holds every approval key (R-2); the audit chain is not anchored outside the system (R-13); redaction before the model is opt-in where each model backend is built and pattern-based (PRIV-1 to PRIV-3), so live mode is not certified for real customer documents.
+- **Largest residual risks.** One person holds every approval key (R-2); the audit chain is not anchored outside the system (R-13); redaction before the model is pattern-based and cannot be complete (PRIV-4, PRIV-5; PRIV-1 to PRIV-3 are fixed and merging), so live mode is not certified for real customer documents.
 
 **Standards used.** This assessment is structured after common industry practice, not certified against any standard: the threat model uses **STRIDE**; LLM-specific risks are mapped to the **OWASP Top 10 for LLM Applications (2025)**; risks are rated on a three-level likelihood × impact scale in the style of **NIST SP 800-30 Rev. 1**; and the process follows the **NIST AI RMF 1.0** functions: *Govern* (the owner-signed mandate and the owner's recorded decisions), *Map* (the threat model in section 02), *Measure* (the attack catalogue, audits and certifications) and *Manage* (the risk register and release gate in section 04).
 
@@ -173,7 +173,7 @@ The log is append-only, so there is no destructive rollback. A mistake is correc
 | **Spoofing** | callers, buyer channels, the owner | identity from the credential only; body claims downgraded; constant-time comparison; demo credentials refused outside demo mode; buyer key bound to the buyer (SEC-18) | one person holds every key (R-2); an anonymous offer can name a buyer (SEC-19) |
 | **Tampering** | offers, verdicts, approvals, the log | exact-span grounding; terms-hash binding; a used document id is refused (SEC-16); hash chain; database triggers on the log, approvals and security events (SEC-08) | chain head not anchored (R-13) |
 | **Repudiation** | every decision | every outcome logged, refusals included; security events append-only; exportable, re-verifiable evidence | demo reset erases the log in demo mode (F-05) |
-| **Information disclosure** | outbound text, reads, the model provider | owner token on every read (F-03); template replies and the egress guard; the agent's allow-list view (R-11); redaction before the model | redaction opt-in and incomplete (PRIV-1 to PRIV-3); threshold probing (R-10); derived values (SEC-22) |
+| **Information disclosure** | outbound text, reads, the model provider | owner token on every read (F-03); template replies and the egress guard; the agent's allow-list view (R-11); every provider backend redacts by default (PRIV-1, *merging*) | redaction is pattern-based (PRIV-4, PRIV-5); threshold probing (R-10); derived values (SEC-22) |
 | **Denial of service** | intake, chat, the model bill | size bounds (SEC-17); per-caller rate limits (SEC-20); refusal and buyer budgets (SEC-10, R-10); malformed documents answered 422 (RT-2, *merging*) | no daily model-call budget for owner and agent (RT-3); one process |
 | **Elevation of privilege** | the agent, a persuaded model, the raw API | tiers computed by code; Tier 3 refused for all; self-approval refused; owner-only clock and circuit reset; raw offer operations refused on a request sent outside FLOW (OUT-1b, *merging*) | the in-process actor is trusted (R-5); a compromised agent's Tier-1 reach (R-3) |
 
@@ -184,7 +184,7 @@ The log is append-only, so there is no destructive rollback. A mistake is correc
 | OWASP LLM risk | How FLOW addresses it | Tested by | Residual |
 | --- | --- | --- | --- |
 | LLM01 Prompt injection | the model output is typed data with exact source spans; the coverage proof fails closed; tiers and gates are code | 17 injection, 41 consent, 16 quoted-approval and 18 buyer-instruction attacks; external live tier (40 attacks) | none known |
-| LLM02 Sensitive information disclosure | owner token on reads; template replies; egress guard with canaries; agent allow-list view; redaction before the model | 22 exfiltration and 38 chat-leak attacks; external live tier (20 leak requests) | PRIV-1 to PRIV-3; R-10; SEC-22 |
+| LLM02 Sensitive information disclosure | owner token on reads; template replies; egress guard with canaries; agent allow-list view; redaction before the model | 22 exfiltration and 38 chat-leak attacks; external live tier (20 leak requests); `tests/compiler/test_redaction_mandatory.py` | PRIV-4, PRIV-5; R-10; SEC-22 |
 | LLM03 Supply chain | lockfiles; `pip-audit` clean; `pnpm audit --prod` clean after RT-1 | dependency audits (17 Oct) | RT-1 *merging*; `braces` (lint tooling only, no patch) |
 | LLM04 Data and model poisoning | no training or fine-tuning; recorded readings are keyed on the full document and written offline only | review of the recording path (16 Oct) | none known |
 | LLM05 Improper output handling | model output is schema-validated and grounded, never executed, never rendered as HTML; React escaping; a per-request CSP nonce | injected-markup probes in a browser (17 Oct) | none known |
@@ -269,7 +269,7 @@ Headline metrics for the 126 API attacks: unauthorised operations, facilities ad
 | PG-1 | Low (availability) | on PostgreSQL, two API processes opening the store at once raced | table creation and the guard under one advisory lock | `tests/concurrency/test_pg_guard_install.py` | `3742c5d3` |
 | CAPEX-4, SETUP-1, 4, 5, 7, SEC-23 | Low | register the business as its own vendor; open setup over used books; crash preview with a huge number; a red-team test no longer reached its guard | company-key comparison; untouched blank books only; bounds; test re-pointed | `tests/api/test_setup_books.py`, `tests/operations/test_redteam_d.py` | `b6d1e519` |
 
-Built and handed in on 17 Oct (*merging*): the SEC-08 executor check (`sec/decide-once-log`), OUT-1b (`sec/out1b-raw-operations`), RT-2 (`sec/offers-422`) and RT-1 (`sec/next-16-3-8`); each has a regression test that fails before the fix.
+Built and handed in on 17 Oct (*merging*): the SEC-08 executor check (`sec/decide-once-log`), OUT-1b (`sec/out1b-raw-operations`), RT-2 (`sec/offers-422`), RT-1 (`sec/next-16-3-8`) and PRIV-1 to PRIV-3 (`sec/redaction-mandatory`); each has a regression test that fails before the fix.
 
 #### 2.7 Certification history
 
@@ -289,7 +289,7 @@ In every full-suite run the only failure was issue #161 (a machine-dependent has
 
 **Concurrency.** With two workers on one SQLite file, 16 of 20 cases of a new suite once failed on the old store (two draws on one line's last room both executed; one bank event booked twice). The store now enforces the invariants itself: compare-and-swap on the state version and log head, `BEGIN IMMEDIATE` on SQLite, at most 8 re-runs, then 409. `tests/concurrency/` proves eight invariants with two spawned workers, on SQLite and on a local PostgreSQL 17 (`docs/research/concurrency-certification-2026-10-03.md`). One API process is still required (SEC-11).
 
-**Language boundary.** `scripts/certify_language_boundary.py` runs a 231-item adversarial set (76 buyer offers, 90 owner commands, 15 agent-key messages, 50 malformed model outputs; 194 English, 33 Chinese, 4 mixed) through the real `POST /nl` and scores each from stored state. On 3 Oct it scored **0 wrong-and-material** with cached answers and with scripted fake models (`services/api/evals/certification/`); the first dry run had found one real error ("0,5% off" read as 500 bp), closed by boundary abstentions. The claim is narrow: it certifies the deterministic boundary and the handling of malformed model output; the live run (`--backend live`) has not been done, and that script's live backends do not yet redact (PRIV-1).
+**Language boundary.** `scripts/certify_language_boundary.py` runs a 231-item adversarial set (76 buyer offers, 90 owner commands, 15 agent-key messages, 50 malformed model outputs; 194 English, 33 Chinese, 4 mixed) through the real `POST /nl` and scores each from stored state. On 3 Oct it scored **0 wrong-and-material** with cached answers and with scripted fake models (`services/api/evals/certification/`); the first dry run had found one real error ("0,5% off" read as 500 bp), closed by boundary abstentions. The claim is narrow: it certifies the deterministic boundary and the handling of malformed model output; the live run (`--backend live`) has not been done; its live backends redact since the PRIV-1 fix (*merging*).
 
 #### 2.9 What was not verified
 
@@ -314,7 +314,7 @@ Everything runs offline (`LLM_MODE=cache`), and the metrics are computed from th
 
 ### Data provenance, consent, minimisation, storage and deletion
 
-**In brief.** All data is synthetic. By default nothing leaves the machine; in opt-in live mode the product's model calls send redacted inbound documents to the provider, never the books or the mandate. Redaction is a privacy control, not the security boundary, and it is not yet complete, so live mode is not certified for real customer documents.
+**In brief.** All data is synthetic. By default nothing leaves the machine; in opt-in live mode the product's model calls send redacted inbound documents to the provider, never the books or the mandate. Redaction is a privacy control, not the security boundary; every provider backend now applies it by default, but pattern matching cannot be complete, so live mode is not certified for real customer documents.
 
 #### 3.1 Data inventory
 
@@ -340,14 +340,12 @@ Everything runs offline (`LLM_MODE=cache`), and the metrics are computed from th
 
 **What it is for.** Redaction is a data-minimisation control: it keeps identifiers FLOW never needs (account numbers, phone numbers, ID numbers) away from the model provider. It is not the security boundary. Pattern matching can never be complete, and FLOW must send party names, amounts and clauses because that is what it reads; what stops a hostile or mistaken model from doing harm is the architecture of section 01, which holds even if the model sees everything.
 
-**What the code does.** In live mode the product's model calls (offers, term sheets, contract chunks and the `/nl` classifier), and the recording and contract-evaluation scripts, pass through `app/compiler/redaction.py`. It replaces the common formats of bank account and card numbers, phone numbers, email addresses, unified social credit codes, mainland ID and passport numbers, and addresses that follow a label (住所, 地址, Address:) with placeholders such as `⟦PHONE_1⟧`. The model's quotes are mapped back to the original text through an offset map before grounding, so stored spans refer to the original, and grounding, the coverage proof, the cross-check, recorded readings and cache keys all use the original text, on the machine. `LLM_REDACT` is on by default; the log line `model.redaction` carries counts per kind, never values (`tests/compiler/test_redaction.py`).
+**What the code does.** In live mode every model call passes through `app/compiler/redaction.py`: each provider backend (Claude, DeepSeek and the `/nl` classifier's) redacts its own input before anything leaves the machine, however it was built, so the product, the recording scripts and the evaluation harnesses are all covered; only an explicit `redact=False` or `LLM_REDACT=0` sends the original (PRIV-1 fix, *merging*; `tests/compiler/test_redaction_mandatory.py`). It replaces the common formats of bank account and card numbers, phone numbers, email addresses, unified social credit codes, mainland ID and passport numbers, and addresses that follow a label (住所, 地址, Address:) with placeholders such as `⟦PHONE_1⟧`. The model's quotes are mapped back to the original text through an offset map before grounding, so stored spans refer to the original, and grounding, the coverage proof, the cross-check, recorded readings and cache keys all use the original text, on the machine. `LLM_REDACT` is on by default; the log line `model.redaction` carries counts per kind, never values (`tests/compiler/test_redaction.py`).
 
 **Limits (Security Lead review, 16 Oct; re-checked on `719c9dcf`).**
 
-- **PRIV-1, redaction is opt-in where a backend is built.** The model backends themselves do not redact; each product path wraps them. A path that builds a backend directly sends text unredacted, and one does: the live language-boundary script (`scripts/certify_language_boundary.py --backend live`). The fix is one mandatory choke point that redacts by default, with a test that fails if any backend is built without it.
-- **PRIV-2:** a labelled address can swallow the rest of its sentence, hiding terms after it from the model (the local readers still see them, but a contract reading has no cross-check).
-- **PRIV-3:** a labelled short number (an order quantity after 手机 or Mobile, a day count after 账户) can be replaced as a phone or account number.
-- **PRIV-4, PRIV-5:** bare 16-digit references can be redacted as accounts; person and company names, file names, WeChat and QQ ids, full-width digits, IBANs and unlabelled 12- to 15-digit accounts still reach the provider.
+- **Fixed on `sec/redaction-mandatory` (*merging*).** PRIV-1: redaction used to be a wrapper each caller had to remember, and the live language-boundary script built its backends without it; every provider backend now redacts by default. PRIV-2: a labelled address used to swallow the rest of its sentence; it now ends at the sentence or before the next clause, so the terms after it reach the model. PRIV-3: a labelled short number (an order quantity after 手机, a day count after 账户) used to be taken for a phone or account; a minimum digit count now keeps it, and "+86 (755) 8600 1234" is replaced whole.
+- **Still open, PRIV-4 and PRIV-5:** bare 16-digit references can be redacted as accounts; person and company names, file names, WeChat and QQ ids, full-width digits, IBANs and unlabelled 12- to 15-digit accounts still reach the provider. Pattern matching cannot be made complete.
 
 For these reasons live mode with real customer documents is outside the certified scope.
 
@@ -399,7 +397,7 @@ These are prerequisites, not exploitable flaws; each keeps production at NO-GO.
 | --- | --- | --- |
 | SEC-06 | No runnable production configuration: Compose sets `DEMO_MODE=0` but passes no owner public key, nothing provisions books into an empty database, and the web build defaults to localhost. The API fails closed rather than starting on demo values. | Compose variables, a provisioning step, the web built against the real origin behind TLS with HSTS |
 | SEC-11 | More than one API process is unsafe: a second instance keeps its own clock, and route checks use a per-process lock (owner: after the deadline) | read the day from stored state inside the unit of work; move route invariants into the executor |
-| LIVE | The language boundary has not been certified against a live model (the 231-item live run) | fix PRIV-1, then run it when an API key is provisioned |
+| LIVE | The language boundary has not been certified against a live model (the 231-item live run) | run it when an API key is provisioned (its backends now redact) |
 | OPS | PostgreSQL is not in CI; no backup, restore or emergency write switch | a CI database job; runbooks |
 
 #### 4.3 Risk register: open and mitigated risks
@@ -409,7 +407,7 @@ These are prerequisites, not exploitable flaws; each keeps production at NO-GO.
 | R-2 | One person holds the mandate key and the API token; no second approver or hardware key | Low | High | **Moderate** | open (owner: after the deadline) | Tier 3 refused even for the owner; revocation honoured unsigned | hardware key; second approver for Tier 2 above a threshold; token rotation |
 | R-13 | The audit chain is not anchored: whoever owns the database can rewrite the log consistently | Low | High | **Moderate** | mitigated | triggers on the log, approvals and security events that no session setting lifts; the executor refuses a decision the log already holds (*merging*) | run the API as a non-owner database role; sign the chain head and entry count on export |
 | R-14 | Mandate lifecycle: no API route replaces or revokes the signed mandate; renewal is an offline owner step | Low | High | **Moderate** | open (owner: after the deadline) | Tier 3 refused; demo key refused outside demo mode | owner-only signed-mandate and revoke routes |
-| PRIV-1 to PRIV-3 | Redaction before the model is opt-in where a backend is built, and pattern-based (section 03) | Moderate | Moderate | **Moderate** | open | live mode is opt-in and outside the certified scope; cache mode sends nothing | one mandatory redaction choke point with a test; end a labelled value at the sentence; minimum digit counts |
+| PRIV-4, PRIV-5 | Redaction before the model is pattern-based: names, company names, file names and some identifier formats still reach the provider (section 03; PRIV-1 to PRIV-3 fixed, *merging*) | Moderate | Moderate | **Moderate** | open | every provider backend redacts by default; live mode is opt-in and outside the certified scope; cache mode sends nothing | named-entity detection for person names; a provider data agreement; the PIPL assessment before production |
 | R-3 | A compromised agent can still use its Tier-1 reach inside the mandate (draw the committed line, accept a verified discount) | Moderate | Moderate | **Moderate** | open | caps, reserve floor, admission, rate ceiling, circuit breaker, log; no transfer to a third party exists | owner notification on every Tier-1 draw; a cooling-off period for a facility's first use |
 | R-7 | Free-text reading is imperfect (held-out set: 8 autonomous accepts, 4 wrong, before ADR-0005) | Moderate | Low | Low | mitigated | ADR-0005: Tier 1 needs a coverage proof; since then 0 wrong autonomous accepts on every set | a held-out set written outside the team; a live run |
 | R-10 | A keyed buyer can probe the counter cap (one message at 0.86% shows 0.85%) | Moderate | Low | Low | mitigated | 5 messages a day; the counter face rounded up to two significant figures (¥257,200 → ¥260,000) | a price grid not derived from the caps; budget events counted by the circuit breaker |
@@ -451,13 +449,13 @@ Also fixed since 1 Oct: channel identity (R-4, A03, SEC-18), the agent's chat vi
 
 | Deployment | Verdict | Conditions or blockers |
 | --- | --- | --- |
-| Local demo on loopback (`DEMO_MODE=1`, memory or SQLite, one process, cache mode, simulated counterparties) | **GO** (certified on `719c9dcf`) | nobody but the presenter holds the demo credentials; not live mode with real customer documents (PRIV-1 to PRIV-3) |
+| Local demo on loopback (`DEMO_MODE=1`, memory or SQLite, one process, cache mode, simulated counterparties) | **GO** (certified on `719c9dcf`) | nobody but the presenter holds the demo credentials; not live mode with real customer documents (PRIV-4, PRIV-5; no live certification run) |
 | Demo reachable over a network | **conditional GO** | changed credentials (`OWNER_TOKEN`, `AGENT_KEY`, `BANK_FEED_KEY`, `COUNTERPARTY_KEYS`); a TLS reverse proxy with per-client rate and body-size limits; documentation hidden; SEC-19 accepted or anonymous intake off; `/demo/reset` accepted as wiping that session's log |
-| Production with real customers, documents or money | **NO-GO** | the blockers in 4.2; R-2, R-13 and R-14; PRIV-1 to PRIV-3 |
+| Production with real customers, documents or money | **NO-GO** | the blockers in 4.2; R-2, R-13 and R-14; PRIV-4, PRIV-5 and the PIPL work (section 03) |
 
 #### 4.6 Planned improvements, in priority order
 
-1. **Privacy before the model:** one mandatory redaction choke point with a test, a labelled value ending at the sentence, minimum digit counts; then the live language-boundary run (PRIV-1 to PRIV-3, LIVE).
+1. **Privacy before the model:** merge the mandatory redaction (PRIV-1 to PRIV-3), then the live language-boundary run, named-entity detection for person names and the PIPL assessment (LIVE, PRIV-4, PRIV-5).
 2. **Deployability:** the owner's public key and a provisioning step in Compose; the web built against the real API origin; TLS with HSTS and a per-client rate limit at the proxy (SEC-06, SEC-12, SEC-20).
 3. **Audit integrity:** run the API as a non-owner database role; sign and publish the chain head outside the system (R-13).
 4. **Key custody:** a second approver or a hardware key for Tier 2 above a threshold; mandate replace and revoke routes (R-2, R-14).
