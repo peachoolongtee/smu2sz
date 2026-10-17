@@ -193,10 +193,10 @@
   "refusal_summary": {
     "anchor_id": "activity-refused",
     "href": "/activity#activity-refused",
-    "count": 9,
+    "count": 7,
     "refused_operations": 0,
-    "security_events": 9,
-    "set_aside_text": "9 messages were set aside.",
+    "security_events": 7,
+    "set_aside_text": "7 messages were set aside.",
     "is_fixture_example": false,
     "example": null
   },
