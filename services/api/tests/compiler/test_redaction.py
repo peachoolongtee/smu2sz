@@ -356,11 +356,13 @@ def test_live_chain_wraps_only_the_models(monkeypatch: pytest.MonkeyPatch) -> No
     chain = default_backends(Settings())
     assert [b.name for b in chain] == ["cache", "claude", "deepseek", "rules"]
     assert isinstance(chain[0], CacheBackend) and isinstance(chain[-1], RulesBackend)
-    assert isinstance(chain[1], RedactingBackend) and isinstance(chain[1].inner, ClaudeBackend)
-    assert isinstance(chain[2], RedactingBackend) and isinstance(chain[2].inner, DeepSeekBackend)
+    # PRIV-1: each provider backend redacts its own input, so the chain holds them unwrapped
+    assert isinstance(chain[1], ClaudeBackend) and chain[1].redacts
+    assert isinstance(chain[2], DeepSeekBackend) and chain[2].redacts
     monkeypatch.setenv("LLM_REDACT", "0")
     off = default_backends(Settings())
     assert isinstance(off[1], ClaudeBackend) and isinstance(off[2], DeepSeekBackend)
+    assert not off[1].redacts and not off[2].redacts
 
 
 def test_the_cross_check_reads_the_original(monkeypatch: pytest.MonkeyPatch) -> None:

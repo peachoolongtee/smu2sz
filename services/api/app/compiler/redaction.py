@@ -47,7 +47,12 @@ _E = r"(?![A-Za-z0-9_\-/]|[.,][0-9])"  # nor after (a trailing full stop is fine
 _SEP = r"[ \t]*[:：]?[ \t]*"
 _USCC_CH = "0-9A-HJ-NP-RT-UW-Y"  # GB 32100-2015: no I, O, S, V, Z
 _NUM_END = r"(?![0-9A-Za-z年月日元万%])"  # a labelled number ends where a date, an amount or a word would go on
-_MIN_DIGITS = {"ACCOUNT": 8, "PHONE": 7}
+_MIN_DIGITS = {"ACCOUNT": 8, "PHONE": 7}  # a labelled number with fewer digits is a quantity or a day count (PRIV-3)
+# PRIV-2: where a labelled address stops. A full stop followed by a capital ends the sentence, except after the usual
+# abbreviations inside an address; a comma followed by a new subject (我方, the Buyer, We ...) starts the next clause.
+_SENTENCE_END = (r"(?<!\bNo)(?<!\bRd)(?<!\bSt)(?<!\bAve)(?<!\bBldg)(?<!\bRm)(?<!\bFl)(?<!\bBlk)\.(?=[ \t]+[A-Z\u4e00-\u9fff])")
+_CLAUSE_START = (r"我方|我司|贵方|贵司|本公司|甲方|乙方|买方|卖方|供方|需方|We\b|The Buyer\b|The Seller\b|The Supplier\b|"
+                 r"Payment\b|Invoice\b|Please\b")
 
 # (kind, priority, pattern). A pattern with a group `v` replaces only that group (its label stays). Higher priority wins
 # an overlap; labelled patterns outrank bare ones, so 账号 + 18 digits is an ACCOUNT, not a USCC.
@@ -63,16 +68,16 @@ _LABELLED: list[tuple[str, int, re.Pattern[str]]] = [
         rf"(?:[ \t]*[(（][^)）\n]{{0,30}}[)）])?{_SEP}(?P<v>[0-9]{{2,}}(?:[ \-][0-9]{{2,}}){{0,8}}){_NUM_END}", re.IGNORECASE)),
     ("PHONE", 9, re.compile(
         r"(?<![A-Za-z])(?:联系电话|电话号码|电话|手机号码|手机号|手机|传真|座机|Tel(?:ephone)?|Phone|Mobile|Fax|Cell)\.?(?:[ 	]*(?:number|No\.?))?"
-        rf"(?:[ \t]*[(（][^)）\n]{{0,20}}[)）])?{_SEP}(?P<v>\+?(?:\([0-9]{{1,4}}\)[ \-]?)?[0-9]{{2,}}(?:[ \-][0-9]{{2,}}){{0,4}}){_NUM_END}", re.IGNORECASE)),
+        rf"(?:[ \t]*[(（][^)）\n]{{0,20}}[)）])?{_SEP}(?P<v>\+?(?:[0-9]{{1,4}}[ \-]?)?(?:\([0-9]{{1,4}}\)[ \-]?)?[0-9]{{2,}}(?:[ \-][0-9]{{2,}}){{0,4}}){_NUM_END}", re.IGNORECASE)),
     ("EMAIL", 8, re.compile(r"(?<![A-Za-z0-9._%+\-])[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}")),
     ("ADDRESS", 7, re.compile(
         r"(?<![A-Za-z])(?:住所地|住所|注册地址|通讯地址|联系地址|办公地址|收货地址|地址|(?:Registered |Business |Mailing |Office )?Address)"
-        r"[ \t]*[:：][ \t]*(?P<v>[^\n；;]{2,160}?)"
-        r"(?=[ \t]*(?:$|\n|[；;。]|[ \t，,]+(?:法定代表人|负责人|联系人|电话|手机|传真|邮编|邮箱|电子邮箱|统一社会信用代码|开户|账号|"
-        r"Tel|Phone|Fax|Email|Legal Representative|Contact)))", re.IGNORECASE | re.MULTILINE)),
+        r"[ \t]*[:：][ \t]*(?P<v>[^\n；;。]{2,120}?)"
+        r"(?=[ \t]*(?:$|\n|[；;。]|" + _SENTENCE_END + r"|[ \t，,]+(?:法定代表人|负责人|联系人|电话|手机|传真|邮编|邮箱|电子邮箱|统一社会信用代码|开户|账号|"
+        r"Tel|Phone|Fax|Email|Legal Representative|Contact|" + _CLAUSE_START + r")))", re.IGNORECASE | re.MULTILINE)),
     ("ADDRESS", 6, re.compile(
-        r"(?:registered (?:address|office)|principal place of business|address) at[ \t]+(?P<v>[^\n;；(（\"“]{4,160}?)"
-        r"(?=[ \t]*(?:$|\n|[;；(（\"“]|,?[ \t]+and\b|,[ \t]*(?:hereinafter|represented)))", re.IGNORECASE | re.MULTILINE)),
+        r"(?:registered (?:address|office)|principal place of business|address) at[ \t]+(?P<v>[^\n;；(（\"“]{4,120}?)"
+        r"(?=[ \t]*(?:$|\n|[;；(（\"“]|" + _SENTENCE_END + r"|,?[ \t]+and\b|,[ \t]*(?:hereinafter|represented)))", re.IGNORECASE | re.MULTILINE)),
 ]
 
 _BARE: list[tuple[str, int, re.Pattern[str]]] = [
@@ -152,8 +157,11 @@ def _matches(text: str) -> Iterable[tuple[int, int, int, str]]:
         for m in rx.finditer(text):
             s, e = m.span("v") if "v" in rx.groupindex else m.span()
             v = text[s:e].rstrip(" \t,，.")
-            if v.strip():
-                yield s, s + len(v), prio, kind
+            if not v.strip():
+                continue
+            if kind in _MIN_DIGITS and sum(c.isdigit() for c in v) < _MIN_DIGITS[kind]:
+                continue  # PRIV-3: "采购手机 2000 台", "账户 30 天内付清" are a quantity and a day count, not identifiers
+            yield s, s + len(v), prio, kind
     for kind, prio, rx in _BARE:
         for m in rx.finditer(text):
             s, e = m.span("v")
@@ -267,6 +275,18 @@ def log_counts(backend: str, purpose: str, counts: Counter[str]) -> None:
 R = TypeVar("R", OfferResult, TermSheetResult, ContractResult)
 
 
+def call_redacted[T: (OfferResult, TermSheetResult, ContractResult)](
+    name: str, purpose: str, docs: Sequence[SourceDocument], call: Callable[[list[SourceDocument]], T]
+) -> T:
+    """Run one model call on the redacted documents and bring every string of its extraction back to the original's words."""
+    rc = redact_documents(docs)
+    log_counts(name, purpose, rc.redactor.counts)
+    res = call(rc.docs)
+    if not rc.redactor.counts:
+        return res
+    return type(res)(rc.restore_model(res.extraction), res.model_id)
+
+
 class RedactingBackend:
     """A model backend behind the redaction: it receives redacted documents, and its extraction comes back with every
     quote and fragment in the original's words, ready for the same grounding as any other backend's."""
@@ -276,12 +296,7 @@ class RedactingBackend:
         self.name = inner.name
 
     def _call(self, purpose: str, docs: Sequence[SourceDocument], call: Callable[[list[SourceDocument]], R]) -> R:
-        rc = redact_documents(docs)
-        log_counts(self.name, purpose, rc.redactor.counts)
-        res = call(rc.docs)
-        if not rc.redactor.counts:
-            return res
-        return type(res)(rc.restore_model(res.extraction), res.model_id)
+        return call_redacted(self.name, purpose, docs, call)
 
     def extract_offer(self, docs: Sequence[SourceDocument]) -> OfferResult:
         return self._call("offer", docs, lambda d: self.inner.extract_offer(d))
@@ -297,7 +312,9 @@ class RedactingBackend:
 
 
 def redacting(backends: Iterable[LLMBackend], enabled: bool) -> list[LLMBackend]:
-    return [RedactingBackend(b) if enabled else b for b in backends]
+    """Wrap the backends that do not redact on their own. The provider backends redact by default (PRIV-1), so they pass
+    through unwrapped and nothing is redacted twice; a fake, or a backend built with `redact=False`, is wrapped."""
+    return [RedactingBackend(b) if enabled and not getattr(b, "redacts", False) else b for b in backends]
 
 
 def redact_text(text: str) -> tuple[str, Redactor]:
