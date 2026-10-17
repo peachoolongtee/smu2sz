@@ -584,6 +584,8 @@ RT-1 was rated by reachability. The advisories were in the web server (`next`), 
 
 - **A live model at scale.** The catalogue and the 231-item set ran on recorded or scripted answers. The only live-model evidence is the external run's single pass.
 - **Route coverage of the catalogue.** It drives about [CERT: n] of the [CERT: 100] API routes over HTTP. The remaining routes are covered by targeted tests and by the route sweep, which shows who is turned away rather than that each owner route works (1.5).
+- **Controls the catalogue does not exercise end to end** (SEC-32). Switching the egress scan off made no catalogue case leak, because outbound replies are fixed templates and nothing pushes a protected value at the guard. The guard is tested by `tests/egress` and by a seeded mutation test, not by the catalogue. The harness's disclosure oracle uses the same scanning function as the product, so a defect there would blind both.
+- **Detection without harm** (SEC-33). About ten chat extraction questions, and MX-03, get the neutral reply but raise no `DATA_EXTRACTION` event: the data-request screen does not recognise those wordings. They are recorded as known gaps in the catalogue.
 - **Races inside one API process** across routes (S1), parse timeouts and decompression limits (S2), and browser injection beyond the CSP check (S3).
 - **PostgreSQL beyond one machine:** not in CI; not on a migrated or hosted database; not with pooling, replicas or failover.
 - **A running deployment:** no TLS proxy configuration, backup and restore procedure, or emergency write switch exists to test. No penetration test was done.
