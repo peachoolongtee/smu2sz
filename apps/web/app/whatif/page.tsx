@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/flow-look.css";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -35,9 +36,11 @@ import { useWhatIf } from "./use-whatif";
  */
 export default function WhatIfPage() {
   return (
-    <Suspense fallback={<LoadingBlock rows={3} />}>
-      <WhatIf />
-    </Suspense>
+    <div className="flow-f min-w-0">
+      <Suspense fallback={<LoadingBlock rows={3} />}>
+        <WhatIf />
+      </Suspense>
+    </div>
   );
 }
 
@@ -83,7 +86,7 @@ function Ask({ customer, lang, t }: { customer: string | null; lang: "en" | "zh"
   return (
     <>
       <SandboxHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} />
-      <section aria-labelledby="whatif-ask-title" className="motion-reveal card-flat mx-auto w-full max-w-5xl" data-testid="whatif-ask">
+      <section aria-labelledby="whatif-ask-title" className="motion-reveal card-flat w-full" data-testid="whatif-ask">
         <h2 id="whatif-ask-title" className="sec-title font-display text-2xl font-bold tracking-[-0.01em] text-ink">
           {t("deals.which.title")}
         </h2>
@@ -153,7 +156,7 @@ function Run({ decision, customer }: { decision: string; customer: string | null
   const ask = (text: string) => (
     <>
       <SandboxHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} />
-      <div data-testid="whatif-ask" className="mx-auto w-full max-w-4xl">
+      <div data-testid="whatif-ask" className="w-full">
         <h2 className="type-section text-ink">{t("deals.which.title")}</h2>
         <p className="mt-1 text-sm text-ink-2" data-testid="whatif-irrelevant">
           {text}
@@ -181,7 +184,7 @@ function Run({ decision, customer }: { decision: string; customer: string | null
             {t("whatif.scope.back")}
           </Link>
         </p>
-        <div className="mx-auto w-full max-w-4xl" data-testid="whatif-unscoped">
+        <div className="w-full" data-testid="whatif-unscoped">
           <Callout tone="warn">{s.scope_text}</Callout>
         </div>
       </>
@@ -208,7 +211,7 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
     return (
       <>
         <SandboxHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} />
-        <div data-testid="whatif-ask" className="mx-auto w-full max-w-4xl">
+        <div data-testid="whatif-ask" className="w-full">
           <h2 className="type-section text-ink">{t("deals.which.title")}</h2>
           <p className="mt-1 text-sm text-ink-2" data-testid="whatif-irrelevant">
             {ran.irrelevant_text}
@@ -244,7 +247,7 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
       ) : null}
 
       {unscoped ? (
-        <div className="mx-auto w-full max-w-4xl" data-testid="whatif-unscoped">
+        <div className="w-full" data-testid="whatif-unscoped">
           <Callout tone="warn">{unscoped.scope_text}</Callout>
         </div>
       ) : !result ? (

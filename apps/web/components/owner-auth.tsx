@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { apiMode, ApiError, verifyOwnerToken } from "@/lib/api";
+import { ApiError, verifyOwnerToken } from "@/lib/api";
 import { closeSignIn, requestSignIn, setOwnerToken, signOut, useAuth } from "@/lib/auth";
 import { DEMO_BUILD, DEMO_OWNER_TOKEN } from "@/lib/config";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { errorText } from "@/lib/error-text";
+import { playRipple } from "@/lib/ripple";
 import { Badge, Button, inputClass } from "./ui";
 
 function SignInForm() {
@@ -26,6 +27,7 @@ function SignInForm() {
     setError(null);
     try {
       await verifyOwnerToken(token.trim());
+      await playRipple(document.querySelector<HTMLElement>("dialog[data-testid=owner-signin]"));
       setOwnerToken(token);
       bump(); // screens that failed with a 401 reload with the new token
     } catch (err) {
@@ -51,7 +53,6 @@ function SignInForm() {
           </Badge>
         ) : null}
       </div>
-      <p className="text-sm text-ink-2">{t("auth.body")}</p>
       {notice ? (
         <p role={error ? "alert" : "status"} className={`rounded-tile border px-3 py-2 text-sm ${error ? "border-bad-line bg-bad-bg text-bad-fg" : "border-info-line bg-info-bg text-info-fg"}`}>
           {notice}
@@ -73,9 +74,7 @@ function SignInForm() {
           aria-invalid={error ? true : undefined}
           className={`mt-1 w-full font-mono ${inputClass}`}
         />
-        <p className="mt-1 text-meta text-ink-3">
-          {DEMO_BUILD ? t("auth.demo.hint") : apiMode === "mock" ? t("auth.mock.hint") : null}
-        </p>
+        {DEMO_BUILD ? <p className="mt-1 text-meta text-ink-3">{t("auth.demo.hint")}</p> : null}
       </div>
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={closeSignIn}>
@@ -107,7 +106,7 @@ export function OwnerSignInDialog() {
       aria-labelledby="owner-auth-title"
       data-testid="owner-signin"
       onClose={closeSignIn}
-      className="fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/40"
+      className="fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/50 backdrop:backdrop-blur-sm"
     >
       {open ? <SignInForm /> : null}
     </dialog>

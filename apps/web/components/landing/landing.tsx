@@ -2,9 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode, type RefObject } from "react";
 import { FlowLines } from "@/components/business/flow-lines";
 import { useHasAccount } from "@/lib/account";
+import { useAuth } from "@/lib/auth";
+import { playRipple } from "@/lib/ripple";
 import type { DictKey } from "@/lib/dictionary";
 import { setLang, useI18n } from "@/lib/i18n";
 import s from "./landing.module.css";
@@ -78,6 +81,17 @@ function Arrow() {
   );
 }
 
+/** Going into FLOW from here while signed in plays the same ripple as signing in, then opens the app. Anyone else follows the plain link. */
+function useEnterFlow(): (e: MouseEvent<HTMLAnchorElement>) => void {
+  const { token } = useAuth();
+  const router = useRouter();
+  return (e) => {
+    if (!token || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    void playRipple().then(() => router.push(ACCESS_HREF));
+  };
+}
+
 /**
  * The call to action, by who is visiting: "Access FLOW" for someone who has signed up (their own books are open), "Join FLOW now!" (the
  * setup) for everyone else. Until the browser says which (the server render), a quiet placeholder of the same size holds the place.
@@ -85,12 +99,13 @@ function Arrow() {
 function Cta({ size = "lg", testId }: { size?: "sm" | "lg"; testId: string }) {
   const { t } = useI18n();
   const signedUp = useContext(SignedUp);
+  const enter = useEnterFlow();
   const pad = size === "lg" ? "min-h-12 gap-3 pl-5 pr-2 text-base" : "min-h-10 gap-2 pl-4 pr-1.5 text-sm";
   const cls = `inline-flex items-center whitespace-nowrap rounded-full font-semibold ${pad} ${s.bright}`;
   if (signedUp === null) return <span aria-hidden className={`${cls} invisible`}>{t("landing.cta.join")}</span>;
   const [href, label] = signedUp ? [ACCESS_HREF, t("landing.cta.access")] : [JOIN_HREF, t("landing.cta.join")];
   return (
-    <Link href={href} className={cls} data-testid={testId} data-signed-up={signedUp ? "yes" : "no"}>
+    <Link href={href} onClick={signedUp ? enter : undefined} className={cls} data-testid={testId} data-signed-up={signedUp ? "yes" : "no"}>
       {label}
       <span className={s.dot}>
         <Arrow />
@@ -121,6 +136,7 @@ function PreviewButton({ testId }: { testId: string }) {
 function Nav() {
   const { t, lang } = useI18n();
   const signedUp = useContext(SignedUp);
+  const enter = useEnterFlow();
   return (
     <header className="absolute inset-x-0 top-0 z-10">
       <div className="mx-auto flex max-w-[1360px] items-center justify-between gap-4 px-4 py-5 sm:px-10">
@@ -134,7 +150,7 @@ function Nav() {
           </button>
           {/* Someone who signed up on another browser: their way in. */}
           {signedUp === false ? (
-            <Link href={ACCESS_HREF} className="hidden min-h-10 items-center px-1 text-sm font-medium text-[#3d2e22] hover:text-[#151515] sm:inline-flex" data-testid="landing-signin">
+            <Link href={ACCESS_HREF} onClick={enter} className="hidden min-h-10 items-center px-1 text-sm font-medium text-[#3d2e22] hover:text-[#151515] sm:inline-flex" data-testid="landing-signin">
               {t("landing.signIn")}
             </Link>
           ) : null}
