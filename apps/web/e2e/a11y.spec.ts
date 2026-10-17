@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, demoMode, openCompare, openInbox, openOperatorTools, openReview, resetBooks, runPlan, sendCounter, uploadSupplyAgreement } from "./helpers";
+import { checkedDeal, demoMode, openCompare, openInbox, openOperatorTools, openReview, resetBooks, runPlan, sendCounter } from "./helpers";
 import { openStoryFold } from "./helpers";
 
 /**
@@ -72,15 +72,16 @@ test("Deals: the inbox, a checked deal with its priced response, and the decisio
 test("contract ingestion and the send step: the documents and a review, the buyer choice, the deal summary, the borrower file", async ({ page }) => {
   await demoMode(page); // the simulated send is the Demo's only
   await page.goto("/documents");
-  await expect(page.getByTestId("doc-upload")).toBeVisible();
+  await expect(page.getByTestId("doc-dropzone")).toBeVisible();
   await scan(page, "/documents");
-  await uploadSupplyAgreement(page);
-  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED");
+  // The upload's own message (no company typed yet), then a review. The mock reads no uploaded file, so the review is a
+  // demo document the owner confirmed; a new reading waiting for a decision is covered by documents.spec.ts in the live project.
+  await page.getByTestId("doc-upload").click();
+  await expect(page.locator("#docs-read").getByRole("alert")).toBeVisible();
+  await scan(page, "/documents upload message");
+  await page.getByTestId("doc-row-DOC-000001").getByRole("button").click();
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
   await scan(page, "/documents review");
-  // The outcome card after the owner confirms the reading.
-  await page.getByTestId("doc-confirm").click();
-  await expect(page.getByTestId("doc-outcome")).toBeVisible();
-  await scan(page, "/documents outcome");
   await checkedDeal(page);
   await openReview(page);
   await scan(page, "/deals the send step");

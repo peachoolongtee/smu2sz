@@ -210,42 +210,17 @@ export function mockDocument(id: string): DocumentView {
   return viewOf(byId(id));
 }
 
-/** The text of an upload or a paste, when it is text (a Word or PDF file is not read in the browser). */
-function uploadedText(req: SubmitDocumentRequest): string | null {
-  if (req.text) return req.text;
-  if (!req.content_base64 || !/\.(md|txt)$/i.test(req.filename ?? "")) return null;
-  try {
-    const bin = atob(req.content_base64);
-    return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
-  } catch {
-    return null;
-  }
-}
-
-/**
- * The demo document a request reads: its fixture id, or an upload (or paste) of one of the three demo documents' own text, said to be the
- * kind it is and with the company it names (the same text gives the same reading, as on the server). Anything else is not recorded.
- */
-function recordedFixture(req: SubmitDocumentRequest): string | null {
-  if (req.fixture_id) return RECORDED[req.fixture_id] ? req.fixture_id : null;
-  const text = uploadedText(req)?.trim();
-  if (!text) return null;
-  const f = FIXTURES.find((x) => x.kind === req.kind && x.counterparty_id === req.counterparty_id && RECORDED[x.id]?.reread.document.text.trim() === text);
-  return f?.id ?? null;
-}
-
-/** Reads a demo document (any of its formats: they hold the same text, so the reading is the same) as a new reading: the recorded re-reading. */
+/** Reads a demo document (any of its formats: they hold the same text, so the reading is the same) as a new reading. */
 export function mockSubmit(req: SubmitDocumentRequest): DocumentView {
   requireOwner();
-  const fixtureId = recordedFixture(req);
-  if (!fixtureId) {
+  if (!req.fixture_id || !RECORDED[req.fixture_id]) {
     // The owner's words: no variable name, no mode name (Business mode shows neither).
-    throw new ApiError(422, "Uploading needs the live server; the Demo reads its three sample documents.");
+    throw new ApiError(422, "Uploading needs the live server: run pnpm demo, not the recorded-data build.");
   }
   const docs = load();
   const fresh: DocState = {
     id: `DOC-${String(docs.length + 1).padStart(6, "0")}`,
-    fixture_id: fixtureId,
+    fixture_id: req.fixture_id,
     seeded: false,
     status: "PROPOSED",
     uploaded_day: mockClock().day,
