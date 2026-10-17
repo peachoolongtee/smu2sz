@@ -106,7 +106,7 @@ export function OwnerSignInDialog() {
       aria-labelledby="owner-auth-title"
       data-testid="owner-signin"
       onClose={closeSignIn}
-      className="fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/50"
+      className="fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/50 backdrop:backdrop-blur-sm"
     >
       {open ? <SignInForm /> : null}
     </dialog>
