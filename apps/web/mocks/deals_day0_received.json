@@ -348,6 +348,18 @@
         "actions": [],
         "tone": "ok"
       },
+      "contract_status": {
+        "count": 1,
+        "due_fen": 42000000,
+        "due_display": "¥420,000.00",
+        "late_count": 0,
+        "late_fen": 0,
+        "late_display": "¥0.00",
+        "next_due_day": 32,
+        "next_due_when": "in 32 days",
+        "text": "Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days.",
+        "tone": "mute"
+      },
       "open_offer": {
         "offer_id": "OFF-f806f79b6c21",
         "verdict_id": null,
