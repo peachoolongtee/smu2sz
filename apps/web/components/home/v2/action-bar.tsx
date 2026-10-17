@@ -61,7 +61,7 @@ export function HomeV2ActionBar({
   nextAction: HomeNextAction | null;
   /** The cash goes negative without the plan: the server's lowest figure and when. The card is then the page's alarm (red edge, the strip, the red heading). */
   alarm?: { amount: string; when: string } | null;
-  /** Nothing needs funding (no plan to run, the cash never under the minimum): the quiet card is the celebration "You're covered!" with the way to the deals. */
+  /** The server's "covered" (nothing to fund, the cash under the minimum neither today nor ahead): the quiet card is the celebration "You're covered!" with the way to the deals. */
   covered?: boolean;
   /** The Home read's note under its headline (the server's sentence about the cash), the recommendation's one line. */
   line?: string | null;
@@ -256,10 +256,12 @@ function CoveredCard({ action, kpis, embedded = false }: { action: HomeV2Action;
           <span aria-hidden className="covered-medal grid size-10 place-items-center rounded-pill bg-ok-solid text-white shadow-(--shadow-lift)">
             <CheckIcon width={20} height={20} />
           </span>
-          <span className="rounded-pill bg-f-green px-3 py-1 text-supporting font-bold uppercase tracking-[0.08em] text-f-green-ink">{t("hv2.covered.pill")}</span>
+          <span className="rounded-pill bg-f-green px-3 py-1 text-supporting font-bold uppercase tracking-[0.08em] text-f-green-ink" data-testid="hv2-covered-pill">
+            {action.covered_pill_text ?? t("hv2.covered.pill")}
+          </span>
         </div>
         <h2 id="hv2-covered-title" className="mt-4 font-display text-[34px] font-extrabold leading-[1.05] tracking-[-0.035em] text-ink sm:text-[40px]">
-          {t("hv2.covered.title")}
+          {action.covered_title_text ?? t("hv2.covered.title")}
         </h2>
         <p className="mt-2 max-w-[42ch] text-pretty text-[15px] leading-snug text-ink-2" data-testid="home-action-title">
           {action.title}

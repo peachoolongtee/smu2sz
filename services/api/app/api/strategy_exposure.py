@@ -49,6 +49,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.api.caches import books_generation
 from app.api.customer_overview import customer_context
 from app.api.decisions import is_lapsed, lapsed_by_agreement, latest_verdict_for
 from app.api.display import displayed
@@ -131,7 +132,7 @@ def _answer(rt: Runtime, offer: CompiledOffer, response: str, lang: Literal["en"
         raise _not_found("COUNTER_NOT_FOUND", f"Offer {offer.offer_id} has no {response} any more: its counter-offers changed "
                                               "while you were reading. Read it again.") from None
     key = cache_key(state, mandate, day, held_all, "offer-exposure", offer.offer_id, verdict.id if verdict is not None else "", marker,
-                    inputs.digest(), lang, bool(spare), lead, deal_words)
+                    inputs.digest(), lang, bool(spare), lead, deal_words, books_generation())  # the log's counts start again after a reset
 
     def build() -> dict[str, Any]:
         books = current_books(state, held)
@@ -245,7 +246,7 @@ def get_buyer_exposure(buyer_id: str, lang: Literal["en", "zh"] = Query("en"), s
         if not any(c.id == buyer_id and c.role == "BUYER" for c in state.counterparties):
             raise _not_found("BUYER_NOT_FOUND", t(lang, "There is no such customer on your books.", "您的账目中没有这位客户。"))
         key = cache_key(state, mandate, max(rt.day, state.as_of_day), tuple(rt.store.commitments()), "buyer-exposure", buyer_id, lang, spare,
-                        inputs_from_store(rt.store).digest(), rt.store.change_marker())
+                        inputs_from_store(rt.store).digest(), rt.store.change_marker(), books_generation())
     try:
         body = _BUYER_CACHE.get_or_compute(key, lambda: displayed(_buyer_block(rt, buyer_id, lang, bool(spare))))
     except EngineError as exc:

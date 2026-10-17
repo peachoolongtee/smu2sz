@@ -3302,6 +3302,11 @@ export interface HomeV2Action {
   /** The action's facts as label and value (Estimated cost, Funding, Approval); absent from an older server, then `text` is the one sentence. */
   facts?: { label: string; value: string }[];
   variant: "ACTION" | "QUIET";
+  /** The server's decision that the cash is covered (nothing to fund, never under the minimum today or on any day ahead): the "You're covered!" card. Absent from an older server or recording. */
+  covered?: boolean;
+  /** The covered card's pill and heading, the server's words ("All clear", "You're covered!"); absent from an older server (the dictionary's then). */
+  covered_pill_text?: string | null;
+  covered_title_text?: string | null;
   key: string | null;
   tone: HomeTone;
   eyebrow: string;
@@ -3477,8 +3482,10 @@ export interface HomeView {
     first_breach_day: Day | null;
     first_breach_cash_fen: Fen | null;
     first_breach_cash_short: string | null;
-    /** Today's cash is already under the reserve: the first breach is today, its cash is today's, and no tile may say "N days ago". Absent in older recordings. */
+    /** Today's cash is already under the reserve: the cash in the bank right now, or the projection's close of today. Absent in older recordings. */
     below_reserve_today?: boolean;
+    /** The server's one rule for "covered": nothing to fund, and the cash under the reserve neither today nor on any day ahead. Absent in older recordings. */
+    covered?: boolean;
     cash_short: string;
     floor_short: string;
     lowest_short: string;

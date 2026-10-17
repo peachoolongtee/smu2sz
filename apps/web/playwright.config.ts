@@ -51,7 +51,7 @@ export default defineConfig({
       ? [
           {
             name: "desktop",
-            testIgnore: /(live|contract|slow|home-v2-states)\.spec\.ts/,
+            testIgnore: /(live|contract|slow|home-v2-states|home-reset)\.spec\.ts/, // home-reset drives the real API (resets, the clock)
             use: { ...desktop, baseURL: `http://localhost:${MOCK_PORT}` },
           },
           {
@@ -66,7 +66,7 @@ export default defineConfig({
           {
             name: "live",
             // The same demo walk, what-if and document specs as mock mode, plus the live-only checks and the adapter contract tests.
-            testMatch: /(demo|whatif|alerts|contract|live|chat|ask|strategy|slow|lang|documents|contract-terms|slice-b|slice-b-round-two|accept-as-asked|home-v2-states|ask-header-live|activity|trust|tracker|record-payment)\.spec\.ts/, // Deal tracker: tracker added; ADR-0014: contract-terms; inventory gap 1: record-payment
+            testMatch: /(demo|whatif|alerts|contract|live|chat|ask|strategy|slow|lang|documents|contract-terms|slice-b|slice-b-round-two|accept-as-asked|home-v2-states|ask-header-live|activity|trust|tracker|record-payment|home-reset)\.spec\.ts/, // home-reset: the Home after quick resets and at day 77; Deal tracker: tracker added; ADR-0014: contract-terms; inventory gap 1: record-payment
             use: { ...desktop, baseURL: `http://localhost:${LIVE_PORT}` },
           },
         ]
