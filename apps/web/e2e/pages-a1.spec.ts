@@ -174,7 +174,7 @@ test("Activity in Chinese: the tabs, the search and the evidence fold", async ({
   await page.evaluate(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
   await page.reload();
   await expect(page.getByTestId("activity-filter-all")).toHaveText(/全部/);
-  await expect(page.getByTestId("activity-search")).toHaveAttribute("placeholder", "搜索记录");
+  await expect(page.getByTestId("activity-search")).toHaveAttribute("placeholder", "按客户或事件搜索");
   await expect(page.getByTestId("activity-evidence").first().locator("> summary")).not.toHaveText("Evidence");
 });
 
