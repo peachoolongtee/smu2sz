@@ -668,11 +668,21 @@ def explain(ctx: NlContext, slots: Slots, text: str = "") -> Turn:
 def what_if(ctx: NlContext, slots: Slots, text: str) -> Turn:
     """A hypothetical terms or discount change, verified on synthetic typed obligations whose spans are
     the owner's own words. Nothing is executed."""
-    if not (lx.days(text) or lx.rates(text)):
-        if ctx.reads is not None and lx.LATE_PAYMENT_ASK.search(text):
-            return reads.late_payment(ctx)  # a late payment of the invoice the page names, or the next one due
-        if lx.ACCEPT_ASK.search(text) and not slots.fixture_id and not slots.quoted_text:
-            return reads.accept_original(ctx)  # the verdict already held on their terms as written
+    if lx.LATE_PAYMENT_ASK.search(text) and not lx.rates(text):
+        # a late payment of the invoice the page names, or the next one due: "pays 30 days late" is a late receipt, never
+        # a change to the buyer's terms, so its day count is not compiled as a terms offer
+        from app.nl.ask import layer_reply
+
+        # the answer module projects a named late payment on a copy; "this payment" is the page's, which the read knows
+        if ctx.owner_authenticated and not lx.THIS_PAYMENT.search(text) and (got := layer_reply(ctx, text)) is not None:
+            return Turn(intent=Intent.WHAT_IF, reply=got[0], facts={"ask": {"topic": "late_payment", "metric_ids": got[1]}})
+        if ctx.reads is not None:
+            return reads.late_payment(ctx)
+        return Turn(intent=Intent.WHAT_IF, reply=t(
+            ctx, "A late payment is not a change to the buyer's terms, so I have not tested it as one; nothing was changed.",
+            "延迟付款并不是买家条款的变化，因此我没有把它当作条款来测试；未做任何更改。"))
+    if not (lx.days(text) or lx.rates(text)) and lx.ACCEPT_ASK.search(text) and not slots.fixture_id and not slots.quoted_text:
+        return reads.accept_original(ctx)  # the verdict already held on their terms as written
     state = ctx.state()
     cp = slots.counterparty_id or ctx.session.counterparty_id
     if cp is None and ctx.session.last_offer_id:

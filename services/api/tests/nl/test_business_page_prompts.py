@@ -11,7 +11,8 @@ PROMPTS = [
     # Home
     ("What changed today?", "CHANGES"), ("今天有什么变化？", "CHANGES"),
     ("What needs my attention?", "SHOW_ALERTS"), ("有什么需要我关注的？", "SHOW_ALERTS"),
-    ("Do we have enough cash this month?", "SHOW_STATUS"), ("会不会缺钱？", "SHOW_STATUS"),
+    # "Do we have enough cash this month?" is a top owner question (LIQ-01): the answer module leads with the answer
+    ("Do we have enough cash this month?", "ASK_BOOKS"), ("会不会缺钱？", "SHOW_STATUS"),
     ("What should I deal with today?", "SHOW_ALERTS"), ("今天有什么需要我处理的？", "SHOW_ALERTS"),
     # Deals
     ("Why are we countering this?", "EXPLAIN"), ("为什么要还价？", "EXPLAIN"),

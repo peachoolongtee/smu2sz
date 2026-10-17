@@ -33,7 +33,8 @@ AGENT_KEYS = ("session_id", "turn", "intent", "lang", "trace_id", "awaiting_conf
 
 # Pure reads: they act on nothing, so the agent needs nothing from them but the outcome word of a verdict.
 READ_INTENTS = frozenset({"SHOW_STATUS", "SHOW_ALERTS", "EXPLAIN", "WHAT_IF", "EVALUATE_OFFER", "NEGOTIATE", "RECORD_FACT",
-                          "CHANGES", "COMPARE_FINANCING", "RECONCILE", "SHOW_RATIOS", "CAPEX", "BORROWER_FILE", "SHOW_DEAL"})
+                          "CHANGES", "COMPARE_FINANCING", "RECONCILE", "SHOW_RATIOS", "CAPEX", "BORROWER_FILE", "SHOW_DEAL",
+                          "ASK_BOOKS"})
 
 OPERATION_KINDS = frozenset({
     "ACCEPT_OFFER", "COUNTER_OFFER", "REJECT_OFFER", "RECORD_COMMITMENT", "DRAW_FACILITY", "REPAY_FACILITY",
