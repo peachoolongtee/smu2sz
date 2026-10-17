@@ -206,6 +206,9 @@ test("document and deal adapters: the demo opens on three confirmed documents; a
   const decided = await live.decideDocument(view.id, "confirm", view.doc_hash, null);
   expect(decided.result).toMatchObject({ kind: "CONFIRM_DOCUMENT", status: "EXECUTED", tier: "TIER_2", seq: 4 });
   expect(decided.document).toMatchObject({ status: "CONFIRMED", label: "Read by the agent, confirmed by you", decided_seq: decided.result.seq });
+  // The outcome card, in the server's words: filed under the buyer, with a link to its record.
+  expect(decided.outcome).toMatchObject({ title: "Filed under Foshan Home Retail Co.", tone: "ok", link: { href: "/customers/BUYER-1" } });
+  expect(decided.outcome?.unchanged.lines[0]).toMatch(/^Your books and forecast are unchanged\./);
   expect((await live.getState()).state).toEqual(before.state);
   const deal = (await live.getDeals()).deals.find((d) => d.counterparty_id === "BUYER-1");
   expect(deal).toMatchObject({ has_contract: true, contract: { record_id: view.id, reference: "FHR-2026-07" }, pending_documents: [] });

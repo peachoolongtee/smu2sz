@@ -1303,6 +1303,12 @@ files["home_approve_chat.json"] = await live.nl({ session_id: "rec-home-go", act
 files["contracts_fixtures.json"] = await live.getContractFixtures();
 const CONTRACT_FIXTURES = files["contracts_fixtures.json"];
 const documentsRecorded = {};
+/** The outcome card of a decision just made, { en, zh }: the English from its answer, the Chinese from the same decision asked again with lang=zh. */
+async function decisionOutcomes(doc, decision, link, decided) {
+  const zh = await live.decideDocument(doc.id, decision, doc.doc_hash, link, "zh");
+  if (zh.result.op_id !== decided.result.op_id || !decided.outcome || !zh.outcome) throw new Error(`${doc.id}: the ${decision} answer has no outcome in both languages`);
+  return { en: decided.outcome, zh: zh.outcome };
+}
 await reset();
 {
   const seeded = (await live.getDocuments()).documents;
@@ -1321,12 +1327,24 @@ for (const decision of ["confirm", "reject"]) {
     const again = await live.submitDocument({ fixture_id: f.id });
     if (again.id !== "DOC-000004") throw new Error(`${f.id} read again as ${again.id}, not DOC-000004`);
     documentsRecorded[f.id].reread = again;
-    const decided = await live.decideDocument(again.id, decision, again.doc_hash, decision === "confirm" ? f.link_facility_id : null);
+    const link = decision === "confirm" ? f.link_facility_id : null;
+    const decided = await live.decideDocument(again.id, decision, again.doc_hash, link);
     if (decided.result.status !== "EXECUTED") throw new Error(`${f.id} read again was not ${decision}ed: ${decided.result.message}`);
-    documentsRecorded[f.id][decision === "confirm" ? "confirmed" : "rejected"] = decided;
+    const key = decision === "confirm" ? "confirmed" : "rejected";
+    documentsRecorded[f.id][key] = decided;
+    // The outcome card in both languages: the same decision asked again is answered with the first (nothing appended), in the language asked.
+    documentsRecorded[f.id].outcomes = { ...documentsRecorded[f.id].outcomes, [key]: await decisionOutcomes(again, decision, link, decided) };
     // The deal follows the supply agreement confirmed last: record it once, after the new reading is confirmed.
     if (decision === "confirm" && f.kind === "BUYER_CONTRACT") files["deals_day0_reconfirmed.json"] = await live.getDeals();
   }
+}
+// A lender agreement confirmed with its link box left unticked (the box starts off): the card says no facility.
+for (const f of CONTRACT_FIXTURES.filter((x) => x.link_facility_id)) {
+  await reset();
+  const again = await live.submitDocument({ fixture_id: f.id });
+  const decided = await live.decideDocument(again.id, "confirm", again.doc_hash, null);
+  if (decided.result.status !== "EXECUTED") throw new Error(`${f.id} read again was not confirmed without its link: ${decided.result.message}`);
+  documentsRecorded[f.id].outcomes.confirmed_unlinked = await decisionOutcomes(again, "confirm", null, decided);
 }
 files["documents.json"] = documentsRecorded;
 // The deal on the home path (as above) from the demo's starting point: on day 0 right after the buyer agreed (the Deals page shows

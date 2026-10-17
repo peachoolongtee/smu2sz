@@ -1706,9 +1706,9 @@ export async function submitDocument(req: SubmitDocumentRequest): Promise<Docume
 }
 
 /** The owner's decision is an owner operation on the same chain as the rest (CONFIRM_DOCUMENT / REJECT_DOCUMENT, Tier 2). */
-export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null): Promise<DocumentDecision> {
+export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null, lang: "en" | "zh" = "en"): Promise<DocumentDecision> {
   await delay();
-  return documents.mockDecide(id, decision, docHash, linkFacilityId, (r) => appendRecorded({ ...r, requested_by: "OWNER" }));
+  return documents.mockDecide(id, decision, docHash, linkFacilityId, (r) => appendRecorded({ ...r, requested_by: "OWNER" }), lang);
 }
 
 export async function getContractFixtures(): Promise<ContractFixture[]> {

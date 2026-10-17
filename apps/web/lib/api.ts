@@ -528,8 +528,8 @@ export async function submitDocument(req: SubmitDocumentRequest): Promise<Docume
 }
 
 /** POST /documents/{id}/confirm | reject: the owner's decision, bound to the hash of the text shown (logged in the chain). */
-export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId?: string | null): Promise<DocumentDecision> {
-  return isMock ? (await mock()).decideDocument(id, decision, docHash, linkFacilityId ?? null) : (await live()).decideDocument(id, decision, docHash, linkFacilityId ?? null);
+export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId?: string | null, lang: "en" | "zh" = "en"): Promise<DocumentDecision> {
+  return isMock ? (await mock()).decideDocument(id, decision, docHash, linkFacilityId ?? null, lang) : (await live()).decideDocument(id, decision, docHash, linkFacilityId ?? null, lang);
 }
 
 /** GET /fixtures/contracts: the demo documents (synthetic; each written to match the demo books). */

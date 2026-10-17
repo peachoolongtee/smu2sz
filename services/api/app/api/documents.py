@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import require_feature, require_owner
+from app.api.document_outcome import document_outcome
 from app.api.errors import ALREADY_DECIDED_CODE
 from app.api.runtime import Runtime, get_runtime
 from app.compiler import ContractTooLong
@@ -183,7 +184,9 @@ def get_document(document_id: str, lang: Lang = "en") -> dict:
 def _decide(document_id: str, body: DecisionIn, confirm: bool, lang: Lang) -> dict:
     """The owner's decision. The same decision sent again is answered with the first (same op_id and log position, nothing
     appended); the other decision on a decided document is refused and answered 409 `ALREADY_DECIDED`; a hash that is not the
-    stored text's is refused and answered 409 `TERMS_CHANGED`. Any other refusal is a 200 whose result says REFUSED."""
+    stored text's is refused and answered 409 `TERMS_CHANGED`. Any other refusal is a 200 whose result says REFUSED (and whose
+    `outcome` is null). A decision made carries `outcome`: what it saved, under whom, what it changes and what it does not, in words
+    (`app.api.document_outcome`)."""
     rt = get_runtime()
     before = rt.store.get_contract_record(document_id)
     if before is None:
@@ -198,8 +201,10 @@ def _decide(document_id: str, body: DecisionIn, confirm: bool, lang: Lang) -> di
                                   "result": result.model_dump(mode="json")})
     rec = rt.store.get_contract_record(document_id)
     assert rec is not None
-    return {"result": result.model_dump(mode="json"),
-            "document": record_view(rec, rt.store.get_state(), lang, rt.day, rt.store.contract_guard_rows())}
+    state, rows = rt.store.get_state(), rt.store.contract_guard_rows()
+    # What the decision did, in words (the outcome card): only for a decision that was made, never for a refusal.
+    outcome = document_outcome(rec, state, rows, lang, rt.day) if result.status.value == "EXECUTED" else None
+    return {"result": result.model_dump(mode="json"), "document": record_view(rec, state, lang, rt.day, rows), "outcome": outcome}
 
 
 @router.post("/documents/{document_id}/confirm")
