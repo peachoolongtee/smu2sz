@@ -209,6 +209,14 @@ def opener(session_id: str | None, lang: str | None, *, store: LedgerStore, exec
 # ---------------------------------------------------------------- parsing
 
 
+def _about_the_business(text: str) -> bool:
+    """A question that names something the books are about (cash, money, customers, debt, deals, limits ...), by the broad
+    matcher's own topic cues; "who won the football match?" names none and stays out of scope."""
+    from app.nl.answers.broad import canon, cues
+
+    return bool(cues(canon(text)))
+
+
 def _parse(ctx: NlContext, text: str, backends: Sequence[clf.IntentBackend] | None) -> Parsed:
     s = ctx.session
     state = ctx.state()
@@ -231,7 +239,12 @@ def _parse(ctx: NlContext, text: str, backends: Sequence[clf.IntentBackend] | No
             ctx.new_event(SecurityEventKind.DATA_EXTRACTION, "OWNER",
                           f"intent classifier output from {r.backend} contained {r.reason}; discarded",
                           action="classifier output discarded")
-    if got is None or got.result.confidence < MIN_LLM_CONFIDENCE:
+    if got is None or got.result.confidence < MIN_LLM_CONFIDENCE or got.result.intent == Intent.OUT_OF_SCOPE.value:
+        # A question about the business that no rule read ("how long can we keep paying the bills?") is still asked of the
+        # books: the answer layer, then the router (ADR-0015), then the honest "cannot answer yet". Anything else is out of scope.
+        if lx.is_question(text) and _about_the_business(text):
+            return Parsed(intent=Intent.ASK_BOOKS, slots=Slots(question=text, execute_now=False), source="question",
+                          matched=["ask", "ask:unread"])
         return Parsed(intent=Intent.OUT_OF_SCOPE, source="fallback")
     ls = got.result.slots
     cps = lx.find_counterparty(ls.counterparty_name or "", state) if ls.counterparty_name else []
