@@ -35,7 +35,9 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 import docx
@@ -66,7 +68,14 @@ JOBS = [
 ]
 
 CODE_FONT = "Courier New"  # present on Windows and macOS
+# Chinese text needs an East Asian font named on every style, or a reader without a fallback drops the characters.
+CJK_FONT = "Microsoft YaHei"
 PLACEHOLDERS = ("Write here", "Please complete")
+TITLES = {
+    "Technical_Document.docx": "Technical Document",
+    "Execution_Evidence.docx": "Execution Evidence",
+    "Security_Self_Assessment.docx": "Security Self-Assessment",
+}
 
 
 # ------------------------------------------------------------------ evidence tables (from the e2e run)
@@ -556,14 +565,33 @@ class Renderer:
                     shd.set(qn("w:color"), "auto")
                     shd.set(qn("w:fill"), "E8EEFB")
                     tcpr.append(shd)
-        # repeat the header row on each page
+        # repeat the header row on each page, and keep every row on one page
         trpr = t.rows[0]._tr.get_or_add_trPr()
         th = OxmlElement("w:tblHeader")
         th.set(qn("w:val"), "true")
         trpr.append(th)
+        for row in t.rows:
+            cs = OxmlElement("w:cantSplit")
+            cs.set(qn("w:val"), "true")
+            row._tr.get_or_add_trPr().insert(0, cs)
+        self.widths(t, rows, ncols)
         anchor._p.addprevious(t._tbl)
         spacer = self.para_before(anchor)
         spacer.paragraph_format.space_after = Pt(2)
+
+    @staticmethod
+    def widths(t, rows: list[list[str]], ncols: int) -> None:
+        """Columns sized by their text (an id column stays narrow, a narrative column gets the room)."""
+        total = 6.5
+        weight = []
+        for ci in range(ncols):
+            lens = sorted(len(re.sub(r"[`*]", "", r[ci])) if ci < len(r) else 0 for r in rows)
+            weight.append(max(4.0, min(60.0, lens[len(lens) * 3 // 4] if lens else 4.0)))
+        scale = total / sum(weight)
+        t.autofit = False
+        for ci, w in enumerate(weight):
+            for cell in t.columns[ci].cells:
+                cell.width = Inches(max(0.55, w * scale))
 
     def figure(self, anchor: Paragraph, name: str, caption: str) -> None:
         path = (self.md_dir / name)
@@ -613,6 +641,9 @@ def fill(md_path: Path, template: Path, out_path: Path, repo_url: str | None) ->
         r.render(parse_blocks(pre), headings[0])
     for sec in sections:
         h = next((p for p in body_paragraphs(doc) if p.style.name == "Heading 1" and p.text.strip() == sec.heading), None)
+        if h is None and sec.heading.startswith("Appendix"):
+            append_section(doc, r, sec)
+            continue
         if h is None:
             raise SystemExit(f"{md_path.name}: heading '{sec.heading}' is not in the template {template.name}")
         after = _following(doc, h)
@@ -629,8 +660,117 @@ def fill(md_path: Path, template: Path, out_path: Path, repo_url: str | None) ->
             if n == 0:
                 raise SystemExit(f"{md_path.name}: prompt '{prompt}' has no content")
             placeholder._p.getparent().remove(placeholder._p)
+    finish(doc, TITLES.get(out_path.name, out_path.stem.replace("_", " ")), contents="<!-- contents -->" in md)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(str(out_path))
+
+
+def append_section(doc, r: Renderer, sec: Section) -> None:
+    """An "## Appendix ..." section the template does not have: added at the end, its "###" lines as sub-headings."""
+    end = doc.add_paragraph("")
+    h = end.insert_paragraph_before(sec.heading, style="Heading 1")
+    h.paragraph_format.page_break_before = True
+    if sec.intro:
+        r.render(parse_blocks(sec.intro), end)
+    for prompt, lines in sec.prompts:
+        r.render([Block("heading", prompt, level=3)] + parse_blocks(lines), end)
+    end._p.getparent().remove(end._p)
+
+
+def _field(par: Paragraph, instr: str, shown: str = "1") -> None:
+    """A Word field (PAGE, NUMPAGES, TOC); Word computes it when the document is opened or updated."""
+    for kind, text in (("begin", None), ("instr", instr), ("separate", None), ("text", shown), ("end", None)):
+        run = OxmlElement("w:r")
+        if kind == "instr":
+            el = OxmlElement("w:instrText")
+            el.set(qn("xml:space"), "preserve")
+            el.text = f" {text} "
+        elif kind == "text":
+            el = OxmlElement("w:t")
+            el.text = text
+        else:
+            el = OxmlElement("w:fldChar")
+            el.set(qn("w:fldCharType"), kind)
+        run.append(el)
+        par._p.append(run)
+
+
+def finish(doc, title: str, contents: bool) -> None:
+    """East Asian fonts on every style, page numbers in the footer, metadata; a contents field where asked."""
+    for style in doc.styles:
+        el = getattr(style, "element", None)
+        if el is None or style.type not in (1, 2):  # paragraph and character styles
+            continue
+        rpr = el.get_or_add_rPr()
+        fonts = rpr.find(qn("w:rFonts"))
+        if fonts is None:
+            fonts = OxmlElement("w:rFonts")
+            rpr.insert(0, fonts)
+        fonts.set(qn("w:eastAsia"), CJK_FONT)
+    defaults = doc.styles.element.find(qn("w:docDefaults"))
+    if defaults is not None:
+        rpr = defaults.find(f"{qn('w:rPrDefault')}/{qn('w:rPr')}")
+        if rpr is not None:
+            fonts = rpr.find(qn("w:rFonts"))
+            if fonts is None:
+                fonts = OxmlElement("w:rFonts")
+                rpr.insert(0, fonts)
+            fonts.set(qn("w:eastAsia"), CJK_FONT)
+    footer = doc.sections[0].footer
+    p = footer.add_paragraph()
+    p.alignment = 1  # centred
+    p.add_run("Page ")
+    _field(p, "PAGE")
+    p.add_run(" of ")
+    _field(p, "NUMPAGES")
+    for run in p.runs:
+        run.font.size = Pt(8)
+    if contents:
+        marker = next((q for q in body_paragraphs(doc) if q.text.strip() == "Contents"), None)
+        if marker is not None:
+            toc = marker.insert_paragraph_before("")
+            marker._p.addnext(toc._p)
+            _field(toc, 'TOC \\o "1-3" \\h \\z \\u', "Open in Word and update fields to show the contents.")
+    cp = doc.core_properties
+    cp.title = f"FLOW (TermsLedger): {title}"
+    cp.subject = "2026 FinTechathon, International AI Track, Topic E"
+    cp.author = cp.last_modified_by = "TermsLedger team"
+    cp.keywords = "FLOW; TermsLedger; security; FinTechathon 2026"
+    now = datetime.now(UTC).replace(microsecond=0, tzinfo=None)
+    cp.created = cp.modified = now
+    cp.revision = 1
+
+
+WORD_PS = r"""
+$ErrorActionPreference = 'Stop'
+$w = New-Object -ComObject Word.Application
+$w.Visible = $false
+$w.DisplayAlerts = 0
+try {
+  foreach ($f in $args) {
+    $d = $w.Documents.Open($f, $false, $false)
+    foreach ($t in $d.TablesOfContents) { $t.Update() }
+    $d.Fields.Update() | Out-Null
+    foreach ($s in $d.Sections) { foreach ($ft in $s.Footers) { $ft.Range.Fields.Update() | Out-Null } }
+    $d.Save()
+    $pdf = [IO.Path]::ChangeExtension($f, '.pdf')
+    $d.ExportAsFixedFormat($pdf, 17, $false, 0, 0, 0, 0, 0, $true, $true, 1, $true, $true, $false)
+    $n = $d.ComputeStatistics(2)
+    $d.Close($false)
+    Write-Output "$f pages=$n"
+  }
+} finally { $w.Quit() }
+"""
+
+
+def word_pass(paths: list[Path]) -> None:
+    """Windows with Word only: update the contents and page fields, save, and export a PDF with fonts embedded."""
+    with tempfile.TemporaryDirectory() as tmp:
+        script = Path(tmp) / "word_pass.ps1"
+        script.write_text(WORD_PS, encoding="utf-8")
+        r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(script),
+                            *(str(p.resolve()) for p in paths)], capture_output=True, text=True, check=False)
+    print(r.stdout.strip() or r.stderr.strip())
 
 
 def _following(doc, par: Paragraph) -> Paragraph | None:
@@ -719,6 +859,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--refresh-evidence", action="store_true", help="regenerate the evidence tables from the e2e run first")
     ap.add_argument("--latest", default=str(E2E), help="scenario-run directory (default: services/api/evals/e2e/latest)")
+    ap.add_argument("--word", action="store_true",
+                    help="Windows with Word: update the contents and page numbers, and export a PDF beside each file")
     ap.add_argument("--repo-url", default=None,
                     help="base URL for repo links, e.g. https://github.com/<org>/<repo>/blob/<ref> (default: print paths)")
     args = ap.parse_args()
@@ -727,11 +869,13 @@ def main() -> int:
         refresh_evidence(DELIV / "execution_evidence.md", Path(args.latest).resolve())
 
     failed = False
+    built: list[Path] = []
     for md_name, tpl_name, out_name in JOBS:
         md_path = (DELIV / md_name).resolve()
         template = TEMPLATES / tpl_name
         out_path = OUT / out_name
         fill(md_path, template, out_path, args.repo_url)
+        built.append(out_path)
         problems = verify(out_path, template)
         rel = out_path.relative_to(ROOT)
         if problems:
@@ -747,6 +891,8 @@ def main() -> int:
             print(f"     {len(team)} [TEAM: ...] placeholder(s) for the team to fill:")
             for t in team:
                 print(f"       {t}")
+    if args.word and not failed:
+        word_pass(built)
     return 1 if failed else 0
 
 

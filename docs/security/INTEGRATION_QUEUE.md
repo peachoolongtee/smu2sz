@@ -1,5 +1,18 @@
 # Security integration queue
 
+## Round four, 17 Oct: after the external review of the self-assessment
+
+Built from dev `0fde33fd`, one concern each, no engine module touched. The combined gate (security, api and the mock browser suite on all
+of them together) runs before hand-in; counts below are each branch's own.
+
+| Branch @ head | Finding | Files | Tests | Ready |
+|---|---|---|---|---|
+| `sec/refusal-budget` @ `089ff973` | SEC-26 (Low/Medium): one address could hide everyone's refused credentials for an hour | `app/api/auth.py`, `tests/security/test_sec26_refusal_budget.py` | regression 3 (2 fail before); `test_security_event_growth.py` 3 | combined gate pending |
+| `sec/evidence-verifier` @ `aa050d85` | EV-1 (Low): offline verifier trusted readable fields, ignored the count, no checkpoint | `scripts/verify_evidence.py`, `tests/security/test_evidence_verifier.py` | regression 5 (5 fail before); existing callers pass; all 49 committed evidence files VALID | combined gate pending |
+| `sec/anonymous-intake-switch` @ `d8d22332` | SEC-19: `ANONYMOUS_INTAKE=0` for a network demo | `app/config.py`, `app/api/offers.py`, `tests/security/test_anonymous_intake_switch.py` | regression 3 (1 fails before); buyer budget, intake hardening, counterparty channel 38 | combined gate pending |
+| `sec/harness-assurance` | SEC-24, SEC-25: cases that never reached their control counted as defended; no positive controls or mutation tests; no route policy test | `app/security/attacks.py`, `evals/security/attacks.yaml`, `tests/security/` | building | no |
+| `ci/linux-green` @ `e658ba64` (existing, not ours) | T-161: the stale router-plan digest | `tests/books/test_modules_on_books.py` (golden only) | cherry-pick `e658ba64` alone; the cause is one display string (see the register) | **yes** |
+
 ## Round three, 17 Oct
 
 The five round-two branches and the OUT-1 fix are merged (`719c9dcf`, certified 17 Oct for scope S).

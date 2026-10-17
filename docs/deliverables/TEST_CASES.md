@@ -8,7 +8,7 @@ Everything runs offline: `LLM_MODE=cache` replays recorded model outputs, the bo
 
 | Suite | Result |
 | --- | --- |
-| API (`uv run pytest`) | **8,556 passed, 1 known failure** (#161, a machine-dependent hash). 8,598 tests are collected, so the other 41 are skips or deselected |
+| API (`uv run pytest`) | **8,556 passed, 1 known failure** (#161, a stale router-plan digest pin: "1 days" became "1 day" in a menu label; fix `e658ba64` on `ci/linux-green`). 8,598 tests are collected, so the other 41 are skips or deselected |
 | Playwright, mock project | **435/435** |
 | Playwright, live project | **141/141** |
 | Web unit (`pnpm test:unit`) | **163 passed** |
@@ -84,7 +84,7 @@ Checked in this session (Windows, 16 Oct 2026): `uv run pytest tests/mandate tes
 
 | Issue | What | Status |
 | --- | --- | --- |
-| #161 | `tests/books/test_modules_on_books.py::test_no_commitments_trajectory_and_router_plan_are_unchanged` compares a trajectory and router-plan hash that differs between machines (`24f1dc649f4363e3` against `252b9812e99b4aee` on Linux CI). It is the 1 failure in the 8,556-passed gate. The issue originally listed three more API failures (a red-team negotiate test and two Chinese-name tests); they were not failing in the gate | open |
+| #161 | `tests/books/test_modules_on_books.py::test_no_commitments_trajectory_and_router_plan_are_unchanged` pins a router-plan digest that is stale, not machine-dependent: every platform computes `24f1dc649f4363e3` against the pinned `252b9812e99b4aee`, because one menu label changed from "1 days" to "1 day" (`61eb4576`, 13 Oct); no amount, leg or cost changed. The golden update is `e658ba64` on `ci/linux-green`. It is the 1 failure in the 8,556-passed gate. The issue originally listed three more API failures (a red-team negotiate test and two Chinese-name tests); they were not failing in the gate | open |
 | #157 | Playwright specs that are broken or flaky on the same tree. In `live.spec.ts`: "a write that lost a race is sent once more after the hint, and succeeds" and "a second conflict is not retried again" (both wait on a button the round-two Approvals card renamed; the second also flakes); "the EX01 verdict shows each early-pay discount as a yearly rate". In `demo.spec.ts`: a double-click test at 390 px that races the 400 ms arming window, and the engine-views rail count. `a11y.spec.ts` on /approvals is flaky (#156). In our run of `live.spec.ts` alone on 16 Oct (after the gate), 26 passed and the first two of these specs failed | open |
 
 Per the issue, the #157 specs fail on a stale expectation (a renamed button, a longer list) or a timing window in the test. To see why a Playwright spec failed, run it alone and open its `trace.zip` with `pnpm exec playwright show-trace`.
