@@ -1,6 +1,20 @@
 # Security integration queue
 
-## Round two, 16 Oct: five branches for `dev` (merge in this order)
+## Round three, 17 Oct
+
+The five round-two branches and the OUT-1 fix are merged (`719c9dcf`, certified 17 Oct for scope S).
+
+| Branch @ head | Finding | Files | Tests | Ready |
+|---|---|---|---|---|
+| `sec/decide-once-log` @ `2ebb59d0` | SEC-08 executor half (owner-approved 17 Oct) | `app/operations/executor.py` (`_decide` only), `tests/operations/test_sec08_decided_in_log.py` | on `int/security-2`: operations 412, verifier 263, security 289, persistence 161, tests/api 1,729 passed / 2 skipped, mock e2e 444 / 61 skipped, typecheck, lint, unit; after merging `719c9dcf`: operations + guard tests 415 passed | **yes** |
+
+Not built (each needs a go-ahead; none is an engine change):
+- **OUT-1b** (Low): refuse AcceptOffer, RejectOffer and CounterOffer in `run_operation` (`app/api/operations.py`) when
+  `sent_outside_conflict` holds, so the raw route matches the chat and the UI routes.
+- **RT-2** (Low): `POST /offers` answers 422, not 500, for a malformed document (`app/api/offers.py` `_docs`).
+- **RT-1** (Medium): `next` 16.3.8 and `source-map-js` 1.2.2 (7 advisories); the team's call under stability mode; needs the full browser gate.
+
+## Round two, 16 Oct: five branches for `dev` (merged in `719c9dcf`)
 
 Each branch was cut from `dev`, has the latest `dev` (`fe56b357`, the final UI and the R-10 rounding) merged in, holds one concern,
 carries a regression test that fails before and passes after, and passed the full mock browser suite (docs/agents/integration.md rule 4).

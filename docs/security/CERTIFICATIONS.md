@@ -10,6 +10,7 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 17 Oct | `719c9dcf` (dev: the five round-two branches, the OUT-1 fix, Dylan's ui-final) | everything since `0f92d433`: buyer messages, live readers, the setup lockout fix, the owner-approved engine fixes (`_priced`, `_attribute`, the R-10 rounding), model-privacy redaction, SEC-08 (database), SEC-12, SEC-20, SEC-21, SEC-22, OUT-1 | **CERTIFIED** for scope S |
 | 16 Oct | `fe56b357` (dev: final UI, R-10 rounding) | R-10 reassessed; the five round-two branches re-checked on it | R-10: **residual Low**; dev itself not certified while OUT-1 is open |
 | 16 Oct | `b8c65b24` (dev: buyer messages on the web, live readers, PG-1 merged, demo launcher) | the changes since `0f92d433` | **NOT CERTIFIED: one blocking finding (OUT-1)**; every automated check passes |
 | 16 Oct | `0f92d433` + `7f55c0dc` (PostgreSQL 17) | concurrency invariants and append-only triggers on PostgreSQL | **concurrency CERTIFIED** with PG-1 fixed (branch, pending merge); SEC-08 confirmed open |
@@ -41,6 +42,35 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
   `app.api.decide.plan`, so it ran the real (runnable) plan and failed without testing the guard. Patched at the new site it passes, and
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
+
+## `719c9dcf` (dev): CERTIFIED for scope S, 17 Oct
+
+Covers everything since the last certified commit `0f92d433`: buyer messages on the web and live readers (`b8c65b24`), the setup lockout
+fix (`049ec6a3`), the owner-approved engine fixes `_priced` (`app/alerts/engine.py`), `_attribute` (`app/funding/search.py`) and the R-10
+rounding (`app/verifier/counters.py`), model-privacy redaction, the five round-two branches (SEC-08 database part, SEC-20, SEC-22,
+SEC-21, SEC-12), the OUT-1 fix (`fix/out-1` ac838334) and Dylan's ui-final. Merged heads checked: all five branch heads and `ac838334`
+are ancestors of `719c9dcf`. Evidence: `evidence/2026-10-17/dev-719c9dcf/`.
+
+| Check | Result |
+| --- | --- |
+| Authorization sweep, 103 routes × 7 callers, `DEMO_MODE` on, off and unset | identical to the `b8c65b24` baseline in all three modes: no non-owner caller reaches an owner route |
+| 14 Oct reproductions (`r3`, `r4_bounded`, `repro1..3`) | all refused, as on `b8c65b24` |
+| SEC-08 approval flip (SQLite) | the database refuses the flip ("a decision is recorded once"); PostgreSQL 17 guard tests 4 of 4 |
+| OUT-1 (`r_nl.py`, `r_paths.py`; `tests/nl/test_sent_outside.py`) | **fixed**: every chat wording, owner and agent, runs no operation and books no commitment; `/negotiate` 409 `OFFER_SENT_OUTSIDE`; the guard is in each chat entry point (offers, pipeline, and `run_accelerate` for a confirmed early-pay plan) and again in the builders `accept`, `reject`, `send_counters` and `run_negotiation`; the team's 12 regression tests pass, including direct calls to the builders |
+| OUT-1 by the raw route (`out1_raw_ops.py`) | RejectOffer and CounterOffer still execute through `POST /operations`: **OUT-1b, Low, open** (no agreement, no money) |
+| Attack catalogue (126 API + 133 NL) | 0 with harm |
+| Full API suite by directory | every shard passes except the known #161 hash pin in `tests/books`; tests/api 1,729 passed, 2 skipped |
+| PostgreSQL 17 concurrency | 3 of 3 clean runs, 31 passed, 10 on PostgreSQL each |
+| Content-Security-Policy, production build, in a browser | the nonce policy on every page; 15 Business pages, sign-in and the chat with 0 violations and 0 page errors; injected `<img onerror>` and `javascript:` blocked (`csp_browser.json`) |
+| Mock browser suite | 444 passed, 61 skipped; typecheck, lint, test:unit pass (run by the Security Lead) |
+| Engine fixes `_priced`, `_attribute` | presentation and attribution only: the executor's rate gate (`funding/admission.py`, `rates.py`) is unchanged since `0f92d433`, so a draw above the ceiling still waits for the owner |
+| Setup lockout (`049ec6a3`) | a refused sign-in no longer counts as use of the blank books; only `log_refusal` writes the `SEC-AUTH-` prefix; residual SETUP-8 (Info) |
+| Model-privacy redaction | PRIV-1, PRIV-2, PRIV-3 re-checked: **unchanged, still open** (live certification script unredacted; a labelled address swallows its sentence; two digits read as a phone or account) |
+
+**Verdict: CERTIFIED for scope S.** Conditions as before: loopback, the presenter alone holds the demo credentials, simulated buyers,
+`LLM_MODE=cache`. **Not for live mode with real customer documents** until PRIV-1 to PRIV-3 are fixed. Open and not blocking: OUT-1b,
+OUT-2, OUT-3, OUT-4, DEMO-L1, SETUP-8, RT-1 to RT-3, the SEC-08 executor check (built, `sec/decide-once-log`, pending merge), and the items
+the owner deferred past the deadline (SEC-11, R-2, R-14, the capex cancel path, CAPEX-4b, SETUP-2/3/6, SEC-22 derived values).
 
 ## R-10 reassessed on `fe56b357` (the early-pay counter's face), 16 Oct
 
