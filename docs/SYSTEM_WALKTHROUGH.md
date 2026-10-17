@@ -1292,7 +1292,7 @@ Test paths are under `services/api/tests/` unless they start with `apps/`.
 | Leg ordering: the router orders legs so every prefix is admissible, one leg rule shared with admission; a plan admissible only as a whole is flagged cannot run today | 5.4, 5.6 | `funding/test_planner_executor_agree.py` |
 | Capex evaluation is side-effect free; `POST /capex/apply` is the owner's explicit, state-version-bound step | 5.14 | `capex/test_api.py`, `capex/test_audit_fixes.py` |
 | The borrower file is read-only with provenance (generation day, versions, evidence hash); no GENERATE_BORROWER_FILE operation or approval; dated by the generation day | 5.15 | `borrower_file/test_api.py`, `borrower_file/test_review_gaps.py`, `nl/test_capabilities.py` |
-| Chat refuses to "record" facts: RECORD_FACT answers "cannot record, forecast unchanged" and arms nothing (22 intents) | 5.12 | `nl/test_record_fact.py` |
+| Chat refuses to "record" facts: RECORD_FACT answers "cannot record, forecast unchanged" and arms nothing (23 intents) | 5.12 | `nl/test_record_fact.py` |
 | Mandate-expiry alert: a warning 14 days ahead, critical once expired, no suggested operation | 5.10 | `alerts/test_review_gaps.py`, `nl/test_review_gaps_opener.py` |
 | Zero-floor fallback cure: when no plan restores the reserve but one keeps cash at or above zero, the alert offers it and says it does not restore the reserve | 5.10 | `alerts/test_review_gaps.py`, `nl/test_review_gaps_opener.py` |
 | The alert button is bound: `act` carries the state version and the suggestions shown, and answers 409 `ALERT_CHANGED` when either moved | 5.10, 6 | `alerts/test_review_gaps.py` |

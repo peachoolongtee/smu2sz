@@ -28,6 +28,7 @@ feed are simulated, and no real money moves.
 | Usefulness | Answers 57 of 115 held-out buyer messages with no owner involvement. Only 3 of the 14 genuinely acceptable offers are accepted on its own; the other 11 go to the owner for one review (section 03, Table 7) |
 | Security | 260 stored attack cases through the API and chat: 0 violations of the defined harm oracles in each specified run. Reviewed and certified by the team's Security Lead, an AI agent in a separate session (an internal review, not external accreditation) |
 | Agent tasks | 49/49 scripted conversations completed, each with a verifiable evidence chain |
+| Owner questions | Ask FLOW answers 288 of 503 owner, CEO and CFO questions (122 questions in English and Chinese, with rewordings) directly from the books, with 0 wrong answers. A question is answered, never acted on |
 | Tests | 9,085 API tests (9,040 passed, 1 known machine-specific hash failure, the rest skipped by design), 169 web unit tests, 445 mock and 139 live browser tests |
 | Languages | Every screen and reply in English and Chinese. Chinese contracts are read with every term tied to its clause |
 
@@ -287,9 +288,13 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
 ### Intent understanding, planning, tool use and state management
 
 **Understanding a request.**
-- **A deterministic parser (Chinese and English) maps each chat request to one of 22 intents** and fills typed slots.
+- **A deterministic parser (Chinese and English) maps each chat request to one of 23 intents** and fills typed slots.
   Examples: evaluate an offer, negotiate, speed up a receipt, fund a gap, show status, compare financing, explain, what-if,
-  approve, reject, out of scope.
+  approve, reject, answer from the books, out of scope.
+- **A question is answered, never acted on.** A question gate runs before every action rule. "Can we pay off our loans?"
+  is answered from the books; it never proposes a repayment, compiles an offer, queues anything or writes to the log.
+  Answers come from a read-only module of about 40 figures computed by the engine's own functions, so every number is the
+  one the screens show, and each answer leads with the yes, the no or the figure.
 - **Every id is checked against the registry.**
 - **An unmatched request gets the nearest capability**, not a flat refusal.
 - **The model classifier is consulted only when the parser finds nothing.** It may choose only from a closed list of intents.
@@ -547,6 +552,7 @@ never seen).
 | Can every plan run today? | Of the 26 router plans, 19 can run now, 6 depend on an action no operation can perform yet (a buyer's early payment or a bill) and are labelled "cannot run today", and 1 scenario has no admissible plan, which the router says |
 | Does it walk away honestly? | A hard-line buyer ends in NO DEAL within 3 rounds and the gap is still funded; 7/7 checks |
 | Does the agent complete tasks? | 49/49 scripted chat tasks (87 turns); every evidence chain verifies, and a tampered copy is rejected |
+| Does it answer an owner's questions? | A bank of 122 owner, CEO and CFO questions in English and Chinese, with rewordings (503 asks): 288 answered directly from the books (57%), 38 partly, 0 wrong, 177 declined honestly, naming the nearest thing FLOW can show. All 30 priority questions are answered in every wording. No question executes or queues anything (dev `3f0ed53e`, 17 Oct) |
 | How fast is it? | Router p50 81 ms, p95 238 ms. Chat turn p50 9 ms, p95 567 ms. Full Scene 1 (read, decide, negotiate, execute) p50 1.08 s. All in process, cache mode |
 | Does language stay safe at the boundary? | 231 adversarial inputs through the real chat route: 0 wrong-and-material (recorded and scripted models, 3 Oct; not yet run against a live model) |
 
@@ -778,6 +784,7 @@ These are open production blockers. The supported way to run FLOW is the local l
 | Browser tests | `pnpm exec playwright test` (mock and live projects) | mock 445 passed, 0 failed; live 139 passed, with 2 known write-conflict retry failures (#157) |
 | Attacks | `uv run python -m app.security.attacks --report` (round four, 17 Oct) | 260 cases, 0 harm-oracle violations; 260 of 260 reached their path |
 | Agent tasks | `scripts/run_scenarios.py --inproc` | 49/49; all evidence chains verify |
+| Owner questions | `uv run python scripts/owner_questions_baseline.py` (services/api), on dev `3f0ed53e` | 288 answered, 38 partly, 0 wrong, 177 declined of 503 |
 | Offline evaluation | `scripts/evaluate.py` (7 min 41 s, including the funding brute force) | every target met; figures in Tables 9 and 6 |
 | Autonomy funnel | `scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2` | Table 7 |
 | Contract reading | `scripts/eval_contracts.py` on the 70 synthetic contracts, recorded DeepSeek readings | 75% held-out, 86% after fixes, 98% tuned; measured in session, 17 Oct |
