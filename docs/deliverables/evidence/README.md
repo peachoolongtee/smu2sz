@@ -2,6 +2,9 @@
 
 A fresh sandbox run for deliverable 6, produced on 16 Oct 2026 at commit `0f92d433` (`dev`) on branch `docs/submission-code`, in `LLM_MODE=cache` (recorded model outputs, no network, no paid model), `DATABASE_URL=memory`, `DEMO_MODE=1`. Everything is synthetic. The narrative is in [../execution_evidence.md](../execution_evidence.md).
 
+The figures quoted in the final technical document come from a later run, on `dev` at `975e082f` (17 Oct 2026): see
+[EVIDENCE_PACK.md](EVIDENCE_PACK.md), which gives the command and source for each one.
+
 | File | What it is | Command that makes it |
 | --- | --- | --- |
 | [demo_run_output.txt](demo_run_output.txt) | The 17-step demo walk, printed: deal on Counter A, the agreed early payment on day 2, the late residual on day 34, "go ahead" then "approve", the cure's cash on day 37, the receipts, the repayment, an attack through chat. Ends `RESULT: … cure executed and alert cleared: True`, exit 0. The recorder's `compiler.call` log lines (timings, hashes of the cached text) are removed. | `DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py` |
