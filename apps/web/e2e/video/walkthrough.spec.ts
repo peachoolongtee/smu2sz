@@ -20,7 +20,7 @@ import * as tour from "./tour";
 const CUTS: Record<Cut, { name: string; pace: number; maxSeconds: number | null; scenes: Scene[] }> = {
   "5min": {
     name: "flow-demo-5min",
-    pace: 1.3, // 3:58 at pace 1 (18 Oct): the reading pauses take the rest, under the 4:50 limit
+    pace: 1, // 4:56 at pace 1.3 on a fresh API (18 Oct, dev ed5e0932): fresh demo books warm the strategy answers first, so the pauses stay at 1
     maxSeconds: 290, // the competition allows 5:00; 4:50 leaves room for the player's own start
     scenes: [
       story.titleCard,

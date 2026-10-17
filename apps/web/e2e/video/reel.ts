@@ -339,6 +339,13 @@ export async function take(reel: Reel, scenario: "golden_sme" | "blank" | "busy"
   });
   await page.goto("/");
   await page.locator("main").first().waitFor();
+  // The card stays up while Home reads the new books (on fresh demo books the strategy answers warm first): no loading skeleton on camera.
+  await page
+    .getByTestId("home-action-title")
+    .or(page.getByRole("link", { name: "Start setup" }))
+    .first()
+    .waitFor({ timeout: 60_000 })
+    .catch(() => undefined);
   await page.waitForTimeout(seconds * 1000);
   await card(page, null);
 }

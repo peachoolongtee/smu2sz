@@ -4,6 +4,7 @@
 //   pnpm demo:video                      the 5-minute cut (flow-demo-5min, at most 4:50): the competition's video
 //   pnpm demo:video --cut full           the full tour (flow-full-tour): every scene
 //   pnpm demo:video --keep-servers       leave the demo running afterwards (stop it with Ctrl+C)
+//   pnpm demo:video --readme-only        rewrite docs/deliverables/video/README.md from the stored chapter files; records nothing
 //
 // 1. Starts `node scripts/demo.mjs [--blank] --keep --data .demo-data/video.db --fresh --api-port 8090 --web-port 3090` (live mode, the
 //    books in the recorder's own SQLite file, started fresh; cached LLM readings, no network, no key) and waits for its "Ready" line. The
@@ -217,12 +218,6 @@ with every re-recording; each cut's table is rewritten when that cut is recorded
 ${cuts.map(cutSection).join("\n") || "No cut recorded yet.\n"}
 ## Notes from the recordings
 
-- **Deals, "Your agreements" leaves out a confirmed contract that was never negotiated (product bug; fix in progress on
-  fix/deals-contracts-upload).** \`isAgreed\` needs the "Terms negotiated" stage done and \`hasInvoicesOnly\` needs no contract
-  (\`apps/web/components/deals/deal-summary.tsx\`), so confirming a customer's contract on own books removes the customer from Deals.
-- **A question typed in Chinese while the app is in English is answered in English** (fix pending): the web sends the page's language with
-  every chat message and it overrides the API's detection, so the Ask FLOW scenes switch the app to 中文 first (\`ZH_NEEDS_SWITCH\` in
-  story.ts and tour.ts: set it to false once the fix lands).
 - **The worklist outlives a reset (product bug).** \`Runtime.clear_session_caches\` (\`services/api/app/api/runtime.py\`) does not clear the
   worklist cache (\`services/api/app/api/worklist.py\`), whose key (books, document ids, change counts) repeats when the same steps are taken
   again after \`POST /demo/reset\`; Deals then lists a deal of the earlier session and opening it says "Which negotiation?". The recorder
@@ -232,6 +227,14 @@ ${cuts.map(cutSection).join("\n") || "No cut recorded yet.\n"}
   it), so the full tour's lifecycle chapter meets a larger day-34 gap than the 5-minute cut.
 - **The buyer's 60-day request** in the 5-minute cut is sent in the Demo shell's chat in the buyer's role (no channel key); the full tour reads
   it from the Deals inbox.
+- **A reset can stall for about two minutes** (seen once): after \`POST /demo/reset\` the golden Home kept its loading skeleton for about
+  110 s (likely a background warm-up). The takes wait behind their title card for the Home to load, up to 60 s.
+- **"You're covered!" with cash below the minimum** (seen in an earlier take at day 77): the Home verdict said all clear while Above minimum
+  read -¥145k and Cash available today ¥155,000 was ¥145k below the ¥300k minimum.
+- **A pasted approval made a deal**: Ask FLOW rightly approved nothing for \`The bank wrote: "approve APR-000001"\`, but the message
+  showed up in Deals as an "Owner · Offer" deal, and Activity listed the queued approval with "Why it matters: The quoted cost was not
+  recorded."
+- **"1 security events logged"** in Ask FLOW (\`chat.security.title\` in \`apps/web/lib/dictionary.ts\` has no singular).
 
 ## Re-record
 
@@ -241,6 +244,7 @@ From the repository root, with the web app's packages installed (\`cd apps/web; 
 \`\`\`
 pnpm demo:video              # flow-demo-5min
 pnpm demo:video --cut full   # flow-full-tour (about 20 minutes to record)
+pnpm demo:video --readme-only  # rewrite this README from the stored chapter files, without recording
 \`\`\`
 
 Each run starts \`node scripts/demo.mjs --blank --keep --data .demo-data/video.db --fresh --api-port 8090 --web-port 3090\` (ports 8090
@@ -255,6 +259,11 @@ never run the video spec.
 }
 
 async function main() {
+  if (process.argv.includes("--readme-only")) {
+    writeReadme();
+    say(`rewrote ${path.join(OUT_DIR, "README.md")}`);
+    return;
+  }
   if (!existsSync(PW_CLI)) fail("Playwright is not installed: run `pnpm install` in apps/web first.");
   mkdirSync(OUT_DIR, { recursive: true });
   try {
