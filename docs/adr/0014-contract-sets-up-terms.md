@@ -178,6 +178,19 @@ For the Security Lead:
 3. Should the set-up also bind `state_version` (refuse when anything in the books moved since the preview), or is the
    re-derivation on today's books (as built) enough?
 
+## Implementation note, 17 Oct 2026 (`feat/contract-sets-terms`)
+
+- Derivation: `services/api/app/contracts/terms_setup.py` (`derive`, `terms_hash`); routes: `services/api/app/api/contract_terms.py`;
+  executor: `Executor._set_up_terms`, `_undo_terms`, `_owner_only_terms`; flag `FEATURE_CONTRACT_TERMS` (`app/config.py`).
+- Web: `apps/web/components/contract-terms-step.tsx` on the review of a confirmed buyer contract (`document-review.tsx`); mock
+  `apps/web/mocks/contract_terms.json` from `record-mocks.mjs --contract-terms` (the demo agreement only: ALREADY, and BLOCKED once
+  superseded); the full flow is `apps/web/e2e/contract-terms.spec.ts` on the live project, whose API starts with the flag on.
+- Test contract: `fixtures/contract_terms/dgos-2026-09-supply-agreement.md` (Dongguan Office Supplies, BUYER-2, not a demo starting
+  document). On the demo books it adds ¥180,000 every 30 days from day 14, payable in 45 days: three receipts inside the 120-day
+  forecast (¥540,000); the lowest forecast headroom (day 30) does not move, cash at the end of the window rises by ¥540,000.
+- Tests: `tests/contracts/test_terms_setup.py`, `tests/operations/test_contract_terms.py` (both stores),
+  `tests/api/test_contract_terms.py`, `tests/mandate/test_tiers.py`.
+
 ## Considered and rejected
 
 - **Setting the terms on confirmation.** Confirming is a statement about the reading; setting up is a change to the forecast.
