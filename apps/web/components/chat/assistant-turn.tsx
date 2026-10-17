@@ -12,6 +12,8 @@ import { useBusinessShell } from "@/lib/use-business-today";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dictionary";
 import type { NlOperation, NlPlanStatus, NlPlanStep, NlResponse, NlVerdict } from "@/lib/types";
+import { AnswerCard } from "./answer-card";
+import { FlowMark } from "./flow-mark";
 
 const PLAN_TONE: Record<NlPlanStatus, Tone> = {
   PROPOSED: "info",
@@ -208,12 +210,12 @@ export function AssistantTurn({
   const refused = r.operations.some((o) => o.status === "REFUSED");
   const pendingAfterRefresh = restored && (r.awaiting_confirmation || r.operations.some((o) => o.status === "PENDING_APPROVAL"));
 
+  // FLOW's turn is unboxed, on the left, beside its small mark (the owner's message is the bubble on the right); it fades in once when it lands.
   return (
-    <div
-      className={`space-y-3 rounded-tile border bg-surface p-3 ${hasSecurity ? "border-bad-line" : "border-line"}`}
-      data-testid="chat-turn"
-      data-intent={r.intent}
-    >
+    <div className={`flex items-start gap-2.5 ${restored ? "" : "ask-in"}`} data-testid="chat-turn" data-intent={r.intent}>
+      <FlowMark />
+      <div className={`min-w-0 flex-1 space-y-3 pt-0.5 ${hasSecurity ? "rounded-tile border border-bad-line p-3" : ""}`}>
+      <span className="sr-only">{t("ask.from")}:</span>
       {r.amended || r.replayed ? (
         <div className="flex flex-wrap items-center gap-2">
           {r.amended ? (
@@ -233,9 +235,13 @@ export function AssistantTurn({
         </div>
       ) : null}
 
-      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink" data-testid="chat-reply">
-        {r.reply}
-      </p>
+      {r.card && !hasSecurity ? (
+        <AnswerCard card={r.card} reply={r.reply} />
+      ) : (
+        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink" data-testid="chat-reply">
+          {r.reply}
+        </p>
+      )}
 
       {hasSecurity ? (
         <div role="alert" className="rounded-tile border border-bad-line bg-bad-bg px-3 py-2 text-sm text-bad-fg" data-testid="chat-security">
@@ -316,7 +322,9 @@ export function AssistantTurn({
         </section>
       ) : null}
 
-      <Disclosure className="rounded-tile border border-line px-3" defaultOpen={hasSecurity || refused} testId="chat-details" summary={t("chat.details")}>
+      {/* An answer card on a Business page has nothing behind "Details" (no plan, nothing ran, no intent chip there): the card's own "How FLOW worked this out" is the detail. */}
+      {r.card && business && !r.plan.length && !r.operations.length && !ranNothing ? null : (
+      <Disclosure className="text-ink-3" defaultOpen={hasSecurity || refused} testId="chat-details" summary={t("chat.details")}>
         <div className="space-y-3">
           {business ? null : (
             <span data-testid="chat-intent" className="inline-block">
@@ -332,6 +340,8 @@ export function AssistantTurn({
           ) : null}
         </div>
       </Disclosure>
+      )}
+      </div>
     </div>
   );
 }

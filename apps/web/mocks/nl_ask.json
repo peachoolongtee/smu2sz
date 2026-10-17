@@ -1,0 +1,4726 @@
+{
+  "day0": {
+    "Are we safe?": {
+      "session_id": "rec-ask-day0-0",
+      "turn": 1,
+      "reply": "Not on today's books: without new funding, cash falls below your ¥300,000 reserve from day 12, lowest −¥105,000 on day 30 (¥405,000 short of the reserve). FLOW's plan covers it for ¥3,113.93, and your loan covenants hold.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-0:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Not on today's books: without new funding, cash falls below your ¥300,000 reserve from day 12, lowest −¥105,000 on day 30 (¥405,000 short of the reserve).",
+        "figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥405,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Lowest cash",
+            "value": "−¥105,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Below reserve from",
+            "value": "Day 12",
+            "tone": "danger"
+          }
+        ],
+        "body": "FLOW's plan covers it for ¥3,113.93, and your loan covenants hold.",
+        "basis": "Conservative forecast, today's books, day 0",
+        "all_figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥405,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Lowest cash",
+            "value": "−¥105,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Below reserve from",
+            "value": "Day 12",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW's plan costs",
+            "value": "¥3,113.93",
+            "tone": "neutral"
+          },
+          {
+            "label": "Your reserve",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See the cash forecast",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          },
+          {
+            "label": "Open FLOW's plan",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们安全吗？": {
+      "session_id": "rec-ask-day0-1",
+      "turn": 1,
+      "reply": "按今日账目并不安全：若不新增融资，现金将从第 12 天起低于您 ¥300,000 的最低现金储备，最低在第 30 天降至 −¥105,000（比储备低 ¥405,000）。FLOW 的方案可用 ¥3,113.93 补上，且您的贷款契约指标都满足。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-1:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "按今日账目并不安全：若不新增融资，现金将从第 12 天起低于您 ¥300,000 的最低现金储备，最低在第 30 天降至 −¥105,000（比储备低 ¥405,000）。",
+        "figures": [
+          {
+            "label": "所需资金",
+            "value": "¥405,000",
+            "tone": "danger"
+          },
+          {
+            "label": "最低现金",
+            "value": "−¥105,000",
+            "tone": "danger"
+          },
+          {
+            "label": "跌破储备线",
+            "value": "第 12 天",
+            "tone": "danger"
+          }
+        ],
+        "body": "FLOW 的方案可用 ¥3,113.93 补上，且您的贷款契约指标都满足。",
+        "basis": "基于今日账目的保守预测，第 0 天",
+        "all_figures": [
+          {
+            "label": "所需资金",
+            "value": "¥405,000",
+            "tone": "danger"
+          },
+          {
+            "label": "最低现金",
+            "value": "−¥105,000",
+            "tone": "danger"
+          },
+          {
+            "label": "跌破储备线",
+            "value": "第 12 天",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW 方案成本",
+            "value": "¥3,113.93",
+            "tone": "neutral"
+          },
+          {
+            "label": "最低现金储备",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看现金预测",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          },
+          {
+            "label": "查看 FLOW 的方案",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "How much do we need to raise?": {
+      "session_id": "rec-ask-day0-2",
+      "turn": 1,
+      "reply": "¥405,000, needed from day 12 to day 31; FLOW's cheapest committed plan covers it for ¥3,113.93.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-2:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥405,000, needed from day 12 to day 31; FLOW's cheapest committed plan covers it for ¥3,113.93.",
+        "figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥405,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW's plan costs",
+            "value": "¥3,113.93",
+            "tone": "neutral"
+          }
+        ],
+        "body": "",
+        "basis": "Conservative forecast, today's books, day 0",
+        "all_figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥405,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW's plan costs",
+            "value": "¥3,113.93",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open FLOW's plan",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          },
+          {
+            "label": "See the cash forecast",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们需要融多少？": {
+      "session_id": "rec-ask-day0-3",
+      "turn": 1,
+      "reply": "需要 ¥405,000，缺口从第 12 天持续到第 31 天；FLOW 用已承诺额度的最便宜方案可用 ¥3,113.93 补上。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-3:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "需要 ¥405,000，缺口从第 12 天持续到第 31 天；FLOW 用已承诺额度的最便宜方案可用 ¥3,113.93 补上。",
+        "figures": [
+          {
+            "label": "所需资金",
+            "value": "¥405,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW 方案成本",
+            "value": "¥3,113.93",
+            "tone": "neutral"
+          }
+        ],
+        "body": "",
+        "basis": "基于今日账目的保守预测，第 0 天",
+        "all_figures": [
+          {
+            "label": "所需资金",
+            "value": "¥405,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW 方案成本",
+            "value": "¥3,113.93",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看 FLOW 的方案",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          },
+          {
+            "label": "查看现金预测",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Are we inside our covenants?": {
+      "session_id": "rec-ask-day0-4",
+      "turn": 1,
+      "reply": "Yes. Every projected month is inside the covenants: lowest DSCR 2.00× against the 1.25× minimum (0.75× headroom) and highest leverage 1.35× against the 2.50× maximum (1.15× headroom); no clean-down alert.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-4:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Yes.",
+        "figures": [
+          {
+            "label": "DSCR",
+            "value": "2.00×",
+            "tone": "neutral"
+          },
+          {
+            "label": "Leverage",
+            "value": "1.35×",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Every projected month is inside the covenants: lowest DSCR 2.00× against the 1.25× minimum (0.75× headroom) and highest leverage 1.35× against the 2.50× maximum (1.15× headroom); no clean-down alert.",
+        "basis": "Conservative forecast, today's books, day 0",
+        "all_figures": [
+          {
+            "label": "DSCR",
+            "value": "2.00×",
+            "tone": "neutral"
+          },
+          {
+            "label": "Leverage",
+            "value": "1.35×",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See the covenant readings",
+            "href": "/cash#cash-readings",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们满足契约吗？": {
+      "session_id": "rec-ask-day0-5",
+      "turn": 1,
+      "reply": "满足。预测的每个月都在契约范围内：偿债覆盖率最低 2.00×，下限 1.25×（余量 0.75×）；杠杆率最高 1.35×，上限 2.50×（余量 1.15×）；信用额度清零要求没有预警。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-5:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "满足。",
+        "figures": [
+          {
+            "label": "偿债覆盖率",
+            "value": "2.00×",
+            "tone": "neutral"
+          },
+          {
+            "label": "杠杆率",
+            "value": "1.35×",
+            "tone": "neutral"
+          }
+        ],
+        "body": "预测的每个月都在契约范围内：偿债覆盖率最低 2.00×，下限 1.25×（余量 0.75×）；杠杆率最高 1.35×，上限 2.50×（余量 1.15×）；信用额度清零要求没有预警。",
+        "basis": "基于今日账目的保守预测，第 0 天",
+        "all_figures": [
+          {
+            "label": "偿债覆盖率",
+            "value": "2.00×",
+            "tone": "neutral"
+          },
+          {
+            "label": "杠杆率",
+            "value": "1.35×",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看契约指标",
+            "href": "/cash#cash-readings",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Which customer owes us the most?": {
+      "session_id": "rec-ask-day0-6",
+      "turn": 1,
+      "reply": "Foshan Home Retail Co.: ¥420,000 on one invoice, due on day 32; that is everything you are owed. Dongguan Office Supplies Ltd. owes nothing.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-6:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Foshan Home Retail Co.: ¥420,000 on one invoice, due on day 32; that is everything you are owed.",
+        "figures": [
+          {
+            "label": "Owed",
+            "value": "¥420,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Customer",
+            "value": "Foshan Home Retail Co.",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Dongguan Office Supplies Ltd. owes nothing.",
+        "basis": "Today's books, day 0",
+        "all_figures": [
+          {
+            "label": "Owed",
+            "value": "¥420,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Customer",
+            "value": "Foshan Home Retail Co.",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See Foshan Home Retail Co.'s invoices",
+            "href": "/receivables?customer=BUYER-1",
+            "kind": "link"
+          },
+          {
+            "label": "Open Foshan Home Retail Co.",
+            "href": "/customers/BUYER-1",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "哪个客户欠我们最多？": {
+      "session_id": "rec-ask-day0-7",
+      "turn": 1,
+      "reply": "佛山：1 张发票共 ¥420,000，第 32 天到期；这就是您应收的全部款项。东莞目前不欠款。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-7:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "佛山：1 张发票共 ¥420,000，第 32 天到期；这就是您应收的全部款项。",
+        "figures": [
+          {
+            "label": "欠款",
+            "value": "¥420,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "客户",
+            "value": "佛山",
+            "tone": "neutral"
+          }
+        ],
+        "body": "东莞目前不欠款。",
+        "basis": "今日账目，第 0 天",
+        "all_figures": [
+          {
+            "label": "欠款",
+            "value": "¥420,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "客户",
+            "value": "佛山",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看佛山的发票",
+            "href": "/receivables?customer=BUYER-1",
+            "kind": "link"
+          },
+          {
+            "label": "打开佛山",
+            "href": "/customers/BUYER-1",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "How much debt do we have?": {
+      "session_id": "rec-ask-day0-8",
+      "turn": 1,
+      "reply": "¥1,500,000, all of it the existing equipment loan (¥45,000 a month). Nothing is drawn on your credit line or invoice financing. The books do not record who lent the existing equipment loan.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-8:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥1,500,000, all of it the existing equipment loan (¥45,000 a month).",
+        "figures": [
+          {
+            "label": "Total debt",
+            "value": "¥1,500,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Nothing is drawn on your credit line or invoice financing. The books do not record who lent the existing equipment loan.",
+        "basis": "Today's books, day 0",
+        "all_figures": [
+          {
+            "label": "Total debt",
+            "value": "¥1,500,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See your funding",
+            "href": "/cash#cash-funding",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们总负债多少？": {
+      "session_id": "rec-ask-day0-9",
+      "turn": 1,
+      "reply": "¥1,500,000，全部是现有设备贷款（每月还 ¥45,000）。信用额度和发票融资都没有提款。账目中没有记录现有设备贷款的贷款方。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-9:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥1,500,000，全部是现有设备贷款（每月还 ¥45,000）。",
+        "figures": [
+          {
+            "label": "总负债",
+            "value": "¥1,500,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "信用额度和发票融资都没有提款。账目中没有记录现有设备贷款的贷款方。",
+        "basis": "今日账目，第 0 天",
+        "all_figures": [
+          {
+            "label": "总负债",
+            "value": "¥1,500,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看您的融资",
+            "href": "/cash#cash-funding",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Is anything waiting for my approval?": {
+      "session_id": "rec-ask-day0-10",
+      "turn": 1,
+      "reply": "No. Nothing is waiting for your approval.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-10:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "No.",
+        "figures": [
+          {
+            "label": "Awaiting your approval",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Nothing is waiting for your approval.",
+        "basis": "The operations log and approvals queue, day 0",
+        "all_figures": [
+          {
+            "label": "Awaiting your approval",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open approvals",
+            "href": "/approvals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "有待审批的吗？": {
+      "session_id": "rec-ask-day0-11",
+      "turn": 1,
+      "reply": "没有。目前没有待审批的操作。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-11:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "没有。",
+        "figures": [
+          {
+            "label": "待您审批",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "目前没有待审批的操作。",
+        "basis": "操作日志与审批队列，第 0 天",
+        "all_figures": [
+          {
+            "label": "待您审批",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开审批",
+            "href": "/approvals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "What did FLOW do recently?": {
+      "session_id": "rec-ask-day0-12",
+      "turn": 1,
+      "reply": "3 operations in the last 7 days: ran one other operation; ran one other operation; ran one other operation. 0 refused, 0 waiting for your approval, 0 security events; the log's chain verifies.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-12:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "3 operations in the last 7 days: ran one other operation; ran one other operation; ran one other operation.",
+        "figures": [
+          {
+            "label": "Operations run",
+            "value": "3",
+            "tone": "neutral"
+          },
+          {
+            "label": "Refused",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "0 refused, 0 waiting for your approval, 0 security events; the log's chain verifies.",
+        "basis": "The operations log and approvals queue, day 0",
+        "all_figures": [
+          {
+            "label": "Operations run",
+            "value": "3",
+            "tone": "neutral"
+          },
+          {
+            "label": "Refused",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See what FLOW did",
+            "href": "/activity",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "FLOW 最近做了什么？": {
+      "session_id": "rec-ask-day0-13",
+      "turn": 1,
+      "reply": "最近 7 天执行了 3 项操作：执行了另一项操作；执行了另一项操作；执行了另一项操作。被拒绝 0 项，待您审批 0 项，安全事件 0 起；日志的哈希链校验通过。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-13:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "最近 7 天执行了 3 项操作：执行了另一项操作；执行了另一项操作；执行了另一项操作。",
+        "figures": [
+          {
+            "label": "已执行操作",
+            "value": "3",
+            "tone": "neutral"
+          },
+          {
+            "label": "已拒绝",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "被拒绝 0 项，待您审批 0 项，安全事件 0 起；日志的哈希链校验通过。",
+        "basis": "操作日志与审批队列，第 0 天",
+        "all_figures": [
+          {
+            "label": "已执行操作",
+            "value": "3",
+            "tone": "neutral"
+          },
+          {
+            "label": "已拒绝",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看 FLOW 的操作",
+            "href": "/activity",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Can we afford the die-cutting machine?": {
+      "session_id": "rec-ask-day0-14",
+      "turn": 1,
+      "reply": "Only financed. Paying the ¥600,000 from cash and the credit line would break your ¥300,000 reserve. The 48-month lease (¥14,423.49 a month, 7.20%) passes every limit, and the machine is worth doing on your estimate (NPV ¥380,885.77 at 10.00%, payback in month 31). Nothing was applied for: you apply on the Capex screen.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-14:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Only financed.",
+        "figures": [
+          {
+            "label": "Price",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "A month",
+            "value": "¥14,423.49",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Paying the ¥600,000 from cash and the credit line would break your ¥300,000 reserve. The 48-month lease (¥14,423.49 a month, 7.20%) passes every limit, and the machine is worth doing on your estimate (NPV ¥380,885.77 at 10.00%, payback in month 31). Nothing was applied for: you apply on the Capex screen.",
+        "basis": "The capex case on file (¥600k die-cutting line), today's books, day 0",
+        "all_figures": [
+          {
+            "label": "Price",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "A month",
+            "value": "¥14,423.49",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open Capex & purchases",
+            "href": "/capex",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "模切线买得起吗？": {
+      "session_id": "rec-ask-day0-15",
+      "turn": 1,
+      "reply": "只能融资购买。用现金和信用额度支付 ¥600,000 会跌破您 ¥300,000 的最低现金储备。48 个月设备租赁（每月 ¥14,423.49，年利率 7.20%）满足所有限额，且按您的估计这台设备值得投资（按 10.00% 折现，净现值 ¥380,885.77，第 31 个月回本）。尚未提交任何申请：申请请由您在资本支出页面提交。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-15:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "只能融资购买。",
+        "figures": [
+          {
+            "label": "价格",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "每月",
+            "value": "¥14,423.49",
+            "tone": "neutral"
+          }
+        ],
+        "body": "用现金和信用额度支付 ¥600,000 会跌破您 ¥300,000 的最低现金储备。48 个月设备租赁（每月 ¥14,423.49，年利率 7.20%）满足所有限额，且按您的估计这台设备值得投资（按 10.00% 折现，净现值 ¥380,885.77，第 31 个月回本）。尚未提交任何申请：申请请由您在资本支出页面提交。",
+        "basis": "已录入的设备方案（¥600,000），今日账目，第 0 天",
+        "all_figures": [
+          {
+            "label": "价格",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "每月",
+            "value": "¥14,423.49",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开设备与采购",
+            "href": "/capex",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "What can FLOW do without me?": {
+      "session_id": "rec-ask-day0-16",
+      "turn": 1,
+      "reply": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all. A single commitment above ¥100,000, a new facility or a rate above 15.00% needs you; guarantees, collateral, equity and changes to the mandate are never FLOW's to do.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-16:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all.",
+        "figures": [
+          {
+            "label": "Funding cost ceiling",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Discount limit",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Concession cap",
+            "value": "¥5,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "A single commitment above ¥100,000, a new facility or a rate above 15.00% needs you; guarantees, collateral, equity and changes to the mandate are never FLOW's to do.",
+        "basis": "Your signed mandate (version 1), day 0",
+        "all_figures": [
+          {
+            "label": "Funding cost ceiling",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Discount limit",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Concession cap",
+            "value": "¥5,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Approval threshold",
+            "value": "¥100,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Your reserve",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See your limits",
+            "href": "/limits#limits-rules",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "不经过我，FLOW 能做什么？": {
+      "session_id": "rec-ask-day0-17",
+      "turn": 1,
+      "reply": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。单笔超过 ¥100,000 的承诺、新的融资额度或年化成本超过 15.00% 的融资需要您批准；个人担保、抵押、股权和修改授权，FLOW 永远不能做。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-17:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。",
+        "figures": [
+          {
+            "label": "融资成本上限",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣上限",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "让步上限",
+            "value": "¥5,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "单笔超过 ¥100,000 的承诺、新的融资额度或年化成本超过 15.00% 的融资需要您批准；个人担保、抵押、股权和修改授权，FLOW 永远不能做。",
+        "basis": "您签署的授权（第 1 版），第 0 天",
+        "all_figures": [
+          {
+            "label": "融资成本上限",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣上限",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "让步上限",
+            "value": "¥5,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "审批门槛",
+            "value": "¥100,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "最低现金储备",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看您的限额",
+            "href": "/limits#limits-rules",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Should we take the early payment?": {
+      "session_id": "rec-ask-day0-18",
+      "turn": 1,
+      "reply": "No. 1.20% is above your 0.88% break-even, so your own funding is cheaper: discounting the whole invoice costs ¥5,040, against ¥3,113.93 for FLOW's plan.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-18:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "No.",
+        "figures": [
+          {
+            "label": "Discount asked",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Break-even",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Cost of the discount",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "body": "1.20% is above your 0.88% break-even, so your own funding is cheaper: discounting the whole invoice costs ¥5,040, against ¥3,113.93 for FLOW's plan.",
+        "basis": "Conservative forecast, today's books, day 0",
+        "all_figures": [
+          {
+            "label": "Discount asked",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Break-even",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Cost of the discount",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open Deals",
+            "href": "/deals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "提前付款划算吗？": {
+      "session_id": "rec-ask-day0-19",
+      "turn": 1,
+      "reply": "不划算。1.20% 高于您 0.88% 的盈亏平衡点，自己融资更便宜：整张发票贴现要花 ¥5,040，而 FLOW 的方案只需 ¥3,113.93。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day0-19:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "不划算。",
+        "figures": [
+          {
+            "label": "所提折扣",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "盈亏平衡点",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣成本",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "body": "1.20% 高于您 0.88% 的盈亏平衡点，自己融资更便宜：整张发票贴现要花 ¥5,040，而 FLOW 的方案只需 ¥3,113.93。",
+        "basis": "基于今日账目的保守预测，第 0 天",
+        "all_figures": [
+          {
+            "label": "所提折扣",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "盈亏平衡点",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣成本",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开交易",
+            "href": "/deals",
+            "kind": "link"
+          }
+        ]
+      }
+    }
+  },
+  "day34": {
+    "Are we safe?": {
+      "session_id": "rec-ask-day34-0",
+      "turn": 1,
+      "reply": "Not on today's books: without new funding, cash falls below your ¥300,000 reserve from day 42 (in 8 days), lowest ¥100,000 on day 42 (in 8 days) (¥200,000 short of the reserve). FLOW's plan covers it for ¥1,782.19, with your approval, and your loan covenants hold.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-0:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Not on today's books: without new funding, cash falls below your ¥300,000 reserve from day 42 (in 8 days), lowest ¥100,000 on day 42 (in 8 days) (¥200,000 short of the reserve).",
+        "figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Lowest cash",
+            "value": "¥100,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Below reserve from",
+            "value": "Day 42",
+            "tone": "danger"
+          }
+        ],
+        "body": "FLOW's plan covers it for ¥1,782.19, with your approval, and your loan covenants hold.",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Lowest cash",
+            "value": "¥100,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Below reserve from",
+            "value": "Day 42",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW's plan costs",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          },
+          {
+            "label": "Your reserve",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See the cash forecast",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          },
+          {
+            "label": "Open FLOW's plan",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们安全吗？": {
+      "session_id": "rec-ask-day34-1",
+      "turn": 1,
+      "reply": "按今日账目并不安全：若不新增融资，现金将从第 42 天（8 天后）起低于您 ¥300,000 的最低现金储备，最低在第 42 天（8 天后）降至 ¥100,000（比储备低 ¥200,000）。FLOW 的方案可用 ¥1,782.19 补上，需要您批准，且您的贷款契约指标都满足。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-1:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "按今日账目并不安全：若不新增融资，现金将从第 42 天（8 天后）起低于您 ¥300,000 的最低现金储备，最低在第 42 天（8 天后）降至 ¥100,000（比储备低 ¥200,000）。",
+        "figures": [
+          {
+            "label": "所需资金",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "最低现金",
+            "value": "¥100,000",
+            "tone": "danger"
+          },
+          {
+            "label": "跌破储备线",
+            "value": "第 42 天",
+            "tone": "danger"
+          }
+        ],
+        "body": "FLOW 的方案可用 ¥1,782.19 补上，需要您批准，且您的贷款契约指标都满足。",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "所需资金",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "最低现金",
+            "value": "¥100,000",
+            "tone": "danger"
+          },
+          {
+            "label": "跌破储备线",
+            "value": "第 42 天",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW 方案成本",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          },
+          {
+            "label": "最低现金储备",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看现金预测",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          },
+          {
+            "label": "查看 FLOW 的方案",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "How much do we need to raise?": {
+      "session_id": "rec-ask-day34-2",
+      "turn": 1,
+      "reply": "¥200,000, needed from day 42 (in 8 days) to day 46 (in 12 days); FLOW's cheapest committed plan covers it for ¥1,782.19.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-2:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥200,000, needed from day 42 (in 8 days) to day 46 (in 12 days); FLOW's cheapest committed plan covers it for ¥1,782.19.",
+        "figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW's plan costs",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          }
+        ],
+        "body": "",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW's plan costs",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open FLOW's plan",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          },
+          {
+            "label": "See the cash forecast",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们需要融多少？": {
+      "session_id": "rec-ask-day34-3",
+      "turn": 1,
+      "reply": "需要 ¥200,000，缺口从第 42 天（8 天后）持续到第 46 天（12 天后）；FLOW 用已承诺额度的最便宜方案可用 ¥1,782.19 补上。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-3:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "需要 ¥200,000，缺口从第 42 天（8 天后）持续到第 46 天（12 天后）；FLOW 用已承诺额度的最便宜方案可用 ¥1,782.19 补上。",
+        "figures": [
+          {
+            "label": "所需资金",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW 方案成本",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          }
+        ],
+        "body": "",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "所需资金",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW 方案成本",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看 FLOW 的方案",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          },
+          {
+            "label": "查看现金预测",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Are we inside our covenants?": {
+      "session_id": "rec-ask-day34-4",
+      "turn": 1,
+      "reply": "Yes. Every projected month is inside the covenants: lowest DSCR 1.92× against the 1.25× minimum (0.67× headroom) and highest leverage 1.48× against the 2.50× maximum (1.02× headroom); no clean-down alert.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-4:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Yes.",
+        "figures": [
+          {
+            "label": "DSCR",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "Leverage",
+            "value": "1.48×",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Every projected month is inside the covenants: lowest DSCR 1.92× against the 1.25× minimum (0.67× headroom) and highest leverage 1.48× against the 2.50× maximum (1.02× headroom); no clean-down alert.",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "DSCR",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "Leverage",
+            "value": "1.48×",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See the covenant readings",
+            "href": "/cash#cash-readings",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们满足契约吗？": {
+      "session_id": "rec-ask-day34-5",
+      "turn": 1,
+      "reply": "满足。预测的每个月都在契约范围内：偿债覆盖率最低 1.92×，下限 1.25×（余量 0.67×）；杠杆率最高 1.48×，上限 2.50×（余量 1.02×）；信用额度清零要求没有预警。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-5:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "满足。",
+        "figures": [
+          {
+            "label": "偿债覆盖率",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "杠杆率",
+            "value": "1.48×",
+            "tone": "neutral"
+          }
+        ],
+        "body": "预测的每个月都在契约范围内：偿债覆盖率最低 1.92×，下限 1.25×（余量 0.67×）；杠杆率最高 1.48×，上限 2.50×（余量 1.02×）；信用额度清零要求没有预警。",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "偿债覆盖率",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "杠杆率",
+            "value": "1.48×",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看契约指标",
+            "href": "/cash#cash-readings",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Which customer owes us the most?": {
+      "session_id": "rec-ask-day34-6",
+      "turn": 1,
+      "reply": "Foshan Home Retail Co.: ¥1,000,000 on 3 invoices; that is everything you are owed. ¥160,000 of it is overdue. Dongguan Office Supplies Ltd. owes nothing.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-6:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Foshan Home Retail Co.: ¥1,000,000 on 3 invoices; that is everything you are owed.",
+        "figures": [
+          {
+            "label": "Owed",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Customer",
+            "value": "Foshan Home Retail Co.",
+            "tone": "neutral"
+          }
+        ],
+        "body": "¥160,000 of it is overdue. Dongguan Office Supplies Ltd. owes nothing.",
+        "basis": "Today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Owed",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Customer",
+            "value": "Foshan Home Retail Co.",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See Foshan Home Retail Co.'s invoices",
+            "href": "/receivables?customer=BUYER-1",
+            "kind": "link"
+          },
+          {
+            "label": "Open Foshan Home Retail Co.",
+            "href": "/customers/BUYER-1",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "哪个客户欠我们最多？": {
+      "session_id": "rec-ask-day34-7",
+      "turn": 1,
+      "reply": "佛山：3 张发票共 ¥1,000,000；这就是您应收的全部款项。其中 ¥160,000 已逾期。东莞目前不欠款。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-7:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "佛山：3 张发票共 ¥1,000,000；这就是您应收的全部款项。",
+        "figures": [
+          {
+            "label": "欠款",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "客户",
+            "value": "佛山",
+            "tone": "neutral"
+          }
+        ],
+        "body": "其中 ¥160,000 已逾期。东莞目前不欠款。",
+        "basis": "今日账目，第 34 天",
+        "all_figures": [
+          {
+            "label": "欠款",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "客户",
+            "value": "佛山",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看佛山的发票",
+            "href": "/receivables?customer=BUYER-1",
+            "kind": "link"
+          },
+          {
+            "label": "打开佛山",
+            "href": "/customers/BUYER-1",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "How much debt do we have?": {
+      "session_id": "rec-ask-day34-8",
+      "turn": 1,
+      "reply": "¥1,602,210: the existing equipment loan ¥1,455,000 and the credit line ¥147,210 (Main bank). The books do not record who lent the existing equipment loan.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-8:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥1,602,210: the existing equipment loan ¥1,455,000 and the credit line ¥147,210 (Main bank).",
+        "figures": [
+          {
+            "label": "Total debt",
+            "value": "¥1,602,210",
+            "tone": "neutral"
+          }
+        ],
+        "body": "The books do not record who lent the existing equipment loan.",
+        "basis": "Today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Total debt",
+            "value": "¥1,602,210",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See your funding",
+            "href": "/cash#cash-funding",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们总负债多少？": {
+      "session_id": "rec-ask-day34-9",
+      "turn": 1,
+      "reply": "¥1,602,210：现有设备贷款 ¥1,455,000，银行信用额度 ¥147,210。账目中没有记录现有设备贷款的贷款方。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-9:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥1,602,210：现有设备贷款 ¥1,455,000，银行信用额度 ¥147,210。",
+        "figures": [
+          {
+            "label": "总负债",
+            "value": "¥1,602,210",
+            "tone": "neutral"
+          }
+        ],
+        "body": "账目中没有记录现有设备贷款的贷款方。",
+        "basis": "今日账目，第 34 天",
+        "all_figures": [
+          {
+            "label": "总负债",
+            "value": "¥1,602,210",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看您的融资",
+            "href": "/cash#cash-funding",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Is anything waiting for my approval?": {
+      "session_id": "rec-ask-day34-10",
+      "turn": 1,
+      "reply": "No. Nothing is waiting for your approval.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-10:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "No.",
+        "figures": [
+          {
+            "label": "Awaiting your approval",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Nothing is waiting for your approval.",
+        "basis": "The operations log and approvals queue, day 34",
+        "all_figures": [
+          {
+            "label": "Awaiting your approval",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open approvals",
+            "href": "/approvals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "有待审批的吗？": {
+      "session_id": "rec-ask-day34-11",
+      "turn": 1,
+      "reply": "没有。目前没有待审批的操作。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-11:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "没有。",
+        "figures": [
+          {
+            "label": "待您审批",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "目前没有待审批的操作。",
+        "basis": "操作日志与审批队列，第 34 天",
+        "all_figures": [
+          {
+            "label": "待您审批",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开审批",
+            "href": "/approvals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "What did FLOW do recently?": {
+      "session_id": "rec-ask-day34-12",
+      "turn": 1,
+      "reply": "2 operations in the last 7 days: moved the clock forward to day 34; moved the clock forward to day 34. 0 refused, 0 waiting for your approval, 0 security events; the log's chain verifies.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-12:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "2 operations in the last 7 days: moved the clock forward to day 34; moved the clock forward to day 34.",
+        "figures": [
+          {
+            "label": "Operations run",
+            "value": "2",
+            "tone": "neutral"
+          },
+          {
+            "label": "Refused",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "0 refused, 0 waiting for your approval, 0 security events; the log's chain verifies.",
+        "basis": "The operations log and approvals queue, day 34",
+        "all_figures": [
+          {
+            "label": "Operations run",
+            "value": "2",
+            "tone": "neutral"
+          },
+          {
+            "label": "Refused",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See what FLOW did",
+            "href": "/activity",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "FLOW 最近做了什么？": {
+      "session_id": "rec-ask-day34-13",
+      "turn": 1,
+      "reply": "最近 7 天执行了 2 项操作：将日期向前推进；将日期向前推进。被拒绝 0 项，待您审批 0 项，安全事件 0 起；日志的哈希链校验通过。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-13:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "最近 7 天执行了 2 项操作：将日期向前推进；将日期向前推进。",
+        "figures": [
+          {
+            "label": "已执行操作",
+            "value": "2",
+            "tone": "neutral"
+          },
+          {
+            "label": "已拒绝",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "被拒绝 0 项，待您审批 0 项，安全事件 0 起；日志的哈希链校验通过。",
+        "basis": "操作日志与审批队列，第 34 天",
+        "all_figures": [
+          {
+            "label": "已执行操作",
+            "value": "2",
+            "tone": "neutral"
+          },
+          {
+            "label": "已拒绝",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看 FLOW 的操作",
+            "href": "/activity",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Can we afford the die-cutting machine?": {
+      "session_id": "rec-ask-day34-14",
+      "turn": 1,
+      "reply": "Only financed. Paying the ¥600,000 from cash and the credit line would break your ¥300,000 reserve. The 36-month term loan (¥18,144.62 a month, 5.60%) passes every limit, and the machine is worth doing on your estimate (NPV ¥380,885.77 at 10.00%, payback in month 31). Nothing was applied for: you apply on the Capex screen.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-14:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Only financed.",
+        "figures": [
+          {
+            "label": "Price",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "A month",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Paying the ¥600,000 from cash and the credit line would break your ¥300,000 reserve. The 36-month term loan (¥18,144.62 a month, 5.60%) passes every limit, and the machine is worth doing on your estimate (NPV ¥380,885.77 at 10.00%, payback in month 31). Nothing was applied for: you apply on the Capex screen.",
+        "basis": "The capex case on file (¥600k die-cutting line), today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Price",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "A month",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open Capex & purchases",
+            "href": "/capex",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "模切线买得起吗？": {
+      "session_id": "rec-ask-day34-15",
+      "turn": 1,
+      "reply": "只能融资购买。用现金和信用额度支付 ¥600,000 会跌破您 ¥300,000 的最低现金储备。36 个月定期贷款（每月 ¥18,144.62，年利率 5.60%）满足所有限额，且按您的估计这台设备值得投资（按 10.00% 折现，净现值 ¥380,885.77，第 31 个月回本）。尚未提交任何申请：申请请由您在资本支出页面提交。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-15:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "只能融资购买。",
+        "figures": [
+          {
+            "label": "价格",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "每月",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "body": "用现金和信用额度支付 ¥600,000 会跌破您 ¥300,000 的最低现金储备。36 个月定期贷款（每月 ¥18,144.62，年利率 5.60%）满足所有限额，且按您的估计这台设备值得投资（按 10.00% 折现，净现值 ¥380,885.77，第 31 个月回本）。尚未提交任何申请：申请请由您在资本支出页面提交。",
+        "basis": "已录入的设备方案（¥600,000），今日账目，第 34 天",
+        "all_figures": [
+          {
+            "label": "价格",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "每月",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开设备与采购",
+            "href": "/capex",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "What can FLOW do without me?": {
+      "session_id": "rec-ask-day34-16",
+      "turn": 1,
+      "reply": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all. A single commitment above ¥100,000, a new facility or a rate above 15.00% needs you; guarantees, collateral, equity and changes to the mandate are never FLOW's to do.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-16:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all.",
+        "figures": [
+          {
+            "label": "Funding cost ceiling",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Discount limit",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Concession cap",
+            "value": "¥5,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "A single commitment above ¥100,000, a new facility or a rate above 15.00% needs you; guarantees, collateral, equity and changes to the mandate are never FLOW's to do.",
+        "basis": "Your signed mandate (version 1), day 34",
+        "all_figures": [
+          {
+            "label": "Funding cost ceiling",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Discount limit",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Concession cap",
+            "value": "¥5,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Approval threshold",
+            "value": "¥100,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Your reserve",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See your limits",
+            "href": "/limits#limits-rules",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "不经过我，FLOW 能做什么？": {
+      "session_id": "rec-ask-day34-17",
+      "turn": 1,
+      "reply": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。单笔超过 ¥100,000 的承诺、新的融资额度或年化成本超过 15.00% 的融资需要您批准；个人担保、抵押、股权和修改授权，FLOW 永远不能做。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-17:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。",
+        "figures": [
+          {
+            "label": "融资成本上限",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣上限",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "让步上限",
+            "value": "¥5,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "单笔超过 ¥100,000 的承诺、新的融资额度或年化成本超过 15.00% 的融资需要您批准；个人担保、抵押、股权和修改授权，FLOW 永远不能做。",
+        "basis": "您签署的授权（第 1 版），第 34 天",
+        "all_figures": [
+          {
+            "label": "融资成本上限",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣上限",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "让步上限",
+            "value": "¥5,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "审批门槛",
+            "value": "¥100,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "最低现金储备",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看您的限额",
+            "href": "/limits#limits-rules",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Should we take the early payment?": {
+      "session_id": "rec-ask-day34-18",
+      "turn": 1,
+      "reply": "No. 1.20% is above your 0.88% break-even, so your own funding is cheaper: discounting the whole invoice costs ¥5,040, against ¥1,782.19 for FLOW's plan.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-18:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "No.",
+        "figures": [
+          {
+            "label": "Discount asked",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Break-even",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Cost of the discount",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "body": "1.20% is above your 0.88% break-even, so your own funding is cheaper: discounting the whole invoice costs ¥5,040, against ¥1,782.19 for FLOW's plan.",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Discount asked",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Break-even",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Cost of the discount",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open Deals",
+            "href": "/deals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "提前付款划算吗？": {
+      "session_id": "rec-ask-day34-19",
+      "turn": 1,
+      "reply": "不划算。1.20% 高于您 0.88% 的盈亏平衡点，自己融资更便宜：整张发票贴现要花 ¥5,040，而 FLOW 的方案只需 ¥1,782.19。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-day34-19:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "不划算。",
+        "figures": [
+          {
+            "label": "所提折扣",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "盈亏平衡点",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣成本",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "body": "1.20% 高于您 0.88% 的盈亏平衡点，自己融资更便宜：整张发票贴现要花 ¥5,040，而 FLOW 的方案只需 ¥1,782.19。",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "所提折扣",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "盈亏平衡点",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣成本",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开交易",
+            "href": "/deals",
+            "kind": "link"
+          }
+        ]
+      }
+    }
+  },
+  "pending": {
+    "Are we safe?": {
+      "session_id": "rec-ask-pending-0",
+      "turn": 1,
+      "reply": "Not on today's books: without new funding, cash falls below your ¥300,000 reserve from day 42 (in 8 days), lowest ¥100,000 on day 42 (in 8 days) (¥200,000 short of the reserve). FLOW's plan covers it for ¥1,782.19, with your approval, and your loan covenants hold.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-0:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Not on today's books: without new funding, cash falls below your ¥300,000 reserve from day 42 (in 8 days), lowest ¥100,000 on day 42 (in 8 days) (¥200,000 short of the reserve).",
+        "figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Lowest cash",
+            "value": "¥100,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Below reserve from",
+            "value": "Day 42",
+            "tone": "danger"
+          }
+        ],
+        "body": "FLOW's plan covers it for ¥1,782.19, with your approval, and your loan covenants hold.",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Lowest cash",
+            "value": "¥100,000",
+            "tone": "danger"
+          },
+          {
+            "label": "Below reserve from",
+            "value": "Day 42",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW's plan costs",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          },
+          {
+            "label": "Your reserve",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See the cash forecast",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          },
+          {
+            "label": "Open FLOW's plan",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们安全吗？": {
+      "session_id": "rec-ask-pending-1",
+      "turn": 1,
+      "reply": "按今日账目并不安全：若不新增融资，现金将从第 42 天（8 天后）起低于您 ¥300,000 的最低现金储备，最低在第 42 天（8 天后）降至 ¥100,000（比储备低 ¥200,000）。FLOW 的方案可用 ¥1,782.19 补上，需要您批准，且您的贷款契约指标都满足。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-1:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "按今日账目并不安全：若不新增融资，现金将从第 42 天（8 天后）起低于您 ¥300,000 的最低现金储备，最低在第 42 天（8 天后）降至 ¥100,000（比储备低 ¥200,000）。",
+        "figures": [
+          {
+            "label": "所需资金",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "最低现金",
+            "value": "¥100,000",
+            "tone": "danger"
+          },
+          {
+            "label": "跌破储备线",
+            "value": "第 42 天",
+            "tone": "danger"
+          }
+        ],
+        "body": "FLOW 的方案可用 ¥1,782.19 补上，需要您批准，且您的贷款契约指标都满足。",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "所需资金",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "最低现金",
+            "value": "¥100,000",
+            "tone": "danger"
+          },
+          {
+            "label": "跌破储备线",
+            "value": "第 42 天",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW 方案成本",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          },
+          {
+            "label": "最低现金储备",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看现金预测",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          },
+          {
+            "label": "查看 FLOW 的方案",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "How much do we need to raise?": {
+      "session_id": "rec-ask-pending-2",
+      "turn": 1,
+      "reply": "¥200,000, needed from day 42 (in 8 days) to day 46 (in 12 days); FLOW's cheapest committed plan covers it for ¥1,782.19.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-2:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥200,000, needed from day 42 (in 8 days) to day 46 (in 12 days); FLOW's cheapest committed plan covers it for ¥1,782.19.",
+        "figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW's plan costs",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          }
+        ],
+        "body": "",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Funding needed",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW's plan costs",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open FLOW's plan",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          },
+          {
+            "label": "See the cash forecast",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们需要融多少？": {
+      "session_id": "rec-ask-pending-3",
+      "turn": 1,
+      "reply": "需要 ¥200,000，缺口从第 42 天（8 天后）持续到第 46 天（12 天后）；FLOW 用已承诺额度的最便宜方案可用 ¥1,782.19 补上。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-3:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "需要 ¥200,000，缺口从第 42 天（8 天后）持续到第 46 天（12 天后）；FLOW 用已承诺额度的最便宜方案可用 ¥1,782.19 补上。",
+        "figures": [
+          {
+            "label": "所需资金",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW 方案成本",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          }
+        ],
+        "body": "",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "所需资金",
+            "value": "¥200,000",
+            "tone": "danger"
+          },
+          {
+            "label": "FLOW 方案成本",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看 FLOW 的方案",
+            "href": "/#home-v2-action",
+            "kind": "link"
+          },
+          {
+            "label": "查看现金预测",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Are we inside our covenants?": {
+      "session_id": "rec-ask-pending-4",
+      "turn": 1,
+      "reply": "Yes. Every projected month is inside the covenants: lowest DSCR 1.92× against the 1.25× minimum (0.67× headroom) and highest leverage 1.48× against the 2.50× maximum (1.02× headroom); no clean-down alert.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-4:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Yes.",
+        "figures": [
+          {
+            "label": "DSCR",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "Leverage",
+            "value": "1.48×",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Every projected month is inside the covenants: lowest DSCR 1.92× against the 1.25× minimum (0.67× headroom) and highest leverage 1.48× against the 2.50× maximum (1.02× headroom); no clean-down alert.",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "DSCR",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "Leverage",
+            "value": "1.48×",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See the covenant readings",
+            "href": "/cash#cash-readings",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们满足契约吗？": {
+      "session_id": "rec-ask-pending-5",
+      "turn": 1,
+      "reply": "满足。预测的每个月都在契约范围内：偿债覆盖率最低 1.92×，下限 1.25×（余量 0.67×）；杠杆率最高 1.48×，上限 2.50×（余量 1.02×）；信用额度清零要求没有预警。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-5:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "满足。",
+        "figures": [
+          {
+            "label": "偿债覆盖率",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "杠杆率",
+            "value": "1.48×",
+            "tone": "neutral"
+          }
+        ],
+        "body": "预测的每个月都在契约范围内：偿债覆盖率最低 1.92×，下限 1.25×（余量 0.67×）；杠杆率最高 1.48×，上限 2.50×（余量 1.02×）；信用额度清零要求没有预警。",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "偿债覆盖率",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "杠杆率",
+            "value": "1.48×",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看契约指标",
+            "href": "/cash#cash-readings",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Which customer owes us the most?": {
+      "session_id": "rec-ask-pending-6",
+      "turn": 1,
+      "reply": "Foshan Home Retail Co.: ¥1,000,000 on 3 invoices; that is everything you are owed. ¥160,000 of it is overdue. Dongguan Office Supplies Ltd. owes nothing.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-6:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Foshan Home Retail Co.: ¥1,000,000 on 3 invoices; that is everything you are owed.",
+        "figures": [
+          {
+            "label": "Owed",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Customer",
+            "value": "Foshan Home Retail Co.",
+            "tone": "neutral"
+          }
+        ],
+        "body": "¥160,000 of it is overdue. Dongguan Office Supplies Ltd. owes nothing.",
+        "basis": "Today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Owed",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Customer",
+            "value": "Foshan Home Retail Co.",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See Foshan Home Retail Co.'s invoices",
+            "href": "/receivables?customer=BUYER-1",
+            "kind": "link"
+          },
+          {
+            "label": "Open Foshan Home Retail Co.",
+            "href": "/customers/BUYER-1",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "哪个客户欠我们最多？": {
+      "session_id": "rec-ask-pending-7",
+      "turn": 1,
+      "reply": "佛山：3 张发票共 ¥1,000,000；这就是您应收的全部款项。其中 ¥160,000 已逾期。东莞目前不欠款。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-7:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "佛山：3 张发票共 ¥1,000,000；这就是您应收的全部款项。",
+        "figures": [
+          {
+            "label": "欠款",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "客户",
+            "value": "佛山",
+            "tone": "neutral"
+          }
+        ],
+        "body": "其中 ¥160,000 已逾期。东莞目前不欠款。",
+        "basis": "今日账目，第 34 天",
+        "all_figures": [
+          {
+            "label": "欠款",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "客户",
+            "value": "佛山",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看佛山的发票",
+            "href": "/receivables?customer=BUYER-1",
+            "kind": "link"
+          },
+          {
+            "label": "打开佛山",
+            "href": "/customers/BUYER-1",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "How much debt do we have?": {
+      "session_id": "rec-ask-pending-8",
+      "turn": 1,
+      "reply": "¥1,602,210: the existing equipment loan ¥1,455,000 and the credit line ¥147,210 (Main bank). The books do not record who lent the existing equipment loan.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-8:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥1,602,210: the existing equipment loan ¥1,455,000 and the credit line ¥147,210 (Main bank).",
+        "figures": [
+          {
+            "label": "Total debt",
+            "value": "¥1,602,210",
+            "tone": "neutral"
+          }
+        ],
+        "body": "The books do not record who lent the existing equipment loan.",
+        "basis": "Today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Total debt",
+            "value": "¥1,602,210",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See your funding",
+            "href": "/cash#cash-funding",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们总负债多少？": {
+      "session_id": "rec-ask-pending-9",
+      "turn": 1,
+      "reply": "¥1,602,210：现有设备贷款 ¥1,455,000，银行信用额度 ¥147,210。账目中没有记录现有设备贷款的贷款方。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-9:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥1,602,210：现有设备贷款 ¥1,455,000，银行信用额度 ¥147,210。",
+        "figures": [
+          {
+            "label": "总负债",
+            "value": "¥1,602,210",
+            "tone": "neutral"
+          }
+        ],
+        "body": "账目中没有记录现有设备贷款的贷款方。",
+        "basis": "今日账目，第 34 天",
+        "all_figures": [
+          {
+            "label": "总负债",
+            "value": "¥1,602,210",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看您的融资",
+            "href": "/cash#cash-funding",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Is anything waiting for my approval?": {
+      "session_id": "rec-ask-pending-10",
+      "turn": 1,
+      "reply": "Yes, 1: invoice financing of ¥200,000. Approve or reject each on the Approvals page.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-10:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Yes, 1: invoice financing of ¥200,000.",
+        "figures": [
+          {
+            "label": "Awaiting your approval",
+            "value": "1",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Approve or reject each on the Approvals page.",
+        "basis": "The operations log and approvals queue, day 34",
+        "all_figures": [
+          {
+            "label": "Awaiting your approval",
+            "value": "1",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open approvals",
+            "href": "/approvals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "有待审批的吗？": {
+      "session_id": "rec-ask-pending-11",
+      "turn": 1,
+      "reply": "有，共 1 项：发票融资 ¥200,000。请在审批页面逐项批准或拒绝。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-11:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "有，共 1 项：发票融资 ¥200,000。",
+        "figures": [
+          {
+            "label": "待您审批",
+            "value": "1",
+            "tone": "neutral"
+          }
+        ],
+        "body": "请在审批页面逐项批准或拒绝。",
+        "basis": "操作日志与审批队列，第 34 天",
+        "all_figures": [
+          {
+            "label": "待您审批",
+            "value": "1",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开审批",
+            "href": "/approvals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "What did FLOW do recently?": {
+      "session_id": "rec-ask-pending-12",
+      "turn": 1,
+      "reply": "2 operations in the last 7 days: moved the clock forward to day 34; moved the clock forward to day 34. 0 refused, 1 waiting for your approval, 0 security events; the log's chain verifies.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-12:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "2 operations in the last 7 days: moved the clock forward to day 34; moved the clock forward to day 34.",
+        "figures": [
+          {
+            "label": "Operations run",
+            "value": "2",
+            "tone": "neutral"
+          },
+          {
+            "label": "Refused",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "0 refused, 1 waiting for your approval, 0 security events; the log's chain verifies.",
+        "basis": "The operations log and approvals queue, day 34",
+        "all_figures": [
+          {
+            "label": "Operations run",
+            "value": "2",
+            "tone": "neutral"
+          },
+          {
+            "label": "Refused",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See what FLOW did",
+            "href": "/activity",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "FLOW 最近做了什么？": {
+      "session_id": "rec-ask-pending-13",
+      "turn": 1,
+      "reply": "最近 7 天执行了 2 项操作：将日期向前推进；将日期向前推进。被拒绝 0 项，待您审批 1 项，安全事件 0 起；日志的哈希链校验通过。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-13:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "最近 7 天执行了 2 项操作：将日期向前推进；将日期向前推进。",
+        "figures": [
+          {
+            "label": "已执行操作",
+            "value": "2",
+            "tone": "neutral"
+          },
+          {
+            "label": "已拒绝",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "被拒绝 0 项，待您审批 1 项，安全事件 0 起；日志的哈希链校验通过。",
+        "basis": "操作日志与审批队列，第 34 天",
+        "all_figures": [
+          {
+            "label": "已执行操作",
+            "value": "2",
+            "tone": "neutral"
+          },
+          {
+            "label": "已拒绝",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看 FLOW 的操作",
+            "href": "/activity",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Can we afford the die-cutting machine?": {
+      "session_id": "rec-ask-pending-14",
+      "turn": 1,
+      "reply": "Only financed. Paying the ¥600,000 from cash and the credit line would break your ¥300,000 reserve. The 36-month term loan (¥18,144.62 a month, 5.60%) passes every limit, and the machine is worth doing on your estimate (NPV ¥380,885.77 at 10.00%, payback in month 31). Nothing was applied for: you apply on the Capex screen.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-14:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Only financed.",
+        "figures": [
+          {
+            "label": "Price",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "A month",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Paying the ¥600,000 from cash and the credit line would break your ¥300,000 reserve. The 36-month term loan (¥18,144.62 a month, 5.60%) passes every limit, and the machine is worth doing on your estimate (NPV ¥380,885.77 at 10.00%, payback in month 31). Nothing was applied for: you apply on the Capex screen.",
+        "basis": "The capex case on file (¥600k die-cutting line), today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Price",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "A month",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open Capex & purchases",
+            "href": "/capex",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "模切线买得起吗？": {
+      "session_id": "rec-ask-pending-15",
+      "turn": 1,
+      "reply": "只能融资购买。用现金和信用额度支付 ¥600,000 会跌破您 ¥300,000 的最低现金储备。36 个月定期贷款（每月 ¥18,144.62，年利率 5.60%）满足所有限额，且按您的估计这台设备值得投资（按 10.00% 折现，净现值 ¥380,885.77，第 31 个月回本）。尚未提交任何申请：申请请由您在资本支出页面提交。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-15:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "只能融资购买。",
+        "figures": [
+          {
+            "label": "价格",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "每月",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "body": "用现金和信用额度支付 ¥600,000 会跌破您 ¥300,000 的最低现金储备。36 个月定期贷款（每月 ¥18,144.62，年利率 5.60%）满足所有限额，且按您的估计这台设备值得投资（按 10.00% 折现，净现值 ¥380,885.77，第 31 个月回本）。尚未提交任何申请：申请请由您在资本支出页面提交。",
+        "basis": "已录入的设备方案（¥600,000），今日账目，第 34 天",
+        "all_figures": [
+          {
+            "label": "价格",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "每月",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开设备与采购",
+            "href": "/capex",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "What can FLOW do without me?": {
+      "session_id": "rec-ask-pending-16",
+      "turn": 1,
+      "reply": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all. A single commitment above ¥100,000, a new facility or a rate above 15.00% needs you; guarantees, collateral, equity and changes to the mandate are never FLOW's to do.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-16:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all.",
+        "figures": [
+          {
+            "label": "Funding cost ceiling",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Discount limit",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Concession cap",
+            "value": "¥5,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "A single commitment above ¥100,000, a new facility or a rate above 15.00% needs you; guarantees, collateral, equity and changes to the mandate are never FLOW's to do.",
+        "basis": "Your signed mandate (version 1), day 34",
+        "all_figures": [
+          {
+            "label": "Funding cost ceiling",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Discount limit",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Concession cap",
+            "value": "¥5,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Approval threshold",
+            "value": "¥100,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Your reserve",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See your limits",
+            "href": "/limits#limits-rules",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "不经过我，FLOW 能做什么？": {
+      "session_id": "rec-ask-pending-17",
+      "turn": 1,
+      "reply": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。单笔超过 ¥100,000 的承诺、新的融资额度或年化成本超过 15.00% 的融资需要您批准；个人担保、抵押、股权和修改授权，FLOW 永远不能做。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-17:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。",
+        "figures": [
+          {
+            "label": "融资成本上限",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣上限",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "让步上限",
+            "value": "¥5,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "单笔超过 ¥100,000 的承诺、新的融资额度或年化成本超过 15.00% 的融资需要您批准；个人担保、抵押、股权和修改授权，FLOW 永远不能做。",
+        "basis": "您签署的授权（第 1 版），第 34 天",
+        "all_figures": [
+          {
+            "label": "融资成本上限",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣上限",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "让步上限",
+            "value": "¥5,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "审批门槛",
+            "value": "¥100,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "最低现金储备",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看您的限额",
+            "href": "/limits#limits-rules",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Should we take the early payment?": {
+      "session_id": "rec-ask-pending-18",
+      "turn": 1,
+      "reply": "No. 1.20% is above your 0.88% break-even, so your own funding is cheaper: discounting the whole invoice costs ¥5,040, against ¥1,782.19 for FLOW's plan.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-18:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "No.",
+        "figures": [
+          {
+            "label": "Discount asked",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Break-even",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Cost of the discount",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "body": "1.20% is above your 0.88% break-even, so your own funding is cheaper: discounting the whole invoice costs ¥5,040, against ¥1,782.19 for FLOW's plan.",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Discount asked",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Break-even",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Cost of the discount",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open Deals",
+            "href": "/deals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "提前付款划算吗？": {
+      "session_id": "rec-ask-pending-19",
+      "turn": 1,
+      "reply": "不划算。1.20% 高于您 0.88% 的盈亏平衡点，自己融资更便宜：整张发票贴现要花 ¥5,040，而 FLOW 的方案只需 ¥1,782.19。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-pending-19:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "不划算。",
+        "figures": [
+          {
+            "label": "所提折扣",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "盈亏平衡点",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣成本",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "body": "1.20% 高于您 0.88% 的盈亏平衡点，自己融资更便宜：整张发票贴现要花 ¥5,040，而 FLOW 的方案只需 ¥1,782.19。",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "所提折扣",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "盈亏平衡点",
+            "value": "0.88%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣成本",
+            "value": "¥5,040",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开交易",
+            "href": "/deals",
+            "kind": "link"
+          }
+        ]
+      }
+    }
+  },
+  "after": {
+    "Are we safe?": {
+      "session_id": "rec-ask-after-0",
+      "turn": 1,
+      "reply": "Yes: on today's books cash stays at or above your ¥300,000 reserve for the next 120 days; the lowest point is ¥300,000 on day 34 (today). Your loan covenants hold.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-0:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Yes: on today's books cash stays at or above your ¥300,000 reserve for the next 120 days; the lowest point is ¥300,000 on day 34 (today).",
+        "figures": [
+          {
+            "label": "Lowest cash",
+            "value": "¥300,000",
+            "tone": "ok"
+          },
+          {
+            "label": "Your reserve",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Your loan covenants hold.",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Lowest cash",
+            "value": "¥300,000",
+            "tone": "ok"
+          },
+          {
+            "label": "Your reserve",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See the cash forecast",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们安全吗？": {
+      "session_id": "rec-ask-after-1",
+      "turn": 1,
+      "reply": "安全：按今日账目，未来 120 天现金都不低于您 ¥300,000 的最低现金储备；最低点是第 34 天（今天）的 ¥300,000。您的贷款契约指标都满足。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-1:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "安全：按今日账目，未来 120 天现金都不低于您 ¥300,000 的最低现金储备；最低点是第 34 天（今天）的 ¥300,000。",
+        "figures": [
+          {
+            "label": "最低现金",
+            "value": "¥300,000",
+            "tone": "ok"
+          },
+          {
+            "label": "最低现金储备",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "您的贷款契约指标都满足。",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "最低现金",
+            "value": "¥300,000",
+            "tone": "ok"
+          },
+          {
+            "label": "最低现金储备",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看现金预测",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "How much do we need to raise?": {
+      "session_id": "rec-ask-after-2",
+      "turn": 1,
+      "reply": "Nothing: cash stays at or above your ¥300,000 reserve for the next 120 days.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-2:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Nothing: cash stays at or above your ¥300,000 reserve for the next 120 days.",
+        "figures": [],
+        "body": "",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [],
+        "actions": [
+          {
+            "label": "See the cash forecast",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们需要融多少？": {
+      "session_id": "rec-ask-after-3",
+      "turn": 1,
+      "reply": "不需要：未来 120 天现金都不低于您 ¥300,000 的最低现金储备。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-3:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "不需要：未来 120 天现金都不低于您 ¥300,000 的最低现金储备。",
+        "figures": [],
+        "body": "",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [],
+        "actions": [
+          {
+            "label": "查看现金预测",
+            "href": "/cash#cash-chart",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Are we inside our covenants?": {
+      "session_id": "rec-ask-after-4",
+      "turn": 1,
+      "reply": "Yes. Every projected month is inside the covenants: lowest DSCR 1.92× against the 1.25× minimum (0.67× headroom) and highest leverage 1.67× against the 2.50× maximum (0.83× headroom); no clean-down alert.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-4:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Yes.",
+        "figures": [
+          {
+            "label": "DSCR",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "Leverage",
+            "value": "1.67×",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Every projected month is inside the covenants: lowest DSCR 1.92× against the 1.25× minimum (0.67× headroom) and highest leverage 1.67× against the 2.50× maximum (0.83× headroom); no clean-down alert.",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "DSCR",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "Leverage",
+            "value": "1.67×",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See the covenant readings",
+            "href": "/cash#cash-readings",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们满足契约吗？": {
+      "session_id": "rec-ask-after-5",
+      "turn": 1,
+      "reply": "满足。预测的每个月都在契约范围内：偿债覆盖率最低 1.92×，下限 1.25×（余量 0.67×）；杠杆率最高 1.67×，上限 2.50×（余量 0.83×）；信用额度清零要求没有预警。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-5:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "满足。",
+        "figures": [
+          {
+            "label": "偿债覆盖率",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "杠杆率",
+            "value": "1.67×",
+            "tone": "neutral"
+          }
+        ],
+        "body": "预测的每个月都在契约范围内：偿债覆盖率最低 1.92×，下限 1.25×（余量 0.67×）；杠杆率最高 1.67×，上限 2.50×（余量 0.83×）；信用额度清零要求没有预警。",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "偿债覆盖率",
+            "value": "1.92×",
+            "tone": "neutral"
+          },
+          {
+            "label": "杠杆率",
+            "value": "1.67×",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看契约指标",
+            "href": "/cash#cash-readings",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Which customer owes us the most?": {
+      "session_id": "rec-ask-after-6",
+      "turn": 1,
+      "reply": "Foshan Home Retail Co.: ¥1,000,000 on 3 invoices; that is everything you are owed. ¥160,000 of it is overdue. Dongguan Office Supplies Ltd. owes nothing.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-6:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Foshan Home Retail Co.: ¥1,000,000 on 3 invoices; that is everything you are owed.",
+        "figures": [
+          {
+            "label": "Owed",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Customer",
+            "value": "Foshan Home Retail Co.",
+            "tone": "neutral"
+          }
+        ],
+        "body": "¥160,000 of it is overdue. Dongguan Office Supplies Ltd. owes nothing.",
+        "basis": "Today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Owed",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Customer",
+            "value": "Foshan Home Retail Co.",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See Foshan Home Retail Co.'s invoices",
+            "href": "/receivables?customer=BUYER-1",
+            "kind": "link"
+          },
+          {
+            "label": "Open Foshan Home Retail Co.",
+            "href": "/customers/BUYER-1",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "哪个客户欠我们最多？": {
+      "session_id": "rec-ask-after-7",
+      "turn": 1,
+      "reply": "佛山：3 张发票共 ¥1,000,000；这就是您应收的全部款项。其中 ¥160,000 已逾期。东莞目前不欠款。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-7:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "佛山：3 张发票共 ¥1,000,000；这就是您应收的全部款项。",
+        "figures": [
+          {
+            "label": "欠款",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "客户",
+            "value": "佛山",
+            "tone": "neutral"
+          }
+        ],
+        "body": "其中 ¥160,000 已逾期。东莞目前不欠款。",
+        "basis": "今日账目，第 34 天",
+        "all_figures": [
+          {
+            "label": "欠款",
+            "value": "¥1,000,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "客户",
+            "value": "佛山",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看佛山的发票",
+            "href": "/receivables?customer=BUYER-1",
+            "kind": "link"
+          },
+          {
+            "label": "打开佛山",
+            "href": "/customers/BUYER-1",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "How much debt do we have?": {
+      "session_id": "rec-ask-after-8",
+      "turn": 1,
+      "reply": "¥1,802,210: the existing equipment loan ¥1,455,000, the credit line ¥147,210 (Main bank) and invoice financing ¥200,000 (Invoice financing platform). The books do not record who lent the existing equipment loan.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-8:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥1,802,210: the existing equipment loan ¥1,455,000, the credit line ¥147,210 (Main bank) and invoice financing ¥200,000 (Invoice financing platform).",
+        "figures": [
+          {
+            "label": "Total debt",
+            "value": "¥1,802,210",
+            "tone": "neutral"
+          }
+        ],
+        "body": "The books do not record who lent the existing equipment loan.",
+        "basis": "Today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Total debt",
+            "value": "¥1,802,210",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See your funding",
+            "href": "/cash#cash-funding",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "我们总负债多少？": {
+      "session_id": "rec-ask-after-9",
+      "turn": 1,
+      "reply": "¥1,802,210：现有设备贷款 ¥1,455,000，银行信用额度 ¥147,210，发票融资 ¥200,000。账目中没有记录现有设备贷款的贷款方。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-9:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "¥1,802,210：现有设备贷款 ¥1,455,000，银行信用额度 ¥147,210，发票融资 ¥200,000。",
+        "figures": [
+          {
+            "label": "总负债",
+            "value": "¥1,802,210",
+            "tone": "neutral"
+          }
+        ],
+        "body": "账目中没有记录现有设备贷款的贷款方。",
+        "basis": "今日账目，第 34 天",
+        "all_figures": [
+          {
+            "label": "总负债",
+            "value": "¥1,802,210",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看您的融资",
+            "href": "/cash#cash-funding",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Is anything waiting for my approval?": {
+      "session_id": "rec-ask-after-10",
+      "turn": 1,
+      "reply": "No. Nothing is waiting for your approval.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-10:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "No.",
+        "figures": [
+          {
+            "label": "Awaiting your approval",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Nothing is waiting for your approval.",
+        "basis": "The operations log and approvals queue, day 34",
+        "all_figures": [
+          {
+            "label": "Awaiting your approval",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open approvals",
+            "href": "/approvals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "有待审批的吗？": {
+      "session_id": "rec-ask-after-11",
+      "turn": 1,
+      "reply": "没有。目前没有待审批的操作。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-11:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "没有。",
+        "figures": [
+          {
+            "label": "待您审批",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "目前没有待审批的操作。",
+        "basis": "操作日志与审批队列，第 34 天",
+        "all_figures": [
+          {
+            "label": "待您审批",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开审批",
+            "href": "/approvals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "What did FLOW do recently?": {
+      "session_id": "rec-ask-after-12",
+      "turn": 1,
+      "reply": "3 operations in the last 7 days: moved the clock forward to day 34; moved the clock forward to day 34; financed ¥200,000 of Foshan Home Retail Co.'s invoice. 0 refused, 1 waiting for your approval, 0 security events; the log's chain verifies.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-12:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "3 operations in the last 7 days: moved the clock forward to day 34; moved the clock forward to day 34; financed ¥200,000 of Foshan Home Retail Co.'s invoice.",
+        "figures": [
+          {
+            "label": "Operations run",
+            "value": "3",
+            "tone": "neutral"
+          },
+          {
+            "label": "Refused",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "0 refused, 1 waiting for your approval, 0 security events; the log's chain verifies.",
+        "basis": "The operations log and approvals queue, day 34",
+        "all_figures": [
+          {
+            "label": "Operations run",
+            "value": "3",
+            "tone": "neutral"
+          },
+          {
+            "label": "Refused",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See what FLOW did",
+            "href": "/activity",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "FLOW 最近做了什么？": {
+      "session_id": "rec-ask-after-13",
+      "turn": 1,
+      "reply": "最近 7 天执行了 3 项操作：将日期向前推进；将日期向前推进；以佛山的发票融资 ¥200,000。被拒绝 0 项，待您审批 1 项，安全事件 0 起；日志的哈希链校验通过。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-13:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "最近 7 天执行了 3 项操作：将日期向前推进；将日期向前推进；以佛山的发票融资 ¥200,000。",
+        "figures": [
+          {
+            "label": "已执行操作",
+            "value": "3",
+            "tone": "neutral"
+          },
+          {
+            "label": "已拒绝",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "body": "被拒绝 0 项，待您审批 1 项，安全事件 0 起；日志的哈希链校验通过。",
+        "basis": "操作日志与审批队列，第 34 天",
+        "all_figures": [
+          {
+            "label": "已执行操作",
+            "value": "3",
+            "tone": "neutral"
+          },
+          {
+            "label": "已拒绝",
+            "value": "0",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看 FLOW 的操作",
+            "href": "/activity",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Can we afford the die-cutting machine?": {
+      "session_id": "rec-ask-after-14",
+      "turn": 1,
+      "reply": "Only financed. Paying the ¥600,000 from cash and the credit line would break your ¥300,000 reserve. The 36-month term loan (¥18,144.62 a month, 5.60%) passes every limit, and the machine is worth doing on your estimate (NPV ¥380,885.77 at 10.00%, payback in month 31). Nothing was applied for: you apply on the Capex screen.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-14:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Only financed.",
+        "figures": [
+          {
+            "label": "Price",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "A month",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "body": "Paying the ¥600,000 from cash and the credit line would break your ¥300,000 reserve. The 36-month term loan (¥18,144.62 a month, 5.60%) passes every limit, and the machine is worth doing on your estimate (NPV ¥380,885.77 at 10.00%, payback in month 31). Nothing was applied for: you apply on the Capex screen.",
+        "basis": "The capex case on file (¥600k die-cutting line), today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Price",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "A month",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open Capex & purchases",
+            "href": "/capex",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "模切线买得起吗？": {
+      "session_id": "rec-ask-after-15",
+      "turn": 1,
+      "reply": "只能融资购买。用现金和信用额度支付 ¥600,000 会跌破您 ¥300,000 的最低现金储备。36 个月定期贷款（每月 ¥18,144.62，年利率 5.60%）满足所有限额，且按您的估计这台设备值得投资（按 10.00% 折现，净现值 ¥380,885.77，第 31 个月回本）。尚未提交任何申请：申请请由您在资本支出页面提交。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-15:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "只能融资购买。",
+        "figures": [
+          {
+            "label": "价格",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "每月",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "body": "用现金和信用额度支付 ¥600,000 会跌破您 ¥300,000 的最低现金储备。36 个月定期贷款（每月 ¥18,144.62，年利率 5.60%）满足所有限额，且按您的估计这台设备值得投资（按 10.00% 折现，净现值 ¥380,885.77，第 31 个月回本）。尚未提交任何申请：申请请由您在资本支出页面提交。",
+        "basis": "已录入的设备方案（¥600,000），今日账目，第 34 天",
+        "all_figures": [
+          {
+            "label": "价格",
+            "value": "¥600,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "每月",
+            "value": "¥18,144.62",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开设备与采购",
+            "href": "/capex",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "What can FLOW do without me?": {
+      "session_id": "rec-ask-after-16",
+      "turn": 1,
+      "reply": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all. A single commitment above ¥100,000, a new facility or a rate above 15.00% needs you; guarantees, collateral, equity and changes to the mandate are never FLOW's to do.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-16:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all.",
+        "figures": [
+          {
+            "label": "Funding cost ceiling",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Discount limit",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Concession cap",
+            "value": "¥5,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "A single commitment above ¥100,000, a new facility or a rate above 15.00% needs you; guarantees, collateral, equity and changes to the mandate are never FLOW's to do.",
+        "basis": "Your signed mandate (version 1), day 34",
+        "all_figures": [
+          {
+            "label": "Funding cost ceiling",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Discount limit",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Concession cap",
+            "value": "¥5,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Approval threshold",
+            "value": "¥100,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "Your reserve",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "See your limits",
+            "href": "/limits#limits-rules",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "不经过我，FLOW 能做什么？": {
+      "session_id": "rec-ask-after-17",
+      "turn": 1,
+      "reply": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。单笔超过 ¥100,000 的承诺、新的融资额度或年化成本超过 15.00% 的融资需要您批准；个人担保、抵押、股权和修改授权，FLOW 永远不能做。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-17:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。",
+        "figures": [
+          {
+            "label": "融资成本上限",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣上限",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "让步上限",
+            "value": "¥5,000",
+            "tone": "neutral"
+          }
+        ],
+        "body": "单笔超过 ¥100,000 的承诺、新的融资额度或年化成本超过 15.00% 的融资需要您批准；个人担保、抵押、股权和修改授权，FLOW 永远不能做。",
+        "basis": "您签署的授权（第 1 版），第 34 天",
+        "all_figures": [
+          {
+            "label": "融资成本上限",
+            "value": "15.00%",
+            "tone": "neutral"
+          },
+          {
+            "label": "折扣上限",
+            "value": "1.50%",
+            "tone": "neutral"
+          },
+          {
+            "label": "让步上限",
+            "value": "¥5,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "审批门槛",
+            "value": "¥100,000",
+            "tone": "neutral"
+          },
+          {
+            "label": "最低现金储备",
+            "value": "¥300,000",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "查看您的限额",
+            "href": "/limits#limits-rules",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "Should we take the early payment?": {
+      "session_id": "rec-ask-after-18",
+      "turn": 1,
+      "reply": "No. 1.20% is above your 0.88% break-even, so your own funding is cheaper, and you have no funding need on today's books.",
+      "intent": "ASK_BOOKS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-18:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "No.",
+        "figures": [
+          {
+            "label": "Discount asked",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Break-even",
+            "value": "0.88%",
+            "tone": "neutral"
+          }
+        ],
+        "body": "1.20% is above your 0.88% break-even, so your own funding is cheaper, and you have no funding need on today's books.",
+        "basis": "Conservative forecast, today's books, day 34",
+        "all_figures": [
+          {
+            "label": "Discount asked",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "Break-even",
+            "value": "0.88%",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Open Deals",
+            "href": "/deals",
+            "kind": "link"
+          }
+        ]
+      }
+    },
+    "提前付款划算吗？": {
+      "session_id": "rec-ask-after-19",
+      "turn": 1,
+      "reply": "不划算。1.20% 高于您 0.88% 的盈亏平衡点，自己融资更便宜，而且按今日账目您并没有融资需求。",
+      "intent": "ASK_BOOKS",
+      "lang": "zh",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "rec-ask-after-19:1",
+      "context_echo": null,
+      "scope_used": null,
+      "card": {
+        "lead": "不划算。",
+        "figures": [
+          {
+            "label": "所提折扣",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "盈亏平衡点",
+            "value": "0.88%",
+            "tone": "neutral"
+          }
+        ],
+        "body": "1.20% 高于您 0.88% 的盈亏平衡点，自己融资更便宜，而且按今日账目您并没有融资需求。",
+        "basis": "基于今日账目的保守预测，第 34 天",
+        "all_figures": [
+          {
+            "label": "所提折扣",
+            "value": "1.20%",
+            "tone": "neutral"
+          },
+          {
+            "label": "盈亏平衡点",
+            "value": "0.88%",
+            "tone": "neutral"
+          }
+        ],
+        "actions": [
+          {
+            "label": "打开交易",
+            "href": "/deals",
+            "kind": "link"
+          }
+        ]
+      }
+    }
+  }
+}

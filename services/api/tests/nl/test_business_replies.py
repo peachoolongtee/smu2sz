@@ -299,7 +299,8 @@ def test_past_due_invoices_and_other_alerts_are_said_without_ids_when_no_cure_is
     en = _say(client, "what needs me today?", "pd2")
     assert en["reply"] == ("¥160,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. was due 4 days ago and has not arrived. 1 more warning: "
                            "Cash is close to your minimum today.")
-    zh = _say(client, "what needs me today?", "pd3", "zh")
+    # Asked in Chinese: an English question is answered in English whatever the page's language (lead, 17 Oct; tests/nl/test_answer_card.py)
+    zh = _say(client, "今天有什么需要我处理的？", "pd3", "zh")
     assert zh["reply"] == "Foshan Home Retail Co. 的 ¥420,000.00 发票的 ¥160,000.00 应于4 天前到账，至今未到。另有 1 项提醒：今天现金仅略高于最低现金储备。"
     for reply in (en["reply"], zh["reply"]):
         _owner_words(reply)

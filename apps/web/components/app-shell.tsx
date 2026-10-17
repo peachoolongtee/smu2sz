@@ -12,6 +12,7 @@ import { useSetupStatus } from "@/lib/setup-draft";
 import type { DictKey } from "@/lib/dictionary";
 import { AskHeaderInput } from "./ask-header";
 import { ChatPanel } from "./chat/chat-panel";
+import { HashLander } from "./hash-lander";
 import { DemoStepper } from "./demo-stepper";
 import { FlowLogo } from "./flow-logo";
 import { ArrowLeftIcon, BankIcon, ShieldCheckIcon, ShieldIcon, SparkIcon } from "./icons";
@@ -450,7 +451,7 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
   useDock(bar);
   const rail = useRail();
   // From `lg` Ask FLOW is an input in the header (the floating pill is gone); a phone and a tablet keep the pill and the bottom bar's "Ask".
-  const wide = useWide() && pathname !== "/chat";
+  const wide = useWide() && pathname !== "/chat" && pathname !== "/ask";
   return (
     <div className="min-h-dvh" style={{ "--sec": SEC_COLOR[sectionOf(pathname)] } as CSSProperties} data-section={sectionOf(pathname)}>
       <PageBackdrop sectionKey={sectionOf(pathname)} />
@@ -599,6 +600,7 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
         </div>
       </nav>
       <ChatPanel headerEntry={wide} />
+      <HashLander />
     </div>
   );
 }
@@ -611,6 +613,7 @@ const TITLE_KEY: Record<string, DictKey> = {
   "/welcome": "landing.title",
   "/setup": "setup.title",
   "/trust": "nav.trust",
+  "/ask": "ask.title",
 };
 
 /**

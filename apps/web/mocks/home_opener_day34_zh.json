@@ -26,6 +26,30 @@
   "trace_id": "rec-home-zh:1",
   "context_echo": null,
   "scope_used": null,
+  "card": {
+    "lead": "",
+    "figures": [],
+    "body": "",
+    "basis": "今日账目，第 34 天",
+    "all_figures": [],
+    "actions": [
+      {
+        "label": "查看 FLOW 的方案",
+        "href": "/#home-v2-action",
+        "kind": "link"
+      },
+      {
+        "label": "查看现金预测",
+        "href": "/cash#cash-chart",
+        "kind": "link"
+      },
+      {
+        "label": "查看Foshan Home Retail Co.的发票",
+        "href": "/receivables?customer=BUYER-1",
+        "kind": "link"
+      }
+    ]
+  },
   "proactive": true,
   "has_news": true
 }

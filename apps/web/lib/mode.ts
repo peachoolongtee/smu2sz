@@ -36,7 +36,7 @@ export const OWNER_DETAIL_ROUTES: Record<string, string> = {
 };
 
 /** Business routes: the owner's six sections (Documents among them), the limits and sign-in, and the detail routes opened from them. Everything else is an engine view of the demo. */
-export const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/whatif", "/capex", "/receivables", "/approvals", "/activity", "/limits", "/trust", "/setup", ...Object.keys(OWNER_DETAIL_ROUTES)] as const;
+export const BUSINESS_ROUTES = ["/", "/ask", "/deals", "/documents", "/cash", "/whatif", "/capex", "/receivables", "/approvals", "/activity", "/limits", "/trust", "/setup", ...Object.keys(OWNER_DETAIL_ROUTES)] as const;
 
 /** A decision's record (`/decisions/{id}`) is an owner page opened from Home, Activity or an approval; it has no section of its own. */
 export const DECISION_ROUTE_PREFIX = "/decisions/";

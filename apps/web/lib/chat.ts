@@ -12,7 +12,7 @@
  * signing out ends the owner's session with the token that is going and drops both conversations and the draft.
  */
 
-import { endNlSession, nl } from "./api";
+import { endNlSession, nl, nlOpener } from "./api";
 import { getOwnerToken, onSignedIn, onSignedOut, onSigningOut } from "./auth";
 import { booksEpoch, onBooksReplaced } from "./books-epoch";
 import { getLang } from "./i18n";
@@ -41,6 +41,8 @@ interface Conversation {
   busy: boolean;
   /** Bumped by "New conversation" so a late answer to the old one is dropped. */
   generation: number;
+  /** FLOW's opener (POST /nl/opener) was asked for this conversation: it is asked once per conversation, never twice. */
+  openerTried?: boolean;
 }
 
 interface ChatState {
@@ -52,7 +54,7 @@ interface ChatState {
   booksEpoch: string | null;
 }
 
-const empty = (generation = 0): Conversation => ({ sessionId: null, messages: [], busy: false, generation });
+const empty = (generation = 0): Conversation => ({ sessionId: null, messages: [], busy: false, generation, openerTried: false });
 
 /** How many turns a refresh brings back (the server keeps the session; this is what the panel shows again). */
 const KEEP_TURNS = 12;
@@ -82,6 +84,7 @@ const store = createStore<ChatState>(
           sessionId: s.convs.OWNER.sessionId,
           busy: false,
           generation: 0,
+          openerTried: s.convs.OWNER.openerTried ?? false,
           messages: s.convs.OWNER.messages
             .filter((m) => m.from !== "error")
             .slice(-KEEP_TURNS)
@@ -276,6 +279,64 @@ export function setCounterparty(id: CounterpartyId): void {
 
 export function setPanelOpen(panelOpen: boolean): void {
   store.set((s) => ({ ...s, panelOpen }));
+}
+
+/**
+ * FLOW speaks first (lead, 17 Oct): when the side panel or the Ask FLOW page opens on the owner's EMPTY conversation, ask POST /nl/opener once
+ * and, if something needs the owner (`has_news`), show its answer as FLOW's first message (its pending cure waits in the same session for
+ * "go ahead", exactly as before). Nothing needs the owner, a failure, or a conversation that started meanwhile: nothing is shown and the
+ * empty state stays. Never for a buyer, never signed out (the opener is owner only), never twice in one conversation; "New conversation"
+ * starts a fresh one, where it may run again. While it is asked the conversation is busy, so a question typed meanwhile waits behind it.
+ */
+export async function startOpener(lang: "en" | "zh"): Promise<void> {
+  const conv = store.get().convs.OWNER;
+  if (conv.openerTried || conv.busy || conv.messages.length > 0 || !getOwnerToken()) return;
+  const sessionId = conv.sessionId ?? newSessionId();
+  const generation = conv.generation;
+  patchConv("OWNER", (c) => ({ ...c, sessionId, openerTried: true, busy: true }));
+  try {
+    const r = await nlOpener(sessionId, lang);
+    patchConv("OWNER", (c) =>
+      c.generation !== generation
+        ? c
+        : { ...c, busy: false, sessionId: r.session_id, messages: r.has_news && c.messages.length === 0 ? [{ id: uid("a"), from: "assistant", response: r }] : c.messages },
+    );
+  } catch {
+    patchConv("OWNER", (c) => (c.generation !== generation ? c : { ...c, busy: false }));
+  }
+}
+
+/** "Back to the side panel": the panel opens once the page it returns to is shown (components/chat/chat-panel.tsx reads it on the route change). */
+let panelOnArrival = false;
+
+export function openPanelOnArrival(): void {
+  panelOnArrival = true;
+}
+
+export function takePanelOnArrival(): boolean {
+  const wanted = panelOnArrival;
+  panelOnArrival = false;
+  return wanted;
+}
+
+/** Where "Back to the side panel" on the Ask FLOW page returns to: the page Expand was pressed on (this tab only). */
+const RETURN_KEY = "tl-ask-return";
+
+export function setAskReturn(path: string): void {
+  try {
+    window.sessionStorage.setItem(RETURN_KEY, path);
+  } catch {
+    /* storage unavailable: the way back is Home */
+  }
+}
+
+export function askReturn(): string {
+  try {
+    const p = window.sessionStorage.getItem(RETURN_KEY);
+    return p && p.startsWith("/") && !p.startsWith("//") && !p.startsWith("/ask") ? p : "/";
+  } catch {
+    return "/";
+  }
 }
 
 // Signing out ends the owner's session on the server with the token that is going, then takes both conversations and the draft out of the browser.

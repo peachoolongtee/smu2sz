@@ -288,7 +288,7 @@ function Cash() {
               <CashFigures h={h} big />
             </section>
           )}
-          {fundingCard ? <div className={stressed || stressPending ? "order-1" : "max-lg:order-1"}>{fundingCard}</div> : null}
+          {fundingCard ? <div id="cash-funding" className={stressed || stressPending ? "order-1" : "max-lg:order-1"}>{fundingCard}</div> : null}
           <PartialRead partial={h.partial} onRetry={home.reload} />
           <FixResult flat part="notices" result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           {slot}
@@ -329,7 +329,7 @@ function Cash() {
 
           {/* The debt readings are the forecast's own footer: the same projection, read by month. */}
           {view?.trajectory.months.length ? (
-            <FoldCard testId="cash-readings" title={t("biz.readings")} hint={t("biz.readings.hint")}>
+            <FoldCard id="cash-readings" testId="cash-readings" title={t("biz.readings")} hint={t("biz.readings.hint")}>
               <div>
                 {/* The first line is the home's own reading (the same projection as the table's first month). */}
                 {h.cash.dscr_text || h.cash.leverage_text ? (
