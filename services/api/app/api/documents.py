@@ -130,6 +130,7 @@ def _short_names(rt: Runtime, counterparty_id: str) -> list[str]:
 def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
     rt = get_runtime()
     title = body.title
+    fixture_names: list[str] = []  # the names a demo document's own lender goes by (REG-2; see fixtures/contracts)
     if body.fixture_id is not None:
         capex_fx = load_capex_contract_fixtures().get(body.fixture_id) if _capex_on() else None
         fx = load_contract_fixtures().get(body.fixture_id) or capex_fx
@@ -145,6 +146,7 @@ def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
         name, data = (capex_contract_fixture_bytes(body.fixture_id, fmt) if fx is capex_fx
                       else contract_fixture_bytes(body.fixture_id, fmt))
         source, title = f"fixture:{body.fixture_id}", title or fx["title"]
+        fixture_names = list(fx.get("party_names", []))
     else:
         if body.kind is None or body.counterparty_id is None:
             raise HTTPException(422, {"code": "KIND_AND_COUNTERPARTY_REQUIRED",
@@ -189,7 +191,7 @@ def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
         text = extract_text(name, data)
         record = read_document(text, kind, cp, title=title, source=source, day=day, facilities=state.facilities)
         # The owner's rule of 17 Oct: the counterparty chosen must be a party the document names (app.contracts.parties).
-        record = with_party_check(record, party, _short_names(rt, cp))
+        record = with_party_check(record, party, [*_short_names(rt, cp), *fixture_names])
     except IngestError as e:
         raise HTTPException(413 if isinstance(e, DocumentTooLarge) else 422,
                             _refusal(e.code, str(e), e.message_zh)) from None

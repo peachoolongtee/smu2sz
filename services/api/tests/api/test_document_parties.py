@@ -33,7 +33,7 @@ class _Reader:
 
     def extract_contract(self, chunk):  # type: ignore[no-untyped-def]
         terms = [_term(ContractField.PARTY_SUPPLIER if m["role"] == "Supplier" else ContractField.PARTY_BUYER, m[0], m["name"])
-                 for m in re.finditer(r'\(\d\) (?P<name>.+?) \(the "(?P<role>Supplier|Buyer)"\)', chunk.text)]
+                 for m in re.finditer(r'\(\d\) (?P<name>.+?)(?:, a company[^(\n]*)? \(the "(?P<role>Supplier|Buyer)"\)', chunk.text)]
         return ContractResult(ContractExtraction(terms=terms, authority_claims=[], data_requests=[]), self.name)
 
 
@@ -107,22 +107,51 @@ def test_the_same_contract_naming_foshan_in_its_long_form_is_not_flagged(client,
     assert d["flags"] == [] and d["can_confirm"] is True
 
 
-def test_a_reading_with_no_party_names_carries_a_warning_and_can_be_confirmed(client):
+def test_a_reading_with_no_party_names_blocks_the_contract_and_cannot_be_confirmed(client):
     d = _post(client, kind="BUYER_CONTRACT", counterparty_id="BUYER-1", text=NO_PARTIES)
     (flag,) = [f for f in d["flags"] if f["kind"] == "PARTY_UNCHECKED"]
-    assert flag["blocking"] is False and flag["kind_text"] == "parties not checked"
+    assert flag["blocking"] is True and flag["kind_text"] == "parties not checked"
     assert flag["note"] == ("The agent found no party names in this document, so it could not check that it is with "
                             "Foshan Home Retail Co. Check who it is with before confirming.")
-    assert d["blocked"] is False and d["can_confirm"] is True
+    assert d["blocked"] is True and d["can_confirm"] is False
+    assert d["status_text"] == "Cannot be confirmed: the agent could not tell who it is with"
+    c = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]}).json()
+    assert c["result"]["status"] == "REFUSED" and c["document"]["status"] == "PROPOSED"
     zh = client.get(f"/documents/{d['id']}?lang=zh").json()["document"]
     (zflag,) = zh["flags"]
     assert zflag["kind_text"] == "未能核对合同各方"
     assert zflag["note"] == "代理没有在文件中读到各方的名称，因此无法核实它是否与Foshan Home Retail Co.签订。确认前请核实它的对方是谁。"
+    assert zh["status_text"] == "无法确认：代理无法判断它的对方是谁"
+
+
+@pytest.mark.parametrize("supplier, buyer", [
+    ("Foshan Home Retail Co.", "Evil Holdings Ltd."),  # the chosen buyer named only as the supplier
+    (CHENGYU, "Foshan Evil Trading Co."),  # a different company sharing the first word
+    (CHENGYU, "Foshan Home Retail Co. Hong Kong Shell Ltd."),  # a longer company containing the name
+])
+def test_reg2_contracts_that_do_not_name_the_buyer_in_its_role_cannot_be_confirmed(client, reader, supplier, buyer):
+    text = OTHERS.replace(SHENGDA, supplier).replace(CHENGYU, buyer)
+    d = _post(client, kind="BUYER_CONTRACT", counterparty_id="BUYER-1", text=text)
+    assert [f["kind"] for f in d["flags"]] == ["PARTY_NOT_NAMED"] and d["can_confirm"] is False
     c = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]}).json()
-    assert c["result"]["status"] == "EXECUTED"
+    assert c["result"]["status"] == "REFUSED" and c["document"]["status"] == "PROPOSED"
 
 
-def test_a_lender_agreement_whose_reading_names_no_lender_is_not_checked(client):
-    d = _post(client, kind="LENDER_AGREEMENT", counterparty_id="BANK-1",
-              text="Credit line of RMB 100,000 at 5% a year. Funds released within 1 day.")
-    assert not [f for f in d["flags"] if f["kind"].startswith("PARTY_")]
+def test_a_lender_agreement_pasted_as_text_is_blocked_when_the_registry_does_not_carry_its_lender(client):
+    from app.domain.fixtures import contract_fixture_bytes
+
+    text = contract_fixture_bytes("MB_CREDIT_LINE_AGREEMENT")[1].decode("utf-8")
+    d = _post(client, kind="LENDER_AGREEMENT", counterparty_id="BANK-1", text=text)
+    assert [f["kind"] for f in d["flags"]] == ["PARTY_UNCHECKED"] and d["can_confirm"] is False
+    c = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]}).json()
+    assert c["result"]["status"] == "REFUSED"
+
+
+def test_the_demo_lender_names_come_only_from_the_fixture_the_server_picks(client):
+    """`party_names` in fixtures/contracts/contracts.yaml is read only for a fixture_id post; a request cannot carry names of
+    its own, and the same text posted as pasted text or an upload gets no such names."""
+    ok = _post(client, fixture_id="MB_CREDIT_LINE_AGREEMENT")
+    assert ok["flags"] == [] and ok["can_confirm"] is True
+    r = client.post("/documents", json={"kind": "LENDER_AGREEMENT", "counterparty_id": "BANK-1", "text": "x",
+                                        "party_names": ["Main bank"]})
+    assert r.status_code == 422  # the body forbids fields it does not define

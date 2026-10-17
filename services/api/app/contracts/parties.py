@@ -1,16 +1,19 @@
-"""Who the document is with (the owner's rule of 17 Oct): the counterparty the owner chose against the companies the
-reading found named in the document.
+"""Who the document is with (the owner's rule of 17 Oct, tightened by REG-2): the counterparty the owner chose against the
+companies the reading found named in the document, each in the role its kind needs.
 
 The owner says who a document is with; the reading finds the parties it names (a contract's PARTY_BUYER and PARTY_SUPPLIER
-terms, a lender agreement's lender name). When neither named party is the chosen counterparty, the record carries a
-blocking PARTY_NOT_NAMED flag and cannot be confirmed; when a contract reading found no party names at all, a non-blocking
-PARTY_UNCHECKED warning says the parties could not be checked. A lender agreement whose reading names no lender is not
-checked. Deterministic: no model call, no fuzzy score.
+terms, a lender agreement's lender name). The chosen counterparty must be the party in its own role: the buyer of a buyer
+contract, the vendor (the seller) of a capex contract, the lender of a lender agreement. A named party in that role that is
+not the chosen counterparty gives a blocking PARTY_NOT_NAMED flag. When the reading found no party in that role (no parties
+at all, the other party only, or a lender agreement whose lender was not found) the record carries a blocking
+PARTY_UNCHECKED flag: a document whose parties could not be checked is not confirmed silently. Neither can be confirmed
+(`ContractRecord.blocked`; the executor refuses a blocked record). Deterministic: no model call, no fuzzy score.
 
-Matching: both sides are normalised (full-width to half-width, case, punctuation and whitespace); a name matches when the two
-are equal or one contains the other on word boundaries, and the registry name's short form ("Foshan") counts when it sits
-inside a party name. A contained name must be long enough to identify a company once its legal-form words (Co., Ltd.,
-有限公司) are set aside: 4 characters, or 2 Chinese characters.
+Matching is by company, not by words: a party is the chosen counterparty when `same_company_key` of the two names is equal
+(full-width to half-width, case, punctuation and whitespace gone, the legal-form suffix Co., Ltd., Limited, 有限公司 dropped).
+A first word ("Foshan"), a part of a name, or a longer name that contains it ("... Hong Kong Shell Ltd.") is another
+company. The names a counterparty answers to are its registry name and any short name the owner gave it when adding it; the
+owner's own short name may sit whole inside a longer party name, because the owner registered it for that.
 """
 
 from __future__ import annotations
@@ -28,14 +31,18 @@ from app.domain.models import (
     DocumentKind,
     SourceSpan,
 )
+from app.operations.party_names import same_company_key
 
-PARTY_NOT_NAMED = "PARTY_NOT_NAMED"  # blocking: no party the document names is the chosen counterparty
-PARTY_UNCHECKED = "PARTY_UNCHECKED"  # warning: the reading found no party names, so the parties were not checked
+PARTY_NOT_NAMED = "PARTY_NOT_NAMED"  # blocking: the party in the document's role is not the chosen counterparty
+PARTY_UNCHECKED = "PARTY_UNCHECKED"  # blocking: the reading found no party in that role, so the parties were not checked
 PARTY_FLAG_KINDS = frozenset({PARTY_NOT_NAMED, PARTY_UNCHECKED})
 
 _PARTY_FIELDS = (ContractField.PARTY_BUYER, ContractField.PARTY_SUPPLIER)
 _PUNCT = re.compile(r"[\s,.;:()\[\]'\"“”‘’`·、，。；：（）【】「」]+")
-_CJK = re.compile(r"[㐀-鿿豈-﫿]")
+
+# The role of the chosen counterparty in each kind of document: the party the reading must find, and must find to be it.
+_KIND_ROLE = {DocumentKind.BUYER_CONTRACT: "BUYER", DocumentKind.CAPEX_CONTRACT: "SUPPLIER",
+              DocumentKind.LENDER_AGREEMENT: "LENDER"}
 
 
 def normalise(name: str) -> str:
@@ -44,61 +51,61 @@ def normalise(name: str) -> str:
     return _PUNCT.sub(" ", unicodedata.normalize("NFKC", name).casefold()).strip()
 
 
-# Words every company name may carry: a contained name made of them alone ("Co., Ltd.") names no one.
-_GENERIC = re.compile(r"(?<![a-z0-9])(?:co|company|ltd|limited|inc|corp|corporation|llc|plc|group|the|and|of)(?![a-z0-9])"
-                      r"|股份有限公司|有限责任公司|有限公司|公司|集团")
-
-
-def _long_enough(n: str) -> bool:
-    """Enough of a name to identify a company once its legal-form words are set aside: 4 characters, or 2 Chinese."""
-    core = _GENERIC.sub(" ", n)
-    return len(_CJK.findall(core)) >= 2 or len(core.replace(" ", "")) >= 4
-
-
-def _inside(short: str, long: str) -> bool:
-    """`short` sits in `long` as whole words (a Latin name does not match half a word; Chinese has no word gaps)."""
-    if not short or not _long_enough(short):
-        return False
-    return re.search(rf"(?<![a-z0-9]){re.escape(short)}(?![a-z0-9])", long) is not None
-
-
 def names_match(party: str, chosen: str) -> bool:
-    """One party name against one name of the chosen counterparty: equal, or one inside the other."""
-    p, c = normalise(party), normalise(chosen)
-    if not p or not c:
-        return False
-    return p == c or _inside(c, p) or _inside(p, c)
+    """One party name against one name of the chosen counterparty: the same company, by the same-company key used for the
+    business's own names (operations.party_names). Never a first word, a part of the name or a longer name containing it."""
+    p, c = same_company_key(party), same_company_key(chosen)
+    return bool(p) and p == c
 
 
 def short_name(name: str) -> str:
     """The registry name's short form, the one the pages use ("Foshan Home Retail Co." -> "Foshan"). The pages' own
-    rule, imported here so that importing the contracts layer does not import the strategy package."""
+    rule, imported here so that importing the contracts layer does not import the strategy package. It names a company
+    on the pages only; the party check does not accept it (REG-2), and a new customer may not take it (`taken_names`)."""
     from app.strategy.words import buyer_short
 
     return buyer_short(name)
 
 
 def registry_names(party: Counterparty, extra: Sequence[str] = ()) -> list[str]:
-    """The names the registry holds for a counterparty: its name and its short form, then any short name the owner gave it
-    when adding it (`extra`, from the ADD_CUSTOMER entry; `app.api.customers.added_short_names`)."""
+    """The names a counterparty answers to in the party check: its registry name, then any short name the owner gave it when
+    adding it (`extra`, from the ADD_CUSTOMER entry; `app.api.customers.added_short_names`). Not the pages' first-word short
+    form: that is not the owner's registration."""
     out = [party.name]
-    for n in (short_name(party.name), *extra):
-        if n and n.strip() and normalise(n) not in {normalise(x) for x in out}:
+    for n in extra:
+        if n and n.strip() and same_company_key(n) not in {same_company_key(x) for x in out}:
             out.append(n)
     return out
 
 
 def taken_names(party: Counterparty, extra: Sequence[str] = ()) -> set[str]:
-    """The normalised names a new customer may not take: a counterparty's name and its short names."""
-    return {normalise(n) for n in registry_names(party, extra) if normalise(n)}
+    """The normalised names a new customer may not take: a counterparty's name, its owner-given short names and the first-word
+    short form the pages use for it."""
+    return {normalise(n) for n in [*registry_names(party, extra), short_name(party.name)] if normalise(n)}
+
+
+_CJK = re.compile(r"[㐀-鿿豈-﫿]")
+_GENERIC = re.compile(r"(?<![a-z0-9])(?:co|company|ltd|limited|inc|corp|corporation|llc|plc|group|the|and|of)(?![a-z0-9])"
+                      r"|股份有限公司|有限责任公司|有限公司|公司|集团")
+
+
+def _registered_inside(short: str, party: str) -> bool:
+    """A short name the owner registered, whole words inside a party name ("澄昱智能" inside 深圳市澄昱智能制造股份有限公司). Only
+    the owner's own registration counts this way, and only a name that identifies a company once its legal-form words are set
+    aside (4 characters, or 2 Chinese); the pages' first-word short form never does."""
+    s, p = normalise(short), normalise(party)
+    core = _GENERIC.sub(" ", s)
+    if not s or not (len(_CJK.findall(core)) >= 2 or len(core.replace(" ", "")) >= 4):
+        return False
+    return re.search(rf"(?<![a-z0-9]){re.escape(s)}(?![a-z0-9])", p) is not None
 
 
 def party_matches(found: Iterable[str], names: Sequence[str]) -> bool:
-    """Whether any name the document gives is one of the chosen counterparty's `names` (its registry name first, then the
-    short or Chinese forms). A short form counts only inside a party name, never the other way round."""
-    found = [f for f in found if f.strip()]
-    full, *others = names
-    return any(names_match(f, full) or any(_inside(normalise(o), normalise(f)) for o in others) for f in found)
+    """Whether any name the document gives is the chosen counterparty: the same company as its registry name (`names[0]`),
+    or the same company as, or a party name containing, a short name the owner registered for it (`names[1:]`)."""
+    full, *registered = names
+    return any(names_match(f, full) or any(names_match(f, r) or _registered_inside(r, f) for r in registered)
+               for f in found if f.strip())
 
 
 _FIELD_ROLE = {ContractField.PARTY_BUYER: "BUYER", ContractField.PARTY_SUPPLIER: "SUPPLIER"}
@@ -119,11 +126,11 @@ def _found_roles(record: ContractRecord) -> list[tuple[str, SourceSpan, str]]:
         at = record.document.text.find(name) if name and name not in (record.document.sender_id, record.counterparty_id) else -1
         if at >= 0:
             out.append((name, SourceSpan(doc_id=record.document.doc_id, start=at, end=at + len(name), text=name), "LENDER"))
-    seen: set[str] = set()
+    seen: set[tuple[str, str]] = set()
     distinct: list[tuple[str, SourceSpan, str]] = []
     for name, span, role in sorted(out, key=lambda x: x[1].start):
-        if normalise(name) not in seen:
-            seen.add(normalise(name))
+        if (same_company_key(name), role) not in seen:
+            seen.add((same_company_key(name), role))
             distinct.append((name, span, role))
     return distinct
 
@@ -181,21 +188,60 @@ def unchecked_note(chosen: str, lang: str) -> str:
             f"Check who it is with before confirming.")
 
 
+# A party the document defines: it opens the party ("between <name>", "and <name>", "(1) <name>", "甲方：<name>"), and its name is
+# followed, after any legal-form words, by the bracket that names its role in the document ((the "Bank"), （以下简称“乙方”）).
+# A name the document only mentions, a part of a longer name, or a party defined as the borrower's side is not the lender.
+_OPENS_PARTY = r"(?:^|\n|[:：;；)）\]]|(?<![a-z0-9])(?:between|and|by|with|among)(?![a-z0-9])|[&与和及])\s*"
+_LEGAL_FORM = r"(?:[\s,.]*(?:co|ltd|limited|company|corp|corporation|inc|llc|plc))*"
+_DEFINED_AS = r"[\s,.]*[(（]\s*(?:the\s+|以下简称\s*)?[\"“「'‘]\s*([^\"”」'’]{1,40})"
+_BORROWER_SIDE = frozenset({"borrower", "client", "customer", "buyer", "company", "business", "debtor", "lessee", "借款人", "借款方",
+                            "客户", "买方", "承租人"})
+
+
+def defines_party(text: str, names: Sequence[str]) -> bool:
+    """Whether the document text defines one of `names` as a party that is not the borrower's side ("between <name> (the
+    "Bank")"). A lender agreement whose reading found no lender is checked this way: the chosen lender must be a party the
+    document itself introduces, whole, in a role other than the borrower's."""
+    flat = unicodedata.normalize("NFKC", text).casefold()
+    for name in names:
+        n = unicodedata.normalize("NFKC", name).casefold().strip()
+        if not n or not _long_enough(n):
+            continue
+        body = r"\s+".join(re.escape(w) for w in n.split())
+        for m in re.finditer(_OPENS_PARTY + body + _LEGAL_FORM + _DEFINED_AS, flat):
+            if m.group(1).strip().removeprefix("the ").strip() not in _BORROWER_SIDE:
+                return True
+    return False
+
+
+def _long_enough(n: str) -> bool:
+    """A name worth looking for: not only legal-form words ("Co., Ltd.")."""
+    core = re.sub(r"(?<![a-z0-9])(?:co|company|ltd|limited|inc|corp|corporation|llc|plc|the|and|of)(?![a-z0-9])", " ", n)
+    return len(re.findall(r"[\w]", core)) >= 2
+
+
+def _no_party_flag(record: ContractRecord, names: Sequence[str]) -> DocumentFlag:
+    return DocumentFlag(kind=PARTY_UNCHECKED, blocking=True, note=unchecked_note(names[0], "en"),
+                        span=SourceSpan(doc_id=record.document.doc_id, start=0, end=0, text=""))
+
+
 def party_flags(record: ContractRecord, names: Sequence[str]) -> list[DocumentFlag]:
     """The party check's flags for a record read for the counterparty whose registry names are `names` (empty: no
-    registry entry to compare with, nothing is checked)."""
+    registry entry to compare with, nothing is checked). Only the party in the document kind's own role counts: the buyer
+    of a buyer contract, the vendor of a capex contract, the lender of a lender agreement. Both flags block."""
     if not names:
         return []
-    found = _found(record)
-    if not found:
-        if record.kind not in CONTRACT_READING_KINDS:
-            return []  # a lender agreement whose reading names no lender is not checked
-        return [DocumentFlag(kind=PARTY_UNCHECKED, blocking=False, note=unchecked_note(names[0], "en"),
-                             span=SourceSpan(doc_id=record.document.doc_id, start=0, end=0, text=""))]
-    if party_matches([n for n, _ in found], names):
-        return []
-    return [DocumentFlag(kind=PARTY_NOT_NAMED, blocking=True,
-                         note=not_named_note(record.kind, [n for n, _ in found], names[0], "en"), span=found[0][1])]
+    role = _KIND_ROLE[record.kind]
+    found = _found_roles(record)
+    in_role = [n for n, _, r in found if r == role]
+    if in_role:
+        if party_matches(in_role, names):
+            return []
+        return [DocumentFlag(kind=PARTY_NOT_NAMED, blocking=True,
+                             note=not_named_note(record.kind, [n for n, _, _ in found], names[0], "en"), span=found[0][1])]
+    if record.kind not in CONTRACT_READING_KINDS and defines_party(record.document.text, names):
+        return []  # the reading found no lender, but the agreement itself introduces the chosen lender as a party
+    return [_no_party_flag(record, names)]
 
 
 def with_party_check(record: ContractRecord, party: Counterparty | None, extra: Sequence[str] = ()) -> ContractRecord:
