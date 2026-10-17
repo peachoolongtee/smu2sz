@@ -124,3 +124,31 @@ def test_the_skeleton_makes_what_a_reader_cannot_tell_apart_equal():
     assert not keys_clash(name_key("Co"), name_key("Cocoa Trading"))  # too short to identify a company
     assert not keys_clash(name_key("Foshan Home Retail"), name_key("Dongguan Office Supplies"))
     assert not has_letter_or_digit("́⃝") and has_letter_or_digit("á")
+
+
+# ---------------------------------------------------------------- REG-4: a key written by another kind of entry
+
+
+def test_a_key_another_kind_of_entry_already_holds_is_refused_409_not_a_500(client):
+    """The agent can write any idempotency key. `ADD_CUSTOMER:<k>` on a DRAW_FACILITY entry made the route replay that entry
+    as a customer and raise KeyError (a 500); it now answers 409 IDEMPOTENCY_KEY_REUSED and writes nothing."""
+    rt = get_runtime()
+    body = {"kind": "DRAW_FACILITY", "op_id": "agent-op-x", "idempotency_key": "ADD_CUSTOMER:victimkey", "mandate_version": 1,
+            "requested_by": "AGENT", "day": rt.day, "facility_id": "NOPE", "amount_fen": 100}
+    assert client.post("/operations", json=body, headers={"X-Agent-Key": "demo-agent-key"}).status_code == 200
+    held = rt.store.find_by_idempotency_key("ADD_CUSTOMER:victimkey")
+    assert held is not None and held.kind == "DRAW_FACILITY"
+    before = (_counterparties(), len(rt.store.operations()))
+    r = _add(client, name="Victim Co", key="victimkey")
+    assert r.status_code == 409, r.text
+    assert r.json()["detail"]["code"] == "IDEMPOTENCY_KEY_REUSED"
+    assert (_counterparties(), len(rt.store.operations())) == before
+    zh = _add(client, name="Victim Co", key="victimkey", lang="zh")
+    assert zh.status_code == 409 and "已用于其他操作" in zh.json()["detail"]["message"]
+    assert _add(client, name="Victim Co", key="another").status_code == 200  # a new key works
+
+
+def test_a_key_this_route_already_used_still_replays(client):
+    first = _add(client, name="Zhuhai Supplies Co.", key="same").json()
+    again = _add(client, name="Zhuhai Supplies Co.", key="same")
+    assert again.status_code == 200 and again.json() == {**first, "created": False}

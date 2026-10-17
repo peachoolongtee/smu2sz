@@ -191,6 +191,12 @@ def add_customer(body: CustomerIn, lang: Lang = "en") -> dict[str, Any]:
     key = f"{ADD_CUSTOMER_KIND}:{body.idempotency_key}"
     with rt.lock:
         earlier = rt.store.find_by_idempotency_key(key)
+        if earlier is not None and earlier.kind != ADD_CUSTOMER_KIND:
+            # REG-4: the key is another kind of entry's (an agent can write any idempotency key): not this route's request to
+            # replay, and it has no customer to answer with
+            raise HTTPException(409, {"code": "IDEMPOTENCY_KEY_REUSED", "message": t(
+                lang, "That request key was already used for something else. Use a new key to add the customer.",
+                "该请求标识已用于其他操作。请换一个新的标识来添加客户。")})
         if earlier is not None:  # the same request again: the same customer, nothing appended
             return _answer(json.loads(earlier.payload_json), rt.store.get_state(), False, lang)
         state = rt.store.get_state()
