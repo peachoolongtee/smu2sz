@@ -570,7 +570,9 @@ class Renderer:
         th = OxmlElement("w:tblHeader")
         th.set(qn("w:val"), "true")
         trpr.append(th)
-        for row in t.rows:
+        for row, cells in zip(t.rows, rows, strict=False):
+            if sum(len(c) for c in cells) > 360:
+                continue  # a long row may break across pages rather than leave most of a page empty
             cs = OxmlElement("w:cantSplit")
             cs.set(qn("w:val"), "true")
             row._tr.get_or_add_trPr().insert(0, cs)
@@ -581,17 +583,40 @@ class Renderer:
 
     @staticmethod
     def widths(t, rows: list[list[str]], ncols: int) -> None:
-        """Columns sized by their text (an id column stays narrow, a narrative column gets the room)."""
-        total = 6.5
-        weight = []
+        """Columns sized by their text: each at least as wide as its longest unbreakable word (a code name cannot wrap), the
+        rest of the page shared by how much text each column holds."""
+        total, per_char = 6.5, 0.068  # inches of usable width; inches per character at 8 to 9 pt
+        floor, weight = [], []
         for ci in range(ncols):
-            lens = sorted(len(re.sub(r"[`*]", "", r[ci])) if ci < len(r) else 0 for r in rows)
-            weight.append(max(4.0, min(60.0, lens[len(lens) * 3 // 4] if lens else 4.0)))
-        scale = total / sum(weight)
+            cells = [re.sub(r"[*]", "", r[ci]) if ci < len(r) else "" for r in rows]
+            words = [w for c in cells for w in re.split(r"[\s]+", c.replace("`", "")) if w]
+            # the cell's padding plus its longest word; a long path may wrap, so it does not claim more than 1.4 in
+            floor.append(min(1.4, 0.16 + per_char * max((len(w) for w in words), default=4)))
+            lens = sorted(len(c) for c in cells)
+            weight.append(max(4.0, min(80.0, lens[len(lens) * 3 // 4] if lens else 4.0)))
+        spare = total - sum(floor)
+        if spare <= 0:
+            width = [f * total / sum(floor) for f in floor]
+        else:
+            # share the spare room by text length, but no column wider than its text needs on one line
+            need = [max(0.0, per_char * w * 1.1 - f) for f, w in zip(floor, weight, strict=True)]
+            width = list(floor)
+            for _ in range(4):
+                open_cols = [k for k in range(ncols) if need[k] > 1e-6]
+                if spare <= 1e-6 or not open_cols:
+                    break
+                share = sum(weight[k] for k in open_cols)
+                for k in open_cols:
+                    add = min(need[k], spare * weight[k] / share)
+                    width[k] += add
+                    need[k] -= add
+                spare = total - sum(width)
+            if spare > 1e-6:
+                width = [w + spare * weight[k] / sum(weight) for k, w in enumerate(width)]
         t.autofit = False
-        for ci, w in enumerate(weight):
+        for ci, w in enumerate(width):
             for cell in t.columns[ci].cells:
-                cell.width = Inches(max(0.55, w * scale))
+                cell.width = Inches(w)
 
     def figure(self, anchor: Paragraph, name: str, caption: str) -> None:
         path = (self.md_dir / name)
@@ -749,6 +774,9 @@ $w.DisplayAlerts = 0
 try {
   foreach ($f in $args) {
     $d = $w.Documents.Open($f, $false, $false)
+    foreach ($n in 1..3) {
+      try { $st = $d.Styles.Item("TOC $n"); $st.Font.Size = 9; $st.ParagraphFormat.SpaceBefore = 0; $st.ParagraphFormat.SpaceAfter = 0 } catch {}
+    }
     foreach ($t in $d.TablesOfContents) { $t.Update() }
     $d.Fields.Update() | Out-Null
     foreach ($s in $d.Sections) { foreach ($ft in $s.Footers) { $ft.Range.Fields.Update() | Out-Null } }

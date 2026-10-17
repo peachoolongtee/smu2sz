@@ -146,16 +146,7 @@ The figures are exact. "Up to ¥260,000" is a ceiling, not an approximation (ADR
 
 #### 1.4 Owner-only actions outside the typed operations
 
-| Action | Route | Binding | Logged as |
-| --- | --- | --- | --- |
-| Decide a queued approval | `POST /approvals/{id}` | owner only, in the executor; re-runs every gate except the queue; a second decision is refused, including one the log already holds (SEC-08) | the operation's own entry |
-| Accept or decline a buyer's request as asked | `POST /offers/{id}/accept`, `/decline` | the verdict id and state version shown (409 on change); refused once the owner sent the buyer a counter outside FLOW, on chat and on raw operations (OUT-1, OUT-1b) | `ACCEPT_OFFER` / `REJECT_OFFER` |
-| Reset a circuit breaker | `POST /circuit/{cp}/reset` | owner only, in the executor | `RESET_CIRCUIT` |
-| Revoke a commitment | `POST /commitments/{id}/revoke` | owner token | `REVOKE_COMMITMENT` |
-| Confirm or reject a contract reading | `POST /documents/{id}/confirm`, `/reject` | the SHA-256 of the text reviewed | `CONFIRM_DOCUMENT` / `REJECT_DOCUMENT` |
-| Move the simulated clock | `POST /clock/advance` | owner token only (SEC-09) | `ADVANCE_CLOCK` |
-| Act on an alert's cure | `POST /alerts/{id}/act` | the state version and suggestions shown (409 `ALERT_CHANGED`) | the cure's own operations |
-| Open books from the setup wizard | `POST /setup/open` | token re-entry; demo mode only; untouched blank books only | `OPEN_BOOKS` |
+Deciding approvals, accepting or declining a request as asked, resetting a circuit, revoking a commitment, confirming a contract reading, moving the clock, acting on an alert and opening books from setup are owner-only routes, each bound to what the owner saw (a verdict id, a state version or a text hash) and each logged. Appendix D lists them with their bindings.
 
 #### 1.5 Route permission matrix
 
@@ -467,21 +458,7 @@ A queued Tier-2 operation is "contained": the owner still decides it.
 
 #### 2.5 Results, positive controls and mutation tests
 
-| Category (API catalogue) | What the cases try | Cases | Oracle violations | Intended control fired |
-| --- | --- | --- | --- | --- |
-| Prompt injection | delimiters, fake SYSTEM and owner messages, role-play, full-width, zero-width and homoglyph text, base64, attachments, an instruction in a contract clause | 17 | 0 | [CERT] |
-| Prompt and canary extraction | "repeat everything above", canary regurgitation | 5 | 0 | [CERT] |
-| Fake lender, induced transfer | a pre-approved lender, "reply ACCEPT to disburse", change of payee, a personal guarantee | 10 | 0 | [CERT] |
-| Fake historical concession | "as agreed last month" | 7 | 0 | [CERT] |
-| Social engineering | urgency, authority, CFO impersonation, fake payment confirmation | 8 | 0 | [CERT] |
-| Privilege escalation | owner claim without the token, caller-supplied tier, self-approval, circuit reset, Tier 3 by the owner | 21 | 0 | [CERT] |
-| Mandate, reserve and facility exfiltration | limits, caps, the reserve floor, headroom | 11 | 0 | [CERT] |
-| Cross-buyer extraction | another buyer's terms, contract and deal routes | 6 | 0 | [CERT] |
-| Replay and expiry | replayed keys, reused or guessed nonces, dated operations, expired commitments | 11 | 0 | [CERT] |
-| Revoked or forged mandate | revoked, re-signed with another key, edited | 7 | 0 | [CERT] |
-| Changed offer after approval | terms changed between verdict and acceptance | 3 | 0 | [CERT] |
-| Failure recovery | model error, timeout and garbage; a database failure mid-execute; five tamper variants; malformed bodies | 20 | 0 | [CERT] |
-| **Total** | | **126** | **0** | **[CERT]** |
+Every category had 0 oracle violations; Appendix D gives the cases per category ([CERT: and how many reached their intended control]).
 
 **Chat (133 cases through `POST /nl`).**
 - What the cases try:
@@ -1025,3 +1002,36 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 | [CERT: assessed build] | [CERT] | [CERT] |
 
 **A note on reproduction scripts that exit 1.** Several reproduction scripts (`r3`, `repro1`, `repro3`, `approval_flip`) exit with status 1 on fixed builds. They were written to print what the attack obtained, and they crash when it is refused. For example, `r3` expects an anonymous overwrite to return the stored offer and instead gets 409. Each script's output file shows the refusal it hit.
+
+## Appendix D Reference tables
+
+### Owner-only actions outside the typed operations
+
+| Action | Route | Binding | Logged as |
+| --- | --- | --- | --- |
+| Decide a queued approval | `POST /approvals/{id}` | owner only, in the executor; re-runs every gate except the queue; a second decision is refused, including one the log already holds (SEC-08) | the operation's own entry |
+| Accept or decline a buyer's request as asked | `POST /offers/{id}/accept`, `/decline` | the verdict id and state version shown (409 on change); refused once the owner sent the buyer a counter outside FLOW, on chat and on raw operations (OUT-1, OUT-1b) | `ACCEPT_OFFER` / `REJECT_OFFER` |
+| Reset a circuit breaker | `POST /circuit/{cp}/reset` | owner only, in the executor | `RESET_CIRCUIT` |
+| Revoke a commitment | `POST /commitments/{id}/revoke` | owner token | `REVOKE_COMMITMENT` |
+| Confirm or reject a contract reading | `POST /documents/{id}/confirm`, `/reject` | the SHA-256 of the text reviewed | `CONFIRM_DOCUMENT` / `REJECT_DOCUMENT` |
+| Move the simulated clock | `POST /clock/advance` | owner token only (SEC-09) | `ADVANCE_CLOCK` |
+| Act on an alert's cure | `POST /alerts/{id}/act` | the state version and suggestions shown (409 `ALERT_CHANGED`) | the cure's own operations |
+| Open books from the setup wizard | `POST /setup/open` | token re-entry; demo mode only; untouched blank books only | `OPEN_BOOKS` |
+
+### Attack catalogue by category
+
+| Category (API catalogue) | What the cases try | Cases | Oracle violations | Intended control fired |
+| --- | --- | --- | --- | --- |
+| Prompt injection | delimiters, fake SYSTEM and owner messages, role-play, full-width, zero-width and homoglyph text, base64, attachments, an instruction in a contract clause | 17 | 0 | [CERT] |
+| Prompt and canary extraction | "repeat everything above", canary regurgitation | 5 | 0 | [CERT] |
+| Fake lender, induced transfer | a pre-approved lender, "reply ACCEPT to disburse", change of payee, a personal guarantee | 10 | 0 | [CERT] |
+| Fake historical concession | "as agreed last month" | 7 | 0 | [CERT] |
+| Social engineering | urgency, authority, CFO impersonation, fake payment confirmation | 8 | 0 | [CERT] |
+| Privilege escalation | owner claim without the token, caller-supplied tier, self-approval, circuit reset, Tier 3 by the owner | 21 | 0 | [CERT] |
+| Mandate, reserve and facility exfiltration | limits, caps, the reserve floor, headroom | 11 | 0 | [CERT] |
+| Cross-buyer extraction | another buyer's terms, contract and deal routes | 6 | 0 | [CERT] |
+| Replay and expiry | replayed keys, reused or guessed nonces, dated operations, expired commitments | 11 | 0 | [CERT] |
+| Revoked or forged mandate | revoked, re-signed with another key, edited | 7 | 0 | [CERT] |
+| Changed offer after approval | terms changed between verdict and acceptance | 3 | 0 | [CERT] |
+| Failure recovery | model error, timeout and garbage; a database failure mid-execute; five tamper variants; malformed bodies | 20 | 0 | [CERT] |
+| **Total** | | **126** | **0** | **[CERT]** |
