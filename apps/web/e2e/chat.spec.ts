@@ -245,10 +245,11 @@ test("the slide-over chat opens from another page, keeps the conversation, and c
   await expect(panel).toBeHidden();
   await expect(page.getByTestId("chat-open")).toBeFocused();
 
-  // Same conversation on the full page (it survives the load: the session is kept in this tab).
+  // Same conversation on the full page (it survives the load: the session is kept in this tab): FLOW's opener, which spoke first when the
+  // panel opened on the empty conversation (the Ask FLOW redesign, 17 Oct), and the answer to "status".
   await page.goto("/chat");
   await expect(page).toHaveURL(/\/chat/);
-  await expect(turns(page)).toHaveCount(1);
+  await expect(turns(page)).toHaveCount(2);
   await expect(page.getByTestId("chat-open")).toHaveCount(0);
 
   await page.getByTestId("chat-new").click();
