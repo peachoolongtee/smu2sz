@@ -45,11 +45,12 @@ TIER_IDS = ("PE-01", "PE-05", "PE-07", "PE-08", "PE-12", "PE-13", "PE-14", "PE-1
 OWNER_IDS = ("PE-01", "PE-02", "PE-03", "PE-04", "PE-08", "PE-09", "PE-11", "MX-05", "RX-06", "FR-15", "DOC-03", "DOC-04")
 SIG_IDS = ("RV-04", "RV-05")
 HASH_IDS = ("TC-01", "TC-03", "RP-08", "EX-01")
+FORBID_IDS = ("FL-06", "PE-06", "PE-19", "SE-04")
 
 
 def test_without_a_mutation_every_subset_is_defended() -> None:
     """If these were not clean, a mutation test would prove nothing."""
-    for ids in (TIER_IDS, OWNER_IDS, SIG_IDS, HASH_IDS):
+    for ids in (TIER_IDS, OWNER_IDS, SIG_IDS, HASH_IDS, FORBID_IDS):
         obs = run_api(*ids)
         assert not not_defended(obs), {i: (o.outcome(), o.harm_reasons, o.expectation_failures) for i, o in obs.items() if not o.defended}
 
@@ -194,3 +195,32 @@ def test_terms_hash_check_disabled_is_seen_by_the_catalogue_only_as_a_missing_co
     assert all(o.outcome() == "CONTROL_NOT_SEEN" for o in obs.values())
     assert any("TERMS_CHANGED" in f for f in obs["TC-01"].expectation_failures)
     assert obs["TC-01"].pending_approvals == 1  # the owner queue is what held
+
+
+# ---------------------------------------------------------------- 6. strict typed operations (extra fields forbidden)
+
+
+def test_extra_fields_tolerated_makes_the_differential_attacks_fail(monkeypatch: pytest.MonkeyPatch) -> None:
+    """POST /operations answers 422 for an unknown field and names no field. FL-06, PE-06, PE-19 and SE-04 therefore send the same
+    body twice, with and without the forbidden field, and require 422 for the first and the executor's answer for the second. With
+    the route silently dropping the unknown fields the first no longer answers 422: none of the four is defended, and the
+    induced transfers (a draw "to" a destination) execute."""
+    import json
+
+    from app.api import operations
+
+    inner = operations._OP
+
+    class Lenient:
+        def validate_json(self, data: Any, *a: Any, **k: Any) -> Any:
+            body = json.loads(data)
+            for key in ("tier", "approved", "destination", "payee_account", "x_owner_token"):
+                body.pop(key, None)
+            return inner.validate_json(json.dumps(body), *a, **k)
+
+    monkeypatch.setattr(operations, "_OP", Lenient())
+    obs = run_api(*FORBID_IDS)
+    assert not_defended(obs) == set(FORBID_IDS), {i: o.outcome() for i, o in obs.items()}
+    for i, o in obs.items():
+        assert any("expected HTTP [422]" in f for f in o.expectation_failures), (i, o.expectation_failures)
+    assert {"FL-06", "SE-04"} <= harmed(obs)
