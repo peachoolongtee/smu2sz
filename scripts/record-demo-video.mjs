@@ -5,9 +5,10 @@
 //   pnpm demo:video --cut full           the full tour (flow-full-tour): every scene
 //   pnpm demo:video --keep-servers       leave the demo running afterwards (stop it with Ctrl+C)
 //
-// 1. Starts `node scripts/demo.mjs --blank --fresh --keep --api-port 8090 --web-port 3090` (live mode, the books in a SQLite file,
-//    .demo-data/flow-demo.db started fresh, cached LLM readings, no network, no key) and waits for its "Ready" line. --fresh deletes the
-//    kept demo books in .demo-data/flow-demo.db first, so a kept demo of your own is reset.
+// 1. Starts `node scripts/demo.mjs [--blank] --keep --data .demo-data/video.db --fresh --api-port 8090 --web-port 3090` (live mode, the
+//    books in the recorder's own SQLite file, started fresh; cached LLM readings, no network, no key) and waits for its "Ready" line. The
+//    owner's kept demo books (.demo-data/flow-demo.db) are never touched. --books blank (the default) or golden picks the books it starts
+//    on; a cut switches books between its takes itself (POST /demo/reset behind a title card), so one cut is one continuous file.
 // 2. Opens every page once so the dev server has compiled it before the camera rolls.
 // 3. Runs the cut's test of the `video` Playwright project headless (E2E_TARGET=video; never part of the mock or live suites).
 // 4. Copies the recording to docs/deliverables/video/<cut name>.webm, keeps its chapter timings in <cut name>.chapters.json and rewrites
@@ -29,12 +30,21 @@ const API_PORT = 8090;
 const WEB_PORT = 3090;
 const IS_WIN = process.platform === "win32";
 const keepServers = process.argv.includes("--keep-servers");
-const CUTS = { "5min": "flow-demo-5min", full: "flow-full-tour" };
-const cutArg = (() => {
-  const i = process.argv.findIndex((x) => x === "--cut" || x.startsWith("--cut="));
-  if (i < 0) return "5min";
+/** The value after `--name` (or in `--name=value`), else the default. */
+function option(name, fallback) {
+  const i = process.argv.findIndex((x) => x === `--${name}` || x.startsWith(`--${name}=`));
+  if (i < 0) return fallback;
   return process.argv[i].includes("=") ? process.argv[i].split("=")[1] : process.argv[i + 1];
-})();
+}
+const BOOKS = option("books", "blank");
+if (!["blank", "golden"].includes(BOOKS)) {
+  console.error(`[video] --books takes blank or golden, not "${BOOKS ?? ""}".`);
+  process.exit(1);
+}
+/** The recorder's own kept books: never the owner's .demo-data/flow-demo.db. */
+const VIDEO_DB = ".demo-data/video.db";
+const CUTS = { "5min": "flow-demo-5min", full: "flow-full-tour" };
+const cutArg = option("cut", "5min");
 if (!Object.hasOwn(CUTS, cutArg ?? "")) {
   console.error(`[video] --cut takes 5min or full, not "${cutArg ?? ""}".`);
   process.exit(1);
@@ -82,7 +92,7 @@ process.on("exit", () => {
 /** Starts the demo on blank books and resolves once it prints "Ready". */
 function startDemo() {
   return new Promise((resolve, reject) => {
-    const args = ["scripts/demo.mjs", "--blank", "--fresh", "--keep", "--api-port", String(API_PORT), "--web-port", String(WEB_PORT)];
+    const args = ["scripts/demo.mjs", ...(BOOKS === "blank" ? ["--blank"] : []), "--keep", "--data", VIDEO_DB, "--fresh", "--api-port", String(API_PORT), "--web-port", String(WEB_PORT)];
     say(`starting: node ${args.join(" ")}`);
     demo = spawn(process.execPath, args, { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"], detached: !IS_WIN, windowsHide: true });
     const timer = setTimeout(() => reject(new Error("the demo did not print Ready within 6 minutes")), 6 * 60_000);
@@ -231,8 +241,9 @@ pnpm demo:video              # flow-demo-5min
 pnpm demo:video --cut full   # flow-full-tour
 \`\`\`
 
-Each run starts \`node scripts/demo.mjs --blank --fresh --keep --api-port 8090 --web-port 3090\` (ports 8090 and 3090 must be free;
-\`--fresh\` resets the kept demo books in \`.demo-data/flow-demo.db\`), warms every page, records the cut's test in
+Each run starts \`node scripts/demo.mjs --blank --keep --data .demo-data/video.db --fresh --api-port 8090 --web-port 3090\` (ports 8090
+and 3090 must be free; \`--books golden\` starts on the demo books instead). The recorder keeps its books in its own file, so the owner's
+kept demo books (\`.demo-data/flow-demo.db\`) are never touched. It warms every page, records the cut's test in
 \`apps/web/e2e/video/walkthrough.spec.ts\` headless (Playwright project \`video\`, \`E2E_TARGET=video\`), writes this folder, and stops only
 the processes it started. \`VIDEO_SLOWMO_MS\` (default 180) sets the pause after every browser action. A cut is a list of scenes and a pace
 for the viewing pauses (\`CUTS\` in walkthrough.spec.ts). The mock and live suites never run the video spec.
