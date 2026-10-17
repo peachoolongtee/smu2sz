@@ -2461,6 +2461,7 @@ export type NlIntent =
   | "WHAT_IF"
   | "RECORD_FACT"
   | "CHANGES"
+  | "ASK_BOOKS"
   | "APPROVE"
   | "REJECT"
   | "COUNTERPARTY_MESSAGE"
