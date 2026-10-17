@@ -806,6 +806,9 @@ These are open production blockers. The supported way to run FLOW is the local l
 - **Everything outside FLOW is simulated.** Lenders, buyers, rates and the bank feed are simulated, and no real money moves.
 - **Recorded readings only.** The demo replays recorded model readings. A new document gets the rules reading unless live mode
   is on.
+- **The demo company is a fixed test set.** Its books hold one payroll (¥340,000 on day 12), sized for the 60-day story,
+  so its 120-day forecast has no later payrolls and is optimistic after day 30. No decision in the story depends on that
+  period. Books opened through setup repeat payroll monthly (or quarterly or yearly) across the whole forecast.
 - **The plain demo forgets on restart.** `pnpm demo` keeps the books in memory, so restarting it starts fresh. `pnpm demo:keep` keeps them in a local SQLite file instead.
 
 *Product gaps (known, with the next step):*
