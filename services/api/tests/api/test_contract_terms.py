@@ -246,3 +246,25 @@ def test_chinese_the_step_is_written_in_chinese(client, on):
     raw = [r"\.terms\[\]\.quote", r"\.(doc_hash|terms_hash|status|document_id|counterparty_id|lang)",
            r"\.(terms|not_set_up|problems|notes)\[\]\.(field|code)", r"\.forecast\.rows\[\]\.key"]
     assert english_leaks(v, names, raw) == []
+
+
+_TERM = ("2.1 This Agreement takes effect on 1 October 2026 and continues for a term of twenty-four (24) months, "
+         "until 30 September 2028.")
+
+
+@pytest.mark.parametrize("sentence", [
+    "2.1 This Agreement takes effect on 1 October 2026 and continues for a term of two (2) months.",
+    ("2.1 This Agreement takes effect on 1 October 2026. It is valid for the deliveries of October and November 2026 only "
+     "and lapses after the last of them."),
+    "2.1 This Agreement takes effect on 1 October 2026 and remains in force to 30 November 2026.",
+])
+def test_ct1_a_contract_that_may_end_inside_the_forecast_cannot_be_set_up(client, on, rt, sentence):
+    """Review 7, CT-1: each of these was READY with 'The contract states no end date' and was set up."""
+    d = _confirmed(client, DGOS.replace(_TERM, sentence))
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    assert v["status"] == "BLOCKED" and not v["can_set_up"] and v["terms_hash"] is None
+    assert not any(n["code"] == "NO_END_DATE" for n in v["notes"])
+    r = client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": "a" * 64})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "TERMS_NOT_READY" and not _buyer2(rt)
+    zh = client.get(f"/documents/{d['id']}/terms", params={"lang": "zh"}).json()["terms"]
+    assert zh["problems"] and all(p["text"] and not p["text"].isascii() for p in zh["problems"])

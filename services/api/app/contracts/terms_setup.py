@@ -13,17 +13,21 @@ Only figures that survive every check below are used; anything missing or unchec
 - PRICE (per delivery), INVOICING (a day interval with a first date) and PAYMENT_TERMS (calendar days from the invoice
   date) are each stated once, each quotes the document verbatim, and each figure is parsed again by the reader's own code
   from the quoted words; no abstention other than a note, and no failed cross-check, touches them;
-- the contract does not end inside today's forecast window (the engine's repeating invoice has no end).
+- the contract's end is certain and not inside today's forecast window (the engine's repeating invoice has no end): exactly
+  one checked END_DATE, or a term in months from a checked start date, and no unexplained term, renewal or expiry wording;
+  END_NOT_CERTAIN blocks otherwise (CT-1).
 
 Pure: no store, no clock, no I/O.
 """
 
 from __future__ import annotations
 
+import calendar
 import hashlib
 import json
 import re
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from typing import Literal
 
 from app.compiler.contract_parsing import (
@@ -33,8 +37,10 @@ from app.compiler.contract_parsing import (
     parse_date,
     parse_days,
     parse_money,
+    parse_months,
     unit_of,
 )
+from app.compiler.contract_rules import DURATION, END, START
 from app.contracts.derive import buyer_terms, day_of
 from app.contracts.parties import PARTY_FLAG_KINDS, party_matches, registry_names
 from app.domain.models import (
@@ -232,6 +238,109 @@ def _abstention_problems(record: ContractRecord) -> list[Problem]:
     return out
 
 
+# ---------------------------------------------------------------- when the contract ends (CT-1: fail closed)
+#
+# The engine's repeating invoice has no end, so a contract that ends inside the forecast window cannot be set up. That check
+# is only as good as the end date it is given. An end is used when exactly one END_DATE term quotes the document, re-parses
+# from its quote to the same date, and agrees with any term in months counted from the start date. Wording about a term,
+# renewal, expiry or lapse that no checked end or term covers blocks: the contract may end sooner than the reading says. "The
+# contract states no end date" is said only when nothing in the reading or the text points to an end.
+
+# Wording that points to an end. Deliberately narrow on "term" and "until" (payment terms; "withheld until acceptance").
+_END_WORDING = re.compile(
+    r"\b(?:term|period|duration)\s+of\s+[^.;\n]{0,30}?\b(?:months?|years?)\b"
+    r"|\bfor\s+(?:a\s+)?(?:(?:fixed|initial)\s+)?(?:term|period)\b"
+    r"|\bfor\s+(?:\w+\s+)?(?:\(\d{1,3}\)|\d{1,3})\s*(?:months?|years?)\b"
+    r"|\b(?:renew\w*|expir\w*|lapse[sd]?|lapsing|duration)\b"
+    r"|\bremains?\s+in\s+(?:force|effect)\b|\bcontinues?\s+(?:in\s+(?:force|effect)|until|to|for)\b"
+    r"|\bvalid\s+(?:for|until|through|to)\b|\buntil\b(?=[^.;\n]{0,40}\d)|\b(?:ends?|ending|terminates?)\s+(?:on|at|by)\b"
+    r"|有效期|期限|到期|届满|续约|续期|自动续|终止日期|终止之日", re.IGNORECASE)
+
+
+def _end_problem(en: str, zh: str) -> Problem:
+    return Problem("END_NOT_CERTAIN", en, zh)
+
+
+def _dated_term_ok(record: ContractRecord, t: ContractTerm, pattern: re.Pattern[str]) -> bool:
+    """The term quotes the document, its date is the one its value fragment states, and the reader's own pattern, run again
+    over the quote, finds that date. A date the reader derived rather than found written never passes."""
+    if t.date is None or (t.text or "").startswith("derived: ") or not _quoted(record, t):
+        return False
+    if parse_date(t.value_text).value != t.date:
+        return False
+    return any(parse_date(g).value == t.date for m in pattern.finditer(t.span.text)
+               for g in (m.group("d"), m.group("d2"), m.group("dz")) if g)
+
+
+def _months_ok(record: ContractRecord, t: ContractTerm) -> bool:
+    if t.months is None or not _quoted(record, t) or parse_months(t.value_text).value != t.months:
+        return False
+    return any(parse_months(g).value == t.months for m in DURATION.finditer(t.span.text)
+               for g in (m.group("p"), m.group("p2"), m.group("pz")) if g)
+
+
+def _add_months(iso: str, months: int) -> date:
+    d = date.fromisoformat(iso)
+    y, m = divmod(d.month - 1 + months, 12)
+    return date(d.year + y, m + 1, min(d.day, calendar.monthrange(d.year + y, m + 1)[1]))
+
+
+def _end_of(record: ContractRecord, state: FinancialState, *, today: int,
+            horizon_days: int) -> tuple[int | None, list[Problem], bool]:
+    """(the contract's last day as a day number or None, the problems it raises, whether the reading or text suggests an end)."""
+    assert record.contract is not None
+    c = record.contract
+    ends = [t for t in c.terms if t.field == F.END_DATE]
+    durations = [t for t in c.terms if t.field == F.DURATION]
+    starts = [t for t in c.terms if t.field == F.START_DATE]
+    problems: list[Problem] = []
+    suggested = bool(ends or durations)
+    if any(a.field.removeprefix("note:") in (F.END_DATE.value, F.DURATION.value) for a in c.abstentions):
+        problems.append(_end_problem("Part of the contract about its end or term could not be read exactly.",
+                                     "合同中关于到期或期限的部分无法准确读取。"))
+        suggested = True
+    end_iso: str | None = None
+    if len(ends) > 1:
+        problems.append(_end_problem("The contract states more than one end date.", "合同写明了不止一个到期日。"))
+    elif ends:
+        if _dated_term_ok(record, ends[0], END):
+            end_iso = ends[0].date
+        else:
+            problems.append(_end_problem("The end date the reading gives is not the one its quoted words state.",
+                                         "读取到的到期日与所引用原文中的日期不一致。"))
+    # a term in months counted from the start date is an end of its own, and a check on the stated one
+    counted: date | None = None
+    if len(durations) > 1:
+        problems.append(_end_problem("The contract states more than one term.", "合同写明了不止一个期限。"))
+    elif len(durations) == 1 and len(starts) == 1 and _months_ok(record, durations[0]) and _dated_term_ok(record, starts[0], START):
+        counted = _add_months(starts[0].date, durations[0].months) - timedelta(days=1)  # type: ignore[arg-type]
+    if counted is not None and end_iso is not None:
+        if date.fromisoformat(end_iso) not in (counted, counted + timedelta(days=1)):
+            problems.append(_end_problem("The contract's term and its end date do not agree.", "合同的期限与到期日不一致。"))
+    elif counted is not None and not problems:
+        end_iso = counted.isoformat()
+    # wording that points to an end and that no checked end or term covers
+    covered = [(t.span.start, t.span.end) for t in (*ends, *durations) if _quoted(record, t)]
+    if any(not any(a <= m.start() < b for a, b in covered) for m in _END_WORDING.finditer(record.document.text)):
+        suggested = True
+        if not problems:
+            problems.append(_end_problem(
+                "The contract mentions a term, renewal or expiry, but the reading does not give one end date that can be "
+                "checked against its words, so FLOW will not guess when invoices stop.",
+                "合同提到了期限、续期或到期，但读取结果没有给出一个可与原文核对的到期日，FLOW 不会猜测发票何时停止。"))
+    if problems:
+        return None, problems, suggested
+    end_day = day_of(end_iso, state.as_of) if end_iso is not None else None
+    if end_day is not None and end_day < today:
+        problems.append(Problem("CONTRACT_ENDED", "The contract has already ended.", "该合同已经到期。"))
+    elif end_day is not None and end_day <= today + horizon_days:
+        problems.append(Problem("ENDS_IN_FORECAST",
+                                f"The contract ends inside your {horizon_days}-day forecast, and the books cannot yet stop "
+                                f"repeating invoices at a contract's end.",
+                                f"合同在您 {horizon_days} 天的预测期内到期，而账簿目前还不能在合同到期时停止循环发票。"))
+    return end_day, problems, suggested
+
+
 # ---------------------------------------------------------------- the derivation
 
 
@@ -301,15 +410,8 @@ def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon
                               start=t.span.start, end=t.span.end))
     problems += _abstention_problems(record)
     early = next(iter(t for t in c.terms if t.field == F.EARLY_PAYMENT), None)
-    ends = [t for t in c.terms if t.field == F.END_DATE and t.date]
-    end_day = day_of(ends[0].date, state.as_of) if len(ends) == 1 and ends[0].date else None  # type: ignore[arg-type]
-    if end_day is not None and end_day < today:
-        problems.append(Problem("CONTRACT_ENDED", "The contract has already ended.", "该合同已经到期。"))
-    elif end_day is not None and end_day <= today + horizon_days:
-        problems.append(Problem("ENDS_IN_FORECAST",
-                                f"The contract ends inside your {horizon_days}-day forecast, and the books cannot yet stop "
-                                f"repeating invoices at a contract's end.",
-                                f"合同在您 {horizon_days} 天的预测期内到期，而账簿目前还不能在合同到期时停止循环发票。"))
+    end_day, end_problems, _ = _end_of(record, state, today=today, horizon_days=horizon_days)
+    problems += end_problems
     if len(existing_all) > 1:
         problems.append(Problem("SEVERAL_REPEATING", "Your books hold more than one repeating invoice for this customer.",
                                 "您的账簿中该客户有不止一项循环发票。"))
@@ -323,7 +425,7 @@ def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon
     h = terms_hash(record.id, record.doc_hash, ri, tuple(sources))
     more: dict[str, object] = {"sources": tuple(sources), "end_day": end_day, "early_payment": early, "terms_hash": h}
     notes: list[Problem] = []
-    if end_day is None:
+    if end_day is None:  # no problem was raised, so neither the reading nor the text points to an end
         notes.append(Problem("NO_END_DATE", "The contract states no end date: the books will expect these invoices until "
                              "you undo the set-up.", "合同未写明到期日：在您撤销设置之前，账簿会一直预计这些发票。"))
     else:

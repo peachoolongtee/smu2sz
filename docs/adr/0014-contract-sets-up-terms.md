@@ -192,6 +192,15 @@ For the Security Lead:
 - Tests: `tests/contracts/test_terms_setup.py`, `tests/operations/test_contract_terms.py` (both stores),
   `tests/api/test_contract_terms.py`, `tests/mandate/test_tiers.py`.
 
+### Security review fixes, 17 Oct 2026 (batch 7)
+
+- **CT-1, the end fails closed.** The end is used only when exactly one END_DATE term quotes the document and re-parses to its
+  date (and a DURATION counted from a checked START_DATE agrees); an END_DATE abstention, two end dates, a derived end, a term the
+  reading could not turn into an end, or term / renewal / expiry / "until <date>" / "lapses" / "remains in force" wording that no
+  checked term covers blocks the step as END_NOT_CERTAIN. "The contract states no end date" is said only when neither the
+  reading nor the text points to an end. A term in months is counted from the start date and blocked inside the window like an
+  explicit end.
+
 ## Considered and rejected
 
 - **Setting the terms on confirmation.** Confirming is a statement about the reading; setting up is a change to the forecast.

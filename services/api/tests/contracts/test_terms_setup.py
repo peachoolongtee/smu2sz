@@ -184,3 +184,79 @@ def test_a_customer_not_on_the_registry_blocks():
     s = _state()
     s = s.model_copy(update={"counterparties": [c for c in s.counterparties if c.id != "BUYER-2"]})
     assert _codes(derive(_record(), s, today=0, horizon_days=HORIZON)) == {"NOT_A_KNOWN_CUSTOMER"}
+
+
+# ---------------------------------------------------------------- CT-1: the end date fails closed
+
+_TERM = ("2.1 This Agreement takes effect on 1 October 2026 and continues for a term of twenty-four (24) months, "
+         "until 30 September 2028.")
+
+
+def _with_term(sentence: str) -> str:
+    assert _TERM in DGOS
+    return DGOS.replace(_TERM, sentence)
+
+
+def test_ct1_a_term_written_in_months_only_ends_the_set_up_inside_the_forecast():
+    """Reviewed (probe p2): 'for a term of two (2) months' was read as a DURATION with no END_DATE and set up with a note that
+    the contract states no end. The end is now computed from the start date and the term, and falls inside the window."""
+    text = _with_term("2.1 This Agreement takes effect on 1 October 2026 and continues for a term of two (2) months.")
+    rec = _record(text)
+    assert [t.field.value for t in rec.contract.terms if t.field.value in ("DURATION", "END_DATE")] == ["DURATION"]  # type: ignore[union-attr]
+    d = derive(rec, _state(), today=0, horizon_days=HORIZON)
+    assert d.status == "BLOCKED" and _codes(d) == {"ENDS_IN_FORECAST"} and d.end_day == 60  # 30 November 2026
+
+
+def test_ct1_a_term_in_months_that_ends_after_the_forecast_is_set_up_with_the_later_end_note():
+    text = _with_term("2.1 This Agreement takes effect on 1 October 2026 and continues for a term of twenty-four (24) months.")
+    d = derive(_record(text), _state(), today=0, horizon_days=HORIZON)
+    assert d.status == "READY" and {n.code for n in d.notes} == {"ENDS_LATER"} and d.end_day is not None and d.end_day > 120
+
+
+def test_ct1_a_phrase_the_reader_misses_blocks_instead_of_saying_there_is_no_end():
+    """'valid for the deliveries of October and November 2026 only and lapses after the last of them' reads as no term at all."""
+    text = _with_term("2.1 This Agreement takes effect on 1 October 2026. It is valid for the deliveries of October and "
+                      "November 2026 only and lapses after the last of them.")
+    d = derive(_record(text), _state(), today=0, horizon_days=HORIZON)
+    assert d.status == "BLOCKED" and _codes(d) == {"END_NOT_CERTAIN"} and d.recurring is None
+    assert not any(n.code == "NO_END_DATE" for n in d.notes)
+
+
+def test_ct1_remains_in_force_to_a_date_the_reader_misses_blocks():
+    text = _with_term("2.1 This Agreement takes effect on 1 October 2026 and remains in force to 30 November 2026.")
+    d = derive(_record(text), _state(), today=0, horizon_days=HORIZON)
+    assert d.status == "BLOCKED" and _codes(d) == {"END_NOT_CERTAIN"}
+
+
+def test_ct1_the_plain_clause_with_a_checked_end_date_is_unchanged():
+    d = derive(_record(), _state(), today=0, horizon_days=HORIZON)
+    assert d.status == "READY" and not d.problems and {n.code for n in d.notes} == {"ENDS_LATER"} and d.end_day == 730
+
+
+def test_ct1_no_end_wording_anywhere_still_says_the_contract_states_no_end_date():
+    d = derive(_record(_with_term("2.1 This Agreement takes effect on 1 October 2026.")), _state(), today=0, horizon_days=HORIZON)
+    assert d.status == "READY" and {n.code for n in d.notes} == {"NO_END_DATE"}
+
+
+def test_ct1_an_end_date_abstention_blocks():
+    from app.domain.models import Abstention
+
+    rec = _record()
+    c = rec.contract.model_copy(update={"abstentions": [Abstention(field="END_DATE", reason="note: end not derived")]})  # type: ignore[union-attr]
+    d = derive(rec.model_copy(update={"contract": c}), _state(), today=0, horizon_days=HORIZON)
+    assert d.status == "BLOCKED" and "END_NOT_CERTAIN" in _codes(d)
+
+
+def test_ct1_two_end_dates_block_and_an_end_the_quote_does_not_state_blocks():
+    rec = _record()
+    end = next(t for t in rec.contract.terms if t.field.value == "END_DATE")  # type: ignore[union-attr]
+    two = rec.contract.model_copy(update={"terms": [*rec.contract.terms, end.model_copy(update={"date": "2030-01-01"})]})  # type: ignore[union-attr]
+    assert "END_NOT_CERTAIN" in _codes(derive(rec.model_copy(update={"contract": two}), _state(), today=0, horizon_days=HORIZON))
+    edited = _edit_term(rec, "END_DATE", date="2030-01-01")  # the reading says 2030, the quote says 30 September 2028
+    assert "END_NOT_CERTAIN" in _codes(derive(edited, _state(), today=0, horizon_days=HORIZON))
+
+
+def test_ct1_a_term_that_disagrees_with_the_end_date_blocks():
+    text = _with_term("2.1 This Agreement takes effect on 1 October 2026 and continues for a term of twelve (12) months, "
+                      "until 30 September 2028.")
+    assert "END_NOT_CERTAIN" in _codes(derive(_record(text), _state(), today=0, horizon_days=HORIZON))
