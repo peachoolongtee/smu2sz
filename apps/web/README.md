@@ -30,6 +30,14 @@ steps, the two servers and the database choices are in the root `README.md`; thi
   OpenAPI schema to generate from yet). Read views follow one rule: every `<name>_fen` / `<name>_bp` has a
   sibling `<name>_display` (see `Displayed<T>`).
 - All labels (English and Chinese) are in `lib/dictionary.ts`.
+- `NEXT_PUBLIC_STRATEGY_MVP=1` (build time; `pnpm demo`, `pnpm demo:mock` and `pnpm dev:live` set it) shows the price of
+  earlier cash on Cash & funding (the API's `FEATURE_PRICE_CURVE`), and the collections ranking on the receivables page of
+  before (`FEATURE_COLLECTIONS_WORTH`; that page shows only when the API has no `GET /receivables`). On top of it, each with its
+  own flag: `NEXT_PUBLIC_STRATEGY_ENVELOPE=1` adds the Safe Deal Envelope to a deal's Cash impact ("The most you can give",
+  "What you could answer instead"; `FEATURE_ENVELOPE`). Its first read takes 17 s to 90 s, so `pnpm demo`, `pnpm demo:mock` and
+  the strategy e2e build (`E2E_STRATEGY=1`) set it, the demo with its API warming the read (`DEMO_WARM_STRATEGY=1`), and `pnpm
+  dev:live` does not (see `lib/config.ts`). `NEXT_PUBLIC_PILOT_JOURNAL=1`, in live mode, adds the pilot journal to Activity
+  (`FEATURE_PILOT_JOURNAL`; the pilot only, off in the demo).
 
 ### Running live locally
 

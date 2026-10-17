@@ -2027,6 +2027,17 @@ def abstention_words(reason: str, channels: Iterable[str], lang: Lang) -> str | 
     return t(lang, f"{who} give {en_n} different {en_what}s.", f"{who}给出了{zh_n}个不同的{zh_what}。")
 
 
+def no_simulated_reply_text(state: FinancialState, buyer_id: str | None, lang: Lang) -> str:
+    """Why a simulated send to this customer did nothing: the Demo simulates replies only for the buyers it was written for, so the owner
+    sends the prepared message themself. The customer by name; one the books do not name is "this customer", never its id."""
+    name = next((c.name for c in state.counterparties if c.id == buyer_id), None)
+    if name:
+        return t(lang, f"The Demo has no simulated reply from {name}, so nothing was sent. Copy the message and send it to {name} yourself.",
+                 f"演示中没有{name}的模拟回复，因此未发送任何内容。请复制消息，自行发给{name}。")
+    return t(lang, "The Demo has no simulated reply from this customer, so nothing was sent. Copy the message and send it yourself.",
+             "演示中没有该客户的模拟回复，因此未发送任何内容。请复制消息，自行发给对方。")
+
+
 def lapsed_offer_text(lang: Lang, by_agreement: bool = True) -> str:
     """Why a negotiation whose invoice has changed since can no longer be answered: it is closed, and there is nothing to read on it.
     `by_agreement` says another agreement settled the invoice (the usual cause); otherwise the invoice or the dates it named have changed."""

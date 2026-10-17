@@ -214,7 +214,7 @@ repository only after the approval step (section 5).
 
    ```bash
    cd apps/web
-   NEXT_PUBLIC_STRATEGY_MVP=1 NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8001 pnpm exec next dev -p 3100
+   NEXT_PUBLIC_STRATEGY_MVP=1 NEXT_PUBLIC_STRATEGY_ENVELOPE=1 NEXT_PUBLIC_PILOT_JOURNAL=1 NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8001 pnpm exec next dev -p 3100
    ```
 
    Open `http://localhost:3100`, sign in with the owner token, switch to the Business shell, and save a full-page
