@@ -42,7 +42,7 @@ from app.compiler.contract_parsing import (
 )
 from app.compiler.contract_rules import DURATION, END, START
 from app.contracts.derive import buyer_terms, day_of
-from app.contracts.parties import PARTY_FLAG_KINDS, party_matches, registry_names
+from app.contracts.parties import PARTY_FLAG_KINDS, names_match
 from app.domain.models import (
     CompileStatus,
     ContractField,
@@ -58,6 +58,7 @@ from app.domain.models import (
     RecurringInvoice,
 )
 from app.domain.money import fmt_yuan
+from app.operations.party_names import same_company_key
 
 F = ContractField
 Status = Literal["READY", "ALREADY", "CONFLICT", "BLOCKED"]
@@ -122,29 +123,45 @@ def terms_hash(document_id: str, doc_hash: str, ri: RecurringInvoice, sources: t
 
 # ---------------------------------------------------------------- who the contract is with
 #
-# The comparison is the party check's own (`app.contracts.parties`, the owner's rule of 17 Oct): the registry name and its short
-# form against the names the reading found. That check already blocks confirming a document that does not name the chosen
-# counterparty at all; here the contract must name the customer as its BUYER, never as its supplier.
+# Stricter than the party check at confirmation (`app.contracts.parties`, where a short form such as "Dongguan" counts when it
+# sits inside a party name, which is right for "does this document concern the counterparty I chose"). Here money is set up, so
+# (CT-3): the contract's buyer must be the customer's full registry name (`same_company_key`: NFKC, case, punctuation and the
+# legal-form suffix are ignored, nothing else), the buyer's quote must be found in the document text, and the customer must not
+# be the contract's supplier (the supplier is checked against the full name, whole words, by the party check's own rule).
+
+
+def _in_text(record: ContractRecord, t: ContractTerm, name: str) -> bool:
+    """The party term quotes the document verbatim and the name it gives is inside that quote."""
+    text = record.document.text
+    return (0 <= t.span.start < t.span.end <= len(text) and text[t.span.start:t.span.end] == t.span.text
+            and name in t.span.text and name in text)
 
 
 def _party_problem(record: ContractRecord, party: Counterparty) -> Problem | None:
     assert record.contract is not None
-    names = registry_names(party)
-    buyers = [(t.text or t.value_text or "").strip() for t in record.contract.terms if t.field == F.PARTY_BUYER]
+    buyers = [t for t in record.contract.terms if t.field == F.PARTY_BUYER]
     suppliers = [(t.text or t.value_text or "").strip() for t in record.contract.terms if t.field == F.PARTY_SUPPLIER]
-    if party_matches(suppliers, names) and not party_matches(buyers, names):
+    key = same_company_key(party.name)
+    if any(same_company_key(x) == key or names_match(x, party.name) for x in suppliers if x):
         return Problem("PARTY_IS_SUPPLIER",
-                       f"The contract names {party.name} as the supplier, not the buyer: it is not a contract under which "
-                       f"this customer pays you.",
-                       f"合同把{party.name}列为供货方而非买方：这不是该客户向您付款的合同。")
-    if not [x for x in buyers if x]:
+                       f"The contract names {party.name} as the supplier: it is not a contract under which this customer "
+                       f"pays you.",
+                       f"合同把{party.name}列为供货方：这不是该客户向您付款的合同。")
+    named = [(t, (t.text or t.value_text or "").strip()) for t in buyers]
+    named = [(t, n) for t, n in named if n]
+    if not named:
         return Problem("PARTY_NOT_READ", "The reading found no buyer named in the contract, so it cannot be checked "
                        "that the contract is with this customer.",
                        "未从合同中读出买方名称，无法核实合同是与该客户签订的。")
-    if not party_matches(buyers, names):
-        return Problem("PARTY_NOT_THIS_CUSTOMER",
-                       f"The contract's buyer is {buyers[0]}, not {party.name.rstrip('.')}.",
-                       f"合同的买方是{buyers[0]}，而不是{party.name}。")
+    for t, n in named:
+        if same_company_key(n) != key:
+            return Problem("PARTY_NOT_THIS_CUSTOMER",
+                           f"The contract's buyer is {n}, not {party.name.rstrip('.')}.",
+                           f"合同的买方是{n}，而不是{party.name}。")
+    for t, n in named:
+        if not _in_text(record, t, n):
+            return Problem("PARTY_NOT_IN_TEXT", "The buyer the reading names cannot be found in the contract's own words.",
+                           "读取到的买方名称在合同原文中找不到。")
     return None
 
 

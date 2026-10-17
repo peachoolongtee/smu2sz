@@ -206,6 +206,10 @@ For the Security Lead:
   used). The demo agreement (RMB 180,000 every 30 days, no history) is inside it: the demo ceiling is RMB 300,000. The route
   passes the mandate; the executor does not yet, so it re-checks the interval and the history but not the mandate ceiling.
   Not counting a set-up invoice as confirmed in the conservative forecast until the first is issued is engine work, still open.
+- **CT-3, the buyer check is exact.** For this step the PARTY_BUYER name must equal the customer's full registry name under
+  `same_company_key` (case, punctuation and the legal-form suffix ignored; a short form no longer counts), its quote must be
+  found in the document, and the customer may not be the contract's PARTY_SUPPLIER (full name, whole words). This supersedes
+  §4's "or its short form inside it"; the confirmation-time party check keeps the short-form rule.
 
 ## Considered and rejected
 

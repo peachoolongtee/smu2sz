@@ -296,3 +296,19 @@ def test_ct2_an_outsized_contract_cannot_be_set_up_and_the_alerts_stay(client, o
     r = client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": "a" * 64})
     assert r.status_code == 409 and r.json()["detail"]["code"] == "TERMS_NOT_READY"
     assert not _buyer2(rt) and _alert_kinds(rt) == alerts_before
+
+
+def test_ct3_another_dongguan_company_as_buyer_cannot_be_set_up(client, on, rt):
+    """Review 7, CT-3: 'Dongguan Steel Works Ltd.' filed under BUYER-2 was set up for Dongguan Office Supplies."""
+    d = _confirmed(client, DGOS.replace("(2) Dongguan Office Supplies Ltd.,", "(2) Dongguan Steel Works Ltd.,"))
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    assert v["status"] == "BLOCKED" and not v["can_set_up"]
+    assert {p["code"] for p in v["problems"]} == {"PARTY_NOT_THIS_CUSTOMER"}
+    assert not _buyer2(rt)
+
+
+def test_ct3_the_customer_named_as_buyer_and_supplier_cannot_be_set_up(client, on, rt):
+    d = _confirmed(client, DGOS.replace("(1) Lingnan Homeware Manufacturing Co., Ltd.,", "(1) Dongguan Office Supplies Ltd.,"))
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    assert v["status"] == "BLOCKED" and "PARTY_IS_SUPPLIER" in {p["code"] for p in v["problems"]}
+    assert not _buyer2(rt)

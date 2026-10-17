@@ -333,3 +333,38 @@ def test_ct2_history_alone_bounds_the_figure_when_the_mandate_is_not_given():
     assert _codes(derive(_record(), s, today=0, horizon_days=HORIZON)) == {"OUTSIZED"}
     # with no history and no mandate there is nothing to compare an amount to
     assert derive(_record(), _state(), today=0, horizon_days=HORIZON).status == "READY"
+
+
+# ---------------------------------------------------------------- CT-3: the buyer is the customer's full registry name
+
+def test_ct3_a_buyer_that_only_shares_the_short_form_is_not_the_customer():
+    """Probe p2: 'Dongguan Steel Works Ltd.' filed under BUYER-2 (Dongguan Office Supplies Ltd.) was set up, because the short
+    form 'Dongguan' counted when it sat inside a party name."""
+    rec = _record(DGOS.replace("(2) Dongguan Office Supplies Ltd.,", "(2) Dongguan Steel Works Ltd.,"))
+    assert rec.status == DocumentStatus.CONFIRMED  # the party check (short form inside a party name) let it be confirmed
+    d = derive(rec, _state(), today=0, horizon_days=HORIZON, mandate=_mandate())
+    assert d.status == "BLOCKED" and _codes(d) == {"PARTY_NOT_THIS_CUSTOMER"} and d.recurring is None
+
+
+def test_ct3_the_customer_named_as_both_buyer_and_supplier_is_blocked():
+    both = DGOS.replace("(1) Lingnan Homeware Manufacturing Co., Ltd.,", "(1) Dongguan Office Supplies Ltd.,")
+    d = derive(_record(both), _state(), today=0, horizon_days=HORIZON, mandate=_mandate())
+    assert d.status == "BLOCKED" and "PARTY_IS_SUPPLIER" in _codes(d)
+
+
+def test_ct3_the_spelling_of_the_legal_form_does_not_matter_but_the_name_does():
+    same = derive(_record(DGOS.replace("(2) Dongguan Office Supplies Ltd.,", "(2) Dongguan Office Supplies Co., Ltd.,")),
+                  _state(), today=0, horizon_days=HORIZON, mandate=_mandate())
+    assert same.status == "READY"
+    other = derive(_record(DGOS.replace("(2) Dongguan Office Supplies Ltd.,", "(2) Dongguan Office Furniture Ltd.,")),
+                   _state(), today=0, horizon_days=HORIZON, mandate=_mandate())
+    assert _codes(other) == {"PARTY_NOT_THIS_CUSTOMER"}
+
+
+def test_ct3_a_buyer_the_document_does_not_contain_is_blocked():
+    rec = _record()
+    buyer = next(t for t in rec.contract.terms if t.field.value == "PARTY_BUYER")  # type: ignore[union-attr]
+    forged = _edit_term(rec, "PARTY_BUYER", span=buyer.span.model_copy(update={"text": buyer.span.text.replace("Dongguan", "Dongguam")}))
+    assert _codes(derive(forged, _state(), today=0, horizon_days=HORIZON)) == {"PARTY_NOT_IN_TEXT"}
+    moved = _edit_term(rec, "PARTY_BUYER", span=buyer.span.model_copy(update={"start": 0, "end": len(buyer.span.text)}))
+    assert _codes(derive(moved, _state(), today=0, horizon_days=HORIZON)) == {"PARTY_NOT_IN_TEXT"}
