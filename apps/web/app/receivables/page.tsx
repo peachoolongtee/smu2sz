@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/flow-look.css";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -32,9 +33,11 @@ import { LegacyReceivables } from "./legacy";
  */
 export default function ReceivablesPage() {
   return (
-    <Suspense fallback={<LoadingBlock rows={3} />}>
-      <Receivables />
-    </Suspense>
+    <div className="flow-f min-w-0">
+      <Suspense fallback={<LoadingBlock rows={3} />}>
+        <Receivables />
+      </Suspense>
+    </div>
   );
 }
 
