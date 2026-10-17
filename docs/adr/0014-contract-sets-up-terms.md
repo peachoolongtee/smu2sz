@@ -200,6 +200,12 @@ For the Security Lead:
   checked term covers blocks the step as END_NOT_CERTAIN. "The contract states no end date" is said only when neither the
   reading nor the text points to an end. A term in months is counted from the start date and blocked inside the window like an
   explicit end.
+- **CT-2, the figures have bounds.** `derive` blocks as OUTSIZED an interval under 7 days, and one invoice above the larger of
+  3 times the customer's largest receivable face on the books (any status) and the mandate's ceiling, which is the larger of
+  `tier2_single_commitment_fen` and `min_cash_fen` (`per_buyer_caps_fen` caps forward concessions, not invoices, so it is not
+  used). The demo agreement (RMB 180,000 every 30 days, no history) is inside it: the demo ceiling is RMB 300,000. The route
+  passes the mandate; the executor does not yet, so it re-checks the interval and the history but not the mandate ceiling.
+  Not counting a set-up invoice as confirmed in the conservative forecast until the first is issued is engine work, still open.
 
 ## Considered and rejected
 

@@ -52,10 +52,12 @@ from app.domain.models import (
     DocumentKind,
     DocumentStatus,
     FinancialState,
+    Mandate,
     PaymentBasis,
     PriceUnit,
     RecurringInvoice,
 )
+from app.domain.money import fmt_yuan
 
 F = ContractField
 Status = Literal["READY", "ALREADY", "CONFLICT", "BLOCKED"]
@@ -341,6 +343,59 @@ def _end_of(record: ContractRecord, state: FinancialState, *, today: int,
     return end_day, problems, suggested
 
 
+# ---------------------------------------------------------------- the figures have bounds (CT-2)
+#
+# A contract is text written by a counterparty and the conservative forecast counts every invoice it generates as money that
+# arrives. A quote-true price of RMB 90,000,000 every day was set up and made the forecast show no reserve breach and no alert,
+# so the agent stopped funding the gap. The figures are therefore bounded against the owner's own books and mandate:
+#
+# - an invoice interval under MIN_EVERY_DAYS days is outsized whatever the amount (no customer is invoiced every day or two on
+#   a supply contract; a weekly interval is the shortest accepted);
+# - one invoice may not exceed the larger of HISTORY_FACTOR times this customer's largest receivable face on the books (open,
+#   financed or settled) and the mandate's ceiling for a single invoice. The ceiling is the larger of
+#   `tier2_single_commitment_fen` (the most the mandate lets FLOW agree to on its own) and `min_cash_fen` (the owner's own
+#   statement of the scale of cash the business must hold: one invoice larger than the reserve could on its own cover a breach
+#   of it). `per_buyer_caps_fen` caps forward concessions to a buyer, not invoices, and is not used. With no receivable history
+#   the mandate's ceiling alone bounds the amount; without a mandate (the executor's call today) only the history can.
+#
+# The deeper fix, not counting a set-up invoice as confirmed money in the conservative forecast until the first is issued, is
+# in the engine (`financial.trajectory._receivables`) and is not made here.
+
+MIN_EVERY_DAYS = 7
+HISTORY_FACTOR = 3
+
+
+def mandate_invoice_ceiling_fen(mandate: Mandate) -> int:
+    """The most one invoice from a customer with no history may be: the larger of the mandate's single-commitment limit and its
+    cash reserve."""
+    return max(mandate.tier2_single_commitment_fen, mandate.min_cash_fen)
+
+
+def _outsized(state: FinancialState, counterparty_id: str, face_fen: int, every_days: int,
+              mandate: Mandate | None) -> list[Problem]:
+    out: list[Problem] = []
+    if every_days < MIN_EVERY_DAYS:
+        out.append(Problem("OUTSIZED", f"The contract invoices every {every_days} days; FLOW will not set up invoices closer "
+                           f"together than {MIN_EVERY_DAYS} days from a contract alone. If the contract is right, enter it in "
+                           f"the setup.",
+                           f"合同每 {every_days} 天开一次发票；仅凭合同，FLOW 不会设置间隔短于 {MIN_EVERY_DAYS} 天的发票。"
+                           f"如合同无误，请在账簿设置中录入。"))
+    history = max((r.face_fen for r in state.receivables if r.counterparty_id == counterparty_id), default=None)
+    ceilings: list[tuple[int, str, str]] = []
+    if history is not None:
+        ceilings.append((HISTORY_FACTOR * history, f"{HISTORY_FACTOR} times this customer's largest invoice ({fmt_yuan(history)})",
+                         f"该客户最大一张发票（{fmt_yuan(history)}）的 {HISTORY_FACTOR} 倍"))
+    if mandate is not None:
+        cap = mandate_invoice_ceiling_fen(mandate)
+        ceilings.append((cap, f"the limit in your mandate ({fmt_yuan(cap)})", f"您的授权中的上限（{fmt_yuan(cap)}）"))
+    if ceilings and face_fen > max(c for c, _, _ in ceilings):
+        _, en, zh = max(ceilings, key=lambda c: c[0])
+        out.append(Problem("OUTSIZED", f"One invoice of {fmt_yuan(face_fen)} is more than {en}, so FLOW will not count on it "
+                           f"from a contract alone. If the contract is right, enter it in the setup.",
+                           f"单张发票 {fmt_yuan(face_fen)} 超过{zh}，FLOW 不会仅凭合同就计入。如合同无误，请在账簿设置中录入。"))
+    return out
+
+
 # ---------------------------------------------------------------- the derivation
 
 
@@ -362,8 +417,10 @@ def _collides(state: FinancialState, ri: RecurringInvoice) -> bool:
     return False
 
 
-def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon_days: int) -> TermsSetUp:
-    """What `record` sets up on the books `state` of day `today`, and whether it can (`status`)."""
+def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon_days: int,
+           mandate: Mandate | None = None) -> TermsSetUp:
+    """What `record` sets up on the books `state` of day `today`, and whether it can (`status`). `mandate` bounds the size of
+    one invoice (CT-2); without it only the customer's own history can."""
     base = {"document_id": record.id, "doc_hash": record.doc_hash, "counterparty_id": record.counterparty_id}
     existing_all = _recurring_of(state, record.counterparty_id)
     existing = existing_all[0] if len(existing_all) == 1 else None
@@ -409,6 +466,9 @@ def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon
         sources.append(Source(field=f, clause=t.clause, quote=t.span.text, value_text=t.value_text or "",
                               start=t.span.start, end=t.span.end))
     problems += _abstention_problems(record)
+    price, cadence = terms.get(F.PRICE), terms.get(F.INVOICING)
+    if price is not None and cadence is not None and price.amount_fen is not None and cadence.days is not None:
+        problems += _outsized(state, record.counterparty_id, price.amount_fen, cadence.days, mandate)
     early = next(iter(t for t in c.terms if t.field == F.EARLY_PAYMENT), None)
     end_day, end_problems, _ = _end_of(record, state, today=today, horizon_days=horizon_days)
     problems += end_problems

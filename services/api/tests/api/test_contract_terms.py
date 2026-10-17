@@ -268,3 +268,31 @@ def test_ct1_a_contract_that_may_end_inside_the_forecast_cannot_be_set_up(client
     assert r.status_code == 409 and r.json()["detail"]["code"] == "TERMS_NOT_READY" and not _buyer2(rt)
     zh = client.get(f"/documents/{d['id']}/terms", params={"lang": "zh"}).json()["terms"]
     assert zh["problems"] and all(p["text"] and not p["text"].isascii() for p in zh["problems"])
+
+
+def _alert_kinds(rt) -> list[str]:  # type: ignore[no-untyped-def]
+    from app.alerts import alerts
+
+    return sorted(str(getattr(a.kind, "value", a.kind)) for a in alerts(rt.store.get_state(), rt.store.get_mandate(), rt.store, rt.day))
+
+
+@pytest.mark.parametrize(("face", "every", "first"), [
+    ("RMB 90,000,000", "one (1) day", "2 October 2026"),
+    ("RMB 2,000,000", "two (2) days", "2 October 2026"),
+])
+def test_ct2_an_outsized_contract_cannot_be_set_up_and_the_alerts_stay(client, on, rt, face, every, first):
+    """Review 7, CT-2 (probe p4): these were set up, and the forecast then showed no reserve breach and no alert."""
+    alerts_before = _alert_kinds(rt)
+    assert alerts_before  # the demo's starting books carry alerts
+    text = (DGOS.replace("RMB 180,000 (one hundred and eighty thousand yuan) for each Batch", f"{face} for each Batch")
+            .replace("Batches are delivered every thirty (30) days, the first regular Batch on 15 October 2026.",
+                     f"Batches are delivered every {every}, the first regular Batch on {first}."))
+    d = _confirmed(client, text)
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    assert v["status"] == "BLOCKED" and not v["can_set_up"] and v["forecast"] is None
+    assert {p["code"] for p in v["problems"]} == {"OUTSIZED"}
+    zh = client.get(f"/documents/{d['id']}/terms", params={"lang": "zh"}).json()["terms"]
+    assert all(not p["text"].isascii() for p in zh["problems"])
+    r = client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": "a" * 64})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "TERMS_NOT_READY"
+    assert not _buyer2(rt) and _alert_kinds(rt) == alerts_before

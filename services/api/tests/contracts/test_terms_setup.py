@@ -260,3 +260,76 @@ def test_ct1_a_term_that_disagrees_with_the_end_date_blocks():
     text = _with_term("2.1 This Agreement takes effect on 1 October 2026 and continues for a term of twelve (12) months, "
                       "until 30 September 2028.")
     assert "END_NOT_CERTAIN" in _codes(derive(_record(text), _state(), today=0, horizon_days=HORIZON))
+
+
+# ---------------------------------------------------------------- CT-2: the figures have bounds
+
+def _mandate(**over):  # type: ignore[no-untyped-def]
+    from app.mandate.fixture import load_signed_mandate
+
+    return load_signed_mandate().model_copy(update=over)
+
+
+def _priced(face: str, every: str = "thirty (30) days", first: str = "15 October 2026") -> str:
+    return (DGOS.replace("RMB 180,000 (one hundred and eighty thousand yuan) for each Batch", f"{face} for each Batch")
+            .replace("Batches are delivered every thirty (30) days, the first regular Batch on 15 October 2026.",
+                     f"Batches are delivered every {every}, the first regular Batch on {first}."))
+
+
+def test_ct2_the_demo_agreement_is_inside_the_bounds_with_the_demo_mandate():
+    """The demo fixture: RMB 180,000 every 30 days. The customer has no receivables, so the mandate alone bounds it: the
+    larger of the reserve (RMB 300,000) and the single-commitment limit (RMB 100,000)."""
+    d = derive(_record(), _state(), today=0, horizon_days=HORIZON, mandate=_mandate())
+    assert d.status == "READY" and not d.problems
+
+
+def test_ct2_a_huge_price_every_day_is_outsized():
+    """Probe p2/p4: RMB 90,000,000 every day was set up, and the forecast then showed no breach and no alert."""
+    rec = _record(_priced("RMB 90,000,000", "one (1) day", "2 October 2026"))
+    d = derive(rec, _state(), today=0, horizon_days=HORIZON, mandate=_mandate())
+    assert d.status == "BLOCKED" and d.recurring is None and _codes(d) == {"OUTSIZED"}
+    assert len([p for p in d.problems if p.code == "OUTSIZED"]) == 2  # the interval and the amount
+    assert all(p.en and p.zh and not p.zh.isascii() for p in d.problems)
+
+
+def test_ct2_two_million_every_two_days_is_outsized():
+    rec = _record(_priced("RMB 2,000,000", "two (2) days", "2 October 2026"))
+    d = derive(rec, _state(), today=0, horizon_days=HORIZON, mandate=_mandate())
+    assert d.status == "BLOCKED" and _codes(d) == {"OUTSIZED"}
+
+
+def test_ct2_less_than_a_week_apart_is_outsized_whatever_the_amount():
+    d = derive(_record(_priced("RMB 1,000", "six (6) days", "2 October 2026")), _state(), today=0, horizon_days=HORIZON,
+               mandate=_mandate())
+    assert d.status == "BLOCKED" and _codes(d) == {"OUTSIZED"}
+    weekly = derive(_record(_priced("RMB 1,000", "seven (7) days", "2 October 2026")), _state(), today=0, horizon_days=HORIZON,
+                    mandate=_mandate())
+    assert weekly.status == "READY"
+    # the interval is bounded on the books alone as well (the executor derives without the mandate)
+    assert derive(_record(_priced("RMB 1,000", "six (6) days", "2 October 2026")), _state(), today=0,
+                  horizon_days=HORIZON).status == "BLOCKED"
+
+
+def test_ct2_an_invoice_beyond_three_times_the_customers_largest_receivable_and_the_mandate_cap_is_outsized():
+    s = _state()
+    small = Receivable(id="RCV-B2-1", counterparty_id="BUYER-2", face_fen=1_000_000, issue_day=-20, terms_days=30,
+                       status="SETTLED", settled_fen=1_000_000)
+    s = s.model_copy(update={"receivables": [*s.receivables, small]})
+    m = _mandate(tier2_single_commitment_fen=1_000_000, min_cash_fen=2_000_000)
+    d = derive(_record(), s, today=0, horizon_days=HORIZON, mandate=m)  # RMB 180,000 > max(3 x 10,000, 20,000)
+    assert d.status == "BLOCKED" and _codes(d) == {"OUTSIZED"}
+    big = small.model_copy(update={"id": "RCV-B2-2", "face_fen": 6_000_000, "settled_fen": 0, "status": "OPEN"})  # 3 x 60,000
+    over = big.model_copy(update={"face_fen": 5_999_999})
+    s2 = s.model_copy(update={"receivables": [*s.receivables, over]})
+    assert derive(_record(), s2, today=0, horizon_days=HORIZON, mandate=m).status == "BLOCKED"  # 180,000 > 3 x 59,999.99
+    s3 = s.model_copy(update={"receivables": [*s.receivables, big]})
+    assert derive(_record(), s3, today=0, horizon_days=HORIZON, mandate=m).status == "READY"  # 3 x 60,000 = 180,000 allowed
+
+
+def test_ct2_history_alone_bounds_the_figure_when_the_mandate_is_not_given():
+    s = _state()
+    s = s.model_copy(update={"receivables": [*s.receivables, Receivable(
+        id="RCV-B2-1", counterparty_id="BUYER-2", face_fen=1_000_000, issue_day=-20, terms_days=30)]})
+    assert _codes(derive(_record(), s, today=0, horizon_days=HORIZON)) == {"OUTSIZED"}
+    # with no history and no mandate there is nothing to compare an amount to
+    assert derive(_record(), _state(), today=0, horizon_days=HORIZON).status == "READY"

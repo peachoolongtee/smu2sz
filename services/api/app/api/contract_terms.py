@@ -224,7 +224,7 @@ def _forecast(rt: Runtime, d: TermsSetUp, lang: Lang) -> dict[str, Any] | None:
 def terms_view(rt: Runtime, record: ContractRecord, lang: Lang) -> dict[str, Any]:
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     today = state.as_of_day
-    d = derive(record, state, today=today, horizon_days=mandate.horizon_days)
+    d = derive(record, state, today=today, horizon_days=mandate.horizon_days, mandate=mandate)
     name = _name(state, record.counterparty_id)
     done, undone = _set_ups(rt, record.id)
     live = [e for e in done if e.op.op_id not in undone]
@@ -354,7 +354,7 @@ def post_terms(document_id: str, body: SetUpIn, lang: Lang = "en") -> dict:
         if repeat is not None:  # the same press again (a retry): the executor answers DUPLICATE, nothing runs twice
             result = rt.executor.execute(repeat.op)
             return {"result": _result(result), "result_text": _result_text(result, "", lang), "terms": terms_view(rt, rec, lang)}
-        d = derive(rec, state, today=state.as_of_day, horizon_days=mandate.horizon_days)
+        d = derive(rec, state, today=state.as_of_day, horizon_days=mandate.horizon_days, mandate=mandate)
         if d.status != "READY" or d.recurring is None or d.terms_hash is None:
             raise HTTPException(409, {"code": "TERMS_NOT_READY", "status": d.status,
                                       "message": "these terms cannot be set up on today's books",
