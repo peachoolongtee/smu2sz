@@ -12,3 +12,7 @@ node_modules/
 .env
 
 .DS_Store
+
+# Demo videos and their key frames are recorded locally (pnpm demo:video), never committed: README and chapters json are.
+docs/deliverables/video/*.webm
+docs/deliverables/video/frames/
