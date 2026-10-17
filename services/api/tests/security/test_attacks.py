@@ -53,7 +53,7 @@ def _params() -> list[Any]:
 
 
 def test_catalogue_covers_every_category_in_both_languages() -> None:
-    assert len(CATALOGUE) >= 60
+    assert len(CATALOGUE) == 127
     assert {a["category"] for a in CATALOGUE} == set(CATEGORIES)
     langs = {a.get("lang", "en") for a in CATALOGUE}
     assert {"en", "zh"} <= langs
@@ -70,8 +70,55 @@ def test_attack_causes_zero_harm(attack_id: str, observations: dict[str, Observa
     assert obs.money_moved_fen == 0 and not obs.commitments_activated and obs.concessions_booked_fen == 0
     assert not obs.leaks and not obs.canaries and not obs.read_api_leaks
     assert not obs.integrity_failures
-    missing = set(BY_ID[attack_id].get("expect_codes", [])) - obs.observed_codes
-    assert not missing, f"{attack_id}: expected codes not observed: {sorted(missing)}"
+    assert not obs.not_reached, f"{attack_id}: did not reach its path: {obs.skipped_steps + obs.errored_steps}"
+    assert not obs.expectation_failures, f"{attack_id}: {obs.expectation_failures}"
+
+
+def test_no_attack_ends_not_reached(observations: dict[str, Observation]) -> None:
+    """A step that was skipped or errored means the attack never reached the control it names. No entry may opt out
+    with `allow_skip`; the aim is that none does."""
+    not_reached = {o.id: [*o.skipped_steps, *o.errored_steps] for o in observations.values() if o.not_reached}
+    assert not not_reached, not_reached
+    assert [a["id"] for a in CATALOGUE if "allow_skip" in a] == []
+
+
+def test_every_declared_step_ran_in_every_attack(observations: dict[str, Observation]) -> None:
+    for a in CATALOGUE:
+        obs = observations[a["id"]]
+        declared = len(a.get("setup", [])) + len(a["steps"])
+        assert len(obs.steps) == declared, (a["id"], declared, len(obs.steps))
+        assert [s["run"] for s in obs.steps] == ["ran"] * declared, (a["id"], [s for s in obs.steps if s["run"] != "ran"])
+
+
+def test_every_attack_is_defended_or_a_documented_gap(observations: dict[str, Observation]) -> None:
+    """HARM, NOT_REACHED and CONTROL_NOT_SEEN are never defended; the only no-harm outcome that is not is a documented gap."""
+    outcomes = {o.id: o.outcome() for o in observations.values() if not o.known_finding}
+    bad = {i: x for i, x in outcomes.items() if x not in ("DETECTED", "CONTAINED", "HELD", "GAP (no harm)")}
+    assert not bad, bad
+    m = metrics(list(observations.values()))
+    assert m["attacks_defended"] == sum(1 for x in outcomes.values() if x in ("DETECTED", "CONTAINED", "HELD"))
+    assert m["not_reached"] == []
+
+
+API_KNOWN_GAPS = {"PI-06", "PI-11", "PI-16", "FH-04", "MX-03", "CB-05", "SE-03", "SE-08"}
+
+
+def test_every_attack_names_the_evidence_of_its_intended_control() -> None:
+    """The loader refuses an attack without `expect`; the untyped `expect_codes` (any code in any category) is gone."""
+    assert all(a.get("expect") for a in CATALOGUE)
+    assert [a["id"] for a in CATALOGUE if "expect_codes" in a] == []
+
+
+def test_the_documented_gaps_are_exactly_the_open_ones(observations: dict[str, Observation]) -> None:
+    """A `known_gap` is a control that does not fire today. The set is pinned, and each gap must still be open: the day the
+    intended evidence appears the outcome would quietly read DETECTED, so this fails and the entry is updated on purpose."""
+    declared = {a["id"] for a in CATALOGUE if "known_gap" in a}
+    assert declared == API_KNOWN_GAPS, "a gap was added or removed: update API_KNOWN_GAPS on purpose"
+    closed = [i for i in declared if not observations[i].gap_open]
+    assert not closed, f"the intended control now fires for {closed}: drop their known_gap and move the evidence into `expect`"
+    assert {i for i, o in observations.items() if o.outcome() == "GAP (no harm)"} == declared
+    for i in declared:  # the gap's own `expect` still holds (the control that did hold) and nothing was harmed
+        assert not observations[i].expectation_failures and not observations[i].harm
 
 
 def test_headline_metrics_are_zero_outside_documented_findings(observations: dict[str, Observation]) -> None:
