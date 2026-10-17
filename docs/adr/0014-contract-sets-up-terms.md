@@ -1,7 +1,7 @@
 # ADR-0014: A confirmed customer contract can set up that customer's repeating invoices, by an owner operation
 
-Status: proposed, 17 Oct 2026, on `feat/contract-sets-terms`. Post-submission work: not merged into `dev` before 20 Oct, and
-not merged before the Security Lead's review. Owner: main architect. Amends ADR-0012 §1 for one narrow, explicit path; keeps
+Status: accepted by the owner, 17 Oct 2026, and merged for the submission switched on in `pnpm demo`
+(FEATURE_CONTRACT_TERMS); the Security Lead's review of the engine changes is pending. Owner: main architect. Amends ADR-0012 §1 for one narrow, explicit path; keeps
 ADR-0012 §2 (confirming changes nothing).
 
 ## Problem
