@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { FoldCard } from "@/components/business/surface";
+import { HealthFigures } from "@/components/capex/health-figures";
 import { contractsOff } from "@/components/documents";
 import { cardTitle } from "@/components/home/v2/home-cards";
 import { Button, EmptyState, ErrorState, inputClass, LoadingBlock, PageHeader } from "@/components/ui";
@@ -89,7 +90,7 @@ export default function FinancePage() {
       <div className="space-y-4">
         {health.error ? <ErrorState error={health.error} onRetry={health.reload} /> : null}
         {error ? <ErrorState error={error} /> : null}
-        {!h ? <LoadingBlock rows={4} /> : <Figures h={h} />}
+        {!h ? <LoadingBlock rows={4} /> : <HealthFigures h={h} />}
         {h ? <Capacity h={h} /> : null}
 
         <section aria-labelledby="finance-loans-title" className="motion-reveal f-card p-4 sm:p-5" id="loans">
@@ -177,44 +178,6 @@ export default function FinancePage() {
  */
 function lead(summary: string): string {
   return summary.split(/(?<=[.。])\s*(?=[A-Z一-鿿])/).slice(0, 2).join(" ").replace(/。 /g, "。");
-}
-
-/** One of the four figure cards, in Home's card language: the title, the figure in the display face, one short line, and a pill when there is a state to say. */
-function Figure({ title, value, note, bad, pill, testId }: { title: string; value: string; note?: string; bad?: boolean; pill?: { tone: PillTone; text: string } | null; testId?: string }) {
-  return (
-    <section className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid={testId}>
-      <div className="flex items-start justify-between gap-2">
-        <h2 className={cardTitle}>{title}</h2>
-        {pill ? <StatusPill tone={pill.tone}>{pill.text}</StatusPill> : null}
-      </div>
-      <p className={`mt-3 font-display text-[28px] font-bold leading-none tracking-[-0.03em] tabular-nums ${bad ? "text-bad-fg" : "text-ink"}`}>{value}</p>
-      {note ? <p className="mt-auto pt-2 text-pretty text-supporting text-ink-3">{note}</p> : null}
-    </section>
-  );
-}
-
-function Figures({ h }: { h: FinanceHealthView }) {
-  const { t } = useI18n();
-  const c = h.covenants;
-  return (
-    <div className="grid items-stretch gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4" data-testid="finance-stats">
-      <Figure title={t("finance.headroom")} value={h.cash.headroom_display} bad={h.cash.headroom_fen < 0} note={t("finance.headroom.note", { cash: h.cash.cash_display, reserve: h.cash.reserve_display })} />
-      <Figure
-        title={t("finance.lowest")}
-        value={h.cash.lowest_display}
-        bad={h.cash.lowest_headroom_fen < 0}
-        note={t("finance.lowest.vsMin", { amount: h.cash.lowest_headroom_display })}
-        pill={{ tone: h.cash.lowest_headroom_fen < 0 ? "amber" : "green", text: t("finance.lowest.day", { day: h.cash.lowest_day }) }}
-      />
-      <Figure title={t("finance.coverage")} value={h.coverage.ratio?.display ?? t("common.none")} note={t("finance.coverage.hint", { n: h.coverage.window_days })} />
-      <Figure
-        title={t("finance.dscr")}
-        value={c?.worst_dscr?.display ?? t("common.none")}
-        bad={c ? !c.dscr_ok : false}
-        note={c ? t("finance.min", { v: c.min_dscr.display ?? "" }) : undefined}
-      />
-    </div>
-  );
 }
 
 /** How much more the owner could borrow: one row per facility, the amount on the right (no table: three columns of the old one were one sentence each). */

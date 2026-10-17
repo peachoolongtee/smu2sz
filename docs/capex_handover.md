@@ -355,6 +355,25 @@ Newest last. One entry per change: date, phase, what changed, files, tests, resu
   assumptions are `FoldCard`s (`finance-ratios`, `finance-basis`). New keys: `finance.loans.why`, `finance.basis`,
   `finance.basis.hint`, `finance.headroom.note`, `finance.lowest.vsMin` (en, zh). Test IDs kept; the spec opens the
   ratios fold before filling it. Mock e2e `buyside.spec.ts`: 7 passed.
+- 17 Oct 2026, the owner: the Capex tab becomes the buy side's one page (branch `feat/capex-hub`, web only, no API
+  change). `app/capex/page.tsx`, in the Home/Finance card language (`flow-f`, `f-card`, `StatusPill`):
+  - the four health figures of `GET /finance/health` (`capex-health`) with a link to Financial health;
+  - "Your purchases" from `GET /purchases`: one row per contract (vendor initials, the server's next action, price, stage
+    pill); REVIEW links to the reading, AWAITING_APPROVAL to Approvals, the others open the workbench below
+    (`?purchase=<id>`, `capex-bench-<id>`); an opened purchase stays open whatever its stage becomes, so the commit's
+    confirmation stays on screen. Empty: "Read the demo vendor contract". Links to All purchases and Long-term plans;
+  - the old screen (POST /capex/evaluate, the demo's ¥600k machine) as "Test a machine without a contract", a
+    `FoldCard` open by default (`capex-quick`); its first control is secondary there. With FEATURE_CAPEX_CONTRACTS off
+    (`contractsOff`) only that check is drawn, unfolded, as before. Every test id, `#structures`, `#tier`, `#file` and
+    the tour's `capex-start` are kept; "How this was worked out" is now a fold (the spec already clicked it).
+  - Shared components: `components/capex/health-figures.tsx` (`Figure`, `HealthFigures`, moved out of
+    `app/finance/page.tsx`), `components/capex/contract-workbench.tsx` (the evaluation flow of `/buy/contract`,
+    restyled; `/buy/contract` is now its header plus the workbench), `components/capex/quick-check.tsx`.
+  - Deals' `BuyingCard`: a READY / COMMITTED / PAID row now opens `/capex?purchase=<id>` (was `/buy/contract?id=`);
+    the spec in `e2e/buyside.spec.ts` follows, plus a new spec for the page (health, row, workbench, commit, close).
+  - New keys (en, zh): `capex.hub.*`, `capex.quick.*`, `buy.early.worth`, `buy.commit.tier`, `buy.assumptions.hint`.
+  - Note: `pnpm demo` starts the API without FEATURE_CAPEX_CONTRACTS, so there the page shows only the quick check;
+    the mock build and an API started with the flag show the whole page.
 
 ## 7. How to run and check
 
