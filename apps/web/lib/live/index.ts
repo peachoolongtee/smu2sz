@@ -93,6 +93,8 @@ import type {
   PriceCurveView,
   ReceivablesRead,
   ReceivablesWorthView,
+  RecordReceiptRequest,
+  RecordReceiptResult,
   ReconciliationView,
   StateView,
   SubmitDocumentRequest,
@@ -347,6 +349,22 @@ export const live = {
 
   /** The guided Demo's synthetic bank event (owner, demo mode): the server posts the promised early payment as the bank feed would. */
   demoBankReceipt: () => http<BankReceiptResult>("POST", "/demo/bank-receipt", { body: {} }),
+
+  /**
+   * The owner records a payment they received: the existing typed RECEIVE_PAYMENT operation through POST /operations as the owner (Tier 1, the
+   * owner's receipt is a fact). The mandate version is the stored one's (the executor checks only its signature for an owner's receipt); the day
+   * is left to the server (today on its clock). The answer carries the server's words for what it did (`receipt`).
+   */
+  recordReceipt: async (req: RecordReceiptRequest, lang: "en" | "zh"): Promise<RecordReceiptResult> => {
+    const mandate = await http<MandateView>("GET", "/mandate");
+    const op = `owner-receipt-${req.key}`;
+    return http<RecordReceiptResult>("POST", `/operations?lang=${lang}`, {
+      body: {
+        kind: "RECEIVE_PAYMENT", op_id: op, idempotency_key: op, mandate_version: mandate.mandate.version, requested_by: "OWNER",
+        receivable_id: req.receivable_id, amount_fen: req.amount_fen, ...(req.bank_reference ? { bank_reference: req.bank_reference } : {}),
+      },
+    });
+  },
 
   getEvidence: () => http<string>("GET", "/evidence", { as: "text" }),
 

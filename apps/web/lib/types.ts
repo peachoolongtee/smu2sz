@@ -2313,6 +2313,36 @@ export interface ReceivableRow {
   collection_state?: CollectionState;
   collection_state_text?: string;
   collection_action?: { primary?: CollectionActionKind; label?: string; others?: { action: CollectionActionKind; label: string }[] };
+  /** The invoice's status in the books ("OPEN", "FINANCED", "SETTLED") and what is still owed on it, in fen: the record-a-payment form sends the
+   * outstanding as it is when the owner records the full amount (never added up here). */
+  status?: string;
+  outstanding_fen?: Fen;
+}
+
+/** What the owner sends to record a payment they received (the existing RECEIVE_PAYMENT operation, POST /operations as the owner). */
+export interface RecordReceiptRequest {
+  receivable_id: string;
+  amount_fen: Fen;
+  bank_reference?: string | null;
+  /** One per press of Record: the op id and the idempotency key, so a retried request books once. */
+  key: string;
+}
+
+/** The owner's words for a recorded payment (`receipt` on the POST /operations answer), written by the server in the page's language. */
+export interface ReceiptWords {
+  status: "EXECUTED" | "REFUSED" | "DUPLICATE" | "PENDING_APPROVAL" | string;
+  tone: "ok" | "bad" | "info" | "warn" | "neutral";
+  headline_text: string | null;
+  lines: string[];
+  /** How the reconciliation reads the receipt, as a sentence; the page puts its own "Reconciliation" label before it. */
+  reconciliation_text: string | null;
+}
+
+export interface RecordReceiptResult {
+  result: OperationResult;
+  /** Null when the server could not write the words (the executor's answer stands). */
+  receipt: ReceiptWords | null;
+  lang?: "en" | "zh";
 }
 
 export interface ReceivablesRead {
@@ -3296,6 +3326,8 @@ export interface HomeV2 {
       with_plan?: { label: string; value_text: string } | null;
       /** The note in a few words ("in 30 days · current books, no new funding"); absent until the server sends it (`note` then). */
       short_note?: string | null;
+      /** The label under the figure: "Without new funding", or "With the funding in place" once the plan's operations have run. Absent on older recordings (the dictionary's "Without new funding" then). */
+      basis_label?: string | null;
     };
     funding: HomeV2Kpi & { state: "PROPOSED" | "ARRANGED" | "NONE"; hint: string | null; /** "Ready to run" and its like, in the server's words. */ status_text?: string | null };
   };

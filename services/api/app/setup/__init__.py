@@ -571,7 +571,8 @@ def build_books(draft: SetupDraft) -> Built:
             if due < 0:
                 en_d, zh_d = _date_words(sent[1])
                 c.warn(3, q, f"{who[0]}'s invoice sent on {en_d} is {-due} days late. FLOW won't count on it until a payment "
-                       "is recorded.", f"{who[1]}在{zh_d}开出的发票已逾期 {-due} 天。在记录收款前，FLOW 不会把它算作现金。")
+                       "is recorded (Receivables › Record a payment).",
+                       f"{who[1]}在{zh_d}开出的发票已逾期 {-due} 天。在记录收款前（应收款 › 记录收款），FLOW 不会把它算作现金。")
             if (sent[1], face) in seen_invoices:
                 en_d, zh_d = _date_words(sent[1])
                 c.warn(3, q, f"{who[0]}, invoice {ii + 1}: another invoice has the same date ({en_d}) and amount. Check it is not "

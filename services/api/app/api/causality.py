@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.api.decisions import Context, decision_summary, quote_for, remaining_task_view
-from app.api.presentation import first_breach_ahead, t, when_text
+from app.api.presentation import first_breach_ahead, party_name, t, when_text
 from app.domain.money import fmt_yuan
 
 log = logging.getLogger("termsledger.decisions")
@@ -92,6 +92,26 @@ def mark_changed(rows: list[dict[str, Any]]) -> None:
         previous = why
 
 
+CONTRACT_TERMS_KINDS = ("SET_UP_CONTRACT_TERMS", "UNDO_CONTRACT_TERMS")  # ADR-0014
+
+
+def contract_terms_why(kind: str, payload: dict[str, Any], state: Any, lang: str) -> str:
+    """Why a contract set-up (or its undo) waiting for the owner matters: what it does to the forecast, from the operation's own figures. It has no
+    quoted cost (it is not funding), so it never says the quoted cost was not recorded."""
+    cp = payload.get("counterparty_id")
+    customer = party_name(state, cp) if state is not None else (cp or "")
+    if kind == "UNDO_CONTRACT_TERMS":
+        return (t(lang, f"Removes the repeating invoices the contract set up for {customer} from your forecast; invoices already sent stay.",
+                  f"从您的预测中移除该合同为{customer}设置的循环发票；已开出的发票保留。") if customer else
+                t(lang, "Removes the repeating invoices the contract set up from your forecast; invoices already sent stay.",
+                  "从您的预测中移除该合同设置的循环发票；已开出的发票保留。"))
+    face, every, terms = payload.get("face_fen"), payload.get("every_days"), payload.get("terms_days")
+    if not (isinstance(face, int) and isinstance(every, int) and isinstance(terms, int) and customer):
+        return t(lang, "Adds the customer's repeating invoices to your forecast.", "将该客户的循环发票计入您的预测。")
+    return t(lang, f"Adds {customer}'s repeating invoice of {fmt_yuan(face)} every {every} days to your forecast, payable in {terms} days.",
+             f"将{customer}每 {every} 天一张、金额 {fmt_yuan(face)} 的循环发票计入您的预测，付款期 {terms} 天。")
+
+
 @dataclass
 class Causality:
     """Builds the three causal sentences of an event once the request's decision record and forecast are read."""
@@ -139,11 +159,15 @@ class Causality:
             return None
         return t(self.lang, "; ".join(parts_en) + ".", "；".join(parts_zh) + "。")
 
-    def fields(self, *, status: str, event_text: str | None, decision_id: str | None, decided: bool = False) -> dict[str, Any]:
-        """`what_changed`, `why_it_matters`, `what_remains` and the record link for one entry. `status` is the operation's own status."""
+    def fields(self, *, status: str, event_text: str | None, decision_id: str | None, decided: bool = False, kind: str | None = None,
+               payload: dict[str, Any] | None = None, state: Any = None) -> dict[str, Any]:
+        """`what_changed`, `why_it_matters`, `what_remains` and the record link for one entry. `status` is the operation's own status;
+        `kind`, `payload` and `state` (the logged operation and today's books) let a request that is not a funding one say what it does."""
         why: str | None = None
         if status == "REFUSED":
             why = t(self.lang, "No money moved.", "资金未动。")
+        elif status == "PENDING_APPROVAL" and kind in CONTRACT_TERMS_KINDS:
+            why = contract_terms_why(kind, payload or {}, state, self.lang)
         elif status == "PENDING_APPROVAL":
             why = self._approval_why(decision_id, decided)
         elif status == "EXECUTED" and self.forecast is not None:

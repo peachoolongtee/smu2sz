@@ -100,6 +100,8 @@ import type {
   PilotJournalView,
   PriceCurveView,
   ReceivablesRead,
+  RecordReceiptRequest,
+  RecordReceiptResult,
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
@@ -510,6 +512,15 @@ export async function demoReset(scenario?: string, guard?: BooksGuard): Promise<
  */
 export async function demoBankReceipt(): Promise<BankReceiptResult> {
   return isMock ? (await mock()).demoBankReceipt() : (await live()).demoBankReceipt();
+}
+
+/**
+ * The owner records a payment they received on an open invoice: the existing RECEIVE_PAYMENT operation through POST /operations as the owner
+ * (owner action; one key per press, so a retry books once). The answer's `receipt` is the server's words for what it did: what reached cash,
+ * what repaid the lender first on a financed invoice, what is still open, how the reconciliation reads it, or why nothing was recorded.
+ */
+export async function recordReceipt(req: RecordReceiptRequest, lang: "en" | "zh"): Promise<RecordReceiptResult> {
+  return isMock ? (await mock()).recordReceipt(req, lang) : (await live()).recordReceipt(req, lang);
 }
 
 /** GET /borrower-file/{id}.html | .docx | .pdf: fetched with the owner token and saved. Live mode only. */

@@ -966,7 +966,7 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
                            decision_id=did)}
         if causality is not None:
             item.update(causality.fields(status=e.result.status.value, event_text=item["event_text"], decision_id=did,
-                                         decided=e.result.approval_id in decided_ids))
+                                         decided=e.result.approval_id in decided_ids, kind=e.kind, payload=e.payload, state=state))
         items.append(item)
     for a in found:
         if a.kind == AlertKind.RECEIVABLE_PAST_DUE:
