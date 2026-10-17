@@ -132,11 +132,23 @@ class Runtime:
             return n
 
     def hydrate(self) -> None:
-        """Read the clock and the seeded scenario from the stored books (start-up; nothing is written)."""
+        """Read the clock and the kind of books from the store (start-up; nothing is written): a demo scenario's books carry its name
+        (the golden books, the busy company, the blank books); books the owner opened at setup carry none and are the owner's own
+        ("own", as `POST /setup/open` sets it). Defaulting those to the golden scenario took a kept file's own books for the demo's after
+        a restart (`pnpm demo:keep`): the Demo page offered the golden story on them and the evidence header named and hashed the golden
+        fixture (feature inventory, gap 12)."""
         state = self.store.get_state()
         self.day = state.as_of_day
         if state.scenario:
             self.scenario = state.scenario
+        elif self._opened_at_setup():
+            self.scenario = "own"
+
+    def _opened_at_setup(self) -> bool:
+        """Whether the operations log holds the entry `POST /setup/open` writes first on the books it opens."""
+        from app.api.setup import OPEN_BOOKS_KIND
+
+        return any(e.kind == OPEN_BOOKS_KIND for e in self.store.operations())
 
     def is_owner(self, token: str | None) -> bool:
         from app.api.auth import is_owner

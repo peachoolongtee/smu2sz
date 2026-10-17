@@ -1,6 +1,7 @@
 """Audit A04: process start hydrates from the store and never deletes. Temp SQLite files only; the engine is
 disposed before the file is released (Windows keeps it locked otherwise)."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -165,3 +166,44 @@ def _same_books_one_more_log_row(rt, before):
     assert after["chain"] and after["ops"] == before["ops"] + 1
     for k in ("cash", "drawn", "state_version", "day", "pending"):
         assert after[k] == before[k], k
+
+
+def test_own_books_stay_own_after_a_restart_on_a_kept_sqlite_file(sqlite_env, monkeypatch):
+    """`pnpm demo:keep` (feature inventory, gap 12): books opened at setup carry no scenario name. A restart on the kept file used to leave
+    the runtime on its default, the golden scenario, so the Demo page offered the golden story on the owner's books and the evidence header
+    named and hashed the golden fixture. The kind of books (demo, own, blank) must be what it was before the restart."""
+    import datetime
+
+    import app.setup as setup_mod
+    from app.main import app
+    from tests.api.test_setup_books import DRAFT
+
+    monkeypatch.setattr(setup_mod, "today", lambda: datetime.date(2026, 10, 15))  # the draft is written for mid-October 2026
+    get_runtime()
+    assert TestClient(app, headers=OWNER).post("/demo/reset?scenario=blank").status_code == 200
+    _restart()
+    assert get_runtime().scenario == "blank"  # the blank books stay blank
+    assert TestClient(app, headers=OWNER).post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"}).status_code == 200
+    assert get_runtime().scenario == "own"
+    before = _snapshot(get_runtime())
+    _restart()
+    rt = get_runtime()
+    c = TestClient(app, headers=OWNER)
+    assert _snapshot(rt) == before and rt.scenario == "own"
+    story = c.get("/demo/story").json()
+    assert story["scenario"] == "own" and story["main"] is False and story["story_available"] is False
+    assert story["alternate"]["loaded_text"].startswith("You are on your own books.")
+    header = json.loads(c.get("/evidence").text.splitlines()[0])
+    assert header["scenario"] == "own" and header["scenario_sha256"] is None
+    assert c.get("/setup/status").json()["books"] == "own"
+    assert c.get("/state").json()["scenario_id"] == "own"
+
+
+def test_the_golden_books_stay_golden_after_a_restart(sqlite_env):
+    from app.main import app
+
+    get_runtime()
+    _populate()
+    _restart()
+    assert get_runtime().scenario == "golden_sme"
+    assert TestClient(app, headers=OWNER).get("/demo/story").json()["main"] is True
