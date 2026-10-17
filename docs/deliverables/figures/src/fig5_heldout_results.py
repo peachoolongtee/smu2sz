@@ -1,17 +1,19 @@
 """Figure 5: the compiler's held-out results, honestly labelled.
 
 Render: uv run --no-project --with matplotlib --with pillow python fig5_heldout_results.py
-Source: services/api/evals/accuracy_summary.md (1 Oct 2026, commit 389cfd9), copied here row by row:
+Sources, one row each (the same rows as the technical document's Table 8):
+- First run and live DeepSeek: services/api/evals/accuracy_summary.md (1 Oct 2026, commit 389cfd9).
+- Today (rules) and form baseline: docs/deliverables/evidence/EVIDENCE_PACK.md section 1 (dev 975e082f, 17 Oct 2026).
 
 | Set | Independence | Path | Verdict agreement | Material error rate | Wrong autonomous accepts |
-| Held-out 3, first run (before ADR-0005) | independent, unseen | rules | 33/63 (52%) | 4/51 (7.8%) | 4 of 8 |
-| Held-out 3, after round 3 | its failure classes guided round 3 | rules | 46/63 (73%) | 3/51 (5.9%) | 0 (2 correct) |
-| Held-out 3, after round 3 | the prompt was not tuned on it | live DeepSeek (deepseek-flash) | 42/63 (67%) | 3/51 (5.9%) | 0 (1 correct) |
-| Held-out 2, after round 3 | its classes guided round 2 | rules | 41/47 (87%) | 0/37 | 0 (4 correct) |
-| Form baseline (labels typed in) | - | no compiler | 61/63 (97%) | - | - |
+| Held-out 3, first run (1 Oct, before ADR-0005) | independent, unseen | rules | 33/63 (52%) | 4/51 (7.8%) | 4 of 8 |
+| Held-out 3, today (17 Oct) | its failure classes guided later fixes | rules | 44/63 (70%) | 3/51 (5.9%) | 0 |
+| Held-out 3, after round 3 (1 Oct) | the prompt was not tuned on it | live DeepSeek (deepseek-flash) | 42/63 (67%) | 3/51 (5.9%) | 0 |
+| Held-out 2, today (17 Oct) | its classes guided round 2 | rules | 38/47 (81%) | 0/37 | 0 |
+| Form baseline, today (labels typed in) | - | no compiler | 56/63 (89%) | - | - |
 
-The summary's own claim: the only untuned compiler figure is the first held-out-3 row. The live DeepSeek row runs on
-held-out 3 after round 3, whose failure classes guided the rules; the prompt itself was not tuned on it.
+Only the first held-out-3 row is an untuned figure. The form baseline is below 100% because the 1 Oct labels predate the
+early-payment rule (ADR-0007), which now counters some offers the labels accept.
 """
 
 import matplotlib.pyplot as plt
@@ -20,11 +22,11 @@ from matplotlib.transforms import blended_transform_factory
 from flowstyle import BLUE, DPI, GREY, INK, INK_2, PURPLE, WIDTH_IN, save
 
 ROWS = [  # label, tag, colour, agreement (n, d), material errors (n, d) or None, wrong accepts text, wrong accepts value
-    ("Held-out 3, first run", "rules · unseen", BLUE, (33, 63), (4, 51), "4 of 8", 4),
-    ("Held-out 3, after round 3", "rules · tuned on its misses", PURPLE, (46, 63), (3, 51), "0", 0),
-    ("Held-out 3, after round 3", "DeepSeek · prompt untuned", PURPLE, (42, 63), (3, 51), "0", 0),
-    ("Held-out 2, after round 3", "rules · tuned on its misses", PURPLE, (41, 47), (0, 37), "0", 0),
-    ("Form baseline", "labels typed in, no compiler", GREY, (61, 63), None, "n/a", None),
+    ("Held-out 3, first run (1 Oct)", "rules · unseen", BLUE, (33, 63), (4, 51), "4 of 8", 4),
+    ("Held-out 3, today (17 Oct)", "rules · tuned on its misses", PURPLE, (44, 63), (3, 51), "0", 0),
+    ("Held-out 3, round 3 (1 Oct)", "live DeepSeek · prompt untuned", PURPLE, (42, 63), (3, 51), "0", 0),
+    ("Held-out 2, today (17 Oct)", "rules · tuned on its misses", PURPLE, (38, 47), (0, 37), "0", 0),
+    ("Form baseline, today", "labels typed in, no compiler", GREY, (56, 63), None, "n/a", None),
 ]
 
 fig = plt.figure(figsize=(WIDTH_IN, 6.2), dpi=DPI)
