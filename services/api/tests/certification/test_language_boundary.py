@@ -282,7 +282,9 @@ def test_malformed_classifier_outputs_are_rejected_by_the_production_adapter(fak
         mp = by[i]["model_path"]
         assert mp["invocations"] == 1 and mp["answered_by"] == [None], i
         assert mp["rejected"], i
-        assert by[i]["diff"]["turns"][0]["parse_source"] == "fallback", i
+        # the model's output was discarded: the turn fell back (out of scope), or, for a question about the business, went to
+        # the read-only answer layer (ASK_BOOKS, source "question"); never "llm:<model>"
+        assert by[i]["diff"]["turns"][0]["parse_source"] in ("fallback", "question"), i
     assert any("canary" in x for x in by["MC-010"]["model_path"]["rejected"])
     assert "DATA_EXTRACTION" in by["MC-010"]["diff"]["events"]
 

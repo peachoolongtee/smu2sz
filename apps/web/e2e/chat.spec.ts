@@ -245,10 +245,11 @@ test("the slide-over chat opens from another page, keeps the conversation, and c
   await expect(panel).toBeHidden();
   await expect(page.getByTestId("chat-open")).toBeFocused();
 
-  // Same conversation on the full page (it survives the load: the session is kept in this tab).
+  // Same conversation on the full page (it survives the load: the session is kept in this tab): FLOW's opener, which spoke first when the
+  // panel opened on the empty conversation (the Ask FLOW redesign, 17 Oct), and the answer to "status".
   await page.goto("/chat");
   await expect(page).toHaveURL(/\/chat/);
-  await expect(turns(page)).toHaveCount(1);
+  await expect(turns(page)).toHaveCount(2);
   await expect(page.getByTestId("chat-open")).toHaveCount(0);
 
   await page.getByTestId("chat-new").click();
@@ -567,7 +568,9 @@ test("New conversation on the Business shell clears the owner's conversation, wh
   const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   await panel.getByRole("textbox", { name: "Message" }).fill("status");
   await panel.getByTestId("chat-send").click();
-  await expect(panel.getByTestId("chat-turn")).toHaveCount(1);
+  // The answer to "status" (FLOW's opener may also sit before it: the owner is never blocked while it is read)
+  await expect(panel.getByTestId("chat-busy")).toHaveCount(0);
+  await expect.poll(() => panel.getByTestId("chat-turn").count()).toBeGreaterThanOrEqual(1);
   await panel.getByTestId("chat-new").click();
   await expect(panel.getByTestId("chat-turn")).toHaveCount(0);
   expect(await ownerSession(page)).toBeNull();

@@ -142,6 +142,34 @@ class ScopeUsed(BaseModel):
     label: str
 
 
+class CardFigure(BaseModel):
+    """One key figure of an answer card: the server's value as it said it, a short label in the turn's language, and its tone."""
+
+    label: str
+    value: str
+    tone: Literal["danger", "ok", "neutral"] = "neutral"
+
+
+class CardAction(BaseModel):
+    """A link under an answer card to the page that shows what the chip names. A link only: it never approves, sends or runs anything."""
+
+    label: str
+    href: str
+    kind: Literal["link"] = "link"
+
+
+class AnswerCard(BaseModel):
+    """An answer that has structure, laid out (app/nl/answer_card.py): the lead sentence (the yes/no or the figure), the key figures, the rest of the
+    reply, what it was worked out from, and links to the pages that show it. Every word and every href is the server's (INVARIANT 13). Owner only."""
+
+    lead: str
+    figures: list[CardFigure] = Field(default_factory=list)
+    body: str = ""
+    basis: str = ""
+    all_figures: list[CardFigure] = Field(default_factory=list)
+    actions: list[CardAction] = Field(default_factory=list)
+
+
 class ContextEcho(BaseModel):
     """What the server actually used from the page context (so the panel can say "Discussing: the Foshan offer")."""
 
@@ -188,3 +216,4 @@ class NlResponse(BaseModel):
     trace_id: str
     context_echo: ContextEcho | None = None  # the validated page context this turn used (owner channel only)
     scope_used: ScopeUsed | None = None  # the scope this turn was answered in, when the request carried one (owner channel only)
+    card: AnswerCard | None = None  # an answer with structure, laid out with links to the pages that show it (owner channel only)

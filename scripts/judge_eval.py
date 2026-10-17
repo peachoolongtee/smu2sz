@@ -229,7 +229,7 @@ def run_walk(artifacts: Path) -> dict[str, Any]:
     def check(path: Path) -> tuple[int, str]:
         b = io.StringIO()
         with contextlib.redirect_stdout(b):
-            rc = verify.main(str(path))
+            rc = verify.main([str(path)])
         return rc, b.getvalue().strip()
 
     rc_ok, msg_ok = check(good)

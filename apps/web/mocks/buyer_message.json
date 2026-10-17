@@ -12595,16 +12595,16 @@
       "offer_id": "OFF-96e709c2b1d8",
       "buyer_profile": "cooperative",
       "counterparty_id": "BUYER-3",
-      "message": "This buyer has no simulated reply in this environment; nothing was sent. Copy the message to the buyer instead.",
-      "message_when": "This buyer has no simulated reply in this environment; nothing was sent. Copy the message to the buyer instead."
+      "message": "The Demo has no simulated reply from this customer, so nothing was sent. Copy the message and send it yourself.",
+      "message_when": "The Demo has no simulated reply from this customer, so nothing was sent. Copy the message and send it yourself."
     },
     "zh": {
       "code": "NO_SIMULATED_BUYER",
       "offer_id": "OFF-96e709c2b1d8",
       "buyer_profile": "cooperative",
       "counterparty_id": "BUYER-3",
-      "message": "此环境中没有该买方的模拟回复；未发送任何内容。请改为复制发给买方的消息。",
-      "message_when": "此环境中没有该买方的模拟回复；未发送任何内容。请改为复制发给买方的消息。"
+      "message": "The Demo has no simulated reply from this customer, so nothing was sent. Copy the message and send it yourself.",
+      "message_when": "演示中没有该客户的模拟回复，因此未发送任何内容。请复制消息，自行发给对方。"
     }
   }
 }

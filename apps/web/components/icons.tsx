@@ -41,6 +41,31 @@ export const ArrowRightIcon = (p: P) => (
     <path d="M3 8h10M9 4l4 4-4 4" />
   </svg>
 );
+/** Ask FLOW's send button: an arrow up. */
+export const ArrowUpIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M8 13V3M4 7l4-4 4 4" />
+  </svg>
+);
+/** Ask FLOW's "New conversation": a pencil on a page. */
+export const NewChatIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M7.5 2.5H4a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 4 13.5h8a1.5 1.5 0 0 0 1.5-1.5V8.5" />
+    <path d="M11.8 2.2a1.2 1.2 0 0 1 1.7 1.7L8.2 9.2 6 9.8l.6-2.2 5.2-5.4z" />
+  </svg>
+);
+/** Ask FLOW's "Expand": two corners going out. */
+export const ExpandIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M9.5 2.5h4v4M13.5 2.5L9 7M6.5 13.5h-4v-4M2.5 13.5L7 9" />
+  </svg>
+);
+/** Ask FLOW's "Back to the side panel": two corners coming in. */
+export const CollapseIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M13.5 6.5h-4v-4M9.5 6.5l4-4M2.5 9.5h4v4M6.5 9.5l-4 4" />
+  </svg>
+);
 export const ArrowLeftIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M13 8H3M7 4L3 8l4 4" />

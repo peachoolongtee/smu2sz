@@ -2627,6 +2627,35 @@ export interface NlResponse {
   /** An owner turn that decided something: the decision's record id, and whether the record was written. Absent on other turns and in older recordings. */
   decision_id?: string | null;
   decision_recorded?: boolean;
+  /** An answer with structure, laid out by the server (services/api/app/nl/answer_card.py); owner only, absent from an older server and on other turns. */
+  card?: NlAnswerCard | null;
+}
+
+/** One key figure of an answer card: the server's value and label, and its tone. */
+export interface NlCardFigure {
+  label: string;
+  value: string;
+  tone: "danger" | "ok" | "neutral";
+}
+
+/** A link under an answer card to the page that shows what it names. A link only: it never approves, sends or runs anything. */
+export interface NlCardAction {
+  label: string;
+  href: string;
+  kind: "link";
+}
+
+/**
+ * An answer card: the lead sentence (the yes/no or the figure), up to three key figures, the rest of the reply, what it was worked out from (with every figure), and links to the
+ * pages that show it. Every word and every href is the server's. The opener's card has no lead or body (its reply is shown as it is): only its links and basis.
+ */
+export interface NlAnswerCard {
+  lead: string;
+  figures: NlCardFigure[];
+  body: string;
+  basis: string;
+  all_figures?: NlCardFigure[];
+  actions: NlCardAction[];
 }
 
 /** POST /nl/opener: the agent speaks first. A pending cure sits in the owner's session until "go ahead". */

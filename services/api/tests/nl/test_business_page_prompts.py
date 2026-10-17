@@ -31,6 +31,11 @@ PROMPTS = [
     ("What is overdue?", "RECONCILE"), ("哪些款项逾期了？", "RECONCILE"),
     ("Which payments are late?", "RECONCILE"), ("哪些回款没到？", "RECONCILE"),
     ("Who owes us money?", "SHOW_STATUS"), ("谁欠我们钱？", "SHOW_STATUS"),
+    # The Ask FLOW page (lib/chat-prompts.ts askPrompts): top owner questions, each answered with an answer card
+    ("Are we safe?", "ASK_BOOKS"), ("我们安全吗？", "ASK_BOOKS"),
+    ("How much do we need to raise?", "ASK_BOOKS"), ("我们需要融多少？", "ASK_BOOKS"),
+    ("Are we inside our covenants?", "ASK_BOOKS"), ("我们满足契约吗？", "ASK_BOOKS"),
+    ("Which customer owes us the most?", "ASK_BOOKS"), ("哪个客户欠我们最多？", "ASK_BOOKS"),
 ]
 
 

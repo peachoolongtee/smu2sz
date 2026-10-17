@@ -8,7 +8,7 @@ import { defineConfig, devices } from "@playwright/test";
  *         NEXT_PUBLIC_API_MODE=live on :3000. The demo walk is the same spec as in mock mode.
  *
  * The live web server uses :3000 (the API default CORS origin); E2E_LIVE_PORT moves it and tells the API to allow that origin.
- * E2E_STRATEGY=1 builds the web app with NEXT_PUBLIC_STRATEGY_MVP=1 (its own dist dir) and starts the live API with
+ * E2E_STRATEGY=1 builds the web app with NEXT_PUBLIC_STRATEGY_MVP=1 and NEXT_PUBLIC_STRATEGY_ENVELOPE=1 (its own dist dir) and starts the live API with
  * FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1, so e2e/strategy.spec.ts and the screenshot walk see the strategy surfaces; unset,
  * the app is the default build and that spec skips.
  * E2E_REUSE_API=1 starts no API: the live project runs against one already listening on E2E_API_PORT (start it yourself, with
@@ -31,7 +31,7 @@ const databaseUrl = process.env.E2E_DATABASE_URL || "memory";
 
 // The strategy MVP is a build-time flag on the web app and a runtime flag on the API; both follow E2E_STRATEGY.
 const strategy = process.env.E2E_STRATEGY === "1";
-const strategyWeb: Record<string, string> = strategy ? { NEXT_PUBLIC_STRATEGY_MVP: "1" } : {};
+const strategyWeb: Record<string, string> = strategy ? { NEXT_PUBLIC_STRATEGY_MVP: "1", NEXT_PUBLIC_STRATEGY_ENVELOPE: "1" } : {};
 const strategyApi: Record<string, string> = strategy ? { FEATURE_ENVELOPE: "1", FEATURE_PRICE_CURVE: "1", FEATURE_COLLECTIONS_WORTH: "1" } : {};
 
 const desktop = { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } };
@@ -66,7 +66,7 @@ export default defineConfig({
           {
             name: "live",
             // The same demo walk, what-if and document specs as mock mode, plus the live-only checks and the adapter contract tests.
-            testMatch: /(demo|whatif|alerts|contract|live|chat|strategy|slow|lang|documents|contract-terms|slice-b|slice-b-round-two|accept-as-asked|home-v2-states|ask-header-live|activity|trust|tracker|record-payment)\.spec\.ts/, // Deal tracker: tracker added; ADR-0014: contract-terms; inventory gap 1: record-payment
+            testMatch: /(demo|whatif|alerts|contract|live|chat|ask|strategy|slow|lang|documents|contract-terms|slice-b|slice-b-round-two|accept-as-asked|home-v2-states|ask-header-live|activity|trust|tracker|record-payment)\.spec\.ts/, // Deal tracker: tracker added; ADR-0014: contract-terms; inventory gap 1: record-payment
             use: { ...desktop, baseURL: `http://localhost:${LIVE_PORT}` },
           },
         ]

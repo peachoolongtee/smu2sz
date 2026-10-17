@@ -23,6 +23,7 @@ from typing import Any
 from app.domain.models import FlowKind
 from app.domain.money import bp, fmt_pct
 from app.nl import lexicon as lx
+from app.nl.answers import broad
 from app.nl.answers import metrics as mx
 from app.nl.answers.metrics import Event, Metric, Reading, money, ratio_x
 
@@ -206,8 +207,97 @@ def joined(w: W, parts: list[str]) -> str:
 # ================================================================ liquidity
 
 
+def plan_tail(w: W) -> str:
+    """What FLOW's plan does for the breach, then whether the covenants hold, as one closing sentence."""
+    plan = plan_clause(w)
+    if plan.endswith((".", "。")):
+        return plan
+    cc = covenant_clause(w)
+    return plan + w.t(", ", "，") + cc if cc else plan + w.t(".", "。")
+
+
+# ================================================================ the time window a question names
+
+
+@dataclass(frozen=True)
+class Window:
+    """The window a question names ("this month" -> the next 30 days), clipped to the forecast FLOW has."""
+
+    asked: int  # the days asked about
+    days: int  # the days answered (at most the forecast horizon)
+    end: int  # the last day answered
+    longer: bool  # asked about more than the forecast holds
+
+
+def window_of(w: W, q: str) -> Window | None:
+    n = broad.window_days(q)
+    if n is None:
+        return None
+    days = min(n, w.r.horizon)
+    return Window(n, days, w.r.today + days, n > w.r.horizon)
+
+
+def horizon_note(w: W) -> str:
+    """"FLOW forecasts 120 days, to day 120": said plainly when the question asks about longer than the forecast."""
+    h = w.r.horizon
+    w.fig("horizon_days", str(h))
+    return w.t(f"FLOW forecasts {h} days, to {w.day(w.r.today + h)}", f"FLOW 的预测覆盖 {h} 天（到{w.day(w.r.today + h)}）")
+
+
+def low_within(r: Reading, end: int) -> Any:
+    """The lowest closing day ahead up to `end` (the whole forecast's lowest when `end` is past it)."""
+    days = [d for d in r.ahead if d.day <= end] or list(r.ahead)
+    return min(days, key=lambda d: (d.closing_fen, d.day))
+
+
+def a_safe_window(w: W, q: str, win: Window) -> AnswerReply:
+    """"Can my company survive this month?": the same answer on the window asked (this month -> the next 30 days); a window
+    longer than the forecast is answered on the forecast FLOW has, and says so."""
+    r = w.r
+    fb, neg = w.m(mx.first_breach(r)), w.m(mx.first_negative_cash_day(r))
+    w.m(mx.lowest_point(r))
+    res = w.fig("reserve", money(r.floor))
+    low = low_within(r, win.end)
+    lo = w.fig("lowest", money(low.closing_fen))
+    w.fig("lowest_day", str(low.day))
+    w.fig("window_days", str(win.days))
+    note = horizon_note(w) if win.longer else ""
+    if fb.value is None or fb.value > win.end:
+        w.fig("answer", "yes")
+        if win.longer:
+            lead = w.t(f"Yes, as far as FLOW can see. {note}; over that window cash stays at or above your {res} reserve, and the "
+                       f"lowest point is {lo} on {w.on(low.day)}.",
+                       f"安全，就 FLOW 能看到的范围而言。{note}；在这段时间内现金都不低于您 {res} 的最低现金储备，最低点是{w.on(low.day)}的 {lo}。")
+        else:
+            lead = w.t(f"Yes, for the next {win.days} days: cash stays at or above your {res} reserve to {w.day(win.end)}, and the "
+                       f"lowest point in that time is {lo} on {w.on(low.day)}.",
+                       f"安全：未来 {win.days} 天（到{w.day(win.end)}）现金都不低于您 {res} 的最低现金储备，期间最低点是{w.on(low.day)}的 {lo}。")
+        if fb.value is None:
+            return w.reply("LIQ-01", lead + w.t(" ", "") + covenant_sentence(w))
+        w.fig("first_breach_day", str(fb.value))
+        return w.reply("LIQ-01", lead + w.t(f" After that it is not: cash falls below the reserve from {w.on(fb.value)}. ",
+                                            f"但之后不安全：现金将从{w.on(fb.value)}起低于储备线。") + plan_tail(w))
+    w.fig("answer", "no")
+    w.fig("first_breach_day", str(fb.value))
+    short = w.fig("need", money(max(0, r.floor - low.closing_fen)))
+    body_en = (f"without new funding, cash falls below your {res} reserve from {w.on(fb.value)}, lowest {lo} on {w.on(low.day)} "
+               f"({short} short of the reserve).")
+    body_zh = f"若不新增融资，现金将从{w.on(fb.value)}起低于您 {res} 的最低现金储备，最低在{w.on(low.day)}降至 {lo}（比储备低 {short}）。"
+    if win.longer:
+        lead = w.t(f"Not on today's books. {note}; over that window, " + body_en, f"按今日账目并不安全。{note}；在这段时间内，" + body_zh)
+    else:
+        lead = w.t(f"Not in the next {win.days} days, on today's books: " + body_en, f"未来 {win.days} 天并不安全：按今日账目，" + body_zh)
+    if neg.value is not None and neg.value <= win.end:
+        w.fig("zero_day", str(neg.value))
+        lead += w.t(f" Cash itself goes below zero on {w.on(neg.value)} ({neg.detail['closing']}).",
+                    f"现金本身将在{w.on(neg.value)}跌破零（{neg.detail['closing']}）。")
+    return w.reply("LIQ-01", lead + w.t(" ", "") + plan_tail(w))
+
+
 def a_safe(w: W, q: str) -> AnswerReply:
     r = w.r
+    if (win := window_of(w, q)) is not None:
+        return a_safe_window(w, q, win)
     fb, low, need = w.m(mx.first_breach(r)), w.m(mx.lowest_point(r)), w.m(mx.funding_need(r))
     res = w.fig("reserve", money(r.floor))
     lo = w.fig("lowest", low.display)
@@ -231,10 +321,7 @@ def a_safe(w: W, q: str) -> AnswerReply:
                    f"{lo} on {w.on(low.day)} ({short} short of the reserve).",
                    f"按今日账目并不安全：若不新增融资，现金将从{w.on(fb.value)}起低于您 {res} 的最低现金储备，最低在{w.on(low.day)}"
                    f"降至 {lo}（比储备低 {short}）。")
-    plan = plan_clause(w)
-    tail = (plan if plan.endswith((".", "。")) else
-            plan + w.t(", ", "，") + covenant_clause(w) if covenant_clause(w) else plan + w.t(".", "。"))
-    return w.reply("LIQ-01", lead + w.t(" ", "") + tail)
+    return w.reply("LIQ-01", lead + w.t(" ", "") + plan_tail(w))
 
 
 def a_runway(w: W, q: str) -> AnswerReply:
@@ -264,11 +351,19 @@ def a_runway(w: W, q: str) -> AnswerReply:
 def a_lowest(w: W, q: str) -> AnswerReply:
     r = w.r
     low = w.m(mx.lowest_point(r))
-    lo = w.fig("lowest", low.display)
-    w.fig("lowest_day", str(low.day))
-    outs = [e for e in r.events(low.day or 0, low.day or 0) if e.amount_fen < 0]
-    rec = next((e for e in r.events((low.day or 0) + 1, r.today + r.horizon) if e.amount_fen > 0), None)
-    text = w.t(f"{lo} on {w.on(low.day)}", f"最低为{w.on(low.day)}的 {lo}")
+    win = window_of(w, q)
+    lo_fen, lo_day = low.value, low.day
+    if win is not None and not win.longer:  # "how low does cash get over the next month?": the lowest in that window
+        point = low_within(r, win.end)
+        lo_fen, lo_day = point.closing_fen, point.day
+        w.fig("window_days", str(win.days))
+    lo = w.fig("lowest", money(lo_fen))
+    w.fig("lowest_day", str(lo_day))
+    outs = [e for e in r.events(lo_day or 0, lo_day or 0) if e.amount_fen < 0]
+    rec = next((e for e in r.events((lo_day or 0) + 1, r.today + r.horizon) if e.amount_fen > 0), None)
+    text = w.t(f"{lo} on {w.on(lo_day)}", f"最低为{w.on(lo_day)}的 {lo}")
+    if win is not None and not win.longer and (lo_fen, lo_day) != (low.value, low.day):
+        text += w.t(f" (the lowest in the next {win.days} days)", f"（未来 {win.days} 天内）")
     if outs:
         text += w.t(", the day of " + joined(w, [f"the {lower_first(w.outflow(e))} of {money(-e.amount_fen)}" for e in outs]),
                     "，当天要支付" + joined(w, [f"{w.outflow(e)} {money(-e.amount_fen)}" for e in outs]))
@@ -277,9 +372,11 @@ def a_lowest(w: W, q: str) -> AnswerReply:
                     f"；{w.on(rec.day)}{w.buyer(rec.counterparty_id)}付款 {money(rec.amount_fen)} 后回升。")
     else:
         text += w.t(".", "。")
-    if low.value is not None and low.value < r.floor:
-        text += w.t(f" That is {money(r.floor - low.value)} below your {money(r.floor)} reserve.",
-                    f"比您 {money(r.floor)} 的最低现金储备低 {money(r.floor - low.value)}。")
+    if lo_fen is not None and lo_fen < r.floor:
+        text += w.t(f" That is {money(r.floor - lo_fen)} below your {money(r.floor)} reserve.",
+                    f"比您 {money(r.floor)} 的最低现金储备低 {money(r.floor - lo_fen)}。")
+    if win is not None and win.longer:
+        text += w.t(f" {horizon_note(w)}, so this is the lowest over that window.", f"{horizon_note(w)}，以上是这段时间内的最低点。")
     return w.reply("LIQ-04", text)
 
 
@@ -337,12 +434,17 @@ def a_spend(w: W, q: str) -> AnswerReply:
 
 def a_payments(w: W, q: str) -> AnswerReply:
     r = w.r
-    m = w.m(mx.upcoming_outflows(r))
+    win = window_of(w, q)
+    if win is not None and not win.longer and win.days == mx.UPCOMING_DAYS:
+        win = None  # "the next month" or two: the standard "coming up" window, the next 60 days
+    # a window asked about runs to its last day ("this month": to day 30), as the cash answers read it
+    m = w.m(mx.upcoming_outflows(r) if win is None else mx.upcoming_outflows(r, window=win.days + 1))
     outs: list[Event] = m.value
-    window = m.detail["window_days"]
+    window = m.detail["window_days"] if win is None else win.days
+    note = w.t(f" {horizon_note(w)}; nothing later is forecast yet.", f"{horizon_note(w)}，更晚的付款尚无预测。") if win and win.longer else ""
     if not outs:
         return w.reply("LIQ-09", w.t(f"None: no payment is scheduled in the next {window} days.",
-                                     f"没有：未来 {window} 天没有计划中的付款。"))
+                                     f"没有：未来 {window} 天没有计划中的付款。") + note)
     total = w.fig("total", money(m.detail["total_fen"]))
     for i, e in enumerate(outs[:8]):
         w.fig(f"payment_{i + 1}", f"{money(-e.amount_fen)} day {e.day}")
@@ -352,7 +454,7 @@ def a_payments(w: W, q: str) -> AnswerReply:
     tail = w.t(f"; and {more} more", f"；另有 {more} 笔") if more > 0 else ""
     return w.reply("LIQ-09", w.t(
         f"{cap(n_en(len(outs), 'payment', 'payments'))} in the next {window} days, {total} in all: " + "; ".join(items) + tail + ".",
-        f"未来 {window} 天共有 {len(outs)} 笔支出，合计 {total}：" + "；".join(items) + tail + "。"))
+        f"未来 {window} 天共有 {len(outs)} 笔支出，合计 {total}：" + "；".join(items) + tail + "。") + note)
 
 
 def a_payroll(w: W, q: str) -> AnswerReply:
@@ -497,6 +599,90 @@ def a_recommend(w: W, q: str) -> AnswerReply:
     return w.reply("FUN-02", w.t(
         lead + cap(joined(w, legs)) if not lead else lead + joined(w, legs), lead + "，并".join(legs)) + w.t(
         f": {cost} in total, {auth}. Nothing has run yet.", f"：合计 {cost}，{auth}。目前尚未执行任何操作。"))
+
+
+def a_general(w: W, q: str) -> AnswerReply:
+    """"How do I ensure that my cashflow is safe for the next 6 months?", 现金紧张我该怎么办: what to do now from the books (FLOW's
+    plan to approve on Home or Cash, or nothing), the dates that matter (the first unsafe day, the big payments, the receipt it
+    depends on) and what FLOW watches. Read-only: it proposes nothing in chat and runs nothing."""
+    r = w.r
+    win = window_of(w, q)
+    end = win.end if win is not None else r.today + r.horizon
+    fb, p = w.m(mx.first_breach(r)), w.m(mx.standing_plan(r))
+    w.m(mx.lowest_point(r))
+    res = w.fig("reserve", money(r.floor))
+    low = low_within(r, end)
+    breach = fb.value is not None and fb.value <= end
+    # 1. what to do now
+    if breach and p.value is not None:
+        cost = w.fig("plan_cost", p.detail["cost"] or "")
+        total = w.fig("plan_amount", money(sum(leg["amount_fen"] for leg in p.value)))
+        for i, leg in enumerate(p.value):
+            w.fig(f"leg_{i + 1}", money(leg["amount_fen"]))
+        legs = legs_words(w, p.value)
+        auth = (w.t(", and it needs your approval", "，需要您批准") if p.detail["needs_owner"]
+                else w.t(", within your limits", "，在您的授权内"))
+        if p.detail["restores_reserve"]:
+            now = w.t(f"Approve FLOW's {total} plan on Home or Cash: " + joined(w, legs) + f", {cost} in all{auth}. Nothing has run yet.",
+                      f"在首页或现金页批准 FLOW 的 {total} 融资方案：" + "，并".join(legs) + f"，合计 {cost}{auth}。目前尚未执行任何操作。")
+        else:
+            now = w.t(f"Decide on funding: no committed funding restores your {res} reserve. FLOW's best plan on Home or Cash ("
+                      + joined(w, legs) + f", {cost}) keeps cash above zero. Nothing has run yet.",
+                      f"需要您决定融资：已承诺的融资无法恢复您 {res} 的最低现金储备。首页或现金页上 FLOW 的最佳方案（" + "，并".join(legs)
+                      + f"，{cost}）可让现金保持在零以上。目前尚未执行任何操作。")
+    elif breach:
+        now = w.t(f"Decide on new funding: cash falls below your {res} reserve and no committed funding fixes it; a new facility "
+                  "is one way.",
+                  f"需要您决定新的融资：现金将低于您 {res} 的最低现金储备，而已承诺的融资都无法解决，例如可以申请新的融资额度。")
+    elif fb.value is not None:
+        later_cost = p.detail["cost"] if p.value is not None else None
+        ready = (w.t(f" FLOW's plan ({later_cost}) is ready on Home or Cash before then.", f"在此之前，首页或现金页上已有 FLOW 的方案（{later_cost}）。")
+                 if later_cost else "")
+        now = w.t(f"Nothing needs doing in the next {end - r.today} days: cash stays at or above your {res} reserve to {w.day(end)}. "
+                  f"It falls below from {w.on(fb.value)}.",
+                  f"未来 {end - r.today} 天无需采取行动：到{w.day(end)}现金都不低于您 {res} 的最低现金储备，但从{w.on(fb.value)}起会低于。") + ready
+    else:
+        now = w.t(f"Nothing needs doing now: cash stays at or above your {res} reserve for the next {min(end - r.today, r.horizon)} days; "
+                  f"the lowest point is {money(low.closing_fen)} on {w.on(low.day)}.",
+                  f"目前无需采取行动：未来 {min(end - r.today, r.horizon)} 天现金都不低于您 {res} 的最低现金储备，最低点是{w.on(low.day)}的 "
+                  f"{money(low.closing_fen)}。")
+    # 2. the dates that matter, in the window asked (the forecast's, when the window is longer)
+    lead = (w.t(f"{horizon_note(w)}; over that window the dates that matter are: ", f"{horizon_note(w)}；在这段时间内，关键日期是：")
+            if win is not None and win.longer else w.t("The dates that matter: ", "关键日期："))
+    dates: list[str] = []
+    if breach:
+        w.fig("first_breach_day", str(fb.value))
+        dates.append(w.t(f"without it, cash falls below the reserve on {w.on(fb.value)}",
+                         f"若不融资，现金将在{w.on(fb.value)}低于储备线"))
+    receipt = None
+    if fb.value is not None:
+        receipt = next((e for e in r.events(fb.value + 1, r.today + r.horizon) if e.amount_fen > 0), None)
+    last = receipt.day - 1 if receipt is not None else max(low.day, fb.value or 0) if breach else end
+    outs = [e for e in r.events(r.today, min(last, end)) if e.amount_fen < 0]
+    big = sorted(sorted(outs, key=lambda e: e.amount_fen)[:4], key=lambda e: e.day)
+    pays = [w.t(f"{lower_first(w.outflow(e))} {money(-e.amount_fen)} on {w.on(e.day)}", f"{w.on(e.day)}{w.outflow(e)} {money(-e.amount_fen)}")
+            for e in big]
+    if pays:
+        dates.append(w.t("the big payments: ", "大额支出：") + joined(w, pays))
+    if breach:
+        dates.append(w.t(f"the lowest point, {money(low.closing_fen)} on {w.on(low.day)}", f"最低点{w.on(low.day)}的 {money(low.closing_fen)}"))
+        w.fig("lowest", money(low.closing_fen))
+    if receipt is None and fb.value is None:
+        receipt = next((e for e in r.events(r.today, end) if e.amount_fen > 0), None)
+    if receipt is not None:
+        w.fig("receipt", f"{money(receipt.amount_fen)} day {receipt.day}")
+        dates.append(w.t(f"{w.buyer_s(receipt.counterparty_id)} {money(receipt.amount_fen)} on {w.on(receipt.day)}, the receipt this depends on",
+                         f"{w.on(receipt.day)}{w.buyer(receipt.counterparty_id)}的 {money(receipt.amount_fen)} 回款，现金依赖这笔收款"))
+    said = lead + (w.t("; ", "；").join(dates) if dates else w.t("no payment or receipt is forecast", "预测期内没有付款或收款")) + w.t(".", "。")
+    # 3. what FLOW watches
+    if receipt is not None:
+        watch = w.t("FLOW watches that receipt: if it is late, or a new bill lands, FLOW warns you and proposes a cure.",
+                    "FLOW 会盯住这笔收款：如果它延迟，或出现新的账单，FLOW 会提醒您并提出补救方案。")
+    else:
+        watch = w.t("FLOW watches every payment and receipt: if one is late, or a new bill lands, FLOW warns you and proposes a cure.",
+                    "FLOW 会盯住每一笔付款和收款：如果有延迟，或出现新的账单，FLOW 会提醒您并提出补救方案。")
+    sep = w.t(" ", "")
+    return w.reply("general_advice", now + sep + said + sep + watch)
 
 
 def a_plan_cost(w: W, q: str) -> AnswerReply:
@@ -1326,6 +1512,19 @@ QUESTIONS: tuple[tuple[str, re.Pattern[str], Handler], ...] = (
                   r"(?:plan|fix(?:ing)? (?:the|this) gap|fund(?:ing)? (?:the|this) gap|clos(?:e|ing) (?:the|this) gap)\b",
                   r"\bhow much (?:would|does|will) (?:flow'?s |the |your )?plan cost\b", r"\bplan\b.{0,10}\bcost\b\?",
                   r"(?:方案|补上缺口|补缺口|填补缺口|补上这个缺口).{0,10}(?:多少钱|成本|花多少|费用)"), a_plan_cost),
+    # "How do I ensure that my cashflow is safe for the next 6 months?", 怎么保证未来半年现金流安全: what to do, the dates, what
+    # FLOW watches. Before FLOW's recommendation, whose words ("what should we do", 我该怎么做) it shares when a goal follows.
+    ("general_advice", _p(r"\bhow (?:do|can|should|could|will|would|must) (?:i|we)\b.{0,40}\b(?:ensure|make sure|keep|protect|avoid|stay|get "
+                          r"through|guarantee|secure|improve|manage|survive)\b",
+                          r"\bhow to (?:ensure|make sure|keep|protect|avoid|stay|get through|guarantee|secure|improve|manage|survive)\b",
+                          r"\bwhat (?:should|can|must|do) (?:i|we) do\b.{0,6}\b(?:to|so)\b.{0,40}\b(?:safe|afloat|solvent|survive|cash|money|"
+                          r"broke|run out|pay|bills|payroll|wages|salaries)",
+                          r"\b(?:advice|tips)\b.{0,30}\b(?:cash|money|cash ?flow|finances?|liquidity|payroll)\b",
+                          r"(?:怎么|如何|怎样).{0,6}(?:保证|确保|避免|保住|才能不|才不会|管钱|管理现金)",
+                          r"(?:保证|确保).{0,20}(?:安全|不缺钱|不断|周转|发得出|够用)",
+                          r"(?:现金|资金|钱).{0,10}(?:怎么办|该怎么做|我该做什么|应该做什么)",
+                          r"我(?:们)?(?:该|应该)(?:怎么做|做些什么|做什么).{0,4}(?:才能|来保|保住|保证)",
+                          r"(?:现金管理|现金流管理|资金管理).{0,4}(?:的)?建议"), a_general),
     ("FUN-02", _p(r"\bwhat (?:does flow|do you|would you|would flow|does the system) (?:recommend|suggest|advise)\b",
                   r"\bwhat should (?:i|we) do\b", r"\b(?:your|flow'?s) (?:recommendation|advice|suggestion)\b",
                   r"\bwhat do you recommend\b",
@@ -1407,21 +1606,28 @@ def _normal(text: str) -> str:
 
 
 def match(question: str) -> tuple[str, Handler] | None:
-    """The one top-30 question this text asks (its id and its answer), or None."""
+    """The one top-30 question this text asks (its id and its answer), or None: the literal patterns first (the bank's
+    wordings), then the broad reading of the text's cues (`broad.best`), which answers only a clear winner and never an
+    instruction."""
     q = _normal(question)
     if not q or len(q) > 400:
         return None
-    if _COMMAND.search(q) and not re.search(r"[?？]|吗|么|呢|多少|哪|什么|怎么|几", q):
+    literal = not (_COMMAND.search(q) and not re.search(r"[?？]|吗|么|呢|多少|哪|什么|怎么|几", q)) and bool(
+        _QUESTION.search(q) or q.startswith(("show me", "tell me", "list")))
+    if literal:
+        for qid, pattern, handler in QUESTIONS:
+            if pattern.search(q):
+                guard = _GUARDS.get(qid)
+                if guard is not None and not guard(q):
+                    return None  # the question is about something this answer does not hold
+                return qid, handler
+    found = broad.best(question)
+    if found is None:
         return None
-    if not _QUESTION.search(q) and not q.startswith(("show me", "tell me", "list")):
+    guard = _GUARDS.get(found)
+    if guard is not None and not guard(q):
         return None
-    for qid, pattern, handler in QUESTIONS:
-        if pattern.search(q):
-            guard = _GUARDS.get(qid)
-            if guard is not None and not guard(q):
-                return None  # the question is about something this answer does not hold
-            return qid, handler
-    return None
+    return found, _BROAD_HANDLERS[found]
 
 
 def _the_case_on_file(q: str) -> bool:
@@ -1442,7 +1648,9 @@ def _about_our_cash(q: str) -> bool:
     return not _ABOUT_A_DEAL.search(q)
 
 
-_GUARDS: dict[str, Callable[[str], bool]] = {"CAP-01": _the_case_on_file, "LIQ-01": _about_our_cash}
+_GUARDS: dict[str, Callable[[str], bool]] = {"CAP-01": _the_case_on_file, "LIQ-01": _about_our_cash, "general_advice": _about_our_cash}
+# The answer for each question the broad reading can pick (the first handler the literal table gives it; COV-07 is the plan's).
+_BROAD_HANDLERS: dict[str, Handler] = {**{qid: h for qid, _, h in reversed(QUESTIONS)}, "COV-07": a_plan_covenants}
 
 
 def answer(question: str, lang: str, ctx: Any) -> AnswerReply | None:
@@ -1457,7 +1665,8 @@ def answer(question: str, lang: str, ctx: Any) -> AnswerReply | None:
 
 
 def question_ids() -> list[str]:
-    return [qid for qid, _, _ in QUESTIONS]
+    """The top 30 question ids (general_advice, the how-to answer, is not one of them)."""
+    return list(dict.fromkeys(qid for qid, _, _ in QUESTIONS if qid != "general_advice"))
 
 
 __all__ = ["AnswerReply", "answer", "match", "question_ids"]
