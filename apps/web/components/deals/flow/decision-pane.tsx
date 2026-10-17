@@ -32,7 +32,7 @@ import { TrackerBody } from "@/components/tracker/tracker-body";
 import { useTracker } from "@/lib/tracker";
 import { CostTable } from "./cost-table";
 import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
-import { STRATEGY_MVP } from "@/lib/config";
+import { STRATEGY_ENVELOPE } from "@/lib/config";
 import { patchedHref } from "@/lib/selection";
 import { ChoicesTable, Recommendation, SectionNav, type SectionItem } from "./deal-overview";
 import { EnvelopePackages } from "./investigate";
@@ -814,7 +814,7 @@ export function DecisionPane({
           <div id={`${uid}-panel-cash`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-cash">
             <CashTab offerId={offer.offer.offer_id} picture={picture} paths={paths} />
             {/* The evidence behind the choices: what the owner can live with for this buyer, then the envelope's packages by who may send them (the strategy build). */}
-            {STRATEGY_MVP ? (
+            {STRATEGY_ENVELOPE ? (
               <div className="mt-8" data-testid="deal-before-they-ask">
                 <BeforeTheyAsk buyerId={buyerId ?? ""} />
               </div>

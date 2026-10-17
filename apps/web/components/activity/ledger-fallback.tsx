@@ -11,7 +11,7 @@ import { SpanQuote } from "@/components/offer-parts";
 import { Badge, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { getAudit, getLedger, getState } from "@/lib/api";
-import { API_MODE, STRATEGY_MVP } from "@/lib/config";
+import { API_MODE, PILOT_JOURNAL } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
@@ -434,7 +434,7 @@ export function LedgerActivity() {
           </p>
 
           {/* The shadow pilot's journal: read-only, only with the strategy build flag and a live API (the mock has none). */}
-          {STRATEGY_MVP && API_MODE === "live" ? <PilotJournal /> : null}
+          {PILOT_JOURNAL && API_MODE === "live" ? <PilotJournal /> : null}
         </div>
       )}
     </>

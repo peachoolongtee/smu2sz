@@ -625,15 +625,31 @@ NOT_HELD: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("products", _re(r"\bby product\b", r"\bproducts?\b.{0,20}\b(?:sell|best|backlog)\b", r"\bwhich products?\b", r"按产品",
                      r"哪个产品", r"产品.{0,6}(?:卖|毛利|销量)")),
 )
+NOT_HELD_PAY_PER_PERSON = dict(NOT_HELD)["pay_per_person"]
 # EBITDA is held (one monthly figure): "What's our monthly operating profit?", 每月息税折旧前利润是多少
 _HELD_FIGURE = _re(r"\bebitda\b", r"\boperating profit\b", r"息税折旧前")
 _CAPEX_SUBJECT = _re(r"\b(?:machine\w*|equipment|investment|capex|purchase)\b", r"设备", r"机器", r"投资", r"购置")
 
 
+# Whether the staff can be paid is the payroll in the forecast, which the books hold ("can I pay my staff this month?",
+# 员工工资够不够发); what each person is paid is not.
+_PAY_STAFF = _re(r"\b(?:pay|paying|cover|afford)\b.{0,20}\b(?:staff|employees|workers|people|team)\b",
+                 r"\b(?:staff|employees|workers)\b.{0,20}\b(?:get paid|be paid|paid on time)\b",
+                 r"(?:员工|工人).{0,4}(?:工资|薪水|薪资).{0,8}(?:够|发|付|能|有问题)", r"(?:发|付)(?:得起|得出).{0,8}(?:员工|工人|工资|薪水|薪资)",
+                 r"(?:够|能).{0,6}(?:给员工|发员工)")
+
+
+# Hiring is not the payroll on the books ("Can we afford two more workers?", 多招两个人): it stays not held.
+_MORE_STAFF = _re(r"\b(?:more|new|another|extra|additional|two|three|hire|hiring)\b", r"招", r"新员工", r"多(?:请|雇)")
+
+
 def not_held(text: str) -> str | None:
     """The subject the books do not hold that the text asks about (a NOT_HELD key), or None. A machine's or an
-    investment's payback is held (the capex case), so "is the machine profitable?" is not a refusal."""
+    investment's payback is held (the capex case), so "is the machine profitable?" is not a refusal; nor is whether the
+    staff can be paid (the payroll)."""
     if _CAPEX_SUBJECT.search(text) or _HELD_FIGURE.search(text):
+        return None
+    if _PAY_STAFF.search(text) and not NOT_HELD_PAY_PER_PERSON.search(text) and not _MORE_STAFF.search(text):
         return None
     return next((key for key, pat in NOT_HELD if pat.search(text)), None)
 

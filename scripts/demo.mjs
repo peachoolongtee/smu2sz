@@ -247,6 +247,19 @@ async function waitFor(url, what, seconds, child) {
   return false;
 }
 
+/**
+ * Reads the price curve and BUYER-1's envelope (with its table) once, in the background, while the web app compiles: the API caches
+ * both by the books, so the owner's first visit to Cash & funding and to a deal's Cash impact is a cache hit instead of a 17 s
+ * sweep. Read-only; a failure (a blank start has no BUYER-1) is ignored. The API repeats it after each reset and setup.
+ */
+function warmStrategy(apiPort) {
+  const headers = { "X-Owner-Token": "demo-owner-token" };
+  const base = `http://127.0.0.1:${apiPort}`;
+  for (const path of ["/cash/price-curve?lang=en", "/buyers/BUYER-1/envelope?lang=en&zone=1"]) {
+    fetch(`${base}${path}`, { headers, signal: AbortSignal.timeout(300_000) }).catch(() => {});
+  }
+}
+
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   checkTools(opts);
@@ -280,6 +293,10 @@ async function main() {
         FEATURE_EXPOSURE: "1",
         FEATURE_CAPEX_CONTRACTS: "1", // the buy side (ADR-0013, certified): the Capex hub shows Your purchases and Deals its Buying card
         FEATURE_CONTRACT_TERMS: "1", // ADR-0014: a confirmed customer contract can set up its repeating invoice (owner, Tier 2)
+        FEATURE_ASK_ROUTER: "1", // ADR-0015: the model routes an unanswered owner question to read-only tools (live LLM mode only)
+        // After a demo reset or setup, the API reads the price curve and BUYER-1's envelope once in the background, so the first
+        // visit is a cache hit (app/api/strategy_warm.py); warmStrategy() below does the same for the books it starts with.
+        DEMO_WARM_STRATEGY: "1",
         CORS_ORIGINS: `${webOrigin},http://127.0.0.1:${opts.webPort}`,
         ...(opts.blank ? { DEMO_SCENARIO: "blank" } : {}),
       },
@@ -287,6 +304,7 @@ async function main() {
     // The first run installs the API's Python packages, so allow a few minutes.
     if (!(await waitFor(`http://127.0.0.1:${opts.apiPort}/health`, "API", 300, api))) return;
     say(`API ready on ${apiOrigin}.`);
+    warmStrategy(opts.apiPort);
   }
 
   say(`starting the web app on ${webOrigin} (${opts.mock ? "mock mode, recorded answers" : `live mode against ${apiOrigin}`}) ...`);
@@ -294,6 +312,13 @@ async function main() {
     ...(opts.mock
       ? { NEXT_PUBLIC_API_MODE: "mock" }
       : { NEXT_PUBLIC_API_MODE: "live", NEXT_PUBLIC_API_URL: apiOrigin, NEXT_PUBLIC_DEMO: "1" }),
+    // The strategy answers the API above switches on: the price of earlier cash on Cash & funding and the Safe Deal Envelope on a
+    // deal's Cash impact ("The most you can give", "What you could answer instead"). Read-only; the mock serves their recordings.
+    // The envelope's first read of a set of books is slow (about 17 s on the demo books), so the API reads it once in the background
+    // after each reset and setup (DEMO_WARM_STRATEGY above). The pilot journal stays off (NEXT_PUBLIC_PILOT_JOURNAL, the pilot's
+    // record of real owners, with FEATURE_PILOT_JOURNAL off). See apps/web/lib/config.ts.
+    NEXT_PUBLIC_STRATEGY_MVP: "1",
+    NEXT_PUBLIC_STRATEGY_ENVELOPE: "1",
     // Its own build folder: it never clashes with a `pnpm dev` already running in apps/web, nor mixes mock and live builds.
     NEXT_DIST_DIR: opts.mock ? ".next-demo-mock" : ".next-demo",
   });

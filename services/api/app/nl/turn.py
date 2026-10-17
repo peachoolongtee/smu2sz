@@ -29,6 +29,8 @@ class Turn:
     guarded: bool = False  # the reply was already passed through the egress guard
     # Typed figures and ids the Business rewrite (app/nl/business.py) says in the owner's words; nothing in the engine reads them
     facts: dict[str, Any] = field(default_factory=dict)
+    # An answer card's figures, basis and links (app/nl/answer_card.py); its lead and body are cut from the final reply when the response is built
+    card: Any = None
 
 
 def ask(intent: Intent, slot: str, question: str, options: list[tuple[str, str, Any]], slots: Slots) -> Turn:

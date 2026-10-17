@@ -12,7 +12,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, cast
 
-from app.counterparties import BuyerKernel, CounterpartyError, negotiate
+from app.api.presentation import no_simulated_reply_text
+from app.counterparties import BuyerKernel, CounterpartyError, UnknownBuyerProfile, negotiate
+from app.counterparties.books import fitted_profile
+from app.counterparties.profiles import get_profile
 from app.domain.models import (
     AcceptOffer,
     CompiledOffer,
@@ -250,11 +253,16 @@ def run_negotiation(ctx: NlContext, steps: Steps, verdict: Verdict, counters: Se
     sent = send_counters(ctx, steps, verdict, counters, recipient)
     if not sent:
         return NegotiationOutcome("NOT_STARTED", {"reason": "no counter could be sent"})
-    kernel = BuyerKernel()
     try:
+        # The buyer answers about the invoice in these books (on books the owner opened, never the golden demo's RCV-A).
+        fitted = fitted_profile(get_profile(profile_id), ctx.store.get_state(), ctx.day, [c for c, _ in sent])
+        kernel = BuyerKernel(profiles={profile_id: fitted})
         transcript = negotiate([c for c, _ in sent], profile_id, lambda _r: None, kernel=kernel)
     except CounterpartyError as e:
-        steps.add("NEGOTIATE", t(ctx, f"Negotiation not started: {type(e).__name__}", "未能开始谈判"), "SKIPPED")
+        # The owner's words, never the exception's class name: a buyer with no simulated profile gets the send's own sentence.
+        said = (no_simulated_reply_text(ctx.store.get_state(), recipient, ctx.lang) if isinstance(e, UnknownBuyerProfile)
+                else t(ctx, "The simulated buyer could not answer, so the negotiation did not start.", "模拟买方无法答复，因此谈判未开始。"))
+        steps.add("NEGOTIATE", said, "SKIPPED")
         return NegotiationOutcome("NOT_STARTED", {"reason": type(e).__name__})
     accepted = next((c for c, _ in sent if c.id == transcript.accepted_counter_id), None)
     buyer_lines = [m.text_zh if ctx.lang == "zh" and m.text_zh else m.text_en

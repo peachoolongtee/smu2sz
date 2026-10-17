@@ -17,6 +17,20 @@
   "trace_id": "rec-quiet-en:1",
   "context_echo": null,
   "scope_used": null,
+  "card": {
+    "lead": "1 warning: Cash is close to your minimum in 30 days.",
+    "figures": [],
+    "body": "",
+    "basis": "Today's books, day 0",
+    "all_figures": [],
+    "actions": [
+      {
+        "label": "See the cash forecast",
+        "href": "/cash#cash-chart",
+        "kind": "link"
+      }
+    ]
+  },
   "proactive": true,
   "has_news": true
 }

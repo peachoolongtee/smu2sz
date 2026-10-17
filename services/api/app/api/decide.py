@@ -38,6 +38,7 @@ from app.api.presentation import (
     concession_interpretation,
     counter_economics,
     last_read,
+    no_simulated_reply_text,
     option_label,
     plan_name,
     plan_when,
@@ -55,8 +56,9 @@ from app.api.workspace import build as build_workspace
 from app.books import Books, current_books
 from app.commitments import terms_hash
 from app.config import get_settings
-from app.counterparties import negotiate
-from app.counterparties.profiles import load_buyer_profiles
+from app.counterparties import BuyerKernel, negotiate
+from app.counterparties.books import fitted_profile
+from app.counterparties.profiles import get_profile, load_buyer_profiles
 from app.decisions import derive
 from app.decisions.facts import CounterEconomics, EvaluatedFact, GapLeg, GapPlan, SentFact
 from app.decisions.identity import deal_id
@@ -118,11 +120,14 @@ def simulated_profile(counterparty_id: str, mode: str) -> str | None:
     return pid if p is not None and p.counterparty_id == counterparty_id else None
 
 
-def _no_simulated_buyer(offer: CompiledOffer, mode: str, lang: str) -> HTTPException:
-    said = t(lang, "This buyer has no simulated reply in this environment; nothing was sent. Copy the message to the buyer instead.",
-             "此环境中没有该买方的模拟回复；未发送任何内容。请改为复制发给买方的消息。")
+def _no_simulated_buyer(rt: Runtime, offer: CompiledOffer, mode: str, lang: str) -> HTTPException:
+    """409 NO_SIMULATED_BUYER, said for the owner: the customer by name and what to do instead (`message` is the English, as the
+    other refusals carry it; `message_when` the reader's language)."""
+    state = rt.store.get_state()
     return HTTPException(409, detail={"code": "NO_SIMULATED_BUYER", "offer_id": offer.offer_id, "buyer_profile": mode,
-                                      "counterparty_id": offer.counterparty_id, "message": said, "message_when": said})
+                                      "counterparty_id": offer.counterparty_id,
+                                      "message": no_simulated_reply_text(state, offer.counterparty_id, "en"),
+                                      "message_when": no_simulated_reply_text(state, offer.counterparty_id, lang)})
 
 
 def _owner_declared(offer_id_hint: str | None) -> dict[str, Any] | None:
@@ -455,7 +460,7 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str =
     assert offer is not None
     profile = simulated_profile(offer.counterparty_id, body.buyer_profile)
     if profile is None:  # every send used to negotiate against BUYER-1's reservation, whoever asked
-        raise _no_simulated_buyer(offer, body.buyer_profile, lang)
+        raise _no_simulated_buyer(rt, offer, body.buyer_profile, lang)
     if (outside := sent_outside_conflict(rt, offer_id, lang)) is not None:
         raise outside  # the real buyer has the counter: the simulated one does not answer it as well
     chosen: CounterProposal | None = None
@@ -493,7 +498,9 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str =
         return counters[0]
 
     with rt.lock:
-        t = negotiate(counters[:1] if body.buyer_profile == "hard_line" else counters, profile, supplier_next)
+        # The buyer answers about the invoice in these books (on books the owner opened, never the golden demo's RCV-A).
+        kernel = BuyerKernel(profiles={profile: fitted_profile(get_profile(profile), rt.store.get_state(), rt.day, counters)})
+        t = negotiate(counters[:1] if body.buyer_profile == "hard_line" else counters, profile, supplier_next, kernel=kernel)
         state, mandate = rt.store.get_state(), rt.store.get_mandate()
         ps = ProtectedSet.build(state, mandate, extra_private=contract_private_values(rt.store.contract_guard_rows(), state))
         by_id = {c.id: c for c in counters}

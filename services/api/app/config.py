@@ -77,6 +77,9 @@ class Features:
     capex_contracts: bool = field(default_factory=lambda: _flag("FEATURE_CAPEX_CONTRACTS", default=False))
     # ADR-0014: a confirmed customer contract can set up that customer's repeating invoices (owner, Tier 2); default off
     contract_terms: bool = field(default_factory=lambda: _flag("FEATURE_CONTRACT_TERMS", default=False))
+    # ADR-0015: an owner question the deterministic answers miss is routed by the model to read-only tools; default off.
+    # Only live LLM mode reaches a model; in cache mode only recorded routes answer (none ship), so it changes nothing.
+    ask_router: bool = field(default_factory=lambda: _flag("FEATURE_ASK_ROUTER", default=False))
 
 
 @dataclass(frozen=True)

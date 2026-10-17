@@ -17,6 +17,32 @@
   "trace_id": "rec-home-after:1",
   "context_echo": null,
   "scope_used": null,
+  "card": {
+    "lead": "¥160,000 on the ¥420,000 invoice to Foshan Home Retail Co. was due 2 days ago and has not arrived.",
+    "figures": [
+      {
+        "label": "Overdue",
+        "value": "¥160,000",
+        "tone": "danger"
+      }
+    ],
+    "body": "1 more warning: Cash is close to your minimum today.",
+    "basis": "Today's books, day 34",
+    "all_figures": [
+      {
+        "label": "Overdue",
+        "value": "¥160,000",
+        "tone": "danger"
+      }
+    ],
+    "actions": [
+      {
+        "label": "See Foshan Home Retail Co.'s invoices",
+        "href": "/receivables?customer=BUYER-1",
+        "kind": "link"
+      }
+    ]
+  },
   "proactive": true,
   "has_news": true
 }
