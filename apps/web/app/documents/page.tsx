@@ -12,7 +12,7 @@ import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { ContractFixture, Counterparty, DocumentKind, DocumentSummary, SubmitDocumentRequest } from "@/lib/types";
 import { useAsync, type AsyncState } from "@/lib/use-async";
-import { API_MODE, DEMO_BUILD } from "@/lib/config";
+import { useSetupStatus } from "@/lib/setup-draft";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 /** A sample dragged onto the drop zone carries its fixture id and chosen format under this type. */
@@ -20,9 +20,6 @@ const FIXTURE_MIME = "application/x-flow-fixture";
 const READABLE = /\.(pdf|docx|txt|md)$/i;
 
 type Format = "md" | "docx" | "pdf";
-
-/** The samples row is a demo's and the mock's only: a plain live build (no NEXT_PUBLIC_DEMO, the live API) shows no sample and reads none. */
-const SAMPLES = DEMO_BUILD || API_MODE === "mock";
 
 /**
  * Contract ingestion (brief 03): read a demo document or upload a signed contract or lender agreement, review the agent's
@@ -250,7 +247,7 @@ function KindSelect({ id, value, onChange, className }: { id: string; value: Doc
 
 /**
  * The owner's own file, as one wide drop zone (Dylan's layout): drop the file (it is read at once) or press Upload and read, and say what it
- * is and who it is with under it. In a demo or mock build the zone ends with the samples row; a sample says its own kind and company.
+ * is and who it is with under it. On the demo books the zone ends with the samples row; a sample says its own kind and company.
  */
 function UploadForm({
   parties,
@@ -284,8 +281,11 @@ function UploadForm({
   const found = matches[0] ?? (near.length === 1 ? near[0] : undefined);
   const chosen = found?.id ?? "";
   const listId = useId();
-  // The samples are read only where they are shown: a demo build or the mock adapter. A plain live build never asks for them.
-  const fixtures = useAsync(() => (SAMPLES ? getContractFixtures() : Promise.resolve([] as ContractFixture[])), []);
+  // The samples belong to the demo books (they name Foshan and the others): the row shows only when the server says the books are the
+  // demo's, nothing while that is being read (no flash), and the samples are read only when the row will show.
+  const { status: setup } = useSetupStatus();
+  const samples = setup?.books === "demo";
+  const fixtures = useAsync(() => (samples ? getContractFixtures() : Promise.resolve(null)), [samples]);
 
   // The server answers once, when the reading is done, so the bar is the work in hand: it climbs toward the end while the file is sent and read, and fills when the answer arrives.
   const [progress, setProgress] = useState(0);
@@ -410,7 +410,7 @@ function UploadForm({
           }}
           className="sr-only"
         />
-        {SAMPLES ? <Samples fixtures={fixtures} existing={existing} nameOf={nameOf} busy={busy !== null} onRead={readSample} onOpen={onOpen} /> : null}
+        {samples ? <Samples fixtures={fixtures} existing={existing} nameOf={nameOf} busy={busy !== null} onRead={readSample} onOpen={onOpen} /> : null}
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
@@ -457,7 +457,7 @@ function UploadForm({
 }
 
 /**
- * "Or try a sample:", one compact row at the foot of the drop zone (demo and mock builds only): one button per synthetic document
+ * "Or try a sample:", one compact row at the foot of the drop zone (the demo books only): one button per synthetic document
  * (GET /fixtures/contracts), named by the server's title with its kind and company. One click reads it (Markdown unless another copy is
  * chosen); where a reading of it is already on the list, Open beside it opens that one. A sample can also be dragged onto the zone.
  */
@@ -469,7 +469,7 @@ function Samples({
   onRead,
   onOpen,
 }: {
-  fixtures: AsyncState<ContractFixture[]>;
+  fixtures: AsyncState<ContractFixture[] | null>;
   existing: DocumentSummary[];
   nameOf: (id: string) => string;
   busy: boolean;
