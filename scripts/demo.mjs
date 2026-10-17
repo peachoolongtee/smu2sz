@@ -4,13 +4,17 @@
 //   pnpm demo                      API on :8000 + web app on :3000 against it (live mode, owner sign-in prefilled)
 //   pnpm demo:blank                the same, the API opening on a new business with no books (the setup wizard)
 //   pnpm demo:mock                 the web app alone on the recorded mocks (no API, no Python)
+//   pnpm demo:keep                 like pnpm demo, but the books live in .demo-data/flow-demo.db and survive a restart
+//   pnpm demo:keep --fresh         the same, starting from new demo books (deletes that file first)
 //   pnpm demo --web-port 3141 --api-port 8041   other ports (the API is told to allow the web origin)
 //
 // The API runs with the environment of scripts/dev-api.sh: in-memory books (DATABASE_URL=memory), the repo-root .env ignored
 // (TERMSLEDGER_NO_DOTENV=1; it points at a hosted database), the demo credentials, cached LLM outputs and every feature flag.
+// --keep changes only DATABASE_URL, to a local SQLite file (gitignored). The API seeds the demo books into an empty file on the
+// first start and opens what the file holds on every later start (app/api/runtime.py: it never reseeds or deletes stored books).
 // It checks both ports first and stops if one is taken (it never stops another program). Ctrl+C stops both servers.
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,12 +24,16 @@ const API_DIR = path.join(ROOT, "services", "api");
 const WEB_DIR = path.join(ROOT, "apps", "web");
 const NEXT_BIN = path.join(WEB_DIR, "node_modules", "next", "dist", "bin", "next");
 const IS_WIN = process.platform === "win32";
+const KEEP_DIR = path.join(ROOT, ".demo-data");
+const KEEP_DB = path.join(KEEP_DIR, "flow-demo.db");
 
-const USAGE = `usage: node scripts/demo.mjs [--api-port 8000] [--web-port 3000] [--blank | --mock]
+const USAGE = `usage: node scripts/demo.mjs [--api-port 8000] [--web-port 3000] [--blank | --mock] [--keep [--fresh]]
   --api-port N  port for the API (default 8000)
   --web-port N  port for the web app (default 3000)
   --blank       open on a new business with no books (DEMO_SCENARIO=blank), so the setup wizard can open new books
-  --mock        the web app alone on the recorded mocks; no API, no Python needed`;
+  --mock        the web app alone on the recorded mocks; no API, no Python needed
+  --keep        keep the books in a local file (.demo-data/flow-demo.db): uploads, confirmations and the clock survive a restart
+  --fresh       with --keep: delete that file first and start from new demo books (new blank books with --blank)`;
 
 function say(line) {
   console.log(`[demo] ${line}`);
@@ -37,7 +45,7 @@ function fail(line) {
 }
 
 function parseArgs(argv) {
-  const opts = { apiPort: 8000, webPort: 3000, blank: false, mock: false };
+  const opts = { apiPort: 8000, webPort: 3000, blank: false, mock: false, keep: false, fresh: false };
   const port = (name, value) => {
     const n = Number(value);
     if (!Number.isInteger(n) || n < 1 || n > 65535) fail(`${name} needs a port number between 1 and 65535, not "${value ?? ""}".`);
@@ -51,12 +59,16 @@ function parseArgs(argv) {
     else if (flag === "--web-port") opts.webPort = port(flag, value());
     else if (flag === "--blank") opts.blank = true;
     else if (flag === "--mock") opts.mock = true;
+    else if (flag === "--keep") opts.keep = true;
+    else if (flag === "--fresh") opts.fresh = true;
     else if (flag === "--help" || flag === "-h") {
       console.log(USAGE);
       process.exit(0);
     } else fail(`unknown option "${argv[i]}".\n${USAGE}`);
   }
   if (opts.blank && opts.mock) fail("--blank needs the API, and --mock runs without it: pick one.");
+  if (opts.keep && opts.mock) fail("--keep keeps the API's books, and --mock runs without the API (its answers are recorded): pick one.");
+  if (opts.fresh && !opts.keep) fail("--fresh starts the kept books again, so it only goes with --keep (pnpm demo:keep --fresh).");
   if (!opts.mock && opts.apiPort === opts.webPort) fail(`the API and the web app cannot share port ${opts.apiPort}.`);
   return opts;
 }
@@ -81,6 +93,32 @@ function checkTools(opts) {
         "and try again. Or run the web app alone on the recorded mocks: pnpm demo:mock",
     );
   }
+}
+
+/** A SQLAlchemy URL for an absolute file path: sqlite:///C:/x/y.db on Windows, sqlite:////home/x/y.db on macOS and Linux. */
+function sqliteUrl(file) {
+  return `sqlite:///${path.resolve(file).replace(/\\/g, "/")}`;
+}
+
+/** --keep: make the folder and, with --fresh, delete the file (and SQLite's companion files) so the API seeds new books. */
+function prepareKeep(opts) {
+  mkdirSync(KEEP_DIR, { recursive: true });
+  if (opts.fresh) {
+    for (const suffix of ["", "-journal", "-wal", "-shm"]) {
+      try {
+        rmSync(KEEP_DB + suffix, { force: true });
+      } catch (err) {
+        fail(`could not delete ${KEEP_DB + suffix} (${err.code ?? err.message}). Is another demo still running on it? Stop it first.`);
+      }
+    }
+  }
+  say(`keeping the books in ${KEEP_DB}`);
+  say(
+    existsSync(KEEP_DB)
+      ? "  opening the books it holds (nothing is reseeded). To start again from new books: pnpm demo:keep --fresh"
+      : `  the file is new: the API seeds ${opts.blank ? "blank books" : "the demo books"} into it, and later starts keep what you do.`,
+  );
+  return sqliteUrl(KEEP_DB);
 }
 
 /** Does something answer on this port (IPv4 or IPv6 loopback)? */
@@ -212,7 +250,9 @@ async function main() {
   const apiOrigin = `http://localhost:${opts.apiPort}`;
 
   if (!opts.mock) {
-    say(`starting the API on ${apiOrigin} (in-memory books, demo credentials, cached LLM outputs${opts.blank ? ", blank books" : ""}) ...`);
+    const databaseUrl = opts.keep ? prepareKeep(opts) : "memory";
+    const books = opts.keep ? "books kept in .demo-data/flow-demo.db" : "in-memory books";
+    say(`starting the API on ${apiOrigin} (${books}, demo credentials, cached LLM outputs${opts.blank ? ", blank books" : ""}) ...`);
     const api = start(
       "API",
       "uv",
@@ -221,7 +261,7 @@ async function main() {
       {
         // Exactly scripts/dev-api.sh: never the repo-root .env, never a real database, never a live LLM.
         TERMSLEDGER_NO_DOTENV: "1",
-        DATABASE_URL: "memory",
+        DATABASE_URL: databaseUrl, // "memory", or with --keep the local SQLite file (never a hosted database)
         DEMO_MODE: "1",
         LLM_MODE: "cache",
         PYTHONUTF8: "1",
@@ -252,6 +292,7 @@ async function main() {
   if (!(await waitFor(`${webOrigin}/`, "web app", 300, web))) return;
   say("");
   say(`Ready. Open ${webOrigin} in your browser.${opts.mock ? "" : " Owner token: demo-owner-token (prefilled)."}`);
+  if (opts.keep) say(`Your changes are kept in ${KEEP_DB}. To start again from new books: pnpm demo:keep --fresh`);
   say("Press Ctrl+C here to stop.");
 }
 
