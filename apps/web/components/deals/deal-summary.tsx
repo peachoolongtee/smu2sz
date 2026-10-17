@@ -351,6 +351,14 @@ export function DealInvoices({ deal, today }: { deal: DealView; today: number })
   );
 }
 
+/**
+ * A buyer whose contract is confirmed but who has no deal agreed on it yet (the server sends `contract_status` with it). Deals lists it in "Your agreements"
+ * with its deal summary, so a confirmed contract is never missing from the page (owner's report, 17 Oct).
+ */
+export function hasContractOnly(d: DealView): boolean {
+  return d.has_contract && !isAgreed(d);
+}
+
 /** A buyer with no confirmed contract whose invoices are on the books (the server sends `open_invoices` with them). */
 export function hasInvoicesOnly(d: DealView): boolean {
   return !d.has_contract && Boolean(d.open_invoices && d.invoices?.length);

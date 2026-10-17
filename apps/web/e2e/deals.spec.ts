@@ -217,3 +217,30 @@ test("a buyer with an invoice and no contract is on Deals: the server's sentence
   await expect(page.getByTestId("invoices-BUYER-2")).toHaveCount(0);
   expect(await proseOf(page)).not.toMatch(/\bday \d|RCV-A/i);
 });
+
+test("a buyer whose contract is confirmed and who has no deal yet is on Deals: its contract row, the server's sentence, the summary and the invoices (owner's report, 17 Oct)", async ({ page }) => {
+  // The recorded opening books: Foshan's supply agreement is confirmed and no deal is agreed on it yet; Dongguan has neither.
+  await page.goto("/deals");
+  const agreements = page.getByTestId("deals-agreements");
+  const row = agreements.getByTestId("contract-BUYER-1");
+  await expect(row).toContainText("Contract with Foshan Home Retail Co.");
+  await expect(row.getByTestId("contract-line")).toHaveText("Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days.");
+  // The buyer is listed once: no invoices-only row, no second summary; a buyer with no contract and no invoice has no row.
+  await expect(agreements.getByTestId("invoices-BUYER-1")).toHaveCount(0);
+  await expect(agreements.getByTestId("deal-summary-BUYER-1")).toHaveCount(1);
+  await expect(agreements.locator('[data-testid$="-BUYER-2"]')).toHaveCount(0);
+  // Opened: the deal summary as on an agreed deal, the contract's terms beside the books and its invoices.
+  await row.getByTestId("commitment-toggle").click();
+  const deal = row.getByTestId("deal-summary-BUYER-1");
+  await expect(deal).toBeVisible();
+  await expect(deal.getByTestId("deal-facts")).toContainText("Supply agreement FHR-2026-07 · signed 1 Sep 2026 · 12 months");
+  await deal.getByTestId("deal-details-BUYER-1").locator("summary").click();
+  await expect(deal.getByTestId("deal-contract")).toContainText("¥420,000.00 per delivery batch");
+  await expect(deal.getByTestId("deal-stages").locator('li[data-state="skipped"]').first()).toContainText("Terms negotiated");
+  const invoice = deal.getByTestId("deal-invoice-RCV-A");
+  await expect(invoice).toHaveAttribute("data-status", "NOT_DUE");
+  await expect(invoice).toContainText("¥420,000.00");
+  // The contract is one press away from the section.
+  await expect(page.getByTestId("deal-documents-link")).toBeVisible();
+  expect(await proseOf(page)).not.toMatch(/\bday \d|RCV-A/i);
+});

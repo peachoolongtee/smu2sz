@@ -308,3 +308,16 @@ test("a buyer with an invoice and no contract: the deals read lists the invoice 
   assert.equal(other.invoices, undefined);
   assert.equal(other.open_invoices, undefined);
 });
+
+test("a confirmed contract with no deal agreed: the deals read says it in words; an agreed deal does not (deals_day0.json, deals_day0_agreed.json)", () => {
+  const en = mock("deals_day0.json").deals.find((d) => d.counterparty_id === "BUYER-1");
+  assert.equal(en.has_contract, true);
+  assert.equal(en.stages.find((s) => s.key === "negotiated").state, "skipped");
+  assert.equal(en.contract_status.text, "Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days.");
+  assert.ok(!/(RCV|RI|BUYER)[-:]|\bday \d/.test(en.contract_status.text));
+  assert.equal(en.open_invoices, undefined);
+  const agreed = mock("deals_day0_agreed.json").deals.find((d) => d.counterparty_id === "BUYER-1");
+  assert.equal(agreed.contract_status, undefined);
+  // the buyer without a contract has no contract sentence
+  assert.equal(mock("deals_day0.json").deals.find((d) => d.counterparty_id === "BUYER-2").contract_status, undefined);
+});

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ActiveCommitments, type AgreementGroups } from "@/components/deals/commitments";
-import { hasInvoicesOnly, isAgreed } from "@/components/deals/deal-summary";
+import { hasContractOnly, hasInvoicesOnly, isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
 import { DealTools } from "@/components/deals/tools";
 import { Button, ErrorState, PageHeader } from "@/components/ui";
@@ -335,13 +335,15 @@ export function DealsPage() {
           </div>
         </div>
         {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the list, where the queue's Agreements tab leads the eye.
-            A buyer with invoices on the books and no contract yet is a row there too, its invoices in the summary's own table. */}
+            A buyer with a confirmed contract and no deal agreed yet is a row there too ("Contract with …", its summary inside), and so is a buyer with invoices on the books
+            and no contract yet, its invoices in the summary's own table. */}
         <div className="mt-8" data-testid="deals-agreements">
           <ActiveCommitments
             today={clock.data?.day ?? books.data?.day ?? 0}
             buyerName={(id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? deals.data?.deals.find((d) => d.counterparty_id === id)?.counterparty_name ?? id}
             hideEmpty
             agreed={(deals.data?.deals ?? []).filter(isAgreed)}
+            contracted={(deals.data?.deals ?? []).filter(hasContractOnly)}
             invoiced={(deals.data?.deals ?? []).filter(hasInvoicesOnly)}
             dealsDay={deals.data?.day ?? null}
             dealsError={dealsError}

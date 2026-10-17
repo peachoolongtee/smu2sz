@@ -124,3 +124,36 @@ def test_set_up_books_customer_without_a_contract_shows_its_invoice_on_deals(cli
     d = deals[0]
     assert [(i["amount_display"], i["status"], i["due_when"]) for i in d["invoices"]] == [("¥120,000.00", "NOT_DUE", "in 14 days")]
     assert d["open_invoices"]["text"] == "No contract on file yet. Open invoices: 1, ¥120,000.00 due in 14 days."
+
+
+def test_a_confirmed_contract_with_no_deal_says_so_with_its_invoices(client) -> None:
+    """Owner's report, 17 Oct: a buyer whose contract is confirmed but who has no deal agreed showed nowhere on Deals. The
+    contract path carries one server sentence for that row (`contract_status`, the same counts as `open_invoices`), in the
+    page's language, naming no id or day number; a deal agreed on the contract takes it away."""
+    from tests.api.test_deals import run_demo_to_day_34
+
+    confirm_demo_documents(client)
+    en, zh = _deal(client), _deal(client, lang="zh")
+    assert en["has_contract"] is True and "open_invoices" not in en
+    s = en["contract_status"]
+    assert (s["count"], s["due_display"], s["late_count"], s["next_due_day"], s["tone"]) == (1, "¥420,000.00", 0, 32, "mute")
+    assert s["text"] == "Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days."
+    assert zh["contract_status"]["text"] == "合同已存档，尚未商定交易。未结发票 1 张，应收 ¥420,000.00，32 天后到期。"
+    for text in (s["text"], zh["contract_status"]["text"]):
+        _no_ids_or_days(text)
+    assert english_leaks({"contract_status": zh["contract_status"]}, names=["Foshan Home Retail Co."]) == []
+    # GET /deals carries the same sentence.
+    listed = next(d for d in client.get("/deals").json()["deals"] if d["counterparty_id"] == "BUYER-1")
+    assert listed["contract_status"]["text"] == s["text"]
+    # A deal agreed on the contract: the agreement row says it, so the sentence goes.
+    run_demo_to_day_34(client)
+    assert "contract_status" not in _deal(client)
+
+
+def test_a_confirmed_contract_with_no_invoice_says_there_is_none(client) -> None:
+    rt = get_runtime()
+    state = rt.store.get_state()
+    rt.store.put_state(state.model_copy(update={"receivables": [], "recurring_invoices": []}))
+    confirm_demo_documents(client)
+    assert _deal(client)["contract_status"]["text"] == "Contract on file; no deal agreed yet. No invoices on the books yet."
+    assert _deal(client, lang="zh")["contract_status"]["text"] == "合同已存档，尚未商定交易。账上尚无发票。"

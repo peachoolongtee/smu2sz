@@ -123,7 +123,8 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
         v["event_detail"] = detail
         if causality is not None:
             v.update(causality.fields(status=str(res.get("status") or ""), event_text=text, decision_id=decision,
-                                      decided=res.get("approval_id") in decided))
+                                      decided=res.get("approval_id") in decided, kind=o.kind,
+                                      payload=op if isinstance(op, dict) else None, state=state))
     return v
 
 

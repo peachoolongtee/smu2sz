@@ -88,6 +88,9 @@ test("the header and the cards: the headline for a screen reader, Refresh, the c
   expect(await page.getByTestId("home-kpi-lowest-value").evaluate((n) => getComputedStyle(n).color)).toBe("rgb(168, 50, 34)");
   await expect(page.getByTestId("hv2-outlook-when")).toHaveText(new RegExp(`^${h.cash.lowest_when}$`, "i"));
   await expect(page.getByTestId("home-kpi-lowest-note")).toHaveText(low.short_note ?? low.note);
+  // The label under the figure is the server's: the plan has not run, so the figure is without new funding.
+  expect(low.basis_label).toBe("Without new funding");
+  await expect(page.getByTestId("home-kpi-lowest-basis")).toContainText(low.basis_label);
   const outlook = page.getByTestId("hv2-outlook-card");
   await expect(outlook.getByTestId("hv2-forecast")).toBeVisible();
   await expect(outlook.getByTestId("home-line-plan")).toBeAttached();
@@ -362,6 +365,10 @@ test("running the plan: no alert, the covered recommendation with its one button
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
   await expect(page.getByTestId("hv2-covered-facts")).toContainText(v2.kpis.lowest_ahead.value_display);
+  // The plan's operations ran, so the outlook's figure includes that funding: its label says so, never "Without new funding".
+  expect(v2.kpis.lowest_ahead.basis_label).toBe("With the funding in place");
+  await expect(page.getByTestId("home-kpi-lowest-basis")).toContainText(v2.kpis.lowest_ahead.basis_label);
+  await expect(page.getByTestId("home-kpi-lowest-basis")).not.toContainText("Without new funding");
   await expect(page.getByTestId("hv2-explore-deals")).toHaveAttribute("href", "/deals");
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
   await expect(page.getByTestId("home-check-plan")).toHaveCount(0);

@@ -1983,6 +1983,18 @@
               "actions": [],
               "tone": "ok"
             },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "in 32 days",
+              "text": "Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days.",
+              "tone": "mute"
+            },
             "open_offer": {
               "offer_id": "OFF-f806f79b6c21",
               "verdict_id": "VER-a899ca66120c",
@@ -2974,6 +2986,18 @@
               "items": [],
               "actions": [],
               "tone": "ok"
+            },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "32 天后",
+              "text": "合同已存档，尚未商定交易。未结发票 1 张，应收 ¥420,000.00，32 天后到期。",
+              "tone": "mute"
             },
             "open_offer": {
               "offer_id": "OFF-f806f79b6c21",
@@ -6966,6 +6990,18 @@
               "actions": [],
               "tone": "ok"
             },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "in 32 days",
+              "text": "Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days.",
+              "tone": "mute"
+            },
             "open_offer": null,
             "needs_you": false,
             "needs_you_text": null
@@ -7742,6 +7778,18 @@
               "items": [],
               "actions": [],
               "tone": "ok"
+            },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "32 天后",
+              "text": "合同已存档，尚未商定交易。未结发票 1 张，应收 ¥420,000.00，32 天后到期。",
+              "tone": "mute"
             },
             "open_offer": null,
             "needs_you": false,
@@ -9422,6 +9470,18 @@
               "actions": [],
               "tone": "ok"
             },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "in 32 days",
+              "text": "Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days.",
+              "tone": "mute"
+            },
             "open_offer": {
               "offer_id": "OFF-3e92827af02f",
               "verdict_id": null,
@@ -10515,6 +10575,18 @@
               "items": [],
               "actions": [],
               "tone": "ok"
+            },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "32 天后",
+              "text": "合同已存档，尚未商定交易。未结发票 1 张，应收 ¥420,000.00，32 天后到期。",
+              "tone": "mute"
             },
             "open_offer": {
               "offer_id": "OFF-3e92827af02f",
@@ -11614,6 +11686,18 @@
               "actions": [],
               "tone": "ok"
             },
+            "contract_status": {
+              "count": 2,
+              "due_fen": 84000000,
+              "due_display": "¥840,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "in 29 days",
+              "text": "Contract on file; no deal agreed yet. Open invoices: 2, ¥840,000.00 due; the next due in 29 days.",
+              "tone": "mute"
+            },
             "open_offer": null,
             "needs_you": false,
             "needs_you_text": null
@@ -12359,6 +12443,18 @@
               "items": [],
               "actions": [],
               "tone": "ok"
+            },
+            "contract_status": {
+              "count": 2,
+              "due_fen": 84000000,
+              "due_display": "¥840,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "29 天后",
+              "text": "合同已存档，尚未商定交易。未结发票 2 张，应收 ¥840,000.00；下一张29 天后到期。",
+              "tone": "mute"
             },
             "open_offer": null,
             "needs_you": false,

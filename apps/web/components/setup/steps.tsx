@@ -323,7 +323,7 @@ export function StepBills({ draft, issues }: { draft: SetupDraft; issues: Issues
           </table>
         </RowsTable>
       )}
-      <p className="text-meta text-ink-3">{t("setup.s4.foot")}</p>
+      <p className="text-meta text-ink-3" data-testid="setup-s4-foot">{t("setup.s4.foot")}</p>
     </div>
   );
 }
@@ -387,7 +387,7 @@ export function StepLimits({ draft, issues }: { draft: SetupDraft; issues: Issue
           ))}
         </ul>
       </div>
-      <p className="text-meta text-ink-3">{t("setup.s5.foot")}</p>
+      <p className="text-meta text-ink-3" data-testid="setup-s5-foot">{t("setup.s5.foot")}</p>
     </div>
   );
 }
