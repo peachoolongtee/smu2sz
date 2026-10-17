@@ -309,7 +309,13 @@ def parse_route(raw: str) -> list[Call] | None:
         tool = catalogue.TOOLS.get(c["tool"]) if isinstance(c["tool"], str) else None
         if tool is None:
             raise Rejected("unknown tool")
-        if bad := problems(tool.slots_schema, c["slots"]):
+        if not isinstance(c["slots"], dict):
+            raise Rejected("slots: not an object")
+        try:  # the catalogue's own guard ...
+            catalogue.validate_slots(tool, c["slots"])
+        except catalogue.SlotError as e:
+            raise Rejected(f"slots: {e}") from e
+        if bad := problems(tool.slots_schema, c["slots"]):  # ... and the strict subset check (types, nulls, patterns), both
             raise Rejected("slots: " + bad[0])
         slots = {k: v for k, v in c["slots"].items() if v is not None}
         call = Call(tool.name, slots)

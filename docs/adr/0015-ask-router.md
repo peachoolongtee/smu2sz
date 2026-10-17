@@ -24,7 +24,7 @@ catalogue of read-only tools and fill their typed slots**. Code validates the ch
 figure and every word of the reply comes from the tools' writers (server-side, English and Chinese), built on the same metrics
 the top-30 answers use (`app/nl/answers/metrics.py`). The model's output has no free text that is ever shown.
 
-The catalogue (`app/nl/router/catalogue.py`, about 30 to 45 tools) covers cash safety over a horizon, runway, the lowest point,
+The catalogue (`app/nl/router/catalogue.py` and `tools/`, 40 tools) covers cash safety over a horizon, runway, the lowest point,
 the first breach, upcoming payments, payroll, the funding need, plan and cost, debt, repaying everything, borrowing headroom,
 loan payments, who owes most, overdue invoices, concentration, a late payment, an early-payment offer, longer terms, what waits,
 approvals, covenants and their break points, the plan's covenants, a capex purchase, recent activity, the mandate's limits, what
@@ -57,9 +57,9 @@ do go, as the owner wrote them: they are the question.
 - the canary check first (a canary in the output means the prompt leaked: rejected);
 - strict JSON: no duplicate keys, no NaN or Infinity, nothing around the object (a fenced code block is rejected);
 - exactly the keys `calls` and `none` at the top and `tool` and `slots` in each call; `none: true` only with no calls;
-- at most three calls; every tool in the catalogue; every slot valid against that tool's schema (`app/nl/router/schema.py`: no
-  unknown slot, no type coercion, a bool is not an integer and "30" is not 30, ranges and enums enforced, null only where the
-  schema allows it).
+- at most three calls; every tool in the catalogue; every slot valid against that tool's schema, checked twice: by the
+  catalogue's own `validate_slots` and by the strict subset check in `app/nl/router/schema.py` (no unknown slot, no type
+  coercion, a bool is not an integer and "30" is not 30, ranges and enums enforced, null only where the schema allows it).
 
 One bad call rejects all of them. Identical calls run once. Several calls give one answer: each tool's sentence, joined, each
 sentence once. The schema sent to the provider (`output_schema`, one `anyOf` branch per tool) has its numeric bounds removed,
@@ -119,8 +119,9 @@ likely questions; it is there to correlate, not to protect.
   about the books at all** (the rules return nothing and the intent classifier falls back to OUT_OF_SCOPE), so the router never
   sees them. Widening the reach to those (an owner question the rules do not read, routed before the out-of-scope reply) is a
   small follow-up in `app/nl/service.py._parse`, deliberately not part of this change.
-- Live mode costs one model call per routed question: about 3,000 to 3,500 input tokens with the full catalogue (most of it the
-  identical system prompt, which provider prompt caching bills at the cached rate) and about 60 output tokens.
+- Live mode costs one model call per routed question: about 3,300 input tokens with the 40-tool catalogue (an estimate of 3,250
+  for the system prompt, identical on every call so provider prompt caching bills it at the cached rate, and about 36 for the
+  question) and up to about 60 output tokens.
 - A new tool is a code change with its schema and writer, reviewed like any read: the model can never reach anything that is not
   in the catalogue.
 

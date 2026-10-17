@@ -22,8 +22,7 @@ from app.api.nl import _owner_reads
 from app.api.runtime import Runtime
 from app.domain.money import fmt_yuan
 from app.egress import canary
-from app.nl.answers.answers import W, a_safe, a_total_debt
-from app.nl.answers.metrics import Reading, money
+from app.nl.answers.metrics import money
 from app.nl.ask import ask_books
 from app.nl.context import NlContext
 from app.nl.models import Intent, Parsed, Slots
@@ -65,8 +64,9 @@ def ctx_for(rt: Runtime, lang: str = "en", *, owner: bool = True) -> NlContext:
                      lang=lang, trace_id="router-test:1", reads=_owner_reads(rt) if owner else None)
 
 
-def expected(rt: Runtime, fn: Any, lang: str) -> str:
-    return fn(W(Reading(rt.store, rt.day, rt.owner_key_hex), lang), "").text
+def expected(rt: Runtime, tool: str, lang: str, slots: dict[str, Any] | None = None) -> str:
+    """The tool's own answer, called directly: what a routed answer must be, word for word."""
+    return catalogue.TOOLS[tool].answer(ctx_for(rt, lang), lang, dict(slots or {})).text
 
 
 def snapshot(rt: Runtime) -> tuple[Any, ...]:
@@ -82,7 +82,7 @@ def snapshot(rt: Runtime) -> tuple[Any, ...]:
 def test_a_single_call_is_answered_by_the_tool_writer(rt: Runtime, lang: str) -> None:
     fake = Scripted(calls(("total_debt", {})))
     got = rr.route("how much do we owe overall, roughly?", lang, ctx_for(rt, lang), [fake])
-    assert got is not None and got.text == expected(rt, a_total_debt, lang)
+    assert got is not None and got.text == expected(rt, "total_debt", lang)
     assert got.question_id == "router:total_debt" and got.extra["router"]["tools"] == ["total_debt"]
     assert rr.LAST.outcome == "answered" and rr.LAST.tools == ["total_debt"] and len(fake.prompts) == 1
 
@@ -92,10 +92,46 @@ def test_several_calls_make_one_answer_with_each_sentence_once(rt: Runtime, lang
     fake = Scripted(calls(("cash_safety", {"horizon_days": 90}), ("total_debt", {}), ("total_debt", {})))
     got = rr.route("are we safe and what do we owe?", lang, ctx_for(rt, lang), [fake])
     assert got is not None
-    safe, debt = expected(rt, a_safe, lang), expected(rt, a_total_debt, lang)
+    safe, debt = expected(rt, "cash_safety", lang, {"horizon_days": 90}), expected(rt, "total_debt", lang)
     assert got.text == ("" if lang == "zh" else " ").join([safe, debt])
     assert got.extra["router"]["tools"] == ["cash_safety", "total_debt"]  # the duplicate call ran once
     assert set(got.metric_ids) >= {"first_breach", "total_debt"}
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_a_customer_slot_is_resolved_by_the_tool_not_the_model(rt: Runtime, lang: str) -> None:
+    slots = {"customer": "佛山", "days_late": 30}
+    fake = Scripted(calls(("late_payment_whatif", slots)))
+    got = rr.route("如果佛山晚一个月付款会怎样？", lang, ctx_for(rt, lang), [fake])
+    assert got is not None and got.text == expected(rt, "late_payment_whatif", lang, slots)
+    assert ("Foshan" in got.text) if lang == "en" else ("佛山" in got.text)
+    system = fake.prompts[0].system
+    assert "Foshan" not in system and "佛山" not in system and "Dongguan" not in system  # the registry never goes to the model
+
+
+def test_an_unknown_customer_gets_the_tool_s_question_back(rt: Runtime) -> None:
+    slots = {"customer": "Shenzhen Widgets", "days_late": 30}
+    got = rr.route("what if Shenzhen Widgets pays a month late?", "en", ctx_for(rt), [Scripted(calls(("late_payment_whatif", slots)))])
+    assert got is not None and got.text == expected(rt, "late_payment_whatif", "en", slots)
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_three_real_tools_make_one_answer(rt: Runtime, lang: str) -> None:
+    trio: tuple[tuple[str, dict[str, Any]], ...] = (("cash_safety", {"horizon_days": 180}), ("late_payment_whatif", {"customer": "Foshan", "days_late": 45}),
+            ("compare_financing", {}))
+    got = rr.route("are we ok for six months, what if Foshan pays late, and which financing is cheapest?", lang, ctx_for(rt, lang),
+                   [Scripted(calls(*trio))])
+    assert got is not None and got.extra["router"]["tools"] == ["cash_safety", "late_payment_whatif", "compare_financing"]
+    assert got.text == ("" if lang == "zh" else " ").join(expected(rt, t, lang, s) for t, s in trio)
+    assert got.question_id == "router:cash_safety+late_payment_whatif+compare_financing"
+
+
+def test_a_slot_the_catalogue_requires_is_required(rt: Runtime) -> None:
+    assert rr.route("what if Foshan pays late?", "en", ctx_for(rt), [Scripted(calls(("late_payment_whatif", {"customer": "Foshan"})))]) is None
+    assert rr.LAST.outcome.startswith("rejected:slots:")
+    for bad in ({"customer": "Foshan", "days_late": 181}, {"customer": "Foshan", "days_late": 0}):
+        assert rr.route("late?", "en", ctx_for(rt), [Scripted(calls(("late_payment_whatif", bad)))]) is None
+    assert rr.route("2%?", "en", ctx_for(rt), [Scripted(calls(("early_pay_offer", {"rate_bp": 501})))]) is None
 
 
 def test_none_means_no_answer(rt: Runtime) -> None:
@@ -110,7 +146,7 @@ def test_null_is_a_value_only_where_the_schema_says_so(rt: Runtime, monkeypatch:
     nullable = {**tool.slots_schema, "properties": {"horizon_days": {"type": ["integer", "null"], "minimum": 1, "maximum": 365}}}
     monkeypatch.setitem(catalogue.TOOLS, "cash_safety", catalogue.Tool(tool.name, tool.description, nullable, tool.answer))
     got = rr.route("are we safe?", "en", ctx_for(rt), [fake])  # nullable: null is the slot left out
-    assert got is not None and got.text == expected(rt, a_safe, "en")
+    assert got is not None and got.text == expected(rt, "cash_safety", "en")
 
 
 # ---------------------------------------------------------------- every rejection path
@@ -156,7 +192,7 @@ def test_an_invalid_response_is_rejected_whole(rt: Runtime, case: str) -> None:
 def test_a_valid_call_next_to_an_invalid_one_does_not_run(rt: Runtime) -> None:
     fake = Scripted(calls(("total_debt", {}), ("cash_safety", {"horizon_days": 999})))
     assert rr.route("debt and safety?", "en", ctx_for(rt), [fake]) is None
-    assert rr.LAST.outcome == "rejected:slots: slot 'horizon_days' is out of range"
+    assert rr.LAST.outcome.startswith("rejected:slots:") and "out of range" in rr.LAST.outcome
 
 
 def test_a_canary_in_the_output_is_rejected(rt: Runtime) -> None:
@@ -221,7 +257,7 @@ def test_injection_in_the_question_cannot_reach_data_or_change_the_rules(rt: Run
     # a model that routes the genuine read: the answer is the code's own sentence, nothing else
     ok = Scripted(calls(("total_debt", {})))
     got = rr.route(question, "en", ctx_for(rt), [ok])
-    assert got is not None and got.text == expected(rt, a_total_debt, "en")
+    assert got is not None and got.text == expected(rt, "total_debt", "en")
     # the question is fenced once: it cannot close its own markers
     user = ok.prompts[0].user
     assert user.count(rr.OPEN_Q) == 1 and user.count(rr.CLOSE_Q) == 1
@@ -257,7 +293,8 @@ def test_the_model_receives_no_figure_name_or_limit_from_the_books(rt: Runtime) 
     rr.route(question, "en", ctx_for(rt), [fake])
     p = fake.prompts[0]
     sent = p.system + "\n" + p.user + "\n" + json.dumps(p.schema, ensure_ascii=False)
-    leaked = sorted(s for s in _book_strings(rt) if s in sent)
+    # a figure counts as a whole number (the catalogue's bound 100000000000 is not the book's 100000)
+    leaked = sorted(s for s in _book_strings(rt) if re.search(rf"(?<![\d,.]){re.escape(s)}(?!\d|[,.]\d)", sent))
     assert leaked == [], leaked
     # the only numbers in the prompt are the catalogue's own bounds and the rules', never a figure
     allowed = {str(rr.MAX_CALLS)} | {str(v) for t in catalogue.TOOLS.values() for spec in t.slots_schema.get("properties", {}).values()
@@ -365,7 +402,7 @@ def test_the_flag_on_routes_after_the_deterministic_layers(rt: Runtime, spy: Scr
     q = "what is our exposure to the banks?"
     turn = ask_books(ctx_for(rt), _books_question(q), q)
     assert len(spy.prompts) == 1 and turn.intent == Intent.ASK_BOOKS
-    assert turn.reply == expected(rt, a_total_debt, "en") and turn.facts["ask"]["router"] == ["total_debt"]
+    assert turn.reply == expected(rt, "total_debt", "en") and turn.facts["ask"]["router"] == ["total_debt"]
     # a question the answer layer takes never reaches the router
     q2 = "How much debt do we have?"
     ask_books(ctx_for(rt), Parsed(intent=Intent.ASK_BOOKS, slots=Slots(question=q2), matched=["ask", "ask:answer:DEBT-01"]), q2)
@@ -387,7 +424,7 @@ def test_through_nl_the_owner_is_routed_and_the_agent_key_is_not(client: Any, rt
     before = snapshot(rt)
     owner = Chat(client, "router-owner").say("what is our exposure to the banks?")
     assert owner["intent"] == "ASK_BOOKS" and len(spy.prompts) == 1
-    assert owner["reply"].startswith(expected(rt, a_total_debt, "en")[:20])
+    assert owner["reply"].startswith(expected(rt, "total_debt", "en")[:20])
     agent = client.post("/nl", json={"session_id": "router-agent", "actor": "OWNER", "text": "what is our exposure to the banks?"},
                         headers=AGENT).json()
     assert len(spy.prompts) == 1 and agent["operations"] == []
@@ -408,7 +445,7 @@ def test_cache_mode_replays_a_recorded_route_and_a_miss_is_none(rt: Runtime, tmp
     assert rr.route(q, "en", ctx_for(rt), [cache]) is None and rr.LAST.outcome == "miss"
     rr.write_cache_entry(q, "en", calls(("cash_safety", {"horizon_days": 30})), "recorded-model", tmp_path)
     got = rr.route(q, "en", ctx_for(rt), [cache])
-    assert got is not None and got.text == expected(rt, a_safe, "en") and rr.LAST.model == "cache:recorded-model"
+    assert got is not None and got.text == expected(rt, "cash_safety", "en", {"horizon_days": 30}) and rr.LAST.model == "cache:recorded-model"
 
 
 def test_a_recorded_route_goes_through_the_same_validation(rt: Runtime, tmp_path: Path) -> None:
