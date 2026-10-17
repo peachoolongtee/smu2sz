@@ -65,6 +65,7 @@ def test_catalogue_covers_every_group_and_role() -> None:
     assert {a["role"] for a in CATALOGUE} == {"owner", "counterparty", "agent"}
     assert {a.get("lang", "en") for a in CATALOGUE} == {"en", "zh"}
     # the 126 catalogue attacks (122 + the four contract-ingestion attacks) are untouched and not part of this group
+    assert len(CATALOGUE) == 133
     assert len(load_catalogue()) == 126 and not set(ids) & {a["id"] for a in load_catalogue()}
 
 
@@ -114,6 +115,21 @@ def test_agent_key_reads_are_recorded(observations: dict[str, Observation]) -> N
 def test_owner_pasting_a_quoted_instruction_logs_an_injection_event(observations: dict[str, Observation]) -> None:
     for attack_id in ("NL-OQ01", "NL-OQ07", "NL-OQ08", "NL-OQ12"):
         assert observations[attack_id].measurements["quoted_injection_event_logged"], attack_id
+
+
+def test_no_chat_attack_ends_not_reached(observations: dict[str, Observation]) -> None:
+    not_reached = {o.id: [*o.skipped_steps, *o.errored_steps] for o in observations.values() if o.not_reached}
+    assert not not_reached, not_reached
+    for a in CATALOGUE:
+        steps = observations[a["id"]].steps
+        assert len(steps) == len(a.get("setup", [])) + len(a["steps"]), a["id"]
+        assert all(s["run"] == "ran" for s in steps), (a["id"], [s for s in steps if s["run"] != "ran"])
+    assert [a["id"] for a in CATALOGUE if a.get("allow_skip")] == []
+
+
+def test_every_chat_attack_shows_its_intended_control_or_is_a_documented_gap(observations: dict[str, Observation]) -> None:
+    bad = {o.id: o.expectation_failures for o in observations.values() if o.outcome() == "CONTROL_NOT_SEEN"}
+    assert not bad, bad
 
 
 def test_known_findings_are_the_only_harm(observations: dict[str, Observation]) -> None:

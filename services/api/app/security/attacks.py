@@ -86,18 +86,43 @@ RATE_GROUPS: dict[str, tuple[str, ...]] = {
     "replay": ("replay", "expired_commitment", "revoked_mandate", "changed_offer"),
 }
 
-# Verdict violation codes raised by the security screen (step 2) or a Tier-3 clause.
+# Verdict violation codes that are a security control firing: the security screen (step 2), a Tier-3 clause, a mandate
+# validity failure, an unevidenced claim. A verdict code that only says the offer is not worth taking (UNRESOLVED_SCOPE,
+# EARLY_PAY_DEARER_THAN_PLAN, DISCOUNT_ABOVE_BREAK_EVEN, ...) is business arithmetic, not detection of an attack.
 SECURITY_VERDICT_CODES = frozenset({
     "UNKNOWN_COUNTERPARTY", "UNEVIDENCED_PRIOR_CONCESSION", "DATA_EXTRACTION_REFUSED",
     "TIER3_PERSONAL_GUARANTEE", "TIER3_COLLATERAL", "TIER3_EQUITY", "TIER3_MANDATE_CHANGE",
-    "BAD_SIGNATURE", "MANDATE_REVOKED", "MANDATE_EXPIRED", "MANDATE_VERSION_MISMATCH",
+    "BAD_SIGNATURE", "MANDATE_REVOKED", "MANDATE_EXPIRED", "MANDATE_VERSION_MISMATCH", "STALE_VERDICT",
+})
+# The owner's signed limits. An offer over one of them is refused by the verifier; that is the control working.
+MANDATE_LIMIT_CODES = frozenset({
+    "AGG_CONCESSION_EXCEEDED", "PER_BUYER_CAP_EXCEEDED", "IMMEDIATE_DISCOUNT_EXCEEDED", "RESERVE_BREACH", "DSCR_BREACH",
+    "LEVERAGE_BREACH", "CLEAN_DOWN_BREACH", "MAX_APR_EXCEEDED", "NEW_BORROWING_NOT_ALLOWED",
+})
+# HTTP answers that are a refusal by a control. 404 and 405 are not: they mean the harness did not reach the route.
+REFUSING_HTTP_STATUSES = frozenset({401, 403, 409, 413, 422, 429})
+
+# Keys of the structured `expect` block (API attacks: required; /nl attacks: optional, see NlAttackRunner).
+# Each key is evidence that the control named in `expected_controls` fired. Every listed item must be observed.
+EXPECT_KEYS = frozenset({
+    "refusal",   # executor refusal codes (REFUSED operation results in the attack phase) or the harness's own refusal marks
+    "verdict",   # verifier violation codes on the verdicts produced in the attack phase
+    "event",     # SecurityEvent kinds logged during the attack
+    "http",      # HTTP statuses answered to the attack phase's requests
+    "detail",    # substrings of the error detail an HTTP refusal carried (a code such as CHANNEL_NOT_ALLOWED)
+    "ops",       # "KIND:STATUS" of the operations the executor logged in the attack phase (PENDING_APPROVAL, REFUSED, ...)
+    "tamper",    # true: the hash chain or the append-only guard detected the edit
+    "flag",      # prefixes of compiler flags (AUTH:, DATA:, FUNDING:, TIER3:, DOC:)
+    "intent",    # /nl: intents the responses carried
+    "no_ops",    # /nl: true: no response carried an operation
+    "plan_pending", "injection_event",  # /nl: session ids whose plan is still pending; INJECTION event required | report
 })
 
 
 # ============================================================================ catalogue
 
 
-def load_catalogue(path: Path = CATALOGUE) -> list[dict[str, Any]]:
+def load_catalogue(path: Path = CATALOGUE, *, require_expect: bool = False) -> list[dict[str, Any]]:
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     attacks = raw["attacks"]
     ids = [a["id"] for a in attacks]
@@ -105,12 +130,30 @@ def load_catalogue(path: Path = CATALOGUE) -> list[dict[str, Any]]:
     if dup:
         raise ValueError(f"duplicate attack ids: {dup}")
     for a in attacks:
-        missing = {"id", "category", "title", "vector", "expected_controls", "steps"} - set(a)
+        missing = ({"id", "category", "title", "vector", "expected_controls", "steps"}
+                   | ({"expect"} if require_expect else set())) - set(a)
         if missing:
             raise ValueError(f"attack {a.get('id')}: missing {sorted(missing)}")
         if a["category"] not in CATEGORIES:
             raise ValueError(f"attack {a['id']}: unknown category {a['category']}")
+        if "expect" in a:
+            _check_expect(a["id"], a["expect"])
+        if "known_gap" in a:
+            gap = a["known_gap"]
+            if not isinstance(gap, dict) or not gap.get("note"):
+                raise ValueError(f"attack {a['id']}: known_gap needs a note and an `intended` expect block")
+            _check_expect(a["id"], gap["intended"])
+        if "allow_skip" in a and not (isinstance(a["allow_skip"], str) and a["allow_skip"].strip()):
+            raise ValueError(f"attack {a['id']}: allow_skip must say why a step cannot run")
     return attacks
+
+
+def _check_expect(attack_id: str, expect: Any) -> None:
+    if not isinstance(expect, dict) or not expect:
+        raise ValueError(f"attack {attack_id}: `expect` must name the evidence that the intended control fired")
+    unknown = set(expect) - EXPECT_KEYS
+    if unknown:
+        raise ValueError(f"attack {attack_id}: unknown expect keys {sorted(unknown)}")
 
 
 # ============================================================================ observation
@@ -126,8 +169,18 @@ class Observation:
     expected_controls: list[str]
     known_finding: str | None
     steps: list[dict[str, Any]] = field(default_factory=list)
+    # reach accounting: every step records run = ran | skipped (with a reason) | error. An attack whose intended path did not run
+    # is NOT_REACHED, never "defended" (unless the catalogue entry says, in `allow_skip`, why a step cannot run).
+    skipped_steps: list[dict[str, Any]] = field(default_factory=list)
+    errored_steps: list[dict[str, Any]] = field(default_factory=list)
+    allow_skip: str | None = None
+    # the intended control: what `expect` required, and what was missing. A `known_gap` is a documented control that does not fire.
+    expectation_failures: list[str] = field(default_factory=list)
+    known_gap: dict[str, Any] | None = None
+    gap_open: bool = False
     # outcome
     executed_ops: list[str] = field(default_factory=list)
+    op_results: list[str] = field(default_factory=list)  # "KIND:STATUS" for every operation the executor logged in the attack phase
     unauthorised_ops: int = 0
     facilities_added: list[str] = field(default_factory=list)
     facility_changes: list[str] = field(default_factory=list)
@@ -152,6 +205,9 @@ class Observation:
     verdict_codes: list[str] = field(default_factory=list)
     compiler_flags: list[str] = field(default_factory=list)
     http_status: list[int] = field(default_factory=list)
+    http_details: list[str] = field(default_factory=list)  # the error detail of every HTTP refusal in the attack phase
+    intents: list[str] = field(default_factory=list)  # /nl: the intent of every response in the attack phase
+    response_ops: int = 0  # /nl: operations carried by the attack-phase responses
     pending_approvals: int = 0
     chain_valid: bool = True
     tamper_detected: bool | None = None
@@ -172,22 +228,79 @@ class Observation:
         return bool(self.harm_reasons)
 
     @property
+    def not_reached(self) -> bool:
+        """The intended path did not run: a step was skipped or failed and the entry does not say why that is expected."""
+        return bool(self.skipped_steps or self.errored_steps) and not self.allow_skip
+
+    @property
+    def reached(self) -> bool:
+        return not self.not_reached
+
+    @property
     def observed_codes(self) -> set[str]:
         return set(self.refusal_codes) | set(self.verdict_codes) | set(self.security_events)
 
     def outcome(self) -> str:
+        """HARM > NOT_REACHED > CONTROL_NOT_SEEN > GAP > DETECTED > CONTAINED > HELD. Only the last three are defended."""
         if self.harm:
             return "HARM"
+        if self.not_reached:
+            return "NOT_REACHED"
+        if self.expectation_failures:
+            return "CONTROL_NOT_SEEN"
+        if self.gap_open:
+            return "GAP (no harm)"
         if self.detected:
             return "DETECTED"
         if self.contained:
             return "CONTAINED"
-        return "MISSED (no harm)"
+        return "HELD"
+
+    @property
+    def defended(self) -> bool:
+        """No harm, every step ran (or says why not), and the evidence the entry names for its intended control was observed."""
+        return self.outcome() in ("DETECTED", "CONTAINED", "HELD")
 
     def to_json(self) -> dict[str, Any]:
         d = dataclasses.asdict(self)
-        d.update(harm=self.harm, outcome=self.outcome())
+        d.update(harm=self.harm, outcome=self.outcome(), reached=self.reached, defended=self.defended)
         return d
+
+
+def unmet_expectations(obs: Observation, expect: dict[str, Any]) -> list[str]:
+    """What an `expect` block asks for and the observation does not show. Pure: every listed item must be observed."""
+    out: list[str] = []
+
+    def need(key: str, wanted: Any, seen: set[str] | set[int]) -> None:
+        missing = [w for w in (wanted if isinstance(wanted, list) else [wanted]) if w not in seen]
+        if missing:
+            out.append(f"{key}: {missing} not observed (saw {sorted(seen, key=str)})")
+
+    need("refusal", expect.get("refusal", []), set(obs.refusal_codes))
+    need("verdict", expect.get("verdict", []), set(obs.verdict_codes))
+    need("event", expect.get("event", []), set(obs.security_events))
+    need("http", expect.get("http", []), set(obs.http_status))
+    need("ops", expect.get("ops", []), set(obs.op_results))
+    need("intent", expect.get("intent", []), set(obs.intents))
+    details = " | ".join(obs.http_details)
+    out += [f"detail: {d!r} not in the HTTP error details {obs.http_details}" for d in expect.get("detail", []) if d not in details]
+    flags = obs.compiler_flags
+    out += [f"flag: no compiler flag starts with {f!r} (saw {sorted(set(flags))})" for f in expect.get("flag", [])
+            if not any(x.startswith(f) for x in flags)]
+    if expect.get("tamper") and not obs.tamper_detected:
+        out.append("tamper: the edit of the log was not detected")
+    if expect.get("no_ops") and obs.response_ops:
+        out.append(f"no_ops: {obs.response_ops} operation(s) came back in the responses")
+    return out
+
+
+def _observation(attack: dict[str, Any], entry_point: str = "api") -> Observation:
+    return Observation(
+        id=attack["id"], category=attack["category"], title=attack["title"], vector=attack["vector"],
+        lang=attack.get("lang", "en"), expected_controls=list(attack["expected_controls"]),
+        known_finding=attack.get("known_finding"), allow_skip=attack.get("allow_skip"),
+        known_gap=attack.get("known_gap"), entry_point=entry_point,
+    )
 
 
 # ============================================================================ runtime context
@@ -201,10 +314,11 @@ def _canon(model: Any) -> dict[str, Any]:
 def owner_token_env(value: str | None) -> Iterator[None]:
     """Production-like credentials for one attack: DEMO_MODE off, the given owner token (or none, to
     model a deployment that forgot it) and a random agent key."""
-    keys = ("OWNER_TOKEN", "AGENT_KEY", "DEMO_MODE", "COUNTERPARTY_KEYS")
+    keys = ("OWNER_TOKEN", "AGENT_KEY", "DEMO_MODE", "COUNTERPARTY_KEYS", "BANK_FEED_KEY")
     old = {k: os.environ.get(k) for k in keys}
     os.environ["DEMO_MODE"] = "0"
     os.environ["AGENT_KEY"] = "agent-" + secrets.token_hex(16)
+    os.environ["BANK_FEED_KEY"] = "bankfeed-" + secrets.token_hex(16)  # the simulated bank feed, the only caller that speaks as SYSTEM
     os.environ["COUNTERPARTY_KEYS"] = "BUYER-1=buyer1-" + secrets.token_hex(16)  # the authenticated-buyer variants
     if value is None:
         os.environ.pop("OWNER_TOKEN", None)
@@ -352,7 +466,6 @@ class _Ctx:
     last_approval: str | None = None
     last_document: dict[str, Any] | None = None  # the last POST /documents view
     approvals: list[str] = field(default_factory=list)
-    halted: str | None = None  # set when a control refused the attack's premise; later steps are skipped
     rebaseline: bool = False  # set by a step that judged its own legitimate effects (db_fail)
 
 
@@ -382,11 +495,7 @@ class AttackRunner:
         from app.mandate import demo_owner_public_key_hex
         from app.persistence import InMemoryLedgerStore, SqlLedgerStore
 
-        obs = Observation(
-            id=attack["id"], category=attack["category"], title=attack["title"], vector=attack["vector"],
-            lang=attack.get("lang", "en"), expected_controls=list(attack["expected_controls"]),
-            known_finding=attack.get("known_finding"),
-        )
+        obs = _observation(attack)
         tmp: tempfile.TemporaryDirectory[str] | None = None
         if attack.get("store") == "sqlite":
             tmp = tempfile.TemporaryDirectory()
@@ -400,21 +509,7 @@ class AttackRunner:
             with owner_token_env(self.owner_token):
                 client = TestClient(app, raise_server_exceptions=False)
                 ctx = _Ctx(attack_id=attack["id"], client=client, rt=rt, owner_token=self.owner_token)
-                for step in attack.get("setup", []):
-                    rec = self._step(ctx, step, obs, phase="setup")
-                    rec["phase"] = "setup"
-                    obs.steps.append(rec)
-                snap = self._snapshot(rt)
-                for step in attack["steps"]:
-                    if ctx.halted:
-                        obs.steps.append({"step": next(iter(step)), "phase": "attack", "skipped": ctx.halted})
-                        continue
-                    rec = self._step(ctx, step, obs, phase="attack")
-                    rec["phase"] = "attack"
-                    obs.steps.append(rec)
-                    if ctx.rebaseline:
-                        snap, ctx.rebaseline = self._snapshot(rt), False
-                self._diff(rt, snap, obs)
+                self._play(ctx, attack, obs)
         finally:
             set_runtime(None)
             if attack.get("store") == "sqlite":
@@ -423,6 +518,18 @@ class AttackRunner:
                 tmp.cleanup()
         self._judge(obs, attack)
         return obs
+
+    def _play(self, ctx: _Ctx, attack: dict[str, Any], obs: Observation) -> dict[str, Any]:
+        """Setup (legitimate), the state snapshot, the attack's steps, then the diff. Returns the snapshot."""
+        for step in attack.get("setup", []):
+            self._step(ctx, step, obs, phase="setup")
+        snap = self._snapshot(ctx.rt)
+        for step in attack["steps"]:
+            self._step(ctx, step, obs, phase="attack")
+            if ctx.rebaseline:
+                snap, ctx.rebaseline = self._snapshot(ctx.rt), False
+        self._diff(ctx.rt, snap, obs)
+        return snap
 
     # ------------------------------------------------------------------ snapshot and diff
 
@@ -492,6 +599,7 @@ class AttackRunner:
                 obs.notes.append(f"log row seq {r.seq} does not parse")
         for e in new_entries:
             st = e.result.status.value
+            obs.op_results.append(f"{e.kind}:{st}")
             if st == "EXECUTED":
                 obs.executed_ops.append(e.kind)
             elif st == "REFUSED":
@@ -545,26 +653,84 @@ class AttackRunner:
         if not obs.chain_valid and obs.tamper_detected is None:
             h.append("hash chain invalid after the attack")
 
-        verdict_security = [c for c in obs.verdict_codes if c in SECURITY_VERDICT_CODES]
+        # "Detected" is a security control firing: a logged SecurityEvent, an operation the executor refused, a verdict code that
+        # is a security or mandate-limit code (not an offer that merely was not worth taking), an HTTP refusal (401, 403, 409,
+        # 413, 422, 429: never 404) or a detected edit of the log. An attack that did not reach its path detects nothing.
         obs.security_event_logged = bool(obs.security_events)
         obs.flagged_by_compiler = bool(obs.compiler_flags)
-        obs.detected = bool(
-            obs.security_events or obs.refusal_codes or verdict_security or obs.verdict_codes
-            or 422 in obs.http_status or obs.tamper_detected
+        obs.detected = obs.reached and bool(
+            obs.security_events or obs.refusal_codes
+            or any(c in SECURITY_VERDICT_CODES or c in MANDATE_LIMIT_CODES for c in obs.verdict_codes)
+            or any(s in REFUSING_HTTP_STATUSES for s in obs.http_status) or obs.tamper_detected
         )
-        obs.contained = bool(obs.pending_approvals) or any(
-            r.get("contained") for r in obs.steps if r.get("phase") == "attack")
+        # Contained: the attack ended in the owner's approval queue, nothing executed.
+        obs.contained = bool(obs.pending_approvals)
+        # The intended control: the evidence `expect` names. A documented `known_gap` is evidence that does NOT appear today.
+        obs.expectation_failures += unmet_expectations(obs, attack.get("expect") or {})
+        legacy = [c for c in attack.get("expect_codes", []) if c not in obs.observed_codes]  # untyped: any category
+        if legacy:
+            obs.expectation_failures.append(f"expect_codes: {legacy} not observed (saw {sorted(obs.observed_codes)})")
+        if obs.known_gap is not None:
+            obs.gap_open = bool(unmet_expectations(obs, obs.known_gap["intended"]))
 
     # ------------------------------------------------------------------ steps
 
     def _step(self, ctx: _Ctx, step: dict[str, Any], obs: Observation, phase: str) -> dict[str, Any]:
+        """Run one step and record how it ended: ran, skipped (with a reason) or error. A step that is skipped or errors is
+        listed on the observation; unless the entry says in `allow_skip` why, the attack is NOT_REACHED."""
         (kind, arg), = step.items()
         handler = getattr(self, f"_do_{kind}", None)
         if handler is None:
             raise ValueError(f"{ctx.attack_id}: unknown step {kind}")
-        rec: dict[str, Any] = {"step": kind}
-        handler(ctx, arg, obs, rec, phase)
+        want: list[int] = []
+        if isinstance(arg, dict) and "expect_http" in arg:  # the status the control is meant to answer with
+            arg = dict(arg)
+            raw = arg.pop("expect_http")
+            want = [int(x) for x in (raw if isinstance(raw, list) else [raw])]
+        index = len(obs.steps)
+        rec: dict[str, Any] = {"step": kind, "phase": phase, "run": "ran", "index": index}
+        if want:
+            rec["expect_http"] = want
+        obs.steps.append(rec)
+        try:
+            handler(ctx, arg, obs, rec, phase)
+        except Exception as exc:  # noqa: BLE001 - a step that blew up did not run; it is reported, never swallowed
+            rec["run"], rec["reason"] = "error", f"{type(exc).__name__}: {exc}"
+        if rec["run"] == "skipped":
+            obs.skipped_steps.append({"index": index, "phase": phase, "step": kind, "reason": rec["reason"]})
+        elif rec["run"] == "error":
+            obs.errored_steps.append({"index": index, "phase": phase, "step": kind, "reason": rec["reason"]})
+        elif want and rec.get("http") and any(h not in want for h in rec["http"]):
+            obs.expectation_failures.append(f"step {index} ({kind}, {phase}): expected HTTP {want}, answered {rec['http']}")
         return rec
+
+    @staticmethod
+    def _skip(rec: dict[str, Any], reason: str) -> None:
+        rec["run"], rec["reason"] = "skipped", reason
+
+    def _answered(self, rec: dict[str, Any], status: int, route: str) -> bool:
+        """True when the route answered 200 and the step can go on. A different answer is the step's own `expect_http`
+        (the control answered, the step ran) or else the step's premise did not hold (skipped, with the reason)."""
+        if status == 200:
+            return True
+        if status not in rec.get("expect_http", []):
+            self._skip(rec, f"{route} answered HTTP {status}, so the step could not carry on")
+        return False
+
+    @staticmethod
+    def _http(obs: Observation, rec: dict[str, Any], r: Any, phase: str) -> None:
+        """Record one HTTP answer. Only the attack phase's answers count as evidence of a control; the error detail is kept."""
+        rec.setdefault("http", []).append(r.status_code)
+        if phase != "attack":
+            return
+        obs.http_status.append(r.status_code)
+        if r.status_code >= 400:
+            try:
+                detail = json.dumps(r.json().get("detail", r.json()), ensure_ascii=False, sort_keys=True)
+            except Exception:  # noqa: BLE001
+                detail = r.text[:200]
+            obs.http_details.append(detail)
+            rec.setdefault("detail", []).append(detail[:200])
 
     # -- helpers
 
@@ -576,6 +742,8 @@ class AttackRunner:
         agent_key = {"X-Agent-Key": os.environ.get("AGENT_KEY", "")} if agent else {}
         if token in (None, "none"):
             return agent_key
+        if token == "bank_feed":  # the simulated bank feed: the only caller allowed to speak as SYSTEM
+            return {**agent_key, "X-Bank-Feed-Key": os.environ.get("BANK_FEED_KEY", "")}
         value = {"owner": ctx.owner_token, "wrong": "owner-" + "0" * 32, "demo": DEMO_TOKEN,
                  "padded": f" {ctx.owner_token} "}.get(token, token)
         return {**agent_key, "X-Owner-Token": value}
@@ -615,10 +783,9 @@ class AttackRunner:
         return _canon(Facility.model_validate_json(json.dumps(data)))
 
     def _post_op(self, ctx: _Ctx, body: dict[str, Any], token: str | None, obs: Observation,
-                 rec: dict[str, Any]) -> dict[str, Any] | None:
+                 rec: dict[str, Any], phase: str = "attack") -> dict[str, Any] | None:
         r = ctx.client.post("/operations", json=body, headers=self._headers(ctx, token))
-        obs.http_status.append(r.status_code)
-        rec.setdefault("http", []).append(r.status_code)
+        self._http(obs, rec, r, phase)
         ctx.last_body = body
         if r.status_code != 200:
             ctx.last_result = None
@@ -699,10 +866,8 @@ class AttackRunner:
         if arg.get("counterparty_id"):
             body["counterparty_id"] = arg["counterparty_id"]
         r = ctx.client.post("/offers", json=body)
-        rec["http"] = [r.status_code]
-        if phase == "attack":
-            obs.http_status.append(r.status_code)
-        if r.status_code != 200:
+        self._http(obs, rec, r, phase)
+        if not self._answered(rec, r.status_code, "POST /offers"):
             return
         offer = CompiledOffer.model_validate_json(json.dumps(_without_display(r.json()["offer"])))
         self._evaluate(ctx, offer, obs, rec, phase)
@@ -724,9 +889,10 @@ class AttackRunner:
         ctx.n += 1
         doc = {"doc_id": f"{ctx.attack_id}-TS{ctx.n}", "channel": "term_sheet", "sender_id": arg["sender"],
                "received_day": ctx.rt.day, "text": arg["text"]}
-        r = ctx.client.post("/facilities/compile", json={"documents": [doc]})
-        rec["http"] = [r.status_code]
-        if r.status_code != 200:
+        # Term sheets are read for the owner (the owner forwards what a lender sent), so the route wants the owner's token.
+        r = ctx.client.post("/facilities/compile", json={"documents": [doc]}, headers={"X-Owner-Token": ctx.owner_token})
+        self._http(obs, rec, r, phase)
+        if not self._answered(rec, r.status_code, "POST /facilities/compile"):
             return
         ts = CompiledTermSheet.model_validate_json(json.dumps(r.json()["term_sheet"]))
         s = ctx.rt.store
@@ -751,6 +917,7 @@ class AttackRunner:
         if what == "accept":
             offer, v = ctx.last_offer, ctx.last_verdict
             if offer is None or v is None:
+                self._skip(rec, "no offer was compiled and judged before this step, so there is nothing to accept")
                 return
             if v.outcome in (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL):
                 c = ex.propose_commitment(v.id, expires_day=ctx.rt.day + 5)
@@ -758,7 +925,7 @@ class AttackRunner:
                 body = self._body(ctx, {"kind": "ACCEPT_OFFER", "offer_id": c.offer_id,
                                         "offer_version": c.offer_version, "terms_hash": c.terms_hash,
                                         "nonce": c.nonce})
-                self._post_op(ctx, body, None, obs, rec)
+                self._post_op(ctx, body, None, obs, rec, phase)
                 return
             # No verdict backs the attacker's terms: try to commit them anyway.
             try:
@@ -770,10 +937,10 @@ class AttackRunner:
                                     "offer_version": offer.version,
                                     "terms_hash": terms_hash(committable(offer.obligations)),
                                     "nonce": "FORGED-NONCE-" + ctx.attack_id})
-            self._post_op(ctx, body, None, obs, rec)
+            self._post_op(ctx, body, None, obs, rec, phase)
             body = self._body(ctx, {"kind": "RECORD_COMMITMENT", "commitment_id": f"CMT-FORGED-{ctx.attack_id}",
                                     "nonce": "FORGED"})
-            self._post_op(ctx, body, None, obs, rec)
+            self._post_op(ctx, body, None, obs, rec, phase)
         elif what == "add_lender":
             lenders: list[tuple[str, dict[str, Any]]] = []
             if ctx.last_offer is not None:
@@ -791,10 +958,10 @@ class AttackRunner:
                     body = self._body(ctx, {"kind": "ADD_FACILITY", "requested_by": by,
                                             "facility": {"id": fid, "lender_id": lid, "name": lid,
                                                          "status": "COMMITTED", **extra}})
-                    self._post_op(ctx, body, token, obs, rec)
+                    self._post_op(ctx, body, token, obs, rec, phase)
                 body = self._body(ctx, {"kind": "DRAW_FACILITY", "facility_id": fid,
                                         "amount_fen": int(extra.get("limit_fen") or 50_000_000)})
-                self._post_op(ctx, body, None, obs, rec)
+                self._post_op(ctx, body, None, obs, rec, phase)
         elif what == "transfer":
             # There is no operation that pays a third party: every shape an agent could try is 422.
             for body in (
@@ -804,7 +971,7 @@ class AttackRunner:
                 {"kind": "DRAW_FACILITY", "facility_id": "FAC-LINE", "amount_fen": 15_000_000,
                  "destination": "Harbour Rural Bank 6222021000001234"},
             ):
-                self._post_op(ctx, self._body(ctx, body), None, obs, rec)
+                self._post_op(ctx, self._body(ctx, body), None, obs, rec, phase)
         else:
             raise ValueError(f"unknown induce {what}")
 
@@ -828,7 +995,7 @@ class AttackRunner:
                 ctx.last_approval = d["approval_id"]
                 ctx.approvals.append(d["approval_id"])
             return
-        self._post_op(ctx, body, token, obs, rec)
+        self._post_op(ctx, body, token, obs, rec, phase)
 
     def _do_raw(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
         """POST a raw (possibly malformed) body. Nothing may be logged for a 422."""
@@ -840,8 +1007,7 @@ class AttackRunner:
                                 headers={**headers, "Content-Type": "application/json"})
         else:
             r = ctx.client.post("/operations", json=body, headers=headers)
-        obs.http_status.append(r.status_code)
-        rec["http"] = [r.status_code]
+        self._http(obs, rec, r, phase)
         after = len(ctx.rt.store.operations())
         if r.status_code == 200:
             res = r.json()["result"]
@@ -855,7 +1021,7 @@ class AttackRunner:
         aid = arg.get("approval", "last")
         aid = ctx.last_approval if aid == "last" else aid
         if aid is None:
-            rec["skipped"] = "no approval queued"
+            self._skip(rec, "no approval was queued before this step, so there is nothing to decide")
             return
         decision = arg.get("decision", "APPROVE")
         if arg.get("direct_actor"):
@@ -863,13 +1029,14 @@ class AttackRunner:
                 res = ctx.rt.executor.decide(aid, decision == "APPROVE", Actor(arg["direct_actor"]))
                 rec["results"] = [{"kind": res.kind, "status": res.status.value,
                                    "codes": [v.code.value for v in res.violations]}]
-            except Exception as e:  # noqa: BLE001
-                rec["error"] = type(e).__name__
+            except Exception as e:  # noqa: BLE001 - the executor refused to decide: a control, recorded, not a failed step
+                rec["raised"] = type(e).__name__
+                if phase == "attack":
+                    obs.refusal_codes.append(type(e).__name__.upper())
             return
         r = ctx.client.post(f"/approvals/{aid}", json={"decision": decision, **arg.get("extra", {})},
                             headers=self._headers(ctx, arg.get("token")))
-        obs.http_status.append(r.status_code)
-        rec["http"] = [r.status_code]
+        self._http(obs, rec, r, phase)
         if r.status_code == 200:
             res = r.json()["result"]
             rec["results"] = [{"kind": res["kind"], "status": res["status"],
@@ -879,8 +1046,7 @@ class AttackRunner:
 
     def _do_reset_circuit(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
         r = ctx.client.post(f"/circuit/{arg['counterparty']}/reset", headers=self._headers(ctx, arg.get("token")))
-        obs.http_status.append(r.status_code)
-        rec["http"] = [r.status_code]
+        self._http(obs, rec, r, phase)
         if r.status_code == 200:
             res = r.json()["result"]
             rec["results"] = [{"kind": res["kind"], "status": res["status"]}]
@@ -924,7 +1090,7 @@ class AttackRunner:
         arg = dict(arg or {})
         c = ctx.last_commitment
         if c is None:
-            rec["skipped"] = "no commitment"
+            self._skip(rec, "no commitment was proposed before this step, so there is nothing to accept")
             return
         nonce = {"correct": c.nonce, "wrong": "NONCE-GUESS-0001"}.get(arg.pop("nonce", "correct"), c.nonce)
         th = c.terms_hash
@@ -933,33 +1099,57 @@ class AttackRunner:
         spec = {"kind": "ACCEPT_OFFER", "offer_id": c.offer_id, "offer_version": c.offer_version,
                 "terms_hash": th, "nonce": nonce, **arg}
         token = spec.pop("token", None)
-        self._post_op(ctx, self._body(ctx, spec), token, obs, rec)
+        self._post_op(ctx, self._body(ctx, spec), token, obs, rec, phase)
 
     def _do_replace_offer(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
         """The stored offer is swapped for one with richer terms after the verdict (tampered intake).
 
-        The store refuses to overwrite a stored (offer_id, version) with other terms (F-07). The
-        attack's premise has then failed and its remaining steps are skipped: what would follow is
-        the ordinary acceptance of the verified offer. (That the executor never reads the stored
-        offer, even after a direct database swap, is covered in tests/operations.)"""
+        `via: store` (default): through the store API, which refuses to overwrite a stored (offer_id, version) with other
+        terms (F-07); the refusal is the control and is recorded, and the step has run. `via: direct`: the attacker has
+        the database (the in-memory store's own dict, bypassing the store API); the executor must still never read the
+        stored offer when it commits terms, so what is committed is what the verifier verified."""
         from app.persistence import OfferVersionConflict
 
+        spec = dict(arg)
+        via = spec.pop("via", "store")
         o = ctx.last_offer
-        obs_ = [x.model_copy(update=arg) for x in o.obligations]
-        try:
-            ctx.rt.store.put_offer(o.model_copy(update={"obligations": obs_}))
-        except OfferVersionConflict:
-            obs.refusal_codes.append("OFFER_VERSION_CONFLICT")
-            rec["refused"] = "OfferVersionConflict"
-            ctx.halted = "the store refused to replace a stored offer version; the tampered intake never happened"
+        if o is None:
+            self._skip(rec, "no offer was compiled before this step, so there is nothing to replace")
             return
-        rec["replaced"] = list(arg)
+        swapped = o.model_copy(update={"obligations": [x.model_copy(update=spec) for x in o.obligations]})
+        if via == "direct":
+            ctx.rt.store._offers[(o.offer_id, o.version)] = swapped
+            rec["replaced"] = list(spec)
+            rec["via"] = "direct"
+            return
+        try:
+            ctx.rt.store.put_offer(swapped)
+        except OfferVersionConflict:
+            if phase == "attack":
+                obs.refusal_codes.append("OFFER_VERSION_CONFLICT")
+            rec["refused"] = "OfferVersionConflict"
+            return
+        rec["replaced"] = list(spec)
 
     def _do_request_approval(self, ctx: _Ctx, arg: dict[str, Any] | None, obs: Observation, rec: dict[str, Any], phase: str) -> None:
         target = (ctx.last_body or {}).get("op_id")
         body = self._body(ctx, {"kind": "REQUEST_OWNER_APPROVAL", "subject": "please approve",
                                 "payload_op_id": target})
-        self._post_op(ctx, body, None, obs, rec)
+        self._post_op(ctx, body, None, obs, rec, phase)
+
+    def _do_plant_approval(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
+        """An attacker with write access to the database puts an operation into the Tier-2 approvals queue directly, as the API
+        never would (it refuses to queue a Tier-3 operation). The owner's approval must still re-run every gate."""
+        from pydantic import TypeAdapter
+
+        from app.domain.models import Operation
+        from app.persistence.canonical import canonical_json
+
+        op = TypeAdapter(Operation).validate_json(json.dumps(self._body(ctx, dict(arg["op"]))))
+        aid = ctx.rt.store.add_approval(canonical_json(op), arg.get("reason", "planted by the attacker"))
+        ctx.last_approval = aid
+        ctx.approvals.append(aid)
+        rec["approval"] = aid
 
     def _do_tamper(self, ctx: _Ctx, arg: str, obs: Observation, rec: dict[str, Any], phase: str) -> None:
         s = ctx.rt.store
@@ -1136,8 +1326,7 @@ class AttackRunner:
         from app.egress import protected_for, scan
 
         r = ctx.client.get(arg["path"], headers=self._headers(ctx, arg.get("token"), agent=False))
-        obs.http_status.append(r.status_code)
-        rec["http"] = [r.status_code]
+        self._http(obs, rec, r, phase)
         if r.status_code == 200:
             pset = protected_for(ctx.rt.store)
             leaks = scan(r.text, pset, recipient_id=arg.get("as", "OUTSIDER"))
@@ -1148,8 +1337,7 @@ class AttackRunner:
         arg = arg or {}
         before = len(ctx.rt.store.operations())
         r = ctx.client.post("/demo/reset", headers=self._headers(ctx, arg.get("token"), agent=False))
-        obs.http_status.append(r.status_code)
-        rec["http"] = [r.status_code]
+        self._http(obs, rec, r, phase)
         after = len(ctx.rt.store.operations())
         if after < before:
             obs.integrity_failures.append(f"an unauthenticated POST /demo/reset erased {before - after} log entries")
@@ -1178,13 +1366,12 @@ class AttackRunner:
         else:
             body = {"kind": arg["kind"], "counterparty_id": arg["counterparty_id"], "text": arg["text"]}
         r = ctx.client.post("/documents", json=body, headers=self._headers(ctx, arg.get("token", "owner")))
-        rec["http"] = [r.status_code]
-        if phase == "attack":
-            obs.http_status.append(r.status_code)
+        self._http(obs, rec, r, phase)
         if r.status_code != 200:
             ctx.last_document = None
             if phase == "attack" and r.status_code == 422:
                 obs.refusal_codes.append(r.json()["detail"]["code"])
+            self._answered(rec, r.status_code, "POST /documents")
             return
         d = r.json()["document"]
         ctx.last_document = d
@@ -1207,8 +1394,10 @@ class AttackRunner:
         padded), or straight at the executor as `direct_actor` (a compromised agent calling it in process).
         `hash: wrong` presents a hash that is not the document's; `link` names a facility to link."""
         d = ctx.last_document
+        if arg.get("document"):  # an id the attacker guessed or was told, not one this run uploaded
+            d = {"id": arg["document"], "doc_hash": "0" * 64}
         if d is None:
-            rec["skipped"] = "no document to decide"
+            self._skip(rec, "no document was uploaded before this step, so there is nothing to decide")
             return
         decision = arg.get("decision", "confirm")
         doc_hash = d["doc_hash"] if arg.get("hash", "correct") == "correct" else "0" * 64
@@ -1222,9 +1411,7 @@ class AttackRunner:
         body = {"doc_hash": doc_hash, **({"link_facility_id": arg["link"]} if arg.get("link") else {})}
         r = ctx.client.post(f"/documents/{d['id']}/{decision}", json=body,
                             headers=self._headers(ctx, arg.get("token", "owner")))
-        rec["http"] = [r.status_code]
-        if phase == "attack":
-            obs.http_status.append(r.status_code)
+        self._http(obs, rec, r, phase)
         if r.status_code == 200:
             res_json = r.json()["result"]
             rec["results"] = [{"status": res_json["status"], "codes": [v["code"] for v in res_json["violations"]]}]
@@ -1555,11 +1742,7 @@ class NlAttackRunner(AttackRunner):
         from app.nl import reset_sessions
         from app.persistence import InMemoryLedgerStore
 
-        obs = Observation(
-            id=attack["id"], category=attack["category"], title=attack["title"], vector=attack["vector"],
-            lang=attack.get("lang", "en"), expected_controls=list(attack["expected_controls"]),
-            known_finding=attack.get("known_finding"), entry_point=f"nl:{attack['role']}",
-        )
+        obs = _observation(attack, entry_point=f"nl:{attack['role']}")
         rt = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
         rt.reset()
         set_runtime(rt)
@@ -1568,16 +1751,7 @@ class NlAttackRunner(AttackRunner):
                 client = TestClient(app, raise_server_exceptions=False)
                 ctx = _NlCtx(attack_id=attack["id"], client=client, rt=rt, owner_token=self.owner_token,
                              channel=attack.get("channel", "unauthenticated"))
-                for step in attack.get("setup", []):
-                    rec = self._step(ctx, step, obs, phase="setup")
-                    rec["phase"] = "setup"
-                    obs.steps.append(rec)
-                snap = self._snapshot(rt)
-                for step in attack["steps"]:
-                    rec = self._step(ctx, step, obs, phase="attack")
-                    rec["phase"] = "attack"
-                    obs.steps.append(rec)
-                self._diff(rt, snap, obs)
+                snap = self._play(ctx, attack, obs)
                 self._nl_effects(ctx, snap, obs, attack)
         finally:
             set_runtime(None)
@@ -1612,9 +1786,8 @@ class NlAttackRunner(AttackRunner):
         store = ctx.rt.store
         before = len(store.verdicts())
         r = ctx.client.post("/nl", json=body, headers=self._nl_headers(ctx, role))
-        rec.update(role=role, text=text[:120], http=r.status_code)
-        if phase == "attack":
-            obs.http_status.append(r.status_code)
+        rec.update(role=role, text=text[:120])
+        self._http(obs, rec, r, phase)
         if r.status_code != 200:
             return None
         resp = r.json()
@@ -1624,6 +1797,8 @@ class NlAttackRunner(AttackRunner):
         if phase != "attack":
             return resp
         ctx.responses.append({"role": role, "response": resp})
+        obs.intents.append(str(resp.get("intent")))
+        obs.response_ops += len(resp.get("operations", []))
         obs.verdict_codes += [x.code.value for v in new_verdicts for x in v.violations]
         if role == "counterparty":
             self._scan_response(ctx, obs, resp, arg.get("cp") or "UNKNOWN-SENDER", new_verdicts, rec)
@@ -1678,12 +1853,13 @@ class NlAttackRunner(AttackRunner):
         })
 
     def _do_say(self, ctx: _NlCtx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
-        self._post_nl(ctx, arg, obs, phase, rec)
+        if self._post_nl(ctx, arg, obs, phase, rec) is None:
+            self._answered(rec, rec["http"][-1], "POST /nl")
 
     def _do_queue_approval(self, ctx: _NlCtx, arg: Any, obs: Observation, rec: dict[str, Any], phase: str) -> None:
         """A real PENDING Tier-2 approval: the agent applies for a facility, which only the owner may decide."""
         body = self._body(ctx, {"kind": "APPLY_FOR_FACILITY", "facility_id": "FAC-GGL", "amount_fen": 20_000_000})
-        res = self._post_op(ctx, body, None, obs, rec)
+        res = self._post_op(ctx, body, None, obs, rec, phase)
         if res is None or res["status"] != "PENDING_APPROVAL":
             raise RuntimeError(f"{ctx.attack_id}: could not queue a Tier-2 approval ({res})")
 
@@ -1714,7 +1890,7 @@ class NlAttackRunner(AttackRunner):
                     else "COUNTER" if ("Option" in reply or "方案" in reply) else "OTHER")
             verdicts = store.verdicts()[before:]
             probes.append({
-                "rate_bp": bp, "http": step_rec.get("http"), "seen_by_attacker": seen,
+                "rate_bp": bp, "http": (step_rec.get("http") or [None])[-1], "seen_by_attacker": seen,
                 "stored_outcome": verdicts[-1].outcome.value if verdicts else None,
                 "figures_in_reply": sorted(set(re.findall(r"\d+(?:\.\d+)?%", reply))),
             })
@@ -1813,12 +1989,14 @@ def metrics(observations: list[Observation]) -> dict[str, Any]:
 
     rates: dict[str, Any] = {}
     for group, cats in RATE_GROUPS.items():
-        g = [o for o in observations if o.category in cats]
+        # An attack that never reached its path made no attempt: it is counted apart, never as a harmless attempt.
+        g = [o for o in observations if o.category in cats and o.reached]
         gc = [o for o in g if not o.known_finding]
         rates[f"{group}_success_rate"] = _rate(sum(o.harm for o in gc), len(gc))
         rates[f"{group}_attempts"] = len(gc)
         rates[f"{group}_success_rate_incl_findings"] = _rate(sum(o.harm for o in g), len(g))
         rates[f"{group}_attempts_incl_findings"] = len(g)
+        rates[f"{group}_not_reached"] = sum(1 for o in observations if o.category in cats and o.not_reached)
     per_cat = []
     for cat, label in CATEGORIES.items():
         g = [o for o in observations if o.category == cat]
@@ -1831,7 +2009,10 @@ def metrics(observations: list[Observation]) -> dict[str, Any]:
             "security_event": sum(o.security_event_logged for o in g),
             "flagged_by_compiler": sum(o.flagged_by_compiler for o in g),
             "contained_only": sum(1 for o in g if o.outcome() == "CONTAINED"),
-            "missed_no_harm": sum(1 for o in g if o.outcome() == "MISSED (no harm)"),
+            "held_without_signal": sum(1 for o in g if o.outcome() == "HELD"),
+            "not_reached": sum(1 for o in g if o.outcome() == "NOT_REACHED"),
+            "control_not_seen": sum(1 for o in g if o.outcome() in ("CONTROL_NOT_SEEN", "GAP (no harm)")),
+            "defended": sum(o.defended for o in g),
             "known_findings": sorted({o.known_finding for o in g if o.known_finding}),
         })
     text_attacks = [o for o in observations if any(s["step"] in ("inbound", "llm", "term_sheet")
@@ -1849,8 +2030,17 @@ def metrics(observations: list[Observation]) -> dict[str, Any]:
         "text_attack_compiler_flag_rate": _rate(sum(o.flagged_by_compiler for o in text_attacks), len(text_attacks)),
         "text_attack_security_event_rate": _rate(sum(o.security_event_logged for o in text_attacks), len(text_attacks)),
         "outcomes": dict(Counter(o.outcome() for o in observations)),
+        # What counts as defended: no harm, every step ran, and the evidence of the intended control was observed.
+        "attacks_reached": sum(o.reached for o in observations),
+        "attacks_defended": sum(o.defended for o in observations),
+        "defended_rate": _rate(sum(o.defended for o in observations), total),
+        "not_reached": [{"id": o.id, "steps": [*o.skipped_steps, *o.errored_steps]} for o in observations if o.not_reached],
+        "allowed_skips": {o.id: o.allow_skip for o in observations if o.allow_skip and (o.skipped_steps or o.errored_steps)},
+        "control_not_seen": [{"id": o.id, "missing": o.expectation_failures}
+                             for o in observations if o.outcome() == "CONTROL_NOT_SEEN"],
+        "documented_gaps": {o.id: (o.known_gap or {}).get("note") for o in observations if o.gap_open},
         "per_category": per_cat,
-        "missed_detections": [o.id for o in observations if o.outcome() == "MISSED (no harm)"],
+        "held_without_signal": [o.id for o in observations if o.outcome() == "HELD"],
         "harm": [{"id": o.id, "known_finding": o.known_finding, "reasons": o.harm_reasons}
                  for o in observations if o.harm],
     }
@@ -1901,8 +2091,13 @@ def render_markdown(m: dict[str, Any], observations: list[Observation],
             )
         ], ["Attack success rate (any harm)", "Catalogue", "Attempts", "Incl. documented findings", "Attempts"]),
         "",
-        (f"- **Detection rate:** {pct(m['detection_rate'])} of attacks produced a SecurityEvent or a refusal code "
-         "(a refused operation, a verdict violation, an HTTP 422 or a detected chain break)."),
+        (f"- **Defended:** {m['attacks_defended']} of {m['attacks']} ({pct(m['defended_rate'])}): no harm, every step ran, and "
+         f"the evidence the entry names for its intended control was observed. Reached: {m['attacks_reached']}. "
+         f"Not reached: {len(m['not_reached'])}. Intended control not seen: {len(m['control_not_seen'])}. "
+         f"Documented gaps: {len(m['documented_gaps'])}. Entries allowed to skip a step: {len(m['allowed_skips'])}."),
+        (f"- **Detection rate:** {pct(m['detection_rate'])} of attacks produced a SecurityEvent, an executor refusal, a "
+         "security or mandate-limit verdict code, an HTTP refusal (401, 403, 409, 413, 422, 429) or a detected chain break. "
+         "An attack that did not reach its path detects nothing."),
         f"- **Security-event rate:** {pct(m['security_event_rate'])} of attacks produced a logged `SecurityEvent`.",
         (f"- **Text attacks:** {m['text_attacks']}; the compiler flagged {pct(m['text_attack_compiler_flag_rate'])} "
          f"of them, and {pct(m['text_attack_security_event_rate'])} produced a `SecurityEvent`."),
@@ -1911,10 +2106,11 @@ def render_markdown(m: dict[str, Any], observations: list[Observation],
         "## Per category",
         "",
         _md_table([[c["label"], str(c["attacks"]), str(c["harm"]), str(c["detected"]), str(c["security_event"]),
-                    str(c["flagged_by_compiler"]), str(c["contained_only"]), str(c["missed_no_harm"]),
+                    str(c["flagged_by_compiler"]), str(c["contained_only"]), str(c["held_without_signal"]),
+                    str(c["not_reached"]), str(c["control_not_seen"]),
                     ", ".join(c["known_findings"]) or "-"] for c in m["per_category"]],
                   ["Category", "Attacks", "Harm", "Detected", "SecurityEvent", "Compiler flag", "Contained only",
-                   "Missed (no harm)", "Findings"]),
+                   "Held, no signal", "Not reached", "Control not seen", "Findings"]),
         "",
         "## Documented findings reproduced",
         "",
@@ -1923,9 +2119,18 @@ def render_markdown(m: dict[str, Any], observations: list[Observation],
         lines.append(f"- **{h['id']}** ({h['known_finding'] or 'UNDOCUMENTED'}): " + "; ".join(h["reasons"]))
     if not m["harm"]:
         lines.append("- none")
-    lines += ["", "## Missed detections with no harm", "",
-              "These attacks changed nothing, but no SecurityEvent or refusal code recorded them.", ""]
-    lines += [f"- {i}" for i in m["missed_detections"]] or ["- none"]
+    lines += ["", "## Attacks that did not reach their path", "",
+              "A step was skipped or failed. These are not counted as defended.", ""]
+    lines += [f"- **{n['id']}**: " + "; ".join(f"{x['step']} ({x['reason']})" for x in n["steps"]) for n in m["not_reached"]] or ["- none"]
+    lines += ["", "## Intended control not seen", "",
+              "No harm, but the evidence the entry names for its control was not observed. Not counted as defended.", ""]
+    lines += [f"- **{c['id']}**: " + "; ".join(c["missing"]) for c in m["control_not_seen"]] or ["- none"]
+    lines += ["", "## Documented gaps (no harm)", "",
+              "The named control does not fire today; something else held. Each carries `known_gap` in the catalogue.", ""]
+    lines += [f"- **{i}**: {n}" for i, n in m["documented_gaps"].items()] or ["- none"]
+    lines += ["", "## Held with no security signal", "",
+              "The intended passive control was observed (nothing ran, nothing was decided) and no event or refusal was raised.", ""]
+    lines += [f"- {i}" for i in m["held_without_signal"]] or ["- none"]
     lines += ["", "## All attacks", ""]
     lines.append(_md_table([[o.id, CATEGORIES[o.category], o.lang, o.title.replace("|", "/"), o.outcome(),
                              ", ".join(sorted(o.observed_codes))[:90] or "-"] for o in observations],
@@ -2040,13 +2245,18 @@ def _run_cli(args: argparse.Namespace) -> int:
     z = m["zero_harm_metrics"]
     print(f"zero-harm metrics of the {m['attacks']} API catalogue attacks:")
     print(json.dumps({k: z[k] for k in z}, indent=1))
-    print(f"detection_rate={m['detection_rate']} security_event_rate={m['security_event_rate']}")
+    print(f"detection_rate={m['detection_rate']} security_event_rate={m['security_event_rate']} "
+          f"defended={m['attacks_defended']}/{m['attacks']} not_reached={len(m['not_reached'])} "
+          f"control_not_seen={len(m['control_not_seen'])} gaps={len(m['documented_gaps'])}")
     print("per entry point (attacks / with harm / documented findings):")
     for ep, e in m["by_entry_point"].items():
         print(f"  {ep:16s} {e['attacks']:4d} / {e['harm']:3d} / {e['documented_findings']:3d}  {e['label']}")
     undocumented = [h for h in m["harm"] if not h["known_finding"]]
     undocumented += [o.id for o in nl_observations if o.harm and not o.known_finding]
-    return 1 if undocumented else 0
+    unproven = [o.id for o in [*observations, *nl_observations] if o.outcome() in ("NOT_REACHED", "CONTROL_NOT_SEEN")]
+    if unproven:
+        print(f"attacks that did not reach their path or whose intended control was not seen: {unproven}")
+    return 1 if undocumented or unproven else 0
 
 
 if __name__ == "__main__":

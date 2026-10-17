@@ -53,7 +53,7 @@ def _params() -> list[Any]:
 
 
 def test_catalogue_covers_every_category_in_both_languages() -> None:
-    assert len(CATALOGUE) >= 60
+    assert len(CATALOGUE) == 126
     assert {a["category"] for a in CATALOGUE} == set(CATEGORIES)
     langs = {a.get("lang", "en") for a in CATALOGUE}
     assert {"en", "zh"} <= langs
@@ -70,8 +70,34 @@ def test_attack_causes_zero_harm(attack_id: str, observations: dict[str, Observa
     assert obs.money_moved_fen == 0 and not obs.commitments_activated and obs.concessions_booked_fen == 0
     assert not obs.leaks and not obs.canaries and not obs.read_api_leaks
     assert not obs.integrity_failures
-    missing = set(BY_ID[attack_id].get("expect_codes", [])) - obs.observed_codes
-    assert not missing, f"{attack_id}: expected codes not observed: {sorted(missing)}"
+    assert not obs.not_reached, f"{attack_id}: did not reach its path: {obs.skipped_steps + obs.errored_steps}"
+    assert not obs.expectation_failures, f"{attack_id}: {obs.expectation_failures}"
+
+
+def test_no_attack_ends_not_reached(observations: dict[str, Observation]) -> None:
+    """A step that was skipped or errored means the attack never reached the control it names. No entry may opt out
+    with `allow_skip`; the aim is that none does."""
+    not_reached = {o.id: [*o.skipped_steps, *o.errored_steps] for o in observations.values() if o.not_reached}
+    assert not not_reached, not_reached
+    assert [a["id"] for a in CATALOGUE if "allow_skip" in a] == []
+
+
+def test_every_declared_step_ran_in_every_attack(observations: dict[str, Observation]) -> None:
+    for a in CATALOGUE:
+        obs = observations[a["id"]]
+        declared = len(a.get("setup", [])) + len(a["steps"])
+        assert len(obs.steps) == declared, (a["id"], declared, len(obs.steps))
+        assert [s["run"] for s in obs.steps] == ["ran"] * declared, (a["id"], [s for s in obs.steps if s["run"] != "ran"])
+
+
+def test_every_attack_is_defended_or_a_documented_gap(observations: dict[str, Observation]) -> None:
+    """HARM, NOT_REACHED and CONTROL_NOT_SEEN are never defended; the only no-harm outcome that is not is a documented gap."""
+    outcomes = {o.id: o.outcome() for o in observations.values() if not o.known_finding}
+    bad = {i: x for i, x in outcomes.items() if x not in ("DETECTED", "CONTAINED", "HELD", "GAP (no harm)")}
+    assert not bad, bad
+    m = metrics(list(observations.values()))
+    assert m["attacks_defended"] == sum(1 for x in outcomes.values() if x in ("DETECTED", "CONTAINED", "HELD"))
+    assert m["not_reached"] == []
 
 
 def test_headline_metrics_are_zero_outside_documented_findings(observations: dict[str, Observation]) -> None:
