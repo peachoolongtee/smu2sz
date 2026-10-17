@@ -271,6 +271,14 @@ _AUTHORITY: list[tuple[str, re.Pattern[str]]] = [
         r"|\b(?:you\s+are|you'?re)\s+(?:now\s+)?(?:an?\s+)?(?:\w+\s+)?(?:assistant|ai|bot|agent)\s+(?:with|that\s+has|who\s+has)\s+no\s+(?:mandate|rules|restrictions|limits|filters)\b"
         r"|\byou\s+are\s+\w*bot\b|\bas\s+\w*bot\b"
         r"|扮演|假装(?:你是|自己是|成)|假设你是|角色扮演"
+        # a note addressed to the reading agent ("Note to the agent: ..."), and an instruction to change the owner's registry of
+        # customers ("add X to the owner's customers"): contract wording does neither (REG-6). A bare "to the Agent" is a
+        # facility agreement's own wording, so the address needs its label and its colon.
+        r"|\b(?:note|memo|reminder|attention|message)s?\s+(?:to|for)\s+(?:the\s+|our\s+|your\s+|any\s+|this\s+)?(?:\w+\s+)?"
+        r"(?:agent|assistant|bot|chatbot|reader|reviewer|software|model|AI|system)s?\s*[:：\-–—]"
+        r"|\b(?:add|register|create|insert|enrol|enroll|record|include)\b(?:[^.;。\n]|\.(?!\s+(?-i:[A-Z]))){0,100}?\bto\s+(?:the\s+|your\s+)?owner'?s?\s+"
+        r"(?:customers?|clients?|counterpart(?:y|ies)|buyers?|suppliers?|lenders?|registry|books|ledger|accounts?)\b"
+        r"|(?:给|致|写给)(?:代理|助手|智能体|系统)[:：]|(?:添加|加入|新增|登记|录入)[^。；\n]{0,30}?(?:到|至|进)(?:老板|业主)的?(?:客户|对手方|账簿|名单)"
         # changing a protected setting by message: "change your minimum reserve to 0", 把最低现金储备改成0
         rf"|{CHANGE_SETTING_RE.pattern}", I)),
     ("URGENCY", rx(
