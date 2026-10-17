@@ -265,7 +265,7 @@ def terms_extension_cost(ctx: Any, lang: str, slots: dict[str, Any]) -> AnswerRe
     capf = money(int(d["cap_fen"] or 0))
     text = w.t(f"{total} in forward concessions over {span} of {name} invoices on {n}-day terms, "
                + (f"above your {capf} limit" if d["over_cap"] else f"within your {capf} limit"),
-               f"按 {n} 天账期，{span}{name}的发票共产生远期让步 {total}，" + (f"超过您 {capf} 的上限" if d["over_cap"] else f"在您 {capf} 的上限内"))
+               f"{span}{name}的发票共产生远期让步 {total}（按 {n} 天账期），" + (f"超过您 {capf} 的上限" if d["over_cap"] else f"在您 {capf} 的上限内"))
     if d["breach_day"] is not None:
         w.fig("breach_day", str(d["breach_day"]))
         text += w.t(f", and cash would fall below your reserve on {w.on(d['breach_day'])}", f"，且现金将在{w.on(d['breach_day'])}低于您的储备线")

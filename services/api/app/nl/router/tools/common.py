@@ -163,21 +163,23 @@ def _and(w: W, parts: list[str]) -> str:
 
 def ask_which_customer(w: W, tool: str, res: Resolved) -> AnswerReply:
     """The reply when a customer slot names no one on the books, or more than one: it asks which, naming only the customers
-    the owner already sees on the Deals page (in Chinese, those the books hold a Chinese name for; the rest are counted)."""
+    the owner already sees on the Deals page (in Chinese, those with a Chinese name; the rest are counted)."""
     if not res.candidates:
         text_ = w.t("There is no customer on your books yet, so I cannot answer that for a customer.",
                     "您的账目中还没有客户，因此无法针对客户回答。")
         return _clarify(w, tool, text_)
     if w.zh:
-        aliases = lx.counterparty_aliases(w.r.state)
-        named = [n for cid in res.candidates if (n := next((a for a in aliases.get(cid, ()) if not a.isascii()), None))]
+        known = customer_names(w.r)  # a customer's Chinese name: the owner's own short name for it, or the lexicon's city name
+        named = [n for cid in res.candidates if (n := next((a for a in known.get(cid, ()) if not a.isascii()), None))]
         rest = len(res.candidates) - len(named)
         if res.ambiguous:
-            listed = _or(w, named) if named else ""
-            more = f"（另有 {rest} 位同名客户）" if rest and named else ""
-            text_ = (f"您指的是哪位客户：{listed}{more}？请用完整的客户名称再问一次。" if named
+            # two customers may share a Chinese name (two companies from the same city): then only their count is said
+            distinct = not rest and len(set(named)) == len(named)
+            text_ = (f"您指的是哪位客户：{_or(w, named)}？请用完整的客户名称再问一次。" if distinct
                      else f"有 {len(res.candidates)} 位客户都符合，请用完整的客户名称再问一次。")
         else:
+            named = list(dict.fromkeys(named))
+            rest = len(res.candidates) - len(named)
             listed = _and(w, named) + (f"，以及另外 {rest} 位客户" if rest and named else "")
             text_ = (f"您指的是哪位客户？我无法从问题中确定。您的客户有{listed}。" if named
                      else f"您指的是哪位客户？我无法从问题中确定。您的账目中有 {rest} 位客户，请用客户名称再问一次。")
