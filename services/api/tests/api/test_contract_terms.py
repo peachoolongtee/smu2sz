@@ -312,3 +312,45 @@ def test_ct3_the_customer_named_as_buyer_and_supplier_cannot_be_set_up(client, o
     v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
     assert v["status"] == "BLOCKED" and "PARTY_IS_SUPPLIER" in {p["code"] for p in v["problems"]}
     assert not _buyer2(rt)
+
+
+def _replacement(client, price: str = "RMB 200,000 (two hundred thousand yuan)") -> tuple[dict, dict]:  # type: ignore[no-untyped-def]
+    """The customer's contract is set up, then a later contract with another price is confirmed and replaces it."""
+    first = _confirmed(client)
+    v = client.get(f"/documents/{first['id']}/terms").json()["terms"]
+    done = client.post(f"/documents/{first['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]}).json()
+    assert done["result"]["status"] == "EXECUTED"
+    second = _confirmed(client, DGOS.replace("RMB 180,000 (one hundred and eighty thousand yuan)", price))
+    return first, second
+
+
+def test_ct4_a_replacing_contract_names_the_live_set_up_of_the_one_it_replaced_and_offers_its_undo(client, on, rt):
+    """Review 7, CT-4: the replaced contract's repeating invoice stayed in the books and the new contract's page said only that
+    other invoices were there."""
+    first, second = _replacement(client)
+    assert client.get(f"/documents/{first['id']}").json()["document"]["superseded_by"] == second["id"]
+    v = client.get(f"/documents/{second['id']}/terms").json()["terms"]
+    assert v["status"] == "CONFLICT" and not v["can_set_up"]
+    live = v["live_set_up"]
+    assert live["document_id"] == first["id"] and live["replaced_by_this_contract"] is True
+    op_id = client.get(f"/documents/{first['id']}/terms").json()["terms"]["set_up"]["op_id"]
+    assert live["set_up_op_id"] == op_id
+    assert live["undo"] == {"method": "POST", "route": f"/documents/{first['id']}/terms/undo", "body": {"set_up_op_id": op_id},
+                            "button": "Undo that set-up", "confirm": live["undo"]["confirm"]}
+    assert "¥180,000.00 every 30 days" in live["text"] and "DOC-" not in live["text"]
+    zh = client.get(f"/documents/{second['id']}/terms", params={"lang": "zh"}).json()["terms"]["live_set_up"]
+    assert zh["undo"]["button"] == "撤销该设置" and not zh["text"].isascii() and zh["undo"]["route"] == live["undo"]["route"]
+    # following the offer: undo it, and the new contract can be set up
+    undone = client.post(live["undo"]["route"], json=live["undo"]["body"]).json()
+    assert undone["result"]["status"] == "EXECUTED" and not _buyer2(rt)
+    after = client.get(f"/documents/{second['id']}/terms").json()["terms"]
+    assert after["status"] == "READY" and after["live_set_up"] is None
+
+
+def test_ct4_a_contract_with_no_other_live_set_up_has_none_to_name_and_an_undone_one_is_not_named(client, on, rt):
+    d = _confirmed(client)
+    assert client.get(f"/documents/{d['id']}/terms").json()["terms"]["live_set_up"] is None
+    _, second = _replacement(client)  # the pair set up after an unrelated first document
+    live = client.get(f"/documents/{second['id']}/terms").json()["terms"]["live_set_up"]
+    client.post(live["undo"]["route"], json=live["undo"]["body"])
+    assert client.get(f"/documents/{second['id']}/terms").json()["terms"]["live_set_up"] is None

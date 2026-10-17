@@ -210,6 +210,10 @@ For the Security Lead:
   `same_company_key` (case, punctuation and the legal-form suffix ignored; a short form no longer counts), its quote must be
   found in the document, and the customer may not be the contract's PARTY_SUPPLIER (full name, whole words). This supersedes
   §4's "or its short form inside it"; the confirmation-time party check keeps the short-form rule.
+- **CT-4, a replaced contract's set-up is named.** When the contract a set-up came from is replaced, the repeating invoice stays
+  in the books until the owner undoes it. The new contract's view carries `live_set_up` (the other document, its `set_up_op_id`,
+  the undo route and button) whatever its status, so the CONFLICT says where the invoices came from and offers the undo. A Home
+  alert for it is engine (`alerts`) and is not made.
 
 ## Considered and rejected
 
