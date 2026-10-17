@@ -82,6 +82,7 @@ from app.persistence.chain import (
     offer_fingerprint,
     op_identity,
     parse_json,
+    refiled_record,
     verify_entries,
 )
 from app.persistence.errors import (
@@ -732,6 +733,25 @@ class SqlLedgerStore:
                 facility=Facility.model_validate_json(json.dumps(facility)) if facility else None,
                 clause_quotes=tuple(c["span"]["text"] for c in (ts or {}).get("clauses", []))))
         return out
+
+    def close_refiled_record(self, record_id: str, superseded_by: str, day: int, seq: int) -> ContractRecord:
+        cr = t.contract_records
+        with self.transaction():
+            conn = self._tx()
+            assert conn is not None
+            row = conn.execute(select(cr).where(cr.c.id == record_id)).first()
+            if row is None:
+                raise NotFound(f"document {record_id} not found")
+            stored = ContractRecord.model_validate_json(row.payload_json)
+            if stored.status != DocumentStatus.PROPOSED:
+                raise DocumentAlreadyDecided(f"document {record_id} is {stored.status.value}")
+            closed = refiled_record(stored, superseded_by, day, seq)
+            res = conn.execute(
+                update(cr).where(cr.c.id == record_id, cr.c.status == DocumentStatus.PROPOSED.value)
+                .values(status=closed.status.value, decided_day=day, payload_json=canonical_json(closed)))
+            if res.rowcount == 0:  # another writer decided it between the read and the update
+                raise DocumentAlreadyDecided(f"document {record_id} was decided concurrently")
+        return closed
 
     def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
         cr = t.contract_records

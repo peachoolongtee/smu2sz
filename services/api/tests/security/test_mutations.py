@@ -42,7 +42,8 @@ def not_defended(obs: dict[str, Observation]) -> set[str]:
 # ---------------------------------------------------------------- the unmutated runs are clean (the control group)
 
 TIER_IDS = ("PE-01", "PE-05", "PE-07", "PE-08", "PE-12", "PE-13", "PE-14", "PE-16", "PE-17")
-OWNER_IDS = ("PE-01", "PE-02", "PE-03", "PE-04", "PE-08", "PE-09", "PE-11", "MX-05", "RX-06", "FR-15", "DOC-03", "DOC-04")
+OWNER_IDS = ("PE-01", "PE-02", "PE-03", "PE-04", "PE-08", "PE-09", "PE-11", "MX-05", "RX-06", "FR-15", "DOC-03", "DOC-04",
+             "DOC-05")
 SIG_IDS = ("RV-04", "RV-05")
 HASH_IDS = ("TC-01", "TC-03", "RP-08", "EX-01")  # Tier-2 rebates: the owner queue stands behind the hash check
 FORBID_IDS = ("FL-06", "PE-06", "PE-19", "SE-04")
@@ -83,8 +84,10 @@ def test_owner_check_bypassed_makes_owner_route_attacks_show_harm_or_a_leak(monk
 
     monkeypatch.setattr(auth, "is_owner", lambda token: True)
     obs = run_api(*OWNER_IDS)
-    assert harmed(obs) >= {"PE-03", "PE-04", "PE-08", "PE-09", "PE-11", "FR-15", "DOC-04", "MX-05", "RX-06", "DOC-03"}, \
-        {i: o.outcome() for i, o in obs.items()}
+    assert harmed(obs) >= {"PE-03", "PE-04", "PE-08", "PE-09", "PE-11", "FR-15", "DOC-04", "MX-05", "RX-06", "DOC-03",
+                           "DOC-05"}, {i: o.outcome() for i, o in obs.items()}
+    # a non-owner credential that is now believed adds a customer: the customers_added oracle sees it
+    assert any(r.startswith("customers added during the attack") for r in obs["DOC-05"].harm_reasons)
     # the read routes answer an outsider with the books: leaks, not executions
     assert obs["MX-05"].read_api_leaks and obs["RX-06"].read_api_leaks and obs["DOC-03"].read_api_leaks
     # an approval decided by a caller who is not the owner executes

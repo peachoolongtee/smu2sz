@@ -3628,6 +3628,37 @@ export interface DocumentView extends Omit<DocumentSummary, "flags"> {
   suggested_facility_name?: string | null;
   compared_with?: string | null;
   comparison?: { label: string; agreement_display: string; books_display: string | null; same: boolean }[];
+  /** The parties the document names, each with the company on the books that has that name, if any; absent from an older server. */
+  named_parties?: NamedParty[];
+}
+
+/** A party a document names (a contract's buyer or supplier, an agreement's lender) and the company on the books with that name, if any. */
+export interface NamedParty {
+  name: string;
+  role: "BUYER" | "SUPPLIER" | "LENDER";
+  on_books_id: string | null;
+}
+
+/** A customer (a buyer) on the books, as POST /customers answers it. */
+export interface Customer {
+  id: string;
+  name: string;
+  role: "BUYER";
+  known: boolean;
+}
+
+/** POST /customers: a buyer the owner adds by name; the key makes a retried request add it once. */
+export interface AddCustomerRequest {
+  name: string;
+  short_name?: string | null;
+  idempotency_key: string;
+}
+
+/** The customer, whether this request added it (false: the key was seen before), and the server's sentence for it. */
+export interface AddCustomerResponse {
+  customer: Customer;
+  created: boolean;
+  event_text: string;
 }
 
 export interface DocumentsList {

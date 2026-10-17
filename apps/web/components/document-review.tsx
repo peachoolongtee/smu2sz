@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
 import { Disclosure } from "@/components/business/kit";
@@ -9,11 +10,11 @@ import { OperationResultBox } from "@/components/operation-result";
 import { CheckIcon, XIcon } from "@/components/icons";
 import { Badge, Button, ButtonLink, Callout, Card, Chip, ErrorState, LoadingBlock, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { ANNOTATION_STYLE, type AnnotationKind } from "@/lib/annotation-style";
-import { decideDocument, getDocument } from "@/lib/api";
+import { addCustomer, decideDocument, existingCustomerId, getDocument, refileDocument } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { ApiError } from "@/lib/errors";
 import { useI18n, type I18n } from "@/lib/i18n";
-import type { DocumentDecision, DocumentOutcome, DocumentView, TextSpan } from "@/lib/types";
+import type { DocumentDecision, DocumentOutcome, DocumentView, NamedParty, TextSpan } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 
 /** One numbered thing the reading points at in the text: a term, a lender agreement's clause, or a flag. */
@@ -87,6 +88,42 @@ function problemOf(e: unknown): Problem {
   return { kind: "generic" };
 }
 
+const PARTY_NOT_NAMED = "PARTY_NOT_NAMED";
+
+/** Every blocking flag is the party check's: the document does not name the company it was filed under. */
+function blockedByParty(d: DocumentView): boolean {
+  const blocking = d.flags.filter((f) => f.blocking);
+  return blocking.length > 0 && blocking.every((f) => f.kind === PARTY_NOT_NAMED);
+}
+
+/**
+ * The ways out of a buyer contract filed under a company it does not name: file it under a party it does name (its buyers
+ * first, then its supplier), adding a buyer not on the books as a new customer. Only a buyer can be added as a customer, so a
+ * supplier the books do not have is not offered. Nothing for a reading already decided or filed again.
+ */
+function partyChoices(d: DocumentView): NamedParty[] {
+  if (d.kind !== "BUYER_CONTRACT" || d.status !== "PROPOSED" || d.superseded_by) return [];
+  if (!d.flags.some((f) => f.kind === PARTY_NOT_NAMED && f.blocking)) return [];
+  const seen = new Set<string>();
+  return [...(d.named_parties ?? [])]
+    .filter((p) => (p.role === "BUYER" || (p.role === "SUPPLIER" && p.on_books_id)) && p.on_books_id !== d.counterparty_id)
+    .sort((a, b) => (a.role === "BUYER" ? 0 : 1) - (b.role === "BUYER" ? 0 : 1))
+    .filter((p) => {
+      const k = p.name.trim().toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+}
+
+/** What went wrong filing a reading again, in the owner's words: the text changed, it no longer waits, or the call failed. */
+function refileProblem(e: unknown, t: I18n["t"]): string {
+  const code = e instanceof ApiError && e.status === 409 ? (e.detail as { code?: unknown } | undefined)?.code : undefined;
+  if (code === "DOCUMENT_CHANGED") return t("docs.party.changed");
+  if (code === "NOT_PROPOSED") return t("docs.party.notWaiting");
+  return t("docs.party.failed");
+}
+
 /**
  * The review screen for one document: the text with every clause the agent read highlighted, each term beside its quote,
  * the fields left blank and why, the flags, and for a lender agreement the facility it describes against the one on the books.
@@ -97,7 +134,11 @@ function problemOf(e: unknown): Problem {
  */
 export function DocumentReview({ id, today = null, focus }: { id: string; today?: number | null; focus?: { at: string | null; clause: string | null } }) {
   const { t, te, lang } = useI18n();
+  const router = useRouter();
   const doc = useAsync(() => getDocument(id, lang), [id, lang]);
+  // Filing a mismatched reading again: which party is being filed (its name), and what went wrong.
+  const [filing, setFiling] = useState<string | null>(null);
+  const [fileProblem, setFileProblem] = useState<string | null>(null);
   // What is lit comes from the pointer or from keyboard focus, kept apart. The pointer lights a term only when it moves over it (mousemove), not when the page scrolls under a parked pointer (focusing a term scrolls it into view, and the browser then reports a leave and an enter that no one made): that must not switch off, or replace, what focus lit.
   const [hovered, setHovered] = useState<string | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
@@ -175,6 +216,35 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
     }
   }
 
+  /** Files the reading under a party it names (added as a new customer first when the books do not have it), then opens the new reading. */
+  async function refileUnder(p: NamedParty, view: DocumentView) {
+    if (filing || busy) return;
+    setFiling(p.name);
+    setFileProblem(null);
+    try {
+      let to = p.on_books_id;
+      if (!to) {
+        try {
+          to = (await addCustomer({ name: p.name }, lang)).customer.id;
+        } catch (e) {
+          // Added since the reading was made (here, or by a retry): the customer on the books is the one.
+          to = existingCustomerId(e);
+          if (!to) throw e;
+        }
+      }
+      const next = await refileDocument(view.id, to, view.doc_hash, lang);
+      bump();
+      router.replace(`/documents?id=${encodeURIComponent(next.id)}`, { scroll: false });
+    } catch (e) {
+      setFileProblem(refileProblem(e, t));
+      if (e instanceof ApiError && e.status === 409) doc.reload();
+      setFiling(null);
+    }
+  }
+
+  const choices = partyChoices(d);
+  const blockedSaid = blockedByParty(d) ? t("docs.flags.blocked.party") : t("docs.flags.blocked");
+
   const itemRow = (it: Item) => (
     <li
       key={it.id}
@@ -221,11 +291,48 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
           {flags.length ? (
             <div className="mt-3" data-testid="doc-flags">
               <Callout tone={d.blocked ? "bad" : "warn"} title={t("docs.flags", { n: flags.length })}>
-                {d.blocked ? <p className="mb-1 font-medium">{t("docs.flags.blocked")}</p> : null}
+                {d.blocked ? <p className="mb-1 font-medium">{blockedSaid}</p> : null}
                 <ul className="list-disc space-y-1 pl-5">
                   {d.flags.map((f, i) => (
                     <li key={i}>
                       {f.note} <span className="text-meta">“{f.quote}”</span>
+                      {f.kind === PARTY_NOT_NAMED && f.blocking && choices.length > 0 && d.flags.findIndex((x) => x.kind === PARTY_NOT_NAMED && x.blocking) === i ? (
+                        <div className="mt-2" data-testid="doc-party-actions">
+                          <p className="text-meta font-bold text-ink-2">{t("docs.party.lead")}</p>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                            {choices.map((p, n) => (
+                              <Button
+                                key={p.name}
+                                size="sm"
+                                variant={n === 0 ? "primary" : "secondary"}
+                                className="max-sm:w-full max-sm:whitespace-normal max-sm:text-left"
+                                disabled={(filing !== null && filing !== p.name) || busy !== null}
+                                loading={filing === p.name}
+                                onClick={() => void refileUnder(p, d)}
+                                data-testid="doc-party-file"
+                                data-party={p.on_books_id ?? "new"}
+                              >
+                                {p.on_books_id ? t("docs.party.fileUnder", { name: p.name }) : t("docs.party.fileUnderNew", { name: p.name })}
+                              </Button>
+                            ))}
+                            <Button
+                              size="sm"
+                              className="max-sm:w-full"
+                              disabled={filing !== null || busy !== null}
+                              loading={busy === "reject"}
+                              onClick={() => void decide("reject", d)}
+                              data-testid="doc-party-discard"
+                            >
+                              {t("docs.party.discard")}
+                            </Button>
+                          </div>
+                          {fileProblem ? (
+                            <p role="alert" className="mt-1.5 text-meta font-medium text-bad-fg" data-testid="doc-party-problem">
+                              {fileProblem}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -299,7 +406,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
               ) : null}
               {d.can_confirm ? null : (
                 <p id={reasonId} className="mt-2 text-sm font-semibold text-bad-fg" data-testid="doc-cannot-confirm">
-                  {d.blocked ? t("docs.flags.blocked") : t("docs.cannotConfirm")}
+                  {d.blocked ? blockedSaid : t("docs.cannotConfirm")}
                 </p>
               )}
             </div>

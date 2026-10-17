@@ -67,6 +67,7 @@ OWNER: set[Key] = {
     ("GET", "/cash/price-curve"),
     ("POST", "/commitments/{commitment_id}/revoke"),
     ("GET", "/customers"),
+    ("POST", "/customers"),
     ("GET", "/customers/{customer_id}/overview"),
     ("GET", "/deals"),
     ("GET", "/deals/{counterparty_id}"),
@@ -79,6 +80,7 @@ OWNER: set[Key] = {
     ("POST", "/documents"),
     ("GET", "/documents/{document_id}"),
     ("POST", "/documents/{document_id}/confirm"),
+    ("POST", "/documents/{document_id}/refile"),
     ("POST", "/documents/{document_id}/reject"),
     ("GET", "/evidence"),
     ("POST", "/facilities/compile"),
@@ -381,6 +383,9 @@ def prepare_world(client: TestClient, mode: Mode, rt: Runtime, static: bool) -> 
     w.ids.update(doc_capex=docs[0]["id"], doc_confirm=docs[1]["id"], doc_reject=docs[2]["id"],
                  hash_confirm=docs[1]["doc_hash"], hash_reject=docs[2]["doc_hash"])
     w.call("POST", f"/documents/{docs[0]['id']}/confirm", json={"doc_hash": docs[0]["doc_hash"]})
+    # a buyer contract filed under the wrong buyer, waiting to be filed again under the right one
+    refile = w.call("POST", "/documents", json={"fixture_id": "FHR_SUPPLY_AGREEMENT"})["document"]
+    w.ids.update(doc_refile=refile["id"], hash_refile=refile["doc_hash"])
     ev = w.call("POST", f"/capex/contracts/{docs[0]['id']}/evaluate", json={"timeline": TIMELINE})
     w.ids["schedule_hash"] = ev["schedule"]["schedule"]["schedule_hash"]
     w.ids["file"] = w.call("POST", "/borrower-file", json=BORROWER)["file_id"]
@@ -482,9 +487,12 @@ PLAN[("POST", "/commitments/{commitment_id}/revoke")] = _post_ids("/commitments/
 PLAN[("POST", "/demo/bank-receipt")] = _post("/demo/bank-receipt")
 PLAN[("POST", "/demo/reset")] = _post("/demo/reset", scenario="blank")
 PLAN[("POST", "/demo/restore")] = _post("/demo/restore")
+PLAN[("POST", "/customers")] = _post("/customers", {"name": "Delta Retail Co.", "idempotency_key": "route-policy-customer"})
 PLAN[("POST", "/documents")] = _post("/documents", {"fixture_id": "FHR_SUPPLY_AGREEMENT"})
 PLAN[("POST", "/documents/{document_id}/confirm")] = _post_ids(
     "/documents/{document_id}/confirm", lambda w: {"doc_hash": w.ids["hash_confirm"]}, document_id="doc_confirm")
+PLAN[("POST", "/documents/{document_id}/refile")] = _post_ids(
+    "/documents/{document_id}/refile", lambda w: {"counterparty_id": "BUYER-2", "doc_hash": w.ids["hash_refile"]}, document_id="doc_refile")
 PLAN[("POST", "/documents/{document_id}/reject")] = _post_ids(
     "/documents/{document_id}/reject", lambda w: {"doc_hash": w.ids["hash_reject"]}, document_id="doc_reject")
 PLAN[("POST", "/facilities/compile")] = _post("/facilities/compile", {"fixture_id": "EX09_TERM_SHEET_PG"})

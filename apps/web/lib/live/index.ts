@@ -13,6 +13,8 @@ import { serverScenario } from "../selection";
 import type {
   AcceptRequest,
   AcceptResult,
+  AddCustomerRequest,
+  AddCustomerResponse,
   BuyerAcceptedRequest,
   BuyerAcceptedResult,
   BuyerDeclinedRequest,
@@ -348,6 +350,9 @@ export const live = {
     http<DocumentDecision>("POST", `/documents/${enc(id)}/${decision}${lang === "zh" ? "?lang=zh" : ""}`, {
       body: linkFacilityId ? { doc_hash: docHash, link_facility_id: linkFacilityId } : { doc_hash: docHash },
     }),
+  refileDocument: async (id: string, counterpartyId: string, docHash: string, lang: "en" | "zh"): Promise<DocumentView> =>
+    (await http<{ document: DocumentView }>("POST", `/documents/${enc(id)}/refile?lang=${lang}`, { body: { counterparty_id: counterpartyId, doc_hash: docHash } })).document,
+  addCustomer: (body: AddCustomerRequest, lang: "en" | "zh") => http<AddCustomerResponse>("POST", `/customers?lang=${lang}`, { body }),
   getContractFixtures: async (): Promise<ContractFixture[]> => (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/contracts")).contracts,
 
   // the buy side (ADR-0013, FEATURE_CAPEX_CONTRACTS): every route needs the owner token; the responses already have the page's shape
