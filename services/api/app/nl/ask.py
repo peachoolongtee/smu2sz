@@ -346,7 +346,41 @@ def topic_of(p: Parsed) -> str:
     return next((m.split(":", 1)[1] for m in p.matched if m.startswith("ask:")), "books")
 
 
+# The topics that are about doing something (a draw, a repayment, early payment, a counter); an amount in the question counts too.
+ACTION_TOPICS = frozenset({"fund", "repay", "accelerate", "negotiate", "debt", "record"})
+
+
+def pending_reminder(ctx: NlContext, p: Parsed) -> tuple[str, str] | None:
+    """ASK-2. A question about an action asked while a plan waits for "go ahead": the reply must say that the earlier plan is
+    still waiting, what it does and what it costs, and that "go ahead" runs that plan and nothing the question named.
+    Chosen: the plan is KEPT (a question never cancels anything, so the owner can still go on with it) and the reply says
+    so; clearing it would be a change the owner did not ask for."""
+    pending = ctx.session.pending_plan
+    if pending is None or not ctx.owner_authenticated:
+        return None
+    if topic_of(p) not in ACTION_TOPICS and p.slots.amount_fen is None:
+        return None
+    steps = [s.description for s in pending.steps if s.status == "PROPOSED"] or [s.description for s in pending.steps]
+    what = "; ".join(d.rstrip(".") for d in steps) or pending.intent.value
+    cost_en = f" (cost {fmt_yuan(pending.quoted_cost_fen)})" if pending.quoted_cost_fen is not None else ""
+    cost_zh = f"（成本 {fmt_yuan(pending.quoted_cost_fen)}）" if pending.quoted_cost_fen is not None else ""
+    amount = p.slots.amount_fen
+    asked_en = f"the {fmt_yuan(amount)} you just asked about" if amount is not None else "what you just asked about"
+    asked_zh = f"您刚才询问的 {fmt_yuan(amount)}" if amount is not None else "您刚才询问的内容"
+    return (("Your earlier plan is still waiting and nothing has changed: "
+             f"{what}{cost_en}. Reply 'go ahead' and that plan runs, not {asked_en}; reply 'cancel' to drop it."),
+            f"您之前的方案仍在等待，没有任何变化：{what}{cost_zh}。回复“执行”将运行该方案，而不是{asked_zh}；回复“取消”可放弃。")
+
+
 def ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
+    turn = _ask_books(ctx, p, text)
+    if turn.intent == Intent.ASK_BOOKS and (note := pending_reminder(ctx, p)) is not None:
+        turn.reply = f"{turn.reply}{'' if ctx.lang == 'zh' else ' '}{t(ctx, *note)}"
+        turn.awaiting = True  # the earlier plan is still waiting for its go-ahead
+    return turn
+
+
+def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
     topic = topic_of(p)
     slots = p.slots
     question = slots.question or text
