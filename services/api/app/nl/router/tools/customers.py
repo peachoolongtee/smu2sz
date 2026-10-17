@@ -39,6 +39,14 @@ def overdue(ctx: Any, lang: str, slots: dict[str, Any]) -> AnswerReply:
     return a_late(writer(ctx, lang), "")
 
 
+def _next_due(w: W, buyer: str | None) -> str:
+    """", next due on day 47": the customer's next invoice not yet due (the overdue ones are said as overdue), or nothing."""
+    days = [x.due_day for x in mx.unpaid(w.r.state) if x.counterparty_id == buyer and x.due_day >= w.r.today]
+    if not days:
+        return ""
+    return w.t(f", next due on {w.on(min(days))}", f"，最近一张{w.on(min(days))}到期")
+
+
 def receivables_by_customer(ctx: Any, lang: str, slots: dict[str, Any]) -> AnswerReply:
     w = writer(ctx, lang)
     r = w.r
@@ -53,11 +61,10 @@ def receivables_by_customer(ctx: Any, lang: str, slots: dict[str, Any]) -> Answe
         if not x["owed_fen"]:
             parts.append(w.t(f"{name} nothing", f"{name}不欠款"))
             continue
-        due = (w.t(f", next due on {w.on(x['next_due_day'])}", f"，最近一张{w.on(x['next_due_day'])}到期")
-               if x["next_due_day"] is not None else "")
+        due = _next_due(w, x["buyer_id"])
         late = (w.t(f", {money(x['overdue_fen'])} of it overdue", f"，其中 {money(x['overdue_fen'])} 已逾期") if x["overdue_fen"] else "")
         parts.append(w.t(f"{name} {money(x['owed_fen'])} on {n_en(x['invoices'], 'invoice', 'invoices')}{due}{late}",
-                         f"{name} {money(x['owed_fen'])}（{x['invoices']} 张发票{due}{late}）"))
+                         f"{name} {money(x['owed_fen'])}，共 {x['invoices']} 张发票{due}{late}"))
     return w.reply("CUS-02", w.t(f"{amt} owed to you in all: " + "; ".join(parts) + ".", f"应收账款合计 {amt}：" + "；".join(parts) + "。"),
                    w.basis("books"))
 
@@ -104,11 +111,10 @@ def customer_summary(ctx: Any, lang: str, slots: dict[str, Any]) -> AnswerReply:
         text = w.t(f"{name} owes you nothing right now.", f"{name}目前不欠您款项。")
     else:
         owed = w.fig("owed", money(x["owed_fen"]))
-        due = (w.t(f", next due on {w.on(x['next_due_day'])}", f"，最近一张{w.on(x['next_due_day'])}到期")
-               if x["next_due_day"] is not None else "")
+        due = _next_due(w, buyer)
         text = w.t(f"{name} owes you {owed} on {n_en(x['invoices'], 'invoice', 'invoices')}{due}; that is {pct0(x['share'])} of what "
                    f"you are owed.",
-                   f"{name}欠您 {owed}（{x['invoices']} 张发票{due}），占您应收账款的 {pct0(x['share'])}。")
+                   f"{name}欠您 {owed}，共 {x['invoices']} 张发票{due}，占您应收账款的 {pct0(x['share'])}。")
     if late:
         worst = max(late, key=lambda o: o["days_late"])
         w.fig("overdue", money(sum(o["face_fen"] for o in late)))

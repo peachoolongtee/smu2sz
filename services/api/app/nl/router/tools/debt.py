@@ -49,6 +49,8 @@ _RATE = re.compile(r"\b\d+(?:\.\d+)?%")
 
 def _option(w: W, row: dict[str, Any]) -> str:
     en, zh = _OPTION.get(row["key"], ("another way", "另一种方式"))
+    if row["key"] == "router_optimum" and row["result"] != "SELECTED":  # not FLOW's plan when it does not keep the reserve
+        en, zh = "the cheapest mix of your committed funding", "已承诺融资的最便宜组合"
     rate = _RATE.search(row.get("label") or "")
     if rate and row["key"] in ("full_discount", "line_partial_early_pay"):
         en, zh = en + f" at {rate.group(0)}", zh + f"（折扣 {rate.group(0)}）"
