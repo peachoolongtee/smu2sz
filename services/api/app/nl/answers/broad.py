@@ -65,7 +65,12 @@ _ASKS = re.compile(
     r"|可不可以|撑得住|得过来|得过去|没问题吧")
 # An advice request without a question form: "Give me some advice on our cash flow", "help me keep cash healthy", 给点建议
 _ADVICE_REQUEST = re.compile(
-    r"^\s*(?:please\s+)?(?:give me|tell me how|help me|advise|any tips|some tips|tips)\b|\badvice\b|\btips\b|给点.{0,8}建议|给我.{0,6}建议")
+    r"^\s*(?:please\s+)?(?:give me|tell me how|advise|any tips|some tips|tips)\b|\badvice\b|\btips\b|给点.{0,8}建议|给我.{0,6}建议")
+# A question form: the lexicon's (a wh-word, an inverted auxiliary, a trailing question mark, a Chinese interrogative), a
+# modal with a subject ("will we make it", "can my company survive"), or a Chinese A-not-A (紧不紧, 会不会) or 谁.
+_FILLER = re.compile(r"^\s*(?:(?:so|and|ok|okay|hey|hi|also|but|then|right|now|honestly|be honest|quick question|question|tell me)[ ,:]+)+")
+_MODAL = re.compile(r"^\s*(?:will|would|can|could|shall|am|must|have|has)\s+(?:we|i|my|our|the|you|it|there|flow|this|that|us)\b")
+_ZH_ASK = re.compile(r"([\u4e00-\u9fff])不\1|谁|怎样|怎么样|会怎|会不会|够不够|是不是|有没有|行不行|撑得住|得过来|得过去|没问题吧|吧\s*[?？]?\s*$")
 # An instruction, or a request addressed to FLOW to do something: never answered by the broad reading (the literal patterns
 # and the rules keep their reading of it, unchanged).
 _COMMAND_EN = re.compile(
@@ -92,7 +97,9 @@ def asks(q: str) -> bool:
         return False
     if _ACTION.search(q):
         return False
-    return bool(_ASKS.search(q) or _ADVICE_REQUEST.search(q))
+    body = _FILLER.sub("", q)
+    return bool(lx.ASK_EN.search(body) or lx.ASK_ZH.search(body) or _MODAL.search(body) or _ZH_ASK.search(body)
+                or _ADVICE_REQUEST.search(q))
 
 
 # ---------------------------------------------------------------- cues
@@ -279,18 +286,38 @@ _DEFER = re.compile(r"\b(?:machine\w*|machinery|equipment|investment|capex|purch
 _DEFER_READS = (lx.COMPARE_FINANCING, lx.DEAL, lx.BORROWER_FILE, lx.RECONCILE)
 
 
+# A request to act in question form keeps its action reading (get paid early, repay the line, negotiate,
+# evaluate an offer, a vague "sort out our cash"), and a question the explain, what-if or status reads answer keeps that read
+# unless the broad reading's answer is the one asked for (why cash is short; a late payment; doing nothing; our own safety).
+_DEFER_ACTS = (lx.ACCELERATE, lx.REPAY, lx.NEGOTIATE, lx.NEGOTIATE_VERB, lx.EVALUATE, lx.AMBIGUOUS)
+_ABOUT_A_VERDICT = re.compile(r"\b(?:plan|offer|verdict|reject\w*|chose|choose|chosen|cheaper|counter\w*|deal)\b|方案|报价|结论|拒绝|选|还价")
+_KEEP_OVER_WHAT_IF = frozenset({"CUS-07", "CUS-05", "general_advice", "LIQ-01"})
+_KEEP_OVER_STATUS = frozenset({"LIQ-01", "LIQ-03", "LIQ-04", "LIQ-05", "LIQ-10", "LIQ-14", "general_advice"})
+
+
 def best(question: str) -> str | None:
     """The one question this text clearly asks, by its cues, or None (no clear winner, not a question, an instruction, or a
     subject another read answers)."""
     q = canon(question)
     if not asks(q) or _DEFER.search(q) or (not CUES["covenant"].search(q) and any(p.search(q) for p in _DEFER_READS)):
         return None
+    if any(p.search(q) for p in _DEFER_ACTS):
+        return None
     ranked = sorted(scores(q).items(), key=lambda kv: -kv[1])
     if not ranked or ranked[0][1] < MIN_SCORE:
         return None
     if len(ranked) > 1 and ranked[0][1] - ranked[1][1] < MIN_MARGIN:
         return None
-    return ranked[0][0]
+    win = ranked[0][0]
+    if lx.EXPLAIN.search(q) and (win != "LIQ-14" or _ABOUT_A_VERDICT.search(q)):
+        return None
+    if lx.WHAT_IF.search(q) and win not in _KEEP_OVER_WHAT_IF:
+        return None
+    if lx.STATUS.search(q) and win not in _KEEP_OVER_STATUS:
+        return None
+    if lx.RATIOS.search(q) and win not in ("COV-05", "COV-07"):  # the ratios read; what would break them, or the plan's, is ours
+        return None
+    return win
 
 
 # ---------------------------------------------------------------- the time window asked about

@@ -32,6 +32,7 @@ import sys
 import uuid
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -99,7 +100,7 @@ def run(mode: str) -> list[dict]:
         r = client.post(path, json={"session_id": "gq-" + uuid.uuid4().hex[:16], "actor": "OWNER", "text": item["q"],
                                     "lang": item["lang"]})
         after = base.fingerprint(rt)
-        resp = r.json() if r.status_code == 200 else {"intent": f"HTTP {r.status_code}", "reply": r.text[:300], "operations": []}
+        resp: dict[str, Any] = r.json() if r.status_code == 200 else {"intent": f"HTTP {r.status_code}", "reply": r.text[:300], "operations": []}
         sc, why = outcome(item, rec.last, resp["intent"], resp["reply"])
         executed = [o for o in resp.get("operations", []) if o.get("status") in ("EXECUTED", "PENDING_APPROVAL")]
         changed = {k: (before[k], after[k]) for k in before if before[k] != after[k]}
@@ -123,7 +124,7 @@ def table(rows: list[dict], label: str) -> list[str]:
 
 
 def main() -> None:
-    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined,union-attr,unused-ignore]
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--mode", choices=("business", "demo"), default="business")
     ap.add_argument("--part", choices=("tune", "heldout", "all"), default="tune")

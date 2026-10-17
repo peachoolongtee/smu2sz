@@ -435,9 +435,12 @@ def a_spend(w: W, q: str) -> AnswerReply:
 def a_payments(w: W, q: str) -> AnswerReply:
     r = w.r
     win = window_of(w, q)
-    m = w.m(mx.upcoming_outflows(r) if win is None else mx.upcoming_outflows(r, window=max(1, win.days)))
+    if win is not None and not win.longer and win.days == mx.UPCOMING_DAYS:
+        win = None  # "the next month" or two: the standard "coming up" window, the next 60 days
+    # a window asked about runs to its last day ("this month": to day 30), as the cash answers read it
+    m = w.m(mx.upcoming_outflows(r) if win is None else mx.upcoming_outflows(r, window=win.days + 1))
     outs: list[Event] = m.value
-    window = m.detail["window_days"]
+    window = m.detail["window_days"] if win is None else win.days
     note = w.t(f" {horizon_note(w)}; nothing later is forecast yet.", f"{horizon_note(w)}，更晚的付款尚无预测。") if win and win.longer else ""
     if not outs:
         return w.reply("LIQ-09", w.t(f"None: no payment is scheduled in the next {window} days.",
