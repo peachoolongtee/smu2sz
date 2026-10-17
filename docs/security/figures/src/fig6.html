@@ -1,14 +1,26 @@
 <!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css">
-<style>.tl{display:flex;gap:10px;position:relative;padding-top:34px}.tl:before{content:"";position:absolute;left:10px;right:10px;top:15px;height:4px;background:#9fb3cf;border-radius:2px}.ev{flex:1;min-width:0;position:relative}.ev:before{content:"";position:absolute;top:-27px;left:18px;width:16px;height:16px;border-radius:50%;background:#24324a;border:3px solid #fff;box-shadow:0 0 0 2px #24324a}.d{font-weight:700;font-size:15px;color:#0048a5;margin-bottom:4px}</style>
+<style>
+.tl{position:relative;display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.tl:before{content:"";position:absolute;left:187px;top:14px;bottom:14px;width:4px;background:#9fb3cf;border-radius:2px}
+.ev{display:flex;align-items:stretch;gap:0}
+.d{flex:none;width:170px;text-align:right;font-weight:700;font-size:22px;color:#0048a5;padding:8px 0 0}
+.dot{flex:none;width:36px;position:relative}
+.dot:before{content:"";position:absolute;top:12px;left:9px;width:18px;height:18px;border-radius:50%;background:#24324a;border:3px solid #fff;box-shadow:0 0 0 2px #24324a}
+.ev .box{flex:1;min-width:0}
+.ids{margin-top:2px}
+.ids .chip{font-family:Consolas,"Courier New",monospace;margin:4px 4px 0 0}
+</style>
 <div class="fig" id="fig">
+<div class="title">AI-assisted, internal reviews</div>
+<div class="sub">None of these was external professional assurance.</div>
 <div class="tl">
- <div class="ev"><div class="d">1–3 Oct</div><div class="box"><b>Independent audit and five red-team rounds</b><small>13 + 26 findings; all 39 closed, each by a regression test</small></div></div>
- <div class="ev"><div class="d">3 Oct</div><div class="box"><b>Concurrency and language boundary</b><small>8 invariants with two worker processes (SQLite); 231-item adversarial set, 0 wrong-and-material (offline)</small></div></div>
- <div class="ev"><div class="d">5 Oct</div><div class="box det"><b>Attack catalogue</b><small>259 attacks through the API and chat; 0 with harm</small></div></div>
- <div class="ev"><div class="d">14 Oct</div><div class="box"><b>Security Lead audit</b><small>code audit of e8e270f8; route sweep; release gate issued</small></div></div>
- <div class="ev"><div class="d">16 Oct</div><div class="box det"><b>Certifications</b><small>0ba8e4c1, a6de32a2, b6d1e519, 0f92d433; PostgreSQL 17 run (PG-1 found and fixed)</small></div></div>
- <div class="ev"><div class="d">16 Oct</div><div class="box"><b>External red-team run</b><small>17 tests, live DeepSeek tier and offline tier; 0 harmful outcomes; findings RT-1 to RT-3 confirmed</small></div></div>
- <div class="ev"><div class="d">17 Oct</div><div class="box det" style="border-width:3px"><b>719c9dcf certified</b><small>SEC-08 database guard, SEC-12 CSP, SEC-20, SEC-21, SEC-22, OUT-1</small></div></div>
- <div class="ev"><div class="d">Next</div><div class="box owner"><b>Merging, then certified</b><small>SEC-08 executor check, OUT-1b, RT-1 (Next.js 16.3.8), RT-2, PRIV-1 to PRIV-3</small></div></div>
+ <div class="ev"><div class="d">1 Oct</div><div class="dot"></div><div class="box"><b>Attack catalogue</b><small>written by the team that built the system ("our own")</small></div></div>
+ <div class="ev"><div class="d">3 Oct</div><div class="dot"></div><div class="box"><b>Principal audit, red-team rounds 1 to 5</b><small>rounds run by AI subagents; every finding became a regression test</small></div></div>
+ <div class="ev"><div class="d">14 to 17 Oct</div><div class="dot"></div><div class="box det"><b>Security Lead: an AI agent in a separate session</b><small>audit, fixes and certifications (internal release decisions):</small>
+   <div class="ids"><span class="chip c-grn">0ba8e4c1</span><span class="chip c-grn">a6de32a2</span><span class="chip c-grn">b6d1e519</span><span class="chip c-grn">0f92d433</span><span class="chip c-grn">719c9dcf</span><span class="chip c-grn">0fde33fd</span></div>
+   <div class="ids"><span class="chip c-blu" style="font-family:inherit">assessed build (final)</span></div></div></div>
+ <div class="ev"><div class="d">16 Oct</div><div class="dot"></div><div class="box"><b>External red-team run</b><small>live DeepSeek tier and an offline tier; report supplied by the owner; not re-run</small></div></div>
+ <div class="ev"><div class="d">16 and 17 Oct</div><div class="dot"></div><div class="box owner"><b>The owner's risk decisions</b><small>a person accepts the residual risks</small></div></div>
 </div>
+<div class="box warn" style="margin-top:12px;border-width:3px"><b>Internal release decisions, not accreditation</b><small>"Certified" means the stated checks ran on the exact merged commit. The Security Lead also wrote the fixes it certified.</small></div>
 </div>
