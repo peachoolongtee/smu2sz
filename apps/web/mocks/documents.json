@@ -1589,6 +1589,117 @@
             "reason_raw": "stated more than once with the same value: read once"
           }
         ]
+      },
+      "outcome": {
+        "title": "Filed under Foshan Home Retail Co.",
+        "tone": "ok",
+        "changed": {
+          "title": "What changed",
+          "lines": [
+            "The supply agreement is now the contract on file for Foshan Home Retail Co. It replaces the contract you confirmed today.",
+            "Foshan Home Retail Co.'s deal summary now reads from this contract: it sets the contract's terms beside your books and points out where they differ.",
+            "Foshan Home Retail Co.'s invoices now show this contract as the agreement on file."
+          ]
+        },
+        "unchanged": {
+          "title": "What did not change",
+          "lines": [
+            "Your books and forecast are unchanged. Confirming records what the contract says; it books no invoice and changes no payment terms.",
+            "New requests from Foshan Home Retail Co. are still checked against your books and your limits, not against this contract."
+          ]
+        },
+        "link": {
+          "label": "Open Foshan Home Retail Co.'s record",
+          "href": "/customers/BUYER-1"
+        }
+      }
+    },
+    "outcomes": {
+      "confirmed": {
+        "en": {
+          "title": "Filed under Foshan Home Retail Co.",
+          "tone": "ok",
+          "changed": {
+            "title": "What changed",
+            "lines": [
+              "The supply agreement is now the contract on file for Foshan Home Retail Co. It replaces the contract you confirmed today.",
+              "Foshan Home Retail Co.'s deal summary now reads from this contract: it sets the contract's terms beside your books and points out where they differ.",
+              "Foshan Home Retail Co.'s invoices now show this contract as the agreement on file."
+            ]
+          },
+          "unchanged": {
+            "title": "What did not change",
+            "lines": [
+              "Your books and forecast are unchanged. Confirming records what the contract says; it books no invoice and changes no payment terms.",
+              "New requests from Foshan Home Retail Co. are still checked against your books and your limits, not against this contract."
+            ]
+          },
+          "link": {
+            "label": "Open Foshan Home Retail Co.'s record",
+            "href": "/customers/BUYER-1"
+          }
+        },
+        "zh": {
+          "title": "已归档到Foshan Home Retail Co.名下",
+          "tone": "ok",
+          "changed": {
+            "title": "有何变化",
+            "lines": [
+              "供货协议现为Foshan Home Retail Co.的在档合同。它取代了您今天确认的合同。",
+              "Foshan Home Retail Co.的交易摘要现依据这份合同：把合同条款与您的账本并列，并指出不一致之处。",
+              "Foshan Home Retail Co.的发票现显示这份合同为在档协议。"
+            ]
+          },
+          "unchanged": {
+            "title": "没有变化的",
+            "lines": [
+              "您的账本和预测没有变化。确认只是记录合同的内容，不会记入任何发票，也不会更改账期。",
+              "Foshan Home Retail Co.之后提出的新要求，仍按您的账本和限额核对，而不是按这份合同。"
+            ]
+          },
+          "link": {
+            "label": "查看Foshan Home Retail Co.的客户记录",
+            "href": "/customers/BUYER-1"
+          }
+        }
+      },
+      "rejected": {
+        "en": {
+          "title": "Rejected: nothing was saved from it",
+          "tone": "mute",
+          "changed": {
+            "title": "What happened",
+            "lines": [
+              "You rejected FLOW's reading of the supply agreement. Nothing from it is recorded for Foshan Home Retail Co."
+            ]
+          },
+          "unchanged": {
+            "title": "What did not change",
+            "lines": [
+              "Your books and forecast are unchanged. Foshan Home Retail Co.'s deal summary and invoices do not use it.",
+              "It stays on the list below, marked rejected. To use this document, attach it again and confirm the new reading."
+            ]
+          },
+          "link": null
+        },
+        "zh": {
+          "title": "已拒绝：其中的内容均未保存",
+          "tone": "mute",
+          "changed": {
+            "title": "处理结果",
+            "lines": [
+              "您已拒绝 FLOW 对供货协议的读取。未为Foshan Home Retail Co.记录其中的任何内容。"
+            ]
+          },
+          "unchanged": {
+            "title": "没有变化的",
+            "lines": [
+              "您的账本和预测没有变化。Foshan Home Retail Co.的交易摘要和发票都不会使用它。",
+              "它仍在下方列表中，标记为已拒绝。如需使用这份文件，请重新添加并确认新的读取结果。"
+            ]
+          },
+          "link": null
+        }
       }
     },
     "rejected": {
@@ -2125,6 +2236,24 @@
             "reason_raw": "stated more than once with the same value: read once"
           }
         ]
+      },
+      "outcome": {
+        "title": "Rejected: nothing was saved from it",
+        "tone": "mute",
+        "changed": {
+          "title": "What happened",
+          "lines": [
+            "You rejected FLOW's reading of the supply agreement. Nothing from it is recorded for Foshan Home Retail Co."
+          ]
+        },
+        "unchanged": {
+          "title": "What did not change",
+          "lines": [
+            "Your books and forecast are unchanged. Foshan Home Retail Co.'s deal summary and invoices do not use it.",
+            "It stays on the list below, marked rejected. To use this document, attach it again and confirm the new reading."
+          ]
+        },
+        "link": null
       }
     }
   },
@@ -2683,6 +2812,153 @@
             "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
           }
         ]
+      },
+      "outcome": {
+        "title": "Filed under Main bank",
+        "tone": "ok",
+        "changed": {
+          "title": "What changed",
+          "lines": [
+            "The credit line agreement is now on file as your agreement with Main bank.",
+            "It is linked to Bank credit line for reference."
+          ]
+        },
+        "unchanged": {
+          "title": "What did not change",
+          "lines": [
+            "Your books, facilities and forecast are unchanged. FLOW plans your funding from the facility terms in your books, not from this agreement."
+          ]
+        },
+        "link": {
+          "label": "See your funding",
+          "href": "/funding"
+        }
+      }
+    },
+    "outcomes": {
+      "confirmed": {
+        "en": {
+          "title": "Filed under Main bank",
+          "tone": "ok",
+          "changed": {
+            "title": "What changed",
+            "lines": [
+              "The credit line agreement is now on file as your agreement with Main bank.",
+              "It is linked to Bank credit line for reference."
+            ]
+          },
+          "unchanged": {
+            "title": "What did not change",
+            "lines": [
+              "Your books, facilities and forecast are unchanged. FLOW plans your funding from the facility terms in your books, not from this agreement."
+            ]
+          },
+          "link": {
+            "label": "See your funding",
+            "href": "/funding"
+          }
+        },
+        "zh": {
+          "title": "已归档到Main bank名下",
+          "tone": "ok",
+          "changed": {
+            "title": "有何变化",
+            "lines": [
+              "信用额度协议现已作为您与Main bank的协议存档。",
+              "它已关联到Bank credit line，仅供参考。"
+            ]
+          },
+          "unchanged": {
+            "title": "没有变化的",
+            "lines": [
+              "您的账本、融资额度和预测没有变化。FLOW 按账本中的融资条款安排资金，而不是按这份协议。"
+            ]
+          },
+          "link": {
+            "label": "查看融资安排",
+            "href": "/funding"
+          }
+        }
+      },
+      "rejected": {
+        "en": {
+          "title": "Rejected: nothing was saved from it",
+          "tone": "mute",
+          "changed": {
+            "title": "What happened",
+            "lines": [
+              "You rejected FLOW's reading of the credit line agreement. Nothing from it is recorded for Main bank."
+            ]
+          },
+          "unchanged": {
+            "title": "What did not change",
+            "lines": [
+              "Your books and forecast are unchanged. Your funding does not use it.",
+              "It stays on the list below, marked rejected. To use this document, attach it again and confirm the new reading."
+            ]
+          },
+          "link": null
+        },
+        "zh": {
+          "title": "已拒绝：其中的内容均未保存",
+          "tone": "mute",
+          "changed": {
+            "title": "处理结果",
+            "lines": [
+              "您已拒绝 FLOW 对信用额度协议的读取。未为Main bank记录其中的任何内容。"
+            ]
+          },
+          "unchanged": {
+            "title": "没有变化的",
+            "lines": [
+              "您的账本和预测没有变化。您的融资安排不会使用它。",
+              "它仍在下方列表中，标记为已拒绝。如需使用这份文件，请重新添加并确认新的读取结果。"
+            ]
+          },
+          "link": null
+        }
+      },
+      "confirmed_unlinked": {
+        "en": {
+          "title": "Filed under Main bank",
+          "tone": "ok",
+          "changed": {
+            "title": "What changed",
+            "lines": [
+              "The credit line agreement is now on file as your agreement with Main bank."
+            ]
+          },
+          "unchanged": {
+            "title": "What did not change",
+            "lines": [
+              "Your books, facilities and forecast are unchanged. FLOW plans your funding from the facility terms in your books, not from this agreement."
+            ]
+          },
+          "link": {
+            "label": "See your funding",
+            "href": "/funding"
+          }
+        },
+        "zh": {
+          "title": "已归档到Main bank名下",
+          "tone": "ok",
+          "changed": {
+            "title": "有何变化",
+            "lines": [
+              "信用额度协议现已作为您与Main bank的协议存档。"
+            ]
+          },
+          "unchanged": {
+            "title": "没有变化的",
+            "lines": [
+              "您的账本、融资额度和预测没有变化。FLOW 按账本中的融资条款安排资金，而不是按这份协议。"
+            ]
+          },
+          "link": {
+            "label": "查看融资安排",
+            "href": "/funding"
+          }
+        }
       }
     },
     "rejected": {
@@ -2874,6 +3150,24 @@
             "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
           }
         ]
+      },
+      "outcome": {
+        "title": "Rejected: nothing was saved from it",
+        "tone": "mute",
+        "changed": {
+          "title": "What happened",
+          "lines": [
+            "You rejected FLOW's reading of the credit line agreement. Nothing from it is recorded for Main bank."
+          ]
+        },
+        "unchanged": {
+          "title": "What did not change",
+          "lines": [
+            "Your books and forecast are unchanged. Your funding does not use it.",
+            "It stays on the list below, marked rejected. To use this document, attach it again and confirm the new reading."
+          ]
+        },
+        "link": null
       }
     }
   },
@@ -3378,6 +3672,153 @@
             "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
           }
         ]
+      },
+      "outcome": {
+        "title": "Filed under Invoice financing platform",
+        "tone": "ok",
+        "changed": {
+          "title": "What changed",
+          "lines": [
+            "The invoice financing agreement is now on file as your agreement with Invoice financing platform.",
+            "It is linked to Invoice financing (onboarded platform) for reference."
+          ]
+        },
+        "unchanged": {
+          "title": "What did not change",
+          "lines": [
+            "Your books, facilities and forecast are unchanged. FLOW plans your funding from the facility terms in your books, not from this agreement."
+          ]
+        },
+        "link": {
+          "label": "See your funding",
+          "href": "/funding"
+        }
+      }
+    },
+    "outcomes": {
+      "confirmed": {
+        "en": {
+          "title": "Filed under Invoice financing platform",
+          "tone": "ok",
+          "changed": {
+            "title": "What changed",
+            "lines": [
+              "The invoice financing agreement is now on file as your agreement with Invoice financing platform.",
+              "It is linked to Invoice financing (onboarded platform) for reference."
+            ]
+          },
+          "unchanged": {
+            "title": "What did not change",
+            "lines": [
+              "Your books, facilities and forecast are unchanged. FLOW plans your funding from the facility terms in your books, not from this agreement."
+            ]
+          },
+          "link": {
+            "label": "See your funding",
+            "href": "/funding"
+          }
+        },
+        "zh": {
+          "title": "已归档到Invoice financing platform名下",
+          "tone": "ok",
+          "changed": {
+            "title": "有何变化",
+            "lines": [
+              "发票融资协议现已作为您与Invoice financing platform的协议存档。",
+              "它已关联到Invoice financing (onboarded platform)，仅供参考。"
+            ]
+          },
+          "unchanged": {
+            "title": "没有变化的",
+            "lines": [
+              "您的账本、融资额度和预测没有变化。FLOW 按账本中的融资条款安排资金，而不是按这份协议。"
+            ]
+          },
+          "link": {
+            "label": "查看融资安排",
+            "href": "/funding"
+          }
+        }
+      },
+      "rejected": {
+        "en": {
+          "title": "Rejected: nothing was saved from it",
+          "tone": "mute",
+          "changed": {
+            "title": "What happened",
+            "lines": [
+              "You rejected FLOW's reading of the invoice financing agreement. Nothing from it is recorded for Invoice financing platform."
+            ]
+          },
+          "unchanged": {
+            "title": "What did not change",
+            "lines": [
+              "Your books and forecast are unchanged. Your funding does not use it.",
+              "It stays on the list below, marked rejected. To use this document, attach it again and confirm the new reading."
+            ]
+          },
+          "link": null
+        },
+        "zh": {
+          "title": "已拒绝：其中的内容均未保存",
+          "tone": "mute",
+          "changed": {
+            "title": "处理结果",
+            "lines": [
+              "您已拒绝 FLOW 对发票融资协议的读取。未为Invoice financing platform记录其中的任何内容。"
+            ]
+          },
+          "unchanged": {
+            "title": "没有变化的",
+            "lines": [
+              "您的账本和预测没有变化。您的融资安排不会使用它。",
+              "它仍在下方列表中，标记为已拒绝。如需使用这份文件，请重新添加并确认新的读取结果。"
+            ]
+          },
+          "link": null
+        }
+      },
+      "confirmed_unlinked": {
+        "en": {
+          "title": "Filed under Invoice financing platform",
+          "tone": "ok",
+          "changed": {
+            "title": "What changed",
+            "lines": [
+              "The invoice financing agreement is now on file as your agreement with Invoice financing platform."
+            ]
+          },
+          "unchanged": {
+            "title": "What did not change",
+            "lines": [
+              "Your books, facilities and forecast are unchanged. FLOW plans your funding from the facility terms in your books, not from this agreement."
+            ]
+          },
+          "link": {
+            "label": "See your funding",
+            "href": "/funding"
+          }
+        },
+        "zh": {
+          "title": "已归档到Invoice financing platform名下",
+          "tone": "ok",
+          "changed": {
+            "title": "有何变化",
+            "lines": [
+              "发票融资协议现已作为您与Invoice financing platform的协议存档。"
+            ]
+          },
+          "unchanged": {
+            "title": "没有变化的",
+            "lines": [
+              "您的账本、融资额度和预测没有变化。FLOW 按账本中的融资条款安排资金，而不是按这份协议。"
+            ]
+          },
+          "link": {
+            "label": "查看融资安排",
+            "href": "/funding"
+          }
+        }
       }
     },
     "rejected": {
@@ -3551,6 +3992,24 @@
             "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
           }
         ]
+      },
+      "outcome": {
+        "title": "Rejected: nothing was saved from it",
+        "tone": "mute",
+        "changed": {
+          "title": "What happened",
+          "lines": [
+            "You rejected FLOW's reading of the invoice financing agreement. Nothing from it is recorded for Invoice financing platform."
+          ]
+        },
+        "unchanged": {
+          "title": "What did not change",
+          "lines": [
+            "Your books and forecast are unchanged. Your funding does not use it.",
+            "It stays on the list below, marked rejected. To use this document, attach it again and confirm the new reading."
+          ]
+        },
+        "link": null
       }
     }
   }

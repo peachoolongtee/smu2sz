@@ -16,16 +16,39 @@ const SUPPLY = "FHR_SUPPLY_AGREEMENT";
 const LINE = "MB_CREDIT_LINE_AGREEMENT";
 const INVOICE_FINANCING = "GBR_INVOICE_FINANCING_AGREEMENT";
 
+/** The demo documents' own files (fixtures/contracts, contracts.yaml): what each is and the company it is with, by its name on the books. */
+const CONTRACTS = join(__dirname, "..", "..", "..", "fixtures", "contracts");
+const FILES: Record<string, { file: string; kind: "BUYER_CONTRACT" | "LENDER_AGREEMENT"; party: string }> = {
+  [SUPPLY]: { file: "fhr-2026-07-supply-agreement", kind: "BUYER_CONTRACT", party: "Foshan Home Retail Co." }, // BUYER-1
+  [LINE]: { file: "mb-cl-2026-031-credit-line-agreement", kind: "LENDER_AGREEMENT", party: "Main bank" }, // BANK-1
+  [INVOICE_FINANCING]: { file: "gbr-if-2026-118-invoice-financing-agreement", kind: "LENDER_AGREEMENT", party: "Invoice financing platform" }, // PLATFORM-1
+};
+
+/** The mock build reads no file (nothing in the browser extracts text or reads terms): a spec that needs a new reading runs against the live API. */
+const NEEDS_SERVER = "a new reading is an upload, and only the live server reads an uploaded file (the mock answers 422)";
+
 test.beforeEach(async ({ request }) => {
   await resetBooks(request);
 });
 
-/** Reads a demo document again: a new reading (DOC-000004 on fresh demo books), waiting for the owner. */
+/**
+ * Uploads a demo document's own file (Markdown unless another copy is chosen) as the owner would: what it is, the company
+ * typed by name, then the file. The server knows the text (the same document hash), so the reading is the recorded one.
+ */
+async function uploadFixture(page: Page, fixtureId: string, format: "md" | "docx" | "pdf" = "md") {
+  const { file, kind, party } = FILES[fixtureId];
+  const form = page.locator("#docs-read");
+  // "What it is" lists the buyer contract first and the lender agreement second, in either language.
+  await form.getByTestId("doc-kind").click();
+  await form.getByTestId("doc-kind-list").getByRole("option").nth(kind === "BUYER_CONTRACT" ? 0 : 1).click();
+  await form.getByTestId("doc-counterparty").fill(party);
+  await form.locator('input[type="file"]').setInputFiles(join(CONTRACTS, `${file}.${format}`));
+}
+
+/** Reads a demo document again: an upload of its file, a new reading (DOC-000004 on fresh demo books) waiting for the owner. */
 async function readAgain(page: Page, fixtureId: string, format?: "md" | "docx" | "pdf") {
   await page.goto("/documents");
-  const row = page.getByTestId(`fixture-${fixtureId}`);
-  if (format) await row.getByLabel("Format").selectOption(format);
-  await row.getByTestId(`fixture-read-${fixtureId}`).click();
+  await uploadFixture(page, fixtureId, format);
   await expect(page).toHaveURL(/\/documents\?id=DOC-000004$/);
   const review = page.getByTestId("doc-review");
   await expect(review).toHaveAttribute("data-status", "PROPOSED");
@@ -115,7 +138,7 @@ test("the documents: the three demo documents confirmed, each term of the supply
   for (const id of ["DOC-000001", "DOC-000002", "DOC-000003"]) {
     await expect(page.getByTestId(`doc-row-${id}`)).toHaveAttribute("data-status", "CONFIRMED");
   }
-  await page.getByTestId(`fixture-open-${SUPPLY}`).click();
+  await page.getByTestId("doc-row-DOC-000001").getByRole("button").click();
   await expect(page).toHaveURL(/\/documents\?id=DOC-000001$/);
   const review = page.getByTestId("doc-review");
   await expect(review).toHaveAttribute("data-status", "CONFIRMED");
@@ -165,20 +188,37 @@ test("focusing a term lights its clause with the shared dialogs mounted, whereve
   await expect(mark).not.toHaveClass(/ring-2/);
 });
 
-test("the confirm flow: a new reading is labelled AI-generated until the owner confirms it, and Activity logs it", async ({ page }) => {
+test("the confirm flow: a new reading is labelled AI-generated until the owner confirms it, and Activity logs it", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "live", NEEDS_SERVER);
   const review = await readAgain(page, SUPPLY);
   await expect(review.getByTestId("doc-ai-label")).toHaveText("AI-generated, for reference");
   await expect(page.getByTestId("doc-terms").locator(":scope > li")).toHaveCount(18);
   await page.getByTestId("doc-confirm").click();
   const result = page.getByTestId("doc-result");
   await expect(result).toHaveAttribute("data-status", "EXECUTED");
-  await expect(result).toContainText("Confirm document");
-  await expect(result).toContainText("nothing in your books changed");
+  await expect(result).toHaveAttribute("data-kind", "CONFIRM_DOCUMENT");
+  // The outcome card (the server's words): where it was filed, what that changes, what it does not, and the buyer's record to open.
+  const outcome = page.getByTestId("doc-outcome");
+  await expect(outcome).toBeInViewport();
+  await expect(page.getByTestId("doc-outcome-title")).toHaveText("Filed under Foshan Home Retail Co.");
+  // An upload with no title of its own is "this contract"; it replaces the demo's confirmed supply agreement.
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText("This contract is now the one on file for Foshan Home Retail Co. It replaces the contract you confirmed today.");
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText("deal summary now reads from this contract");
+  await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("Your books and forecast are unchanged.");
+  await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("New requests from Foshan Home Retail Co. are still checked against your books and your limits, not against this contract.");
+  expect(await outcome.innerText()).not.toMatch(/DOC-\d|BUYER-|FHR-2026|\bday \d|CONFIRM_DOCUMENT|EXECUTED/);
+  await expect(page.getByTestId("doc-outcome-link")).toHaveText("Open Foshan Home Retail Co.'s record");
+  await expect(page.getByTestId("doc-outcome-link")).toHaveAttribute("href", "/customers/BUYER-1");
   await expect(review).toHaveAttribute("data-status", "CONFIRMED");
   await expect(review.getByTestId("doc-ai-label")).toHaveText("Read by the agent, confirmed by you");
   await expect(page.getByTestId("doc-decided")).toContainText("You confirmed this reading today.");
   await expect(page.getByTestId("doc-seq")).toHaveText("#4");
   await expect(page.getByTestId("doc-row-DOC-000004")).toHaveAttribute("data-status", "CONFIRMED");
+
+  // The card's link opens the buyer's record.
+  await page.getByTestId("doc-outcome-link").click();
+  await expect(page).toHaveURL(/\/customers\/BUYER-1$/);
+  await expect(page.getByTestId("customer-missing")).toHaveCount(0);
 
   // Activity: the owner's confirmations in the server's words, newest first, each opening its record in Documents.
   await page.goto("/activity");
@@ -190,7 +230,8 @@ test("the confirm flow: a new reading is labelled AI-generated until the owner c
   await expect(page).toHaveURL(/\/documents/);
 });
 
-test("a lender agreement (the PDF copy) is compared with the facility on the books and linked when confirmed", async ({ page }) => {
+test("a lender agreement (the PDF copy) is compared with the facility on the books and linked when confirmed", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "live", NEEDS_SERVER);
   const review = await readAgain(page, INVOICE_FINANCING, "pdf");
   await expect(review).toHaveAttribute("data-kind", "LENDER_AGREEMENT");
   await expect(review.getByTestId("doc-ai-label")).toHaveText("AI-generated, for reference");
@@ -210,20 +251,41 @@ test("a lender agreement (the PDF copy) is compared with the facility on the boo
   await link.check();
   await page.getByTestId("doc-confirm").click();
   await expect(page.getByTestId("doc-result")).toHaveAttribute("data-status", "EXECUTED");
-  await expect(page.getByTestId("doc-result")).toContainText("linked");
+  // Filed under the lender, linked to the facility by its name (never its id), and the facility and the funding unchanged.
+  await expect(page.getByTestId("doc-outcome-title")).toHaveText("Filed under Invoice financing platform");
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText(/It is linked to .+ for reference\./);
+  await expect(page.getByTestId("doc-outcome")).not.toContainText("FAC-IF");
+  await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("Your books, facilities and forecast are unchanged.");
+  await expect(page.getByTestId("doc-outcome-link")).toHaveAttribute("href", "/funding");
   await expect(review).toHaveAttribute("data-status", "CONFIRMED");
 });
 
-test("reject: a new reading is set aside and logged; the agreement already confirmed stays", async ({ page }) => {
+test("a lender agreement confirmed with the link box left unticked: the card names no facility", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "live", NEEDS_SERVER);
+  await readAgain(page, INVOICE_FINANCING);
+  await expect(page.getByTestId("doc-link")).not.toBeChecked();
+  await page.getByTestId("doc-confirm").click();
+  await expect(page.getByTestId("doc-outcome-title")).toHaveText("Filed under Invoice financing platform");
+  await expect(page.getByTestId("doc-outcome-changed")).not.toContainText("linked");
+});
+
+test("reject: a new reading is set aside and logged; the agreement already confirmed stays", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "live", NEEDS_SERVER);
   const review = await readAgain(page, LINE);
   await expect(page.getByTestId("doc-compare")).toContainText("¥150,000.00");
   await page.getByTestId("doc-reject").click();
   const result = page.getByTestId("doc-result");
   await expect(result).toHaveAttribute("data-status", "EXECUTED");
-  await expect(result).toContainText("Reject document");
+  await expect(result).toHaveAttribute("data-kind", "REJECT_DOCUMENT");
   await expect(review).toHaveAttribute("data-status", "REJECTED");
   await expect(review.getByTestId("doc-status")).toContainText("Rejected by you today");
-  await expect(page.getByTestId("doc-result")).toContainText("Nothing from this document was recorded");
+  // The outcome card: nothing saved, nothing uses it, and where it stays; no link, since nothing was filed anywhere.
+  await expect(page.getByTestId("doc-outcome")).toHaveAttribute("data-tone", "mute");
+  await expect(page.getByTestId("doc-outcome-title")).toHaveText("Rejected: nothing was saved from it");
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText("You rejected FLOW's reading of the lender agreement. Nothing from it is recorded for Main bank.");
+  await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("Your books and forecast are unchanged. Your funding does not use it.");
+  await expect(page.getByTestId("doc-outcome-link")).toHaveCount(0);
+  await expect(page.getByTestId("doc-decided")).toContainText("Nothing from this document was recorded");
   await expect(page.getByTestId("doc-row-DOC-000002")).toHaveAttribute("data-status", "CONFIRMED");
   await expect(page.getByTestId("doc-row-DOC-000004")).toHaveAttribute("data-status", "REJECTED");
 });
@@ -231,6 +293,10 @@ test("reject: a new reading is set aside and logged; the agreement already confi
 test("your own file: the upload form sends a Word, PDF or text file with what it is and who it is with", async ({ page }, testInfo) => {
   await page.goto("/documents");
   const form = page.locator("#docs-read");
+  // The owner's own file is the only way in: there is no demo documents panel.
+  await expect(page.getByTestId("doc-dropzone")).toBeVisible();
+  await expect(page.locator('[data-testid^="fixture-"]')).toHaveCount(0);
+  await expect(form.getByLabel("Format")).toHaveCount(0);
   // "What it is" is the page's own listbox: each kind with its one line; the buyer contract is the default.
   const kind = form.getByLabel("What it is");
   await expect(kind).toHaveText("Contract with a buyer");
@@ -245,10 +311,11 @@ test("your own file: the upload form sends a Word, PDF or text file with what it
   await page.getByTestId("doc-upload").click();
   await expect(form.getByText("Type the name of the company this document is with first.")).toBeVisible();
   await party.fill("Nobody Ltd");
-  await expect(form.getByText("No company with that name is on your books.")).toBeVisible();
+  // A buyer the books do not have: the hint's place offers to add it (new-customer.spec.ts walks the adding).
+  await expect(form.getByTestId("doc-new-customer")).toHaveText("Add “Nobody Ltd” as a new customer");
   await party.fill("Foshan Home Retail Co.");
   // Upload and read opens the file picker; the file chosen is read at once.
-  const text = readFileSync(join(__dirname, "..", "..", "..", "fixtures", "contracts", "fhr-2026-07-supply-agreement.md"));
+  const text = readFileSync(join(CONTRACTS, "fhr-2026-07-supply-agreement.md"));
   const chooser = page.waitForEvent("filechooser");
   await page.getByTestId("doc-upload").click();
   await (await chooser).setFiles({ name: "supply-agreement.md", mimeType: "text/plain", buffer: text });
@@ -258,8 +325,39 @@ test("your own file: the upload form sends a Word, PDF or text file with what it
     await expect(review).toHaveAttribute("data-status", "PROPOSED");
     await expect(page.getByTestId("doc-terms").locator(":scope > li")).toHaveCount(18);
   } else {
-    await expect(form.getByRole("alert")).toContainText("Uploading needs the live server; the Demo reads its three sample documents.");
+    await expect(form.getByRole("alert")).toContainText("Uploading needs the live server: run pnpm demo, not the recorded-data build.");
   }
+});
+
+test("Upload with no company says so under the drop zone, and sends nothing", async ({ page }) => {
+  await page.goto("/documents");
+  const form = page.locator("#docs-read");
+  const party = form.getByTestId("doc-counterparty");
+  await expect(party).toHaveValue("");
+  let sent = 0;
+  page.on("request", (r) => {
+    if (r.method() === "POST" && /\/documents(\?.*)?$/.test(r.url())) sent += 1;
+  });
+  let chooser = false;
+  page.on("filechooser", () => {
+    chooser = true;
+  });
+  await page.getByTestId("doc-upload").click();
+  const message = form.getByRole("alert");
+  await expect(message).toContainText("Type the name of the company this document is with first.");
+  // Under the drop zone, in sight.
+  await expect(message).toBeInViewport();
+  const zone = (await page.getByTestId("doc-dropzone").boundingBox())!;
+  const box = (await message.boundingBox())!;
+  expect(box.y, "the message is under the drop zone").toBeGreaterThanOrEqual(zone.y + zone.height);
+  expect(box.y - (zone.y + zone.height), "the message is right under the drop zone").toBeLessThanOrEqual(40);
+  // A file given without a company is not read either.
+  await form.locator('input[type="file"]').setInputFiles(join(CONTRACTS, "fhr-2026-07-supply-agreement.md"));
+  await expect(message).toContainText("Type the name of the company this document is with first.");
+  await expect(page.getByTestId("doc-progress")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/documents$/);
+  expect(chooser, "no file picker opens without a company").toBe(false);
+  expect(sent, "nothing is sent without a company").toBe(0);
 });
 
 test("day 34: the deal summary tells the story and points at the approval", async ({ page }, testInfo) => {
@@ -294,7 +392,7 @@ test("day 34: the deal summary tells the story and points at the approval", asyn
   await expect(page).toHaveURL(/\/approvals/);
 });
 
-test("Chinese: the deal summary and the review screen", async ({ page }, testInfo) => {
+test("Chinese: the deal summary", async ({ page }, testInfo) => {
   await demoMode(page); // the simulated send is the Demo's only
   test.skip(testInfo.project.name === "live", "the strings are the same in both modes; checked once");
   await agreeFoshanDeal(page);
@@ -304,17 +402,32 @@ test("Chinese: the deal summary and the review screen", async ({ page }, testInf
   await expect(page.locator("#commitments").getByRole("heading", { name: "您的协议", level: 2 })).toBeVisible();
   await expect(page.getByTestId("deal-summary-BUYER-1")).toContainText("合同约定");
   await expect(page.getByTestId("deal-summary-BUYER-1")).toContainText("由代理读取，经您确认");
-  await readAgain(page, SUPPLY);
+});
+
+test("Chinese: the review screen of a new reading", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "live", NEEDS_SERVER);
+  await page.goto("/documents");
+  await openAccountMenu(page);
+  await page.getByLabel("中文").check();
   await expect(page.getByRole("heading", { name: "文件", level: 1 })).toBeVisible();
+  await uploadFixture(page, SUPPLY);
+  await expect(page).toHaveURL(/\/documents\?id=DOC-000004$/);
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED");
   await expect(page.getByTestId("doc-ai-label")).toHaveText("由 AI 生成，仅供参考");
   await expect(page.getByTestId("doc-terms")).toContainText("账期");
   await page.getByTestId("doc-confirm").click();
   await expect(page.getByTestId("doc-ai-label")).toHaveText("由代理读取，经您确认");
+  // The outcome card in Chinese: the decision was asked with lang=zh, and the server wrote the card in it.
+  await expect(page.getByTestId("doc-outcome-title")).toHaveText("已归档到Foshan Home Retail Co.名下");
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText("这份合同现为Foshan Home Retail Co.的在档合同。它取代了您今天确认的合同。");
+  await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("您的账本和预测没有变化。");
+  await expect(page.getByTestId("doc-outcome-link")).toHaveText("查看Foshan Home Retail Co.的客户记录");
 });
 
 // ---------------------------------------------------------------------------------------------- the owner's words, the decision, a phone
 
-test("Business words: no day numbers, ids, entry numbers, hashes, env names or raw codes outside the Audit details fold", async ({ page }) => {
+test("Business words: no day numbers, ids, entry numbers, hashes, env names or raw codes outside the Audit details fold", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "live", NEEDS_SERVER);
   await readAgain(page, SUPPLY);
   // The list, the card's header and the decision card, as the owner reads them (a closed fold is not rendered, so its text is not read).
   const shown = [await page.locator("#docs-list").innerText(), await page.locator("#doc-review").innerText(), await page.locator("#doc-decide").innerText()].join("\n");
@@ -332,7 +445,8 @@ test("Business words: no day numbers, ids, entry numbers, hashes, env names or r
   await expect(proseOf(page, ["[data-testid=doc-audit]", "#doc-text", "#doc-terms", "#doc-blanks", "#doc-notes"])).resolves.not.toMatch(/FEATURE_CONTRACTS|NEXT_PUBLIC_API_MODE/);
 });
 
-test("the decision is irreversible and says so; the controls are named, described and disabled while one is sent", async ({ page }) => {
+test("the decision is irreversible and says so; the controls are named, described and disabled while one is sent", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "live", NEEDS_SERVER);
   await readAgain(page, SUPPLY);
   const card = page.locator("#doc-decide");
   const confirm = page.getByTestId("doc-confirm");
@@ -350,7 +464,8 @@ test("the decision is irreversible and says so; the controls are named, describe
   await expect(page.getByTestId("doc-reject")).toHaveCount(0);
 });
 
-test("on a phone the decision controls are inside the first screen, above the tab bar, however long the terms list", async ({ page }) => {
+test("on a phone the decision controls are inside the first screen, above the tab bar, however long the terms list", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "live", NEEDS_SERVER);
   await page.setViewportSize({ width: 390, height: 844 });
   await readAgain(page, SUPPLY);
   // The top of the page (the stylesheet scrolls smoothly; this jumps).
@@ -477,5 +592,18 @@ test.describe("against the live API", () => {
     await page.route(apiUrl("/deals"), (route) => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "boom" }) }));
     await page.goto("/deals");
     await expect(page.getByTestId("deals-error")).toBeVisible();
+  });
+
+  test("the decision is asked in the owner's language, so the outcome card comes back in it", async ({ page }) => {
+    const urls: string[] = [];
+    page.on("request", (r) => urls.push(r.url()));
+    await page.goto("/documents");
+    await openAccountMenu(page);
+    await page.getByLabel("中文").check();
+    await readAgain(page, LINE);
+    await page.getByTestId("doc-reject").click();
+    await expect(page.getByTestId("doc-outcome-title")).toHaveText("已拒绝：其中的内容均未保存");
+    await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("您的融资安排不会使用它。");
+    expect(urls.some((u) => /\/documents\/DOC-000004\/reject\?lang=zh$/.test(u))).toBe(true);
   });
 });

@@ -3,6 +3,9 @@ classifier is consulted only when these rules find nothing.
 
 Order matters and is fixed ("why"/"为什么" makes a request EXPLAIN before any decline or approval cue):
   (borrower file, financing comparison, reconciliation, ratios and capex are read before the status questions)
+  the question gate first: an information question that only names a Tier-3 subject, a subject the books do not hold, or a
+  topic a read cue would answer wrongly is ASK_BOOKS (app/nl/ask.py), and every action rule below answers a question with
+  ASK_BOOKS instead of acting; an otherwise unread question about the books is ASK_BOOKS too,
   correction / confirmation of the session's pending plan (a short whole-message affirmative only), Tier-3 requests,
   explicit approvals (a full-match approve or reject sentence only; see app/nl/consent.py), the closed command grammar
   (the only free text that executes a draw or a repay),
@@ -190,6 +193,28 @@ def slots_from(text: str, state: FinancialState) -> Slots:
     )
 
 
+def _top_question(text: str) -> str | None:
+    """The id of the top owner question this text asks, when the answer module is installed (app/nl/answers)."""
+    try:
+        from app.nl.answers import match
+    except ImportError:  # the routing works without the answer module; ask.py then falls back to the nearest read
+        return None
+    found = match(text)
+    return found[0] if found else None
+
+
+def _page_read(text: str) -> bool:
+    """A question the Business pages ask with a read of their own (app/nl/reads.py): what changed, what we are waiting for,
+    when money arrives, what is overdue, who owes us, what needs the owner (the alerts and their cure), and a late payment of
+    "this" invoice, which is the page's own. Those reads answer them already and know the page's binding, so the answer
+    module does not take them over."""
+    if any(p.search(text) for p in (lx.CHANGES_ASK, lx.WAITING_ASK, lx.ARRIVAL_ASK, lx.OVERDUE_ASK, lx.OWED_ASK)):
+        return True
+    if lx.ALERTS.search(text) and not lx.ACCELERATE.search(text):
+        return True
+    return bool(lx.LATE_PAYMENT_ASK.search(text) and lx.THIS_PAYMENT.search(text))
+
+
 def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Parsed | None:
     """Owner request -> intent + typed slots, or None when no rule applies."""
     s = slots_from(text, state)
@@ -214,8 +239,40 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
             return Parsed(intent=intent, slots=s, matched=[cue, f"consent:{gate}"])
         return hit(intent, cue, tentative=True)  # a proposal that waits for the owner's confirmation
 
+    # ---- the question gate (app/nl/ask.py): a question about the books is answered, never acted on. It comes before every
+    # action rule: no plan is proposed, no offer compiled, nothing queued or run, and no refused operation is written to the
+    # log for a question that only names a Tier-3 subject ("Did anyone try to change our limits?", "Is equity an option?").
+    # A buyer's offer the owner asks about (a fixture, a quote, a reported offer) still gets its verdict; a request phrased
+    # as a question ("can you draw ...?", 能不能让他们早点打款) keeps its action reading, and consent.py is unchanged.
+    asks = (lx.is_question(text) and not s.fixture_id and not s.quoted_text and not s.approval_id
+            and not (pending_plan and (lx.CORRECTION.search(text) or consent.confirmation(text) is not None)))
+
+    def ask_books(topic: str) -> Parsed:
+        slots = s.model_copy(update={"tier3": None, "execute_now": False, "question": text})
+        return Parsed(intent=Intent.ASK_BOOKS, slots=slots, matched=["ask", f"ask:{topic}"])
+
+    # One of the top owner questions (app/nl/answers) is answered from the books before any older read claims it: the
+    # answer leads with the yes/no or the figure. "show me / tell me / list ..." asks too. Never for a fixture, quoted text,
+    # an approval or a reply to a pending plan.
+    plain = not s.fixture_id and not s.quoted_text and not s.approval_id and not s.tier3
+    if (plain and not (pending_plan and (lx.CORRECTION.search(text) or consent.confirmation(text) is not None))
+            and lx.not_held(text) is None and not _page_read(text) and (top := _top_question(text)) is not None):
+        return ask_books(f"answer:{top}")
+
+    if asks:
+        if s.tier3:
+            return ask_books(f"tier3:{s.tier3}")
+        if (held := lx.not_held(text)) is not None:
+            return ask_books(f"not_held:{held}")
+        topic = next((name for name, pat in lx.ASK_TOPICS if pat.search(text)), None)
+        if topic is not None:
+            return ask_books(topic)
+    elif (not s.fixture_id and not s.quoted_text and not s.tier3 and lx.DATA_REQUEST.search(text)
+          and (held := lx.not_held(text)) is not None):
+        return ask_books(f"not_held:{held}")  # "Balance by account, please", 按账户列一下余额: asked for as a list
+
     declines_plan = pending_plan and not s.counterparty_id and consent.confirmation(text) == "no"  # "先不要发送": a decline
-    if not asks_why and not s.approval_id and not s.tier3 and not declines_plan:
+    if not asks and not asks_why and not s.approval_id and not s.tier3 and not declines_plan:
         # "do not negotiate", "don't send the counters", 不要谈判, "do not get paid early": nothing is done and no plan
         # stays pending, whether or not a plan is waiting (a decline that names a buyer would otherwise be held back)
         for intent, kind in ((Intent.NEGOTIATE, "NEGOTIATE"), (Intent.ACCELERATE_RECEIPT, "ACCELERATE")):
@@ -296,23 +353,32 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.SHOW_DEAL, "deal")  # read-only: the confirmed contract beside the live books
     if lx.STATUS_QUESTION.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_STATUS, "status_question")
+    # the action rules: a question that names an action is asked about it, so it is answered (ASK_BOOKS), never proposed
+    # "can we pay off all our loans?", 我们能把债务还清吗 (a question about the term debt, not "could you repay the loan")
+    debt_ask = bool(lx.DEBT_ASK.search(text)) and (asks or (lx.is_asking(text) and not lx.ASK_YOU.search(text)))
     if lx.RECORD_FACT.search(text) and not (lx.ACCELERATE.search(text) or lx.NEGOTIATE_VERB.search(text)
                                             or lx.NEGOTIATE.search(text) or lx.REPAY.search(text)
                                             or lx.FUND.search(text) or lx.FUND_SOFT.search(text)):
+        if asks:
+            return ask_books("record")
         return hit(Intent.RECORD_FACT, "record_fact")  # read-only: it says the agent cannot book this from chat
     if lx.NEGOTIATE_VERB.search(text):
-        return _act(Intent.NEGOTIATE, "negotiate")
+        return ask_books("negotiate") if asks else _act(Intent.NEGOTIATE, "negotiate")
     if lx.ACCELERATE.search(text):
-        return _act(Intent.ACCELERATE_RECEIPT, "accelerate")
+        return ask_books("accelerate") if asks else _act(Intent.ACCELERATE_RECEIPT, "accelerate")
     if lx.NEGOTIATE.search(text):
-        return _act(Intent.NEGOTIATE, "negotiate")
+        return ask_books("negotiate") if asks else _act(Intent.NEGOTIATE, "negotiate")
     if lx.REPAY.search(text):
-        return _money(Intent.REPAY_FACILITY, "repay")
+        if debt_ask:
+            return ask_books("debt")  # the term loan is repaid on its schedule; REPAY_FACILITY repays a drawn line
+        return ask_books("repay") if asks else _money(Intent.REPAY_FACILITY, "repay")
     if lx.FUND.search(text):
+        if asks:
+            return ask_books("fund")
         # nothing here executes: a clear negation, a bad amount or a condition is answered, anything else proposes
         return _money(Intent.FUND_GAP, "fund_explore" if lx.FUND_EXPLORE.search(text) else "fund")
     if lx.FUND_SOFT.search(text):
-        return hit(Intent.FUND_GAP, "fund_need", tentative=True)
+        return ask_books("fund") if asks else hit(Intent.FUND_GAP, "fund_need", tentative=True)
     if lx.STATUS.search(text):
         return hit(Intent.SHOW_STATUS, "status")
     if lx.EVALUATE.search(text):
@@ -325,4 +391,8 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.CAPEX, "capex")
     if lx.AMBIGUOUS.search(text) or bare_counterparty(text, state):
         return hit(Intent.AMBIGUOUS, "vague")
+    if debt_ask:
+        return ask_books("debt")  # "Can we clear our debts?", "How much debt do we have?"
+    if asks and lx.ASK_WORD.search(text) and lx.BOOKS_TOPIC.search(text) and s.amount_fen is None and s.rate_bp is None:
+        return ask_books("books")  # a question about the books no rule reads: the answer layer, else the nearest capability
     return None

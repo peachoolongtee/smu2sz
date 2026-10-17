@@ -33,7 +33,7 @@ from app.api.presentation import (
     without_record_ids,
 )
 from app.api.runtime import get_runtime
-from app.api.security_words import audit_fields
+from app.api.security_words import audit_fields, is_benign_auth
 from app.api.views import Money, TrajectoryView, trajectory_view
 from app.books import current_books
 from app.decisions.identity import decision_id_for
@@ -92,6 +92,16 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
                                             lang=lang)
             v["document_id"] = op.get("document_id")
             v["message_when"] = " ".join(x for x in (words["event_text"], words["event_detail"]) if x)
+        if o.kind == "REFILE_DOCUMENT" and isinstance(op, dict) and res.get("status") == "EXECUTED":
+            from app.api.presentation import refile_words
+
+            record = (documents or {}).get(op.get("document_id"))
+            words = refile_words(state, title=record.title if record else None, kind=record.kind.value if record else None,
+                                 counterparty_id=op.get("counterparty_id"), lang=lang)
+            v["document_id"] = op.get("new_document_id")
+            v["message_when"] = words["event_text"]
+        if o.kind == "ADD_CUSTOMER" and isinstance(op, dict) and res.get("status") == "EXECUTED":
+            v["message_when"] = words["event_text"] or v["message_when"]
         if o.kind == "OPEN_BOOKS" and isinstance(op, dict):
             from app.api.setup import open_books_words
 
@@ -177,9 +187,16 @@ def _forecast_now(rt, state, mandate, commitments, today: int):
         return None
 
 
+def _set_aside_events(events) -> int:
+    """The security events that count as messages set aside (F26): every recorded event except the failed sign-ins (`SEC-AUTH-`, what
+    `log_refusal` writes). A refused credential reached no module and set no message aside; the web app's first reads before the owner
+    signs in answer 401, so counting them told fresh books that messages had been set aside. They stay listed in the Security view."""
+    return sum(1 for e in events if not is_benign_auth(e))
+
+
 def _refusal_counts(rt, ops) -> tuple[int, int]:
     refused = sum(1 for o in ops if json.loads(o.result_json).get("status") == "REFUSED")
-    return refused, len(rt.store.security_events())
+    return refused, _set_aside_events(rt.store.security_events())
 
 
 @router.get("/ledger")
@@ -244,7 +261,7 @@ def get_audit(lang: str = "en") -> dict:
         "events": [{**displayed(json.loads(e.model_dump_json())), **audit_fields(state, e, max(rt.day, state.as_of_day), lang)}
                    for e in events],
         "refusals": refusals,
-        "refusal_summary": refusal_block(len(refusals), len(events), lang),
+        "refusal_summary": refusal_block(len(refusals), _set_aside_events(events), lang),
         "documents": [json.loads(d.model_dump_json()) for i, d in rt.documents.items() if i in doc_ids],
         "summary": displayed({
             "facilities_added": s.get("facilities_added_by_non_owner", 0),

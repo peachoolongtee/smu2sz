@@ -31,6 +31,9 @@ class Intent(StrEnum):
     WHAT_IF = "WHAT_IF"
     RECORD_FACT = "RECORD_FACT"  # the owner states a new bill, invoice, delay or figure: read-only, nothing is recorded
     CHANGES = "CHANGES"  # "what changed today?": a read of the operations log, the forecast and what is still open
+    # A question about the books that no other intent answers right (app/nl/ask.py): read-only and owner only. It never
+    # proposes a plan, compiles an offer, queues or executes anything, or writes to the operations log.
+    ASK_BOOKS = "ASK_BOOKS"
     APPROVE = "APPROVE"
     REJECT = "REJECT"
     COUNTERPARTY_MESSAGE = "COUNTERPARTY_MESSAGE"
@@ -69,6 +72,9 @@ class Slots(_Strict):
     tier3: Tier3Kind | None = None
     capex: bool = False
     quoted_approval: bool = False  # quoted/pasted text carried an approval instruction (ignored, logged)
+    # ASK_BOOKS only: the owner's own question, passed to the read-only answer layer (app.nl.answers). It never reaches the
+    # verifier, the compiler or the executor.
+    question: str | None = Field(default=None, max_length=4000)
 
 
 class Parsed(_Strict):

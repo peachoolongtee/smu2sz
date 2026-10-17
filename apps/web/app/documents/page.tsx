@@ -6,22 +6,19 @@ import { Suspense, useEffect, useId, useMemo, useRef, useState, type DragEvent, 
 import { CheckIcon } from "@/components/icons";
 import { DocumentReview } from "@/components/document-review";
 import { contractsOff, DocStatusBadge, whenWords } from "@/components/documents";
-import { Button, Callout, Card, ErrorState, inputClass, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
-import { getContractFixtures, getDocuments, getState, submitDocument } from "@/lib/api";
+import { Button, Callout, Card, ErrorState, inputClass, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, textLinkClass, thCls } from "@/components/ui";
+import { addCustomer, existingCustomerId, getDocuments, getState, newKey, submitDocument } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
+import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
-import type { Counterparty, DocumentKind, DocumentSummary, SubmitDocumentRequest } from "@/lib/types";
+import type { Counterparty, DocumentKind, SubmitDocumentRequest } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 
 const MAX_BYTES = 5 * 1024 * 1024;
-/** A demo document dragged from the list onto the drop zone carries its fixture id and chosen format under this type. */
-const FIXTURE_MIME = "application/x-flow-fixture";
 const READABLE = /\.(pdf|docx|txt|md)$/i;
 
-type Format = "md" | "docx" | "pdf";
-
 /**
- * Contract ingestion (brief 03): read a demo document or upload a signed contract or lender agreement, review the agent's
+ * Contract ingestion (brief 03): upload a signed contract or lender agreement, review the agent's
  * reading beside the text, and confirm or reject it. The selected document is in the address (?id=DOC-…), so the home cards
  * link straight to it. Everything goes through lib/api.ts; the reading, the amounts and the comparison are the server's.
  */
@@ -51,7 +48,6 @@ function Documents() {
   const today = list.data?.day ?? null;
   const docs = list.data?.documents ?? [];
   const parties = state.data?.state.counterparties ?? [];
-  const nameOf = (id: string) => parties.find((c) => c.id === id)?.name ?? id;
 
   const open = (id: string) => router.replace(`/documents?id=${encodeURIComponent(id)}`, { scroll: false });
 
@@ -83,10 +79,7 @@ function Documents() {
       {/* A flex column, not a stack: the review's parts are ordered (the decision is a bar at the foot of a phone, under the header on a desktop). */}
       <div className="flex flex-col gap-8">
         <Card id="docs-read" className="order-1">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-            <UploadForm parties={parties} onRead={read} />
-            <DemoDocuments existing={docs} nameOf={nameOf} onRead={read} onOpen={open} />
-          </div>
+          <UploadForm parties={parties} onRead={read} onPartiesChanged={state.reload} />
           {error ? (
             <div className="mt-4">
               <ErrorState error={error} />
@@ -141,103 +134,6 @@ function Documents() {
         </Card>
       </div>
     </>
-  );
-}
-
-/** The synthetic demo documents (GET /fixtures/contracts): read one in any of its formats, or open the reading already made. */
-function DemoDocuments({
-  existing,
-  nameOf,
-  onRead,
-  onOpen,
-}: {
-  existing: DocumentSummary[];
-  nameOf: (id: string) => string;
-  onRead: (req: SubmitDocumentRequest) => Promise<void>;
-  onOpen: (id: string) => void;
-}) {
-  const { t, te } = useI18n();
-  const fixtures = useAsync(getContractFixtures, []);
-  const [formats, setFormats] = useState<Record<string, Format>>({});
-  const [busy, setBusy] = useState<string | null>(null);
-  return (
-    <section className="min-w-0">
-      <h3 className="text-base font-semibold text-ink">{t("docs.demo")}</h3>
-      <p className="mt-0.5 text-meta text-ink-3">{t("docs.demo.hint")}</p>
-      {fixtures.error ? (
-        <div className="mt-3">
-          <ErrorState error={fixtures.error} onRetry={fixtures.reload} />
-        </div>
-      ) : !fixtures.data ? (
-        <div className="mt-3">
-          <LoadingBlock rows={2} />
-        </div>
-      ) : (
-        <ul className="mt-3 divide-y divide-line border-y border-line">
-          {fixtures.data.map((f) => {
-            const made = existing.filter((d) => d.source === `fixture:${f.id}` && d.status !== "REJECTED");
-            const last = made.length ? made[made.length - 1] : null;
-            const format = formats[f.id] ?? "md";
-            return (
-              <li
-                key={f.id}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData(FIXTURE_MIME, JSON.stringify({ fixture_id: f.id, format }));
-                  e.dataTransfer.effectAllowed = "copy";
-                }}
-                className="flex cursor-grab flex-wrap items-center justify-between gap-2 py-2.5 active:cursor-grabbing"
-                data-testid={`fixture-${f.id}`}
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink">{f.title}</p>
-                  <p className="text-meta text-ink-3">
-                    {te("dockind", f.kind)} · {nameOf(f.counterparty_id)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {last ? (
-                    <Button size="sm" onClick={() => onOpen(last.id)} data-testid={`fixture-open-${f.id}`}>
-                      {t("docs.openIt")}
-                    </Button>
-                  ) : null}
-                  <label className="sr-only" htmlFor={`fmt-${f.id}`}>
-                    {t("docs.format")}
-                  </label>
-                  <select
-                    id={`fmt-${f.id}`}
-                    value={format}
-                    onChange={(e) => setFormats((s) => ({ ...s, [f.id]: e.target.value as Format }))}
-                    className={`${inputClass} touch:min-h-11`}
-                  >
-                    {f.formats.map((x) => (
-                      <option key={x} value={x}>
-                        {te("docformat", x)}
-                      </option>
-                    ))}
-                  </select>
-                  {/* Reading a document again is a new reading for the owner to review; the one already confirmed stays. */}
-                  <Button
-                    size="sm"
-                    variant={last ? "secondary" : "primary"}
-                    loading={busy === f.id}
-                    disabled={busy !== null}
-                    data-testid={`fixture-read-${f.id}`}
-                    onClick={async () => {
-                      setBusy(f.id);
-                      await onRead({ fixture_id: f.id, format });
-                      setBusy(null);
-                    }}
-                  >
-                    {last ? t("docs.readAgain") : t("docs.readIt")}
-                  </Button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
   );
 }
 
@@ -346,21 +242,27 @@ function KindSelect({ id, value, onChange, className }: { id: string; value: Doc
 
 /**
  * The owner's own file, as a drop zone: say what it is and who it is with, then drop the file (it is read at once) or choose it and press
- * Upload and read. A demo document dragged from the list beside it is read the same way.
+ * Upload and read.
  */
-function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req: SubmitDocumentRequest) => Promise<void> }) {
+function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterparty[]; onRead: (req: SubmitDocumentRequest) => Promise<void>; onPartiesChanged: () => void }) {
   const { t } = useI18n();
   const kindId = useId();
   const partyId = useId();
   const fileId = useId();
   const input = useRef<HTMLInputElement>(null);
+  const partyInput = useRef<HTMLInputElement>(null);
   const [kind, setKind] = useState<DocumentKind>("BUYER_CONTRACT");
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A customer added here is chosen at once, before the companies on the books are read again.
+  const [added, setAdded] = useState<Counterparty[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const role = kind === "BUYER_CONTRACT" ? "BUYER" : "LENDER";
-  const options = parties.filter((c) => c.role === role && c.known);
+  const known = [...parties, ...added.filter((a) => !parties.some((p) => p.id === a.id))];
+  const options = known.filter((c) => c.role === role && c.known);
   // The company is typed by name: an exact name, else the one company whose name contains what was typed. Nothing that is not on the books can be chosen.
   const needle = typed.trim().toLowerCase();
   const matches = needle ? options.filter((c) => c.name.toLowerCase() === needle) : [];
@@ -368,6 +270,28 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
   const found = matches[0] ?? (near.length === 1 ? near[0] : undefined);
   const chosen = found?.id ?? "";
   const listId = useId();
+  // A contract with a buyer the books do not have yet: the owner can add the buyer right here, by the name typed.
+  const canAdd = role === "BUYER" && Boolean(needle) && !found && near.length === 0;
+
+  // The server's sentence for the customer added stays a few seconds, quietly.
+  useEffect(() => {
+    if (!notice) return;
+    const id = window.setTimeout(() => setNotice(null), 6000);
+    return () => window.clearTimeout(id);
+  }, [notice]);
+
+  /** The customer added is chosen; `said` null: it was on the books already (a 409), and the owner is told so by its name there. */
+  function choose(c: Counterparty, said: string | null) {
+    const there = known.find((p) => p.id === c.id);
+    const picked = there ?? c;
+    if (!there) setAdded((list) => [...list, c]);
+    setTyped(picked.name);
+    setAdding(false);
+    setError(null);
+    setNotice(said ?? t("docs.newCustomer.exists", { name: picked.name }));
+    onPartiesChanged();
+    partyInput.current?.focus();
+  }
 
   // The server answers once, when the reading is done, so the bar is the work in hand: it climbs toward the end while the file is sent and read, and fills when the answer arrives.
   const [progress, setProgress] = useState(0);
@@ -402,19 +326,6 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
     e.preventDefault();
     setOver(false);
     if (busy) return;
-    const fixture = e.dataTransfer.getData(FIXTURE_MIME);
-    if (fixture) {
-      setProgress(6);
-      setBusy(t("docs.demo"));
-      setError(null);
-      try {
-        await onRead(JSON.parse(fixture) as SubmitDocumentRequest);
-        setProgress(100);
-      } finally {
-        setBusy(null);
-      }
-      return;
-    }
     const dropped = e.dataTransfer.files?.[0];
     if (!dropped) return;
     if (!READABLE.test(dropped.name)) {
@@ -440,14 +351,19 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
             {t("docs.counterparty")}
           </label>
           <input
+            ref={partyInput}
             id={partyId}
             list={listId}
             value={typed}
-            onChange={(e) => setTyped(e.target.value)}
+            onChange={(e) => {
+              setTyped(e.target.value);
+              setNotice(null);
+              setAdding(false);
+            }}
             autoComplete="off"
             placeholder={t("docs.counterparty.placeholder")}
             aria-invalid={needle && !found ? true : undefined}
-            aria-describedby={needle && !found ? `${partyId}-hint` : undefined}
+            aria-describedby={needle && !found && !(adding && canAdd) ? `${partyId}-hint` : undefined}
             className={field}
             data-testid="doc-counterparty"
           />
@@ -456,9 +372,29 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
               <option key={c.id} value={c.name} />
             ))}
           </datalist>
-          {needle && !found ? (
+          {adding && canAdd ? (
+            <NewCustomerPanel
+              typed={typed.trim()}
+              onAdded={choose}
+              onCancel={() => {
+                setAdding(false);
+                partyInput.current?.focus();
+              }}
+            />
+          ) : canAdd ? (
+            <p id={`${partyId}-hint`} className="mt-0.5 text-meta">
+              <span className="sr-only">{t("docs.counterparty.none")} </span>
+              <button type="button" onClick={() => setAdding(true)} className={`${textLinkClass} -ml-2`} data-testid="doc-new-customer">
+                {t("docs.newCustomer.offer", { name: typed.trim() })}
+              </button>
+            </p>
+          ) : needle && !found ? (
             <p id={`${partyId}-hint`} className="mt-1 text-meta text-bad-fg">
               {near.length > 1 ? t("docs.counterparty.many") : t("docs.counterparty.none")}
+            </p>
+          ) : notice ? (
+            <p role="status" className="mt-1 text-meta text-ink-3" data-testid="doc-new-customer-done">
+              {notice}
             </p>
           ) : null}
         </div>
@@ -490,7 +426,7 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
             <div role="progressbar" aria-label={t("docs.drop.reading", { name: busy })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-2 overflow-hidden rounded-full bg-line-strong">
               <div className="h-full rounded-full bg-brand-600 transition-[width] duration-(--dur) ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
             </div>
-            <p className="mt-1 text-supporting tabular-nums text-ink-3">{Math.round(progress)}%</p>
+            <p className="mt-1 text-meta tabular-nums text-ink-3">{Math.round(progress)}%</p>
           </div>
         ) : (
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -523,7 +459,6 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
           }}
           className="sr-only"
         />
-        <p className="mt-1 text-meta text-ink-3">{t("docs.drop.demoHint")}</p>
       </div>
       {error ? (
         <div className="mt-3">
@@ -531,5 +466,121 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
         </div>
       ) : null}
     </section>
+  );
+}
+
+/** A failed request's sentence for the owner: the server's own message when it sent one in words, else the app's. */
+function saidOf(e: unknown, fallback: string): string {
+  if (e instanceof ApiError) {
+    const m = (e.detail as { message?: unknown } | undefined)?.message;
+    if (typeof m === "string" && m.trim()) return m;
+  }
+  return fallback;
+}
+
+/**
+ * A buyer who is not on the books yet, added from "Who it is with": the name as typed, a short name if the owner wants one,
+ * Add customer or Cancel. The customer added (or the one already on the books with that name) is chosen in the field.
+ */
+function NewCustomerPanel({ typed, onAdded, onCancel }: { typed: string; onAdded: (c: Counterparty, said: string | null) => void; onCancel: () => void }) {
+  const { t, lang } = useI18n();
+  const titleId = useId();
+  const nameId = useId();
+  const shortId = useId();
+  const errorId = useId();
+  const nameInput = useRef<HTMLInputElement>(null);
+  const [name, setName] = useState(typed);
+  const [short, setShort] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  // One key for this customer: a retry after a failed call adds it once.
+  const [key] = useState(newKey);
+
+  useEffect(() => {
+    nameInput.current?.focus();
+  }, []);
+
+  async function add() {
+    if (busy) return;
+    const clean = name.trim();
+    if (!clean) {
+      setProblem(t("docs.newCustomer.nameNeeded"));
+      nameInput.current?.focus();
+      return;
+    }
+    setBusy(true);
+    setProblem(null);
+    try {
+      const res = await addCustomer({ name: clean, short_name: short.trim() || null, idempotency_key: key }, lang);
+      onAdded({ id: res.customer.id, name: res.customer.name, role: "BUYER", known: true }, res.event_text);
+    } catch (e) {
+      const existing = existingCustomerId(e);
+      if (existing) {
+        // Already on the books: that customer is the one chosen, and the owner is told so.
+        onAdded({ id: existing, name: clean, role: "BUYER", known: true }, null);
+      } else {
+        setProblem(saidOf(e, t("docs.newCustomer.failed")));
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const field = `${inputClass} ${FOCUS} w-full touch:min-h-11`;
+  return (
+    <form
+      aria-labelledby={titleId}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void add();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onCancel();
+        }
+      }}
+      className="motion-reveal mt-2 rounded-card border border-line bg-subtle/60 p-3"
+      data-testid="doc-new-customer-panel"
+    >
+      <p id={titleId} className="text-meta font-bold text-ink">
+        {t("docs.newCustomer.title")}
+      </p>
+      <label htmlFor={nameId} className="mt-2 mb-1 block text-meta font-bold text-ink-2">
+        {t("docs.newCustomer.name")}
+      </label>
+      <input
+        ref={nameInput}
+        id={nameId}
+        value={name}
+        onChange={(e) => {
+          setName(e.target.value);
+          setProblem(null);
+        }}
+        autoComplete="off"
+        maxLength={120}
+        aria-invalid={problem ? true : undefined}
+        aria-describedby={problem ? errorId : undefined}
+        className={field}
+        data-testid="doc-new-customer-name"
+      />
+      <label htmlFor={shortId} className="mt-2 mb-1 block text-meta font-bold text-ink-2">
+        {t("docs.newCustomer.short")}
+      </label>
+      <input id={shortId} value={short} onChange={(e) => setShort(e.target.value)} autoComplete="off" maxLength={40} className={field} data-testid="doc-new-customer-short" />
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Button type="submit" variant="primary" size="sm" loading={busy} data-testid="doc-new-customer-add">
+          {t("docs.newCustomer.add")}
+        </Button>
+        <Button size="sm" disabled={busy} onClick={onCancel} data-testid="doc-new-customer-cancel">
+          {t("docs.newCustomer.cancel")}
+        </Button>
+        {problem ? (
+          <p id={errorId} role="alert" className="min-w-0 basis-full text-meta text-bad-fg sm:basis-auto" data-testid="doc-new-customer-error">
+            {problem}
+          </p>
+        ) : null}
+      </div>
+    </form>
   );
 }

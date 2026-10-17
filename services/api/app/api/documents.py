@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import binascii
 import hashlib
+import hmac
 import re
 import uuid
 from typing import Literal
@@ -18,11 +19,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import require_feature, require_owner
+from app.api.document_outcome import document_outcome
 from app.api.errors import ALREADY_DECIDED_CODE
+from app.api.presentation import t
 from app.api.runtime import Runtime, get_runtime
 from app.compiler import ContractTooLong
 from app.config import get_settings
-from app.contracts import read_document, record_view
+from app.contracts import PARTY_FLAG_KINDS, read_document, record_view, with_party_check
+from app.contracts.parties import without_party_check
+from app.contracts.records import suggest_facility
 from app.deals import documents_for
 from app.domain.fixtures import (
     capex_contract_fixture_bytes,
@@ -30,7 +35,17 @@ from app.domain.fixtures import (
     load_capex_contract_fixtures,
     load_contract_fixtures,
 )
-from app.domain.models import Actor, DocumentKind, DocumentStatus, SecurityEvent, SecurityEventKind
+from app.domain.models import (
+    Actor,
+    ContractRecord,
+    DocumentKind,
+    DocumentStatus,
+    OperationResult,
+    OperationStatus,
+    SecurityEvent,
+    SecurityEventKind,
+    Tier,
+)
 from app.ingest import DocumentTooLarge, IngestError, extract_text
 
 router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature("contracts"))])
@@ -38,6 +53,7 @@ router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature
 Lang = Literal["en", "zh"]
 _ROLE = {DocumentKind.BUYER_CONTRACT: "BUYER", DocumentKind.LENDER_AGREEMENT: "LENDER",
          DocumentKind.CAPEX_CONTRACT: "SUPPLIER"}
+_ROLE_WORDS = {"BUYER": ("customer", "客户"), "LENDER": ("lender", "贷款方"), "SUPPLIER": ("supplier", "供应商")}
 # ADR-0013 (D12): the vendor of a capex contract need not be on the registry yet (the owner is shopping); committing the
 # purchase registers it. Its id must still look like a registry id.
 _VENDOR_ID = re.compile(r"^[A-Z0-9][A-Z0-9_-]{1,63}$")
@@ -57,6 +73,19 @@ class DocumentIn(BaseModel):
     content_base64: str | None = Field(default=None, max_length=7_200_000)  # 5 MB of file
     text: str | None = Field(default=None, max_length=400_000)
     title: str | None = Field(default=None, max_length=120)
+
+
+REFILE_DOCUMENT_KIND = "REFILE_DOCUMENT"
+
+
+class RefileIn(BaseModel):
+    """File a PROPOSED document's text under another registered counterparty of the right role (the owner chose the wrong one,
+    or has just added the right customer). `doc_hash` binds the request to the text the owner was shown."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    counterparty_id: str = Field(min_length=1, max_length=64)
+    doc_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 class DecisionIn(BaseModel):
@@ -82,6 +111,19 @@ def _capex_on() -> bool:
 
 def _refusal(code: str, message: str, message_zh: str | None) -> dict[str, str]:
     return {"code": code, "message": message, **({"message_zh": message_zh} if message_zh else {})}
+
+
+def _view(rt: Runtime, rec: ContractRecord, lang: Lang) -> dict:
+    """The review screen of `rec` on the books as they are now, with the parties it names matched to the registry."""
+    from app.api.customers import added_short_names
+
+    return record_view(rec, rt.store.get_state(), lang, rt.day, rt.store.contract_guard_rows(), added_short_names(rt.store))
+
+
+def _short_names(rt: Runtime, counterparty_id: str) -> list[str]:
+    from app.api.customers import added_short_names
+
+    return added_short_names(rt.store).get(counterparty_id, [])
 
 
 @router.post("/documents")
@@ -146,6 +188,8 @@ def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
     try:
         text = extract_text(name, data)
         record = read_document(text, kind, cp, title=title, source=source, day=day, facilities=state.facilities)
+        # The owner's rule of 17 Oct: the counterparty chosen must be a party the document names (app.contracts.parties).
+        record = with_party_check(record, party, _short_names(rt, cp))
     except IngestError as e:
         raise HTTPException(413 if isinstance(e, DocumentTooLarge) else 422,
                             _refusal(e.code, str(e), e.message_zh)) from None
@@ -156,9 +200,9 @@ def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
         stored = rt.store.get_contract_record(rid)
         assert stored is not None
         for f in stored.flags:
-            if f.blocking:
+            if f.blocking and f.kind not in PARTY_FLAG_KINDS:  # a party the document does not name is no attack
                 _event(SecurityEventKind.INJECTION, rt.day, cp, f"{rid}: {f.note}", [f.span])
-        return {"document": record_view(stored, rt.store.get_state(), lang, rt.day, rt.store.contract_guard_rows())}
+        return {"document": _view(rt, stored, lang)}
 
 
 @router.get("/documents")
@@ -175,13 +219,15 @@ def get_document(document_id: str, lang: Lang = "en") -> dict:
         rec = rt.store.get_contract_record(document_id)
         if rec is None:
             raise HTTPException(404, {"code": "UNKNOWN_DOCUMENT", "message": f"no document {document_id}"})
-        return {"document": record_view(rec, rt.store.get_state(), lang, rt.day, rt.store.contract_guard_rows()), "lang": lang}
+        return {"document": _view(rt, rec, lang), "lang": lang}
 
 
 def _decide(document_id: str, body: DecisionIn, confirm: bool, lang: Lang) -> dict:
     """The owner's decision. The same decision sent again is answered with the first (same op_id and log position, nothing
     appended); the other decision on a decided document is refused and answered 409 `ALREADY_DECIDED`; a hash that is not the
-    stored text's is refused and answered 409 `TERMS_CHANGED`. Any other refusal is a 200 whose result says REFUSED."""
+    stored text's is refused and answered 409 `TERMS_CHANGED`. Any other refusal is a 200 whose result says REFUSED (and whose
+    `outcome` is null). A decision made carries `outcome`: what it saved, under whom, what it changes and what it does not, in words
+    (`app.api.document_outcome`)."""
     rt = get_runtime()
     before = rt.store.get_contract_record(document_id)
     if before is None:
@@ -196,8 +242,10 @@ def _decide(document_id: str, body: DecisionIn, confirm: bool, lang: Lang) -> di
                                   "result": result.model_dump(mode="json")})
     rec = rt.store.get_contract_record(document_id)
     assert rec is not None
-    return {"result": result.model_dump(mode="json"),
-            "document": record_view(rec, rt.store.get_state(), lang, rt.day, rt.store.contract_guard_rows())}
+    state, rows = rt.store.get_state(), rt.store.contract_guard_rows()
+    # What the decision did, in words (the outcome card): only for a decision that was made, never for a refusal.
+    outcome = document_outcome(rec, state, rows, lang, rt.day) if result.status.value == "EXECUTED" else None
+    return {"result": result.model_dump(mode="json"), "document": _view(rt, rec, lang), "outcome": outcome}
 
 
 @router.post("/documents/{document_id}/confirm")
@@ -208,6 +256,69 @@ def confirm_document(document_id: str, body: DecisionIn, lang: Lang = "en") -> d
 @router.post("/documents/{document_id}/reject")
 def reject_document(document_id: str, body: DecisionIn, lang: Lang = "en") -> dict:
     return _decide(document_id, body, confirm=False, lang=lang)
+
+
+@router.post("/documents/{document_id}/refile")
+def refile_document(document_id: str, body: RefileIn, lang: Lang = "en") -> dict:
+    """File a PROPOSED document under another registered counterparty of its kind's role: a NEW record holding the same text
+    and the same reading (no new model call), with the party check run again for the new counterparty; the old record is
+    closed, superseded by the new one (its `superseded_by`, the new record's `replaces`). One REFILE_DOCUMENT entry in the
+    hash chain records it. Refused, with nothing written: an unknown document (404); a document already confirmed, rejected
+    or filed again (409 NOT_PROPOSED); a hash that is not the stored text's (409 DOCUMENT_CHANGED); an unknown counterparty
+    (404); one of the wrong role or the same one (422). Nothing in the books changes."""
+    from app.persistence.canonical import canonical_json
+
+    rt = get_runtime()
+    with rt.lock:
+        rec = rt.store.get_contract_record(document_id)
+        if rec is None:
+            raise HTTPException(404, {"code": "UNKNOWN_DOCUMENT", "message": t(
+                lang, "FLOW has no such document.", "FLOW 中没有这份文件。")})
+        if rec.status != DocumentStatus.PROPOSED:
+            raise HTTPException(409, {"code": "NOT_PROPOSED", "status": rec.status.value, "message": t(
+                lang, "This document has already been decided or filed again, so it was not moved.",
+                "这份文件已经处理过或已改归，因此没有移动。")})
+        if not hmac.compare_digest(body.doc_hash.encode(), rec.doc_hash.encode()):
+            raise HTTPException(409, {"code": "DOCUMENT_CHANGED", "message": t(
+                lang, "The document shown is not the one FLOW holds, so nothing was moved. Reload it and try again.",
+                "显示的文件与 FLOW 保存的不一致，因此没有移动任何内容。请重新加载后再试。")})
+        state = rt.store.get_state()
+        party = next((c for c in state.counterparties if c.id == body.counterparty_id and c.known), None)
+        if party is None:
+            raise HTTPException(404, {"code": "UNKNOWN_COUNTERPARTY", "message": t(
+                lang, "That counterparty is not on your books.", "该对方不在您的账簿中。")})
+        role = _ROLE[rec.kind]
+        if party.role != role:
+            raise HTTPException(422, {"code": "COUNTERPARTY_ROLE_MISMATCH", "message": t(
+                lang, f"{party.name} is not a {_ROLE_WORDS[role][0]}, so this document cannot be filed under it.",
+                f"{party.name}不是{_ROLE_WORDS[role][1]}，因此不能将这份文件归入其下。")})
+        if party.id == rec.counterparty_id:
+            raise HTTPException(422, {"code": "SAME_COUNTERPARTY", "message": t(
+                lang, f"This document is already filed under {party.name}.", f"这份文件已归入{party.name}。")})
+        moved = without_party_check(rec).model_copy(update={"counterparty_id": party.id})
+        if moved.term_sheet is not None:  # the agreement's facility is now this lender's, and so is the one it describes
+            ts = moved.term_sheet
+            if ts.proposed_facility is not None:
+                ts = ts.model_copy(update={"proposed_facility": ts.proposed_facility.model_copy(update={"lender_id": party.id})})
+            moved = moved.model_copy(update={"term_sheet": ts,
+                                             "suggested_facility_id": suggest_facility(ts, party.id, state.facilities)})
+        moved = with_party_check(moved, party, _short_names(rt, party.id))
+        day = rt.day
+        with rt.store.transaction():  # the new record, the entry that records the move and the old record's closing, together
+            new_id = rt.store.add_contract_record(moved)
+            op_id = f"REFILE-{document_id}-{day}-{len(rt.store.operations()) + 1}"
+            payload = {"kind": REFILE_DOCUMENT_KIND, "op_id": op_id, "document_id": document_id, "new_document_id": new_id,
+                       "from_counterparty_id": rec.counterparty_id, "counterparty_id": party.id, "doc_hash": rec.doc_hash,
+                       "requested_by": Actor.OWNER.value, "day": day}
+            result = OperationResult(op_id=op_id, kind=REFILE_DOCUMENT_KIND, status=OperationStatus.EXECUTED, tier=Tier.TIER_2,
+                                     effective_day=day, message=(f"Document {document_id} filed again under {party.id} as "
+                                                                 f"{new_id} by the owner; nothing in the books changed"))
+            entry = rt.store.append_operation(op_id, REFILE_DOCUMENT_KIND, op_id, canonical_json(payload),
+                                              canonical_json(result))
+            rt.store.close_refiled_record(document_id, new_id, day, entry.seq)
+        stored = rt.store.get_contract_record(new_id)
+        assert stored is not None
+        return {"document": _view(rt, stored, lang)}
 
 
 def confirm_demo_documents(rt: Runtime) -> None:

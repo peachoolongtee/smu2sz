@@ -199,3 +199,21 @@ test("?buyer= lists that buyer's tasks: the chase dialog's thread link lands on 
   await expect(page.getByTestId("queue-row")).toHaveCount(0);
   await expect(page.getByTestId("deal-pane")).toHaveCount(0);
 });
+
+test("a buyer with an invoice and no contract is on Deals: the server's sentence on its row, the invoice in the summary's own table", async ({ page }) => {
+  // The short-facilities books (recorded by record-mocks.mjs --deals-short): Foshan owes an open invoice and has no confirmed contract.
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-scenario", "short_facilities"));
+  await page.goto("/deals");
+  const row = page.getByTestId("invoices-BUYER-1");
+  await expect(row).toContainText("Invoices to Foshan Home Retail Co.");
+  await expect(row.getByTestId("invoices-line")).toHaveText("No contract on file yet. Open invoices: 1, ¥420,000.00 due in 32 days.");
+  await row.getByTestId("commitment-toggle").click();
+  const invoice = row.getByTestId("deal-invoice-RCV-A");
+  await expect(invoice).toHaveAttribute("data-status", "NOT_DUE");
+  await expect(invoice).toContainText("¥420,000.00");
+  await expect(invoice).toContainText("Not due");
+  // No contract is claimed: none of the contract summary's parts is drawn, and a buyer with no invoice has no row.
+  await expect(page.getByTestId("deal-summary-BUYER-1")).toHaveCount(0);
+  await expect(page.getByTestId("invoices-BUYER-2")).toHaveCount(0);
+  expect(await proseOf(page)).not.toMatch(/\bday \d|RCV-A/i);
+});

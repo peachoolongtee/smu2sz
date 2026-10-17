@@ -192,11 +192,13 @@ scenarios:
     after: {facilities_added: 0, cash_unchanged: true}
 
   - id: S16_ex11_capex_out_of_scope
-    title: "EX11: the capex case is answered in chat (NPV, payback, structures); nothing is applied for"
+    title: "EX11: the capex case is answered in chat (the answer first: only financed, NPV, payback); nothing is applied for"
     tags: [EX11, capex]
     turns:
+      # a top owner question (CAP-01): the answer module leads with the answer (app/nl/answers), read-only
       - text: "Can we buy the ¥600k machine?"
-        expect: {intent: CAPEX, ops_count: 0, reply_contains: ["NPV", "Capex screen"]}
+        expect: {intent: ASK_BOOKS, ops_count: 0, awaiting: false,
+                 reply_contains: ["Only financed", "NPV ¥380,885.77", "48-month lease", "Capex screen"]}
 
   - id: S17_ex12_goal_accept
     title: "EX12 goal -> plan: early-pay counter at 0.85% with zero forward concessions; the buyer accepts"
@@ -474,10 +476,14 @@ scenarios:
         expect: {intent: SHOW_RATIOS, ops_count: 0, reply_contains: ["最低 DSCR 2.00×", "余量 0.75×", "最高杠杆 1.35×"]}  # (1,500,000 − 45,000) / 1,080,000 at the month-1 end
 
   - id: S43_capex_case
-    title: "Can we afford the ¥600,000 machine? NPV, payback and each financing structure; the application is not made"
+    title: "Can we afford the ¥600,000 machine? The answer first, then NPV, payback and each financing structure on request; the application is not made"
     tags: [nl_capabilities, capex, EX11]
     turns:
+      # the question gets the answer (CAP-01, app/nl/answers); "evaluate" asks for the whole case, every structure
       - text: "can we afford the ¥600,000 machine?"
+        expect: {intent: ASK_BOOKS, ops_count: 0, awaiting: false,
+                 reply_contains: ["Only financed", "NPV ¥380,885.77", "payback in month 31", "48-month lease (¥14,423.49 a month, 7.20%)"]}
+      - text: "evaluate the ¥600,000 machine"
         expect: {intent: CAPEX, ops_count: 0, awaiting: false,
                  reply_contains: ["NPV ¥380,885.77", "payback in month 31", "36-month term loan, 5.60%: min DSCR 1.43×", "SELECTED",
                                   "fails", "Capex screen"]}

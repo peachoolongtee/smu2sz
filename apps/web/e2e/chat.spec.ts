@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { DEMO_TOKEN } from "./fixtures";
-import { checkedDeal, resetBooks } from "./helpers";
+import { checkedDeal, openOperatorTools, resetBooks } from "./helpers";
 
 // These start signed out: the landing page (the first page a visitor sees) is taken as seen, so "/" opens Home.
 test.beforeEach(async ({ context }) => {
@@ -494,5 +494,137 @@ test("a refresh keeps the draft and the conversation, and a pending plan points 
   await page.getByTestId("owner-signout").click();
   await expect(page.getByTestId("owner-signin-open")).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue("");
+  await expect(turns(page)).toHaveCount(0);
+});
+
+/**
+ * A reset is a fresh conversation everywhere (owner report, 17 Oct: "Ask FLOW still retains memory of previous conversations"). New conversation drops
+ * the transcript, the session id and the draft and ends the session on the server; a demo reset clears the chat in every tab; signing out ends the
+ * owner's session too. A refresh is not a reset: it keeps the conversation (the spec above).
+ */
+const ownerSession = (page: Page) => page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-chat-session") ?? "{}").convs?.OWNER?.sessionId as string | null);
+const endRequest = (page: Page) => page.waitForRequest((r) => r.url().endsWith("/nl/session/reset") && r.method() === "POST");
+
+/** A "go ahead" with nothing to confirm: no operation runs, nothing waits, and live, the server says so in its own words. */
+async function goAheadRunsNothing(page: Page) {
+  await send(page, "go ahead");
+  await expect(turns(page)).toHaveCount(1);
+  const turn = turns(page).last();
+  await expect(turn.getByTestId("chat-reply")).toBeVisible();
+  await expect(turn.getByTestId("chat-ops")).toHaveCount(0);
+  await expect(turn.getByTestId("chat-awaiting")).toHaveCount(0);
+  if (isLive()) await expect(turn.getByTestId("chat-reply")).toContainText("Nothing in this conversation is waiting");
+}
+
+test("New conversation starts over here and on the server: a go ahead afterwards does not run the old plan", async ({ page, request }) => {
+  await resetBooks(request);
+  await demoMode(page);
+  await asOwner(page);
+  await page.goto("/chat");
+  await send(page, "Evaluate EX01");
+  await expect(turns(page).first().getByTestId("chat-awaiting")).toBeVisible();
+  const old = await ownerSession(page);
+  expect(old).toBeTruthy();
+  await page.getByRole("textbox", { name: "Message" }).fill("half a thought");
+
+  // The browser lets go of the transcript, the id and the draft, and tells the server to end that session.
+  const ended = isLive() ? endRequest(page) : null;
+  await page.getByTestId("chat-new").click();
+  await expect(turns(page)).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue("");
+  expect(await ownerSession(page)).toBeNull();
+  if (ended) {
+    const req = await ended;
+    expect(req.postDataJSON()).toEqual({ session_id: old });
+    expect((await req.response())?.status()).toBe(200);
+  }
+
+  await goAheadRunsNothing(page);
+  expect(await ownerSession(page)).not.toBe(old);
+
+  // Live: a stale tab still holding the old id gets nothing from it either; the ended id is not continued.
+  if (isLive()) {
+    const stale = await (await request.post(`${API}/nl`, {
+      headers: { "X-Owner-Token": DEMO_TOKEN },
+      data: { session_id: old, actor: "OWNER", text: "go ahead", lang: "en" },
+    })).json();
+    expect(stale.session_id).not.toBe(old);
+    expect(stale.operations).toEqual([]);
+    expect(stale.awaiting_confirmation).toBe(false);
+  }
+});
+
+test("New conversation on the Business shell clears the owner's conversation, whatever role a Demo visit left", async ({ page, request }) => {
+  await resetBooks(request);
+  await demoMode(page);
+  await asOwner(page);
+  await page.goto("/chat");
+  await page.getByRole("radio", { name: "Buyer (counterparty)" }).check();
+  // To the Business shell without a reload: the role in the tab is still the buyer's, the chat shows the owner's.
+  await page.getByRole("radio", { name: "Business" }).check();
+  await expect(page).toHaveURL(/\/$/);
+  await page.getByTestId("chat-open").click();
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
+  await panel.getByRole("textbox", { name: "Message" }).fill("status");
+  await panel.getByTestId("chat-send").click();
+  await expect(panel.getByTestId("chat-turn")).toHaveCount(1);
+  await panel.getByTestId("chat-new").click();
+  await expect(panel.getByTestId("chat-turn")).toHaveCount(0);
+  expect(await ownerSession(page)).toBeNull();
+});
+
+test("a demo reset clears Ask FLOW in this tab and in another open one, and a go ahead afterwards runs nothing", async ({ page, context, request }) => {
+  await resetBooks(request);
+  await demoMode(page);
+  await asOwner(page);
+  await page.goto("/chat");
+  await send(page, "Evaluate EX01");
+  await expect(turns(page).first().getByTestId("chat-awaiting")).toBeVisible();
+
+  // A second tab with a conversation of its own.
+  const other = await context.newPage();
+  await other.addInitScript((tok) => sessionStorage.setItem("tl-owner-auth", JSON.stringify({ token: tok })), isLive() ? DEMO_TOKEN : "mock-owner");
+  await other.goto("/chat");
+  await send(other, "status");
+  await expect(turns(other)).toHaveCount(1);
+
+  // The Demo's reset, through its guarded control.
+  await page.goto("/demo");
+  await openOperatorTools(page);
+  await page.getByTestId("demo-tools-books").getByRole("button").first().click();
+  const dialog = page.getByTestId("books-dialog");
+  await dialog.waitFor({ state: "visible", timeout: 2000 }).catch(() => undefined);
+  if (await dialog.isVisible()) await page.getByTestId("books-dialog-confirm").click();
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
+
+  // The other tab heard it while open.
+  await expect(turns(other)).toHaveCount(0);
+  expect(await ownerSession(other)).toBeNull();
+  await other.close();
+
+  // This tab's conversation is gone too, and the old plan with it.
+  await page.goto("/chat");
+  await expect(page.getByTestId("chat-send")).toBeVisible();
+  await expect(turns(page)).toHaveCount(0);
+  expect(await ownerSession(page)).toBeNull();
+  await goAheadRunsNothing(page);
+});
+
+test("signing out ends the owner's session on the server before the token goes", async ({ page, request }) => {
+  test.skip(!isLive(), "the mock has no server session to end");
+  await resetBooks(request);
+  await demoMode(page);
+  await asOwner(page);
+  await page.goto("/chat");
+  await send(page, "Evaluate EX01");
+  await expect(turns(page).first().getByTestId("chat-awaiting")).toBeVisible();
+  const old = await ownerSession(page);
+  const ended = endRequest(page);
+  await openAccountMenu(page);
+  await page.getByTestId("owner-signout").click();
+  const req = await ended;
+  expect(req.postDataJSON()).toEqual({ session_id: old });
+  expect(req.headers()["x-owner-token"]).toBe(DEMO_TOKEN);
+  expect((await req.response())?.status()).toBe(200);
   await expect(turns(page)).toHaveCount(0);
 });

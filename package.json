@@ -5,6 +5,7 @@
   "scripts": {
     "demo": "node scripts/demo.mjs",
     "demo:blank": "node scripts/demo.mjs --blank",
-    "demo:mock": "node scripts/demo.mjs --mock"
+    "demo:mock": "node scripts/demo.mjs --mock",
+    "demo:keep": "node scripts/demo.mjs --keep"
   }
 }

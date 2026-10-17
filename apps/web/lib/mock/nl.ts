@@ -29,6 +29,20 @@ interface Session {
 }
 
 const sessions = new Map<string, Session>();
+/** Ids ended with "New conversation": as on the server, such an id is never continued (a turn on it starts a fresh session). */
+const ended = new Set<string>();
+
+/** "New conversation" (POST /nl/session/reset): what the session waited for is forgotten. */
+export function endMockSession(sid: string): void {
+  sessions.delete(sid);
+  ended.add(sid);
+}
+
+/** A demo reset: every session is forgotten, as on the server. */
+export function resetMockSessions(): void {
+  sessions.clear();
+  ended.clear();
+}
 
 const CJK = /[㐀-鿿]/;
 const CONFIRM = /^\s*(go ahead|yes|proceed|do it|send the counters|approve|执行|确认|好的?|是)\s*[.!。]*\s*$/i;
@@ -133,7 +147,7 @@ export async function mockNl(req: NlRequest): Promise<NlResponse> {
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
-  const sid = req.session_id ?? "mock-session";
+  const sid = req.session_id && ended.has(req.session_id) ? `mock-${Date.now().toString(36)}` : (req.session_id ?? "mock-session");
   const s = sessions.get(sid) ?? { turn: 0, pending: null, clarifying: false, zh: false };
   // The agent's opener left a cure waiting in this session: "go ahead" runs it (recorded), "cancel" drops it.
   if (req.actor === "OWNER" && openerWaiting(sid) && (CONFIRM.test(req.text) || CANCEL.test(req.text))) {

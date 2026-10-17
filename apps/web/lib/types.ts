@@ -2461,6 +2461,7 @@ export type NlIntent =
   | "WHAT_IF"
   | "RECORD_FACT"
   | "CHANGES"
+  | "ASK_BOOKS"
   | "APPROVE"
   | "REJECT"
   | "COUNTERPARTY_MESSAGE"
@@ -3628,6 +3629,37 @@ export interface DocumentView extends Omit<DocumentSummary, "flags"> {
   suggested_facility_name?: string | null;
   compared_with?: string | null;
   comparison?: { label: string; agreement_display: string; books_display: string | null; same: boolean }[];
+  /** The parties the document names, each with the company on the books that has that name, if any; absent from an older server. */
+  named_parties?: NamedParty[];
+}
+
+/** A party a document names (a contract's buyer or supplier, an agreement's lender) and the company on the books with that name, if any. */
+export interface NamedParty {
+  name: string;
+  role: "BUYER" | "SUPPLIER" | "LENDER";
+  on_books_id: string | null;
+}
+
+/** A customer (a buyer) on the books, as POST /customers answers it. */
+export interface Customer {
+  id: string;
+  name: string;
+  role: "BUYER";
+  known: boolean;
+}
+
+/** POST /customers: a buyer the owner adds by name; the key makes a retried request add it once. */
+export interface AddCustomerRequest {
+  name: string;
+  short_name?: string | null;
+  idempotency_key: string;
+}
+
+/** The customer, whether this request added it (false: the key was seen before), and the server's sentence for it. */
+export interface AddCustomerResponse {
+  customer: Customer;
+  created: boolean;
+  event_text: string;
 }
 
 export interface DocumentsList {
@@ -3658,6 +3690,20 @@ export interface SubmitDocumentRequest {
 export interface DocumentDecision {
   result: OperationResultLike;
   document: DocumentView;
+  /** What the decision did, in the server's words (null when it was refused). Absent from an answer recorded before it existed. */
+  outcome?: DocumentOutcome | null;
+}
+
+/**
+ * The outcome card of the owner's decision on a document (ADR-0012): what was saved and under whom (`title`), what that changes and what
+ * it does not, and the page that shows it. Every string is the server's, in the language asked for; confirming changes nothing in the books.
+ */
+export interface DocumentOutcome {
+  title: string;
+  tone: "ok" | "mute";
+  changed: { title: string; lines: string[] };
+  unchanged: { title: string; lines: string[] };
+  link: { label: string; href: string } | null;
 }
 
 /** The executor's answer to CONFIRM_DOCUMENT / REJECT_DOCUMENT. */
@@ -3735,6 +3781,23 @@ export interface DealView {
     notes: string[];
   }[];
   next_invoice?: { day: Day; when?: string; amount_display: string } | null;
+  /**
+   * A buyer with no confirmed contract whose invoices are on the books (`invoices` is then sent too): how many are open, what is due, the late
+   * ones, when the next falls due and the server's one sentence about them ("No contract on file yet. Open invoices: 1, ¥120,000.00 due in 14 days.").
+   * Absent with a contract (its own fields say it) and for a buyer with no invoice.
+   */
+  open_invoices?: {
+    count: number;
+    due_fen: Fen;
+    due_display: string;
+    late_count: number;
+    late_fen: Fen;
+    late_display: string;
+    next_due_day: Day | null;
+    next_due_when: string | null;
+    text: string;
+    tone: DealTone;
+  };
   owed_by_us?: {
     display_only: boolean;
     deliverables: { text: string | null; clause: string | null; quote: string }[];

@@ -5,10 +5,16 @@
  * one continues in the other). One conversation per role: the owner's and a buyer's are different channels
  * with different sessions. The server keeps the session (pending plan, clarification); this store keeps what
  * to show and the session id. It never interprets money: replies and amounts are rendered as received.
+ *
+ * A reset is a fresh conversation everywhere (owner report, 17 Oct): "New conversation" drops the transcript, the session id, the draft
+ * and the failed turn here and ends the session on the server (POST /nl/session/reset); replaced books (a demo reset, the story's
+ * restore, Set up your books; lib/books-epoch.ts) drop both conversations in every tab, the server having ended every session itself;
+ * signing out ends the owner's session with the token that is going and drops both conversations and the draft.
  */
 
-import { nl } from "./api";
-import { onSignedIn, onSignedOut } from "./auth";
+import { endNlSession, nl } from "./api";
+import { getOwnerToken, onSignedIn, onSignedOut, onSigningOut } from "./auth";
+import { booksEpoch, onBooksReplaced } from "./books-epoch";
 import { getLang } from "./i18n";
 import { getMode, shellFor } from "./mode";
 import { nlContext } from "./chat-context";
@@ -42,6 +48,8 @@ interface ChatState {
   counterpartyId: CounterpartyId;
   panelOpen: boolean;
   convs: Record<NlActor, Conversation>;
+  /** The books marker (lib/books-epoch.ts) this conversation was held under: a different one on load means the books were replaced since. */
+  booksEpoch: string | null;
 }
 
 const empty = (generation = 0): Conversation => ({ sessionId: null, messages: [], busy: false, generation });
@@ -60,6 +68,7 @@ const store = createStore<ChatState>(
     counterpartyId: "BUYER-1",
     panelOpen: false,
     convs: { OWNER: empty(), COUNTERPARTY: empty() },
+    booksEpoch: null,
   },
   {
     storage: "session",
@@ -216,9 +225,36 @@ export async function retryLast(role: NlActor = store.get().role): Promise<void>
   await run(a);
 }
 
-export function newConversation(): void {
-  delete failed[store.get().role];
-  patchConv(store.get().role, (c) => empty(c.generation + 1));
+/** Ends a session on the server, quietly: the browser has already let go of the id, so a failure leaves only the server's expiry. */
+function endOnServer(sessionId: string | null, role: NlActor, counterpartyId: CounterpartyId, token: string | null = getOwnerToken()): void {
+  if (!sessionId) return;
+  void endNlSession(sessionId, role, role === "COUNTERPARTY" ? counterpartyId : undefined, role === "OWNER" ? token : undefined).catch(() => undefined);
+}
+
+/**
+ * "New conversation" in the channel on screen (`role`: the Business shell shows the owner's whatever role a Demo visit left behind): the
+ * transcript, the session id, the failed turn and the draft go, a late answer to the old conversation is dropped, and the server ends the
+ * session, so nothing it held (a pending plan, the last offer, a clarification) can be confirmed or referred to again.
+ */
+export function newConversation(role: NlActor = store.get().role): void {
+  const s = store.get();
+  const old = s.convs[role].sessionId;
+  delete failed[role];
+  patchConv(role, (c) => empty(c.generation + 1));
+  setDraft("");
+  endOnServer(old, role, s.counterpartyId);
+}
+
+/** Both conversations and the draft go (the books were replaced, or the owner signed out). */
+function startOver(): void {
+  delete failed.OWNER;
+  delete failed.COUNTERPARTY;
+  store.set((s) => ({
+    ...s,
+    booksEpoch: booksEpoch(),
+    convs: { OWNER: empty(s.convs.OWNER.generation + 1), COUNTERPARTY: empty(s.convs.COUNTERPARTY.generation + 1) },
+  }));
+  setDraft("");
 }
 
 export function setRole(role: NlActor): void {
@@ -227,7 +263,9 @@ export function setRole(role: NlActor): void {
 
 /** A different buyer is a different counterparty on the server, so it starts a fresh conversation. */
 export function setCounterparty(id: CounterpartyId): void {
-  if (store.get().counterpartyId === id) return;
+  const s = store.get();
+  if (s.counterpartyId === id) return;
+  endOnServer(s.convs.COUNTERPARTY.sessionId, "COUNTERPARTY", s.counterpartyId);
   delete failed.COUNTERPARTY;
   store.set((s) => ({
     ...s,
@@ -240,12 +278,13 @@ export function setPanelOpen(panelOpen: boolean): void {
   store.set((s) => ({ ...s, panelOpen }));
 }
 
-// Signing out takes the owner's conversation and draft out of the browser with the token.
-onSignedOut(() => {
-  delete failed.OWNER;
-  patchConv("OWNER", (c) => empty(c.generation + 1));
-  setDraft("");
-});
+// Signing out ends the owner's session on the server with the token that is going, then takes both conversations and the draft out of the browser.
+onSigningOut((token) => endOnServer(store.get().convs.OWNER.sessionId, "OWNER", store.get().counterpartyId, token));
+onSignedOut(startOver);
+
+// Replaced books start the conversation over, in this tab and in every other one; a tab reloaded after another tab replaced them too.
+onBooksReplaced(startOver);
+if (typeof window !== "undefined" && store.get().booksEpoch !== booksEpoch()) startOver();
 
 // After the owner signs in, resend the turn that was refused with a 401 so they do not have to retype it.
 onSignedIn(() => {

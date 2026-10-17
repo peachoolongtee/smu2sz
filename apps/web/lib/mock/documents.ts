@@ -12,12 +12,16 @@ import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
 import type {
   ContractFixture,
+  Counterparty,
   DealsView,
   DocumentDecision,
+  DocumentFlagView,
+  DocumentOutcome,
   DocumentStatus,
   DocumentSummary,
   DocumentsList,
   DocumentView,
+  NamedParty,
   OperationView,
   SubmitDocumentRequest,
 } from "../types";
@@ -52,7 +56,12 @@ interface Recorded {
   reread: DocumentView;
   confirmed: DocumentDecision;
   rejected: DocumentDecision;
+  /** The outcome card of each decision as the server wrote it in both languages; a lender agreement recorded with its facility link
+   *  also has the card of the same confirmation without the link (`confirmed_unlinked`). */
+  outcomes: Record<"confirmed" | "rejected", Both<DocumentOutcome>> & { confirmed_unlinked?: Both<DocumentOutcome> };
 }
+
+type Both<T> = { en: T; zh: T };
 
 const RECORDED = documentsJson as unknown as Record<string, Recorded>;
 const FIXTURES = fixturesJson as unknown as ContractFixture[];
@@ -71,6 +80,13 @@ interface DocState {
   decided_seq: number | null;
   /** The owner confirmed a lender agreement without linking it to the facility the recording linked. */
   unlinked?: boolean;
+  /** The company the owner filed it under, when not the recording's (the party check runs against it). */
+  chosen?: string;
+  /** The buyer the uploaded text names, when it names another than the recording: the same text with that name in each place. */
+  named?: string;
+  /** Filed again: the reading this one supersedes, and the one that superseded this. */
+  replaces?: string;
+  superseded_by?: string;
 }
 
 /** The demo's starting point, in ledger order. */
@@ -149,12 +165,186 @@ export function resetDocuments(): void {
 }
 
 /** The recorded view for this document's current status, with the mock's own id, days and chain position. */
-function viewOf(d: DocState): DocumentView {
+function viewOf(d: DocState, parties: Counterparty[] = [], lang: "en" | "zh" = "en"): DocumentView {
   const r = RECORDED[d.fixture_id];
   if (d.seeded) return { ...clone<DocumentView>(r.seeded), uploaded_day: d.uploaded_day, decided_day: d.decided_day, decided_seq: d.decided_seq };
   const recorded = d.status === "CONFIRMED" ? r.confirmed.document : d.status === "REJECTED" ? r.rejected.document : r.reread;
   const view = { ...renumber(clone<DocumentView>(recorded), r.reread.id, d.id), uploaded_day: d.uploaded_day, decided_day: d.decided_day, decided_seq: d.decided_seq };
-  return d.unlinked ? { ...view, linked_facility_id: null } : view;
+  const plain = d.unlinked ? { ...view, linked_facility_id: null } : view;
+  return d.chosen || d.named || d.replaces || d.superseded_by ? withParties(plain, d, parties, lang) : plain;
+}
+
+// ------------------------------------------------------------- the party check, filing again (POST /documents/{id}/refile)
+
+const sameName = (a: string, b: string) => a.trim().replace(/\s+/g, " ").toLowerCase() === b.trim().replace(/\s+/g, " ").toLowerCase();
+const tidy = (s: string) => s.replace(/\r\n/g, "\n").trim();
+
+/** The buyer a recorded reading names (its PARTY_BUYER term). */
+function buyerOf(v: DocumentView): string | null {
+  const term = (v.terms ?? []).find((t) => t.field === "PARTY_BUYER");
+  return term ? (term.text ?? term.value_display) : null;
+}
+
+/** A stable stand-in for the hash of a text the recording does not hold (FNV-1a, as hex). */
+function textHash(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
+  return `mock-${h.toString(16).padStart(8, "0")}`;
+}
+
+/** The view with `to` in each place the recording says `from`: the text, the terms and quotes, and every span after a changed name moved to match. */
+function rename(v: DocumentView, from: string, to: string): DocumentView {
+  const text = v.document.text;
+  const at: number[] = [];
+  for (let i = text.indexOf(from); i >= 0; i = text.indexOf(from, i + from.length)) at.push(i);
+  const delta = to.length - from.length;
+  const shift = (p: number) => p + delta * at.filter((i) => i + from.length <= p).length;
+  const rest = JSON.stringify({ ...v, document: null }).split(from).join(to);
+  const out = JSON.parse(rest, (_k, val: unknown) => {
+    if (val && typeof val === "object" && !Array.isArray(val)) {
+      const o = val as Record<string, unknown>;
+      if (Object.keys(o).length === 2 && typeof o.start === "number" && typeof o.end === "number") return { start: shift(o.start), end: shift(o.end) };
+    }
+    return val;
+  }) as DocumentView;
+  const renamed = text.split(from).join(to);
+  return { ...out, document: { ...v.document, text: renamed }, doc_hash: textHash(renamed) };
+}
+
+function hashOf(d: DocState): string {
+  const r = RECORDED[d.fixture_id];
+  const from = buyerOf(r.reread);
+  return d.named && from ? textHash(r.reread.document.text.split(from).join(d.named)) : r.reread.doc_hash;
+}
+
+const partyName = (id: string, parties: Counterparty[]) => parties.find((p) => p.id === id)?.name ?? id;
+
+/** As the server words a PARTY_NOT_NAMED flag (contracts/parties.py). */
+function notNamedNote(found: string[], chosen: string, lang: "en" | "zh"): string {
+  if (lang === "zh") return `这份合同列明的是${found.join("和")}，而不是${chosen}。确认前请核实它的对方是谁。`;
+  return `This contract names ${found.join(" and ")}, not ${chosen}${chosen.endsWith(".") ? "" : "."} Check who it is with before confirming.`;
+}
+
+/**
+ * A reading filed under a company of the owner's choosing: the parties it names (each matched to the books by name), the
+ * party check's blocking flag when none of them is the company chosen, and the words for a reading filed again.
+ */
+function withParties(base: DocumentView, d: DocState, parties: Counterparty[], lang: "en" | "zh"): DocumentView {
+  const r = RECORDED[d.fixture_id];
+  const from = buyerOf(r.reread);
+  const v = d.named && from ? rename(base, from, d.named) : base;
+  const cpId = d.chosen ?? v.counterparty_id;
+  const cpName = partyName(cpId, parties);
+  const terms = (v.terms ?? []).filter((t) => t.field === "PARTY_BUYER" || t.field === "PARTY_SUPPLIER");
+  const named: NamedParty[] = terms.map((t) => {
+    const name = t.text ?? t.value_display;
+    return { name, role: t.field === "PARTY_BUYER" ? "BUYER" : "SUPPLIER", on_books_id: parties.find((p) => p.role !== "OWNER" && sameName(p.name, name))?.id ?? null };
+  });
+  const out: DocumentView = { ...v, counterparty_id: cpId, counterparty_name: cpName, named_parties: named };
+  if (terms.length && !named.some((n) => sameName(n.name, cpName))) {
+    const first = terms.find((t) => t.field === "PARTY_BUYER") ?? terms[0];
+    const flag: DocumentFlagView = {
+      kind: "PARTY_NOT_NAMED",
+      kind_text: lang === "zh" ? "不是您选择的对方" : "not the counterparty you chose",
+      blocking: true,
+      note: notNamedNote(named.map((n) => n.name), cpName, lang),
+      quote: first.quote,
+      span: first.span,
+    };
+    out.flags = [...out.flags, flag];
+    out.blocked = true;
+    out.can_confirm = false;
+    if (out.status === "PROPOSED") {
+      out.status_text = lang === "zh" ? "无法确认：文件没有列明您选择的对方" : "Cannot be confirmed: it does not name the counterparty you chose";
+      out.status_tone = "bad";
+    }
+  }
+  if (d.replaces) {
+    const earlier = load().find((x) => x.id === d.replaces);
+    const was = earlier ? partyName(earlier.chosen ?? RECORDED[earlier.fixture_id].reread.counterparty_id, parties) : null;
+    out.replaces = d.replaces;
+    out.replaces_text = was ? (lang === "zh" ? `重新归档：此前归在${was}名下` : `Filed again: it was filed under ${was} before`) : null;
+  }
+  if (d.superseded_by) {
+    const later = load().find((x) => x.id === d.superseded_by);
+    const now = later ? partyName(later.chosen ?? RECORDED[later.fixture_id].reread.counterparty_id, parties) : null;
+    out.superseded_by = d.superseded_by;
+    out.superseded_by_text = now ? (lang === "zh" ? `已重新归档到${now}名下` : `Filed again under ${now}`) : null;
+    out.can_confirm = false;
+    if (out.status === "PROPOSED") {
+      out.status_text = out.superseded_by_text ?? out.status_text;
+      out.status_tone = "neutral";
+    }
+  }
+  return out;
+}
+
+/** The text of an uploaded Markdown or plain-text file (the mock reads no Word or PDF file). */
+function uploadedText(req: SubmitDocumentRequest): string | null {
+  if (!req.content_base64 || !/\.(md|txt)$/i.test(req.filename ?? "")) return null;
+  try {
+    const bin = atob(req.content_base64);
+    return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+  } catch {
+    return null;
+  }
+}
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** The recorded buyer contract a text is, and the buyer it names: the recording's own, or one other name in each place the recording names its buyer. */
+function recognise(text: string): { fixture: string; named: string } | null {
+  const got = tidy(text);
+  for (const f of FIXTURES) {
+    if (f.kind !== "BUYER_CONTRACT" || !RECORDED[f.id]) continue;
+    const r = RECORDED[f.id].reread;
+    const from = buyerOf(r);
+    if (!from) continue;
+    const parts = tidy(r.document.text).split(from);
+    if (parts.length < 2) continue;
+    const re = new RegExp(`^${parts.map(escapeRe).reduce((acc, p, i) => (i === 0 ? p : `${acc}${i === 1 ? "([^\\n]{1,120}?)" : "\\1"}${p}`), "")}$`);
+    const m = re.exec(got);
+    if (m) return { fixture: f.id, named: m[1] };
+  }
+  return null;
+}
+
+/**
+ * Files a reading that waits for the owner under another company: a new reading that supersedes it, with the party check
+ * run again. As live: bound to the hash of the text shown (DOCUMENT_CHANGED) and only while it waits (NOT_PROPOSED).
+ */
+export function mockRefile(id: string, counterpartyId: string, docHash: string, lang: "en" | "zh", parties: Counterparty[]): DocumentView {
+  requireOwner();
+  const d = byId(id);
+  if (d.status !== "PROPOSED" || d.superseded_by) {
+    const message = lang === "zh" ? "此读取结果已不在等待您处理。" : "This reading is no longer waiting for you.";
+    throw new ApiError(409, message, { code: "NOT_PROPOSED", message });
+  }
+  if (docHash !== hashOf(d)) {
+    const message = lang === "zh" ? "自您打开后文件已更改。请重新加载后再试。" : "The document changed since you opened it. Reload it and try again.";
+    throw new ApiError(409, message, { code: "DOCUMENT_CHANGED", message });
+  }
+  if (!parties.some((p) => p.id === counterpartyId && p.role !== "OWNER")) {
+    const message = lang === "zh" ? "您的账本中没有该公司。" : "That company is not on your books.";
+    throw new ApiError(422, message, { code: "UNKNOWN_COUNTERPARTY", message });
+  }
+  const docs = load();
+  const fresh: DocState = {
+    id: `DOC-${String(docs.length + 1).padStart(6, "0")}`,
+    fixture_id: d.fixture_id,
+    seeded: false,
+    status: "PROPOSED",
+    uploaded_day: mockClock().day,
+    decided_day: null,
+    decided_seq: null,
+    chosen: counterpartyId,
+    ...(d.named ? { named: d.named } : {}),
+    replaces: d.id,
+  };
+  d.superseded_by = fresh.id;
+  docs.push(fresh);
+  save();
+  return viewOf(fresh, parties, lang);
 }
 
 function summaryOf(v: DocumentView): DocumentSummary {
@@ -194,26 +384,51 @@ export function mockContractFixtures(): ContractFixture[] {
   return clone(FIXTURES);
 }
 
-export function mockDocuments(): DocumentsList {
+export function mockDocuments(parties: Counterparty[] = [], lang: "en" | "zh" = "en"): DocumentsList {
   requireOwner();
-  return { documents: load().map((d) => summaryOf(viewOf(d))), day: mockClock().day };
+  return { documents: load().map((d) => summaryOf(viewOf(d, parties, lang))), day: mockClock().day };
 }
 
-export function mockDocument(id: string): DocumentView {
+export function mockDocument(id: string, parties: Counterparty[] = [], lang: "en" | "zh" = "en"): DocumentView {
   requireOwner();
-  return viewOf(byId(id));
+  return viewOf(byId(id), parties, lang);
 }
 
-/** Reads a demo document (any of its formats: they hold the same text, so the reading is the same) as a new reading. */
-export function mockSubmit(req: SubmitDocumentRequest): DocumentView {
+/**
+ * Reads a demo document (any of its formats: they hold the same text, so the reading is the same) as a new reading. The mock
+ * reads no uploaded file, with one exception: a demo buyer contract's own text (or that text naming another buyer) filed
+ * under a company it does not name is answered as the party check answers it, the recorded reading with the blocking flag.
+ */
+export function mockSubmit(req: SubmitDocumentRequest, parties: Counterparty[] = [], lang: "en" | "zh" = "en"): DocumentView {
   requireOwner();
-  if (!req.fixture_id || !RECORDED[req.fixture_id]) {
-    // The owner's words: no variable name, no mode name (Business mode shows neither).
-    throw new ApiError(422, "Uploading needs the live server; the Demo reads its three sample documents.");
-  }
   const docs = load();
+  const next = `DOC-${String(docs.length + 1).padStart(6, "0")}`;
+  if (!req.fixture_id || !RECORDED[req.fixture_id]) {
+    const text = req.kind === "BUYER_CONTRACT" && req.counterparty_id ? uploadedText(req) : null;
+    const known = text ? recognise(text) : null;
+    const chosen = req.counterparty_id ? parties.find((p) => p.id === req.counterparty_id) : undefined;
+    if (known && chosen && !sameName(chosen.name, known.named)) {
+      const recordedBuyer = buyerOf(RECORDED[known.fixture].reread);
+      const fresh: DocState = {
+        id: next,
+        fixture_id: known.fixture,
+        seeded: false,
+        status: "PROPOSED",
+        uploaded_day: mockClock().day,
+        decided_day: null,
+        decided_seq: null,
+        chosen: chosen.id,
+        ...(recordedBuyer && known.named !== recordedBuyer ? { named: known.named } : {}),
+      };
+      docs.push(fresh);
+      save();
+      return viewOf(fresh, parties, lang);
+    }
+    // The owner's words: no variable name, no mode name (Business mode shows neither).
+    throw new ApiError(422, "Uploading needs the live server: run pnpm demo, not the recorded-data build.");
+  }
   const fresh: DocState = {
-    id: `DOC-${String(docs.length + 1).padStart(6, "0")}`,
+    id: next,
     fixture_id: req.fixture_id,
     seeded: false,
     status: "PROPOSED",
@@ -237,14 +452,20 @@ export function mockDecide(
   docHash: string,
   linkFacilityId: string | null,
   book: (r: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; day: number; document_id?: string }) => OperationView,
+  parties: Counterparty[] = [],
+  lang: "en" | "zh" = "en",
 ): DocumentDecision {
   requireOwner();
   const d = byId(id);
   const r = RECORDED[d.fixture_id];
   // The two 409s carry the code the live API gives (`detail.code`), which the review screen words for the owner.
   if (d.status !== "PROPOSED") throw new ApiError(409, "You already decided this document.", { code: "ALREADY_DECIDED", message: "You already decided this document." });
-  if (docHash !== r.reread.doc_hash) {
+  if (docHash !== hashOf(d)) {
     throw new ApiError(409, "The document changed since you opened it. Reload it and decide again.", { code: "TERMS_CHANGED", message: "The document changed since you opened it. Reload it and decide again." });
+  }
+  // A reading the party check (or a filing again) blocked cannot be confirmed, as live.
+  if (decision === "confirm" && !viewOf(d, parties, lang).can_confirm) {
+    throw new ApiError(409, "This reading cannot be confirmed.", { code: "BLOCKED", message: "This reading cannot be confirmed." });
   }
   const recorded = renumber(clone<DocumentDecision>(decision === "confirm" ? r.confirmed : r.rejected), r.reread.id, id);
   const recordedLink = recorded.document.linked_facility_id;
@@ -252,7 +473,9 @@ export function mockDecide(
     throw new ApiError(409, "The Demo can only link the facility it was recorded with.", { code: "LINK_NOT_RECORDED", message: "The Demo can only link the facility it was recorded with." });
   }
   // Confirming without the link (the box starts unticked) is the recording with the link left off: the facility stays as the books have it.
-  if (decision === "confirm" && !linkFacilityId && recordedLink) {
+  const unlinked = decision === "confirm" && !linkFacilityId && Boolean(recordedLink);
+  const outcomes = unlinked ? r.outcomes.confirmed_unlinked : r.outcomes[decision === "confirm" ? "confirmed" : "rejected"];
+  if (unlinked) {
     recorded.document.linked_facility_id = null;
     recorded.result.message = recorded.result.message.replace(/; linked to .*$/, "");
   }
@@ -260,13 +483,14 @@ export function mockDecide(
   const res = recorded.result;
   const op = book({ kind: res.kind, status: res.status, tier: res.tier as OperationView["tier"], message: res.message, day, document_id: d.id });
   d.status = decision === "confirm" ? "CONFIRMED" : "REJECTED";
-  d.unlinked = decision === "confirm" && !linkFacilityId && Boolean(recordedLink);
+  d.unlinked = unlinked;
   d.decided_day = day;
   d.decided_seq = op.seq;
   save();
   return {
     result: { ...res, seq: op.seq, entry_hash: op.entry_hash ?? null, prev_hash: op.prev_hash ?? null, effective_day: day },
-    document: viewOf(d),
+    document: viewOf(d, parties, lang),
+    outcome: outcomes ? clone<DocumentOutcome>(outcomes[lang]) : null,
   };
 }
 
@@ -279,7 +503,9 @@ export function mockDecide(
 export function mockDeals(openOffer: "received" | "evaluated" | null = null): DealsView {
   requireOwner();
   const docs = load();
-  const supply = docs.filter((d) => d.fixture_id === SUPPLY_AGREEMENT);
+  const buyer = RECORDED[SUPPLY_AGREEMENT].seeded.counterparty_id;
+  // Foshan's readings only: not one filed under another company, nor one naming another buyer.
+  const supply = docs.filter((d) => d.fixture_id === SUPPLY_AGREEMENT && !d.named && (!d.chosen || d.chosen === buyer) && !d.superseded_by);
   const reconfirmed = supply.some((d) => !d.seeded && d.status === "CONFIRMED");
   const day = mockClock().day;
   const stage = cureStage();
@@ -300,7 +526,6 @@ export function mockDeals(openOffer: "received" | "evaluated" | null = null): De
           ? dealsDay34Pending
           : dealsDay34Open;
   const view = clone<DealsView>(recorded);
-  const buyer = RECORDED[SUPPLY_AGREEMENT].seeded.counterparty_id;
   const waiting = supply.filter((d) => d.status === "PROPOSED").map((d) => d.id);
   const lastConfirmed = [...supply].reverse().find((d) => d.status === "CONFIRMED");
   return {

@@ -27,8 +27,9 @@ STATE, _ = load_scenario()
     ("我们账上现在有多少现金？", "SHOW_STATUS"),
     ("How much money do we have right now?", "SHOW_STATUS"),
     ("Is there any risk of breaking a covenant?", "SHOW_STATUS"),
-    ("我们下个月会不会跌破储备线？", "SHOW_STATUS"),
-    ("Will we have enough cash for payroll?", "SHOW_STATUS"),
+    # top owner questions (LIQ-05, LIQ-10): the answer module answers them first (ASK_BOOKS, read-only)
+    ("我们下个月会不会跌破储备线？", "ASK_BOOKS"),
+    ("Will we have enough cash for payroll?", "ASK_BOOKS"),
     # hypotheticals
     ("What happens if we accept a 1.5% early payment discount?", "WHAT_IF"),
     ("How would 70-day terms for Dongguan affect our cash?", "WHAT_IF"),

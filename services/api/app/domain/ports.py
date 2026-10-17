@@ -271,6 +271,11 @@ class LedgerStore(Protocol):
         """Every record in upload order without its document text (see `ContractGuardRow`): for the outbound guard and for
         reads that need only the status. The full record is `get_contract_record`."""
         ...
+    def close_refiled_record(self, record_id: str, superseded_by: str, day: int, seq: int) -> ContractRecord:
+        """Close a PROPOSED record the owner filed again under another counterparty (REFILE_DOCUMENT at log `seq`): it becomes
+        REJECTED with `superseded_by` the new record, its text and reading unchanged. Compare-and-swap on the status, as
+        `decide_contract_record`: a record already decided raises `DocumentAlreadyDecided`, an unknown one `NotFound`."""
+        ...
     def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
         """Replace a PROPOSED record by its decided version. Compare-and-swap on the status: a record already decided
         raises `DocumentAlreadyDecided`, an unknown one `NotFound`, and a decision that changes anything but the

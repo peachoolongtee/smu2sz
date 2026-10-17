@@ -13,6 +13,8 @@ import { serverScenario } from "../selection";
 import type {
   AcceptRequest,
   AcceptResult,
+  AddCustomerRequest,
+  AddCustomerResponse,
   BuyerAcceptedRequest,
   BuyerAcceptedResult,
   BuyerDeclinedRequest,
@@ -296,6 +298,21 @@ export const live = {
       buyerKey: req.actor === "COUNTERPARTY" ? DEMO_BUYER_KEYS[req.counterparty_id ?? ""] : undefined,
     }),
 
+  /** POST /nl/session/reset: ends one chat session. The owner's with the owner token (passed in, so a sign-out can end it before the token
+   * goes), a buyer's with its demo channel key; silent, so a refusal never opens the sign-in dialog. */
+  endNlSession: async (sessionId: string, actor: NlRequest["actor"], counterpartyId?: string, token?: string | null): Promise<void> => {
+    const buyer = actor === "COUNTERPARTY";
+    // A buyer without a demo key (FastCapital) speaks anonymously, and ends its anonymous session the same way.
+    const buyerKey = buyer ? DEMO_BUYER_KEYS[counterpartyId ?? ""] : undefined;
+    await http("POST", "/nl/session/reset", {
+      body: { session_id: sessionId },
+      auth: buyer ? "none" : "owner",
+      buyerKey,
+      token: buyer ? undefined : (token ?? undefined),
+      silent: true,
+    });
+  },
+
   /** POST /nl/opener. Owner only (the API answers 403 without the token, which opens the sign-in dialog). */
   nlOpener: (sessionId: string | undefined, lang: "en" | "zh"): Promise<NlOpenerResponse> =>
     http<NlOpenerResponse>("POST", "/nl/opener", { body: { session_id: sessionId, lang }, ownerOn403: true }),
@@ -343,10 +360,14 @@ export const live = {
     (await http<{ document: DocumentView }>("GET", `/documents/${enc(id)}${lang === "zh" ? "?lang=zh" : ""}`)).document,
   submitDocument: async (req: SubmitDocumentRequest): Promise<DocumentView> =>
     (await http<{ document: DocumentView }>("POST", "/documents", { body: req })).document,
-  decideDocument: (id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null) =>
-    http<DocumentDecision>("POST", `/documents/${enc(id)}/${decision}`, {
+  // The answer's words (the outcome card, the reading) are written in the owner's language.
+  decideDocument: (id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null, lang: "en" | "zh" = "en") =>
+    http<DocumentDecision>("POST", `/documents/${enc(id)}/${decision}${lang === "zh" ? "?lang=zh" : ""}`, {
       body: linkFacilityId ? { doc_hash: docHash, link_facility_id: linkFacilityId } : { doc_hash: docHash },
     }),
+  refileDocument: async (id: string, counterpartyId: string, docHash: string, lang: "en" | "zh"): Promise<DocumentView> =>
+    (await http<{ document: DocumentView }>("POST", `/documents/${enc(id)}/refile?lang=${lang}`, { body: { counterparty_id: counterpartyId, doc_hash: docHash } })).document,
+  addCustomer: (body: AddCustomerRequest, lang: "en" | "zh") => http<AddCustomerResponse>("POST", `/customers?lang=${lang}`, { body }),
   getContractFixtures: async (): Promise<ContractFixture[]> => (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/contracts")).contracts,
 
   // the buy side (ADR-0013, FEATURE_CAPEX_CONTRACTS): every route needs the owner token; the responses already have the page's shape

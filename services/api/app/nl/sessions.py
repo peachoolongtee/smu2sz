@@ -92,12 +92,19 @@ class SessionStore:
     def __init__(self, ttl_s: float | None = None) -> None:
         self.ttl_s = float(os.environ.get("NL_SESSION_TTL_S", ttl_s or DEFAULT_TTL_S))
         self._sessions: dict[str, Session] = {}
+        # ids ended with "New conversation" (`end`), with when: such an id is never continued again, by anyone, until it ages out
+        self._ended: dict[str, float] = {}
         self._lock = threading.RLock()
 
     def _expire(self, now: float) -> None:
         dead = [k for k, s in self._sessions.items() if now - s.touched > self.ttl_s]
         for k in dead:
             del self._sessions[k]
+        for k in [k for k, t in self._ended.items() if now - t > self.ttl_s]:
+            del self._ended[k]
+        if len(self._ended) > MAX_SESSIONS:  # bounded: the oldest ended ids go first
+            for k, _ in sorted(self._ended.items(), key=lambda kv: kv[1])[:len(self._ended) - MAX_SESSIONS]:
+                del self._ended[k]
         if len(self._sessions) > MAX_SESSIONS:
             # SEC-21: anyone else's sessions go first, the oldest first, so a flood of agent or anonymous turns cannot push out the
             # owner's session and its pending plan; the owner's own go only when the owner alone fills the store
@@ -111,7 +118,8 @@ class SessionStore:
         """A session is bound to the actor, the credential class and the principal that opened it: a counterparty cannot
         continue an owner session (or the reverse), a caller without the owner token cannot continue a session the owner
         opened (or the reverse), and a sender without a buyer's key cannot continue that buyer's keyed session (SEC-21), by
-        guessing or knowing its id; each gets a fresh, server-issued one instead. A free id the client chose is still taken."""
+        guessing or knowing its id; each gets a fresh, server-issued one instead. A free id the client chose is still taken, unless
+        that conversation was ended (`end`): an ended id gets a fresh, server-issued one too, so nothing of it can come back."""
         now = time.monotonic()
         with self._lock:
             self._expire(now)
@@ -119,7 +127,8 @@ class SessionStore:
             if s is not None and s.actor == actor and s.owner_auth == owner_auth and s.principal == principal:
                 s.touched = now
                 return s, False
-            sid = session_id if session_id and s is None else f"nls-{uuid.uuid4().hex[:16]}"
+            free = bool(session_id) and s is None and session_id not in self._ended
+            sid = session_id if free else f"nls-{uuid.uuid4().hex[:16]}"
             s = Session(id=sid, actor=actor, owner_auth=owner_auth, principal=principal)
             self._sessions[sid] = s
             return s, True
@@ -128,9 +137,24 @@ class SessionStore:
         with self._lock:
             return self._sessions.get(session_id)
 
+    def end(self, session_id: str, principal: str | None) -> bool:
+        """"New conversation": forget this session (its last offer and verdict, pending plan, pending clarification, shown approvals
+        and replayed requests) and never continue its id again. `principal` None is the owner's authority (any session); otherwise
+        only the principal that opened the session may end it (SEC-21). True when a session was ended; a session that does not
+        exist or is someone else's is left as it is and answers False, the same answer either way."""
+        with self._lock:
+            self._expire(time.monotonic())
+            s = self._sessions.get(session_id)
+            if s is None or (principal is not None and s.principal != principal):
+                return False
+            del self._sessions[session_id]
+            self._ended[session_id] = time.monotonic()
+            return True
+
     def clear(self) -> None:
         with self._lock:
             self._sessions.clear()
+            self._ended.clear()
 
     def __len__(self) -> int:
         return len(self._sessions)

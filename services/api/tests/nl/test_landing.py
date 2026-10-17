@@ -150,7 +150,10 @@ def test_repay_defaults_to_the_landed_balance_and_names_when_the_rest_lands(clie
     line = next(f for f in rt.store.get_state().facilities if f.id == "FAC-LINE")
     assert line.drawn_fen == 15_000_000 and lots(rt) == [("FAC-LINE", 0, 0, True), ("FAC-LINE", 0, 2, False)]
     c = Chat(client, "ld-rp")
-    r = c.say("Is it OK to repay the credit line?")
+    asked = c.say("Is it OK to repay the credit line?")  # a question is answered, never proposed (app/nl/ask.py)
+    assert asked["intent"] == "ASK_BOOKS" and not asked["awaiting_confirmation"] and ops(asked) == []
+    assert SESSIONS.get("ld-rp").pending_plan is None
+    r = c.say("I'd like to repay the credit line")
     assert r["awaiting_confirmation"] and ops(r) == []
     assert signature(pending("ld-rp").ops) == [("REPAY_FACILITY", "FAC-LINE", None, 10_000_000)]  # landed, not drawn
     assert "Repay ¥100,000.00 on FAC-LINE" in r["reply"]
@@ -164,7 +167,7 @@ def test_repay_defaults_to_the_landed_balance_and_names_when_the_rest_lands(clie
 
 def test_asking_to_repay_more_than_has_landed_repays_the_landed_balance_and_says_so(client, rt):
     _line_with_a_part_in_transit(client, rt)
-    r = Chat(client, "ld-rp2").say("Is it OK to repay ¥150,000 on the credit line?")
+    r = Chat(client, "ld-rp2").say("I'd like to repay ¥150,000 on the credit line")
     assert signature(pending("ld-rp2").ops) == [("REPAY_FACILITY", "FAC-LINE", None, 10_000_000)]
     assert "lands on day 2" in r["reply"] and "cannot be repaid before then" in r["reply"]
 

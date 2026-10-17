@@ -436,3 +436,6 @@ accepting ADR-0013 (status "proposed").
   and the sidebar names the tab "Capex & purchases" (资本开支与采购; "Capex" on a phone's tab bar). Buying (`/buy`) opens
   from and leads back to Capex & purchases (`back-to-capex`), and the buy pages take the capex section's colour. A purchase
   that waits for the owner still reaches them through Approvals and Home's worklist.
+- 17 Oct 2026 (`feat/new-customer-api`): `POST /documents/{id}/refile` (file a PROPOSED reading under another counterparty)
+  also takes a capex contract, but only to a vendor already on the registry as a SUPPLIER: an unregistered vendor is refused
+  404 `UNKNOWN_COUNTERPARTY` (committing the purchase is still what registers one). Nothing in `app/capex` changed.
