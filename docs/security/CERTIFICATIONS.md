@@ -1,7 +1,9 @@
 # Security certifications
 
-Each entry is the Security Lead's independent sign-off on one exact commit. A certification covers what is listed under "Evidence" and
-nothing else; it is not a claim of absolute security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback).
+Each entry is the Security Lead's sign-off on one exact commit: an internal release decision, not accreditation or a penetration test.
+The Security Lead is an AI agent working in a separate session and worktree, and it wrote the security fixes it certifies (see the
+self-assessment, section 2.6). A certification covers what is listed under "Evidence" and nothing else; it is not a claim of absolute
+security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback).
 
 | Date | Commit | What | Verdict |
 |---|---|---|---|
@@ -10,6 +12,7 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 17 Oct | `0fde33fd` (dev: SEC-08 executor check, OUT-1b, RT-2, RT-1, the 719c9dcf records) | the four merged branches | **CERTIFIED** for scope S; one test exception (#161, stale digest pin) |
 | 17 Oct | `719c9dcf` (dev: the five round-two branches, the OUT-1 fix, Dylan's ui-final) | everything since `0f92d433`: buyer messages, live readers, the setup lockout fix, the owner-approved engine fixes (`_priced`, `_attribute`, the R-10 rounding), model-privacy redaction, SEC-08 (database), SEC-12, SEC-20, SEC-21, SEC-22, OUT-1 | **CERTIFIED** for scope S |
 | 16 Oct | `fe56b357` (dev: final UI, R-10 rounding) | R-10 reassessed; the five round-two branches re-checked on it | R-10: **residual Low**; dev itself not certified while OUT-1 is open |
 | 16 Oct | `b8c65b24` (dev: buyer messages on the web, live readers, PG-1 merged, demo launcher) | the changes since `0f92d433` | **NOT CERTIFIED: one blocking finding (OUT-1)**; every automated check passes |
@@ -42,6 +45,33 @@ nothing else; it is not a claim of absolute security. Scope words follow `RELEAS
   `app.api.decide.plan`, so it ran the real (runnable) plan and failed without testing the guard. Patched at the new site it passes, and
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
+
+## `0fde33fd` (dev): CERTIFIED for scope S, 17 Oct
+
+Covers the merge of `security/lead-audit` 4cdda790, `sec/decide-once-log` 2ebb59d0, `sec/out1b-raw-operations` f3392196,
+`sec/offers-422` 3158c81c and `sec/next-16-3-8` ce7791bd; all five heads are ancestors of `0fde33fd`. Evidence:
+`evidence/2026-10-17/dev-0fde33fd/` (script `certify_0fde.sh`, results `steps.txt`). Unlike earlier entries, counts are recorded.
+
+| Check | Result |
+| --- | --- |
+| The merged regression tests (SEC-08 executor, OUT-1b, RT-2) | 22 passed |
+| tests/operations, verifier, security, persistence | 412 passed 1 skipped; 263 passed; 305 passed; 161 passed 1 skipped |
+| Authorization sweep, 103 routes, three modes | 0 policy violations (`tools/sweep_policy.py`); 0 differences from `719c9dcf`, caller by caller (`tools/sweep_diff.py`). Owner answers: 43 to 47 reach a handler (200); the rest stop at validation on the sweep's placeholder ids and empty bodies, so the sweep shows who is refused, not that each owner route works |
+| 14 and 16 Oct reproductions | all refused. `r3`, `repro1`, `repro3` and `approval_flip` exit 1 because they crash printing what a successful attack would have returned (for example `r3` gets 409 and has no offer to print); each output shows the refusal |
+| Attack catalogue | 126 API + 133 chat cases, 0 with harm |
+| Issue #161 tests alone | 1 failed, 32 passed: `test_no_commitments_trajectory_and_router_plan_are_unchanged`, computed `24f1dc649f4363e3`, pinned `252b9812e99b4aee`. The same value on Linux CI: a stale pin, not machine-dependent as recorded earlier. Cause: "1 days" became "1 day" in one menu display string (`61eb4576`, 13 Oct); nothing the executor uses changed. Golden update `e658ba64` exists on `ci/linux-green` only |
+| PostgreSQL 17 | concurrency 3 of 3 clean (31 passed, 10 on PostgreSQL each); guards and the SEC-08 executor test 10 passed |
+| `pnpm audit --prod` (apps/web lockfile, `next` 16.3.8, `source-map-js` 1.2.2) | 0 advisories |
+| `pnpm audit` including development | 1 high: `braces` (GHSA-vfj7-8cjw-p6xm) via `eslint-config-next` > `fast-glob` > `micromatch`; lint tooling only, no patched version |
+| `pip-audit` (production dependencies exported from `uv.lock`) | no known vulnerabilities |
+
+Not re-run here: the full sharded suite and the mock browser suite (the integration owner's gate reports API 9,024 passed with only #161,
+mock 444/0), the CSP browser check (to be repeated on the assessed build) and the language-boundary set (no change in its path).
+
+**Verdict: CERTIFIED for scope S**, with the #161 exception. Conditions unchanged.
+
+**Correction to the `a6de32a2` entry.** It says the patched red-team test "fails when `runnable()` is disabled". That was checked by hand
+on 16 Oct; no committed test disables `runnable()`.
 
 ## `719c9dcf` (dev): CERTIFIED for scope S, 17 Oct
 
