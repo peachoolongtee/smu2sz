@@ -65,7 +65,7 @@ def test_catalogue_covers_every_group_and_role() -> None:
     assert {a["role"] for a in CATALOGUE} == {"owner", "counterparty", "agent"}
     assert {a.get("lang", "en") for a in CATALOGUE} == {"en", "zh"}
     # the 128 catalogue attacks (123 + the four contract-ingestion attacks + DOC-05, adding a customer) are untouched and not part of this group
-    assert len(CATALOGUE) == 133
+    assert len(CATALOGUE) == 151
     assert len(load_catalogue()) == 128 and not set(ids) & {a["id"] for a in load_catalogue()}
 
 

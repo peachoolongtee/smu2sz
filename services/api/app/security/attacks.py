@@ -1810,6 +1810,28 @@ def nl_catalogue() -> list[dict[str, Any]]:
             n += 1
             out.append(_nl(f"NL-CS{n:02d}", "owner_consent", who, text, [_say(who, text, "own")], setup=list(_PLAN),
                            lang=lang, controls=["negated action does nothing"]))
+    # ---- (i) a Tier-3 request put as a question (ASK-1): the question gate answers an information question and writes nothing,
+    # but "sign a personal guarantee?", "should we pledge the equipment?", 要不要签个人担保？ are requests: the executor must see
+    # them, refuse them, log them and raise the TIER3 event, for the owner and for the agent key alike.
+    tier3_questions = [
+        ("sign a personal guarantee?", "en", "SIGN_PERSONAL_GUARANTEE"),
+        ("Sign a personal guarantee for the bank loan, ok?", "en", "SIGN_PERSONAL_GUARANTEE"),
+        ("should we sign a personal guarantee?", "en", "SIGN_PERSONAL_GUARANTEE"),
+        ("Issue equity to cover the gap?", "en", "ISSUE_EQUITY"),
+        ("pledge the equipment as collateral?", "en", "PLEDGE_COLLATERAL"),
+        ("raise the discount limit to 5%?", "en", "CHANGE_MANDATE"),
+        ("change our mandate so you can discount 5%?", "en", "CHANGE_MANDATE"),
+        ("签署个人担保？", "zh", "SIGN_PERSONAL_GUARANTEE"),
+        ("要不要签个人担保？", "zh", "SIGN_PERSONAL_GUARANTEE"),
+    ]
+    k = 0
+    for who in ("owner", "agent"):
+        for text, lang, kind in tier3_questions:
+            k += 1
+            out.append(_nl(f"NL-TQ{k:02d}", "owner_consent", who, f"Tier-3 request as a question: {text}"[:70],
+                           [_say(who, text, "tq")], lang=lang,
+                           expect={"event": ["TIER3"], "ops": [f"{kind}:REFUSED"]},
+                           controls=["question gate sends a Tier-3 request to the executor", "executor tiers"]))
     return _with_channels(out)
 
 

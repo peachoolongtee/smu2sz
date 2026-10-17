@@ -1,13 +1,18 @@
 """ASK_BOOKS: an owner's question about the books, answered read-only (the question gate in app/nl/rules.py routes it here).
 
 Nothing here proposes a plan, compiles an offer, queues or executes an operation, or writes to the operations log or the
-security log: every branch reads the store and the books and writes words. The server writes all of them, in English and
+security log: every branch reads the store and the books and writes words. The one exception is a Tier-3 request put as a
+question ("sign a personal guarantee?", "should we pledge the equipment?"): it goes to the executor like the same words
+without the mark, so it is refused, logged and raises its security event, for every caller (ASK-1;
+lexicon.tier3_is_information). The server writes all of them, in English and
 Chinese. Owner only: with the agent key a question gets the sign-in reply (and a question the old rules did not read at
 all gets exactly the reply it got before).
 
 The order of the answer:
   1. A Tier-3 subject asked about ("Is equity an option?", "Did anyone try to change our limits?"): what FLOW may never
-     do, as information; an attempt is read from the operations log and the security log. Nothing is requested.
+     do, as information; an attempt is read from the operations log and the security log. Nothing is requested. This is
+     for the owner and for a question that only asks for information; a request put as a question, or any question from
+     another caller, is refused by the executor and logged (see `tier3_request`).
   2. A subject the books do not hold (tax, VAT, profit, staff, inventory, competitors, a valuation ...): "FLOW's books do
      not hold {thing}." and the nearest thing FLOW can show, chosen by the subject.
   3. The read-only answer layer, `app.nl.answers.answer(question, lang, ctx)`, when it is installed and answers.
@@ -193,6 +198,13 @@ def tier3_info(ctx: NlContext, kind: str, text: str) -> Turn:
                     f"takes, whoever asks. Only you can decide it, outside FLOW. Nothing was requested or logged.",
                f"{what_zh}不在 FLOW 的权限之内：这是三级操作，无论谁提出，FLOW 都不会执行，只能由您在 FLOW 之外自行决定。"
                f"本次没有提交任何请求，也没有记录。")]
+    lines += _tier3_guidance(ctx, kind)
+    return Turn(intent=Intent.ASK_BOOKS, reply=("" if ctx.lang == "zh" else " ").join(lines), facts={"ask": {"tier3": kind}})
+
+
+def _tier3_guidance(ctx: NlContext, kind: str) -> list[str]:
+    """What the owner can look at instead of the Tier-3 action (the funding menu's equity row, the nearest financing read)."""
+    lines: list[str] = []
     if kind == "ISSUE_EQUITY":
         ref = next((f for f in ctx.state().facilities if f.kind.value == "EQUITY"), None)
         if ref is not None:
@@ -200,7 +212,23 @@ def tier3_info(ctx: NlContext, kind: str, text: str) -> Turn:
                            f"“{ref.name}”仅作为参考列在融资菜单中（约 {ref.lead_time_days} 天到账）。"))
     if kind != "CHANGE_MANDATE":
         lines.append(_nearest_line(ctx, _nearest(ctx, "financing")))
-    return Turn(intent=Intent.ASK_BOOKS, reply=("" if ctx.lang == "zh" else " ").join(lines), facts={"ask": {"tier3": kind}})
+    return lines
+
+
+def tier3_request(ctx: NlContext, kind: str, slots: Slots) -> Turn:
+    """A Tier-3 subject in a question that is not plainly information: a request put as a question ("sign a personal
+    guarantee?", "should we pledge the equipment?", 要不要签个人担保？), or any question from a caller who is not the owner.
+    It is sent to the executor exactly as the imperative is (service.refuse_tier3), so it is REFUSED, written to the operations
+    log and raises its TIER3 security event. The owner's reply then also says what to look at instead (the question part);
+    any other caller gets the plain refusal."""
+    from app.nl.service import refuse_tier3
+
+    typed = slots.model_copy(update={"tier3": kind, "execute_now": False})
+    tail: tuple[str, str] | None = None
+    if ctx.owner_authenticated:
+        extra = _tier3_guidance(ctx, kind)
+        tail = (" ".join(["Only you can decide it, outside FLOW.", *extra]), "只能由您在 FLOW 之外自行决定。" + "".join(extra))
+    return refuse_tier3(ctx, typed, tail)
 
 
 # ---------------------------------------------------------------- 4. the fallback, by topic
@@ -318,10 +346,48 @@ def topic_of(p: Parsed) -> str:
     return next((m.split(":", 1)[1] for m in p.matched if m.startswith("ask:")), "books")
 
 
+# The topics that are about doing something (a draw, a repayment, early payment, a counter); an amount in the question counts too.
+ACTION_TOPICS = frozenset({"fund", "repay", "accelerate", "negotiate", "debt", "record"})
+
+
+def pending_reminder(ctx: NlContext, p: Parsed) -> tuple[str, str] | None:
+    """ASK-2. A question about an action asked while a plan waits for "go ahead": the reply must say that the earlier plan is
+    still waiting, what it does and what it costs, and that "go ahead" runs that plan and nothing the question named.
+    Chosen: the plan is KEPT (a question never cancels anything, so the owner can still go on with it) and the reply says
+    so; clearing it would be a change the owner did not ask for."""
+    pending = ctx.session.pending_plan
+    if pending is None or not ctx.owner_authenticated:
+        return None
+    if topic_of(p) not in ACTION_TOPICS and p.slots.amount_fen is None:
+        return None
+    steps = [s.description for s in pending.steps if s.status == "PROPOSED"] or [s.description for s in pending.steps]
+    what = "; ".join(d.rstrip(".") for d in steps) or pending.intent.value
+    cost_en = f" (cost {fmt_yuan(pending.quoted_cost_fen)})" if pending.quoted_cost_fen is not None else ""
+    cost_zh = f"（成本 {fmt_yuan(pending.quoted_cost_fen)}）" if pending.quoted_cost_fen is not None else ""
+    amount = p.slots.amount_fen
+    asked_en = f"the {fmt_yuan(amount)} you just asked about" if amount is not None else "what you just asked about"
+    asked_zh = f"您刚才询问的 {fmt_yuan(amount)}" if amount is not None else "您刚才询问的内容"
+    return (("Your earlier plan is still waiting and nothing has changed: "
+             f"{what}{cost_en}. Reply 'go ahead' and that plan runs, not {asked_en}; reply 'cancel' to drop it."),
+            f"您之前的方案仍在等待，没有任何变化：{what}{cost_zh}。回复“执行”将运行该方案，而不是{asked_zh}；回复“取消”可放弃。")
+
+
 def ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
+    turn = _ask_books(ctx, p, text)
+    if turn.intent == Intent.ASK_BOOKS and (note := pending_reminder(ctx, p)) is not None:
+        turn.reply = f"{turn.reply}{'' if ctx.lang == 'zh' else ' '}{t(ctx, *note)}"
+        turn.awaiting = True  # the earlier plan is still waiting for its go-ahead
+    return turn
+
+
+def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
     topic = topic_of(p)
     slots = p.slots
     question = slots.question or text
+    if topic.startswith("tier3:"):
+        kind = topic.split(":", 1)[1]
+        if not ctx.owner_authenticated or not lx.tier3_is_information(question):
+            return tier3_request(ctx, kind, slots)
     if not ctx.owner_authenticated:
         if topic == "books":
             return _old_reply(ctx, slots, text)  # the agent key gets exactly what it got before
