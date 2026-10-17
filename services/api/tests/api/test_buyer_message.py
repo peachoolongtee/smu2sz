@@ -385,8 +385,11 @@ def test_the_buyers_yes_reads_as_what_happened(api: TestClient, rt: Runtime) -> 
     assert out["provenance_text"] == "Source: recorded by you; no buyer message attached" and out["evidence_quote"] is None
     assert out["consequences"] == ["Foshan Home Retail Co. can settle ¥260,000.00 of the invoice by paying ¥257,790.00 by 3 October 2026.",
                                    "The other ¥160,000.00 stays due on 2 November 2026.",
-                                   "No cash has been received yet; FLOW reconciles the payment when it arrives."]
-    assert [x["href"] for x in out["links"]] == ["/receivables#RCV-A", "/customers/BUYER-1"]
+                                   "No cash has been received yet; FLOW reconciles the payment when it arrives.",
+                                   # recording the yes funds nothing (18 Oct): the reserve gap still ahead and where the plan is
+                                   "The agreement ran no funding: cash still falls ¥102,210.00 below your minimum in 20 days. FLOW's plan to "
+                                   "cover it is ready on Cash & funding; it runs only when you run it."]
+    assert [x["href"] for x in out["links"]] == ["/cash", "/receivables#RCV-A", "/customers/BUYER-1"]
 
 
 def test_their_counter_reads_as_a_new_request_to_answer(api: TestClient) -> None:

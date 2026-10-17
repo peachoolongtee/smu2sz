@@ -1017,10 +1017,19 @@ export interface AcceptRequest {
 }
 
 /** POST /offers/{id}/accept: the record as it stands after the acceptance, the receipt of what was agreed and what ran, in the server's words. */
+/** The owner's next step after an agreement that funded nothing while a reserve gap is ahead: the server's sentence and the link to the funding plan. */
+export interface FundingNextStep {
+  text: string;
+  label: string;
+  href: string;
+}
+
 export interface AcceptResult {
   decision: DecisionView;
   receipt?: CommitmentReceiptView | null;
   execution?: ExecutionBlock | null;
+  /** Additive: the agreement's `funding_next`, when it left a reserve gap (null otherwise). */
+  next_step?: FundingNextStep | null;
 }
 
 /** POST /offers/{id}/decline: the record as it stands once the request is closed. */
@@ -4346,7 +4355,7 @@ export interface DecisionView extends DecisionSummary, DealLifeWords {
     decided_day: Day | null;
     decided_when: string | null;
   } | null;
-  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; /** Null for an agreement in force (it does not expire: the receipt says "In force."); the words and the line are then left out, never filled in. */ expires_day: Day | null; expires_when: string | null; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[]; /** The receipt of the agreement on the record. */ receipt?: CommitmentReceiptView | null } | null;
+  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; /** Null for an agreement in force (it does not expire: the receipt says "In force."); the words and the line are then left out, never filled in. */ expires_day: Day | null; expires_when: string | null; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[]; /** The receipt of the agreement on the record. */ receipt?: CommitmentReceiptView | null; /** An agreement the owner made themself (accept as asked, the buyer's yes recorded) runs no funding: while a reserve gap is ahead, the server's sentence for it and the link to the plan; null otherwise. */ funding_next?: FundingNextStep | null } | null;
   operations: DecisionOperation[];
   execution: ExecutionBlock;
   settlement: DecisionSettlementLot[];
