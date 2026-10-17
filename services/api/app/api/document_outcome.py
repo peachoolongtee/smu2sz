@@ -21,6 +21,7 @@ from typing import Any
 from urllib.parse import quote
 
 from app.api.presentation import Lang, document_name, facility_name, t, when_text
+from app.contracts.views import refiled
 from app.domain.models import ContractField, ContractRecord, DocumentKind, DocumentStatus, FinancialState
 from app.domain.ports import ContractGuardRow
 
@@ -62,8 +63,9 @@ def _doc(record: ContractRecord, lang: Lang) -> str:
 
 def _replaces(record: ContractRecord, records: Sequence[ContractRecord | ContractGuardRow], lang: Lang, today: int | None) -> str:
     """The sentence after "now the contract on file" when this contract superseded one confirmed earlier (the store supersedes it on
-    confirmation), with when that one was confirmed; empty when it replaced none."""
-    replaced = next((r for r in records if r.superseded_by == record.id), None)
+    confirmation), with when that one was confirmed; empty when it replaced none. A record the owner filed again under another
+    counterparty (closed by a refile, never confirmed) is not "the contract you confirmed" and is not counted (REG-5)."""
+    replaced = next((r for r in records if r.superseded_by == record.id and not refiled(r)), None)
     if replaced is None:
         return ""
     when = when_text(replaced.decided_day, today, lang) if today is not None and replaced.decided_day is not None else ""

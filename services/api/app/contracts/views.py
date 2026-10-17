@@ -345,7 +345,10 @@ def replacement_words(record: ContractRecord | ContractGuardRow, records: Sequen
     one superseded, `superseded_by` the later one that superseded this. The ids stay in their fields; the sentences say when.
     A document the owner filed again under another counterparty (`refiled`) is said as that: who it was under, who it is under
     now, by their registry names."""
-    replaced = next((r for r in records if r.superseded_by == record.id), None)
+    # A confirmed contract this one replaced comes before a record the owner filed again under another counterparty: the
+    # refile-closed record was never "the contract you confirmed" (REG-5).
+    replaced = (next((r for r in records if r.superseded_by == record.id and not refiled(r)), None)
+                or next((r for r in records if r.superseded_by == record.id), None))
     later = next((r for r in records if r.id == record.superseded_by), None) if record.superseded_by else None
 
     def when(r: ContractRecord | ContractGuardRow | None) -> str:
