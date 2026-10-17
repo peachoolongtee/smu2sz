@@ -793,3 +793,67 @@ answered / partial / wrong / can't over the question's wordings.
 Most of the can'ts are one metric of section 5 away. `metrics.py` already computes many of them (`in_transit`, `cash_on`,
 `drawn_by_facility`, `mandate_limits_and_validity`, `activity_since`, `invoice_financing_capacity`), but no question in
 `answers.QUESTIONS` reaches them yet.
+
+## 8. General owner wording (branch `fix/ask-general`, 17 Oct 2026)
+
+In the offline rehearsal (cache mode, no model) general questions got OUT_OF_SCOPE: "can my company survive this month?",
+"how do I ensure that my cashflow is safe for the next 6 months?". Offline nothing catches unusual wording, so the
+deterministic matching itself is now broad.
+
+**The held-out set, written first.** `general.yaml`: 345 owner phrasings (219 en, 126 zh), casual, formal, typos, run-on, time
+windows, how-to and worried questions, each labelled with the answer it should reach (a top-30 id, `general_advice`,
+`not_in_books` or `out_of_scope_ok`; `also` for an equally right answer). It was written from the meaning of the ids only,
+before the matcher, and not edited after. `scripts/owner_questions_general.py` splits it 60/40 by a hash of the text; the
+matcher was tuned on the 60% only. RIGHT = the right answer (or the page read that is that question's own answer, or the
+honest not-held reply, or no books answer to chatter); WRONG = a books answer on another topic; MISS = anything else.
+
+| | Held-out right | Held-out wrong | All right | All wrong |
+|---|---:|---:|---:|---:|
+| Before (`dev` 3bd440a0), en | 34/92 (37.0%) | 1 | 85/219 (38.8%) | 2 |
+| Before, zh | 23/50 (46.0%) | 0 | 52/126 (41.3%) | 1 |
+| **Before, all** | **57/142 (40.1%)** | **1 (0.7%)** | **137/345 (39.7%)** | **3 (0.9%)** |
+| After, en | 81/92 (88.0%) | 2 | 206/219 (94.1%) | 2 |
+| After, zh | 46/50 (92.0%) | 1 | 121/126 (96.0%) | 1 |
+| **After, all** | **127/142 (89.4%)** | **3 (2.1%)** | **327/345 (94.8%)** | **3 (0.9%)** |
+
+The held-out part was first measured at 130/142 right, 3 wrong. The precision changes after it (a stricter question form; the
+explain, what-if, status, ratios and action reads keep their questions) came from the existing routing tests and the tuning
+part, not from held-out items, and cost three held-out items. `--mode demo` gives the same numbers. No turn executed,
+queued or changed anything.
+
+**What changed** (`app/nl/answers/broad.py`, `answers.py`, `lexicon.py`, `rules.py`):
+- A scored fallback after the literal patterns: typos and casual spellings normalised; en and zh cues (survive / make it /
+  stay afloat / run out / broke and 撑 / 断 / 周转 / 资金链 -> cash safety; staff / wages and 工资 -> payroll; owe / loan and
+  欠 / 贷款 -> debt ...); each top question scored by weighted cues; only a clear winner (score >= 3, margin >= 1).
+- It never reads an instruction, a request to FLOW, a deal or offer, a named amount (for the funding, debt and plan answers),
+  the security log, or a subject that the financing comparison, capex, deal, borrower-file or reconciliation read answers.
+  It also leaves explain, what-if, status, ratios and action questions to their reads, unless its own answer is the one
+  asked for.
+- Time windows: "this month" is the next 30 days; a horizon longer than the 120-day forecast is answered on it and says
+  "FLOW forecasts 120 days, to day 120" (cash safety, lowest point, payments).
+- `general_advice`: what to do now (FLOW's plan to approve on Home or Cash, or nothing), the dates that matter, the receipt it
+  depends on, and what FLOW watches. It is read-only.
+- Whether the staff can be paid is the payroll, not "staff is not held"; hiring is still not held. "When will the money run
+  out" is the runway, not the arrival read.
+
+**The bank (this harness, business wording):** 303 answered / 46 partial / 0 wrong / 154 can't (it was 288 / 38 / 0 / 177).
+`--mode demo`: 301 / 48 / 0 / 154. No turn moved down. The 26 bank wordings outside the top 30 that the broad reading now
+answers each get the nearest top answer that holds what was asked. For example, the mandate's expiry is answered with
+"valid to day 90", the interest bill with the debt service, and Dongguan's balance with who owes what.
+
+**Remaining misses (all, 18):**
+- Wrong, held-out (3):
+  - "can we stay afloat until year end?" gets general_advice ("stay afloat" is also a how-to cue).
+  - "I'm worried about cash, what should I do?" gets FUN-02 (the literal "what should I do").
+  - 这个月还能支出多少 gets LIQ-09, the payments, instead of LIQ-06.
+- Kept by another read, by design (6):
+  - the capex read takes three machine questions;
+  - the status read takes "how much room is left on our facilities" and 还有多少授信没用;
+  - the ratios read takes "Is our DSCR ok?".
+- Out of scope or "cannot yet" (8):
+  - "How long can we keep paying the bills?" and 我们的钱还能用多久;
+  - "what do we need to do to not go broke" and "is there anything I should be doing about our cash flow";
+  - CUS-07 without a day count ("delays payment by 2 weeks"; "our main customer");
+  - "Is it possible to repay everything we owe now?" (the repay read);
+  - 资金缺口有多大, which FUND_GAP takes and proposes (as before).
+- Kept as before, by design (1): "help me keep cash healthy" asks one clarifying question (AMBIGUOUS).
