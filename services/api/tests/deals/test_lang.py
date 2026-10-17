@@ -42,7 +42,9 @@ WORDS_FIELDS = {"PARTY_SUPPLIER", "PARTY_BUYER", "CONTRACT_REFERENCE", "DELIVERA
 def _without_the_contracts_words(x: Any) -> Any:
     if isinstance(x, dict):
         quoted = x.get("field") in WORDS_FIELDS
-        return {k: _without_the_contracts_words(v) for k, v in x.items() if not (quoted and k == "value_display")}
+        # a party the contract names is the contract's own words, as written there (feat/new-customer)
+        return {k: _without_the_contracts_words(v) for k, v in x.items()
+                if not (quoted and k == "value_display") and k != "named_parties"}
     if isinstance(x, list):
         return [_without_the_contracts_words(v) for v in x]
     return x

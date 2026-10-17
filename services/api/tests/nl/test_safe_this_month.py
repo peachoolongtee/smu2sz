@@ -3,6 +3,8 @@ month?") in the offline rules classifier, in English and Chinese; a question abo
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -40,9 +42,16 @@ def _ask(api: TestClient, text: str, lang: str) -> dict:
     "How is our cash?", "What is our cash runway?", "How long will our cash last?", "Will I have enough cash?",
 ])
 def test_english_wordings_are_the_cash_runway_read(api: TestClient, text: str) -> None:
+    """Each wording is the cash read: the status read itself, or (for a top owner question, app/nl/answers) the answer module's
+    cash answer, which leads with the answer and names the same first unsafe day. Nothing runs either way."""
     out = _ask(api, text, "en")
-    assert out["intent"] == "SHOW_STATUS"
-    assert out["reply"] == _ask(api, RUNWAY, "en")["reply"]
+    assert out["operations"] == [] and not out["awaiting_confirmation"]
+    if out["intent"] == "ASK_BOOKS":
+        assert re.match(r"^(?:Not on today's books|12 days to your reserve)", out["reply"]), out["reply"]
+        assert "day 12" in out["reply"] and "¥300,000 reserve" in out["reply"]
+    else:
+        assert out["intent"] == "SHOW_STATUS"
+        assert out["reply"] == _ask(api, RUNWAY, "en")["reply"]
 
 
 @pytest.mark.parametrize("text", [
@@ -50,12 +59,19 @@ def test_english_wordings_are_the_cash_runway_read(api: TestClient, text: str) -
 ])
 def test_chinese_wordings_are_the_cash_runway_read(api: TestClient, text: str) -> None:
     out = _ask(api, text, "zh")
-    assert out["intent"] == "SHOW_STATUS"
-    assert out["reply"] == _ask(api, "这个月我们会不会缺钱？", "zh")["reply"]
+    assert out["operations"] == [] and not out["awaiting_confirmation"]
+    if out["intent"] == "ASK_BOOKS":  # the answer module's cash answer (LIQ-01 / LIQ-03), leading with the answer
+        assert re.match(r"^(?:按今日账目并不安全|距离跌破储备线还有 12 天)", out["reply"]), out["reply"]
+        assert "第 12 天" in out["reply"] and "¥300,000" in out["reply"]
+    else:
+        assert out["intent"] == "SHOW_STATUS"
+        assert out["reply"] == _ask(api, "这个月我们会不会缺钱？", "zh")["reply"]
 
 
 @pytest.mark.parametrize(("text", "lang"), [
     ("Are we OK to accept this offer from Foshan?", "en"), ("Is the invoice safe?", "en"), ("这份合同安全吗", "zh"),
 ])
 def test_a_question_about_a_deal_is_not_the_cash_read(api: TestClient, text: str, lang: str) -> None:
-    assert _ask(api, text, lang)["intent"] != "SHOW_STATUS"
+    out = _ask(api, text, lang)
+    assert out["intent"] != "SHOW_STATUS"
+    assert not out["reply"].startswith(("Not on today's books", "按今日账目并不安全"))  # nor the answer module's cash answer

@@ -98,14 +98,20 @@ def test_zero_forward_slot(text: str) -> None:
     ("帮我补足资金缺口", True),
     ("Find me the cheapest way to cover the payroll gap", True),
     ("帮我找最便宜的方式补上工资缺口", True),
-    ("how can we close the funding gap?", True),
-    ("资金缺口怎么补？", True),
     ("payroll is short this month", True),
     ("这个月工资不够", True),
 ])
 def test_fund_gap_without_an_amount_always_proposes(text: str, tentative: bool) -> None:
     p = parse(text, STATE)
     assert p is not None and p.intent.value == "FUND_GAP" and p.tentative is tentative
+
+
+@pytest.mark.parametrize("text", ["how can we close the funding gap?", "资金缺口怎么补？"])
+def test_a_question_about_the_gap_is_answered_not_proposed(text: str) -> None:
+    """A question names the gap but asks about it: it is answered (ASK_BOOKS, read-only), never proposed. "fund the gap"
+    still proposes (above), and the answer says how to ask for it."""
+    p = parse(text, STATE)
+    assert p is not None and p.intent.value == "ASK_BOOKS" and not p.tentative and not p.slots.execute_now
 
 
 @pytest.mark.parametrize("text", ["Find me the cheapest way to cover the cash gap", "帮我找最便宜的方式把资金缺口补上"])

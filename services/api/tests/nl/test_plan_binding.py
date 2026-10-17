@@ -251,7 +251,9 @@ def test_a_repayment_is_sent_as_shown_and_not_when_the_books_moved(client, rt):
     c = Chat(client, "pb-repay")
     move_books(rt, 100_000_000)  # ¥1,000,000 more cash: repaying is affordable when it is proposed
     assert c.say("draw ¥100,000 on the credit line")["operations"][0]["status"] == "EXECUTED"
-    r = c.say("Is it OK to repay ¥50,000 on the credit line?")
+    asked = c.say("Is it OK to repay ¥50,000 on the credit line?")  # a question: answered, nothing proposed (app/nl/ask.py)
+    assert asked["intent"] == "ASK_BOOKS" and not asked["awaiting_confirmation"] and ops(asked) == []
+    r = c.say("I'd like to repay ¥50,000 on the credit line")
     assert r["awaiting_confirmation"] and ops(r) == []
     assert signature(pending("pb-repay").ops) == [("REPAY_FACILITY", "FAC-LINE", None, 5_000_000)]
     move_books(rt, -95_000_000)  # cash down, so that repaying would now break the reserve
@@ -264,7 +266,7 @@ def test_a_repayment_runs_exactly_the_stored_amount(client, rt):
     c = Chat(client, "pb-repay2")
     move_books(rt, 100_000_000)
     c.say("draw ¥100,000 on the credit line")
-    c.say("Is it OK to repay ¥50,000 on the credit line?")
+    c.say("I'd like to repay ¥50,000 on the credit line")
     drawn = rt.store.get_state().facilities
     r = c.say("go ahead")
     assert ops(r) == [("REPAY_FACILITY", "EXECUTED")]

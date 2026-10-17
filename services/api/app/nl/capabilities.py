@@ -29,7 +29,7 @@ from app.capex import CapexDisabled, CapexRequest, CapexResult, CapexStructure, 
 from app.capex.models import CHARGES_BASIS
 from app.config import get_settings
 from app.covenants import ratios_for, worst_dscr, worst_leverage
-from app.domain.models import Mode
+from app.domain.models import Mode, Violation
 from app.domain.money import BP_DENOM, Ratio, bp, fmt_pct, fmt_yuan
 from app.financial import EngineError, project
 from app.funding import compare, menu_view, plan
@@ -78,7 +78,23 @@ def _row_line(ctx: NlContext, row: ComparisonRow) -> str:
         en.append("cannot run today: it relies on an invoice that is not issued yet")
         zh.append("今天无法执行：它依赖一张尚未开出的发票")
     return t(ctx, f"Also priced: {row.label}, {row.cost_display}; " + "; ".join(en) + ".",
-             f"另有测算：{row.label}，{row.cost_display}；" + "；".join(zh) + "。")
+             f"另有测算：{_zh(ctx, row.label)}，{row.cost_display}；" + "；".join(zh) + "。")
+
+
+def _zh(ctx: NlContext, text: str) -> str:
+    """An engine sentence (a router label or note) in Chinese, in the owner's words when the owner's reads are lent to the
+    turn (names for ids, distances from today), else through the translation layer; a sentence no template knows stays
+    as written."""
+    if text in _ROUTER_NOTES_ZH:
+        return _ROUTER_NOTES_ZH[text]
+    if ctx.reads is not None:
+        return str(ctx.reads.words(text, "zh"))
+    from app.api.engine_zh import translate
+
+    return translate(text, [f.name for f in ctx.state().facilities]) or text
+
+
+_ROUTER_NOTES_ZH = {"no capacity (limit fully used or zero)": "没有可用额度（额度已用尽或为零）"}
 
 
 def compare_financing(ctx: NlContext) -> Turn:
@@ -128,7 +144,7 @@ def compare_financing(ctx: NlContext) -> Turn:
         if not r.committed:
             why = t(ctx, "; not relied on until it is committed", "；未承诺前不计入方案")
         elif not r.admissible_for_need and r.notes:
-            why = t(ctx, f"; not used: {r.notes[0]}", f"；未采用：{r.notes[0]}")
+            why = t(ctx, f"; not used: {r.notes[0]}", f"；未采用：{_zh(ctx, r.notes[0])}")
         lines.append(t(ctx, f"- {r.name}: {r.all_in_display} all-in a year, {cost}, {cash}, {state_en}{why}{over}.",
                        f"- {r.name}：综合年化 {r.all_in_display}，{cost}，{cash}，{state_zh}{why}{over}。"))
     if gap:
@@ -136,7 +152,7 @@ def compare_financing(ctx: NlContext) -> Turn:
         if committed.admissible and sel is not None:
             steps = "; ".join(c.label for c in committed.costs)
             lines.append(t(ctx, f"Selected committed plan: {steps}. Total cost {sel.cost_display}.",
-                           f"选定的已承诺方案：{steps}。总成本 {sel.cost_display}。"))
+                           f"选定的已承诺方案：{'；'.join(_zh(ctx, c.label) for c in committed.costs)}。总成本 {sel.cost_display}。"))
             if committed.needs_owner_approval:
                 lines.append(t(ctx, "It needs your approval: ", "该方案需要您批准：") + " ".join(approval_sentences(ctx, committed)))
             if not committed.executable_now:
@@ -342,6 +358,40 @@ def show_ratios(ctx: NlContext) -> Turn:
 # ---------------------------------------------------------------- CAPEX
 
 
+def _structure_label_zh(s: CapexStructure) -> str:
+    """A structure's name in Chinese, from its typed fields (the module writes its label in English)."""
+    rate = fmt_pct(Fraction(s.rate_bp, BP_DENOM)) if s.rate_bp is not None else ""
+    if s.kind == "CASH_LINE":
+        return "现金加信用额度"
+    what = "定期贷款" if s.kind == "LOAN" else "租赁"
+    return f"{s.term_months} 个月{what}" + (f"，{rate}" if rate else "")
+
+
+def _limit(text: str | None) -> str:
+    return (text or "").lstrip("≥≤<> ").strip()
+
+
+def _violation_zh(v: Violation) -> str:
+    """A structure's first failed check in Chinese, from the violation's code and its own figures."""
+    code = v.code.value
+    if code == "RESERVE_BREACH":
+        on = f"第 {v.day} 天" if v.day is not None else "期间"
+        i = v.inputs
+        if all(k in i for k in ("available_above_reserve", "line_available", "price", "min_cash")):  # paying from cash + line
+            return (f"在 {i['min_cash']} 的最低现金储备之上只有 {i['available_above_reserve']} 可用（现金加 {i['line_available']} "
+                    f"的信用额度），不足以支付 {i['price']} 的价款；{on}现金降至 {v.observed}")
+        return f"{on}现金降至 {v.observed}，低于 {_limit(v.limit)} 的最低现金储备"
+    if code == "DSCR_BREACH":
+        on = f"第 {v.month} 个月" if v.month is not None else "期间"
+        return f"{on}的偿债覆盖率（DSCR）为 {v.observed}，低于 {_limit(v.limit)} 的下限"
+    if code == "LEVERAGE_BREACH":
+        on = f"第 {v.month} 个月" if v.month is not None else "期间"
+        return f"{on}的杠杆率为 {v.observed}，高于 {_limit(v.limit)} 的上限"
+    if code == "CLEAN_DOWN_BREACH":
+        return "信用额度无法按要求按期清零"
+    return f"未通过检查（{code}）"
+
+
 def _structure_line(ctx: NlContext, r: CapexResult, s: CapexStructure) -> str:
     tag = (t(ctx, "SELECTED", "选定") if s.id == r.selected_id
            else t(ctx, "passes", "通过") if s.feasible else t(ctx, "fails", "不通过"))
@@ -350,12 +400,40 @@ def _structure_line(ctx: NlContext, r: CapexResult, s: CapexStructure) -> str:
         figures = t(ctx, f"min DSCR {s.min_dscr.text}×", f"最低 DSCR {s.min_dscr.text}×")
         if s.leverage is not None:
             figures += t(ctx, f", leverage {s.leverage.text}×", f"，杠杆 {s.leverage.text}×")
-        figures += "; "
+        figures += t(ctx, "; ", "；")
     if s.hypothetical:
         tag += t(ctx, " (illustration only: not the facility's real term, never applied for)",
                  "（仅为示例：并非该额度的实际期限，不会据此申请）")
+    if ctx.lang == "zh":
+        why = f"：{_violation_zh(s.violations[0])}" if not s.feasible and s.violations else ""
+        return f"- {_structure_label_zh(s)}：{figures}{tag}{why}"
     why = f": {s.violations[0].message}" if not s.feasible and s.violations else ""
     return f"- {s.label}: {figures}{tag}{why}"
+
+
+def _capex_words_zh(req: CapexRequest, r: CapexResult) -> tuple[str, str]:
+    """(the owner's-estimate note, the recommendation) in Chinese, from the result's typed fields; the module writes both
+    in English."""
+    note = (f"业主的估计，系统未观察到：自第 {req.uplift_start_month} 个月至第 {req.life_months} 个月，"
+            f"每月经营现金流增加 {fmt_yuan(req.monthly_uplift_fen)}。")
+    hurdle = fmt_pct(Fraction(req.hurdle_bp, BP_DENOM))
+    payback = f"第 {r.payback_month} 个月回本" if r.payback_month is not None else "使用期内无法回本"
+    lines = [("按业主的估计值得投资" if r.worth_doing else "按业主的估计不值得投资")
+             + f"：按 {hurdle} 折现，净现值 {fmt_yuan(r.npv_fen)}，{payback}。"]
+    sel = next((s for s in r.structures if s.id == r.selected_id), None)
+    if sel is not None:
+        monthly = f"（每月 {fmt_yuan(sel.monthly_payment_fen)}）" if sel.monthly_payment_fen else ""
+        charges = f"，为 {fmt_yuan(sel.charges_total_fen)}" if sel.charges_total_fen is not None else ""
+        lines.append(f"建议采用{_structure_label_zh(sel)}{monthly}：在通过检查的结构中，其融资费用合计（利息加费用，未折现）最低{charges}。")
+        cheaper = [s for s in r.structures if not s.feasible and not s.hypothetical and s.charges_total_fen is not None
+                   and sel.charges_total_fen is not None and s.charges_total_fen < sel.charges_total_fen and s.violations]
+        for s in cheaper:
+            lines.append(f"费用更低的{_structure_label_zh(s)}未通过：{_violation_zh(s.violations[0])}。")
+        if r.required_tier.value == "TIER_2":
+            lines.append("新增融资属于二级操作：由代理提出建议，由业主提交申请。")
+    else:
+        lines.append("没有任何结构通过全部检查，因此不建议融资购置。")
+    return note, "".join(lines)
 
 
 def capex_intent(ctx: NlContext, slots: Slots) -> Turn:
@@ -377,12 +455,13 @@ def capex_intent(ctx: NlContext, slots: Slots) -> Turn:
                                                       "the purchase.", "暂时无法预测账目，无法评估这笔购置。"))
     payback = (t(ctx, f"payback in month {r.payback_month}", f"第 {r.payback_month} 个月回本")
                if r.payback_month is not None else t(ctx, "no payback within its life", "使用期内无法回本"))
+    note, recommendation = _capex_words_zh(req, r) if ctx.lang == "zh" else (r.estimate_note, r.recommendation)
     lines = [t(ctx, f"{req.label}, {fmt_yuan(req.price_fen)}: NPV {fmt_yuan(r.npv_fen)} at "
                     f"{fmt_pct(Fraction(req.hurdle_bp, BP_DENOM))}, {payback}. ",
                f"{req.label}，{fmt_yuan(req.price_fen)}：按 {fmt_pct(Fraction(req.hurdle_bp, BP_DENOM))} 折现，"
-               f"净现值 {fmt_yuan(r.npv_fen)}，{payback}。") + r.estimate_note]
+               f"净现值 {fmt_yuan(r.npv_fen)}，{payback}。") + note]
     lines += [_structure_line(ctx, r, s) for s in r.structures]
-    lines.append(r.recommendation)
+    lines.append(recommendation)
     lines.append(t(ctx, f"Computed on day {r.as_of_day}. Structures are ranked on the {CHARGES_BASIS}; rates are "
                         f"nominal annual rates, and the uplift is your estimate, not an observed figure.",
                    f"按第 {r.as_of_day} 天的账目计算。结构按融资费用合计（利息加费用，未折现）排序；利率为名义年利率；"
@@ -492,7 +571,9 @@ def show_deal(ctx: NlContext, slots: Slots) -> Turn:
         else:
             return ask(Intent.SHOW_DEAL, "counterparty_id", t(ctx, "Which buyer's deal?", "哪位买家的交易？"),
                        [(str(i), c.name, c.id) for i, c in enumerate(buyers, 1)], slots)
-    return Turn(intent=Intent.SHOW_DEAL, reply=deal_reply(deal_summary(ctx.store, cp, ctx.day), ctx.lang))
+    reply = deal_reply(deal_summary(ctx.store, cp, ctx.day), ctx.lang)
+    # a name that ends in a full stop ("Foshan Home Retail Co.") at the end of a sentence takes no second one
+    return Turn(intent=Intent.SHOW_DEAL, reply=re.sub(r"(?<=[A-Za-z])\.\.(?=\s|$|[)）])", ".", reply))
 
 
 # ---------------------------------------------------------------- the nearest capability (E2)

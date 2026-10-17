@@ -30,7 +30,7 @@ from app.security.attacks import (
 )
 
 PINNED = json.loads((Path(__file__).parent / "attack_ids.json").read_text(encoding="utf-8"))
-API_IDS_SHA256 = "aba174a56e3c201ae08eb3481c107c0141a2b25e0d69675640c32b1e69e80f6c"
+API_IDS_SHA256 = "36e96fbc55bd4d1e7e9d0324db71420a02c18dc2c3cae41a59084ec6ad311b62"
 NL_IDS_SHA256 = "f44b2906da3e70cd7449a36ad7e3663c05cae6c1c04d7c97e895f9cf3af5d5cd"
 
 
@@ -41,9 +41,9 @@ def _sha(ids: list[str]) -> str:
 # ---------------------------------------------------------------- completeness
 
 
-def test_the_api_catalogue_is_exactly_the_127_pinned_attacks() -> None:
+def test_the_api_catalogue_is_exactly_the_128_pinned_attacks() -> None:
     ids = [a["id"] for a in load_catalogue()]
-    assert len(ids) == 127 and len(set(ids)) == 127
+    assert len(ids) == 128 and len(set(ids)) == 128
     assert sorted(ids) == PINNED["api"], "an attack was added, dropped or renamed: update attack_ids.json on purpose"
     assert _sha(ids) == API_IDS_SHA256
 

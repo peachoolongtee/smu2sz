@@ -144,6 +144,17 @@ def document_id(n: int) -> str:
 _DECISION_FIELDS = ("status", "decided_day", "decided_seq", "linked_facility_id")
 
 
+def refiled_record(stored: Any, superseded_by: str, day: int, seq: int) -> Any:
+    """A PROPOSED record closed because the owner filed its text again under another counterparty: REJECTED (it can no longer
+    be confirmed), decided by the REFILE_DOCUMENT entry at `seq`, superseded by the new record. Nothing else changes."""
+    from app.domain.models import DocumentStatus
+
+    if not superseded_by or superseded_by == stored.id:
+        raise ValueError(f"a refiled record is superseded by another record, not {superseded_by!r}")
+    return stored.model_copy(update={"status": DocumentStatus.REJECTED, "decided_day": day, "decided_seq": seq,
+                                     "linked_facility_id": None, "superseded_by": superseded_by})
+
+
 def check_decision(stored: Any, decided: Any) -> None:
     """A decision on a contract record may change only the decision fields, and only to CONFIRMED or REJECTED."""
     from app.domain.models import DocumentStatus
