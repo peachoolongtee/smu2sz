@@ -1,0 +1,15 @@
+Certification of dev 85309b63 (code of 3f0ed53e; the assessed build), 17 Oct 2026, 14:01 to 14:38 UTC, by the Security Lead.
+Script: certify_8530.sh; results by step: steps.txt; totals: suite_totals.txt.
+
+full suite (135 processes)     9,740 passed, 0 failed, 46 skipped
+attack catalogue               128 API + 133 chat, 0 harm, 0 NOT_REACHED, 120/128 named control, 8 known gaps
+sweep, three modes             0 policy violations; only the three new routes differ from 29fa0ea2 (sweep_policy.txt)
+reproductions; approval flip   refused; the database refuses the flip
+language boundary              cache 0 wrong-and-material; fake 0 wrong-and-material
+PostgreSQL 17                  concurrency 3/3; guards 10 passed
+pnpm audit --prod              0; full audit: braces (dev only); pip-audit clean
+mock browser suite             453 passed, 71 skipped; typecheck, lint, unit pass (web/)
+CSP, production build          16 pages, nonce policy, 0 violations, 0 page errors, injections blocked (csp_browser.json)
+code review                    nothing Critical or High; ASK-1 to ASK-3, REG-1 to REG-7 (FINDINGS_REGISTER.md)
+
+Verdict: CERTIFIED for scope S (local simulation), with those findings disclosed. Not a claim of absolute security.

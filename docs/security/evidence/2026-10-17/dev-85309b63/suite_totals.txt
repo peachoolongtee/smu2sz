@@ -1,0 +1,2 @@
+{'passed': 9740, 'failed': 0, 'skipped': 46, 'error': 0, 'xfailed': 0, 'deselected': 0}
+non-zero shards: 0

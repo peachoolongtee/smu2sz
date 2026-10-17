@@ -12,7 +12,8 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
-| 17 Oct | `29fa0ea2` (dev: round four, the redaction fix, self-assessment v3; **the assessed build**) | everything since `0fde33fd` | **CERTIFIED** for scope S; no test exception |
+| 17 Oct | `85309b63` (dev: batches 5 and 6, code of `3f0ed53e`; **the assessed build**) | everything since `29fa0ea2` | **CERTIFIED** for scope S; ASK-1, ASK-2, REG-1 to REG-7 disclosed |
+| 17 Oct | `29fa0ea2` (dev: round four, the redaction fix, self-assessment v3) | everything since `0fde33fd` | **CERTIFIED** for scope S; no test exception |
 | 17 Oct | `0fde33fd` (dev: SEC-08 executor check, OUT-1b, RT-2, RT-1, the 719c9dcf records) | the four merged branches | **CERTIFIED** for scope S; one test exception (#161, stale digest pin) |
 | 17 Oct | `719c9dcf` (dev: the five round-two branches, the OUT-1 fix, Dylan's ui-final) | everything since `0f92d433`: buyer messages, live readers, the setup lockout fix, the owner-approved engine fixes (`_priced`, `_attribute`, the R-10 rounding), model-privacy redaction, SEC-08 (database), SEC-12, SEC-20, SEC-21, SEC-22, OUT-1 | **CERTIFIED** for scope S |
 | 16 Oct | `fe56b357` (dev: final UI, R-10 rounding) | R-10 reassessed; the five round-two branches re-checked on it | R-10: **residual Low**; dev itself not certified while OUT-1 is open |
@@ -47,7 +48,32 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
 
-## `29fa0ea2` (dev): CERTIFIED for scope S, 17 Oct: the assessed build
+## `85309b63` (dev): CERTIFIED for scope S, 17 Oct: the assessed build
+
+Batches 5 and 6:
+- `fcc81a62`: Dylan's Attach page, the party check `PARTY_NOT_NAMED`, the demo inbox, the set-aside count, `--keep`, the outcome card, deals invoices without a contract;
+- `3f0ed53e`: `POST /customers` (ADD_CUSTOMER), `POST /documents/{id}/refile` (REFILE_DOCUMENT), `POST /nl/session/reset`, owner questions (ASK_BOOKS, the read-only `app/nl/answers`), DOC-05, PC-06;
+- then the technical document (`85309b63`, docs only; the code is that of `3f0ed53e`).
+
+Evidence: `evidence/2026-10-17/dev-85309b63/` (script `certify_8530.sh`). The run took 14:01 to 14:38 UTC; the CSP check came after it.
+
+| Check | Result |
+| --- | --- |
+| Full suite (135 processes) | **9,740 passed, 0 failed, 46 skipped** |
+| Attack catalogue | 128 API + 133 chat, 0 with harm; 0 NOT_REACHED; 120 of 128 API cases stopped by the named control, 8 known gaps |
+| Sweep, three modes | 0 policy violations; against `29fa0ea2` only the three new routes differ: every non-owner gets 401 on `POST /customers` and `/documents/{id}/refile`, and `POST /nl/session/reset` is open as a buyer channel |
+| Route policy test (in the suite) | 107 routes; no class disagreement; the owner reaches the handler on 91 of 91 in demo mode and 86 of 91 in production mode |
+| Reproductions; approval flip | refused; the database refuses the flip |
+| Language boundary | 0 wrong-and-material (cache and fake) |
+| PostgreSQL 17 | concurrency 3 of 3; guards 10 passed |
+| Dependency scans | `pnpm audit --prod` 0; `braces` (development only); `pip-audit` clean |
+| Mock browser suite | 453 passed, 71 skipped; typecheck, lint, unit pass |
+| CSP, production build | 16 pages with the nonce policy, 0 violations, 0 page errors, injections blocked |
+| Code review of the new routes and owner questions (two reviewer agents, probes in the scratchpad) | nothing Critical or High; ASK-1 to ASK-3 and REG-1 to REG-7 recorded in the register |
+
+**Verdict: CERTIFIED for scope S.** It is certified with the review findings disclosed. None lets a non-owner act or read: each needs an owner action, the agent key, or a document the owner uploads. Fixes are built in round five and are not in this build.
+
+## `29fa0ea2` (dev): CERTIFIED for scope S, 17 Oct
 
 The build the self-assessment v3 describes. Contents since `0fde33fd`:
 - the redaction fix (`sec/redaction-mandatory` 817bcaad, PRIV-1 to PRIV-3), via `975e082f`;

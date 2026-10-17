@@ -14,13 +14,13 @@ International AI Track | Security Self-Assessment
 
 | Item | Value |
 | --- | --- |
-| Commit | `dev` at `29fa0ea2de262f58610c7e6965021c491be76a06`; working tree clean: yes |
+| Commit | `dev` at `85309b632ae12fefeabbdd5062740dfa95d13aa1`; working tree clean: yes |
 | Build | source checkout of that commit; no container image (the local simulation runs from source) |
 | Runtime | Python 3.12 (uv), Node 24.11.1, pnpm 12.11.2; PostgreSQL 17 for the concurrency suite only |
 | Key dependencies | FastAPI 0.142.2, Pydantic 2.13.5, Starlette 1.7.0; Next.js 16.3.8, React 19.3.0, source-map-js 1.2.2 (from the lockfiles) |
 | Configuration assessed | loopback, one API process, `LLM_MODE=cache` (no model provider is called), in-memory or SQLite store, synthetic fixtures, `DEMO_MODE=1` with the published demo credentials, and the same checks with `DEMO_MODE=0` and unset |
-| Assessment window and assessor | 17 Oct 2026, 10:51 to 11:37 UTC, plus the browser CSP check; the Security Lead (an AI agent, section 2.6) |
-| Evidence | `docs/security/evidence/2026-10-17/dev-29fa0ea2/`, with `MANIFEST.json` and `SHA256SUMS`; evidence id `sha256:38ed949a20ba2edd` (the hash of `SHA256SUMS`) |
+| Assessment window and assessor | 17 Oct 2026, 14:01 to 14:38 UTC, plus the browser CSP check; the Security Lead (an AI agent, section 2.6) |
+| Evidence | `docs/security/evidence/2026-10-17/dev-85309b63/`, with `MANIFEST.json` and `SHA256SUMS`; evidence id `sha256:4ed8e24d7f729f0a` (the hash of `SHA256SUMS`) |
 | Explicit exclusions | live model mode; real customer documents or money; more than one API process; any network-reachable or hosted deployment; the web app beyond the checks in section 2.8 |
 | Approved exceptions | the `braces` development-only advisory (section 2.8). No failing test: issue #161 is closed in the assessed build (section 2.7) |
 
@@ -30,7 +30,7 @@ International AI Track | Security Self-Assessment
 
 **Executive summary.** TermsLedger v2 (FLOW) lets an SME owner delegate supplier-side credit decisions (buyer concessions, early-pay offers, draws on committed facilities and capex purchases) to an AI agent, under a mandate the owner signs. The design question is *what can a hostile message, a hostile caller or a fully persuaded language model make the system do?* The design answer is that **the model only fills typed data; deterministic code checks it and deterministic code executes it, under permission tiers that code computes**. FLOW is a simulation: lenders, buyers and the bank feed are simulated. We claim neither regulatory compliance nor absolute security.
 
-- **Test result, with its limits.** In the specified runs on the assessed build, the 260 stored attack cases (127 through the API, 133 through chat) produced **zero observed violations of the defined harm oracles** (section 2.4). This is a test result within a scope, not evidence that no exploitable path exists. Each case ran in a fresh in-memory runtime, offline, with recorded or scripted model answers; the catalogue drives only part of the 100 API routes, though a route policy test calls every route as every kind of caller (section 1.5); and no running deployment has had a penetration test.
+- **Test result, with its limits.** In the specified runs on the assessed build, the 261 stored attack cases (128 through the API, 133 through chat) produced **zero observed violations of the defined harm oracles** (section 2.4). This is a test result within a scope, not evidence that no exploitable path exists. Each case ran in a fresh in-memory runtime, offline, with recorded or scripted model answers; the catalogue drives only part of the 100 API routes, though a route policy test calls every route as every kind of caller (section 1.5); and no running deployment has had a penetration test.
 - **Review arrangement.** The reviews were AI-assisted and internal (section 2.6). The Security Lead is an AI agent working in a separate session and worktree. It also wrote the security fixes it then certified. The owner, a person, accepted the residual risks. "Certified" in this document means an **internal release decision for a stated build and scope**. It is not external accreditation, and no professional penetration test was done.
 - **Verdict.** Local simulation on loopback: **GO** for the assessed build. Demo over a network: **NO-GO** until a tested deployment profile exists (section 4.6). Production with real customers, documents or money: **NO-GO** (section 04).
 - **Largest residual risks.**
@@ -47,7 +47,7 @@ International AI Track | Security Self-Assessment
 | --- | --- | --- | --- | --- |
 | **Induced transfers** (诱导转账) | no operation has a payee or account field, so no message can redirect money; a lender named in a message is a security event, never a facility; receipts count only from the bank feed or the owner; concessions only through the verifier's caps and the owner's tiers | 1.3, 1.6 | fake-lender and induced-transfer cases (10), fake prior concessions (7), the compromised-agent step on every case, extra-field differentials (FL-06, SE-04) | 0 money moved; 0 facilities added by non-owners; 0 concessions from unevidenced claims |
 | **Data extraction** (信息套取) | owner token on every read; template replies; the egress guard with canaries; the agent's allow-list view; the buyer's daily budget | 3.4, 1.2 | mandate, reserve and facility exfiltration (11), cross-buyer (6), canary extraction (5), 38 chat leak cases | 0 protected values disclosed; 0 readable without the owner token; 0 canaries; known detection gaps listed (SEC-33, SEC-34) |
-| **Privilege escalation** (越权操作) | tiers computed by code; Tier 3 refused for everyone; Tier 2 waits for the owner; identity from the credential only; owner-only clock, circuit and approvals | 1.2, 1.3, 1.5, 1.8 | privilege escalation (21), replay and expiry (11), revoked or forged mandate (7), changed offers (4), the route policy test over every route and caller, mutation tests | 0 unauthorised executions; 0 route policy deviations |
+| **Privilege escalation** (越权操作) | tiers computed by code; Tier 3 refused for everyone; Tier 2 waits for the owner; identity from the credential only; owner-only clock, circuit and approvals | 1.2, 1.3, 1.5, 1.8 | privilege escalation (22), replay and expiry (11), revoked or forged mandate (7), changed offers (4), the route policy test over every route and caller, mutation tests | 0 unauthorised executions; 0 route policy deviations |
 | **Prompt injection** (Prompt 注入) | the model fills typed data only, with exact source spans; the coverage proof fails closed; the consent grammar for owner chat | 1.2, 1.6, 2.3 | prompt injection (17), consent (41), quoted approvals (16), buyer instructions (18); the external run's live tier | 0 executions from injected text; misreadings stay within typed rows (R-7) |
 | Social engineering (template) | the same controls: urgency, authority or a claimed payment changes no tier | 2.4 | social engineering (8) | 0 harm |
 | Failure recovery (template) | one unit of work per operation; compare-and-swap; triggers; refusals fail closed | 1.10, 1.12 | failure recovery (20); the concurrency suite; the database failure mid-execute (FR-06) | 0 partial writes; plans are atomic per operation only (SEC-28) |
@@ -68,11 +68,11 @@ International AI Track | Security Self-Assessment
 
 | Id | Evidence | Result on the assessed build |
 | --- | --- | --- |
-| E1 | Attack catalogue: 127 API and 133 chat cases, stored as data and run through the real API and chat | 0 harm-oracle violations; 260 of 260 reached the path they target; 119 of 127 API cases were stopped by the control they name, and 8 by another control (known gaps, SEC-34) |
-| E2 | Positive controls and mutation tests: legitimate actions execute; a control switched off makes the harness report harm | 5 positive controls execute and the oracle sees each; 5 of 7 mutations detected by the catalogue, 2 found gaps (section 2.5) |
+| E1 | Attack catalogue: 128 API and 133 chat cases, stored as data and run through the real API and chat | 0 harm-oracle violations; 261 of 261 reached the path they target; 120 of 128 API cases were stopped by the control they name, and 8 by another control (known gaps, SEC-34) |
+| E2 | Positive controls and mutation tests: legitimate actions execute; a control switched off makes the harness report harm | 6 positive controls execute and the oracle sees each; 5 of 7 mutations detected by the catalogue, 2 found gaps (section 2.5) |
 | E3 | Route authorization sweep: every route as each kind of caller, in three modes, checked against an explicit policy | 0 policy violations; identical to the previous certified sweep, route by route and caller by caller |
 | E4 | Regression tests for every finding fixed since 14 Oct | each fails before its fix and passes after |
-| E5 | Full API suite, sharded (130 processes) | 9,116 passed, 0 failed, 44 skipped; issue #161 closed (section 2.7) |
+| E5 | Full API suite, sharded (135 processes) | 9,740 passed, 0 failed, 46 skipped; issue #161 closed (section 2.7) |
 | E6 | Language-boundary set: 231 adversarial items through `POST /nl`, scored from stored state | 0 wrong-and-material, on recorded and scripted model answers (not a live model) |
 | E7 | Concurrency suite: eight invariants, two worker processes, SQLite and PostgreSQL 17 | 3 of 3 clean PostgreSQL runs (31 passed, 10 on PostgreSQL each) |
 | E8 | Dependency audits of the assessed lockfiles | `pnpm audit --prod`: 0 advisories; `pip-audit`: no known vulnerabilities; the CSP verified in a browser on a production build; exceptions in section 2.8 |
@@ -105,7 +105,7 @@ Package-import tests enforce one direction of this split: the compiler package c
 
 | Actor | Credential | May do | Can never |
 | --- | --- | --- | --- |
-| Owner | `X-Owner-Token`. The mandate is Ed25519-signed; the owner's public key is pinned in the executor at start-up | decide Tier-2 approvals; add a facility (Tier 2); reset a circuit breaker; read every view; upload, confirm or reject a document; move the simulated clock; demo and setup tools (demo mode only) | execute a Tier-3 operation; revoke or renew the mandate through the API (no such route exists, R-14) |
+| Owner | `X-Owner-Token`. The mandate is Ed25519-signed; the owner's public key is pinned in the executor at start-up | decide Tier-2 approvals; add a facility (Tier 2); reset a circuit breaker; read every view; upload, confirm, reject or refile a document; add a customer to the registry; ask questions about the books (answered read-only); move the simulated clock; demo and setup tools (demo mode only) | execute a Tier-3 operation; revoke or renew the mandate through the API (no such route exists, R-14) |
 | Agent | `X-Agent-Key` | Tier-1 operations inside the mandate; queue Tier-2 operations (never a capex purchase); in chat, an allow-list view with only its own amounts (R-11) | approve, reset a circuit, read owner views, move the clock |
 | Bank feed (`SYSTEM`) | `X-Bank-Feed-Key` | record a received payment at Tier 1 | anything else, including the clock (SEC-09) |
 | Registered buyer | `X-Counterparty-Key`; the server maps the key to the buyer and ignores any id in the body | send offers (at most 5 documents of 4,000 characters) or chat: 5 per simulated day across both routes, then 429 `BUYER_BUDGET_EXHAUSTED` (R-10) | cause execution by itself; its chat answer carries the reply and a session id only |
@@ -168,11 +168,11 @@ The figures are exact. "Up to ¥260,000" is a ceiling, not an approximation (ADR
 
 #### 1.4 Owner-only actions outside the typed operations
 
-Deciding approvals, accepting or declining a request as asked, resetting a circuit, revoking a commitment, confirming a contract reading, moving the clock, acting on an alert and opening books from setup are owner-only routes, each bound to what the owner saw (a verdict id, a state version or a text hash) and each logged. Appendix D lists them with their bindings.
+Deciding approvals, accepting or declining a request as asked, resetting a circuit, revoking a commitment, confirming or refiling a contract reading, adding a customer, moving the clock, acting on an alert and opening books from setup are owner-only routes, each bound to what the owner saw (a verdict id, a state version or a text hash) and each logged. Appendix D lists them with their bindings.
 
 #### 1.5 Route permission matrix
 
-The sweep calls every route (100 routes plus `/docs`, `/redoc` and `/openapi.json` on the assessed build) as each kind of caller, with a fresh runtime per call and every feature flag on, in three modes:
+The sweep calls every route (103 routes plus `/docs`, `/redoc` and `/openapi.json` on the assessed build) as each kind of caller, with a fresh runtime per call and every feature flag on, in three modes:
 - `DEMO_MODE=1` with the demo credentials;
 - `DEMO_MODE=0` with production credentials, where the demo values must be refused;
 - `DEMO_MODE` unset.
@@ -191,12 +191,12 @@ A policy check then compares each answer with the class below, and a diff compar
 **Result on the assessed build:** 0 policy violations in any mode. With `DEMO_MODE` off or unset, every published demo credential was refused.
 
 **What the sweep does not show, and the test that does.** The sweep fills path parameters with a placeholder and sends empty bodies, so on about half the routes the owner's own request stops at validation (404 or 422). It shows who is turned away, not that each owner route works. Since the external review, `tests/security/test_route_policy.py` closes that gap:
-- it enumerates every method and route from the application itself (104 in demo mode: 100 API routes and 4 documentation routes);
+- it enumerates every method and route from the application itself (107 in demo mode: 103 API routes and 4 documentation routes);
 - every route must belong to exactly one class, and the class is cross-checked against the authentication dependency the code runs, so a new route cannot slip in unclassified;
 - every non-owner caller sends the owner's real request, with real ids and valid bodies, and must be refused (401 or 403), and the books must be unchanged afterwards;
 - with `DEMO_MODE=0` and production credentials, every published demo value is refused on every non-public route, and the documentation routes answer 404.
 
-**Result:** no route disagrees with its class. The owner reaches the handler on 89 of 89 owner and demo routes in demo mode, and on 84 of 89 in production mode. The other five are the demo-only routes, refused by design.
+**Result:** no route disagrees with its class. The owner reaches the handler on 91 of 91 owner and demo routes in demo mode, and on 86 of 91 in production mode. The other five are the demo-only routes, refused by design.
 
 **One behaviour to note.** `/demo/reset` and `/demo/restore` are owner-only and are refused on a persistent store outside demo mode. On the in-memory store they work for the owner even with `DEMO_MODE=0`.
 
@@ -229,6 +229,8 @@ The rest of the chat path is bound in the same way:
 - **Counters sent outside FLOW:** once the owner has sent a buyer a counter outside FLOW, no chat path and no raw operation accepts, declines or counters that request (OUT-1, OUT-1b).
 - **Asserted facts:** `RECORD_FACT` answers "cannot record it", so chat cannot change the books by assertion.
 - **Sessions:** a session continues only for the caller that opened it (SEC-21).
+- **Owner questions.** A question about the books ("what is our cash?") is answered by a read-only module (`app/nl/answers`) that writes nothing and has no route of its own. Only the owner gets figures: the agent key gets the sign-in sentence, and buyer and anonymous chat never reach the module. A review on the assessed build found no protected value reaching a non-owner, and no question executing anything. It did find that a Tier-3 request phrased as a question was answered rather than refused and logged (ASK-1), and that a question asked while a plan waits did not say so (ASK-2); both are in section 4.4.
+- **Ending a chat session** (`POST /nl/session/reset`). A caller with no credential can end only an anonymous session; the owner can end any. Ending someone else's session answers exactly as for a missing one, so it reveals nothing.
 
 ### Confirmation, verification and rollback mechanisms
 
@@ -386,7 +388,7 @@ The `/negotiate` reply wording is a known defect, listed in section 4.4.
 
 **In brief.**
 - We modelled threats with STRIDE, end-to-end scenarios and the OWASP Top 10 for LLM Applications.
-- We attacked the system with 260 stored cases, under the assumption that the model is fully persuaded.
+- We attacked the system with 261 stored cases, under the assumption that the model is fully persuaded.
 - We checked that each case reaches the control it targets, that legitimate actions still work, and that switching a control off makes the tests fail.
 - No case violated a harm oracle in the specified runs. What we did not test is in section 2.9.
 
@@ -431,7 +433,7 @@ The STRIDE table is a category map. The scenarios below follow one attacker from
 | LLM03 Supply chain | lockfiles; dependency audits of the assessed lockfiles | E8 | see 2.8; a clean scan is a statement about that scan, not supply-chain security |
 | LLM04 Data and model poisoning | no training or fine-tuning; recorded readings are keyed on the full document and written offline only | review of the recording path | none known |
 | LLM05 Improper output handling | model output is schema-validated and grounded, never executed and never rendered as HTML; React escaping; a per-request CSP nonce | injected-markup probes in a browser | S3 |
-| LLM06 Excessive agency | owner-signed mandate; Tier 3 refused; Tier 2 waits for the owner; admission and circuit breaker; no operation has a payee field | 21 escalation cases; the compromised-agent step on every case; mutation tests (2.5) | R-3 |
+| LLM06 Excessive agency | owner-signed mandate; Tier 3 refused; Tier 2 waits for the owner; admission and circuit breaker; no operation has a payee field | 22 escalation cases; the compromised-agent step on every case; mutation tests (2.5) | R-3 |
 | LLM07 System prompt leakage | prompts hold no secrets, limits or books | 5 extraction cases; external live tier | none known |
 | LLM08 Vector and embedding weaknesses | not applicable: no retrieval or vector store | | |
 | LLM09 Misinformation | grounding; the coverage proof; a second reader, with disagreements sent to the owner; "AI-generated, for reference" labels | 231-item language-boundary set; held-out compiler sets | R-7, R-16 |
@@ -439,7 +441,7 @@ The STRIDE table is a category map. The scenarios below follow one attacker from
 
 #### 2.4 Method and harm oracle
 
-**The catalogue.** `services/api/evals/security/attacks.yaml` stores 127 API cases as data: id, category, vector, language, expected controls, steps and expected codes. The runner `app/security/attacks.py` adds 133 cases through `POST /nl`: 43 as the owner, 64 as a buyer and 26 with the agent key.
+**The catalogue.** `services/api/evals/security/attacks.yaml` stores 128 API cases as data: id, category, vector, language, expected controls, steps and expected codes. The runner `app/security/attacks.py` adds 133 cases through `POST /nl`: 43 as the owner, 64 as a buyer and 26 with the agent key.
 
 Each case:
 - gets a fresh in-memory runtime;
@@ -481,7 +483,7 @@ A queued Tier-2 operation is "contained": the owner still decides it.
 - every API case declares the codes, statuses or events that prove its intended control fired (a typed `expect` block), and a case without one fails the tests;
 - "detected" counts only security-relevant signals (a security event, an executor refusal, a security or mandate verdict code, a refusal status), not any verdict code.
 
-Before this change eight cases scored as defended without running their intended path (PE-03, PE-17, FR-16, TC-02, DOC-02, SE-06, PI-15, FL-08). Each was re-pointed so that it does. On the assessed build all 260 cases reach the path they target. Of the 127 API cases, 119 are stopped by the control they name. The other 8 are **known gaps** (SEC-34): another control held and nothing was harmed, but the named one did not fire. For example, MX-03's question about the maximum discount gets the neutral reply without the data-request screen recognising it. Each known gap is pinned, so the test fails the day it closes and the record must be updated.
+Before this change eight cases scored as defended without running their intended path (PE-03, PE-17, FR-16, TC-02, DOC-02, SE-06, PI-15, FL-08). Each was re-pointed so that it does. On the assessed build all 261 cases reach the path they target. Of the 128 API cases, 120 are stopped by the control they name. The other 8 are **known gaps** (SEC-34): another control held and nothing was harmed, but the named one did not fire. For example, MX-03's question about the maximum discount gets the neutral reply without the data-request screen recognising it. Each known gap is pinned, so the test fails the day it closes and the record must be updated.
 
 **Worked example (PI-02).**
 
@@ -509,12 +511,13 @@ Every category had 0 oracle violations; Appendix D gives the cases per category,
 - None violated an oracle.
 - The intended control for consent cases is that nothing executes. For them, "no refusal code and no state change" is the correct result, not a miss.
 
-**Positive controls** (`tests/security/test_positive_controls.py`). Five legitimate actions run through the same runtime, routes, snapshot and oracle as an attack, kept apart so they never count as harm:
+**Positive controls** (`tests/security/test_positive_controls.py`). Six legitimate actions run through the same runtime, routes, snapshot and oracle as an attack, kept apart so they never count as harm:
 - PC-01, a Tier-1 early-pay acceptance below break-even;
 - PC-02, the owner's approval of a queued facility application;
 - PC-03, the owner's approval of a queued rebate (the concession is booked);
 - PC-04, a bank-feed receipt with a reference (cash rises by ¥420,000 and the receivable settles);
-- PC-05, an agent draw on the committed line within the ceiling.
+- PC-05, an agent draw on the committed line within the ceiling;
+- PC-06, the owner adding a customer to the registry (logged as ADD_CUSTOMER).
 
 Each executes with its expected state change, and the oracle reports that change. So the clean attack result does not come from a system that refuses everything. The same receipt without the bank-feed key waits for the owner.
 
@@ -531,7 +534,7 @@ Each executes with its expected state change, and the oracle reports that change
 | the agent's allow-list view; an approval id in a reply (chat) | the chat cases show the leak |
 
 **Completeness.**
-- The tests pin exactly 127 API and 133 chat cases and their id set (`tests/security/attack_ids.json` and its SHA-256), and every id must produce an observation in which each declared step ran.
+- The tests pin exactly 128 API and 133 chat cases and their id set (`tests/security/attack_ids.json` and its SHA-256), and every id must produce an observation in which each declared step ran.
 - A case that errors fails the run: this is how SEC-01, the harness silently not running, was found and closed.
 
 **Fuzzers.** Two hypothesis fuzzers:
@@ -598,11 +601,12 @@ Its five observations, with their status on the assessed build:
 | 16 Oct | `0ba8e4c1`, `a6de32a2`, `b6d1e519`, `0f92d433` | the audit's fixes, security headers, the capex buy side, the owner's decisions; PostgreSQL 17 | certified (internal) |
 | 17 Oct | `719c9dcf` | round-two fixes and OUT-1 | certified (internal) |
 | 17 Oct | `0fde33fd` | SEC-08 executor check, OUT-1b, RT-2, RT-1 | certified (internal) |
-| 17 Oct | `29fa0ea2` (**the assessed build**) | the redaction fix (PRIV-1 to PRIV-3), SEC-26, the evidence verifier, the anonymous-intake switch, the harness assurance work, the route policy test, the #161 golden, this document | certified (internal) |
+| 17 Oct | `29fa0ea2` | the redaction fix (PRIV-1 to PRIV-3), SEC-26, the evidence verifier, the anonymous-intake switch, the harness assurance work, the route policy test, the #161 golden, the v3 document | certified (internal) |
+| 17 Oct | `85309b63` (**the assessed build**) | batches 5 and 6: adding a customer and refiling a document (owner-only), owner questions answered from the books (read-only), a chat session reset, the party check, the outcome card, DOC-05 and PC-06 | certified (internal), with ASK-1, ASK-2 and REG-1 to REG-7 disclosed (section 4.4) |
 
 Appendix C gives the checks and counts for each row.
 
-**The full-suite exception (issue #161).** On the assessed build the sharded suite gave 9,116 passed, 0 failed, 44 skipped.
+**The full-suite exception (issue #161).** On the assessed build the sharded suite gave 9,740 passed, 0 failed, 46 skipped.
 
 The failing test is `tests/books/test_modules_on_books.py::test_no_commitments_trajectory_and_router_plan_are_unchanged`. It pins a SHA-256 digest of the router's plan on the golden books.
 - **What changed.** Every platform, Windows and Linux CI alike, computes `24f1dc649f4363e3` against the pinned `252b9812e99b4aee`. The pin is stale, not machine-dependent, as earlier records wrongly said.
@@ -626,7 +630,7 @@ RT-1 was rated by reachability. The advisories were in the web server (`next`), 
 #### 2.9 What was not verified
 
 - **A live model at scale.** The catalogue and the 231-item set ran on recorded or scripted answers. The only live-model evidence is the external run's single pass.
-- **Route coverage of the catalogue.** The catalogue's attacks reach only part of the 100 API routes. Every route's authorization is covered by the route policy test (1.5), and the remaining routes' logic by targeted tests; not every route has an adversarial case.
+- **Route coverage of the catalogue.** The catalogue's attacks reach only part of the 103 API routes. Every route's authorization is covered by the route policy test (1.5), and the remaining routes' logic by targeted tests; not every route has an adversarial case.
 - **Controls the catalogue does not exercise end to end** (SEC-32). Switching the egress scan off made no catalogue case leak, because outbound replies are fixed templates and nothing pushes a protected value at the guard. The guard is tested by `tests/egress` and by a seeded mutation test, not by the catalogue. The harness's disclosure oracle uses the same scanning function as the product, so a defect there would blind both.
 - **Detection without harm** (SEC-33). About ten chat extraction questions, and MX-03, get the neutral reply but raise no `DATA_EXTRACTION` event: the data-request screen does not recognise those wordings. They are recorded as known gaps in the catalogue.
 - **Races inside one API process** across routes (S1), parse timeouts and decompression limits (S2), and browser injection beyond the CSP check (S3).
@@ -829,7 +833,12 @@ Each risk is rated for **a production deployment of the code as it stands**. The
 | PRIV-6 | The setup draft stays in the browser after sign-out | vulnerability | local | Low | Low (C) | Low |
 | R-5 | The in-process actor is trusted; authentication happens only in the API layer | by design | | Low | Moderate (I) | Low |
 | CAPEX-NC | A committed capex purchase has no cancel path | operational gap | privileged | Low | Moderate (F) | Low |
-| Minor | CAPEX-4b, SETUP-2, 3, 6, 8, SEC-13, 14, 15, OUT-2 to OUT-4, DEMO-L1; the unlocked document and setup routes (S1); the export `content_sha256` scope (1.10) | various | | Low | Low | Low |
+| REG-1 | After a refile, or while a record is blocked by the party check, the egress guard counts the wrongly filed buyer as entitled to the other buyer's contract values | vulnerability | privileged (owner action) | Low | Moderate (C) | Low |
+| REG-2 | The party check ignores roles and accepts a short name or a containing name; a reading with no party names is not blocked | vulnerability | any document sender, then the owner | Moderate | Low (H) | Low |
+| REG-3 | Adding a customer accepts lookalike names and the business itself; the review screen offers names read from the document | vulnerability | privileged (owner action, document-prompted) | Low | Moderate (H) | Low |
+| ASK-1 | A Tier-3 request phrased as a question is answered, not refused and logged | vulnerability (detection) | authenticated | Moderate | Low (I) | Low |
+| ASK-2 | A question asked while a plan waits does not say the plan is still waiting | vulnerability | privileged (owner) | Low | Moderate (H) | Low |
+| Minor | REG-4, REG-5, REG-6, ASK-3, REG-7, CAPEX-4b, SETUP-2, 3, 6, 8, SEC-13, 14, 15, OUT-2 to OUT-4, DEMO-L1; the unlocked document and setup routes (S1); the export `content_sha256` scope (1.10) | various | | Low | Low | Low |
 
 #### 4.3 Production and network prerequisites
 
@@ -933,6 +942,19 @@ These keep production at NO-GO. Several also have security consequences of their
 - **Exposure and rationale:** Low × Low. The setup draft (company figures) stays in `localStorage` after sign-out. It matters only on a shared browser.
 - **Next step:** clear it on sign-out.
 
+**Found on the assessed build: REG-1 to REG-7 and ASK-1 to ASK-3.** Two code reviews of batches 5 and 6 found nothing Critical or High. Every new route is owner-only (checked as every caller, in both modes), and no protected value reached a non-owner. What they found:
+- **REG-1.** Refiling leaves the wrongly filed buyer entitled to the other buyer's contract values in the egress guard's eyes. This is defence in depth: replies to buyers are fixed templates.
+- **REG-2.** The party check is loose: roles are ignored, and short or containing names are accepted.
+- **REG-3.** Adding a customer accepts lookalike names. Together with REG-2, a document could lead the owner to file a genuine contract under a lookalike buyer.
+- **REG-4.** A crafted idempotency key gives a 500.
+- **REG-5.** The outcome card's wording.
+- **REG-6.** A coverage gap in DOC-05.
+- **ASK-1.** A detection regression.
+- **ASK-2.** Clarity of the owner's consent.
+- **ASK-3 and REG-7.** Missing events (informational).
+
+Each needs an owner action, the agent key, or a document the owner chooses to upload. Fixes with regression tests are built (round five: `sec/ask-books-trace`, `sec/registry-guards`, `sec/party-roles`) but are **not in the assessed build**. REG-5's executor half needs the owner's approval.
+
 **R-7, R-10, R-16, SEC-22, R-1, R-5, CAPEX-NC.** Unchanged from the register (`docs/security/FINDINGS_REGISTER.md`):
 - misreadings are caught by the coverage proof and the cross-check, and contract readings change no books (R-7, R-16);
 - probing is budgeted (R-10);
@@ -968,31 +990,32 @@ Each was found by one of the reviews, reproduced, and closed by a fix whose regr
 
 #### 4.7 Planned improvements, in priority order
 
-1. **Before any network demo:**
+1. **Round five, built and not yet merged:** ASK-1, ASK-2, REG-1 to REG-4, REG-6 and the card half of REG-5.
+2. **Before any network demo:**
    - a tested deployment profile;
    - anonymous intake off, or provenance shown everywhere (SEC-19);
    - browser injection tests (S3).
-2. **Plan integrity:** `/negotiate` and alert actions stop and report at the first leg that does not execute (SEC-28, with the owner's approval).
-3. **Owner control:** mandate revoke and renew routes; an emergency write switch; key rotation (R-14, OPS, R-2).
-4. **Audit integrity:** a restricted database role; a checkpoint of the chain kept outside the system (R-13).
-5. **Privacy before any live use:**
+3. **Plan integrity:** `/negotiate` and alert actions stop and report at the first leg that does not execute (SEC-28, with the owner's approval).
+4. **Owner control:** mandate revoke and renew routes; an emergency write switch; key rotation (R-14, OPS, R-2).
+5. **Audit integrity:** a restricted database role; a checkpoint of the chain kept outside the system (R-13).
+6. **Privacy before any live use:**
    - the live language-boundary run;
    - named-entity detection;
    - provider retention settings;
    - the deployment's PIPL assessment (LIVE, PRIV-4, PRIV-5).
-6. **Scale:** read the day from stored state inside the unit of work; PostgreSQL in CI (SEC-11, OPS).
+7. **Scale:** read the day from stored state inside the unit of work; PostgreSQL in CI (SEC-11, OPS).
 
 ## Appendix A Evidence index
 
-Every evidence file of the assessed build is in `docs/security/evidence/2026-10-17/dev-29fa0ea2/` and listed in its `SHA256SUMS`. The configuration for every row is the one in the release manifest unless stated.
+Every evidence file of the assessed build is in `docs/security/evidence/2026-10-17/dev-85309b63/` and listed in its `SHA256SUMS`. The configuration for every row is the one in the release manifest unless stated.
 
 | Id | Claim it supports | Command (from `services/api`) | Result | Files |
 | --- | --- | --- | --- | --- |
-| E1 | 0 harm-oracle violations; cases reached their control | `uv run pytest -o addopts= -q tests/security`; `uv run python -m app.security.attacks --report` | 0 violations; 260 of 260 reached their path; 119 of 127 API cases stopped by the named control, 8 known gaps | `latest_report.json`, `latest_report.md`, `attacks.txt`, `shards/tests_security.txt` |
-| E2 | legitimate actions execute; controls switched off are detected; every route's policy | `uv run pytest -o addopts= -q tests/security/test_positive_controls.py tests/security/test_mutations.py tests/security/test_route_policy.py` | 5 positive controls executed; every mutation detected or recorded as a gap; 0 route policy deviations | `shards/tests_security.txt` |
+| E1 | 0 harm-oracle violations; cases reached their control | `uv run pytest -o addopts= -q tests/security`; `uv run python -m app.security.attacks --report` | 0 violations; 261 of 261 reached their path; 120 of 128 API cases stopped by the named control, 8 known gaps | `latest_report.json`, `latest_report.md`, `attacks.txt`, `shards/tests_security.txt` |
+| E2 | legitimate actions execute; controls switched off are detected; every route's policy | `uv run pytest -o addopts= -q tests/security/test_positive_controls.py tests/security/test_mutations.py tests/security/test_route_policy.py` | 6 positive controls executed; every mutation detected or recorded as a gap; 0 route policy deviations | `shards/tests_security.txt` |
 | E3 | route policy holds; unchanged from the previous certified sweep | `SWEEP_MODE=demo\|prod\|unset python authz_sweep_v3.py`; `python sweep_policy.py`; `python sweep_diff.py` | 0 policy violations; 0 differences | `sweep_*.json`, `sweep_policy.txt` |
 | E4 | each fixed finding stays fixed | the regression tests in 4.5, inside the full suite | all pass | `shards/` |
-| E5 | the wider suite passes | `pytest` per test directory and per `tests/api` file (130 processes, 8 at a time) | 9,116 passed, 0 failed, 44 skipped | `suite_totals.txt`, `shards/` |
+| E5 | the wider suite passes | `pytest` per test directory and per `tests/api` file (135 processes, 8 at a time) | 9,740 passed, 0 failed, 46 skipped | `suite_totals.txt`, `shards/` |
 | E6 | 0 wrong-and-material on the language boundary (recorded and scripted answers) | `python ../../scripts/certify_language_boundary.py --backend cache` and `--backend fake` | cache: 0 wrong-and-material, 1 wrong-harmless; fake: 0 wrong-and-material, 3 wrong-harmless (231 items each) | `lb_cache.txt`, `lb_fake.txt`, `language_boundary/` |
 | E7 | concurrency invariants on PostgreSQL 17 | `TERMSLEDGER_TEST_DATABASE_URL=<local database> pytest tests/concurrency` (three runs); the guard tests | 3 of 3 clean (31 passed, 10 on PostgreSQL each); guards 10 passed | `pg_concurrency_*.txt`, `pg_guards.txt` |
 | E8 | dependency scans; CSP in a browser | `pnpm audit --prod --json`; `pip-audit`; `csp_check.mjs` against a production build | 0 production advisories; `braces` (development only); pip-audit clean; 16 pages with the nonce policy, 0 violations, 0 page errors, injected handler and `javascript:` URL blocked | `pnpm_audit_*.json`, `pip_audit.txt`, `csp_browser.json` |
@@ -1044,7 +1067,8 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 | `0f92d433` | the owner's decisions; sweep in three modes; the catalogue (0 of 259 with harm); full suite. PostgreSQL 17 concurrency 6 of 6 on `0f92d433` plus the PG-1 fix `7f55c0dc` (merged later) | exit codes; failure: the #161 digest test only |
 | `719c9dcf` | sweep in three modes (100 routes, unchanged); every reproduction refused; OUT-1 on every chat path; the catalogue; full suite; PostgreSQL 17 concurrency 3 of 3; the CSP in a browser on a production build | tests/api 1,729 passed, 2 skipped; mock browser suite 444 passed, 61 skipped; PostgreSQL concurrency 31 passed ×3 |
 | `0fde33fd` | the four new regression tests; operations, verifier, security and persistence suites; sweep in three modes with the policy check and a diff against `719c9dcf`; every reproduction refused; the catalogue; PostgreSQL 17 concurrency ×3 and the guards; dependency audits | regressions 22; operations 412 (1 skipped), verifier 263, security 305, persistence 161 (1 skipped); 0 harm; 0 policy violations; PostgreSQL 3 of 3 |
-| `29fa0ea2` (assessed build) | the full suite; the catalogue; sweep in three modes with the policy check and a diff against `0fde33fd`; every reproduction refused, and the SQLite approval flip refused by the database ("a decision is recorded once"); the language boundary (cache and fake); PostgreSQL 17 concurrency ×3 and the guards; dependency scans; the mock browser suite; the CSP in a browser on a production build | 9,116 passed, 0 failed, 44 skipped; 0 harm; 0 policy violations, 0 sweep differences; mock 445 passed, 61 skipped; typecheck, lint, unit pass |
+| `29fa0ea2` | the full suite; the catalogue; sweep in three modes with the policy check and a diff against `0fde33fd`; every reproduction refused, and the SQLite approval flip refused by the database ("a decision is recorded once"); the language boundary (cache and fake); PostgreSQL 17 concurrency ×3 and the guards; dependency scans; the mock browser suite; the CSP in a browser on a production build | 9,116 passed, 0 failed, 44 skipped; 0 harm; 0 policy violations, 0 sweep differences; mock 445 passed, 61 skipped; typecheck, lint, unit pass |
+| `85309b63` (assessed build; code of `3f0ed53e`) | the full suite; the catalogue; sweep in three modes with the policy check and a diff against `29fa0ea2` (only the three new routes differ; every non-owner refused on the two new owner routes); every reproduction refused; the approval flip refused by the database; the language boundary; PostgreSQL 17 ×3 and the guards; dependency scans; the mock browser suite; the CSP in a browser on a production build; two code reviews of the new routes and owner questions | 9,740 passed, 0 failed, 46 skipped; 0 harm; 0 policy violations; mock 453 passed, 71 skipped; typecheck, lint, unit pass; CSP 16 pages, 0 violations |
 
 **A note on reproduction scripts that exit 1.** Several reproduction scripts (`r3`, `repro1`, `repro3`) exit with status 1 on fixed builds. They were written to print what the attack obtained, and they crash when it is refused. For example, `r3` expects an anonymous overwrite to return the stored offer and instead gets 409. Each script's output file shows the refusal it hit.
 
@@ -1074,7 +1098,7 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 | Fake lender, induced transfer | induced transfers | a pre-approved lender, "reply ACCEPT to disburse", change of payee, a personal guarantee | 10 | 0 | 10 | |
 | Fake prior concession | induced transfers | "as agreed last month" | 7 | 0 | 6 | FH-04 |
 | Social engineering | social engineering | urgency, authority, CFO impersonation, fake payment confirmation | 8 | 0 | 6 | SE-03, SE-08 |
-| Privilege escalation | privilege escalation | owner claim without the token, caller-supplied tier, self-approval, circuit reset, Tier 3 by the owner | 21 | 0 | 21 | |
+| Privilege escalation | privilege escalation | owner claim without the token, caller-supplied tier, self-approval, circuit reset, Tier 3 by the owner, a non-owner adding a customer (DOC-05) | 22 | 0 | 22 | |
 | Mandate exfiltration | data extraction | limits and caps | 5 | 0 | 4 | MX-03 |
 | Reserve and facility exfiltration | data extraction | the reserve floor, headroom | 6 | 0 | 6 | |
 | Cross-buyer extraction | data extraction | another buyer's terms, contract and deal routes | 6 | 0 | 5 | CB-05 |
@@ -1083,4 +1107,4 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 | Revoked or forged mandate | privilege escalation | revoked, re-signed with another key, edited | 7 | 0 | 7 | |
 | Changed offer after the verdict | privilege escalation | terms changed between verdict and acceptance, at Tier 2 and at Tier 1 (TC-04) | 4 | 0 | 4 | |
 | Failure recovery | failure recovery | model error, timeout and garbage; a database failure mid-execute; five tamper variants; malformed bodies | 20 | 0 | 20 | |
-| **Total** | | | **127** | **0** | **119** | **8** |
+| **Total** | | | **128** | **0** | **120** | **8** |
