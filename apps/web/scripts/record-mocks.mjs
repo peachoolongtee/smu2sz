@@ -81,6 +81,9 @@
 // the opening books and on day 34 (the same test with no deal). The API needs FEATURE_EXPOSURE=1 for these.
 // buyer_exposure[_zh].json alone: --buyer-exposure (the same GET /buyers/BUYER-1/exposure, on the opening books; the API needs FEATURE_EXPOSURE=1).
 //
+// --deals-short records ONLY apps/web/mocks/deals_short.json and exits: { en, zh } of GET /deals on the short-facilities books (POST /demo/reset?scenario=short_facilities),
+// where the buyer has an open invoice and no confirmed contract (the deal summary lists its invoices and `open_invoices`); the mock serves it while those books are loaded.
+//
 // --no-exposure skips the three exposure reads (buyer_exposure*, exposure_offer*): run it against an API WITHOUT FEATURE_EXPOSURE to record the home reads the specs
 // expect (stress_available false); run again with the flag on for the exposure files and the receivables reads, and keep each run's own files.
 //
@@ -179,7 +182,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --buyside | --tracker | --buyer-message]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --deals-short | --exposure | --home-v2 | --slice-d | --buyside | --tracker | --buyer-message]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
@@ -195,6 +198,7 @@ const INPUTS = process.argv.includes("--inputs");
 const SLICE_D = process.argv.includes("--slice-d");
 const BUYER_MESSAGE = process.argv.includes("--buyer-message");
 const BUYSIDE = process.argv.includes("--buyside");
+const DEALS_SHORT = process.argv.includes("--deals-short");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -485,6 +489,17 @@ if (BUYER_EXPOSURE) {
   await buyerExposure("buyer_exposure");
   for (const name of Object.keys(files).sort()) write(name, files[name]);
   console.log(`recorded ${written.length} buyer-exposure files into ${OUT} from ${API}`);
+  process.exit(0);
+}
+// --deals-short: deals_short.json and nothing else, on the short-facilities books (a buyer with an invoice and no contract), then the main books again.
+if (DEALS_SHORT) {
+  await live.demoReset("short_facilities");
+  const view = { en: await live.getDeals("en"), zh: await live.getDeals("zh") };
+  if (!view.en.deals.some((d) => !d.has_contract && d.open_invoices)) throw new Error("no buyer without a contract carries its invoices: start the API from a branch with fix/deals-invoices");
+  files["deals_short.json"] = view;
+  await live.demoReset();
+  for (const name of Object.keys(files).sort()) write(name, files[name]);
+  console.log(`recorded ${written.length} deals file into ${OUT} from ${API}`);
   process.exit(0);
 }
 // --strategy: the nine strategy recordings and nothing else (see the header). The recorder's own day-0, day-34 and day-34-approved states.

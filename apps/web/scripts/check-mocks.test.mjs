@@ -293,3 +293,18 @@ test("the deal summary: the confirmed contract once the buyer agrees, then the d
   assert.deepEqual(mock("deals_day34_open.json").deals[0].pills.map((p) => p.label), ["Payment overdue"]);
   assert.equal(mock("deals_day34_approved.json").deals[0].invoices.find((i) => i.label === "Invoice issued 32 days ago").status, "FINANCED");
 });
+
+test("a buyer with an invoice and no contract: the deals read lists the invoice and says it in words (deals_short.json)", () => {
+  const short = mock("deals_short.json");
+  const [en, zh] = ["en", "zh"].map((l) => short[l].deals.find((d) => d.counterparty_id === "BUYER-1"));
+  assert.equal(en.has_contract, false);
+  assert.equal(en.contract, undefined);
+  assert.deepEqual(en.invoices.map((i) => [i.id, i.status, i.outstanding_display]), [["RCV-A", "NOT_DUE", "¥420,000.00"]]);
+  assert.equal(en.open_invoices.text, "No contract on file yet. Open invoices: 1, ¥420,000.00 due in 32 days.");
+  assert.equal(zh.open_invoices.text, "尚无合同。未结发票 1 张，应收 ¥420,000.00，32 天后到期。");
+  assert.ok(!/(RCV|RI|BUYER)[-:]/.test(en.open_invoices.text));
+  // a buyer with no invoice is the placeholder it was
+  const other = short.en.deals.find((d) => d.counterparty_id === "BUYER-2");
+  assert.equal(other.invoices, undefined);
+  assert.equal(other.open_invoices, undefined);
+});

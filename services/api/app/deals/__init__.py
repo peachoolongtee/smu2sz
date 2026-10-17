@@ -525,6 +525,64 @@ def _next_action(invoices: list[dict[str, Any]], store: LedgerStore, state: Fina
             "tone": "bad" if late else "warn"}
 
 
+def _open_invoices_text(open_: list[dict[str, Any]], late: list[dict[str, Any]], nxt: dict[str, Any] | None,
+                        due_fen: int, late_fen: int, day: int, lang: Lang) -> str:
+    """The one sentence for a buyer's invoices before any contract: how many are open, what is due, the late ones and when the
+    next falls due, said as a distance from today (never a day number, an id or a reference)."""
+    head = say(lang, "No contract on file yet.", "尚无合同。")
+    if not open_:
+        return head + say(lang, " Every invoice is paid.", "所有发票均已收讫。")
+    n, due = len(open_), fmt_yuan(due_fen)
+    if n == 1:
+        one = open_[0]
+        if one["status"] == "LATE":
+            d = day - one["due_day"]
+            return head + say(lang, f" Open invoices: 1, {due} due, {d} day{'' if d == 1 else 's'} late.",
+                              f"未结发票 1 张，应收 {due}，已逾期 {d} 天。")
+        when = when_text(one["due_day"], day, lang)
+        return head + say(lang, f" Open invoices: 1, {due} due {when}.", f"未结发票 1 张，应收 {due}，{when}到期。")
+    en, zh = f" Open invoices: {n}, {due} due", f"未结发票 {n} 张，应收 {due}"
+    if late:
+        en += f"; {len(late)} late ({fmt_yuan(late_fen)})"
+        zh += f"；其中 {len(late)} 张已逾期（{fmt_yuan(late_fen)}）"
+    if nxt is not None:
+        when = when_text(nxt["due_day"], day, lang)
+        en += f"; the next due {when}"
+        zh += f"；下一张{when}到期"
+    return head + say(lang, en + ".", zh + "。")
+
+
+def _without_contract(store: LedgerStore, state: FinancialState, cp: str, day: int, lang: Lang) -> dict[str, Any]:
+    """A buyer with no confirmed contract still has its invoices on the books (from setup, a recurring invoice, a receipt):
+    the same invoice rows the contract path lists, and what the card says about them (`open_invoices`). Nothing when the
+    buyer has no invoice; the contract's own fields (contract, terms, stages, checks) stay absent."""
+    mine = [r for r in state.receivables if r.counterparty_id == cp]
+    if not mine:
+        return {}
+    receipts: list[Any] = []
+    if any(sum(r.early_paid_fen.values()) for r in mine):  # only an early settlement's note reads the receipts
+        ids = {r.id for r in mine}
+        receipts = [m for m in reconcile(store, day=day).receipts if m.receivable_id in ids and m.status.value != "UNMATCHED"]
+    invoices = _invoices(store, state, cp, day, receipts, lang)
+    open_ = [i for i in invoices if i["status"] != "PAID"]
+    late = [i for i in open_ if i["status"] == "LATE"]
+    upcoming = sorted((i for i in open_ if i["status"] != "LATE"), key=lambda i: (i["due_day"], i["issue_day"], i["id"]))
+    nxt = upcoming[0] if upcoming else None
+    due_fen = sum(i["outstanding_fen"] for i in open_)
+    late_fen = sum(i["outstanding_fen"] for i in late)
+    return {
+        "invoices": invoices,
+        "open_invoices": {
+            "count": len(open_), "due_fen": due_fen, "due_display": fmt_yuan(due_fen),
+            "late_count": len(late), "late_fen": late_fen, "late_display": fmt_yuan(late_fen),
+            "next_due_day": nxt["due_day"] if nxt is not None else None,
+            "next_due_when": when_text(nxt["due_day"], day, lang) if nxt is not None else None,
+            "text": _open_invoices_text(open_, late, nxt, due_fen, late_fen, day, lang),
+            "tone": "bad" if late else "mute" if open_ else "ok",
+        },
+    }
+
+
 # ---------------------------------------------------------------- public
 
 
@@ -538,6 +596,7 @@ def deal_summary(store: LedgerStore, counterparty_id: str, day: int, lang: Lang 
     base: dict[str, Any] = {"counterparty_id": counterparty_id, "counterparty_name": name, "day": day,
                             "has_contract": record is not None, "pending_documents": pending_docs}
     if record is None:
+        base.update(_without_contract(store, state, counterparty_id, day, lang))
         return base
     anchor = state.as_of
     implied = buyer_terms(record.contract, counterparty_id, anchor) if record.contract else None
@@ -607,7 +666,8 @@ def record_summary_blanks(record: ContractRecord, lang: Lang = "en") -> list[dic
 
 
 def deals(store: LedgerStore, day: int, lang: Lang = "en") -> list[dict[str, Any]]:
-    """Every buyer on the registry: a full summary where a contract is confirmed, a placeholder otherwise."""
+    """Every buyer on the registry: a full summary where a contract is confirmed, otherwise the name, the documents waiting and,
+    when the buyer has invoices on the books, those invoices and `open_invoices`."""
     state = store.get_state()
     out = []
     for c in state.counterparties:
