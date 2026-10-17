@@ -119,10 +119,14 @@ class CallableBackend:
     """A live model behind a plain `complete(system, user, schema) -> str` callable (Claude or DeepSeek
     in live mode; a stub in tests)."""
 
-    def __init__(self, name: str, model_id: str, complete: Callable[[str, str, dict], str], *, redact: bool = False) -> None:
+    def __init__(self, name: str, model_id: str, complete: Callable[[str, str, dict], str], *, redact: bool | None = None) -> None:
         self.name = name
         self.model_id = model_id
         self._complete = complete
+        if redact is None:  # PRIV-1: redaction is the default for a backend built without an explicit choice
+            from app.config import get_settings
+
+            redact = get_settings().llm_redact
         self.redact = redact
 
     def classify(self, text: str) -> tuple[str, str]:

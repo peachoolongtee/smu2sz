@@ -259,7 +259,7 @@ body {
   outline-offset: 2px;
 }
 
-/* A field that draws its own focus (a darker border on its wrapper) opts out of the ring. Unlayered like the rule above, so it wins over it. */
+/* A field that draws its own focus (a darker border or ring on its wrapper) opts out of the ring. Unlayered like the rule above, so it wins over it. */
 .focus-own:focus-visible {
   outline: none;
 }

@@ -23,6 +23,7 @@ from app.compiler.prompts import (
     offer_user_message,
     term_sheet_user_message,
 )
+from app.compiler.redaction import call_redacted
 from app.compiler.schema import ContractExtraction, OfferExtraction, TermSheetExtraction
 from app.domain.models import SourceDocument
 
@@ -60,7 +61,28 @@ def output_schema(model: type[BaseModel]) -> dict[str, Any]:
 # ---------------------------------------------------------------- Claude
 
 
-class ClaudeBackend:
+class _RedactsByDefault:
+    """PRIV-1 (security register): a provider backend redacts its own input before anything leaves the machine, however it
+    was built (the product chain, a recording script, an evaluation harness with a client passed in). Only `redact=False`,
+    or LLM_REDACT=0 when `redact` is left unset, sends the original text. Before, redaction was a wrapper each caller had to
+    remember, and the live language-boundary script did not."""
+
+    name: str
+    _redact: bool | None = None
+
+    @property
+    def redacts(self) -> bool:
+        if self._redact is not None:
+            return self._redact
+        from app.config import get_settings
+
+        return get_settings().llm_redact
+
+    def _through(self, purpose: str, docs: Sequence[SourceDocument], call: Any) -> Any:
+        return call_redacted(self.name, purpose, docs, call) if self.redacts else call(list(docs))
+
+
+class ClaudeBackend(_RedactsByDefault):
     name = "claude"
 
     def __init__(
@@ -69,8 +91,10 @@ class ClaudeBackend:
         model: str = CLAUDE_DEFAULT_MODEL,
         hard_model: str = CLAUDE_HARD_MODEL,
         timeout_s: float = 60.0,
+        redact: bool | None = None,
     ) -> None:
         self._client = client
+        self._redact = redact
         self.model = model
         self.hard_model = hard_model
         self.timeout_s = timeout_s
@@ -117,6 +141,15 @@ class ClaudeBackend:
         return parsed, str(getattr(resp, "model", None) or model)
 
     def extract_offer(self, docs: Sequence[SourceDocument]) -> OfferResult:
+        return self._through("offer", docs, self._offer)
+
+    def extract_term_sheet(self, doc: SourceDocument) -> TermSheetResult:
+        return self._through("term_sheet", [doc], lambda d: self._term_sheet(d[0]))
+
+    def extract_contract(self, chunk: SourceDocument) -> ContractResult:
+        return self._through("contract", [chunk], lambda d: self._contract(d[0]))
+
+    def _offer(self, docs: Sequence[SourceDocument]) -> OfferResult:
         hard = is_hard(docs)
         ex, served = self._call(
             self.hard_model if hard else self.model,
@@ -127,13 +160,13 @@ class ClaudeBackend:
         )
         return OfferResult(ex, served)
 
-    def extract_term_sheet(self, doc: SourceDocument) -> TermSheetResult:
+    def _term_sheet(self, doc: SourceDocument) -> TermSheetResult:
         ex, served = self._call(
             self.hard_model, TERM_SHEET_SYSTEM_PROMPT, term_sheet_user_message(doc), TermSheetExtraction, "high"
         )
         return TermSheetResult(ex, served)
 
-    def extract_contract(self, chunk: SourceDocument) -> ContractResult:
+    def _contract(self, chunk: SourceDocument) -> ContractResult:
         ex, served = self._call(
             self.hard_model, CONTRACT_SYSTEM_PROMPT, contract_user_message(chunk), ContractExtraction, "high"
         )
@@ -143,7 +176,7 @@ class ClaudeBackend:
 # ---------------------------------------------------------------- DeepSeek
 
 
-class DeepSeekBackend:
+class DeepSeekBackend(_RedactsByDefault):
     """JSON mode guarantees JSON syntax but not the schema, and may return empty content: validate with
     Pydantic and retry up to `retries` more times, then raise so the chain falls back."""
 
@@ -155,8 +188,10 @@ class DeepSeekBackend:
         model: str = DEEPSEEK_MODEL,
         retries: int = 2,
         timeout_s: float = 60.0,
+        redact: bool | None = None,
     ) -> None:
         self._client = client
+        self._redact = redact
         self.model = model
         self.retries = retries
         self.timeout_s = timeout_s
@@ -223,14 +258,13 @@ class DeepSeekBackend:
         raise BackendError(f"deepseek failed after {self.retries + 1} attempts: {last}")
 
     def extract_offer(self, docs: Sequence[SourceDocument]) -> OfferResult:
-        return OfferResult(self._call(OFFER_SYSTEM_PROMPT, offer_user_message(docs), OfferExtraction), self.model)
+        return self._through("offer", docs, lambda d: OfferResult(
+            self._call(OFFER_SYSTEM_PROMPT, offer_user_message(d), OfferExtraction), self.model))
 
     def extract_term_sheet(self, doc: SourceDocument) -> TermSheetResult:
-        return TermSheetResult(
-            self._call(TERM_SHEET_SYSTEM_PROMPT, term_sheet_user_message(doc), TermSheetExtraction), self.model
-        )
+        return self._through("term_sheet", [doc], lambda d: TermSheetResult(
+            self._call(TERM_SHEET_SYSTEM_PROMPT, term_sheet_user_message(d[0]), TermSheetExtraction), self.model))
 
     def extract_contract(self, chunk: SourceDocument) -> ContractResult:
-        return ContractResult(
-            self._call(CONTRACT_SYSTEM_PROMPT, contract_user_message(chunk), ContractExtraction), self.model
-        )
+        return self._through("contract", [chunk], lambda d: ContractResult(
+            self._call(CONTRACT_SYSTEM_PROMPT, contract_user_message(d[0]), ContractExtraction), self.model))
