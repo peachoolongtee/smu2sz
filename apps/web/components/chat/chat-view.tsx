@@ -251,7 +251,8 @@ function ChatViewInner({ variant }: { variant: "page" | "panel" }) {
             </select>
           </div>
         ) : null}
-        <Button size="sm" variant="ghost" className="ml-auto" onClick={newConversation} disabled={conv.messages.length === 0 && !conv.busy} data-testid="chat-new">
+        {/* The conversation on screen starts over, here and on the server (lib/chat.ts): on the Business shell that is the owner's, whatever role a Demo visit left. */}
+        <Button size="sm" variant="ghost" className="ml-auto" onClick={() => newConversation(role)} disabled={conv.messages.length === 0 && !conv.busy && conv.sessionId === null} data-testid="chat-new">
           {t("chat.new")}
         </Button>
       </div>
@@ -295,7 +296,7 @@ function ChatViewInner({ variant }: { variant: "page" | "panel" }) {
                           {t("auth.signin")}
                         </Button>
                       ) : null}
-                      <Button size="sm" variant="secondary" disabled={conv.busy} onClick={() => void retryLast()} data-testid="chat-retry">
+                      <Button size="sm" variant="secondary" disabled={conv.busy} onClick={() => void retryLast(role)} data-testid="chat-retry">
                         {t("common.retry")}
                       </Button>
                     </div>

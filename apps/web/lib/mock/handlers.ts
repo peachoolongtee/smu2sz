@@ -1406,6 +1406,11 @@ export async function nl(req: NlRequest): Promise<NlResponse> {
   return (await import("./nl")).mockNl(req);
 }
 
+/** POST /nl/session/reset: the mock forgets what that session was waiting for, as the server does. */
+export async function endNlSession(sessionId: string): Promise<void> {
+  (await import("./nl")).endMockSession(sessionId);
+}
+
 // ------------------------------------------------------------------ what-if (display-only)
 
 interface WhatIfMockFile {
@@ -1467,6 +1472,7 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
   documents.resetDocuments();
   customers.resetCustomers();
   buyside.resetBuyside();
+  (await import("./nl")).resetMockSessions(); // as the server: replaced books end every chat session
 }
 
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
