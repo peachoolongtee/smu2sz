@@ -61,9 +61,10 @@ def cache_dir(settings: Settings) -> Path:
 def default_backends(settings: Settings | None = None) -> list[LLMBackend]:
     s = settings or get_settings()
     if s.llm_mode == "live":
-        claude = ClaudeBackend(model=s.claude_model, hard_model=s.claude_hard_model)
-        deepseek = DeepSeekBackend(model=s.deepseek_model)
-        # Only the models see redacted text (compiler.redaction): the recording and the rules grammar read the original.
+        claude = ClaudeBackend(model=s.claude_model, hard_model=s.claude_hard_model, redact=s.llm_redact)
+        deepseek = DeepSeekBackend(model=s.deepseek_model, redact=s.llm_redact)
+        # Only the models see redacted text: each provider backend redacts its own input (compiler.redaction, PRIV-1), and
+        # the recording and the rules grammar read the original.
         first = redacting([deepseek, claude] if s.llm_primary == "deepseek" else [claude, deepseek], s.llm_redact)
         recorded: list[LLMBackend] = [] if s.llm_live_raw else [CacheBackend(cache_dir(s))]
         return [*recorded, *first, RulesBackend()]
