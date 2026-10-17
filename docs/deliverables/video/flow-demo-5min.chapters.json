@@ -1,73 +1,97 @@
 {
   "cut": "5min",
   "name": "flow-demo-5min",
-  "total_seconds": 242.471,
+  "total_seconds": 238.453,
   "chapters": [
     {
       "n": 1,
-      "id": "sign-in",
-      "title": "Sign in",
-      "at": 4.556
+      "id": "title",
+      "title": "FLOW",
+      "at": 0.421
     },
     {
       "n": 2,
-      "id": "setup",
-      "title": "Set up your books",
-      "at": 15.678
+      "id": "setup-clip",
+      "title": "Own books in six steps",
+      "at": 12.98
     },
     {
       "n": 3,
-      "id": "home-gap",
-      "title": "Home: the forecast and the gap",
-      "at": 67.284
+      "id": "golden-home",
+      "title": "Am I safe?",
+      "at": 37.957
     },
     {
       "n": 4,
-      "id": "attach-deal",
-      "title": "Attach a deal",
-      "at": 79.047
+      "id": "buyer-asks",
+      "title": "The buyer asks",
+      "at": 48.994
     },
     {
       "n": 5,
-      "id": "wrong-company",
-      "title": "Safety: the wrong company",
-      "at": 99.772
+      "id": "verdict",
+      "title": "FLOW decides",
+      "at": 58.944
     },
     {
       "n": 6,
-      "id": "contract-to-forecast",
-      "title": "From contract to forecast",
-      "at": 115.563
+      "id": "negotiate",
+      "title": "The counter is sent",
+      "at": 80.604
     },
     {
       "n": 7,
-      "id": "buyer-request",
-      "title": "Deals: a buyer asks for 60 days",
-      "at": 148.898
+      "id": "agreement",
+      "title": "The deal, followed",
+      "at": 93.817
     },
     {
       "n": 8,
-      "id": "ask-flow",
-      "title": "Ask FLOW",
-      "at": 169.719
+      "id": "bank-and-time",
+      "title": "The bank, then time",
+      "at": 104.359
     },
     {
       "n": 9,
-      "id": "fund-gap",
-      "title": "Fund the gap",
-      "at": 197.559
+      "id": "late-payment",
+      "title": "A late payment",
+      "at": 119.338
     },
     {
       "n": 10,
-      "id": "activity",
-      "title": "Activity and evidence",
-      "at": 216.913
+      "id": "cure",
+      "title": "The owner decides",
+      "at": 138.728
     },
     {
       "n": 11,
-      "id": "end",
-      "title": "FLOW",
-      "at": 233.988
+      "id": "landed",
+      "title": "The loop closes",
+      "at": 154.742
+    },
+    {
+      "n": 12,
+      "id": "contract-set-up",
+      "title": "A contract becomes invoices",
+      "at": 169.628
+    },
+    {
+      "n": 13,
+      "id": "ask-flow",
+      "title": "Ask FLOW",
+      "at": 190.879
+    },
+    {
+      "n": 14,
+      "id": "evidence",
+      "title": "The record",
+      "at": 214.514
+    },
+    {
+      "n": 15,
+      "id": "closing",
+      "title": "Results",
+      "at": 226.43
     }
   ],
   "problems": [],

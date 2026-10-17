@@ -93,6 +93,9 @@ export default defineConfig({
               video: { mode: "on" as const, size: { width: 1920, height: 1080 } },
               reducedMotion: "no-preference" as const,
               trace: "off" as const,
+              // A step that cannot happen fails in seconds (the chapter is kept with a screenshot and the next one runs), never at the test's timeout.
+              actionTimeout: 30_000,
+              navigationTimeout: 60_000,
               launchOptions: {
                 slowMo: Number(process.env.VIDEO_SLOWMO_MS ?? 180),
                 ...(process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {}),

@@ -158,7 +158,7 @@ function find(dir, test) {
 
 const stamp = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-/** What each scene shows (scene ids from apps/web/e2e/video/scenes.ts). */
+/** What each scene of scenes.ts shows, for scenes that do not say it themselves (`about`). */
 const SCENES = {
   "sign-in": "the landing page, then the owner sign-in with the demo build's pre-filled token. Empty books: Home cannot answer yet.",
   setup:
@@ -183,7 +183,7 @@ function cutSection(info) {
   const file = `${info.name}.webm`;
   const bytes = existsSync(path.join(OUT_DIR, file)) ? statSync(path.join(OUT_DIR, file)).size : 0;
   const big = bytes > 50e6;
-  const rows = info.chapters.map((c) => `| ${c.n} | ${stamp(c.at)} | ${c.title} | ${SCENES[c.id] ?? ""} |`).join("\n");
+  const rows = info.chapters.map((c) => `| ${c.n} | ${stamp(c.at)} | ${c.title} | ${c.about ?? SCENES[c.id] ?? ""} |`).join("\n");
   const frames = existsSync(FRAMES_DIR) ? readdirSync(FRAMES_DIR).filter((f) => f.startsWith(`${info.cut}-`) && f.endsWith(".png")).sort() : [];
   const problems = info.problems.length ? info.problems.map((p) => `- Chapter ${p.chapter} (${p.title}): ${p.error}`).join("\n") : "None: every chapter ran to its end.";
   return `## ${info.name} (\`--cut ${info.cut}\`)

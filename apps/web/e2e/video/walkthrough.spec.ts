@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { installOverlay, Reel, type Cut, type Scene } from "./reel";
 import * as s from "./scenes";
+import * as story from "./story";
 
 /**
  * The demo videos (project `video`, E2E_TARGET=video; never part of the mock or live suites), recorded at 1080p against
@@ -15,17 +16,36 @@ import * as s from "./scenes";
  * VIDEO_FRAMES_DIR when set. The recorder turns them into docs/deliverables/video/README.md.
  */
 
-const CUTS: Record<Cut, { name: string; pace: number; maxSeconds: number | null; scenes: Scene[] }> = {
+const CUTS: Record<Cut, { name: string; pace: number; maxSeconds: number | null; opening: boolean; scenes: Scene[] }> = {
   "5min": {
     name: "flow-demo-5min",
-    pace: 1,
+    pace: 1.3, // 3:58 at pace 1 (18 Oct): the reading pauses take the rest, under the 4:50 limit
     maxSeconds: 290, // the competition allows 5:00; 4:50 leaves room for the player's own start
-    scenes: [s.signIn, s.setupBooks, s.homeGap, s.attachDeal, s.wrongCompany, s.contractToForecast, s.buyerRequest, s.askFlow, s.fundGap, s.activity, s.endCard],
+    opening: false,
+    // docs/deliverables/FEATURE_INVENTORY.md 16a: a setup clip on blank books, the money story on the golden books, a second golden take.
+    scenes: [
+      story.titleCard,
+      story.setupClip,
+      story.goldenHome,
+      story.buyerAsks,
+      story.verdict,
+      story.negotiate,
+      story.agreement,
+      story.bankAndTime,
+      story.latePayment,
+      story.cure,
+      story.landed,
+      story.contractSetUp,
+      story.askFlow,
+      story.evidence,
+      story.closingCard,
+    ],
   },
   full: {
     name: "flow-full-tour",
     pace: 1,
     maxSeconds: null,
+    opening: true,
     scenes: [
       s.signIn,
       s.setupBooks,
@@ -51,7 +71,8 @@ for (const [cut, spec] of Object.entries(CUTS) as [Cut, (typeof CUTS)[Cut]][]) {
   test(spec.name, async ({ page }) => {
     await installOverlay(page);
     const reel = new Reel(page, cut, spec.pace, spec.scenes);
-    await s.opening(reel);
+    if (spec.opening) await s.opening(reel);
+    else await page.goto("/welcome");
     await reel.play();
     reel.write(spec.name);
     expect(reel.problems, "every chapter ran to its end").toEqual([]);

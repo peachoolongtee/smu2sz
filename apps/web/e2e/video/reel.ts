@@ -1,4 +1,4 @@
-import { test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -18,6 +18,8 @@ export interface Scene {
   title: string;
   /** The chapter's first caption. */
   caption: string;
+  /** What the chapter shows, for the README's chapter table (one plain sentence). */
+  about?: string;
   run: (reel: Reel) => Promise<void>;
 }
 
@@ -25,7 +27,7 @@ export type Cut = "5min" | "full";
 
 /** One recording: the chapters run so far, their start times and anything that went wrong. */
 export class Reel {
-  readonly marks: { n: number; id: string; title: string; at: number }[] = [];
+  readonly marks: { n: number; id: string; title: string; about?: string; at: number }[] = [];
   readonly problems: { chapter: number; title: string; error: string; screenshot: string }[] = [];
   private readonly t0 = Date.now();
   private current = 0;
@@ -52,14 +54,22 @@ export class Reel {
     const n = this.current;
     const title = this.scenes[n - 1]?.title ?? "";
     const caption = { step: `${n} / ${this.scenes.length}`, text: `<b>${n} · ${title}</b> — ${text}` };
-    await this.page.evaluate((c) => sessionStorage.setItem("vw-caption", JSON.stringify(c)), caption);
+    await this.page.evaluate((c) => {
+      sessionStorage.setItem("vw-caption", JSON.stringify(c));
+      // Drawn at once (the overlay's own timer would take up to 200 ms): a key frame taken next shows this caption.
+      const step = document.getElementById("vw-step");
+      const text = document.getElementById("vw-text");
+      if (step) step.textContent = c.step;
+      if (text) text.innerHTML = c.text;
+    }, caption);
   }
 
   /** Runs every scene in order; a failure is kept with a screenshot and the next scene runs. */
   async play(): Promise<void> {
     for (const [i, scene] of this.scenes.entries()) {
       this.current = i + 1;
-      this.marks.push({ n: i + 1, id: scene.id, title: scene.title, at: this.seconds });
+      this.marks.push({ n: i + 1, id: scene.id, title: scene.title, about: scene.about, at: this.seconds });
+      console.log(`[reel] ${this.cut} ${i + 1}/${this.scenes.length} ${scene.title} at ${this.seconds.toFixed(1)} s`);
       await this.say(scene.caption);
       try {
         await scene.run(this);
@@ -67,6 +77,7 @@ export class Reel {
         const shot = test.info().outputPath(`problem-${i + 1}-${scene.id}.png`);
         await this.page.screenshot({ path: shot }).catch(() => undefined);
         this.problems.push({ chapter: i + 1, title: scene.title, error: String(e instanceof Error ? e.message : e).split("\n").slice(0, 6).join(" "), screenshot: shot });
+        console.log(`[reel] problem in ${scene.title}: ${this.problems[this.problems.length - 1].error}`);
       }
     }
   }
@@ -74,6 +85,11 @@ export class Reel {
   /** chapters.json in the test's output folder: what the recorder turns into the README. */
   write(name: string): void {
     writeFileSync(test.info().outputPath("chapters.json"), JSON.stringify({ cut: this.cut, name, total_seconds: this.seconds, chapters: this.marks, problems: this.problems }, null, 2));
+  }
+
+  /** A file in the test's output folder (a download kept for a check). */
+  outputPath(name: string): string {
+    return test.info().outputPath(name);
   }
 
   /** A key frame for the README and the report (VIDEO_FRAMES_DIR/<cut>-<name>.png). */
@@ -257,9 +273,86 @@ export async function type(page: Page, field: Locator, text: string): Promise<vo
 
 /** A section of the app from the rail, as the owner gets there. */
 export async function go(page: Page, name: string, path: RegExp): Promise<void> {
-  const link = page.getByTestId("nav-rail").getByRole("link", { name, exact: true });
+  // The link's name can carry its badge ("Receivables, 1 overdue"): matched on its start, the visible one.
+  const link = page
+    .getByTestId("nav-rail")
+    .getByRole("link", { name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`) })
+    .filter({ visible: true })
+    .first();
   await press(page, link);
   await page.waitForURL(path);
   // Off the rail, so its flyout folds away again.
   await page.mouse.move(960, 420, { steps: 10 });
+}
+
+// ---------------------------------------------------------------- the app around the scenes
+
+const API = process.env.VIDEO_API_URL ?? "http://localhost:8090";
+/** The local demo build's published owner token (scripts/demo.mjs runs the API with DEMO_MODE=1). */
+export const DEMO_TOKEN = "demo-owner-token";
+
+/** The API, as the owner, from the test (the books a take starts on, the synthetic bank event). */
+export async function ownerPost(page: Page, route: string): Promise<unknown> {
+  const res = await page.request.post(`${API}${route}`, { headers: { "X-Owner-Token": DEMO_TOKEN }, data: {} });
+  if (!res.ok()) throw new Error(`POST ${route}: ${res.status()} ${(await res.text()).slice(0, 300)}`);
+  return res.json();
+}
+
+/**
+ * A new take inside the same recording: a title card goes up, the books are replaced (`POST /demo/reset?scenario=`), the browser's
+ * per-session reads are dropped (the sign-in and the overlay stay), Home is opened, and the card comes down. One cut stays one file.
+ */
+export async function take(reel: Reel, scenario: "golden_sme" | "blank", html: string, seconds = 4): Promise<void> {
+  const { page } = reel;
+  await card(page, html);
+  await ownerPost(page, `/demo/reset?scenario=${scenario}`);
+  await page.evaluate(() => {
+    for (const k of Object.keys(sessionStorage)) if (!k.startsWith("vw-") && k !== "tl-owner-auth" && k !== "tl-welcomed") sessionStorage.removeItem(k);
+    localStorage.removeItem("tl-setup-draft");
+  });
+  await page.goto("/");
+  await page.locator("main").first().waitFor();
+  await page.waitForTimeout(seconds * 1000);
+  await card(page, null);
+}
+
+/**
+ * The header's Business / Demo switch, as the owner presses it. The switch opens its shell's start page (Demo: the story page, Business:
+ * Home); `back` returns to the page the owner was on.
+ */
+export async function setMode(page: Page, mode: "business" | "demo", back = false): Promise<void> {
+  const radio = page.locator(`input[name="mode"][value="${mode}"]`).first();
+  const stored = () => page.evaluate(() => (JSON.parse(localStorage.getItem("tl-mode") ?? '{"mode":"business"}') as { mode: string }).mode);
+  if ((await stored()) === mode) return;
+  const from = page.url();
+  await point(page, radio);
+  await radio.click();
+  await expect.poll(stored).toBe(mode);
+  await page.waitForLoadState();
+  if (back && page.url() !== from) await page.goto(from);
+}
+
+/** The app's language, from the account menu. */
+export async function setLang(page: Page, lang: "en" | "zh"): Promise<void> {
+  const menu = page.getByTestId("account-menu");
+  if (!(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await press(page, menu.locator("> summary"));
+  const radio = menu.locator(`input[name="lang"][value="${lang}"]`);
+  await point(page, radio);
+  await radio.check();
+  await expect(page.locator("html")).toHaveAttribute("lang", lang === "zh" ? /zh/ : /en/);
+  await page.keyboard.press("Escape");
+}
+
+/** The simulated clock, moved on the Demo page's Operator tools as the owner does it; waits for the server's new day. */
+export async function advanceClock(page: Page, days: number, toDay: number): Promise<void> {
+  if (!new URL(page.url()).pathname.startsWith("/demo")) await page.goto("/demo");
+  const tools = page.getByTestId("demo-operator-tools");
+  await tools.waitFor();
+  if (!(await tools.evaluate((el) => (el as HTMLDetailsElement).open))) await press(page, tools.locator("> summary"));
+  await glide(page, page.getByTestId("demo-tools-clock"), "center", 600);
+  const field = page.getByTestId("home-days");
+  await point(page, field);
+  await field.fill(String(days));
+  await press(page, page.getByTestId("home-advance"));
+  await expect(page.getByTestId("home-day")).toContainText(`Day ${toDay}`);
 }

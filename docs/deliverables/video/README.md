@@ -11,23 +11,27 @@ with every re-recording; each cut's table is rewritten when that cut is recorded
 
 ## flow-demo-5min (`--cut 5min`)
 
-`flow-demo-5min.webm`: 4:02 long, 29.9 MB, recorded 2026-10-17.
+`flow-demo-5min.webm`: 3:58 long, 29.1 MB, recorded 2026-10-17.
 
 | # | Starts at | Chapter | What it shows |
 |---|-----------|---------|---------------|
-| 1 | 0:04 | Sign in | the landing page, then the owner sign-in with the demo build's pre-filled token. Empty books: Home cannot answer yet. |
-| 2 | 0:15 | Set up your books | the six-step setup wizard on blank books. Lingnan Homeware Manufacturing Co., Ltd.: cash ¥400,000; a ¥150,000 credit line at 6.4% (Pearl River Commercial Bank) and ¥350,000 of invoice financing; Foshan Home Retail Co. with an open ¥420,000 invoice on 45-day terms and a contract invoicing ¥420,000 every 30 days; Dongguan Office Supplies Ltd. with an open ¥180,000 invoice; payroll ¥340,000 every month and a ¥120,000 supplier payment; a ¥300,000 minimum and the default limits. The review's first forecast, then the owner signs and opens the books. |
-| 3 | 1:07 | Home: the forecast and the gap | the cash forecast, the gap before payroll and FLOW's funding plan (not approved yet). |
-| 4 | 1:19 | Attach a deal | Foshan's supply agreement (PDF) read, the deal at a glance, each term beside its clause, confirmed. |
-| 5 | 1:39 | Safety: the wrong company | the same contract filed under Dongguan is blocked (it names other companies), filed again under Foshan in one press, and the duplicate reading rejected. |
-| 6 | 1:55 | From contract to forecast | Dongguan's new supply agreement confirmed, then “Set up in my books” with the forecast before and after, confirmed by the owner (Tier 2); Home's 120-day forecast reflects it. |
-| 7 | 2:28 | Deals: a buyer asks for 60 days | Foshan asks for 60-day terms on its own keyed channel (the API's demo buyer key); FLOW's verdict and its counters side by side; Your agreements when Deals lists the confirmed contracts; in the full tour, Foshan's customer record. |
-| 8 | 2:49 | Ask FLOW | “Are we safe?”, “What if Foshan pays 30 days late?” (the full tour adds “Who owes us the most?” and “Can we clear all our debts?”), then “我们安全吗？” with the app in Chinese; the full tour ends on a new conversation. |
-| 9 | 3:17 | Fund the gap | the plan run from Cash & funding (all Tier 1 on these books; a Tier 2 step would be approved in Approvals); Home holds the reserve. |
-| 10 | 3:36 | Activity and evidence | the hash-chained activity record in the owner's words, then the evidence view (each entry with its hash and the one before). |
-| 11 | 3:53 | FLOW | “FLOW · supplier-owned working-capital agent · every figure from the books, every action logged”. |
+| 1 | 0:00 | FLOW |  |
+| 2 | 0:12 | Own books in six steps |  |
+| 3 | 0:37 | Am I safe? |  |
+| 4 | 0:48 | The buyer asks |  |
+| 5 | 0:58 | FLOW decides |  |
+| 6 | 1:20 | The counter is sent |  |
+| 7 | 1:33 | The deal, followed |  |
+| 8 | 1:44 | The bank, then time |  |
+| 9 | 1:59 | A late payment |  |
+| 10 | 2:18 | The owner decides |  |
+| 11 | 2:34 | The loop closes |  |
+| 12 | 2:49 | A contract becomes invoices |  |
+| 13 | 3:10 | Ask FLOW | “Are we safe?”, “What if Foshan pays 30 days late?” (the full tour adds “Who owes us the most?” and “Can we clear all our debts?”), then “我们安全吗？” with the app in Chinese; the full tour ends on a new conversation. |
+| 14 | 3:34 | The record |  |
+| 15 | 3:46 | Results |  |
 
-Key frames: [5min-activity.png](frames/5min-activity.png), [5min-ask-flow-zh.png](frames/5min-ask-flow-zh.png), [5min-blocked.png](frames/5min-blocked.png), [5min-contract-to-forecast.png](frames/5min-contract-to-forecast.png), [5min-deal-at-a-glance.png](frames/5min-deal-at-a-glance.png), [5min-deal-verdict.png](frames/5min-deal-verdict.png), [5min-home-gap.png](frames/5min-home-gap.png), [5min-reserve-held.png](frames/5min-reserve-held.png), [5min-setup-review.png](frames/5min-setup-review.png).
+Key frames: [5min-agreed.png](frames/5min-agreed.png), [5min-approval.png](frames/5min-approval.png), [5min-ask-zh.png](frames/5min-ask-zh.png), [5min-attention.png](frames/5min-attention.png), [5min-contract-set-up.png](frames/5min-contract-set-up.png), [5min-golden-home.png](frames/5min-golden-home.png), [5min-verdict.png](frames/5min-verdict.png), [5min-verify.png](frames/5min-verify.png).
 
 Problems seen while recording: None: every chapter ran to its end.
 
@@ -82,8 +86,9 @@ pnpm demo:video              # flow-demo-5min
 pnpm demo:video --cut full   # flow-full-tour
 ```
 
-Each run starts `node scripts/demo.mjs --blank --fresh --keep --api-port 8090 --web-port 3090` (ports 8090 and 3090 must be free;
-`--fresh` resets the kept demo books in `.demo-data/flow-demo.db`), warms every page, records the cut's test in
+Each run starts `node scripts/demo.mjs --blank --keep --data .demo-data/video.db --fresh --api-port 8090 --web-port 3090` (ports 8090
+and 3090 must be free; `--books golden` starts on the demo books instead). The recorder keeps its books in its own file, so the owner's
+kept demo books (`.demo-data/flow-demo.db`) are never touched. It warms every page, records the cut's test in
 `apps/web/e2e/video/walkthrough.spec.ts` headless (Playwright project `video`, `E2E_TARGET=video`), writes this folder, and stops only
 the processes it started. `VIDEO_SLOWMO_MS` (default 180) sets the pause after every browser action. A cut is a list of scenes and a pace
 for the viewing pauses (`CUTS` in walkthrough.spec.ts). The mock and live suites never run the video spec.
