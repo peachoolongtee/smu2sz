@@ -10,11 +10,12 @@ import { Button, Callout, Card, ErrorState, inputClass, LoadingBlock, PageHeader
 import { getContractFixtures, getDocuments, getState, submitDocument } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import type { Counterparty, DocumentKind, DocumentSummary, SubmitDocumentRequest } from "@/lib/types";
-import { useAsync } from "@/lib/use-async";
+import type { ContractFixture, Counterparty, DocumentKind, DocumentSummary, SubmitDocumentRequest } from "@/lib/types";
+import { useAsync, type AsyncState } from "@/lib/use-async";
+import { useSetupStatus } from "@/lib/setup-draft";
 
 const MAX_BYTES = 5 * 1024 * 1024;
-/** A demo document dragged from the list onto the drop zone carries its fixture id and chosen format under this type. */
+/** A sample dragged onto the drop zone carries its fixture id and chosen format under this type. */
 const FIXTURE_MIME = "application/x-flow-fixture";
 const READABLE = /\.(pdf|docx|txt|md)$/i;
 
@@ -83,10 +84,7 @@ function Documents() {
       {/* A flex column, not a stack: the review's parts are ordered (the decision is a bar at the foot of a phone, under the header on a desktop). */}
       <div className="flex flex-col gap-8">
         <Card id="docs-read" className="order-1">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-            <UploadForm parties={parties} onRead={read} />
-            <DemoDocuments existing={docs} nameOf={nameOf} onRead={read} onOpen={open} />
-          </div>
+          <UploadForm parties={parties} existing={docs} nameOf={nameOf} onRead={read} onOpen={open} />
           {error ? (
             <div className="mt-4">
               <ErrorState error={error} />
@@ -141,103 +139,6 @@ function Documents() {
         </Card>
       </div>
     </>
-  );
-}
-
-/** The synthetic demo documents (GET /fixtures/contracts): read one in any of its formats, or open the reading already made. */
-function DemoDocuments({
-  existing,
-  nameOf,
-  onRead,
-  onOpen,
-}: {
-  existing: DocumentSummary[];
-  nameOf: (id: string) => string;
-  onRead: (req: SubmitDocumentRequest) => Promise<void>;
-  onOpen: (id: string) => void;
-}) {
-  const { t, te } = useI18n();
-  const fixtures = useAsync(getContractFixtures, []);
-  const [formats, setFormats] = useState<Record<string, Format>>({});
-  const [busy, setBusy] = useState<string | null>(null);
-  return (
-    <section className="min-w-0">
-      <h3 className="text-base font-semibold text-ink">{t("docs.demo")}</h3>
-      <p className="mt-0.5 text-meta text-ink-3">{t("docs.demo.hint")}</p>
-      {fixtures.error ? (
-        <div className="mt-3">
-          <ErrorState error={fixtures.error} onRetry={fixtures.reload} />
-        </div>
-      ) : !fixtures.data ? (
-        <div className="mt-3">
-          <LoadingBlock rows={2} />
-        </div>
-      ) : (
-        <ul className="mt-3 divide-y divide-line border-y border-line">
-          {fixtures.data.map((f) => {
-            const made = existing.filter((d) => d.source === `fixture:${f.id}` && d.status !== "REJECTED");
-            const last = made.length ? made[made.length - 1] : null;
-            const format = formats[f.id] ?? "md";
-            return (
-              <li
-                key={f.id}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData(FIXTURE_MIME, JSON.stringify({ fixture_id: f.id, format }));
-                  e.dataTransfer.effectAllowed = "copy";
-                }}
-                className="flex cursor-grab flex-wrap items-center justify-between gap-2 py-2.5 active:cursor-grabbing"
-                data-testid={`fixture-${f.id}`}
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink">{f.title}</p>
-                  <p className="text-meta text-ink-3">
-                    {te("dockind", f.kind)} · {nameOf(f.counterparty_id)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {last ? (
-                    <Button size="sm" onClick={() => onOpen(last.id)} data-testid={`fixture-open-${f.id}`}>
-                      {t("docs.openIt")}
-                    </Button>
-                  ) : null}
-                  <label className="sr-only" htmlFor={`fmt-${f.id}`}>
-                    {t("docs.format")}
-                  </label>
-                  <select
-                    id={`fmt-${f.id}`}
-                    value={format}
-                    onChange={(e) => setFormats((s) => ({ ...s, [f.id]: e.target.value as Format }))}
-                    className={`${inputClass} touch:min-h-11`}
-                  >
-                    {f.formats.map((x) => (
-                      <option key={x} value={x}>
-                        {te("docformat", x)}
-                      </option>
-                    ))}
-                  </select>
-                  {/* Reading a document again is a new reading for the owner to review; the one already confirmed stays. */}
-                  <Button
-                    size="sm"
-                    variant={last ? "secondary" : "primary"}
-                    loading={busy === f.id}
-                    disabled={busy !== null}
-                    data-testid={`fixture-read-${f.id}`}
-                    onClick={async () => {
-                      setBusy(f.id);
-                      await onRead({ fixture_id: f.id, format });
-                      setBusy(null);
-                    }}
-                  >
-                    {last ? t("docs.readAgain") : t("docs.readIt")}
-                  </Button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
   );
 }
 
@@ -332,7 +233,7 @@ function KindSelect({ id, value, onChange, className }: { id: string; value: Doc
               >
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold text-ink">{te("dockind", k)}</span>
-                  <span className="mt-0.5 block text-meta text-ink-3">{te("dockind.desc", k)}</span>
+                  <span className="mt-0.5 block text-supporting text-ink-3">{te("dockind.desc", k)}</span>
                 </span>
                 {selected ? <CheckIcon aria-hidden className="mt-0.5 shrink-0 text-ink" /> : null}
               </li>
@@ -345,10 +246,22 @@ function KindSelect({ id, value, onChange, className }: { id: string; value: Doc
 }
 
 /**
- * The owner's own file, as a drop zone: say what it is and who it is with, then drop the file (it is read at once) or choose it and press
- * Upload and read. A demo document dragged from the list beside it is read the same way.
+ * The owner's own file, as one wide drop zone (Dylan's layout): drop the file (it is read at once) or press Upload and read, and say what it
+ * is and who it is with under it. On the demo books the zone ends with the samples row; a sample says its own kind and company.
  */
-function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req: SubmitDocumentRequest) => Promise<void> }) {
+function UploadForm({
+  parties,
+  existing,
+  nameOf,
+  onRead,
+  onOpen,
+}: {
+  parties: Counterparty[];
+  existing: DocumentSummary[];
+  nameOf: (id: string) => string;
+  onRead: (req: SubmitDocumentRequest) => Promise<void>;
+  onOpen: (id: string) => void;
+}) {
   const { t } = useI18n();
   const kindId = useId();
   const partyId = useId();
@@ -368,6 +281,11 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
   const found = matches[0] ?? (near.length === 1 ? near[0] : undefined);
   const chosen = found?.id ?? "";
   const listId = useId();
+  // The samples belong to the demo books (they name Foshan and the others): the row shows only when the server says the books are the
+  // demo's, nothing while that is being read (no flash), and the samples are read only when the row will show.
+  const { status: setup } = useSetupStatus();
+  const samples = setup?.books === "demo";
+  const fixtures = useAsync(() => (samples ? getContractFixtures() : Promise.resolve(null)), [samples]);
 
   // The server answers once, when the reading is done, so the bar is the work in hand: it climbs toward the end while the file is sent and read, and fills when the answer arrives.
   const [progress, setProgress] = useState(0);
@@ -376,6 +294,18 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
     const id = window.setInterval(() => setProgress((p) => p + (92 - p) * 0.08), 120);
     return () => window.clearInterval(id);
   }, [busy]);
+
+  async function send(name: string, req: SubmitDocumentRequest) {
+    setProgress(6);
+    setBusy(name);
+    setError(null);
+    try {
+      await onRead(req);
+      setProgress(100);
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function upload(f: File | null) {
     if (!f) return;
@@ -387,32 +317,24 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
       setError(t("docs.tooBig"));
       return;
     }
-    setProgress(6);
-    setBusy(f.name);
-    setError(null);
-    try {
-      await onRead({ kind, counterparty_id: chosen, filename: f.name, content_base64: await toBase64(f) });
-      setProgress(100);
-    } finally {
-      setBusy(null);
-    }
+    await send(f.name, { kind, counterparty_id: chosen, filename: f.name, content_base64: await toBase64(f) });
+  }
+
+  /** A sample is read as it is: its fixture id and the chosen copy. The server knows its kind and company, so the questions need nothing. */
+  function readSample(f: ContractFixture, format: Format) {
+    if (busy) return;
+    void send(f.title, { fixture_id: f.id, format });
   }
 
   async function onDrop(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setOver(false);
     if (busy) return;
-    const fixture = e.dataTransfer.getData(FIXTURE_MIME);
-    if (fixture) {
-      setProgress(6);
-      setBusy(t("docs.demo"));
-      setError(null);
-      try {
-        await onRead(JSON.parse(fixture) as SubmitDocumentRequest);
-        setProgress(100);
-      } finally {
-        setBusy(null);
-      }
+    const sample = e.dataTransfer.getData(FIXTURE_MIME);
+    if (sample) {
+      const { fixture_id, format } = JSON.parse(sample) as { fixture_id: string; format: Format };
+      const f = fixtures.data?.find((x) => x.id === fixture_id);
+      if (f) readSample(f, format);
       return;
     }
     const dropped = e.dataTransfer.files?.[0];
@@ -428,15 +350,77 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
   return (
     <section className="min-w-0">
       <h3 className="text-base font-bold text-ink">{t("docs.own")}</h3>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          if (!over) setOver(true);
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => void onDrop(e)}
+        className={`mt-3 flex min-h-64 flex-col items-center justify-center rounded-card border-2 border-dashed px-4 py-10 text-center transition-colors sm:min-h-80 sm:px-8 sm:py-14 ${
+          over ? "border-brand-600 bg-brand-50" : "border-line-strong bg-subtle/60"
+        }`}
+        data-testid="doc-dropzone"
+        data-over={over || undefined}
+      >
+        <span aria-hidden className={`grid size-14 place-items-center rounded-full ${over ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-600"}`}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 16V4M7 9l5-5 5 5" />
+            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+          </svg>
+        </span>
+        <p className="mt-4 text-lg font-bold text-ink">{busy ? t("docs.drop.reading", { name: busy }) : over ? t("docs.drop.active") : t("docs.drop.title")}</p>
+        <p className="mt-1 max-w-lg text-sm text-ink-3">{t("docs.drop.sub")}</p>
+        {busy !== null ? (
+          <div className="mt-5 w-full max-w-sm" data-testid="doc-progress">
+            <div role="progressbar" aria-label={t("docs.drop.reading", { name: busy })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-2 overflow-hidden rounded-full bg-line-strong">
+              <div className="h-full rounded-full bg-brand-600 transition-[width] duration-(--dur) ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
+            </div>
+            <p className="mt-1 text-supporting tabular-nums text-ink-3">{Math.round(progress)}%</p>
+          </div>
+        ) : (
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (!chosen) return setError(t("docs.counterparty.pick"));
+                setError(null);
+                input.current?.click();
+              }}
+              className="touch:min-h-11"
+              data-testid="doc-upload"
+            >
+              {t("docs.upload")}
+            </Button>
+          </div>
+        )}
+        <label htmlFor={fileId} className="mt-3 block text-supporting text-ink-3">
+          {t("docs.file")}
+        </label>
+        <input
+          ref={input}
+          id={fileId}
+          type="file"
+          accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+          onChange={(e) => {
+            const picked = e.target.files?.[0] ?? null;
+            e.target.value = "";
+            void upload(picked);
+          }}
+          className="sr-only"
+        />
+        {samples ? <Samples fixtures={fixtures} existing={existing} nameOf={nameOf} busy={busy !== null} onRead={readSample} onOpen={onOpen} /> : null}
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor={kindId} className="mb-1 block text-meta font-bold text-ink-2">
+          <label htmlFor={kindId} className="mb-1 block text-supporting font-bold text-ink-2">
             {t("docs.kind")}
           </label>
           <KindSelect id={kindId} value={kind} onChange={setKind} className={field} />
         </div>
         <div>
-          <label htmlFor={partyId} className="mb-1 block text-meta font-bold text-ink-2">
+          <label htmlFor={partyId} className="mb-1 block text-supporting font-bold text-ink-2">
             {t("docs.counterparty")}
           </label>
           <input
@@ -457,73 +441,11 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
             ))}
           </datalist>
           {needle && !found ? (
-            <p id={`${partyId}-hint`} className="mt-1 text-meta text-bad-fg">
+            <p id={`${partyId}-hint`} className="mt-1 text-supporting text-bad-fg">
               {near.length > 1 ? t("docs.counterparty.many") : t("docs.counterparty.none")}
             </p>
           ) : null}
         </div>
-      </div>
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = "copy";
-          if (!over) setOver(true);
-        }}
-        onDragLeave={() => setOver(false)}
-        onDrop={(e) => void onDrop(e)}
-        className={`mt-3 flex flex-col items-center justify-center rounded-card border-2 border-dashed px-5 py-8 text-center transition-colors ${
-          over ? "border-brand-600 bg-brand-50" : "border-line-strong bg-subtle/60"
-        }`}
-        data-testid="doc-dropzone"
-        data-over={over || undefined}
-      >
-        <span aria-hidden className={`grid size-12 place-items-center rounded-full ${over ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-600"}`}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 16V4M7 9l5-5 5 5" />
-            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
-          </svg>
-        </span>
-        <p className="mt-3 text-base font-bold text-ink">{busy ? t("docs.drop.reading", { name: busy }) : over ? t("docs.drop.active") : t("docs.drop.title")}</p>
-        <p className="mt-1 max-w-md text-meta text-ink-3">{t("docs.drop.sub")}</p>
-        {busy !== null ? (
-          <div className="mt-4 w-full max-w-sm" data-testid="doc-progress">
-            <div role="progressbar" aria-label={t("docs.drop.reading", { name: busy })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-2 overflow-hidden rounded-full bg-line-strong">
-              <div className="h-full rounded-full bg-brand-600 transition-[width] duration-(--dur) ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
-            </div>
-            <p className="mt-1 text-supporting tabular-nums text-ink-3">{Math.round(progress)}%</p>
-          </div>
-        ) : (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                if (!chosen) return setError(t("docs.counterparty.pick"));
-                setError(null);
-                input.current?.click();
-              }}
-              data-testid="doc-upload"
-            >
-              {t("docs.upload")}
-            </Button>
-          </div>
-        )}
-        <label htmlFor={fileId} className="mt-3 block text-meta text-ink-3">
-          {t("docs.file")}
-        </label>
-        <input
-          ref={input}
-          id={fileId}
-          type="file"
-          accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-          onChange={(e) => {
-            const picked = e.target.files?.[0] ?? null;
-            e.target.value = "";
-            void upload(picked);
-          }}
-          className="sr-only"
-        />
-        <p className="mt-1 text-meta text-ink-3">{t("docs.drop.demoHint")}</p>
       </div>
       {error ? (
         <div className="mt-3">
@@ -531,5 +453,99 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
         </div>
       ) : null}
     </section>
+  );
+}
+
+/**
+ * "Or try a sample:", one compact row at the foot of the drop zone (the demo books only): one button per synthetic document
+ * (GET /fixtures/contracts), named by the server's title with its kind and company. One click reads it (Markdown unless another copy is
+ * chosen); where a reading of it is already on the list, Open beside it opens that one. A sample can also be dragged onto the zone.
+ */
+function Samples({
+  fixtures,
+  existing,
+  nameOf,
+  busy,
+  onRead,
+  onOpen,
+}: {
+  fixtures: AsyncState<ContractFixture[] | null>;
+  existing: DocumentSummary[];
+  nameOf: (id: string) => string;
+  busy: boolean;
+  onRead: (f: ContractFixture, format: Format) => void;
+  onOpen: (id: string) => void;
+}) {
+  const { t, te } = useI18n();
+  const labelId = useId();
+  const formatId = useId();
+  const [format, setFormat] = useState<Format>("md");
+  const formats: Format[] = fixtures.data?.[0]?.formats ?? ["md"];
+  return (
+    <div className="mt-6 w-full max-w-4xl border-t border-dashed border-line-strong pt-4" data-testid="doc-samples">
+      {fixtures.error ? (
+        <ErrorState error={fixtures.error} onRetry={fixtures.reload} />
+      ) : !fixtures.data ? (
+        <LoadingBlock rows={1} />
+      ) : (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex items-center gap-2">
+            <span id={labelId} className="text-supporting font-bold text-ink-2">
+              {t("docs.samples")}
+            </span>
+            {formats.length > 1 ? (
+              <>
+                <label className="sr-only" htmlFor={formatId}>
+                  {t("docs.format")}
+                </label>
+                <select id={formatId} value={format} onChange={(e) => setFormat(e.target.value as Format)} className={`${inputClass} ${FOCUS} min-h-11`} data-testid="fixture-format">
+                  {formats.map((x) => (
+                    <option key={x} value={x}>
+                      {te("docformat", x)}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : null}
+          </div>
+          <ul aria-labelledby={labelId} className="flex min-w-0 max-w-full flex-wrap justify-center gap-2">
+            {fixtures.data.map((f) => {
+              const made = existing.filter((d) => d.source === `fixture:${f.id}` && d.status !== "REJECTED");
+              const last = made.length ? made[made.length - 1] : null;
+              const titleId = `${labelId}-${f.id}`;
+              return (
+                <li key={f.id} className="flex max-w-full items-stretch gap-1" data-testid={`fixture-${f.id}`}>
+                  {/* Reading a sample again is a new reading for the owner to review; the one already confirmed stays. */}
+                  <button
+                    type="button"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(FIXTURE_MIME, JSON.stringify({ fixture_id: f.id, format }));
+                      e.dataTransfer.effectAllowed = "copy";
+                    }}
+                    disabled={busy}
+                    onClick={() => onRead(f, format)}
+                    className="motion-press motion-lift flex min-h-11 min-w-0 max-w-full flex-col items-start justify-center rounded-control border border-line-ui bg-surface px-3 py-1.5 text-left hover:border-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    data-testid={`fixture-read-${f.id}`}
+                  >
+                    <span id={titleId} className="max-w-full break-words text-supporting font-bold text-ink">
+                      {f.title}
+                    </span>
+                    <span className="max-w-full break-words text-supporting text-ink-3">
+                      {te("dockind", f.kind)} · {nameOf(f.counterparty_id)}
+                    </span>
+                  </button>
+                  {last ? (
+                    <Button disabled={busy} onClick={() => onOpen(last.id)} aria-describedby={titleId} className="min-h-11 self-stretch" data-testid={`fixture-open-${f.id}`}>
+                      {t("docs.openIt")}
+                    </Button>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
