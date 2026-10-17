@@ -37,8 +37,12 @@ cd apps/web; pnpm install; cd ../..     # once
 pnpm demo                               # API on :8000 + UI on :3000 against it; open http://localhost:3000
 pnpm demo:blank                         # the same, opening on a new business with no books (the setup wizard)
 pnpm demo:mock                          # UI alone on the recorded mocks: no API, no Python
+pnpm demo:keep                          # like pnpm demo, but what you upload, confirm or book survives a restart
+pnpm demo:keep --fresh                  # the same, starting again from new demo books
 pnpm demo --web-port 3141 --api-port 8041   # other ports, if 3000 or 8000 is taken
 ```
+
+`--keep` (also with `--blank`) keeps the books in a local SQLite file, `.demo-data/flow-demo.db` (gitignored), instead of in memory: the first start seeds the demo books into it, later starts open what it holds. `--fresh` deletes the file first. Everything else about the API's environment is the same.
 
 The launcher (`scripts/demo.mjs`, Node only) starts the API with in-memory books (`DATABASE_URL=memory`), the repo-root `.env` ignored (`TERMSLEDGER_NO_DOTENV=1`), the demo credentials, cached LLM outputs and every feature flag, and tells it to allow the web port it uses. It checks both ports first, waits for the API before starting the web app, prints the address to open, and stops both on Ctrl+C. The first run installs the API's Python packages (a minute or two).
 
