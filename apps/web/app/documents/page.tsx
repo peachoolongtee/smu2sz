@@ -17,7 +17,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const READABLE = /\.(pdf|docx|txt|md)$/i;
 
 /**
- * Contract ingestion (brief 03): read a demo document or upload a signed contract or lender agreement, review the agent's
+ * Contract ingestion (brief 03): upload a signed contract or lender agreement, review the agent's
  * reading beside the text, and confirm or reject it. The selected document is in the address (?id=DOC-…), so the home cards
  * link straight to it. Everything goes through lib/api.ts; the reading, the amounts and the comparison are the server's.
  */
@@ -207,7 +207,7 @@ function KindSelect({ id, value, onChange, className }: { id: string; value: Doc
         data-testid="doc-kind"
       >
         <span className="truncate">{te("dockind", value)}</span>
-        <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-ink-3 transition-transform duration-(--dur-fast) ${open ? "rotate-180" : ""}`}>
+        <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-ink-3 transition-transform duration-150 ${open ? "rotate-180" : ""}`}>
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
@@ -227,7 +227,7 @@ function KindSelect({ id, value, onChange, className }: { id: string; value: Doc
               >
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold text-ink">{te("dockind", k)}</span>
-                  <span className="mt-0.5 block text-supporting text-ink-3">{te("dockind.desc", k)}</span>
+                  <span className="mt-0.5 block text-meta text-ink-3">{te("dockind.desc", k)}</span>
                 </span>
                 {selected ? <CheckIcon aria-hidden className="mt-0.5 shrink-0 text-ink" /> : null}
               </li>
@@ -240,8 +240,8 @@ function KindSelect({ id, value, onChange, className }: { id: string; value: Doc
 }
 
 /**
- * The owner's own file, in one compact row: say what it is and who it is with, then upload (or drop the file anywhere on the row).
- * The company is chosen from the books, so nothing that is not on them can be picked; a problem shows beside the button.
+ * The owner's own file, as a drop zone: say what it is and who it is with, then drop the file (it is read at once) or choose it and press
+ * Upload and read.
  */
 function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req: SubmitDocumentRequest) => Promise<void> }) {
   const { t } = useI18n();
@@ -250,16 +250,21 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
   const fileId = useId();
   const input = useRef<HTMLInputElement>(null);
   const [kind, setKind] = useState<DocumentKind>("BUYER_CONTRACT");
-  const [picked, setPicked] = useState("");
+  const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const role = kind === "BUYER_CONTRACT" ? "BUYER" : "LENDER";
   const options = parties.filter((c) => c.role === role && c.known);
-  // One company of that kind on the books: it is the one. Otherwise the owner picks; a choice from the other kind does not carry over.
-  const chosen = options.length === 1 ? options[0].id : options.some((c) => c.id === picked) ? picked : "";
+  // The company is typed by name: an exact name, else the one company whose name contains what was typed. Nothing that is not on the books can be chosen.
+  const needle = typed.trim().toLowerCase();
+  const matches = needle ? options.filter((c) => c.name.toLowerCase() === needle) : [];
+  const near = needle && matches.length === 0 ? options.filter((c) => c.name.toLowerCase().includes(needle)) : [];
+  const found = matches[0] ?? (near.length === 1 ? near[0] : undefined);
+  const chosen = found?.id ?? "";
+  const listId = useId();
 
-  // The server answers once, when the reading is done, so the bar climbs toward the end while the file is sent and read.
+  // The server answers once, when the reading is done, so the bar is the work in hand: it climbs toward the end while the file is sent and read, and fills when the answer arrives.
   const [progress, setProgress] = useState(0);
   useEffect(() => {
     if (busy === null) return;
@@ -269,12 +274,17 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
 
   async function upload(f: File | null) {
     if (!f) return;
-    if (!chosen) return setError(t("docs.counterparty.pick"));
-    if (!READABLE.test(f.name)) return setError(t("docs.drop.unsupported"));
-    if (f.size > MAX_BYTES) return setError(t("docs.tooBig"));
-    setError(null);
+    if (!chosen) {
+      setError(t("docs.counterparty.pick"));
+      return;
+    }
+    if (f.size > MAX_BYTES) {
+      setError(t("docs.tooBig"));
+      return;
+    }
     setProgress(6);
     setBusy(f.name);
+    setError(null);
     try {
       await onRead({ kind, counterparty_id: chosen, filename: f.name, content_base64: await toBase64(f) });
       setProgress(100);
@@ -283,82 +293,123 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
     }
   }
 
+  async function onDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setOver(false);
+    if (busy) return;
+    const dropped = e.dataTransfer.files?.[0];
+    if (!dropped) return;
+    if (!READABLE.test(dropped.name)) {
+      setError(t("docs.drop.unsupported"));
+      return;
+    }
+    await upload(dropped);
+  }
+
   const field = `${inputClass} ${FOCUS} w-full touch:min-h-11`;
   return (
-    <section
-      className={`min-w-0 rounded-card border-2 border-dashed p-4 transition-colors ${over ? "border-brand-600 bg-brand-50" : "border-line-strong bg-subtle/60"}`}
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "copy";
-        if (!over) setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e: DragEvent<HTMLElement>) => {
-        e.preventDefault();
-        setOver(false);
-        if (!busy) void upload(e.dataTransfer.files?.[0] ?? null);
-      }}
-      data-testid="doc-dropzone"
-      data-over={over || undefined}
-    >
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto] sm:items-end">
+    <section className="min-w-0">
+      <h3 className="text-base font-bold text-ink">{t("docs.own")}</h3>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor={kindId} className="mb-1 block text-supporting font-bold text-ink-2">
+          <label htmlFor={kindId} className="mb-1 block text-meta font-bold text-ink-2">
             {t("docs.kind")}
           </label>
           <KindSelect id={kindId} value={kind} onChange={setKind} className={field} />
         </div>
         <div>
-          <label htmlFor={partyId} className="mb-1 block text-supporting font-bold text-ink-2">
+          <label htmlFor={partyId} className="mb-1 block text-meta font-bold text-ink-2">
             {t("docs.counterparty")}
           </label>
-          <select id={partyId} value={chosen} onChange={(e) => setPicked(e.target.value)} className={field} data-testid="doc-counterparty">
-            {options.length !== 1 ? <option value="">{t("docs.counterparty.choose")}</option> : null}
+          <input
+            id={partyId}
+            list={listId}
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            autoComplete="off"
+            placeholder={t("docs.counterparty.placeholder")}
+            aria-invalid={needle && !found ? true : undefined}
+            aria-describedby={needle && !found ? `${partyId}-hint` : undefined}
+            className={field}
+            data-testid="doc-counterparty"
+          />
+          <datalist id={listId}>
             {options.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
+              <option key={c.id} value={c.name} />
             ))}
-          </select>
+          </datalist>
+          {needle && !found ? (
+            <p id={`${partyId}-hint`} className="mt-1 text-meta text-bad-fg">
+              {near.length > 1 ? t("docs.counterparty.many") : t("docs.counterparty.none")}
+            </p>
+          ) : null}
         </div>
-        <Button
-          variant="primary"
-          disabled={busy !== null}
-          onClick={() => {
-            if (!chosen) return setError(t("docs.counterparty.pick"));
-            setError(null);
-            input.current?.click();
-          }}
-          className="touch:min-h-11"
-          data-testid="doc-upload"
-        >
-          {busy ? t("docs.drop.reading", { name: busy }) : t("docs.upload")}
-        </Button>
       </div>
-      {busy !== null ? (
-        <div role="progressbar" aria-label={t("docs.drop.reading", { name: busy })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="mt-3 h-1.5 overflow-hidden rounded-full bg-line-strong" data-testid="doc-progress">
-          <div className="h-full rounded-full bg-brand-600 transition-[width] duration-(--dur) ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
-        </div>
-      ) : null}
-      <label htmlFor={fileId} className="mt-2 block text-supporting text-ink-3">
-        {over ? t("docs.drop.active") : t("docs.file")}
-      </label>
-      <input
-        ref={input}
-        id={fileId}
-        type="file"
-        accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-        onChange={(e) => {
-          const file = e.target.files?.[0] ?? null;
-          e.target.value = "";
-          void upload(file);
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          if (!over) setOver(true);
         }}
-        className="sr-only"
-      />
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => void onDrop(e)}
+        className={`mt-3 flex flex-col items-center justify-center rounded-card border-2 border-dashed px-5 py-8 text-center transition-colors ${
+          over ? "border-brand-600 bg-brand-50" : "border-line-strong bg-subtle/60"
+        }`}
+        data-testid="doc-dropzone"
+        data-over={over || undefined}
+      >
+        <span aria-hidden className={`grid size-12 place-items-center rounded-full ${over ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-600"}`}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 16V4M7 9l5-5 5 5" />
+            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+          </svg>
+        </span>
+        <p className="mt-3 text-base font-bold text-ink">{busy ? t("docs.drop.reading", { name: busy }) : over ? t("docs.drop.active") : t("docs.drop.title")}</p>
+        <p className="mt-1 max-w-md text-meta text-ink-3">{t("docs.drop.sub")}</p>
+        {busy !== null ? (
+          <div className="mt-4 w-full max-w-sm" data-testid="doc-progress">
+            <div role="progressbar" aria-label={t("docs.drop.reading", { name: busy })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-2 overflow-hidden rounded-full bg-line-strong">
+              <div className="h-full rounded-full bg-brand-600 transition-[width] duration-200 ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
+            </div>
+            <p className="mt-1 text-meta tabular-nums text-ink-3">{Math.round(progress)}%</p>
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                if (!chosen) return setError(t("docs.counterparty.pick"));
+                setError(null);
+                input.current?.click();
+              }}
+              data-testid="doc-upload"
+            >
+              {t("docs.upload")}
+            </Button>
+          </div>
+        )}
+        <label htmlFor={fileId} className="mt-3 block text-meta text-ink-3">
+          {t("docs.file")}
+        </label>
+        <input
+          ref={input}
+          id={fileId}
+          type="file"
+          accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+          onChange={(e) => {
+            const picked = e.target.files?.[0] ?? null;
+            e.target.value = "";
+            void upload(picked);
+          }}
+          className="sr-only"
+        />
+      </div>
       {error ? (
-        <p role="alert" className="mt-2 text-supporting font-bold text-bad-fg" data-testid="doc-upload-error">
-          {error}
-        </p>
+        <div className="mt-3">
+          <ErrorState error={error} />
+        </div>
       ) : null}
     </section>
   );
