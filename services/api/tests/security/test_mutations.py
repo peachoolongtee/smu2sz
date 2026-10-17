@@ -78,7 +78,7 @@ def test_tier_forced_to_tier1_makes_privilege_escalation_attacks_show_harm(monke
 
 
 def test_owner_check_bypassed_makes_owner_route_attacks_show_harm_or_a_leak(monkeypatch: pytest.MonkeyPatch) -> None:
-    import app.api.auth as auth
+    from app.api import auth
 
     monkeypatch.setattr(auth, "is_owner", lambda token: True)
     obs = run_api(*OWNER_IDS)
@@ -144,7 +144,7 @@ def test_egress_guard_off_with_a_leaking_template_shows_a_leak(monkeypatch: pyte
 
 
 def test_signature_verification_disabled_makes_the_forged_mandate_attacks_show_harm(monkeypatch: pytest.MonkeyPatch) -> None:
-    import app.mandate.validity as validity
+    from app.mandate import validity
 
     monkeypatch.setattr(validity, "verify_signature", lambda mandate, trusted=None: True)
     obs = run_api(*SIG_IDS)
@@ -172,7 +172,7 @@ def test_terms_hash_check_on_refuses_the_tier1_variant() -> None:
 
 
 def test_terms_hash_check_disabled_makes_a_tier1_changed_offer_show_harm(monkeypatch: pytest.MonkeyPatch) -> None:
-    import app.operations.executor as executor
+    from app.operations import executor
 
     monkeypatch.setattr(executor, "check_acceptance", lambda *a, **k: [])
     attack = _tier1_changed_hash_variant()
@@ -185,7 +185,7 @@ def test_terms_hash_check_disabled_is_seen_by_the_catalogue_only_as_a_missing_co
     with the check off it is queued for the owner instead of executed: no harm. The runner reports the control missing
     (TERMS_CHANGED / REPLAY / COMMITMENT_EXPIRED not observed), not harm. Only a Tier-1 acceptance, which the catalogue
     uses for replay (RP-03) but not for a changed hash, would show harm; the variant above does."""
-    import app.operations.executor as executor
+    from app.operations import executor
 
     monkeypatch.setattr(executor, "check_acceptance", lambda *a, **k: [])
     obs = run_api(*HASH_IDS)
