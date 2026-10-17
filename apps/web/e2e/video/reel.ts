@@ -5,10 +5,12 @@ import { join } from "node:path";
 /**
  * The recording kit of the demo videos (e2e/video): the overlay a viewer sees (caption bar with a step counter, a visible pointer, title
  * cards; added by the spec, not product code), smooth motion, and the `Reel` that runs a list of scenes as numbered chapters, times them
- * and keeps any failure with a screenshot. The scenes themselves are in scenes.ts; the cuts that order them are walkthrough.spec.ts.
+ * and keeps any failure with a screenshot. The scenes are in story.ts (the 5-minute cut) and tour.ts (the full tour); walkthrough.spec.ts orders them into cuts.
  */
 
 const FRAMES = process.env.VIDEO_FRAMES_DIR ?? "";
+/** The longest one scene may take (a full-tour chapter runs two to four minutes). */
+const SCENE_LIMIT_MS = 8 * 60_000;
 
 /** What a scene gets: the page, an API client, and its cut's pace (every viewing pause is multiplied by it). */
 export interface Scene {
@@ -72,7 +74,18 @@ export class Reel {
       console.log(`[reel] ${this.cut} ${i + 1}/${this.scenes.length} ${scene.title} at ${this.seconds.toFixed(1)} s`);
       await this.say(scene.caption);
       try {
-        await scene.run(this);
+        // A scene that hangs (a page that never loads) ends the recording here, with what ran so far kept: never a silent wait to the test's timeout.
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const limit = new Promise<"hung">((done) => (timer = setTimeout(() => done("hung"), SCENE_LIMIT_MS)));
+        const outcome = await Promise.race([scene.run(this).then(() => "done" as const), limit]);
+        clearTimeout(timer);
+        if (outcome === "hung") {
+          const shot = test.info().outputPath(`problem-${i + 1}-${scene.id}.png`);
+          await this.page.screenshot({ path: shot, timeout: 10_000 }).catch(() => undefined);
+          this.problems.push({ chapter: i + 1, title: scene.title, error: `did not finish within ${SCENE_LIMIT_MS / 60_000} minutes; the recording stops here`, screenshot: shot });
+          console.log(`[reel] ${scene.title} did not finish within ${SCENE_LIMIT_MS / 60_000} minutes: stopping`);
+          return;
+        }
       } catch (e) {
         const shot = test.info().outputPath(`problem-${i + 1}-${scene.id}.png`);
         await this.page.screenshot({ path: shot }).catch(() => undefined);
@@ -259,7 +272,8 @@ export async function point(page: Page, target: Locator): Promise<void> {
 /** Clicks with the pointer travelling there first, so the viewer sees what is pressed. */
 export async function press(page: Page, target: Locator): Promise<void> {
   await target.waitFor();
-  await point(page, target);
+  // The pointer's trip is for the viewer: a page that re-renders under it (the element replaced) must not fail the click.
+  await point(page, target).catch(() => undefined);
   await target.click();
 }
 
@@ -271,6 +285,17 @@ export async function type(page: Page, field: Locator, text: string): Promise<vo
   await field.pressSequentially(text);
 }
 
+const RAIL: Record<string, string> = {
+  Home: "/",
+  Deals: "/deals",
+  "Attach deals": "/documents",
+  "Cash & funding": "/cash",
+  Sandbox: "/whatif",
+  Capex: "/capex",
+  Receivables: "/receivables",
+  Activity: "/activity",
+};
+
 /** A section of the app from the rail, as the owner gets there. */
 export async function go(page: Page, name: string, path: RegExp): Promise<void> {
   // The link's name can carry its badge ("Receivables, 1 overdue"): matched on its start, the visible one.
@@ -279,7 +304,9 @@ export async function go(page: Page, name: string, path: RegExp): Promise<void> 
     .getByRole("link", { name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`) })
     .filter({ visible: true })
     .first();
-  await press(page, link);
+  // A page without the rail (the landing page, a dry run's first page) is left by its address.
+  if (await link.waitFor({ timeout: 3000 }).then(() => true, () => false)) await press(page, link);
+  else await page.goto(RAIL[name] ?? "/");
   await page.waitForURL(path);
   // Off the rail, so its flyout folds away again.
   await page.mouse.move(960, 420, { steps: 10 });
@@ -302,7 +329,7 @@ export async function ownerPost(page: Page, route: string): Promise<unknown> {
  * A new take inside the same recording: a title card goes up, the books are replaced (`POST /demo/reset?scenario=`), the browser's
  * per-session reads are dropped (the sign-in and the overlay stay), Home is opened, and the card comes down. One cut stays one file.
  */
-export async function take(reel: Reel, scenario: "golden_sme" | "blank", html: string, seconds = 4): Promise<void> {
+export async function take(reel: Reel, scenario: "golden_sme" | "blank" | "busy", html: string, seconds = 4): Promise<void> {
   const { page } = reel;
   await card(page, html);
   await ownerPost(page, `/demo/reset?scenario=${scenario}`);

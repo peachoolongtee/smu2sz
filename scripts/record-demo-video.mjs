@@ -15,7 +15,7 @@
 //    docs/deliverables/video/README.md from every cut recorded so far, with key frames in docs/deliverables/video/frames.
 // 5. Stops only what it started, by PID tree (taskkill /T on Windows, the process group elsewhere). Never by program name.
 import { spawn, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
@@ -43,6 +43,8 @@ if (!["blank", "golden"].includes(BOOKS)) {
 }
 /** The recorder's own kept books: never the owner's .demo-data/flow-demo.db. */
 const VIDEO_DB = ".demo-data/video.db";
+/** The demo server's own output during the recording (gitignored, beside the recorder's books). */
+const SERVER_LOG = path.join(ROOT, ".demo-data", "video-server.log");
 const CUTS = { "5min": "flow-demo-5min", full: "flow-full-tour" };
 const cutArg = option("cut", "5min");
 if (!Object.hasOwn(CUTS, cutArg ?? "")) {
@@ -96,9 +98,14 @@ function startDemo() {
     say(`starting: node ${args.join(" ")}`);
     demo = spawn(process.execPath, args, { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"], detached: !IS_WIN, windowsHide: true });
     const timer = setTimeout(() => reject(new Error("the demo did not print Ready within 6 minutes")), 6 * 60_000);
-    // The demo's own lines are shown until it is ready, then only read (so they never mix with the recording's report).
+    // The demo's own lines are shown until it is ready, then written to SERVER_LOG only (so they never mix with the recording's report,
+    // and a slow or failing step can be traced to the server's own words).
     let ready = false;
+    mkdirSync(path.dirname(SERVER_LOG), { recursive: true });
+    writeFileSync(SERVER_LOG, "");
+    const keep = (line) => appendFileSync(SERVER_LOG, `${new Date().toISOString().slice(11, 23)} ${line}\n`);
     createInterface({ input: demo.stdout }).on("line", (line) => {
+      keep(line);
       if (!ready) console.log(`  | ${line}`);
       if (!ready && /\[demo\] Ready\./.test(line)) {
         ready = true;
@@ -107,6 +114,7 @@ function startDemo() {
       }
     });
     createInterface({ input: demo.stderr }).on("line", (line) => {
+      keep(line);
       if (!ready) console.error(`  | ${line}`);
     });
     demo.once("exit", (code) => {
@@ -130,6 +138,10 @@ async function warmUp() {
   }
 }
 
+/**
+ * Runs the cut's test. Asynchronously: the demo's output pipes must keep draining while the browser works, or a long recording fills them
+ * and the servers stop answering (a blocking spawnSync here froze the full tour after about seven minutes).
+ */
 function runSpec() {
   rmSync(RESULTS, { recursive: true, force: true });
   if (existsSync(FRAMES_DIR)) for (const f of readdirSync(FRAMES_DIR)) if (f.startsWith(`${cutArg}-`)) rmSync(path.join(FRAMES_DIR, f));
@@ -141,8 +153,11 @@ function runSpec() {
     VIDEO_FRAMES_DIR: FRAMES_DIR,
   };
   say(`recording ${CUT_NAME} (headless, 1920×1080) ...`);
-  const r = spawnSync(process.execPath, [PW_CLI, "test", "--project=video", "--reporter=list", `--grep=${CUT_NAME}`, `--output=${RESULTS}`], { cwd: WEB_DIR, env, stdio: "inherit" });
-  return r.status ?? 1;
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [PW_CLI, "test", "--project=video", "--reporter=list", `--grep=${CUT_NAME}`, `--output=${RESULTS}`], { cwd: WEB_DIR, env, stdio: "inherit", windowsHide: true });
+    child.once("error", () => resolve(1));
+    child.once("exit", (code) => resolve(code ?? 1));
+  });
 }
 
 function find(dir, test) {
@@ -158,32 +173,12 @@ function find(dir, test) {
 
 const stamp = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-/** What each scene of scenes.ts shows, for scenes that do not say it themselves (`about`). */
-const SCENES = {
-  "sign-in": "the landing page, then the owner sign-in with the demo build's pre-filled token. Empty books: Home cannot answer yet.",
-  setup:
-    "the six-step setup wizard on blank books. Lingnan Homeware Manufacturing Co., Ltd.: cash ¥400,000; a ¥150,000 credit line at 6.4% (Pearl River Commercial Bank) and ¥350,000 of invoice financing; Foshan Home Retail Co. with an open ¥420,000 invoice on 45-day terms and a contract invoicing ¥420,000 every 30 days; Dongguan Office Supplies Ltd. with an open ¥180,000 invoice; payroll ¥340,000 every month and a ¥120,000 supplier payment; a ¥300,000 minimum and the default limits. The review's first forecast, then the owner signs and opens the books.",
-  "home-gap": "the cash forecast, the gap before payroll and FLOW's funding plan (not approved yet).",
-  "attach-deal": "Foshan's supply agreement (PDF) read, the deal at a glance, each term beside its clause, confirmed.",
-  "wrong-company": "the same contract filed under Dongguan is blocked (it names other companies), filed again under Foshan in one press, and the duplicate reading rejected.",
-  "new-customer": "Shunde Kitchen Supply Co. added from the upload form.",
-  "contract-to-forecast": "Dongguan's new supply agreement confirmed, then “Set up in my books” with the forecast before and after, confirmed by the owner (Tier 2); Home's 120-day forecast reflects it.",
-  "lender-agreement": "the bank's credit-line agreement (PDF) confirmed and linked to the credit line.",
-  "buyer-request": "Foshan asks for 60-day terms on its own keyed channel (the API's demo buyer key); FLOW's verdict and its counters side by side; Your agreements when Deals lists the confirmed contracts; in the full tour, Foshan's customer record.",
-  "ask-flow": "“Are we safe?”, “What if Foshan pays 30 days late?” (the full tour adds “Who owes us the most?” and “Can we clear all our debts?”), then “我们安全吗？” with the app in Chinese; the full tour ends on a new conversation.",
-  "fund-gap": "the plan run from Cash & funding (all Tier 1 on these books; a Tier 2 step would be approved in Approvals); Home holds the reserve.",
-  "cash-funding": "each funding source, how much is drawn and what is left.",
-  capex: "the capex check on a ¥600k machine: NPV, payback and which financing holds every covenant and the reserve.",
-  receivables: "who owes what, when it is due, and what is left once financing is repaid.",
-  activity: "the hash-chained activity record in the owner's words, then the evidence view (each entry with its hash and the one before).",
-  end: "“FLOW · supplier-owned working-capital agent · every figure from the books, every action logged”.",
-};
 
 function cutSection(info) {
   const file = `${info.name}.webm`;
   const bytes = existsSync(path.join(OUT_DIR, file)) ? statSync(path.join(OUT_DIR, file)).size : 0;
   const big = bytes > 50e6;
-  const rows = info.chapters.map((c) => `| ${c.n} | ${stamp(c.at)} | ${c.title} | ${c.about ?? SCENES[c.id] ?? ""} |`).join("\n");
+  const rows = info.chapters.map((c) => `| ${c.n} | ${stamp(c.at)} | ${c.title} | ${c.about ?? ""} |`).join("\n");
   const frames = existsSync(FRAMES_DIR) ? readdirSync(FRAMES_DIR).filter((f) => f.startsWith(`${info.cut}-`) && f.endsWith(".png")).sort() : [];
   const problems = info.problems.length ? info.problems.map((p) => `- Chapter ${p.chapter} (${p.title}): ${p.error}`).join("\n") : "None: every chapter ran to its end.";
   return `## ${info.name} (\`--cut ${info.cut}\`)
@@ -207,46 +202,54 @@ function writeReadme() {
     .map((f) => JSON.parse(readFileSync(f, "utf8")));
   const text = `# FLOW demo videos
 
-The app walked from empty books, recorded at 1920×1080 against the real API in live mode (cached LLM readings, no network, no key,
-synthetic companies). Two cuts of the same scenes (\`apps/web/e2e/video/scenes.ts\`, one per feature or step):
+The app on camera, recorded at 1920×1080 against the real API in live mode (cached model readings, no network, no key, synthetic
+companies), with a caption bar and a step counter. Two cuts, each one continuous file; the takes inside a cut switch books behind a title
+card (\`POST /demo/reset\`), and the story stepper is used only in its own take:
 
-- **flow-demo-5min**: the competition's video, at most 4:50: the strongest end-to-end story on the owner's own books.
-- **flow-full-tour**: every scene at the full reading pace.
+- **flow-demo-5min** (\`apps/web/e2e/video/story.ts\`): the competition's video, at most 4:50 (FEATURE_INVENTORY.md 16a): a setup clip on
+  blank books, the money story on the golden demo books, then a second take for a contract set up in the books, Ask FLOW and the evidence.
+- **flow-full-tour** (\`apps/web/e2e/video/tour.ts\`): every feature in twelve chapters (FEATURE_INVENTORY.md 16b).
 
+The videos and key frames stay on the recording machine (they are gitignored); this README and each cut's \`.chapters.json\` are committed.
 The timestamps come from the recording's own step timings (each chapter's start, measured from the start of the recording), so they move
 with every re-recording; each cut's table is rewritten when that cut is recorded.
 
 ${cuts.map(cutSection).join("\n") || "No cut recorded yet.\n"}
-## Notes from the walkthrough
+## Notes from the recordings
 
-- **Deals, "Your agreements" stays empty on these books (product bug).** A customer with a confirmed contract and open invoices but no
-  negotiation (Foshan and Dongguan here) is neither "agreed" (\`isAgreed\` needs the "Terms negotiated" stage done) nor "invoices only"
-  (\`hasInvoicesOnly\` needs no contract) in \`apps/web/components/deals/deal-summary.tsx\`, so confirming a customer's contract removes its
-  row from Deals (a fix is in progress on fix/deals-contracts-upload). The Deals scene opens Your agreements whenever the page lists a
-  confirmed contract.
-- **A question typed in Chinese while the app is in English is answered in English.** The web sends the page's language with every chat
-  message, and it overrides the API's own language detection, so the Ask FLOW scene switches the app to 中文 before asking “我们安全吗？”.
-- **Why Dongguan has an open invoice in the setup.** With it, FLOW finds counters to Foshan's 60-day request inside the limits; without it
-  (monthly payroll, no other receipts) FLOW finds no counter and recommends declining, and the deal shows no counters.
-- **The buyer's request** arrives through the API's keyed buyer channel (\`POST /offers\` with the demo key for BUYER-1, Foshan, which is the
-  first customer the setup enters) carrying the worked example EX01's message, whose reading is cached; the demo books are never loaded.
+- **Deals, "Your agreements" leaves out a confirmed contract that was never negotiated (product bug; fix in progress on
+  fix/deals-contracts-upload).** \`isAgreed\` needs the "Terms negotiated" stage done and \`hasInvoicesOnly\` needs no contract
+  (\`apps/web/components/deals/deal-summary.tsx\`), so confirming a customer's contract on own books removes the customer from Deals.
+- **A question typed in Chinese while the app is in English is answered in English** (fix pending): the web sends the page's language with
+  every chat message and it overrides the API's detection, so the Ask FLOW scenes switch the app to 中文 first (\`ZH_NEEDS_SWITCH\` in
+  story.ts and tour.ts: set it to false once the fix lands).
+- **The worklist outlives a reset (product bug).** \`Runtime.clear_session_caches\` (\`services/api/app/api/runtime.py\`) does not clear the
+  worklist cache (\`services/api/app/api/worklist.py\`), whose key (books, document ids, change counts) repeats when the same steps are taken
+  again after \`POST /demo/reset\`; Deals then lists a deal of the earlier session and opening it says "Which negotiation?". The recorder
+  starts a fresh API for every run, so recordings are not affected; a second walk on one running demo is.
+- **Fill from an agreement** (setup step 2) names the row after the file, not the lender; the full tour retypes the lender's name.
+- **Recording the buyer's acceptance in Business mode** books the agreement but not the planned funding (the Demo shell's simulated send runs
+  it), so the full tour's lifecycle chapter meets a larger day-34 gap than the 5-minute cut.
+- **The buyer's 60-day request** in the 5-minute cut is sent in the Demo shell's chat in the buyer's role (no channel key); the full tour reads
+  it from the Deals inbox.
 
 ## Re-record
 
-From the repository root, with the web app's packages installed (\`cd apps/web; pnpm install\`), \`uv\` on the PATH and Playwright's
-Chromium installed (\`pnpm exec playwright install chromium\` in apps/web):
+From the repository root, with the web app's packages installed (\`cd apps/web; pnpm install\`), \`uv\` on the PATH, Python 3 on the PATH (for
+\`scripts/verify_evidence.py\`) and Playwright's Chromium installed (\`pnpm exec playwright install chromium\` in apps/web):
 
 \`\`\`
 pnpm demo:video              # flow-demo-5min
-pnpm demo:video --cut full   # flow-full-tour
+pnpm demo:video --cut full   # flow-full-tour (about 20 minutes to record)
 \`\`\`
 
 Each run starts \`node scripts/demo.mjs --blank --keep --data .demo-data/video.db --fresh --api-port 8090 --web-port 3090\` (ports 8090
 and 3090 must be free; \`--books golden\` starts on the demo books instead). The recorder keeps its books in its own file, so the owner's
 kept demo books (\`.demo-data/flow-demo.db\`) are never touched. It warms every page, records the cut's test in
 \`apps/web/e2e/video/walkthrough.spec.ts\` headless (Playwright project \`video\`, \`E2E_TARGET=video\`), writes this folder, and stops only
-the processes it started. \`VIDEO_SLOWMO_MS\` (default 180) sets the pause after every browser action. A cut is a list of scenes and a pace
-for the viewing pauses (\`CUTS\` in walkthrough.spec.ts). The mock and live suites never run the video spec.
+the processes it started. \`VIDEO_SLOWMO_MS\` (default 180) sets the pause after every browser action; a cut's \`pace\` stretches its
+reading pauses. \`VIDEO_SCENES=id,id\` records only those scenes (a dry run of one chapter against a running demo). The mock and live suites
+never run the video spec.
 `;
   writeFileSync(path.join(OUT_DIR, "README.md"), text);
 }
@@ -261,7 +264,7 @@ async function main() {
   }
   await warmUp();
   const started = Date.now();
-  const status = runSpec();
+  const status = await runSpec();
   say(`${CUT_NAME} finished with exit code ${status} after ${((Date.now() - started) / 1000).toFixed(0)} s`);
   const videos = find(RESULTS, (n) => n.endsWith(".webm"));
   const chapters = find(RESULTS, (n) => n === "chapters.json");
