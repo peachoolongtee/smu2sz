@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { CustomerSentence } from "@/components/customer-link";
 import { ChevronRightIcon } from "@/components/icons";
-import { DealSummary } from "@/components/deals/deal-summary";
+import { DealInvoices, DealSummary } from "@/components/deals/deal-summary";
 import { Badge, Card, ErrorState, LoadingBlock, textLinkClass, type Tone } from "@/components/ui";
 import { dealRecordId, getDecisions, getLedger } from "@/lib/api";
 import { useI18n, type I18n } from "@/lib/i18n";
@@ -174,14 +174,17 @@ function CommitmentItem({ c, buyer, buyerId, today, recordState, inForce, summar
 
 /**
  * The ledger's commitments, newest first with the ones in force (proposed, accepted or active) ahead of the ones that ended. `agreed` is
- * GET /deals for the buyers whose deal both parties agreed: each one's summary opens inside that buyer's newest agreement in force. A failed
- * read of the summaries says so in the standard error state (`dealsError`); a server with contract reading off sends none.
+ * GET /deals for the buyers whose deal both parties agreed: each one's summary opens inside that buyer's newest agreement in force. `invoiced` is
+ * GET /deals for the buyers with invoices on the books and no contract yet: each is a row of its own, the server's sentence about them as its
+ * line and the deal summary's own invoice table inside. A failed read of the summaries says so in the standard error state (`dealsError`); a
+ * server with contract reading off sends none.
  */
 export function ActiveCommitments({
   today,
   buyerName,
   hideEmpty = false,
   agreed = [],
+  invoiced = [],
   dealsDay = null,
   dealsError,
   onRetryDeals,
@@ -193,6 +196,8 @@ export function ActiveCommitments({
   buyerName: (id: string) => string;
   hideEmpty?: boolean;
   agreed?: DealView[];
+  /** The buyers with invoices on the books and no contract yet (`hasInvoicesOnly`). */
+  invoiced?: DealView[];
   dealsDay?: number | null;
   dealsError?: Error;
   onRetryDeals?: () => void;
@@ -216,7 +221,7 @@ export function ActiveCommitments({
   const all = ledger.data ? [...ledger.data.commitments].reverse() : [];
   const live = [...all.filter((c) => LIVE.includes(c.status)), ...all.filter((c) => !LIVE.includes(c.status))];
   // An empty section is noise on the deal page: with `hideEmpty` the card appears only once a deal is on the books (or the summaries could not be read).
-  if (hideEmpty && ledger.data && !ledger.error && !live.length && !agreed.length && !dealsError) return null;
+  if (hideEmpty && ledger.data && !ledger.error && !live.length && !agreed.length && !invoiced.length && !dealsError) return null;
   // A buyer's summary opens inside its first agreement in the list; a summary with no agreement on the ledger gets an entry of its own.
   const placed = new Set<string>();
   const summaryFor = (buyerId: string) => {
@@ -260,14 +265,26 @@ export function ActiveCommitments({
         <ErrorState error={ledger.error} onRetry={ledger.reload} />
       ) : !ledger.data || groupsPending ? (
         <LoadingBlock rows={2} />
-      ) : items.length || loose.length || AFTER_GROUPS.some((g) => grouped[g].items.length) ? (
+      ) : items.length || loose.length || invoiced.length || AFTER_GROUPS.some((g) => grouped[g].items.length) ? (
         <>
-          {items.length || loose.length ? (
+          {items.length || loose.length || invoiced.length ? (
             <ul data-testid="commitments-live">
               {items}
               {loose.map((d) => (
                 <AgreementRow key={d.counterparty_id} {...openProps(`loose:${d.counterparty_id}`)} head={t("deal.with", { buyer: d.counterparty_name })} who={<CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.with", { buyer: b })} />}>
                   <DealSummary deal={d} today={dealsDay ?? today} />
+                </AgreementRow>
+              ))}
+              {invoiced.map((d) => (
+                <AgreementRow
+                  key={d.counterparty_id}
+                  {...openProps(`invoices:${d.counterparty_id}`)}
+                  testId={`invoices-${d.counterparty_id}`}
+                  head={t("deal.invoicesLabel", { name: d.counterparty_name })}
+                  who={<CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.invoicesLabel", { name: b })} />}
+                  line={<span data-testid="invoices-line">{d.open_invoices?.text}</span>}
+                >
+                  <DealInvoices deal={d} today={dealsDay ?? today} />
                 </AgreementRow>
               ))}
             </ul>

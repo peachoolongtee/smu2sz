@@ -142,3 +142,42 @@ def test_the_refused_section_has_a_stable_anchor_and_the_set_aside_count_is_the_
     assert after["security_events"] == events and after["count"] == 1 + events
     assert audit["refusal_summary"] == after  # the audit and the ledger count the same refusals
     assert _ledger(client, "zh")["refusals"]["set_aside_text"] == f"已搁置 {1 + events} 条消息。"
+
+
+def _set_aside_by_unknown_sender(client) -> None:
+    """A message from a sender the books do not know (FastCapital): checking it sets it aside and records its security events."""
+    oid = client.post("/offers", json={"fixture_id": "SEC_DEMO_FASTCAPITAL"}, headers=OWNER).json()["offer"]["offer_id"]
+    client.post(f"/offers/{oid}/evaluate", json={"fixture_id": "SEC_DEMO_FASTCAPITAL"}, headers=OWNER)
+
+
+def test_a_refused_sign_in_is_not_a_message_set_aside(client, rt):
+    """17 Oct: fresh demo books said "12 messages were set aside" because the web app's first reads before the owner signs in answer
+    401 and each is a `SEC-AUTH-` event. A refused credential sets no message aside: the count stays 0 and the example shows, while the
+    Security view and the audit's event list still show the failed sign-ins."""
+    assert client.post("/demo/reset", headers=OWNER).status_code == 200
+    for path in ("/ledger", "/audit", "/home"):
+        assert client.get(path).status_code == 401  # no credential
+        assert client.get(path, headers={"X-Owner-Token": "wrong"}).status_code == 401
+    benign = [e for e in rt.store.security_events() if e.id.startswith("SEC-AUTH-")]
+    assert len(benign) == 6
+    for lang in ("en", "zh"):
+        audit = client.get("/audit", params={"lang": lang}, headers=OWNER).json()
+        for block in (_ledger(client, lang)["refusals"], audit["refusal_summary"]):
+            assert (block["count"], block["refused_operations"], block["security_events"]) == (0, 0, 0)
+            assert block["set_aside_text"] is None and block["example"]["is_fixture_example"] is True
+        # the failed sign-ins are still listed where they are today
+        assert {e["id"] for e in audit["events"]} >= {e.id for e in benign}
+    assert client.get("/activity", headers=OWNER).json()["summary"]["benign_auth_count"] == 6
+
+
+def test_a_message_set_aside_still_counts_beside_a_refused_sign_in(client, rt):
+    assert client.get("/ledger").status_code == 401  # a failed sign-in first: it does not count
+    _set_aside_by_unknown_sender(client)
+    real = [e for e in rt.store.security_events() if not e.id.startswith("SEC-AUTH-")]
+    assert real and len(rt.store.security_events()) == len(real) + 1
+    ledger = _ledger(client)["refusals"]
+    assert (ledger["count"], ledger["refused_operations"], ledger["security_events"]) == (len(real), 0, len(real))
+    assert ledger["set_aside_text"] == ("One message was set aside." if len(real) == 1 else f"{len(real)} messages were set aside.")
+    assert ledger["example"] is None
+    assert client.get("/audit", headers=OWNER).json()["refusal_summary"] == ledger
+    assert _ledger(client, "zh")["refusals"]["set_aside_text"] == f"已搁置 {len(real)} 条消息。"

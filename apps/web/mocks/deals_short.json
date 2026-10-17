@@ -1,0 +1,202 @@
+{
+  "en": {
+    "day": 0,
+    "lang": "en",
+    "deals": [
+      {
+        "counterparty_id": "BUYER-1",
+        "counterparty_name": "Foshan Home Retail Co.",
+        "day": 0,
+        "has_contract": false,
+        "pending_documents": [],
+        "invoices": [
+          {
+            "id": "RCV-A",
+            "label": "the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days",
+            "issue_day": -13,
+            "due_day": 32,
+            "issue_when": "13 days ago",
+            "due_when": "in 32 days",
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "outstanding_fen": 42000000,
+            "outstanding_display": "¥420,000.00",
+            "status": "NOT_DUE",
+            "status_text": "Not due",
+            "tone": "mute",
+            "notes": []
+          }
+        ],
+        "open_invoices": {
+          "count": 1,
+          "due_fen": 42000000,
+          "due_display": "¥420,000.00",
+          "late_count": 0,
+          "late_fen": 0,
+          "late_display": "¥0.00",
+          "next_due_day": 32,
+          "next_due_when": "in 32 days",
+          "text": "No contract on file yet. Open invoices: 1, ¥420,000.00 due in 32 days.",
+          "tone": "mute"
+        },
+        "open_offer": null,
+        "needs_you": false,
+        "needs_you_text": null
+      },
+      {
+        "counterparty_id": "BUYER-2",
+        "counterparty_name": "Dongguan Office Supplies Ltd.",
+        "day": 0,
+        "has_contract": false,
+        "pending_documents": [],
+        "open_offer": null,
+        "needs_you": false,
+        "needs_you_text": null
+      }
+    ],
+    "queue": {
+      "counts": {
+        "needs_you": 0,
+        "waiting": 0,
+        "agreements": 0,
+        "customers": 2
+      },
+      "headline_text": "A funding plan is ready.",
+      "deals": {
+        "needs_you": 0,
+        "waiting": 0,
+        "agreements": 0,
+        "closed": 0,
+        "awaiting_payment": 0,
+        "payment_late": 0
+      },
+      "alert": {
+        "key": "company-cash",
+        "eyebrow": "Company cash",
+        "kind_text": "FLOW action ready",
+        "text": "Reserve unsafe in 12 days. A funding plan is ready.",
+        "pending_text": "¥120k funding plan available · no approval needed · waits for your go",
+        "tone": "bad",
+        "primary": {
+          "label": "Run or compare",
+          "href": "/"
+        }
+      },
+      "needs_you": [],
+      "waiting": [],
+      "agreements": [],
+      "needs_you_empty_text": "Nothing else needs you.",
+      "waiting_empty_text": "Nothing is waiting on anyone else.",
+      "agreements_empty_text": "No agreement is in force."
+    },
+    "context": {
+      "customer": null,
+      "decision": null,
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": null,
+      "irrelevant_text": null
+    }
+  },
+  "zh": {
+    "day": 0,
+    "lang": "zh",
+    "deals": [
+      {
+        "counterparty_id": "BUYER-1",
+        "counterparty_name": "Foshan Home Retail Co.",
+        "day": 0,
+        "has_contract": false,
+        "pending_documents": [],
+        "invoices": [
+          {
+            "id": "RCV-A",
+            "label": "Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）",
+            "issue_day": -13,
+            "due_day": 32,
+            "issue_when": "13 天前",
+            "due_when": "32 天后",
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "outstanding_fen": 42000000,
+            "outstanding_display": "¥420,000.00",
+            "status": "NOT_DUE",
+            "status_text": "未到期",
+            "tone": "mute",
+            "notes": []
+          }
+        ],
+        "open_invoices": {
+          "count": 1,
+          "due_fen": 42000000,
+          "due_display": "¥420,000.00",
+          "late_count": 0,
+          "late_fen": 0,
+          "late_display": "¥0.00",
+          "next_due_day": 32,
+          "next_due_when": "32 天后",
+          "text": "尚无合同。未结发票 1 张，应收 ¥420,000.00，32 天后到期。",
+          "tone": "mute"
+        },
+        "open_offer": null,
+        "needs_you": false,
+        "needs_you_text": null
+      },
+      {
+        "counterparty_id": "BUYER-2",
+        "counterparty_name": "Dongguan Office Supplies Ltd.",
+        "day": 0,
+        "has_contract": false,
+        "pending_documents": [],
+        "open_offer": null,
+        "needs_you": false,
+        "needs_you_text": null
+      }
+    ],
+    "queue": {
+      "counts": {
+        "needs_you": 0,
+        "waiting": 0,
+        "agreements": 0,
+        "customers": 2
+      },
+      "headline_text": "一项融资方案已准备好。",
+      "deals": {
+        "needs_you": 0,
+        "waiting": 0,
+        "agreements": 0,
+        "closed": 0,
+        "awaiting_payment": 0,
+        "payment_late": 0
+      },
+      "alert": {
+        "key": "company-cash",
+        "eyebrow": "公司现金",
+        "kind_text": "FLOW 已备好行动",
+        "text": "现金储备将在 12 天后变得不安全。融资方案已准备好。",
+        "pending_text": "¥120k 融资方案可用 · 无需批准 · 等待您确认",
+        "tone": "bad",
+        "primary": {
+          "label": "执行或比较",
+          "href": "/"
+        }
+      },
+      "needs_you": [],
+      "waiting": [],
+      "agreements": [],
+      "needs_you_empty_text": "没有其他事项需要您处理。",
+      "waiting_empty_text": "目前没有在等待他人的事项。",
+      "agreements_empty_text": "目前没有生效的协议。"
+    },
+    "context": {
+      "customer": null,
+      "decision": null,
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": null,
+      "irrelevant_text": null
+    }
+  }
+}

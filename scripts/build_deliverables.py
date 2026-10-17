@@ -41,7 +41,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import docx
-from docx.enum.text import WD_BREAK
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
+from docx.image.image import Image as DocxImage
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.opc.constants import RELATIONSHIP_TYPE
@@ -56,10 +57,12 @@ E2E = ROOT / "services" / "api" / "evals" / "e2e" / "latest"
 E2E_REL = "services/api/evals/e2e/latest"
 
 HEADER = {
-    "Team name": "[TEAM: team name]",
-    "Competition track": "International AI Track, Topic E: SME Finance Copilot [TEAM: confirm wording]",
-    "Submission date": "[TEAM: submission date]",
+    "Team name": "ISMOGGER",
+    "Competition track": "International AI Track, Topic E: SME Finance Copilot",
+    "Submission date": "20 October 2026",
 }
+BODY_PT = Pt(10)
+MAX_FIG_HEIGHT_IN = 4.8
 
 JOBS = [
     ("technical_document.md", "international-technical-document-en.docx", "Technical_Document.docx"),
@@ -400,11 +403,22 @@ INLINE_RE = re.compile(r"(`[^`]+`|\*\*.+?\*\*|(?<![\w*])\*(?!\s)[^*]+?\*(?![\w*]
 
 
 class Renderer:
-    def __init__(self, doc: docx.document.Document, md_dir: Path, repo_url: str | None) -> None:
+    def __init__(self, doc: docx.document.Document, md_dir: Path, repo_url: str | None, compact: bool = False) -> None:
         self.doc = doc
         self.md_dir = md_dir
         self.repo_url = repo_url.rstrip("/") if repo_url else None
         self.last_figure_embedded = False
+        # compact: 10 pt body, tight spacing and height-capped figures (the technical document)
+        self.compact = compact
+
+    def tighten(self, p: Paragraph) -> None:
+        if not self.compact:
+            return
+        f = p.paragraph_format
+        f.space_before, f.space_after, f.line_spacing = Pt(0), Pt(3), 1.08
+        for r in p.runs:
+            if r.font.size is None:
+                r.font.size = BODY_PT
 
     # -- inline
     def inline(self, par: Paragraph, text: str, bold: bool = False, italic: bool = False, size: Pt | None = None) -> None:
@@ -525,6 +539,8 @@ class Renderer:
                 self.table(anchor, b.rows)
             elif b.kind == "figure":
                 self.figure(anchor, b.rows[0][0], b.text)
+            if b.kind in ("para", "para_in_list", "bullet", "number"):
+                self.tighten(p)
         return count
 
     def code(self, anchor: Paragraph, text: str) -> None:
@@ -558,6 +574,11 @@ class Renderer:
                 cell = t.cell(ri, ci)
                 p = cell.paragraphs[0]
                 self.inline(p, row[ci] if ci < len(row) else "", bold=(ri == 0), size=size)
+                if self.compact:
+                    f = p.paragraph_format
+                    f.space_before, f.space_after, f.line_spacing = Pt(1), Pt(1), 1.0
+                    if ncols == 2:
+                        cell.width = Inches(1.9 if ci == 0 else 4.6)
                 if ri == 0:
                     tcpr = cell._tc.get_or_add_tcPr()
                     shd = OxmlElement("w:shd")
@@ -627,7 +648,13 @@ class Renderer:
         if not path.exists():
             return
         p = self.para_before(anchor)
-        p.add_run().add_picture(str(path), width=Inches(6.4))
+        width = Inches(6.4)
+        if self.compact:
+            img = DocxImage.from_file(str(path))
+            # cap the height so a tall screenshot does not take a whole page
+            width = Inches(min(6.2, MAX_FIG_HEIGHT_IN * img.px_width / img.px_height))
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.add_run().add_picture(str(path), width=width)
         c = self.para_before(anchor, "Caption")
         c.add_run(caption)
 
@@ -662,7 +689,7 @@ def fill(md_path: Path, template: Path, out_path: Path, repo_url: str | None) ->
     fill_header(doc)
     md = md_path.read_text(encoding="utf-8")
     pre, sections = split_markdown(md)
-    r = Renderer(doc, md_path.parent, repo_url)
+    r = Renderer(doc, md_path.parent, repo_url, compact=md_path.name == "technical_document.md")
     paras = body_paragraphs(doc)
     headings = [p for p in paras if p.style.name == "Heading 1"]
     if pre and any(x.strip() for x in pre) and headings:

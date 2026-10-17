@@ -254,46 +254,7 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
 
           <section className="min-w-0">
             <DealHeading>{t("deals.summary.money")}</DealHeading>
-            {deal.invoices?.length ? (
-              <div role="region" aria-label={t("deal.invoicesLabel", { name: deal.counterparty_name })} tabIndex={0} className="overflow-x-auto">
-                <table className="w-full border-collapse text-sm [&_tbody_tr:last-child_td]:border-b-0">
-                  <thead>
-                    <tr>
-                      <th className={TH}>{t("deal.col.invoice")}</th>
-                      <th className={`${TH} text-right`}>{t("deal.col.amount")}</th>
-                      <th className={TH}>{t("deal.col.due")}</th>
-                      <th className={`${TH} text-right`}>{t("deal.col.outstanding")}</th>
-                      <th className={TH}>{t("deal.col.status")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {deal.invoices.map((inv) => (
-                      <tr key={inv.id} data-testid={`deal-invoice-${inv.id}`} data-status={inv.status}>
-                        <td className={TD}>
-                          {inv.label}
-                          <span className="block text-supporting text-ink-3">{t("deal.issued", { when: when(inv.issue_when, inv.issue_day) })}</span>
-                        </td>
-                        <td className={`${TD} text-right`}>{inv.amount_display}</td>
-                        <td className={`${TD} whitespace-nowrap`}>{when(inv.due_when, inv.due_day)}</td>
-                        <td className={`${TD} text-right`}>{inv.outstanding_display}</td>
-                        <td className={TD}>
-                          <StateWord tone={toneOf(inv.tone)} wrap={false}>
-                            {inv.status_text}
-                          </StateWord>
-                          {inv.notes.map((n) => (
-                            <span key={n} className="block text-supporting text-ink-3">
-                              {n}
-                            </span>
-                          ))}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-ink-3">{t("deal.noInvoices")}</p>
-            )}
+            <DealInvoices deal={deal} today={today} />
           </section>
 
           <section className="min-w-0" data-testid="deal-owed">
@@ -339,6 +300,60 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
       </Disclosure>
     </div>
   );
+}
+
+/**
+ * A buyer's invoices as the deal summary lists them (the server's `invoices` rows: its label, amount, due, outstanding and status words). The contract's summary
+ * shows it under "Money"; a buyer with no contract yet shows the same table in its own row on Deals.
+ */
+export function DealInvoices({ deal, today }: { deal: DealView; today: number }) {
+  const { t } = useI18n();
+  const when = (server: string | null | undefined, day: number | null | undefined) => server || (day === null || day === undefined ? "" : whenText(day, today, t));
+  return deal.invoices?.length ? (
+    <div role="region" aria-label={t("deal.invoicesLabel", { name: deal.counterparty_name })} tabIndex={0} className="overflow-x-auto">
+      <table className="w-full border-collapse text-sm [&_tbody_tr:last-child_td]:border-b-0">
+        <thead>
+          <tr>
+            <th className={TH}>{t("deal.col.invoice")}</th>
+            <th className={`${TH} text-right`}>{t("deal.col.amount")}</th>
+            <th className={TH}>{t("deal.col.due")}</th>
+            <th className={`${TH} text-right`}>{t("deal.col.outstanding")}</th>
+            <th className={TH}>{t("deal.col.status")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {deal.invoices.map((inv) => (
+            <tr key={inv.id} data-testid={`deal-invoice-${inv.id}`} data-status={inv.status}>
+              <td className={TD}>
+                {inv.label}
+                <span className="block text-supporting text-ink-3">{t("deal.issued", { when: when(inv.issue_when, inv.issue_day) })}</span>
+              </td>
+              <td className={`${TD} text-right`}>{inv.amount_display}</td>
+              <td className={`${TD} whitespace-nowrap`}>{when(inv.due_when, inv.due_day)}</td>
+              <td className={`${TD} text-right`}>{inv.outstanding_display}</td>
+              <td className={TD}>
+                <StateWord tone={toneOf(inv.tone)} wrap={false}>
+                  {inv.status_text}
+                </StateWord>
+                {inv.notes.map((n) => (
+                  <span key={n} className="block text-supporting text-ink-3">
+                    {n}
+                  </span>
+                ))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <p className="text-ink-3">{t("deal.noInvoices")}</p>
+  );
+}
+
+/** A buyer with no confirmed contract whose invoices are on the books (the server sends `open_invoices` with them). */
+export function hasInvoicesOnly(d: DealView): boolean {
+  return !d.has_contract && Boolean(d.open_invoices && d.invoices?.length);
 }
 
 /** What the supplier owes, listed from the contract with its clause as a link into it; shown, never tracked (brief 03, Q1). */
