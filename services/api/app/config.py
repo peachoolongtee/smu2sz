@@ -100,6 +100,9 @@ class Settings:
     features: Features = field(default_factory=Features)
     # Offers and buyer turns that arrive without a channel key, per simulated day (R04, R05).
     intake_cap_per_day: int = field(default_factory=lambda: _int("INTAKE_CAP_PER_DAY", 200))
+    # SEC-19: offers and buyer turns with no channel key at all. On for the local demo; a demo reachable over a network turns it off
+    # (ANONYMOUS_INTAKE=0), so an unsigned message cannot appear on a registered buyer's deal.
+    anonymous_intake: bool = field(default_factory=lambda: _flag("ANONYMOUS_INTAKE", default=True))
     # Offers and messages one keyed buyer (X-Counterparty-Key) may send per simulated day (R-10: threshold probing).
     buyer_attempts_per_day: int = field(default_factory=lambda: _int("BUYER_ATTEMPTS_PER_DAY", 5))
 

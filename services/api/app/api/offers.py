@@ -66,6 +66,10 @@ def enforce_intake_cap(rt: Runtime, route: str, claimed: str | None) -> None:
 
     from app.domain.models import SecurityEvent, SecurityEventKind
 
+    if not rt.settings.anonymous_intake:
+        # SEC-19: with ANONYMOUS_INTAKE=0 a sender must present a channel key; nothing is compiled or stored
+        raise HTTPException(403, {"code": "ANONYMOUS_INTAKE_OFF",
+                                  "message": "this deployment accepts offers and messages from registered buyers only"})
     with rt.lock:
         if rt.take_intake_slot():
             return
