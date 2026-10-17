@@ -97,7 +97,7 @@ test.describe("against the live API", () => {
     await confirmDialog(page, "Yes, set them up");
     const result = step.getByTestId("terms-result");
     await expect(result).toHaveAttribute("data-status", "EXECUTED");
-    await expect(result).toContainText("Set up: your books now expect an invoice of ¥180,000.00 every 30 days");
+    await expect(result).toContainText("Set up: your books now expect Dongguan Office Supplies Ltd. to pay an invoice of ¥180,000.00 every 30 days");
     await expect(step).toHaveAttribute("data-status", "SET_UP");
     await expect(step.getByTestId("terms-set-up-text")).toContainText("¥180,000.00 every 30 days, paid in 45 days.");
 

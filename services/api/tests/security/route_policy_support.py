@@ -80,6 +80,9 @@ OWNER: set[Key] = {
     ("GET", "/documents/{document_id}"),
     ("POST", "/documents/{document_id}/confirm"),
     ("POST", "/documents/{document_id}/reject"),
+    ("GET", "/documents/{document_id}/terms"),  # ADR-0014
+    ("POST", "/documents/{document_id}/terms"),
+    ("POST", "/documents/{document_id}/terms/undo"),
     ("GET", "/evidence"),
     ("POST", "/facilities/compile"),
     ("GET", "/finance/health"),
@@ -198,7 +201,7 @@ class Mode:
 
 ALL_FEATURES = ["TERMS_GUARD", "DEBT_DESK", "CAPEX", "BORROWER_FILE", "BUYER_NEGOTIATION", "SECURITY_SCENES", "ALERTS", "EXPECTED_PLANS",
                 "ENVELOPE", "PRICE_CURVE", "COLLECTIONS_WORTH", "EXPOSURE", "CUSTOMER_ECONOMICS", "CONTRACTS", "PILOT_JOURNAL",
-                "CAPEX_CONTRACTS"]
+                "CAPEX_CONTRACTS", "CONTRACT_TERMS"]
 CREDENTIAL_ENV = ["OWNER_TOKEN", "AGENT_KEY", "BANK_FEED_KEY", "COUNTERPARTY_KEYS", "OWNER_PUBLIC_KEY_HEX"]
 
 DEMO_OWNER = {"X-Owner-Token": "demo-owner-token"}
@@ -483,6 +486,10 @@ PLAN[("POST", "/demo/bank-receipt")] = _post("/demo/bank-receipt")
 PLAN[("POST", "/demo/reset")] = _post("/demo/reset", scenario="blank")
 PLAN[("POST", "/demo/restore")] = _post("/demo/restore")
 PLAN[("POST", "/documents")] = _post("/documents", {"fixture_id": "FHR_SUPPLY_AGREEMENT"})
+# ADR-0014: the demo's supply agreement is already in the books, so the owner's set-up is answered by the handler (409 TERMS_NOT_READY) and
+# an undo of a set-up that never ran by the handler's 404; every other caller is refused before either.
+PLAN[("POST", "/documents/{document_id}/terms")] = _post("/documents/DOC-000001/terms", {"doc_hash": "0" * 64, "terms_hash": "0" * 64})
+PLAN[("POST", "/documents/{document_id}/terms/undo")] = _post("/documents/DOC-000001/terms/undo", {"set_up_op_id": "route-policy-none"})
 PLAN[("POST", "/documents/{document_id}/confirm")] = _post_ids(
     "/documents/{document_id}/confirm", lambda w: {"doc_hash": w.ids["hash_confirm"]}, document_id="doc_confirm")
 PLAN[("POST", "/documents/{document_id}/reject")] = _post_ids(

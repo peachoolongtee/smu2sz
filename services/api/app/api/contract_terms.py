@@ -371,9 +371,9 @@ def post_terms(document_id: str, body: SetUpIn, lang: Lang = "en") -> dict:
             every_days=ri.every_days, next_issue_day=ri.next_issue_day, terms_days=ri.terms_days)
         result = _approve(rt, rt.executor.execute(op))
         name = _name(state, rec.counterparty_id)
-        text = _result_text(result, _t(lang, f"Set up: your books now expect {_schedule_text(ri, state, state.as_of_day, lang)} "
-                                             f"from {name}.",
-                                       f"已设置：您的账簿现已计入来自{name}的{_schedule_text(ri, state, state.as_of_day, lang)}。"),
+        text = _result_text(result, _t(lang, f"Set up: your books now expect {name} to pay "
+                                             f"{_schedule_text(ri, state, state.as_of_day, lang)}.",
+                                       f"已设置：您的账簿现已预计{name}按以下安排付款：{_schedule_text(ri, state, state.as_of_day, lang)}。"),
                             lang)
         return {"result": _result(result), "result_text": text, "terms": terms_view(rt, rec, lang)}
 

@@ -70,7 +70,7 @@ def test_the_owner_sees_the_terms_and_the_forecast_before_and_after_then_sets_th
 
     r = client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]}).json()
     assert r["result"]["status"] == "EXECUTED" and r["result"]["kind"] == "SET_UP_CONTRACT_TERMS"
-    assert r["result_text"].startswith("Set up: your books now expect an invoice of ¥180,000.00 every 30 days")
+    assert r["result_text"].startswith("Set up: your books now expect Dongguan Office Supplies Ltd. to pay an invoice of ¥180,000.00 every 30 days")
     assert r["terms"]["status"] == "SET_UP" and r["terms"]["set_up"]["can_undo"]
     assert [(x.face_fen, x.every_days, x.next_issue_day, x.terms_days) for x in _buyer2(rt)] == [(18_000_000, 30, 14, 45)]
     ops = client.get("/ledger").json()["operations"]
