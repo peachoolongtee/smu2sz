@@ -13,6 +13,7 @@ using only the data FLOW already holds.
 - The primary run is `POST /nl?mode=business`, the wording the Business pages send. A second run with `--mode demo` gives
   the same totals within 2 turns.
 - No product code was changed.
+- Measured on dev `975e082f`, then re-run after merging dev `29fa0ea2`. All 503 replies and scores were identical.
 
 ```
 cd services/api
