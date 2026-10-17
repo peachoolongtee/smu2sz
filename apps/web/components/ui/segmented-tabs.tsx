@@ -44,6 +44,7 @@ export function SegmentedTabs<T extends string | number>({
   stretch = false,
   scroll = false,
   compact = false,
+  equal = false,
   className = "",
   testId,
 }: {
@@ -58,6 +59,8 @@ export function SegmentedTabs<T extends string | number>({
   scroll?: boolean;
   /** The small size for a control that sits on a page's content, not at its head: 32 px tall, radius 10, a thin `line-strong` border, a white selected pill with its own border and no shadow, 13 px labels (Home V2's window and scenario). */
   compact?: boolean;
+  /** Every tab as wide as the widest one, so the track splits evenly and the pill covers one share of it (Activity's category filters). */
+  equal?: boolean;
   className?: string;
   testId?: string;
 }) {
@@ -133,7 +136,7 @@ export function SegmentedTabs<T extends string | number>({
         ref={track}
         role="tablist"
         aria-label={label}
-        className={`seg-track relative flex border bg-track p-0.5 ${compact ? "rounded-tile border-line-strong" : "rounded-pill border-line-ui"} ${scroll ? "w-max min-w-full" : stretch ? "w-full" : "w-fit max-w-full"}`}
+        className={`seg-track relative ${equal ? "grid grid-flow-col auto-cols-fr" : "flex"} border bg-track p-0.5 ${compact ? "rounded-tile border-line-strong" : "rounded-pill border-line-ui"} ${scroll ? "w-max min-w-full" : stretch ? "w-full" : "w-fit max-w-full"}`}
       >
         <span
           ref={pill}
@@ -152,7 +155,7 @@ export function SegmentedTabs<T extends string | number>({
               data-testid={o.testId}
               onClick={() => onChange(o.value)}
               onKeyDown={(e) => onKeyDown(e, i)}
-              className={`seg-tab relative z-10 flex min-w-0 max-w-72 flex-auto cursor-pointer items-center justify-center gap-2 border border-transparent px-3 text-center leading-tight transition-colors duration-(--dur-fast) disabled:cursor-not-allowed disabled:opacity-50 ${compact ? "h-6.5 rounded-control text-supporting" : "min-h-11 rounded-pill text-sm sm:px-4"} ${scroll ? "whitespace-nowrap" : ""} ${
+              className={`seg-tab relative z-10 flex min-w-0 ${equal ? "" : "max-w-72 flex-auto"} cursor-pointer items-center justify-center gap-2 border border-transparent px-3 text-center leading-tight transition-colors duration-(--dur-fast) disabled:cursor-not-allowed disabled:opacity-50 ${compact ? "h-6.5 rounded-control text-supporting" : "min-h-11 rounded-pill text-sm sm:px-4"} ${scroll ? "whitespace-nowrap" : ""} ${
                 on ? `font-extrabold text-f-btn-ink ${pill ? "border-transparent" : "border-f-purple bg-f-purple shadow-pill"}` : "border-transparent font-semibold text-ink-2 enabled:hover:text-f-purple-ink"
               }`}
             >
