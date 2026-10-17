@@ -209,7 +209,7 @@ export function mockSubmit(req: SubmitDocumentRequest): DocumentView {
   requireOwner();
   if (!req.fixture_id || !RECORDED[req.fixture_id]) {
     // The owner's words: no variable name, no mode name (Business mode shows neither).
-    throw new ApiError(422, "Uploading needs the live server; the Demo reads its three sample documents.");
+    throw new ApiError(422, "Uploading needs the live server: run pnpm demo, not the recorded-data build.");
   }
   const docs = load();
   const fresh: DocState = {

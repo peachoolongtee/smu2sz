@@ -197,10 +197,12 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
 
 test("the document review fits the viewport", async ({ page }) => {
   await page.goto("/documents");
-  await page.getByTestId("fixture-read-FHR_SUPPLY_AGREEMENT").click();
-  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED");
-  expect(await overflowX(page), "the review screen overflows horizontally").toBeLessThanOrEqual(1);
-  await page.getByTestId("doc-confirm").click();
+  // The upload form with its message (no company typed yet) fits too.
+  await page.getByTestId("doc-upload").click();
+  await expect(page.locator("#docs-read").getByRole("alert")).toBeVisible();
+  expect(await overflowX(page), "the upload form overflows horizontally").toBeLessThanOrEqual(1);
+  // The mock reads no uploaded file, so the review is a demo document the owner confirmed (a new reading is documents.spec.ts, live).
+  await page.getByTestId("doc-row-DOC-000001").getByRole("button").click();
   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
   expect(await overflowX(page), "the confirmed review overflows horizontally").toBeLessThanOrEqual(1);
 });
