@@ -55,15 +55,18 @@ test.describe("against the live API", () => {
   async function confirmDongguan(page: Page) {
     await page.goto("/documents");
     const form = page.locator("#docs-read");
-    await form.getByLabel("Who it is with").fill("Dongguan Office Supplies Ltd.");
-    await form.getByLabel(/^File/).setInputFiles({ name: "dgos-supply-agreement.md", mimeType: "text/plain", buffer: DGOS });
+    // The companies on the books load with the page: choose the file only once the name typed is one of them.
+    await expect(form.locator('datalist option[value="Dongguan Office Supplies Ltd."]')).toHaveCount(1);
+    await form.getByTestId("doc-counterparty").fill("Dongguan Office Supplies Ltd.");
+    await expect(form.getByTestId("doc-counterparty")).not.toHaveAttribute("aria-invalid", "true");
+    await form.locator('input[type="file"]').setInputFiles({ name: "dgos-supply-agreement.md", mimeType: "text/plain", buffer: DGOS });
     const review = page.getByTestId("doc-review");
     await expect(review).toHaveAttribute("data-status", "PROPOSED");
     // Not before confirming: the set-up is a separate step on a confirmed contract, never part of the confirmation.
     await expect(page.getByTestId("terms-step")).toHaveCount(0);
     await page.getByTestId("doc-confirm").click();
     await expect(page.getByTestId("doc-result")).toHaveAttribute("data-status", "EXECUTED");
-    await expect(page.getByTestId("doc-result")).toContainText("nothing in your books changed");
+    await expect(page.getByTestId("doc-result")).toContainText("Your books and forecast are unchanged.");
     return page.getByTestId("terms-step");
   }
 
