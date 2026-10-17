@@ -7,13 +7,14 @@ import { Disclosure } from "@/components/business/kit";
 import { DealPicture } from "@/components/deal-picture";
 import { CLAUSE_KIND, ClauseQuote, DocStatusBadge, FIELD_KIND, whenWords } from "@/components/documents";
 import { OperationResultBox } from "@/components/operation-result";
-import { Badge, Button, Callout, Card, Chip, ErrorState, LoadingBlock, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { CheckIcon, XIcon } from "@/components/icons";
+import { Badge, Button, ButtonLink, Callout, Card, Chip, ErrorState, LoadingBlock, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { ANNOTATION_STYLE, type AnnotationKind } from "@/lib/annotation-style";
 import { decideDocument, getDocument } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { ApiError } from "@/lib/errors";
 import { useI18n, type I18n } from "@/lib/i18n";
-import type { DocumentDecision, DocumentView, TextSpan } from "@/lib/types";
+import type { DocumentDecision, DocumentOutcome, DocumentView, TextSpan } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 
 /** One numbered thing the reading points at in the text: a term, a lender agreement's clause, or a flag. */
@@ -104,7 +105,8 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
   // Linking a lender agreement to a facility on the books starts off: the owner chooses it.
   const [link, setLink] = useState(false);
   const [busy, setBusy] = useState<"confirm" | "reject" | null>(null);
-  const [decision, setDecision] = useState<DocumentDecision | null>(null);
+  // The answer to the owner's decision, with the language it was asked in: its outcome card is the server's words in that language.
+  const [decision, setDecision] = useState<(DocumentDecision & { lang: string }) | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
   const reasonId = useId();
   const hintId = useId();
@@ -155,10 +157,14 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
     setBusy(which);
     setProblem(null);
     try {
-      const res = await decideDocument(view.id, which, view.doc_hash, which === "confirm" ? linkTo : null);
+      const res = await decideDocument(view.id, which, view.doc_hash, which === "confirm" ? linkTo : null, lang);
       // The executor can refuse in an answer of its own: the text changed under the owner's eyes, or something else stopped it.
       if (res.result.status === "REFUSED") setProblem({ kind: res.result.violations.some((v) => v.code === "TERMS_CHANGED") ? "changed" : "refused" });
-      else setDecision(res);
+      else {
+        setDecision({ ...res, lang });
+        // The outcome card answers the press: bring it into view (on a phone the controls were a bar at the foot of the screen).
+        window.setTimeout(() => document.getElementById("doc-outcome")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150);
+      }
       bump();
     } catch (e) {
       const found = problemOf(e);
@@ -331,7 +337,15 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
             </span>
           </p>
         )}
-        {decision ? (
+        {decision?.outcome ? (
+          // What the decision saved, under whom, what it changes and what it does not: the server's words, shown in the language they
+          // were written in only (after a language switch the decided line above says it in the new one).
+          decision.lang === lang ? (
+            <div className="mt-3" data-testid="doc-result" data-status={decision.result.status} data-kind={decision.result.kind}>
+              <OutcomeCard outcome={decision.outcome} />
+            </div>
+          ) : null
+        ) : decision ? (
           <div className="mt-3">
             <OperationResultBox
               status={decision.result.status}
@@ -479,5 +493,50 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * The outcome of the owner's decision on a document (ADR-0012), as the server wrote it: where it was filed (the title), what that
+ * changed and what it did not (confirming changes nothing in the books), and the page that shows it. Nothing here is composed in
+ * the browser; the card only lays the server's sentences out. It is a status region, so the outcome is read out when it appears.
+ */
+function OutcomeCard({ outcome }: { outcome: DocumentOutcome }) {
+  const ok = outcome.tone === "ok";
+  const Glyph = ok ? CheckIcon : XIcon;
+  const part = (key: "changed" | "unchanged") => (
+    <section aria-label={outcome[key].title} className="min-w-0" data-testid={`doc-outcome-${key}`}>
+      <h4 className="text-supporting font-bold text-ink-3">{outcome[key].title}</h4>
+      <ul className="mt-1.5 space-y-1.5">
+        {outcome[key].lines.map((line, i) => (
+          <li key={i} className="break-words text-sm text-ink">
+            {line}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+  return (
+    <div id="doc-outcome" role="status" className={`scroll-mt-20 rounded-card border bg-surface p-4 sm:p-5 ${ok ? "border-ok-line" : "border-line"}`} data-testid="doc-outcome" data-tone={outcome.tone}>
+      <div className="flex items-start gap-3">
+        <span aria-hidden className={`grid size-9 shrink-0 place-items-center rounded-full ${ok ? "bg-ok-bg text-ok-fg" : "bg-subtle text-ink-3"}`}>
+          <Glyph />
+        </span>
+        <h3 className="min-w-0 self-center break-words font-display text-lg font-extrabold tracking-[-0.01em] text-ink" data-testid="doc-outcome-title">
+          {outcome.title}
+        </h3>
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {part("changed")}
+        {part("unchanged")}
+      </div>
+      {outcome.link ? (
+        <div className="mt-4">
+          <ButtonLink href={outcome.link.href} variant="primary" className="touch:min-h-11" data-testid="doc-outcome-link">
+            {outcome.link.label}
+          </ButtonLink>
+        </div>
+      ) : null}
+    </div>
   );
 }

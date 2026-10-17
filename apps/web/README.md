@@ -1,7 +1,8 @@
-# TermsLedger web
+# FLOW web app (`apps/web`)
 
-Next.js (App Router) + TypeScript + Tailwind v4 + Recharts. The UI never computes money: it renders the
-server's `*_display` strings and passes integer fen to charts for axes only (INVARIANT 13).
+The web app of FLOW (the package and code name is TermsLedger). Next.js 16 (App Router) + TypeScript + Tailwind v4 +
+Recharts. The UI never computes money: it renders the server's `*_display` strings and passes integer fen to charts for axes
+only (INVARIANT 13).
 
 ```
 pnpm install
@@ -34,7 +35,8 @@ steps, the two servers and the database choices are in the root `README.md`; thi
 
 The simplest way, on any shell including PowerShell: `pnpm demo` (here or at the repository root) starts both servers with the
 safe settings below and picks the CORS origin for you; `pnpm demo --web-port 3141 --api-port 8041` for other ports,
-`pnpm demo:mock` for this app alone on the mocks. `pnpm dev:live` / `pnpm dev:mock` start this app alone in either mode on any
+`pnpm demo:mock` for this app alone on the mocks, and `pnpm demo:keep` (at the repository root; `node ../../scripts/demo.mjs
+--keep` from here) to keep the books in `.demo-data/flow-demo.db` across restarts. `pnpm dev:live` / `pnpm dev:mock` start this app alone in either mode on any
 shell (`dev:live` reads `NEXT_PUBLIC_API_URL`, default `http://localhost:8000`).
 
 By hand (bash syntax), two terminals, both starting at the repository root:
@@ -99,15 +101,16 @@ commitment id and nonce and the hashes derived from them, what-if timings) are l
 ### Business and Demo modes
 
 Two shells, chosen with the switch in the header and remembered in `localStorage` (`tl-mode`, `lib/mode.ts`). **Business** is
-the product the owner uses: the brand FLOW 流 · AI working-capital agent, a top navigation of five questions (Home, Deals,
-Cash & funding, Receivables, Activity, plus Limits from the account menu), an Approvals badge that appears in the header only
+the product the owner uses: the brand FLOW 流 · AI working-capital agent, a navigation of Business sections (Home, Deals,
+Attach deals, Cash & funding, Sandbox, Capex, Receivables, Activity: `BUSINESS_NAV` in `components/app-shell.tsx`; Limits
+opens from the account menu), an Approvals badge that appears in the header only
 while something waits for the owner (the `/approvals` route stays), one account menu (signed-in state, sign out, language, what
 the data is; Sign in stays visible when signed out), one "Demo data" pill, no clock, no stepper, no mock or sample controls.
 Business pages speak in distances from today ("in 12 days", `lib/when.ts` or the server's `*_when` strings), never "Day N"
 (the shared plan, violation and counter cards decide this with `lib/use-business-today.ts`: the Demo views keep "Day N", a
 Business page gets `whenText` and the server's `*_when` twins such as the ledger's `message_when` and a counter's `text_when`);
 the reserve is the "minimum cash reserve"; authority copy is the owner's signed limits. Recent changes and Activity lead with the server's business sentence (`event_text`, with `event_detail` beside it; `GET /home` `changes[]`, `GET /ledger` operations and the act results), and the executor's own sentence, the operation id, the tier and the hashes stay behind Audit details. The account menu holds "Signed in as Owner", the language and Sign out; the header button is the avatar. The chat button is "Ask FLOW", and on a Business page `promptsFor(role, lang, pathname)` puts that page's own questions first (each one a sentence the NL rules read; `services/api/tests/nl/test_business_page_prompts.py`). **Demo** is for judges: the story page (`/demo`) with the
-fifteen steps, the clock, the scenario switch and the side doors, the story bar on every page, and the engine views (Mandate,
+story's scenes (`GET /demo/story`), the clock, the scenario switch and the side doors, the story bar on every page, and the engine views (Mandate,
 Inbox, Trajectory, Funding, Verdict, What-if, Capex, Ledger, Alerts, Reconciliation, Security, Evidence). Engine routes
 always render the Demo shell; business routes render the Demo shell only while Demo mode is on (running a step or Reset
 turns it on, so the walk through `/approvals` keeps its bar). `docs/UX_AUDIT.md` is the audit behind the split.
@@ -178,19 +181,22 @@ agreed when the negotiation (Deals, the stepper) or the chat's "go ahead" agrees
 ## Tests
 
 `playwright.config.ts` has three projects (`PW_CHROMIUM_PATH` points them at a pre-installed Chromium when the pinned build cannot be downloaded). `desktop` and `phone` run against a mock-mode build on :3100.
-`live` runs `demo`, `whatif`, `alerts`, `chat`, `contract`, `documents`, `live` (and `slow`, `strategy`) specs against uvicorn (:8000, in-memory store,
-recorded LLM cache, no Supabase) and a live-mode build on :3000. `demo.spec.ts` and `chat.spec.ts` are the same files in both
+`live` runs the specs its `testMatch` names (`demo`, `whatif`, `alerts`, `chat`, `contract`, `documents`, `live`, `activity`,
+`trust`, `tracker` and others) against uvicorn (:8000, in-memory store, recorded LLM cache, no Supabase) and a live-mode build
+on :3000. `demo.spec.ts` and `chat.spec.ts` are the same files in both
 modes and asserts the same golden numbers. `contract.spec.ts` calls the live adapters from Node against the
 running API. Mock and live builds use separate `NEXT_DIST_DIR`s (`.next-e2e-mock`, `.next-e2e-live`).
 
-Counts on `feat/ux-remediation`, 9 Oct 2026, run from this directory with `--retries=0`:
+Counts on `dev` at `975e082f`, 17 Oct 2026 (the lead's gate, as recorded in
+[`docs/deliverables/evidence/EVIDENCE_PACK.md`](../../docs/deliverables/evidence/EVIDENCE_PACK.md), section 1):
 
 | Command | Result |
 | --- | --- |
-| `E2E_TARGET=mock pnpm exec playwright test` (`pnpm test:e2e:mock`) | 166 tests listed: 135 passed, 33 skipped |
-| `E2E_TARGET=live pnpm exec playwright test` (`pnpm test:e2e:live`) | 79 tests listed: 69 passed, 12 skipped |
+| `pnpm test:unit` | 169 passed |
+| `E2E_TARGET=mock pnpm exec playwright test` (`pnpm test:e2e:mock`) | 445 passed, 0 failed |
+| `E2E_TARGET=live pnpm exec playwright test` (`pnpm test:e2e:live`) | 139 passed; known failures `live.spec.ts:333` and `:347` (#157, the write-conflict retries) |
 
-All 12 live skips need `E2E_STRATEGY=1` (11 in `strategy.spec.ts`, the price-curve test in `slow.spec.ts`).
+Some listed tests skip themselves; the strategy specs run only with `E2E_STRATEGY=1`.
 
 Switches, all read by `playwright.config.ts`:
 

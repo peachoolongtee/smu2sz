@@ -105,9 +105,10 @@ r.counterparty_id == cp)`, `terms_in_force` requires exactly one). So:
 
 The contract must name the chosen customer as its **buyer**: one PARTY_BUYER term whose name is the customer's registry name
 (or its short form inside it), compared after NFKC, case folding and punctuation; and the customer must not be the contract's
-PARTY_SUPPLIER. No PARTY_BUYER term, or a mismatch, blocks. When `feat/contract-party-check` (`app/contracts/parties.py`)
-lands, its blocking PARTY_NOT_NAMED flag already prevents confirmation and its PARTY_UNCHECKED warning blocks this step; the
-local comparison here is then replaced by `parties.party_matches` (the integration step, noted in the code).
+PARTY_SUPPLIER. No PARTY_BUYER term, or a mismatch, blocks. The party check (`app/contracts/parties.py`, merged into dev in
+batch 5 and brought into this branch) already prevents confirming a document that names neither party as the chosen counterparty
+(PARTY_NOT_NAMED, blocking); its PARTY_UNCHECKED warning blocks this step; and this step compares with the same rule
+(`parties.party_matches` over `parties.registry_names`), restricted to the PARTY_BUYER term.
 
 ### 5. Reading errors: only quoted, code-parsed figures; anything unchecked blocks
 

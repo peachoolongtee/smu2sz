@@ -1,0 +1,10 @@
+.F...............................                                        [100%]
+================================== FAILURES ===================================
+E   AssertionError: assert '24f1dc649f4363e3' == '252b9812e99b4aee'
+      
+      - 252b9812e99b4aee
+      + 24f1dc649f4363e3
+C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\cert-719c\services\api\tests\books\test_modules_on_books.py:207: AssertionError: assert '24f1dc649f4363e3' == '252b9812e99b4aee'
+=========================== short test summary info ===========================
+FAILED tests/books/test_modules_on_books.py::test_no_commitments_trajectory_and_router_plan_are_unchanged
+1 failed, 32 passed in 21.37s

@@ -726,3 +726,31 @@ test("Activity: each row says what changed, why it matters and what remains; the
   await expect(page.getByTestId("chain-status")).toContainText("Record chain checks passed");
   await post("/demo/reset", {});
 });
+
+test("Deals: books set up with a customer and an open invoice, no contract, show that invoice on the customer's row (owner's report, 17 Oct)", async ({ page, request }) => {
+  const post = ownerPost(request);
+  await post("/demo/reset?scenario=blank", {});
+  // Dates against the server's today, as the setup wizard writes them: the books open today; the invoice was sent 16 days ago on 30-day terms.
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const today = new Date();
+  const sent = new Date(today.getTime() - 16 * 86_400_000);
+  const draft = {
+    business: { company_name: "Lingnan Homeware", start_date: iso(today), cash: "400,000", monthly_sales: "500,000", monthly_costs: "410,000" },
+    borrowing: [],
+    loans: [],
+    customers: [{ name: "Customer B", invoices: [{ sent_on: iso(sent), amount: "120,000", terms_days: 30 }] }],
+    bills: [],
+    limits: { min_cash: "100,000", max_apr_pct: "15", concession_cap: "5,000", approval_above: "100,000", valid_days: 90 },
+  };
+  await post("/setup/open", { draft, password: TOKEN });
+  await page.goto("/deals");
+  const row = page.getByTestId("invoices-BUYER-1");
+  await expect(row).toContainText("Invoices to Customer B");
+  await expect(row.getByTestId("invoices-line")).toHaveText("No contract on file yet. Open invoices: 1, ¥120,000.00 due in 14 days.");
+  await row.getByTestId("commitment-toggle").click();
+  const invoice = row.locator('[data-testid^="deal-invoice-"]');
+  await expect(invoice).toHaveCount(1);
+  await expect(invoice).toHaveAttribute("data-status", "NOT_DUE");
+  await expect(invoice).toContainText("¥120,000.00");
+  await post("/demo/reset", {});
+});

@@ -1452,6 +1452,11 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
 // The recordings are English: the mock takes `lang` as the live client does and answers the same recording (re-recorded, not translated by hand).
 export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {}): Promise<DealsView> {
   await delay();
+  // The short-facilities books: the buyer has an open invoice and no confirmed contract (recorded by `record-mocks.mjs --deals-short`).
+  if (otherBooks() === "short") {
+    const short = (await import("../../mocks/deals_short.json")).default as unknown as Record<"en" | "zh", DealsView>;
+    return clone(short[lang]);
+  }
   const m = await messageStage();
   if (m) return buyerMessage.recordedReads(m.rec, m.stage, lang).deals;
   const view = documents.mockDeals(openOfferStage());
@@ -1708,9 +1713,9 @@ export async function submitDocument(req: SubmitDocumentRequest): Promise<Docume
 }
 
 /** The owner's decision is an owner operation on the same chain as the rest (CONFIRM_DOCUMENT / REJECT_DOCUMENT, Tier 2). */
-export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null): Promise<DocumentDecision> {
+export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null, lang: "en" | "zh" = "en"): Promise<DocumentDecision> {
   await delay();
-  return documents.mockDecide(id, decision, docHash, linkFacilityId, (r) => appendRecorded({ ...r, requested_by: "OWNER" }));
+  return documents.mockDecide(id, decision, docHash, linkFacilityId, (r) => appendRecorded({ ...r, requested_by: "OWNER" }), lang);
 }
 
 /** ADR-0014: the recorded "Set up these terms in your books" step of the demo's supply agreement (already in the books). */

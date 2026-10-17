@@ -23,7 +23,6 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import unicodedata
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -37,11 +36,13 @@ from app.compiler.contract_parsing import (
     unit_of,
 )
 from app.contracts.derive import buyer_terms, day_of
+from app.contracts.parties import PARTY_FLAG_KINDS, party_matches, registry_names
 from app.domain.models import (
     CompileStatus,
     ContractField,
     ContractRecord,
     ContractTerm,
+    Counterparty,
     DocumentKind,
     DocumentStatus,
     FinancialState,
@@ -55,8 +56,7 @@ Status = Literal["READY", "ALREADY", "CONFLICT", "BLOCKED"]
 
 # The fields whose figures become the repeating invoice, in the order they are shown.
 SET_UP_FIELDS = (F.PRICE, F.INVOICING, F.PAYMENT_TERMS)
-# feat/contract-party-check (`app/contracts/parties.py`): its flags. Any of them on a record blocks the set-up.
-PARTY_FLAG_KINDS = frozenset({"PARTY_NOT_NAMED", "PARTY_UNCHECKED"})
+# The party check's flags (`app.contracts.parties.PARTY_FLAG_KINDS`): any of them on a record blocks the set-up.
 _DATE_RE = re.compile(DATE_PAT, re.IGNORECASE)
 
 
@@ -113,42 +113,30 @@ def terms_hash(document_id: str, doc_hash: str, ri: RecurringInvoice, sources: t
 
 
 # ---------------------------------------------------------------- who the contract is with
-
-_PUNCT = re.compile(r"[\s,.;:()\[\]'\"“”‘’`·、，。；：（）【】「」]+")
-
-
-def _norm(name: str) -> str:
-    return _PUNCT.sub(" ", unicodedata.normalize("NFKC", name).casefold()).strip()
+#
+# The comparison is the party check's own (`app.contracts.parties`, the owner's rule of 17 Oct): the registry name and its short
+# form against the names the reading found. That check already blocks confirming a document that does not name the chosen
+# counterparty at all; here the contract must name the customer as its BUYER, never as its supplier.
 
 
-def _names(a: str, b: str) -> bool:
-    """`b` (the registry's name) is `a` (the contract's party name), or sits inside it as whole words.
-
-    Stricter than `app.contracts.parties.party_matches` (feat/contract-party-check), which replaces it at integration: no
-    short forms, no containment the other way."""
-    x, y = _norm(a), _norm(b)
-    if not x or not y:
-        return False
-    return x == y or re.search(rf"(?<![a-z0-9]){re.escape(y)}(?![a-z0-9])", x) is not None
-
-
-def _party_problem(record: ContractRecord, registry_name: str) -> Problem | None:
+def _party_problem(record: ContractRecord, party: Counterparty) -> Problem | None:
     assert record.contract is not None
+    names = registry_names(party)
     buyers = [(t.text or t.value_text or "").strip() for t in record.contract.terms if t.field == F.PARTY_BUYER]
     suppliers = [(t.text or t.value_text or "").strip() for t in record.contract.terms if t.field == F.PARTY_SUPPLIER]
-    if any(_names(s, registry_name) for s in suppliers):
+    if party_matches(suppliers, names) and not party_matches(buyers, names):
         return Problem("PARTY_IS_SUPPLIER",
-                       f"The contract names {registry_name} as the supplier, not the buyer: it is not a contract under which "
+                       f"The contract names {party.name} as the supplier, not the buyer: it is not a contract under which "
                        f"this customer pays you.",
-                       f"合同把{registry_name}列为供货方而非买方：这不是该客户向您付款的合同。")
-    if not [b for b in buyers if b]:
+                       f"合同把{party.name}列为供货方而非买方：这不是该客户向您付款的合同。")
+    if not [x for x in buyers if x]:
         return Problem("PARTY_NOT_READ", "The reading found no buyer named in the contract, so it cannot be checked "
                        "that the contract is with this customer.",
                        "未从合同中读出买方名称，无法核实合同是与该客户签订的。")
-    if not any(_names(b, registry_name) for b in buyers):
+    if not party_matches(buyers, names):
         return Problem("PARTY_NOT_THIS_CUSTOMER",
-                       f"The contract's buyer is {buyers[0]}, not {registry_name.rstrip('.')}.",
-                       f"合同的买方是{buyers[0]}，而不是{registry_name}。")
+                       f"The contract's buyer is {buyers[0]}, not {party.name.rstrip('.')}.",
+                       f"合同的买方是{buyers[0]}，而不是{party.name}。")
     return None
 
 
@@ -295,7 +283,7 @@ def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon
     if c.status != CompileStatus.COMPILED:
         problems.append(Problem("READING_INCOMPLETE", "The reading of this contract is incomplete or conflicting.",
                                 "对该合同的读取不完整或相互矛盾。"))
-    if (p := _party_problem(record, party.name)) is not None:
+    if (p := _party_problem(record, party)) is not None:
         problems.append(p)
     sources: list[Source] = []
     terms: dict[ContractField, ContractTerm] = {}

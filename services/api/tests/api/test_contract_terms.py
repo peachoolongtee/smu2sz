@@ -141,11 +141,25 @@ def test_a_contract_with_text_addressed_to_the_agent_sets_nothing_up(client, on,
     assert not _buyer2(rt)
 
 
-def test_a_contract_naming_another_buyer_is_blocked_with_the_reason(client, on, rt):
+def test_a_contract_naming_another_buyer_cannot_be_confirmed_so_sets_nothing_up(client, on, rt):
+    """The party check (PARTY_NOT_NAMED, blocking) stops the confirmation; the derivation's own buyer check
+    (PARTY_NOT_THIS_CUSTOMER, tests/contracts/test_terms_setup.py) is the second line behind it."""
     d = _confirmed(client, DGOS.replace("Dongguan Office Supplies Ltd.", "Shenzhen Desk Traders Ltd."))
+    assert client.get(f"/documents/{d['id']}").json()["document"]["status"] == "PROPOSED"
     v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
-    assert v["status"] == "BLOCKED"
-    assert any(p["code"] == "PARTY_NOT_THIS_CUSTOMER" and "Shenzhen Desk Traders" in p["text"] for p in v["problems"])
+    assert v["status"] == "BLOCKED" and {p["code"] for p in v["problems"]} == {"NOT_CONFIRMED"}
+    assert not _buyer2(rt)
+
+
+def test_a_forced_confirmation_of_a_contract_naming_another_buyer_still_sets_nothing_up(client, on, rt):
+    d = _confirmed(client, DGOS.replace("Dongguan Office Supplies Ltd.", "Shenzhen Desk Traders Ltd."))
+    rec = rt.store.get_contract_record(d["id"])
+    forced = rec.model_copy(update={"status": "CONFIRMED", "flags": []})  # as if the party flag were dropped from the row
+    from app.contracts.terms_setup import derive
+
+    out = derive(forced, rt.store.get_state(), today=0, horizon_days=120)
+    assert out.status == "BLOCKED" and any(p.code == "PARTY_NOT_THIS_CUSTOMER" and "Shenzhen Desk Traders" in p.en
+                                           for p in out.problems)
 
 
 @pytest.mark.parametrize("headers", [AGENT, BUYER, {}])

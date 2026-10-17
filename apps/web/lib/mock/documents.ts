@@ -16,6 +16,7 @@ import type {
   ContractTermsView,
   DealsView,
   DocumentDecision,
+  DocumentOutcome,
   DocumentStatus,
   DocumentSummary,
   DocumentsList,
@@ -55,7 +56,12 @@ interface Recorded {
   reread: DocumentView;
   confirmed: DocumentDecision;
   rejected: DocumentDecision;
+  /** The outcome card of each decision as the server wrote it in both languages; a lender agreement recorded with its facility link
+   *  also has the card of the same confirmation without the link (`confirmed_unlinked`). */
+  outcomes: Record<"confirmed" | "rejected", Both<DocumentOutcome>> & { confirmed_unlinked?: Both<DocumentOutcome> };
 }
+
+type Both<T> = { en: T; zh: T };
 
 const RECORDED = documentsJson as unknown as Record<string, Recorded>;
 const FIXTURES = fixturesJson as unknown as ContractFixture[];
@@ -247,7 +253,7 @@ export function mockSubmit(req: SubmitDocumentRequest): DocumentView {
   requireOwner();
   if (!req.fixture_id || !RECORDED[req.fixture_id]) {
     // The owner's words: no variable name, no mode name (Business mode shows neither).
-    throw new ApiError(422, "Uploading needs the live server; the Demo reads its three sample documents.");
+    throw new ApiError(422, "Uploading needs the live server: run pnpm demo, not the recorded-data build.");
   }
   const docs = load();
   const fresh: DocState = {
@@ -275,6 +281,7 @@ export function mockDecide(
   docHash: string,
   linkFacilityId: string | null,
   book: (r: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; day: number; document_id?: string }) => OperationView,
+  lang: "en" | "zh" = "en",
 ): DocumentDecision {
   requireOwner();
   const d = byId(id);
@@ -290,7 +297,9 @@ export function mockDecide(
     throw new ApiError(409, "The Demo can only link the facility it was recorded with.", { code: "LINK_NOT_RECORDED", message: "The Demo can only link the facility it was recorded with." });
   }
   // Confirming without the link (the box starts unticked) is the recording with the link left off: the facility stays as the books have it.
-  if (decision === "confirm" && !linkFacilityId && recordedLink) {
+  const unlinked = decision === "confirm" && !linkFacilityId && Boolean(recordedLink);
+  const outcomes = unlinked ? r.outcomes.confirmed_unlinked : r.outcomes[decision === "confirm" ? "confirmed" : "rejected"];
+  if (unlinked) {
     recorded.document.linked_facility_id = null;
     recorded.result.message = recorded.result.message.replace(/; linked to .*$/, "");
   }
@@ -298,13 +307,14 @@ export function mockDecide(
   const res = recorded.result;
   const op = book({ kind: res.kind, status: res.status, tier: res.tier as OperationView["tier"], message: res.message, day, document_id: d.id });
   d.status = decision === "confirm" ? "CONFIRMED" : "REJECTED";
-  d.unlinked = decision === "confirm" && !linkFacilityId && Boolean(recordedLink);
+  d.unlinked = unlinked;
   d.decided_day = day;
   d.decided_seq = op.seq;
   save();
   return {
     result: { ...res, seq: op.seq, entry_hash: op.entry_hash ?? null, prev_hash: op.prev_hash ?? null, effective_day: day },
     document: viewOf(d),
+    outcome: outcomes ? clone<DocumentOutcome>(outcomes[lang]) : null,
   };
 }
 

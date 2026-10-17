@@ -345,8 +345,9 @@ export const live = {
     (await http<{ document: DocumentView }>("GET", `/documents/${enc(id)}${lang === "zh" ? "?lang=zh" : ""}`)).document,
   submitDocument: async (req: SubmitDocumentRequest): Promise<DocumentView> =>
     (await http<{ document: DocumentView }>("POST", "/documents", { body: req })).document,
-  decideDocument: (id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null) =>
-    http<DocumentDecision>("POST", `/documents/${enc(id)}/${decision}`, {
+  // The answer's words (the outcome card, the reading) are written in the owner's language.
+  decideDocument: (id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null, lang: "en" | "zh" = "en") =>
+    http<DocumentDecision>("POST", `/documents/${enc(id)}/${decision}${lang === "zh" ? "?lang=zh" : ""}`, {
       body: linkFacilityId ? { doc_hash: docHash, link_facility_id: linkFacilityId } : { doc_hash: docHash },
     }),
   getContractFixtures: async (): Promise<ContractFixture[]> => (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/contracts")).contracts,

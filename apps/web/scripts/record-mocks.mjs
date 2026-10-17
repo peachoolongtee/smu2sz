@@ -81,6 +81,9 @@
 // the opening books and on day 34 (the same test with no deal). The API needs FEATURE_EXPOSURE=1 for these.
 // buyer_exposure[_zh].json alone: --buyer-exposure (the same GET /buyers/BUYER-1/exposure, on the opening books; the API needs FEATURE_EXPOSURE=1).
 //
+// --deals-short records ONLY apps/web/mocks/deals_short.json and exits: { en, zh } of GET /deals on the short-facilities books (POST /demo/reset?scenario=short_facilities),
+// where the buyer has an open invoice and no confirmed contract (the deal summary lists its invoices and `open_invoices`); the mock serves it while those books are loaded.
+//
 // --no-exposure skips the three exposure reads (buyer_exposure*, exposure_offer*): run it against an API WITHOUT FEATURE_EXPOSURE to record the home reads the specs
 // expect (stress_available false); run again with the flag on for the exposure files and the receivables reads, and keep each run's own files.
 //
@@ -188,7 +191,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --buyside | --tracker | --buyer-message | --contract-terms]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --deals-short | --exposure | --home-v2 | --slice-d | --buyside | --tracker | --buyer-message | --contract-terms]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
@@ -205,6 +208,7 @@ const SLICE_D = process.argv.includes("--slice-d");
 const BUYER_MESSAGE = process.argv.includes("--buyer-message");
 const BUYSIDE = process.argv.includes("--buyside");
 const CONTRACT_TERMS = process.argv.includes("--contract-terms");
+const DEALS_SHORT = process.argv.includes("--deals-short");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -515,6 +519,17 @@ if (BUYER_EXPOSURE) {
   await buyerExposure("buyer_exposure");
   for (const name of Object.keys(files).sort()) write(name, files[name]);
   console.log(`recorded ${written.length} buyer-exposure files into ${OUT} from ${API}`);
+  process.exit(0);
+}
+// --deals-short: deals_short.json and nothing else, on the short-facilities books (a buyer with an invoice and no contract), then the main books again.
+if (DEALS_SHORT) {
+  await live.demoReset("short_facilities");
+  const view = { en: await live.getDeals("en"), zh: await live.getDeals("zh") };
+  if (!view.en.deals.some((d) => !d.has_contract && d.open_invoices)) throw new Error("no buyer without a contract carries its invoices: start the API from a branch with fix/deals-invoices");
+  files["deals_short.json"] = view;
+  await live.demoReset();
+  for (const name of Object.keys(files).sort()) write(name, files[name]);
+  console.log(`recorded ${written.length} deals file into ${OUT} from ${API}`);
   process.exit(0);
 }
 // --strategy: the nine strategy recordings and nothing else (see the header). The recorder's own day-0, day-34 and day-34-approved states.
@@ -1333,6 +1348,12 @@ files["home_approve_chat.json"] = await live.nl({ session_id: "rec-home-go", act
 files["contracts_fixtures.json"] = await live.getContractFixtures();
 const CONTRACT_FIXTURES = files["contracts_fixtures.json"];
 const documentsRecorded = {};
+/** The outcome card of a decision just made, { en, zh }: the English from its answer, the Chinese from the same decision asked again with lang=zh. */
+async function decisionOutcomes(doc, decision, link, decided) {
+  const zh = await live.decideDocument(doc.id, decision, doc.doc_hash, link, "zh");
+  if (zh.result.op_id !== decided.result.op_id || !decided.outcome || !zh.outcome) throw new Error(`${doc.id}: the ${decision} answer has no outcome in both languages`);
+  return { en: decided.outcome, zh: zh.outcome };
+}
 await reset();
 {
   const seeded = (await live.getDocuments()).documents;
@@ -1351,12 +1372,24 @@ for (const decision of ["confirm", "reject"]) {
     const again = await live.submitDocument({ fixture_id: f.id });
     if (again.id !== "DOC-000004") throw new Error(`${f.id} read again as ${again.id}, not DOC-000004`);
     documentsRecorded[f.id].reread = again;
-    const decided = await live.decideDocument(again.id, decision, again.doc_hash, decision === "confirm" ? f.link_facility_id : null);
+    const link = decision === "confirm" ? f.link_facility_id : null;
+    const decided = await live.decideDocument(again.id, decision, again.doc_hash, link);
     if (decided.result.status !== "EXECUTED") throw new Error(`${f.id} read again was not ${decision}ed: ${decided.result.message}`);
-    documentsRecorded[f.id][decision === "confirm" ? "confirmed" : "rejected"] = decided;
+    const key = decision === "confirm" ? "confirmed" : "rejected";
+    documentsRecorded[f.id][key] = decided;
+    // The outcome card in both languages: the same decision asked again is answered with the first (nothing appended), in the language asked.
+    documentsRecorded[f.id].outcomes = { ...documentsRecorded[f.id].outcomes, [key]: await decisionOutcomes(again, decision, link, decided) };
     // The deal follows the supply agreement confirmed last: record it once, after the new reading is confirmed.
     if (decision === "confirm" && f.kind === "BUYER_CONTRACT") files["deals_day0_reconfirmed.json"] = await live.getDeals();
   }
+}
+// A lender agreement confirmed with its link box left unticked (the box starts off): the card says no facility.
+for (const f of CONTRACT_FIXTURES.filter((x) => x.link_facility_id)) {
+  await reset();
+  const again = await live.submitDocument({ fixture_id: f.id });
+  const decided = await live.decideDocument(again.id, "confirm", again.doc_hash, null);
+  if (decided.result.status !== "EXECUTED") throw new Error(`${f.id} read again was not confirmed without its link: ${decided.result.message}`);
+  documentsRecorded[f.id].outcomes.confirmed_unlinked = await decisionOutcomes(again, "confirm", null, decided);
 }
 files["documents.json"] = documentsRecorded;
 // The deal on the home path (as above) from the demo's starting point: on day 0 right after the buyer agreed (the Deals page shows
