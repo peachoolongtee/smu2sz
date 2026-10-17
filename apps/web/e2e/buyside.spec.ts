@@ -35,12 +35,40 @@ test("Deals shows the buying side in its own card under the list of every deal, 
   // the deal opens as its own page; the list (and this card with it) stays mounted but hidden, so its place is kept for All deals
   await expect(page.getByTestId("deals-buying")).toBeHidden();
   await page.goto("/deals");
+  // a purchase ready to plan opens its workbench on Capex, the buy side's one page
   await page.getByTestId("deals-buying-DOC-000004").click();
-  await expect(page).toHaveURL(/\/buy\/contract\?id=DOC-000004$/);
+  await expect(page).toHaveURL(/\/capex\?purchase=DOC-000004$/);
+  await expect(page.getByTestId("capex-bench-DOC-000004").getByTestId("buy-evaluate")).toBeVisible();
   await page.goto("/deals");
   await page.getByTestId("deals-buying-all").click();
   await expect(page).toHaveURL(/\/buy$/);
   await expect(page.getByTestId("purchase-DOC-000004")).toBeVisible();
+});
+
+test("Capex is the buy side's one page: the health figures, every purchase, and the picked one worked through to the commitment", async ({ page }) => {
+  await page.goto("/capex");
+  await expect(page.getByTestId("capex-health")).toContainText("2.55×");
+  const row = page.getByTestId("capex-purchase-DOC-000004");
+  await expect(row).toContainText("¥600,000.00");
+  await expect(row).toContainText("Ready to plan");
+  await expect(row).toHaveAttribute("aria-expanded", "false");
+  // the quick check without a contract stays on the page, below the purchases
+  await expect(page.getByTestId("capex-quick")).toHaveAttribute("open", "");
+  await expect(page.getByRole("button", { name: "Evaluate the ¥600k machine" })).toBeVisible();
+
+  await row.click();
+  await expect(page).toHaveURL(/\/capex\?purchase=DOC-000004$/);
+  await expect(row).toHaveAttribute("aria-expanded", "true");
+  const bench = page.getByTestId("capex-bench-DOC-000004");
+  await bench.getByTestId("buy-evaluate").click();
+  await expect(bench.getByTestId("buy-schedule").locator("tbody tr")).toHaveCount(3);
+  await expect(bench.getByTestId("buy-structure-loan_36m")).toContainText("Selected");
+  await bench.getByTestId("buy-commit").click();
+  await expect(bench.getByTestId("buy-committed")).toContainText("Queued for your approval");
+
+  await page.getByTestId("capex-bench-close").click();
+  await expect(page).toHaveURL(/\/capex$/);
+  await expect(page.getByTestId("capex-bench-DOC-000004")).toHaveCount(0);
 });
 
 test("a vendor contract's schedule, financing and early payment, then the commitment", async ({ page }) => {

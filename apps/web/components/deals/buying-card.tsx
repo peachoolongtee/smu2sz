@@ -18,11 +18,11 @@ const STAGE: Record<PurchaseStage, DictKey> = {
 };
 const SHOWN = 3;
 
-/** Where a purchase's one next step is done: the reading to review, the approval to give, else the contract's own page. */
+/** Where a purchase's one next step is done: the reading to review, the approval to give, else its workbench on Capex. */
 function hrefOf(p: PurchaseRow): string {
   if (p.stage === "REVIEW") return `/documents?id=${encodeURIComponent(p.document_id)}`;
   if (p.stage === "AWAITING_APPROVAL") return "/approvals";
-  return `/buy/contract?id=${encodeURIComponent(p.document_id)}`;
+  return `/capex?purchase=${encodeURIComponent(p.document_id)}`;
 }
 
 function initials(name: string): string {
