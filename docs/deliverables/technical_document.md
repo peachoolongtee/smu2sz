@@ -647,7 +647,7 @@ advance, revoke a commitment, decline a queued request or revoke the mandate. A 
   - A sentence addressed to the agent blocks confirmation and logs a security event.
   - Documents are read only for counterparties on the owner's registry, and the contract must actually name the chosen
     company.
-  - A confirmed document never changes the books.
+  - A confirmed document never changes the books. After confirming, FLOW says what was saved, under which customer, and that the forecast is unchanged.
 - **Chat is inside the boundary.**
   - Pasted or quoted text never becomes an instruction or an approval.
   - A session continues only for the caller that opened it.
@@ -734,6 +734,7 @@ against it. It prints "Ready. Open http://localhost:3000" when both are up. The 
 demo token.
 
 - `pnpm demo:mock` runs the web app alone on recorded data.
+- `pnpm demo:keep` keeps the books in a local file, so uploads, confirmations and the day survive a restart; `pnpm demo:keep --fresh` starts over.
 - `pnpm demo:blank` starts with empty books, to set up your own company in six steps.
 - If a port is taken, the launcher says so and suggests another.
 
@@ -795,7 +796,7 @@ These are open production blockers. The supported way to run FLOW is the local l
 - **Everything outside FLOW is simulated.** Lenders, buyers, rates and the bank feed are simulated, and no real money moves.
 - **Recorded readings only.** The demo replays recorded model readings. A new document gets the rules reading unless live mode
   is on.
-- **The demo forgets on restart.** The demo keeps the books in memory, so restarting it starts fresh.
+- **The plain demo forgets on restart.** `pnpm demo` keeps the books in memory, so restarting it starts fresh. `pnpm demo:keep` keeps them in a local SQLite file instead.
 
 *Product gaps (known, with the next step):*
 - **Settlement dates.** Good early-payment offers that state a settlement date go to the owner, because the date is not yet
