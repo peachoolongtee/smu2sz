@@ -47,6 +47,8 @@ import type {
   CapexRequest,
   CapexView,
   ContractFixture,
+  ContractTermsResult,
+  ContractTermsView,
   CustomerOverviewView,
   InputSaveRequest,
   InputSaveResult,
@@ -1742,6 +1744,25 @@ export async function submitDocument(req: SubmitDocumentRequest): Promise<Docume
 export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null, lang: "en" | "zh" = "en"): Promise<DocumentDecision> {
   await delay();
   return documents.mockDecide(id, decision, docHash, linkFacilityId, (r) => appendRecorded({ ...r, requested_by: "OWNER" }), books(), lang);
+}
+
+/** ADR-0014: the recorded "Set up these terms in your books" step of the demo's supply agreement (already in the books). */
+export async function getContractTerms(id: string, lang: "en" | "zh" = "en"): Promise<ContractTermsView | null> {
+  await delay();
+  return documents.mockContractTerms(id, lang);
+}
+
+export async function setUpContractTerms(id: string, docHash: string, termsHash: string, lang: "en" | "zh" = "en"): Promise<ContractTermsResult> {
+  void docHash;
+  void termsHash;
+  await delay();
+  return documents.mockSetUpContractTerms(id, lang);
+}
+
+export async function undoContractTerms(id: string, setUpOpId: string, lang: "en" | "zh" = "en"): Promise<ContractTermsResult> {
+  void lang;
+  await delay();
+  return documents.mockUndoContractTerms(id, setUpOpId);
 }
 
 export async function getContractFixtures(): Promise<ContractFixture[]> {

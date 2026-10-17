@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
+import { ContractTermsStep } from "@/components/contract-terms-step";
 import { Disclosure } from "@/components/business/kit";
 import { DealPicture } from "@/components/deal-picture";
 import { CLAUSE_KIND, ClauseQuote, DocStatusBadge, FIELD_KIND, whenWords } from "@/components/documents";
@@ -487,6 +488,8 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
       </section>
 
       <div className="order-4 space-y-6">
+        {/* ADR-0014: a confirmed customer contract can set up its repeating invoices in the books, a separate step of its own (never part of confirming). */}
+        {(decision?.document.status ?? d.status) === "CONFIRMED" && d.kind === "BUYER_CONTRACT" ? <ContractTermsStep key={`${d.id}:${decision ? "decided" : "loaded"}`} id={d.id} /> : null}
         {/* The answer first: what this deal means for cash, loans and rates. The clause-by-clause reading follows for checking. */}
         <DealPicture doc={d} />
 

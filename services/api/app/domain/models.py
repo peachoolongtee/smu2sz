@@ -1054,6 +1054,31 @@ class CommitPurchase(_OpBase):
     take_early_pay: bool = False  # book the schedule with the vendor's early-payment discount taken
 
 
+class SetUpContractTerms(_OpBase):
+    """ADR-0014: set up a confirmed customer contract's repeating invoice in the books. Always Tier 2 and owner-only. The
+    four figures are what the owner was shown; on execution the executor re-derives them by code from the stored record on
+    today's books and refuses unless they and `terms_hash` match, so the figures here are a record, never the source."""
+
+    kind: Literal["SET_UP_CONTRACT_TERMS"] = "SET_UP_CONTRACT_TERMS"
+    document_id: str
+    doc_hash: str
+    terms_hash: str
+    counterparty_id: str
+    face_fen: Fen = Field(gt=0)
+    every_days: int = Field(ge=1, le=366)
+    next_issue_day: Day
+    terms_days: int = Field(ge=0, le=365)
+
+
+class UndoContractTerms(_OpBase):
+    """ADR-0014: the compensating operation of an executed SetUpContractTerms (named by its op id): removes the repeating
+    invoice it wrote, if that is still the one in the books. Always Tier 2 and owner-only; invoices already issued stay."""
+
+    kind: Literal["UNDO_CONTRACT_TERMS"] = "UNDO_CONTRACT_TERMS"
+    set_up_op_id: str
+    counterparty_id: str
+
+
 class SignPersonalGuarantee(_OpBase):
     kind: Literal["SIGN_PERSONAL_GUARANTEE"] = "SIGN_PERSONAL_GUARANTEE"
     facility_id: str
@@ -1097,7 +1122,9 @@ Operation = Annotated[
     | IssueEquity
     | ChangeMandate
     | AddFacility
-    | CommitPurchase,
+    | CommitPurchase
+    | SetUpContractTerms
+    | UndoContractTerms,
     Field(discriminator="kind"),
 ]
 

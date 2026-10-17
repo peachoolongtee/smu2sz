@@ -62,6 +62,8 @@ import type {
   EnvelopeView,
   ExposureView,
   ContractFixture,
+  ContractTermsResult,
+  ContractTermsView,
   CustomerOverviewView,
   InputSaveRequest,
   InputSaveResult,
@@ -369,6 +371,20 @@ export const live = {
     (await http<{ document: DocumentView }>("POST", `/documents/${enc(id)}/refile?lang=${lang}`, { body: { counterparty_id: counterpartyId, doc_hash: docHash } })).document,
   addCustomer: (body: AddCustomerRequest, lang: "en" | "zh") => http<AddCustomerResponse>("POST", `/customers?lang=${lang}`, { body }),
   getContractFixtures: async (): Promise<ContractFixture[]> => (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/contracts")).contracts,
+  // ADR-0014: a confirmed customer contract's terms set up in the books (FEATURE_CONTRACT_TERMS). Switched off, the read answers 403
+  // FEATURE_DISABLED and the step is not shown.
+  getContractTerms: async (id: string, lang: "en" | "zh" = "en"): Promise<ContractTermsView | null> => {
+    try {
+      return (await http<{ terms: ContractTermsView }>("GET", `/documents/${enc(id)}/terms${lang === "zh" ? "?lang=zh" : ""}`)).terms;
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 403 && (e.detail as { code?: unknown } | undefined)?.code === "FEATURE_DISABLED") return null;
+      throw e;
+    }
+  },
+  setUpContractTerms: (id: string, docHash: string, termsHash: string, lang: "en" | "zh" = "en") =>
+    http<ContractTermsResult>("POST", `/documents/${enc(id)}/terms${lang === "zh" ? "?lang=zh" : ""}`, { body: { doc_hash: docHash, terms_hash: termsHash } }),
+  undoContractTerms: (id: string, setUpOpId: string, lang: "en" | "zh" = "en") =>
+    http<ContractTermsResult>("POST", `/documents/${enc(id)}/terms/undo${lang === "zh" ? "?lang=zh" : ""}`, { body: { set_up_op_id: setUpOpId } }),
 
   // the buy side (ADR-0013, FEATURE_CAPEX_CONTRACTS): every route needs the owner token; the responses already have the page's shape
   getPurchases: (lang: "en" | "zh" = "en") => http<PurchasesView>("GET", `/purchases${lang === "zh" ? "?lang=zh" : ""}`),

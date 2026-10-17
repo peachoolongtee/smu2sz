@@ -46,6 +46,13 @@ CASES = [
     # ADR-0013: committing to a purchase is always the owner's decision, whoever asks
     (op(m.CommitPurchase, document_id="DOC-1", doc_hash="h", schedule_hash="s", amount_fen=1), Tier.TIER_2),
     (op(m.CommitPurchase, actor=Actor.OWNER, document_id="DOC-1", doc_hash="h", schedule_hash="s", amount_fen=1), Tier.TIER_2),
+    # ADR-0014: what a contract sets up in the books, and its undo, are always the owner's decision (the executor also
+    # refuses any requester but the owner before queueing)
+    (op(m.SetUpContractTerms, document_id="DOC-1", doc_hash="h", terms_hash="t", counterparty_id="BUYER-2", face_fen=1,
+        every_days=30, next_issue_day=14, terms_days=45), Tier.TIER_2),
+    (op(m.SetUpContractTerms, actor=Actor.OWNER, document_id="DOC-1", doc_hash="h", terms_hash="t", counterparty_id="BUYER-2",
+        face_fen=1, every_days=30, next_issue_day=14, terms_days=45), Tier.TIER_2),
+    (op(m.UndoContractTerms, actor=Actor.OWNER, set_up_op_id="terms-1", counterparty_id="BUYER-2"), Tier.TIER_2),
 ]
 
 
