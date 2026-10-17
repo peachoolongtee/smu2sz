@@ -1,29 +1,31 @@
+/* Canvas 1000 CSS px, placed at 6.4 in: 1 px prints at 0.4608 pt.
+   Smallest text 17 px = 7.8 pt; body labels 19-20 px = 8.8-9.2 pt; headings 22 px+ = 10 pt+. */
 * { box-sizing: border-box; }
 body { margin: 0; background: #fff; font-family: "Segoe UI", Arial, sans-serif; color: #1f2a3c; }
-.fig { width: 1600px; padding: 28px 32px; background: #fff; }
-.title { font-size: 26px; font-weight: 700; margin: 0 0 4px; }
-.sub { font-size: 17px; color: #4d5767; margin: 0 0 20px; }
-.box { border: 2px solid #9fb3cf; background: #f3f7fd; border-radius: 10px; padding: 10px 14px; font-size: 16px; line-height: 1.35; }
-.box b { display: block; font-size: 17px; margin-bottom: 2px; color: #14213a; }
-.box small { color: #4d5767; font-size: 14px; display: block; }
+.fig { width: 1000px; padding: 20px 22px; background: #fff; }
+.title { font-size: 28px; font-weight: 700; margin: 0 0 4px; }
+.sub { font-size: 20px; color: #4d5767; margin: 0 0 14px; }
+.box { border: 2px solid #9fb3cf; background: #f3f7fd; border-radius: 10px; padding: 8px 12px; font-size: 20px; line-height: 1.25; }
+.box b { display: block; font-size: 22px; margin-bottom: 2px; color: #14213a; }
+.box small { color: #3f4857; font-size: 19px; display: block; }
 .det { background: #e8f5f1; border-color: #6cbfae; }
 .unt { background: #fff4e5; border-color: #e7b467; }
 .ext { background: #f4f4f6; border-color: #a7acb6; }
 .owner { background: #eaf1ff; border-color: #6f9be8; }
 .bad { background: #fdecea; border-color: #e59a92; }
-.bnd { border: 3px dashed #c0392b; border-radius: 14px; padding: 22px 16px 16px; position: relative; }
-.bnd > .lbl { position: absolute; top: -14px; left: 16px; background: #fff; padding: 0 8px; color: #c0392b; font-weight: 700; font-size: 15px; }
-.row { display: flex; gap: 14px; align-items: stretch; }
-.col { display: flex; flex-direction: column; gap: 12px; }
-.arrow { display: flex; align-items: center; justify-content: center; color: #34507a; font-size: 30px; font-weight: 700; min-width: 34px; }
-.varrow { text-align: center; color: #34507a; font-size: 26px; line-height: 1; margin: 2px 0; font-weight: 700; }
-.chip { display: inline-block; font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin: 3px 4px 0 0; }
+.warn { background: #fdf2d9; border-color: #ecd092; }
+.bnd { border: 3px dashed #c0392b; border-radius: 14px; padding: 24px 12px 12px; position: relative; }
+.bnd > .lbl { position: absolute; top: -17px; left: 14px; background: #fff; padding: 0 8px; color: #c0392b; font-weight: 700; font-size: 20px; }
+.row { display: flex; gap: 10px; align-items: stretch; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.arrow { display: flex; align-items: center; justify-content: center; color: #34507a; font-size: 30px; font-weight: 700; min-width: 28px; }
+.varrow { text-align: center; color: #34507a; font-size: 26px; line-height: 1; margin: 0; font-weight: 700; }
+.chip { display: inline-block; font-size: 17px; font-weight: 700; padding: 1px 9px; border-radius: 999px; margin: 3px 4px 0 0; white-space: nowrap; }
 .c-red { background: #fdecea; color: #a3241a; border: 1px solid #f1b9b2; }
 .c-amb { background: #fdf2d9; color: #82490a; border: 1px solid #ecd092; }
 .c-grn { background: #e2f6f3; color: #0a6b5f; border: 1px solid #a6e0d7; }
 .c-blu { background: #e6f1ff; color: #0048a5; border: 1px solid #bcd8fd; }
-.legend { display: flex; gap: 22px; margin-top: 18px; font-size: 15px; color: #4d5767; align-items: center; flex-wrap: wrap; }
+.legend { display: flex; gap: 8px 20px; margin-top: 12px; font-size: 17px; color: #3f4857; align-items: center; flex-wrap: wrap; }
 .sw { display: inline-block; width: 22px; height: 16px; border-radius: 4px; vertical-align: middle; margin-right: 6px; border: 2px solid; }
-.gate { flex: 1; min-width: 0; text-align: left; }
-.gate .n { display: inline-block; width: 28px; height: 28px; border-radius: 50%; background: #24324a; color: #fff; font-weight: 700; text-align: center; line-height: 28px; font-size: 15px; margin-bottom: 6px; }
-.out { font-size: 13px; margin-top: 8px; }
+.out { font-size: 17px; }
+.mono { font-family: Consolas, "Courier New", monospace; }

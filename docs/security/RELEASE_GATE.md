@@ -1,6 +1,6 @@
 # Release security gate
 
-Issued by the independent Security Lead, 14 Oct 2026. A gate decision is tied to one commit **and** one deployment configuration;
+Issued by the Security Lead (an AI agent in a separate session; an internal release decision, not accreditation), 14 Oct 2026. A gate decision is tied to one commit **and** one deployment configuration;
 it lapses when either changes. It is never a claim of absolute security or zero residual risk.
 
 ## Configurations
@@ -23,6 +23,7 @@ it lapses when either changes. It is never a claim of absolute security or zero 
 | `0f92d433` (dev, owner's decisions) | **GO** (certified 16 Oct) | CONDITIONAL GO, as above | **NO-GO** |
 | `b8c65b24` (dev, buyer messages, demo launcher) | **NOT CERTIFIED** (OUT-1): usable for S only if the presenter never marks a counter sent outside FLOW and then negotiates in the chat | NO-GO until OUT-1 is fixed | **NO-GO** |
 | `719c9dcf` (dev, 17 Oct: round-two fixes, OUT-1 fixed, ui-final) | **GO** (certified 17 Oct; not live mode with real customer documents: PRIV-1 to PRIV-3) | **CONDITIONAL GO**: the S-net conditions below; in-app rate limits now exist (SEC-20) but behind a proxy every caller shares its address, so the proxy's per-client limit stays a condition; SEC-19 accepted or anonymous intake off | **NO-GO** |
+| `0fde33fd` (dev, 17 Oct: SEC-08 executor check, OUT-1b, RT-2, RT-1) | **GO** (certified 17 Oct, with the #161 test exception) | **NO-GO** until one tested deployment profile exists (below); revised 17 Oct after the external review: the conditions were never exercised on a deployment, and SEC-19 provenance is not shown on the accept card or approvals | **NO-GO** |
 | `fe56b357` (dev head, 16 Oct: final UI, R-10 rounding) | not certified: OUT-1 still present (the chat paths do not check the outside mark); R-10 reassessed, residual Low | NO-GO until OUT-1 is fixed | **NO-GO** |
 
 **Conditions for S on `e8e270f8`:** loopback only; nobody but the presenter holds the demo credentials; the presenter does not approve
@@ -31,6 +32,13 @@ a second agreement for a request already agreed (SEC-02 is fixed only on the bra
 **Additional conditions for S-net:** `sec/intake-hardening` merged; a reverse proxy with a request-rate limit and a body-size limit in
 front of the API; `/docs`, `/openapi.json` not exposed; the demo credentials changed from the published values (`OWNER_TOKEN`,
 `AGENT_KEY`, `BANK_FEED_KEY`, `COUNTERPARTY_KEYS` set, still `DEMO_MODE=1`); `/demo/reset` accepted as wiping the session's log.
+
+**S-net from 17 Oct: a tested deployment profile.** A network demo is NO-GO until one profile has been deployed and checked, and the
+checks recorded against that deployment: credentials changed from the published values; a signing key other than the fixture (a new owner
+key pair, `OWNER_PUBLIC_KEY_HEX` set); one worker; synthetic fixtures; `LLM_MODE=cache` or a recorded live decision; documentation
+hidden (`DEMO_MODE=0`); a TLS reverse proxy with per-client rate and body-size limits; anonymous intake off or "unverified sender" shown
+on every view of the offer (SEC-19); a written stop procedure; the route sweep and the browser injection checks (S3) run against it.
+Without such a profile the local configuration S is the one demonstrated.
 
 ## P blockers (all must close; none is closed today)
 
