@@ -275,7 +275,8 @@ test("your own file: the upload form sends a Word, PDF or text file with what it
   await page.getByTestId("doc-upload").click();
   await expect(form.getByText("Type the name of the company this document is with first.")).toBeVisible();
   await party.fill("Nobody Ltd");
-  await expect(form.getByText("No company with that name is on your books.")).toBeVisible();
+  // A buyer the books do not have: the hint's place offers to add it (new-customer.spec.ts walks the adding).
+  await expect(form.getByTestId("doc-new-customer")).toHaveText("Add “Nobody Ltd” as a new customer");
   await party.fill("Foshan Home Retail Co.");
   // Upload and read opens the file picker; the file chosen is read at once.
   const text = readFileSync(join(CONTRACTS, "fhr-2026-07-supply-agreement.md"));
