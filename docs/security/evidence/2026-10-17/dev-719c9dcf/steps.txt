@@ -1,0 +1,18 @@
+sweep demo exit=0
+sweep prod exit=0
+sweep unset exit=0
+r3 exit=1
+r4_bounded exit=0
+repro1 exit=1
+repro2 exit=0
+repro3 exit=1
+approval_flip exit=1
+r_nl exit=0
+r_paths exit=0
+r_edge exit=0
+attacks exit=0
+pg concurrency 1: 31 passed in 15.20s postgres-passed=10
+pg concurrency 2: 31 passed in 14.93s postgres-passed=10
+pg concurrency 3: 31 passed in 12.61s postgres-passed=10
+pg guards: 4 passed in 44.74s
+ALL DONE

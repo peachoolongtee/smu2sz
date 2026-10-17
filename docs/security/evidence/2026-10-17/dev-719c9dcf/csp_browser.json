@@ -1,0 +1,25 @@
+{
+ "header": "default-src 'self'; script-src 'self' 'nonce-OTljNzkxZDgtOGIyMy00N2M4LWI4ZjctZGY2ZWEwY2MwODAx' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' http://localhost:8420; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
+ "pages": [
+  "/welcome h1=\"Built for your cash\" failed=0",
+  "/ h1=\"Action needed Your cash reserve becomes unsafe in \" failed=0",
+  "/deals h1=\"Deals\" failed=0",
+  "/documents h1=\"Documents\" failed=0",
+  "/cash h1=\"Your cash reserve becomes unsafe in 12 days.\" failed=0",
+  "/whatif h1=\"What-if sandbox\" failed=0",
+  "/capex h1=\"Capex\" failed=0",
+  "/receivables h1=\"¥420k expected from Foshan.\nAbout ¥420k becomes av\" failed=0",
+  "/activity h1=\"Activity\" failed=0",
+  "/approvals h1=\"Approvals\" failed=0",
+  "/limits h1=\"Limits\" failed=0",
+  "/customers/BUYER-1 h1=\"Foshan Home Retail Co.\" failed=0",
+  "/buy h1=\"Buying\" failed=0",
+  "/finance h1=\"Financial health\" failed=0",
+  "/plans h1=\"Long-term plans\" failed=0"
+ ],
+ "chatAnswered": false,
+ "cspViolationsBeforeProbes": 0,
+ "probePwn": 0,
+ "probeViolations": 2,
+ "pageErrors": []
+}
