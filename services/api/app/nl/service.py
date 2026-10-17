@@ -104,6 +104,33 @@ def _principal(req: NlRequest, owner_authenticated: bool) -> str:
     return f"buyer:{req.counterparty_id}" if COUNTERPARTY_AUTHENTICATED.get() else "anon"
 
 
+_HAN = re.compile(r"[一-鿿]")
+_LATIN = re.compile(r"[A-Za-z]")
+_EN_QUESTION = re.compile(r"\?\s*$|^\s*(?:what|when|who|whom|which|how|where|why|is|are|do|does|did|can|could|will|would|should|any)\b",
+                          re.IGNORECASE)
+
+
+def turn_lang(req: NlRequest, session: Session) -> str:
+    """The language the owner is answered in. The page's language is the default, not an override: a question clearly written in the other
+    language is answered in that language (Chinese characters, mostly, -> zh; an English question, Latin letters and no Chinese -> en), so a
+    Chinese question typed while the app is in English is answered in Chinese, and the reverse. A text with neither (a figure, "1"), an
+    English instruction or confirmation typed in the Chinese app (the fixture commands, "go ahead") and a pick of a pending clarification's
+    option take the page's. A buyer's turn keeps the language its request names."""
+    detected = lx.detect_lang(req.text)
+    if req.lang is None:
+        return detected
+    if req.actor != "OWNER":
+        return req.lang
+    pc = session.pending_clarification
+    if pc is not None and req.text.strip() in {o.id for o in pc.options}:
+        return req.lang
+    if _HAN.search(req.text) and detected == "zh":
+        return "zh"
+    if _LATIN.search(req.text) and not _HAN.search(req.text) and _EN_QUESTION.search(req.text):
+        return "en"  # an English question; an English instruction or confirmation ("go ahead", "fund the gap") keeps the page's language
+    return req.lang
+
+
 def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, owner_key_hex: str,
            owner_authenticated: bool, sessions: SessionStore = SESSIONS,
            classifier_backends: Sequence[clf.IntentBackend] | None = None,
@@ -112,7 +139,7 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
                                            owner_auth=owner_authenticated and req.actor == "OWNER",
                                            principal=_principal(req, owner_authenticated))
     session.turn += 1
-    lang = req.lang or lx.detect_lang(req.text)
+    lang = turn_lang(req, session)
     session.lang = lang
     if req.actor == "OWNER" and req.counterparty_id:
         session.counterparty_id = req.counterparty_id
@@ -186,10 +213,11 @@ def _honour_scope(ctx: NlContext, scoped: page.ScopeResult | None, state: Financ
 
 def opener(session_id: str | None, lang: str | None, *, store: LedgerStore, executor: Executor, day: int,
            owner_key_hex: str, sessions: SessionStore = SESSIONS,
-           verdict_extras: VerdictExtras | None = None) -> tuple[NlResponse, bool]:
+           verdict_extras: VerdictExtras | None = None, owner_reads: page.OwnerReads | None = None) -> tuple[NlResponse, bool]:
     """An agent-initiated turn in the owner's session (the API layer has checked the owner token): the agent says
     what needs the owner, if anything, and proposes the cure as a pending plan. It executes nothing; the owner's
-    next direct "go ahead" in this session confirms it. Returns (the response, whether anything needs the owner)."""
+    next direct "go ahead" in this session confirms it. Returns (the response, whether anything needs the owner).
+    `owner_reads` lends the owner's word rewrite to the card (an alert's title in the owner's words); the reply is unchanged."""
     session, _new = sessions.get_or_create(session_id, "OWNER", owner_auth=True, principal="owner")
     session.turn += 1
     if lang:
@@ -200,6 +228,11 @@ def opener(session_id: str | None, lang: str | None, *, store: LedgerStore, exec
     before = {e.id for e in store.security_events()}
     turn, has_news = alerts_turn(ctx)
     turn.reply, _ok = ctx.guard(turn.reply, turn.recipient, allow=turn.allow)
+    from app.nl import answer_card
+
+    ctx.reads = owner_reads  # the card's words only: the alerts turn above ran exactly as before
+    # The opener as a card in the owner's words (lead, tiles, the plan in one sentence, links); the reply and the pending plan are unchanged.
+    turn.card = answer_card.opener_seed(ctx, turn, has_news)
     _update_session(session, turn)
     _remember_shown(ctx, turn)
     session.history.append((session.turn, turn.intent.value))
@@ -793,4 +826,15 @@ def _response(ctx: NlContext, turn: Turn, parse_source: str, before: set[str],
         operations=[r.model_dump(mode="json") for r in ctx.results], clarification=turn.clarification,
         awaiting_confirmation=turn.awaiting, amended=turn.amended, replayed=replayed, negotiation=turn.negotiation,
         security_events=events, parse_source=parse_source, trace_id=ctx.trace_id,
-        context_echo=ctx.binding.echo if ctx.binding is not None else None, scope_used=ctx.scope_used)
+        context_echo=ctx.binding.echo if ctx.binding is not None else None, scope_used=ctx.scope_used,
+        card=_card(ctx, turn))
+
+
+def _card(ctx: NlContext, turn: Turn) -> Any:
+    """The answer card (app/nl/answer_card.py), laid out on the reply the owner is sent. The owner's authenticated turns only: a card carries
+    the answer's protected figures."""
+    if turn.card is None or not ctx.owner_authenticated or ctx.session.actor != "OWNER":
+        return None
+    from app.nl import answer_card
+
+    return answer_card.finish(turn.card, turn.reply)

@@ -476,7 +476,8 @@
         "decision_id": "VER-a899ca66120c",
         "invoice_id": null
       },
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "original": {
       "session_id": "rec-page-deal-original",
@@ -954,7 +955,8 @@
         "decision_id": "VER-a899ca66120c",
         "invoice_id": null
       },
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "option": {
       "session_id": "rec-page-deal-option",
@@ -1432,7 +1434,8 @@
         "decision_id": "VER-a899ca66120c",
         "invoice_id": null
       },
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     }
   },
   "day0": {
@@ -1454,7 +1457,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day0-changes:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "waiting": {
       "session_id": "rec-page-day0-waiting",
@@ -1474,7 +1478,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day0-waiting:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "arrival": {
       "session_id": "rec-page-day0-arrival",
@@ -1494,7 +1499,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day0-arrival:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "overdue": {
       "session_id": "rec-page-day0-overdue",
@@ -1514,7 +1520,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day0-overdue:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "late": {
       "session_id": "rec-page-day0-late",
@@ -1534,7 +1541,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day0-late:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "plan": {
       "session_id": "rec-page-day0-plan",
@@ -1554,7 +1562,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day0-plan:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     }
   },
   "day34": {
@@ -1576,7 +1585,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day34-changes:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "waiting": {
       "session_id": "rec-page-day34-waiting",
@@ -1596,7 +1606,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day34-waiting:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "arrival": {
       "session_id": "rec-page-day34-arrival",
@@ -1616,7 +1627,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day34-arrival:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "overdue": {
       "session_id": "rec-page-day34-overdue",
@@ -1636,7 +1648,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day34-overdue:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "late": {
       "session_id": "rec-page-day34-late",
@@ -1656,7 +1669,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day34-late:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "plan": {
       "session_id": "rec-page-day34-plan",
@@ -1676,7 +1690,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-day34-plan:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     }
   },
   "pending": {
@@ -1698,7 +1713,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-pending-changes:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "waiting": {
       "session_id": "rec-page-pending-waiting",
@@ -1718,7 +1734,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-pending-waiting:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "arrival": {
       "session_id": "rec-page-pending-arrival",
@@ -1738,7 +1755,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-pending-arrival:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "overdue": {
       "session_id": "rec-page-pending-overdue",
@@ -1758,7 +1776,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-pending-overdue:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "late": {
       "session_id": "rec-page-pending-late",
@@ -1778,7 +1797,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-pending-late:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "plan": {
       "session_id": "rec-page-pending-plan",
@@ -1798,7 +1818,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-pending-plan:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     }
   },
   "after": {
@@ -1820,7 +1841,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-after-changes:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "waiting": {
       "session_id": "rec-page-after-waiting",
@@ -1840,7 +1862,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-after-waiting:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "arrival": {
       "session_id": "rec-page-after-arrival",
@@ -1860,7 +1883,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-after-arrival:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "overdue": {
       "session_id": "rec-page-after-overdue",
@@ -1880,7 +1904,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-after-overdue:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "late": {
       "session_id": "rec-page-after-late",
@@ -1900,7 +1925,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-after-late:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     },
     "plan": {
       "session_id": "rec-page-after-plan",
@@ -1920,7 +1946,8 @@
       "parse_source": "rules",
       "trace_id": "rec-page-after-plan:1",
       "context_echo": null,
-      "scope_used": null
+      "scope_used": null,
+      "card": null
     }
   }
 }

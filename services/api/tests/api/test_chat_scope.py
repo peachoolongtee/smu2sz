@@ -46,7 +46,13 @@ def api(rt: Runtime) -> TestClient:
     return TestClient(app, headers=OWNER)
 
 
+# The reply follows the question's own language (lead, 17 Oct: an English question in the Chinese app is answered in English), so the
+# Chinese app's questions are asked in Chinese: the same questions the page offers in Chinese (lib/chat-prompts.ts).
+_IN_ZH = {EXPLAIN: "为什么要还价？", "What happens if this payment is late?": "如果这笔款项延迟会怎样？"}
+
+
 def _ask(api: TestClient, session: str, text: str, lang: str = "en", **body: Any) -> dict[str, Any]:
+    text = _IN_ZH.get(text, text) if lang == "zh" else text
     r = api.post("/nl", json={"session_id": session, "text": text, "lang": lang, **body})
     assert r.status_code == 200, r.text
     out: dict[str, Any] = r.json()

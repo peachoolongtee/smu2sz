@@ -18,6 +18,32 @@ export interface Prompt {
   counterparty?: CounterpartyId;
   /** The page must hold this for the prompt to be answerable; otherwise it is hidden. */
   needs?: keyof ChatFacts;
+  /** The one-line subtitle of the prompt's card on the Ask FLOW page's empty state. */
+  sub?: DictKey;
+}
+
+/**
+ * The Ask FLOW page's four questions (its empty state's cards, then its chips): top owner questions the answer layer answers with a card
+ * (ASK_BOOKS; services/api/tests/nl/test_business_page_prompts.py holds them too).
+ */
+const ASK: Record<Lang, Prompt[]> = {
+  en: [
+    { id: "ask-safe", label: "ask.s.safe", sub: "ask.s.safe.sub", text: "Are we safe?" },
+    { id: "ask-need", label: "ask.s.need", sub: "ask.s.need.sub", text: "How much do we need to raise?" },
+    { id: "ask-covenants", label: "ask.s.covenants", sub: "ask.s.covenants.sub", text: "Are we inside our covenants?" },
+    { id: "ask-owes", label: "ask.s.owes", sub: "ask.s.owes.sub", text: "Which customer owes us the most?" },
+  ],
+  zh: [
+    { id: "ask-safe", label: "ask.s.safe", sub: "ask.s.safe.sub", text: "我们安全吗？" },
+    { id: "ask-need", label: "ask.s.need", sub: "ask.s.need.sub", text: "我们需要融多少？" },
+    { id: "ask-covenants", label: "ask.s.covenants", sub: "ask.s.covenants.sub", text: "我们满足契约吗？" },
+    { id: "ask-owes", label: "ask.s.owes", sub: "ask.s.owes.sub", text: "哪个客户欠我们最多？" },
+  ],
+};
+
+/** The Ask FLOW page's questions, in the page's language. */
+export function askPrompts(lang: Lang): Prompt[] {
+  return ASK[lang];
 }
 
 const FASTCAPITAL =
@@ -176,6 +202,7 @@ export function promptsFor(role: NlActor, lang: Lang, pathname?: string | null, 
   const shown = (list: Prompt[] | undefined) => (list ?? []).filter((p) => !p.needs || facts[p.needs]);
   // A customer's page (`/customers/{id}`) takes the customer questions, whichever customer.
   const key = pathname?.startsWith("/customers/") ? "/customers" : pathname;
+  if (pathname === "/ask") return ASK[lang];
   if (opts.business) return shown((key ? PAGE[key] : undefined)?.[lang] ?? PAGE["/"][lang]);
   const page = pathname && isBusinessRoute(pathname) ? shown(PAGE[key as string]?.[lang]) : [];
   return [...page, ...OWNER[lang]];

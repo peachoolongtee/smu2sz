@@ -332,9 +332,8 @@ def _old_reply(ctx: NlContext, slots: Slots, text: str) -> Turn:
 # ---------------------------------------------------------------- the handler
 
 
-def layer_reply(ctx: NlContext, question: str) -> tuple[str, list[str]] | None:
-    """The answer layer's reply (its text in the turn's language, its metric ids), or None when it is not installed or
-    has no answer."""
+def layer_answer(ctx: NlContext, question: str) -> Any:
+    """The answer layer's own reply object, or None when it is not installed, has no answer or has no text in the turn's language."""
     fn = answer_layer()
     if fn is None:
         return None
@@ -342,6 +341,13 @@ def layer_reply(ctx: NlContext, question: str) -> tuple[str, list[str]] | None:
         got = fn(question, ctx.lang, ctx)
     except EngineError:
         return None
+    return got if got is not None and _reply_text(got, ctx.lang) else None
+
+
+def layer_reply(ctx: NlContext, question: str) -> tuple[str, list[str]] | None:
+    """The answer layer's reply (its text in the turn's language, its metric ids), or None when it is not installed or
+    has no answer."""
+    got = layer_answer(ctx, question)
     text = _reply_text(got, ctx.lang) if got is not None else None
     return (text, _metric_ids(got)) if text else None
 
@@ -364,6 +370,10 @@ def ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         return tier3_info(ctx, topic.split(":", 1)[1], question)
     if topic.startswith("not_held:"):
         return not_held(ctx, topic.split(":", 1)[1])
-    if (got := layer_reply(ctx, question)) is not None:
-        return Turn(intent=Intent.ASK_BOOKS, reply=got[0], facts={"ask": {"topic": topic, "metric_ids": got[1]}})
+    if (got := layer_answer(ctx, question)) is not None:
+        from app.nl import answer_card
+
+        text = _reply_text(got, ctx.lang) or ""
+        return Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": topic, "metric_ids": _metric_ids(got)}},
+                    card=answer_card.from_reply(got, ctx.lang, ctx.state()))  # the card's figures and links; laid out in the response
     return _fallback(ctx, topic, slots, text)

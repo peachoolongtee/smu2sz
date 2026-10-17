@@ -1666,6 +1666,32 @@ async function pointReads(point, since) {
   }
   return out;
 }
+// Ask FLOW's answer cards (the owner's redesign, 17 Oct): mocks/nl_ask.json, { point: { question: response } }. The Ask FLOW page's four questions
+// (lib/chat-prompts.ts askPrompts) and one question per other destination a card links to, each in English and Chinese, asked in its own language
+// (the reply follows the question's language), at the same four points of the story as the page questions. lib/mock/nl.ts answers a question
+// with exactly this text from the recording of the point the mock is at.
+const ASK_QUESTIONS = [
+  ["Are we safe?", "en"], ["我们安全吗？", "zh"],
+  ["How much do we need to raise?", "en"], ["我们需要融多少？", "zh"],
+  ["Are we inside our covenants?", "en"], ["我们满足契约吗？", "zh"],
+  ["Which customer owes us the most?", "en"], ["哪个客户欠我们最多？", "zh"],
+  ["How much debt do we have?", "en"], ["我们总负债多少？", "zh"],
+  ["Is anything waiting for my approval?", "en"], ["有待审批的吗？", "zh"],
+  ["What did FLOW do recently?", "en"], ["FLOW 最近做了什么？", "zh"],
+  ["Can we afford the die-cutting machine?", "en"], ["模切线买得起吗？", "zh"],
+  ["What can FLOW do without me?", "en"], ["不经过我，FLOW 能做什么？", "zh"],
+  ["Should we take the early payment?", "en"], ["提前付款划算吗？", "zh"],
+];
+async function askReads(point) {
+  const out = {};
+  for (const [i, [text, lang]] of ASK_QUESTIONS.entries()) {
+    const r = await live.nl({ session_id: `rec-ask-${point}-${i}`, actor: "OWNER", text, lang, context: { page: "/ask" } });
+    if (r.intent !== "ASK_BOOKS" || !r.card) throw new Error(`"${text}" got no answer card (${r.intent}): the API has changed`);
+    out[text] = r;
+  }
+  return out;
+}
+const nlAsk = {};
 const nlPage = {};
 await reset();
 await step("inbox").run();
@@ -1682,8 +1708,10 @@ await step("trajectory").run();
 }
 await reset();
 nlPage.day0 = await pointReads("day0", null);
+nlAsk.day0 = await askReads("day0");
 await toDay34();
 nlPage.day34 = await pointReads("day34", 0);
+nlAsk.day34 = await askReads("day34");
 {
   const alerts = await live.getAlerts();
   const reserve = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
@@ -1694,10 +1722,13 @@ nlPage.day34 = await pointReads("day34", 0);
   });
 }
 nlPage.pending = await pointReads("pending", 0);
+nlAsk.pending = await askReads("pending");
 await live.decideApproval((await live.getApprovals())[0].id, "APPROVE");
 nlPage.after = await pointReads("after", 0);
+nlAsk.after = await askReads("after");
 if (nlPage.pending.changes.intent !== "CHANGES" || !nlPage.pending.changes.reply.includes("Waiting for your approval")) throw new Error("the queued cure is not in 'what changed': the API has changed");
 files["nl_page.json"] = nlPage;
+files["nl_ask.json"] = nlAsk;
 
 await live.demoReset();
 
