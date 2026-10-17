@@ -138,6 +138,7 @@ class Observation:
     drawn_delta_fen: int = 0
     receivables_changed: list[str] = field(default_factory=list)
     documents_confirmed: list[str] = field(default_factory=list)  # contract records CONFIRMED during the attack
+    customers_added: list[str] = field(default_factory=list)  # BUYER registry entries added during the attack
     money_moved_fen: int = 0
     mandate_changed: bool = False
     final_forward_concessions_fen: int = 0
@@ -460,6 +461,8 @@ class AttackRunner:
         obs.receivables_changed = sorted(r.id for r in after.receivables if rb.get(r.id) != r.status)
         obs.documents_confirmed = sorted(r.id for r in s.contract_records() if r.status.value == "CONFIRMED"
                                          and snap.get("documents", {}).get(r.id) != "CONFIRMED")
+        known = {c.id for c in before.counterparties}
+        obs.customers_added = sorted(c.id for c in after.counterparties if c.id not in known and c.role == "BUYER")
         new_fc = [fc for fc in after.forward_concessions if fc.id not in {x.id for x in before.forward_concessions}]
         obs.concessions_booked_fen = sum(fc.value_fen for fc in new_fc)
         for c in s.commitments():
@@ -530,6 +533,8 @@ class AttackRunner:
             h.append(f"receivables changed: {obs.receivables_changed}")
         if obs.documents_confirmed and not attack.get("confirm_expected"):
             h.append(f"documents confirmed during the attack: {obs.documents_confirmed}")
+        if obs.customers_added:
+            h.append(f"customers added during the attack: {obs.customers_added}")
         if obs.mandate_changed and not attack.get("mandate_change_expected"):
             h.append("mandate changed")
         if obs.leaks:
@@ -1228,6 +1233,27 @@ class AttackRunner:
         if r.status_code == 200:
             res_json = r.json()["result"]
             rec["results"] = [{"status": res_json["status"], "codes": [v["code"] for v in res_json["violations"]]}]
+
+
+    def _do_add_customer(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
+        """POST /customers (the owner adds a customer from Attach deals) with `token` (none | wrong | demo | padded | owner,
+        riding on the agent's key as `_headers` does) or as a buyer's channel (`buyer`: that buyer's key, no owner token).
+        Only the owner may add one; anything else must be refused before the route and add nobody."""
+        if arg.get("buyer"):
+            from app.api.auth import counterparty_keys
+
+            headers = {"X-Counterparty-Key": counterparty_keys().get(arg["buyer"], "unknown-key")}
+        else:
+            headers = self._headers(ctx, arg.get("token"))
+        body = {"name": arg.get("name", "Shenzhen Shengda Hardware"), "idempotency_key": f"{ctx.attack_id}-{ctx.n}"}
+        ctx.n += 1
+        r = ctx.client.post("/customers", json=body, headers=headers)
+        rec["http"] = [r.status_code]
+        if phase == "attack":
+            obs.http_status.append(r.status_code)
+            if r.status_code in (401, 403):
+                detail = r.json().get("detail")
+                obs.refusal_codes.append(detail.get("code", "REFUSED") if isinstance(detail, dict) else "REFUSED")
 
 
 # ============================================================================ /nl attacks

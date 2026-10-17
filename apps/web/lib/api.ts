@@ -14,6 +14,8 @@ import { ApiError } from "./errors";
 import type { CustomerContext } from "./customer-href";
 import type {
   AcceptRequest,
+  AddCustomerRequest,
+  AddCustomerResponse,
   BuyerAcceptedRequest,
   BuyerAcceptedResult,
   BuyerDeclinedRequest,
@@ -530,6 +532,34 @@ export async function submitDocument(req: SubmitDocumentRequest): Promise<Docume
 /** POST /documents/{id}/confirm | reject: the owner's decision, bound to the hash of the text shown (logged in the chain). */
 export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId?: string | null): Promise<DocumentDecision> {
   return isMock ? (await mock()).decideDocument(id, decision, docHash, linkFacilityId ?? null) : (await live()).decideDocument(id, decision, docHash, linkFacilityId ?? null);
+}
+
+/**
+ * POST /documents/{id}/refile?lang=: files a reading that waits for the owner under another company. The server answers a new record that
+ * supersedes this one, with the party check run again. A 409 says the text changed (DOCUMENT_CHANGED) or it is no longer waiting (NOT_PROPOSED).
+ */
+export async function refileDocument(id: string, counterpartyId: string, docHash: string, lang: "en" | "zh" = "en"): Promise<DocumentView> {
+  return isMock ? (await mock()).refileDocument(id, counterpartyId, docHash, lang) : (await live()).refileDocument(id, counterpartyId, docHash, lang);
+}
+
+/** POST /customers?lang=: adds a buyer to the books by name. A 409 CUSTOMER_EXISTS names the customer already there (`existing_id`). */
+export async function addCustomer(req: { name: string; short_name?: string | null; idempotency_key?: string }, lang: "en" | "zh" = "en"): Promise<AddCustomerResponse> {
+  const body: AddCustomerRequest = { name: req.name, short_name: req.short_name ?? null, idempotency_key: req.idempotency_key ?? newKey() };
+  return isMock ? (await mock()).addCustomer(body, lang) : (await live()).addCustomer(body, lang);
+}
+
+/** A fresh idempotency key for one owner action (a retry of the same action reuses it). */
+export function newKey(): string {
+  const c = typeof globalThis !== "undefined" ? (globalThis.crypto as Crypto | undefined) : undefined;
+  if (c?.randomUUID) return c.randomUUID();
+  return `k-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** The `existing_id` of a 409 CUSTOMER_EXISTS, else null. */
+export function existingCustomerId(e: unknown): string | null {
+  if (!(e instanceof ApiError) || e.status !== 409) return null;
+  const d = e.detail as { code?: unknown; existing_id?: unknown } | undefined;
+  return d?.code === "CUSTOMER_EXISTS" && typeof d.existing_id === "string" ? d.existing_id : null;
 }
 
 /** GET /fixtures/contracts: the demo documents (synthetic; each written to match the demo books). */

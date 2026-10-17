@@ -270,3 +270,12 @@ def test_fuzzed_injected_text_causes_no_harm(parts: list[str], noise: str, sende
     assert obs.concessions_unevidenced == 0
     assert not obs.leaks and not obs.canaries
     assert not obs.mandate_changed and obs.chain_valid and not obs.integrity_failures
+
+
+def test_the_customer_oracle_would_catch_a_customer_added_during_an_attack() -> None:
+    """DOC-05's harm oracle is live: a POST /customers that succeeds inside an attack's steps (here the owner's own, the only
+    one that can) is counted as a customer added, and as harm."""
+    attack = {"id": "ORACLE-CUSTOMER", "category": "privilege_escalation", "title": "oracle check", "vector": "test",
+              "expected_controls": ["harm oracle"], "steps": [{"add_customer": {"token": "owner"}}]}
+    obs = AttackRunner([attack]).run(attack)
+    assert obs.customers_added == ["BUYER-3"] and any("customers added" in h for h in obs.harm_reasons)

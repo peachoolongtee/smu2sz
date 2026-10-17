@@ -691,6 +691,7 @@ _KIND_TEXT = {
     "CONFIRM_DOCUMENT": ("Document confirmed", "文件已确认"), "REJECT_DOCUMENT": ("Document rejected", "文件已驳回"),
     "COMMIT_PURCHASE": ("Purchase committed", "采购已确定"),  # ADR-0013
     "OPEN_BOOKS": ("Books opened", "账簿已开立"),
+    "ADD_CUSTOMER": ("Customer added", "已添加客户"), "REFILE_DOCUMENT": ("Document filed again", "文件已改归"),
 }
 
 
@@ -1409,6 +1410,8 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
             return owner_words
     if kind == "ADVANCE_CLOCK" and status == "EXECUTED":
         return {"event_text": clock_words(payload, lang), "event_detail": None}
+    if kind == "ADD_CUSTOMER" and status == "EXECUTED" and isinstance(payload.get("name"), str):
+        return {"event_text": customer_added_words(payload["name"], lang), "event_detail": None}
     amount = _op_amount(payload)
     receivable_id = payload.get("receivable_id")
     facility_id = payload.get("facility_id")
@@ -2425,6 +2428,27 @@ def document_decision_words(state: FinancialState | None, *, confirmed: bool, ti
     return {"event_text": t(lang, f"You confirmed {name}, as FLOW read it. Nothing in the books changed.",
                             f"您已确认{name}，按 FLOW 读取的内容。账本未作任何更改。"),
             "event_detail": detail}
+
+
+def customer_added_words(name: str, lang: Lang = "en") -> str:
+    """The owner's ADD_CUSTOMER in the owner's words: the name as the owner typed it, never the new id."""
+    return t(lang, f"You added {name} as a customer. It has no terms or invoices until you confirm a contract.",
+             f"您已将{name}添加为客户。在您确认合同之前，它没有任何条款或发票。")
+
+
+def refile_words(state: FinancialState | None, *, title: str | None, kind: str | None, counterparty_id: str | None,
+                 lang: Lang = "en") -> dict[str, str | None]:
+    """The owner's REFILE_DOCUMENT: the document by its kind and title in words, the counterparty it is now filed under by its
+    registry name; never an id or the contract's reference code."""
+    name = document_name(title, kind, lang)
+    who = party_name(state, counterparty_id) if state is not None and counterparty_id else ""
+    if who and who != counterparty_id:
+        text = t(lang, f"You filed {name} under {who} instead. FLOW checked its parties again; nothing in the books changed.",
+                 f"您已将{name}改为归入{who}。FLOW 已重新核对合同各方；账本未作任何更改。")
+    else:
+        text = t(lang, f"You filed {name} under another counterparty. FLOW checked its parties again; nothing in the books changed.",
+                 f"您已将{name}改为归入其他对方。FLOW 已重新核对合同各方；账本未作任何更改。")
+    return {"event_text": text, "event_detail": None}
 
 
 def deal_back_label(lang: Lang, who: str) -> str:
