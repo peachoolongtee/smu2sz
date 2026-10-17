@@ -3735,6 +3735,23 @@ export interface DealView {
     notes: string[];
   }[];
   next_invoice?: { day: Day; when?: string; amount_display: string } | null;
+  /**
+   * A buyer with no confirmed contract whose invoices are on the books (`invoices` is then sent too): how many are open, what is due, the late
+   * ones, when the next falls due and the server's one sentence about them ("No contract on file yet. Open invoices: 1, ¥120,000.00 due in 14 days.").
+   * Absent with a contract (its own fields say it) and for a buyer with no invoice.
+   */
+  open_invoices?: {
+    count: number;
+    due_fen: Fen;
+    due_display: string;
+    late_count: number;
+    late_fen: Fen;
+    late_display: string;
+    next_due_day: Day | null;
+    next_due_when: string | null;
+    text: string;
+    tone: DealTone;
+  };
   owed_by_us?: {
     display_only: boolean;
     deliverables: { text: string | null; clause: string | null; quote: string }[];

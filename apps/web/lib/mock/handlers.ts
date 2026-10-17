@@ -1450,6 +1450,11 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
 // The recordings are English: the mock takes `lang` as the live client does and answers the same recording (re-recorded, not translated by hand).
 export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {}): Promise<DealsView> {
   await delay();
+  // The short-facilities books: the buyer has an open invoice and no confirmed contract (recorded by `record-mocks.mjs --deals-short`).
+  if (otherBooks() === "short") {
+    const short = (await import("../../mocks/deals_short.json")).default as unknown as Record<"en" | "zh", DealsView>;
+    return clone(short[lang]);
+  }
   const m = await messageStage();
   if (m) return buyerMessage.recordedReads(m.rec, m.stage, lang).deals;
   const view = documents.mockDeals(openOfferStage());
