@@ -24,7 +24,8 @@ test.beforeEach(async ({ request }) => {
 async function readAgain(page: Page, fixtureId: string, format?: "md" | "docx" | "pdf") {
   await page.goto("/documents");
   const row = page.getByTestId(`fixture-${fixtureId}`);
-  if (format) await row.getByLabel("Format").selectOption(format);
+  // One copy chooser for the samples row (Markdown unless another is chosen).
+  if (format) await page.getByTestId("doc-samples").getByLabel("Format").selectOption(format);
   await row.getByTestId(`fixture-read-${fixtureId}`).click();
   await expect(page).toHaveURL(/\/documents\?id=DOC-000004$/);
   const review = page.getByTestId("doc-review");
