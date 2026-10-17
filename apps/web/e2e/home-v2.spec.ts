@@ -1001,7 +1001,7 @@ test("sizes at 1440: the cash card 360 px tall at most and padded 16 px, the out
   expect(await pad("hv2-outlook-card")).toBe("24px");
   const px = (id: string) => page.getByTestId(id).evaluate((el) => getComputedStyle(el).fontSize);
   expect(await px("hv2-metric-cash-label")).toBe("16px");
-  expect(await px("home-action-eyebrow")).toBe("16px");
+  expect(await px("home-action-eyebrow")).toBe("19px");
   expect(await px("hv2-metric-lowest-label")).toBe("22px");
   expect(await px("home-kpi-cash-value")).toBe("32px");
   expect(await px("home-kpi-lowest-value")).toBe("40px");

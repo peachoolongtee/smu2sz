@@ -164,7 +164,7 @@ export function ActivityRead({ view }: { view: ActivityView }) {
     <div id="activity-timeline" className="space-y-6" data-testid="activity-read">
       <div className="space-y-3">
         <div className="max-w-md">
-          <WorklistSearch value={q} onChange={setQ} label={t("activity.search")} testId="activity-search" />
+          <WorklistSearch boxed value={q} onChange={setQ} label={t("activity.search")} testId="activity-search" />
         </div>
         {view.categories.length > 1 ? (
           <SegmentedTabs

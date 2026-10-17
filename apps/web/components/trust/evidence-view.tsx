@@ -53,7 +53,7 @@ export function EvidenceView({ embedded = false, entry = null, entryAsked = fals
     <>
       {embedded ? (
         <div className="mb-4">
-          <h2 className="font-display text-xl font-extrabold tracking-[-0.01em] text-ink">{t("evid.title")}</h2>
+          <h2 className="font-display text-2xl font-extrabold tracking-[-0.01em] text-ink">{t("evid.title")}</h2>
           <p className="mt-0.5 max-w-3xl text-supporting text-ink-3">{t("evid.subtitle")}</p>
         </div>
       ) : (

@@ -244,7 +244,7 @@ export function DealsPage() {
       <div key="inbox" className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
         {inboxOpen ? null : (
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">
-            <h2 className="font-display text-base font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
+            <h2 className="font-display text-lg font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
             <Button size="sm" onClick={() => setInboxPref(true)} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
               {t("deals.inbox.show")}
             </Button>

@@ -46,7 +46,7 @@ export function StepBusiness({ draft, issues }: { draft: SetupDraft; issues: Iss
       </div>
       <section className="space-y-4 rounded-card border border-line bg-surface p-5">
         <div className="space-y-1">
-          <h3 className="text-sm font-bold text-ink">{t("setup.s1.earn.title")}</h3>
+          <h3 className="text-base font-bold text-ink">{t("setup.s1.earn.title")}</h3>
           <p className="text-sm text-ink-2">{t("setup.s1.earn.sub")}</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -95,7 +95,7 @@ export function StepFunding({ draft, issues }: { draft: SetupDraft; issues: Issu
       <StepHeading title={t("setup.s2.title")} sub={t("setup.s2.sub")} />
       <section className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h3 className="text-base font-bold text-ink">{t("setup.s2.sources")}</h3>
+          <h3 className="text-lg font-bold text-ink">{t("setup.s2.sources")}</h3>
           <span className="grow" />
           <button type="button" onClick={() => setPicking((p) => !p)} className="motion-press inline-flex min-h-10 items-center rounded-control border border-line-ui px-4 text-sm font-semibold text-ink hover:bg-subtle" data-testid="setup-fill-agreement">
             {t("setup.s2.fill")}
@@ -181,7 +181,7 @@ export function StepFunding({ draft, issues }: { draft: SetupDraft; issues: Issu
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h3 className="text-base font-bold text-ink">{t("setup.s2.loans")}</h3>
+          <h3 className="text-lg font-bold text-ink">{t("setup.s2.loans")}</h3>
           <span className="grow" />
           <AddButton onClick={() => updateDraft((d) => ({ ...d, loans: [...d.loans, blankLoan()] }))} testId="setup-add-loan">
             {t("setup.s2.addLoan")}
