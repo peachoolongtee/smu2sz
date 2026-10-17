@@ -1,0 +1,1841 @@
+# Owner question bank for Ask FLOW (POST /nl): what an owner, CEO or CFO of a 20-100 person supplier asks, in English
+# and Chinese, with the data in FLOW's books that answers each one (or `not_in_books: true`) and, for the golden demo
+# books on day 0 (`golden_sme`, Runtime.reset()), the figure the answer must carry.
+#
+# Every expected figure was read from an existing read route on day 0 (GET /state, /trajectory, /home, /mandate,
+# /receivables, /worklist, /alerts, /reconciliation, /ledger, /activity, /approvals/queue, POST /router/plan,
+# POST /capex/evaluate, GET /whatif/presets) or from fixtures/golden/golden_values.json. A figure marked
+# `derived:` is one line of arithmetic on route values (the formula is given); nothing else is computed here. A blank
+# `figures` list means no existing route gives the number; the answer is then judged by `expect_re` or by hand.
+#
+# Fields
+#   id, category, text_en, text_zh, para_en, para_zh (paraphrases: how people phrase the same question differently)
+#   kind        figure | yes_no | list | refusal (refusal = the books cannot answer; the right reply says so and offers
+#               the nearest thing FLOW can do)
+#   data        where the answer lives (store / model field / module function); see BASELINE.md section 1
+#   routes      the read routes that already carry the answer
+#   ok_intents  the /nl intents whose reply is on topic for this question (used by the baseline scorer)
+#   expected    answer (yes/no for yes_no), figures (tokens the reply must carry), expect_re (a direct answer when no figure
+#               applies), direct_re (for a yes/no: the explicit yes/no sentence when it is not the reply's first line),
+#               wrong_re (a reply that is misleading for this question), note
+#   value       1-3: how much an owner (and the demo) gains from a direct answer
+#
+# Figure tokens (scripts/owner_questions_baseline.py matches them in the reply, en and zh renderings):
+#   "¥405000" money in yuan (the sign is ignored: "−¥105,000.00" matches "¥105000"); "d12" a number of days or day 12;
+#   "m31" a month count or month 31; "6.40%" a percentage; "2.00x" a ratio; "t:Foshan|佛山" literal alternatives.
+version: 1
+books: "golden_sme, day 0 (Runtime.reset(); POST /demo/reset?scenario=golden_sme also confirms the demo documents)"
+questions:
+
+# ---------------------------------------------------------------- liquidity and cash
+- id: LIQ-01
+  category: liquidity
+  text_en: "Are we safe?"
+  text_zh: "我们安全吗？"
+  para_en: ["Are we ok for cash?", "Is our cash position safe?"]
+  para_zh: ["现金够不够？", "公司资金安全吗？"]
+  kind: yes_no
+  data: ["trajectory.first_breach_day", "trajectory.min_cash_fen", "mandate.min_cash_fen", "funding.plan"]
+  routes: ["GET /home", "GET /trajectory"]
+  ok_intents: [SHOW_STATUS, SHOW_ALERTS]
+  expected:
+    answer: "no"
+    figures: ["d12", "¥405000"]
+    note: "Not without funding: cash falls to ¥60,000 in 12 days, ¥240,000 under the ¥300,000 reserve; worst −¥105,000 on day 30 (¥405,000 short); FLOW's ¥3,113.93 plan covers it."
+  value: 3
+
+- id: LIQ-02
+  category: liquidity
+  text_en: "How much cash do we have today?"
+  text_zh: "我们今天账上有多少钱？"
+  para_en: ["What's our bank balance?"]
+  para_zh: ["现在现金余额是多少？"]
+  kind: figure
+  data: ["FinancialState.cash_fen"]
+  routes: ["GET /state", "GET /home"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥400000"]
+  value: 3
+
+- id: LIQ-03
+  category: liquidity
+  text_en: "What is our cash runway?"
+  text_zh: "我们的现金能撑多久？"
+  para_en: ["How long will our cash last?", "How many days until we run out of cash?"]
+  para_zh: ["现金跑道有多长？", "钱还能撑几天？"]
+  kind: figure
+  data: ["trajectory.first_breach_day", "trajectory.days.closing"]
+  routes: ["GET /trajectory"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["d12"]
+    note: "12 days to the reserve (¥60,000 left on day 12); cash itself goes negative on day 20 (−¥60,000, after the ¥120,000 supplier payment)."
+  value: 3
+
+- id: LIQ-04
+  category: liquidity
+  text_en: "What is the lowest our cash will go, and when?"
+  text_zh: "现金最低会降到多少？是哪一天？"
+  para_en: ["When is our worst cash day?"]
+  para_zh: ["哪天现金最紧张？"]
+  kind: figure
+  data: ["trajectory.min_cash_fen", "trajectory.min_cash_day"]
+  routes: ["GET /trajectory", "GET /home"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥105000", "d30"]
+  value: 3
+
+- id: LIQ-05
+  category: liquidity
+  text_en: "When do we first drop below our minimum cash reserve?"
+  text_zh: "我们什么时候第一次跌破最低现金储备？"
+  para_en: ["When do we breach the reserve?"]
+  para_zh: ["哪天会跌破储备线？"]
+  kind: figure
+  data: ["trajectory.first_breach_day", "trajectory.first_breach_cash"]
+  routes: ["GET /trajectory", "GET /alerts"]
+  ok_intents: [SHOW_STATUS, SHOW_ALERTS]
+  expected:
+    figures: ["d12", "¥60000"]
+  value: 3
+
+- id: LIQ-06
+  category: liquidity
+  text_en: "How much can I spend today without breaking the reserve?"
+  text_zh: "今天我最多能花多少钱而不跌破储备？"
+  para_en: ["What can I spend?", "How much free cash do we have?"]
+  para_zh: ["我现在能动用多少钱？"]
+  kind: figure
+  data: ["home.cash.headroom_fen", "home.cash.lowest_headroom_fen"]
+  routes: ["GET /home"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥100000", "¥405000"]
+    note: "Nothing safely: ¥100,000 is above the reserve today, but the forecast is already ¥405,000 short on day 30; any spend widens the gap."
+  value: 3
+
+- id: LIQ-07
+  category: liquidity
+  text_en: "What is our minimum cash reserve?"
+  text_zh: "我们的最低现金储备是多少？"
+  para_en: ["What's the cash floor?"]
+  para_zh: ["储备线是多少？"]
+  kind: figure
+  data: ["Mandate.min_cash_fen"]
+  routes: ["GET /mandate"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥300000"]
+  value: 2
+
+- id: LIQ-08
+  category: liquidity
+  text_en: "How much headroom do we have above the reserve?"
+  text_zh: "储备线以上还有多少余量？"
+  para_en: ["What's our headroom?"]
+  para_zh: ["现金余量还有多少？"]
+  kind: figure
+  data: ["home.cash.headroom_fen", "home.cash.lowest_headroom_fen"]
+  routes: ["GET /home"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥100000", "¥405000"]
+    note: "¥100,000 today; the lowest forecast headroom is −¥405,000 on day 30."
+  value: 2
+
+- id: LIQ-09
+  category: liquidity
+  text_en: "What big payments are coming up?"
+  text_zh: "接下来有哪些大额支出？"
+  para_en: ["What bills are due soon?", "What's going out in the next month?"]
+  para_zh: ["近期要付哪些钱？"]
+  kind: list
+  data: ["FinancialState.flows", "FinancialState.debts"]
+  routes: ["GET /state", "GET /trajectory"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥340000", "¥120000", "¥45000"]
+    note: "Payroll ¥340,000 on day 12, supplier ¥120,000 on day 20, equipment loan ¥45,000 on day 30, operating bill ¥100,000 on day 47."
+  value: 3
+
+- id: LIQ-10
+  category: liquidity
+  text_en: "Can we make payroll?"
+  text_zh: "下次发工资的钱够吗？"
+  para_en: ["Is payroll covered?"]
+  para_zh: ["工资发得出来吗？"]
+  kind: yes_no
+  data: ["FinancialState.flows(PAYROLL)", "trajectory.days.closing"]
+  routes: ["GET /state", "GET /trajectory"]
+  ok_intents: [SHOW_STATUS, FUND_GAP]
+  expected:
+    answer: "yes"
+    figures: ["¥340000", "d12"]
+    note: "Yes in cash (¥400,000 covers ¥340,000 on day 12) but it leaves ¥60,000, ¥240,000 under the reserve."
+  value: 3
+
+- id: LIQ-11
+  category: liquidity
+  text_en: "What will our cash be in 30 days?"
+  text_zh: "30天后我们的现金是多少？"
+  para_en: ["Where will cash be at the end of the month?"]
+  para_zh: ["一个月后现金会是多少？"]
+  kind: figure
+  data: ["trajectory.days(30).closing"]
+  routes: ["GET /trajectory"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥105000"]
+    note: "−¥105,000 on day 30."
+  value: 2
+
+- id: LIQ-12
+  category: liquidity
+  text_en: "Show me the 13-week cash forecast."
+  text_zh: "给我看一下未来13周的现金流预测。"
+  para_en: ["What does cash look like over the next three months?"]
+  para_zh: ["未来三个月现金走势怎么样？"]
+  kind: list
+  data: ["trajectory.days"]
+  routes: ["GET /trajectory", "GET /home (cash.series)"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥105000", "d30"]
+  value: 2
+
+- id: LIQ-13
+  category: liquidity
+  text_en: "When does the next money come in?"
+  text_zh: "下一笔钱什么时候到账？"
+  para_en: ["When do we next get paid?"]
+  para_zh: ["下一笔回款什么时候到？"]
+  kind: figure
+  data: ["Receivable.due_day", "receivables.summary.next_expected"]
+  routes: ["GET /receivables"]
+  ok_intents: [SHOW_STATUS, RECONCILE]
+  expected:
+    figures: ["¥420000", "d32"]
+  value: 3
+
+- id: LIQ-14
+  category: liquidity
+  text_en: "Why are we going to be short of cash?"
+  text_zh: "为什么我们的现金会不够？"
+  para_en: ["What is causing the cash gap?"]
+  para_zh: ["资金缺口是怎么造成的？"]
+  kind: figure
+  data: ["home.cash.drivers", "FinancialState.flows", "Receivable.due_day"]
+  routes: ["GET /home"]
+  ok_intents: [EXPLAIN, SHOW_STATUS, SHOW_ALERTS]
+  expected:
+    figures: ["¥340000", "d32"]
+    note: "Payroll of ¥340,000 falls due in 12 days; the next receipt, ¥420,000, lands only in 32 days."
+  value: 3
+
+- id: LIQ-15
+  category: liquidity
+  text_en: "How much do we need to raise to stay safe?"
+  text_zh: "要保持安全，我们需要融多少钱？"
+  para_en: ["How big is the cash gap?", "How much are we short?"]
+  para_zh: ["资金缺口有多大？"]
+  kind: figure
+  data: ["FundingPlan.need_fen"]
+  routes: ["POST /router/plan", "GET /home"]
+  ok_intents: [SHOW_STATUS, FUND_GAP, COMPARE_FINANCING, SHOW_ALERTS]
+  expected:
+    figures: ["¥405000"]
+  value: 3
+
+- id: LIQ-16
+  category: liquidity
+  text_en: "Is any money in transit?"
+  text_zh: "有没有在途的资金？"
+  para_en: ["Is any funding on its way?"]
+  para_zh: ["有没有还没到账的融资？"]
+  kind: yes_no
+  data: ["FinancialState.lots", "home.cash.in_transit"]
+  routes: ["GET /home"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    answer: "no"
+    expect_re: "(?i)nothing (is )?(in transit|on its way)|no (funding|money|payment) (is )?(in transit|on its way)|没有(在途|在路上)"
+  value: 1
+
+- id: LIQ-17
+  category: liquidity
+  text_en: "What happens to cash if we do nothing?"
+  text_zh: "如果我们什么都不做，现金会怎样？"
+  para_en: ["What if we don't act?"]
+  para_zh: ["不采取行动会怎么样？"]
+  kind: figure
+  data: ["trajectory.min_cash_fen", "trajectory.min_cash_day"]
+  routes: ["GET /home (worst)"]
+  ok_intents: [SHOW_STATUS, WHAT_IF]
+  expected:
+    figures: ["¥105000", "d30"]
+  value: 2
+
+# ---------------------------------------------------------------- debt
+- id: DEBT-01
+  category: debt
+  text_en: "How much debt do we have?"
+  text_zh: "我们总共欠多少债？"
+  para_en: ["What's our total debt?", "How much do we owe the banks?"]
+  para_zh: ["我们现在负债多少？"]
+  kind: figure
+  data: ["FinancialState.debts.principal_fen", "Facility.drawn_fen", "trajectory.days.debt"]
+  routes: ["GET /state", "GET /trajectory"]
+  ok_intents: [SHOW_STATUS, SHOW_RATIOS]
+  expected:
+    figures: ["¥1500000"]
+    note: "¥1,500,000: the existing equipment loan; nothing is drawn on the credit line or invoice financing."
+  value: 3
+
+- id: DEBT-02
+  category: debt
+  text_en: "Who do we owe money to?"
+  text_zh: "我们欠谁的钱？"
+  para_en: ["Break down our debt by lender."]
+  para_zh: ["按贷方列一下我们的债务。"]
+  kind: list
+  data: ["FinancialState.debts", "Facility.drawn_fen", "Facility.lender_id"]
+  routes: ["GET /state"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥1500000"]
+    note: "One position: the existing equipment loan ¥1,500,000 (DebtPosition.facility_id is null, so its lender is not recorded); ¥0 drawn on every facility."
+  value: 2
+
+- id: DEBT-03
+  category: debt
+  text_en: "What does our debt cost us each month?"
+  text_zh: "我们的债务每个月要付多少？"
+  para_en: ["What's our monthly debt service?"]
+  para_zh: ["每月还本付息多少？"]
+  kind: figure
+  data: ["DebtPosition.monthly_debt_service_fen", "trajectory.months.debt_service"]
+  routes: ["GET /state", "GET /trajectory"]
+  ok_intents: [SHOW_STATUS, SHOW_RATIOS]
+  expected:
+    figures: ["¥45000"]
+  value: 2
+
+- id: DEBT-04
+  category: debt
+  text_en: "Can we clear our debts?"
+  text_zh: "我们能把债务还清吗？"
+  para_en: ["Can we pay off all our loans?"]
+  para_zh: ["我们能还清所有贷款吗？"]
+  kind: yes_no
+  data: ["FinancialState.debts", "FinancialState.cash_fen", "Mandate.min_cash_fen"]
+  routes: ["GET /state", "GET /home"]
+  ok_intents: [SHOW_STATUS, REPAY_FACILITY]
+  expected:
+    answer: "no"
+    figures: ["¥1500000"]
+    wrong_re: "(?i)nothing is drawn|没有.{0,10}(提款|提用|动用)|未提款"
+    note: "No: the ¥1,500,000 equipment loan is far above the ¥100,000 available over the reserve; it is paid ¥45,000 a month."
+  value: 2
+
+- id: DEBT-05
+  category: debt
+  text_en: "Is there anything we could repay right now?"
+  text_zh: "现在有什么贷款可以马上还掉吗？"
+  para_en: ["What is repayable today?"]
+  para_zh: ["现在可以提前还哪笔款？"]
+  kind: yes_no
+  data: ["Facility.drawn_fen", "FundingLot", "alerts(FACILITY_REPAYABLE)"]
+  routes: ["GET /state", "GET /alerts"]
+  ok_intents: [REPAY_FACILITY, SHOW_STATUS, SHOW_ALERTS]
+  expected:
+    answer: "no"
+    expect_re: "(?i)nothing (is )?drawn|no (draw|balance)|没有.{0,6}(提款|余额|提用)|未提"
+  value: 1
+
+- id: DEBT-06
+  category: debt
+  text_en: "How much more can we borrow?"
+  text_zh: "我们还能借多少钱？"
+  para_en: ["What's our borrowing headroom?", "How much is undrawn on our facilities?"]
+  para_zh: ["授信还剩多少额度？"]
+  kind: figure
+  data: ["Facility.limit_fen", "Facility.drawn_fen", "Facility.status", "menu_view"]
+  routes: ["GET /home (facilities)", "POST /router/plan (menu)"]
+  ok_intents: [SHOW_STATUS, COMPARE_FINANCING, FUND_GAP]
+  expected:
+    figures: ["¥150000", "¥350000"]
+    note: "¥500,000 committed and undrawn: credit line ¥150,000 (6.40%, same day) and invoice financing ¥350,000 (80% of an invoice, 3 days). Buyer early pay (¥420,000) is a discount, not borrowing."
+  value: 3
+
+- id: DEBT-07
+  category: debt
+  text_en: "How much is drawn on the credit line?"
+  text_zh: "授信额度已经用了多少？"
+  para_en: ["What's the balance on the line?"]
+  para_zh: ["信用额度用掉多少了？"]
+  kind: figure
+  data: ["Facility(FAC-LINE).drawn_fen", "Facility.limit_fen"]
+  routes: ["GET /state", "GET /home"]
+  ok_intents: [SHOW_STATUS, REPAY_FACILITY]
+  expected:
+    figures: ["¥150000"]
+    expect_re: "(?i)¥0(\\.00)? (is )?drawn|nothing (is )?drawn|not drawn|未(提|使用)|没有(提|使用)|已用 ¥0"
+  value: 2
+
+- id: DEBT-08
+  category: debt
+  text_en: "When is our next loan payment?"
+  text_zh: "下一笔贷款还款是什么时候？"
+  para_en: ["When do we next pay the bank?"]
+  para_zh: ["下次还贷是哪天？"]
+  kind: figure
+  data: ["DebtPosition.next_payment_day", "DebtPosition.monthly_debt_service_fen"]
+  routes: ["GET /state", "GET /trajectory"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥45000", "d30"]
+  value: 2
+
+- id: DEBT-09
+  category: debt
+  text_en: "Which of our facilities is cheapest to use?"
+  text_zh: "我们哪个额度用起来最便宜？"
+  para_en: ["What's the cheapest money we have?"]
+  para_zh: ["哪个融资渠道成本最低？"]
+  kind: figure
+  data: ["menu_view.all_in", "Facility.rate_bp"]
+  routes: ["POST /router/plan (menu)"]
+  ok_intents: [COMPARE_FINANCING]
+  expected:
+    figures: ["6.40%"]
+    note: "The credit line at 6.40% (same day, ¥150,000); invoice financing is 10.84% all-in."
+  value: 2
+
+- id: DEBT-10
+  category: debt
+  text_en: "When does the credit line have to be at zero?"
+  text_zh: "授信额度什么时候必须清零？"
+  para_en: ["What is the clean-down rule?"]
+  para_zh: ["清零要求是什么？"]
+  kind: figure
+  data: ["Covenant(CLEAN_DOWN).clean_down_days", "alerts(CLEAN_DOWN_AT_RISK)"]
+  routes: ["GET /state"]
+  ok_intents: [SHOW_RATIOS]
+  expected:
+    figures: ["d30"]
+    note: "At zero for 30 consecutive days each year; no clean-down alert is raised."
+  value: 1
+
+- id: DEBT-11
+  category: debt
+  text_en: "How much interest will we pay over the next four months?"
+  text_zh: "未来四个月我们要付多少利息？"
+  para_en: ["What's our interest bill?"]
+  para_zh: ["利息要付多少？"]
+  kind: figure
+  data: ["Trajectory.interest_posted_fen", "Trajectory.fees_posted_fen"]
+  routes: ["GET /trajectory (interest and fees)"]
+  ok_intents: [SHOW_STATUS, SHOW_RATIOS]
+  expected:
+    figures: ["¥0"]
+    note: "¥0.00 on current books (nothing drawn; the equipment loan is at 0%, a fixture assumption). FLOW's plan would add ¥3,113.93."
+  value: 2
+
+- id: DEBT-12
+  category: debt
+  text_en: "What would FLOW's plan do to our debt?"
+  text_zh: "如果执行FLOW的方案，我们的负债会怎样？"
+  para_en: ["How much debt does the funding plan add?"]
+  para_zh: ["融资方案会增加多少负债？"]
+  kind: figure
+  data: ["FundingPlan.actions", "covenants.pro_forma"]
+  routes: ["POST /router/plan", "GET /home (next_action)"]
+  ok_intents: [WHAT_IF, COMPARE_FINANCING, FUND_GAP, EXPLAIN]
+  expected:
+    figures: ["¥150000", "¥255000"]
+    note: "+¥405,000 short-term: ¥150,000 on the line (repaid day 32) and ¥255,000 advanced on the Foshan invoice (repaid when Foshan pays); leverage goes to 1.49x in month 1."
+  value: 2
+
+- id: DEBT-13
+  category: debt
+  text_en: "What is our cost of funds?"
+  text_zh: "我们的资金成本是多少？"
+  para_en: ["What's our marginal cost of borrowing?"]
+  para_zh: ["我们的边际融资成本是多少？"]
+  kind: figure
+  data: ["funding.rates.marginal_cost"]
+  routes: ["POST /router/plan (committed.marginal_cost_annual)"]
+  ok_intents: [COMPARE_FINANCING, EXPLAIN]
+  expected:
+    figures: ["10.84%"]
+    note: "10.84% a year: invoice financing, the cheapest committed source that can carry a permanent need."
+  value: 2
+
+- id: DEBT-14
+  category: debt
+  text_en: "Should we draw on the credit line now?"
+  text_zh: "我们现在要不要动用授信额度？"
+  para_en: ["Is it time to use the line?"]
+  para_zh: ["现在该提款了吗？"]
+  kind: yes_no
+  data: ["funding.plan", "alerts(RESERVE_BREACH_AHEAD)"]
+  routes: ["POST /router/plan", "GET /alerts"]
+  ok_intents: [FUND_GAP, COMPARE_FINANCING, SHOW_STATUS, SHOW_ALERTS]
+  expected:
+    answer: "yes"
+    figures: ["¥150000"]
+    note: "Yes, as part of the plan: draw ¥150,000 today (¥841.64) with ¥255,000 of invoice financing; the line alone leaves day 12 short."
+  value: 2
+
+# ---------------------------------------------------------------- customers and receivables
+- id: CUS-01
+  category: customers
+  text_en: "Who owes us the most?"
+  text_zh: "谁欠我们最多钱？"
+  para_en: ["Which customer owes us the most money?"]
+  para_zh: ["哪个客户欠款最多？"]
+  kind: figure
+  data: ["Receivable.outstanding_fen", "worklist.customers"]
+  routes: ["GET /receivables", "GET /worklist"]
+  ok_intents: [SHOW_STATUS, RECONCILE]
+  expected:
+    figures: ["t:Foshan|佛山", "¥420000"]
+  value: 3
+
+- id: CUS-02
+  category: customers
+  text_en: "How much are we owed in total?"
+  text_zh: "客户总共欠我们多少钱？"
+  para_en: ["What are our total receivables?"]
+  para_zh: ["应收账款总额是多少？"]
+  kind: figure
+  data: ["receivables.summary.outstanding_total_fen"]
+  routes: ["GET /receivables"]
+  ok_intents: [SHOW_STATUS, RECONCILE]
+  expected:
+    figures: ["¥420000"]
+  value: 3
+
+- id: CUS-03
+  category: customers
+  text_en: "Who is paying late?"
+  text_zh: "谁拖欠我们的款？"
+  para_en: ["Which customers are overdue?", "Who should I chase?"]
+  para_zh: ["哪些客户逾期了？", "我应该先催谁？"]
+  kind: list
+  data: ["Receivable.due_day", "reconcile.outstanding.past_due"]
+  routes: ["GET /receivables", "GET /reconciliation"]
+  ok_intents: [RECONCILE, SHOW_STATUS]
+  expected:
+    expect_re: "(?i)nothing (is )?overdue|no (invoice|receivable|one|customer)s? (is |are )?(overdue|late|past due)|nobody|没有.{0,8}逾期|无逾期|都没有逾期"
+    note: "Nobody: the only open invoice (Foshan ¥420,000) is due in 32 days."
+  value: 3
+
+- id: CUS-04
+  category: customers
+  text_en: "What is our DSO?"
+  text_zh: "我们的应收账款周转天数是多少？"
+  para_en: ["How long do customers take to pay us?"]
+  para_zh: ["客户平均多久付款？"]
+  kind: figure
+  data: ["Receivable.issue_day", "Receivable.terms_days", "RecurringInvoice.terms_days"]
+  routes: ["GET /receivables (governed_by.terms_days)"]
+  ok_intents: [SHOW_STATUS, RECONCILE]
+  expected:
+    figures: ["d45"]
+    note: "No route computes DSO. The terms are 45 days on every invoice (the receivables read); a DSO figure needs receipt history the demo books do not hold on day 0."
+  value: 2
+
+- id: CUS-05
+  category: customers
+  text_en: "How dependent are we on one customer?"
+  text_zh: "我们对单一客户的依赖有多大？"
+  para_en: ["What share of our receivables is Foshan?"]
+  para_zh: ["佛山占我们应收的比例是多少？"]
+  kind: figure
+  data: ["worklist.customers.share_text", "strategy.Concentration"]
+  routes: ["GET /worklist"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["100%"]
+    note: "Foshan is 100% of what you are owed (¥420,000) and of the recurring invoicing."
+  value: 2
+
+- id: CUS-06
+  category: customers
+  text_en: "What do Foshan's payment terms cost us?"
+  text_zh: "佛山的账期让我们付出多少成本？"
+  para_en: ["What does a 45-day term cost us?"]
+  para_zh: ["45天账期的资金成本是多少？"]
+  kind: figure
+  data: ["funding.rates.marginal_cost", "Receivable.terms_days", "strategy.exposure (feature off)"]
+  routes: []
+  ok_intents: [EXPLAIN, SHOW_DEAL, WHAT_IF]
+  expected:
+    figures: []
+    note: "No route prices the carrying cost of the current terms (customer economics is switched off by default). It is computable: face × marginal cost × days / 365."
+  value: 2
+
+- id: CUS-07
+  category: customers
+  text_en: "What if Foshan pays 30 days late?"
+  text_zh: "如果佛山晚30天付款会怎样？"
+  para_en: ["What happens if the Foshan invoice slips a month?"]
+  para_zh: ["佛山的款晚一个月到会怎么样？"]
+  kind: figure
+  data: ["trajectory (receipt moved)", "whatif.simulate"]
+  routes: ["POST /whatif (terms only; not a delay)"]
+  ok_intents: [WHAT_IF]
+  expected:
+    figures: []
+    note: "No read route projects a late receipt; the answer needs one projection with RCV-A moved from day 32 to day 62."
+  value: 3
+
+- id: CUS-08
+  category: customers
+  text_en: "Should we take Foshan's early-payment offer at 1.2%?"
+  text_zh: "佛山1.2%的提前付款折扣划算吗？"
+  para_en: ["Is the early-pay discount worth it?"]
+  para_zh: ["接受佛山提前付款值不值？"]
+  kind: yes_no
+  data: ["funding.rates.break_even_discount", "router.comparison(full_discount)"]
+  routes: ["POST /router/plan (rejected rows)"]
+  ok_intents: [EVALUATE_OFFER, WHAT_IF, COMPARE_FINANCING, ACCELERATE_RECEIPT, EXPLAIN]
+  expected:
+    answer: "no"
+    figures: ["0.88%"]
+    note: "No: 1.2% is above the 0.88% break-even; discounting the whole invoice costs ¥5,040 against ¥3,113.93 for the plan."
+  value: 3
+
+- id: CUS-09
+  category: customers
+  text_en: "Which invoices are still open?"
+  text_zh: "有哪些发票还没收款？"
+  para_en: ["List the open receivables."]
+  para_zh: ["列出未收的应收款。"]
+  kind: list
+  data: ["FinancialState.receivables"]
+  routes: ["GET /receivables"]
+  ok_intents: [SHOW_STATUS, RECONCILE]
+  expected:
+    figures: ["¥420000", "d32"]
+  value: 2
+
+- id: CUS-10
+  category: customers
+  text_en: "When is Foshan's invoice due?"
+  text_zh: "佛山那张发票什么时候到期？"
+  para_en: ["When will Foshan pay?"]
+  para_zh: ["佛山什么时候付款？"]
+  kind: figure
+  data: ["Receivable.due_day"]
+  routes: ["GET /receivables"]
+  ok_intents: [SHOW_STATUS, RECONCILE, SHOW_DEAL]
+  expected:
+    figures: ["d32"]
+  value: 2
+
+- id: CUS-11
+  category: customers
+  text_en: "How much does Dongguan owe us?"
+  text_zh: "东莞欠我们多少钱？"
+  para_en: ["Does Dongguan owe us anything?"]
+  para_zh: ["东莞还有欠款吗？"]
+  kind: figure
+  data: ["Receivable.counterparty_id"]
+  routes: ["GET /worklist", "GET /customers"]
+  ok_intents: [SHOW_STATUS, RECONCILE, SHOW_DEAL]
+  expected:
+    expect_re: "(?i)dongguan[^.\\n]{0,60}(¥0\\b|nothing|no receivable|owes nothing|not owe)|东莞[^。\\n]{0,30}(没有|¥0)"
+  value: 1
+
+- id: CUS-12
+  category: customers
+  text_en: "How much will we invoice next month?"
+  text_zh: "下个月我们会开多少发票？"
+  para_en: ["What's our recurring billing?"]
+  para_zh: ["每月固定开票多少？"]
+  kind: figure
+  data: ["FinancialState.recurring_invoices"]
+  routes: ["GET /state", "GET /receivables (scheduled_note)"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥420000"]
+    note: "¥420,000 to Foshan every 30 days, next issued in 2 days (45-day terms)."
+  value: 2
+
+- id: CUS-13
+  category: customers
+  text_en: "What orders do we expect next quarter?"
+  text_zh: "下季度预计会有多少订单？"
+  para_en: ["What's in the sales pipeline?"]
+  para_zh: ["在手和预期订单有多少？"]
+  kind: figure
+  data: ["FinancialState.expected_orders"]
+  routes: ["GET /state"]
+  ok_intents: [SHOW_STATUS]
+  expected:
+    figures: ["¥400000"]
+    note: "Foshan, ¥400,000 next quarter (days 92-182), not firm; FLOW does not count it in conservative cash."
+  value: 2
+
+- id: CUS-14
+  category: customers
+  text_en: "Have all expected payments arrived?"
+  text_zh: "该到的回款都到了吗？"
+  para_en: ["Has every payment we expected come in?"]
+  para_zh: ["该收的钱都收到了吗？"]
+  kind: yes_no
+  data: ["reconcile.receipts", "reconcile.outstanding"]
+  routes: ["GET /reconciliation"]
+  ok_intents: [RECONCILE]
+  expected:
+    answer: "yes"
+    expect_re: "(?i)0 flagged|nothing (is )?(missing|overdue)|no receipt|没有.{0,6}(缺|异常|逾期)|0 笔有异常"
+    note: "Nothing was due yet: no receipt expected before day 32, none flagged."
+  value: 2
+
+- id: CUS-15
+  category: customers
+  text_en: "Who are our customers?"
+  text_zh: "我们有哪些客户？"
+  para_en: ["List our customers."]
+  para_zh: ["列一下我们的客户。"]
+  kind: list
+  data: ["FinancialState.counterparties(role=BUYER)"]
+  routes: ["GET /customers"]
+  ok_intents: [SHOW_STATUS, SHOW_DEAL]
+  expected:
+    figures: ["t:Foshan|佛山", "t:Dongguan|东莞"]
+  value: 1
+
+- id: CUS-16
+  category: customers
+  text_en: "Is Foshan a reliable payer?"
+  text_zh: "佛山付款靠谱吗？"
+  para_en: ["How does Foshan usually pay?"]
+  para_zh: ["佛山一般按时付款吗？"]
+  kind: yes_no
+  data: ["strategy.PaymentBehaviour", "customer_inputs (empty on day 0)"]
+  routes: ["GET /buyers/{id}/inputs (feature off)"]
+  ok_intents: [SHOW_DEAL, RECONCILE, SHOW_STATUS]
+  expected:
+    figures: []
+    note: "The books hold no payment history on day 0 (customer inputs are empty); the honest answer is that there is no record yet and the open invoice is not due."
+  value: 2
+
+# ---------------------------------------------------------------- deals and requests
+- id: DEAL-01
+  category: deals
+  text_en: "What is waiting for me?"
+  text_zh: "有什么在等我处理？"
+  para_en: ["What needs my decision?", "Anything for me to look at today?"]
+  para_zh: ["有什么需要我决定的吗？"]
+  kind: list
+  data: ["worklist.needs_you", "approvals", "alerts", "home.next_action"]
+  routes: ["GET /worklist", "GET /home", "GET /approvals/queue"]
+  ok_intents: [SHOW_ALERTS, SHOW_STATUS]
+  expected:
+    figures: ["d12"]
+    expect_re: "(?i)plan|方案"
+    note: "One thing: the reserve is unsafe in 12 days and a ¥405,000 plan (¥3,113.93, no approval needed) waits for your go. No approvals are pending."
+  value: 3
+
+- id: DEAL-02
+  category: deals
+  text_en: "Are there any approvals pending?"
+  text_zh: "有待审批的操作吗？"
+  para_en: ["Anything for me to approve?"]
+  para_zh: ["有需要我批准的吗？"]
+  kind: yes_no
+  data: ["ApprovalRecord(status=PENDING)"]
+  routes: ["GET /approvals/queue"]
+  ok_intents: [SHOW_ALERTS, SHOW_STATUS, APPROVE]
+  expected:
+    answer: "no"
+    expect_re: "(?i)no (approval|operation)s? (is |are )?(pending|waiting)|nothing (is )?(pending|waiting for (your )?approval)|没有(待审批|需要.{0,4}批准)"
+  value: 2
+
+- id: DEAL-03
+  category: deals
+  text_en: "Where are we with Foshan?"
+  text_zh: "跟佛山的合作进展如何？"
+  para_en: ["What's the status with Foshan?"]
+  para_zh: ["佛山那边现在什么情况？"]
+  kind: list
+  data: ["deals.deal_summary", "Receivable", "ContractRecord"]
+  routes: ["GET /deals/BUYER-1", "GET /customers/BUYER-1/overview"]
+  ok_intents: [SHOW_DEAL, SHOW_STATUS]
+  expected:
+    figures: ["¥420000"]
+    note: "No confirmed contract on file (after reset()); ¥420,000 invoice due in 32 days; nothing open."
+  value: 3
+
+- id: DEAL-04
+  category: deals
+  text_en: "Is there an open request from a customer?"
+  text_zh: "现在有客户提出的待处理请求吗？"
+  para_en: ["Any open negotiations?"]
+  para_zh: ["现在有在谈的交易吗？"]
+  kind: yes_no
+  data: ["deals.open_offer", "decisions"]
+  routes: ["GET /deals", "GET /decisions"]
+  ok_intents: [SHOW_DEAL, SHOW_STATUS, SHOW_ALERTS]
+  expected:
+    answer: "no"
+    expect_re: "(?i)no (open )?(offer|request|negotiation)|nothing (is )?open|没有.{0,6}(报价|请求|谈判|交易)"
+  value: 2
+
+- id: DEAL-05
+  category: deals
+  text_en: "Foshan wants 60-day terms. Can we accept?"
+  text_zh: "佛山要60天账期，我们能接受吗？"
+  para_en: ["Should we agree to 60 days for Foshan?"]
+  para_zh: ["佛山要求60天账期，这个能接吗？"]
+  kind: yes_no
+  data: ["verifier.verdict", "whatif.simulate(terms_days=60)"]
+  routes: ["POST /whatif"]
+  ok_intents: [EVALUATE_OFFER, WHAT_IF, NEGOTIATE]
+  expected:
+    direct_re: "FLOW recommends a counter|FLOW 建议还价"
+    figures: []
+    note: "Answer from a verdict on the reported terms; the figure depends on how the request is compiled, so it is left blank."
+  value: 3
+
+- id: DEAL-06
+  category: deals
+  text_en: "What is the biggest discount I can give a customer?"
+  text_zh: "我最多能给客户多大的折扣？"
+  para_en: ["How much can we give away to Foshan?"]
+  para_zh: ["给佛山的让利上限是多少？"]
+  kind: figure
+  data: ["Mandate.max_immediate_discount_bp", "Mandate.max_aggregate_forward_concession_fen"]
+  routes: ["GET /mandate"]
+  ok_intents: [SHOW_STATUS, EXPLAIN]
+  expected:
+    figures: ["1.50%", "¥5000"]
+  value: 2
+
+- id: DEAL-07
+  category: deals
+  text_en: "Which contracts have we signed?"
+  text_zh: "我们签了哪些合同？"
+  para_en: ["Show me our agreements."]
+  para_zh: ["我们有哪些已确认的合同？"]
+  kind: list
+  data: ["ContractRecord(status=CONFIRMED)"]
+  routes: ["GET /documents", "GET /deals"]
+  ok_intents: [SHOW_DEAL]
+  expected:
+    expect_re: "(?i)no (confirmed )?(contract|agreement)|没有.{0,6}(合同|协议)"
+    note: "None confirmed after reset() (POST /demo/reset would confirm the three demo documents)."
+  value: 2
+
+- id: DEAL-08
+  category: deals
+  text_en: "What payment terms did we agree with Foshan?"
+  text_zh: "我们跟佛山约定的账期是多少？"
+  para_en: ["What are Foshan's terms?"]
+  para_zh: ["佛山的付款条件是什么？"]
+  kind: figure
+  data: ["Receivable.terms_days", "receivables.governed_by", "contracts.derive.buyer_terms"]
+  routes: ["GET /receivables (governed_by)"]
+  ok_intents: [SHOW_DEAL, SHOW_STATUS]
+  expected:
+    figures: ["d45"]
+  value: 2
+
+- id: DEAL-09
+  category: deals
+  text_en: "What would it cost us to give Foshan 60 days?"
+  text_zh: "给佛山60天账期要花我们多少钱？"
+  para_en: ["What does extending Foshan to 60 days cost?"]
+  para_zh: ["把佛山账期延到60天成本多少？"]
+  kind: figure
+  data: ["whatif.simulate(terms_days=60)", "funding.rates.marginal_cost"]
+  routes: ["POST /whatif"]
+  ok_intents: [WHAT_IF, EVALUATE_OFFER, EXPLAIN]
+  expected:
+    figures: ["¥24326.92"]
+    note: "¥24,326.92 of forward concessions over 12 months (golden_values extension_committed_12m; POST /whatif terms_days=60), above the ¥5,000 cap."
+  value: 3
+
+- id: DEAL-10
+  category: deals
+  text_en: "What did we last offer Foshan?"
+  text_zh: "我们上次给佛山报的是什么条件？"
+  para_en: ["What counter did we send?"]
+  para_zh: ["我们发过什么还价？"]
+  kind: list
+  data: ["decisions.SentFact", "OfferedFact"]
+  routes: ["GET /decisions"]
+  ok_intents: [SHOW_DEAL, EXPLAIN, CHANGES]
+  expected:
+    expect_re: "(?i)no (counter|offer)|nothing (was |has been )?(sent|offered)|没有.{0,6}(还价|报价|发送)"
+  value: 1
+
+# ---------------------------------------------------------------- funding
+- id: FUN-01
+  category: funding
+  text_en: "What's the cheapest way to raise ¥200,000?"
+  text_zh: "融20万最便宜的办法是什么？"
+  para_en: ["Cheapest way to get ¥200k?"]
+  para_zh: ["要借20万，哪种方式最划算？"]
+  kind: figure
+  data: ["funding.router.plan(need)", "menu_view"]
+  routes: ["POST /router/plan (for the projected gap only)"]
+  ok_intents: [COMPARE_FINANCING, FUND_GAP]
+  expected:
+    figures: []
+    note: "The router prices the projected gap, not an arbitrary amount; no route takes a need. Nearest: the credit line at 6.40% for ¥150,000 plus invoice financing."
+  value: 3
+
+- id: FUN-02
+  category: funding
+  text_en: "What does FLOW recommend we do about cash?"
+  text_zh: "FLOW建议我们怎么处理现金问题？"
+  para_en: ["What should I do?", "What's your recommendation?"]
+  para_zh: ["你建议怎么做？"]
+  kind: figure
+  data: ["home.next_action", "funding.plan"]
+  routes: ["GET /home", "POST /router/plan"]
+  ok_intents: [COMPARE_FINANCING, FUND_GAP, SHOW_ALERTS, SHOW_STATUS]
+  expected:
+    figures: ["¥3113.93", "¥150000", "¥255000"]
+  value: 3
+
+- id: FUN-03
+  category: funding
+  text_en: "Which financing option is cheapest?"
+  text_zh: "哪种融资最便宜？"
+  para_en: ["Compare our funding options."]
+  para_zh: ["比较一下我们的融资方案。"]
+  kind: list
+  data: ["funding.compare", "menu_view"]
+  routes: ["POST /router/plan (comparison)"]
+  ok_intents: [COMPARE_FINANCING]
+  expected:
+    figures: ["¥3113.93"]
+  value: 3
+
+- id: FUN-04
+  category: funding
+  text_en: "How much would FLOW's plan cost?"
+  text_zh: "FLOW的方案要花多少钱？"
+  para_en: ["What's the cost of fixing the gap?"]
+  para_zh: ["补上缺口要花多少钱？"]
+  kind: figure
+  data: ["FundingPlan.total_cost_fen"]
+  routes: ["POST /router/plan", "GET /home (funding_line)"]
+  ok_intents: [COMPARE_FINANCING, FUND_GAP, SHOW_ALERTS]
+  expected:
+    figures: ["¥3113.93"]
+  value: 3
+
+- id: FUN-05
+  category: funding
+  text_en: "How fast can we get money?"
+  text_zh: "最快多久能拿到钱？"
+  para_en: ["What's the quickest funding we have?"]
+  para_zh: ["哪个融资到账最快？"]
+  kind: figure
+  data: ["Facility.lead_time_days", "menu_view.time_to_cash_days"]
+  routes: ["POST /router/plan (menu)"]
+  ok_intents: [COMPARE_FINANCING]
+  expected:
+    expect_re: "(?i)same day|today|当天"
+    note: "Same day: the credit line (¥150,000); invoice financing takes 3 days."
+  value: 2
+
+- id: FUN-06
+  category: funding
+  text_en: "Should we apply for the government-guaranteed loan?"
+  text_zh: "我们要不要申请政府担保贷款？"
+  para_en: ["Is the guaranteed loan worth applying for?"]
+  para_zh: ["政府担保贷款值得申请吗？"]
+  kind: yes_no
+  data: ["Facility(FAC-GGL)", "router.comparison(line_guaranteed_loan)"]
+  routes: ["POST /router/plan"]
+  ok_intents: [COMPARE_FINANCING, BORROWER_FILE]
+  expected:
+    figures: ["5.00%", "d21"]
+    note: "Cheapest rate (5.00%) but not applied and 21 days to cash; the gap opens in 12 days, so it cannot fix this gap. Worth applying for the next one."
+  value: 2
+
+- id: FUN-07
+  category: funding
+  text_en: "Can we borrow against the Foshan invoice?"
+  text_zh: "佛山那张发票能拿去融资吗？"
+  para_en: ["How much can we get for our invoices?"]
+  para_zh: ["我们的发票最多能融多少钱？"]
+  kind: figure
+  data: ["Facility(FAC-IF).advance_rate_bp", "Receivable.face_fen"]
+  routes: ["GET /state", "GET /alerts (cure)"]
+  ok_intents: [COMPARE_FINANCING, FUND_GAP, ACCELERATE_RECEIPT]
+  expected:
+    figures: ["¥336000"]
+    note: "Yes: 80% of ¥420,000 = ¥336,000 (limit ¥350,000), 7.80% a year + 0.25% per 30 days; 3 days to cash."
+  value: 2
+
+- id: FUN-08
+  category: funding
+  text_en: "What's the break-even discount for early payment?"
+  text_zh: "提前付款折扣的盈亏平衡点是多少？"
+  para_en: ["Above what discount is early payment too expensive?"]
+  para_zh: ["折扣超过多少就不划算了？"]
+  kind: figure
+  data: ["funding.rates.break_even_discount"]
+  routes: ["POST /router/plan"]
+  ok_intents: [EXPLAIN, COMPARE_FINANCING]
+  expected:
+    figures: ["0.88%"]
+  value: 2
+
+- id: FUN-09
+  category: funding
+  text_en: "What would a bank need from us for a loan?"
+  text_zh: "银行贷款需要我们准备什么材料？"
+  para_en: ["Prepare what a lender would ask for."]
+  para_zh: ["申请贷款要哪些资料？"]
+  kind: list
+  data: ["borrower_file.build"]
+  routes: ["POST /borrower-file"]
+  ok_intents: [BORROWER_FILE]
+  expected:
+    figures: []
+    note: "The borrower file: FLOW builds it from verified state for a named facility and amount."
+  value: 2
+
+- id: FUN-10
+  category: funding
+  text_en: "Is equity an option?"
+  text_zh: "引入股东投资可以吗？"
+  para_en: ["Could we raise money from an investor?"]
+  para_zh: ["找投资人融资行不行？"]
+  kind: refusal
+  data: ["Facility(FAC-EQUITY) REFERENCE_ONLY", "mandate.tiers (ISSUE_EQUITY is Tier 3)"]
+  routes: ["POST /router/plan (menu; reference only)"]
+  ok_intents: [OUT_OF_SCOPE, COMPARE_FINANCING]
+  expected:
+    note: "Reference only: FLOW never issues equity (Tier 3); it is listed for comparison, 60 days to cash."
+  value: 1
+
+# ---------------------------------------------------------------- covenants
+- id: COV-01
+  category: covenants
+  text_en: "Are we inside our covenants?"
+  text_zh: "我们满足贷款契约吗？"
+  para_en: ["Are we compliant with the bank's covenants?"]
+  para_zh: ["契约指标都达标吗？"]
+  kind: yes_no
+  data: ["covenants.ratios_for", "trajectory.months"]
+  routes: ["GET /trajectory (months)"]
+  ok_intents: [SHOW_RATIOS, SHOW_STATUS]
+  expected:
+    direct_re: "Every projected month is inside the covenants|预测的每个月都在契约范围内"
+    answer: "yes"
+    figures: ["2.00x", "1.35x"]
+  value: 3
+
+- id: COV-02
+  category: covenants
+  text_en: "How much covenant headroom do we have?"
+  text_zh: "契约还有多少余量？"
+  para_en: ["How close are we to breaching a covenant?"]
+  para_zh: ["离违反契约还有多远？"]
+  kind: figure
+  data: ["covenants.worst_dscr", "covenants.worst_leverage", "Mandate.min_dscr_bp", "Mandate.max_leverage_bp"]
+  routes: ["GET /trajectory"]
+  ok_intents: [SHOW_RATIOS, SHOW_STATUS]
+  expected:
+    figures: ["0.75x", "1.15x"]
+    note: "derived: DSCR 2.00 − 1.25 = 0.75x; leverage 2.50 − 1.35 = 1.15x (both month 1)."
+  value: 3
+
+- id: COV-03
+  category: covenants
+  text_en: "What is our DSCR?"
+  text_zh: "我们的偿债覆盖率是多少？"
+  para_en: ["What's our debt service coverage?"]
+  para_zh: ["DSCR是多少？"]
+  kind: figure
+  data: ["trajectory.months.dscr"]
+  routes: ["GET /trajectory"]
+  ok_intents: [SHOW_RATIOS, SHOW_STATUS]
+  expected:
+    figures: ["2.00x", "1.25x"]
+  value: 2
+
+- id: COV-04
+  category: covenants
+  text_en: "What is our leverage?"
+  text_zh: "我们的杠杆率是多少？"
+  para_en: ["What's our debt to EBITDA?"]
+  para_zh: ["负债和EBITDA的倍数是多少？"]
+  kind: figure
+  data: ["trajectory.months.leverage"]
+  routes: ["GET /trajectory"]
+  ok_intents: [SHOW_RATIOS, SHOW_STATUS]
+  expected:
+    figures: ["1.35x", "2.50x"]
+  value: 2
+
+- id: COV-05
+  category: covenants
+  text_en: "What would break our covenants?"
+  text_zh: "什么情况会让我们违反契约？"
+  para_en: ["How much more debt service can we carry?"]
+  para_zh: ["还本付息最多能到多少？"]
+  kind: figure
+  data: ["FinancialState.monthly_ebitda_fen", "Mandate.min_dscr_bp", "Mandate.max_leverage_bp"]
+  routes: ["GET /state", "GET /mandate"]
+  ok_intents: [SHOW_RATIOS, EXPLAIN, WHAT_IF]
+  expected:
+    figures: ["¥72000", "¥2700000"]
+    note: "derived: monthly debt service above ¥90,000 / 1.25 = ¥72,000 breaks DSCR; total debt above 2.5 × 12 × ¥90,000 = ¥2,700,000 breaks leverage."
+  value: 3
+
+- id: COV-06
+  category: covenants
+  text_en: "How much more can we borrow before we break the leverage covenant?"
+  text_zh: "在不违反杠杆契约的前提下还能再借多少？"
+  para_en: ["What's our leverage headroom in yuan?"]
+  para_zh: ["杠杆余量换成金额是多少？"]
+  kind: figure
+  data: ["FinancialState.monthly_ebitda_fen", "trajectory.months.total_debt", "Mandate.max_leverage_bp"]
+  routes: ["GET /trajectory"]
+  ok_intents: [SHOW_RATIOS, WHAT_IF]
+  expected:
+    figures: ["¥1245000"]
+    note: "derived: 2.5 × 12 × ¥90,000 − ¥1,455,000 (month-1 debt) = ¥1,245,000; the DSCR covenant may bind first if the new debt amortises."
+  value: 2
+
+- id: COV-07
+  category: covenants
+  text_en: "Would FLOW's funding plan break a covenant?"
+  text_zh: "FLOW的融资方案会违反契约吗？"
+  para_en: ["Does the plan breach any covenant?"]
+  para_zh: ["这个方案会不会违反契约？"]
+  kind: yes_no
+  data: ["FundingPlan.violations", "covenants.pro_forma"]
+  routes: ["POST /router/plan (violations empty)"]
+  ok_intents: [SHOW_RATIOS, COMPARE_FINANCING, EXPLAIN, WHAT_IF]
+  expected:
+    answer: "no"
+    note: "No: the plan has no violations; leverage rises to 1.49x in month 1 against 2.50x, and the line is repaid on day 32."
+  value: 2
+
+- id: COV-08
+  category: covenants
+  text_en: "Is the credit line clean-down at risk?"
+  text_zh: "授信清零要求有风险吗？"
+  para_en: ["Could we miss the clean-down?"]
+  para_zh: ["清零会不会做不到？"]
+  kind: yes_no
+  data: ["alerts(CLEAN_DOWN_AT_RISK)"]
+  routes: ["GET /alerts"]
+  ok_intents: [SHOW_RATIOS, SHOW_ALERTS]
+  expected:
+    direct_re: "Clean-down of the credit line: no alert raised|信用额度的清零要求：没有预警"
+    answer: "no"
+    expect_re: "(?i)no alert|clean-down[^.\\n]{0,40}(no alert|not at risk)|清零[^。\\n]{0,20}没有预警"
+  value: 1
+
+- id: COV-09
+  category: covenants
+  text_en: "What is our EBITDA?"
+  text_zh: "我们的EBITDA是多少？"
+  para_en: ["What's our monthly operating profit?"]
+  para_zh: ["每月息税折旧前利润是多少？"]
+  kind: figure
+  data: ["FinancialState.monthly_ebitda_fen"]
+  routes: ["GET /state"]
+  ok_intents: [SHOW_RATIOS, SHOW_STATUS]
+  expected:
+    figures: ["¥90000"]
+  value: 2
+
+# ---------------------------------------------------------------- capex
+- id: CAP-01
+  category: capex
+  text_en: "Can we afford a new machine?"
+  text_zh: "我们买得起一台新设备吗？"
+  para_en: ["Can we afford the die-cutting line?"]
+  para_zh: ["这台模切线我们买得起吗？"]
+  kind: yes_no
+  data: ["capex.evaluate_capex", "CapexRequest defaults"]
+  routes: ["POST /capex/evaluate"]
+  ok_intents: [CAPEX]
+  expected:
+    direct_re: "Finance with the 48-month lease"
+    answer: "yes"
+    figures: ["¥600000"]
+    note: "Only financed: cash plus the line leaves ¥250,000 above the reserve for a ¥600,000 price; the 48-month lease (¥14,423.49 a month) passes every limit."
+  value: 3
+
+- id: CAP-02
+  category: capex
+  text_en: "What's the best way to finance the ¥600k machine?"
+  text_zh: "60万的设备怎么融资最好？"
+  para_en: ["Lease or loan for the machine?"]
+  para_zh: ["这台设备是租赁好还是贷款好？"]
+  kind: figure
+  data: ["CapexResult.selected_id", "CapexStructure"]
+  routes: ["POST /capex/evaluate"]
+  ok_intents: [CAPEX]
+  expected:
+    figures: ["7.20%", "¥14423.49"]
+    note: "The 48-month lease at 7.20% (¥14,423.49 a month, ¥92,327.32 total charges); the 36-month loan breaches the reserve, the 18-month loan breaks DSCR (1.13x)."
+  value: 3
+
+- id: CAP-03
+  category: capex
+  text_en: "Is the machine worth buying?"
+  text_zh: "这台设备值得买吗？"
+  para_en: ["Does the investment pay off?"]
+  para_zh: ["这笔投资划算吗？"]
+  kind: yes_no
+  data: ["CapexResult.npv_fen", "CapexResult.payback_month"]
+  routes: ["POST /capex/evaluate"]
+  ok_intents: [CAPEX]
+  expected:
+    direct_re: "Worth doing on the owner's estimate"
+    answer: "yes"
+    figures: ["¥380885.77", "m31"]
+  value: 3
+
+- id: CAP-04
+  category: capex
+  text_en: "How long until the machine pays for itself?"
+  text_zh: "这台设备多久能回本？"
+  para_en: ["What's the payback on the equipment?"]
+  para_zh: ["设备的回收期是多久？"]
+  kind: figure
+  data: ["CapexResult.payback_month"]
+  routes: ["POST /capex/evaluate"]
+  ok_intents: [CAPEX]
+  expected:
+    figures: ["m31"]
+  value: 2
+
+- id: CAP-05
+  category: capex
+  text_en: "Can we pay for the machine in cash?"
+  text_zh: "这台设备能用现金直接买吗？"
+  para_en: ["Could we buy the equipment outright?"]
+  para_zh: ["全款买设备行不行？"]
+  kind: yes_no
+  data: ["CapexStructure(cash_line).violations"]
+  routes: ["POST /capex/evaluate"]
+  ok_intents: [CAPEX]
+  expected:
+    direct_re: "Cash \\+ credit line: (?:fails|不通过)"
+    answer: "no"
+    figures: ["¥250000"]
+  value: 2
+
+- id: CAP-06
+  category: capex
+  text_en: "What would a ¥300,000 machine do to our cash?"
+  text_zh: "买一台30万的机器对现金有什么影响？"
+  para_en: ["Can we buy a ¥300k machine?"]
+  para_zh: ["30万的设备能买吗？"]
+  kind: figure
+  data: ["capex.evaluate_capex(CapexRequest(price_fen=...))"]
+  routes: ["POST /capex/evaluate (with a body)"]
+  ok_intents: [CAPEX]
+  expected:
+    figures: []
+    note: "POST /capex/evaluate accepts another price but chat holds only the default case and says so; no figure read here."
+  value: 2
+
+- id: CAP-07
+  category: capex
+  text_en: "Would an equipment loan break our covenants?"
+  text_zh: "设备贷款会让我们违反契约吗？"
+  para_en: ["Would the term loan fail the DSCR test?"]
+  para_zh: ["设备定期贷款会不会通不过偿债覆盖率测试？"]
+  kind: yes_no
+  data: ["CapexStructure.min_dscr", "CapexStructure.violations"]
+  routes: ["POST /capex/evaluate"]
+  ok_intents: [CAPEX, SHOW_RATIOS]
+  expected:
+    direct_re: "18-month term loan[^\\n]*(?:fails|不通过)"
+    answer: "yes"
+    figures: ["1.13x"]
+    note: "The 18-month loan does (DSCR 1.13x in month 1 against 1.25x); the 36-month one passes DSCR (1.43x) but breaches the reserve on day 44."
+  value: 2
+
+- id: CAP-08
+  category: capex
+  text_en: "What purchases have we committed to?"
+  text_zh: "我们已经承诺了哪些采购？"
+  para_en: ["Do we have any capex contracts?"]
+  para_zh: ["有哪些设备采购合同？"]
+  kind: list
+  data: ["deals.purchases", "ContractRecord(kind=CAPEX_CONTRACT)"]
+  routes: ["GET /purchases (FEATURE_CAPEX_CONTRACTS; off by default)"]
+  ok_intents: [CAPEX, SHOW_DEAL]
+  expected:
+    expect_re: "(?i)no (purchase|capex contract)|none|没有.{0,6}(采购|合同)"
+  value: 1
+
+# ---------------------------------------------------------------- activity and audit
+- id: ACT-01
+  category: activity
+  text_en: "What did FLOW do this week?"
+  text_zh: "FLOW这周做了什么？"
+  para_en: ["What have you done recently?", "Show me your recent actions."]
+  para_zh: ["你最近做了哪些操作？"]
+  kind: list
+  data: ["LedgerEntry (operations log)", "activity.rows"]
+  routes: ["GET /activity", "GET /ledger"]
+  ok_intents: [CHANGES]
+  expected:
+    expect_re: "(?i)nothing|no (operation|action|change)s?|没有.{0,6}(操作|变化|执行)"
+    note: "Nothing yet: the log is empty on day 0 and the chain verifies."
+  value: 3
+
+- id: ACT-02
+  category: activity
+  text_en: "What changed today?"
+  text_zh: "今天有什么变化？"
+  para_en: ["Catch me up."]
+  para_zh: ["自上次以来有什么变化？"]
+  kind: list
+  data: ["operations log", "home.changes"]
+  routes: ["GET /home (changes)"]
+  ok_intents: [CHANGES]
+  expected:
+    expect_re: "(?i)nothing|no (change|operation)|没有.{0,6}(变化|操作)"
+  value: 3
+
+- id: ACT-03
+  category: activity
+  text_en: "Why did FLOW decline Foshan's offer?"
+  text_zh: "FLOW为什么拒绝了佛山的报价？"
+  para_en: ["Why was the Foshan request turned down?"]
+  para_zh: ["佛山的请求为什么被拒？"]
+  kind: list
+  data: ["Verdict.violations", "decisions.EvaluatedFact"]
+  routes: ["GET /decisions"]
+  ok_intents: [EXPLAIN]
+  expected:
+    expect_re: "(?i)no (offer|verdict|decision)|nothing (was|has been) (declined|evaluated|rejected)|haven'?t|have not|没有.{0,8}(报价|结论|评估|拒绝)"
+    note: "No Foshan offer has been evaluated on day 0; the honest answer says so (it must not invent a reason)."
+  value: 3
+
+- id: ACT-04
+  category: activity
+  text_en: "Has anything been refused or blocked?"
+  text_zh: "有没有被拒绝或拦截的操作？"
+  para_en: ["Were any operations refused?"]
+  para_zh: ["有操作被拦下来吗？"]
+  kind: yes_no
+  data: ["OperationResult(REFUSED)", "SecurityEvent"]
+  routes: ["GET /ledger (refusals)", "GET /audit"]
+  ok_intents: [CHANGES, RECONCILE]
+  expected:
+    answer: "no"
+    expect_re: "(?i)nothing (has been |was )?(refused|blocked)|no (operation|refusal|security event)s?|0 refused|没有.{0,6}(拒绝|拦截)"
+  value: 2
+
+- id: ACT-05
+  category: activity
+  text_en: "Is the audit log intact?"
+  text_zh: "审计日志完整吗？"
+  para_en: ["Can I trust the log?"]
+  para_zh: ["审计链校验通过吗？"]
+  kind: yes_no
+  data: ["store.verify_chain"]
+  routes: ["GET /ledger (chain_valid)", "GET /activity (chain)"]
+  ok_intents: [RECONCILE, CHANGES]
+  expected:
+    answer: "yes"
+    expect_re: "(?i)chain verifies|chain is valid|校验通过"
+  value: 2
+
+- id: ACT-06
+  category: activity
+  text_en: "How much money has FLOW moved?"
+  text_zh: "FLOW一共动了多少钱？"
+  para_en: ["Has FLOW moved any money?"]
+  para_zh: ["FLOW有没有动过钱？"]
+  kind: figure
+  data: ["audit.summary.money_moved_fen"]
+  routes: ["GET /audit"]
+  ok_intents: [CHANGES, RECONCILE]
+  expected:
+    figures: ["¥0"]
+    expect_re: "(?i)nothing|no money|没有"
+  value: 2
+
+- id: ACT-07
+  category: activity
+  text_en: "Which decisions are still open?"
+  text_zh: "还有哪些决策没完成？"
+  para_en: ["What are we waiting for?"]
+  para_zh: ["我们还在等什么？"]
+  kind: list
+  data: ["decisions.derive", "decisions.waiting_for"]
+  routes: ["GET /decisions?open=true"]
+  ok_intents: [SHOW_STATUS, CHANGES]
+  expected:
+    expect_re: "(?i)nothing|no (open )?decision|not waiting|没有.{0,6}(决策|等待|在等)"
+  value: 2
+
+- id: ACT-08
+  category: activity
+  text_en: "Did anyone try to change our limits?"
+  text_zh: "有人试图修改我们的限额吗？"
+  para_en: ["Any security incidents?"]
+  para_zh: ["有没有安全事件？"]
+  kind: yes_no
+  data: ["SecurityEvent", "mandate_history"]
+  routes: ["GET /audit", "GET /security/summary"]
+  ok_intents: [CHANGES, RECONCILE]
+  expected:
+    answer: "no"
+    expect_re: "(?i)no (security event|attempt|incident)|nothing (was |has been )?(refused|blocked)|没有.{0,6}(安全事件|尝试)"
+    wrong_re: "(?i)tier[- ]?3|三级操作|can never do it|不能执行"
+    note: "A question about attempts, not a request to change the mandate; refusing it as a Tier-3 request is wrong."
+  value: 2
+
+- id: ACT-09
+  category: activity
+  text_en: "What have we sent to customers?"
+  text_zh: "我们给客户发过什么？"
+  para_en: ["Which messages went out?"]
+  para_zh: ["对外发了哪些消息？"]
+  kind: list
+  data: ["decisions.SentFact", "outbound"]
+  routes: ["GET /decisions", "GET /activity"]
+  ok_intents: [CHANGES, SHOW_DEAL]
+  expected:
+    expect_re: "(?i)nothing|no (message|counter)s?|没有.{0,6}(发送|消息)"
+  value: 1
+
+# ---------------------------------------------------------------- mandate and limits
+- id: MAN-01
+  category: mandate
+  text_en: "What can FLOW do without me?"
+  text_zh: "FLOW不经过我可以做什么？"
+  para_en: ["What are you allowed to do on your own?", "What's within your authority?"]
+  para_zh: ["你自己能做哪些事？"]
+  kind: list
+  data: ["Mandate", "mandate.tiers.tier_for"]
+  routes: ["GET /mandate"]
+  ok_intents: [SHOW_STATUS, EXPLAIN]
+  expected:
+    figures: ["¥100000", "15.00%", "¥300000"]
+    note: "Tier 1 inside the signed mandate: use committed facilities up to 15.00% a year while keeping ¥300,000; concessions up to ¥5,000, discounts up to 1.50%; a single commitment above ¥100,000 or a new facility needs you."
+  value: 3
+
+- id: MAN-02
+  category: mandate
+  text_en: "What needs my approval?"
+  text_zh: "哪些事情需要我批准？"
+  para_en: ["When do you have to ask me first?"]
+  para_zh: ["什么情况下你必须先问我？"]
+  kind: list
+  data: ["Mandate.tier2_single_commitment_fen", "Mandate.max_apr_bp", "mandate.tiers"]
+  routes: ["GET /mandate"]
+  ok_intents: [SHOW_STATUS, EXPLAIN, SHOW_ALERTS]
+  expected:
+    figures: ["¥100000", "15.00%"]
+  value: 3
+
+- id: MAN-03
+  category: mandate
+  text_en: "When does your mandate expire?"
+  text_zh: "授权什么时候到期？"
+  para_en: ["How long is the mandate valid?"]
+  para_zh: ["授权还有多久有效？"]
+  kind: figure
+  data: ["Mandate.expires_day", "mandate.validity"]
+  routes: ["GET /mandate (validity)"]
+  ok_intents: [SHOW_STATUS, SHOW_ALERTS]
+  expected:
+    figures: ["d90"]
+  value: 2
+
+- id: MAN-04
+  category: mandate
+  text_en: "What's the highest interest rate FLOW may accept?"
+  text_zh: "FLOW最高能接受多少利率？"
+  para_en: ["What's the APR ceiling?"]
+  para_zh: ["年化利率上限是多少？"]
+  kind: figure
+  data: ["Mandate.max_apr_bp"]
+  routes: ["GET /mandate"]
+  ok_intents: [SHOW_STATUS, COMPARE_FINANCING, EXPLAIN]
+  expected:
+    figures: ["15.00%"]
+  value: 2
+
+- id: MAN-05
+  category: mandate
+  text_en: "How big a discount can FLOW give a customer on its own?"
+  text_zh: "FLOW自己最多能给客户多大折扣？"
+  para_en: ["What's the concession cap?"]
+  para_zh: ["让步上限是多少？"]
+  kind: figure
+  data: ["Mandate.max_immediate_discount_bp", "Mandate.max_aggregate_forward_concession_fen"]
+  routes: ["GET /mandate"]
+  ok_intents: [SHOW_STATUS, EXPLAIN]
+  expected:
+    figures: ["1.50%", "¥5000"]
+  value: 2
+
+- id: MAN-06
+  category: mandate
+  text_en: "Is the mandate valid?"
+  text_zh: "授权有效吗？"
+  para_en: ["Is your signed mandate still in force?"]
+  para_zh: ["签署的授权还有效吗？"]
+  kind: yes_no
+  data: ["mandate.validity", "mandate.signing"]
+  routes: ["GET /mandate"]
+  ok_intents: [SHOW_STATUS, SHOW_ALERTS]
+  expected:
+    answer: "yes"
+    figures: ["d90"]
+  value: 1
+
+- id: MAN-07
+  category: mandate
+  text_en: "What will FLOW never do?"
+  text_zh: "FLOW绝对不会做什么？"
+  para_en: ["What is off limits for you?"]
+  para_zh: ["哪些事你永远不会做？"]
+  kind: list
+  data: ["mandate.tiers (Tier 3)", "nl.models.Tier3Kind"]
+  routes: []
+  ok_intents: [OUT_OF_SCOPE, EXPLAIN]
+  expected:
+    expect_re: "(?i)guarantee|collateral|equity|担保|抵押|股权"
+    note: "Tier 3: sign a personal guarantee, pledge collateral, issue equity, change the mandate."
+  value: 2
+
+- id: MAN-08
+  category: mandate
+  text_en: "Can FLOW sign a personal guarantee for me?"
+  text_zh: "FLOW能替我签个人担保吗？"
+  para_en: ["Could you pledge our equipment as collateral?"]
+  para_zh: ["你能把设备拿去抵押吗？"]
+  kind: yes_no
+  data: ["mandate.tiers (Tier 3)"]
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected:
+    answer: "no"
+    expect_re: "(?i)never|cannot|can't|will not|won't|only you|永远不|不能|不会|只有您"
+  value: 2
+
+- id: MAN-09
+  category: mandate
+  text_en: "What limits did I sign?"
+  text_zh: "我签了哪些限额？"
+  para_en: ["Show me the mandate."]
+  para_zh: ["给我看一下授权内容。"]
+  kind: list
+  data: ["Mandate"]
+  routes: ["GET /mandate"]
+  ok_intents: [SHOW_STATUS, EXPLAIN]
+  expected:
+    figures: ["¥300000", "15.00%", "1.25x", "2.50x"]
+  value: 2
+
+- id: MAN-10
+  category: mandate
+  text_en: "Can FLOW take on new borrowing by itself?"
+  text_zh: "FLOW可以自己去借新的钱吗？"
+  para_en: ["Can you open a new loan without me?"]
+  para_zh: ["你能不经过我申请新贷款吗？"]
+  kind: yes_no
+  data: ["Mandate.allow_new_borrowing", "mandate.tiers (new facility is Tier 2)"]
+  routes: ["GET /mandate"]
+  ok_intents: [SHOW_STATUS, EXPLAIN, COMPARE_FINANCING]
+  expected:
+    answer: "no"
+    note: "It may draw committed facilities inside the limits (allow_new_borrowing true); a new facility is Tier 2, only you add to the menu."
+  value: 2
+
+# ---------------------------------------------------------------- not in the books (honest refusal)
+- id: NIB-01
+  category: not_in_books
+  not_in_books: true
+  text_en: "How much tax do we owe?"
+  text_zh: "我们要交多少税？"
+  para_en: ["When is our next tax payment?"]
+  para_zh: ["下次交税是什么时候？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected:
+    note: "Not in the books; nearest: the scheduled outflows (enter a tax payment as a bill)."
+  value: 2
+
+- id: NIB-02
+  category: not_in_books
+  not_in_books: true
+  text_en: "What's our VAT position this quarter?"
+  text_zh: "本季度增值税情况怎么样？"
+  para_en: ["How much VAT can we reclaim?"]
+  para_zh: ["进项税能抵扣多少？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected: {}
+  value: 1
+
+- id: NIB-03
+  category: not_in_books
+  not_in_books: true
+  text_en: "What was our profit this year?"
+  text_zh: "我们今年利润多少？"
+  para_en: ["Are we profitable?"]
+  para_zh: ["我们赚钱吗？"]
+  kind: refusal
+  data: ["FinancialState.monthly_ebitda_fen (nearest)"]
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected:
+    note: "Only a monthly EBITDA (¥90,000) is held; no P&L. Nearest: EBITDA and the covenant ratios."
+  value: 2
+
+- id: NIB-04
+  category: not_in_books
+  not_in_books: true
+  text_en: "What's our gross margin?"
+  text_zh: "我们的毛利率是多少？"
+  para_en: ["What margin do we make on our products?"]
+  para_zh: ["产品毛利多少？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected: {}
+  value: 2
+
+- id: NIB-05
+  category: not_in_books
+  not_in_books: true
+  text_en: "Which customer is most profitable?"
+  text_zh: "哪个客户最赚钱？"
+  para_en: ["Which customers make us the most money?"]
+  para_zh: ["哪个客户利润最高？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected:
+    note: "No margins by customer; nearest: who owes the most and what each customer's terms cost (customer economics, off)."
+  value: 2
+
+- id: NIB-06
+  category: not_in_books
+  not_in_books: true
+  text_en: "How much inventory do we hold?"
+  text_zh: "我们有多少库存？"
+  para_en: ["What's our stock worth?"]
+  para_zh: ["库存值多少钱？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected: {}
+  value: 2
+
+- id: NIB-07
+  category: not_in_books
+  not_in_books: true
+  text_en: "How many staff do we have?"
+  text_zh: "我们有多少员工？"
+  para_en: ["What's our headcount?"]
+  para_zh: ["公司有多少人？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected: {}
+  value: 1
+
+- id: NIB-08
+  category: not_in_books
+  not_in_books: true
+  text_en: "How much is each employee paid?"
+  text_zh: "每个员工的工资是多少？"
+  para_en: ["Break down the payroll by person."]
+  para_zh: ["工资按人列一下。"]
+  kind: refusal
+  data: ["FinancialState.flows(PAYROLL): total only (nearest)"]
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected:
+    note: "Only the payroll total (¥340,000 on day 12) is held."
+  value: 1
+
+- id: NIB-09
+  category: not_in_books
+  not_in_books: true
+  text_en: "What's our revenue this year?"
+  text_zh: "今年营收多少？"
+  para_en: ["What are our sales year to date?"]
+  para_zh: ["今年到现在销售额多少？"]
+  kind: refusal
+  data: ["RecurringInvoice: forward only (nearest)"]
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected:
+    note: "No history; nearest: forward invoicing ¥420,000 every 30 days."
+  value: 2
+
+- id: NIB-10
+  category: not_in_books
+  not_in_books: true
+  text_en: "How much is in each of our bank accounts?"
+  text_zh: "每个银行账户里各有多少钱？"
+  para_en: ["Balance by account, please."]
+  para_zh: ["按账户列一下余额。"]
+  kind: refusal
+  data: ["FinancialState.cash_fen: one total (nearest)"]
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected:
+    note: "One cash total (¥400,000), not per account."
+  value: 1
+
+- id: NIB-11
+  category: not_in_books
+  not_in_books: true
+  text_en: "How much do we owe our suppliers in total?"
+  text_zh: "我们总共欠供应商多少钱？"
+  para_en: ["What are our accounts payable?"]
+  para_zh: ["应付账款有多少？"]
+  kind: refusal
+  data: ["FinancialState.flows(SUPPLIER): scheduled payments only (nearest)"]
+  routes: []
+  ok_intents: [OUT_OF_SCOPE, SHOW_STATUS]
+  expected:
+    note: "No payables ledger; only scheduled supplier payments (¥120,000 on day 20)."
+  value: 2
+
+- id: NIB-12
+  category: not_in_books
+  not_in_books: true
+  text_en: "What's our credit rating?"
+  text_zh: "我们的信用评级是多少？"
+  para_en: ["What do the banks think of us?"]
+  para_zh: ["银行怎么评价我们？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected: {}
+  value: 1
+
+- id: NIB-13
+  category: not_in_books
+  not_in_books: true
+  text_en: "How are our competitors doing?"
+  text_zh: "竞争对手情况怎么样？"
+  para_en: ["What's happening in our market?"]
+  para_zh: ["行业行情怎么样？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected: {}
+  value: 1
+
+- id: NIB-14
+  category: not_in_books
+  not_in_books: true
+  text_en: "Where is the exchange rate going?"
+  text_zh: "人民币汇率会怎么走？"
+  para_en: ["Should we hedge our dollars?"]
+  para_zh: ["要不要做汇率对冲？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected: {}
+  value: 1
+
+- id: NIB-15
+  category: not_in_books
+  not_in_books: true
+  text_en: "Should I hire more people?"
+  text_zh: "我应该多招人吗？"
+  para_en: ["Can we afford two more workers?"]
+  para_zh: ["再招两个工人养得起吗？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected:
+    note: "No staff data; nearest: a what-if on a new monthly outflow, which chat cannot book (enter it as a bill)."
+  value: 2
+
+- id: NIB-16
+  category: not_in_books
+  not_in_books: true
+  text_en: "What is the company worth?"
+  text_zh: "公司值多少钱？"
+  para_en: ["What's our valuation?"]
+  para_zh: ["公司估值多少？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected: {}
+  value: 1
+
+- id: NIB-17
+  category: not_in_books
+  not_in_books: true
+  text_en: "How much did we spend on rent last month?"
+  text_zh: "上个月房租花了多少？"
+  para_en: ["What were our expenses last month?"]
+  para_zh: ["上个月支出了多少？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected:
+    note: "No history before day 0 (closed days are not stored as a ledger of expenses)."
+  value: 1
+
+- id: NIB-18
+  category: not_in_books
+  not_in_books: true
+  text_en: "Are we up to date on social insurance contributions?"
+  text_zh: "社保都按时交了吗？"
+  para_en: ["Are we compliant on employee benefits?"]
+  para_zh: ["员工社保合规吗？"]
+  kind: refusal
+  data: []
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected: {}
+  value: 1
+
+- id: NIB-19
+  category: not_in_books
+  not_in_books: true
+  text_en: "What's our order backlog by product?"
+  text_zh: "按产品看在手订单有多少？"
+  para_en: ["Which products sell best?"]
+  para_zh: ["哪个产品卖得最好？"]
+  kind: refusal
+  data: ["FinancialState.expected_orders: by customer only (nearest)"]
+  routes: []
+  ok_intents: [OUT_OF_SCOPE]
+  expected:
+    note: "Orders are held by customer only (Foshan ¥400,000 next quarter, not firm), never by product."
+  value: 1
