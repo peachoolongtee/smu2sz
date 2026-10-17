@@ -22,7 +22,7 @@ from app.api.errors import ALREADY_DECIDED_CODE
 from app.api.runtime import Runtime, get_runtime
 from app.compiler import ContractTooLong
 from app.config import get_settings
-from app.contracts import read_document, record_view
+from app.contracts import PARTY_FLAG_KINDS, read_document, record_view, with_party_check
 from app.deals import documents_for
 from app.domain.fixtures import (
     capex_contract_fixture_bytes,
@@ -146,6 +146,8 @@ def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
     try:
         text = extract_text(name, data)
         record = read_document(text, kind, cp, title=title, source=source, day=day, facilities=state.facilities)
+        # The owner's rule of 17 Oct: the counterparty chosen must be a party the document names (app.contracts.parties).
+        record = with_party_check(record, party)
     except IngestError as e:
         raise HTTPException(413 if isinstance(e, DocumentTooLarge) else 422,
                             _refusal(e.code, str(e), e.message_zh)) from None
@@ -156,7 +158,7 @@ def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
         stored = rt.store.get_contract_record(rid)
         assert stored is not None
         for f in stored.flags:
-            if f.blocking:
+            if f.blocking and f.kind not in PARTY_FLAG_KINDS:  # a party the document does not name is no attack
                 _event(SecurityEventKind.INJECTION, rt.day, cp, f"{rid}: {f.note}", [f.span])
         return {"document": record_view(stored, rt.store.get_state(), lang, rt.day, rt.store.contract_guard_rows())}
 

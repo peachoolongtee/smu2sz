@@ -2,10 +2,11 @@
 implies for the books (compared, never written).
 
 Public API: `read_document`, `suggest_facility`, `record_view`, `record_summary`, `term_display`, `buyer_terms`,
-`day_of`. Depends on domain, the compiler's public entry points and nothing that writes state.
+`day_of`, `with_party_check`. Depends on domain, the compiler's public entry points and nothing that writes state.
 """
 
 from app.contracts.derive import BuyerContractTerms, ScheduledInvoice, buyer_terms, date_display, day_of
+from app.contracts.parties import PARTY_FLAG_KINDS, PARTY_NOT_NAMED, PARTY_UNCHECKED, with_party_check
 from app.contracts.records import KIND_TITLES, doc_hash, read_document, suggest_facility
 from app.contracts.views import (
     AI_LABEL,
@@ -22,6 +23,9 @@ __all__ = [
     "AI_LABEL",
     "FIELD_LABELS",
     "KIND_TITLES",
+    "PARTY_FLAG_KINDS",
+    "PARTY_NOT_NAMED",
+    "PARTY_UNCHECKED",
     "BuyerContractTerms",
     "ScheduledInvoice",
     "blanks",
@@ -36,4 +40,5 @@ __all__ = [
     "suggest_facility",
     "term_display",
     "term_view",
+    "with_party_check",
 ]
