@@ -1065,19 +1065,19 @@ The tour follows one owner through FLOW in the order a business meets it. Stage 
 every other stage runs on the demo company (`pnpm demo`), whose figures are those of sections 01 and 03. Each stage names the
 screens, what the owner does and what FLOW does. Buttons and links are in italics.
 
-**Video timestamps.** The lead fills these in after the final recording. They are kept together here, as one list.
+**Video timestamps.** Two recordings of build `ed5e0932` (18 Oct 2026), made by `pnpm demo:video`: the submission video (`flow-demo-5min`, 4:22) and the full tour (`flow-full-tour`, 17:31). The chapter lists are in `docs/deliverables/video/README.md`.
 
-1. Setting up the books: [VIDEO: mm:ss]
-2. The daily view: [VIDEO: mm:ss]
-3. Documents: [VIDEO: mm:ss]
-4. Customers: [VIDEO: mm:ss]
-5. Deals and negotiation: [VIDEO: mm:ss]
-6. Money and approvals: [VIDEO: mm:ss]
-7. Time passing: invoices, receipts, a late payment, the cure, reconciliation: [VIDEO: mm:ss]
-8. Ask FLOW: [VIDEO: mm:ss]
-9. What-if and strategy: [VIDEO: mm:ss]
-10. Capex: [VIDEO: mm:ss]
-11. Records, evidence and security: [VIDEO: mm:ss]
+1. Setting up the books: full tour 0:16; submission video 0:12
+2. The daily view: full tour 2:48; submission video 0:40
+3. Documents: full tour 4:06; submission video 3:06 (a contract becomes invoices)
+4. Customers: full tour 6:12
+5. Deals and negotiation: full tour 6:45; submission video 1:07 (the buyer asks), 1:19 (FLOW decides), 1:40 (the counter is sent), 1:53 (the deal, followed)
+6. Money and approvals: full tour 9:34; submission video 2:35 (the owner decides)
+7. Time passing: invoices, receipts, a late payment, the cure, reconciliation: full tour 10:19; submission video 2:04, 2:18, 2:52
+8. Ask FLOW: full tour 11:52; submission video 3:30
+9. What-if and strategy: full tour 13:12
+10. Capex: full tour 13:54
+11. Records, evidence and security: full tour 15:16 (records and judging), 16:48 (security); submission video 3:58
 
 **1. Setting up the books.** *Screens:* the landing page, *Set up your books* (`/setup`), Home. *The owner* chooses *Join FLOW
 now!* and works through six steps: the business and its cash; credit lines and loans (*Fill from an agreement* reads a lender
