@@ -214,6 +214,9 @@ For the Security Lead:
   in the books until the owner undoes it. The new contract's view carries `live_set_up` (the other document, its `set_up_op_id`,
   the undo route and button) whatever its status, so the CONFLICT says where the invoices came from and offers the undo. A Home
   alert for it is engine (`alerts`) and is not made.
+- **CT-5, a refused press can be pressed again.** The idempotency key gains `-r<k>` for k earlier refused presses of the same
+  terms (read from the log), so a press refused at decision time no longer makes the next press a DUPLICATE; a DUPLICATE after a
+  refusal says the earlier press was refused.
 
 ## Considered and rejected
 

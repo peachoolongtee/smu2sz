@@ -354,3 +354,38 @@ def test_ct4_a_contract_with_no_other_live_set_up_has_none_to_name_and_an_undone
     live = client.get(f"/documents/{second['id']}/terms").json()["terms"]["live_set_up"]
     client.post(live["undo"]["route"], json=live["undo"]["body"])
     assert client.get(f"/documents/{second['id']}/terms").json()["terms"]["live_set_up"] is None
+
+
+def test_ct5_a_press_refused_at_decision_time_can_be_pressed_again(client, on, rt, monkeypatch):
+    """Review 7, CT-5 (probe p5): the key of a press refused at decision time matched its queued row, so the second press was
+    answered 'This was already done' although nothing had been set up."""
+    import app.contracts.terms_setup as ts
+
+    d = _confirmed(client)
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    body = {"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]}
+    real, calls = ts.derive, {"n": 0}
+
+    def refuse_once(*a, **k):  # type: ignore[no-untyped-def]
+        calls["n"] += 1
+        out = real(*a, **k)
+        return out if calls["n"] > 1 else out.__class__(**{**out.__dict__, "status": "BLOCKED", "recurring": None})
+
+    monkeypatch.setattr(ts, "derive", refuse_once)  # the route bound its own name; only the executor's lookup sees this
+    first = client.post(f"/documents/{d['id']}/terms", json=body).json()
+    assert first["result"]["status"] == "REFUSED" and not _buyer2(rt)
+    second = client.post(f"/documents/{d['id']}/terms", json=body).json()
+    assert second["result"]["status"] == "EXECUTED" and len(_buyer2(rt)) == 1
+    assert second["terms"]["status"] == "SET_UP"
+    third = client.post(f"/documents/{d['id']}/terms", json=body).json()  # now a true repeat
+    assert third["result"]["status"] == "DUPLICATE" and len(_buyer2(rt)) == 1
+    keys = [o.idempotency_key for o in rt.store.operations() if o.kind == "SET_UP_CONTRACT_TERMS"]
+    assert len(set(keys)) == 2 and any(k.endswith("-r1") for k in keys)
+
+
+def test_ct5_the_text_of_a_duplicate_after_a_refusal_says_the_earlier_press_was_refused():
+    from app.api.contract_terms import _result_text
+    from app.domain.models import OperationResult, OperationStatus, Tier
+
+    r = OperationResult(op_id="x", status=OperationStatus.DUPLICATE, message="dup", kind="SET_UP_CONTRACT_TERMS", tier=Tier.TIER_2)
+    assert "refused" in _result_text(r, "", "en", after_refusal=True) and "already done" in _result_text(r, "", "en")

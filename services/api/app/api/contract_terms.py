@@ -89,6 +89,15 @@ def _set_ups(rt: Runtime, document_id: str) -> tuple[list[Any], set[str]]:
     return done, undone
 
 
+def _refused_presses(rt: Runtime, base_key: str) -> list[str]:
+    """CT-5: the idempotency keys of earlier presses of this set-up that were refused (queued, then refused at decision time or
+    at the queue). A refused press set nothing up, so it must not make the next press a DUPLICATE."""
+    entries, _ = read_entries(rt.store.operations())
+    return sorted({e.idempotency_key for e in entries if isinstance(e.op, SetUpContractTerms)
+                   and (e.idempotency_key == base_key or e.idempotency_key.startswith(base_key + "-r"))
+                   and e.result.status == OperationStatus.REFUSED})
+
+
 def _live_elsewhere(rt: Runtime, record: ContractRecord) -> Any | None:
     """CT-4: the latest executed, not undone set-up of this customer that came from another document, if any (a replaced
     contract's repeating invoice stays in the books until the owner undoes it)."""
@@ -370,9 +379,12 @@ def _result(r: OperationResult) -> dict[str, Any]:
     return json.loads(r.model_dump_json())
 
 
-def _result_text(r: OperationResult, done: str, lang: Lang) -> str:
+def _result_text(r: OperationResult, done: str, lang: Lang, *, after_refusal: bool = False) -> str:
     if r.status == OperationStatus.EXECUTED:
         return done
+    if r.status == OperationStatus.DUPLICATE and after_refusal:
+        return _t(lang, "The earlier press was refused, so nothing was set up; nothing ran again.",
+                  "先前的操作已被拒绝，没有设置任何内容；也没有重复执行。")
     if r.status == OperationStatus.DUPLICATE:
         return _t(lang, "This was already done; nothing ran again.", "此操作已完成；没有重复执行。")
     if lang == "zh":  # the executor's reason is the audit level's English; the page says what it means
@@ -409,17 +421,20 @@ def post_terms(document_id: str, body: SetUpIn, lang: Lang = "en") -> dict:
                                       "gives on today's books; read them again", "terms": terms_view(rt, rec, lang)})
         n = len(undone)  # a set-up undone and made again is a new operation, not a duplicate of the first
         ri, h = d.recurring, d.terms_hash
+        base_key = f"contract-terms:{rec.id}:{h[:16]}:{n}"
+        refused = len(_refused_presses(rt, base_key))  # CT-5: each refused press gets a fresh key, so the retry runs
+        suffix = f"-r{refused}" if refused else ""
         op = SetUpContractTerms(
-            op_id=f"terms-{rec.id}-{h[:12]}-{n}", idempotency_key=f"contract-terms:{rec.id}:{h[:16]}:{n}",
+            op_id=f"terms-{rec.id}-{h[:12]}-{n}{suffix}", idempotency_key=base_key + suffix,
             mandate_version=mandate.version, requested_by=Actor.OWNER, day=rt.day, document_id=rec.id,
             doc_hash=rec.doc_hash, terms_hash=h, counterparty_id=ri.counterparty_id, face_fen=ri.face_fen,
             every_days=ri.every_days, next_issue_day=ri.next_issue_day, terms_days=ri.terms_days)
         result = _approve(rt, rt.executor.execute(op))
         name = _name(state, rec.counterparty_id)
-        text = _result_text(result, _t(lang, f"Set up: your books now expect {name} to pay "
-                                             f"{_schedule_text(ri, state, state.as_of_day, lang)}.",
-                                       f"已设置：您的账簿现已预计{name}按以下安排付款：{_schedule_text(ri, state, state.as_of_day, lang)}。"),
-                            lang)
+        schedule = _schedule_text(ri, state, state.as_of_day, lang)
+        done_text = _t(lang, f"Set up: your books now expect {name} to pay {schedule}.",
+                       f"已设置：您的账簿现已预计{name}按以下安排付款：{schedule}。")
+        text = _result_text(result, done_text, lang, after_refusal=bool(refused))
         return {"result": _result(result), "result_text": text, "terms": terms_view(rt, rec, lang)}
 
 
