@@ -58,13 +58,26 @@ EXPLAIN = _re(r"\bwhy\b", r"\bexplain\b", r"\bhow come\b", r"\breasons?\b", r"�
 WHAT_IF = _re(r"\bwhat if\b", r"\bwhat would happen\b", r"\bwhat happens\b", r"\bsuppose\b", r"\bhypothetical",
               r"\bwhat (?:would|will|does) (?:it|that) (?:do|mean|look like|cost)\b",
               r"\bhow (?:would|will|does)\b.{0,50}\b(?:affect|change|impact|hit)\b", r"\bimpact of\b",
-              r"如果", r"假如", r"假设", r"要是", r"会怎样", r"会怎么样", r"会如何", r"有什么影响", r"影响多大")
-STATUS = _re(r"\bstatus\b", r"\bposition\b", r"\bhow are we\b", r"\bhow'?s (?:our |the )?cash\b", r"\bheadroom\b",
+              r"如果", r"假如", r"假设", r"要是", r"会怎样", r"会怎么样", r"会如何", r"有什么影响", r"影响多大",
+              # the cost of a change to a buyer's terms: "给佛山60天账期要花我们多少钱", "把佛山账期延到60天成本多少"
+              r"(?:给|延|延长|延到|改|改成|放宽|放到)[^，。?？]{0,10}账期[^，。?？]{0,12}(?:要花|花|成本|代价|多少钱)",
+              r"账期(?:延|延长|延到|改|改成|放宽|放到)[^，。?？]{0,12}(?:要花|花|成本|代价|多少钱)")
+STATUS = _re(r"\bstatus\b", r"\b(?:cash|liquidity|financial|funding|overall|current|our|my)\s+position\b", r"\bhow are we\b", r"\bhow'?s (?:our |the )?cash\b", r"\bheadroom\b",
              r"\bdashboard\b", r"\boverview\b", r"\bcash balance\b", r"\bwhere do we stand\b", r"现状", r"状况", r"状态",
-             r"现金(?:余额|情况)", r"余额", r"概况", r"情况怎么样",
-             r"\bhow much (?:cash|money)\b", r"\bcash (?:on hand|do we have|position)\b", r"\bbank balance\b",
+             # 余额 and 情况怎么样 only with a cash or company subject: "本季度增值税情况怎么样", "按账户列一下余额" and
+             # "竞争对手情况怎么样" ask about what the books do not hold (app/nl/ask.py answers them)
+             r"现金(?:余额|情况)", r"(?:现金|银行|账上|账面|账户)余额", r"余额(?:是多少|多少|还有多少|还剩)", r"概况",
+             r"^\s*(?:现在|目前|今天)?(?:的)?(?:情况|状况)怎么样",
+             r"(?:现金|资金|财务|公司|我们|咱们|整体|总体|目前|现在)(?:的)?(?:情况|状况)怎么样",
+             # "how much cash do we have", not "how much money has FLOW moved" (the activity log) or "how much money do we
+             # need" (the funding need)
+             r"\bhow much (?:cash|money)\s+(?:do|does|have|has|is|are|will|would)\s+(?:we|i|there|our|the company|the business)\b"
+             r"(?!.{0,20}\b(?:need|raise|borrow|moved?|spent|spend)\b)",
+             r"\bhow much (?:cash|money)\s+(?:is |are )?(?:left|in the bank|on hand|available)\b", r"\bhow much (?:cash|money)\s*\??\s*$",
+             r"\bcash (?:on hand|do we have|position)\b", r"\bbank balance\b",
              r"\bcovenants?\b.{0,30}\b(?:look|looking|status|headroom|ok|okay|safe|risk)\b",
-             r"账上", r"多少(?:钱|现金)", r"还有多少", r"(?:契约|财务指标).{0,10}(?:怎么样|情况|风险)",
+             r"账上", r"多少现金", r"(?:现金|资金|手上|手头|银行(?:里|上)?|户头)[^，。?？]{0,6}多少钱",
+             r"^\s*(?:我们|咱们|公司)?(?:现在|今天|目前)?(?:还)?有多少钱", r"还有多少", r"(?:契约|财务指标).{0,10}(?:怎么样|情况|风险)",
              # forecasts and receivables: "show me the 13 week forecast", "list the open receivables", 现金流预测
              # ("cash flow" alone is a topic, not a request to see it: "a poem about cash flow" is not a status)
              r"\bforecast\b", r"\b\d{1,2}[- ]?week (?:forecast|projection|view|outlook)\b", r"\bprojection\b",
@@ -120,7 +133,10 @@ CAPEX_ASK = _re(
     r"\b(?:buy|buying|purchase|purchasing|afford|invest(?:ing)? in|worth)\b.{0,40}\b(?:machine|machinery|equipment)\b",
     r"\b(?:machine|machinery|equipment|capex)\b.{0,40}\b(?:purchase|worth|afford|affordable|payback|npv)\b",
     r"\b(?:evaluate|assess|appraise|review)\b.{0,20}\b(?:machine|machinery|equipment|capex)\b", r"\bcapex\b",
-    r"买.{0,6}(?:设备|机器)", r"(?:设备|机器).{0,8}(?:划算|值得|购置|采购|买)", r"购置.{0,4}(?:设备|机器)")
+    # "does the investment pay off?" asks whether the machine is worth it, not to repay a loan
+    r"\b(?:investment|machine|machinery|equipment|purchase)\b.{0,20}\bpay (?:off|back|for itself)\b",
+    r"买.{0,6}(?:设备|机器)", r"(?:设备|机器).{0,8}(?:划算|值得|购置|采购|买)", r"购置.{0,4}(?:设备|机器)",
+    r"投资.{0,6}(?:划算|值得|回本|值不值)")
 # The owner states a fact the agent cannot book from chat: "we have a supplier bill of ¥80,000 due on day 30, add it to
 # the forecast", "record a ¥50,000 payable", "we will pay the supplier 10 days late", "EBITDA is actually ¥120,000",
 # 记一笔, 新增账单, 延迟付款. RECORD_FACT only says so; it reads and writes nothing (checked after the requests the agent
@@ -160,6 +176,8 @@ STATUS_QUESTION = _re(
     r"\bhow long (?:will|does|can|would) (?:our |the |my )?(?:cash|money|runway)\b",
     r"\b(?:will|do|would) (?:we|i) have enough (?:cash|money)\b",
     r"^\s*(?:我们?|咱们?|公司|本公司)[^，。？?！!]{0,8}安全吗", r"(?:现金|资金|钱)(?:够不够|够吗|够用吗|充足吗|紧张吗|安全吗|还够)",
+    # what can be spent against the reserve: "How much can I spend today without breaking the reserve?", 今天我最多能花多少钱
+    r"\bhow much (?:can|could) (?:i|we) (?:spend|use|take out)\b", r"(?:能|可以)(?:动用|用|花)多少(?:钱|现金)?",
     r"(?:够不够|够)(?:用的?)?(?:现金|资金|钱)", r"现金跑道", r"(?:现金|资金|钱).{0,6}(?:能|可以)?撑(?:多久|多长时间|几天)",
     r"现金(?:怎么样|如何|还好吗|还行吗)")
 REPAY = _re(r"\brepay", r"\bpay (?:back|down|off)\b", r"\bpay (?:the |our )?(?:credit |bank )?line (?:back|down|off)\b",
@@ -441,16 +459,23 @@ OVERDUE_ASK = _re(
     r"\bwho\s+(?:should|do)\s+(?:i|we)\s+(?:chase|call|follow up|remind|collect)\b", r"\bchase\s+first\b",
     r"\bwho\s+(?:has not|hasn'?t|haven'?t)\s+paid\b", r"\bwho\s+to\s+chase\b",
     r"\b(?:which|what|any)\b.{0,20}\b(?:invoices?|payments?|receipts?|receivables?)\b.{0,25}\b(?:late|overdue|past due)\b",
-    r"逾期", r"先催", r"该催", r"催(?:收|款|哪)", r"谁(?:还)?没(?:有)?付")
+    r"逾期", r"先催", r"该催", r"催(?:收|款|哪)", r"谁(?:还)?没(?:有)?付",
+    # "who is paying late?", 谁拖欠我们的款: who is late, not a payment delay of ours to record
+    r"\bwho\s+(?:is|are)\s+paying\s+(?:us\s+)?late\b", r"谁(?:在)?(?:拖欠|晚付|迟付)", r"哪些?(?:客户|买家|买方).{0,4}(?:拖欠|晚付|迟付)")
 OWED_ASK = _re(
     r"\bwho\s+(?:still\s+)?owes?\s+(?:us|me)\b", r"\bwho\s+(?:still\s+)?owes?\s+(?:the\s+)?(?:company|business)\b",
     r"\bhow\s+much\b.{0,25}\b(?:owed|do\s+(?:they|customers|buyers|our\s+customers)\s+owe)\b",
     r"\bwho\s+hasn'?t\s+paid\s+us\s+yet\b",
-    r"谁欠(?:我们|我)?(?:的)?(?:多少)?钱", r"谁欠(?:我们|我)", r"(?:客户|买方|买家).{0,6}欠(?:我们)?(?:多少)?(?:钱|款)")
+    r"谁欠(?:我们|我)?(?:的)?(?:多少)?钱", r"谁欠(?:我们|我)", r"(?:客户|买方|买家).{0,6}欠(?:我们)?(?:多少)?(?:钱|款)",
+    r"欠(?:我们|我)(?:的)?(?:多少)?(?:钱|款)")
 LATE_PAYMENT_ASK = _re(
     r"\b(?:late|delayed?|overdue|slips?|slipped|doesn'?t arrive|does not arrive|never arrives?)\b.{0,40}\b(?:payment|invoice|receipt|receivable)s?\b",
     r"\b(?:payment|invoice|receipt|receivable)s?\b.{0,40}\b(?:is|are|comes?|arrives?|gets?)\b.{0,6}\b(?:late|delayed|overdue)\b",
     r"\b(?:payment|invoice|receipt)s?\b.{0,30}\bdoesn'?t arrive\b", r"\bpays?\s+late\b",
+    # "pays 30 days late", "the invoice slips a month", 晚30天付款, 款晚一个月到
+    r"\bpays\b.{0,24}\blate\b", r"\b(?:they|customers?|buyers?|clients?)\s+pay\b.{0,24}\blate\b",
+    r"\b(?:payment|invoice|receipt|receivable)s?\b.{0,20}\bslips?\b",
+    r"(?<!我们)(?<!我)晚\s?(?:\d+|[一二两三四五六七八九十]+)\s?(?:个)?(?:天|日|周|星期|月)(?:才)?(?:付|到|回|收)",
     r"(?:款|付款|回款|收款|发票).{0,10}(?:延迟|晚到|晚付|逾期|没到|迟到|延误)", r"(?:延迟|晚到|晚付|逾期|迟到|延误).{0,10}(?:款|付款|回款|收款|发票)")
 ACCEPT_ASK = _re(r"\baccept(?:ed|ing)?\b", r"\bagree(?:d)?\s+to\b", r"\btake\s+(?:the|their|this)\s+(?:deal|offer|terms)\b",
                     r"接受", r"答应", r"同意")
@@ -459,3 +484,171 @@ PLAN_ASK = _re(r"\bplan\b", r"\bchoose\b", r"\bchose\b", r"\bchosen\b", r"\breco
 
 READ_QUESTION = re.compile(r"^\s*(?:what|when|who|whom|which|how|where|why|is|are|do|does|did|can|could|will|would|should|show|tell)\b"
                             r"|[?？]\s*$|什么|谁|哪|吗|多少|几|怎么|如何", re.IGNORECASE)
+
+# ---- questions about the books (ASK_BOOKS: app/nl/ask.py answers them; rules.py routes them) ---------------------------
+#
+# An information question: a wh-word, an inverted be/do/have auxiliary with a subject, a recommendation question ("should
+# we ...?"), "any ...?", a trailing question mark, or a Chinese interrogative. A question never proposes a plan, compiles an
+# offer, queues or executes anything, or writes a refused operation to the log: rules.py reads it before every action rule.
+_ASK_SUBJECT = (r"(?:we|i|you|they|it|there|our|the|this|that|these|those|any|anyone|anybody|anything|someone|somebody|flow"
+                r"|my|he|she)")
+_ASK_START = (
+    r"^\s*(?:(?:so|and|ok|okay|hey|hi|also|but|then|right|now|quick question|one question|question)[ ,:]+)*"
+    r"(?:what|what['’]s|whats|which|who|who['’]s|whom|whose|when|when['’]s|where|where['’]s"
+    r"|why(?!\s+(?:don['’]?t|not)\b)|how(?!\s+about\b)"
+    r"|(?:is|isn['’]t|are|aren['’]t|was|were|does|doesn['’]t|do(?!\s+not\b)|did|didn['’]t|has|hasn['’]t|have|haven['’]t|had)"
+    rf"\s+{_ASK_SUBJECT}\b"
+    r"|(?:should|shall)\s+(?:we|i)\b|any(?:thing|one|body)?\b)")
+_ASK_ZH_WORDS = r"什么|多少|哪|谁|是否|要不要|有没有|几(?:天|个|笔|次|号|月|周|时|年)|怎么|为什么|为何|如何"
+ASK_EN = _re(_ASK_START, r"\?\s*$")
+ASK_ZH = re.compile(_ASK_ZH_WORDS + r"|(?:吗|呢|么|嘛)\s*[?？。.!！~～]*\s*$|[?？]\s*$")
+# The plain question forms only (a wh-word, an inverted auxiliary, a Chinese interrogative word), not a bare "?" or 吗:
+# what an otherwise unread message needs before it goes to the answer layer.
+ASK_WORD = _re(_ASK_START, _ASK_ZH_WORDS)
+# A request phrased as a question ("can you draw ¥100k?", "could we get Foshan to pay early?", 能不能让他们早点打款, "FLOW能
+# 替我签个人担保吗"): it keeps its action reading, which proposes at most (consent.py decides what runs, unchanged).
+ASK_REQUEST = _re(r"\b(?:can|could|would|will|won['’]t)\s+(?:you|u|flow)\b(?!['’]s)", r"^\s*(?:can|could)\s+(?:we|i)\b",
+                  r"[,，;]\s*(?:can|could)\s+(?:we|i)\b", r"\bplease\b", r"\bpls\b",
+                  r"能不能", r"可不可以", r"能否", r"可否", r"帮我", r"帮忙", r"麻烦", r"^\s*请", r"你能", r"你可以", r"您能",
+                  r"您可以", r"(?<!不)能[^，。？?]{0,20}(?:吗|么)", r"可以[^，。？?]{0,20}(?:吗|么)")
+# A request addressed to FLOW ("could you repay the loan?", 你能把设备拿去抵押吗)
+ASK_YOU = _re(r"\b(?:can|could|would|will|won['’]t)\s+(?:you|u|flow)\b(?!['’]s)", r"你能", r"你可以", r"您能", r"您可以", r"帮我",
+              r"帮忙", r"麻烦", r"^\s*请", r"\bplease\b")
+# An attempt asked about ("did anyone try to change our limits?", 有人试图修改我们的限额吗): answered from the log.
+ASK_ATTEMPT = _re(r"\b(?:anyone|anybody|someone|somebody)\b", r"\b(?:tr(?:y|ied|ying)|attempt\w*)\b", r"有人", r"试图",
+                  r"尝试", r"企图")
+
+
+def is_question(text: str) -> bool:
+    """Whether the owner's own words ask for information (ASK_EN / ASK_ZH) and are not a request phrased as one."""
+    t = unicodedata.normalize("NFKC", text).strip()
+    if not t or ASK_REQUEST.search(t):
+        return False
+    return bool(ASK_EN.search(t) or ASK_ZH.search(t))
+
+
+def is_asking(text: str) -> bool:
+    """Any question form, a request phrased as a question included ("can we pay off all our loans?")."""
+    t = unicodedata.normalize("NFKC", text).strip()
+    return bool(t) and bool(ASK_EN.search(t) or ASK_ZH.search(t) or re.search(r"^\s*(?:can|could)\s+(?:we|i)\b", t, re.IGNORECASE))
+
+
+# Questions that a read cue would answer wrongly, each routed to ASK_BOOKS with its topic (rules.py, before the reads).
+ASK_TOPICS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    # "Do we have any capex contracts?", 有哪些设备采购合同: the contracts on file, not the built-in capex case
+    ("capex_contracts", _re(
+        r"\b(?:capex|purchase|equipment|machine|machinery)\s+(?:contracts?|agreements?|orders?|commitments?)\b",
+        r"\bpurchases?\b.{0,25}\bcommitted\b", r"\bcommitted\b.{0,25}\bpurchases?\b",
+        r"(?:设备|采购|购置|机器)[^，。?？]{0,6}(?:合同|协议)", r"承诺[^，。?？]{0,6}采购")),
+    # "Does the plan breach any covenant?": the plan's pro forma, not today's status
+    ("plan_covenants", _re(r"\b(?:plan|funding|draw|borrowing)\b.{0,40}\b(?:covenants?|breach\w*|dscr|leverage)\b",
+                           r"(?:方案|融资|提款).{0,12}(?:契约|违约|违反|杠杆|覆盖)")),
+    # "How much money has FLOW moved?", FLOW一共动了多少钱: the activity log, not the cash status
+    ("money_moved", _re(r"\b(?:money|cash|funds?)\b.{0,25}\bmoved\b", r"\bmoved\b.{0,20}\b(?:money|cash|funds?)\b",
+                        r"\bflow\b.{0,20}\b(?:moved|spent|paid out|transferred)\b",
+                        r"(?:动|转|划)(?:了|过)?(?:多少|什么)?(?:钱|资金|款)", r"动过钱")),
+    # "When does your mandate expire?", 授权什么时候到期, "What can FLOW do without me?": the signed mandate
+    ("mandate", _re(r"\bmandate\b", r"\bwithout (?:me|my approval|asking me)\b", r"\bneeds? my approval\b",
+                    r"\b(?:what|which)\b.{0,20}\b(?:limits?|authority|authori[sz]ed|allowed)\b",
+                    r"授权(?!书)", r"(?:需要|要)我(?:批准|审批|同意)", r"不经过我", r"限额(?:是多少|有哪些|多少)")),
+    # "How much would FLOW's plan cost?", FLOW的方案要花多少钱: the plan's cost, not the cash status
+    ("plan_cost", _re(
+        r"\b(?:plan|fixing the gap|closing the gap|covering the gap|the fix)\b.{0,20}\b(?:cost|costs|price|expensive)\b",
+        r"\bcost\b.{0,20}\b(?:of|for) (?:the |flow['’]?s |your )?(?:plan|fix|fixing)\b",
+        r"方案.{0,8}(?:多少钱|成本|费用|花多少)", r"(?:补上|补足|填补)?缺口.{0,6}(?:要)?花多少")),
+    # "How much can we get for our invoices?", 我们的发票最多能融多少钱, "How much more can we borrow?": what can be raised
+    # (a covenant's headroom, "how much more can we borrow before we break the leverage covenant?", is the ratios read)
+    ("capacity", _re(r"^(?!.*\b(?:covenants?|leverage|dscr)\b)(?!.*(?:契约|杠杆)).*\bhow much\b(?!.{0,25}\bneed\b).{0,30}"
+                     r"\b(?:borrow|get for|finance|advance)\b",
+                     r"\bborrow against\b", r"\bhow much (?:more )?(?:credit|financing)\b",
+                     r"(?:最多|还)能(?:融|借|贷)(?:多少|到)", r"能融多少", r"能借多少", r"(?:发票|应收).{0,8}(?:融资|融)(?:多少|吗)")),
+    # "What's the break-even discount for early payment?": a definition, not an early-pay plan to send to the buyer
+    ("break_even", _re(r"\bbreak[- ]?even\b", r"\babove what (?:discount|rate)\b", r"\btoo expensive\b", r"盈亏平衡",
+                       r"超过多少.{0,6}(?:不划算|不值)", r"折扣.{0,8}(?:上限|最多多少|超过多少)")),
+    # "How much do we need to raise to stay safe?", 要保持安全，我们需要融多少钱: the funding need, not the cash status
+    ("fund", _re(r"\bhow much\b.{0,30}\b(?:need|have) to (?:raise|borrow|fund|find|cover)\b", r"\bhow much are we short\b",
+                 r"需要(?:融|借|筹)(?:多少|资)", r"(?:要|得)(?:融|借|筹)多少", r"缺多少(?:钱)?")),
+    # "What is causing the cash gap?", 资金缺口是怎么造成的: what drives the gap, not a plan to fund it
+    ("why_short", _re(
+        r"\b(?:why|what(?:['’]s| is)? caus\w*|what(?:['’]s| is)? driv\w*|reasons?)\b.{0,40}\b(?:short|gap|shortfall|low|run out|tight)\b",
+        r"(?:缺口|不够|缺钱|紧张).{0,8}(?:怎么造成|为什么|原因|怎么来)", r"(?:为什么|为何).{0,12}(?:不够|缺口|缺钱|紧张|短缺)")),
+    # "Any open negotiations?", 我们发过什么还价: what is open or was sent, not a counter to send
+    ("deals", _re(r"\b(?:open|ongoing|pending|active|current)\s+(?:negotiations?|requests?|deals?|offers?|counters?)\b",
+                  r"(?:在谈|谈判中|待处理)的?(?:交易|请求|报价)")),
+    # "What counter did we send?", 我们发过什么还价: what was sent, not a counter to send now
+    ("deals_sent", _re(r"\b(?:what|which|any)\b.{0,25}\b(?:counters?|counter-?offers?|offers?)\b.{0,15}\b(?:sent|made|offered)\b",
+                       r"\bwhat did we (?:last )?(?:offer|counter|send|propose)\b",
+                       r"(?:发过|发了|报过|提过|给过|上次).{0,6}(?:什么)?(?:还价|报价|条件|反报价)")),
+    # "What is our DSO?", 应收账款周转天数是多少: the days to be paid, not a funding need (周转)
+    ("receivable_days", _re(r"\bdso\b", r"\bdays sales outstanding\b", r"\bhow long\b.{0,30}\b(?:to pay|pay us|take to pay)\b",
+                            r"周转天数", r"(?:平均)?多久(?:才)?(?:付款|回款|付钱|结款)")),
+)
+# The term debt ("When is our next loan payment?", 下一笔贷款还款是什么时候, "Can we pay off all our loans?"): asked about, it is
+# not a repayment of a facility (REPAY_FACILITY repays a drawn line on demand; the equipment loan is repaid on its schedule).
+DEBT_ASK = _re(r"\bdebts?\b", r"\b(?:term |equipment |bank )?loans?\b(?!\s+(?:options?|offers?|file|pack|package))",
+               r"\bowe the bank\b", r"\bpay the bank\b", r"债务", r"负债", r"贷款(?!资料|材料|包|申请)", r"还贷", r"欠银行")
+
+# Subjects the books do not hold (app/nl/ask.py says so and names the nearest thing FLOW can show).
+NOT_HELD: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("vat", _re(r"\bvat\b", r"\binput tax\b", r"\breclaim\b.{0,10}\btax\b", r"增值税", r"进项税", r"销项税")),
+    ("tax", _re(r"\btax(?:es)?\b", r"交税", r"纳税", r"税款", r"税务", r"多少税", r"缴税")),
+    ("customer_profit", _re(
+        r"\b(?:which|what) (?:customers?|buyers?|clients?)\b.{0,25}\b(?:profitable|profit|make us the most|margin)",
+        r"\bmost profitable (?:customer|buyer|client)s?\b", r"哪个(?:客户|买家).{0,6}(?:最赚钱|利润|毛利)")),
+    ("margin", _re(r"\bgross margin\b", r"\bmargins?\b", r"毛利")),
+    ("profit", _re(r"\bprofit(?:s|able|ability)?\b", r"\bp&l\b", r"\bnet income\b", r"\bincome statement\b", r"利润", r"赚钱吗",
+                   r"(?<!盈亏)盈利", r"(?<!资金)亏损")),
+    ("revenue", _re(r"\brevenue\b", r"\bturnover\b", r"\bsales\b(?!\s+(?:tax|contract|pipeline))", r"营收", r"销售额", r"营业额",
+                    r"收入多少")),
+    ("inventory", _re(r"\binventory\b", r"\bstock\b(?!\s+market)", r"库存", r"存货")),
+    ("pay_per_person", _re(r"\b(?:each|every|per) (?:employee|person|worker|head|staff member)\b",
+                           r"\bby (?:person|employee|head)\b", r"每个(?:员工|人|工人)", r"按人")),
+    ("staff", _re(r"\bheadcount\b", r"\bhow many (?:staff|employees|people|workers)\b", r"\bstaff\b",
+                  r"\bhir(?:e|ing)\b(?!\s+purchase)",
+                  r"\bmore (?:people|workers|staff)\b", r"员工", r"多少人", r"招人", r"工人")),
+    ("accounts", _re(r"\b(?:each|every|all) (?:of )?(?:our )?(?:bank )?accounts\b", r"\bby (?:bank )?account\b",
+                     r"\bper (?:bank )?account\b", r"\beach account\b", r"每个(?:银行)?账户", r"按账户", r"各个?账户")),
+    ("payables", _re(r"\baccounts payable\b", r"\bpayables?\b", r"\bowe (?:our |the )?suppliers\b", r"欠供应商", r"应付账款",
+                     r"应付款")),
+    ("credit_rating", _re(r"\bcredit (?:rating|score)\b", r"\bwhat do (?:the )?banks think\b", r"信用评级", r"银行怎么(?:评价|看)")),
+    ("market", _re(r"\bcompetitors?\b", r"\bcompetition\b", r"\bour market\b", r"\bin the market\b", r"\bindustry\b",
+                   r"竞争对手", r"行业", r"行情")),
+    ("fx", _re(r"\bexchange rates?\b", r"\bhedg\w*\b", r"\bdollars?\b", r"\bforex\b", r"汇率", r"对冲", r"外汇", r"美元")),
+    ("valuation", _re(r"\b(?:company|business)\b.{0,10}\bworth\b", r"\bvaluation\b", r"\bvalued at\b",
+                      r"\bworth\b.{0,10}\b(?:company|business)\b", r"公司值多少", r"估值")),
+    ("past_spend", _re(r"\blast (?:month|year|quarter)\b.{0,30}\b(?:spend|spent|expenses?|cost)\b",
+                       r"\b(?:spend|spent|expenses?)\b.{0,30}\blast (?:month|year|quarter)\b",
+                       r"(?:上个月|去年|上季度).{0,8}(?:花|支出|开支|费用)")),
+    ("social_insurance", _re(r"\bsocial insurance\b", r"\bemployee benefits\b", r"\bpensions?\b", r"社保", r"公积金")),
+    ("products", _re(r"\bby product\b", r"\bproducts?\b.{0,20}\b(?:sell|best|backlog)\b", r"\bwhich products?\b", r"按产品",
+                     r"哪个产品", r"产品.{0,6}(?:卖|毛利|销量)")),
+)
+# EBITDA is held (one monthly figure): "What's our monthly operating profit?", 每月息税折旧前利润是多少
+_HELD_FIGURE = _re(r"\bebitda\b", r"\boperating profit\b", r"息税折旧前")
+_CAPEX_SUBJECT = _re(r"\b(?:machine\w*|equipment|investment|capex|purchase)\b", r"设备", r"机器", r"投资", r"购置")
+
+
+def not_held(text: str) -> str | None:
+    """The subject the books do not hold that the text asks about (a NOT_HELD key), or None. A machine's or an
+    investment's payback is held (the capex case), so "is the machine profitable?" is not a refusal."""
+    if _CAPEX_SUBJECT.search(text) or _HELD_FIGURE.search(text):
+        return None
+    return next((key for key, pat in NOT_HELD if pat.search(text)), None)
+
+
+# Asking for figures in a list ("Balance by account, please", 按账户列一下余额, "Break down the payroll by person"): a
+# not-held subject asked for this way is answered like a question, which it is.
+DATA_REQUEST = _re(r"^\s*(?:please\s+)?(?:list|show|tell|break\s*down|split)\b", r"\bby (?:account|person|employee|product)\b",
+                   r"\bplease\.?\s*$", r"列一下", r"列出", r"按.{1,4}列", r"给我看", r"告诉我")
+# The subjects of the books: an otherwise unmatched question about one of them goes to ASK_BOOKS (app/nl/ask.py answers it,
+# or gives the nearest-capability reply exactly as before when it cannot).
+BOOKS_TOPIC = _re(
+    r"\b(?:cash|money|funds?|funding|financ\w*|debts?|loans?|lines?|credit|facilit\w*|banks?|invoices?|receivables?|customers?"
+    r"|buyers?|suppliers?|payroll|wages?|salar\w*|payments?|pay|paid|owe\w*|mandate|limits?|reserve|floor|covenants?|dscr"
+    r"|leverage|ebitda|plan|deals?|contracts?|offers?|counters?|negotiat\w*|approvals?|capex|machine\w*|equipment|tax\w*|vat"
+    r"|profit\w*|margins?|revenue|sales|inventory|stock|staff|employees?|competitors?|interest|rates?|cost\w*|gap|short\w*"
+    r"|runway|forecast|flow|foshan|dongguan|spend|spent|expenses?|headroom|budget|liquidity)\b",
+    r"现金", r"钱", r"资金", r"融资", r"贷款", r"债", r"额度", r"授信", r"银行", r"发票", r"应收", r"应付", r"客户", r"买家",
+    r"供应商", r"工资", r"付款", r"回款", r"欠", r"授权", r"限额", r"储备", r"契约", r"杠杆", r"方案", r"合同", r"报价", r"还价",
+    r"审批", r"设备", r"机器", r"税", r"利润", r"毛利", r"营收", r"库存", r"员工", r"竞争", r"利率", r"成本", r"缺口", r"预测",
+    r"佛山", r"东莞", r"账", r"支出", r"费用")

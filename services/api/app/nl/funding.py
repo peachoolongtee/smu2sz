@@ -466,8 +466,8 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
                   + (f" If {cp} accepts, the rest of the gap: {accept_plan.label}." if accept_ops and accept_plan else ""),
              f"方案（一级权限）：向 {cp} 提议对 {rcv.id} 最多 {fmt_yuan(_face(counter))} 按 "
              f"{fmt_pct(Fraction(_rate(counter), BP_DENOM))} 提前结算（低于盈亏平衡 {fmt_pct(be_ratio.value)}），"
-             f"账期不变、无返利：远期让步 ¥0.00。若对方拒绝：{fallback.label if fallback else '无需后备'}。"
-             + (f"若对方接受，其余缺口：{accept_plan.label}。" if accept_ops and accept_plan else ""))
+             f"账期不变、无返利：远期让步 ¥0.00。若对方拒绝：{_label_zh(fallback.label) if fallback else '无需后备'}。"
+             + (f"若对方接受，其余缺口：{_label_zh(accept_plan.label)}。" if accept_ops and accept_plan else ""))
     head += (t(ctx, f" If {cp} refuses: {when_refuse}", f" 若 {cp} 拒绝：{when_refuse}") if when_refuse else "")
     head += (t(ctx, f" If {cp} refuses: {refuse_note}", f" 若 {cp} 拒绝：{refuse_note}") if refuse_note else "")
     head += (t(ctx, f" If {cp} accepts: {when_accept}", f" 若 {cp} 接受：{when_accept}") if when_accept else "")
@@ -555,6 +555,13 @@ def _goal_offer(ctx: NlContext, text: str, cp: str, receivable_id: str, face: in
     oid = f"GOAL-{cp}-{receivable_id}-{rate_bp}-d{ctx.day}"
     return CompiledOffer(offer_id=oid, counterparty_id=cp, doc_ids=[doc.doc_id], received_day=ctx.day,
                          status=CompileStatus.COMPILED, obligations=[ob], compiler="nl-goal", prompt_version="nl-v1")
+
+
+def _label_zh(label: str) -> str:
+    """The router's plan label ("committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93") in Chinese, figures unchanged."""
+    from app.api.engine_zh import translate
+
+    return translate(label) or label
 
 
 def _face(c: CounterProposal) -> int:

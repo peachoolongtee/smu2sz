@@ -1169,7 +1169,7 @@ questions:
   routes: ["POST /capex/evaluate"]
   ok_intents: [CAPEX]
   expected:
-    direct_re: "Finance with the 48-month lease"
+    direct_re: "Finance with the 48-month lease|建议采用48 个月租赁"
     answer: "yes"
     figures: ["¥600000"]
     note: "Only financed: cash plus the line leaves ¥250,000 above the reserve for a ¥600,000 price; the 48-month lease (¥14,423.49 a month) passes every limit."
@@ -1201,7 +1201,7 @@ questions:
   routes: ["POST /capex/evaluate"]
   ok_intents: [CAPEX]
   expected:
-    direct_re: "Worth doing on the owner's estimate"
+    direct_re: "Worth doing on the owner's estimate|按业主的估计值得投资"
     answer: "yes"
     figures: ["¥380885.77", "m31"]
   value: 3
@@ -1231,7 +1231,7 @@ questions:
   routes: ["POST /capex/evaluate"]
   ok_intents: [CAPEX]
   expected:
-    direct_re: "Cash \\+ credit line: (?:fails|不通过)"
+    direct_re: "Cash \\+ credit line: (?:fails|不通过)|现金加信用额度：不通过"
     answer: "no"
     figures: ["¥250000"]
   value: 2

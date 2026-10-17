@@ -26,6 +26,7 @@ from app.domain.models import (
     SignPersonalGuarantee,
 )
 from app.domain.ports import LedgerStore
+from app.nl import ask as asking
 from app.nl import binding as page
 from app.nl import business, landing, plans, reads
 from app.nl import capabilities as cap
@@ -329,6 +330,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         case Intent.CHANGES:
             ctx.scope_read = "company"  # what changed is the company's log
             return reads.changes(ctx)
+        case Intent.ASK_BOOKS:
+            return asking.ask_books(ctx, p, text)  # read-only: it answers, it never proposes, queues or runs
         case Intent.RECORD_FACT:
             return cap.record_fact(ctx, slots)
         case Intent.SHOW_ALERTS:

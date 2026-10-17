@@ -78,36 +78,49 @@ CANT_INTENTS = {"OUT_OF_SCOPE", "AMBIGUOUS"}
 # Replies that decline the question whatever the intent: sign-in, a switched-off feature, and the what-if handler's own
 # "I only test a buyer's terms" (it answers no cash, cost or debt what-if).
 CANT_REPLY = re.compile(r"This needs the owner's sign-in|这需要业主登录|That feature is switched off|该功能已关闭"
-                        r"|I can test changes to a buyer's terms|我可以测试买家条款的变化|Which change should I test|要测试哪种变化")
-NEAREST = re.compile(r"closest thing I can do|最接近能做的|not in (?:the|your) books|账目中没有|I do not (?:hold|keep|have)", re.IGNORECASE)
+                        r"|I can test changes to a buyer's terms|我可以测试买家条款的变化|Which change should I test|要测试哪种变化"
+                        # ASK_BOOKS on a question no read in chat answers yet (app/nl/ask.py `cannot_yet`)
+                        r"|I cannot answer that from the books in chat yet|我暂时还不能在对话中根据账目回答")
+NEAREST = re.compile(r"closest thing I can do|最接近能做的|not in (?:the|your) books|账目中没有|I do not (?:hold|keep|have)"
+                     r"|books do not hold|nearest I can show is|我能提供的最接近的是", re.IGNORECASE)
+# ASK_BOOKS (app/nl/ask.py) is the question-answering intent: on topic for every question, but its "the books do not hold
+# this" reply on a question the books can answer is a false refusal.
+ASK_INTENT = "ASK_BOOKS"
+NOT_HELD_REPLY = re.compile(r"books do not hold|FLOW 的账目中没有")
 REFUSAL = re.compile(r"I can't do that|I cannot|I can answer questions about|这个我做不了|我无法|我不能", re.IGNORECASE)
 YES_EN = re.compile(r"^\s*(?:yes\b|you are (?:safe|inside|covered|fine)|we are (?:safe|inside|covered|fine)|you can\b|it is worth)", re.IGNORECASE)
 NO_EN = re.compile(r"^\s*(?:no\b|not\b|you are not|we are not|you can(?:no|')t|you cannot|it is not worth|nothing\b|refused\b)", re.IGNORECASE)
 YES_ZH = re.compile(r"^\s*(?:是的|是，|会，|可以|能，|够|安全|有，|满足|值得|划算|没问题)")
 NO_ZH = re.compile(r"^\s*(?:不|没有|否|无|已拒绝)")
 
-# Manual overrides after reading every reply by hand: (question id, exact text) -> (score, reason). Each one is listed
-# in BASELINE.md.
-OVERRIDES: dict[tuple[str, str], tuple[str, str]] = {
+# Manual overrides after reading every reply by hand: (question id, exact text) -> (score, reason, the reply it was read
+# on). An override applies only while the reply still matches the reply it was written for, so a fixed reply is scored by
+# the rules again. Each one is listed in BASELINE.md.
+OVERRIDES: dict[tuple[str, str], tuple[str, str, str]] = {
     ("LIQ-14", "Why are we going to be short of cash?"): (
-        "CANT", "EXPLAIN only explains offer verdicts: 'There is no verdict to explain yet. Evaluate an offer first.'"),
+        "CANT", "EXPLAIN only explains offer verdicts: 'There is no verdict to explain yet. Evaluate an offer first.'",
+        r"There is no verdict to explain yet"),
     ("LIQ-14", "为什么我们的现金会不够？"): (
-        "CANT", "EXPLAIN only explains offer verdicts: '还没有可解释的结论。请先评估一条报价。'"),
+        "CANT", "EXPLAIN only explains offer verdicts: '还没有可解释的结论。请先评估一条报价。'", r"还没有可解释的结论"),
     ("CUS-07", "What if Foshan pays 30 days late?"): (
         "WRONG", ("a late payment is compiled as an offer and gets a verdict ('This needs your approval: the terms are within "
-                  "your limits'); nothing about cash")),
+                  "your limits'); nothing about cash"), r"needs your approval|within your limits"),
     ("CUS-07", "如果佛山晚30天付款会怎样？"): (
-        "WRONG", "a late payment is compiled as an offer and gets a verdict ('这需要您批准：条款在您的限额内'); nothing about cash"),
+        "WRONG", "a late payment is compiled as an offer and gets a verdict ('这需要您批准：条款在您的限额内'); nothing about cash",
+        r"需要您批准|限额内"),
     ("DEBT-14", "我们现在要不要动用授信额度？"): (
-        "WRONG", "'要不要' (whether to) is read as '不要' (do not): '明白，我没有执行任何操作，也没有待确认的方案。'"),
+        "WRONG", "'要不要' (whether to) is read as '不要' (do not): '明白，我没有执行任何操作，也没有待确认的方案。'",
+        r"明白，我没有执行任何操作"),
     ("DEBT-14", "现在该提款了吗？"): (
-        "CANT", "the consent gate answers a question as a conditional instruction ('我只执行无条件、立即生效的明确指令')"),
+        "CANT", "the consent gate answers a question as a conditional instruction ('我只执行无条件、立即生效的明确指令')",
+        r"我只执行无条件"),
     ("MAN-03", "授权什么时候到期？"): (
-        "WRONG", "'什么时候到' hits the arrival read: it answers when the next invoice is due, not when the mandate expires"),
+        "WRONG", "'什么时候到' hits the arrival read: it answers when the next invoice is due, not when the mandate expires",
+        r"发票.{0,12}到期"),
     ("CAP-08", "Do we have any capex contracts?"): (
-        "WRONG", "evaluates the built-in ¥600k case instead of saying no purchase contract is on file"),
+        "WRONG", "evaluates the built-in ¥600k case instead of saying no purchase contract is on file", r"\bNPV\b"),
     ("CAP-08", "有哪些设备采购合同？"): (
-        "WRONG", "evaluates the built-in ¥600k case instead of saying no purchase contract is on file"),
+        "WRONG", "evaluates the built-in ¥600k case instead of saying no purchase contract is on file", r"净现值"),
 }
 
 
@@ -173,8 +186,12 @@ def score(q: dict, resp: dict, lang: str) -> tuple[str, str]:
     intent, reply = resp["intent"], resp["reply"]
     exp = q.get("expected") or {}
     ok = set(q.get("ok_intents") or [])
+    if q.get("kind") != "refusal":
+        if intent == ASK_INTENT and NOT_HELD_REPLY.search(reply):
+            return "WRONG", "ASK_BOOKS said the books do not hold what they do hold"
+        ok.add(ASK_INTENT)
     if q.get("kind") == "refusal":
-        if intent == "OUT_OF_SCOPE":
+        if intent in ("OUT_OF_SCOPE", ASK_INTENT):
             return ("ANSWERED", "refused, names the nearest capability") if NEAREST.search(reply) else \
                 ("PARTIAL", "refused without a nearest capability")
         if intent == "AMBIGUOUS":
@@ -279,9 +296,10 @@ def run(mode: str, only: set[str] | None) -> dict:
             effects = {k: fx_after[k] - fx_before[k] for k in fx_before if fx_after[k] != fx_before[k]}
             sc, why = score(q, resp, lang)
             if (q["id"], text) in OVERRIDES:
-                new, reason = OVERRIDES[(q["id"], text)]
-                why = f"override {sc} -> {new}: {reason}"
-                sc = new
+                new, reason, read_on = OVERRIDES[(q["id"], text)]
+                if re.search(read_on, resp["reply"]):
+                    why = f"override {sc} -> {new}: {reason}"
+                    sc = new
             row = {"id": q["id"], "category": q["category"], "lang": lang, "variant": variant, "text": text,
                    "intent": resp["intent"], "parse_source": resp.get("parse_source"), "score": sc, "reason": why,
                    "reply": resp["reply"], "operations": [(o.get("kind"), o.get("status")) for o in resp.get("operations", [])],
