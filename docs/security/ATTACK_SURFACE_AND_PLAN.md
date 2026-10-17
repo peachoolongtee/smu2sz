@@ -22,6 +22,7 @@ agent, bank feed, buyer-1 and owner, with every feature flag on, a fresh memory 
 | Agent channel | `POST /operations`, `POST /approvals/{id}`, `POST /circuit/{cp}/reset` | owner or agent (authority decided in the executor) |
 | Clock | `POST /clock/advance` | owner or bank feed |
 | Chat side routes | `POST /nl/reset`, `/nl/opener` | owner only (403 otherwise) |
+| Chat "New conversation" | `POST /nl/session/reset` | open like the buyer channel of `POST /nl` (route policy class BUYER): the owner ends any session; every other caller only a session of its own principal as `/nl` binds it (agent key, buyer key, or anonymous for an anonymous session), SEC-21; the same `ended: false` for someone else's and for none |
 | Owner reads | 50 GET routes (books, mandate, ledger, audit, evidence, Deals/Customers/Activity/Home, strategy, receivables) | owner only, all verified 401 for every other role |
 | Owner writes | `/offers/{id}/accept|decline|evaluate`, `/negotiate/{id}`, `/alerts/{id}/act`, `/commitments/{id}/revoke`, `/documents[...]`, `/buyers/{id}/inputs`, `/firm/inputs`, `/pilot/journal`, `/capex/apply`, `/demo/reset|restore|bank-receipt`, read-only computations (`/router/plan`, `/whatif`, `/capex/evaluate`, `/borrower-file`, `/facilities/compile`) | owner only, verified |
 

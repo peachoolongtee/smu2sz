@@ -9,6 +9,7 @@
  * Money arrives pre-formatted (`*_display`); the client never parses or computes it.
  */
 
+import { markBooksReplaced } from "./books-epoch";
 import { API_MODE } from "./config";
 import { ApiError } from "./errors";
 import type { CustomerContext } from "./customer-href";
@@ -393,6 +394,16 @@ export async function nl(req: NlRequest, opts: { business?: boolean } = {}): Pro
   return isMock ? (await mock()).nl(req) : (await live()).nl(req, opts);
 }
 
+/**
+ * POST /nl/session/reset: "New conversation" ends this chat session on the server (its pending plan, last offer and clarification are
+ * forgotten and the id is never continued). The owner's session ends with the owner token (`token`, given while the owner is still signed
+ * in); a buyer's with its channel key. Never opens the sign-in dialog: a failure leaves only the server's 30-minute expiry, and the browser
+ * has already dropped the id.
+ */
+export async function endNlSession(sessionId: string, actor: NlRequest["actor"], counterpartyId?: string, token?: string | null): Promise<void> {
+  return isMock ? (await mock()).endNlSession(sessionId) : (await live()).endNlSession(sessionId, actor, counterpartyId, token);
+}
+
 /** POST /nl/opener: the agent speaks first. Owner only. Any pending cure waits in `sessionId` until "go ahead". */
 export async function nlOpener(sessionId: string | undefined, lang: "en" | "zh"): Promise<NlOpenerResponse> {
   return isMock ? (await mock()).nlOpener(sessionId, lang) : (await live()).nlOpener(sessionId, lang);
@@ -482,9 +493,13 @@ export async function whatIf(params: WhatIfParams, scope: { offerId?: string | n
   return isMock ? (await mock()).whatIf(params) : (await live()).whatIf(params, scope);
 }
 
-/** POST /demo/reset (owner action). `scenario` picks the server fixture: the golden books by default, or `short_facilities`. */
+/**
+ * POST /demo/reset (owner action). `scenario` picks the server fixture: the golden books by default, or `short_facilities`. The server forgets every
+ * Ask FLOW session with the old books; once it has answered, the chat in every tab starts over too (lib/books-epoch.ts).
+ */
 export async function demoReset(scenario?: string, guard?: BooksGuard): Promise<void> {
-  return isMock ? (await mock()).demoReset(scenario, guard) : (await live()).demoReset(scenario, guard);
+  await (isMock ? (await mock()).demoReset(scenario, guard) : (await live()).demoReset(scenario, guard));
+  markBooksReplaced();
 }
 
 /**
@@ -639,7 +654,9 @@ export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Pro
 
 /** POST /demo/restore?lang= (owner, demo mode): puts the main books back after the alternate scenario was loaded. */
 export async function restoreDemo(lang: "en" | "zh", guard?: BooksGuard): Promise<DemoRestoreResult> {
-  return isMock ? (await mock()).restoreDemo(lang, guard) : (await live()).restoreDemo(lang, guard);
+  const restored = await (isMock ? (await mock()).restoreDemo(lang, guard) : (await live()).restoreDemo(lang, guard));
+  markBooksReplaced(); // the main books are back: a fresh Ask FLOW conversation, as after a reset
+  return restored;
 }
 
 // ------------------------------------------------------------------ the buy side (ADR-0013, FEATURE_CAPEX_CONTRACTS)
@@ -718,5 +735,7 @@ export async function previewSetup(draft: SetupDraft, lang: "en" | "zh" = "en"):
 
 /** POST /setup/open: the owner signs the limits with their sign-in and opens the books (this replaces the books loaded now). */
 export async function openBooks(draft: SetupDraft, password: string, lang: "en" | "zh" = "en"): Promise<SetupOpenResult> {
-  return isMock ? (await mock()).openBooks() : (await live()).openBooks(draft, password, lang);
+  const opened = await (isMock ? (await mock()).openBooks() : (await live()).openBooks(draft, password, lang));
+  markBooksReplaced(); // new books: a fresh Ask FLOW conversation
+  return opened;
 }

@@ -70,7 +70,19 @@ export function setOwnerToken(token: string): void {
   signedInListeners.forEach((l) => l());
 }
 
+const signingOutListeners = new Set<(token: string) => void>();
+
+/** Runs as the owner signs out, with the token that is about to go: the last request the token may send (the chat ends its server session with it). */
+export function onSigningOut(l: (token: string) => void): () => void {
+  signingOutListeners.add(l);
+  return () => {
+    signingOutListeners.delete(l);
+  };
+}
+
 export function signOut(): void {
+  const token = authStore.get().token;
+  if (token) signingOutListeners.forEach((l) => l(token));
   authStore.set({ token: null, open: false, reason: null });
   signedOutListeners.forEach((l) => l());
 }
