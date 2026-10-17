@@ -7,21 +7,17 @@ import { CheckIcon } from "@/components/icons";
 import { DocumentReview } from "@/components/document-review";
 import { contractsOff, DocStatusBadge, whenWords } from "@/components/documents";
 import { Button, Callout, Card, ErrorState, inputClass, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
-import { getContractFixtures, getDocuments, getState, submitDocument } from "@/lib/api";
+import { getDocuments, getState, submitDocument } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import type { Counterparty, DocumentKind, DocumentSummary, SubmitDocumentRequest } from "@/lib/types";
+import type { Counterparty, DocumentKind, SubmitDocumentRequest } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 
 const MAX_BYTES = 5 * 1024 * 1024;
-/** A demo document dragged from the list onto the drop zone carries its fixture id and chosen format under this type. */
-const FIXTURE_MIME = "application/x-flow-fixture";
 const READABLE = /\.(pdf|docx|txt|md)$/i;
 
-type Format = "md" | "docx" | "pdf";
-
 /**
- * Contract ingestion (brief 03): read a demo document or upload a signed contract or lender agreement, review the agent's
+ * Contract ingestion (brief 03): upload a signed contract or lender agreement, review the agent's
  * reading beside the text, and confirm or reject it. The selected document is in the address (?id=DOC-…), so the home cards
  * link straight to it. Everything goes through lib/api.ts; the reading, the amounts and the comparison are the server's.
  */
@@ -51,7 +47,6 @@ function Documents() {
   const today = list.data?.day ?? null;
   const docs = list.data?.documents ?? [];
   const parties = state.data?.state.counterparties ?? [];
-  const nameOf = (id: string) => parties.find((c) => c.id === id)?.name ?? id;
 
   const open = (id: string) => router.replace(`/documents?id=${encodeURIComponent(id)}`, { scroll: false });
 
@@ -83,10 +78,7 @@ function Documents() {
       {/* A flex column, not a stack: the review's parts are ordered (the decision is a bar at the foot of a phone, under the header on a desktop). */}
       <div className="flex flex-col gap-8">
         <Card id="docs-read" className="order-1">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-            <UploadForm parties={parties} onRead={read} />
-            <DemoDocuments existing={docs} nameOf={nameOf} onRead={read} onOpen={open} />
-          </div>
+          <UploadForm parties={parties} onRead={read} />
           {error ? (
             <div className="mt-4">
               <ErrorState error={error} />
@@ -141,103 +133,6 @@ function Documents() {
         </Card>
       </div>
     </>
-  );
-}
-
-/** The synthetic demo documents (GET /fixtures/contracts): read one in any of its formats, or open the reading already made. */
-function DemoDocuments({
-  existing,
-  nameOf,
-  onRead,
-  onOpen,
-}: {
-  existing: DocumentSummary[];
-  nameOf: (id: string) => string;
-  onRead: (req: SubmitDocumentRequest) => Promise<void>;
-  onOpen: (id: string) => void;
-}) {
-  const { t, te } = useI18n();
-  const fixtures = useAsync(getContractFixtures, []);
-  const [formats, setFormats] = useState<Record<string, Format>>({});
-  const [busy, setBusy] = useState<string | null>(null);
-  return (
-    <section className="min-w-0">
-      <h3 className="text-base font-semibold text-ink">{t("docs.demo")}</h3>
-      <p className="mt-0.5 text-meta text-ink-3">{t("docs.demo.hint")}</p>
-      {fixtures.error ? (
-        <div className="mt-3">
-          <ErrorState error={fixtures.error} onRetry={fixtures.reload} />
-        </div>
-      ) : !fixtures.data ? (
-        <div className="mt-3">
-          <LoadingBlock rows={2} />
-        </div>
-      ) : (
-        <ul className="mt-3 divide-y divide-line border-y border-line">
-          {fixtures.data.map((f) => {
-            const made = existing.filter((d) => d.source === `fixture:${f.id}` && d.status !== "REJECTED");
-            const last = made.length ? made[made.length - 1] : null;
-            const format = formats[f.id] ?? "md";
-            return (
-              <li
-                key={f.id}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData(FIXTURE_MIME, JSON.stringify({ fixture_id: f.id, format }));
-                  e.dataTransfer.effectAllowed = "copy";
-                }}
-                className="flex cursor-grab flex-wrap items-center justify-between gap-2 py-2.5 active:cursor-grabbing"
-                data-testid={`fixture-${f.id}`}
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink">{f.title}</p>
-                  <p className="text-meta text-ink-3">
-                    {te("dockind", f.kind)} · {nameOf(f.counterparty_id)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {last ? (
-                    <Button size="sm" onClick={() => onOpen(last.id)} data-testid={`fixture-open-${f.id}`}>
-                      {t("docs.openIt")}
-                    </Button>
-                  ) : null}
-                  <label className="sr-only" htmlFor={`fmt-${f.id}`}>
-                    {t("docs.format")}
-                  </label>
-                  <select
-                    id={`fmt-${f.id}`}
-                    value={format}
-                    onChange={(e) => setFormats((s) => ({ ...s, [f.id]: e.target.value as Format }))}
-                    className={`${inputClass} touch:min-h-11`}
-                  >
-                    {f.formats.map((x) => (
-                      <option key={x} value={x}>
-                        {te("docformat", x)}
-                      </option>
-                    ))}
-                  </select>
-                  {/* Reading a document again is a new reading for the owner to review; the one already confirmed stays. */}
-                  <Button
-                    size="sm"
-                    variant={last ? "secondary" : "primary"}
-                    loading={busy === f.id}
-                    disabled={busy !== null}
-                    data-testid={`fixture-read-${f.id}`}
-                    onClick={async () => {
-                      setBusy(f.id);
-                      await onRead({ fixture_id: f.id, format });
-                      setBusy(null);
-                    }}
-                  >
-                    {last ? t("docs.readAgain") : t("docs.readIt")}
-                  </Button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
   );
 }
 
@@ -346,7 +241,7 @@ function KindSelect({ id, value, onChange, className }: { id: string; value: Doc
 
 /**
  * The owner's own file, as a drop zone: say what it is and who it is with, then drop the file (it is read at once) or choose it and press
- * Upload and read. A demo document dragged from the list beside it is read the same way.
+ * Upload and read.
  */
 function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req: SubmitDocumentRequest) => Promise<void> }) {
   const { t } = useI18n();
@@ -402,19 +297,6 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
     e.preventDefault();
     setOver(false);
     if (busy) return;
-    const fixture = e.dataTransfer.getData(FIXTURE_MIME);
-    if (fixture) {
-      setProgress(6);
-      setBusy(t("docs.demo"));
-      setError(null);
-      try {
-        await onRead(JSON.parse(fixture) as SubmitDocumentRequest);
-        setProgress(100);
-      } finally {
-        setBusy(null);
-      }
-      return;
-    }
     const dropped = e.dataTransfer.files?.[0];
     if (!dropped) return;
     if (!READABLE.test(dropped.name)) {
@@ -490,7 +372,7 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
             <div role="progressbar" aria-label={t("docs.drop.reading", { name: busy })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-2 overflow-hidden rounded-full bg-line-strong">
               <div className="h-full rounded-full bg-brand-600 transition-[width] duration-(--dur) ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
             </div>
-            <p className="mt-1 text-supporting tabular-nums text-ink-3">{Math.round(progress)}%</p>
+            <p className="mt-1 text-meta tabular-nums text-ink-3">{Math.round(progress)}%</p>
           </div>
         ) : (
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -523,7 +405,6 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
           }}
           className="sr-only"
         />
-        <p className="mt-1 text-meta text-ink-3">{t("docs.drop.demoHint")}</p>
       </div>
       {error ? (
         <div className="mt-3">
