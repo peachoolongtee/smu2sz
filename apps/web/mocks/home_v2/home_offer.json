@@ -18303,7 +18303,8 @@
           "with_plan": {
             "label": "with plan",
             "value_text": "¥300,000"
-          }
+          },
+          "basis_label": "Without new funding"
         },
         "funding": {
           "state": "PROPOSED",
@@ -36977,7 +36978,8 @@
           "with_plan": {
             "label": "采用方案后",
             "value_text": "¥300,000"
-          }
+          },
+          "basis_label": "未新增融资"
         },
         "funding": {
           "state": "PROPOSED",

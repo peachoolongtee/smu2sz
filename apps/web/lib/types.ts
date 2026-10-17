@@ -2313,6 +2313,36 @@ export interface ReceivableRow {
   collection_state?: CollectionState;
   collection_state_text?: string;
   collection_action?: { primary?: CollectionActionKind; label?: string; others?: { action: CollectionActionKind; label: string }[] };
+  /** The invoice's status in the books ("OPEN", "FINANCED", "SETTLED") and what is still owed on it, in fen: the record-a-payment form sends the
+   * outstanding as it is when the owner records the full amount (never added up here). */
+  status?: string;
+  outstanding_fen?: Fen;
+}
+
+/** What the owner sends to record a payment they received (the existing RECEIVE_PAYMENT operation, POST /operations as the owner). */
+export interface RecordReceiptRequest {
+  receivable_id: string;
+  amount_fen: Fen;
+  bank_reference?: string | null;
+  /** One per press of Record: the op id and the idempotency key, so a retried request books once. */
+  key: string;
+}
+
+/** The owner's words for a recorded payment (`receipt` on the POST /operations answer), written by the server in the page's language. */
+export interface ReceiptWords {
+  status: "EXECUTED" | "REFUSED" | "DUPLICATE" | "PENDING_APPROVAL" | string;
+  tone: "ok" | "bad" | "info" | "warn" | "neutral";
+  headline_text: string | null;
+  lines: string[];
+  /** How the reconciliation reads the receipt, as a sentence; the page puts its own "Reconciliation" label before it. */
+  reconciliation_text: string | null;
+}
+
+export interface RecordReceiptResult {
+  result: OperationResult;
+  /** Null when the server could not write the words (the executor's answer stands). */
+  receipt: ReceiptWords | null;
+  lang?: "en" | "zh";
 }
 
 export interface ReceivablesRead {
@@ -3296,6 +3326,8 @@ export interface HomeV2 {
       with_plan?: { label: string; value_text: string } | null;
       /** The note in a few words ("in 30 days · current books, no new funding"); absent until the server sends it (`note` then). */
       short_note?: string | null;
+      /** The label under the figure: "Without new funding", or "With the funding in place" once the plan's operations have run. Absent on older recordings (the dictionary's "Without new funding" then). */
+      basis_label?: string | null;
     };
     funding: HomeV2Kpi & { state: "PROPOSED" | "ARRANGED" | "NONE"; hint: string | null; /** "Ready to run" and its like, in the server's words. */ status_text?: string | null };
   };
@@ -3780,6 +3812,20 @@ export interface ContractTermsResult {
 export type StageState = "done" | "now" | "todo" | "skipped" | "pending" | "missed";
 export type DealTone = "ok" | "warn" | "bad" | "info" | "mute";
 
+/** What a buyer's invoice rows add up to, with the server's one sentence about them (`DealView.open_invoices`, `DealView.contract_status`). */
+export interface OpenInvoices {
+  count: number;
+  due_fen: Fen;
+  due_display: string;
+  late_count: number;
+  late_fen: Fen;
+  late_display: string;
+  next_due_day: Day | null;
+  next_due_when: string | null;
+  text: string;
+  tone: DealTone;
+}
+
 export interface DealView {
   counterparty_id: string;
   counterparty_name: string;
@@ -3842,18 +3888,12 @@ export interface DealView {
    * ones, when the next falls due and the server's one sentence about them ("No contract on file yet. Open invoices: 1, ¥120,000.00 due in 14 days.").
    * Absent with a contract (its own fields say it) and for a buyer with no invoice.
    */
-  open_invoices?: {
-    count: number;
-    due_fen: Fen;
-    due_display: string;
-    late_count: number;
-    late_fen: Fen;
-    late_display: string;
-    next_due_day: Day | null;
-    next_due_when: string | null;
-    text: string;
-    tone: DealTone;
-  };
+  open_invoices?: OpenInvoices;
+  /**
+   * A confirmed contract with no deal agreed on it yet: the same counts as `open_invoices` and the server's one sentence for the row that lists it on
+   * Deals ("Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days."). Absent once a deal is agreed and without a contract.
+   */
+  contract_status?: OpenInvoices;
   owed_by_us?: {
     display_only: boolean;
     deliverables: { text: string | null; clause: string | null; quote: string }[];

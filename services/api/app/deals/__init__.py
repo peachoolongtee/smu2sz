@@ -526,10 +526,14 @@ def _next_action(invoices: list[dict[str, Any]], store: LedgerStore, state: Fina
 
 
 def _open_invoices_text(open_: list[dict[str, Any]], late: list[dict[str, Any]], nxt: dict[str, Any] | None,
-                        due_fen: int, late_fen: int, day: int, lang: Lang) -> str:
-    """The one sentence for a buyer's invoices before any contract: how many are open, what is due, the late ones and when the
-    next falls due, said as a distance from today (never a day number, an id or a reference)."""
-    head = say(lang, "No contract on file yet.", "尚无合同。")
+                        due_fen: int, late_fen: int, day: int, lang: Lang, head: str | None = None,
+                        any_invoice: bool = True) -> str:
+    """The one sentence for a buyer's invoices before any contract (or, with `head`, before any deal on a confirmed contract):
+    how many are open, what is due, the late ones and when the next falls due, said as a distance from today (never a day
+    number, an id or a reference)."""
+    head = head if head is not None else say(lang, "No contract on file yet.", "尚无合同。")
+    if not any_invoice:
+        return head + say(lang, " No invoices on the books yet.", "账上尚无发票。")
     if not open_:
         return head + say(lang, " Every invoice is paid.", "所有发票均已收讫。")
     n, due = len(open_), fmt_yuan(due_fen)
@@ -564,6 +568,12 @@ def _without_contract(store: LedgerStore, state: FinancialState, cp: str, day: i
         ids = {r.id for r in mine}
         receipts = [m for m in reconcile(store, day=day).receipts if m.receivable_id in ids and m.status.value != "UNMATCHED"]
     invoices = _invoices(store, state, cp, day, receipts, lang)
+    return {"invoices": invoices, "open_invoices": _open_summary(invoices, day, lang)}
+
+
+def _open_summary(invoices: list[dict[str, Any]], day: int, lang: Lang, head: str | None = None) -> dict[str, Any]:
+    """What the card says about a buyer's invoice rows: the counts and amounts in their own fields and the one sentence
+    (`_open_invoices_text`) under `head` (no contract yet, unless the caller says otherwise)."""
     open_ = [i for i in invoices if i["status"] != "PAID"]
     late = [i for i in open_ if i["status"] == "LATE"]
     upcoming = sorted((i for i in open_ if i["status"] != "LATE"), key=lambda i: (i["due_day"], i["issue_day"], i["id"]))
@@ -571,15 +581,12 @@ def _without_contract(store: LedgerStore, state: FinancialState, cp: str, day: i
     due_fen = sum(i["outstanding_fen"] for i in open_)
     late_fen = sum(i["outstanding_fen"] for i in late)
     return {
-        "invoices": invoices,
-        "open_invoices": {
-            "count": len(open_), "due_fen": due_fen, "due_display": fmt_yuan(due_fen),
-            "late_count": len(late), "late_fen": late_fen, "late_display": fmt_yuan(late_fen),
-            "next_due_day": nxt["due_day"] if nxt is not None else None,
-            "next_due_when": when_text(nxt["due_day"], day, lang) if nxt is not None else None,
-            "text": _open_invoices_text(open_, late, nxt, due_fen, late_fen, day, lang),
-            "tone": "bad" if late else "mute" if open_ else "ok",
-        },
+        "count": len(open_), "due_fen": due_fen, "due_display": fmt_yuan(due_fen),
+        "late_count": len(late), "late_fen": late_fen, "late_display": fmt_yuan(late_fen),
+        "next_due_day": nxt["due_day"] if nxt is not None else None,
+        "next_due_when": when_text(nxt["due_day"], day, lang) if nxt is not None else None,
+        "text": _open_invoices_text(open_, late, nxt, due_fen, late_fen, day, lang, head, any_invoice=bool(invoices)),
+        "tone": "bad" if late else "mute" if open_ else "ok",
     }
 
 
@@ -658,6 +665,11 @@ def deal_summary(store: LedgerStore, counterparty_id: str, day: int, lang: Lang 
         "checks": _checks(state, counterparty_id, record, implied, commitments, lang, day),
         "next_action": _next_action(invoices, store, state, day, counterparty_id, lang),
     })
+    if accepted_day is None:
+        # A confirmed contract with no deal agreed on it yet (owner's report, 17 Oct: a confirmed contract showed nowhere on
+        # Deals): one sentence for the row that lists it, the same counts and amounts as `open_invoices` beside it.
+        base["contract_status"] = _open_summary(
+            invoices, day, lang, head=say(lang, "Contract on file; no deal agreed yet.", "合同已存档，尚未商定交易。"))
     return base
 
 

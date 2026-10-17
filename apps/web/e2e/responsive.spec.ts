@@ -197,10 +197,13 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
 
 test("the document review fits the viewport", async ({ page }) => {
   await page.goto("/documents");
-  // The upload form with its message (no company typed yet) fits too.
-  await page.getByTestId("doc-upload").click();
-  await expect(page.locator("#docs-read").getByRole("alert")).toBeVisible();
+  // The upload form with a file waiting for its company (the list open, its question on top) fits too.
+  await page.locator("#docs-read").locator('input[type="file"]').setInputFiles({ name: "fhr-2026-07-supply-agreement.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+  await expect(page.getByTestId("doc-ask-who")).toBeVisible();
+  await expect(page.getByTestId("doc-counterparty-list")).toBeVisible();
   expect(await overflowX(page), "the upload form overflows horizontally").toBeLessThanOrEqual(1);
+  await page.keyboard.press("Escape"); // the list closes; Remove is under it
+  await page.getByTestId("doc-waiting-remove").click();
   // The mock reads no uploaded file, so the review is a demo document the owner confirmed (a new reading is documents.spec.ts, live).
   await page.getByTestId("doc-row-DOC-000001").getByRole("button").click();
   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");

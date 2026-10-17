@@ -13,13 +13,14 @@ import { inFilter, type RecvFilter } from "@/components/receivables/state";
 import { STRESS_DAYS, StressAside } from "@/components/receivables/stress-aside";
 import { Summary } from "@/components/receivables/summary";
 import { CustomerList } from "@/components/receivables/customer-list";
+import { RecordedPayment } from "@/components/receivables/record-payment";
 import { ArrowLeftIcon } from "@/components/icons";
 import { ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { getBuyerExposure, getDecisionExposure, getReceivables, getReconciliation, getState } from "@/lib/api";
 import { usePageScope } from "@/lib/chat-scope";
 import { useI18n } from "@/lib/i18n";
 import { withContext } from "@/lib/receivables-context";
-import type { BuyerExposureView, ReceivableRow, ReceivablesRead } from "@/lib/types";
+import type { BuyerExposureView, ReceivableRow, ReceivablesRead, ReceiptWords } from "@/lib/types";
 import { useNarrow } from "@/lib/use-narrow";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { useAsync } from "@/lib/use-async";
@@ -154,6 +155,15 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
   const dealHref = (r: ReceivableRow) =>
     r.pending_counter?.decision_id ? withContext("/deals", params, { decision: r.pending_counter.decision_id, customer: r.buyer_id ?? null, invoice: r.receivable_id }, r.buyer_id ? { buyer: r.buyer_id } : {}) : null;
 
+  // A payment the owner just recorded: the server's words above the invoices, and every read of the books again (the invoice, the history, the payment record).
+  const [paid, setPaid] = useState<ReceiptWords | null>(null);
+  const recorded = (words: ReceiptWords) => {
+    setPaid(words);
+    reload();
+    recon.reload();
+    buyerRead.reload();
+  };
+
   const history = recon.error ? (
     <div data-testid="recv3-history-failed">
       <ErrorState error={recon.error} onRetry={recon.reload} />
@@ -196,7 +206,8 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
         }
       />
       <PartialRead partial={read.partial} onRetry={reload} />
-      {rows.length === 0 ? <p className="card-flat text-sm text-ink-3">{t("recv.list.none")}</p> : null}
+      {paid ? <RecordedPayment words={paid} onDismiss={() => setPaid(null)} /> : null}
+      {rows.length === 0 ?<p className="card-flat text-sm text-ink-3">{t("recv.list.none")}</p> : null}
       {narrow && selected ? <SelectedStrip row={selected} customerHref={customerHref(selected)} /> : null}
       <InvoiceList rows={rows} selectedId={selected?.receivable_id ?? null} onSelect={select} filter={filter} onFilter={applyFilter} />
 
@@ -211,7 +222,7 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
             {t("recv3.selected", { invoice: selected.invoice ?? selected.buyer_name ?? "" })}
           </p>
           <div key={selected.receivable_id} className="motion-swap min-w-0">
-            <InvoiceDetail row={selected} customerHref={customerHref(selected)} dealHref={dealHref(selected)} history={view?.payments?.sentence ?? null} primaryHere={!narrow} />
+            <InvoiceDetail row={selected} customerHref={customerHref(selected)} dealHref={dealHref(selected)} history={view?.payments?.sentence ?? null} primaryHere={!narrow} onRecorded={recorded} />
           </div>
           <div key={`${selected.receivable_id}-aside`} className="motion-swap min-w-0">
             <StressAside
