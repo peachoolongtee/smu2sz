@@ -194,11 +194,16 @@ test("without the flag the Deals page reads no envelope, and the strategy spec g
   assert.match(source("playwright.config.ts"), /process\.env\.E2E_STRATEGY === "1"/);
 });
 
-test("pnpm demo and pnpm dev:live build with the strategy surfaces on, against an API with the three strategy routes on; the envelope and the pilot journal stay off", () => {
+test("pnpm demo builds with the strategy surfaces and the envelope on, its API warming the envelope's cache; dev:live has the strategy flag only; the pilot journal stays off", () => {
   const demo = source("../../scripts/demo.mjs");
   assert.match(demo, /NEXT_PUBLIC_STRATEGY_MVP: "1"/);
-  // The envelope's first read is past the web's 20 s on the busy books (lib/config.ts): off in the demo until it is faster.
-  assert.doesNotMatch(demo, /NEXT_PUBLIC_STRATEGY_ENVELOPE: "1"/);
+  // The envelope's first read of a set of books is slow (lib/config.ts): the demo shows it because its API reads it once after every
+  // reset and setup (DEMO_WARM_STRATEGY, app/api/strategy_warm.py) and the launcher reads it once when the API is up.
+  assert.match(demo, /NEXT_PUBLIC_STRATEGY_ENVELOPE: "1"/);
+  assert.match(demo, /DEMO_WARM_STRATEGY: "1"/);
+  assert.match(demo, /warmStrategy\(opts\.apiPort\);/);
+  assert.match(demo, /"\/buyers\/BUYER-1\/envelope\?lang=en&zone=1"/);
+  // dev:live talks to an API started by hand, which may not warm anything: the envelope stays off there.
   assert.doesNotMatch(source("scripts/dev-mode.mjs"), /NEXT_PUBLIC_STRATEGY_ENVELOPE: "1"|NEXT_PUBLIC_PILOT_JOURNAL: "1"/);
   for (const flag of ["FEATURE_ENVELOPE", "FEATURE_PRICE_CURVE", "FEATURE_COLLECTIONS_WORTH"]) assert.match(demo, new RegExp(`${flag}: "1"`), flag);
   assert.match(source("scripts/dev-mode.mjs"), /NEXT_PUBLIC_STRATEGY_MVP: "1"/);

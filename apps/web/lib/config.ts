@@ -28,8 +28,10 @@ export const STRATEGY_MVP: boolean = process.env.NEXT_PUBLIC_STRATEGY_MVP === "1
  * Build-time flag for the Safe Deal Envelope on a deal's Cash impact ("The most you can give" and "What you could answer
  * instead"): the strategy build AND NEXT_PUBLIC_STRATEGY_ENVELOPE=1. Its own flag because its first read of a set of books is
  * bound by the funding search it repeats (measured 17 Oct 2026, a fresh API: about 17 s on the golden books with the terms and
- * price table, 32 s without it and 81 s with it on the busy books), at or past the 20 s after which the web gives up. `pnpm demo`
- * leaves it off until that read is faster; the strategy e2e build (E2E_STRATEGY=1) and the pilot set it.
+ * price table, 32 s without it and 81 s with it on the busy books), at or past the 20 s after which the web gives up. The API
+ * caches the answer by the books, so `pnpm demo` sets it together with the API's warm-up (DEMO_WARM_STRATEGY: the read runs once in
+ * the background after each reset and setup, and the launcher runs it when the API is up); a warmed first visit loads in under 2 s
+ * on the golden books. `pnpm dev:live` leaves it off (its API may not warm). The strategy e2e build and the pilot set it.
  */
 export const STRATEGY_ENVELOPE: boolean = STRATEGY_MVP && process.env.NEXT_PUBLIC_STRATEGY_ENVELOPE === "1";
 

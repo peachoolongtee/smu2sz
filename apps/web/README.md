@@ -33,10 +33,11 @@ steps, the two servers and the database choices are in the root `README.md`; thi
 - `NEXT_PUBLIC_STRATEGY_MVP=1` (build time; `pnpm demo`, `pnpm demo:mock` and `pnpm dev:live` set it) shows the price of
   earlier cash on Cash & funding (the API's `FEATURE_PRICE_CURVE`), and the collections ranking on the receivables page of
   before (`FEATURE_COLLECTIONS_WORTH`; that page shows only when the API has no `GET /receivables`). On top of it, each with its
-  own flag and off in the demo: `NEXT_PUBLIC_STRATEGY_ENVELOPE=1` adds the Safe Deal Envelope to a deal's Cash impact ("The
-  most you can give", "What you could answer instead"; `FEATURE_ENVELOPE`; its first read takes 17 s to 80 s, see
-  `lib/config.ts`), and `NEXT_PUBLIC_PILOT_JOURNAL=1`, in live mode, the pilot journal on Activity (`FEATURE_PILOT_JOURNAL`;
-  the pilot only). The strategy e2e build (`E2E_STRATEGY=1`) sets the envelope's flag.
+  own flag: `NEXT_PUBLIC_STRATEGY_ENVELOPE=1` adds the Safe Deal Envelope to a deal's Cash impact ("The most you can give",
+  "What you could answer instead"; `FEATURE_ENVELOPE`). Its first read takes 17 s to 90 s, so `pnpm demo`, `pnpm demo:mock` and
+  the strategy e2e build (`E2E_STRATEGY=1`) set it, the demo with its API warming the read (`DEMO_WARM_STRATEGY=1`), and `pnpm
+  dev:live` does not (see `lib/config.ts`). `NEXT_PUBLIC_PILOT_JOURNAL=1`, in live mode, adds the pilot journal to Activity
+  (`FEATURE_PILOT_JOURNAL`; the pilot only, off in the demo).
 
 ### Running live locally
 

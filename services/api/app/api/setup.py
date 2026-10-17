@@ -582,5 +582,8 @@ def setup_open(body: OpenIn, request: Request, lang: str = "en") -> dict:
                     "Please try again.", "FLOW 无法开立您的账簿，因此未开立任何内容，已回到空白账簿。请重试。")}) from None
         rt.clear_session_caches()
         _setup_docs.clear()
+    from app.api.strategy_warm import warm_strategy_reads
+
+    warm_strategy_reads()  # the local demo only (DEMO_WARM_STRATEGY=1): the strategy reads of the new books, in the background
     return {"ok": True, "seq": rec.seq, "entry_hash": rec.entry_hash, "confirmed_documents": confirmed,
             "text": t(lg, "Your books are open. Home now answers from your own figures.", "账簿已开立。首页现在根据您自己的数据作答。")}
