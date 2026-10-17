@@ -1,5 +1,6 @@
-"""The party check (owner's rule, 17 Oct): the counterparty the owner chose against the companies the reading found named.
-Synthetic names; deterministic matching only (normalised equality or containment, the registry short name inside)."""
+"""The party check (owner's rule, 17 Oct; roles and whole-company matching, REG-2): the counterparty the owner chose against
+the companies the reading found named in its role. Synthetic names; deterministic matching only (the same-company key).
+The REG-2 cases themselves are in test_party_roles.py."""
 
 from __future__ import annotations
 
@@ -38,11 +39,11 @@ def test_normalise_folds_width_case_punctuation_and_whitespace():
 @pytest.mark.parametrize("party, chosen", [
     ("Foshan Home Retail Co.", "Foshan Home Retail Co."),  # exact
     ("foshan home retail co.", "Foshan Home Retail Co."),  # case
-    ("Foshan Home Retail Co., Ltd.", "Foshan Home Retail Co."),  # the registry name inside the party name
-    ("Foshan Home Retail", "Foshan Home Retail Co., Ltd."),  # the party name inside the registry name
+    ("Foshan Home Retail Co., Ltd.", "Foshan Home Retail Co."),  # the legal-form words differ
+    ("Foshan Home Retail", "Foshan Home Retail Co., Ltd."),  # the legal form left out
     ("Ｆｏｓｈａｎ　Ｈｏｍｅ　Ｒｅｔａｉｌ　Ｃｏ．", "Foshan Home Retail Co."),  # full-width
     ("深圳市晟达五金制品有限公司", "深圳市晟达五金制品有限公司"),  # Chinese, exact
-    ("深圳市晟达五金制品有限公司", "晟达五金"),  # a Chinese name inside
+    ("深圳市晟达五金制品公司", "深圳市晟达五金制品有限公司"),  # the Chinese legal form differs
 ])
 def test_names_that_match(party, chosen):
     assert names_match(party, chosen)
@@ -54,24 +55,29 @@ def test_names_that_match(party, chosen):
     ("Foshanxi Trading Ltd.", "Foshan"),  # half a word is not the name
     ("Co., Ltd.", "Foshan Home Retail Co., Ltd."),  # too short to name a company
     ("", "Foshan Home Retail Co."),
+    ("深圳市晟达五金制品有限公司", "晟达五金"),  # a part of a name is not the company
 ])
 def test_names_that_do_not_match(party, chosen):
     assert not names_match(party, chosen)
 
 
-def test_the_registry_short_name_counts_inside_a_party_name():
-    names = _names("Foshan Home Retail Co.")
-    assert names == ["Foshan Home Retail Co.", "Foshan"]
+def test_the_registry_names_are_the_name_and_the_short_names_the_owner_gave():
+    assert _names("Foshan Home Retail Co.") == ["Foshan Home Retail Co."]  # the first word is the pages', not a registration
+    names = _names("Foshan Home Retail Co.") + ["Foshan"]
     assert party_matches(["Lingnan Homeware Manufacturing Co., Ltd.", "Foshan Home Retail Company Limited"], names)
-    assert party_matches(["FOSHAN HOME RETAIL (GROUP) CO., LTD."], names)
+    assert party_matches(["Foshan"], names)  # a name the owner registered
+    assert not party_matches(["FOSHAN HOME RETAIL (GROUP) CO., LTD."], names[:1])  # another company, not a form of this one
     assert not party_matches(["Lingnan Homeware Manufacturing Co., Ltd.", "Dongguan Office Supplies Ltd."], names)
     assert not party_matches([], names)
 
 
 def test_a_chinese_registry_name_and_its_forms():
-    names = ["深圳市晟达五金制品有限公司", "晟达五金"]  # a registry name and a short or Chinese name it holds
+    names = ["深圳市晟达五金制品有限公司", "晟达五金"]  # a registry name and a short or Chinese name the owner registered
     assert party_matches(["深圳市晟达五金制品有限公司"], names)
-    assert party_matches(["晟达五金（深圳）有限公司"], names)  # the short form inside
+    assert party_matches(["晟达五金"], names)  # the registered short name, whole
+    assert party_matches(["晟达五金（深圳）有限公司"], names)  # the owner's short name inside a longer legal name
+    assert not party_matches(["晟达五金（深圳）有限公司"], names[:1])  # but not from the registry name alone
+    assert not party_matches(["深圳市晟达五金制品有限公司香港分公司"], names[:1])
     assert not party_matches(["深圳市澄昱智能制造股份有限公司"], names)
 
 
@@ -118,25 +124,25 @@ def test_a_contract_with_two_other_companies_is_blocked_with_both_names():
         "Supplies Ltd.。确认前请核实它的对方是谁。")
 
 
-def test_a_reading_with_no_party_names_carries_a_warning_only():
+def test_a_reading_with_no_party_names_blocks_the_contract():
     rec = _fhr("Supply agreement.\n\nThe buyer pays each invoice 45 days after the invoice date.\n")
     (flag,) = party_flags(rec, registry_names(FOSHAN))
-    assert flag.kind == PARTY_UNCHECKED and not flag.blocking
+    assert flag.kind == PARTY_UNCHECKED and flag.blocking
     assert "could not check that it is with Foshan Home Retail Co." in flag.note
-    assert not with_party_check(rec, FOSHAN).blocked
+    assert with_party_check(rec, FOSHAN).blocked
 
 
-def test_a_lender_agreement_is_checked_only_when_the_reading_names_the_lender():
+def test_a_lender_agreement_is_checked_against_the_lender_the_reading_names():
     text = contract_fixture_bytes("MB_CREDIT_LINE_AGREEMENT")[1].decode("utf-8")
     rec = read_document(text, DocumentKind.LENDER_AGREEMENT, "BANK-1", title=None, source="text", day=0, facilities=[])
     bank = Counterparty(id="BANK-1", name="Main bank", role="LENDER")
-    assert rec.term_sheet.lender_name == "BANK-1"  # the recorded reading names no lender: not checked, no warning
-    assert party_flags(rec, registry_names(bank)) == []
+    assert rec.term_sheet.lender_name == "BANK-1"  # the recorded reading names no lender, so "Main bank" is not found
+    assert [f.kind for f in party_flags(rec, registry_names(bank))] == [PARTY_UNCHECKED]  # blocked, not skipped (REG-2)
     named = rec.model_copy(update={"term_sheet": rec.term_sheet.model_copy(
-        update={"lender_name": "Pearl River Commercial Bank"})})
+        update={"lender_name": "Pearl River Commercial Bank, Foshan Branch"})})
     pearl = Counterparty(id="BANK-1", name="Pearl River Commercial Bank, Foshan Branch", role="LENDER")
     assert party_flags(named, registry_names(pearl)) == []
     (flag,) = party_flags(named, registry_names(Counterparty(id="BANK-2", name="Guaranteed-loan bank", role="LENDER")))
     assert flag.kind == PARTY_NOT_NAMED and flag.blocking and flag.note.startswith(
-        "This agreement names Pearl River Commercial Bank, not Guaranteed-loan bank.")
-    assert text[flag.span.start:flag.span.end] == "Pearl River Commercial Bank"
+        "This agreement names Pearl River Commercial Bank, Foshan Branch, not Guaranteed-loan bank.")
+    assert text[flag.span.start:flag.span.end] == "Pearl River Commercial Bank, Foshan Branch"

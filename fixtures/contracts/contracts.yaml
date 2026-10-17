@@ -2,7 +2,9 @@
 # Synthetic: each was written to match fixtures/scenarios/golden_sme.json, and each says so in its own text.
 # `file` is the canonical text the agent reads when the demo picks the fixture; `formats` are generated copies
 # (scripts/build_contract_files.py) that exercise the .docx and text-PDF upload path.
-# `link_facility_id` is the existing facility the owner links a lender agreement to on confirmation.
+# `party_names` are the names a lender agreement's counterparty goes by in the document, which the demo registry ("Main bank",
+# "Invoice financing platform") does not carry: the party check (app/contracts/parties.py, REG-2) accepts them for the fixture
+# only, as the short names an owner would register. `link_facility_id` is the existing facility the owner links a lender agreement to on confirmation.
 contracts:
   - id: FHR_SUPPLY_AGREEMENT
     kind: BUYER_CONTRACT
@@ -16,6 +18,7 @@ contracts:
     title: Credit line agreement MB-CL-2026-031
     file: mb-cl-2026-031-credit-line-agreement.md
     formats: [docx, pdf]
+    party_names: ["Pearl River Commercial Bank, Foshan Branch"]
     link_facility_id: FAC-LINE
   - id: GBR_INVOICE_FINANCING_AGREEMENT
     kind: LENDER_AGREEMENT
@@ -23,4 +26,5 @@ contracts:
     title: Invoice financing agreement GBR-IF-2026-118
     file: gbr-if-2026-118-invoice-financing-agreement.md
     formats: [docx, pdf]
+    party_names: ["Greater Bay Receivables Finance Co., Ltd."]
     link_facility_id: FAC-IF

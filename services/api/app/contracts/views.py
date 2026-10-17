@@ -17,7 +17,7 @@ from typing import Any
 from app.api.engine_zh import translate
 from app.api.presentation import Lang, t, when_text
 from app.contracts.derive import date_display, day_of
-from app.contracts.parties import PARTY_FLAG_KINDS, PARTY_NOT_NAMED, named_parties, party_note
+from app.contracts.parties import PARTY_FLAG_KINDS, PARTY_UNCHECKED, named_parties, party_note
 from app.domain.models import (
     CONTRACT_READING_KINDS,
     MULTI_VALUED_CONTRACT_FIELDS,
@@ -315,7 +315,10 @@ def _status_text(record: ContractRecord, lang: Lang, today: int | None, state: F
         return t(lang, f"Confirmed by you {when}".strip(), f"{when}经您确认".strip())
     if record.status == DocumentStatus.REJECTED:
         return t(lang, f"Rejected by you {when}".strip(), f"{when}被您拒绝".strip())
-    if record.blocked and all(f.kind == PARTY_NOT_NAMED for f in record.flags if f.blocking):
+    blocking = {f.kind for f in record.flags if f.blocking}
+    if blocking == {PARTY_UNCHECKED}:
+        return t(lang, "Cannot be confirmed: the agent could not tell who it is with", "无法确认：代理无法判断它的对方是谁")
+    if record.blocked and blocking <= PARTY_FLAG_KINDS:
         return t(lang, "Cannot be confirmed: it does not name the counterparty you chose", "无法确认：文件没有列明您选择的对方")
     if record.blocked:
         return t(lang, "Cannot be confirmed: it carries text addressed to the agent", "无法确认：其中含有写给代理的文字")
