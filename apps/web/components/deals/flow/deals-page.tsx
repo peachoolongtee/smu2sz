@@ -20,6 +20,7 @@ import { useMode } from "@/lib/mode";
 import { offerOf, patchedHref, readSelection } from "@/lib/selection";
 import type { DealsContext } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
+import { useSetupStatus } from "@/lib/setup-draft";
 import { useDecisions } from "@/lib/use-decision";
 import { type DealView, DecisionPane } from "./decision-pane";
 import { afterGroupCounts, afterGroupOf, dealTabCounts, dealTabOf, dealWalk, type DealWalk, LEGACY_VIEW_KEYS, negotiationRows, sortRows, TABLE_FROM, viewOf, type DealTab } from "./deal-model";
@@ -152,13 +153,17 @@ export function DealsPage() {
   const clock = useAsync(getClock, []);
   const records = useDecisions({ family: "DEAL" });
   const known = books.data ? new Set(books.data.state.counterparties.map((c) => c.id)) : null;
+  // The inbox is the demo's simulated buyer messages: only on the demo books. Books the owner set up (or blank books) number their first
+  // customer BUYER-1 too, and Foshan's demo messages must never appear there as if that customer had written (owner, 17 Oct).
+  const setup = useSetupStatus();
+  const demoInbox = setup.status?.books === "demo" ? INBOX : [];
   const [reading, setReading] = useState<string | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
   const [inboxPref, setInboxPref] = useState<boolean | null>(null);
   // Open while nothing is selected and nothing needs the owner (the next thing to do is read a message); folded to one row once a negotiation is selected.
   const inboxOpen = inboxPref ?? Boolean(queue && !decision && queue.counts.needs_you === 0);
   // The messages Business mode shows: the senders the books know (the same rule as the list itself).
-  const inboxCount = INBOX.filter((m) => mode !== "business" || (known ? known.has(m.counterparty_id) : false)).length;
+  const inboxCount = demoInbox.filter((m) => mode !== "business" || (known ? known.has(m.counterparty_id) : false)).length;
   async function openMessage(m: InboxMessage) {
     const seen = Object.values(demo.offers).find((o) => o.documents[0]?.doc_id === m.document.doc_id);
     if (seen) return select(seen.offer.counterparty_id, dealRecordId(seen.offer.offer_id), null);
@@ -239,6 +244,7 @@ export function DealsPage() {
             currentDocId={decision ? (demo.offers[offerOf(decision) ?? ""]?.documents[0]?.doc_id ?? null) : null}
             readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
             known={known}
+            messages={demoInbox}
             busy={reading}
             today={clock.data?.day ?? books.data?.day ?? 0}
             mode={mode}
@@ -259,6 +265,7 @@ export function DealsPage() {
       currentDocId={decision ? (demo.offers[offerOf(decision) ?? ""]?.documents[0]?.doc_id ?? null) : null}
       readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
       known={known}
+      messages={demoInbox}
       busy={reading}
       today={clock.data?.day ?? books.data?.day ?? 0}
       mode={mode}
