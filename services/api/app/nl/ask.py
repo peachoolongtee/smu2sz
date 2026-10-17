@@ -280,7 +280,7 @@ def router_reply(ctx: NlContext, question: str) -> tuple[str, list[str], list[st
 
     if not get_settings().features.ask_router or not ctx.owner_authenticated:
         return None
-    from app.nl.router import route
+    from app.nl.router.route import route
 
     got = route(question, ctx.lang, ctx)
     text = _reply_text(got, ctx.lang) if got is not None else None
