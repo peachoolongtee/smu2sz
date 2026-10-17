@@ -296,6 +296,21 @@ export const live = {
       buyerKey: req.actor === "COUNTERPARTY" ? DEMO_BUYER_KEYS[req.counterparty_id ?? ""] : undefined,
     }),
 
+  /** POST /nl/session/reset: ends one chat session. The owner's with the owner token (passed in, so a sign-out can end it before the token
+   * goes), a buyer's with its demo channel key; silent, so a refusal never opens the sign-in dialog. */
+  endNlSession: async (sessionId: string, actor: NlRequest["actor"], counterpartyId?: string, token?: string | null): Promise<void> => {
+    const buyer = actor === "COUNTERPARTY";
+    const buyerKey = buyer ? DEMO_BUYER_KEYS[counterpartyId ?? ""] : undefined;
+    if (buyer && !buyerKey) return; // an unkeyed buyer's session holds only proposals; only the owner and the expiry end it
+    await http("POST", "/nl/session/reset", {
+      body: { session_id: sessionId },
+      auth: buyer ? "none" : "owner",
+      buyerKey,
+      token: buyer ? undefined : (token ?? undefined),
+      silent: true,
+    });
+  },
+
   /** POST /nl/opener. Owner only (the API answers 403 without the token, which opens the sign-in dialog). */
   nlOpener: (sessionId: string | undefined, lang: "en" | "zh"): Promise<NlOpenerResponse> =>
     http<NlOpenerResponse>("POST", "/nl/opener", { body: { session_id: sessionId, lang }, ownerOn403: true }),
