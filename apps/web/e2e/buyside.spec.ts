@@ -7,42 +7,17 @@ import { expect, test } from "./fixtures";
  * recording (mocks/buyside).
  */
 
-test("Deals shows the buying side in its own card under the list of every deal, each purchase with its next step", async ({ page }) => {
+test("Deals is selling only: no buying card there; the purchases live on Capex & purchases, and Buying leads back to it", async ({ page }) => {
+  // The owner (17 Oct): Deals stays purely the buyers' negotiations; the buy side is one page under Capex & purchases.
   await page.goto("/deals");
-  const card = page.getByTestId("deals-buying");
-  await expect(card).toBeVisible();
-  await expect(page.locator("header").getByTestId("deals-buying")).toHaveCount(0);
-  await expect(card.getByRole("heading", { name: /Buying/ })).toContainText("1");
-  // selling stays first: the list of deals comes before the buying card in the reading order, the buyers' messages after it
-  const [listFirst, messagesAfter] = await page.evaluate(() => {
-    const list = document.querySelector('[data-testid="deals-queue"]');
-    const buying = document.querySelector('[data-testid="deals-buying"]');
-    const messages = document.querySelector('[data-testid="inbox-list"]');
-    const follows = (a: Element | null, b: Element | null) => Boolean(a && b && a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-    return [follows(list, buying), follows(buying, messages)];
-  });
-  expect(listFirst).toBe(true);
-  expect(messagesAfter).toBe(true);
-  const row = card.getByTestId("deals-buying-DOC-000004");
-  await expect(row).toContainText("Choose the timeline and financing, then commit");
-  await expect(row).toContainText("¥600,000.00");
-  await expect(row).toContainText("Ready to plan");
-  await expect(card.getByTestId("deals-buying-finance")).toHaveText("Financial health and loans");
-  await expect(card.getByTestId("deals-buying-plans")).toHaveText("Long-term plans");
-  // while a selling negotiation is open the card steps aside: that page is the selling decision
-  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await expect(page.getByTestId("deal-pane")).toBeVisible();
-  // the deal opens as its own page; the list (and this card with it) stays mounted but hidden, so its place is kept for All deals
-  await expect(page.getByTestId("deals-buying")).toBeHidden();
-  await page.goto("/deals");
-  // a purchase ready to plan opens its workbench on Capex, the buy side's one page
-  await page.getByTestId("deals-buying-DOC-000004").click();
-  await expect(page).toHaveURL(/\/capex\?purchase=DOC-000004$/);
-  await expect(page.getByTestId("capex-bench-DOC-000004").getByTestId("buy-evaluate")).toBeVisible();
-  await page.goto("/deals");
-  await page.getByTestId("deals-buying-all").click();
-  await expect(page).toHaveURL(/\/buy$/);
+  await expect(page.getByTestId("deals-queue")).toBeVisible();
+  await expect(page.getByTestId("deals-buying")).toHaveCount(0);
+  await page.goto("/capex");
+  await expect(page.getByTestId("capex-purchase-DOC-000004")).toBeVisible();
+  await page.goto("/buy");
   await expect(page.getByTestId("purchase-DOC-000004")).toBeVisible();
+  await page.getByTestId("back-to-capex").click();
+  await expect(page).toHaveURL(/\/capex$/);
 });
 
 test("Capex is the buy side's one page: the health figures, every purchase, and the picked one worked through to the commitment", async ({ page }) => {
@@ -141,7 +116,7 @@ test("long-term plans rank the permutations and say what the limits cost", async
 
 test("the buying pages stay in the Business shell, each with its way back", async ({ page }) => {
   for (const [path, back, label] of [
-    ["/buy", "back-to-deals", "Back to Deals"],
+    ["/buy", "back-to-capex", "Back to Capex & purchases"],
     ["/buy/contract?id=DOC-000004", "back-to-buy", "Back to Buying"],
     ["/finance", "back-to-buy", "Back to Buying"],
     ["/plans", "back-to-buy", "Back to Buying"],

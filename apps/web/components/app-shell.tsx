@@ -419,11 +419,12 @@ function sectionOf(pathname: string): Section {
   if (pathname.startsWith("/decisions/")) return "deals";
   if (pathname.startsWith("/customers/")) return "recv";
   if (OWNER_DETAIL_ROUTES[pathname] === "/cash") return "cash";
+  if (OWNER_DETAIL_ROUTES[pathname] === "/capex" || OWNER_DETAIL_ROUTES[pathname] === "/buy") return "capex";
   return "home";
 }
-const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash", "/documents": "nav.short.attach" };
+const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash", "/documents": "nav.short.attach", "/capex": "nav.short.capex" };
 /** The way back from a detail page, by the section it opens from. */
-const BACK_LABEL: Record<string, DictKey> = { "/cash": "nav.backToCash", "/deals": "nav.backToDeals", "/buy": "nav.backToBuying" };
+const BACK_LABEL: Record<string, DictKey> = { "/cash": "nav.backToCash", "/deals": "nav.backToDeals", "/buy": "nav.backToBuying", "/capex": "nav.backToCapex" };
 
 /**
  * The one shell. The Demo is the same app with the same rail and header (the Demo's own sidebar of engine views is gone: they are in the Demo page's Operator tools), plus the deep strip that

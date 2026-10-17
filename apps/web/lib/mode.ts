@@ -28,8 +28,8 @@ export function setMode(mode: Mode): void {
  * the section.
  */
 export const OWNER_DETAIL_ROUTES: Record<string, string> = {
-  // The buy side (ADR-0013): Buying opens from Deals; a contract, financial health and long-term plans open from Buying.
-  "/buy": "/deals",
+  // The buy side (ADR-0013): Buying opens from Capex & purchases (the owner keeps Deals for selling only, 17 Oct); a contract, financial health and long-term plans open from Buying.
+  "/buy": "/capex",
   "/buy/contract": "/buy",
   "/finance": "/buy",
   "/plans": "/buy",

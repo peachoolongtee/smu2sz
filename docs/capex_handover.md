@@ -432,3 +432,7 @@ after it). Nothing is pushed or merged.
 
 Decisions left for the owner: switching `FEATURE_CAPEX_CONTRACTS` on by default (`app/config.py`), merging, and
 accepting ADR-0013 (status "proposed").
+- 17 Oct 2026, the owner: Deals is selling only. The Buying card left Deals (`components/deals/buying-card.tsx` removed),
+  and the sidebar names the tab "Capex & purchases" (资本开支与采购; "Capex" on a phone's tab bar). Buying (`/buy`) opens
+  from and leads back to Capex & purchases (`back-to-capex`), and the buy pages take the capex section's colour. A purchase
+  that waits for the owner still reaches them through Approvals and Home's worklist.
