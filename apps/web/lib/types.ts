@@ -3675,6 +3675,62 @@ export interface OperationResultLike {
   message: string;
 }
 
+/**
+ * ADR-0014, GET /documents/{id}/terms: what a confirmed customer contract would set up in the books (its repeating invoice),
+ * whether it can, and the forecast before and after. Every figure and sentence is the server's, in the owner's language.
+ */
+export type ContractTermsStatus = "READY" | "ALREADY" | "SET_UP" | "CONFLICT" | "BLOCKED";
+
+export interface ContractTermsView {
+  document_id: string;
+  counterparty_id: string;
+  counterparty_name: string;
+  status: ContractTermsStatus;
+  status_text: string;
+  title: string;
+  intro: string;
+  /** The figures the contract gives (each invoice, the interval, the next invoice, the payment days), each with its clause and quote. */
+  terms: { field: string; label: string; value_display: string | null; clause: string | null; quote: string | null; span: TextSpan | null }[];
+  schedule_text: string | null;
+  /** What the contract says that this step never puts in the books, and why. */
+  not_set_up: { field: string; label: string; text: string }[];
+  /** Why it cannot be set up (BLOCKED). */
+  problems: { code: string; text: string }[];
+  /** Warnings that do not block (READY). */
+  notes: { code: string; text: string }[];
+  /** CONFLICT: the repeating invoice the books hold beside the one the contract gives. */
+  existing: { text: string; contract_text: string | null } | null;
+  /** READY only: the conservative forecast without and with the new invoices. */
+  forecast: { rows: { key: string; label: string; before: string; after: string; changed: boolean }[]; text: string; horizon_days: number } | null;
+  can_set_up: boolean;
+  doc_hash: string;
+  terms_hash: string | null;
+  button: string;
+  /** The step's own labels, in the owner's language (the browser writes no words of its own here). */
+  labels: { from_contract: string; forecast: string; before: string; after: string; not_set_up: string; why_not: string; busy: string; undo_busy: string };
+  confirm: { title: string; body: string; yes: string; no: string };
+  /** The set-up in force from this contract, if any, and its undo. */
+  set_up: {
+    op_id: string;
+    seq: number;
+    day: Day | null;
+    when: string;
+    text: string;
+    can_undo: boolean;
+    undo_button: string;
+    undo_confirm: { title: string; body: string; yes: string; no: string };
+  } | null;
+  lang: "en" | "zh";
+  day: Day;
+}
+
+/** POST /documents/{id}/terms and /terms/undo: the executor's answer, the server's sentence for it, and the step read again. */
+export interface ContractTermsResult {
+  result: OperationResultLike;
+  result_text: string;
+  terms: ContractTermsView;
+}
+
 export type StageState = "done" | "now" | "todo" | "skipped" | "pending" | "missed";
 export type DealTone = "ok" | "warn" | "bad" | "info" | "mute";
 

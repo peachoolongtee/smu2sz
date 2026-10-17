@@ -166,6 +166,15 @@
 //   cd services/api && SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8531
 //   node scripts/record-mocks.mjs --api http://localhost:8531 --buyer-message
 
+// --contract-terms records ONLY apps/web/mocks/contract_terms.json and exits (ADR-0014, "Set up these terms in your books"): GET /documents/{id}/terms
+// for the demo's supply agreement, in both languages, { FHR_SUPPLY_AGREEMENT: { current: { en, zh }, superseded: { en, zh } } }:
+//   current     the reading the demo reset confirmed: the books already expect its invoices (ALREADY)
+//   superseded  the same reading once the agreement is read again and that new reading confirmed (BLOCKED, SUPERSEDED)
+// The full set-up (a new customer's contract, the forecast before and after, the set-up and its undo) needs a contract the demo does not have and
+// is exercised by e2e/contract-terms.spec.ts against the live API. The API needs FEATURE_CONTRACT_TERMS=1 (default off):
+//   cd services/api && FEATURE_CONTRACT_TERMS=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8031
+//   node scripts/record-mocks.mjs --api http://localhost:8031 --contract-terms
+
 import { createHash } from "node:crypto";
 import { register } from "node:module";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -179,7 +188,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --buyside | --tracker | --buyer-message]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d | --buyside | --tracker | --buyer-message | --contract-terms]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
@@ -195,6 +204,7 @@ const INPUTS = process.argv.includes("--inputs");
 const SLICE_D = process.argv.includes("--slice-d");
 const BUYER_MESSAGE = process.argv.includes("--buyer-message");
 const BUYSIDE = process.argv.includes("--buyside");
+const CONTRACT_TERMS = process.argv.includes("--contract-terms");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -476,6 +486,26 @@ if (BUYSIDE) {
   await live.demoReset();
   for (const name of Object.keys(files).sort()) write(name, files[name]);
   console.log(`recorded ${written.length} buy-side files into ${join(OUT, "buyside")} from ${API}`);
+  process.exit(0);
+}
+
+// --contract-terms: contract_terms.json and nothing else (ADR-0014; see the header).
+if (CONTRACT_TERMS) {
+  const both = async (id) => ({ en: await live.getContractTerms(id, "en"), zh: await live.getContractTerms(id, "zh") });
+  await reset();
+  const seeded = (await live.getDocuments()).documents.find((d) => d.source === "fixture:FHR_SUPPLY_AGREEMENT");
+  if (!seeded || seeded.status !== "CONFIRMED") throw new Error("the demo reset did not confirm the supply agreement");
+  const current = await both(seeded.id);
+  if (!current.en) throw new Error("setting up a contract's terms is off: start the API with FEATURE_CONTRACT_TERMS=1");
+  if (current.en.status !== "ALREADY") throw new Error(`the demo supply agreement is ${current.en.status}, not already in the books`);
+  const again = await live.submitDocument({ fixture_id: "FHR_SUPPLY_AGREEMENT" });
+  await live.decideDocument(again.id, "confirm", again.doc_hash, null);
+  const superseded = await both(seeded.id);
+  if (superseded.en?.status !== "BLOCKED") throw new Error("the superseded supply agreement is not blocked");
+  files["contract_terms.json"] = { FHR_SUPPLY_AGREEMENT: { current, superseded } };
+  await live.demoReset();
+  for (const name of Object.keys(files).sort()) write(name, files[name]);
+  console.log(`recorded ${written.length} contract-terms file into ${OUT} from ${API}`);
   process.exit(0);
 }
 

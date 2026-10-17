@@ -23,6 +23,7 @@ from app.api.decide import router as decide_router
 from app.api.decisions import router as decisions_router
 from app.api.demo_bank import router as demo_bank_router
 from app.api.demo_story import router as demo_story_router
+from app.api.contract_terms import router as contract_terms_router
 from app.api.documents import router as documents_router
 from app.api.errors import install_error_handlers
 from app.api.home import router as home_router
@@ -96,6 +97,7 @@ app.include_router(collections_router)
 app.include_router(receivables_router)
 app.include_router(customer_overview_router)
 app.include_router(documents_router)
+app.include_router(contract_terms_router)  # ADR-0014, behind FEATURE_CONTRACT_TERMS (default off)
 app.include_router(deals_router)
 app.include_router(nav_router)
 app.include_router(offer_picture_router)

@@ -12,6 +12,8 @@ import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
 import type {
   ContractFixture,
+  ContractTermsResult,
+  ContractTermsView,
   DealsView,
   DocumentDecision,
   DocumentStatus,
@@ -21,6 +23,7 @@ import type {
   OperationView,
   SubmitDocumentRequest,
 } from "../types";
+import contractTermsJson from "../../mocks/contract_terms.json";
 import fixturesJson from "../../mocks/contracts_fixtures.json";
 import dealsDay0 from "../../mocks/deals_day0.json";
 import dealsDay0Agreed from "../../mocks/deals_day0_agreed.json";
@@ -187,6 +190,41 @@ function byId(id: string): DocState {
   const d = load().find((x) => x.id === id);
   if (!d) throw new ApiError(404, `no document ${id}`, { code: "UNKNOWN_DOCUMENT", message: `no document ${id}` });
   return d;
+}
+
+type ByLang = { en: ContractTermsView | null; zh: ContractTermsView | null };
+const TERMS = contractTermsJson as unknown as Record<string, { current: ByLang; superseded: ByLang }>;
+
+/**
+ * ADR-0014, "Set up these terms in your books", as recorded (mocks/contract_terms.json): the demo's supply agreement is already in the books;
+ * a reading of it replaced by a later confirmed one sets nothing up. Only a confirmed buyer contract with a recording has the step (the Demo
+ * reads no other customer's contract: the set-up itself needs the live server).
+ */
+export function mockContractTerms(id: string, lang: "en" | "zh"): ContractTermsView | null {
+  requireOwner();
+  const d = byId(id);
+  const rec = TERMS[d.fixture_id];
+  if (!rec || d.status !== "CONFIRMED") return null;
+  const docs = load();
+  const later = docs.slice(docs.indexOf(d) + 1).some((x) => x.fixture_id === d.fixture_id && x.status === "CONFIRMED");
+  const pick = later ? rec.superseded : rec.current;
+  const view = pick[lang] ?? pick.en;
+  if (!view) return null;
+  return renumber(clone<ContractTermsView>(view), view.document_id, d.id);
+}
+
+/** As live: a contract already in the books, or replaced by a later one, answers 409 TERMS_NOT_READY with the step read again. */
+export function mockSetUpContractTerms(id: string, lang: "en" | "zh"): ContractTermsResult {
+  const view = mockContractTerms(id, lang);
+  const message = lang === "zh" ? "这些条款无法在今天的账簿上设置。" : "These terms cannot be set up on today's books.";
+  throw new ApiError(409, message, { code: "TERMS_NOT_READY", status: view?.status ?? null, message, terms: view });
+}
+
+/** The Demo sets nothing up, so there is nothing to undo. */
+export function mockUndoContractTerms(id: string, setUpOpId: string): ContractTermsResult {
+  requireOwner();
+  byId(id);
+  throw new ApiError(404, `no set-up ${setUpOpId} of ${id}`, { code: "UNKNOWN_SET_UP", message: `no set-up ${setUpOpId} of ${id}` });
 }
 
 export function mockContractFixtures(): ContractFixture[] {

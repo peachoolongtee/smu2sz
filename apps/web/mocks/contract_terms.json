@@ -1,0 +1,384 @@
+{
+  "FHR_SUPPLY_AGREEMENT": {
+    "current": {
+      "en": {
+        "document_id": "DOC-000001",
+        "counterparty_id": "BUYER-1",
+        "counterparty_name": "Foshan Home Retail Co.",
+        "status": "ALREADY",
+        "status_text": "Already in your books: they expect these invoices from Foshan Home Retail Co.",
+        "title": "Set up these terms in your books",
+        "intro": "FLOW can add Foshan Home Retail Co.'s repeating invoices to your books, from the contract's own words, so the forecast counts on them. Nothing else in your books changes, and you can undo it.",
+        "terms": [
+          {
+            "field": "PRICE",
+            "label": "Each invoice",
+            "value_display": "¥420,000.00",
+            "clause": "3.1",
+            "quote": "The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch",
+            "span": {
+              "start": 1127,
+              "end": 1226
+            }
+          },
+          {
+            "field": "INVOICING",
+            "label": "Invoiced every",
+            "value_display": "30 days",
+            "clause": "4.1",
+            "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
+            "span": {
+              "start": 1425,
+              "end": 1538
+            }
+          },
+          {
+            "field": "NEXT_INVOICE",
+            "label": "Next invoice",
+            "value_display": "3 Oct 2026 (in 2 days)",
+            "clause": "4.1",
+            "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
+            "span": {
+              "start": 1425,
+              "end": 1538
+            }
+          },
+          {
+            "field": "PAYMENT_TERMS",
+            "label": "Paid within",
+            "value_display": "45 days of the invoice date",
+            "clause": "4.2",
+            "quote": "Each invoice is payable forty-five (45) days after the Invoice Date",
+            "span": {
+              "start": 1545,
+              "end": 1612
+            }
+          }
+        ],
+        "schedule_text": "an invoice of ¥420,000.00 every 30 days from 3 Oct 2026 (in 2 days), each paid 45 days after its invoice date",
+        "not_set_up": [
+          {
+            "field": "EARLY_PAYMENT",
+            "label": "Early payment",
+            "text": "The buyer's option to pay early at a discount is not set up: the forecast never assumes an early payment."
+          },
+          {
+            "field": "SCHEDULED_INVOICE",
+            "label": "Invoices the contract lists",
+            "text": "Invoices already sent are not added: whether they were paid is for the bank to say."
+          },
+          {
+            "field": "LIMITS",
+            "label": "Never from a contract",
+            "text": "Cash, credit lines, loans, your limits and any concession are never set from a contract."
+          }
+        ],
+        "problems": [],
+        "notes": [],
+        "existing": null,
+        "forecast": null,
+        "can_set_up": false,
+        "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
+        "terms_hash": null,
+        "button": "Set up in my books",
+        "labels": {
+          "from_contract": "From the contract",
+          "forecast": "Your forecast",
+          "before": "Now",
+          "after": "After the set-up",
+          "not_set_up": "Not set up from this contract",
+          "why_not": "Why it cannot be set up",
+          "busy": "Setting up…",
+          "undo_busy": "Undoing…"
+        },
+        "confirm": {
+          "title": "Set up Foshan Home Retail Co.'s invoices in your books?",
+          "body": "Your forecast will count on this money arriving on time. Only these invoices are added; you can undo it later. This is logged.",
+          "yes": "Yes, set them up",
+          "no": "Not now"
+        },
+        "set_up": null,
+        "lang": "en",
+        "day": 0
+      },
+      "zh": {
+        "document_id": "DOC-000001",
+        "counterparty_id": "BUYER-1",
+        "counterparty_name": "Foshan Home Retail Co.",
+        "status": "ALREADY",
+        "status_text": "已在您的账簿中：账簿已计入来自Foshan Home Retail Co.的这些发票。",
+        "title": "将这些条款记入账簿",
+        "intro": "FLOW 可以根据合同原文，把Foshan Home Retail Co.的循环发票记入账簿，让预测计入这些款项。账簿中其他内容不变，并且可以撤销。",
+        "terms": [
+          {
+            "field": "PRICE",
+            "label": "每张发票",
+            "value_display": "¥420,000.00",
+            "clause": "3.1",
+            "quote": "The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch",
+            "span": {
+              "start": 1127,
+              "end": 1226
+            }
+          },
+          {
+            "field": "INVOICING",
+            "label": "开票间隔",
+            "value_display": "30 天",
+            "clause": "4.1",
+            "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
+            "span": {
+              "start": 1425,
+              "end": 1538
+            }
+          },
+          {
+            "field": "NEXT_INVOICE",
+            "label": "下一张发票",
+            "value_display": "2026年10月3日 (2 天后)",
+            "clause": "4.1",
+            "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
+            "span": {
+              "start": 1425,
+              "end": 1538
+            }
+          },
+          {
+            "field": "PAYMENT_TERMS",
+            "label": "账期",
+            "value_display": "开票后 45 天",
+            "clause": "4.2",
+            "quote": "Each invoice is payable forty-five (45) days after the Invoice Date",
+            "span": {
+              "start": 1545,
+              "end": 1612
+            }
+          }
+        ],
+        "schedule_text": "自2026年10月3日 (2 天后)起每 30 天开具一张 ¥420,000.00 的发票，每张在开票后 45 天付款",
+        "not_set_up": [
+          {
+            "field": "EARLY_PAYMENT",
+            "label": "提前付款",
+            "text": "买方享有折扣提前付款的选择权，此项不会设置：预测从不假设提前付款。"
+          },
+          {
+            "field": "SCHEDULED_INVOICE",
+            "label": "合同列出的发票",
+            "text": "已开出的发票不会添加：是否已付款以银行记录为准。"
+          },
+          {
+            "field": "LIMITS",
+            "label": "绝不来自合同",
+            "text": "现金、信用额度、贷款、您的规则以及任何让步都绝不会根据合同设置。"
+          }
+        ],
+        "problems": [],
+        "notes": [],
+        "existing": null,
+        "forecast": null,
+        "can_set_up": false,
+        "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
+        "terms_hash": null,
+        "button": "记入我的账簿",
+        "labels": {
+          "from_contract": "来自合同",
+          "forecast": "您的预测",
+          "before": "现在",
+          "after": "设置之后",
+          "not_set_up": "不会根据本合同设置",
+          "why_not": "无法设置的原因",
+          "busy": "正在设置…",
+          "undo_busy": "正在撤销…"
+        },
+        "confirm": {
+          "title": "将Foshan Home Retail Co.的发票记入账簿？",
+          "body": "您的预测将依赖这些款项按时到账。只添加这些发票；之后可以撤销。此操作会被记录。",
+          "yes": "确认记入",
+          "no": "暂不"
+        },
+        "set_up": null,
+        "lang": "zh",
+        "day": 0
+      }
+    },
+    "superseded": {
+      "en": {
+        "document_id": "DOC-000001",
+        "counterparty_id": "BUYER-1",
+        "counterparty_name": "Foshan Home Retail Co.",
+        "status": "BLOCKED",
+        "status_text": "This contract cannot set up invoices in your books:",
+        "title": "Set up these terms in your books",
+        "intro": "FLOW can add Foshan Home Retail Co.'s repeating invoices to your books, from the contract's own words, so the forecast counts on them. Nothing else in your books changes, and you can undo it.",
+        "terms": [
+          {
+            "field": "PRICE",
+            "label": "Each invoice",
+            "value_display": null,
+            "clause": null,
+            "quote": null,
+            "span": null
+          },
+          {
+            "field": "INVOICING",
+            "label": "Invoiced every",
+            "value_display": null,
+            "clause": null,
+            "quote": null,
+            "span": null
+          },
+          {
+            "field": "NEXT_INVOICE",
+            "label": "Next invoice",
+            "value_display": null,
+            "clause": null,
+            "quote": null,
+            "span": null
+          },
+          {
+            "field": "PAYMENT_TERMS",
+            "label": "Paid within",
+            "value_display": null,
+            "clause": null,
+            "quote": null,
+            "span": null
+          }
+        ],
+        "schedule_text": null,
+        "not_set_up": [
+          {
+            "field": "SCHEDULED_INVOICE",
+            "label": "Invoices the contract lists",
+            "text": "Invoices already sent are not added: whether they were paid is for the bank to say."
+          },
+          {
+            "field": "LIMITS",
+            "label": "Never from a contract",
+            "text": "Cash, credit lines, loans, your limits and any concession are never set from a contract."
+          }
+        ],
+        "problems": [
+          {
+            "code": "SUPERSEDED",
+            "text": "A later contract with this customer replaced this one."
+          }
+        ],
+        "notes": [],
+        "existing": null,
+        "forecast": null,
+        "can_set_up": false,
+        "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
+        "terms_hash": null,
+        "button": "Set up in my books",
+        "labels": {
+          "from_contract": "From the contract",
+          "forecast": "Your forecast",
+          "before": "Now",
+          "after": "After the set-up",
+          "not_set_up": "Not set up from this contract",
+          "why_not": "Why it cannot be set up",
+          "busy": "Setting up…",
+          "undo_busy": "Undoing…"
+        },
+        "confirm": {
+          "title": "Set up Foshan Home Retail Co.'s invoices in your books?",
+          "body": "Your forecast will count on this money arriving on time. Only these invoices are added; you can undo it later. This is logged.",
+          "yes": "Yes, set them up",
+          "no": "Not now"
+        },
+        "set_up": null,
+        "lang": "en",
+        "day": 0
+      },
+      "zh": {
+        "document_id": "DOC-000001",
+        "counterparty_id": "BUYER-1",
+        "counterparty_name": "Foshan Home Retail Co.",
+        "status": "BLOCKED",
+        "status_text": "本合同不能在您的账簿中设置发票：",
+        "title": "将这些条款记入账簿",
+        "intro": "FLOW 可以根据合同原文，把Foshan Home Retail Co.的循环发票记入账簿，让预测计入这些款项。账簿中其他内容不变，并且可以撤销。",
+        "terms": [
+          {
+            "field": "PRICE",
+            "label": "每张发票",
+            "value_display": null,
+            "clause": null,
+            "quote": null,
+            "span": null
+          },
+          {
+            "field": "INVOICING",
+            "label": "开票间隔",
+            "value_display": null,
+            "clause": null,
+            "quote": null,
+            "span": null
+          },
+          {
+            "field": "NEXT_INVOICE",
+            "label": "下一张发票",
+            "value_display": null,
+            "clause": null,
+            "quote": null,
+            "span": null
+          },
+          {
+            "field": "PAYMENT_TERMS",
+            "label": "账期",
+            "value_display": null,
+            "clause": null,
+            "quote": null,
+            "span": null
+          }
+        ],
+        "schedule_text": null,
+        "not_set_up": [
+          {
+            "field": "SCHEDULED_INVOICE",
+            "label": "合同列出的发票",
+            "text": "已开出的发票不会添加：是否已付款以银行记录为准。"
+          },
+          {
+            "field": "LIMITS",
+            "label": "绝不来自合同",
+            "text": "现金、信用额度、贷款、您的规则以及任何让步都绝不会根据合同设置。"
+          }
+        ],
+        "problems": [
+          {
+            "code": "SUPERSEDED",
+            "text": "该客户后来的合同已取代此合同。"
+          }
+        ],
+        "notes": [],
+        "existing": null,
+        "forecast": null,
+        "can_set_up": false,
+        "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
+        "terms_hash": null,
+        "button": "记入我的账簿",
+        "labels": {
+          "from_contract": "来自合同",
+          "forecast": "您的预测",
+          "before": "现在",
+          "after": "设置之后",
+          "not_set_up": "不会根据本合同设置",
+          "why_not": "无法设置的原因",
+          "busy": "正在设置…",
+          "undo_busy": "正在撤销…"
+        },
+        "confirm": {
+          "title": "将Foshan Home Retail Co.的发票记入账簿？",
+          "body": "您的预测将依赖这些款项按时到账。只添加这些发票；之后可以撤销。此操作会被记录。",
+          "yes": "确认记入",
+          "no": "暂不"
+        },
+        "set_up": null,
+        "lang": "zh",
+        "day": 0
+      }
+    }
+  }
+}
