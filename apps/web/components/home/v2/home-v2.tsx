@@ -171,7 +171,9 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       kpis={v2.kpis}
       nextAction={h.next_action}
       alarm={h.next_action && cash.lowest_fen < 0 && cash.lowest_short ? { amount: cash.lowest_short, when: cash.lowest_when ?? "" } : null}
-      covered={!h.next_action && cash.first_breach_day == null && !cash.below_reserve_today}
+      // "You're covered!" is the server's decision (`action.covered`, the same rule as `cash.covered`): never while the cash is under the minimum today or on any day ahead.
+      // An older server or recording without it: the same rule from the fields it has.
+      covered={v2.action.covered ?? cash.covered ?? (!h.next_action && cash.first_breach_day == null && !cash.below_reserve_today)}
       line={cash.headline_note}
       fundingTotal={v2.kpis.funding.value_display}
       onBack={shown ? () => clear("action") : undefined}

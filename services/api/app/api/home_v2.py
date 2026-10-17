@@ -428,6 +428,7 @@ def _consequence_text(c: HomeRead) -> str | None:
 
 def _action(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any] | None = None) -> dict[str, Any]:
     out = _action_body(c, att)
+    out.setdefault("covered", False)  # the "You're covered!" card: the server's decision (`cash.covered`), never the page's
     out["approval_text"], out["approval_needed"] = _approval_words(c, out)
     out["consequence_text"] = _consequence_text(c)
     out["legs"], out["cost_basis_text"] = _action_legs(c, out, funding_line)
@@ -482,9 +483,14 @@ def _action_body(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
     if c.breach_day is not None:  # the reserve is unsafe and there is no plan to run: say so, point to the options
         return {"variant": "ACTION", "key": None, "tone": "bad", "eyebrow": _breach_eyebrow(c), "title": c.headline, "text": c.note, "facts": [],
                 "primary": {"label": t(lang, "See the options", "查看选项"), "href": "/cash#cash-options"}, "secondary": None, "control": None}
+    if not c.covered:  # no alert and no plan, yet the cash is under the reserve today (in the bank) or on a day ahead: never "covered"
+        return {"variant": "ACTION", "key": None, "tone": "bad", "eyebrow": _eyebrow(lang, "Cash below your minimum", "现金低于最低额"),
+                "title": c.headline, "text": c.note, "facts": [],
+                "primary": {"label": t(lang, "See the options", "查看选项"), "href": "/cash#cash-options"}, "secondary": None, "control": None}
     n = _worklist_holds(c)
     held = (t(lang, f" Your worklist still holds {n} {'item' if n == 1 else 'items'} for you.", f"您的待办列表里还有 {n} 项等您处理。") if n else "")
-    return {"variant": "QUIET", "key": None, "tone": "ok",
+    return {"variant": "QUIET", "key": None, "tone": "ok", "covered": a is None,
+            "covered_pill_text": t(lang, "All clear", "一切正常"), "covered_title_text": t(lang, "You're covered!", "您的现金很安全！"),
             "eyebrow": _eyebrow(lang, "Nothing needs you from the company side", "公司层面没有需要您处理的事项"),
             "title": (t(lang, "Your cash is covered on the plan that ran.", "按已执行的方案，您的现金是安全的。") if _plan_has_run(c.state)
                       else t(lang, "Your cash is covered.", "您的现金是安全的。")),

@@ -8,6 +8,7 @@ sentence. Read-only and hypothetical: nothing is written, logged as an operation
 from __future__ import annotations
 
 import time
+from collections.abc import Sequence
 from fractions import Fraction
 from typing import Any, Literal
 
@@ -17,7 +18,8 @@ from app.api.display import displayed
 from app.api.features import require_feature
 from app.api.presentation import t, when_text
 from app.api.runtime import get_runtime
-from app.books import books_from_store
+from app.books import Books, books_from_store
+from app.domain.models import Commitment, Mandate
 from app.domain.money import fmt_pct
 from app.financial import EngineError
 from app.funding import NoPermanentSourceError
@@ -31,6 +33,30 @@ _cache: AnswerCache[PriceCurve] = AnswerCache(CACHE_SIZE)
 
 def clear_cache() -> None:
     _cache.clear()
+
+
+class CommitmentsSnapshot:
+    """The store as the curve reads it: the commitments in force when the books were read (the curve and its alerts read nothing else),
+    so a curve computed outside the lock, or in the warm-up's own process (`app.api.strategy_warm`), reads the books of its key."""
+
+    def __init__(self, commitments: Sequence[Commitment]) -> None:
+        self._commitments = list(commitments)
+
+    def commitments(self) -> list[Commitment]:
+        return list(self._commitments)
+
+
+def curve_key(state: Any, mandate: Any, day: int, commitments: Sequence[Commitment]) -> str:
+    """The curve's key: pure in the books, the mandate, the day and the commitments (shared with the warm-up)."""
+    return cache_key(state, mandate, day, commitments)
+
+
+def compute_curve(books: Books, mandate: Mandate, store: Any, day: int, lang: Literal["en", "zh"] = "en") -> PriceCurve:
+    """The curve, as the route caches it; its refusals are the route's 422 (`_cannot_price`)."""
+    try:
+        return price_curve(books, mandate, store=store, day=day)
+    except (NoPermanentSourceError, EngineError) as exc:
+        raise _cannot_price(exc, lang) from None
 
 
 def _cannot_price(exc: NoPermanentSourceError | EngineError, lang: Literal["en", "zh"]) -> HTTPException:
@@ -54,13 +80,9 @@ def get_price_curve(lang: Literal["en", "zh"] = "en") -> dict[str, Any]:
         commitments = tuple(rt.store.commitments())
         day = rt.day
 
-    def compute() -> PriceCurve:
-        try:
-            return price_curve(books, mandate, store=rt.store, day=day)
-        except (NoPermanentSourceError, EngineError) as exc:
-            raise _cannot_price(exc, lang) from None
-
-    curve = _cache.get_or_compute(cache_key(books.state, mandate, day, commitments), compute)
+    snapshot = CommitmentsSnapshot(commitments)
+    curve = _cache.get_or_compute(curve_key(books.state, mandate, day, commitments),
+                                  lambda: compute_curve(books, mandate, snapshot, day, lang))
     bands = [{**b.model_dump(), "from_when": when_text(b.from_day, day, lang), "to_when": when_text(b.to_day, day, lang),
               "value_pct": fmt_pct(Fraction(b.value_bp, 10_000))} for b in curve.bands]
     return displayed({**curve.model_dump(), "bands": bands, "sentence": price_sentence(curve, today=day, lang=lang),
