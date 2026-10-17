@@ -17,6 +17,7 @@ from typing import Any
 from app.api.engine_zh import translate
 from app.api.presentation import Lang, t, when_text
 from app.contracts.derive import date_display, day_of
+from app.contracts.parties import PARTY_FLAG_KINDS, PARTY_NOT_NAMED, party_note
 from app.domain.models import (
     CONTRACT_READING_KINDS,
     MULTI_VALUED_CONTRACT_FIELDS,
@@ -185,6 +186,8 @@ _FLAG_WORDS = {
     "PRIOR_AGREEMENT": ("a claimed earlier agreement", "声称已有约定"),
     "URGENCY": ("pressure to hurry", "催促施压"),
     "IMPERSONATION": ("a claim to speak for someone", "冒用他人身份"),
+    "PARTY_NOT_NAMED": ("not the counterparty you chose", "不是您选择的对方"),
+    "PARTY_UNCHECKED": ("parties not checked", "未能核对合同各方"),
 }
 _FLAG_NOTES_ZH = {
     "INSTRUCTION_OVERRIDE": "这是写给代理的文字，不是条款，该文件无法确认；请让对方提供干净的版本。",
@@ -273,6 +276,11 @@ def facility_summary(f: Facility, lang: Lang = "en") -> str:
     return " · ".join(parts)
 
 
+def _registry_name(state: FinancialState | None, counterparty_id: str) -> str | None:
+    cp = next((c for c in (state.counterparties if state else []) if c.id == counterparty_id), None)
+    return cp.name if cp else None
+
+
 def _name(state: FinancialState | None, counterparty_id: str) -> str:
     cp = next((c for c in (state.counterparties if state else []) if c.id == counterparty_id), None)
     return cp.name if cp else counterparty_id
@@ -295,6 +303,8 @@ def _status_text(record: ContractRecord, lang: Lang, today: int | None) -> str:
         return t(lang, f"Confirmed by you {when}".strip(), f"{when}经您确认".strip())
     if record.status == DocumentStatus.REJECTED:
         return t(lang, f"Rejected by you {when}".strip(), f"{when}被您拒绝".strip())
+    if record.blocked and all(f.kind == PARTY_NOT_NAMED for f in record.flags if f.blocking):
+        return t(lang, "Cannot be confirmed: it does not name the counterparty you chose", "无法确认：文件没有列明您选择的对方")
     if record.blocked:
         return t(lang, "Cannot be confirmed: it carries text addressed to the agent", "无法确认：其中含有写给代理的文字")
     return t(lang, "Waiting for your review", "等待您审核")
@@ -373,7 +383,9 @@ def record_view(record: ContractRecord, state: FinancialState | None, lang: Lang
         "document": {"doc_id": record.document.doc_id, "text": record.document.text},
         "ai_label": AI_LABEL_ZH if lang == "zh" else AI_LABEL, "ai_label_zh": AI_LABEL_ZH,
         "flags": [{"kind": f.kind, "kind_text": flag_kind_text(f.kind, lang), "blocking": f.blocking,
-                   "note": flag_note(f.kind, f.blocking, f.note, lang), "note_raw": f.note, "quote": f.span.text,
+                   "note": (party_note(f, record, _registry_name(state, record.counterparty_id), lang)
+                            if f.kind in PARTY_FLAG_KINDS else flag_note(f.kind, f.blocking, f.note, lang)),
+                   "note_raw": f.note, "quote": f.span.text,
                    "span": {"start": f.span.start, "end": f.span.end}} for f in record.flags],
         "can_confirm": record.status == DocumentStatus.PROPOSED and not record.blocked,
     })
