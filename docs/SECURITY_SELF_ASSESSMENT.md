@@ -8,21 +8,21 @@ International AI Track | Security Self-Assessment
 | Competition track | International AI Track, Topic E (SME Finance Copilot) |
 | Submission date | [TEAM: submission date] |
 
-**Document control.** Version 3.0, [CERT: date]. This assessment describes one build and nothing else: the **assessed build** in the release manifest below. Every status in it ("in the assessed build", "fixed", "open") is a statement about that build. Work done after it is not described as present.
+**Document control.** Version 3.0, 17 Oct 2026. This assessment describes one build and nothing else: the **assessed build** in the release manifest below. Every status in it ("in the assessed build", "fixed", "open") is a statement about that build. Work done after it is not described as present.
 
 **Release manifest (assessed build).**
 
 | Item | Value |
 | --- | --- |
-| Commit | `dev` at [CERT: full 40-character SHA]; working tree clean: [CERT: yes] |
+| Commit | `dev` at `29fa0ea2de262f58610c7e6965021c491be76a06`; working tree clean: yes |
 | Build | source checkout of that commit; no container image (the local simulation runs from source) |
-| Runtime | Python 3.12 (uv), Node [CERT: version], pnpm [CERT: version]; PostgreSQL 17 for the concurrency suite only |
+| Runtime | Python 3.12 (uv), Node 24.11.1, pnpm 12.11.2; PostgreSQL 17 for the concurrency suite only |
 | Key dependencies | FastAPI 0.142.2, Pydantic 2.13.5, Starlette 1.7.0; Next.js 16.3.8, React 19.3.0, source-map-js 1.2.2 (from the lockfiles) |
 | Configuration assessed | loopback, one API process, `LLM_MODE=cache` (no model provider is called), in-memory or SQLite store, synthetic fixtures, `DEMO_MODE=1` with the published demo credentials, and the same checks with `DEMO_MODE=0` and unset |
-| Assessment window and assessor | [CERT: start and end, UTC]; the Security Lead (an AI agent, section 2.6) |
-| Evidence | `docs/security/evidence/[CERT: folder]/`, with `MANIFEST.json` and `SHA256SUMS`; evidence id `sha256:[CERT: 16 hex]` (the hash of `SHA256SUMS`) |
+| Assessment window and assessor | 17 Oct 2026, 10:51 to 11:37 UTC, plus the browser CSP check; the Security Lead (an AI agent, section 2.6) |
+| Evidence | `docs/security/evidence/2026-10-17/dev-29fa0ea2/`, with `MANIFEST.json` and `SHA256SUMS`; evidence id `sha256:38ed949a20ba2edd` (the hash of `SHA256SUMS`) |
 | Explicit exclusions | live model mode; real customer documents or money; more than one API process; any network-reachable or hosted deployment; the web app beyond the checks in section 2.8 |
-| Approved exceptions | [CERT: none, or issue #161, one stale digest pin whose only cause is a display string (section 2.7)]; the `braces` development-only advisory (section 2.8) |
+| Approved exceptions | the `braces` development-only advisory (section 2.8). No failing test: issue #161 is closed in the assessed build (section 2.7) |
 
 **Contents**
 
@@ -72,10 +72,10 @@ International AI Track | Security Self-Assessment
 | E2 | Positive controls and mutation tests: legitimate actions execute; a control switched off makes the harness report harm | 5 positive controls execute and the oracle sees each; 5 of 7 mutations detected by the catalogue, 2 found gaps (section 2.5) |
 | E3 | Route authorization sweep: every route as each kind of caller, in three modes, checked against an explicit policy | 0 policy violations; identical to the previous certified sweep, route by route and caller by caller |
 | E4 | Regression tests for every finding fixed since 14 Oct | each fails before its fix and passes after |
-| E5 | Full API suite, sharded | [CERT: passed / failed / skipped]; issue #161 explained in section 2.7 |
+| E5 | Full API suite, sharded (130 processes) | 9,116 passed, 0 failed, 44 skipped; issue #161 closed (section 2.7) |
 | E6 | Language-boundary set: 231 adversarial items through `POST /nl`, scored from stored state | 0 wrong-and-material, on recorded and scripted model answers (not a live model) |
-| E7 | Concurrency suite: eight invariants, two worker processes, SQLite and PostgreSQL 17 | [CERT: 3 of 3] clean PostgreSQL runs |
-| E8 | Dependency audits of the assessed lockfiles | `pnpm audit --prod`: [CERT: result]; `pip-audit`: [CERT: result]; exceptions listed in section 2.8 |
+| E7 | Concurrency suite: eight invariants, two worker processes, SQLite and PostgreSQL 17 | 3 of 3 clean PostgreSQL runs (31 passed, 10 on PostgreSQL each) |
+| E8 | Dependency audits of the assessed lockfiles | `pnpm audit --prod`: 0 advisories; `pip-audit`: no known vulnerabilities; the CSP verified in a browser on a production build; exceptions in section 2.8 |
 | E9 | External red-team run (16 Oct), including a live DeepSeek tier | 0 harmful outcomes reported; five observations, each with its status in section 2.6 |
 
 ## 01 Permission Model
@@ -295,7 +295,7 @@ So the earlier claim that "every outcome is logged" was too broad. Every operati
 - an operator sees a warning line while they happen;
 - an event records the totals when the hour turns.
 
-The executor's own refusals and the operations log are not affected by this budget. [CERT: SEC-26 in the assessed build.]
+The executor's own refusals and the operations log are not affected by this budget. SEC-26 is in the assessed build (`tests/security/test_sec26_refusal_budget.py`).
 
 #### 1.10 Audit log integrity: what the chain proves
 
@@ -598,17 +598,17 @@ Its five observations, with their status on the assessed build:
 | 16 Oct | `0ba8e4c1`, `a6de32a2`, `b6d1e519`, `0f92d433` | the audit's fixes, security headers, the capex buy side, the owner's decisions; PostgreSQL 17 | certified (internal) |
 | 17 Oct | `719c9dcf` | round-two fixes and OUT-1 | certified (internal) |
 | 17 Oct | `0fde33fd` | SEC-08 executor check, OUT-1b, RT-2, RT-1 | certified (internal) |
-| [CERT] | [CERT: assessed build] | the redaction fix (PRIV-1 to PRIV-3), SEC-26, the evidence verifier, the harness assurance work, this document | [CERT] |
+| 17 Oct | `29fa0ea2` (**the assessed build**) | the redaction fix (PRIV-1 to PRIV-3), SEC-26, the evidence verifier, the anonymous-intake switch, the harness assurance work, the route policy test, the #161 golden, this document | certified (internal) |
 
 Appendix C gives the checks and counts for each row.
 
-**The full-suite exception (issue #161).** On the assessed build the sharded API suite gave [CERT: passed / failed / skipped].
+**The full-suite exception (issue #161).** On the assessed build the sharded suite gave 9,116 passed, 0 failed, 44 skipped.
 
 The failing test is `tests/books/test_modules_on_books.py::test_no_commitments_trajectory_and_router_plan_are_unchanged`. It pins a SHA-256 digest of the router's plan on the golden books.
 - **What changed.** Every platform, Windows and Linux CI alike, computes `24f1dc649f4363e3` against the pinned `252b9812e99b4aee`. The pin is stale, not machine-dependent, as earlier records wrongly said.
 - **Why.** We compared the plan at the last passing commit (`f09c92cd`) with the assessed build. The one difference is a display string on a menu entry the router already rejects: "1 days" became "1 day" (`61eb4576`, merged 13 Oct).
 - **Why it does not invalidate the security evidence.** No amount, leg, cost, admission result or ordering changed. The router plan is advisory, and the executor judges every leg on today's books whatever the plan says.
-- **Status.** The golden update exists as `e658ba64` on `ci/linux-green`. [CERT: merged into the assessed build, so no exception remains / not merged; the exception was accepted by [TEAM: who, when].]
+- **Status.** The golden update exists as `e658ba64` on `ci/linux-green`. It is in the assessed build (cherry-picked alone), so the test passes and no exception remains.
 - **The other three tests in issue #161 were closed earlier.** One stale test was fixed (`bbbfb7ce`). Two Chinese-language reads were settled by the owner's decision on buyer names of 16 Oct.
 
 The certification records before 17 Oct report exit codes per shard, not counts. From the assessed build on, counts are recorded.
@@ -617,9 +617,9 @@ The certification records before 17 Oct report exit codes per shard, not counts.
 
 | Scan | Lockfile | Result | Exceptions |
 | --- | --- | --- | --- |
-| `pnpm audit --prod` | `apps/web/pnpm-lock.yaml` at the assessed build | [CERT] | |
-| `pnpm audit` (all, including development) | same | [CERT] | `braces`: a development-only dependency of the lint tooling, with no patched version published; it never ships in the production bundle and parses only our own source globs. Accepted by [TEAM] |
-| `pip-audit` | `services/api/uv.lock` | [CERT] | |
+| `pnpm audit --prod` | `apps/web/pnpm-lock.yaml` at the assessed build | 0 advisories (`next` 16.3.8, `source-map-js` 1.2.2) | |
+| `pnpm audit` (all, including development) | same | 1 high: `braces` (GHSA-vfj7-8cjw-p6xm), via `eslint-config-next` > `fast-glob` > `micromatch` | `braces`: a development-only dependency of the lint tooling, with no patched version published; it never ships in the production bundle and parses only our own source globs. Accepted by [TEAM] |
+| `pip-audit` | production dependencies exported from `services/api/uv.lock` | no known vulnerabilities | |
 
 RT-1 was rated by reachability. The advisories were in the web server (`next`), so they were reachable over HTTP. On loopback, with nobody but the presenter, likelihood was Low; for a network demo it would have been Moderate. A clean result means only that the named scan of these lockfiles found no published advisory on that date.
 
@@ -884,7 +884,7 @@ These keep production at NO-GO. Several also have security consequences of their
   - before any network demo, turn anonymous intake off;
   - otherwise, show "unverified sender" on every view that shows the offer, including the accept card and approvals;
   - record provenance for chat intake too.
-- [CERT: state whether an `ANONYMOUS_INTAKE` switch exists in the assessed build.]
+- The assessed build has the switch: `ANONYMOUS_INTAKE=0` refuses every offer and chat turn without a channel key (403 `ANONYMOUS_INTAKE_OFF`), and nothing is stored (`tests/security/test_anonymous_intake_switch.py`). It is on by default for the local demo.
 
 **SEC-28: partial plans.**
 - **Exposure and rationale:** an owner action, Moderate × Moderate. It occurs in normal use whenever a later leg is refused or queued. The integrity of the books holds per operation (1.12), but the owner can be told the gap is funded when it is not.
@@ -984,18 +984,18 @@ Each was found by one of the reviews, reproduced, and closed by a fix whose regr
 
 ## Appendix A Evidence index
 
-Every evidence file of the assessed build is in `docs/security/evidence/[CERT: folder]/` and listed in its `SHA256SUMS`. The configuration for every row is the one in the release manifest unless stated.
+Every evidence file of the assessed build is in `docs/security/evidence/2026-10-17/dev-29fa0ea2/` and listed in its `SHA256SUMS`. The configuration for every row is the one in the release manifest unless stated.
 
 | Id | Claim it supports | Command (from `services/api`) | Result | Files |
 | --- | --- | --- | --- | --- |
-| E1 | 0 harm-oracle violations; cases reached their control | `uv run pytest -o addopts= -q tests/security`; `uv run python -m app.security.attacks --report` | [CERT] | `latest_report.json`, `latest_report.md`, `t_security.txt` |
-| E2 | legitimate actions execute; controls switched off are detected; every route's policy | `uv run pytest -o addopts= -q tests/security/test_positive_controls.py tests/security/test_mutations.py tests/security/test_route_policy.py` | [CERT] | `t_security.txt` |
+| E1 | 0 harm-oracle violations; cases reached their control | `uv run pytest -o addopts= -q tests/security`; `uv run python -m app.security.attacks --report` | 0 violations; 260 of 260 reached their path; 119 of 127 API cases stopped by the named control, 8 known gaps | `latest_report.json`, `latest_report.md`, `attacks.txt`, `shards/tests_security.txt` |
+| E2 | legitimate actions execute; controls switched off are detected; every route's policy | `uv run pytest -o addopts= -q tests/security/test_positive_controls.py tests/security/test_mutations.py tests/security/test_route_policy.py` | 5 positive controls executed; every mutation detected or recorded as a gap; 0 route policy deviations | `shards/tests_security.txt` |
 | E3 | route policy holds; unchanged from the previous certified sweep | `SWEEP_MODE=demo\|prod\|unset python authz_sweep_v3.py`; `python sweep_policy.py`; `python sweep_diff.py` | 0 policy violations; 0 differences | `sweep_*.json`, `sweep_policy.txt` |
-| E4 | each fixed finding stays fixed | the regression tests in 4.5 | [CERT] | `regressions.txt` |
-| E5 | the wider suite passes | sharded `pytest tests/` (34 shards) | [CERT: counts] | `summary.txt`, shard files |
-| E6 | 0 wrong-and-material on the language boundary (recorded and scripted answers) | `python ../../scripts/certify_language_boundary.py --backend cache` and `--backend fake` | [CERT] | `lb_*.txt` |
-| E7 | concurrency invariants on PostgreSQL 17 | `TERMSLEDGER_TEST_DATABASE_URL=… pytest tests/concurrency` (three runs) | [CERT] | `pg_concurrency_*.txt` |
-| E8 | dependency scans; CSP in a browser | `pnpm audit --prod --json`; `pip-audit`; the CSP browser check | [CERT] | `pnpm_audit_*.json`, `pip_audit.txt`, `csp_browser.json` |
+| E4 | each fixed finding stays fixed | the regression tests in 4.5, inside the full suite | all pass | `shards/` |
+| E5 | the wider suite passes | `pytest` per test directory and per `tests/api` file (130 processes, 8 at a time) | 9,116 passed, 0 failed, 44 skipped | `suite_totals.txt`, `shards/` |
+| E6 | 0 wrong-and-material on the language boundary (recorded and scripted answers) | `python ../../scripts/certify_language_boundary.py --backend cache` and `--backend fake` | cache: 0 wrong-and-material, 1 wrong-harmless; fake: 0 wrong-and-material, 3 wrong-harmless (231 items each) | `lb_cache.txt`, `lb_fake.txt`, `language_boundary/` |
+| E7 | concurrency invariants on PostgreSQL 17 | `TERMSLEDGER_TEST_DATABASE_URL=<local database> pytest tests/concurrency` (three runs); the guard tests | 3 of 3 clean (31 passed, 10 on PostgreSQL each); guards 10 passed | `pg_concurrency_*.txt`, `pg_guards.txt` |
+| E8 | dependency scans; CSP in a browser | `pnpm audit --prod --json`; `pip-audit`; `csp_check.mjs` against a production build | 0 production advisories; `braces` (development only); pip-audit clean; 16 pages with the nonce policy, 0 violations, 0 page errors, injected handler and `javascript:` URL blocked | `pnpm_audit_*.json`, `pip_audit.txt`, `csp_browser.json` |
 | E9 | external run observations | the run's own report | as reported | [TEAM: report location] |
 
 Earlier certifications keep their own folders: `docs/security/evidence/2026-10-14/`, `2026-10-16/` and `2026-10-17/dev-719c9dcf/`. Before 17 Oct, shard results were recorded as exit codes, not counts.
@@ -1043,10 +1043,12 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 | `b6d1e519` | capex exploits and variants; setup probes; sweep (94 routes); the catalogue; full suite | exit codes only; failures: #161 |
 | `0f92d433` | the owner's decisions; sweep in three modes; the catalogue (0 of 259 with harm); full suite. PostgreSQL 17 concurrency 6 of 6 on `0f92d433` plus the PG-1 fix `7f55c0dc` (merged later) | exit codes; failure: the #161 digest test only |
 | `719c9dcf` | sweep in three modes (100 routes, unchanged); every reproduction refused; OUT-1 on every chat path; the catalogue; full suite; PostgreSQL 17 concurrency 3 of 3; the CSP in a browser on a production build | tests/api 1,729 passed, 2 skipped; mock browser suite 444 passed, 61 skipped; PostgreSQL concurrency 31 passed ×3 |
-| `0fde33fd` | the four new regression tests; operations, verifier, security and persistence suites; sweep in three modes with the policy check and a diff against `719c9dcf`; every reproduction refused; the catalogue; PostgreSQL 17 concurrency ×3 and the guards; dependency audits | [CERT: from steps.txt] |
-| [CERT: assessed build] | [CERT] | [CERT] |
+| `0fde33fd` | the four new regression tests; operations, verifier, security and persistence suites; sweep in three modes with the policy check and a diff against `719c9dcf`; every reproduction refused; the catalogue; PostgreSQL 17 concurrency ×3 and the guards; dependency audits | regressions 22; operations 412 (1 skipped), verifier 263, security 305, persistence 161 (1 skipped); 0 harm; 0 policy violations; PostgreSQL 3 of 3 |
+| `29fa0ea2` (assessed build) | the full suite; the catalogue; sweep in three modes with the policy check and a diff against `0fde33fd`; every reproduction refused, and the SQLite approval flip refused by the database ("a decision is recorded once"); the language boundary (cache and fake); PostgreSQL 17 concurrency ×3 and the guards; dependency scans; the mock browser suite; the CSP in a browser on a production build | 9,116 passed, 0 failed, 44 skipped; 0 harm; 0 policy violations, 0 sweep differences; mock 445 passed, 61 skipped; typecheck, lint, unit pass |
 
-**A note on reproduction scripts that exit 1.** Several reproduction scripts (`r3`, `repro1`, `repro3`, `approval_flip`) exit with status 1 on fixed builds. They were written to print what the attack obtained, and they crash when it is refused. For example, `r3` expects an anonymous overwrite to return the stored offer and instead gets 409. Each script's output file shows the refusal it hit.
+**A note on reproduction scripts that exit 1.** Several reproduction scripts (`r3`, `repro1`, `repro3`) exit with status 1 on fixed builds. They were written to print what the attack obtained, and they crash when it is refused. For example, `r3` expects an anonymous overwrite to return the stored offer and instead gets 409. Each script's output file shows the refusal it hit.
+
+**A correction to the `719c9dcf` and `0fde33fd` records.** In those two runs the approval-flip script (`evidence/2026-10-14/approval_flip.py`) never started: it needs a scratch folder as its argument, and none was passed. The earlier records read its exit status as a refusal. The database guard it targets was still covered on both commits by `tests/persistence/test_audit_guards.py` (SQLite and PostgreSQL 17). On the assessed build the script was run correctly, and the database refused the flip: "approvals: a decision is recorded once; UPDATE refused".
 
 ## Appendix D Reference tables
 

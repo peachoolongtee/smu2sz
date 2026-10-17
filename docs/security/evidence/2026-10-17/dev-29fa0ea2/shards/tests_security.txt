@@ -1,0 +1,20 @@
+........................................................................ [ 18%]
+........................................................................ [ 37%]
+........................................................................ [ 56%]
+........................................................................ [ 75%]
+.....................................................
+[route-policy] 104 routes (HEAD/OPTIONS skipped) in DEMO_MODE=1: public 3, docs 4, buyer 2, agent 3, owner_side 3, demo_setup 9, owner 80
+.........
+[route-policy] DEMO_MODE=1: 217.4s for 728 requests; the owner reached the handler on 89 of 89 owner and demo/setup routes (Counter({'handler': 89})); 100 of 100 counting every class
+  owner answers: {200: 81, 201: 1, 409: 6, 501: 1}
+.....
+[route-policy] DEMO_MODE=0: 159.6s for 1040 requests; the owner reached the handler on 84 of 89 owner and demo/setup routes (Counter({'handler': 84, 'refused': 5})); 95 of 100 counting every class
+  stopped before the handler: POST /demo/bank-receipt -> 403 refused DEMO_ONLY
+  stopped before the handler: GET /setup/documents -> 403 refused SETUP_REFUSED
+  stopped before the handler: POST /setup/documents -> 403 refused SETUP_REFUSED
+  stopped before the handler: POST /setup/preview -> 403 refused SETUP_REFUSED
+  stopped before the handler: POST /setup/open -> 403 refused SETUP_REFUSED
+  owner answers: {200: 76, 201: 1, 403: 5, 409: 6, 501: 1}
+..... [ 94%]
+....................                                                     [100%]
+380 passed in 562.45s (0:09:22)
