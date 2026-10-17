@@ -372,8 +372,13 @@ Newest last. One entry per change: date, phase, what changed, files, tests, resu
   - Deals' `BuyingCard`: a READY / COMMITTED / PAID row now opens `/capex?purchase=<id>` (was `/buy/contract?id=`);
     the spec in `e2e/buyside.spec.ts` follows, plus a new spec for the page (health, row, workbench, commit, close).
   - New keys (en, zh): `capex.hub.*`, `capex.quick.*`, `buy.early.worth`, `buy.commit.tier`, `buy.assumptions.hint`.
-  - Note: `pnpm demo` starts the API without FEATURE_CAPEX_CONTRACTS, so there the page shows only the quick check;
-    the mock build and an API started with the flag show the whole page.
+  - Note: `pnpm demo` started the API without FEATURE_CAPEX_CONTRACTS, so there the page showed only the quick check.
+- 17 Oct 2026, the buy side in the local demo: `scripts/demo.mjs` and
+  `scripts/dev-api.sh` now start the API with `FEATURE_CAPEX_CONTRACTS=1` (the README's by-hand command too), so
+  `pnpm demo` shows the Capex hub, the Buying card on Deals, Financial health and Long-term plans. The API's own default
+  (`app/config.py`) is unchanged: off, so a deployment and the test suites see no difference. Checked: under
+  `pnpm demo` `GET /purchases` and `GET /finance/health` answer 200 (403 FEATURE_DISABLED before), and `/capex` shows
+  the health figures, Your purchases (empty on fresh books, with "Read the demo vendor contract") and the quick check.
 
 ## 7. How to run and check
 

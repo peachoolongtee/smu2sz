@@ -230,6 +230,8 @@ async function main() {
         FEATURE_PRICE_CURVE: "1",
         FEATURE_COLLECTIONS_WORTH: "1",
         FEATURE_EXPOSURE: "1",
+        // The buy side (ADR-0013): the Capex hub, the Buying card on Deals, Financial health and Long-term plans.
+        FEATURE_CAPEX_CONTRACTS: "1",
         CORS_ORIGINS: `${webOrigin},http://127.0.0.1:${opts.webPort}`,
         ...(opts.blank ? { DEMO_SCENARIO: "blank" } : {}),
       },

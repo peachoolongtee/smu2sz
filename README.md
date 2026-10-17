@@ -48,7 +48,7 @@ Or by hand, two terminals (PowerShell; in bash write `NAME=value` before the com
 
 ```powershell
 # terminal 1, from services/api
-$env:TERMSLEDGER_NO_DOTENV="1"; $env:DATABASE_URL="memory"; $env:DEMO_MODE="1"; $env:LLM_MODE="cache"; $env:CORS_ORIGINS="http://localhost:3000"; $env:FEATURE_ENVELOPE="1"; $env:FEATURE_PRICE_CURVE="1"; $env:FEATURE_COLLECTIONS_WORTH="1"; $env:FEATURE_EXPOSURE="1"
+$env:TERMSLEDGER_NO_DOTENV="1"; $env:DATABASE_URL="memory"; $env:DEMO_MODE="1"; $env:LLM_MODE="cache"; $env:CORS_ORIGINS="http://localhost:3000"; $env:FEATURE_ENVELOPE="1"; $env:FEATURE_PRICE_CURVE="1"; $env:FEATURE_COLLECTIONS_WORTH="1"; $env:FEATURE_EXPOSURE="1"; $env:FEATURE_CAPEX_CONTRACTS="1"
 uv run uvicorn app.main:app --port 8000
 # terminal 2, from apps/web
 $env:NEXT_PUBLIC_API_URL="http://localhost:8000"; pnpm dev:live        # or `pnpm dev:mock` for the recorded mocks alone
