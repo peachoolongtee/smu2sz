@@ -299,7 +299,7 @@ export function ChoicesTable({
       <div className="space-y-3 @min-[40rem]:hidden" data-testid="deal-choices-stack">
         {paths.map((p, i) => (
           <article key={p.key} aria-label={p.label} className={`space-y-3 rounded-card border p-4 ${p.key === recKey ? "border-2 border-f-purple bg-f-purple-soft" : "border-line"}`} data-recommended={p.key === recKey ? "true" : undefined}>
-            <h3 className="text-base font-bold text-ink">{head(p)}</h3>
+            <h3 className="text-lg font-bold text-ink">{head(p)}</h3>
             <dl className="m-0 divide-y divide-line">
               {rows.map((r) => (
                 <div key={r.key} className="py-2 first:pt-0">

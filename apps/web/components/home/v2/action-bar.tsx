@@ -127,7 +127,7 @@ export function HomeV2ActionBar({
             </p>
           ) : null}
           <div className="flex items-start justify-between gap-3">
-            <h2 id={titleId} className={`font-display text-[16px] font-bold leading-tight tracking-[-0.01em] ${alarm && !quiet ? "text-f-risk" : "text-ink"}`} data-testid="home-action-eyebrow">
+            <h2 id={titleId} className={`font-display text-[19px] font-bold leading-tight tracking-[-0.01em] ${alarm && !quiet ? "text-f-risk" : "text-ink"}`} data-testid="home-action-eyebrow">
               {quiet ? action.eyebrow : t("hv2.action.eyebrow")}
             </h2>
             {planned && !quiet ? (

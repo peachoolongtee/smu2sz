@@ -57,6 +57,9 @@
     background-color var(--dur) var(--ease-ui),
     box-shadow var(--dur) var(--ease-ui);
 }
+.flow-row:not([aria-current="true"]):hover {
+  box-shadow: inset 0 0 0 2px var(--color-brand-600);
+}
 /* Round three (section 9): the Deals queue's selected row is lighter, the tint of the panel and no ring; the 1 px edge that joins it to the workspace is drawn by the row itself. */
 .flow-row.flow-row-light[aria-current="true"] {
   background: color-mix(in srgb, var(--color-f-purple-soft) 42%, var(--color-card));
@@ -65,6 +68,34 @@
 .flow-row[aria-current="true"] {
   background: var(--color-f-purple-soft);
   box-shadow: inset 0 0 0 1px var(--color-f-purple);
+}
+/* "Your deals" (17 Oct, the owner): each queue row is a card in Dylan's look (ui-final's deal list): the card tone, 24 px, the one soft shadow; on hover a brand outline and the lifted
+   shadow, on keyboard focus the lifted shadow under the row's own focus ring; the selected card keeps round three's light lavender and no ring. No glow, no gradient. */
+.flow-deal-card {
+  background: var(--color-card);
+  border-radius: var(--radius-f-card);
+  box-shadow: var(--shadow-f);
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition:
+    background-color var(--dur) var(--ease-ui),
+    box-shadow var(--dur-fast) var(--ease-ui),
+    outline-color var(--dur-fast) var(--ease-ui);
+}
+.flow-deal-card:not([aria-current="true"]):hover {
+  outline-color: var(--color-brand-600);
+  box-shadow: var(--shadow-lift);
+}
+.flow-deal-card:has(:focus-visible) {
+  box-shadow: var(--shadow-lift);
+}
+.flow-deal-card[aria-current="true"] {
+  background: color-mix(in srgb, var(--color-f-purple-soft) 42%, var(--color-card));
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-deal-card {
+    transition: none;
+  }
 }
 
 /* Round two widths (docs/design/flow-mockup-2026-10-13/04_slice_b_round_two.md, section 5): the pages in this scope (Deals, Customer, Approvals) hold their content at 1400 px with 32 px gutters from `lg`;

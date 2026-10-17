@@ -8,6 +8,7 @@ import { BuyingCard } from "@/components/deals/buying-card";
 import { ActiveCommitments, type AgreementGroups } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
+import { DealTools } from "@/components/deals/tools";
 import { Button, ErrorState, PageHeader } from "@/components/ui";
 import { WorklistAlertLine } from "@/components/ui/worklist-rows";
 import { contractsOff } from "@/components/documents";
@@ -244,7 +245,7 @@ export function DealsPage() {
       <div key="inbox" className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
         {inboxOpen ? null : (
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">
-            <h2 className="font-display text-base font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
+            <h2 className="font-display text-lg font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
             <Button size="sm" onClick={() => setInboxPref(true)} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
               {t("deals.inbox.show")}
             </Button>
@@ -295,6 +296,8 @@ export function DealsPage() {
   return (
     <div className="flow-f min-w-0" data-testid="deals-page">
       {decision ? null : <PageHeader section="deals" title={t("nav.deals")} subtitle={subtitle} />}
+      {/* Dylan's ui-final: attaching a deal's documents heads the page while no deal is open (owner, 17 Oct); the queue layout is unchanged. */}
+      {decision ? null : <div className="mb-6"><DealTools /></div>}
       {back ? (
         <Link href={back.href} className="mb-3 inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-back">
           ‹ {back.label}

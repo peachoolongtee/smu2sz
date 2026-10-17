@@ -374,6 +374,15 @@ class Executor:
             return self._log(op, result, key=f"{op.idempotency_key}#decide:{approval_id}:{actor}")
         if rec.status != ApprovalStatus.PENDING:
             raise ApprovalAlreadyDecided(f"approval {approval_id} is {rec.status}")
+        # SEC-08: the log, not the approvals row, is the record of the owner's decision. A row put back to PENDING outside
+        # FLOW (the database guard dropped) gets no second decision: the owner's decline, a refusal at decision time or the
+        # approved run is already logged under this approval (the `#decide:` rows are other actors' refused attempts).
+        attempt = f"#decide:{approval_id}:"
+        decided = next((e for e in self._entries() if e.result.approval_id == approval_id
+                        and e.result.status in (EXECUTED, REFUSED) and attempt not in e.idempotency_key), None)
+        if decided is not None:
+            raise ApprovalAlreadyDecided(
+                f"approval {approval_id} was already decided: the log holds {decided.result.status} at seq {decided.seq}")
         self._store.decide_approval(approval_id, approved, Actor.OWNER.value, now)
         if not approved:
             result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,

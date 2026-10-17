@@ -29,7 +29,7 @@ export function ContextCard({ customerId, customer, onBack }: { customerId: stri
         <span aria-hidden>←</span>
         {t("hv2.context.back")}
       </button>
-      <h2 id="hv2-context-title" className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink">
+      <h2 id="hv2-context-title" className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">
         {t("hv2.context.titleCustomer")}
       </h2>
       <p className="mt-3 border-b border-line pb-4 text-[15px] text-ink-3" data-testid="hv2-context-subject">

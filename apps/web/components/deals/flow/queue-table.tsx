@@ -7,6 +7,7 @@ import { ErrorState, LoadingBlock, toggleClass } from "@/components/ui";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { RowChevron } from "@/components/ui/row-chevron";
 import { StatusPill } from "@/components/ui/status-pill";
+import { ListAvatar } from "@/components/deals/deal-list";
 import { UnderlineTabs, WORKLIST_COLUMNS, WorklistEmpty, WorklistRow, WorklistSearch } from "@/components/ui/worklist-rows";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
@@ -56,46 +57,74 @@ function SeverityDot({ severity }: { severity: QueueRowView["severity"] }) {
 }
 
 /**
- * One negotiation of the queue, a compact row for the 380 px card: the customer and the obligation (the server's `subject_text`, never an id in Business), the lifecycle pill (the server's word,
- * the tone says who acts) and, under it, the one consequence with the severity dot. The row is one target (a button that selects the negotiation in place, or a link to the page that does
- * the task); the customer's name inside it is its own link, carrying THIS row's customer, decision and invoice and the origin. The selected row is the lavender fill with a purple edge and
- * `aria-current`; a row is held (disabled) while a send is in flight.
+ * One negotiation of the queue as a card in Dylan's look (ui-final's deal list, 17 Oct): the buyer's avatar (the initials of the customer's name, a soft fill by the customer's place in the
+ * server's customer list; decoration only), the subject as the card's title with the customer's name as its link (the server's `subject_text`, never an id in Business, the buyer's quoted words
+ * in it where the server quotes them), when it last moved beside it (`last_activity_text`, when the server sends one), the qualifier, the one consequence with the severity dot as the card's
+ * line, the lifecycle pill (the server's word, the tone says who acts) with who acts next on the right (under the line in a narrow column), and the chevron. The queue row carries no channel
+ * and no figure, so the card shows none. The row is one target (a button that selects the negotiation in place, or a link to the page that does the task); the customer's name inside it is
+ * its own link, carrying THIS row's customer, decision and invoice and the origin. The selected card is the light lavender fill with `aria-current`; a row is held (disabled) while a send is in flight.
  */
-function CompactRow({ tier, row, selected, locked, onSelect, activity, hint }: { tier: DealTier; row: QueueRowView; selected: boolean; locked: boolean; onSelect: Select; activity: boolean; hint: boolean }) {
+function CompactRow({ tier, row, selected, locked, onSelect, avatar, hint }: { tier: DealTier; row: QueueRowView; selected: boolean; locked: boolean; onSelect: Select; avatar: { name: string; index: number } | null; hint: boolean }) {
   const { t } = useI18n();
   const target = rowTarget(row);
   const pill = rowPill(tier, row);
   const decision = rowDecision(row);
   const label = [row.subject_text, row.differentiator_text, pill.text, pill.next].filter(Boolean).join(", ");
-  const cls = "absolute inset-0 z-0 rounded-[16px] outline-offset-0 focus-visible:outline-2 focus-visible:outline-brand-600 disabled:cursor-wait";
+  const cls = "absolute inset-0 z-0 rounded-[var(--radius-f-card)] outline-offset-0 focus-visible:outline-2 focus-visible:outline-brand-600 disabled:cursor-wait";
+  const status = (
+    <StatusPill tone={pill.tone} testId="queue-status" data-tier={tier}>
+      {pill.text}
+    </StatusPill>
+  );
+  const next = pill.next ? (
+    <span className="text-supporting text-ink-2" data-testid="queue-next">
+      {pill.next}
+    </span>
+  ) : null;
   return (
     <li className="relative" data-testid="queue-row" data-tier={tier} data-kind={row.kind} data-key={row.key} data-lifecycle={pill.lifecycle ?? undefined} data-selected={selected ? "true" : "false"}>
-      <div className="flow-row flow-row-light group relative flex items-center gap-2 px-4 py-3" aria-current={selected ? "true" : undefined}>
+      <div className="flow-deal-card group relative flex items-center gap-3 p-3.5 @lg:gap-5 @lg:p-5" aria-current={selected ? "true" : undefined}>
         {target.kind === "select" ? (
           <button type="button" className={cls} aria-label={label} aria-current={selected ? "true" : undefined} disabled={locked} onClick={() => onSelect(target.customer, target.decision, target.invoice)} data-testid="queue-select" />
         ) : (
           <Link href={target.href} prefetch={false} className={cls} aria-label={label} data-testid="queue-go" />
         )}
-        <div className="pointer-events-none relative z-[1] min-w-0 flex-1">
-          <p className="text-[15px] leading-snug text-ink" data-testid="queue-subject">
-            <Subject row={row} decision={decision} invoice={row.invoice_id ?? null} />
-            {row.is_new ? <span className="ml-2 text-supporting font-semibold text-ink-2">{t("hv2.work.new")}</span> : null}
+        {avatar ? (
+          <span className="pointer-events-none relative z-[1] self-start @lg:self-center">
+            <ListAvatar name={avatar.name} index={avatar.index} className="size-10 @lg:size-12" />
+          </span>
+        ) : null}
+        <div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 flex-col @lg:flex-row @lg:items-center @lg:gap-5">
+        <div className="min-w-0 flex-1">
+          <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="min-w-0 font-display text-base font-bold leading-snug text-ink [overflow-wrap:anywhere]" data-testid="queue-subject">
+              <Subject row={row} decision={decision} invoice={row.invoice_id ?? null} />
+              {row.is_new ? <span className="ml-2 font-sans text-supporting font-semibold text-ink-2">{t("hv2.work.new")}</span> : null}
+            </span>
+            {/* When it last moved, in the server's words (Dylan's meta line; the queue row has no channel). */}
+            {row.last_activity_text ? (
+              <span className="text-supporting text-ink-3" data-testid="queue-activity">
+                {row.last_activity_text}
+              </span>
+            ) : null}
           </p>
-          {row.differentiator_text ? <p className="text-supporting italic text-ink-3" data-testid="queue-differentiator">{row.differentiator_text}</p> : null}
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <StatusPill tone={pill.tone} testId="queue-status" data-tier={tier}>
-              {pill.text}
-            </StatusPill>
-            {pill.next ? <span className="text-supporting text-ink-2" data-testid="queue-next">{pill.next}</span> : null}
-            {/* Sorted by latest activity, each row says when it last moved (the server's words). */}
-            {activity && row.last_activity_text ? <span className="text-supporting text-ink-3" data-testid="queue-activity">{row.last_activity_text}</span> : null}
-          </div>
+          {row.differentiator_text ? (
+            <p className="text-supporting italic text-ink-3" data-testid="queue-differentiator">
+              {row.differentiator_text}
+            </p>
+          ) : null}
           {row.consequence_text ? (
-            <p className="mt-1.5 flex gap-1.5 text-supporting text-ink-3" data-testid="queue-consequence">
+            <p className="mt-1 flex gap-1.5 text-sm text-ink-2" data-testid="queue-consequence">
               <SeverityDot severity={row.severity} />
               <span className="min-w-0">{row.consequence_text}</span>
             </p>
           ) : null}
+        </div>
+        {/* One pill: under the line in a narrow column (the 380 px queue beside an open deal, a phone), on the right from @lg. */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 @lg:mt-0 @lg:max-w-[220px] @lg:shrink-0 @lg:flex-col @lg:items-end @lg:gap-1.5 @lg:text-right">
+          {status}
+          {next}
+        </div>
         </div>
         <span className="relative z-[1]">
           <RowChevron selected={selected} hint={hint} />
@@ -202,7 +231,7 @@ export function QueuePanel({
         <LoadingBlock rows={4} label={t("deals.queue.loading")} />
       </section>
     );
-  const counts = dealTabCounts(queue);
+  const counts = onlyCustomer ? countsOf(negotiationRows(queue).filter((x) => x.row.customer_id === onlyCustomer)) : dealTabCounts(queue);
   const groupCounts = afterGroupCounts(queue);
   const all = negotiationRows(queue);
   const only = onlyCustomer ? (queue.customers.find((c) => c.customer_id === onlyCustomer)?.name ?? null) : null;
@@ -219,6 +248,14 @@ export function QueuePanel({
   const asTable = tableOffered && layout === "table";
   const nameOf = (id: string | null, row: QueueRowView) => (id ? (queue.customers.find((c) => c.customer_id === id)?.name ?? row.customer_short ?? row.subject_text) : row.subject_text);
   const groups = group && showGroup ? groupByCustomer(sorted, nameOf) : null;
+  // The card's avatar: the customer's name as the customers read writes it (else the server's short name); its fill follows the customer's place in that read, so one buyer keeps one fill. A row
+  // with no customer has none.
+  const avatarOf = (row: QueueRowView): { name: string; index: number } | null => {
+    if (!row.customer_id) return null;
+    const at = queue.customers.findIndex((c) => c.customer_id === row.customer_id);
+    const name = at >= 0 ? queue.customers[at]!.name : row.customer_short;
+    return name ? { name, index: Math.max(at, 0) } : null;
+  };
   const tabId = (v: DealTab) => `${uid}-tab-${v}`;
   const panelId = `${uid}-panel`;
   const tabs = DEAL_TABS.map((k) => ({
@@ -243,7 +280,8 @@ export function QueuePanel({
     list.map(({ tier, row }) => {
       const first = hint && sorted[0]?.row.key === row.key;
       const selected = Boolean(selectedDecision) && rowDecision(row) === selectedDecision;
-      return asTable ? <TableRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} hrefOf={hrefOf} onSelect={onSelect} /> : <CompactRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} onSelect={onSelect} activity={showSort && sort === "latest" && latestOk} hint={first} />;
+      if (asTable) return <TableRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} hrefOf={hrefOf} onSelect={onSelect} />;
+      return <CompactRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} onSelect={onSelect} avatar={avatarOf(row)} hint={first} />;
     });
   const listClass = asTable ? "space-y-2" : "space-y-2";
   return (
@@ -371,4 +409,10 @@ export function QueuePanel({
       </div>
     </section>
   );
+}
+
+/** One company's tab counts, from its own rows (the server's counts are the whole queue's). */
+function countsOf(rows: DealRow[]): Record<DealTab, number> {
+  const n = (tier: DealTab) => rows.filter((x) => x.tier === tier).length;
+  return { all: rows.length, needs_you: n("needs_you"), waiting: n("waiting"), agreements: n("agreements") };
 }

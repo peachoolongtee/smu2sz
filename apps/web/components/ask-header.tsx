@@ -98,7 +98,7 @@ export function AskHeaderInput() {
             // Enter sends; Enter while an IME (Chinese input) is composing only confirms the candidate.
             if (e.key === "Enter" && e.nativeEvent.isComposing) e.preventDefault();
           }}
-          className="h-full min-w-0 flex-1 bg-transparent pr-2 text-sm text-ink outline-none placeholder:text-ink-3"
+          className="h-full min-w-0 flex-1 bg-transparent pr-2 text-sm text-ink outline-none focus-own placeholder:text-ink-3"
           data-testid="ask-input"
         />
         <button

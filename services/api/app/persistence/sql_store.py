@@ -1038,13 +1038,14 @@ class SqlLedgerStore:
         triggers are back in place before it commits."""
         keep = set() if include_telemetry else {table.name for table in t.TELEMETRY_TABLES}
         tables = [table for table in reversed(t.metadata.sorted_tables) if table.name not in keep]
+        guarded = _PROTECTED | set(guards.GUARDED_TABLES)  # refused by the store's hook or by a database trigger
         with self.transaction():
             conn = self._tx()
             assert conn is not None
             for table in tables:
-                if table.name not in _PROTECTED:
+                if table.name not in guarded:
                     conn.execute(table.delete())
             with guards.lifted(conn):
                 for table in tables:
-                    if table.name in _PROTECTED:
+                    if table.name in guarded:
                         conn.execute(table.delete().execution_options(**{_RESET_OPTION: True}))

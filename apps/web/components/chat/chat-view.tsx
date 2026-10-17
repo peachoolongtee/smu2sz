@@ -87,7 +87,7 @@ function Composer({ role, counterpartyId, busy, business }: { role: NlActor; cou
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={role === "OWNER" ? t(business ? "chat.placeholder.business" : "chat.placeholder.owner") : t("chat.placeholder.buyer", { who: counterpartyId })}
-          className="block max-h-40 min-h-13 w-full resize-none rounded-pill border border-line-ui bg-surface px-5 py-3 text-sm text-ink placeholder:text-ink-3"
+          className="block max-h-40 min-h-13 w-full resize-none rounded-pill border border-line-ui bg-surface px-5 py-3 text-sm text-ink outline-none focus-own placeholder:text-ink-3 focus:border-ink"
         />
       </div>
       <Button type="submit" variant="primary" disabled={!text.trim() || busy} loading={busy} data-testid="chat-send">
