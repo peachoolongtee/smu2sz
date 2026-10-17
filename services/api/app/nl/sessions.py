@@ -66,6 +66,8 @@ class Session:
     id: str
     actor: str
     owner_auth: bool = False  # opened with the owner token; only the same credential may continue it
+    # who opened it (SEC-21): "owner", "agent", "buyer:<id>" (a verified channel key) or "anon"; only the same principal continues it
+    principal: str = ""
     counterparty_id: str | None = None
     lang: str = "en"
     buyer_profile: str | None = None
@@ -97,22 +99,28 @@ class SessionStore:
         for k in dead:
             del self._sessions[k]
         if len(self._sessions) > MAX_SESSIONS:
-            for k, _ in sorted(self._sessions.items(), key=lambda kv: kv[1].touched)[: len(self._sessions) - MAX_SESSIONS]:
+            # SEC-21: anyone else's sessions go first, the oldest first, so a flood of agent or anonymous turns cannot push out the
+            # owner's session and its pending plan; the owner's own go only when the owner alone fills the store
+            excess = len(self._sessions) - MAX_SESSIONS
+            ranked = sorted(self._sessions.items(), key=lambda kv: (kv[1].owner_auth, kv[1].touched))
+            for k, _ in ranked[:excess]:
                 del self._sessions[k]
 
-    def get_or_create(self, session_id: str | None, actor: str, owner_auth: bool = False) -> tuple[Session, bool]:
-        """A session is bound to the actor and the credential that opened it: a counterparty cannot continue
-        an owner session (or the reverse), and a caller without the owner token cannot continue a session the
-        owner opened (or the reverse), by guessing its id; each gets a fresh one instead."""
+    def get_or_create(self, session_id: str | None, actor: str, owner_auth: bool = False,
+                      principal: str = "") -> tuple[Session, bool]:
+        """A session is bound to the actor, the credential class and the principal that opened it: a counterparty cannot
+        continue an owner session (or the reverse), a caller without the owner token cannot continue a session the owner
+        opened (or the reverse), and a sender without a buyer's key cannot continue that buyer's keyed session (SEC-21), by
+        guessing or knowing its id; each gets a fresh, server-issued one instead. A free id the client chose is still taken."""
         now = time.monotonic()
         with self._lock:
             self._expire(now)
             s = self._sessions.get(session_id) if session_id else None
-            if s is not None and s.actor == actor and s.owner_auth == owner_auth:
+            if s is not None and s.actor == actor and s.owner_auth == owner_auth and s.principal == principal:
                 s.touched = now
                 return s, False
             sid = session_id if session_id and s is None else f"nls-{uuid.uuid4().hex[:16]}"
-            s = Session(id=sid, actor=actor, owner_auth=owner_auth)
+            s = Session(id=sid, actor=actor, owner_auth=owner_auth, principal=principal)
             self._sessions[sid] = s
             return s, True
 
