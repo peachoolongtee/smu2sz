@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<div class="fig" id="fig" style="width:1500px">
+<div class="row" style="align-items:stretch">
+  <div class="box det" style="flex:1"><b>Tier 1: the agent acts inside the mandate</b><small style="margin-bottom:8px">executes if every gate passes</small>
+    <small>• a pure early-pay discount on a named invoice, below break-even, with a coverage proof, at most ¥100,000</small>
+    <small>• counter-offers and rejections within the mandate</small>
+    <small>• draws and invoice financing on a committed, owner-approved facility at or below the rate ceiling</small>
+    <small>• repayments; receipts from the bank feed or the owner</small></div>
+  <div class="box owner" style="flex:1"><b>Tier 2: the owner decides</b><small style="margin-bottom:8px">queued, then decided only with the owner token</small>
+    <small>• rebates and changes to terms, price, volume or operations</small>
+    <small>• any commitment above ¥100,000; any acceptance that changes terms</small>
+    <small>• a draw above the rate ceiling (queued with its cost and the ceiling)</small>
+    <small>• a receipt reported by the agent or a counterparty</small>
+    <small>• applying for or adding a facility; every capex purchase (owner only)</small></div>
+  <div class="box bad" style="flex:1"><b>Tier 3: never executed</b><small style="margin-bottom:8px">refused for every caller, the owner included</small>
+    <small>• personal guarantees</small><small>• pledging collateral</small><small>• issuing equity</small><small>• changing the mandate through the API</small><small>• any unknown operation type (fail closed)</small></div>
+</div>
+<div class="box" style="margin-top:14px"><b>Who sets the tier</b><small>The executor computes it from the typed operation alone (tier_for, app/mandate/tiers.py). A caller-supplied tier is an unknown field (HTTP 422). Facts the operation cannot carry, such as whether an acceptance changes terms or the value of the commitment it creates, can only raise the tier.</small></div>
+</div>
