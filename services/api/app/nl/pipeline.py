@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from app.counterparties import BuyerKernel, CounterpartyError, negotiate
 from app.domain.models import (
@@ -112,6 +112,17 @@ def span_of(doc: SourceDocument, start: int, end: int) -> SourceSpan:
 # ---------------------------------------------------------------- operations from a verdict
 
 
+def sent_outside(ctx: NlContext, offer_id: str) -> str | None:
+    """The owner's sentence when they sent the buyer a counter on this request themself (an OFFERED fact, OUT-1), else None. From then on
+    the buyer's answer is recorded on the deal, and no chat path accepts, declines, counters or negotiates on the request: the rule is
+    `app.api.decisions.sent_outside_conflict`, the one the accept and simulated-buyer routes apply, and the sentence is its own (en, zh).
+    The helper reads only `.store`, which the context carries. Every chat turn runs under `rt.lock` (POST /nl, /nl/opener)."""
+    from app.api.decisions import sent_outside_conflict
+
+    hit = sent_outside_conflict(cast(Any, ctx), offer_id, ctx.lang)
+    return None if hit is None else str(cast(dict, hit.detail)["message"])
+
+
 def nonce_for(key: str, verdict_id: str) -> str:
     return "nln-" + hashlib.sha256(f"nonce|{key}|{verdict_id}".encode()).hexdigest()[:32]
 
@@ -119,7 +130,11 @@ def nonce_for(key: str, verdict_id: str) -> str:
 def accept(ctx: NlContext, steps: Steps, verdict: Verdict, counter: CounterProposal | None = None,
            condition: str | None = None) -> OperationResult | None:
     """Propose the commitment the verdict (or one of its counters) allows, then send AcceptOffer. The
-    executor computes the tier: Tier 2 comes back PENDING_APPROVAL."""
+    executor computes the tier: Tier 2 comes back PENDING_APPROVAL. Nothing is proposed or sent on a request the owner answered
+    outside FLOW (`sent_outside`)."""
+    if (said := sent_outside(ctx, verdict.offer_id)) is not None:
+        steps.add("ACCEPT_OFFER", said, "SKIPPED", condition=condition)
+        return None
     base = ctx.base("ACCEPT_OFFER")
     expires = min(ctx.day + COMMITMENT_DAYS, ctx.mandate().expires_day)
     try:
@@ -138,7 +153,11 @@ def accept(ctx: NlContext, steps: Steps, verdict: Verdict, counter: CounterPropo
     return r
 
 
-def reject(ctx: NlContext, steps: Steps, verdict: Verdict) -> OperationResult:
+def reject(ctx: NlContext, steps: Steps, verdict: Verdict) -> OperationResult | None:
+    """Send RejectOffer on the verdict's offer; None, with nothing sent, on a request the owner answered outside FLOW."""
+    if (said := sent_outside(ctx, verdict.offer_id)) is not None:
+        steps.add("REJECT_OFFER", said, "SKIPPED")
+        return None
     codes = list(dict.fromkeys(v.code for v in verdict.violations))
     op = RejectOffer(**ctx.base("REJECT_OFFER"), source_verdict_id=verdict.id, offer_id=verdict.offer_id,
                      reason_codes=codes)
@@ -150,8 +169,12 @@ def reject(ctx: NlContext, steps: Steps, verdict: Verdict) -> OperationResult:
 
 def send_counters(ctx: NlContext, steps: Steps, verdict: Verdict, counters: Sequence[CounterProposal],
                   recipient_id: str) -> list[tuple[CounterProposal, str]]:
-    """Guard each counter's template text, then send CounterOffer. Returns (counter, text sent)."""
+    """Guard each counter's template text, then send CounterOffer. Returns (counter, text sent): none on a request the owner answered
+    outside FLOW (`sent_outside`)."""
     sent: list[tuple[CounterProposal, str]] = []
+    if (said := sent_outside(ctx, verdict.offer_id)) is not None:
+        steps.add("COUNTER_OFFER", said, "SKIPPED")
+        return sent
     for c in counters:
         text, ok = ctx.guard(c.text, recipient_id, allow=allowed_for_counter(c))
         if not ok:
@@ -217,7 +240,11 @@ class NegotiationOutcome:
 
 def run_negotiation(ctx: NlContext, steps: Steps, verdict: Verdict, counters: Sequence[CounterProposal],
                     profile_id: str) -> NegotiationOutcome:
-    """Send the counters (guarded), then bounded rounds with the deterministic buyer kernel."""
+    """Send the counters (guarded), then bounded rounds with the deterministic buyer kernel. Not started on a request the owner
+    answered outside FLOW: the buyer has the owner's counter, and the simulated buyer does not answer it as well."""
+    if (said := sent_outside(ctx, verdict.offer_id)) is not None:
+        steps.add("NEGOTIATE", said, "SKIPPED")
+        return NegotiationOutcome("NOT_STARTED", {"reason": "OFFER_SENT_OUTSIDE"})
     offer = ctx.store.get_offer(verdict.offer_id)
     recipient = offer.counterparty_id if offer is not None else "UNKNOWN"
     sent = send_counters(ctx, steps, verdict, counters, recipient)
