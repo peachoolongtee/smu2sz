@@ -49,6 +49,7 @@ from app.nl.pipeline import (
     funding_ops,
     package_offer,
     run_negotiation,
+    sent_outside,
     span_of,
     status_quo_offer,
     t,
@@ -490,6 +491,8 @@ def run_accelerate(ctx: NlContext, pending: PendingPlan) -> Turn:
     if gv is None or counter is None:
         return Turn(intent=Intent.ACCELERATE_RECEIPT, clear_pending=True, reply=t(
             ctx, "That proposal is no longer on record, so nothing was executed.", "该方案已不在记录中，未执行任何操作。"))
+    if (said := sent_outside(ctx, gv.offer_id)) is not None:  # the buyer has the owner's own counter: nothing is sent or run (OUT-1)
+        return Turn(intent=Intent.ACCELERATE_RECEIPT, reply=said, verdict=gv, clear_pending=True)
     cp = d["cp"]
     run = Steps()
     run.add("VERIFY", d["verify"], "DONE")
