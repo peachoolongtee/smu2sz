@@ -207,7 +207,7 @@ function KindSelect({ id, value, onChange, className }: { id: string; value: Doc
         data-testid="doc-kind"
       >
         <span className="truncate">{te("dockind", value)}</span>
-        <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-ink-3 transition-transform duration-150 ${open ? "rotate-180" : ""}`}>
+        <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-ink-3 transition-transform duration-(--dur-fast) ${open ? "rotate-180" : ""}`}>
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
@@ -370,7 +370,7 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
         {busy !== null ? (
           <div className="mt-4 w-full max-w-sm" data-testid="doc-progress">
             <div role="progressbar" aria-label={t("docs.drop.reading", { name: busy })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-2 overflow-hidden rounded-full bg-line-strong">
-              <div className="h-full rounded-full bg-brand-600 transition-[width] duration-200 ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
+              <div className="h-full rounded-full bg-brand-600 transition-[width] duration-(--dur) ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
             </div>
             <p className="mt-1 text-meta tabular-nums text-ink-3">{Math.round(progress)}%</p>
           </div>
