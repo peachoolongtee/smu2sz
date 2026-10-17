@@ -20,8 +20,7 @@ from collections.abc import Sequence
 from typing import Any
 from urllib.parse import quote
 
-from app.api.presentation import Lang, document_name, facility_name, t
-from app.contracts.views import replacement_words
+from app.api.presentation import Lang, document_name, facility_name, t, when_text
 from app.domain.models import ContractField, ContractRecord, DocumentKind, DocumentStatus, FinancialState
 from app.domain.ports import ContractGuardRow
 
@@ -61,6 +60,17 @@ def _doc(record: ContractRecord, lang: Lang) -> str:
     return name
 
 
+def _replaces(record: ContractRecord, records: Sequence[ContractRecord | ContractGuardRow], lang: Lang, today: int | None) -> str:
+    """The sentence after "now the contract on file" when this contract superseded one confirmed earlier (the store supersedes it on
+    confirmation), with when that one was confirmed; empty when it replaced none."""
+    replaced = next((r for r in records if r.superseded_by == record.id), None)
+    if replaced is None:
+        return ""
+    when = when_text(replaced.decided_day, today, lang) if today is not None and replaced.decided_day is not None else ""
+    when = when or t(lang, "earlier", "之前")
+    return t(lang, f" It replaces the contract you confirmed {when}.", f"它取代了您{when}确认的合同。")
+
+
 def _section(lang: Lang, title: tuple[str, str], lines: list[str]) -> dict[str, Any]:
     return {"title": t(lang, *title), "lines": lines}
 
@@ -95,9 +105,8 @@ def document_outcome(record: ContractRecord, state: FinancialState, records: Seq
         }
     title = t(lang, f"Filed under {who}", f"已归档到{who}名下")
     if kind == DocumentKind.BUYER_CONTRACT:
-        replaces = replacement_words(record, records, lang, today).get("replaces_text")
         changed = [t(lang, _sentence(f"{_cap(doc)} is now the contract on file for {who}"), f"{doc}现为{who}的在档合同。")
-                   + (t(lang, f" {replaces}.", f"{replaces}。") if replaces else ""),
+                   + _replaces(record, records, lang, today),
                    t(lang, f"{who}'s deal summary now reads from this contract: it sets the contract's terms beside your books and "
                            f"points out where they differ.",
                      f"{who}的交易摘要现依据这份合同：把合同条款与您的账本并列，并指出不一致之处。")]

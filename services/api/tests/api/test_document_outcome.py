@@ -92,9 +92,9 @@ def test_a_second_confirmed_contract_says_it_replaces_the_first(client):
     _decide(client, first, "confirm")
     again = _read(client, SUPPLY)
     o = _decide(client, again, "confirm")["outcome"]
-    assert o["changed"]["lines"][0].endswith("Replaces the contract you confirmed today.")
+    assert o["changed"]["lines"][0].endswith(" It replaces the contract you confirmed today.")
     zh = client.post(f"/documents/{again['id']}/confirm?lang=zh", json={"doc_hash": again["doc_hash"]}).json()["outcome"]
-    assert zh["changed"]["lines"][0].endswith("取代您今天确认的合同。")
+    assert zh["changed"]["lines"][0].endswith("。它取代了您今天确认的合同。")
     _no_codes(o)
     _no_codes(zh)
 

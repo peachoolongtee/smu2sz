@@ -3658,6 +3658,20 @@ export interface SubmitDocumentRequest {
 export interface DocumentDecision {
   result: OperationResultLike;
   document: DocumentView;
+  /** What the decision did, in the server's words (null when it was refused). Absent from an answer recorded before it existed. */
+  outcome?: DocumentOutcome | null;
+}
+
+/**
+ * The outcome card of the owner's decision on a document (ADR-0012): what was saved and under whom (`title`), what that changes and what
+ * it does not, and the page that shows it. Every string is the server's, in the language asked for; confirming changes nothing in the books.
+ */
+export interface DocumentOutcome {
+  title: string;
+  tone: "ok" | "mute";
+  changed: { title: string; lines: string[] };
+  unchanged: { title: string; lines: string[] };
+  link: { label: string; href: string } | null;
 }
 
 /** The executor's answer to CONFIRM_DOCUMENT / REJECT_DOCUMENT. */

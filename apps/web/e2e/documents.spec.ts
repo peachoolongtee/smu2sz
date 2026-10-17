@@ -173,13 +173,29 @@ test("the confirm flow: a new reading is labelled AI-generated until the owner c
   await page.getByTestId("doc-confirm").click();
   const result = page.getByTestId("doc-result");
   await expect(result).toHaveAttribute("data-status", "EXECUTED");
-  await expect(result).toContainText("Confirm document");
-  await expect(result).toContainText("nothing in your books changed");
+  await expect(result).toHaveAttribute("data-kind", "CONFIRM_DOCUMENT");
+  // The outcome card (the server's words): where it was filed, what that changes, what it does not, and the buyer's record to open.
+  const outcome = page.getByTestId("doc-outcome");
+  await expect(outcome).toBeInViewport();
+  await expect(page.getByTestId("doc-outcome-title")).toHaveText("Filed under Foshan Home Retail Co.");
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText("The supply agreement is now the contract on file for Foshan Home Retail Co. It replaces the contract you confirmed today.");
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText("deal summary now reads from this contract");
+  await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("Your books and forecast are unchanged.");
+  await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("New requests from Foshan Home Retail Co. are still checked against your books and your limits, not against this contract.");
+  const said = await outcome.innerText();
+  expect(said).not.toMatch(/DOC-\d|BUYER-|FHR-2026|\bday \d|CONFIRM_DOCUMENT|EXECUTED/);
+  await expect(page.getByTestId("doc-outcome-link")).toHaveText("Open Foshan Home Retail Co.'s record");
+  await expect(page.getByTestId("doc-outcome-link")).toHaveAttribute("href", "/customers/BUYER-1");
   await expect(review).toHaveAttribute("data-status", "CONFIRMED");
   await expect(review.getByTestId("doc-ai-label")).toHaveText("Read by the agent, confirmed by you");
   await expect(page.getByTestId("doc-decided")).toContainText("You confirmed this reading today.");
   await expect(page.getByTestId("doc-seq")).toHaveText("#4");
   await expect(page.getByTestId("doc-row-DOC-000004")).toHaveAttribute("data-status", "CONFIRMED");
+
+  // The card's link opens the buyer's record.
+  await page.getByTestId("doc-outcome-link").click();
+  await expect(page).toHaveURL(/\/customers\/BUYER-1$/);
+  await expect(page.getByTestId("customer-missing")).toHaveCount(0);
 
   // Activity: the owner's confirmations in the server's words, newest first, each opening its record in Documents.
   await page.goto("/activity");
@@ -211,8 +227,21 @@ test("a lender agreement (the PDF copy) is compared with the facility on the boo
   await link.check();
   await page.getByTestId("doc-confirm").click();
   await expect(page.getByTestId("doc-result")).toHaveAttribute("data-status", "EXECUTED");
-  await expect(page.getByTestId("doc-result")).toContainText("linked");
+  // Filed under the lender, linked to the facility by its name (never its id), and the facility and the funding unchanged.
+  await expect(page.getByTestId("doc-outcome-title")).toHaveText(/^Filed under /);
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText(/It is linked to .+ for reference\./);
+  await expect(page.getByTestId("doc-outcome")).not.toContainText("FAC-IF");
+  await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("Your books, facilities and forecast are unchanged.");
+  await expect(page.getByTestId("doc-outcome-link")).toHaveAttribute("href", "/funding");
   await expect(review).toHaveAttribute("data-status", "CONFIRMED");
+});
+
+test("a lender agreement confirmed with the link box left unticked: the card names no facility", async ({ page }) => {
+  await readAgain(page, INVOICE_FINANCING);
+  await expect(page.getByTestId("doc-link")).not.toBeChecked();
+  await page.getByTestId("doc-confirm").click();
+  await expect(page.getByTestId("doc-outcome-title")).toHaveText(/^Filed under /);
+  await expect(page.getByTestId("doc-outcome-changed")).not.toContainText("linked");
 });
 
 test("reject: a new reading is set aside and logged; the agreement already confirmed stays", async ({ page }) => {
@@ -221,10 +250,16 @@ test("reject: a new reading is set aside and logged; the agreement already confi
   await page.getByTestId("doc-reject").click();
   const result = page.getByTestId("doc-result");
   await expect(result).toHaveAttribute("data-status", "EXECUTED");
-  await expect(result).toContainText("Reject document");
+  await expect(result).toHaveAttribute("data-kind", "REJECT_DOCUMENT");
   await expect(review).toHaveAttribute("data-status", "REJECTED");
   await expect(review.getByTestId("doc-status")).toContainText("Rejected by you today");
-  await expect(page.getByTestId("doc-result")).toContainText("Nothing from this document was recorded");
+  // The outcome card: nothing saved, nothing uses it, and where it stays; no link, since nothing was filed anywhere.
+  await expect(page.getByTestId("doc-outcome")).toHaveAttribute("data-tone", "mute");
+  await expect(page.getByTestId("doc-outcome-title")).toHaveText("Rejected: nothing was saved from it");
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText("You rejected FLOW's reading of the credit line agreement. Nothing from it is recorded");
+  await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("Your books and forecast are unchanged. Your funding does not use it.");
+  await expect(page.getByTestId("doc-outcome-link")).toHaveCount(0);
+  await expect(page.getByTestId("doc-decided")).toContainText("Nothing from this document was recorded");
   await expect(page.getByTestId("doc-row-DOC-000002")).toHaveAttribute("data-status", "CONFIRMED");
   await expect(page.getByTestId("doc-row-DOC-000004")).toHaveAttribute("data-status", "REJECTED");
 });
@@ -311,6 +346,10 @@ test("Chinese: the deal summary and the review screen", async ({ page }, testInf
   await expect(page.getByTestId("doc-terms")).toContainText("账期");
   await page.getByTestId("doc-confirm").click();
   await expect(page.getByTestId("doc-ai-label")).toHaveText("由代理读取，经您确认");
+  // The outcome card in Chinese, as the server wrote it.
+  await expect(page.getByTestId("doc-outcome-title")).toHaveText("已归档到Foshan Home Retail Co.名下");
+  await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("您的账本和预测没有变化。");
+  await expect(page.getByTestId("doc-outcome-link")).toHaveText("查看Foshan Home Retail Co.的客户记录");
 });
 
 // ---------------------------------------------------------------------------------------------- the owner's words, the decision, a phone
@@ -478,5 +517,18 @@ test.describe("against the live API", () => {
     await page.route(apiUrl("/deals"), (route) => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "boom" }) }));
     await page.goto("/deals");
     await expect(page.getByTestId("deals-error")).toBeVisible();
+  });
+
+  test("the decision is asked in the owner's language, so the outcome card comes back in it", async ({ page }) => {
+    const urls: string[] = [];
+    page.on("request", (r) => urls.push(r.url()));
+    await page.goto("/documents");
+    await openAccountMenu(page);
+    await page.getByLabel("中文").check();
+    await readAgain(page, LINE);
+    await page.getByTestId("doc-reject").click();
+    await expect(page.getByTestId("doc-outcome-title")).toHaveText("已拒绝：其中的内容均未保存");
+    await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("您的融资安排不会使用它。");
+    expect(urls.some((u) => /\/documents\/DOC-000004\/reject\?lang=zh$/.test(u))).toBe(true);
   });
 });
