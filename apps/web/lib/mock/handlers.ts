@@ -52,6 +52,9 @@ import type {
   InputSaveResult,
   InputSheetView,
   CustomersView,
+  AddCustomerRequest,
+  AddCustomerResponse,
+  Counterparty,
   DealsView,
   NavCounts,
   OfferPictureView,
@@ -98,6 +101,7 @@ import type {
 import type { CustomerContext } from "../customer-href";
 import * as buyerMessage from "./buyer-message";
 import * as buyside from "./buyside";
+import * as customers from "./customers";
 import * as documents from "./documents";
 import * as decisions from "./decisions";
 import * as trackerMock from "./tracker"; // Deal tracker
@@ -379,7 +383,26 @@ function chainValid(ops: OperationView[]): boolean {
 export async function getState(): Promise<StateView> {
   await delay();
   // The books follow the recorded story: opening books, after the day-0 plan (funding in transit), day 34, after the approved cure.
-  return clone(cast<StateView>(home.mockStateJson() ?? stateJson));
+  const view = clone(cast<StateView>(home.mockStateJson() ?? stateJson));
+  // The customers the owner added in this session (POST /customers) join the companies on the books.
+  return { ...view, state: { ...view.state, counterparties: customers.withAdded(view.state.counterparties) } };
+}
+
+/** The companies on the books as GET /state answers them now, with the customers added in this session. */
+function books(): Counterparty[] {
+  return customers.withAdded(cast<StateView>(home.mockStateJson() ?? stateJson).state.counterparties);
+}
+
+/** POST /customers: a buyer added by name, for this session (it joins the counterparties GET /state answers). */
+export async function addCustomer(req: AddCustomerRequest, lang: "en" | "zh" = "en"): Promise<AddCustomerResponse> {
+  await delay();
+  return customers.mockAddCustomer(req, lang, books());
+}
+
+/** POST /documents/{id}/refile: a waiting reading filed under another company, as a new reading that supersedes it. */
+export async function refileDocument(id: string, counterpartyId: string, docHash: string, lang: "en" | "zh" = "en"): Promise<DocumentView> {
+  await delay();
+  return documents.mockRefile(id, counterpartyId, docHash, lang, books());
 }
 
 export async function getMandate(): Promise<MandateView> {
@@ -1442,6 +1465,7 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
   save();
   home.resetHome();
   documents.resetDocuments();
+  customers.resetCustomers();
   buyside.resetBuyside();
 }
 
@@ -1689,26 +1713,24 @@ export async function saveInput(id: string | null, body: InputSaveRequest, lang:
 }
 
 export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {
-  void lang;
   await delay();
-  return documents.mockDocuments();
+  return documents.mockDocuments(books(), lang);
 }
 
 export async function getDocument(id: string, lang: "en" | "zh" = "en"): Promise<DocumentView> {
-  void lang;
   await delay();
-  return documents.mockDocument(id);
+  return documents.mockDocument(id, books(), lang);
 }
 
 export async function submitDocument(req: SubmitDocumentRequest): Promise<DocumentView> {
   await delay();
-  return documents.mockSubmit(req);
+  return documents.mockSubmit(req, books(), getLang());
 }
 
 /** The owner's decision is an owner operation on the same chain as the rest (CONFIRM_DOCUMENT / REJECT_DOCUMENT, Tier 2). */
 export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null): Promise<DocumentDecision> {
   await delay();
-  return documents.mockDecide(id, decision, docHash, linkFacilityId, (r) => appendRecorded({ ...r, requested_by: "OWNER" }));
+  return documents.mockDecide(id, decision, docHash, linkFacilityId, (r) => appendRecorded({ ...r, requested_by: "OWNER" }), books(), getLang());
 }
 
 export async function getContractFixtures(): Promise<ContractFixture[]> {
