@@ -1,19 +1,39 @@
 <!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css">
-<div class="fig" id="fig" style="width:1500px">
-<div class="row" style="align-items:stretch">
-  <div class="box det" style="flex:1"><b>Tier 1: the agent acts inside the mandate</b><small style="margin-bottom:8px">executes if every gate passes</small>
-    <small>• a pure early-pay discount on a named invoice, below break-even, with a coverage proof, at most ¥100,000</small>
-    <small>• counter-offers and rejections within the mandate</small>
-    <small>• draws and invoice financing on a committed, owner-approved facility at or below the rate ceiling</small>
-    <small>• repayments; receipts from the bank feed or the owner</small></div>
-  <div class="box owner" style="flex:1"><b>Tier 2: the owner decides</b><small style="margin-bottom:8px">queued, then decided only with the owner token</small>
-    <small>• rebates and changes to terms, price, volume or operations</small>
-    <small>• any commitment above ¥100,000; any acceptance that changes terms</small>
-    <small>• a draw above the rate ceiling (queued with its cost and the ceiling)</small>
-    <small>• a receipt reported by the agent or a counterparty</small>
-    <small>• applying for or adding a facility; every capex purchase (owner only)</small></div>
-  <div class="box bad" style="flex:1"><b>Tier 3: never executed</b><small style="margin-bottom:8px">refused for every caller, the owner included</small>
-    <small>• personal guarantees</small><small>• pledging collateral</small><small>• issuing equity</small><small>• changing the mandate through the API</small><small>• any unknown operation type (fail closed)</small></div>
+<style>
+.tier{display:flex;gap:0;margin-bottom:10px}
+.tier .h{flex:none;width:220px;border-radius:10px 0 0 10px;border-right:0}
+.tier .h b{font-size:26px}
+.tier .l{flex:1;border-radius:0 10px 10px 0;background:#fff}
+.tier ul{margin:0;padding-left:22px;font-size:19px;line-height:1.3;color:#1f2a3c}
+.tier li{margin:1px 0}
+</style>
+<div class="fig" id="fig">
+<div class="tier">
+  <div class="box det h"><b>Tier 1</b><small>the agent acts inside the mandate. Runs if every gate passes</small></div>
+  <div class="box det l"><ul>
+    <li>a pure early-pay discount on a named invoice, below break-even, with a coverage proof, at most ¥100,000</li>
+    <li>counter-offers and rejections within the mandate</li>
+    <li>draws and invoice financing on a committed, owner-approved facility, at or below the rate ceiling</li>
+    <li>repayments; requests for owner approval (they only queue)</li>
+    <li>receipts from the bank feed or the owner</li></ul></div>
 </div>
-<div class="box" style="margin-top:14px"><b>Who sets the tier</b><small>The executor computes it from the typed operation alone (tier_for, app/mandate/tiers.py). A caller-supplied tier is an unknown field (HTTP 422). Facts the operation cannot carry, such as whether an acceptance changes terms or the value of the commitment it creates, can only raise the tier.</small></div>
+<div class="tier">
+  <div class="box owner h"><b>Tier 2</b><small>the owner decides. Queued, then decided only with the owner token</small></div>
+  <div class="box owner l"><ul>
+    <li>rebates; changes to terms, price, volume or operations</li>
+    <li>any commitment above ¥100,000; any acceptance that changes terms</li>
+    <li>a draw above the rate ceiling (queued with its cost and the ceiling)</li>
+    <li>a receipt reported by the agent</li>
+    <li>applying for or adding a facility (by the owner)</li>
+    <li>every capex purchase (owner only)</li></ul></div>
+</div>
+<div class="tier">
+  <div class="box bad h"><b>Tier 3</b><small>never executed. Refused for every caller, the owner included</small></div>
+  <div class="box bad l"><ul>
+    <li>personal guarantees; pledging collateral; issuing equity</li>
+    <li>changing the mandate through the API</li>
+    <li>adding a facility by anyone but the owner</li>
+    <li>any unknown operation type (fail closed)</li></ul></div>
+</div>
+<div class="box"><b>Who sets the tier</b><small>The executor computes it from the typed operation alone. A caller-supplied tier is an unknown field (HTTP 422). Facts the operation cannot carry, such as whether an acceptance changes terms, can only raise the tier.</small></div>
 </div>

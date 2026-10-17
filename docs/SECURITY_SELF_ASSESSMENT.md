@@ -771,8 +771,8 @@ Each risk is rated for **a production deployment of the code as it stands**. The
 
   Low is a minor or recoverable effect. Moderate is a bounded financial effect, a confidentiality loss, an integrity defect a person must notice and correct, or a misleading commercial communication. High is money moved or commitments made beyond the mandate, the audit trail falsified, or credentials that control the system lost.
 - **Rating:** likelihood × impact.
-  - **Moderate:** Low × High, Moderate × Moderate and Moderate × Low with an H impact.
-  - **High:** Moderate × High or High × Moderate.
+  - **Moderate:** Low × High and Moderate × Moderate.
+  - **High:** Moderate × High, High × Moderate and High × High.
   - **Low:** otherwise.
   - Every rating of Moderate or above, and every contested one, has a sentence of rationale in 4.4.
 - **Class:**

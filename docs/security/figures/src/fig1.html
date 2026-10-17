@@ -1,49 +1,61 @@
 <!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+.callers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.lane-h{font-size:19px;font-weight:700;margin:0 0 2px}
+.lane-h.u{color:#82490a}.lane-h.d{color:#0a6b5f}
+.sec{display:block;font-size:17px;font-weight:700;color:#a3241a;text-align:center}
+</style>
 <div class="fig" id="fig">
 
+<div class="callers">
+  <div class="box owner"><b>Owner</b><small>token; signs the mandate offline. Chat acts only through the consent grammar</small></div>
+  <div class="box"><b>Agent</b><small>agent key; Tier 1 inside the mandate</small></div>
+  <div class="box"><b>Bank feed</b><small>bank-feed key; receipts only</small></div>
+  <div class="box unt"><b>Registered buyer</b><small>channel key; 5 messages a day</small></div>
+  <div class="box bad"><b>Anonymous sender</b><small>no key; proposals only</small></div>
+  <div class="box unt"><b>Untrusted text</b><small>buyer, anonymous and contract text is data, never a command</small></div>
+</div>
+<div class="varrow" style="margin:6px 0 2px">↓</div>
 
-<div class="row" style="gap:18px">
-  <div class="col" style="width:250px">
-    <div class="box owner"><b>Owner (browser)</b><small>owner token · signs the mandate offline (Ed25519)</small></div>
-    <div class="box"><b>Agent</b><small>agent key · Tier 1 inside the mandate</small></div>
-    <div class="box"><b>Bank feed</b><small>bank-feed key · receipts only</small></div>
-    <div class="box unt"><b>Registered buyer</b><small>channel key · 5 messages a day</small></div>
-    <div class="box bad"><b>Anonymous sender</b><small>no key · proposals only</small></div>
-  </div>
-  <div class="arrow">→</div>
-  <div class="bnd" style="flex:1">
-    <span class="lbl">Trust boundary 1: FLOW API (one process, loopback in the certified scope)</span>
-    <div class="box" style="margin-bottom:10px"><b>Edge controls</b><small>web CSP with a per-request nonce · CORS · per-caller rate limits (429) · credential check in constant time, every refusal logged · request size and document bounds · caller identity from the credential, never the body</small></div>
-    <div class="row">
-      <div class="col" style="flex:1">
-        <div class="box unt"><b>Untrusted-text lane</b><small>buyer messages, contracts, chat text</small></div>
-        <div class="varrow">↓</div>
-        <div class="box unt"><b>Compiler</b><small>rules grammar, or a model in live mode · output is typed obligations only, each tied to an exact source span</small></div>
-        <div class="varrow">↓</div>
-        <div class="box unt"><b>Grounding and coverage proof</b><small>unread words or authority claims send the offer to the owner</small></div>
-      </div>
-      <div class="arrow">→</div>
-      <div class="col" style="flex:1.15">
-        <div class="box det"><b>Verifier (deterministic)</b><small>typed rows + books + signed mandate; never sees free text</small></div>
-        <div class="varrow">↓</div>
-        <div class="box det"><b>Executor (deterministic)</b><small>computes the tier · 8 gates · Tier 2 waits for the owner · Tier 3 refused for everyone</small></div>
-        <div class="varrow">↓</div>
-        <div class="box det"><b>Store</b><small>one unit of work per operation · hash-chained, append-only log · approvals decided once (database triggers)</small></div>
-      </div>
-      <div class="arrow">→</div>
-      <div class="col" style="width:250px">
-        <div class="box det"><b>Egress guard</b><small>blocks any outbound text holding a protected value or a canary</small></div>
-        <div class="varrow">↓</div>
-        <div class="box"><b>Reply to the buyer</b><small>template-filled from typed fields, never model prose</small></div>
-      </div>
+<div class="bnd" style="margin-top:14px">
+  <span class="lbl">Trust boundary 1: FLOW API process (loopback when assessed)</span>
+  <div class="box" style="margin-bottom:8px"><b>Edge controls</b><small>nonce CSP · CORS · per-caller rate limits (429) · constant-time credential check · size bounds · caller identity from the credential, never the body</small></div>
+  <div class="row" style="gap:8px">
+    <div class="col" style="flex:1;min-width:0">
+      <div class="lane-h u">Untrusted-text lane</div>
+      <div class="box unt"><b>Compiler</b><small>rules grammar, or a model in live mode. Its package cannot import the books or the mandate. Output: typed rows with exact source spans, then a proposal</small></div>
+      <div class="varrow">↓</div>
+      <div class="box unt"><b>Coverage proof</b><small>unread words or authority claims go to the owner</small></div>
+    </div>
+    <div class="arrow" style="flex-direction:column;min-width:60px;font-size:17px;text-align:center;line-height:1.1"><span style="font-size:30px">→</span>typed rows only</div>
+    <div class="col" style="flex:1;min-width:0">
+      <div class="lane-h d">Deterministic lane (never reads free text)</div>
+      <div class="box det"><b>Verifier</b><small>typed rows + books + signed mandate</small></div>
+      <div class="varrow">↓</div>
+      <div class="box det"><b>Executor</b><small>tier computed by code · 8 gates · Tier 2 waits for the owner · Tier 3 refused</small></div>
+      <div class="varrow">↓</div>
+      <div class="box det"><b>Store</b><small>one unit of work per operation · hash-chained, append-only log</small></div>
     </div>
   </div>
-  <div class="arrow">⇄</div>
-  <div class="bnd" style="width:250px">
-    <span class="lbl">Boundary 2: model provider</span>
-    <div class="box ext"><b>DeepSeek or Anthropic</b><small>live mode only (opt-in) · receives redacted documents, static instructions and the output schema · never the mandate, books, limits or other buyers' terms</small></div>
-    <div class="box ext" style="margin-top:12px"><b>Cache mode (default)</b><small>nothing leaves the machine</small></div>
+  <div class="row" style="gap:8px;margin-top:10px;align-items:center">
+    <div class="box det" style="flex:1"><b>Egress guard</b><small>blocks outbound text holding a protected value or a canary</small></div>
+    <div class="arrow">→</div>
+    <div class="box" style="flex:1"><b>Reply to the buyer</b><small>template-filled from typed fields, never model prose</small></div>
   </div>
 </div>
+
+<div class="row" style="gap:10px;margin-top:6px;align-items:stretch">
+  <div style="flex:1.7;min-width:0">
+    <div class="varrow" style="margin:2px 0 0">⇅ <span style="font-size:17px;font-weight:700">live mode only</span></div>
+    <div class="bnd" style="margin-top:14px">
+      <span class="lbl">Trust boundary 2: model provider</span>
+      <div class="box ext"><b>DeepSeek or Anthropic</b><small>gets instructions, schema and redacted documents. FLOW never attaches the books or mandate to a model request. Outside the assessed scope</small></div>
+    </div>
+  </div>
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end">
+    <div class="box det"><b>Cache mode (assessed)</b><small>no provider is called; nothing leaves the machine</small></div>
+  </div>
+</div>
+
 <div class="legend"><span><span class="sw" style="background:#fff4e5;border-color:#e7b467"></span>untrusted input</span><span><span class="sw" style="background:#e8f5f1;border-color:#6cbfae"></span>deterministic code that decides</span><span><span class="sw" style="background:#f4f4f6;border-color:#a7acb6"></span>external service</span><span><span class="sw" style="background:#fff;border-color:#c0392b;border-style:dashed"></span>trust boundary</span></div>
 </div>
