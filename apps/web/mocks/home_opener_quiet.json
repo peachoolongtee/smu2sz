@@ -18,7 +18,7 @@
   "context_echo": null,
   "scope_used": null,
   "card": {
-    "lead": "",
+    "lead": "1 warning: Cash is close to your minimum in 30 days.",
     "figures": [],
     "body": "",
     "basis": "Today's books, day 0",

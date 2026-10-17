@@ -176,6 +176,9 @@ class Seed:
     basis: str = ""
     actions: list[CardAction] = field(default_factory=list)
     lead_from_reply: bool = True
+    # A card that writes its own words (the opener's): its lead and body, in place of the reply's.
+    lead: str = ""
+    body: str = ""
 
 
 def action(key: str, lang: str, *, name: str = "", cid: str = "") -> CardAction:
@@ -290,11 +293,142 @@ def from_reply(reply: Any, lang: str, state: Any) -> Seed | None:
     return Seed(lang=lang, figures=tiles, basis=str(basis), actions=acts)
 
 
-def opener_seed(ctx: Any, facts: dict[str, Any], has_news: bool) -> Seed | None:
-    """The links under FLOW's opener (POST /nl/opener): the pages that show what it raised. The opener's own reply stays as it is
-    (no lead is cut from it), so the card holds the links and the basis only. None when nothing needs the owner."""
+def _t(lang: str, en: str, zh: str) -> str:
+    return zh if lang == "zh" else en
+
+
+def _plan_words(ctx: Any, ops: list[Any], cost_fen: int | None) -> str:
+    """FLOW's plan in one sentence, in the owner's words: each leg by its facility's name, an invoice by its customer, amount and due date, and
+    when its cash lands; never an id, never "I". "FLOW's plan: draw ¥150,000 on the Bank credit line today and finance ¥255,000 of the
+    ¥420,000 invoice to Foshan Home Retail Co. (due in 32 days), cash in 3 days; ¥3,113.93 in all."."""
+    from app.api.presentation import facility_name, invoice_words, when_text, whole
+    from app.domain.models import ApplyForFacility, DrawFacility, RepayFacility, SubmitInvoiceForFinancing
+    from app.nl import landing
+
+    lang, state, today = ctx.lang, ctx.state(), ctx.day
+    when = lambda day: when_text(day, today, lang)
+    parts: list[str] = []
+    for o in ops:
+        if isinstance(o, DrawFacility):
+            lands, fac, m = landing.landing_day(ctx, o, executed=False), facility_name(state, o.facility_id), whole(o.amount_fen)
+            parts.append(_t(lang, f"draw {m} on the {fac}" + (" today" if lands <= today else f", cash {when(lands)}"),
+                            f"从{fac}提款 {m}，" + ("今天到账" if lands <= today else f"{when(lands)}到账")))
+        elif isinstance(o, SubmitInvoiceForFinancing):
+            lands, m = landing.landing_day(ctx, o, executed=False), whole(o.advance_fen)
+            inv = invoice_words(state, o.receivable_id, lang).replace(".00", "")
+            due = next((r.due_day for r in state.receivables if r.id == o.receivable_id), None)
+            due_en, due_zh = (f" (due {when(due)})", f"（{when(due)}到期）") if due is not None else ("", "")
+            parts.append(_t(lang, f"finance {m} of {inv}{due_en}, cash {when(lands)}", f"以{inv}{due_zh}融资 {m}，{when(lands)}到账"))
+        elif isinstance(o, RepayFacility):
+            fac, m = facility_name(state, o.facility_id), whole(o.amount_fen)
+            parts.append(_t(lang, f"repay {m} on the {fac} today", f"今天向{fac}还款 {m}"))
+        elif isinstance(o, ApplyForFacility):
+            fac, m = facility_name(state, o.facility_id), whole(o.amount_fen)
+            parts.append(_t(lang, f"apply for {m} on the {fac}", f"申请{fac} {m}"))
+    if not parts:
+        return ""
+    cost = whole(cost_fen) if cost_fen is not None else None
+    return _t(lang, "FLOW's plan: " + " and ".join(parts) + (f"; {cost} in all" if cost else "") + ".",
+              "FLOW 的方案：" + "；".join(parts) + (f"；合计 {cost}" if cost else "") + "。")
+
+
+def _opener_words(ctx: Any, turn: Any) -> tuple[str, str, list[CardFigure]]:
+    """The opener laid out (lead, owner words of 17 Oct): a bold lead sentence (what is wrong with the cash, or the first thing that needs the
+    owner), the figure tiles, FLOW's plan as one sentence, and the other things on a short second line. Read from the turn's typed facts and
+    its pending plan; the reply's engine sentence (ids, "I") is not shown."""
+    from app.api.presentation import invoice_words, when_text, whole
+
+    lang, state, f = ctx.lang, ctx.state(), turn.facts or {}
+    when = lambda day: when_text(day, ctx.day, lang)
+    floor = whole(ctx.mandate().min_cash_fen)
+    lead, plan, figs = "", "", []
+    notes: list[str] = []
+    pending = turn.pending
+    if f.get("cure") == "reserve":
+        short, day, zero = whole(f.get("shortfall_fen") or 0), f.get("day"), f.get("zero_day")
+        gone = zero is not None and zero <= ctx.day
+        zero_en = (" and is below zero" if gone else f" and goes below zero {when(zero)}") if zero is not None else ""
+        zero_zh = ("，已降到零以下" if gone else f"，并将在{when(zero)}降到零以下") if zero is not None else ""
+        if day is not None and day <= ctx.day:  # already below the reserve
+            lead = _t(lang, f"Cash is {short} below your {floor} reserve today{zero_en}.", f"今天现金比您 {floor} 的最低现金储备低 {short}{zero_zh}。")
+        else:
+            lead = _t(lang, f"Cash falls below your {floor} reserve {when(day)}, {short} short{zero_en.replace(' and', ', and')}.",
+                      f"现金将在{when(day)}低于您 {floor} 的最低现金储备，缺口 {short}{zero_zh}。")
+        figs.append(CardFigure(label=_t(lang, "Short of your reserve", "储备缺口"), value=short, tone="danger"))
+        from app.financial import EngineError
+        from app.nl.answers.metrics import Reading, lowest_point
+
+        try:
+            low = lowest_point(Reading.of(ctx))
+        except EngineError:  # the books cannot be projected just now: the tile is extra, the opener is said without it
+            low = None
+        if low is not None and low.value is not None:
+            figs.append(CardFigure(label=_t(lang, "Lowest cash", "最低现金"), value=low.display,
+                                   tone="danger" if low.value < ctx.mandate().min_cash_fen else "ok"))
+        if pending is not None and pending.ops:
+            if pending.quoted_cost_fen is not None:
+                figs.append(CardFigure(label=_t(lang, "FLOW's plan costs", "FLOW 方案成本"), value=whole(pending.quoted_cost_fen)))
+            plan = _plan_words(ctx, list(pending.ops), pending.quoted_cost_fen)
+            if f.get("needs_owner"):
+                plan += _t(lang, " It needs your approval before it runs.", "需要您批准后才会执行。")
+            if not f.get("restores", True):
+                plan += _t(lang, " It keeps cash above zero but does not restore your reserve in full; the rest needs your decision.",
+                           "这可让现金保持在零以上，但不能完全恢复储备线，其余部分需要您来决定。")
+        elif f.get("waiting"):
+            plan = _t(lang, "FLOW's plan is already waiting for your approval; nothing has run yet.", "FLOW 的方案已在等待您批准，尚未执行。")
+        elif f.get("no_cure"):
+            plan = _t(lang, "No committed funding can cover it, so this needs your decision.", "已承诺的融资都无法覆盖，需要您来决定。")
+        if f.get("day") is not None:
+            figs.append(CardFigure(label=_t(lang, "Below reserve", "跌破储备线"), value=when(f["day"]), tone="danger"))
+    elif f.get("cure") == "repay":
+        from app.api.presentation import facility_name
+
+        m, fac = whole(f.get("amount_fen") or 0), facility_name(state, f.get("facility_id"))
+        lead = _t(lang, f"The {m} drawn on the {fac} can be repaid today, and cash stays above your reserve.",
+                  f"{fac}已提取的 {m} 今天可以还清，现金仍高于您的最低现金储备。")
+        figs.append(CardFigure(label=_t(lang, "Can be repaid", "可还清"), value=m, tone="ok"))
+        if pending is not None and pending.ops:
+            plan = _plan_words(ctx, list(pending.ops), None)
+    for d in f.get("past_due") or []:
+        inv, m = invoice_words(state, d.get("receivable_id"), lang).replace(".00", ""), whole(d.get("amount_fen") or 0)
+        due = when(d.get("due_day"))
+        if m in inv:  # the whole invoice is late: said once, not "¥420,000 on the ¥420,000 invoice"
+            notes.append(_t(lang, f"{inv[:1].upper()}{inv[1:]} was due {due} and has not arrived.", f"{inv}应于{due}到账，至今未到。"))
+        else:
+            notes.append(_t(lang, f"{m} on {inv} was due {due} and has not arrived.", f"{inv}的 {m} 应于{due}到账，至今未到。"))
+        if not any(x.label in ("Overdue", "逾期") for x in figs):
+            figs.append(CardFigure(label=_t(lang, "Overdue", "逾期"), value=m, tone="danger"))
+    mand = f.get("mandate")
+    if mand:
+        w = when(mand.get("expires_day"))
+        notes.append(_t(lang, f"Your mandate expired {w}; FLOW cannot act until you sign a new one." if mand.get("critical") else
+                        f"Your mandate expires {w}; after that FLOW cannot act until you sign a new one.",
+                        f"您的授权已于{w}到期，在您签署新授权之前 FLOW 无法执行任何操作。" if mand.get("critical") else
+                        f"您的授权将在{w}到期；之后在您签署新授权之前 FLOW 无法执行任何操作。"))
+    others = [str(x) for x in (f.get("others") or [])]
+    if ctx.reads is not None:
+        others = [ctx.reads.words(x, lang) or x for x in others]
+    if others:
+        n = len(others) + int(f.get("more") or 0)
+        notes.append(_t(lang, f"{n} more {'warning' if n == 1 else 'warnings'}: " + "; ".join(x.rstrip(".") for x in others) + ".",
+                        f"另有 {n} 项提醒：" + "；".join(x.rstrip("。") for x in others) + "。"))
+    if not lead and notes:
+        lead = notes.pop(0)
+        if lang != "zh" and lead.startswith(("1 more", "2 more", "3 more")):
+            lead = lead.replace(" more ", " ", 1)
+        elif lang == "zh":
+            lead = lead.replace("另有 ", "", 1)
+    sep = " " if lang != "zh" else ""
+    body = plan + ("\n" if plan and notes else "") + sep.join(notes)
+    return lead, body.strip(), figs
+
+
+def opener_seed(ctx: Any, turn: Any, has_news: bool) -> Seed | None:
+    """FLOW's opener (POST /nl/opener) as a card: its own lead, tiles and plan sentence in the owner's words (`_opener_words`), and the
+    pages that show what it raised. None when nothing needs the owner."""
     if not has_news:
         return None
+    facts = turn.facts or {}
     lang, state = ctx.lang, ctx.state()
     acts: list[CardAction] = []
     if facts.get("cure") == "reserve":
@@ -316,7 +450,8 @@ def opener_seed(ctx: Any, facts: dict[str, Any], has_news: bool) -> Seed | None:
         acts.append(action("forecast", lang))
     acts = _first(acts)
     basis = f"今日账目，第 {ctx.day} 天" if lang == "zh" else f"Today's books, day {ctx.day}"
-    return Seed(lang=lang, basis=basis, actions=acts, lead_from_reply=False)
+    lead, body, figs = _opener_words(ctx, turn)
+    return Seed(lang=lang, figures=figs, basis=basis, actions=acts, lead_from_reply=False, lead=lead, body=body)
 
 
 _EN_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z¥−\-\d\"“(])")
@@ -337,7 +472,7 @@ def finish(seed: Seed | None, reply: str) -> AnswerCard | None:
     """The card as sent: the lead and body cut from the reply the owner is actually sent (after the guard), the rest from the seed."""
     if seed is None:
         return None
-    lead, body = split_lead(reply, seed.lang) if seed.lead_from_reply else ("", "")
+    lead, body = split_lead(reply, seed.lang) if seed.lead_from_reply else (seed.lead, seed.body)
     tiles = seed.figures[:MAX_TILES]
     return AnswerCard(lead=lead, figures=tiles, body=body, basis=seed.basis, all_figures=list(seed.figures), actions=list(seed.actions))
 

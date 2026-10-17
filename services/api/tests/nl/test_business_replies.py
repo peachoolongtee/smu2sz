@@ -143,8 +143,8 @@ def test_yes_run_it_on_an_alert_cure_queues_it_for_approval_and_keeps_the_approv
     assert SESSIONS.get("ac4").shown_approvals == [aid]  # the consent code still finds the id, in the parenthesis
     waiting = _say(client, "what needs me today?", "ac5")
     assert waiting["reply"] == ("Cash would fall ¥200,000.00 below your minimum in 8 days. The plan is already waiting for your approval "
-                                f"({aid}): requests ¥200,000.00 of invoice financing, arriving in 3 days; estimated cost ¥1,782.19. I have not run "
-                                'it. Reply "Yes, do it" to approve it.')
+                                f"({aid}): requests ¥200,000.00 of invoice financing, arriving in 3 days; estimated cost ¥1,782.19. Nothing has run "
+                                'yet. Reply "Yes, do it" to approve it.')  # the alerts turn speaks of FLOW, never "I" (lead, 17 Oct)
     _owner_words(waiting["reply"])
     done = _say(client, "Yes, do it", "ac5")
     assert [(o["kind"], o["status"]) for o in done["operations"]] == [("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]

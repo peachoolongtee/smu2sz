@@ -246,7 +246,8 @@ def post_nl_opener(body: OpenerRequest, x_owner_token: str | None = Header(defau
         raise HTTPException(403, "owner token required")
     with rt.lock:
         resp, has_news = opener(body.session_id, body.lang, store=rt.store, executor=rt.executor, day=rt.day,
-                                owner_key_hex=rt.owner_key_hex, verdict_extras=owner_verdict_extras)
+                                owner_key_hex=rt.owner_key_hex, verdict_extras=owner_verdict_extras,
+                                owner_reads=_owner_reads(rt, business=True))  # the card is said in the owner's words
     out = resp.model_dump(mode="json")
     out["verdict"] = displayed(out["verdict"]) if out["verdict"] is not None else None
     out["operations"] = displayed(out["operations"])

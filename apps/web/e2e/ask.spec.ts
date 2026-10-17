@@ -99,6 +99,19 @@ test("the panel: its header buttons, FLOW speaks first once, and an answer laid 
   await openerSettled(panel);
   await expect(turns(panel)).toHaveCount(1);
   await expect(turns(panel).first().getByTestId("card-action").first()).toBeVisible();
+  // The opener is laid out like an answer: a bold lead in the owner's words, never an id or "I" (the engine's sentence is not shown).
+  const opener = turns(panel).first().getByTestId("chat-card");
+  await expect(opener.getByTestId("card-lead")).toBeVisible();
+  if (isLive()) {
+    await expect(opener.getByTestId("card-lead")).toHaveText("Cash falls below your ¥300,000 reserve in 12 days, ¥240,000 short.");
+    await expect(opener.getByTestId("card-figure")).toHaveCount(3);
+    await expect(opener.getByTestId("card-body")).toContainText("FLOW's plan: draw ¥150,000 on the Bank credit line today and finance ¥255,000 of the ¥420,000 invoice to Foshan Home Retail Co.");
+    await expect(turns(panel).first().getByTestId("chat-goahead")).toBeEnabled(); // the plan still waits for the go-ahead
+  } else {
+    await expect(opener.getByTestId("card-lead")).toHaveText("1 warning: Cash is close to your minimum in 30 days.");
+  }
+  const openerWords = await opener.evaluate((el) => (el as HTMLElement).innerText);
+  expect(openerWords).not.toMatch(/RCV-|BUYER-|RI:|APR-|FAC-|\bI\b/);
   for (const a of await turns(panel).first().getByTestId("card-action").all()) expect(await a.getAttribute("href")).toMatch(/^\/[a-z#?]*/);
   await shot(page, "after-panel-desktop-en-opener");
 

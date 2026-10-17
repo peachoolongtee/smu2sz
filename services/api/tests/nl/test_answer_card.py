@@ -233,10 +233,26 @@ def test_the_opener_carries_links_to_what_it_raised(day0) -> None:
         r = client.post("/nl/opener", json={"session_id": f"card-opener-{lang}", "lang": lang}, headers=OWNER).json()
         assert r["has_news"] is True
         card = AnswerCard.model_validate(r["card"])
-        assert card.lead == "" and card.body == ""  # the opener's own reply is shown as it is
+        # Laid out like an answer (lead, 17 Oct): the bold lead, the tiles, FLOW's plan in one sentence in the owner's words, the other
+        # warning on its own line; never an id, never "I". The reply and the plan waiting for the go-ahead are unchanged.
+        assert card.lead == {"en": "Cash falls below your ¥300,000 reserve in 12 days, ¥240,000 short.",
+                             "zh": "现金将在12 天后低于您 ¥300,000 的最低现金储备，缺口 ¥240,000。"}[lang]
+        assert [(f.value, f.tone) for f in card.figures] == [("¥240,000", "danger"), ("−¥105,000", "danger"), ("¥3,113.93", "neutral")]
+        plan, warning = card.body.split("\n")
+        assert plan == {"en": "FLOW's plan: draw ¥150,000 on the Bank credit line today and finance ¥255,000 of the ¥420,000 invoice to "
+                              "Foshan Home Retail Co. (due in 32 days), cash in 3 days; ¥3,113.93 in all.",
+                        "zh": "FLOW 的方案：从Bank credit line提款 ¥150,000，今天到账；以Foshan Home Retail Co. 的 ¥420,000 发票（32 天后到期）"
+                              "融资 ¥255,000，3 天后到账；合计 ¥3,113.93。"}[lang]
+        assert warning.startswith({"en": "1 more warning:", "zh": "另有 1 项提醒："}[lang])
+        for words in (card.lead, card.body):
+            assert not IDS.search(words) and not re.search(r"\bI\b|我", words), words
+        assert r["awaiting_confirmation"] is True and r["reply"].endswith({"en": "Go ahead?", "zh": "要执行吗？"}[lang])
         assert [a.href for a in card.actions] == ["/#home-v2-action", "/cash#cash-chart"]
         check_words(card, lang)
         check_links(card)
+    # The go-ahead still runs exactly the plan the opener holds (the consent is unchanged).
+    done = Chat(client, "card-opener-en").say("go ahead", lang="en")
+    assert [(o["kind"], o["status"]) for o in done["operations"]] == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
 
 
 def test_the_opener_at_day_34_links_the_late_customer(day34) -> None:
@@ -244,7 +260,12 @@ def test_the_opener_at_day_34_links_the_late_customer(day34) -> None:
     r = client.post("/nl/opener", json={"session_id": "card-opener-34", "lang": "en"}, headers=OWNER).json()
     hrefs = [a["href"] for a in r["card"]["actions"]]
     assert "/receivables?customer=BUYER-1" in hrefs and "/cash#cash-chart" in hrefs
-    check_links(AnswerCard.model_validate(r["card"]))
+    card = AnswerCard.model_validate(r["card"])
+    check_links(card)
+    assert card.lead.startswith("Cash is ¥405,000 below your ¥300,000 reserve today")
+    assert "invoice to Foshan Home Retail Co." in card.body and "was due 2 days ago and has not arrived." in card.body
+    for words in (card.lead, card.body):
+        assert not IDS.search(words) and not re.search(r"\bI\b", words), words
 
 
 # ---------------------------------------------------------------- the reply's language follows the question (lead, 17 Oct)

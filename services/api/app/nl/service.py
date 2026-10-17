@@ -213,10 +213,11 @@ def _honour_scope(ctx: NlContext, scoped: page.ScopeResult | None, state: Financ
 
 def opener(session_id: str | None, lang: str | None, *, store: LedgerStore, executor: Executor, day: int,
            owner_key_hex: str, sessions: SessionStore = SESSIONS,
-           verdict_extras: VerdictExtras | None = None) -> tuple[NlResponse, bool]:
+           verdict_extras: VerdictExtras | None = None, owner_reads: page.OwnerReads | None = None) -> tuple[NlResponse, bool]:
     """An agent-initiated turn in the owner's session (the API layer has checked the owner token): the agent says
     what needs the owner, if anything, and proposes the cure as a pending plan. It executes nothing; the owner's
-    next direct "go ahead" in this session confirms it. Returns (the response, whether anything needs the owner)."""
+    next direct "go ahead" in this session confirms it. Returns (the response, whether anything needs the owner).
+    `owner_reads` lends the owner's word rewrite to the card (an alert's title in the owner's words); the reply is unchanged."""
     session, _new = sessions.get_or_create(session_id, "OWNER", owner_auth=True, principal="owner")
     session.turn += 1
     if lang:
@@ -229,7 +230,9 @@ def opener(session_id: str | None, lang: str | None, *, store: LedgerStore, exec
     turn.reply, _ok = ctx.guard(turn.reply, turn.recipient, allow=turn.allow)
     from app.nl import answer_card
 
-    turn.card = answer_card.opener_seed(ctx, turn.facts, has_news)  # links to the pages that show what it raised
+    ctx.reads = owner_reads  # the card's words only: the alerts turn above ran exactly as before
+    # The opener as a card in the owner's words (lead, tiles, the plan in one sentence, links); the reply and the pending plan are unchanged.
+    turn.card = answer_card.opener_seed(ctx, turn, has_news)
     _update_session(session, turn)
     _remember_shown(ctx, turn)
     session.history.append((session.turn, turn.intent.value))
