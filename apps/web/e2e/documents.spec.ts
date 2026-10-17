@@ -75,10 +75,13 @@ async function openAccountMenu(page: Page) {
   if ((await menu.count()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await menu.locator("> summary").click();
 }
 
-test("Deals: no summary before a deal is agreed; once the buyer agrees, the confirmed contract beside the books", async ({ page }) => {
+test("Deals: before a deal is agreed the confirmed contract is its own row; once the buyer agrees, the summary is in the agreement", async ({ page }) => {
   await page.goto("/deals");
   await expect(page.getByTestId("inbox-list")).toBeVisible();
-  await expect(page.getByTestId("deal-summary-BUYER-1")).toHaveCount(0);
+  // The supply agreement is confirmed on the opening books and no deal is agreed on it yet: its summary is in the contract's own row ("Contract with …",
+  // owner's report, 17 Oct), never in an agreement.
+  await expect(page.getByTestId("contract-BUYER-1")).toContainText("Contract with Foshan Home Retail Co.");
+  await expect(page.locator('[data-testid="deal-summary-BUYER-1"]:not([data-testid="contract-BUYER-1"] *)')).toHaveCount(0);
 
   await agreeFoshanDeal(page);
   // An agreement in force needs no Action band: the summary is part of the agreements section, not a card of its own.
@@ -89,6 +92,10 @@ test("Deals: no summary before a deal is agreed; once the buyer agrees, the conf
   await page.getByTestId("deal-back-all").click();
   const agreements = page.locator("#commitments");
   await expect(agreements.getByRole("heading", { name: "Your agreements", level: 2 })).toBeVisible();
+  // Agreed: the contract's own row is gone and the buyer's summary is in one place, its agreement.
+  await expect(agreements.getByTestId("contract-BUYER-1")).toHaveCount(0);
+  await expect(agreements.getByTestId("invoices-BUYER-1")).toHaveCount(0);
+  await expect(agreements.getByTestId("deal-summary-BUYER-1")).toHaveCount(1);
   const deal = agreements.getByTestId("deal-summary-BUYER-1");
   // Each agreement is a folded row; opened, it shows its terms and the deal summary (open them all: which row holds this buyer's summary depends on the books).
   await expect(agreements.getByTestId("commitment-toggle").first()).toBeVisible();
@@ -305,14 +312,15 @@ test("your own file: the upload form sends a Word, PDF or text file with what it
   await expect(kind).toHaveText("Lender agreement");
   await kind.click();
   await form.getByRole("option", { name: /^Contract with a buyer/ }).click();
-  // The company is typed by name, and nothing is sent until it is one on the books.
+  // The company is chosen from the books' list (it opens without typing) or typed by name, and nothing is sent until it is one on the books.
   const party = form.getByLabel("Who it is with");
   await expect(party).toHaveValue("");
-  await page.getByTestId("doc-upload").click();
-  await expect(form.getByText("Type the name of the company this document is with first.")).toBeVisible();
+  await party.click();
+  await expect(form.getByTestId("doc-counterparty-list").getByRole("option", { name: "Foshan Home Retail Co." })).toBeVisible();
+  await page.keyboard.press("Escape");
   await party.fill("Nobody Ltd");
-  // A buyer the books do not have: the hint's place offers to add it (new-customer.spec.ts walks the adding).
-  await expect(form.getByTestId("doc-new-customer")).toHaveText("Add “Nobody Ltd” as a new customer");
+  // A buyer the books do not have: the link under the field offers to add it (new-customer.spec.ts walks the adding).
+  await expect(form.getByTestId("doc-new-customer")).toHaveText("+ Add “Nobody Ltd” as a new customer");
   await party.fill("Foshan Home Retail Co.");
   // Upload and read opens the file picker; the file chosen is read at once.
   const text = readFileSync(join(CONTRACTS, "fhr-2026-07-supply-agreement.md"));
@@ -329,7 +337,7 @@ test("your own file: the upload form sends a Word, PDF or text file with what it
   }
 });
 
-test("Upload with no company says so under the drop zone, and sends nothing", async ({ page }) => {
+test("a file before the company waits, named, and the field asks who it is with; nothing is sent until a company is chosen", async ({ page }) => {
   await page.goto("/documents");
   const form = page.locator("#docs-read");
   const party = form.getByTestId("doc-counterparty");
@@ -338,26 +346,40 @@ test("Upload with no company says so under the drop zone, and sends nothing", as
   page.on("request", (r) => {
     if (r.method() === "POST" && /\/documents(\?.*)?$/.test(r.url())) sent += 1;
   });
-  let chooser = false;
-  page.on("filechooser", () => {
-    chooser = true;
-  });
+  // Upload and read opens the file picker before any company is chosen (owner's report, 17 Oct): the file comes first.
+  const chooser = page.waitForEvent("filechooser");
   await page.getByTestId("doc-upload").click();
-  const message = form.getByRole("alert");
-  await expect(message).toContainText("Type the name of the company this document is with first.");
-  // Under the drop zone, in sight.
-  await expect(message).toBeInViewport();
-  const zone = (await page.getByTestId("doc-dropzone").boundingBox())!;
-  const box = (await message.boundingBox())!;
-  expect(box.y, "the message is under the drop zone").toBeGreaterThanOrEqual(zone.y + zone.height);
-  expect(box.y - (zone.y + zone.height), "the message is right under the drop zone").toBeLessThanOrEqual(40);
-  // A file given without a company is not read either.
-  await form.locator('input[type="file"]').setInputFiles(join(CONTRACTS, "fhr-2026-07-supply-agreement.md"));
-  await expect(message).toContainText("Type the name of the company this document is with first.");
+  await (await chooser).setFiles(join(CONTRACTS, "fhr-2026-07-supply-agreement.md"));
+  // The file is kept and named; the company field has the focus, its list open with the question on top, and the question under it.
+  await expect(page.getByTestId("doc-waiting")).toHaveText("Ready to read: fhr-2026-07-supply-agreement.md");
+  await expect(party).toBeFocused();
+  await expect(party).toHaveAttribute("aria-expanded", "true");
+  await expect(form.getByTestId("doc-counterparty-popup")).toContainText("Who is this contract with? Choose a customer or add a new one.");
+  await expect(form.getByTestId("doc-ask-who")).toHaveText("Who is this contract with? Choose a customer or add a new one.");
+  await expect(form.getByRole("alert")).toHaveCount(0);
   await expect(page.getByTestId("doc-progress")).toHaveCount(0);
   await expect(page).toHaveURL(/\/documents$/);
-  expect(chooser, "no file picker opens without a company").toBe(false);
+  // Remove discards it: the drop zone is as it was and nothing was sent.
+  await page.keyboard.press("Escape"); // the list closes; Remove is under it
+  await page.getByTestId("doc-waiting-remove").click();
+  await expect(page.getByTestId("doc-waiting")).toHaveCount(0);
+  await expect(page.getByTestId("doc-dropzone")).toContainText("Drag and drop a document to check it");
+  await expect(form.getByTestId("doc-ask-who")).toHaveCount(0);
   expect(sent, "nothing is sent without a company").toBe(0);
+});
+
+test("a file before the company is read as soon as a company is chosen from the list", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "live", NEEDS_SERVER);
+  await page.goto("/documents");
+  const form = page.locator("#docs-read");
+  await form.locator('input[type="file"]').setInputFiles(join(CONTRACTS, "fhr-2026-07-supply-agreement.md"));
+  await expect(page.getByTestId("doc-waiting")).toHaveText("Ready to read: fhr-2026-07-supply-agreement.md");
+  await expect(page).toHaveURL(/\/documents$/);
+  // The list shows the books' customers without typing; a click on one reads the file at once.
+  await form.getByTestId("doc-counterparty-list").getByRole("option", { name: "Foshan Home Retail Co." }).click();
+  await expect(page).toHaveURL(/\/documents\?id=DOC-000004$/);
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED");
+  await expect(page.getByTestId("doc-waiting")).toHaveCount(0);
 });
 
 test("day 34: the deal summary tells the story and points at the approval", async ({ page }, testInfo) => {

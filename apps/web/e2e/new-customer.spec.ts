@@ -6,7 +6,8 @@ import { expect, test } from "./fixtures";
 
 /**
  * Attach deals with a customer who is not on the books yet (feat/new-customer-base). The upload form offers to add the
- * buyer typed, right under "Who it is with", and chooses it once added. A contract filed under a company it does not name
+ * buyer typed, right under "Who it is with" and as the last choice of its list (fix/deals-contracts-upload: always, even with nothing
+ * typed), and chooses it once added. A contract filed under a company it does not name
  * (the party check's blocking PARTY_NOT_NAMED flag) offers, under that flag, to file it under a party it does name, adding a
  * buyer not on the books as a new customer, or to discard the reading. Mock mode: the mock adds the customer for the session
  * and recognises the demo supply agreement's own text (or that text naming another buyer) filed under another company. The
@@ -36,11 +37,12 @@ async function noSideScroll(page: Page, label: string) {
   expect(over, `${label}: no horizontal scroll`).toBeLessThanOrEqual(0);
 }
 
-/** Opens the add panel for the name typed into "Who it is with". */
+/** Opens the add panel for the name typed into "Who it is with" (from the link under the field; the list it opened is closed first). */
 async function openPanel(page: Page, typed: string) {
   await page.goto("/documents");
   const form = page.locator("#docs-read");
   await form.getByLabel("Who it is with").fill(typed);
+  await form.getByLabel("Who it is with").press("Escape");
   await form.getByTestId("doc-new-customer").click();
   const panel = form.getByTestId("doc-new-customer-panel");
   await expect(panel).toBeVisible();
@@ -69,10 +71,12 @@ test.describe("adding a customer on Attach deals", () => {
     const form = page.locator("#docs-read");
     const party = form.getByLabel("Who it is with");
     await party.fill(NEW_BUYER);
-    // In the place of the old hint, a small text button.
+    // In the place of the old hint, a small text button (and the list's last choice, the same words).
     const offer = form.getByTestId("doc-new-customer");
-    await expect(offer).toHaveText(`Add “${NEW_BUYER}” as a new customer`);
+    await expect(offer).toHaveText(`+ Add “${NEW_BUYER}” as a new customer`);
+    await expect(form.getByTestId("doc-counterparty-add")).toHaveText(`+Add “${NEW_BUYER}” as a new customer`);
     await expect(party).toHaveAttribute("aria-invalid", "true");
+    await party.press("Escape");
     await offer.click();
     const panel = form.getByTestId("doc-new-customer-panel");
     const name = panel.getByLabel("Name", { exact: true });
@@ -83,14 +87,17 @@ test.describe("adding a customer on Attach deals", () => {
     await expect(panel).toHaveCount(0);
     await expect(party).toHaveValue(NEW_BUYER);
     await expect(party).not.toHaveAttribute("aria-invalid", "true");
-    await expect(form.getByTestId("doc-new-customer")).toHaveCount(0);
+    // Chosen: the link no longer names it (adding another customer stays one press away).
+    await expect(form.getByTestId("doc-new-customer")).toHaveText("+ Add a new customer");
     // The server's sentence, quietly.
     await expect(form.getByTestId("doc-new-customer-done")).toHaveText(`You added ${NEW_BUYER} as a customer.`);
     // It is one of the companies on the books now: offered in the list and chosen when typed again.
-    await expect(form.locator(`datalist option[value="${NEW_BUYER}"]`)).toHaveCount(1);
+    await party.click();
+    await expect(form.getByTestId("doc-counterparty-list").getByRole("option", { name: NEW_BUYER })).toHaveCount(1);
+    await party.press("Escape");
     await party.fill("");
     await party.fill(NEW_BUYER);
-    await expect(form.getByTestId("doc-new-customer")).toHaveCount(0);
+    await expect(form.getByTestId("doc-new-customer")).toHaveText("+ Add a new customer");
     // Chosen: Upload and read opens the file picker instead of asking for the company.
     const chooser = page.waitForEvent("filechooser");
     await page.getByTestId("doc-upload").click();
@@ -122,13 +129,17 @@ test.describe("adding a customer on Attach deals", () => {
     await expect(party).toBeFocused();
     await expect(party).toHaveValue(NEW_BUYER);
     await expect(form.getByTestId("doc-new-customer")).toBeVisible();
+    await expect(party).toHaveAttribute("aria-expanded", "false");
     // Escape closes it too.
     await form.getByTestId("doc-new-customer").click();
     await expect(panel).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(panel).toHaveCount(0);
     // Nothing was added: the name is still not on the books.
-    await expect(form.locator(`datalist option[value="${NEW_BUYER}"]`)).toHaveCount(0);
+    await party.fill("");
+    await party.click();
+    await expect(form.getByTestId("doc-counterparty-list").getByRole("option", { name: FOSHAN })).toBeVisible();
+    await expect(form.getByTestId("doc-counterparty-list").getByRole("option", { name: NEW_BUYER })).toHaveCount(0);
   });
 
   test("a lender agreement keeps the plain hint: only a buyer is added here", async ({ page }) => {
@@ -195,7 +206,8 @@ test.describe("a contract filed under a company it does not name", () => {
     // The customer is on the books now: the upload form chooses it by name.
     const form = page.locator("#docs-read");
     await form.getByLabel("Who it is with").fill(NEW_BUYER);
-    await expect(form.getByTestId("doc-new-customer")).toHaveCount(0);
+    await expect(form.getByTestId("doc-new-customer")).toHaveText("+ Add a new customer");
+    await expect(form.getByLabel("Who it is with")).not.toHaveAttribute("aria-invalid", "true");
   });
 
   test("discard rejects the reading", async ({ page }) => {

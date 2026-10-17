@@ -666,7 +666,9 @@ function CompanyField({
         onChange={(e) => {
           onType(e.target.value);
           setActive(-1);
-          onOpen(true);
+          // A name typed in full is the company chosen: the list steps aside (it opens again on a click, ArrowDown or more typing).
+          const typedName = e.target.value.trim().toLowerCase();
+          onOpen(!options.some((c) => c.name.toLowerCase() === typedName));
         }}
         onFocus={() => {
           if (!quietFocus.current && !found) show();
