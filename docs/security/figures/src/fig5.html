@@ -1,23 +1,23 @@
 <!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css">
 <div class="fig" id="fig">
-<div class="row" style="gap:12px;align-items:stretch">
- <div class="col" style="width:260px"><div class="box unt" style="flex:1"><b>Inbound document</b><small>a buyer's message, a term sheet or an uploaded contract; may contain personal information (staff names, phone numbers, bank details)</small></div></div>
- <div class="arrow">→</div>
- <div class="col" style="flex:1">
-   <div class="box det"><b>Cache mode (default for the demo, tests and CI)</b><small>recorded readings or the local rules grammar · <b style="display:inline;font-size:15px;color:#0a6b5f">nothing leaves the machine</b></small></div>
-   <div class="bnd" style="margin-top:16px"><span class="lbl">Live mode (opt-in, LLM_MODE=live)</span>
-    <div class="row" style="gap:10px">
-     <div class="box det" style="flex:1"><b>Redaction</b><small>bank account and card numbers, phone numbers, emails, credit codes, ID and passport numbers, labelled addresses → placeholders such as ⟦PHONE_1⟧ (LLM_REDACT on by default)</small></div>
-     <div class="arrow">→</div>
-     <div class="box ext" style="flex:1"><b>Model provider</b><small>static instructions + output schema + redacted text; returns typed JSON with quotes</small></div>
-     <div class="arrow">→</div>
-     <div class="box det" style="flex:1"><b>Map back and ground</b><small>quotes mapped to the original text through an offset map; grounding, coverage and the cross-check run locally on the original</small></div>
-    </div>
-   </div>
- </div>
+<div class="box unt"><b>Inbound document</b><small>a buyer's message, term sheet or contract; it may hold personal data (names, phone numbers, bank details)</small></div>
+<div class="varrow" style="margin:4px 0">↓</div>
+
+<div class="box det" style="border-width:3px"><b>Cache mode (assessed, the default)</b><small>recorded readings or the local rules grammar. <b style="display:inline;font-size:19px;color:#0a6b5f">Nothing leaves the machine.</b></small></div>
+
+<div class="bnd" style="margin-top:28px">
+  <span class="lbl">Live mode (opt-in, not assessed)</span>
+  <div class="row" style="gap:6px">
+    <div class="box det" style="flex:1;min-width:0"><b>1 Redaction</b><small>on this machine</small><small style="margin-top:4px">accounts, phones, emails, credit codes, ID and passport numbers, labelled addresses become placeholders</small></div>
+    <div class="arrow" style="min-width:24px">→</div>
+    <div class="box ext" style="flex:1;min-width:0"><b>2 Model provider</b><small>gets instructions, schema and the redacted text only</small><small style="margin-top:4px">returns typed JSON with quotes</small></div>
+    <div class="arrow" style="min-width:24px">→</div>
+    <div class="box det" style="flex:1;min-width:0"><b>3 Map back</b><small>on this machine</small><small style="margin-top:4px">quotes mapped to the original; grounding and coverage run on the original</small></div>
+  </div>
 </div>
-<div class="row" style="margin-top:16px;gap:12px">
- <div class="box bad" style="flex:1"><b>Never sent to any model</b><small>the signed mandate · the books and cash · the reserve floor · facility limits and the funding menu · reservation values · other buyers' terms (import tests keep the compiler away from them)</small></div>
- <div class="box" style="flex:1.3;background:#fdf2d9;border-color:#ecd092"><b>Known limits (section 03)</b><small>every provider backend now redacts by default, however it is built (PRIV-1 to PRIV-3, fixed on a branch) · still pattern-based: person and company names, file names and chat ids are sent (PRIV-5), and bare 16-digit references can be taken for accounts (PRIV-4) · so live mode is not certified for real customer documents</small></div>
+
+<div class="row" style="margin-top:12px;gap:10px">
+ <div class="box bad" style="flex:1"><b>Never attached</b><small>FLOW never attaches the books, mandate, menu or other buyers' terms to a model request. A person can still type such figures into a message.</small></div>
+ <div class="box warn" style="flex:1"><b>Still passes (PRIV-4, PRIV-5)</b><small>names, company names, file names, WeChat and QQ ids, and some number formats. So live mode is outside the assessed scope.</small></div>
 </div>
 </div>

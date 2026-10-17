@@ -26,7 +26,7 @@ feed are simulated, and no real money moves.
 | Funding router | Optimal against an exhaustive brute force on 26/26 scenarios |
 | Safety | 0 wrong autonomous accepts on two held-out sets (115 buyer messages) |
 | Usefulness | Answers 57 of 115 held-out buyer messages with no owner involvement. Only 3 of the 14 genuinely acceptable offers are accepted on its own; the other 11 go to the owner for one review (section 03, Table 7) |
-| Security | 259 attacks through the API and chat, 0 caused harm. Certified by an independent Security Lead |
+| Security | 260 stored attack cases through the API and chat: 0 violations of the defined harm oracles in each specified run. Reviewed and certified by the team's Security Lead, an AI agent in a separate session (an internal review, not external accreditation) |
 | Agent tasks | 49/49 scripted conversations completed, each with a verifiable evidence chain |
 | Tests | 9,085 API tests (9,040 passed, 1 known machine-specific hash failure, the rest skipped by design), 169 web unit tests, 445 mock and 139 live browser tests |
 | Languages | Every screen and reply in English and Chinese. Chinese contracts are read with every term tied to its clause |
@@ -164,7 +164,8 @@ talk only through typed contracts in `app/domain/`, and import cycles are forbid
    autonomy rules, and returns a verdict. A rejection or counter comes with counters priced below the marginal cost.
 6. **Negotiate.** The buyer answers within a bounded number of rounds. NO DEAL is a normal outcome.
 7. **Execute.** Code, never the model, turns the verdict into typed operations. The executor runs Tier 1, queues Tier 2 for
-   the owner, refuses Tier 3, and appends every outcome to the hash-chained log.
+   the owner, refuses Tier 3, and appends every outcome of an admitted operation to the hash-chained log. A request refused
+   before it reaches the executor is recorded as a security event instead.
 
 <!-- figure: figures/fig2-offer-lifecycle.png | Figure 3. One buyer request from message to money. The figure marks which steps run on their own, which wait for the owner, and which are simulated in this build: the buyer's replies, the bank feed, the facilities and the clock. -->
 
@@ -207,7 +208,8 @@ The model never decides, prices, negotiates or executes.
 
 **What the model sees.**
 - **The document and the output schema, and nothing else.** The mandate, facility limits, buyers' limits and other buyers'
-  terms never enter a prompt, and a test on the compiler's imports keeps it that way.
+  terms are never attached to a model request, and a test on the compiler's imports keeps it that way. A person can still
+  paste such figures into a message.
 - **Identifying data is redacted first, by every provider backend (PRIV-1 to 3).** Bank and card numbers, phone numbers,
   email addresses, unified social credit codes, ID and passport numbers, and labelled street addresses are replaced with
   stable placeholders before the text leaves the process. Amounts, dates, rates, party names and clauses are kept, because
@@ -255,7 +257,7 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
   - Three demo contracts in Markdown, Word and PDF.
   - 70 synthetic Chinese contracts in four formats for the contract-reading evaluation, kept outside the repository.
   - Alternative books: busy, short of facilities, blank, and a set calibrated from a public filing.
-- **Test suites.** The 259-attack catalogue and the 49 scripted agent tasks.
+- **Test suites.** The 260-case attack catalogue and the 49 scripted agent tasks.
 
 **Table 5. The demo company's funding options (synthetic; only the owner can add to them).**
 
@@ -616,7 +618,8 @@ even if the database row is reset (SEC-08).
 The owner cannot waive a hard rule by approving.
 
 **The record.**
-- **Every outcome is appended to a hash-chained log,** refusals included: `entry_hash = sha256(prev_hash + payload + result)`.
+- **Every outcome of an operation admitted to the executor is appended to a hash-chained log,** refusals and duplicates
+  included: `entry_hash = sha256(prev_hash + payload + result)`. Requests refused earlier are kept as security events.
 - **The database itself refuses to edit or delete history** (migrations 0003 and 0009):
   - the log, nonces and security events are append-only;
   - approvals can be decided only once;
@@ -625,7 +628,9 @@ The owner cannot waive a hard rule by approving.
 - **The chain is internally checkable only.** Its head is not anchored outside the system.
 
 **Rollback.** History is never edited. A mistake is corrected by a logged compensating operation: repay a draw, settle an
-advance, revoke a commitment, decline a queued request or revoke the mandate. A refused or pending operation changes nothing.
+advance, revoke a commitment, decline a queued request or revoke the mandate. A refused or pending operation changes nothing. Each operation is atomic; a plan of
+several steps is not, so a plan refused part-way keeps its earlier steps and the owner is told which step it stopped at
+(SEC-28).
 
 ### Protection against prompt injection, privilege escalation and privacy leakage
 
@@ -663,7 +668,7 @@ advance, revoke a commitment, decline a queued request or revoke the mandate. A 
   - backdated operations.
 - **Unknown fields are rejected.**
 - **Rate limits apply to every caller (SEC-20).** A burst is refused with 429 and a retry time.
-- **All 100 routes were checked** by the independent Security Lead with every kind of caller, with demo mode on, off and
+- **All 100 routes are tested** by a route-policy test that calls every method and route as every kind of caller, with demo mode on, off and
   unset.
 
 **Privacy leakage.**
@@ -686,30 +691,35 @@ advance, revoke a commitment, decline a queued request or revoke the mandate. A 
 - **Not advice.** FLOW is decision support inside an owner-signed mandate, not a licensed lender, broker or adviser, and it
   makes no real payment.
 
-<!-- figure: figures/fig7-security-results.png | Figure 8. The attack catalogue: 259 attacks through the API and chat, by class. None caused harm. 98.4% of the API attacks raised a security event or a refusal code. -->
+<!-- figure: figures/fig7-security-results.png | Figure 8. The attack catalogue: 260 stored cases through the API and chat, by class. None violated the defined harm oracles. Every case reached the path it targets; of the 127 API cases, 119 were stopped by the control they name and 8 by another control. -->
 
-**Table 12. Attack results (126 API attacks with the deployment's credentials and demo mode off; 133 more through chat).**
+**Table 12. Attack results (260 stored cases: 127 through the API, 133 through chat; each in a fresh in-memory runtime, offline, with recorded or scripted model answers).**
 
 | Measure | Result |
 | --- | --- |
+| Harm-oracle violations, in each specified run | 0 of 260 |
 | Unauthorised operations executed / money moved by attacks | 0 / ¥0.00 |
 | Facilities added by non-owners; concessions booked from unproven claims | 0; 0 |
 | Integrity failures (partial write, double execution, erased log) | 0 |
 | Protected values disclosed in outbound text or readable without the owner token | 0 |
-| Success rate: injection / exfiltration / escalation / replay | 0% of 42 / 22 / 21 / 21 |
-| Detected (security event or refusal code), API attacks | 98.4% (124 of 126). The other 2 were queued for the owner, as designed |
-| Detected, all 259 | 81.1%. Most of the rest are the owner's own negated or conditional chat instructions, where the right result is that nothing runs |
+| Cases that reached the path they target | 260 of 260. A case that never reaches its path no longer counts as defended |
+| API cases stopped by the control they name | 119 of 127. The other 8 were stopped by another control, with no harm (known gaps, SEC-34, each pinned by a test) |
 
-**Independent assurance.**
-- **Independent audit and red team (1 to 3 Oct).** An independent audit and five red-team rounds found 39 issues. All are
-  fixed, each with a regression test.
-- **External red team (16 Oct).** An external red team ran 17 tests, including 100 live model calls.
-- **Security Lead (14 to 17 Oct).** An independent Security Lead reproduced every finding and had the clear-cut ones fixed with
-  regression tests. They certified each build that landed, most recently `719c9dcf`, and the later fixes are in their queue.
-- **Assessment.**
-  - The local simulation is a GO.
-  - A network demo is a conditional GO.
-  - Production is NO-GO, because of the items in section 05.
+This is a test result within a scope, not proof that no exploitable path exists. The catalogue drives part of the 100 routes;
+a separate route-policy test calls every route as every kind of caller. No running deployment has had a penetration test.
+
+**Assurance.** Every review was AI-assisted; none was external professional assurance.
+- **A separate audit and five red-team rounds by AI subagents (1 to 3 Oct)** found 39 issues. All are fixed, each with a
+  regression test.
+- **An external red-team run (16 Oct)** ran 17 tests, including 100 live model calls. Its results are its own; they were not
+  re-run, and its five observations were re-checked on the code.
+- **The Security Lead (14 to 17 Oct)** is an AI agent in a separate session and worktree. It reproduced every finding, wrote each
+  fix on its own branch with a regression test, re-ran its checks on each merged commit and certified it. It also wrote the
+  security fixes it certified. "Certified" here is an internal release decision, not accreditation.
+- **Verdicts (Security Self-Assessment v3).**
+  - Local simulation on loopback: GO.
+  - A demo over a network: NO-GO until a tested deployment profile exists; we demonstrate the local configuration.
+  - Production with real customers, documents or money: NO-GO, because of the items in section 05.
 
 The full register is in the Security Self-Assessment, which uses the same build and figures.
 
@@ -744,7 +754,7 @@ Attach deals, Cash & funding, Capex & purchases, Receivables and Activity.
 **Check the evidence without the UI.**
 
 ```
-uv run --project services/api python scripts/judge_eval.py     # 2 to 4 min: 49 tasks, 259 attacks, the demo walk, the chain check
+uv run --project services/api python scripts/judge_eval.py     # 2 to 4 min: 49 tasks, 260 attack cases, the demo walk, the chain check
 uv run --project services/api python scripts/evaluate.py       # about 8 min: the full offline evaluation
 ```
 
@@ -766,7 +776,7 @@ These are open production blockers. The supported way to run FLOW is the local l
 | API tests | `uv run pytest` (services/api) | 9,085 collected; 9,040 passed; 1 known failure (#161, a hash that differs by machine); the rest skipped by design |
 | Web tests | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` (apps/web) | clean; 169 passed |
 | Browser tests | `pnpm exec playwright test` (mock and live projects) | mock 445 passed, 0 failed; live 139 passed, with 2 known write-conflict retry failures (#157) |
-| Attacks | `uv run python -m app.security.attacks --report` | 259 attacks, 0 with harm |
+| Attacks | `uv run python -m app.security.attacks --report` (round four, 17 Oct) | 260 cases, 0 harm-oracle violations; 260 of 260 reached their path |
 | Agent tasks | `scripts/run_scenarios.py --inproc` | 49/49; all evidence chains verify |
 | Offline evaluation | `scripts/evaluate.py` (7 min 41 s, including the funding brute force) | every target met; figures in Tables 9 and 6 |
 | Autonomy funnel | `scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2` | Table 7 |
@@ -820,6 +830,11 @@ These are open production blockers. The supported way to run FLOW is the local l
 - **One worker process only** until PostgreSQL is proven in CI (SEC-11).
 - **Single-operator key custody** (R-2).
 - **The hash-chain head is not anchored outside the system.**
+- **No tested network deployment profile** (TLS proxy, per-client limits, changed credentials and signing key), so a
+  network demo is NO-GO.
+- **Open security risks:** the Tier-1 reach of a compromised agent (R-3), the trusted in-process actor (R-5), and two
+  medium chat items: threshold probing by a buyer with its key (S5) and the agent key reading status and alerts through
+  chat (S9).
 
 #### Appendix A. Metric definitions
 

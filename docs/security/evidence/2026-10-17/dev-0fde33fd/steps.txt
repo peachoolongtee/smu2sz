@@ -1,0 +1,27 @@
+regressions exit=0 22 passed in 12.81s
+tests/operations exit=0 412 passed, 1 skipped in 171.09s (0:02:51)
+tests/verifier exit=0 263 passed in 112.59s (0:01:52)
+tests/security exit=0 305 passed in 97.58s (0:01:37)
+tests/persistence exit=0 161 passed, 1 skipped in 49.06s
+sweep demo exit=0
+sweep prod exit=0
+sweep unset exit=0
+r3 exit=1
+r4_bounded exit=0
+repro1 exit=1
+repro2 exit=0
+repro3 exit=1
+approval_flip exit=1
+r_nl exit=0
+r_paths exit=0
+r_edge exit=0
+attacks exit=0
+issue161 exit=1 1 failed, 32 passed in 21.37s
+pg concurrency 1: 31 passed in 12.69s postgres-passed=10
+pg concurrency 2: 31 passed in 11.77s postgres-passed=10
+pg concurrency 3: 31 passed in 11.58s postgres-passed=10
+pg guards: 10 passed in 41.06s
+pnpm audit --prod exit=0
+pnpm audit all exit=1
+pip-audit exit=1
+ALL DONE
