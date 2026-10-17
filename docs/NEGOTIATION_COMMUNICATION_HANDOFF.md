@@ -279,7 +279,7 @@ The lifecycle, with the code that owns each step:
 | GET /approvals/queue, POST /approvals/{id} | `operations.py:188`, `:328` | O (the executor refuses an AGENT approval) | → queue; `{decision}` → result | `executor.decide` | `tests/operations/test_approvals_and_circuit.py`, `tests/api/test_approval_*.py` | — |
 | POST /commitments/{id}/revoke | `operations.py:370` | O | → result | revoke, log | `tests/api/test_slice_b_round_three.py` | thin coverage |
 | POST /nl, /nl/opener, /nl/reset | `nl.py:120`, `:186`, `:170` | O, A, buyer (key or none) | `NlRequest` → turn | may execute (section 3.5) | `tests/nl/*`, `tests/api/test_chat_scope.py`, `tests/security/test_nl_attacks.py` | SEC-21 sessions; R-10, R-11 |
-| POST /nl/session/reset | `nl.py` (`post_nl_session_reset`) | O (any), A or buyer key (own session only) | `{session_id, lang?}` → `{ended, message}` | ends one session; the id is never continued | `tests/api/test_nl_session_reset.py`, `e2e/chat.spec.ts` | SEC-21 |
+| POST /nl/session/reset | `nl.py` (`post_nl_session_reset`) | O (any); A, buyer key or none (own principal's session only) | `{session_id, lang?}` → `{ended, message}` | ends one session; the id is never continued | `tests/api/test_nl_session_reset.py`, `e2e/chat.spec.ts` | SEC-21 |
 | GET /activity, /audit | `activity.py:282`, `read.py:224` | O | → rows | — | `tests/api/test_activity_read.py` | chain not anchored (R-13) |
 | GET /deals, /worklist, /customers | `deals.py:39`, `worklist.py:886`, `:894` | O | → queue | — | `tests/api/test_deals_queue.py`, `test_worklist.py` | — |
 | GET /receivables/{id}/chase | `app/api/collections.py` (**route line UNKNOWN**; grep `chase`) | O | → a copyable payment request | — | receivables tests | the copy pattern |

@@ -1,6 +1,6 @@
 """A reset starts a fresh Ask FLOW conversation (owner report, 17 Oct): "New conversation" ends the session on the server
 (`POST /nl/session/reset`), and a demo reset ends every session. After either, a "go ahead" that meant the old plan runs nothing
-and says so. Only the owner, or the caller that opened a session, may end it (SEC-21)."""
+and says so. Only the owner, or a caller of the principal that opened a session, may end it (SEC-21)."""
 
 from __future__ import annotations
 
@@ -88,11 +88,19 @@ def test_the_message_is_the_servers_in_both_languages(c):
     assert zh["ended"] is True and zh["message"].startswith("本次对话已结束")
 
 
-def test_a_caller_without_a_credential_cannot_end_a_session(c):
+def test_a_caller_without_a_credential_ends_only_an_anonymous_session(c):
+    """Open like POST /nl's buyer channel: no credential is the anonymous principal, which ends nothing of the owner's (the same answer as
+    for a session that does not exist), and ends an anonymous sender's session, which any anonymous sender could already continue."""
     pending(c, "web-anon")
-    r = c.post("/nl/session/reset", json={"session_id": "web-anon"})
-    assert r.status_code == 401
+    for headers in ({}, {"X-Owner-Token": "not-the-token"}, {"X-Counterparty-Key": "not-a-key"}):
+        r = c.post("/nl/session/reset", headers=headers, json={"session_id": "web-anon"})
+        assert r.status_code == 200 and r.json()["ended"] is False
     assert SESSIONS.get("web-anon").pending_plan is not None
+
+    c.post("/nl", json={"actor": "COUNTERPARTY", "counterparty_id": "FASTCAPITAL", "session_id": "anon-chat", "text": "hello"})
+    assert SESSIONS.get("anon-chat") is not None
+    assert c.post("/nl/session/reset", headers=B1, json={"session_id": "anon-chat"}).json()["ended"] is False  # a keyed buyer is not anon
+    assert c.post("/nl/session/reset", json={"session_id": "anon-chat"}).json()["ended"] is True
 
 
 def test_the_agent_cannot_end_the_owners_session_but_can_end_its_own(c):

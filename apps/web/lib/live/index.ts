@@ -300,8 +300,8 @@ export const live = {
    * goes), a buyer's with its demo channel key; silent, so a refusal never opens the sign-in dialog. */
   endNlSession: async (sessionId: string, actor: NlRequest["actor"], counterpartyId?: string, token?: string | null): Promise<void> => {
     const buyer = actor === "COUNTERPARTY";
+    // A buyer without a demo key (FastCapital) speaks anonymously, and ends its anonymous session the same way.
     const buyerKey = buyer ? DEMO_BUYER_KEYS[counterpartyId ?? ""] : undefined;
-    if (buyer && !buyerKey) return; // an unkeyed buyer's session holds only proposals; only the owner and the expiry end it
     await http("POST", "/nl/session/reset", {
       body: { session_id: sessionId },
       auth: buyer ? "none" : "owner",

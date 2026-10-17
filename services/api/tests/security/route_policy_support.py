@@ -37,7 +37,8 @@ Key = tuple[str, str]  # (METHOD, path template)
 
 PUBLIC: set[Key] = {("GET", "/health"), ("GET", "/clock"), ("GET", "/fixtures/offers")}
 DOCS: set[Key] = {("GET", "/docs"), ("GET", "/redoc"), ("GET", "/openapi.json"), ("GET", "/docs/oauth2-redirect")}  # public, demo mode only
-BUYER: set[Key] = {("POST", "/offers"), ("POST", "/nl")}  # open by design: a buyer's own channel, anonymous allowed (proposal only)
+BUYER: set[Key] = {("POST", "/offers"), ("POST", "/nl"),  # open by design: a buyer's own channel, anonymous allowed (proposal only)
+                   ("POST", "/nl/session/reset")}  # "New conversation": open as POST /nl; a caller ends only a session of its own principal
 AGENT: set[Key] = {("POST", "/operations"), ("POST", "/approvals/{approval_id}"), ("POST", "/circuit/{counterparty_id}/reset")}
 OWNER_SIDE: set[Key] = {("POST", "/clock/advance"), ("POST", "/nl/reset"), ("POST", "/nl/opener")}  # no dependency; the handler answers 403
 DEMO_SETUP: set[Key] = {
@@ -460,6 +461,7 @@ PLAN[("POST", "/approvals/{approval_id}")] = _post_ids("/approvals/{approval_id}
 PLAN[("POST", "/circuit/{counterparty_id}/reset")] = _post("/circuit/BUYER-1/reset")
 PLAN[("POST", "/clock/advance")] = _post("/clock/advance", {"days": 1})
 PLAN[("POST", "/nl/reset")] = _post("/nl/reset")
+PLAN[("POST", "/nl/session/reset")] = _post("/nl/session/reset", {"session_id": "policy-chat", "lang": "en"})
 PLAN[("POST", "/nl/opener")] = _post("/nl/opener", {"lang": "en"})
 
 # the owner's reads and writes that need a real id of one kind

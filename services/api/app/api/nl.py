@@ -212,8 +212,10 @@ def post_nl_session_reset(body: SessionResetRequest, x_owner_token: str | None =
                           x_counterparty_key: str | None = Header(default=None)) -> dict:
     """"New conversation": end one chat session. The server forgets its last offer and verdict, its pending plan and clarification,
     the approvals it showed and its replayed requests, and never continues that id again: a later "go ahead" in it runs nothing.
-    The owner may end any session; the agent key, or a buyer's channel key, only a session that same caller opened (SEC-21). A
-    session that does not exist and one that belongs to someone else get the same answer (`ended: false`) and the latter is kept."""
+    It is open like the buyer channel of POST /nl, and bound the same way (SEC-21): the owner may end any session; any other caller
+    only a session opened by the same principal as POST /nl names it (the agent key "agent", a buyer's channel key that buyer, no
+    valid credential "anon", which ends only an anonymous session, one any anonymous sender could already continue). A session that
+    does not exist and one that belongs to someone else get the same answer (`ended: false`), and the latter is kept."""
     rt = get_runtime()
     if rt.is_owner(x_owner_token):
         principal: str | None = None
@@ -222,8 +224,7 @@ def post_nl_session_reset(body: SessionResetRequest, x_owner_token: str | None =
     elif (bound := counterparty_for_key(x_counterparty_key)) is not None:
         principal = f"buyer:{bound}"
     else:
-        raise HTTPException(401, {"code": "CREDENTIAL_REQUIRED",
-                                  "message": "owner token, agent key or a counterparty channel key required"})
+        principal = "anon"
     with rt.lock:  # after any turn in flight, so the turn cannot put the plan back into the session it ended
         ended = SESSIONS.end(body.session_id, principal)
     return {"ok": True, "ended": ended, "message": SESSION_ENDED[body.lang or "en"]}
