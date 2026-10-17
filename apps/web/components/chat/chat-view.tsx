@@ -236,15 +236,17 @@ function Suggestions({ prompts, disabled, compact, role }: { prompts: Prompt[]; 
 }
 
 /** The Ask FLOW page's empty state: the greeting and four questions as cards (a title and one line), then the composer below. */
-function Welcome({ prompts, disabled, role }: { prompts: Prompt[]; disabled: boolean; role: NlActor }) {
+function Welcome({ prompts, disabled, role, children }: { prompts: Prompt[]; disabled: boolean; role: NlActor; children?: React.ReactNode }) {
   const { t } = useI18n();
   return (
-    <div className="flex flex-col items-center gap-6 py-6 text-center sm:py-10" data-testid="ask-welcome">
+    <div className="flex flex-col items-center gap-6 py-4 text-center sm:py-8" data-testid="ask-welcome">
       <FlowMark size="md" />
       <div className="space-y-1.5">
         <h2 className="font-display text-2xl font-bold tracking-[-0.02em] text-f-ink sm:text-[28px]">{t("ask.greeting")}</h2>
         <p className="mx-auto max-w-[46ch] text-pretty text-sm text-ink-3">{t("ask.greeting.sub")}</p>
       </div>
+      {/* FLOW's opener, when something needs the owner, before the questions. */}
+      {children ? <div className="w-full space-y-5 text-left">{children}</div> : null}
       <ul className="grid w-full gap-3 text-left sm:grid-cols-2" aria-label={t("ask.suggestions")}>
         {prompts.map((p) => (
           <li key={p.id} className="min-w-0">
@@ -317,7 +319,37 @@ function ChatViewInner({ variant }: { variant: ChatVariant }) {
   }, [conv.messages.length, conv.busy]);
 
   const who = role === "OWNER" ? t("chat.you") : t("chat.youBuyer", { who: chat.counterpartyId });
-  const welcome = variant === "full" && empty && !conv.busy;
+  // The Ask FLOW page greets until the owner has asked something: FLOW's opener (if it spoke) sits under the greeting, above the four questions.
+  const welcome = variant === "full" && !conv.messages.some((m) => m.from !== "assistant");
+  const transcript = conv.messages.map((m: ChatMessage) => (
+    <div key={m.id} ref={m === last ? lastRef : undefined}>
+      {m.from === "assistant" ? (
+        <AssistantTurn response={m.response} active={m === last && !m.restored} busy={conv.busy} restored={m.restored} onSend={(text, display) => void sendMessage(text, display, role)} />
+      ) : m.from === "user" ? (
+        <UserBubble who={who}>
+          <p className="whitespace-pre-wrap break-words">{m.text}</p>
+        </UserBubble>
+      ) : (
+        <ErrorBubble title={t("chat.err.title")}>
+          <div role="alert">
+            <p className="break-words">{m.text}</p>
+            {m === last ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {m.status === 401 ? (
+                  <Button size="sm" variant="secondary" onClick={() => requestSignIn("required")}>
+                    {t("auth.signin")}
+                  </Button>
+                ) : null}
+                <Button size="sm" variant="secondary" disabled={conv.busy} onClick={() => void retryLast(role)} data-testid="chat-retry">
+                  {t("common.retry")}
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </ErrorBubble>
+      )}
+    </div>
+  ));
   // The chips sit above the box while the conversation is empty or the box is (a half-typed question is not crowded by them); the Ask FLOW page's empty state shows its cards instead.
   const showChips = !welcome && (empty || draft.trim() === "");
 
@@ -386,7 +418,10 @@ function ChatViewInner({ variant }: { variant: ChatVariant }) {
         }`}
       >
         {welcome ? (
-          <Welcome prompts={prompts} disabled={conv.busy} role={role} />
+          <Welcome prompts={prompts} disabled={conv.busy} role={role}>
+            {transcript}
+            {conv.busy ? <Typing /> : null}
+          </Welcome>
         ) : empty && !conv.busy ? (
           <div className="flex flex-col items-start gap-2 px-1 py-4" data-testid="chat-empty">
             <div className="flex items-center gap-2.5">
@@ -396,37 +431,9 @@ function ChatViewInner({ variant }: { variant: ChatVariant }) {
             <p className="pl-[38px] text-sm text-ink-3">{role === "OWNER" ? t(business ? "chat.empty.business" : "chat.empty.owner") : t("chat.empty.buyer")}</p>
           </div>
         ) : (
-          conv.messages.map((m: ChatMessage) => (
-            <div key={m.id} ref={m === last ? lastRef : undefined}>
-              {m.from === "assistant" ? (
-                <AssistantTurn response={m.response} active={m === last && !m.restored} busy={conv.busy} restored={m.restored} onSend={(text, display) => void sendMessage(text, display, role)} />
-              ) : m.from === "user" ? (
-                <UserBubble who={who}>
-                  <p className="whitespace-pre-wrap break-words">{m.text}</p>
-                </UserBubble>
-              ) : (
-                <ErrorBubble title={t("chat.err.title")}>
-                  <div role="alert">
-                    <p className="break-words">{m.text}</p>
-                    {m === last ? (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {m.status === 401 ? (
-                          <Button size="sm" variant="secondary" onClick={() => requestSignIn("required")}>
-                            {t("auth.signin")}
-                          </Button>
-                        ) : null}
-                        <Button size="sm" variant="secondary" disabled={conv.busy} onClick={() => void retryLast(role)} data-testid="chat-retry">
-                          {t("common.retry")}
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
-                </ErrorBubble>
-              )}
-            </div>
-          ))
+          transcript
         )}
-        {conv.busy ? <Typing /> : null}
+        {conv.busy && !welcome ? <Typing /> : null}
       </div>
 
       {signedOut ? (

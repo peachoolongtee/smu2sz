@@ -29,6 +29,22 @@ function Tiles({ figures }: { figures: NlCardFigure[] }) {
 }
 
 /**
+ * A link to a section of the page already open changes only the hash, which a client navigation does not announce: once the address is the
+ * link's, say so, so the section lands (components/hash-lander.tsx opens and scrolls to it). Gives up after two seconds.
+ */
+function announceWhenAt(href: string): void {
+  const want = new URL(href, window.location.href);
+  if (!want.hash) return;
+  let tries = 0;
+  const tick = () => {
+    const here = window.location;
+    if (here.pathname === want.pathname && here.search === want.search && here.hash === want.hash) window.dispatchEvent(new Event("hashchange"));
+    else if (tries++ < 40) window.setTimeout(tick, 50);
+  };
+  window.setTimeout(tick, 0);
+}
+
+/**
  * The links under an answer, as chips: each opens the page that shows what it names (the server's label and href). A link only: it never
  * approves, sends or runs anything. Opening one closes the side panel so the page is seen.
  */
@@ -45,8 +61,7 @@ export function ActionChips({ actions }: { actions: NlCardAction[] }) {
               href={a.href}
               onClick={() => {
                 setPanelOpen(false);
-                // A link to a section of the page already open changes only the hash, which a client navigation does not announce: say it, so the section lands (components/hash-lander.tsx).
-                window.setTimeout(() => window.dispatchEvent(new Event("hashchange")), 60);
+                announceWhenAt(a.href);
               }}
               className="motion-press inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-pill border border-[color-mix(in_srgb,var(--color-f-purple)_45%,var(--color-f-line))] bg-card px-3.5 text-meta font-semibold text-f-purple-ink hover:bg-f-purple-soft touch:min-h-11"
               data-testid="card-action"
