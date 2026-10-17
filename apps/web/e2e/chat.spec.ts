@@ -568,7 +568,9 @@ test("New conversation on the Business shell clears the owner's conversation, wh
   const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   await panel.getByRole("textbox", { name: "Message" }).fill("status");
   await panel.getByTestId("chat-send").click();
-  await expect(panel.getByTestId("chat-turn")).toHaveCount(1);
+  // The answer to "status" (FLOW's opener may also sit before it: the owner is never blocked while it is read)
+  await expect(panel.getByTestId("chat-busy")).toHaveCount(0);
+  await expect.poll(() => panel.getByTestId("chat-turn").count()).toBeGreaterThanOrEqual(1);
   await panel.getByTestId("chat-new").click();
   await expect(panel.getByTestId("chat-turn")).toHaveCount(0);
   expect(await ownerSession(page)).toBeNull();

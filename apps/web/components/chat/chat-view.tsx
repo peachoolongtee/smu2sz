@@ -420,7 +420,7 @@ function ChatViewInner({ variant }: { variant: ChatVariant }) {
         {welcome ? (
           <Welcome prompts={prompts} disabled={conv.busy} role={role}>
             {transcript}
-            {conv.busy ? <Typing /> : null}
+            {conv.busy || conv.opening ? <Typing /> : null}
           </Welcome>
         ) : empty && !conv.busy ? (
           <div className="flex flex-col items-start gap-2 px-1 py-4" data-testid="chat-empty">
@@ -433,7 +433,7 @@ function ChatViewInner({ variant }: { variant: ChatVariant }) {
         ) : (
           transcript
         )}
-        {conv.busy && !welcome ? <Typing /> : null}
+        {(conv.busy || conv.opening) && !welcome ? <Typing /> : null}
       </div>
 
       {signedOut ? (

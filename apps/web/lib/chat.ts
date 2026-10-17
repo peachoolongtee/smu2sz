@@ -43,6 +43,8 @@ interface Conversation {
   generation: number;
   /** FLOW's opener (POST /nl/opener) was asked for this conversation: it is asked once per conversation, never twice. */
   openerTried?: boolean;
+  /** The opener is being asked. Never blocks the owner: a question sent meanwhile goes at once, and the opener's late answer is then dropped. */
+  opening?: boolean;
 }
 
 interface ChatState {
@@ -286,23 +288,26 @@ export function setPanelOpen(panelOpen: boolean): void {
  * and, if something needs the owner (`has_news`), show its answer as FLOW's first message (its pending cure waits in the same session for
  * "go ahead", exactly as before). Nothing needs the owner, a failure, or a conversation that started meanwhile: nothing is shown and the
  * empty state stays. Never for a buyer, never signed out (the opener is owner only), never twice in one conversation; "New conversation"
- * starts a fresh one, where it may run again. While it is asked the conversation is busy, so a question typed meanwhile waits behind it.
+ * starts a fresh one, where it may run again. While it is asked the owner can still send: their question goes at once, and the opener (if it
+ * had news) is placed first in the conversation when it arrives.
  */
 export async function startOpener(lang: "en" | "zh"): Promise<void> {
   const conv = store.get().convs.OWNER;
   if (conv.openerTried || conv.busy || conv.messages.length > 0 || !getOwnerToken()) return;
   const sessionId = conv.sessionId ?? newSessionId();
   const generation = conv.generation;
-  patchConv("OWNER", (c) => ({ ...c, sessionId, openerTried: true, busy: true }));
+  patchConv("OWNER", (c) => ({ ...c, sessionId, openerTried: true, opening: true }));
   try {
     const r = await nlOpener(sessionId, lang);
-    patchConv("OWNER", (c) =>
-      c.generation !== generation
-        ? c
-        : { ...c, busy: false, sessionId: r.session_id, messages: r.has_news && c.messages.length === 0 ? [{ id: uid("a"), from: "assistant", response: r }] : c.messages },
-    );
+    patchConv("OWNER", (c) => {
+      if (c.generation !== generation) return c;
+      // The owner asked something while the opener was being read: FLOW's opener, if it had news, still comes first in the
+      // conversation (it is what FLOW would have said on opening); its buttons are no longer the active turn.
+      if (c.messages.length > 0) return { ...c, opening: false, messages: r.has_news ? [{ id: uid("a"), from: "assistant", response: r }, ...c.messages] : c.messages };
+      return { ...c, opening: false, sessionId: r.session_id, messages: r.has_news ? [{ id: uid("a"), from: "assistant", response: r }] : c.messages };
+    });
   } catch {
-    patchConv("OWNER", (c) => (c.generation !== generation ? c : { ...c, busy: false }));
+    patchConv("OWNER", (c) => (c.generation !== generation ? c : { ...c, opening: false }));
   }
 }
 
