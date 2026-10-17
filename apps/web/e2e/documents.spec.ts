@@ -20,13 +20,32 @@ test.beforeEach(async ({ request }) => {
   await resetBooks(request);
 });
 
-/** Reads a demo document again: a new reading (DOC-000004 on fresh demo books), waiting for the owner. */
-async function readAgain(page: Page, fixtureId: string, format?: "md" | "docx" | "pdf") {
+/** Each demo document's file (fixtures/contracts/<name>.<format>), what it is (its place in "What it is") and the company it is with. */
+const FILES: Record<string, { name: string; lender: boolean; party: string }> = {
+  [SUPPLY]: { name: "fhr-2026-07-supply-agreement", lender: false, party: "Foshan Home Retail Co." },
+  [LINE]: { name: "mb-cl-2026-031-credit-line-agreement", lender: true, party: "Main bank" },
+  [INVOICE_FINANCING]: { name: "gbr-if-2026-118-invoice-financing-agreement", lender: true, party: "Invoice financing platform" },
+};
+
+/**
+ * Reads a demo document again, as the owner does on Attach deals (no samples on the page): say what it is and who it is with, then upload
+ * its file. A new reading (DOC-000004 on fresh demo books), waiting for the owner. The mock reads the Markdown copy (the same text as its
+ * recording); the live server reads any copy. The controls are found by test id, so this works in either language.
+ */
+async function readAgain(page: Page, fixtureId: string, format: "md" | "docx" | "pdf" = "md") {
   await page.goto("/documents");
-  const row = page.getByTestId(`fixture-${fixtureId}`);
-  // One copy chooser for the samples row (Markdown unless another is chosen).
-  if (format) await page.getByTestId("doc-samples").getByLabel("Format").selectOption(format);
-  await row.getByTestId(`fixture-read-${fixtureId}`).click();
+  const file = FILES[fixtureId];
+  if (file.lender) {
+    await page.getByTestId("doc-kind").click();
+    await page.getByTestId("doc-kind-list").getByRole("option").nth(1).click();
+  }
+  const party = page.getByTestId("doc-counterparty");
+  await party.fill(file.party);
+  // The name is matched against the books once they are read: until then it is not a company on them, and Upload says so instead.
+  await expect(party).not.toHaveAttribute("aria-invalid", "true");
+  const chooser = page.waitForEvent("filechooser");
+  await page.getByTestId("doc-upload").click();
+  await (await chooser).setFiles(join(__dirname, "..", "..", "..", "fixtures", "contracts", `${file.name}.${format}`));
   await expect(page).toHaveURL(/\/documents\?id=DOC-000004$/);
   const review = page.getByTestId("doc-review");
   await expect(review).toHaveAttribute("data-status", "PROPOSED");
@@ -116,7 +135,8 @@ test("the documents: the three demo documents confirmed, each term of the supply
   for (const id of ["DOC-000001", "DOC-000002", "DOC-000003"]) {
     await expect(page.getByTestId(`doc-row-${id}`)).toHaveAttribute("data-status", "CONFIRMED");
   }
-  await page.getByTestId(`fixture-open-${SUPPLY}`).click();
+  // The supply agreement opens from its row in the list (Attach deals has no samples panel).
+  await page.getByTestId("doc-row-DOC-000001").click();
   await expect(page).toHaveURL(/\/documents\?id=DOC-000001$/);
   const review = page.getByTestId("doc-review");
   await expect(review).toHaveAttribute("data-status", "CONFIRMED");
@@ -178,7 +198,10 @@ test("the confirm flow: a new reading is labelled AI-generated until the owner c
   const outcome = page.getByTestId("doc-outcome");
   await expect(outcome).toBeInViewport();
   await expect(page.getByTestId("doc-outcome-title")).toHaveText("Filed under Foshan Home Retail Co.");
-  await expect(page.getByTestId("doc-outcome-changed")).toContainText("The supply agreement is now the contract on file for Foshan Home Retail Co. It replaces the contract you confirmed today.");
+  // The mock serves the recorded reading (titled "Supply agreement"); the live server names an untitled upload "this contract".
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText(
+    /(The supply agreement is now the contract|This contract is now the one) on file for Foshan Home Retail Co\. It replaces the contract you confirmed today\./,
+  );
   await expect(page.getByTestId("doc-outcome-changed")).toContainText("deal summary now reads from this contract");
   await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("Your books and forecast are unchanged.");
   await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("New requests from Foshan Home Retail Co. are still checked against your books and your limits, not against this contract.");
@@ -207,8 +230,9 @@ test("the confirm flow: a new reading is labelled AI-generated until the owner c
   await expect(page).toHaveURL(/\/documents/);
 });
 
-test("a lender agreement (the PDF copy) is compared with the facility on the books and linked when confirmed", async ({ page }) => {
-  const review = await readAgain(page, INVOICE_FINANCING, "pdf");
+test("a lender agreement (the PDF copy) is compared with the facility on the books and linked when confirmed", async ({ page }, testInfo) => {
+  // The live server reads the PDF; the mock reads only text in the browser, so it uploads the Markdown copy (the same text).
+  const review = await readAgain(page, INVOICE_FINANCING, testInfo.project.name === "live" ? "pdf" : "md");
   await expect(review).toHaveAttribute("data-kind", "LENDER_AGREEMENT");
   await expect(review.getByTestId("doc-ai-label")).toHaveText("AI-generated, for reference");
   await expect(page.getByTestId("doc-terms")).toContainText("Advance rate");
@@ -256,7 +280,7 @@ test("reject: a new reading is set aside and logged; the agreement already confi
   // The outcome card: nothing saved, nothing uses it, and where it stays; no link, since nothing was filed anywhere.
   await expect(page.getByTestId("doc-outcome")).toHaveAttribute("data-tone", "mute");
   await expect(page.getByTestId("doc-outcome-title")).toHaveText("Rejected: nothing was saved from it");
-  await expect(page.getByTestId("doc-outcome-changed")).toContainText("You rejected FLOW's reading of the credit line agreement. Nothing from it is recorded");
+  await expect(page.getByTestId("doc-outcome-changed")).toContainText(/You rejected FLOW's reading of the (credit line|lender) agreement\. Nothing from it is recorded for Main bank\./);
   await expect(page.getByTestId("doc-outcome-unchanged")).toContainText("Your books and forecast are unchanged. Your funding does not use it.");
   await expect(page.getByTestId("doc-outcome-link")).toHaveCount(0);
   await expect(page.getByTestId("doc-decided")).toContainText("Nothing from this document was recorded");
@@ -288,12 +312,17 @@ test("your own file: the upload form sends a Word, PDF or text file with what it
   const chooser = page.waitForEvent("filechooser");
   await page.getByTestId("doc-upload").click();
   await (await chooser).setFiles({ name: "supply-agreement.md", mimeType: "text/plain", buffer: text });
-  if (testInfo.project.name === "live") {
-    // The server reads the upload like any other document: the same text gives the same reading.
-    const review = page.getByTestId("doc-review");
-    await expect(review).toHaveAttribute("data-status", "PROPOSED");
-    await expect(page.getByTestId("doc-terms").locator(":scope > li")).toHaveCount(18);
-  } else {
+  // The server reads the upload like any other document: the same text gives the same reading (the mock knows its three demo texts).
+  const review = page.getByTestId("doc-review");
+  await expect(review).toHaveAttribute("data-status", "PROPOSED");
+  await expect(page.getByTestId("doc-terms").locator(":scope > li")).toHaveCount(18);
+  if (testInfo.project.name !== "live") {
+    // Any other file needs the live server, and the mock says so.
+    await page.goto("/documents");
+    await page.getByTestId("doc-counterparty").fill("Foshan Home Retail Co.");
+    const other = page.waitForEvent("filechooser");
+    await page.getByTestId("doc-upload").click();
+    await (await other).setFiles({ name: "other.txt", mimeType: "text/plain", buffer: Buffer.from("A contract the Demo has never seen.") });
     await expect(form.getByRole("alert")).toContainText("Uploading needs the live server; the Demo reads its three sample documents.");
   }
 });

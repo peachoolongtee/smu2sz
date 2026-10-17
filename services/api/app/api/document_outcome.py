@@ -105,8 +105,11 @@ def document_outcome(record: ContractRecord, state: FinancialState, records: Seq
         }
     title = t(lang, f"Filed under {who}", f"已归档到{who}名下")
     if kind == DocumentKind.BUYER_CONTRACT:
-        changed = [t(lang, _sentence(f"{_cap(doc)} is now the contract on file for {who}"), f"{doc}现为{who}的在档合同。")
-                   + _replaces(record, records, lang, today),
+        # An upload with no title of its own is named "the contract": say "this contract", never "the contract is now the contract".
+        plain = doc in ("the contract", "合同", "the buyer contract", "买方合同")
+        filed = (t(lang, _sentence(f"This contract is now the one on file for {who}"), f"这份合同现为{who}的在档合同。") if plain
+                 else t(lang, _sentence(f"{_cap(doc)} is now the contract on file for {who}"), f"{doc}现为{who}的在档合同。"))
+        changed = [filed + _replaces(record, records, lang, today),
                    t(lang, f"{who}'s deal summary now reads from this contract: it sets the contract's terms beside your books and "
                            f"points out where they differ.",
                      f"{who}的交易摘要现依据这份合同：把合同条款与您的账本并列，并指出不一致之处。")]

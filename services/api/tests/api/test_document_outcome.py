@@ -63,6 +63,17 @@ def test_a_confirmed_buyer_contract_is_filed_under_the_buyer_and_says_the_books_
     _no_codes(o)
 
 
+def test_an_upload_without_a_title_is_called_this_contract(client):
+    from app.domain.fixtures import contract_fixture_bytes
+
+    name, data = contract_fixture_bytes(SUPPLY)
+    d = client.post("/documents", json={"kind": "BUYER_CONTRACT", "counterparty_id": "BUYER-1", "text": data.decode()}).json()["document"]
+    buyer = _name(client, "BUYER-1")
+    stop = "" if buyer.endswith(".") else "."
+    assert _decide(client, d, "confirm")["outcome"]["changed"]["lines"][0] == f"This contract is now the one on file for {buyer}{stop}"
+    assert _decide(client, d, "confirm", "zh")["outcome"]["changed"]["lines"][0] == f"这份合同现为{buyer}的在档合同。"
+
+
 def test_the_same_outcome_in_chinese(client):
     d = _read(client, SUPPLY)
     buyer = _name(client, "BUYER-1")

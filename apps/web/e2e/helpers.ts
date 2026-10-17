@@ -35,6 +35,21 @@ export async function openCashOptions(page: Page): Promise<void> {
  * Live mode shares one in-memory API across specs, so a spec that reads the books (alerts, what-if) resets
  * them first. In mock mode every browser context starts with an empty store, so this does nothing.
  */
+/**
+ * Attach deals has no samples panel: a document is read the way the owner reads one, by saying who it is with and uploading its file.
+ * This uploads the demo supply agreement's Markdown copy for Foshan (a buyer contract, the form's default kind), which the mock knows
+ * as its recorded reading and the live server reads afresh. The page must be /documents.
+ */
+export async function uploadSupplyAgreement(page: Page): Promise<void> {
+  const party = page.getByTestId("doc-counterparty");
+  await party.fill("Foshan Home Retail Co.");
+  // The name is matched against the books once they are read: until then it is not a company on them, and Upload says so instead.
+  await expect(party).not.toHaveAttribute("aria-invalid", "true");
+  const chooser = page.waitForEvent("filechooser");
+  await page.getByTestId("doc-upload").click();
+  await (await chooser).setFiles(`${__dirname}/../../../fixtures/contracts/fhr-2026-07-supply-agreement.md`);
+}
+
 export async function resetBooks(request: APIRequestContext): Promise<void> {
   if (test.info().project.name !== "live") return;
   const res = await request.post(`http://localhost:${process.env.E2E_API_PORT ?? 8000}/demo/reset`, {

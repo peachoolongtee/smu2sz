@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { openCompare, openStoryFold, STORY_STEPS, verdictHeading, walkStory, openOperatorTools } from "./helpers";
+import { openCompare, openStoryFold, STORY_STEPS, verdictHeading, walkStory, openOperatorTools, uploadSupplyAgreement } from "./helpers";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
@@ -197,7 +197,7 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
 
 test("the document review fits the viewport", async ({ page }) => {
   await page.goto("/documents");
-  await page.getByTestId("fixture-read-FHR_SUPPLY_AGREEMENT").click();
+  await uploadSupplyAgreement(page);
   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED");
   expect(await overflowX(page), "the review screen overflows horizontally").toBeLessThanOrEqual(1);
   await page.getByTestId("doc-confirm").click();
