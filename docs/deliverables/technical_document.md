@@ -344,7 +344,8 @@ operation from model output.
   on the books of that moment and refuses a commitment that no longer holds (STALE_VERDICT).
 - **The decision record** derives each deal's state from stored facts (ADR-0011).
 - **Contract records** hold a document's reading with each term's quoted clause and the owner's hash-bound decision
-  (ADR-0012).
+  (ADR-0012). From a confirmed customer contract, the owner can set up that customer's repeating invoice in the books, so
+  the forecast counts it (ADR-0014).
 
 ### Core algorithms and evaluation approach
 
@@ -599,6 +600,8 @@ to 300 an hour).
   concessions above **¥100,000 per commitment**. That limit is measured on the commitment's *future-concession value*, not on
   the invoice amount, so an early-payment discount (future value ¥0) never reaches it. Also Tier 2:
   - a facility application or addition;
+  - setting up a confirmed contract's repeating invoice in the books (ADR-0014);
+  - adding a customer to the books;
   - an equipment purchase;
   - a draw above the rate ceiling;
   - a receipt reported by anyone other than the bank or the owner.
@@ -658,7 +661,11 @@ several steps is not, so a plan refused part-way keeps its earlier steps and the
   - A sentence addressed to the agent blocks confirmation and logs a security event.
   - Documents are read only for counterparties on the owner's registry, and the contract must actually name the chosen
     company.
-  - A confirmed document never changes the books. After confirming, FLOW says what was saved, under which customer, and that the forecast is unchanged.
+  - Confirming a document never changes the books. After confirming, FLOW says what was saved, under which customer, and that
+    the forecast is unchanged.
+  - Only a separate owner step, "Set up in my books", can add a confirmed customer contract's repeating invoice
+    (ADR-0014). It uses only terms quoted word for word and re-read by code, is bound to the document and the exact terms
+    shown, is re-checked on today's books, is logged, and can be undone. The agent, buyers and the bank feed are refused.
 - **Chat is inside the boundary.**
   - Pasted or quoted text never becomes an instruction or an approval.
   - A session continues only for the caller that opened it.
@@ -821,7 +828,8 @@ These are open production blockers. The supported way to run FLOW is the local l
 - **Capex.** The search compares standalone structures only. It misses a loan plus a short bridge, which on the demo would save
   about ¥39,000.
 - **Contracts.** Contract reading is 75% on unseen text-layer contracts. Scans and photos are refused, since there is no OCR.
-  Confirming a contract files its reading but does not change the books.
+  Setting up a contract's invoices covers one repeating invoice per contract; a contract that differs from a repeating
+  invoice already in the books is refused rather than replacing it, and rebates and milestones are shown, not set up.
 - **Router.** Six of the 26 router plans rely on actions FLOW cannot run yet (asking a buyer to pay early, discounting a bill).
   They are labelled "cannot run today".
 - **Extra requests.** These are found by cue words and figures. A request with neither could pass the coverage proof, but only
@@ -879,12 +887,12 @@ These are open production blockers. The supported way to run FLOW is the local l
 
 | Area | Routes |
 | --- | --- |
-| Chat | `POST /nl` (a buyer sends its channel key); `POST /nl/opener` |
+| Chat | `POST /nl` (a buyer sends its channel key); `POST /nl/opener`; `POST /nl/session/reset` |
 | Offers and negotiation | `POST /offers`, `/offers/{id}/evaluate`, `/negotiate/{id}`; the owner's accept and decline; a counter marked sent outside, accepted or declined |
 | Funding and capex | `POST /router/plan`, `/facilities/compile`, `/capex/evaluate`, `/capex/apply`, `/capex/contracts/{id}/evaluate`, `/capex/contracts/{id}/commit`; `GET /purchases` |
 | Execution | `POST /operations`; `GET /approvals/queue`; `POST /approvals/{id}`; `POST /commitments/{id}/revoke` |
 | Clock, alerts, reconciliation | `POST /clock/advance`; `GET /alerts`; `POST /alerts/{id}/act`; `GET /reconciliation` |
-| Contracts and deals | `POST /documents`; `GET /documents`, `/documents/{id}`; `POST /documents/{id}/confirm`, `/reject`; `GET /deals`, `/deals/{buyer}` |
+| Contracts and deals | `POST /documents`; `GET /documents`, `/documents/{id}`; `POST /documents/{id}/confirm`, `/reject`, `/refile`; `GET`/`POST /documents/{id}/terms`, `POST /documents/{id}/terms/undo`; `POST /customers`; `GET /deals`, `/deals/{buyer}` |
 | Read views and evidence | `GET /state`, `/mandate`, `/trajectory`, `/ledger`, `/audit`, `/evidence`, `/home`, `/worklist`, `/customers`, `/decisions` |
 
 #### Appendix D. Terms and codes
