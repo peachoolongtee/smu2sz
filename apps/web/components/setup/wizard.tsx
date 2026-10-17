@@ -83,7 +83,7 @@ export function SetupWizard() {
         }
       />
       <div className="flex flex-wrap items-start gap-6">
-        <nav aria-label={t("setup.steps")} className="w-full lg:w-56">
+        <nav aria-label={t("setup.steps")} className={`w-full p-3 lg:w-60 lg:self-start rounded-[var(--radius-f-card)] bg-panel shadow-(--shadow-f)`}>
           <ol className="flex gap-1 overflow-x-auto lg:flex-col">
             {STEPS.map((n) => (
               <li key={n} className="shrink-0">
@@ -103,7 +103,7 @@ export function SetupWizard() {
             ))}
           </ol>
         </nav>
-        <div className="min-w-0 flex-[999_1_560px] space-y-6">
+        <div className={`min-w-0 flex-[999_1_560px] space-y-6 p-5 sm:p-7 rounded-[var(--radius-f-card)] bg-panel shadow-(--shadow-f)`}>
           {issues.length ? (
             <Callout tone="bad" title={t("setup.fixFirst")}>
               <ul className="mt-1 list-disc space-y-1 pl-5" data-testid="setup-step-issues">

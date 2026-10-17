@@ -13,6 +13,7 @@ import type { DictKey } from "@/lib/dictionary";
 import { AskHeaderInput } from "./ask-header";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
+import { FlowLogo } from "./flow-logo";
 import { ArrowLeftIcon, BankIcon, ShieldCheckIcon, ShieldIcon, SparkIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
 import { Tour, startTour } from "./business/tour";
@@ -99,9 +100,7 @@ function Brand({ href }: { href: string }) {
   const { t } = useI18n();
   return (
     <Link href={href} className="hit flex items-center gap-2 font-semibold text-ink">
-      <span className="grid size-9 place-items-center rounded-[12px] bg-f-btn text-f-btn-ink">
-        <ShieldIcon />
-      </span>
+      <FlowLogo className="h-7 w-auto" />
       <span className="whitespace-nowrap leading-tight">
         {t("brand.name")}
         <span className="hidden text-meta font-normal text-ink-3 sm:block">{t("brand.tagline")}</span>
@@ -614,7 +613,7 @@ const TITLE_KEY: Record<string, DictKey> = {
 };
 
 /**
- * Sets the tab title ("Cash & funding · FLOW 流") and the document language, so a tab is findable and read aloud in the owner's
+ * Sets the tab title ("Cash & funding · FLOW") and the document language, so a tab is findable and read aloud in the owner's
  * language. The server already sent the English title of the route (`metadata`, lib/route-title.ts); this puts the chosen language
  * in, and puts it back if Next rewrites the title on a client navigation. It also clears the first-paint guard (lib/pre-hydration.ts)
  * once the shell shows the stored mode and language.
