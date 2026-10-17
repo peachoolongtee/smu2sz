@@ -1,105 +1,100 @@
 {
   "cut": "full",
   "name": "flow-full-tour",
-  "total_seconds": 329.76,
+  "total_seconds": 806.677,
   "chapters": [
     {
       "n": 1,
-      "id": "sign-in",
-      "title": "Sign in",
-      "at": 4.548
+      "id": "title",
+      "title": "FLOW",
+      "about": "Title card over the landing page: what FLOW is, and that everything outside FLOW is simulated.",
+      "at": 0.348
     },
     {
       "n": 2,
-      "id": "setup",
-      "title": "Set up your books",
-      "at": 15.706
+      "id": "tour-setup",
+      "title": "Setup",
+      "about": "Landing and sign-in; the six setup steps field by field, with Fill from an agreement (credit line) and Fill from a contract (Foshan); the first forecast; signing the limits; Home on own books; the launcher modes; Which books? and loading the golden books.",
+      "at": 12.926
     },
     {
       "n": 3,
-      "id": "home-gap",
-      "title": "Home: the forecast and the gap",
-      "at": 66.968
+      "id": "tour-daily",
+      "title": "Daily view",
+      "about": "Home card by card (outlook, recommendation, forecast windows, worklist, cash today and the funding ring, upcoming movements, owed by customer); Business and Demo modes; Operator tools and an engine view; the tour; 中文.",
+      "at": 116.425
     },
     {
       "n": 4,
-      "id": "attach-deal",
-      "title": "Attach a deal",
-      "at": 84.428
+      "id": "tour-documents",
+      "title": "Documents",
+      "about": "The Foshan contract read (recorded reading), each term beside its clause, the deal at a glance, Confirm and the outcome card; the party check (the contract under Dongguan), refile and reject; a new customer; Dongguan's contract set up in the books, then undone; the credit-line agreement linked to the credit line.",
+      "at": 180.311
     },
     {
       "n": 5,
-      "id": "wrong-company",
-      "title": "Safety: the wrong company",
-      "at": 108.183
+      "id": "tour-customers",
+      "title": "Customers",
+      "about": "Foshan's overview (contribution, outstanding, financing, share owed), the receivable-to-cash flow, exposure and the 30-day-late stress on Cash; the inputs sheet's notice (customer economics is off in pnpm demo).",
+      "at": 265.751
     },
     {
       "n": 6,
-      "id": "new-customer",
-      "title": "A new customer",
-      "at": 124.63
+      "id": "tour-deals",
+      "title": "Deals",
+      "about": "Busy books: the queue's tabs, a request accepted as asked (Zhuhai, 75 days), previous and next, a request declined (Dongguan); then the golden books: Foshan's WeChat in the inbox, the verdict and counters, Business consequences, the message to the buyer copied and marked sent, the buyer's acceptance recorded, the agreement, its tracker and its decision record.",
+      "at": 292.454
     },
     {
       "n": 7,
-      "id": "contract-to-forecast",
-      "title": "From contract to forecast",
-      "at": 134.583
+      "id": "tour-money",
+      "title": "Money",
+      "about": "Fresh golden books: Cash & funding, every plan FLOW weighed, the plan run inside the limits (Tier 1) and the funding ring; Limits in plain words; the Approvals page.",
+      "at": 401.33
     },
     {
       "n": 8,
-      "id": "lender-agreement",
-      "title": "A lender agreement",
-      "at": 167.836
+      "id": "tour-lifecycle",
+      "title": "Lifecycle",
+      "about": "Fresh golden books: the counter agreed with the simulated buyer; day 2: the synthetic bank receipt matched; day 34: the late-payment alert, Chase payment, the cure above the owner's ceiling approved; day 38: landed and reconciled; day 77: the signed limits about to expire (Alerts).",
+      "at": 439.36
     },
     {
       "n": 9,
-      "id": "buyer-request",
-      "title": "Deals: a buyer asks for 60 days",
-      "at": 184.607
+      "id": "tour-ask",
+      "title": "Ask FLOW",
+      "about": "Suggested prompts; questions in English and Chinese; a plan and “go ahead”; a fact chat will not record; the nearest thing FLOW can do; a pasted approval ignored; Tier 3 refused; New conversation; the buyer role and the FastCapital message.",
+      "at": 510.4
     },
     {
       "n": 10,
-      "id": "ask-flow",
-      "title": "Ask FLOW",
-      "at": 214.101
+      "id": "tour-sandbox",
+      "title": "Sandbox",
+      "about": "The sandbox from Foshan's request: its verdict, then the Option A preset (45 days, 0.85% on ¥260,000) and back; the 30-day-late stress on Cash; a note on the strategy features a pnpm demo build leaves off.",
+      "at": 586.252
     },
     {
       "n": 11,
-      "id": "fund-gap",
-      "title": "Fund the gap",
-      "at": 258.297
+      "id": "tour-capex",
+      "title": "Capex & purchases",
+      "about": "The quick check on a ¥600k machine (structures screened, the lease selected), Apply queued for approval, the borrower file; the vendor contract read, its payment schedule, Commit and its approval; financial health and loan eligibility; long-term plans.",
+      "at": 619.634
     },
     {
       "n": 12,
-      "id": "cash-funding",
-      "title": "Cash & funding",
-      "at": 277.307
+      "id": "tour-records",
+      "title": "Records and judging",
+      "about": "The Demo story end to end in one take (the owner's approval clicked); Activity with its filters and evidence; Security and evidence: the FastCapital scene, Download JSONL and the offline check; the judge report.",
+      "at": 688.253
     },
     {
       "n": 13,
-      "id": "capex",
-      "title": "Capex & purchases",
-      "at": 283.71
-    },
-    {
-      "n": 14,
-      "id": "receivables",
-      "title": "Receivables",
-      "at": 295.569
-    },
-    {
-      "n": 15,
-      "id": "activity",
-      "title": "Activity and evidence",
-      "at": 303.91
-    },
-    {
-      "n": 16,
-      "id": "end",
-      "title": "FLOW",
-      "at": 321.023
+      "id": "tour-security",
+      "title": "Security",
+      "about": "Demo credentials off by default (card); a buyer over its daily budget is told to write tomorrow; Tier 3 refused; the buyer sees only its reply.",
+      "at": 768.087
     }
   ],
   "problems": [],
-  "recorded": "2026-10-17"
+  "recorded": "2026-10-18"
 }

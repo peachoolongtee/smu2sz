@@ -189,7 +189,7 @@ function cutSection(info) {
 |---|-----------|---------|---------------|
 ${rows}
 
-Key frames: ${frames.map((f) => `[${f}](frames/${f})`).join(", ") || "none written"}.
+Key frames (kept with the video on the recording machine, in \`frames/\`): ${frames.join(", ") || "none written"}.
 
 Problems seen while recording: ${problems}
 `;
@@ -275,7 +275,8 @@ async function main() {
   const info = chapters.length
     ? JSON.parse(readFileSync(chapters[0], "utf8"))
     : { cut: cutArg, name: CUT_NAME, total_seconds: 0, chapters: [], problems: [{ chapter: 0, title: "?", error: "chapters.json was not written" }] };
-  info.recorded = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  info.recorded = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`; // the recording machine's own date
   info.problems = info.problems.map((p) => ({ ...p, screenshot: path.basename(p.screenshot ?? "") }));
   writeFileSync(path.join(OUT_DIR, `${CUT_NAME}.chapters.json`), `${JSON.stringify(info, null, 2)}\n`);
   writeReadme();

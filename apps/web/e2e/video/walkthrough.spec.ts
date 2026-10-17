@@ -42,7 +42,7 @@ const CUTS: Record<Cut, { name: string; pace: number; maxSeconds: number | null;
   },
   full: {
     name: "flow-full-tour",
-    pace: 1,
+    pace: 1.3, // 13:26 at pace 1 (18 Oct); the inventory plans about 19 minutes
     maxSeconds: null,
     scenes: [
       story.titleCard,

@@ -285,7 +285,7 @@ export const dailyView: Scene = {
       await press(page, page.getByTestId("tour-next"));
     }
     await page.keyboard.press("Escape");
-    await reel.say("中文: every page and every sentence the server writes, in Chinese.");
+    await reel.say("中文: the Business pages and the sentences the server writes, in Chinese (the engine views stay in English).");
     await setLang(page, "zh");
     await reel.hold(4);
     await setLang(page, "en");
@@ -579,7 +579,7 @@ export const lifecycle: Scene = {
   id: "tour-lifecycle",
   title: "Lifecycle",
   caption: "A fresh take: Foshan's counter agreed with the simulated buyer, then time passes on the simulated clock.",
-  about: "Fresh golden books: the counter agreed with the simulated buyer; day 2: the synthetic bank receipt matched and the next invoice issued; day 34: the late-payment alert, Chase payment, the cure above the owner's ceiling approved; day 38: landed and reconciled; day 77: the signed limits about to expire (Alerts).",
+  about: "Fresh golden books: the counter agreed with the simulated buyer; day 2: the synthetic bank receipt matched; day 34: the late-payment alert, Chase payment, the cure above the owner's ceiling approved; day 38: landed and reconciled; day 77: the signed limits about to expire (Alerts).",
   run: async (reel) => {
     const { page } = reel;
     await take(reel, "golden_sme", chapterHtml(7, "Lifecycle", "The clock, receipts, late payments, cures and renewals."), 2);
@@ -606,7 +606,7 @@ export const lifecycle: Scene = {
     await ownerPost(page, "/demo/bank-receipt");
     await go(page, "Receivables", /\/receivables/);
     await expect(page.locator("main")).toContainText("Matched");
-    await reel.say("Matched against the agreement; and the contract's next invoice has been issued on its day.");
+    await reel.say("Matched against the agreement: ¥257,790 received for ¥260,000 of the invoice at 0.85%.");
     await reel.hold(4.5);
     await reel.say("Day 34: the rest of the invoice was due on day 32 and has not arrived. Home raises the alarm and prices a cure.");
     await advanceClock(page, 32, 34);
@@ -653,7 +653,7 @@ export const askFlow: Scene = {
   id: "tour-ask",
   title: "Ask FLOW",
   caption: "Ask in plain words on any page. FLOW answers from the books and acts only inside the limits.",
-  about: "Suggested prompts; questions in English and Chinese; a plan and “go ahead”; a correction; a fact chat will not record; the nearest thing FLOW can do; a pasted approval ignored; Tier 3 refused; New conversation; the buyer role and the FastCapital message.",
+  about: "Suggested prompts; questions in English and Chinese; a plan and “go ahead”; a fact chat will not record; the nearest thing FLOW can do; a pasted approval ignored; Tier 3 refused; New conversation; the buyer role and the FastCapital message.",
   run: async (reel) => {
     const { page } = reel;
     await take(reel, "golden_sme", chapterHtml(8, "Ask FLOW", "Plain words in, answers from the books out."), 2);
@@ -709,7 +709,7 @@ export const sandbox: Scene = {
   id: "tour-sandbox",
   title: "Sandbox",
   caption: "Try other terms on a real request: nothing is written.",
-  about: "The sandbox from Foshan's request: 60 → 45 days changes the verdict; the Option A preset; the 30-day-late stress on Cash; a note on the strategy features a pnpm demo build leaves off.",
+  about: "The sandbox from Foshan's request: its verdict, then the Option A preset (45 days, 0.85% on ¥260,000) and back; the 30-day-late stress on Cash; a note on the strategy features a pnpm demo build leaves off.",
   run: async (reel) => {
     const { page } = reel;
     // Fresh golden books: after Ask FLOW funded the gap, Foshan's request would need clarifying first (more invoices are open).
@@ -842,7 +842,7 @@ export const records: Scene = {
   id: "tour-records",
   title: "Records and judging",
   caption: "The guided story, its own take: one Next button through six scenes; the owner's approval is the owner's click.",
-  about: "The Demo story end to end in one take (the owner's approval clicked); Receivables and Chase payment; Activity with its filters and evidence; Security and evidence: the FastCapital scene, Download JSONL and the offline check; the judge report.",
+  about: "The Demo story end to end in one take (the owner's approval clicked); Activity with its filters and evidence; Security and evidence: the FastCapital scene, Download JSONL and the offline check; the judge report.",
   run: async (reel) => {
     const { page } = reel;
     await take(reel, "golden_sme", chapterHtml(11, "Records and judging", "The guided story, the record, and the proof."), 2);
