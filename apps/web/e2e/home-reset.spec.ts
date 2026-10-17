@@ -56,8 +56,11 @@ test("reset several times quickly: the Home reads at once and Deals never lists 
   const now = await dealsOnWorklist(request);
   expect(now).toHaveLength(1);
   expect(now).not.toContain(first);
-  await page.goto("/deals");
-  await page.getByTestId("queue-select").first().click();
+  const queue = JSON.stringify((await get<{ queue: unknown }>(request, "/deals?lang=en")).queue);
+  expect(queue).toContain(now[0]);
+  expect(queue).not.toContain(first);
+  // the deal Deals lists opens: it is the new books' own, never "Which negotiation?"
+  await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(`deal:${now[0]}`)}`);
   await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-decision", `deal:${now[0]}`);
   await expect(page.getByTestId("deal-ask-which")).toHaveCount(0);
 });
