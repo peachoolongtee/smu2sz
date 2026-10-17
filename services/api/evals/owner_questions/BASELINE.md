@@ -499,3 +499,148 @@ Tier-3 refusal (MAN-07, MAN-08). The four left uncovered:
 - FUN-01 (the cheapest way to raise an arbitrary ¥X) needs the router to take a need amount; today it prices only the
   projected gap.
 - DEBT-02 needs the lender on `DebtPosition`.
+
+## 6. After routing fixes (branch `feat/ask-routing`, 17 Oct 2026)
+
+Sections 0 to 5 above are the original baseline and are unchanged. This section re-runs the same harness on `feat/ask-routing`
+(branched from this branch, which contains dev `29fa0ea2`), with the same settings, after the routing fixes below. The answer
+layer `app.nl.answers` (branch `feat/ask-answers`) is **not** installed here, so every question routed to ASK_BOOKS is answered
+by the fallback described below; the numbers measure this branch on its own.
+
+**What changed (all in `app/nl/`)**
+- **The question gate** (`rules.py`, before every action rule): an information question (a wh-word, an inverted be/do/have
+  auxiliary, "should we", "any …?", a trailing "?", or 吗 呢 么 什么 多少 哪 谁 是否 要不要 有没有 几 怎么 为什么 ？) that
+  names an action is asked about it, so it goes to the new read-only intent **ASK_BOOKS**. It proposes no plan, compiles no
+  offer, queues or runs nothing and writes nothing to the operations log or the security log. A request phrased as a question
+  ("can you draw …?", "could we get Foshan to pay early?", 能不能…, 可以…吗) keeps its action reading, commands are untouched,
+  and `consent.py` is unchanged. A buyer's offer the owner asks about (a fixture, a quote, "Foshan wants 60-day terms. Can we
+  accept?") still gets its verdict.
+- **ASK_BOOKS** (`ask.py`, owner only): a Tier-3 subject asked about is answered as information, an attempt read from the
+  log; a subject the books do not hold gets "FLOW's books do not hold {thing}." and a nearest read chosen by the subject (tax
+  and payables → the scheduled payments, profit and valuation → EBITDA and the covenant ratios, staff and pay → the payroll
+  total, bank accounts → the one cash total, revenue and products → what customers owe and the invoicing ahead); then
+  `app.nl.answers.answer(question, lang, ctx)` when it is installed; otherwise the existing read that answers the topic right
+  (the financing comparison for the gap, the plan's cost and the capacity; the cash status for why cash is short; the
+  break-even for early-pay questions; the late-payment read; what is waiting) or a plain "I cannot answer that from the books
+  in chat yet" with the nearest read.
+- **Narrower cues.** 多少钱, 余额, 情况怎么样, "position" and "how much money" need a cash subject; 要不要 is a question, not 不要;
+  谁拖欠 and "who is paying late" read what is overdue; "Does the investment pay off?" is the capex case; 授权 questions are about
+  the mandate; "pays 30 days late" is never compiled as 30-day terms (the `offers.py` day-count gate).
+- **Small fixes.** The Chinese capex reply is written in Chinese from the result's typed fields (it carried the module's
+  English sentences); the Chinese comparison and early-pay replies say the router's labels in Chinese where the translation
+  layer knows them (facility names are the books' own and stay as written); the deal reply's "Co.." is "Co.".
+
+**Scorer changes** (`scripts/owner_questions_baseline.py`), so that the numbers stay comparable:
+- ASK_BOOKS is on topic for every question; its "the books do not hold this" reply on a question the books can answer is WRONG;
+  its "I cannot answer that from the books in chat yet" is CANT; its refusal of a not-in-the-books question is scored like an
+  OUT_OF_SCOPE refusal (it names the nearest read, so it is ANSWERED).
+- Each manual override now applies only while the reply still matches the reply it was written for.
+- Three capex `direct_re` patterns accept the Chinese sentence as well (CAP-01, CAP-03, CAP-05), since the Chinese reply no longer
+  carries the English one.
+
+**Totals, business wording (`mode=business`), 503 turns**
+
+| Category | Lang | Answered | Partial | Wrong | Can't | Turns |
+|---|---|---:|---:|---:|---:|---:|
+| liquidity | en | 6 | 12 | 0 | 21 | 39 |
+|  | zh | 6 | 14 | 0 | 16 | 36 |
+|  | **all** | 12 | 26 | 0 | 37 | 75 |
+| debt | en | 3 | 4 | 0 | 23 | 30 |
+|  | zh | 2 | 6 | 0 | 20 | 28 |
+|  | **all** | 5 | 10 | 0 | 43 | 58 |
+| customers | en | 4 | 4 | 0 | 25 | 33 |
+|  | zh | 8 | 7 | 0 | 18 | 33 |
+|  | **all** | 12 | 11 | 0 | 43 | 66 |
+| deals | en | 4 | 2 | 0 | 15 | 21 |
+|  | zh | 4 | 3 | 0 | 13 | 20 |
+|  | **all** | 8 | 5 | 0 | 28 | 41 |
+| funding | en | 8 | 1 | 0 | 12 | 21 |
+|  | zh | 8 | 2 | 0 | 10 | 20 |
+|  | **all** | 16 | 3 | 0 | 22 | 41 |
+| covenants | en | 6 | 2 | 0 | 10 | 18 |
+|  | zh | 7 | 3 | 0 | 8 | 18 |
+|  | **all** | 13 | 5 | 0 | 18 | 36 |
+| capex | en | 10 | 3 | 0 | 3 | 16 |
+|  | zh | 9 | 3 | 0 | 4 | 16 |
+|  | **all** | 19 | 6 | 0 | 7 | 32 |
+| activity | en | 6 | 0 | 0 | 13 | 19 |
+|  | zh | 6 | 0 | 0 | 12 | 18 |
+|  | **all** | 12 | 0 | 0 | 25 | 37 |
+| mandate | en | 2 | 0 | 0 | 19 | 21 |
+|  | zh | 2 | 0 | 0 | 18 | 20 |
+|  | **all** | 4 | 0 | 0 | 37 | 41 |
+| not_in_books | en | 37 | 1 | 0 | 0 | 38 |
+|  | zh | 38 | 0 | 0 | 0 | 38 |
+|  | **all** | 75 | 1 | 0 | 0 | 76 |
+| **ALL** | en | 86 | 29 | 0 | 141 | 256 |
+|  | zh | 90 | 38 | 0 | 119 | 247 |
+|  | **all** | **176 (35%)** | **67 (13%)** | **0 (0%)** | **260 (52%)** | 503 |
+
+| | Answered | Partial | Wrong | Can't |
+|---|---:|---:|---:|---:|
+| Original baseline (section 2) | 92 (18%) | 111 (22%) | 35 (7%) | 265 (53%) |
+| After routing fixes | 176 (35%) | 67 (13%) | 0 (0%) | 260 (52%) |
+
+- Main wordings only: 92 answered, 30 partial, 0 wrong, 122 can't (244 turns). Paraphrases: 84 / 37 / 0 / 138 (259).
+- `--mode demo`: 174 / 69 / 0 / 260.
+- Per question (best over its wordings, 122 questions): 54 answered, 19 partial, 0 wrong-at-best, 49 can't in every wording
+  (was 38 / 30 / 13 / 41). No question is wrong in any wording (was 24).
+- 148 turns now reach ASK_BOOKS. With the answer layer installed, its answers replace the "cannot answer yet" replies; without it
+  the can't count is close to the original (260 against 265), because the questions that were wrong are now honest can'ts.
+
+**Safety.** No question executed or queued an operation or changed the books. Only four turns append a REFUSED operation to the
+log, all requests addressed to FLOW ("Can FLOW sign a personal guarantee for me?", "Could you pledge our equipment as
+collateral?" and their zh), which section 0 accepted. "Did anyone try to change our limits?" (en and zh) and "Is equity an
+option?" no longer write to the log or raise a security event. Turns proposing a plan that waits for "go ahead": 3 (was 15):
+"有什么需要我决定的吗？" (SHOW_ALERTS, which reads the alerts and holds their cure, by design) and DEAL-05's reported offer (en and
+zh: the verdict on the buyer's 60-day terms and its counters). Turns storing a verdict: 5 (was 18): DEAL-05 and DEAL-09's
+what-if.
+
+**The 35 WRONG cases now**
+
+| Id | Lang | Question | Intent before → now | Score now | Reply now (abridged) |
+|---|---|---|---|---|---|
+| LIQ-14 | en | What is causing the cash gap? | FUND_GAP → SHOW_STATUS | PARTIAL | Cash today is ¥400,000.00; your minimum cash reserve is ¥300,000.00. Cash would fall below your minimum: ¥405,000.00 short in 30 days. … |
+| LIQ-14 | zh | 资金缺口是怎么造成的？ | FUND_GAP → SHOW_STATUS | PARTIAL | 今天现金 ¥400,000.00；您的最低现金储备为 ¥300,000.00。现金将低于最低现金储备：30 天后缺 ¥405,000.00。… |
+| DEBT-04 | zh | 我们能把债务还清吗？ | REPAY_FACILITY → ASK_BOOKS | CANT | 我暂时还不能在对话中根据账目回答这个问题，也没有做任何更改。我能提供的最接近的是贷款方查看的契约指标（DSCR 和杠杆），您可以问：“偿债覆盖率是多少？”。 |
+| DEBT-04 | en | Can we pay off all our loans? | REPAY_FACILITY → ASK_BOOKS | CANT | I cannot answer that from the books in chat yet, and I have not changed anything. The nearest I can show is the covenant ratios a lender reads (DSCR and leverage): ask "What is our DSCR?". |
+| DEBT-04 | zh | 我们能还清所有贷款吗？ | REPAY_FACILITY → ASK_BOOKS | CANT | (as above, zh) |
+| DEBT-08 | zh | 下一笔贷款还款是什么时候？ | REPAY_FACILITY → ASK_BOOKS | CANT | (as above, zh) |
+| DEBT-14 | zh | 我们现在要不要动用授信额度？ | FUND_GAP → COMPARE_FINANCING | PARTIAL | 需要融资的缺口：¥405,000.00（第 12–31 天…）。- Bank credit line：综合年化 6.40%，本次缺口成本 ¥841.64，当天到账，已承诺。… 未执行任何操作。 |
+| CUS-03 | zh | 谁拖欠我们的款？ | RECORD_FACT → RECONCILE | ANSWERED | 目前没有逾期款项。下一笔到期的款项是Foshan Home Retail Co. 的 ¥420,000.00 发票，32 天后到期。 |
+| CUS-04 | zh | 我们的应收账款周转天数是多少？ | FUND_GAP → ASK_BOOKS | CANT | 我暂时还不能…我能提供的最接近的是每位客户欠您多少、何时到期，您可以问：“谁欠我们钱？”。 |
+| CUS-07 | en | What if Foshan pays 30 days late? | WHAT_IF → WHAT_IF | PARTIAL | The next payment due is the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days; the forecast counts it on that day. … I have not re-run the forecast for a late payment. |
+| CUS-07 | zh | 如果佛山晚30天付款会怎样？ | WHAT_IF → WHAT_IF | PARTIAL | 下一笔到期款项是Foshan Home Retail Co. 的 ¥420,000.00 发票，32 天后到期… 预测显示届时现金已低于最低储备，延迟付款会使情况更糟。 |
+| DEAL-04 | en | Any open negotiations? | NEGOTIATE → SHOW_STATUS | ANSWERED | Nothing is waiting on you or on anyone else right now. |
+| DEAL-09 | zh | 给佛山60天账期要花我们多少钱？ | SHOW_STATUS → WHAT_IF | ANSWERED | FLOW 建议还价：此报价的未来让步在未来 12 个月内共需 ¥24,326.92，高于您 ¥5,000 的上限… |
+| DEAL-10 | zh | 我们发过什么还价？ | NEGOTIATE → ASK_BOOKS | CANT | 我暂时还不能…我能提供的最接近的是今天操作日志中的变化，您可以问：“今天有什么变化？”。 |
+| FUN-04 | zh | FLOW的方案要花多少钱？ | SHOW_STATUS → COMPARE_FINANCING | ANSWERED | 需要融资的缺口：¥405,000.00…选定的已承诺方案：…总成本 ¥841.64 + ¥2,272.29 = ¥3,113.93。未执行任何操作。 |
+| FUN-07 | zh | 我们的发票最多能融多少钱？ | SHOW_STATUS → COMPARE_FINANCING | PARTIAL | (the comparison above; it does not state the ¥336,000 capacity) |
+| FUN-08 | en | What's the break-even discount for early payment? | ACCELERATE_RECEIPT → ASK_BOOKS | ANSWERED | The break-even early-payment discount is 0.88%: below it, being paid early costs less than invoice financing; above it, it costs more. Nothing was proposed or sent. |
+| FUN-08 | zh | 提前付款折扣的盈亏平衡点是多少？ | ACCELERATE_RECEIPT → ASK_BOOKS | ANSWERED | 提前付款折扣的盈亏平衡点是 0.88%：低于它，提前收款比发票融资便宜；高于它则更贵。没有提出或发送任何内容。 |
+| FUN-08 | en | Above what discount is early payment too expensive? | ACCELERATE_RECEIPT → ASK_BOOKS | ANSWERED | (as above) |
+| COV-07 | en | Does the plan breach any covenant? | SHOW_STATUS → ASK_BOOKS | CANT | I cannot answer that from the books in chat yet… The nearest I can show is the covenant ratios on today's books: ask "Are we inside our covenants?". |
+| CAP-03 | en | Does the investment pay off? | REPAY_FACILITY → CAPEX | ANSWERED | ¥600k die-cutting line, ¥600,000.00: NPV ¥380,885.77 at 10.00%, payback in month 31. … Worth doing on the owner's estimate … |
+| CAP-08 | en | Do we have any capex contracts? | CAPEX → ASK_BOOKS | CANT | I cannot answer that from the books in chat yet… The nearest I can show is the equipment purchase case FLOW holds: ask "Should I buy the machine?". |
+| CAP-08 | zh | 有哪些设备采购合同？ | CAPEX → ASK_BOOKS | CANT | (as above, zh) |
+| ACT-06 | en | How much money has FLOW moved? | SHOW_STATUS → ASK_BOOKS | CANT | I cannot answer that from the books in chat yet… The nearest I can show is what changed today in the operations log: ask "What changed today?". |
+| ACT-06 | zh | FLOW一共动了多少钱？ | SHOW_STATUS → ASK_BOOKS | CANT | (as above, zh) |
+| ACT-08 | en | Did anyone try to change our limits? | OUT_OF_SCOPE → ASK_BOOKS | ANSWERED | No. Nobody has tried to change your mandate or its limits: the operations log holds no such request, and there is no security event on record. (nothing logged) |
+| ACT-08 | zh | 有人试图修改我们的限额吗？ | OUT_OF_SCOPE → ASK_BOOKS | ANSWERED | 没有。没有人尝试修改您的授权或限额：操作日志中没有这类请求，也没有安全事件记录。 |
+| MAN-03 | zh | 授权什么时候到期？ | SHOW_STATUS → ASK_BOOKS | CANT | 我暂时还不能…我能提供的最接近的是需要您处理的事项（提醒，包括即将到期的授权），您可以问：“有什么提醒？”。 |
+| NIB-02 | en | What's our VAT position this quarter? | SHOW_STATUS → ASK_BOOKS | ANSWERED | FLOW's books do not hold VAT. The nearest I can show is the payments already scheduled in your forecast: ask "How are we doing?". |
+| NIB-02 | zh | 本季度增值税情况怎么样？ | SHOW_STATUS → ASK_BOOKS | ANSWERED | FLOW 的账目中没有增值税数据。我能提供的最接近的是预测中已排定的付款，您可以问：“现金状况怎么样？”。 |
+| NIB-06 | zh | 库存值多少钱？ | SHOW_STATUS → ASK_BOOKS | ANSWERED | FLOW 的账目中没有库存数据。我能提供的最接近的是您的现金状况和预测，您可以问：“现金状况怎么样？”。 |
+| NIB-10 | zh | 每个银行账户里各有多少钱？ | SHOW_STATUS → ASK_BOOKS | ANSWERED | FLOW 的账目中没有各银行账户的余额。我能提供的最接近的是一个现金总额（今天 ¥400,000.00），您可以问：“现金状况怎么样？”。 |
+| NIB-10 | zh | 按账户列一下余额。 | SHOW_STATUS → ASK_BOOKS | ANSWERED | (as above) |
+| NIB-13 | zh | 竞争对手情况怎么样？ | SHOW_STATUS → ASK_BOOKS | ANSWERED | FLOW 的账目中没有市场或竞争对手数据。我能提供的最接近的是您的现金状况和预测，您可以问：“现金状况怎么样？”。 |
+| NIB-16 | zh | 公司值多少钱？ | SHOW_STATUS → ASK_BOOKS | ANSWERED | FLOW 的账目中没有公司估值。我能提供的最接近的是您的月度 EBITDA（¥90,000.00）及据此计算的契约指标，您可以问：“偿债覆盖率是多少？”。 |
+
+Of the 35: 17 are now answered, 6 partial and 12 an honest can't. The 12 can'ts are the ones the answer layer is expected to
+answer (the term debt and its next payment, DSO, the plan's pro forma covenants, capex contracts on file, money moved, the
+mandate's expiry, counters sent).
+
+**Every turn's move** (503): 19 answered → answered, 58 partial → answered, 9 can't → answered, 10 can't → partial, 17 wrong →
+answered, 6 wrong → partial, 12 wrong → can't, 4 partial → partial, 47 can't → can't (the rest unchanged in score and intent).
+The only regressions are two turns, PARTIAL → CANT: COV-07 zh "FLOW的融资方案会违反契约吗？" and "这个方案会不会违反契约？". They
+were answered with the comparison or with today's ratios, neither of which is the plan's pro forma; they now say so.

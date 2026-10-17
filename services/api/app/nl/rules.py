@@ -3,6 +3,9 @@ classifier is consulted only when these rules find nothing.
 
 Order matters and is fixed ("why"/"为什么" makes a request EXPLAIN before any decline or approval cue):
   (borrower file, financing comparison, reconciliation, ratios and capex are read before the status questions)
+  the question gate first: an information question that only names a Tier-3 subject, a subject the books do not hold, or a
+  topic a read cue would answer wrongly is ASK_BOOKS (app/nl/ask.py), and every action rule below answers a question with
+  ASK_BOOKS instead of acting; an otherwise unread question about the books is ASK_BOOKS too,
   correction / confirmation of the session's pending plan (a short whole-message affirmative only), Tier-3 requests,
   explicit approvals (a full-match approve or reject sentence only; see app/nl/consent.py), the closed command grammar
   (the only free text that executes a draw or a repay),

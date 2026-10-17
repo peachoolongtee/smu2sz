@@ -85,11 +85,16 @@ def _zh(ctx: NlContext, text: str) -> str:
     """An engine sentence (a router label or note) in Chinese, in the owner's words when the owner's reads are lent to the
     turn (names for ids, distances from today), else through the translation layer; a sentence no template knows stays
     as written."""
+    if text in _ROUTER_NOTES_ZH:
+        return _ROUTER_NOTES_ZH[text]
     if ctx.reads is not None:
         return str(ctx.reads.words(text, "zh"))
     from app.api.engine_zh import translate
 
     return translate(text, [f.name for f in ctx.state().facilities]) or text
+
+
+_ROUTER_NOTES_ZH = {"no capacity (limit fully used or zero)": "没有可用额度（额度已用尽或为零）"}
 
 
 def compare_financing(ctx: NlContext) -> Turn:
