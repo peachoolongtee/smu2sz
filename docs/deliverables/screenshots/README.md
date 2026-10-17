@@ -28,6 +28,7 @@ story.
 | `shot7-deal-zh.png` | The same deal page as shot 2, in Chinese. The buyer's message stays in the words it was sent in. | Same as shot 2. The legend is in Chinese. |
 | `shot8-phone-home.png` | Home at 390 px on day 0: the outlook and the recommendation card, with the tab bar at the bottom. | 1 · Cash in 30 days without new funding. 2 · The amount to secure. 3 · What it costs. 4 · No approval needed. |
 | `shot9-attach.png` | Attach deals: the agent's reading of supply agreement FHR-2026-07. Each term sits beside its quoted clause, and the focused term (Price, §3.1) lights its clause in the contract text. | 1 · Each term the agent read, with its clause number and the exact words it quoted. 2 · The clause lights up in the contract text when you focus its term. 3 · Numbered markers show which terms each clause holds. |
+| `shot10-ask-answer.png` | Ask FLOW's full page on day 0 answering "Are we safe?" as an answer card: the lead sentence, three key figures, the plan's cost and two links. Cropped, without annotations, from `docs/screenshots/ask-ui/after/page-desktop-en-answer.png` (taken 18 Oct 2026 on `feat/ask-ui` against the live API on the opening books, 1440×900). | none |
 
 ## Notes for the document
 
