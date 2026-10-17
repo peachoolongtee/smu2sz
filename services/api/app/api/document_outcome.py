@@ -21,6 +21,7 @@ from typing import Any
 from urllib.parse import quote
 
 from app.api.presentation import Lang, document_name, facility_name, t, when_text
+from app.config import get_settings
 from app.domain.models import ContractField, ContractRecord, DocumentKind, DocumentStatus, FinancialState
 from app.domain.ports import ContractGuardRow
 
@@ -121,6 +122,9 @@ def document_outcome(record: ContractRecord, state: FinancialState, records: Seq
                        "您的账本和预测没有变化。确认只是记录合同的内容，不会记入任何发票，也不会更改账期。"),
                      t(lang, f"New requests from {who} are still checked against your books and your limits, not against this contract.",
                        f"{who}之后提出的新要求，仍按您的账本和限额核对，而不是按这份合同。")]
+        if get_settings().features.contract_terms:  # ADR-0014: the separate owner step that can add the contract's invoices
+            unchanged.append(t(lang, "To add this contract's repeating invoice to your forecast, use “Set up in my books” below.",
+                               "如需把这份合同的定期发票加入预测，请使用下方的“记入我的账簿”。"))
         link = {"label": t(lang, f"Open {who}'s record", f"查看{who}的客户记录"),
                 "href": f"/customers/{quote(record.counterparty_id, safe='')}"}
     elif kind == DocumentKind.LENDER_AGREEMENT:
