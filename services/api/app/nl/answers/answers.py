@@ -664,9 +664,13 @@ def a_debt_cost(w: W, q: str) -> AnswerReply:
     what = ""
     if loans:
         x = loans[0]
-        rate = fmt_pct(bp(x["rate_bp"]))
-        what = w.t(f": the {w.loan(x['label'])}'s scheduled payment, at the {rate} rate the books record",
-                   f"：即{w.loan(x['label'])}的计划还款，账目记录的利率为 {rate}")
+        if x["rate_bp"]:
+            rate = fmt_pct(bp(x["rate_bp"]))
+            what = w.t(f": the {w.loan(x['label'])}'s scheduled payment, at the {rate} rate the books record",
+                       f"：即{w.loan(x['label'])}的计划还款，账目记录的利率为 {rate}")
+        else:  # a rate of 0 is the fixture's placeholder, not a 0% loan: the books hold no rate
+            what = w.t(f": the {w.loan(x['label'])}'s scheduled payment; the books record no interest rate for it",
+                       f"：即{w.loan(x['label'])}的计划还款；账目中没有记录它的利率")
     f = w.fig("interest_fees", fees.display)
     return w.reply("DEBT-03", w.t(f"{amt} a month of debt service{what}. Interest and fees on your facilities over the forecast: {f}.",
                                   f"每月还本付息 {amt}{what}。预测期内各融资额度的利息和费用合计 {f}。"))
@@ -1023,10 +1027,16 @@ def a_breakpoints(w: W, q: str) -> AnswerReply:
     dsn, dbn = money(d["debt_service_now_fen"]), money(d["debt_now_fen"])
     p1 = pct0(Fraction(d["debt_service_now_fen"], ds_max)) if ds_max else "—"
     p2 = pct0(Fraction(d["debt_now_fen"], debt_max)) if debt_max else "—"
+    ds_end, debt_end, paid = d["debt_service_month_end"], d["debt_month_end"], d["debt_paid_day"]
+    ds_basis = w.t(f"the highest projected month's debt service is {dsn}, in the month to day {ds_end}",
+                   f"预测中单月还本付息最高为 {dsn}，在截至第 {ds_end} 天的那个月")
+    debt_basis = w.t(f"the highest projected month-end debt is {dbn}, at day {debt_end}"
+                     + (f", after the day-{paid} loan payment" if paid is not None else ""),
+                     f"预测中月末负债最高为 {dbn}，即第 {debt_end} 天的月末余额" + (f"，已扣除第 {paid} 天的还款" if paid is not None else ""))
     return w.reply("COV-05", w.t(
-        f"Monthly debt service above {dsm} (now {dsn}) breaks the DSCR covenant; total debt above {dbm} (now {dbn}) breaks the "
-        f"leverage covenant. You are at {p1} and {p2} of those limits, on monthly EBITDA of {money(w.r.state.monthly_ebitda_fen)}.",
-        f"每月还本付息超过 {dsm}（目前 {dsn}）会违反偿债覆盖率契约；总负债超过 {dbm}（目前 {dbn}）会违反杠杆率契约。目前分别处于上限的 "
+        f"Monthly debt service above {dsm} breaks the DSCR covenant ({ds_basis}); total debt above {dbm} breaks the leverage "
+        f"covenant ({debt_basis}). You are at {p1} and {p2} of those limits, on monthly EBITDA of {money(w.r.state.monthly_ebitda_fen)}.",
+        f"每月还本付息超过 {dsm} 会违反偿债覆盖率契约（{ds_basis}）；总负债超过 {dbm} 会违反杠杆率契约（{debt_basis}）。目前分别处于上限的 "
         f"{p1} 和 {p2}，按每月息税折旧摊销前利润 {money(w.r.state.monthly_ebitda_fen)} 计算。"))
 
 

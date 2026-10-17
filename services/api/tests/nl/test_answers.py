@@ -390,6 +390,25 @@ def test_data_the_books_do_not_hold_is_said_not_invented(day0) -> None:
     assert "do not say whether it can be repaid early" in ask(rt, "Can we clear our debts?", "en").text
 
 
+def test_figures_that_could_be_misread_carry_their_basis(day0) -> None:
+    rt, routes = day0
+    # the demo loan's rate is 0 in the books: a placeholder, never said as a 0% loan
+    assert routes.state["debts"][0]["rate_bp"] == 0
+    cost_en, cost_zh = ask(rt, "What does our debt cost us each month?", "en"), ask(rt, "我们的债务每个月要付多少？", "zh")
+    assert cost_en.text.startswith("¥45,000 a month of debt service") and "the books record no interest rate for it" in cost_en.text
+    assert cost_zh.text.startswith("每月还本付息 ¥45,000") and "账目中没有记录它的利率" in cost_zh.text
+    assert "0.00%" not in cost_en.text + cost_zh.text
+    # the leverage figure is a projected month-end, after the day-30 payment, so it differs from today's ¥1,500,000 and says why
+    month1 = routes.traj["months"][0]
+    debt_end = whole(month1["total_debt"]["fen"])
+    assert debt_end == "¥1,455,000" and whole(routes.total_debt) == "¥1,500,000"
+    breaks_en, breaks_zh = ask(rt, "What would break our covenants?", "en"), ask(rt, "什么情况会让我们违反契约？", "zh")
+    assert f"the highest projected month-end debt is {debt_end}, at day 30, after the day-30 loan payment" in breaks_en.text
+    assert f"the highest projected month's debt service is {whole(month1['debt_service']['fen'])}, in the month to day 30" in breaks_en.text
+    assert f"预测中月末负债最高为 {debt_end}，即第 30 天的月末余额，已扣除第 30 天的还款" in breaks_zh.text
+    assert "now" not in breaks_en.text and "目前 ¥" not in breaks_zh.text
+
+
 def test_a_late_payment_of_another_length_is_one_projection(day0) -> None:
     rt, _ = day0
     reply = ask(rt, "What if Foshan pays 15 days late?", "en")

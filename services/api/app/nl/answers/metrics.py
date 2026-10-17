@@ -673,12 +673,21 @@ def covenant_breakpoints(ctx: Any) -> Metric:
     ds_max = round_half_up(Fraction(ebitda) / c["dscr_limit"]) if c["dscr_limit"] else None
     debt_max = round_half_up(c["lev_limit"] * 12 * ebitda)
     months = r.traj.months
-    ds_now = max((m.debt_service_fen for m in months), default=0)
-    debt_now = max((m.total_debt_fen for m in months), default=0)
+    ds_m = max(months, key=lambda m: (m.debt_service_fen, -m.month), default=None)
+    debt_m = max(months, key=lambda m: (m.total_debt_fen, -m.month), default=None)
+    last_day = r.traj.days[-1].day if r.traj.days else 0
+
+    def month_end(m: Any) -> int | None:  # the projection's month m runs over days 30(m-1)+1 .. 30m (`financial.trajectory._month_of`)
+        return min(m.month * 30, last_day) if m is not None else None
+
+    debt_end = month_end(debt_m)
+    paid = ([e for e in r.events((debt_m.month - 1) * 30, debt_end) if e.kind == FlowKind.DEBT_SERVICE.value]
+            if debt_m is not None and debt_end is not None else [])
     return Metric("covenant_breakpoints", {"debt_service_max_fen": ds_max, "debt_max_fen": debt_max}, money(ds_max or 0), None,
                   "EBITDA / min DSCR, max leverage × 12 × EBITDA",
-                  {"debt_service_now_fen": ds_now, "debt_now_fen": debt_now, "dscr_limit": c["dscr_limit"],
-                   "lev_limit": c["lev_limit"]})
+                  {"debt_service_now_fen": ds_m.debt_service_fen if ds_m else 0, "debt_now_fen": debt_m.total_debt_fen if debt_m else 0,
+                   "debt_service_month_end": month_end(ds_m), "debt_month_end": debt_end,
+                   "debt_paid_day": paid[-1].day if paid else None, "dscr_limit": c["dscr_limit"], "lev_limit": c["lev_limit"]})
 
 
 def ebitda_month(ctx: Any) -> Metric:
