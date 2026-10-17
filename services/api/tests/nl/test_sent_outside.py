@@ -142,3 +142,22 @@ def test_the_pipeline_builders_refuse_on_their_own(client: TestClient, rt: Runti
     assert pipeline.run_negotiation(ctx, steps, verdict, verdict.counters, "cooperative").outcome == "NOT_STARTED"
     assert [(s.status, s.description) for s in steps.items] == [("SKIPPED", REFUSAL["zh"])] * 4
     assert _snapshot(rt) == before and ctx.results == [] and rt.store.verify_chain()
+
+
+def test_a_confirmed_early_pay_plan_sends_nothing_on_a_request_sent_outside(client: TestClient, rt: Runtime) -> None:
+    """run_accelerate (the go-ahead on an early-pay plan) does not send its counter, negotiate, or run its fallback legs."""
+    from app.nl.context import NlContext
+    from app.nl.funding import run_accelerate
+    from app.nl.models import Intent, Slots
+    from app.nl.sessions import PendingPlan, Session
+
+    oid = _mark_through_the_route(client, EX02)
+    verdict = next(v for v in reversed(rt.store.verdicts()) if v.offer_id == oid)
+    ctx = NlContext(store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex, owner_authenticated=True,
+                    session=Session(id="out1-accel", actor="OWNER", owner_auth=True), lang="en", trace_id="out1")
+    data = {"verdict_id": verdict.id, "counter_id": verdict.counters[0].id, "cp": "BUYER-1", "verify": "", "accept_ops": [],
+            "refuse_ops": []}
+    before = _snapshot(rt)
+    turn = run_accelerate(ctx, PendingPlan(Intent.ACCELERATE_RECEIPT, Slots(), [], data))
+    assert turn.reply == REFUSAL["en"] and turn.plan == [] and turn.negotiation is None and turn.clear_pending
+    assert _snapshot(rt) == before and ctx.results == [] and rt.store.verify_chain()
