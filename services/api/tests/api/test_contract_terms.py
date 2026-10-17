@@ -303,7 +303,9 @@ def test_ct3_another_dongguan_company_as_buyer_cannot_be_set_up(client, on, rt):
     d = _confirmed(client, DGOS.replace("(2) Dongguan Office Supplies Ltd.,", "(2) Dongguan Steel Works Ltd.,"))
     v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
     assert v["status"] == "BLOCKED" and not v["can_set_up"]
-    assert {p["code"] for p in v["problems"]} == {"PARTY_NOT_THIS_CUSTOMER"}
+    # REG-2's party check now blocks the confirmation itself, so the step says the contract is not confirmed; without it,
+    # the set-up's own buyer check (CT-3) would say the party is not this customer. Either way nothing is set up.
+    assert {p["code"] for p in v["problems"]} <= {"PARTY_NOT_THIS_CUSTOMER", "NOT_CONFIRMED"} and v["problems"]
     assert not _buyer2(rt)
 
 

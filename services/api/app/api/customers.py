@@ -146,7 +146,9 @@ def _refuse_lookalikes(rt: Any, state: Any, extra: dict[str, list[str]], name: s
                             zh=f"该名称与账簿中已有的{cp.name}过于相近，因此没有添加客户。")
     taken = {name_key(n) for n in own} | {name_key(short_name(n)) for n in own}
     for cp in state.counterparties:
-        taken_by = {name_key(n) for n in registry_names(cp, extra.get(cp.id, ()))}
+        # the pages' first-word short form is reserved too: REG-2 no longer counts it as a registry name, but no new customer
+        # may take it (`parties.taken_names`)
+        taken_by = {name_key(n) for n in [*registry_names(cp, extra.get(cp.id, ())), short_name(cp.name)]}
         if mine & taken_by:
             raise _conflict("SHORT_NAME_TAKEN", existing_id=cp.id, lang=lang,
                             en=f"The short name for this customer is the one {cp.name} already uses, so no customer was added. "
