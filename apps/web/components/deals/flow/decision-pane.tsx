@@ -191,6 +191,7 @@ function RecordBlock({ record, decision }: { record: DecisionView; decision: str
         </div>
       ) : null}
       {record.agreement?.receipt ? <CommitmentReceipt receipt={record.agreement.receipt} id={`${decision}-agreement-receipt`.replace(/[^A-Za-z0-9_-]/g, "-")} title={t("receipt.title.agreed")} testId="deal-agreement-receipt" /> : null}
+      {record.agreement?.funding_next && !record.outbound ? <FundingNext step={record.agreement.funding_next} /> : null}
       {record.remaining_task?.text && record.remaining_task.text !== waiting ? (
         <p className="text-sm text-ink-2" data-testid="deal-left">
           {record.remaining_task.text}

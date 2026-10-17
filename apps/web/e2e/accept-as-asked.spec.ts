@@ -109,6 +109,10 @@ test.describe("live", () => {
     // The server's own account of what ran, then the record: Agreed, with the agreement's receipt.
     await expect(page.getByTestId("deal-accepted-ran")).not.toBeEmpty();
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
+    // Accepting funds nothing (the owner runs the funding): the busy books' reserve gap is still ahead, and the next step says so once, with the way on.
+    await expect(page.getByTestId("deal-funding-next")).toHaveCount(1);
+    await expect(page.getByTestId("deal-funding-next-text")).toContainText(/^The agreement ran no funding: cash still falls ¥[\d,.]+ below your minimum/);
+    await expect(page.getByTestId("deal-funding-next-link")).toHaveAttribute("href", /^\/cash/);
     await page.getByTestId("deal-tab-terms").click();
     await expect(page.getByTestId("deal-record")).toBeVisible();
     await expect(page.getByTestId("deal-state-chip")).toContainText("Agreed");
