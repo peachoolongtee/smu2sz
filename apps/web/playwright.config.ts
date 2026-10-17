@@ -85,6 +85,8 @@ export default defineConfig({
             name: "video",
             testMatch: /video[\\/]walkthrough\.spec\.ts/,
             timeout: 25 * 60_000,
+            // Pages on fresh books read several answers at once (the strategy views warm in the background): a wait on what the server writes allows 30 s.
+            expect: { timeout: 30_000 },
             use: {
               ...desktop,
               viewport: { width: 1920, height: 1080 },

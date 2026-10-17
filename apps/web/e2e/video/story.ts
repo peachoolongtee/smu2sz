@@ -18,7 +18,7 @@ const DONGGUAN = "Dongguan Office Supplies Ltd.";
 const EX01 = "We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward and give us 1% off next quarter.";
 
 /** Set to false once the chat answers a Chinese question in Chinese whatever the page's language (pending fix): the scene then asks without switching. */
-const ZH_NEEDS_SWITCH = true;
+const ZH_NEEDS_SWITCH = false; // dev ed5e0932: a Chinese question is answered in Chinese whatever the page language
 
 /** The owner's saved setup draft (the wizard keeps it in this browser: "Save and finish later"), with the books starting today. */
 async function saveDraft(page: Page): Promise<void> {
@@ -147,7 +147,8 @@ export const goldenHome: Scene = {
   run: async (reel) => {
     const { page } = reel;
     await take(reel, "golden_sme", "<div><h1>Day 0</h1><p>The demo company's books: Lingnan Homeware, synthetic.<br/>Payroll in 12 days. A ¥420,000 invoice to Foshan due in 32.</p></div>", 3);
-    await expect(page.getByTestId("home-action-title")).toContainText("before payroll");
+    // Home reads several things on fresh books (the strategy answers warm in the background): give it time.
+    await expect(page.getByTestId("home-action-title")).toContainText("before payroll", { timeout: 60_000 });
     await expect(page.getByTestId("home-next-action")).toContainText("¥3,113.93");
     await reel.hold(3);
     await point(page, page.getByTestId("hv2-funding-rows"));
@@ -168,8 +169,8 @@ export const buyerAsks: Scene = {
     const role = page.locator('input[name^="chat-role"][value="COUNTERPARTY"]').first();
     await point(page, role);
     await role.check();
-    await expect(page.locator("#chat-input")).toBeVisible();
-    await page.locator("#chat-input").fill(EX01);
+    await expect(page.getByTestId("chat-input")).toBeVisible();
+    await page.getByTestId("chat-input").fill(EX01);
     await reel.hold(1.5);
     await press(page, page.getByTestId("chat-send"));
     await expect(page.getByTestId("chat-turn").last().getByTestId("chat-reply")).toContainText("Option A", { timeout: 30_000 });
@@ -276,7 +277,7 @@ export const latePayment: Scene = {
   id: "late-payment",
   title: "A late payment",
   caption: "Home raises the alarm: the reserve becomes unsafe in 8 days, and FLOW has a priced cure.",
-  about: "Day 34: Home's alarm and priced cure; Receivables: ¥160,000 two days late, Chase payment; Ask FLOW “What needs my attention?”.",
+  about: "Day 34: Home's alarm and priced cure; Receivables: ¥160,000 two days late, Chase payment; Ask FLOW speaks first: the late payment, the breach and the cure, waiting for the owner's yes.",
   run: async (reel) => {
     const { page } = reel;
     await go(page, "Home", /\/$/);
@@ -290,14 +291,10 @@ export const latePayment: Scene = {
     await expect(page.locator('[data-testid^="chase-detail-CHASE-dialog-"]')).toContainText("¥160,000.00");
     await reel.hold(3);
     await page.keyboard.press("Escape");
-    await reel.say("Ask FLOW: “What needs my attention?” It names the breach and the priced cure, and asks before anything runs.");
-    await page.goto("/chat");
-    const owner = page.locator('input[name^="chat-role"][value="OWNER"]').first();
-    if (await owner.count()) await owner.check();
-    await type(page, page.locator("#chat-input"), "What needs my attention?");
-    await press(page, page.getByTestId("chat-send"));
-    const turn = page.getByTestId("chat-turn").last();
-    await expect(turn.getByTestId("chat-reply")).toContainText("¥1,782.19", { timeout: 30_000 });
+    await reel.say("Ask FLOW speaks first once time has moved: the late payment, the breach and the cure, and nothing runs until the owner says yes.");
+    await page.goto("/ask");
+    const turn = page.getByTestId("chat-turn").first();
+    await expect(turn.getByTestId("chat-reply")).toContainText("has not arrived", { timeout: 30_000 });
     await glide(page, turn, "center", 600);
     await reel.frame("attention");
     await reel.hold(4.5);
@@ -368,7 +365,7 @@ export const contractSetUp: Scene = {
     const field = form.getByTestId("doc-counterparty");
     await type(page, field, DONGGUAN);
     const option = page.getByRole("option", { name: DONGGUAN, exact: true }).first();
-    if (await option.isVisible().catch(() => false)) await press(page, option);
+    if (await option.waitFor({ timeout: 3000 }).then(() => true, () => false)) await press(page, option);
     await expect(field).not.toHaveAttribute("aria-invalid", "true");
     await form.locator('input[type="file"]').setInputFiles(join(FIXTURES, "contract_terms", "dgos-2026-09-supply-agreement.md"));
     await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED", { timeout: 60_000 });
@@ -397,24 +394,40 @@ export const askFlow: Scene = {
   id: "ask-flow",
   title: "Ask FLOW",
   caption: "Ask FLOW in plain words: every answer comes from the books.",
-  about: "Ask FLOW: “Are we safe?”, then “我们安全吗？” answered in Chinese, then a personal guarantee refused (Tier 3).",
+  about: "Ask FLOW: “Are we safe?” as an answer card whose link opens the cash forecast, then “我们安全吗？” answered in Chinese, then a personal guarantee refused (Tier 3).",
   run: async (reel) => {
     const { page } = reel;
-    await page.goto("/chat");
-    const box = page.locator("#chat-input");
+    await page.goto("/ask");
+    const box = page.getByTestId("chat-input");
     const turns = page.getByTestId("chat-turn");
     const ask = async (q: string, read: number, expectText?: RegExp) => {
+      // FLOW's own opener may still be arriving when the page opens: let it land, then count FLOW's turns.
+      await page.waitForLoadState("networkidle").catch(() => undefined);
       const before = await turns.count();
       await type(page, box, q);
       await press(page, page.getByTestId("chat-send"));
-      await expect(turns).toHaveCount(before + 1, { timeout: 30_000 });
-      const reply = turns.last().getByTestId("chat-reply");
+      await expect.poll(() => turns.count(), { timeout: 30_000 }).toBeGreaterThan(before);
+      const turn = turns.last();
+      const reply = turn.getByTestId("chat-reply");
       await expect(reply).not.toBeEmpty({ timeout: 30_000 });
       if (expectText) await expect(reply).toContainText(expectText);
-      await glide(page, turns.last(), "center", 500);
+      await glide(page, turn, "center", 500);
       await reel.hold(read);
     };
-    await ask("Are we safe?", 3.5);
+    await ask("Are we safe?", 3);
+    // An answer card: the lead, the figures, and links that open the page behind each one.
+    const card = turns.last().getByTestId("chat-card");
+    await expect(card.getByTestId("card-figures")).toBeVisible();
+    await point(page, card.getByTestId("card-figures"));
+    await reel.say("An answer card: the lead, the figures, and links to the page each one comes from.");
+    await reel.hold(3);
+    const link = card.getByTestId("card-action").first();
+    await press(page, link);
+    await page.waitForURL(/\/cash/);
+    await reel.hold(3);
+    await page.goBack();
+    await expect(card).toBeVisible();
+    await reel.say("In Chinese, the answer comes in Chinese.");
     if (ZH_NEEDS_SWITCH) await setLang(page, "zh");
     await ask("我们安全吗？", 3.5, /[一-鿿]/);
     await reel.frame("ask-zh");
