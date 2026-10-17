@@ -1,28 +1,33 @@
 <!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css">
-<div class="fig" id="fig">
-<div class="row" style="align-items:center;gap:10px">
-  <div class="box unt" style="flex:1"><b>Typed operation</b><small>from the owner, the agent, the bank feed or a verdict; a body cannot claim a tier or an actor</small></div>
-  <div class="arrow">→</div>
-  <div class="box det gate"><span class="n">1</span><b>Idempotency</b><small>same key, same operation</small><div class="out"><span class="chip c-blu">DUPLICATE</span><span class="chip c-red">REPLAY</span></div></div>
-  <div class="arrow">→</div>
-  <div class="box det gate"><span class="n">2</span><b>Dating</b><small>day equals the executor's clock</small><div class="out"><span class="chip c-red">STALE_OPERATION</span><span class="chip c-red">REPLAY</span></div></div>
-  <div class="arrow">→</div>
-  <div class="box det gate"><span class="n">3</span><b>Mandate</b><small>Ed25519 signature, pinned key, expiry, revocation, version</small><div class="out"><span class="chip c-red">BAD_SIGNATURE</span><span class="chip c-red">REVOKED</span></div></div>
-  <div class="arrow">→</div>
-  <div class="box det gate"><span class="n">4</span><b>Tier 3</b><small>guarantees, pledges, equity, mandate changes, unknown types</small><div class="out"><span class="chip c-red">REFUSED for everyone</span></div></div>
+<style>
+.gates{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(4,auto);gap:6px 10px}
+.g.box{padding:6px 10px;display:flex;flex-direction:column}
+.g .h{display:flex;align-items:center;gap:8px}
+.g .n{flex:none;width:32px;height:32px;border-radius:50%;background:#24324a;color:#fff;font-weight:700;text-align:center;line-height:32px;font-size:20px}
+.g .h b{margin:0}
+.g small{margin-top:2px}
+.g .out{margin-top:auto;padding-top:1px}
+.g .chip{margin-top:2px}
+.note .box{height:100%}
+</style>
+<div class="fig" id="fig" style="padding:14px 22px">
+<div class="box unt" style="margin-bottom:6px;padding:5px 10px"><b>Typed operation</b><small>from the owner, the agent, the bank feed or a verdict. A body cannot claim a tier or an actor</small></div>
+<div class="gates">
+<div class="g box det"><div class="h"><span class="n">1</span><b>Idempotency</b></div><small>same key, same operation</small><div class="out"><span class="chip c-blu">DUPLICATE</span><span class="chip c-red">REPLAY</span></div></div>
+<div class="g box det"><div class="h"><span class="n">2</span><b>Dating</b></div><small>day equals the executor's clock</small><div class="out"><span class="chip c-red">STALE_OPERATION</span></div></div>
+<div class="g box det" style="border-width:3px;padding:5px 9px"><div class="h"><span class="n">3</span><b>Mandate</b></div><small>signature, key pin, expiry, revocation, version</small><div class="out"><span class="chip c-red">BAD_SIGNATURE</span><span class="chip c-red">MANDATE_EXPIRED</span><span class="chip c-red">MANDATE_REVOKED</span></div></div>
+<div class="g box det"><div class="h"><span class="n">4</span><b>Tier 3</b></div><small>guarantees, pledges, equity, mandate changes, unknown types</small><div class="out"><span class="chip c-red">REFUSED for everyone</span></div></div>
+<div class="g box det"><div class="h"><span class="n">5</span><b>Circuit breaker</b></div><small>3 refused offer operations in 7 days; only the owner resets</small><div class="out"><span class="chip c-red">CIRCUIT_OPEN</span></div></div>
+<div class="g box det"><div class="h"><span class="n">6</span><b>Acceptance binding</b></div><small>commitment, single-use nonce, terms hash, verdict re-verified now</small><div class="out"><span class="chip c-red">STALE_VERDICT</span><span class="chip c-red">CONFLICTING_COMMITMENT</span></div></div>
+<div class="g box owner"><div class="h"><span class="n">7</span><b>Tier-2 queue</b></div><small>queued as its own canonical JSON; only the owner decides</small><div class="out"><span class="chip c-amb">PENDING_APPROVAL</span></div></div>
+<div class="g box det"><div class="h"><span class="n">8</span><b>Preconditions and admission</b></div><small>limits, statuses; DSCR, leverage, reserve on today's books</small><div class="out"><span class="chip c-red">REFUSED</span></div></div>
 </div>
-<div class="varrow" style="text-align:right;padding-right:110px">↓</div>
-<div class="row" style="align-items:center;gap:10px;flex-direction:row-reverse">
-  <div class="box det gate"><span class="n">5</span><b>Circuit breaker</b><small>3 refused offer operations in 7 days; only the owner resets</small><div class="out"><span class="chip c-red">REFUSED</span></div></div>
-  <div class="arrow">←</div>
-  <div class="box det gate"><span class="n">6</span><b>Acceptance binding</b><small>commitment, single-use nonce, terms hash, verdict re-verified now</small><div class="out"><span class="chip c-red">STALE_VERDICT</span><span class="chip c-red">CONFLICTING</span></div></div>
-  <div class="arrow">←</div>
-  <div class="box owner gate"><span class="n">7</span><b>Tier 2</b><small>queued as its own canonical JSON; only the owner decides</small><div class="out"><span class="chip c-amb">PENDING_APPROVAL</span></div></div>
-  <div class="arrow">←</div>
-  <div class="box det gate"><span class="n">8</span><b>Preconditions and admission</b><small>limits, statuses; DSCR, leverage, reserve on today's books</small><div class="out"><span class="chip c-red">REFUSED</span></div></div>
-  <div class="arrow">←</div>
-  <div class="box det" style="flex:1.5;border-width:3px"><b>EXECUTED, in one unit of work</b><small>state, commitment, nonce, approval, security event and the log entry commit together or not at all; entry_hash = sha256(prev_hash + payload + result)</small><div class="out"><span class="chip c-grn">EXECUTED</span></div></div>
+<div class="varrow" style="margin:2px 0;font-size:19px;line-height:1.1">↓ after gate 8</div>
+<div class="box det" style="border-width:3px;padding:5px 10px"><b>EXECUTED, in one unit of work</b><small>state, commitment, nonce, approval, security event and log entry commit together or not at all</small></div>
+
+<div class="row note" style="margin-top:8px;gap:8px">
+<div style="flex:1;min-width:0"><div class="box warn" style="border-width:3px;padding:5px 9px"><b>Gate 3 after the mandate expires, is revoked or changes version</b><small>Only two operations still pass, each with a valid signature: <b style="display:inline;font-size:19px">ReceivePayment</b> (bank feed or owner) and <b style="display:inline;font-size:19px">RepayFacility</b> (owner), because they record or settle money that already moved. Every other operation is refused.</small></div></div>
+<div style="flex:1;min-width:0"><div class="box owner" style="padding:5px 10px"><b>Owner's decision on a Tier-2 item</b><small>The executor re-runs every gate except the queue, dated to the decision day, against the mandate then in force. An approval after a revocation is refused, and an approved Tier 3 stays refused (SEC-08).</small></div></div>
 </div>
-<div class="box owner" style="margin-top:16px"><b>Owner's decision on a Tier-2 item</b><small>The executor re-runs every gate except the queue, dated to the decision day, against the mandate then in force. An approval after a revocation is refused; an approved Tier-3 operation stays refused; a decision the log already holds is refused even if the approval row was edited back to pending (SEC-08).</small></div>
-<div class="legend"><span><span class="chip c-grn">EXECUTED</span> the only outcome that changes the books</span><span><span class="chip c-amb">PENDING_APPROVAL</span> waits for the owner</span><span><span class="chip c-red">refusal</span> logged as its own entry; nothing in the books changes</span></div>
+<div class="legend" style="margin-top:6px"><span><span class="chip c-grn">EXECUTED</span>changes the books</span><span><span class="chip c-amb">PENDING_APPROVAL</span>waits for the owner</span><span><span class="chip c-red">refusal</span>logged, books unchanged</span></div>
 </div>

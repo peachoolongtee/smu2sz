@@ -1,5 +1,35 @@
 # Security integration queue
 
+## Round four, 17 Oct: after the external review of the self-assessment
+
+Built from dev `0fde33fd`, one concern each, no engine module touched. **Combined gate** on `sec/batch-17oct` @ `4fbb2946` (dev `0fde33fd`
+plus all six below, merged in this order, no conflicts):
+
+| Suite | Result |
+| --- | --- |
+| tests/security | 380 passed |
+| tests/operations | 412 passed, 1 skipped |
+| tests/books | 83 passed (#161 gone) |
+| tests/persistence | 161 passed, 1 skipped |
+| tests/nl | 1,156 passed |
+| tests/api | 1,729 passed, 2 skipped |
+| Mock browser suite | 445 passed, 61 skipped |
+| typecheck, lint, unit | pass |
+| ruff on the changed files | 2 findings, both pre-existing lines in `test_modules_on_books.py` (dev has 63 repo-wide) |
+
+| # | Branch @ head | Finding | Files | Tests | Ready |
+|---|---|---|---|---|---|
+| 1 | `sec/refusal-budget` @ `089ff973` | SEC-26: one address could hide everyone's refused credentials for an hour | `app/api/auth.py`, `tests/security/test_sec26_refusal_budget.py` | regression 3 (2 fail before) | **yes** |
+| 2 | `sec/evidence-verifier` @ `aa050d85` | EV-1: the offline verifier trusted readable fields, ignored the count, had no checkpoint | `scripts/verify_evidence.py`, `tests/security/test_evidence_verifier.py` | regression 5 (5 fail before); all 49 committed evidence files VALID | **yes** |
+| 3 | `sec/anonymous-intake-switch` @ `d8d22332` | SEC-19: `ANONYMOUS_INTAKE=0` for a network demo (default on) | `app/config.py`, `app/api/offers.py`, `tests/security/test_anonymous_intake_switch.py` | regression 3 (1 fails before) | **yes** |
+| 4 | `sec/harness-assurance` @ `28133edc` | SEC-24, SEC-32, SEC-34: NOT_REACHED, typed expectations for every API case, exact counts (127 API, 133 chat), positive controls, mutation tests, TC-04 | `app/security/attacks.py`, `evals/security/attacks.yaml`, `evals/security/latest_report.*`, `tests/security/` | tests/security 353 on the branch | **yes** |
+| 5 | `sec/route-policy` @ `3c4bd9ed` | SEC-25: every method and route classified and called as every caller | `tests/security/test_route_policy.py`, `route_policy_support.py` | 16 passed (about 130 s) | **yes** |
+| 6 | `ci/linux-green` commit `e658ba64` (cherry-pick alone) | T-161: the stale router-plan digest | `tests/books/test_modules_on_books.py` (golden only) | tests/books 83 passed | **yes** |
+| 7 | `docs/security-assessment-v3` @ (latest) | self-assessment v3, technical document alignment, register, certifications, release gate, figures, builder | docs and `scripts/build_deliverables.py`, `scripts/security_manifest.py` | builds all three documents | **yes** (owner's review of v3) |
+
+The anonymous-intake switch, SEC-26 and the evidence verifier are described in v3 as in the assessed build; if any is not merged, the
+Security Lead moves it to open before certifying.
+
 ## Round three, 17 Oct
 
 The five round-two branches and the OUT-1 fix are merged (`719c9dcf`, certified 17 Oct for scope S).

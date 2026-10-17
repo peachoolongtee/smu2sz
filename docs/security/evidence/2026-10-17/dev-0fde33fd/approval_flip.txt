@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\sec-fix3\docs\security\evidence\2026-10-14\approval_flip.py", line 3, in <module>
+    SCR = pathlib.Path(sys.argv[1])
+                       ~~~~~~~~^^^
+IndexError: list index out of range
