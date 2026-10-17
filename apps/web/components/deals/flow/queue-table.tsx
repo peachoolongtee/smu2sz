@@ -94,7 +94,8 @@ function CompactRow({ tier, row, selected, locked, onSelect, avatar, hint }: { t
             <ListAvatar name={avatar.name} index={avatar.index} className="size-10 @lg:size-12" />
           </span>
         ) : null}
-        <div className="pointer-events-none relative z-[1] min-w-0 flex-1">
+        <div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 flex-col @lg:flex-row @lg:items-center @lg:gap-5">
+        <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="min-w-0 font-display text-base font-bold leading-snug text-ink [overflow-wrap:anywhere]" data-testid="queue-subject">
               <Subject row={row} decision={decision} invoice={row.invoice_id ?? null} />
@@ -118,15 +119,12 @@ function CompactRow({ tier, row, selected, locked, onSelect, avatar, hint }: { t
               <span className="min-w-0">{row.consequence_text}</span>
             </p>
           ) : null}
-          {/* In a narrow column (the 380 px queue beside an open deal, a phone) the pill and who acts next sit under the line. */}
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 @lg:hidden">
-            {status}
-            {next}
-          </div>
         </div>
-        <div className="pointer-events-none relative z-[1] hidden max-w-[220px] shrink-0 flex-col items-end gap-1.5 text-right @lg:flex">
+        {/* One pill: under the line in a narrow column (the 380 px queue beside an open deal, a phone), on the right from @lg. */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 @lg:mt-0 @lg:max-w-[220px] @lg:shrink-0 @lg:flex-col @lg:items-end @lg:gap-1.5 @lg:text-right">
           {status}
           {next}
+        </div>
         </div>
         <span className="relative z-[1]">
           <RowChevron selected={selected} hint={hint} />
