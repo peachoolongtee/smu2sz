@@ -172,6 +172,7 @@ export function ActivityRead({ view }: { view: ActivityView }) {
             value={active}
             onChange={setCat}
             scroll
+            equal
             testId="activity-filters"
             tabs={view.categories.map((c) => ({ value: c.key, label: c.label, badge: c.count, testId: `activity-filter-${c.key}` }))}
           />
