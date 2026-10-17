@@ -272,6 +272,7 @@ async function main() {
         FEATURE_EXPOSURE: "1",
         FEATURE_CAPEX_CONTRACTS: "1", // the buy side (ADR-0013, certified): the Capex hub shows Your purchases and Deals its Buying card
         FEATURE_CONTRACT_TERMS: "1", // ADR-0014: a confirmed customer contract can set up its repeating invoice (owner, Tier 2)
+        FEATURE_ASK_ROUTER: "1", // ADR-0015: the model routes an unanswered owner question to read-only tools (live LLM mode only)
         CORS_ORIGINS: `${webOrigin},http://127.0.0.1:${opts.webPort}`,
         ...(opts.blank ? { DEMO_SCENARIO: "blank" } : {}),
       },
