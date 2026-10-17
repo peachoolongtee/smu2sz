@@ -1,13 +1,18 @@
 """ASK_BOOKS: an owner's question about the books, answered read-only (the question gate in app/nl/rules.py routes it here).
 
 Nothing here proposes a plan, compiles an offer, queues or executes an operation, or writes to the operations log or the
-security log: every branch reads the store and the books and writes words. The server writes all of them, in English and
+security log: every branch reads the store and the books and writes words. The one exception is a Tier-3 request put as a
+question ("sign a personal guarantee?", "should we pledge the equipment?"): it goes to the executor like the same words
+without the mark, so it is refused, logged and raises its security event, for every caller (ASK-1;
+lexicon.tier3_is_information). The server writes all of them, in English and
 Chinese. Owner only: with the agent key a question gets the sign-in reply (and a question the old rules did not read at
 all gets exactly the reply it got before).
 
 The order of the answer:
   1. A Tier-3 subject asked about ("Is equity an option?", "Did anyone try to change our limits?"): what FLOW may never
-     do, as information; an attempt is read from the operations log and the security log. Nothing is requested.
+     do, as information; an attempt is read from the operations log and the security log. Nothing is requested. This is
+     for the owner and for a question that only asks for information; a request put as a question, or any question from
+     another caller, is refused by the executor and logged (see `tier3_request`).
   2. A subject the books do not hold (tax, VAT, profit, staff, inventory, competitors, a valuation ...): "FLOW's books do
      not hold {thing}." and the nearest thing FLOW can show, chosen by the subject.
   3. The read-only answer layer, `app.nl.answers.answer(question, lang, ctx)`, when it is installed and answers.
@@ -193,6 +198,13 @@ def tier3_info(ctx: NlContext, kind: str, text: str) -> Turn:
                     f"takes, whoever asks. Only you can decide it, outside FLOW. Nothing was requested or logged.",
                f"{what_zh}不在 FLOW 的权限之内：这是三级操作，无论谁提出，FLOW 都不会执行，只能由您在 FLOW 之外自行决定。"
                f"本次没有提交任何请求，也没有记录。")]
+    lines += _tier3_guidance(ctx, kind)
+    return Turn(intent=Intent.ASK_BOOKS, reply=("" if ctx.lang == "zh" else " ").join(lines), facts={"ask": {"tier3": kind}})
+
+
+def _tier3_guidance(ctx: NlContext, kind: str) -> list[str]:
+    """What the owner can look at instead of the Tier-3 action (the funding menu's equity row, the nearest financing read)."""
+    lines: list[str] = []
     if kind == "ISSUE_EQUITY":
         ref = next((f for f in ctx.state().facilities if f.kind.value == "EQUITY"), None)
         if ref is not None:
@@ -200,7 +212,23 @@ def tier3_info(ctx: NlContext, kind: str, text: str) -> Turn:
                            f"“{ref.name}”仅作为参考列在融资菜单中（约 {ref.lead_time_days} 天到账）。"))
     if kind != "CHANGE_MANDATE":
         lines.append(_nearest_line(ctx, _nearest(ctx, "financing")))
-    return Turn(intent=Intent.ASK_BOOKS, reply=("" if ctx.lang == "zh" else " ").join(lines), facts={"ask": {"tier3": kind}})
+    return lines
+
+
+def tier3_request(ctx: NlContext, kind: str, slots: Slots) -> Turn:
+    """A Tier-3 subject in a question that is not plainly information: a request put as a question ("sign a personal
+    guarantee?", "should we pledge the equipment?", 要不要签个人担保？), or any question from a caller who is not the owner.
+    It is sent to the executor exactly as the imperative is (service.refuse_tier3), so it is REFUSED, written to the operations
+    log and raises its TIER3 security event. The owner's reply then also says what to look at instead (the question part);
+    any other caller gets the plain refusal."""
+    from app.nl.service import refuse_tier3
+
+    typed = slots.model_copy(update={"tier3": kind, "execute_now": False})
+    tail: tuple[str, str] | None = None
+    if ctx.owner_authenticated:
+        extra = _tier3_guidance(ctx, kind)
+        tail = (" ".join(["Only you can decide it, outside FLOW.", *extra]), "只能由您在 FLOW 之外自行决定。" + "".join(extra))
+    return refuse_tier3(ctx, typed, tail)
 
 
 # ---------------------------------------------------------------- 4. the fallback, by topic
@@ -322,6 +350,10 @@ def ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
     topic = topic_of(p)
     slots = p.slots
     question = slots.question or text
+    if topic.startswith("tier3:"):
+        kind = topic.split(":", 1)[1]
+        if not ctx.owner_authenticated or not lx.tier3_is_information(question):
+            return tier3_request(ctx, kind, slots)
     if not ctx.owner_authenticated:
         if topic == "books":
             return _old_reply(ctx, slots, text)  # the agent key gets exactly what it got before
