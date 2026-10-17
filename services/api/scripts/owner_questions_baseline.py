@@ -91,7 +91,7 @@ REFUSAL = re.compile(r"I can't do that|I cannot|I can answer questions about|这
 YES_EN = re.compile(r"^\s*(?:yes\b|you are (?:safe|inside|covered|fine)|we are (?:safe|inside|covered|fine)|you can\b|it is worth)", re.IGNORECASE)
 NO_EN = re.compile(r"^\s*(?:no\b|not\b|you are not|we are not|you can(?:no|')t|you cannot|it is not worth|nothing\b|refused\b)", re.IGNORECASE)
 YES_ZH = re.compile(r"^\s*(?:是的|是，|会，|可以|能，|够|安全|有，|满足|值得|划算|没问题)")
-NO_ZH = re.compile(r"^\s*(?:不|没有|否|无|已拒绝)")
+NO_ZH = re.compile(r"^\s*(?:不|没有|否|无|已拒绝)|^[^，。：:]{0,8}并不")  # 按今日账目并不安全 opens with a no
 
 # Manual overrides after reading every reply by hand: (question id, exact text) -> (score, reason, the reply it was read
 # on). An override applies only while the reply still matches the reply it was written for, so a fixed reply is scored by
@@ -134,7 +134,7 @@ def _money(token: str) -> re.Pattern[str]:
     if frac:
         exact = rf"[¥￥]\s?{re.escape(commas)}\.{str(frac)[2:].ljust(2, '0')}(?!\d)"
         return re.compile(exact)
-    alts = [rf"[¥￥]\s?{re.escape(commas)}(?:\.00)?(?![\d,]|\.\d)"]
+    alts = [rf"[¥￥]\s?{re.escape(commas)}(?:\.00)?(?!\d|,\d|\.\d)"]  # a comma or full stop after the figure is punctuation
     if whole >= 1000 and whole % 100 == 0:
         k = (whole / 1000).normalize()
         alts.append(rf"[¥￥]\s?{re.escape(format(k, 'f'))}k\b")
@@ -157,7 +157,7 @@ def figure_re(token: str) -> re.Pattern[str]:
         return re.compile(rf"\bmonth {n}\b|第\s?{n}\s?个?月|(?<![\d.]){n}\s?(?:months?\b|个月)", re.IGNORECASE)
     if token.endswith("%"):
         num = token[:-1].rstrip("0").rstrip(".") if "." in token else token[:-1]
-        return re.compile(rf"(?<![\d.]){re.escape(num)}0*\s?%")
+        return re.compile(rf"(?<![\d.]){re.escape(num)}(?:\.0+)?\s?%")  # 15% matches 15.00%
     if token.endswith("x"):
         num = token[:-1]
         return re.compile(rf"(?<![\d.]){re.escape(num)}\s?[×x]")

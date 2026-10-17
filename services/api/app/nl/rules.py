@@ -193,6 +193,16 @@ def slots_from(text: str, state: FinancialState) -> Slots:
     )
 
 
+def _top_question(text: str) -> str | None:
+    """The id of the top owner question this text asks, when the answer module is installed (app/nl/answers)."""
+    try:
+        from app.nl.answers import match
+    except ImportError:  # the routing works without the answer module; ask.py then falls back to the nearest read
+        return None
+    found = match(text)
+    return found[0] if found else None
+
+
 def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Parsed | None:
     """Owner request -> intent + typed slots, or None when no rule applies."""
     s = slots_from(text, state)
@@ -228,6 +238,14 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     def ask_books(topic: str) -> Parsed:
         slots = s.model_copy(update={"tier3": None, "execute_now": False, "question": text})
         return Parsed(intent=Intent.ASK_BOOKS, slots=slots, matched=["ask", f"ask:{topic}"])
+
+    # One of the top owner questions (app/nl/answers) is answered from the books before any older read claims it: the
+    # answer leads with the yes/no or the figure. "show me / tell me / list ..." asks too. Never for a fixture, quoted text,
+    # an approval or a reply to a pending plan.
+    plain = not s.fixture_id and not s.quoted_text and not s.approval_id and not s.tier3
+    if plain and not (pending_plan and (lx.CORRECTION.search(text) or consent.confirmation(text) is not None)):
+        if lx.not_held(text) is None and (top := _top_question(text)) is not None:
+            return ask_books(f"answer:{top}")
 
     if asks:
         if s.tier3:
