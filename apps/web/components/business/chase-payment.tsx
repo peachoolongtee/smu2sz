@@ -120,7 +120,7 @@ function ChaseBody({ receivableId, buyer, titleId, onClose }: { receivableId: st
             ))}
           </dl>
           <div>
-            <h3 className="text-sm font-semibold">{t("biz.chase.request")}</h3>
+            <h3 className="text-base font-semibold">{t("biz.chase.request")}</h3>
             <p className="mt-1 whitespace-pre-wrap break-words rounded-tile border border-line bg-subtle px-3 py-2 text-sm leading-relaxed text-ink" data-testid="chase-request">
               {d.request_text}
             </p>

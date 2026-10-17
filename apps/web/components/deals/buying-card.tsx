@@ -42,7 +42,7 @@ export function BuyingCard({ purchases }: { purchases: PurchaseRow[] }) {
   return (
     <section className="flow-card p-4 sm:p-5" aria-labelledby="deals-buying-title" data-testid="deals-buying">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h2 id="deals-buying-title" className="flex items-center gap-2 font-display text-base font-extrabold text-ink">
+        <h2 id="deals-buying-title" className="flex items-center gap-2 font-display text-lg font-extrabold text-ink">
           {t("deals.buying.title")}
           {open.length ? <Badge tone="neutral">{open.length}</Badge> : null}
         </h2>

@@ -202,7 +202,7 @@ export function QueuePanel({
         <LoadingBlock rows={4} label={t("deals.queue.loading")} />
       </section>
     );
-  const counts = dealTabCounts(queue);
+  const counts = onlyCustomer ? countsOf(negotiationRows(queue).filter((x) => x.row.customer_id === onlyCustomer)) : dealTabCounts(queue);
   const groupCounts = afterGroupCounts(queue);
   const all = negotiationRows(queue);
   const only = onlyCustomer ? (queue.customers.find((c) => c.customer_id === onlyCustomer)?.name ?? null) : null;
@@ -371,4 +371,10 @@ export function QueuePanel({
       </div>
     </section>
   );
+}
+
+/** One company's tab counts, from its own rows (the server's counts are the whole queue's). */
+function countsOf(rows: DealRow[]): Record<DealTab, number> {
+  const n = (tier: DealTab) => rows.filter((x) => x.tier === tier).length;
+  return { all: rows.length, needs_you: n("needs_you"), waiting: n("waiting"), agreements: n("agreements") };
 }

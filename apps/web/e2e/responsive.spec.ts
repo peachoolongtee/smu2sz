@@ -88,7 +88,7 @@ test("Business navigation: the sections and the two doors (Sandbox, Capex) in th
   await bar.getByRole("link", { name: "Deals", exact: true }).click();
   await expect(page).toHaveURL(/\/deals/);
   // Each page names its tab, and the document says its language.
-  await expect(page).toHaveTitle("Deals · FLOW 流");
+  await expect(page).toHaveTitle("Deals · FLOW");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.getByTestId(phone ? "tab-bar" : "nav-pills").locator('[aria-current="page"]')).toHaveText("Deals");
   // The account sheet carries the identity and the limits.
@@ -127,7 +127,7 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
 });
 
 test("a hard load names the tab: the title survives hydration", async ({ page }) => {
-  for (const [route, title] of [["/deals", "Deals · FLOW 流"], ["/cash", "Cash & funding · FLOW 流"], ["/receivables", "Receivables · FLOW 流"], ["/limits", "Limits · FLOW 流"], ["/", "FLOW 流"]] as const) {
+  for (const [route, title] of [["/deals", "Deals · FLOW"], ["/cash", "Cash & funding · FLOW"], ["/receivables", "Receivables · FLOW"], ["/limits", "Limits · FLOW"], ["/", "FLOW"]] as const) {
     await page.goto(route);
     await page.waitForLoadState("networkidle");
     await expect(page).toHaveTitle(title);
