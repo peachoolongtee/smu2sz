@@ -220,6 +220,30 @@ def test_the_undo_leaves_the_invoices_already_issued(client, on, rt):
     assert client.get("/security/summary").json()["unauthorised_executions"] == 0
 
 
+def test_the_queued_set_up_and_undo_say_what_they_do_not_a_funding_quote(client, on, rt):
+    """Activity used to answer the queued set-up's "why it matters" with the funding approvals' "The quoted cost was not recorded."; a
+    contract set-up has no quoted cost, so it says what it does to the forecast, in both languages, and so does its undo."""
+    d = _confirmed(client)
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    set_up = client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]}).json()
+    client.post(f"/documents/{d['id']}/terms/undo", json={"set_up_op_id": set_up["terms"]["set_up"]["op_id"]})
+
+    def queued(lang: str) -> dict[str, str]:
+        ops = client.get("/ledger", params={"lang": lang}).json()["operations"]
+        return {o["kind"]: o["why_it_matters"] for o in ops if o["status"] == "PENDING_APPROVAL"}
+
+    en, zh = queued("en"), queued("zh")
+    assert en["SET_UP_CONTRACT_TERMS"] == ("Adds Dongguan Office Supplies Ltd.'s repeating invoice of ¥180,000.00 every 30 days to your "
+                                           "forecast, payable in 45 days.")
+    assert en["UNDO_CONTRACT_TERMS"] == ("Removes the repeating invoices the contract set up for Dongguan Office Supplies Ltd. from your "
+                                         "forecast; invoices already sent stay.")
+    assert zh["SET_UP_CONTRACT_TERMS"] == "将Dongguan Office Supplies Ltd.每 30 天一张、金额 ¥180,000.00 的循环发票计入您的预测，付款期 45 天。"
+    assert zh["UNDO_CONTRACT_TERMS"] == "从您的预测中移除该合同为Dongguan Office Supplies Ltd.设置的循环发票；已开出的发票保留。"
+    activity = client.get("/activity").text
+    assert "The quoted cost was not recorded." not in activity and "Adds Dongguan Office Supplies Ltd.&#x27;s" not in activity
+    assert "Adds Dongguan Office Supplies Ltd." in activity
+
+
 def test_set_up_undone_and_set_up_again(client, on, rt):
     d = _confirmed(client)
     v = client.get(f"/documents/{d['id']}/terms").json()["terms"]

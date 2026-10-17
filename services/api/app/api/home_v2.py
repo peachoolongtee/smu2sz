@@ -127,8 +127,11 @@ def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
     else:
         where = t(lang, f"{_short(-gap)} below your minimum {when}", f"比您的最低现金低 {_short(-gap)}（{when}）")
         short = t(lang, f"{_short(-gap)} shortfall {when}", f"{when}缺口 {_short(-gap)}")
-    basis = (t(lang, "current books, the plan ran", "当前账目，方案已执行") if _plan_has_run(c.state)
+    ran = _plan_has_run(c.state)
+    basis = (t(lang, "current books, the plan ran", "当前账目，方案已执行") if ran
              else t(lang, "current books, no new funding", "当前账目，未新增融资"))
+    # The label under the figure: once the plan's operations have executed the figure includes that funding, so "Without new funding" would be false.
+    basis_label = (t(lang, "With the funding in place", "已计入已安排的融资") if ran else t(lang, "Without new funding", "未新增融资"))
     if c.plan_traj is not None:
         plan_fen, _ = _lowest_ahead(c.plan_traj, c.today)
         hint = t(lang, f"If FLOW's plan executes: {whole(plan_fen)}, assuming the funds arrive as planned.",
@@ -138,7 +141,8 @@ def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
         hint = t(lang, "No hypothetical applied.", "未应用任何假设。")
         with_plan = None
     return {"eyebrow": _eyebrow(lang, "Lowest cash ahead", "未来最低现金"), "value_display": whole(low_fen),
-            "note": f"{where} · {basis}", "short_note": short, "tone": _tone(low_fen, floor), "with_plan_hint": hint, "with_plan": with_plan}
+            "note": f"{where} · {basis}", "short_note": short, "tone": _tone(low_fen, floor), "with_plan_hint": hint, "with_plan": with_plan,
+            "basis_label": basis_label}
 
 
 def _lot_kind(lot: FundingLot, lang: str) -> str:

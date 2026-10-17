@@ -72,7 +72,7 @@ export function CashCard({
 }
 
 /**
- * "Company cash outlook", the main card of the Home, the full width of the page: the lowest cash ahead as the figure (the one risk red when it is below the minimum), "Without new funding",
+ * "Company cash outlook", the main card of the Home, the full width of the page: the lowest cash ahead as the figure (the one risk red when it is below the minimum), the server's basis label ("Without new funding", or "With the funding in place" once the plan ran),
  * the plan's cash ("With plan ¥300,000"), the pill that says when the lowest point is, and the company cash forecast; "What we recommend" sits inside it, at its right on a wide screen and
  * between the figures and the forecast on a narrow one (its primary in a phone's first screen).
  */
@@ -100,8 +100,8 @@ export function OutlookCard({ h, kpis, chart, recommendation }: { h: HomeView; k
               <p className={`font-display text-[36px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-[40px] ${low.tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
                 {low.value_display}
               </p>
-              <p className="mt-1.5 text-sm text-ink-3">
-                {t("hv2.card.without")}
+              <p className="mt-1.5 text-sm text-ink-3" data-testid="home-kpi-lowest-basis">
+                {low.basis_label ?? t("hv2.card.without")}
                 {low.short_note ?? low.note ? (
                   <span className="sr-only" data-testid="home-kpi-lowest-note">
                     {" "}
