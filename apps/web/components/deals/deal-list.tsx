@@ -40,6 +40,14 @@ const initials = (name: string) =>
     .map((w) => w[0]!.toUpperCase())
     .join("") || name.slice(0, 1);
 
+/** The card's avatar: the name's initials on a soft fill picked by `index` (decoration, never a status; hidden from a reader, who has the name). `className` sizes it (48 px by default). */
+export function ListAvatar({ name, index, className = "size-12" }: { name: string; index: number; className?: string }) {
+  return (
+    <span aria-hidden className={`grid shrink-0 place-items-center rounded-[14px] font-display text-base font-bold ${AVATAR[index % AVATAR.length]} ${className}`} data-testid="list-avatar">
+      {initials(name)}
+    </span>
+  );
+}
 
 /**
  * One row of a Business list, as a card in Home's look: an avatar with the initials, the name with where the last word came from and when, one line, the pill and a figure on
@@ -55,9 +63,7 @@ export function ListCard({ row: r, index, label, quote, testId }: { row: ListCar
       data-buyer={r.buyerId}
       data-group={r.group}
     >
-      <span aria-hidden className={`grid size-12 shrink-0 place-items-center rounded-[14px] font-display text-base font-bold ${AVATAR[index % AVATAR.length]}`}>
-        {initials(r.name)}
-      </span>
+      <ListAvatar name={r.name} index={index} />
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span className="font-display text-base font-bold text-ink sm:text-lg">{r.name}</span>
