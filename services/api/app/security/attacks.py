@@ -1114,8 +1114,18 @@ class AttackRunner:
             return
         nonce = {"correct": c.nonce, "wrong": "NONCE-GUESS-0001"}.get(arg.pop("nonce", "correct"), c.nonce)
         th = c.terms_hash
-        if arg.pop("hash", "correct") == "changed":
+        which = arg.pop("hash", "correct")
+        if which == "changed":
             th = "0" * 64
+        elif which == "revised":  # the hash of the terms the buyer has since revised to (the last compiled offer), under the old nonce
+            from app.commitments import terms_hash
+            from app.operations import committable
+
+            if ctx.last_offer is None:
+                self._skip(rec, "no revised offer was compiled before this step")
+                return
+            th = terms_hash(committable(ctx.last_offer.obligations))
+            rec["revised_terms_hash_differs"] = th != c.terms_hash
         spec = {"kind": "ACCEPT_OFFER", "offer_id": c.offer_id, "offer_version": c.offer_version,
                 "terms_hash": th, "nonce": nonce, **arg}
         token = spec.pop("token", None)

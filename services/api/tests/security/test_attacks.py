@@ -53,7 +53,7 @@ def _params() -> list[Any]:
 
 
 def test_catalogue_covers_every_category_in_both_languages() -> None:
-    assert len(CATALOGUE) == 126
+    assert len(CATALOGUE) == 127
     assert {a["category"] for a in CATALOGUE} == set(CATEGORIES)
     langs = {a.get("lang", "en") for a in CATALOGUE}
     assert {"en", "zh"} <= langs

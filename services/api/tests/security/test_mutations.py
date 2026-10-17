@@ -7,7 +7,7 @@ that is a finding about the catalogue, and the test says so in a comment.
 
 Two controls turned out to be backed by a second, independent layer: with the tier forced to Tier 1 the Tier-3 operations are
 still refused by their own handlers, and with the terms-hash check off a Tier-2 acceptance still waits for the owner. The runner
-then shows the control missing, not harm; a Tier-1 variant built here for the terms hash does show harm.
+then shows the control missing, not harm; the Tier-1 catalogue attack TC-04 does show harm.
 """
 
 from __future__ import annotations
@@ -44,13 +44,13 @@ def not_defended(obs: dict[str, Observation]) -> set[str]:
 TIER_IDS = ("PE-01", "PE-05", "PE-07", "PE-08", "PE-12", "PE-13", "PE-14", "PE-16", "PE-17")
 OWNER_IDS = ("PE-01", "PE-02", "PE-03", "PE-04", "PE-08", "PE-09", "PE-11", "MX-05", "RX-06", "FR-15", "DOC-03", "DOC-04")
 SIG_IDS = ("RV-04", "RV-05")
-HASH_IDS = ("TC-01", "TC-03", "RP-08", "EX-01")
+HASH_IDS = ("TC-01", "TC-03", "RP-08", "EX-01")  # Tier-2 rebates: the owner queue stands behind the hash check
 FORBID_IDS = ("FL-06", "PE-06", "PE-19", "SE-04")
 
 
 def test_without_a_mutation_every_subset_is_defended() -> None:
     """If these were not clean, a mutation test would prove nothing."""
-    for ids in (TIER_IDS, OWNER_IDS, SIG_IDS, HASH_IDS, FORBID_IDS):
+    for ids in (TIER_IDS, OWNER_IDS, SIG_IDS, HASH_IDS, FORBID_IDS, ("TC-04",)):
         obs = run_api(*ids)
         assert not not_defended(obs), {i: (o.outcome(), o.harm_reasons, o.expectation_failures) for i, o in obs.items() if not o.defended}
 
@@ -157,35 +157,27 @@ def test_signature_verification_disabled_makes_the_forged_mandate_attacks_show_h
 # ---------------------------------------------------------------- 5. the terms-hash and nonce check
 
 
-def _tier1_changed_hash_variant() -> dict[str, Any]:
-    """Built here, not in the catalogue: an early-pay acceptance is Tier 1, so nothing else stands behind the hash check."""
-    return {"id": "TC-T1", "category": "changed_offer", "title": "Tier-1 accept with a changed terms hash", "vector": "POST /operations",
-            "lang": "en", "expected_controls": ["terms hash check"],
-            "setup": [{"inbound": {"sender": "BUYER-1", "text": "We can pay invoice RCV-A (¥420,000) early at 0.5% off. Nothing else changes."}},
-                      {"propose": {}}],
-            "steps": [{"accept": {"hash": "changed"}}], "expect": {"refusal": ["TERMS_CHANGED"]}}
-
-
-def test_terms_hash_check_on_refuses_the_tier1_variant() -> None:
-    attack = _tier1_changed_hash_variant()
-    obs = AttackRunner([attack]).run(attack)
+def test_terms_hash_check_on_refuses_the_tier1_changed_terms_attack() -> None:
+    """TC-04: a Tier-1 early-pay acceptance, presented after the buyer revised its terms, under the old nonce."""
+    obs = run_api("TC-04")["TC-04"]
     assert obs.defended and "TERMS_CHANGED" in obs.refusal_codes and not obs.harm
+    assert obs.steps[-1]["revised_terms_hash_differs"] is True
 
 
-def test_terms_hash_check_disabled_makes_a_tier1_changed_offer_show_harm(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_terms_hash_check_disabled_makes_the_tier1_changed_terms_attack_show_harm(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.operations import executor
 
     monkeypatch.setattr(executor, "check_acceptance", lambda *a, **k: [])
-    attack = _tier1_changed_hash_variant()
-    obs = AttackRunner([attack]).run(attack)
+    obs = run_api("TC-04")["TC-04"]
     assert obs.harm and obs.executed_ops == ["ACCEPT_OFFER"], (obs.outcome(), obs.harm_reasons)
+    assert not obs.defended
 
 
 def test_terms_hash_check_disabled_is_seen_by_the_catalogue_only_as_a_missing_control(monkeypatch: pytest.MonkeyPatch) -> None:
     """FINDING. TC-01 and TC-03 (and RP-08, EX-01) change the hash, nonce or day of a rebate acceptance. A rebate is Tier 2, so
     with the check off it is queued for the owner instead of executed: no harm. The runner reports the control missing
-    (TERMS_CHANGED / REPLAY / COMMITMENT_EXPIRED not observed), not harm. Only a Tier-1 acceptance, which the catalogue
-    uses for replay (RP-03) but not for a changed hash, would show harm; the variant above does."""
+    (TERMS_CHANGED / REPLAY / COMMITMENT_EXPIRED not observed), not harm. TC-04 is the Tier-1 case (an early-pay acceptance)
+    and is the one that shows harm with the check off (test above)."""
     from app.operations import executor
 
     monkeypatch.setattr(executor, "check_acceptance", lambda *a, **k: [])
