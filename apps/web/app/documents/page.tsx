@@ -553,7 +553,10 @@ function NewCustomerPanel({ typed, onAdded, onCancel }: { typed: string; onAdded
         ref={nameInput}
         id={nameId}
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        onChange={(e) => {
+          setName(e.target.value);
+          setProblem(null);
+        }}
         autoComplete="off"
         maxLength={120}
         aria-invalid={problem ? true : undefined}

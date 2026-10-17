@@ -236,7 +236,7 @@ function withParties(base: DocumentView, d: DocState, parties: Counterparty[], l
   });
   const out: DocumentView = { ...v, counterparty_id: cpId, counterparty_name: cpName, named_parties: named };
   if (terms.length && !named.some((n) => sameName(n.name, cpName))) {
-    const first = terms[0];
+    const first = terms.find((t) => t.field === "PARTY_BUYER") ?? terms[0];
     const flag: DocumentFlagView = {
       kind: "PARTY_NOT_NAMED",
       kind_text: lang === "zh" ? "不是您选择的对方" : "not the counterparty you chose",

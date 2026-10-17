@@ -53,6 +53,8 @@ async function uploadContract(page: Page, filedUnder: string, buyerInText = FOSH
   const form = page.locator("#docs-read");
   await expect(form.getByLabel("What it is")).toHaveText("Contract with a buyer");
   await form.getByLabel("Who it is with").fill(filedUnder);
+  // Chosen once the companies on the books have been read.
+  await expect(form.getByLabel("Who it is with")).not.toHaveAttribute("aria-invalid", "true");
   const text = readFileSync(SUPPLY, "utf8").split(FOSHAN).join(buyerInText);
   await form.getByLabel(/^File/).setInputFiles({ name: "supply-agreement.md", mimeType: "text/plain", buffer: Buffer.from(text) });
   await expect(page).toHaveURL(/\/documents\?id=DOC-000004$/);
@@ -214,7 +216,13 @@ test.describe("a contract filed under a company it does not name", () => {
     await expect(flags.getByTestId("doc-party-actions")).toBeVisible();
     await noSideScroll(page, "mismatch actions, phone");
     await scan(page, "mismatch actions, phone");
-    await flags.scrollIntoViewIfNeeded();
-    await flags.screenshot({ path: testInfo.outputPath("mismatch-actions-phone.png") });
+    // Brought to the top of the screen, the actions sit clear of the decision bar at the foot of a phone.
+    const actions = flags.getByTestId("doc-party-actions");
+    await flags.evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - 72));
+    await expect(actions.getByRole("button").last()).toBeInViewport({ ratio: 1 });
+    const bar = (await page.locator("#doc-decide").boundingBox())!;
+    const last = (await actions.getByRole("button").last().boundingBox())!;
+    expect(last.y + last.height, "the actions are above the decision bar").toBeLessThanOrEqual(bar.y);
+    await page.screenshot({ path: testInfo.outputPath("mismatch-actions-phone.png") });
   });
 });
