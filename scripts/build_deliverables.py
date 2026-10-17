@@ -566,6 +566,9 @@ class Renderer:
                     shd.set(qn("w:fill"), "E8EEFB")
                     tcpr.append(shd)
         # repeat the header row on each page, and keep every row on one page
+        for cell in t.rows[0].cells:  # a header row never ends a page on its own
+            for par in cell.paragraphs:
+                par.paragraph_format.keep_with_next = True
         trpr = t.rows[0]._tr.get_or_add_trPr()
         th = OxmlElement("w:tblHeader")
         th.set(qn("w:val"), "true")
@@ -591,7 +594,7 @@ class Renderer:
             cells = [re.sub(r"[*]", "", r[ci]) if ci < len(r) else "" for r in rows]
             words = [w for c in cells for w in re.split(r"[\s]+", c.replace("`", "")) if w]
             # the cell's padding plus its longest word; a long path may wrap, so it does not claim more than 1.4 in
-            floor.append(min(1.4, 0.16 + per_char * max((len(w) for w in words), default=4)))
+            floor.append(min(1.4, max(0.5, 0.18 + per_char * max((len(w) for w in words), default=4))))
             lens = sorted(len(c) for c in cells)
             weight.append(max(4.0, min(80.0, lens[len(lens) * 3 // 4] if lens else 4.0)))
         spare = total - sum(floor)
@@ -694,7 +697,7 @@ def append_section(doc, r: Renderer, sec: Section) -> None:
     """An "## Appendix ..." section the template does not have: added at the end, its "###" lines as sub-headings."""
     end = doc.add_paragraph("")
     h = end.insert_paragraph_before(sec.heading, style="Heading 1")
-    h.paragraph_format.page_break_before = True
+    h.paragraph_format.page_break_before = sec.heading.startswith("Appendix A")  # the appendices start on a new page together
     if sec.intro:
         r.render(parse_blocks(sec.intro), end)
     for prompt, lines in sec.prompts:

@@ -30,7 +30,7 @@ International AI Track | Security Self-Assessment
 
 **Executive summary.** TermsLedger v2 (FLOW) lets an SME owner delegate supplier-side credit decisions (buyer concessions, early-pay offers, draws on committed facilities and capex purchases) to an AI agent, under a mandate the owner signs. The design question is *what can a hostile message, a hostile caller or a fully persuaded language model make the system do?* The design answer is that **the model only fills typed data; deterministic code checks it and deterministic code executes it, under permission tiers that code computes**. FLOW is a simulation: lenders, buyers and the bank feed are simulated. We claim neither regulatory compliance nor absolute security.
 
-- **Test result, with its limits.** In the specified runs on the assessed build, the 260 stored attack cases (127 through the API, 133 through chat) produced **zero observed violations of the defined harm oracles** (section 2.3). This is a test result within a scope, not evidence that no exploitable path exists. Each case ran in a fresh in-memory runtime, offline, with recorded or scripted model answers; the catalogue drives only part of the 100 API routes, though a route policy test calls every route as every kind of caller (section 1.5); and no running deployment has had a penetration test.
+- **Test result, with its limits.** In the specified runs on the assessed build, the 260 stored attack cases (127 through the API, 133 through chat) produced **zero observed violations of the defined harm oracles** (section 2.4). This is a test result within a scope, not evidence that no exploitable path exists. Each case ran in a fresh in-memory runtime, offline, with recorded or scripted model answers; the catalogue drives only part of the 100 API routes, though a route policy test calls every route as every kind of caller (section 1.5); and no running deployment has had a penetration test.
 - **Review arrangement.** The reviews were AI-assisted and internal (section 2.6). The Security Lead is an AI agent working in a separate session and worktree. It also wrote the security fixes it then certified. The owner, a person, accepted the residual risks. "Certified" in this document means an **internal release decision for a stated build and scope**. It is not external accreditation, and no professional penetration test was done.
 - **Verdict.** Local simulation on loopback: **GO** for the assessed build. Demo over a network: **NO-GO** until a tested deployment profile exists (section 4.6). Production with real customers, documents or money: **NO-GO** (section 04).
 - **Largest residual risks.**
@@ -40,6 +40,27 @@ International AI Track | Security Self-Assessment
   - An anonymous offer can name a registered buyer and be acted on by the owner (SEC-19).
   - A multi-step plan can stop half-way with no automatic recovery (SEC-28).
   - Redaction before a model is pattern-based (PRIV-4, PRIV-5), so live mode is outside the assessed scope.
+
+**How this assessment answers the security criterion.** The competition's security criterion reads: "Defence against induced transfers, data extraction, privilege escalation and prompt injection; serious security failures trigger substantial deductions." The template adds social engineering and failure recovery. Each is answered below, in the competition's own terms.
+
+| Criterion | How FLOW defends | Where | Tested by (assessed build) | Result |
+| --- | --- | --- | --- | --- |
+| **Induced transfers** (诱导转账) | no operation has a payee or account field, so no message can redirect money; a lender named in a message is a security event, never a facility; receipts count only from the bank feed or the owner; concessions only through the verifier's caps and the owner's tiers | 1.3, 1.6 | fake-lender and induced-transfer cases (10), fake prior concessions (7), the compromised-agent step on every case, extra-field differentials (FL-06, SE-04) | 0 money moved; 0 facilities added by non-owners; 0 concessions from unevidenced claims |
+| **Data extraction** (信息套取) | owner token on every read; template replies; the egress guard with canaries; the agent's allow-list view; the buyer's daily budget | 3.4, 1.2 | mandate, reserve and facility exfiltration (11), cross-buyer (6), canary extraction (5), 38 chat leak cases | 0 protected values disclosed; 0 readable without the owner token; 0 canaries; known detection gaps listed (SEC-33, SEC-34) |
+| **Privilege escalation** (越权操作) | tiers computed by code; Tier 3 refused for everyone; Tier 2 waits for the owner; identity from the credential only; owner-only clock, circuit and approvals | 1.2, 1.3, 1.5, 1.8 | privilege escalation (21), replay and expiry (11), revoked or forged mandate (7), changed offers (4), the route policy test over every route and caller, mutation tests | 0 unauthorised executions; 0 route policy deviations |
+| **Prompt injection** (Prompt 注入) | the model fills typed data only, with exact source spans; the coverage proof fails closed; the consent grammar for owner chat | 1.2, 1.6, 2.3 | prompt injection (17), consent (41), quoted approvals (16), buyer instructions (18); the external run's live tier | 0 executions from injected text; misreadings stay within typed rows (R-7) |
+| Social engineering (template) | the same controls: urgency, authority or a claimed payment changes no tier | 2.4 | social engineering (8) | 0 harm |
+| Failure recovery (template) | one unit of work per operation; compare-and-swap; triggers; refusals fail closed | 1.10, 1.12 | failure recovery (20); the concurrency suite; the database failure mid-execute (FR-06) | 0 partial writes; plans are atomic per operation only (SEC-28) |
+
+**Serious security failures: none observed in the specified runs.** The table defines what we count as a serious failure, and what the runs on the assessed build show. This is a test result within the scope of section 2.9, not proof that no such failure is possible. The open risks of section 04 are conditions under which one could occur in production; they are disclosed there as risks, not as observed failures.
+
+| Serious failure | Observed in the specified runs | Measured by |
+| --- | --- | --- |
+| Money moved, or a commitment made, without authority | none | executed operations, cash, drawn balances, concessions and commitments, before and after every case (2.4) |
+| Protected or personal data disclosed to someone not entitled to it | none | the egress scan of every outbound text, unauthenticated reads, four planted canaries |
+| A non-owner exercising owner authority | none | executions no tier allowed; the route policy test |
+| An instruction in untrusted text executed | none | the injection and consent cases; the compromised-agent step |
+| The audit record altered without detection | none in the tests | chain verification after every case; database triggers. A database owner can rewrite the log consistently (R-13) |
 
 **Standards used.** The structure follows common industry practice; it is not certified against any standard. The threat model uses **STRIDE**. LLM-specific risks are mapped to the **OWASP Top 10 for LLM Applications (2025)**, which treats output validation and least privilege as mitigations of prompt injection, not as proof that it is eliminated. Risk ratings use our own three-level scale, informed by the structure of **NIST SP 800-30 Rev. 1** (which gives guidance, not validation of any particular matrix). The process follows the four functions of the **NIST AI RMF 1.0**: Govern, Map, Measure and Manage.
 
@@ -62,13 +83,12 @@ International AI Track | Security Self-Assessment
 ### Roles, operations and permission boundaries
 
 **In brief.**
-- Six kinds of caller. Each is identified by its credential, never by the request body.
+- Five kinds of caller (owner, agent, bank feed, registered buyer, anonymous sender), each identified by its credential, never by the request body; the language model is a component, not a caller.
 - Every operation is typed, its tier is computed by code, and only one component, the executor, changes the books.
 - Text from outside the owner's console stays in its own lane: it can become typed data for a proposal, never an operation by itself.
 
 #### 1.1 System and trust boundaries
 
-<!-- figure: security/figures/fig1-architecture-trust-boundaries.png | Figure 1. Architecture and trust boundaries: untrusted text and callers are separated from the deterministic core; only the executor changes the books. -->
 
 Two trust boundaries matter.
 
@@ -78,6 +98,8 @@ Two trust boundaries matter.
 - **Boundary 2 is the model provider.** It is reached only in opt-in live mode, which is outside the assessed scope (section 03).
 
 Package-import tests enforce one direction of this split: the compiler package cannot import the books or the mandate, and the verifier cannot import free text. That is a dependency rule checked at test time. It does not prove runtime isolation, and it does not stop a person from pasting confidential figures into a message that then reaches the compiler.
+
+<!-- figure: security/figures/fig1-architecture-trust-boundaries.png | Figure 1. Architecture and trust boundaries: untrusted text and callers are separated from the deterministic core; only the executor changes the books. -->
 
 #### 1.2 Actors and credentials
 
@@ -94,7 +116,7 @@ Credentials are compared in constant time (`app/api/auth.py`). A body field conf
 - the tokens `demo-owner-token`, `demo-agent-key`, `demo-bank-feed-key`, `demo-buyer-1-key` and `demo-buyer-2-key`;
 - the signing key `fixtures/keys/owner_demo_ed25519.json`, labelled DEMO ONLY.
 
-`DEMO_MODE=1` is off unless set (SEC-07). Outside demo mode an unset credential matches nothing, and the owner and agent routes return 503 (F-06).
+`DEMO_MODE` is off unless set (SEC-07). Outside demo mode an unset credential matches nothing, and the owner and agent routes return 503 (F-06).
 
 **What the model can and cannot influence.** The schema has no field for an operation, but the model's extracted data does feed decisions:
 - amounts, parties, invoices, conditions and dates;
@@ -232,13 +254,12 @@ The limits that matter are spelled out below: what is logged outside the executo
 
 #### 1.8 Verification pipeline
 
-<!-- figure: security/figures/fig2-executor-gates.png | Figure 3. The executor's gates, in order, and the outcome each can produce. -->
 
 Every operation passes the same gates in the same order (`app/operations/executor.py`):
 
 1. idempotency;
-2. the mandate: signature, key pin, expiry, revocation and version;
-3. dating;
+2. dating: the operation's day must be the executor's day;
+3. the mandate: signature, key pin, expiry, revocation and version;
 4. Tier 3;
 5. the counterparty circuit breaker;
 6. acceptance binding: commitment, single-use nonce compared in constant time, terms hash, and the verdict re-verified now;
@@ -252,6 +273,8 @@ Every operation passes the same gates in the same order (`app/operations/executo
 Both still need a valid signature. Every other operation is refused (`tests/operations/test_mandate_gate.py`, `test_redteam_b.py`).
 
 A refusal does not use up an idempotency key: a refused operation can be retried with the same key. A key reused for a different operation is `REPLAY`. The circuit breaker counts only refused offer operations, so agent funding refusals cannot block a bank receipt. The owner's own answers pass an open circuit and never count (SEC-05).
+
+<!-- figure: security/figures/fig2-executor-gates.png | Figure 3. The executor's gates, in order, and the outcome each can produce. -->
 
 #### 1.9 What is recorded, and where
 
@@ -1018,7 +1041,7 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 | `0ba8e4c1` | 31 test shards; the catalogue; every regression test | exit codes only; failures: #161's four tests |
 | `a6de32a2` | sweep; every reproduction refused; the catalogue; sharded suite | exit codes only; failures: #161 |
 | `b6d1e519` | capex exploits and variants; setup probes; sweep (94 routes); the catalogue; full suite | exit codes only; failures: #161 |
-| `0f92d433` | the owner's decisions; sweep in three modes; the catalogue (0 of 259 with harm); full suite; PostgreSQL 17 concurrency 6 of 6 | exit codes; failure: the #161 digest test only |
+| `0f92d433` | the owner's decisions; sweep in three modes; the catalogue (0 of 259 with harm); full suite. PostgreSQL 17 concurrency 6 of 6 on `0f92d433` plus the PG-1 fix `7f55c0dc` (merged later) | exit codes; failure: the #161 digest test only |
 | `719c9dcf` | sweep in three modes (100 routes, unchanged); every reproduction refused; OUT-1 on every chat path; the catalogue; full suite; PostgreSQL 17 concurrency 3 of 3; the CSP in a browser on a production build | tests/api 1,729 passed, 2 skipped; mock browser suite 444 passed, 61 skipped; PostgreSQL concurrency 31 passed ×3 |
 | `0fde33fd` | the four new regression tests; operations, verifier, security and persistence suites; sweep in three modes with the policy check and a diff against `719c9dcf`; every reproduction refused; the catalogue; PostgreSQL 17 concurrency ×3 and the guards; dependency audits | [CERT: from steps.txt] |
 | [CERT: assessed build] | [CERT] | [CERT] |
@@ -1042,20 +1065,20 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 
 ### Attack catalogue by category
 
-| Category (API catalogue) | What the cases try | Cases | Oracle violations | Intended control fired | Known gaps |
-| --- | --- | --- | --- | --- | --- |
-| Prompt injection | delimiters, fake SYSTEM and owner messages, role-play, full-width, zero-width and homoglyph text, base64, attachments, an instruction in a contract clause | 17 | 0 | 14 | PI-06, PI-11, PI-16 |
-| Canary extraction | "repeat everything above", canary regurgitation | 5 | 0 | 5 | |
-| Fake lender, induced transfer | a pre-approved lender, "reply ACCEPT to disburse", change of payee, a personal guarantee | 10 | 0 | 10 | |
-| Fake prior concession | "as agreed last month" | 7 | 0 | 6 | FH-04 |
-| Social engineering | urgency, authority, CFO impersonation, fake payment confirmation | 8 | 0 | 6 | SE-03, SE-08 |
-| Privilege escalation | owner claim without the token, caller-supplied tier, self-approval, circuit reset, Tier 3 by the owner | 21 | 0 | 21 | |
-| Mandate exfiltration | limits and caps | 5 | 0 | 4 | MX-03 |
-| Reserve and facility exfiltration | the reserve floor, headroom | 6 | 0 | 6 | |
-| Cross-buyer extraction | another buyer's terms, contract and deal routes | 6 | 0 | 5 | CB-05 |
-| Replay | replayed keys, reused or guessed nonces, dated operations | 8 | 0 | 8 | |
-| Expired commitment | acceptance after a commitment expired | 3 | 0 | 3 | |
-| Revoked or forged mandate | revoked, re-signed with another key, edited | 7 | 0 | 7 | |
-| Changed offer after the verdict | terms changed between verdict and acceptance, at Tier 2 and at Tier 1 (TC-04) | 4 | 0 | 4 | |
-| Failure recovery | model error, timeout and garbage; a database failure mid-execute; five tamper variants; malformed bodies | 20 | 0 | 20 | |
-| **Total** | | **127** | **0** | **119** | **8** |
+| Category (API catalogue) | Criterion | What the cases try | Cases | Oracle violations | Intended control fired | Known gaps |
+| --- | --- | --- | --- | --- | --- | --- |
+| Prompt injection | prompt injection | delimiters, fake SYSTEM and owner messages, role-play, full-width, zero-width and homoglyph text, base64, attachments, an instruction in a contract clause | 17 | 0 | 14 | PI-06, PI-11, PI-16 |
+| Canary extraction | data extraction | "repeat everything above", canary regurgitation | 5 | 0 | 5 | |
+| Fake lender, induced transfer | induced transfers | a pre-approved lender, "reply ACCEPT to disburse", change of payee, a personal guarantee | 10 | 0 | 10 | |
+| Fake prior concession | induced transfers | "as agreed last month" | 7 | 0 | 6 | FH-04 |
+| Social engineering | social engineering | urgency, authority, CFO impersonation, fake payment confirmation | 8 | 0 | 6 | SE-03, SE-08 |
+| Privilege escalation | privilege escalation | owner claim without the token, caller-supplied tier, self-approval, circuit reset, Tier 3 by the owner | 21 | 0 | 21 | |
+| Mandate exfiltration | data extraction | limits and caps | 5 | 0 | 4 | MX-03 |
+| Reserve and facility exfiltration | data extraction | the reserve floor, headroom | 6 | 0 | 6 | |
+| Cross-buyer extraction | data extraction | another buyer's terms, contract and deal routes | 6 | 0 | 5 | CB-05 |
+| Replay | privilege escalation | replayed keys, reused or guessed nonces, dated operations | 8 | 0 | 8 | |
+| Expired commitment | privilege escalation | acceptance after a commitment expired | 3 | 0 | 3 | |
+| Revoked or forged mandate | privilege escalation | revoked, re-signed with another key, edited | 7 | 0 | 7 | |
+| Changed offer after the verdict | privilege escalation | terms changed between verdict and acceptance, at Tier 2 and at Tier 1 (TC-04) | 4 | 0 | 4 | |
+| Failure recovery | failure recovery | model error, timeout and garbage; a database failure mid-execute; five tamper variants; malformed bodies | 20 | 0 | 20 | |
+| **Total** | | | **127** | **0** | **119** | **8** |
