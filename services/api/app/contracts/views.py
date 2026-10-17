@@ -11,13 +11,13 @@ A day is said as a distance from `today` ("3 days ago"), never as "day N", when 
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from app.api.engine_zh import translate
 from app.api.presentation import Lang, t, when_text
 from app.contracts.derive import date_display, day_of
-from app.contracts.parties import PARTY_FLAG_KINDS, PARTY_NOT_NAMED, party_note
+from app.contracts.parties import PARTY_FLAG_KINDS, PARTY_NOT_NAMED, named_parties, party_note
 from app.domain.models import (
     CONTRACT_READING_KINDS,
     MULTI_VALUED_CONTRACT_FIELDS,
@@ -296,9 +296,21 @@ def _kind_text(kind: DocumentKind, lang: Lang) -> str:
     return t(lang, en, zh)
 
 
-def _status_text(record: ContractRecord, lang: Lang, today: int | None) -> str:
+def refiled(record: ContractRecord | ContractGuardRow) -> bool:
+    """A record the owner filed again under another counterparty (`POST /documents/{id}/refile`): closed without a
+    decision on its text, and superseded by the new record. A confirmed contract superseded by a later one stays CONFIRMED."""
+    return record.superseded_by is not None and record.status == DocumentStatus.REJECTED
+
+
+def _status_text(record: ContractRecord, lang: Lang, today: int | None, state: FinancialState | None = None,
+                 records: Sequence[ContractRecord | ContractGuardRow] = ()) -> str:
     """Where the document stands, in the owner's words, with when it was decided as a distance from today."""
     when = when_text(record.decided_day, today, lang) if today is not None and record.decided_day is not None else ""
+    if refiled(record):
+        to = next((r for r in records if r.id == record.superseded_by), None)
+        later = _registry_name(state, to.counterparty_id) if to is not None else None
+        return t(lang, f"Filed again under {later}" if later else "Filed again under another counterparty",
+                 f"已改为归入{later}" if later else "已改为归入其他对方")
     if record.status == DocumentStatus.CONFIRMED:
         return t(lang, f"Confirmed by you {when}".strip(), f"{when}经您确认".strip())
     if record.status == DocumentStatus.REJECTED:
@@ -328,9 +340,11 @@ def reading_status_text(status: str, lang: Lang) -> str:
 
 
 def replacement_words(record: ContractRecord | ContractGuardRow, records: Sequence[ContractRecord | ContractGuardRow], lang: Lang,
-                      today: int | None) -> dict[str, Any]:
+                      today: int | None, state: FinancialState | None = None) -> dict[str, Any]:
     """What a later confirmed buyer contract means for this one, in the owner's words: `replaces` is the earlier contract this
-    one superseded, `superseded_by` the later one that superseded this. The ids stay in their fields; the sentences say when."""
+    one superseded, `superseded_by` the later one that superseded this. The ids stay in their fields; the sentences say when.
+    A document the owner filed again under another counterparty (`refiled`) is said as that: who it was under, who it is under
+    now, by their registry names."""
     replaced = next((r for r in records if r.superseded_by == record.id), None)
     later = next((r for r in records if r.id == record.superseded_by), None) if record.superseded_by else None
 
@@ -338,13 +352,28 @@ def replacement_words(record: ContractRecord | ContractGuardRow, records: Sequen
         said = when_text(r.decided_day, today, lang) if r is not None and today is not None and r.decided_day is not None else ""
         return said or t(lang, "earlier", "之前")
 
+    replaces_text: str | None
+    superseded_text: str | None
+    if replaced is not None and refiled(replaced):
+        before = _registry_name(state, replaced.counterparty_id)
+        replaces_text = (t(lang, f"You filed this document here instead of under {before}", f"您已将此文件从{before}改归于此")
+                         if before else t(lang, "You filed this document here instead", "您已将此文件改归于此"))
+    else:
+        replaces_text = t(lang, f"Replaces the contract you confirmed {when(replaced)}",
+                          f"取代您{when(replaced)}确认的合同") if replaced else None
+    if record.superseded_by and refiled(record):
+        now = _registry_name(state, later.counterparty_id) if later is not None else None
+        superseded_text = (t(lang, f"You filed this document again under {now}", f"您已将此文件改为归入{now}")
+                           if now else t(lang, "You filed this document again under another counterparty",
+                                         "您已将此文件改为归入其他对方"))
+    else:
+        superseded_text = t(lang, f"Replaced by a contract you confirmed {when(later)}",
+                            f"已被您{when(later)}确认的合同取代") if record.superseded_by else None
     return {
         "replaces": replaced.id if replaced else None,
-        "replaces_text": t(lang, f"Replaces the contract you confirmed {when(replaced)}",
-                           f"取代您{when(replaced)}确认的合同") if replaced else None,
+        "replaces_text": replaces_text,
         "superseded_by": record.superseded_by,
-        "superseded_by_text": t(lang, f"Replaced by a contract you confirmed {when(later)}",
-                                f"已被您{when(later)}确认的合同取代") if record.superseded_by else None,
+        "superseded_by_text": superseded_text,
     }
 
 
@@ -362,23 +391,27 @@ def record_summary(record: ContractRecord, state: FinancialState | None, lang: L
         "id": record.id, "kind": record.kind.value, "kind_text": _kind_text(record.kind, lang), "title": record.title,
         "counterparty_id": record.counterparty_id,
         "counterparty_name": _name(state, record.counterparty_id), "status": record.status.value,
-        "status_text": _status_text(record, lang, today), "status_tone": _status_tone(record),
+        "status_text": _status_text(record, lang, today, state, records), "status_tone": _status_tone(record),
         "uploaded_day": record.uploaded_day, "decided_day": record.decided_day, "decided_seq": record.decided_seq,
         "uploaded_when": when_text(record.uploaded_day, today, lang) if today is not None else None,
         "decided_when": (when_text(record.decided_day, today, lang)
                          if today is not None and record.decided_day is not None else None),
         "linked_facility_id": record.linked_facility_id, "summary": summary, "blocked": record.blocked,
-        "flags": len(record.flags), "source": record.source, **replacement_words(record, records, lang, today),
+        "flags": len(record.flags), "source": record.source, **replacement_words(record, records, lang, today, state),
         "label": (AI_LABEL if lang != "zh" else AI_LABEL_ZH) if record.status != DocumentStatus.CONFIRMED
         else t(lang, "Read by the agent, confirmed by you", "由代理读取，经您确认"),
     }
 
 
 def record_view(record: ContractRecord, state: FinancialState | None, lang: Lang = "en",
-                today: int | None = None, records: Sequence[ContractRecord | ContractGuardRow] = ()) -> dict[str, Any]:
+                today: int | None = None, records: Sequence[ContractRecord | ContractGuardRow] = (),
+                short_names: Mapping[str, Sequence[str]] | None = None) -> dict[str, Any]:
+    """The review screen. `named_parties` are the parties the reading found, each with the registry counterparty it is
+    (`on_books_id`, by the party check's matcher; `short_names` are the short names the owner gave customers it added)."""
     anchor = state.as_of if state is not None else None
     view = record_summary(record, state, lang, today, records)
     view.update({
+        "named_parties": named_parties(record, state.counterparties if state is not None else [], short_names),
         "doc_hash": record.doc_hash,
         "document": {"doc_id": record.document.doc_id, "text": record.document.text},
         "ai_label": AI_LABEL_ZH if lang == "zh" else AI_LABEL, "ai_label_zh": AI_LABEL_ZH,
@@ -428,4 +461,4 @@ def record_view(record: ContractRecord, state: FinancialState | None, lang: Lang
 
 
 __all__ = ["AI_LABEL", "FIELD_LABELS", "blanks", "facility_summary", "flag_kind_text", "reading_status_text",
-           "reason_words", "record_summary", "record_view", "replacement_words", "term_display", "term_view"]
+           "reason_words", "record_summary", "record_view", "refiled", "replacement_words", "term_display", "term_view"]

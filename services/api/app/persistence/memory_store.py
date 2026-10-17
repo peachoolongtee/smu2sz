@@ -35,6 +35,7 @@ from app.persistence.chain import (
     offer_fingerprint,
     op_identity,
     parse_json,
+    refiled_record,
     verify_entries,
 )
 from app.persistence.errors import (
@@ -318,6 +319,17 @@ class InMemoryLedgerStore:
     def contract_guard_rows(self) -> list[ContractGuardRow]:
         with self._lock:
             return [guard_row(r) for r in self._contract_records.values()]
+
+    def close_refiled_record(self, record_id: str, superseded_by: str, day: int, seq: int) -> ContractRecord:
+        with self._lock:
+            stored = self._contract_records.get(record_id)
+            if stored is None:
+                raise NotFound(f"document {record_id} not found")
+            if stored.status != DocumentStatus.PROPOSED:
+                raise DocumentAlreadyDecided(f"document {record_id} is {stored.status.value}")
+            closed = refiled_record(stored, superseded_by, day, seq)
+            self._contract_records[record_id] = closed
+            return closed
 
     def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
         with self._lock:
