@@ -203,6 +203,18 @@ def _top_question(text: str) -> str | None:
     return found[0] if found else None
 
 
+def _page_read(text: str) -> bool:
+    """A question the Business pages ask with a read of their own (app/nl/reads.py): what changed, what we are waiting for,
+    when money arrives, what is overdue, who owes us, what needs the owner (the alerts and their cure), and a late payment of
+    "this" invoice, which is the page's own. Those reads answer them already and know the page's binding, so the answer
+    module does not take them over."""
+    if any(p.search(text) for p in (lx.CHANGES_ASK, lx.WAITING_ASK, lx.ARRIVAL_ASK, lx.OVERDUE_ASK, lx.OWED_ASK)):
+        return True
+    if lx.ALERTS.search(text) and not lx.ACCELERATE.search(text):
+        return True
+    return bool(lx.LATE_PAYMENT_ASK.search(text) and lx.THIS_PAYMENT.search(text))
+
+
 def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Parsed | None:
     """Owner request -> intent + typed slots, or None when no rule applies."""
     s = slots_from(text, state)
@@ -243,9 +255,9 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     # answer leads with the yes/no or the figure. "show me / tell me / list ..." asks too. Never for a fixture, quoted text,
     # an approval or a reply to a pending plan.
     plain = not s.fixture_id and not s.quoted_text and not s.approval_id and not s.tier3
-    if plain and not (pending_plan and (lx.CORRECTION.search(text) or consent.confirmation(text) is not None)):
-        if lx.not_held(text) is None and (top := _top_question(text)) is not None:
-            return ask_books(f"answer:{top}")
+    if (plain and not (pending_plan and (lx.CORRECTION.search(text) or consent.confirmation(text) is not None))
+            and lx.not_held(text) is None and not _page_read(text) and (top := _top_question(text)) is not None):
+        return ask_books(f"answer:{top}")
 
     if asks:
         if s.tier3:

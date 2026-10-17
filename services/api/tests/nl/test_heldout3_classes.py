@@ -21,7 +21,7 @@ STATE, _ = load_scenario()
     ("Could you bring up the ledger?", "SHOW_STATUS"),
     ("show me the books please", "SHOW_STATUS"),
     ("how much is still available on the credit line?", "SHOW_STATUS"),
-    ("授信额度还剩多少可以用", "SHOW_STATUS"),
+    ("授信额度还剩多少可以用", "ASK_BOOKS"),  # a top owner question (DEBT-06): the answer module states the undrawn lines
     # accelerate: "get X to pay ... early", "pull ... forward", "money in sooner"
     ("Try to get Foshan to settle the 420k early, but no more than 0.7%", "ACCELERATE_RECEIPT"),
     ("can we pull the Foshan receivable forward? 0.5% max", "ACCELERATE_RECEIPT"),

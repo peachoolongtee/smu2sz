@@ -590,6 +590,7 @@ questions:
   ok_intents: [WHAT_IF]
   expected:
     figures: []
+    expect_re: "day 62 instead of day 32|第 62 天而不是第 32 天"
     note: "No read route projects a late receipt; the answer needs one projection with RCV-A moved from day 32 to day 62."
   value: 3
 
@@ -1169,7 +1170,7 @@ questions:
   routes: ["POST /capex/evaluate"]
   ok_intents: [CAPEX]
   expected:
-    direct_re: "Finance with the 48-month lease|建议采用48 个月租赁"
+    direct_re: "Finance with the 48-month lease|建议采用48 个月租赁|^Only financed\\.|^只能融资购买。"
     answer: "yes"
     figures: ["¥600000"]
     note: "Only financed: cash plus the line leaves ¥250,000 above the reserve for a ¥600,000 price; the 48-month lease (¥14,423.49 a month) passes every limit."

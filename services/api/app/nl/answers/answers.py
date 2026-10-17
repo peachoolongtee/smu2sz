@@ -991,12 +991,25 @@ def a_terms_cost(w: W, q: str) -> AnswerReply | None:
 # ================================================================ covenants, capex
 
 
+# A covenant question worded as a breach ("Are we in breach of our covenants?", "Does the plan breach any covenant?",
+# FLOW的融资方案会违反契约吗): its yes is a breach, so the answer leads with "No" when every month is inside.
+_BREACH_WORDS = re.compile(r"\b(?:breach\w*|break\w*|broke|violat\w*|trip\w*|fail\w*)\b|违反|违约|突破|不达标|不满足", re.IGNORECASE)
+# ... and about FLOW's funding plan: answered on the projection with the plan's legs (its pro forma), not today's books.
+_PLAN_WORDS = re.compile(r"\b(?:plan|funding|financing|draws?|borrowing)\b|方案|融资|提款", re.IGNORECASE)
+
+
 def a_covenants(w: W, q: str) -> AnswerReply:
+    breach = bool(_BREACH_WORDS.search(q))
+    about_plan = bool(_PLAN_WORDS.search(q))
+    if about_plan:
+        return a_plan_covenants(w, q)
     c = w.m(mx.covenant_ratios(w.r))
     d = c.detail
     if d["dscr"] is None and d["lev"] is None:
         return w.reply("COV-01", w.t("There is nothing to test: no projected month carries debt service or debt.",
                                      "没有可检验的指标：预测期内没有债务或还本付息。"))
+    if breach:
+        return w.reply("COV-01", _breach_sentence(w, c, q, plan=False))
     parts_en, parts_zh = [], []
     if d["dscr"] is not None:
         dv, dl, dh = w.fig("dscr", ratio_x(d["dscr"]) + "×"), ratio_x(d["dscr_limit"]) + "×", ratio_x(d["dscr_head"]) + "×"
@@ -1016,6 +1029,88 @@ def a_covenants(w: W, q: str) -> AnswerReply:
         text = w.t("No. A projected month breaches a covenant: " + " and ".join(parts_en) + cd + ".",
                    "不满足。有预测月份违反契约：" + "；".join(parts_zh) + cd + "。")
     return w.reply("COV-01", text)
+
+
+def _ratio_parts(w: W, d: dict[str, Any]) -> tuple[list[str], list[str]]:
+    en, zh = [], []
+    if d["dscr"] is not None:
+        dv, dl, dh = w.fig("dscr", ratio_x(d["dscr"]) + "×"), ratio_x(d["dscr_limit"]) + "×", ratio_x(d["dscr_head"]) + "×"
+        en.append(f"lowest DSCR {dv} against the {dl} minimum ({dh} headroom)")
+        zh.append(f"偿债覆盖率最低 {dv}，下限 {dl}（余量 {dh}）")
+    if d["lev"] is not None:
+        lv, ll, lh = w.fig("leverage", ratio_x(d["lev"]) + "×"), ratio_x(d["lev_limit"]) + "×", ratio_x(d["lev_head"]) + "×"
+        en.append(f"highest leverage {lv} against the {ll} maximum ({lh} headroom)")
+        zh.append(f"杠杆率最高 {lv}，上限 {ll}（余量 {lh}）")
+    return en, zh
+
+
+_ZH_PAST = re.compile(r"了吗|了没有|了么|有没有违反|是否已经|已经违反")
+
+
+def _zh_no(q: str) -> str:
+    """"没有" for a question about what has happened (违反契约了吗), "不会" for one about what will (会违反契约吗)."""
+    return "没有" if _ZH_PAST.search(q) else "不会"
+
+
+def _zh_yes(q: str) -> str:
+    return "有" if _ZH_PAST.search(q) else "会"
+
+
+def _breach_sentence(w: W, c: Metric, q: str, *, plan: bool) -> str:
+    """The answer to "is there a breach?": "No" when every projected month is inside, "Yes" (and which ratio) when one is not."""
+    d = c.detail
+    en, zh = _ratio_parts(w, d)
+    where_en = "with FLOW's plan, no projected month" if plan else "no projected month"
+    where_zh = "执行 FLOW 的方案后，预测的每个月都" if plan else "预测的每个月都"
+    w.fig("answer", "no" if c.value else "yes")
+    if c.value:
+        return w.t(f"No. {cap(where_en)} breaches a covenant: " + " and ".join(en) + ".",
+                   f"{_zh_no(q)}。{where_zh}没有违反契约：" + "；".join(zh) + "。")
+    which_en = ("the DSCR covenant" if d["dscr"] is not None and d["dscr_head"] < 0 else "the leverage covenant")
+    which_zh = ("偿债覆盖率契约" if d["dscr"] is not None and d["dscr_head"] < 0 else "杠杆率契约")
+    lead_en = "With FLOW's plan, a" if plan else "A"
+    lead_zh = "执行 FLOW 的方案后，" if plan else ""
+    return w.t(f"Yes. {lead_en} projected month breaches {which_en}: " + " and ".join(en) + ".",
+               f"{_zh_yes(q)}。{lead_zh}有预测月份违反{which_zh}：" + "；".join(zh) + "。")
+
+
+def _inside_sentence(w: W, c: Metric, *, plan: bool) -> str:
+    """The answer to "are we inside?": "Yes" when every projected month is inside, "No" when one is not."""
+    d = c.detail
+    en, zh = _ratio_parts(w, d)
+    w.fig("answer", "yes" if c.value else "no")
+    if c.value:
+        return w.t(("Yes. With FLOW's plan, every" if plan else "Yes. Every") + " projected month is inside the covenants: "
+                   + " and ".join(en) + ".",
+                   "满足。" + ("执行 FLOW 的方案后，" if plan else "") + "预测的每个月都在契约范围内：" + "；".join(zh) + "。")
+    return w.t(("No. With FLOW's plan, a" if plan else "No. A") + " projected month breaches a covenant: " + " and ".join(en) + ".",
+               "不满足。" + ("执行 FLOW 的方案后，" if plan else "") + "有预测月份违反契约：" + "；".join(zh) + "。")
+
+
+def _sentence(w: W, c: Metric, q: str, *, plan: bool) -> str:
+    return _breach_sentence(w, c, q, plan=plan) if _BREACH_WORDS.search(q) else _inside_sentence(w, c, plan=plan)
+
+
+def a_plan_covenants(w: W, q: str) -> AnswerReply:
+    """"Would FLOW's funding plan break a covenant?": the covenant ratios on the projection with the standing plan's legs. With no
+    plan standing, the answer is on today's books and says so."""
+    pc = mx.plan_covenant_ratios(w.r)
+    if pc is None:
+        c = w.m(mx.covenant_ratios(w.r))
+        if c.detail["dscr"] is None and c.detail["lev"] is None:
+            return w.reply("COV-07", w.t("There is nothing to test: no projected month carries debt service or debt.",
+                                         "没有可检验的指标：预测期内没有债务或还本付息。"))
+        lead = _sentence(w, c, q, plan=False)
+        note = w.t(" No funding plan is standing today, so this is on today's books.", "目前没有待执行的融资方案，以上按今日账目计算。")
+        return w.reply("COV-07", lead + note)
+    w.m(pc)
+    w.m(mx.standing_plan(w.r))
+    if pc.detail["dscr"] is None and pc.detail["lev"] is None:
+        return w.reply("COV-07", w.t("There is nothing to test: no projected month carries debt service or debt.",
+                                     "没有可检验的指标：预测期内没有债务或还本付息。"))
+    basis = w.t(f"Conservative forecast of a copy of today's books with FLOW's plan applied, nothing changed, day {w.r.today}",
+                f"对今日账目副本加上 FLOW 方案后的保守预测，未做任何更改，第 {w.r.today} 天")
+    return w.reply("COV-07", _sentence(w, pc, q, plan=True), basis=basis)
 
 
 def a_breakpoints(w: W, q: str) -> AnswerReply:
@@ -1210,7 +1305,11 @@ QUESTIONS: tuple[tuple[str, re.Pattern[str], Handler], ...] = (
                   r"\bhow much (?:more )?(?:debt service|debt)\b.{0,30}\b(?:can we|could we)\b.{0,10}\b(?:carry|afford|take on|handle)\b",
                   r"\bcovenant\b.{0,20}\b(?:break ?points?|limits? on debt)\b",
                   r"什么情况.{0,8}违反.{0,4}契约", r"会让我们违反", r"还本付息.{0,6}最多", r"最多.{0,6}还本付息"), a_breakpoints),
-    ("COV-01", _p(r"\b(?:are we|is the company|we)\b.{0,20}\b(?:inside|within|compliant|in compliance|meeting|breaching|in breach)\b.{0,30}"
+    # COV-01 also takes the plan's covenant question (COV-07 in the bank): a_covenants answers it on the plan's pro forma
+    ("COV-01", _p(r"\b(?:plan|funding|financing|draws?|borrowing)\b.{0,40}\b(?:breach\w*|break\w*|violat\w*|trip\w*)\b.{0,20}\bcovenants?\b",
+                  r"\b(?:breach\w*|break\w*|violat\w*)\b.{0,20}\bcovenants?\b.{0,30}\b(?:plan|funding|financing|draw)\b",
+                  r"(?:方案|融资|提款).{0,12}(?:违反|违约|突破|不满足).{0,6}契约",
+                  r"\b(?:are we|is the company|we)\b.{0,20}\b(?:inside|within|compliant|in compliance|meeting|breaching|in breach)\b.{0,30}"
                   r"\bcovenants?\b",
                   r"\bcovenants?\b.{0,20}\b(?:ok|okay|fine|met|hold|holding|passing|compliant)\b",
                   r"\b(?:do we|are we) (?:meet|pass|comply with)\b.{0,20}\bcovenants?\b",
@@ -1235,7 +1334,7 @@ QUESTIONS: tuple[tuple[str, re.Pattern[str], Handler], ...] = (
                    r"\bunused\b.{0,20}\b(?:facilit|credit|lines?)\b", r"\bhow much credit\b.{0,20}\bleft\b",
                    r"还能借", r"能借多少", r"额度还剩", r"还剩多少额度", r"授信.{0,6}剩", r"可用额度"), a_borrow_more),
     ("LIQ-15", _p(r"\bhow (?:much|big)\b.{0,40}\b(?:raise|short(?:fall)?|gap)\b", r"\bhow much (?:money |funding |cash )?do we need\b",
-                  r"(?:融|筹)多少", r"需要融", r"缺口(?:有)?多大", r"缺多少", r"差多少钱", r"缺口是多少"), a_need),
+                  r"(?<![能可])(?:融|筹)多少", r"需要融", r"缺口(?:有)?多大", r"缺多少", r"差多少钱", r"缺口是多少"), a_need),
     ("LIQ-03", _p(r"\brunway\b", r"\bhow long\b.{0,30}\b(?:cash|money)\b.{0,20}\blast\b", r"\bhow many days\b.{0,30}\b(?:run out|last)\b",
                   r"\bwhen (?:do|will) we run out\b",
                   r"能撑多久", r"撑几天", r"撑多久", r"跑道", r"还能撑"), a_runway),
@@ -1318,8 +1417,32 @@ def match(question: str) -> tuple[str, Handler] | None:
         return None
     for qid, pattern, handler in QUESTIONS:
         if pattern.search(q):
+            guard = _GUARDS.get(qid)
+            if guard is not None and not guard(q):
+                return None  # the question is about something this answer does not hold
             return qid, handler
     return None
+
+
+def _the_case_on_file(q: str) -> bool:
+    """CAP-01 answers for the capex case on file only: "Can we buy a ¥300k machine?" names another machine, so it is not
+    answered with the ¥600k case (the capex read then says it will not guess)."""
+    from app.capex import CapexRequest
+
+    price = CapexRequest().price_fen
+    return all(a.value == price for a in lx.amounts(q))
+
+
+_ABOUT_A_DEAL = re.compile(r"\b(?:offers?|deals?|accept\w*|contracts?|agreements?|invoices?|quotes?|terms|buyers?)\b"
+                           r"|合同|协议|报价|发票|交易|条款|接受|买家", re.IGNORECASE)
+
+
+def _about_our_cash(q: str) -> bool:
+    """LIQ-01 is the owner's own cash: "Are we OK to accept this offer from Foshan?" and 这份合同安全吗 ask about a deal."""
+    return not _ABOUT_A_DEAL.search(q)
+
+
+_GUARDS: dict[str, Callable[[str], bool]] = {"CAP-01": _the_case_on_file, "LIQ-01": _about_our_cash}
 
 
 def answer(question: str, lang: str, ctx: Any) -> AnswerReply | None:

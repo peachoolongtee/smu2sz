@@ -5,7 +5,8 @@ instructions (a repayment, a funding plan, a counter to send, a fact to record, 
 question written to the hash-chained log as refused requests, broad Chinese status cues answering what the books do not
 hold, and a late payment compiled as a change to the buyer's terms. Each one is pinned here in English and Chinese, with
 the rule underneath it: a question proposes no plan, compiles no offer, queues or runs nothing and writes nothing to the
-operations log or the security log. Requests phrased as questions keep their action reading, and the consent grammar
+operations log or the security log. With the answer module (app/nl/answers) joined, a top owner question is answered from
+the books first (ASK_BOOKS, leading with the yes/no or the figure); the others keep the honest fallback. Requests phrased as questions keep their action reading, and the consent grammar
 (app/nl/consent.py) is unchanged: test_consent.py still passes as it was.
 """
 
@@ -51,29 +52,29 @@ def asked(client, rt, text: str, lang: str, session: str = "ask") -> dict:
 # (question, lang, the intent it wrongly had, a pattern the new reply must carry)
 WRONG_CASES = [
     # liquidity and debt
-    ("What is causing the cash gap?", "en", "FUND_GAP", r"¥400,000\.00.*¥405,000\.00"),
-    ("资金缺口是怎么造成的？", "zh", "FUND_GAP", r"¥400,000\.00.*¥405,000\.00"),
-    ("Can we pay off all our loans?", "en", "REPAY_FACILITY", r"cannot answer that from the books"),
-    ("我们能把债务还清吗？", "zh", "REPAY_FACILITY", r"暂时还不能"),
-    ("我们能还清所有贷款吗？", "zh", "REPAY_FACILITY", r"暂时还不能"),
-    ("下一笔贷款还款是什么时候？", "zh", "REPAY_FACILITY", r"暂时还不能"),
+    ("What is causing the cash gap?", "en", "FUND_GAP", r"^Because payroll of ¥340,000 falls due on day 12.*day 32"),
+    ("资金缺口是怎么造成的？", "zh", "FUND_GAP", r"^因为第 12 天要支付工资 ¥340,000.*第 32 天"),
+    ("Can we pay off all our loans?", "en", "REPAY_FACILITY", r"^No\. Repaying all ¥1,500,000 today"),
+    ("我们能把债务还清吗？", "zh", "REPAY_FACILITY", r"^不能。今天还清全部 ¥1,500,000"),
+    ("我们能还清所有贷款吗？", "zh", "REPAY_FACILITY", r"^不能。今天还清全部 ¥1,500,000"),
+    ("下一笔贷款还款是什么时候？", "zh", "REPAY_FACILITY", r"^第 30 天，现有设备贷款还款 ¥45,000"),
     ("我们现在要不要动用授信额度？", "zh", "FUND_GAP", r"需要融资的缺口：¥405,000\.00"),
     ("Does the investment pay off?", "en", "REPAY_FACILITY", r"NPV ¥380,885\.77.*payback in month 31"),
     # customers, deals and funding
     ("谁拖欠我们的款？", "zh", "RECORD_FACT", r"目前没有逾期款项"),
     ("我们的应收账款周转天数是多少？", "zh", "FUND_GAP", r"谁欠我们钱"),
-    ("What if Foshan pays 30 days late?", "en", None, r"I have not re-run the forecast for a late payment"),
-    ("如果佛山晚30天付款会怎样？", "zh", None, r"我没有针对延迟付款重新做预测"),
+    ("What if Foshan pays 30 days late?", "en", None, r"\(day 62 instead of day 32\).*nothing was changed"),
+    ("如果佛山晚30天付款会怎样？", "zh", None, r"（第 62 天而不是第 32 天）.*没有更改任何内容"),
     ("Any open negotiations?", "en", "NEGOTIATE", r"Nothing is waiting on you or on anyone else"),
     ("给佛山60天账期要花我们多少钱？", "zh", "SHOW_STATUS", r"¥24,326\.92"),
     ("我们发过什么还价？", "zh", "NEGOTIATE", r"暂时还不能.*今天有什么变化"),
-    ("FLOW的方案要花多少钱？", "zh", "SHOW_STATUS", r"总成本 .*¥3,113\.93"),
+    ("FLOW的方案要花多少钱？", "zh", "SHOW_STATUS", r"^¥3,113\.93：其中"),
     ("我们的发票最多能融多少钱？", "zh", "SHOW_STATUS", r"需要融资的缺口"),
     ("What's the break-even discount for early payment?", "en", "ACCELERATE_RECEIPT", r"break-even early-payment discount is 0\.88%"),
     ("提前付款折扣的盈亏平衡点是多少？", "zh", "ACCELERATE_RECEIPT", r"盈亏平衡点是 0\.88%"),
     ("Above what discount is early payment too expensive?", "en", "ACCELERATE_RECEIPT", r"0\.88%"),
     # covenants, capex, activity and mandate
-    ("Does the plan breach any covenant?", "en", "SHOW_STATUS", r"cannot answer that from the books.*covenant ratios"),
+    ("Does the plan breach any covenant?", "en", "SHOW_STATUS", r"^No\. With FLOW's plan, no projected month breaches a covenant"),
     ("Do we have any capex contracts?", "en", "CAPEX", r"cannot answer that from the books"),
     ("有哪些设备采购合同？", "zh", "CAPEX", r"暂时还不能"),
     ("How much money has FLOW moved?", "en", "SHOW_STATUS", r"cannot answer that from the books.*What changed today"),
@@ -112,9 +113,21 @@ def test_a_late_payment_is_never_compiled_as_a_change_to_the_terms(client, rt):
     for text, lang in (("What if Foshan pays 30 days late?", "en"), ("如果佛山晚30天付款会怎样？", "zh"),
                        ("What happens if the Foshan invoice slips a month?", "en"), ("佛山的款晚一个月到会怎么样？", "zh")):
         r = asked(client, rt, text, lang)
-        assert r["intent"] == "WHAT_IF" and r["verdict"] is None, r["reply"]
+        assert r["intent"] == "ASK_BOOKS" and r["verdict"] is None, r["reply"]  # the answer module's projection on a copy
+        assert re.search(r"day 62 instead of day 32|第 62 天而不是第 32 天", r["reply"]), r["reply"]
         assert "needs your approval" not in r["reply"] and "需要您批准" not in r["reply"]
     assert len(rt.store.verdicts()) == before  # nothing was evaluated as an offer
+
+
+def test_without_the_answer_module_a_late_payment_still_never_compiles_terms(client, rt, monkeypatch):
+    """The routing on its own (no app.nl.answers): the late-payment read, still no verdict."""
+    monkeypatch.setitem(sys.modules, "app.nl.answers", None)  # import fails: the routing's own fallback
+    before = len(rt.store.verdicts())
+    for text, lang in (("What if Foshan pays 30 days late?", "en"), ("如果佛山晚30天付款会怎样？", "zh")):
+        r = asked(client, rt, text, lang)
+        assert r["intent"] == "WHAT_IF" and r["verdict"] is None, r["reply"]
+        assert re.search(r"I have not re-run the forecast for a late payment|我没有针对延迟付款重新做预测", r["reply"]), r["reply"]
+    assert len(rt.store.verdicts()) == before
 
 
 def test_yao_bu_yao_is_a_question_not_a_negation(client, rt):
@@ -297,20 +310,37 @@ def test_every_nearest_read_suggested_is_one_the_rules_answer():
         n = ask._nearest(Ctx(), key)  # type: ignore[arg-type]
         for example in (n.example_en, n.example_zh):
             p = parse(example, STATE)
-            assert p is not None and p.intent.value in (
+            assert p is not None, (key, example)
+            answered = p.intent.value == "ASK_BOOKS" and any(m.startswith("ask:answer:") for m in p.matched)  # the answer module
+            assert answered or p.intent.value in (
                 "SHOW_STATUS", "SHOW_RATIOS", "COMPARE_FINANCING", "CHANGES", "SHOW_ALERTS", "CAPEX", "REPAY_FACILITY"), (key, example, p)
+            assert not p.slots.execute_now  # a suggestion never runs on its own ("repay the credit line" proposes)
 
 
 # ---------------------------------------------------------------- the narrowed Chinese status cues
 
 @pytest.mark.parametrize(("text", "intent"), [
     ("我们今天账上有多少钱？", "SHOW_STATUS"), ("现在现金余额是多少？", "SHOW_STATUS"), ("现金情况怎么样？", "SHOW_STATUS"),
-    ("公司情况怎么样？", "SHOW_STATUS"), ("Is our cash position safe?", "SHOW_STATUS"), ("How much cash do we have today?", "SHOW_STATUS"),
-    ("今天我最多能花多少钱而不跌破储备？", "SHOW_STATUS"), ("东莞欠我们多少钱？", "SHOW_STATUS"),
+    ("公司情况怎么样？", "SHOW_STATUS"), ("Is our cash position safe?", "ASK_BOOKS:LIQ-01"),
+    ("How much cash do we have today?", "SHOW_STATUS"), ("今天我最多能花多少钱而不跌破储备？", "ASK_BOOKS:LIQ-06"),
+    ("东莞欠我们多少钱？", "SHOW_STATUS"),
 ])
 def test_the_status_cues_still_read_cash(text, intent):
+    """Cash questions are still read as cash: by the status read, or by the answer module's cash answer (LIQ-01 "are we
+    safe", LIQ-06 "what can I spend"), which leads with the answer."""
     p = parse(text, STATE)
-    assert p is not None and p.intent.value == intent
+    assert p is not None
+    if intent.startswith("ASK_BOOKS:"):
+        assert p.intent.value == "ASK_BOOKS" and f"ask:answer:{intent.split(':')[1]}" in p.matched, p
+    else:
+        assert p.intent.value == intent, p
+
+
+def test_a_top_cash_question_is_answered_with_its_yes_no_and_nothing_happens(client, rt):
+    r = asked(client, rt, "Is our cash position safe?", "en")
+    assert r["intent"] == "ASK_BOOKS" and r["reply"].startswith("Not on today's books: without new funding, cash falls below")
+    zh = asked(client, rt, "今天我最多能花多少钱而不跌破储备？", "zh")
+    assert zh["intent"] == "ASK_BOOKS" and zh["reply"].startswith("没有可安全动用的钱。")
 
 
 @pytest.mark.parametrize("text", ["FLOW的方案要花多少钱？", "我们的发票最多能融多少钱？", "给佛山60天账期要花我们多少钱？", "FLOW一共动了多少钱？",
@@ -417,3 +447,86 @@ def test_the_chinese_early_pay_plan_names_the_fallback_in_chinese(client, rt):
     r = Chat(client, "ask-accel-zh").say("让佛山提前付款", lang="zh")
     assert r["intent"] == "ACCELERATE_RECEIPT"
     assert "committed plan" not in r["reply"] and "已承诺方案" in r["reply"], r["reply"]
+
+
+# ---------------------------------------------------------------- covenant questions: the yes/no follows the wording
+
+# (question, lang, the reply's lead, a figure it must carry). Breach wording leads with "No" / 不会 / 没有 when every month is
+# inside; inside wording leads with "Yes" / 满足. A question about FLOW's plan is answered on the plan's pro forma.
+COVENANT_POLARITY = [
+    ("Are we inside our covenants?", "en", "Yes. Every projected month is inside the covenants", "1.35×"),
+    ("我们满足贷款契约吗？", "zh", "满足。预测的每个月都在契约范围内", "1.35×"),
+    ("Are we in breach of our covenants?", "en", "No. No projected month breaches a covenant", "1.35×"),
+    ("Are we breaching any covenants?", "en", "No. No projected month breaches a covenant", "2.00×"),
+    ("我们违反契约了吗？", "zh", "没有。预测的每个月都没有违反契约", "1.35×"),
+    ("Would FLOW's funding plan break a covenant?", "en", "No. With FLOW's plan, no projected month breaches a covenant", "1.72×"),
+    ("Does the plan breach any covenant?", "en", "No. With FLOW's plan, no projected month breaches a covenant", "1.87×"),
+    ("FLOW的融资方案会违反契约吗？", "zh", "不会。执行 FLOW 的方案后，预测的每个月都没有违反契约", "1.72×"),
+    ("这个方案会不会违反契约？", "zh", "不会。执行 FLOW 的方案后，预测的每个月都没有违反契约", "1.87×"),
+    ("Will we stay inside our covenants with the plan?", "en", "Yes. With FLOW's plan, every projected month is inside", "1.72×"),
+]
+
+
+@pytest.mark.parametrize(("text", "lang", "lead", "figure"), COVENANT_POLARITY)
+def test_a_covenant_answer_says_yes_or_no_to_the_question_asked(client, rt, text, lang, lead, figure):
+    r = asked(client, rt, text, lang)  # read-only: nothing proposed, compiled, queued, run or logged
+    assert r["intent"] == "ASK_BOOKS" and r["reply"].startswith(lead), r["reply"]
+    assert figure in r["reply"], r["reply"]
+
+
+def test_the_plans_pro_forma_is_read_on_a_copy_and_changes_nothing(client, rt):
+    """The plan's covenants are read on Home's projection with the plan's legs: the books, the log and the plan session are as
+    they were, and a go-ahead afterwards has nothing to run."""
+    c = Chat(client, "ask-cov-plan")
+    before = fingerprint(rt)
+    r = c.say("Would FLOW's funding plan break a covenant?")
+    assert r["intent"] == "ASK_BOOKS" and ops(r) == [] and not r["awaiting_confirmation"]
+    assert ops(c.say("go ahead")) == [] and fingerprint(rt) == before
+
+
+def test_with_no_plan_standing_the_plan_question_is_answered_on_todays_books_and_says_so(client, rt):
+    from app.nl.answers import answer
+    from app.nl.answers import metrics as mx
+
+    class Ctx:
+        store, day, owner_key_hex, reads = rt.store, 0, rt.owner_key_hex, None
+
+    import unittest.mock as um
+
+    with um.patch.object(mx, "plan_covenant_ratios", lambda _ctx: None):
+        en = answer("Would FLOW's funding plan break a covenant?", "en", Ctx())
+        zh = answer("FLOW的融资方案会违反契约吗？", "zh", Ctx())
+    assert en is not None and en.text.startswith("No. No projected month breaches a covenant") and "on today's books" in en.text
+    assert zh is not None and zh.text.startswith("不会。") and "按今日账目计算" in zh.text
+
+
+# ---------------------------------------------------------------- the answer module and the page reads
+
+
+@pytest.mark.parametrize(("text", "intent"), [
+    ("What changed today?", "CHANGES"), ("What are we waiting for?", "SHOW_STATUS"), ("When does the money arrive?", "SHOW_STATUS"),
+    ("What is overdue?", "RECONCILE"), ("Who should I chase first?", "RECONCILE"), ("哪些款项逾期了？", "RECONCILE"),
+    ("Who owes us money?", "SHOW_STATUS"), ("谁欠我们钱？", "SHOW_STATUS"), ("What needs my attention?", "SHOW_ALERTS"),
+    ("What happens if this payment is late?", "WHAT_IF"), ("如果这笔款项延迟会怎样？", "WHAT_IF"),
+])
+def test_a_page_question_keeps_the_pages_own_read(text, intent):
+    """The Business pages' questions have reads of their own that know the page (the bound invoice, the alerts and their
+    cure): the answer module does not take them over."""
+    p = parse(text, STATE)
+    assert p is not None and p.intent.value == intent, p
+
+
+def test_a_named_late_payment_is_the_answer_modules_projection_and_this_payment_is_the_pages(client, rt):
+    named = asked(client, rt, "What if Foshan pays 30 days late?", "en")
+    assert named["intent"] == "ASK_BOOKS" and "day 62 instead of day 32" in named["reply"]
+    this = asked(client, rt, "What happens if this payment is late?", "en")
+    assert this["intent"] == "WHAT_IF" and "I have not re-run the forecast for a late payment" in this["reply"]
+
+
+@pytest.mark.parametrize(("text", "lang"), [("Can we buy a ¥300k machine?", "en"), ("30万的设备能买吗？", "zh")])
+def test_another_machine_is_not_answered_with_the_case_on_file(client, rt, text, lang):
+    """CAP-01 answers for the ¥600,000 case on file only; a question about another price gets the capex read's 'I will not
+    guess', never the ¥600,000 answer."""
+    r = asked(client, rt, text, lang)
+    assert r["intent"] == "CAPEX" and re.search(r"will not guess at ¥300,000\.00|不会猜测 ¥300,000\.00", r["reply"]), r["reply"]
+    assert "Only financed" not in r["reply"] and "只能融资购买" not in r["reply"]

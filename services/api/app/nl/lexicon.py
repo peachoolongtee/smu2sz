@@ -477,6 +477,8 @@ LATE_PAYMENT_ASK = _re(
     r"\b(?:payment|invoice|receipt|receivable)s?\b.{0,20}\bslips?\b",
     r"(?<!我们)(?<!我)晚\s?(?:\d+|[一二两三四五六七八九十]+)\s?(?:个)?(?:天|日|周|星期|月)(?:才)?(?:付|到|回|收)",
     r"(?:款|付款|回款|收款|发票).{0,10}(?:延迟|晚到|晚付|逾期|没到|迟到|延误)", r"(?:延迟|晚到|晚付|逾期|迟到|延误).{0,10}(?:款|付款|回款|收款|发票)")
+# "this payment", 这笔款项: the payment the page shows (its binding), not one the question names
+THIS_PAYMENT = _re(r"\b(?:this|that)\s+(?:payment|invoice|receipt|one)\b", r"这笔", r"这张", r"该笔", r"那笔")
 ACCEPT_ASK = _re(r"\baccept(?:ed|ing)?\b", r"\bagree(?:d)?\s+to\b", r"\btake\s+(?:the|their|this)\s+(?:deal|offer|terms)\b",
                     r"接受", r"答应", r"同意")
 OPTION_ASK = _re(r"\boption\s+([a-d])\b", r"\bcounter\s+([a-d])\b", r"(?:方案|选项|还价)\s?([a-dA-D])\b", r"\b([a-d])\s?(?:方案|选项)")

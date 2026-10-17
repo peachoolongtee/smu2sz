@@ -28,8 +28,10 @@ BF_ASK = "prepare the borrower file for the term loan, ¥600,000"
 PHRASES: dict[Intent, tuple[str, str, str]] = {
     Intent.COMPARE_FINANCING: ("Which financing option is cheapest?", "Compare my funding options", "哪种融资最便宜"),
     Intent.RECONCILE: ("Reconcile this month", "did Foshan pay?", "对账"),
-    Intent.SHOW_RATIOS: ("What is our DSCR?", "are we inside the covenants?", "杠杆率是多少"),
-    Intent.CAPEX: ("should I buy the machine?", "can we afford the ¥600,000 machine?", "买这台设备划算吗"),
+    # "are we inside the covenants?" and "can we afford the ¥600,000 machine?" are top owner questions, answered first by
+    # the answer module (ASK_BOOKS, tests/nl/test_ask_books.py); these phrasings still reach the capability itself
+    Intent.SHOW_RATIOS: ("What is our DSCR?", "are the covenant ratios inside the limits?", "杠杆率是多少"),
+    Intent.CAPEX: ("should I buy the machine?", "evaluate the ¥600,000 machine", "买这台设备划算吗"),
     Intent.BORROWER_FILE: ("prepare the borrower file", "generate the lender pack for the term loan", "准备借款人资料"),
     Intent.SHOW_DEAL: ("where are we with Foshan?", "what did we sign with Foshan?", "跟佛山的合同进展如何"),
 }
@@ -43,7 +45,7 @@ def test_phrasings_map_to_the_intent(intent, text):
     assert p is not None and p.intent == intent
 
 
-@pytest.mark.parametrize("text", ["how are we doing", "How's our cash position?", "are we close to breaching a covenant?",
+@pytest.mark.parametrize("text", ["how are we doing", "How's our cash position?",
                                   "现金状况怎么样", "find me the cheapest way to cover the gap"])
 def test_existing_phrasings_keep_their_intent(text):
     p = parse(text, STATE)
@@ -148,7 +150,7 @@ def test_ratios_equal_the_covenant_figures(client, rt):
 def test_capex_figures_equal_the_route(client, rt):
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     direct = evaluate_capex(CapexRequest(), state, mandate, commitments=rt.store.commitments())
-    reply = Chat(client, "cap-capex").say("can we afford the ¥600,000 machine?")["reply"]
+    reply = Chat(client, "cap-capex").say("evaluate the ¥600,000 machine")["reply"]
     route = client.post("/capex/evaluate", headers=OWNER).json()
     assert route["npv_fen"] == direct.npv_fen and route["payback_month"] == direct.payback_month
     assert f"NPV {fmt_yuan(direct.npv_fen)}" in reply and f"payback in month {direct.payback_month}" in reply

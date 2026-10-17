@@ -673,7 +673,8 @@ def what_if(ctx: NlContext, slots: Slots, text: str) -> Turn:
         # a change to the buyer's terms, so its day count is not compiled as a terms offer
         from app.nl.ask import layer_reply
 
-        if ctx.owner_authenticated and (got := layer_reply(ctx, text)) is not None:
+        # the answer module projects a named late payment on a copy; "this payment" is the page's, which the read knows
+        if ctx.owner_authenticated and not lx.THIS_PAYMENT.search(text) and (got := layer_reply(ctx, text)) is not None:
             return Turn(intent=Intent.WHAT_IF, reply=got[0], facts={"ask": {"topic": "late_payment", "metric_ids": got[1]}})
         if ctx.reads is not None:
             return reads.late_payment(ctx)

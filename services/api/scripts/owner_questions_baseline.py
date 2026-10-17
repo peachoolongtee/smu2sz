@@ -157,7 +157,9 @@ def figure_re(token: str) -> re.Pattern[str]:
         return re.compile(rf"\bmonth {n}\b|第\s?{n}\s?个?月|(?<![\d.]){n}\s?(?:months?\b|个月)", re.IGNORECASE)
     if token.endswith("%"):
         num = token[:-1].rstrip("0").rstrip(".") if "." in token else token[:-1]
-        return re.compile(rf"(?<![\d.]){re.escape(num)}(?:\.0+)?\s?%")  # 15% matches 15.00%
+        # 7.20% matches 7.2% and 7.20%; 15% and 15.00% match each other
+        tail = r"0*" if "." in num else r"(?:\.0+)?"
+        return re.compile(rf"(?<![\d.]){re.escape(num)}{tail}\s?%")
     if token.endswith("x"):
         num = token[:-1]
         return re.compile(rf"(?<![\d.]){re.escape(num)}\s?[×x]")

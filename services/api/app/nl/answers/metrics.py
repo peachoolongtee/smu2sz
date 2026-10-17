@@ -162,8 +162,15 @@ class Reading:
             return None
         if found is not None:
             found.pop("plan_series", None)
-            found.pop("plan_traj", None)
+            self.__dict__["_plan_traj"] = found.pop("plan_traj", None)  # the projection with the plan's legs (read-only)
         return found
+
+    def plan_trajectory(self) -> Trajectory | None:
+        """The conservative projection with the standing plan's legs applied, as Home draws it after the plan; None when no
+        plan is standing. Computed on a copy of the books by `app.api.home.next_action`; nothing is written."""
+        _ = self.action
+        traj = self.__dict__.get("_plan_traj")
+        return traj if isinstance(traj, Trajectory) else None
 
     @cached_property
     def entries(self) -> list[Entry]:
@@ -649,19 +656,33 @@ def late_payment_impact(ctx: Any, buyer_id: str, days_late: int) -> Metric:
 def covenant_ratios(ctx: Any) -> Metric:
     """The worst projected DSCR and leverage against the strictest limit (mandate or a facility covenant), as SHOW_RATIOS reads them."""
     r = R(ctx)
+    return _covenant_ratios(r, r.traj, "covenant_ratios")
+
+
+def plan_covenant_ratios(ctx: Any) -> Metric | None:
+    """The same ratios on the projection with the standing plan's legs (its draws and advances counted as debt): the plan's
+    pro forma. None when no plan is standing."""
+    r = R(ctx)
+    traj = r.plan_trajectory()
+    if traj is None:
+        return None
+    return _covenant_ratios(r, traj, "plan_covenant_ratios")
+
+
+def _covenant_ratios(r: Reading, traj: Trajectory, metric_id: str) -> Metric:
     dscr_limits, lev_limits = covenant_limits(r.books.state, r.mandate)
     dscr_limit = max(x[0] for x in dscr_limits)
     lev_limit = min(x[0] for x in lev_limits)
     out: dict[str, Any] = {"dscr_limit": dscr_limit, "lev_limit": lev_limit, "dscr": None, "lev": None}
-    if (wd := worst_dscr(r.traj.months)) is not None and (d := ratios_for(wd)[0]) is not None:
+    if (wd := worst_dscr(traj.months)) is not None and (d := ratios_for(wd)[0]) is not None:
         out.update(dscr=d.value, dscr_month=wd.month, dscr_head=d.value - dscr_limit)
-    if (wl := worst_leverage(r.traj.months)) is not None and (lv := ratios_for(wl)[1]) is not None:
+    if (wl := worst_leverage(traj.months)) is not None and (lv := ratios_for(wl)[1]) is not None:
         out.update(lev=lv.value, lev_month=wl.month, lev_head=lev_limit - lv.value)
     inside = (out["dscr"] is None or out["dscr_head"] >= 0) and (out["lev"] is None or out["lev_head"] >= 0)
     cd = [a for a in r.found if a.kind == AlertKind.CLEAN_DOWN_AT_RISK]
     out.update(inside=inside, clean_down_alert=bool(cd))
     disp = f"DSCR {ratio_x(out['dscr'])}×" if out["dscr"] is not None else "no ratio"
-    return Metric("covenant_ratios", inside, disp, None, "covenants.ratios worst_dscr / worst_leverage", out)
+    return Metric(metric_id, inside, disp, None, "covenants.ratios worst_dscr / worst_leverage", out)
 
 
 def covenant_breakpoints(ctx: Any) -> Metric:
