@@ -169,6 +169,7 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
         return _replay(ctx, session.requests[req.request_id], before)
 
     parse_source = "actor"
+    parsed: Parsed | None = None
     if req.actor == "COUNTERPARTY":
         turn = counterparty_message(ctx, req.text, req.counterparty_id)
     elif scoped is not None and scoped.clarification is not None:  # a scope the server cannot honour is asked about, never guessed
@@ -187,6 +188,8 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
             turn.pending.data["zero_forward"] = isinstance(ctx, _TurnContext) and ctx.zero_forward  # as it was shown
     if req.actor == "OWNER":
         turn = business.rewrite(ctx, turn)  # Business words for the owner's reply when the request asked for them
+        if parsed is not None:  # after the rewrite, which reads the handler's own words: a plan waiting for "go ahead" is not hidden (ASK-2b)
+            asking.remind_pending(ctx, parsed, turn)
     if not turn.guarded:
         turn.reply, _ok = ctx.guard(turn.reply, turn.recipient, allow=turn.allow)
     _update_session(session, turn)

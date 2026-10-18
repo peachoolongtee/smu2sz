@@ -401,21 +401,32 @@ def topic_of(p: Parsed) -> str:
 ACTION_TOPICS = frozenset({"fund", "repay", "accelerate", "negotiate", "debt", "record"})
 
 
-def pending_reminder(ctx: NlContext, p: Parsed) -> tuple[str, str] | None:
-    """ASK-2. A question about an action asked while a plan waits for "go ahead": the reply must say that the earlier plan is
-    still waiting, what it does and what it costs, and that "go ahead" runs that plan and nothing the question named.
+# The owner turns that only read or decline: with a plan waiting for "go ahead" they leave it in place, so they say so (ASK-2b).
+# A turn that proposes, amends, confirms, cancels, records or runs something is none of these.
+READ_INTENTS = frozenset({Intent.ASK_BOOKS, Intent.SHOW_STATUS, Intent.SHOW_RATIOS, Intent.SHOW_ALERTS, Intent.CHANGES,
+                          Intent.COMPARE_FINANCING, Intent.RECONCILE, Intent.SHOW_DEAL, Intent.EXPLAIN, Intent.WHAT_IF,
+                          Intent.OUT_OF_SCOPE})
+
+
+def pending_reminder(ctx: NlContext, p: Parsed, intent: Intent = Intent.ASK_BOOKS) -> tuple[str, str] | None:
+    """ASK-2 / ASK-2b. A question asked while a plan waits for "go ahead": the reply must say that the earlier plan is still
+    waiting, what it does and what it costs, and that "go ahead" runs that plan. For a question about an action ("should we draw
+    ¥100,000?") it also says "go ahead" runs that plan and nothing the question named.
     Chosen: the plan is KEPT (a question never cancels anything, so the owner can still go on with it) and the reply says
-    so; clearing it would be a change the owner did not ask for."""
+    so; clearing it would be a change the owner did not ask for. This is the one sentence for every owner read turn."""
     pending = ctx.session.pending_plan
     if pending is None or not ctx.owner_authenticated:
-        return None
-    if topic_of(p) not in ACTION_TOPICS and p.slots.amount_fen is None:
         return None
     steps = [s.description for s in pending.steps if s.status == "PROPOSED"] or [s.description for s in pending.steps]
     what = "; ".join(d.rstrip(".") for d in steps) or pending.intent.value
     cost_en = f" (cost {fmt_yuan(pending.quoted_cost_fen)})" if pending.quoted_cost_fen is not None else ""
     cost_zh = f"（成本 {fmt_yuan(pending.quoted_cost_fen)}）" if pending.quoted_cost_fen is not None else ""
     amount = p.slots.amount_fen
+    about_action = intent == Intent.ASK_BOOKS and (topic_of(p) in ACTION_TOPICS or amount is not None)
+    if not about_action:
+        return ((f"Your earlier plan is still waiting and nothing has changed: {what}{cost_en}. "
+                 "Reply 'go ahead' and that plan runs; reply 'cancel' to drop it."),
+                f"您之前的方案仍在等待，没有任何变化：{what}{cost_zh}。回复“执行”将运行该方案；回复“取消”可放弃。")
     asked_en = f"the {fmt_yuan(amount)} you just asked about" if amount is not None else "what you just asked about"
     asked_zh = f"您刚才询问的 {fmt_yuan(amount)}" if amount is not None else "您刚才询问的内容"
     return (("Your earlier plan is still waiting and nothing has changed: "
@@ -423,12 +434,22 @@ def pending_reminder(ctx: NlContext, p: Parsed) -> tuple[str, str] | None:
             f"您之前的方案仍在等待，没有任何变化：{what}{cost_zh}。回复“执行”将运行该方案，而不是{asked_zh}；回复“取消”可放弃。")
 
 
+def remind_pending(ctx: NlContext, p: Parsed, turn: Turn) -> None:
+    """ASK-2b. Called on every owner turn after it is dispatched: while a plan waits for its go-ahead, a turn that only read
+    or declined (`READ_INTENTS`: the rules' reads, the answer layer's, the router's, the out-of-scope reply) keeps
+    `awaiting_confirmation` true and ends with the reminder sentence. It reads the session and writes only words: the plan is
+    never cleared, replaced or confirmed by a question."""
+    if (turn.intent not in READ_INTENTS or turn.pending is not None or turn.clear_pending or turn.awaiting
+            or turn.pending_clarification is not None or ctx.results):
+        return
+    if (note := pending_reminder(ctx, p, turn.intent)) is None:
+        return
+    turn.reply = f"{turn.reply}{'' if ctx.lang == 'zh' else ' '}{t(ctx, *note)}"
+    turn.awaiting = True  # the earlier plan is still waiting for its go-ahead
+
+
 def ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
-    turn = _ask_books(ctx, p, text)
-    if turn.intent == Intent.ASK_BOOKS and (note := pending_reminder(ctx, p)) is not None:
-        turn.reply = f"{turn.reply}{'' if ctx.lang == 'zh' else ' '}{t(ctx, *note)}"
-        turn.awaiting = True  # the earlier plan is still waiting for its go-ahead
-    return turn
+    return _ask_books(ctx, p, text)
 
 
 def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
