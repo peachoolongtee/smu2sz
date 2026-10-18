@@ -218,6 +218,12 @@ _TIER3_WORDS = {
 }
 
 
+def tier3_name(kind: str, lang: str) -> str | None:
+    """A Tier-3 operation kind in the owner's words ("signing a personal guarantee"), or None for any other kind."""
+    words = _TIER3_WORDS.get(kind)
+    return None if words is None else words[1 if lang == "zh" else 0]
+
+
 def tier3_info(ctx: NlContext, kind: str, text: str) -> Turn:
     """A question that only names a Tier-3 subject. Nothing is sent to the executor, so nothing is refused or logged: it
     is answered from the rules and, for an attempt, from the operations log and the security log."""

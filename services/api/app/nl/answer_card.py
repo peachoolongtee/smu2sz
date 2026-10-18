@@ -227,6 +227,12 @@ def actions_for(qid: str, figures: dict[str, str], lang: str, state: Any) -> lis
         out.append(action("forecast", lang))
         if has_plan:
             out.append(action("plan", lang))
+    elif qid == "CUS-09":
+        out += _customer_actions(state, figures.get("buyer"), lang)[:1]
+        out.append(action("forecast", lang))
+    elif qid == "FUN-07":
+        out.append(action("funding", lang))
+        out += _customer_actions(state, figures.get("buyer"), lang)[:1]
     elif qid in _DEBT:
         out.append(action("funding", lang))
         if qid == "DEBT-04":
@@ -249,7 +255,7 @@ def actions_for(qid: str, figures: dict[str, str], lang: str, state: Any) -> lis
         out.append(action("approvals", lang))
     elif qid == "CAP-01":
         out.append(action("capex", lang))
-    elif qid == "ACT-01":
+    elif qid in ("ACT-01", "ACT-04", "ACT-05"):
         out.append(action("activity", lang))
     elif qid in ("MAN-01", "MAN-02"):
         out.append(action("limits", lang))

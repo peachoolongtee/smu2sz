@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Any
 
+from app.api import presentation as pres
 from app.domain.models import FlowKind
 from app.domain.money import bp, fmt_pct
 from app.nl import lexicon as lx
@@ -1538,8 +1539,11 @@ def op_words(w: W, kind: str, amount: int, op: Any) -> str:
         "RECORD_COMMITMENT": ("recorded an agreement", "记录了一项协议"),
         "APPLY_FOR_FACILITY": (f"applied for {fac}", f"申请了{fac}"),
     }
-    en, zh = words.get(kind, ("ran one other operation", "执行了另一项操作"))
-    return w.t(en, zh)
+    if kind in words:
+        return w.t(*words[kind])
+    if pres.has_kind_text(kind):  # any other operation by its kind's owner words ("books opened", "customer added")
+        return w.t(lower_first(pres.kind_text(kind, "en")), pres.kind_text(kind, "zh"))
+    return w.t("ran one other operation", "执行了另一项操作")
 
 
 def a_activity(w: W, q: str) -> AnswerReply:
@@ -1613,6 +1617,227 @@ def a_needs_approval(w: W, q: str) -> AnswerReply:
         f"个人担保、抵押、股权和修改授权，FLOW 永远不能做。") + now, w.basis("mandate"))
 
 
+# ================================================================ a customer that stops paying, or stops ordering
+
+_ORDERING = re.compile(r"\border\w*|\bbuy(?:s|ing)?\b|\bpurchas\w*|下单|订货|订购|订单|不买|采购", re.IGNORECASE)
+_PAYING = re.compile(r"\bpa(?:y|ys|id|ying)\b|\bdefault\w*|\blos(?:e|es|ing|t|s)\b|\bloss\b|\bleav\w+|\bgo(?:es)? (?:bust|under)\b"
+                     r"|付款|不付|不给钱|赖账|违约|失去|流失|丢|倒闭|跑路", re.IGNORECASE)
+
+
+def _loss_buyer(r: Reading, q: str) -> str | None:
+    """The customer a "what if it stops" question is about: the one it names, else the biggest (owing most, else invoiced most)."""
+    named = lx.find_counterparty(q, r.state)
+    if named:
+        return named[0]
+    rows = [x for x in mx.receivables_by_customer(r).value if x["owed_fen"]]
+    if rows:
+        return str(rows[0]["buyer_id"])
+    rec = sorted(r.state.recurring_invoices, key=lambda x: -Fraction(x.face_fen, x.every_days or 1))
+    return rec[0].counterparty_id if rec else None
+
+
+def a_customer_loss(w: W, q: str) -> AnswerReply:
+    """"If my biggest customer doesn't pay, how long can we last?", "What happens to cash if Dongguan stops ordering?": the conservative
+    forecast on a copy of the books without that customer's money (its open invoices and its recurring invoicing; for "stops ordering"
+    only the invoicing still to be issued), against today's forecast: the first day below the reserve and below zero, the lowest point."""
+    r = w.r
+    buyer = _loss_buyer(r, q)
+    basis = w.basis("hypothetical")
+    if buyer is None:
+        return w.reply("CUS-09", w.t("No customer owes you anything and nothing is invoiced regularly, so losing one changes no forecast.",
+                                     "目前没有客户欠款，也没有定期开票，因此失去任何一位客户都不会改变预测。"), basis)
+    orders_only = bool(_ORDERING.search(q)) and not _PAYING.search(q)
+    ex = w.m(mx.customer_exposure(r, buyer)).detail
+    li = w.m(mx.customer_loss_impact(r, buyer, orders_only=orders_only))
+    d = li.detail
+    name, res = w.fig("buyer", w.buyer(buyer)), w.fig("reserve", money(r.floor))
+    owed, rec = money(ex["owed_fen"]), (ex["recurring"][0] if ex["recurring"] else None)
+    share, rshare = w.fig("share", pct0(ex["share"])), w.fig("recurring_share", pct0(ex["recurring_share"]))
+    if ex["owed_fen"] or rec:
+        exposure = w.t(
+            f"{name} accounts for {share} of what you are owed ({owed}) and {rshare} of your recurring invoicing"
+            + (f" ({money(rec['face_fen'])} every {rec['every_days']} days)" if rec else ""),
+            f"{name}占您应收账款的 {share}（{owed}）和定期开票的 {rshare}" + (f"（每 {rec['every_days']} 天 {money(rec['face_fen'])}）" if rec else ""))
+    else:
+        exposure = w.t(f"{name} has no open invoice and no recurring invoicing in the books (0% of what you are owed and of your recurring "
+                       f"invoicing)", f"账目里{name}没有未结发票，也没有定期开票（占应收账款和定期开票均为 0%）")
+    kept = (w.t(f" Its {owed} already invoiced stays due and stays in the forecast.", f"它已开票的 {owed} 仍会到期，仍计入预测。")
+            if orders_only and ex["owed_fen"] else "")
+    base = w.t(f"lowest {money(d['base_low_fen'])} on {w.on(d['base_low_day'])}"
+               + (f", below your reserve from {w.on(d['base_breach_day'])}" if d["base_breach_day"] is not None else ", never below your reserve")
+               + (f" and below zero from {w.on(d['base_zero_day'])}" if d["base_zero_day"] is not None else ""),
+               f"最低为{w.on(d['base_low_day'])}的 {money(d['base_low_fen'])}"
+               + (f"，从{w.on(d['base_breach_day'])}起低于储备线" if d["base_breach_day"] is not None else "，始终不低于储备线")
+               + (f"，从{w.on(d['base_zero_day'])}起跌破零" if d["base_zero_day"] is not None else ""))
+    if not d["changed"]:
+        w.fig("answer", "no change")
+        return w.reply("CUS-09", w.t(
+            f"{exposure}, so if it {'stops ordering' if orders_only else 'stops paying you'} the forecast does not change: today's forecast is {base}."
+            + kept, f"{exposure}，因此即使{'不再下单' if orders_only else '不再付款'}，预测也不会变化：今天的预测是{base}。" + kept), basis)
+    gone_en: list[str] = []
+    gone_zh: list[str] = []
+    if d["invoice_fen"]:
+        days = d["invoice_days"]
+        one = len(days) == 1
+        gone_en.append(f"its {money(d['invoice_fen'])} invoice (due {w.day(days[0])})" if one
+                       else f"its {money(d['invoice_fen'])} of open invoices (the first due {w.day(days[0])})")
+        gone_zh.append(f"已开的 {money(d['invoice_fen'])} 发票（{w.day(days[0])}到期）" if one
+                       else f"已开的 {money(d['invoice_fen'])} 发票（最早{w.day(days[0])}到期）")
+    if d["recurring"]:
+        x = d["recurring"][0]
+        gone_en.append(f"its recurring invoicing ({money(x['face_fen'])} every {x['every_days']} days)")
+        gone_zh.append(f"之后的定期开票（每 {x['every_days']} 天 {money(x['face_fen'])}）")
+    lo = w.fig("lowest", money(d["low_fen"]))
+    w.fig("lowest_day", str(d["low_day"]))
+    if d["breach_day"] is None:
+        mid_en = f"cash still stays at or above your {res} reserve for all {r.horizon} days; the lowest point is {lo} on {w.on(d['low_day'])}."
+        mid_zh = f"现金在 {r.horizon} 天内仍不低于您 {res} 的最低现金储备，最低点是{w.on(d['low_day'])}的 {lo}。"
+    else:
+        bd, zd = d["breach_day"], d["zero_day"]
+        n = bd - r.today
+        w.fig("first_breach_day", str(bd))
+        if n > 0:
+            w.fig("runway_days", str(n))
+        if zd is not None:
+            w.fig("zero_day", str(zd))
+        zc = money(d["zero_closing_fen"]) if zd is not None else ""
+        away_en, away_zh = (f" ({n} days from now)", f"（{n} 天后）") if r.today == 0 and n > 0 else ("", "")
+        when_en = (f"is already below your {res} reserve today" if n == 0
+                   else f"falls below your {res} reserve on {w.on(bd)}{away_en}")
+        when_zh = f"今天就已低于您 {res} 的最低现金储备" if n == 0 else f"将在{w.on(bd)}{away_zh}低于您 {res} 的最低现金储备"
+        zero_en = f" and below zero on {w.on(zd)}, to {zc}" if zd is not None else ", but it never goes below zero"
+        zero_zh = f"，并在{w.on(zd)}跌破零，降至 {zc}" if zd is not None else "，但始终不会跌破零"
+        end = d["low_day"] == d["end_day"] and d["end_fen"] < r.floor
+        low_en = (f" The lowest point is {lo} on {w.on(d['low_day'])}" + (", the last day FLOW forecasts, and cash has not recovered" if end else "") + ".")
+        low_zh = (f"最低点是{w.on(d['low_day'])}的 {lo}" + ("，已是预测的最后一天，现金仍未回升" if end else "") + "。")
+        mid_en = f"cash {when_en}{zero_en}." + low_en
+        mid_zh = f"现金{when_zh}{zero_zh}。" + low_zh
+    need = ""
+    if d["need_fen"]:
+        w.fig("need", money(d["need_fen"]))
+        need = w.t(f" To hold the reserve you would need {money(d['need_fen'])} of new funding"
+                   + (f" (today's books need {money(d['base_need_fen'])})." if d["base_need_fen"] else " (today's books need none)."),
+                   f"要守住储备线，您需要新增 {money(d['need_fen'])} 的资金" + (f"（按今日账目需要 {money(d['base_need_fen'])}）。"
+                                                                    if d["base_need_fen"] else "（按今日账目无需新增）。"))
+    thing_en = "recurring invoicing" if orders_only else "money"
+    thing_zh = "之后的订单" if orders_only else "回款"
+    return w.reply("CUS-09", w.t(
+        f"Without {w.buyer_s(buyer)} {thing_en}, {mid_en}{need} Taken out of the forecast: {joined(w, gone_en)}. {exposure}. Today's forecast, "
+        f"with {name}: {base}.{kept} This is a projection on a copy of your books; nothing was changed.",
+        f"没有{name}的{thing_zh}，{mid_zh}{need}预测中拿掉的是：{joined(w, gone_zh)}。{exposure}。有{name}时，今天的预测是{base}。{kept}"
+        f"这是对账目副本的预测，没有更改任何内容。"), basis)
+
+
+# ================================================================ borrowing against an invoice
+
+
+def a_invoice_financing(w: W, q: str) -> AnswerReply:
+    """"Can we borrow against the Foshan invoice?": what the invoice-financing line on the funding menu would advance on that customer's
+    open invoice (advance rate, limit, all-in cost, days to cash). A read: nothing is submitted or drawn."""
+    r = w.r
+    named = lx.find_counterparty(q, r.state)
+    buyer = named[0] if len(named) == 1 else None
+    off = w.m(mx.invoice_financing_offer(r, buyer))
+    d = off.detail
+    basis = w.basis("books")
+    read = w.t(" This is only a read: nothing was submitted or drawn.", "这只是查询：没有提交，也没有提款。")
+    who = w.buyer(buyer) if buyer else None
+    if not d["line"]:
+        return w.reply("FUN-07", w.t("No: there is no invoice-financing line on your funding menu, so nothing can be advanced on an invoice."
+                                     + read, "不能：您的融资菜单里没有发票融资额度，因此无法凭发票获得垫款。") + (read.strip() if w.zh else ""), basis)
+    if off.value is None and "invoice_fen" not in d:
+        if d["financed"] and buyer is not None:
+            return w.reply("FUN-07", w.t(f"No: {who}'s open invoice has already been financed, so there is nothing more to advance on it." + read,
+                                         f"不能：{who}的未结发票已经融资，无法再垫款。") + (read.strip() if w.zh else ""), basis)
+        return w.reply("FUN-07", w.t(f"No: {who or 'nobody'} has no open invoice to borrow against." + read,
+                                     f"不能：{who or '目前没有客户'}没有可用于融资的未结发票。") + (read.strip() if w.zh else ""), basis)
+    inv, day = w.fig("invoice", money(d["invoice_fen"])), d["due_day"]
+    name = w.fig("buyer", w.buyer(d["buyer_id"]))
+    full = money(d["uncapped_fen"])
+    rate, limit, cost = d["advance_rate"], money(d["limit_fen"]), w.fig("all_in", d["all_in"])
+    days = d["days"]
+    if not d["committed"]:
+        w.fig("answer", "no")
+        return w.reply("FUN-07", w.t(
+            f"Not yet: invoice financing is on your funding menu but it is not committed, so FLOW cannot rely on it and nothing would be advanced "
+            f"today. Once it is committed it would advance {rate} of {w.buyer_s(d['buyer_id'])} {inv} invoice (due {w.day(day)}), "
+            f"{full}, at {cost} a year all in, with cash in {days} days." + read,
+            f"现在还不能：发票融资虽在您的融资菜单上，但尚未承诺，FLOW 不能依赖它，今天不会垫付任何款项。承诺之后，可按{name}的"
+            f" {inv} 发票（{w.day(day)}到期）的 {rate} 垫付 {full}，综合年化成本 {cost}，{days} 天到账。") + (read.strip() if w.zh else ""), basis)
+    adv = w.fig("invoice_capacity", off.display)
+    w.fig("answer", "yes")
+    capped = (w.t(f" (the line's remaining room caps it; {rate} of the invoice would be {full})",
+                  f"（受额度剩余空间限制；按 {rate} 本应为 {full}）") if d["uncapped_fen"] > off.value else "")
+    return w.reply("FUN-07", w.t(
+        f"Yes: invoice financing would advance {adv}{capped} on {w.buyer_s(d['buyer_id'])} {inv} invoice (due {w.day(day)}): {rate} of the "
+        f"invoice, within the line's {limit} limit. It costs {cost} a year all in, and the cash lands in {days} days." + read,
+        f"可以：发票融资可对{name}的 {inv} 发票（{w.day(day)}到期）垫付 {adv}{capped}，即发票的 {rate}，在额度 {limit} 以内。综合年化成本 {cost}，"
+        f"{days} 天到账。") + (read.strip() if w.zh else ""), basis)
+
+
+# ================================================================ the audit log
+
+_REFUSED_ASK = re.compile(r"\b(?:refus\w*|block\w*|turned down|stopped)\b|拒绝|拦截|拦下|拦住", re.IGNORECASE)
+_AUDIT_ASK = re.compile(r"\baudit\b|审计|\bintact\b|完整|\btamper\w*|篡改|\btrust\b|可信|校验|哈希", re.IGNORECASE)
+
+
+def kind_words(w: W, kind: str) -> str:
+    """An operation kind in the owner's words: the Tier-3 subjects as FLOW says them when it declines, every other kind as the Activity
+    page says it ("books opened", "credit line drawn"); never the raw kind."""
+    from app.nl.ask import tier3_name
+
+    if (t3 := tier3_name(kind, w.lang)) is not None:
+        return t3
+    if pres.has_kind_text(kind):
+        return w.t(lower_first(pres.kind_text(kind, "en")), pres.kind_text(kind, "zh"))
+    return w.t("another operation", "另一项操作")
+
+
+def a_audit(w: W, q: str) -> AnswerReply:
+    """"Is the audit log intact?", "Has anything been refused or blocked?": the chain check, then every operation in the log by name, and
+    the refused, waiting and security-event counts (all the log holds, not only the last week)."""
+    a = w.m(mx.activity_since(w.r, since_day=-(10 ** 6)))
+    d = a.detail
+    ok = d["chain_valid"]
+    asks_refused = bool(_REFUSED_ASK.search(q)) and not _AUDIT_ASK.search(q)
+    w.fig("operations", str(a.value))
+    w.fig("refused", str(d["refused"]))
+    chain = (w.t("the log's hash chain verifies", "日志的哈希链校验通过") if ok
+             else w.t("the log's hash chain does NOT verify", "日志的哈希链校验未通过"))
+    if asks_refused:
+        lead = (w.t("Nothing has been refused or blocked.", "没有操作被拒绝或拦截。") if not d["refused"]
+                else w.t(f"Yes: {n_en(d['refused'], 'operation was', 'operations were')} refused.", f"有：{d['refused']} 项操作被拒绝。"))
+    elif ok:
+        lead = w.t("Yes: the audit log is intact, its hash chain verifies.", "完整：审计日志的哈希链校验通过。")
+    else:
+        lead = w.t("No: the audit log's hash chain does NOT verify, so do not rely on it as it stands.",
+                   "不完整：审计日志的哈希链校验未通过，在核查之前请不要依赖它。")
+    ran = [op_words(w, kind, amount, op) for kind, amount, op in d["ran"]]
+    shown = ran[:10]
+    more = len(ran) - len(shown)
+    tail = w.t(f"; and {more} more", f"；另有 {more} 项") if more > 0 else ""
+
+    def named(kinds: list[str]) -> str:
+        words = [kind_words(w, k) for k in kinds[:6]]
+        if not words:
+            return ""
+        more_k = w.t(f", and {len(kinds) - 6} more", f"等共 {len(kinds)} 项") if len(kinds) > 6 else ""
+        return w.t(" (", "（") + w.t(", ", "、").join(words) + more_k + w.t(")", "）")
+
+    if w.zh:
+        body = ((f"日志里共执行了 {a.value} 项操作：" + "；".join(shown) + tail) if ran else "日志里还没有执行过任何操作")
+        body += (f"；被拒绝 {d['refused']} 项{named(d['refused_kinds'])}；待您审批 {d['queued']} 项{named(d['queued_kinds'])}；"
+                 f"安全事件 {d['security_events']} 起")
+        text = f"{lead}{body}" + (f"；{chain}" if asks_refused else "") + "。"
+    else:
+        body = ((f"The log holds {n_en(a.value, 'operation', 'operations')} that ran: " + "; ".join(shown) + tail) if ran
+                else "The log holds no operation that ran")
+        body += (f"; {d['refused']} refused{named(d['refused_kinds'])}; {d['queued']} waiting for your approval{named(d['queued_kinds'])}; "
+                 f"{n_en(d['security_events'], 'security event', 'security events')}")
+        text = f"{lead} {body}" + (f"; {chain}" if asks_refused else "") + "."
+    return w.reply("ACT-04" if asks_refused else "ACT-05", text, w.basis("log"))
+
+
 # ================================================================ the matcher
 
 
@@ -1622,10 +1847,43 @@ def _p(*parts: str) -> re.Pattern[str]:
 
 Handler = Callable[[W, str], AnswerReply | None]
 
+# what a customer does that takes its money out of the forecast: does not pay, stops ordering, defaults, walks away
+_LOSS = (r"(?:(?:doesn'?t|does not|don'?t|do not|won'?t|will not|never|fails? to|failed to|stops?|stopped|quits?|refuses? to|can'?t|cannot|"
+         r"unable to|no longer|isn'?t going to)\s+(?:\w+\s+)?(?:pay|paying|paid|order|ordering|buy|buying|settle|trading|doing business)"
+         r"|defaults?|defaulted|goes? (?:bust|under|bankrupt)|walks? away|leaves? us|disappears?|vanish\w*)")
+
 # In order: the first question whose pattern matches answers. Specific questions (a what-if, a named offer, a breakpoint) come
 # before the general ones whose words they share ("pays late" before "who is late", "debt service can we carry" before "debt
 # service", "payroll" before "is cash enough").
 QUESTIONS: tuple[tuple[str, re.Pattern[str], Handler], ...] = (
+    # a customer that does not pay, or stops ordering: before the runway, what-if and dependence readings, whose words it shares
+    ("CUS-09", _p(rf"\b(?:biggest|largest|main|top|major|key|best|number one)\s+(?:customer|client|buyer)s?\b.{{0,60}}\b{_LOSS}",
+                  r"\b(?:lose|losing|lost|loss of|without)\b.{0,30}\b(?:biggest|largest|main|top|major|key)\s+(?:customer|client|buyer)",
+                  rf"\b(?:customers?|clients?|buyers?|foshan|dongguan)\b.{{0,40}}\b{_LOSS}",
+                  r"\b(?:lose|losing|lost|loss of)\b.{0,12}\b(?:foshan|dongguan)\b",
+                  r"(?:最大|最主要|主要|最重要|最好|头号)(?:的)?(?:客户|买家|顾客).{0,20}(?:不付|不给钱|不还|拖欠|赖账|违约|跑路|倒闭|流失|不买|不下单|不再|停止|走了|没了|不来)",
+                  r"(?:失去|丢了|丢掉|流失|损失|没有了).{0,6}(?:最大|主要)(?:的)?(?:客户|买家)",
+                  r"(?:如果|万一|要是|假如).{0,12}(?:客户|佛山|东莞).{0,12}(?:不付|不再|停止|不下单|不买|流失|赖账|违约|跑路|倒闭|不给钱)",
+                  r"(?:佛山|东莞|客户).{0,10}(?:不付款|不再下单|停止下单|不下单|不再订货|不再合作|赖账|违约|流失)"), a_customer_loss),
+    # borrowing against an invoice: before the debt and customer readings, whose words ("borrow", "invoice") it shares
+    ("FUN-07", _p(r"\b(?:borrow|finance|financing|advance|factor\w*|raise (?:money|cash|funds)|get (?:money|cash|funds|an advance))\b"
+                  r".{0,30}\b(?:against|on|using|with|for|from)\b.{0,30}\b(?:invoices?|receivables?)\b",
+                  r"\b(?:invoices?|receivables?)\b.{0,30}\b(?:be |get )?(?:financed|factored|borrowed against|used (?:as|for) (?:financing|a loan))\b",
+                  r"\bhow much\b.{0,20}\b(?:get|raise|borrow|advance|finance)\b.{0,30}\b(?:for|against|on)\b.{0,12}\binvoices?\b",
+                  r"(?:发票|应收)(?!.{0,4}最多).{0,8}(?:能|可以|能不能|可不可以).{0,8}(?:拿去|用来|去)?(?:融资|融|贴现|借钱|借款|变现|保理)",
+                  r"(?:用|拿).{0,8}(?:发票|应收).{0,8}(?:融资|融|借|变现|保理)"), a_invoice_financing),
+    # the audit log: before every other reading, whose words ("log", "operations") it shares
+    ("ACT-05", _p(r"\baudit\b.{0,12}\b(?:log|trail|chain|record)s?\b",
+                  r"\b(?:log|ledger|chain|records?)\b.{0,25}\b(?:intact|tamper\w*|verif\w*|trustworth\w*|corrupt\w*|altered|modified)\b",
+                  r"\b(?:trust|rely on)\b.{0,12}\b(?:the |our )?(?:audit |operations? )?(?:log|ledger)\b",
+                  r"审计", r"哈希链", r"日志.{0,6}(?:完整|可信|可靠|篡改|校验)", r"(?:校验|验证)通过", r"记录.{0,6}(?:被|有没有).{0,3}(?:篡改|改动)"),
+     a_audit),
+    ("ACT-04", _p(r"\b(?:has|have|had|was|were|is|are)\s+(?:anything|any\b.{0,20}\b(?:operations?|actions?|requests?|commands?))\b"
+                  r".{0,25}\b(?:refused|blocked|stopped|turned down)\b",
+                  r"\bany\s+(?:operations?|actions?|requests?)\b.{0,25}\b(?:refused|blocked)\b",
+                  r"\b(?:refused|blocked)\s+(?:operations?|actions?|requests?)\b",
+                  r"(?:被|有).{0,3}(?:拒绝|拦截|拦下|拦住).{0,6}(?:的)?(?:操作|请求|指令|动作)", r"(?:操作|请求).{0,4}被.{0,2}(?:拒绝|拦截|拦下|拦住)",
+                  r"有没有.{0,6}(?:拒绝|拦截)"), a_audit),
     ("CUS-07", _p(r"\b(?:what if|what happens if|what would happen if|suppose|if)\b.{0,60}\b(?:pays?|paid|payment|invoice|receipt|money)"
                   r"\b.{0,40}\b(?:late|slips?|slipped|delayed|later|overdue)\b",
                   r"\b(?:what if|what happens if|suppose)\b.{0,60}\b(?:slips?|delayed?)\b",
@@ -1828,9 +2086,13 @@ def answer(question: str, lang: str, ctx: Any) -> AnswerReply | None:
     return handler(w, question)
 
 
+# Questions owners asked beyond the top 30 (the live stress test of FLOW, 18 Oct 2026): answered the same way, but not among the 30.
+BEYOND_TOP30 = frozenset({"ACT-04", "ACT-05", "FUN-07", "CUS-09"})
+
+
 def question_ids() -> list[str]:
-    """The top 30 question ids (general_advice, the how-to answer, is not one of them)."""
-    return list(dict.fromkeys(qid for qid, _, _ in QUESTIONS if qid != "general_advice"))
+    """The top 30 question ids (general_advice, the how-to answer, and the questions beyond the 30 are not among them)."""
+    return list(dict.fromkeys(qid for qid, _, _ in QUESTIONS if qid != "general_advice" and qid not in BEYOND_TOP30))
 
 
 __all__ = ["AnswerReply", "answer", "match", "question_ids"]

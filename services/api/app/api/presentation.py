@@ -703,6 +703,11 @@ def kind_text(kind: str, lang: Lang) -> str:
     return t(lang, en, zh)
 
 
+def has_kind_text(kind: str) -> bool:
+    """Whether `kind_text` has the owner's words for this operation kind (otherwise it only restates the raw kind)."""
+    return kind in _KIND_TEXT
+
+
 def short_kind(kind: str, lang: Lang) -> str:
     words = {
         "SUBMIT_INVOICE_FOR_FINANCING": ("invoice financing", "发票融资"),
