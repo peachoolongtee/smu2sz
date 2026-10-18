@@ -6497,9 +6497,9 @@
           "when": "today",
           "title_text": "Waiting for your approval: an application for ¥200,000.00 on Government-guaranteed working-capital loan.",
           "detail_text": "Apply for facility Government-guaranteed working-capital loan (¥200,000.00).",
-          "why_text": null,
+          "why_text": "Applies to Government-guaranteed working-capital loan for ¥200,000.00 of new credit; nothing is borrowed until the lender agrees and you draw it.",
           "why_as_of_text": null,
-          "why_changed": false,
+          "why_changed": true,
           "remaining_text": "Waiting for your approval.",
           "actor": "agent",
           "actor_text": "Prepared by FLOW · waits for you",
@@ -6520,7 +6520,7 @@
             "kind_text": "Facility application",
             "message": "Queued for owner approval (APR-000001): apply for facility FAC-GGL (¥200,000.00)"
           },
-          "search_text": "waiting for your approval: an application for ¥200,000.00 on government-guaranteed working-capital loan. apply for facility government-guaranteed working-capital loan (¥200,000.00). waiting for your approval. cash"
+          "search_text": "waiting for your approval: an application for ¥200,000.00 on government-guaranteed working-capital loan. apply for facility government-guaranteed working-capital loan (¥200,000.00). applies to government-guaranteed working-capital loan for ¥200,000.00 of new credit; nothing is borrowed until the lender agrees and you draw it. waiting for your approval. cash"
         }
       ],
       "chain": {
@@ -6579,9 +6579,9 @@
           "when": "今天",
           "title_text": "等待您批准：在Government-guaranteed working-capital loan申请 ¥200,000.00。",
           "detail_text": "申请融资工具Government-guaranteed working-capital loan（¥200,000.00）。",
-          "why_text": null,
+          "why_text": "向Government-guaranteed working-capital loan申请 ¥200,000.00 的新增授信；在贷款方同意并由您提款之前，不借入任何资金。",
           "why_as_of_text": null,
-          "why_changed": false,
+          "why_changed": true,
           "remaining_text": "等待您批准。",
           "actor": "agent",
           "actor_text": "由 FLOW 准备 · 等待您批准",
@@ -6602,7 +6602,7 @@
             "kind_text": "融资申请",
             "message": "Queued for owner approval (APR-000001): apply for facility FAC-GGL (¥200,000.00)"
           },
-          "search_text": "等待您批准：在government-guaranteed working-capital loan申请 ¥200,000.00。 申请融资工具government-guaranteed working-capital loan（¥200,000.00）。 等待您批准。 现金"
+          "search_text": "等待您批准：在government-guaranteed working-capital loan申请 ¥200,000.00。 申请融资工具government-guaranteed working-capital loan（¥200,000.00）。 向government-guaranteed working-capital loan申请 ¥200,000.00 的新增授信；在贷款方同意并由您提款之前，不借入任何资金。 等待您批准。 现金"
         }
       ],
       "chain": {

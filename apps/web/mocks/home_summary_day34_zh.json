@@ -21,6 +21,7 @@
     "lowest_headroom_short": "−¥200k",
     "first_breach_day": 42,
     "below_reserve_today": false,
+    "covered": false,
     "first_breach_cash_fen": 10000000,
     "first_breach_cash_short": "¥100k",
     "cash_short": "¥300k",
@@ -5607,7 +5608,8 @@
         "with_plan": {
           "label": "采用方案后",
           "value_text": "¥300,000"
-        }
+        },
+        "basis_label": "已计入已安排的融资"
       },
       "funding": {
         "state": "PROPOSED",
@@ -5648,6 +5650,7 @@
         "href": "/cash#cash-options"
       },
       "control": "RUN_PLAN",
+      "covered": false,
       "approval_text": "需要您批准后才会执行",
       "approval_needed": true,
       "consequence_text": "现金将在 8 天后首次低于您的最低现金。即使方案已执行，缺口仍将在 8 天后达到 ¥200k。",

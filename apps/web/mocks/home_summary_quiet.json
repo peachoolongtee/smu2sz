@@ -21,6 +21,7 @@
     "lowest_headroom_short": "¥0.00",
     "first_breach_day": null,
     "below_reserve_today": false,
+    "covered": true,
     "first_breach_cash_fen": null,
     "first_breach_cash_short": null,
     "cash_short": "¥547k",
@@ -4196,7 +4197,8 @@
         "short_note": "At your minimum in 30 days",
         "tone": "warn",
         "with_plan_hint": "No hypothetical applied.",
-        "with_plan": null
+        "with_plan": null,
+        "basis_label": "With the funding in place"
       },
       "funding": {
         "state": "NONE",
@@ -4211,6 +4213,9 @@
       "variant": "QUIET",
       "key": null,
       "tone": "ok",
+      "covered": true,
+      "covered_pill_text": "All clear",
+      "covered_title_text": "You're covered!",
       "eyebrow": "NOTHING NEEDS YOU FROM THE COMPANY SIDE",
       "title": "Your cash is covered on the plan that ran.",
       "text": "Next: Foshan pays ¥420k in 32 days (agreed).",

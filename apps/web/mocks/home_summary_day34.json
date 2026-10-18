@@ -21,6 +21,7 @@
     "lowest_headroom_short": "−¥200k",
     "first_breach_day": 42,
     "below_reserve_today": false,
+    "covered": false,
     "first_breach_cash_fen": 10000000,
     "first_breach_cash_short": "¥100k",
     "cash_short": "¥300k",
@@ -5607,7 +5608,8 @@
         "with_plan": {
           "label": "with plan",
           "value_text": "¥300,000"
-        }
+        },
+        "basis_label": "With the funding in place"
       },
       "funding": {
         "state": "PROPOSED",
@@ -5648,6 +5650,7 @@
         "href": "/cash#cash-options"
       },
       "control": "RUN_PLAN",
+      "covered": false,
       "approval_text": "Needs your approval before it runs",
       "approval_needed": true,
       "consequence_text": "Cash first falls below your minimum in 8 days. Even with the plan that ran, the shortfall reaches ¥200k in 8 days.",

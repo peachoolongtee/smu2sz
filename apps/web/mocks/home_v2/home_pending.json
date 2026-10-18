@@ -22,6 +22,7 @@
       "lowest_headroom_short": "−¥200k",
       "first_breach_day": 42,
       "below_reserve_today": false,
+      "covered": false,
       "first_breach_cash_fen": 10000000,
       "first_breach_cash_short": "¥100k",
       "cash_short": "¥300k",
@@ -5651,6 +5652,7 @@
           "href": "/cash#cash-options"
         },
         "control": "APPROVE_PLAN",
+        "covered": false,
         "approval_text": "Needs your approval before it runs",
         "approval_needed": true,
         "consequence_text": "Cash first falls below your minimum in 8 days. Even with the plan that ran, the shortfall reaches ¥200k in 8 days.",
@@ -6053,6 +6055,7 @@
       "lowest_headroom_short": "−¥200k",
       "first_breach_day": 42,
       "below_reserve_today": false,
+      "covered": false,
       "first_breach_cash_fen": 10000000,
       "first_breach_cash_short": "¥100k",
       "cash_short": "¥300k",
@@ -11682,6 +11685,7 @@
           "href": "/cash#cash-options"
         },
         "control": "APPROVE_PLAN",
+        "covered": false,
         "approval_text": "需要您批准后才会执行",
         "approval_needed": true,
         "consequence_text": "现金将在 8 天后首次低于您的最低现金。即使方案已执行，缺口仍将在 8 天后达到 ¥200k。",

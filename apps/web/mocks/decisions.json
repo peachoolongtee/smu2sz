@@ -132,7 +132,8 @@
           "assumptions_text": null,
           "authority_text": null,
           "remaining_text": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
-        }
+        },
+        "funding_next": null
       },
       "outbound": null,
       "history": [
@@ -421,7 +422,8 @@
           "assumptions_text": null,
           "authority_text": null,
           "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥257,790.00 应在2 天内到账；约定日尚未过。"
-        }
+        },
+        "funding_next": null
       },
       "outbound": null,
       "history": [
@@ -3048,7 +3050,8 @@
           "assumptions_text": null,
           "authority_text": null,
           "remaining_text": null
-        }
+        },
+        "funding_next": null
       },
       "outbound": null,
       "history": [
@@ -3363,7 +3366,8 @@
           "assumptions_text": null,
           "authority_text": null,
           "remaining_text": null
-        }
+        },
+        "funding_next": null
       },
       "outbound": null,
       "history": [
@@ -3680,7 +3684,8 @@
           "assumptions_text": null,
           "authority_text": null,
           "remaining_text": null
-        }
+        },
+        "funding_next": null
       },
       "outbound": null,
       "history": [
@@ -3995,7 +4000,8 @@
           "assumptions_text": null,
           "authority_text": null,
           "remaining_text": null
-        }
+        },
+        "funding_next": null
       },
       "outbound": null,
       "history": [
@@ -4806,7 +4812,8 @@
           "assumptions_text": null,
           "authority_text": null,
           "remaining_text": null
-        }
+        },
+        "funding_next": null
       },
       "outbound": null,
       "history": [
@@ -5095,7 +5102,8 @@
           "assumptions_text": null,
           "authority_text": null,
           "remaining_text": null
-        }
+        },
+        "funding_next": null
       },
       "outbound": null,
       "history": [

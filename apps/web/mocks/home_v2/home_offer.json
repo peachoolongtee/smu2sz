@@ -22,6 +22,7 @@
       "lowest_headroom_short": "−¥405k",
       "first_breach_day": 12,
       "below_reserve_today": false,
+      "covered": false,
       "first_breach_cash_fen": 6000000,
       "first_breach_cash_short": "¥60k",
       "cash_short": "¥400k",
@@ -18345,6 +18346,7 @@
           "href": "/cash#cash-options"
         },
         "control": "RUN_PLAN",
+        "covered": false,
         "approval_text": "No approval needed",
         "approval_needed": false,
         "consequence_text": "Cash first falls below your minimum in 12 days. Without new funding, the shortfall reaches ¥405k in 30 days.",
@@ -18697,6 +18699,7 @@
       "lowest_headroom_short": "−¥405k",
       "first_breach_day": 12,
       "below_reserve_today": false,
+      "covered": false,
       "first_breach_cash_fen": 6000000,
       "first_breach_cash_short": "¥60k",
       "cash_short": "¥400k",
@@ -37020,6 +37023,7 @@
           "href": "/cash#cash-options"
         },
         "control": "RUN_PLAN",
+        "covered": false,
         "approval_text": "无需批准",
         "approval_needed": false,
         "consequence_text": "现金将在 12 天后首次低于您的最低现金。若没有新增融资，缺口将在 30 天后达到 ¥405k。",

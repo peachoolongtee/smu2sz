@@ -22,6 +22,8 @@
       "event_detail": null
     }
   ],
+  "run_status": "WAITING_APPROVAL",
+  "message_when": "Not everything has run: a step waits for your approval. Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.",
   "executed": 0,
   "pending_approval": 1,
   "refused": 0,
