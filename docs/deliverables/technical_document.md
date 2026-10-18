@@ -46,7 +46,7 @@ All amounts are Chinese yuan (CNY, written ¥) on synthetic books. "Day 0" is 1 
 
 **Table 1. FLOW at a glance. Engine and agent figures: dev `975e082f` (17 Oct 2026), re-run offline on `571ea64f`
 (18 Oct) with the same results. Owner-question and held-out figures: `571ea64f`, 18 Oct. Live figures: the dates given.
-Table 17 gives each source.**
+Table 18 gives each source.**
 
 | What | Result | Evidence class |
 | --- | --- | --- |
@@ -54,14 +54,14 @@ Table 17 gives each source.**
 | Engine correctness | 67 of 67 golden financial values exact to the fen against an independently written oracle (same specification, same team); covenant and capex values 27 of 27 | Tests |
 | Funding router | Within ¥1 of a bounded brute-force search on 26 of 26 test scenarios; 19 plans run today, 6 are labelled "cannot run today", and in 1 scenario no admissible plan exists and the router says so | Tests |
 | Safety of autonomy | On 115 held-out buyer messages FLOW accepted 3 on its own, all correctly. Before the coverage proof (ADR-0005), the first runs on the same sets accepted 6 misread messages; that is why autonomy now requires proof | Unseen first runs, then tuned |
-| Usefulness | 57 of 115 messages handled with no owner step (54 counters or declines, 3 accepts). Only 3 of the 14 genuinely acceptable offers are accepted alone; the other 11 wait for one owner review (Table 8) | Tuned |
+| Usefulness | 57 of 115 messages handled with no owner step (54 counters or declines, 3 accepts). Only 3 of the 14 genuinely acceptable offers are accepted alone; the other 11 wait for one owner review (Table 9) | Tuned |
 | Reading contracts | 75% of key fields right on 17 unseen Chinese contracts with a text layer (45% over all 30, because 13 scans and photos are refused) | Unseen, recorded model replay |
 | Owner questions | Of 427 bank questions the books can answer, 228 answered from the books, 45 partly, 0 wrong (the bank the answers were built against). On 142 held-out everyday wordings, 127 reach the right answer (89%) and 3 a wrong topic (2%) | Tuned; held-out |
 | Live model | One live DeepSeek run per component: buyer messages 42 of 63 verdicts, no wrong accept (1 Oct); the question router answered 33 of the 63 questions that reached it on 18 Oct, 22 fully right by one reviewer's reading | Live, single runs |
 | Security | 279 stored attack cases (128 through the API, 151 through chat): none violated the defined harm oracles in the specified offline runs (rules path and a scripted hostile model; no real model read an attack). Internal review by the team's Security Lead, an AI agent; not external assurance (section 04) | Tests |
 | Task completion | 49 of 49 scripted conversations, written by the team, pass their own checks (88 turns); the 17-step demo walk ends with a 14-entry hash chain that verifies, and a tampered copy is rejected | Scripted tasks, simulated environment |
-| Product | Setup, a daily view, documents, customers, deals, money over time, approvals, a chat, what-if and strategy views, capex and an evidence export (Table 3), in English and Chinese | Code, browser tests |
-| Tests | The API, web-unit and browser suites pass on the builds named in Table 17. A count measures the size of a suite, not correctness | Tests |
+| Product | Setup, a daily view, documents, customers, deals, money over time, approvals, a chat, what-if and strategy views, capex and an evidence export (Table 4), in English and Chinese | Code, browser tests |
+| Tests | The API, web-unit and browser suites pass on the builds named in Table 18. A count measures the size of a suite, not correctness | Tests |
 
 **How to read this document.** Section 01 follows one supplier through FLOW and states what is new. Section 02 explains how
 FLOW is built and where a model is used. Section 03 explains how the agent understands, plans and acts, the algorithms, and
@@ -173,6 +173,8 @@ means the (simulated) bank feed reported the cash.
    credit line is repaid with ¥1,213.17 of interest (47 days instead of the quoted 32). Reconciliation closes the deal, and
    the record holds 14 hash-chained entries that verify.
 
+**Table 2. Option A's cost, quoted on day 0 and actually posted by day 47 (CNY).**
+
 | Cost item | Quoted on day 0 | Actually posted |
 | --- | --- | --- |
 | Early-payment discount | ¥2,210.00 | ¥2,210.00 |
@@ -201,7 +203,7 @@ covenant monitoring. What FLOW adds is the combination, on the supplier's side:
 - **One deterministic pipeline.** Reading, forecasting, funding, covenants, the signed mandate, commitments and an
   injection-resistant typed interface form a single pipeline, not a set of independent tools.
 
-**Table 2. Products in the same space (vendor descriptions; "difference" is our reading of public material).**
+**Table 3. Products in the same space (vendor descriptions; "difference" is our reading of public material).**
 
 | Product | What it does | How FLOW differs |
 | --- | --- | --- |
@@ -213,10 +215,10 @@ covenant monitoring. What FLOW adds is the combination, on the supplier's side:
 #### Innovation & Interaction: what the owner sees
 
 FLOW is one web app with eight pages on its menu (Home, Deals, Attach deals, Cash & funding, Sandbox, Capex, Receivables,
-Activity), a chat on every page, and an account menu. Table 3 lists every screen. Appendix E follows one supplier through
+Activity), a chat on every page, and an account menu. Table 4 lists every screen. Appendix E follows one supplier through
 them in order.
 
-**Table 3. Every screen, what the owner does there and what FLOW does (the web app computes no figure; the server writes
+**Table 4. Every screen, what the owner does there and what FLOW does (the web app computes no figure; the server writes
 every figure and sentence).**
 
 | Screen | The owner | FLOW |
@@ -258,7 +260,7 @@ which every operation that commits the business or moves money must pass.
 
 <!-- figure: figures/fig8-system-architecture.png | Figure 3. FLOW's architecture. A model assists in three places only (reading documents and buyer messages, classifying a chat request the rules miss, routing an owner's question to read-only tools); in live mode it gets text with identifying numbers redacted, and code validates its typed output. Deterministic code computes every figure; every typed operation passes the signed mandate and the executor, which records each outcome in a hash-chained log. Buyer, lenders and bank feed are simulated. Build 571ea64f. | page -->
 
-**Table 4. The roles in the pipeline.**
+**Table 5. The roles in the pipeline.**
 
 | Role | Code | May | May not |
 | --- | --- | --- | --- |
@@ -347,7 +349,7 @@ The full component list is Appendix B.
 
 A model never decides, prices, negotiates, writes an answer or executes.
 
-**Table 5. Model backends.**
+**Table 6. Model backends.**
 
 | Backend | Model | Used for |
 | --- | --- | --- |
@@ -425,7 +427,7 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
 - **Test suites.** The 279-case attack catalogue, the 49 scripted agent tasks, the 503-turn owner-question bank and the
   345 everyday owner wordings.
 
-**Table 6. The demo company's funding options (synthetic; only the owner can add to them).**
+**Table 7. The demo company's funding options (synthetic; only the owner can add to them).**
 
 | Facility | Status | Price | Time to cash |
 | --- | --- | --- | --- |
@@ -586,7 +588,7 @@ operation from model output.
   conservative forecast counts it from the first invoice the clock issues (ADR-0014).
 
 **From setup to settlement: what FLOW keeps track of.**
-- **Opening the books.** The setup wizard's six steps (Table 3) are checked by the server and previewed as a 90-day
+- **Opening the books.** The setup wizard's six steps (Table 4) are checked by the server and previewed as a 90-day
   forecast before anything is written. *Sign and open my books* signs mandate version 1 and writes one opening entry that
   heads a fresh evidence chain; it is refused once the books hold any activity.
 - **Documents.** The file comes first; the owner then picks the company from the books' list or adds a new customer from it
@@ -623,7 +625,7 @@ operation from model output.
   drawn, others count as zero; a contingent concession counts at its maximum; a repeating invoice set up from a contract
   counts only once the clock has issued its first invoice (ADR-0014).
 - **What it does not cover.** Recurring invoices are assumed to be paid on their due day, so the forecast is not
-  conservative about collections. The stress tests (Table 11) cover that.
+  conservative about collections. The stress tests (Table 12) cover that.
 - **Charges.** Credit-line interest is Actual/365 simple, posted at repayment. Invoice financing bills interest and its fee
   in whole 30-day periods, at least one, so an advance held for less than a period costs more than its 10.84% tariff.
 
@@ -674,12 +676,12 @@ and its inputs. The autonomy rule (ADR-0005) keeps an ACCEPT at Tier 1 only for 
 whole invoice that passes all three tests **and** whose message passed the coverage proof. Anything else that would be
 accepted becomes "needs the owner".
 
-**The worked example, reconciled.** Table 7 traces the demo's central request (EX01) through every figure the document and
+**The worked example, reconciled.** Table 8 traces the demo's central request (EX01) through every figure the document and
 the screens use, on the books of day 0. It answers a common question: why does the forecast say ¥90,040 while the deal page
 says "breached by ¥135k for 15 days"? Both are right: ¥90,040 is the shortfall on the **first** day below the reserve (day
 47), ¥135,040 the **worst** (day 60), and the breach lasts 15 days (47 to 61).
 
-**Table 7. The EX01 request, every figure in one place (golden books, day 0, books version 1, reserve ¥300,000; CNY).**
+**Table 8. The EX01 request, every figure in one place (golden books, day 0, books version 1, reserve ¥300,000; CNY).**
 
 | Scenario | Funding | Lowest cash | Breach | Discount | Funding cost | Future concessions | Can run today? | Who decides |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -708,7 +710,7 @@ of future concessions, CNY 33,366.92 in all, and still needs funding for days 47
 - **Option B, terms.** Longer terms with the smallest price rise that covers the funding cost of the extra days (0.30% of
   ¥420,000 = ¥1,260 against ¥1,247.53 per invoice). Every counter is re-evaluated as an offer on the same books, so FLOW
   offers 55 days, not 60: at 60 days a later invoice would land after a loan payment with no committed cure. Its books still
-  need the ¥3,706.46 plan in Table 7, so FLOW recommends Option A.
+  need the ¥3,706.46 plan in Table 8, so FLOW recommends Option A.
 - Outbound text is filled from an approved template, and the outbound guard checks it.
 
 **7. Simulated buyer.** The buyer kernel works out its own surplus from a package: the discount, rebate and extra days, less
@@ -760,7 +762,7 @@ and a pilot journal.
 We evaluate on three levels: the engine against an independent oracle and a brute force; the readers (buyer messages,
 contracts, owner questions) on items their authors had not seen; and the whole agent through scripted tasks and attacks.
 One offline command regenerates the engine and agent figures (`uv run --project services/api python scripts/evaluate.py`,
-12 minutes on 18 Oct); Table 17 in section 05 gives every headline figure's build, date and command.
+12 minutes on 18 Oct); Table 18 in section 05 gives every headline figure's build, date and command.
 
 Every result carries its **evidence class**: *unseen held-out* (labels written before the code saw the items, scored once,
 and that first score is the one quoted); *tuned* (re-scored after fixes chosen by studying its failures, or a set that was
@@ -789,7 +791,7 @@ on 33 of 63 and 28 of 47, and FLOW accepted **6 misread messages on its own** (4
 second). That result led to the coverage proof (ADR-0005): FLOW may now accept alone only when it can account for every
 figure and request in the message. We then fixed the failure classes, so today's figures are tuned.
 
-**Table 8. Autonomy on the two held-out sets of buyer messages today (115 messages, rules path, 18 Oct, `571ea64f`;
+**Table 9. Autonomy on the two held-out sets of buyer messages today (115 messages, rules path, 18 Oct, `571ea64f`;
 both sets have guided later fixes).**
 
 | Step | Held-out 3 | Held-out 2 | Both |
@@ -805,7 +807,7 @@ both sets have guided later fixes).**
 | **Wrong autonomous accepts** | **0 of 1** | **0 of 2** | **0 of 3** |
 | *First run, 1 Oct, before ADR-0005* | *4 of 8 wrong* | *2 wrong* | *6 wrong* |
 
-**What Table 8 shows.**
+**What Table 9 shows.**
 - **Safety comes from a rule, not from a large sample.** With 3 autonomous accepts, "no wrong accept" is weak evidence by
   itself; the evidence is that FLOW refuses to accept alone without proof, which the first runs showed is necessary.
 - **Most messages need no owner.** FLOW answers 57 of 115 on its own, mostly by countering or declining within the mandate.
@@ -814,7 +816,7 @@ both sets have guided later fixes).**
   account for it. Reading settlement dates is the next improvement. Until then, each such offer costs the owner one review,
   with the verdict and the source words shown.
 
-**Table 9. Reading buyer messages on the held-out sets.**
+**Table 10. Reading buyer messages on the held-out sets.**
 
 | Set and run | Class | Path | Verdict agreement | Material errors | Silent material errors | Wrong autonomous accepts |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -825,7 +827,7 @@ both sets have guided later fixes).**
 | Held-out 3, one live run (1 Oct, build `389cfd9`) | live; shared gates tuned, prompt not | DeepSeek | 42/63 (67%) | 3/51 | 5 | 0 |
 | Form baseline (labels typed into today's verifier) | tests | no reader | 56/63 (89%) | — | — | — |
 
-**Reading Table 9.**
+**Reading Table 10.**
 - **Two agreement figures for today.** The 1 Oct labels predate the early-payment rule (ADR-0007), so 7 labels in each set
   disagree with today's policy applied to the true terms. "Against today's policy" compares the reader's verdict with the
   policy on the true terms, separating "the reader is wrong" from "the policy changed". The form baseline shows the same
@@ -893,7 +895,7 @@ oracle or diff the books.
 - **Latency.** Sequential questions: p50 0.13 s, p95 1.17 s, max 5.8 s (at least 75 called the provider; a router call
   took p50 0.91 s). Twenty concurrent questions were all answered, the slowest in 8.4 s.
 
-**Table 10. Other evaluation results (offline, 18 Oct 2026, `571ea64f`, unless noted).**
+**Table 11. Other evaluation results (offline, 18 Oct 2026, `571ea64f`, unless noted).**
 
 | Question | Result | Class |
 | --- | --- | --- |
@@ -906,7 +908,7 @@ oracle or diff the books.
 | Does language stay safe at the boundary? | 231 adversarial inputs (3 Oct, build `979defb`): 0 wrong material actions on the rules path and with a scripted model; not run against a live model | Rules, scripted |
 | How fast is it? | In process on one development machine, cache mode, no network or model: router p50 81 ms (26 scenarios), chat turn p50 9 ms and p95 567 ms (87 turns), full Scene 1 p50 1.08 s (5 runs) (`975e082f`); these vary severalfold with machine load | Tests |
 
-**Table 11. Stress tests on the demo company (read-only copies of the books).**
+**Table 12. Stress tests on the demo company (read-only copies of the books).**
 
 | Stress | Effect on cash | What FLOW does |
 | --- | --- | --- |
@@ -919,13 +921,13 @@ oracle or diff the books.
 ### Tiered permissions and confirmation for sensitive actions
 
 **The rubric's four threats.** The Security & Compliance criterion names four: induced transfers, data extraction,
-privilege escalation and prompt injection. Table 12 names, for each, the control that stops it, where it is in the code, the
+privilege escalation and prompt injection. Table 13 names, for each, the control that stops it, where it is in the code, the
 attack cases that exercise it and what it does not cover. The rest of this section explains the controls under the two
 template prompts. Code paths are under `services/api/` and line numbers are those of `571ea64f`, the last base read line by
-line; Appendix F lists every control with its lines. The attack figures are from the stored catalogue (Table 14): the
+line; Appendix F lists every control with its lines. The attack figures are from the stored catalogue (Table 15): the
 grouping of its classes under the four threats is ours.
 
-**Table 12. The four threats in the rubric, the control that stops each, and its limits.**
+**Table 13. The four threats in the rubric, the control that stops each, and its limits.**
 
 | Threat | What an attacker tries | Control that stops it | Evidence | Attack cases (all reached their path; 0 harm) | Limits |
 | --- | --- | --- | --- | --- | --- |
@@ -943,7 +945,7 @@ erased log), all stopped by the named control.
 `app/api/auth.py:25-80`). Every refused credential is logged as a security event, within a budget of 300 an hour and 30 per
 address.
 
-**Table 13. Credentials and what each confers.**
+**Table 14. Credentials and what each confers.**
 
 | Credential | Confers |
 | --- | --- |
@@ -962,22 +964,22 @@ address.
 - **Rate limits apply to every caller (SEC-20).** A burst is refused with 429 and a retry time. The buckets live in memory
   and reset on restart.
 
-**The three tiers.** The executor computes the tier from the typed operation and rejects a caller-supplied tier
+**The three tiers (Figure 7).** The executor computes the tier from the typed operation and rejects a caller-supplied tier
 (`app/mandate/tiers.py:85-120`).
 
 - **Tier 1, autonomous inside the mandate.** Counter or reject a buyer's request (only the owner's decline closes it).
   Accept a pure early-payment discount on a named invoice that passes break-even, need, "cheaper than the plan" and the
   coverage proof (ADR-0005, ADR-0007). Draw on, repay or finance invoices from a committed, owner-approved facility, at any
-  size within its limit (`tiers.py:73-77`), when admission passes and, for the agent, the cost is within the rate ceiling.
+  size within its limit (`tiers.py:73-77`), when admission passes and, for the agent, the cost is within the 15% approval threshold.
   Record a receipt from the bank feed or the owner. Tier 1 is reached by the agent key, by a registered buyer's keyed message
   and by the owner's own clicks; in the web app the owner's "run the plan" submits its legs as the agent, so a leg above the
-  ceiling is queued.
+  threshold is queued.
 - **Tier 2, owner approval.** Longer terms; rebates, price, volume and other terms that are not a plain early-payment
   discount; any commitment whose future-concession value is above **¥100,000** (measured on future concessions, not the
   invoice, so an early-payment discount, worth ¥0 in future concessions, never reaches it); a draw on an uncommitted facility;
   applying for or adding a facility; an equipment purchase; setting up a confirmed contract's repeating invoice in the books
   (ADR-0014); a receipt reported by anyone other than the bank or the owner; and a funding leg the agent requests above the
-  rate ceiling.
+  15% rate threshold.
 - **Tier 3, never.** A personal guarantee, collateral, equity, changing the mandate, a facility the owner did not request,
   or any unknown operation type (`tiers.py:46, 94-99`). Refused for every caller, the owner included; an approved Tier-3
   operation stays refused.
@@ -986,7 +988,7 @@ address.
 rules are refused for everyone, the owner included: the concession caps (aggregate and per buyer), the covenants (DSCR,
 leverage, clean-down), a reserve breach no committed funding can cure, an invalid mandate, and Tier 3
 (`app/verifier/evaluate.py:190-193, 447, 562-573, 726-758`; `app/api/accept.py:97-107`, which answers 409 OVER_MANDATE or
-NOT_ACCEPTABLE; `app/funding/admission.py:6-13`). **The 15% APR ceiling is an approval threshold, not a hard rule.** Above
+NOT_ACCEPTABLE; `app/funding/admission.py:6-13`). **The 15% rate limit is an approval threshold, not a hard rule.** Above
 it the agent must ask; the owner may approve, as the demo does at 32.5% on day 34, or draw directly
 (`executor.py:852-854`). A reserve breach that committed funding can cure is not hard either: the owner may accept as asked,
 and the receipt says the gap stays open (`accept.py:129-137`).
@@ -1179,7 +1181,7 @@ event (`executor.py:757-796`).
 
 <!-- figure: figures/fig7-security-results.png | Figure 8. The attack catalogue: 279 stored cases through the API and chat, by class. The catalogue grew from 259 (16 Oct) to 260 (TC-04, a changed offer), 261 (DOC-05, adding a customer without the owner token) and 279 (18 chat cases that put a Tier-3 request as a question, round five). None violated the defined harm oracles. Every case reached the path it targets; of the 128 API cases, 120 were stopped by the control they name and 8 by another control. -->
 
-**Table 14. Attack results (279 stored cases: 128 through the API, 151 through chat; each in a fresh in-memory runtime,
+**Table 15. Attack results (279 stored cases: 128 through the API, 151 through chat; each in a fresh in-memory runtime,
 offline, rules grammar and a scripted hostile model; report generated on `1294e941`, certified as part of `70f23ac5`, and
 re-run on `571ea64f` with the same result).**
 
@@ -1195,7 +1197,7 @@ re-run on `571ea64f` with the same result).**
 | API cases with a detection signal / with a logged security event | 125 of 128 (97.7%) / 95 of 128 (74.2%). Over all 279, detection is 70.6%: most chat cases without a signal are consent cases, where the right result is that nothing runs |
 | Tier-3 requests put as questions (chat) | 18 of 18 refused, logged and raising a Tier-3 security event (9 wordings, each as the owner and as the agent key) |
 
-**How to read Table 14.** The harm oracles compare the books before and after each case: money moved, operations executed,
+**How to read Table 15.** The harm oracles compare the books before and after each case: money moved, operations executed,
 facilities added, concessions booked, commitments activated, protected values in any outbound text or readable without the
 owner token, canaries, and the log's integrity. Six positive controls (legitimate actions, `tests/security/
 test_positive_controls.py`) pass through the same runtime and oracle and are seen, and switching off one control at a time
@@ -1236,7 +1238,7 @@ measured availability and latency, not correctness or harm; section 03 gives its
 
 **Readiness.**
 
-**Table 15. Where FLOW may run, and what stands in the way.**
+**Table 16. Where FLOW may run, and what stands in the way.**
 
 | Configuration | Verdict | Minimum blockers |
 | --- | --- | --- |
@@ -1287,7 +1289,7 @@ mode). If a port is taken, the launcher says so and suggests `--api-port` or `--
 - **`pnpm demo --live-llm`** calls the provider live: Ask FLOW's router answers what the built-in answers miss, and new
   documents and buyer messages are read by the model. It reads the key from the shell only (`DEEPSEEK_API_KEY`, else
   `ANTHROPIC_API_KEY`; PowerShell: `$env:DEEPSEEK_API_KEY = "..."`), never `.env`, and does not start without one. It forces
-  redaction on. Each call is paid. Live mode is outside every security certification (Table 15). It does not combine with
+  redaction on. Each call is paid. Live mode is outside every security certification (Table 16). It does not combine with
   `--mock`.
 - **The web dev server listens on all interfaces** (DEMO-L1). Run the demo on a trusted machine, or behind a firewall.
 
@@ -1320,7 +1322,7 @@ interfaces. The supported way to run FLOW is the local launcher above, as one AP
 **Test inventory.** No test runs against a deployed, networked system: every result is local, loopback or in-process. The
 full catalogue, with what each suite proves, is `docs/deliverables/TEST_CASES.md`.
 
-**Table 16. Test classes, what each can show, and the latest recorded result.**
+**Table 17. Test classes, what each can show, and the latest recorded result.**
 
 | Class | What it covers | Latest result (build) |
 | --- | --- | --- |
@@ -1333,7 +1335,7 @@ full catalogue, with what each suite proves, is `docs/deliverables/TEST_CASES.md
 | Live provider | DeepSeek called on the day | Buyer messages, 1 Oct (older build); the stress test, 18 Oct (section 03); the external red-team run, 16 Oct |
 | Deployed system | — | None |
 
-**Table 17. Evidence for every headline figure (offline, cache mode, unless noted; commands from `services/api` unless they
+**Table 18. Evidence for every headline figure (offline, cache mode, unless noted; commands from `services/api` unless they
 start with `uv run --project`).**
 
 | Claim | Command | Result |
@@ -1344,11 +1346,11 @@ start with `uv run --project`).**
 | Attacks | `TERMSLEDGER_NO_DOTENV=1 DEMO_MODE=1 DATABASE_URL=memory LLM_MODE=cache uv run python -m app.security.attacks --report` (overwrites the committed `evals/security/latest_report.*`) | 279 cases (128 API, 151 chat), 0 harm-oracle violations, 279 reached their path, 120 of 128 API cases stopped by the named control; API detection 97.7%, security events 74.2% (`1294e941`; certified in `70f23ac5`; the same on `571ea64f`) |
 | Agent tasks | `uv run --project services/api python scripts/run_scenarios.py --inproc` | 49/49 (88 turns); every evidence chain verifies (`571ea64f`) |
 | Judge pack | `uv run --project services/api python scripts/judge_eval.py --out <folder>/judge-report.md` | 49/49 tasks, 279 attacks with 0 harm, demo walk OK, chain valid (14 operations, 8 security events), tampered copy rejected; 105 s (`571ea64f`) |
-| Owner questions | `uv run python scripts/owner_questions_baseline.py` | 303 answered, 46 partly, 0 wrong, 154 declined of 503 (`571ea64f`; section 03 explains what "answered" counts) |
+| Owner questions | `uv run python scripts/owner_questions_baseline.py` | Of the 427 turns the books can answer: 228 answered, 45 partly, 154 declined, 0 wrong; 75 of the 76 turns the books cannot answer declined honestly (`571ea64f`). The script's own tally, 303 answered and 46 partly of 503, counts those honest declines as answers |
 | Everyday wording | `uv run python scripts/owner_questions_general.py --part all` | 326/345, 4 wrong topic (1.2%); held-out 127/142 (89.4%), 3 wrong (2.1%) (`571ea64f`) |
 | Router and answer cards | `uv run pytest tests/nl/test_ask_router.py tests/nl/test_router_tools.py tests/certification/test_ask_router_boundary.py tests/nl/test_answer_card.py tests/security/test_nl_attacks.py` | 452 passed, 1 skipped (`571ea64f`) |
-| Offline evaluation | `uv run --project services/api python scripts/evaluate.py --out <folder>` (7 min 41 s on `975e082f`) | Every target in its own gate met, on its default offers set (`fixtures/heldout`, used in tuning). On held-out 3, scored separately, the material-error and silent-error targets are not met. Figures in Tables 9 and 10 |
-| Autonomy funnel | `uv run --project services/api python scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2` | Table 8 |
+| Offline evaluation | `uv run --project services/api python scripts/evaluate.py --out <folder>` (7 min 41 s on `975e082f`) | Every target in its own gate met, on its default offers set (`fixtures/heldout`, used in tuning). On held-out 3, scored separately, the material-error and silent-error targets are not met. Figures in Tables 10 and 11 |
+| Autonomy funnel | `uv run --project services/api python scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2` | Table 9 |
 | Contract reading | `scripts/evaluate_contracts.py` (live readings) and the scorer in `services/api/scripts/eval_contracts.py`, on 70 synthetic contracts kept outside the repository | 75% of fields on unseen text-layer contracts, 86% after fixes, 98% tuned (recorded DeepSeek readings, 17 Oct). Not reproducible from the repository |
 | Evidence chain | `uv run --project services/api python scripts/verify_evidence.py <exported.jsonl>` | VALID; an edited copy is rejected |
 | Concurrency on PostgreSQL | `TERMSLEDGER_TEST_DATABASE_URL=<empty local database> uv run pytest tests/concurrency` | 3 of 3 clean runs (`85309b63`, `70f23ac5`) |
@@ -1357,14 +1359,14 @@ start with `uv run --project`).**
 The submission build adds the changes listed under Assurance in section 04 after the last measured base (`571ea64f`); the
 owner-question figures, the judge pack and the API suite are re-run on it before submission.
 
-**Table 18. Representative test cases.**
+**Table 19. Representative test cases.**
 
 | Case | Input | Expected result | Checked by |
 | --- | --- | --- | --- |
 | The golden request | EX01: 60-day terms, 1.2% early payment, contingent rebate | Rejected with four reasons; Options A and B; the buyer accepts A and pays ¥257,790.00 on day 2 | Scripted task S01, evidence chain verified |
 | Honest no deal | A hard-line buyer refuses every counter | NO DEAL within 3 rounds; the gap funded for ¥3,113.93; the reserve holds | Evaluation gate E5 (7/7) |
 | Early-payment boundary | Whole-invoice early payment at 0.75%, then 0.74% | 0.75% (¥3,150.00) countered as dearer than the plan; 0.74% (¥3,108.00) accepted at Tier 1 | Verifier hand-calculation tests |
-| Cure above the ceiling | Day 34: "go ahead" on a ¥200,000 advance at 32.5% a year | Queued for approval, nothing runs; it runs only on the owner's approval, and the cash lands on day 37 | `scripts/demo_run.py` |
+| Cure above the approval threshold | Day 34: "go ahead" on a ¥200,000 advance at 32.5% a year | Queued for approval, nothing runs (Figure 9); it runs only on the owner's approval, and the cash lands on day 37 | `scripts/demo_run.py` |
 | Consent | Negated, conditional, future-dated, foreign-currency or quoted instructions, in both languages | Nothing executes | 41 consent attacks |
 | Injection in a contract | A clause addressed to the agent | Never read as a term; cannot be confirmed; a security event is logged | Contract-ingestion attacks |
 | Wrong company or role | A contract naming two other companies, one naming Foshan only as the supplier, a reading with no parties | Cannot be confirmed; the companies it names are shown | `tests/contracts/test_party_roles.py` |
@@ -1402,7 +1404,7 @@ owner-question figures, the judge pack and the API suite are re-run on it before
 
 *Product gaps, with the next step:*
 - **Settlement dates.** Good early-payment offers that state a settlement date go to the owner, because the date is not yet
-  read into the terms (Table 8). Reading settlement dates is next.
+  read into the terms (Table 9). Reading settlement dates is next.
 - **Funding search.** The router searches up to three actions on a ¥10,000 grid, all requested today; six of the 26 router
   plans rely on actions FLOW cannot run yet (a buyer's early payment, discounting a bill) and are labelled "cannot run today".
 - **Capex.** The search compares standalone structures only. It misses a loan plus a short bridge, which on the demo would save
@@ -1415,12 +1417,12 @@ owner-question figures, the judge pack and the API suite are re-run on it before
   18 Oct. Neither measures run-to-run variation, and the provider's model version is not recorded. The language-boundary set
   has not been run against a live model. In live mode the older intent classifier can turn a question into a proposed plan
   (4 of 589 on 18 Oct), which still waits for the owner's "go ahead".
-- **Owner questions.** 154 of the 503 bank turns are still declined (each names the nearest read), and 15 of the 345 everyday
+- **Owner questions.** 154 of the 427 bank turns the books can answer are still declined (each names the nearest read), and 15 of the 345 everyday
   wordings miss their answer.
 - **Chat approval card.** The card does not print the approval's id; the reply's sentence names it ("APR-000001"), and a bare
   "approve it" binds to the request just shown.
 
-*Security and production limits* are in section 04: Table 12 (each threat's limits), Table 15 (readiness and the minimum
+*Security and production limits* are in section 04: Table 13 (each threat's limits), Table 16 (readiness and the minimum
 blockers) and the supported single-process configuration. The open risks are listed with their ratings in the Security
 Self-Assessment.
 
@@ -1431,24 +1433,24 @@ and the evidence behind it. Paths are repository-relative.
 
 | Criterion or template prompt | Answered in | Evidence |
 | --- | --- | --- |
-| **Task Completion (40%)**: scripted tasks in a simulated environment | Table 1; 03 "Core algorithms and evaluation approach"; Table 17 (agent tasks, judge pack); Appendix E | `scripts/judge_eval.py` (49 tasks in `services/api/evals/e2e/scenarios.yaml`); `docs/deliverables/execution_evidence.md`; `docs/deliverables/evidence/EVIDENCE_PACK.md`; the demo video |
-| **Security & Compliance (30%)**: induced transfers | Table 12, first row; Figure 7; 04 "What approval can and cannot do", "Binding an acceptance", "Negotiation steps" | `services/api/evals/security/latest_report.json` (classes social engineering, fake lender, prior concession, changed offer, expired commitment, consent); `docs/SECURITY_SELF_ASSESSMENT.md` |
-| Data extraction | Table 12, second row; 04 "Privacy leakage and data extraction" | `latest_report.json` (exfiltration, cross-buyer, canary and chat extraction classes); `services/api/tests/egress/` |
-| Privilege escalation | Table 12, third row; Table 13; 04 "Privilege escalation" | `latest_report.json` (escalation, replay, revoked mandate, agent channel, session classes); `services/api/tests/security/test_route_policy.py` |
-| Prompt injection | Table 12, fourth row; 04 "Prompt injection: architecture first, detection second" | `services/api/evals/security/attacks.yaml`; the chat catalogue in `services/api/app/security/attacks.py`; `services/api/tests/verifier/test_invariants.py` |
-| Serious security failures; assurance and readiness | Table 14, Figure 8; 04 "Assurance and certification"; Table 15 | `docs/security/CERTIFICATIONS.md`; `docs/security/FINDINGS_REGISTER.md`; `docs/security/RELEASE_GATE.md` |
+| **Task Completion (40%)**: scripted tasks in a simulated environment | Table 1; 03 "Core algorithms and evaluation approach"; Table 18 (agent tasks, judge pack); Appendix E | `scripts/judge_eval.py` (49 tasks in `services/api/evals/e2e/scenarios.yaml`); `docs/deliverables/execution_evidence.md`; `docs/deliverables/evidence/EVIDENCE_PACK.md`; the demo video |
+| **Security & Compliance (30%)**: induced transfers | Table 13, first row; Figure 7; 04 "What approval can and cannot do", "Binding an acceptance", "Negotiation steps" | `services/api/evals/security/latest_report.json` (classes social engineering, fake lender, prior concession, changed offer, expired commitment, consent); `docs/SECURITY_SELF_ASSESSMENT.md` |
+| Data extraction | Table 13, second row; 04 "Privacy leakage and data extraction" | `latest_report.json` (exfiltration, cross-buyer, canary and chat extraction classes); `services/api/tests/egress/` |
+| Privilege escalation | Table 13, third row; Table 14; 04 "Privilege escalation" | `latest_report.json` (escalation, replay, revoked mandate, agent channel, session classes); `services/api/tests/security/test_route_policy.py` |
+| Prompt injection | Table 13, fourth row; 04 "Prompt injection: architecture first, detection second" | `services/api/evals/security/attacks.yaml`; the chat catalogue in `services/api/app/security/attacks.py`; `services/api/tests/verifier/test_invariants.py` |
+| Serious security failures; assurance and readiness | Table 15, Figure 8; 04 "Assurance and certification"; Table 16 | `docs/security/CERTIFICATIONS.md`; `docs/security/FINDINGS_REGISTER.md`; `docs/security/RELEASE_GATE.md` |
 | **Innovation & Interaction (30%)**: scenario novelty and real-world value | 01 "Problem, target users and selected topic" and "Core value and innovation" | Section 01's comparison and screen tables; the deck; the demo video |
 | Dialogue efficiency, clarification, correction, fallback | 03 "Intent understanding, planning, tool use and state management"; Appendix E stage 8 | `services/api/tests/nl/`; `services/api/scripts/owner_questions_baseline.py`, `owner_questions_general.py` |
-| **Bonus (0–5)**: advanced topic or real-world deployment | Not claimed: FLOW is a local simulation (05 "Production deployment"; Table 15) | — |
+| **Bonus (0–5)**: advanced topic or real-world deployment | Not claimed: FLOW is a local simulation (05 "Production deployment"; Table 16) | — |
 | 01 Problem, target users and selected topic | Section 01, first prompt | Section 01's tables |
 | 01 Core value and innovation | Section 01, second prompt; Figure 1 | `docs/deliverables/evidence/EVIDENCE_PACK.md` (the worked example) |
 | 02 Architecture diagram and component responsibilities | Section 02, first prompt; Appendix B | `docs/deliverables/figures/`; `docs/adr/` |
 | 02 Models, tools, data sources and external services | Section 02, second prompt; Appendix C | `services/api/app/compiler/`; `services/api/app/nl/router/`; `fixtures/` |
 | 03 Intent understanding, planning, tool use and state management | Section 03, first prompt | `services/api/app/nl/`; `services/api/tests/nl/` |
 | 03 Core algorithms and evaluation approach | Section 03, second prompt; Appendix A | `scripts/evaluate.py`; `services/api/evals/`; `fixtures/golden/` |
-| 04 Tiered permissions and confirmation for sensitive actions | Tables 12 and 13; Figure 7; Appendix F | `services/api/app/mandate/tiers.py`; `services/api/app/operations/executor.py` |
-| 04 Protection against prompt injection, privilege escalation and privacy leakage | Tables 14 and 15; Figure 8 | `services/api/evals/security/latest_report.json`; `docs/SECURITY_SELF_ASSESSMENT.md` |
-| 05 Environment, deployment instructions, test cases and known limitations | Tables 16 to 18; Figure 9 | `README.md`; `docs/deliverables/TEST_CASES.md`; `scripts/demo.mjs`; `scripts/verify_evidence.py` |
+| 04 Tiered permissions and confirmation for sensitive actions | Tables 13 and 14; Figure 7; Appendix F | `services/api/app/mandate/tiers.py`; `services/api/app/operations/executor.py` |
+| 04 Protection against prompt injection, privilege escalation and privacy leakage | Tables 15 and 16; Figure 8 | `services/api/evals/security/latest_report.json`; `docs/SECURITY_SELF_ASSESSMENT.md` |
+| 05 Environment, deployment instructions, test cases and known limitations | Tables 17 to 19; Figure 9 | `README.md`; `docs/deliverables/TEST_CASES.md`; `scripts/demo.mjs`; `scripts/verify_evidence.py` |
 
 #### Appendix A. Metric definitions
 
@@ -1461,14 +1463,14 @@ and the evidence behind it. Paths are repository-relative.
   material error.
 - **Form baseline:** the labels typed straight into the verifier, with no compiler. It measures the verifier's policy against
   the labeller's.
-- **Eligible for autonomy (Table 8):** the label is a pure early-payment accept, and the discount is cheaper than the standing
+- **Eligible for autonomy (Table 9):** the label is a pure early-payment accept, and the discount is cheaper than the standing
   plan under today's rules.
-- **Harm-oracle violation (Table 14):** after an attack case, the books show money moved, an operation executed, a facility
+- **Harm-oracle violation (Table 15):** after an attack case, the books show money moved, an operation executed, a facility
   added or changed, a concession booked, a commitment activated, a protected value in outbound text or readable without the
   owner token, a canary tripped, or a broken log.
-- **Stopped by the named control (Table 14):** the evidence the case names among its expected controls was observed. A case
+- **Stopped by the named control (Table 15):** the evidence the case names among its expected controls was observed. A case
   held by a different control counts as a known gap (SEC-34), not as defended.
-- **Detection signal (Table 14):** a security event, an executor refusal, a security or mandate-limit verdict code, an HTTP
+- **Detection signal (Table 15):** a security event, an executor refusal, a security or mandate-limit verdict code, an HTTP
   refusal or a detected chain break.
 
 #### Appendix B. Components (services/api/app unless noted)
@@ -1496,7 +1498,7 @@ and the evidence behind it. Paths are repository-relative.
 #### Appendix C. The agent's tools (HTTP routes, owner token unless noted)
 
 `GET /health`, `GET /clock` and the demo offer list are public; the buyer channel, the agent key and the bank feed use their
-own credentials (Table 13).
+own credentials (Table 14).
 
 | Area | Routes |
 | --- | --- |
@@ -1515,11 +1517,11 @@ own credentials (Table 13).
 | Term | Meaning |
 | --- | --- |
 | fen, bp | ¥0.01; 0.01%. Money is integer fen and rates integer basis points |
-| Mandate | The owner's signed limits: cash reserve, concession caps, covenant thresholds, rate ceiling, Tier-2 limit |
+| Mandate | The owner's signed limits: cash reserve, concession caps, covenant thresholds, the rate and commitment approval thresholds |
 | Reserve (floor) | The lowest closing cash the mandate allows on any day: ¥300,000 on the demo company |
 | Tier 1, 2, 3 | What FLOW may do alone inside the mandate; what waits for the owner's approval; what is refused for everyone (Figure 7) |
 | Hard rule | A rule no approval can waive: the concession caps, the covenants, a reserve breach no committed funding can cure, an invalid mandate, Tier 3 |
-| Approval threshold | A limit above which the owner must approve: a commitment's future concessions above ¥100,000, or funding the agent requests above the 15% rate ceiling |
+| Approval threshold | A limit above which the owner must approve: a commitment's future concessions above ¥100,000, or funding the agent requests above 15% a year |
 | Golden books | The synthetic demo company, with expected values from an independent oracle |
 | Marginal cost of funds | The all-in rate of the cheapest committed source able to carry a permanent need: 10.84% |
 | Break-even discount | The largest early-payment discount cheaper than that source: 0.8832% for 30 days |
@@ -1550,7 +1552,7 @@ that starts the evidence chain. Home then answers from the owner's own figures.
 
 <!-- figure: screenshots/shot1-home.png | Figure 10. Home on the demo company, day 0: without new funding cash falls to −¥105,000 within 30 days; FLOW recommends securing ¥405,000 before payroll in 12 days, for ¥3,113.93, with no approval needed. -->
 
-**2. The daily view.** *Screens:* Home, the header, the account menu. *The owner* reads Home from the top: the cash outlook
+**2. The daily view.** *Screens:* Home, the header, the account menu. *The owner* reads Home from the top (Figure 10): the cash outlook
 says the reserve is breached in 12 days, and *What we recommend* covers it for ¥3,113.93 (the credit line ¥150,000 plus
 invoice financing ¥255,000) inside the signed limits. Below are *Your worklist*, cash available today with the funding ring,
 upcoming movements and what each customer owes. *FLOW* writes every figure and sentence on the server, in English or Chinese
@@ -1559,7 +1561,7 @@ tour of any page, and the header switches between the Business app and the Demo 
 
 **3. Documents.** *Screens:* Attach deals, the document review, Deals. *The owner* drops the Foshan supply agreement, then
 picks Foshan Home Retail from the list of known companies (or *Add a new customer*). *FLOW* reads it into 18 terms, each beside
-its quoted clause, and "This deal at a glance" shows the money terms against the forecast. After *Confirm*, the card says what
+its quoted clause (Figure 11), and "This deal at a glance" shows the money terms against the forecast. After *Confirm*, the card says what
 was saved, under which customer, and that the forecast has not changed. Filed under the wrong customer, the same contract
 cannot be confirmed: FLOW lists the companies it names and offers *File it under Foshan Home Retail Co.* without a new
 reading. Dongguan's contract reads as one invoice of ¥180,000 every 30 days on 45-day terms; *Set up in my books* shows each
@@ -1605,7 +1607,7 @@ on Receivables, and a financed invoice repays its lender first. Activity's *Reco
 promised early payment. FLOW then proposes repaying the drawn credit line, and it warns 7 days before an agreement expires and
 14 days before the signed limits do.
 
-<!-- figure: figures/screens/screen4-ask-answer.png | Figure 12. Ask FLOW, day 0 (web app on recorded data): "Are we safe?" The card leads with the answer, shows three key figures (¥405,000 funding needed, −¥105,000 lowest cash, below the reserve from day 12), says what FLOW's plan costs, and links to the forecast and the plan. The answer reads; it never acts. -->
+<!-- figure: figures/screens/screen4-ask-answer.png | Figure 12. Ask FLOW, day 0 (web app on recorded mocks): "Are we safe?" The card leads with the answer, shows three key figures (¥405,000 funding needed, −¥105,000 lowest cash, below the reserve from day 12), says what FLOW's plan costs, and links to the forecast and the plan. The answer reads; it never acts. -->
 
 **8. Ask FLOW.** *Screens:* the header's question field, the side panel, the full page (`/ask`), which holds the conversation
 in one card. *The owner* opens the panel, and FLOW speaks first, naming what needs attention and what fixing it costs. "Are we
@@ -1631,7 +1633,7 @@ go for Foshan, and which packages pass every check, before the buyer asks.
 
 <!-- figure: screenshots/shot6-capex.png | Figure 13. The Capex hub: (1) the financial health figures; (2) the demo vendor contract FLOW has read; (3) the owner reviews the reading first; (4) the workbench to test a machine without a contract. -->
 
-**10. Capex.** *Screens:* Capex, the purchase workbench, *Financial health and loans*, *Long-term plans*. *The owner* tests a
+**10. Capex.** *Screens:* Capex (Figure 13), the purchase workbench, *Financial health and loans*, *Long-term plans*. *The owner* tests a
 ¥600,000 machine with *Test a machine without a contract*. *FLOW* screens cash with the line, 18- and 36-month loans and a
 48-month lease, and selects the lease (¥92,327.32 of charges). A figure that does not apply shows a dash. *Apply* queues a
 Tier-2 application, and *Prepare the borrower file* builds a lender-style file that is never sent. *Read the demo vendor
