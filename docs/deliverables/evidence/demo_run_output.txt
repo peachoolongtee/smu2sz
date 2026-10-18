@@ -1,6 +1,6 @@
 verdict: REJECT | counters: ['Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.', '55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.']
 negotiation: DEAL
-commitment CMT-841499e5946cf2e2: ¥260,000.00 of RCV-A at 85 bp on day 2; agreed receipt ¥257,790.00
+commitment CMT-902d95e8ee01cf2b: ¥260,000.00 of RCV-A at 85 bp on day 2; agreed receipt ¥257,790.00
 
 == after the deal (day 0): {'CRITICAL': 0, 'WARNING': 1, 'INFO': 0}
   [WARNING] ALERT-HEADROOM-30: Reserve headroom thin on day 30
@@ -19,15 +19,15 @@ bank receipt: EXECUTED Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at t
       Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).
 
 reconciliation: matched 1 flagged 0 lapsed promises 0
-  promised: RECEIVED the agreed ¥257,790.00 for RCV-A arrived (commitment CMT-841499e5946cf2e2)
+  promised: RECEIVED the agreed ¥257,790.00 for RCV-A arrived (commitment CMT-902d95e8ee01cf2b)
   outstanding: RCV-A ¥160,000.00 due 32 past due
   outstanding: RI:BUYER-1:2 ¥420,000.00 due 47 
   outstanding: RI:BUYER-1:32 ¥420,000.00 due 77 
 
 == agent opener (has_news True, awaiting True):
-  Day 34. Foshan Home Retail Co.'s ¥160,000.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above your 15.00% yearly ceiling for funding (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. A cheaper plan exists, ¥1,702.20 in all, but it would need 2 separate approvals; this one needs one. Go ahead?
+  Day 34. Foshan Home Retail Co.'s ¥160,000.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for FLOW to borrow without your approval (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. A cheaper plan exists, ¥1,702.20 in all, but it would need 2 separate approvals; this one needs one. Go ahead?
 == owner: go ahead
-  It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above your 15.00% ceiling, so it needs your approval. I have not run it: it is queued as APR-000001. Say "approve APR-000001" or use the approval card. Once it runs, the cash lands after the lead time: day 37 if that is today. The alert is still open.
+  It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for borrowing without your approval, so it waits for your approval. I have not run it: it is queued as APR-000001. Say "approve APR-000001" or use the approval card. Once it runs, the cash lands after the lead time: day 37 if that is today. The alert is still open.
   SUBMIT_INVOICE_FOR_FINANCING PENDING_APPROVAL (tier TIER_2, seq 7)
 
 == after go ahead: cure queued, alert open (day 34): {'CRITICAL': 1, 'WARNING': 2, 'INFO': 0}

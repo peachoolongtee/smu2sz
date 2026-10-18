@@ -156,7 +156,7 @@ closed affirmative command, and a plan runs only on the owner's "go ahead", as e
 2. The buyer accepts Option A, early payment on up to ¥260,000 of its invoice at 0.85%, and pays ¥257,790.00 on day 2.
 3. Day 34: the rest of the invoice is late and cash is heading under the reserve. FLOW speaks first and proposes a ¥200,000
    invoice advance costing ¥1,782.19.
-4. That is 32.5% a year, above the owner's 15% ceiling, so "go ahead" only queues it. The owner's approval runs it, and the
+4. That is 32.5% a year, above the 15% the owner signed for FLOW to borrow without approval, so "go ahead" only queues it. The owner's approval runs it, and the
    cash lands on day 37.
 5. The late money arrives, the advance is repaid, reconciliation closes the deal, and the record's hash chain verifies.
 
@@ -293,8 +293,8 @@ the verdicts:
 | Demo reachable over a network | **conditional GO**: changed credentials, a TLS reverse proxy with rate and body limits, documentation hidden |
 | Production with real customers, documents or money | **NO-GO** |
 
-- **Permission tiers.** Tier 1 runs alone inside the signed mandate; Tier 2 (for example funding above the owner's cost
-  ceiling, or accepting an offer that is not a qualifying early-pay discount) is queued and runs only after the owner approves
+- **Permission tiers.** Tier 1 runs alone inside the signed mandate; Tier 2 (for example funding above the cost the owner
+  signed for FLOW to borrow without approval, or accepting an offer that is not a qualifying early-pay discount) is queued and runs only after the owner approves
   it with the owner token; Tier 3 (personal guarantees, mandate changes, collateral pledges, equity) is refused, whoever asks.
 - **Confirmation for sensitive operations.** Chat never executes on its own: "go ahead" queues what needs approval, the agent
   key cannot decide an approval, a counterparty's "the owner agreed" is only an inbound message, and every operation carries

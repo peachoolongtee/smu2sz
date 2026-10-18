@@ -57,7 +57,7 @@ backend, kept apart from the certified offline evidence.
 
 | Build and verification |
 | --- |
-| Submission commit: {SUBMISSION_COMMIT} |
+| Submission commit: `5941e95a` (code, verified); the repository head adds documentation only |
 | Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz). Evidence files named in this document link to their repository paths |
 | Demo video: International-AI-Track-ISMOGGER-DemoVideo.mp4, submitted alongside this document |
 | Runs fully offline with one command (`pnpm demo`): no account, no VPN, no API key and no foreign service needed — it works in mainland China as delivered (cache mode, in-memory books, published demo credentials; the dependencies are installed once, by `pnpm install` and the first `pnpm demo`). The optional live mode (`pnpm demo --live-llm`) needs a DeepSeek key |
@@ -843,11 +843,18 @@ the final re-measurement on the submission commit: each check's command (Appendi
 failed and skipped counts. A suite with known failures lists them by name in the notes; the live browser suite's are
 `live.spec.ts:334` and `:348` (#157) and `tracker.spec.ts:216` (section 05).
 
-**Table V. Verification manifest for the submission commit {SUBMISSION_COMMIT}.**
+**Table V. Verification manifest for the submission commit `5941e95a` (every check run on 18 October 2026).**
 
-| Check | Command (Appendix C) | Build | Date | Passed | Failed | Skipped | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-{VERIFICATION_TABLE_ROWS}
+| Check | Command (Appendix C) | Passed | Failed | Skipped | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Web typecheck and lint | `pnpm typecheck`, `pnpm lint` | clean | 0 | 0 | Windows 11 (lead) and Linux, 2 cores (team member) |
+| Web unit tests | `pnpm test:unit` | 187 | 0 | 0 | Both machines |
+| API suite (all of `services/api/tests`) | `uv run pytest` | 11,341 | 0 | 47 | Linux, Python 3.12, two workers (pytest-xdist); 11,388 collected; run by a team member |
+| Focused suites on the changed paths (NL, security incl. the 207-case bypass sweep, certification, alerts) | `uv run pytest tests/nl tests/security tests/certification tests/alerts …` | 3,402 | 0 | 1 | Windows 11 |
+| Browser suite, recorded data | `playwright test` (mock, 6 workers) | 479 | 0 | 77 | Windows 11. On a 2-core container with an older Chromium, timing and layout specs failed under load; each passed on a one-worker rerun there or here |
+| Browser suite, real API | `playwright test` (live, 1 worker) | 174 | 3 | 51 | The three known failures: `live.spec.ts:334`, `:348` (#157) and `tracker.spec.ts:216` |
+| Judge pack: scripted tasks, attack catalogue, demo walk, evidence chain | `scripts/judge_eval.py` | 49 of 49 tasks; 279 attacks, 0 with harm | 0 | — | Detection 97.66% of the 128 API attacks (70.25% across all 279); walk OK; chain VALID; tampered copy rejected |
+| Live-model demonstration and frozen evaluation | `ai_demo.py`, `evals/live_frozen/run.py` | see "The AI at work" | — | — | DeepSeek `deepseek-flash`, redaction on; single runs |
 
 ## Appendix C. Evidence commands and results
 

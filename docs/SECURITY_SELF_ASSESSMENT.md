@@ -1129,7 +1129,7 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 
 | Item | Value |
 | --- | --- |
-| Submission commit | {SUBMISSION_COMMIT} (branch `int/final3` at `2ce5265c`, merged into `dev`, plus the SEC-28 reporting fix) |
+| Submission commit | `5941e95a` (branch `int/final4`, merged into `dev`; the repository head adds documentation only) |
 | Certified build it extends | `70f23ac5` (section 2.7) |
 | Configuration | as in the release manifest: loopback, one API process, `LLM_MODE=cache`, synthetic fixtures. Live model mode (`pnpm demo --live-llm`) stays outside certification |
 | Prepared by | the integration lead (an AI agent), 18 Oct 2026; not reviewed by the Security Lead at the time of writing |
@@ -1158,6 +1158,11 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 | `5ad111e0` | the Cash page's funding plan answers on books with no permanent funding source (the marginal-cost block is null instead of raising an error). A catch-all handler turns any unhandled exception into a JSON 500 (`INTERNAL_ERROR`) with no exception text | error handling: the 500 carries no traceback or exception text and is logged; CORS, the security headers and the rate limiter still apply | `tests/api/test_cash_unreachable.py` (7, 5 fail without the fix); `tests/api`: 1,995 passed, 3 skipped, 2 timing-bound failures that also fail on the base; route policy and malformed-document tests passed; web unit 187 passed; mock browser specs 73 passed | follow-up review requested |
 | `4a2af4c0`, `1419602d` | web display only: the Ask FLOW page holds the conversation in one card; capex figures that do not apply show a dash instead of "None" | no route, data or permission change | typecheck and lint; mock browser specs: 76 passed, 11 skipped (Ask), 3 passed (capex, language); web unit 183 passed | follow-up review requested |
 | `39dd6e4e`, `70729b73` | test-only: each test starts on structlog's defaults (a filter leaked from the certification tests and failed 13 router log tests); the router-reads test follows the small-talk rules; a stale DSO expectation updated | none in the product; restores the router log tests (RT-L1) | 197 passed in the order that had failed; `tests/nl/test_ask_books.py`, `test_ask_rule_answers.py` | follow-up review requested |
+| `386775ca`, `d9923e92`, `7404f798`, `f1b95e61` | authority audit: a bare acknowledgement ("ok", "thanks", 好的) is not consent and a retried go-ahead cannot approve; the approval decision response separates the owner's decision from the run's result; an owner-recorded buyer yes states its funding requirement; a part-run plan names the funding still missing | consent and approval binding (closes a path where a repeated go-ahead approved a queued above-threshold advance); truthful execution status | `tests/nl/test_authority_audit.py` (47), `tests/api/test_approval_decision_vs_execution.py`, `tests/api/test_owner_reported_acceptance.py` | follow-up review requested |
+| `16480b3f`, `30d0f105` | the 15% APR and the single-commitment limit worded as approval thresholds (en/zh, server and web); a credential-bypass sweep of every owner write and agent route | wording only; the sweep found no route-level gap | `tests/security/test_approval_thresholds.py`, `tests/security/test_bypass_sweep.py` (207) | follow-up review requested |
+| `0af4a6bc`, `464617b3`, `ab8bac83` | owner pause of everything run on the agent's or a buyer's authority (`POST /agent/pause`, `/agent/resume`, on the hash-chained log); a saved chain checkpoint and verification against it; a test that every live model path receives redacted text only | new owner control; tamper evidence against a kept checkpoint; privacy | `tests/api/test_agent_pause.py`, `tests/security/test_evidence_verifier.py`, `tests/security/test_model_privacy_paths.py` | follow-up review requested |
+| `7fe9c8cd`, `a8d1c8fe` | a failed document decision keeps the page's own sentence; recorded web mocks re-recorded from the server (two identical runs per set) | web display only | live `documents.spec.ts:521`; mock browser suite 479 passed | follow-up review requested |
+| `93dce96f`, `82a5fe09`, `089d2415` | the frozen 20-item live-reading evaluation set and its runner; the LICENSE (all rights reserved, judging permitted) | evaluation tooling and licence; no product change | rules-grammar baseline and two live runs (see the technical document) | not applicable |
 | `069dd754`, `1c736876`, `bf113abf`, `08c8dac0` | the Security Lead's own records: assessment v3, the register, the owner's deferral of SEC-27 and SEC-28, and the certification of `70f23ac5` | documentation and evidence; no code | none needed | not applicable (documentation) |
 
 **Findings register.** `docs/security/FINDINGS_REGISTER.md` marks REG-8, REG-9 and CT-2b as fixed on the submission build, with re-certification requested. SEC-28 is marked "reporting fixed, atomicity disclosed". The Security Lead's statuses for `70f23ac5` are kept as written. The ratings in section 4.2 are unchanged until the Security Lead re-certifies.
@@ -1168,10 +1173,16 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 - Section 1.3: the rate ceiling (15% a year) is described as an approval threshold for the agent, as `app/operations/executor.py` implements it. The owner's own draw above it is not raised to Tier 2.
 - Section 2.6: the Security Lead's dates read 14 to 18 Oct, because the certification of `70f23ac5` and the review that found REG-8 date from 18 Oct.
 - Figures 4 and 5: Figure 4 showed the 259-case catalogue of 16 Oct (126 API, 133 chat), and now shows 279 (128, 151), as in the text. In Figure 5, the Security Lead's dates now run to 18 Oct, and the certifications `29fa0ea2`, `85309b63`, `6d2b6941` (conditional) and `70f23ac5` (the assessed build) are shown. Before this change, the "assessed build (final)" label followed `0fde33fd`.
-- The five remaining questions for the team are marked as tokens for the integration lead to fill from the owner's answers.
+- The team's five questions were answered by the owner on 18 Oct and are filled in (the audit, the red-team run, the dependency advisory and the licence).
 
 **Final-build verification (filled by the integration lead on the submission commit).**
 
-| Check | Command | Result on {SUBMISSION_COMMIT} |
+| Check | Command | Result on `5941e95a` |
 | --- | --- | --- |
-{VERIFICATION_ROWS}
+| Web typecheck, lint, unit tests | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` | clean; 187 passed, 0 failed |
+| API suite | `uv run pytest` | 11,341 passed, 0 failed, 47 skipped (11,388 collected; Linux, two workers) |
+| Focused suites on the changed paths, incl. the 207-case bypass sweep | `uv run pytest tests/nl tests/security tests/certification tests/alerts …` | 3,402 passed, 0 failed, 1 skipped |
+| Browser suite, recorded data | `playwright test` (mock) | 479 passed, 0 failed, 77 skipped |
+| Browser suite, real API | `playwright test` (live, 1 worker) | 174 passed, 3 failed (known: `live.spec.ts:334`, `:348`, `tracker.spec.ts:216`), 51 skipped |
+| Attack catalogue and judge pack | `scripts/judge_eval.py` | 49 of 49 tasks; 279 attacks, 0 with harm; detection 97.66% of 128 API attacks; chain VALID, tampered copy rejected |
+| Re-certification by the Security Lead | — | requested; not yet performed on this commit |
