@@ -1,0 +1,7 @@
+2026-10-18 13:32:19 [info     ] compiler.call                  backend=cache doc_hash=c7bfb130a809f6f280b8883ae84dac3c3673c43455add13292d235128987beb4 error=CacheMiss latency_ms=0.3 outcome=fallback prompt_version=offer-v4
+2026-10-18 13:32:19 [info     ] compiler.call                  backend=rules doc_hash=c7bfb130a809f6f280b8883ae84dac3c3673c43455add13292d235128987beb4 latency_ms=364.5 model=rules-v1 outcome=ok prompt_version=offer-v4
+100 2700 chars: 200 0.66 s 78846 bytes back
+400 10800 chars: 413 0.0 s 106 bytes back
+1600 43200 chars: 413 0.01 s 106 bytes back
+50 docs: 413 0.01 s
+intake count 1 cap 200
