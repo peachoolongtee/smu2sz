@@ -47,6 +47,7 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Any
 
+from app.domain.claims import CLAIM_KINDS, CLAIM_NOUNS_EN, claim_kinds
 from app.domain.models import (
     BaseKind,
     CompiledOffer,
@@ -427,14 +428,18 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
 
         clauses: list[tuple[str, Obligation | None]] = []
         touched_terms = bool(ctx.of_type(ObligationType.TERMS_EXTENSION))
-        mentioned_rebate = bool(ctx.of_type(ObligationType.CONTINGENT_REBATE)) or any(
-            is_claimed(o) for o in ctx.offer.obligations)
+        # what the buyer asked for or claimed that is not on record, named for what it is: a claimed rebate is a rebate, a claimed
+        # terms agreement a payment-terms agreement (owner's QA report, 18 Oct: a terms claim was answered "No rebate is on record")
+        mentioned = set(claim_kinds(ctx.offer.obligations))
+        if ctx.of_type(ObligationType.CONTINGENT_REBATE):
+            mentioned.add("rebate")
+        nouns = [CLAIM_NOUNS_EN[k] for k in CLAIM_KINDS if k in mentioned]
         current = ctx.current_terms()
         lead = []
         if touched_terms and current is not None:
             lead.append(f"Terms stay at {current} days")
-        if mentioned_rebate:
-            lead.append("no rebate" if lead else "No rebate is on record, so none applies")
+        if nouns:
+            lead.append("no " + " or ".join(nouns) if lead else f"No {' or '.join(nouns)} is on record, so none applies")
         if lead:
             clauses.append((", ".join(lead) + ".", None))
         # red team e, F4: the promise names its day; any portion up to the face paid by then earns the rate
