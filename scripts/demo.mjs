@@ -285,7 +285,8 @@ async function main() {
     const deepseek = Boolean(process.env.DEEPSEEK_API_KEY), claude = Boolean(process.env.ANTHROPIC_API_KEY);
     if (!deepseek && !claude)
       fail("--live-llm needs DEEPSEEK_API_KEY or ANTHROPIC_API_KEY set in this shell (PowerShell: $env:DEEPSEEK_API_KEY = \"...\"). .env is not read.");
-    Object.assign(llm, { LLM_MODE: "live", LLM_PRIMARY: process.env.LLM_PRIMARY ?? (deepseek ? "deepseek" : "claude") });
+    // redaction is forced on and the raw mode off, whatever this shell says: the line below promises it
+    Object.assign(llm, { LLM_MODE: "live", LLM_PRIMARY: process.env.LLM_PRIMARY ?? (deepseek ? "deepseek" : "claude"), LLM_REDACT: "1", LLM_LIVE_RAW: "0" });
     say(`live model calls ON (${llm.LLM_PRIMARY}): each unanswered question, new document or buyer message is a paid call; text is redacted first.`);
   }
 
