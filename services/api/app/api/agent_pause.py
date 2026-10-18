@@ -78,7 +78,9 @@ class PausableExecutor(Executor):
 
     def execute(self, op: Any) -> OperationResult:
         actor = str(getattr(getattr(op, "requested_by", None), "value", getattr(op, "requested_by", "")))
-        if actor in PAUSED_ACTORS:
+        kind = str(getattr(getattr(op, "kind", None), "value", getattr(op, "kind", "")))
+        # PAUSE-1: the bank feed is exempt for what it exists to do, report a receipt; anything else it asks for is paused too
+        if actor in PAUSED_ACTORS or (actor == Actor.SYSTEM.value and kind != "RECEIVE_PAYMENT"):
             paused = pause_state(self._store)
             if paused is not None:
                 return self._refuse_paused(op, actor, paused)

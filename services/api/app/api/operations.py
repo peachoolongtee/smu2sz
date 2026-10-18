@@ -81,8 +81,9 @@ def post_operation(body: dict, x_owner_token: str | None = Header(default=None),
     rt = get_runtime()
     if body.get("requested_by") == Actor.OWNER.value and not rt.is_owner(x_owner_token):
         body = {**body, "requested_by": Actor.AGENT.value}  # unauthenticated owner claim -> agent
-    if body.get("requested_by") == Actor.SYSTEM.value and not is_bank_feed(x_bank_feed_key):
-        body = {**body, "requested_by": Actor.AGENT.value}  # only the bank feed speaks as SYSTEM (F-02)
+    if body.get("requested_by") == Actor.SYSTEM.value and not (is_bank_feed(x_bank_feed_key) and body.get("kind") == "RECEIVE_PAYMENT"):
+        # only the bank feed speaks as SYSTEM (F-02), and only to report a receipt (PAUSE-1): any other kind it asks for is the agent's
+        body = {**body, "requested_by": Actor.AGENT.value}
     if body.get("kind") == "RECEIVE_PAYMENT" and body.get("requested_by") == Actor.OWNER.value:
         return _owner_receipt(rt, body, lang)
     return run_operation(rt, body, lang)
@@ -402,6 +403,10 @@ def _decision_outcome(rt, approval_id: str, approve: bool, actor: Actor, result:
     recorded for the approval (APPROVED / REJECTED, or PENDING when nobody with authority decided it); `execution_status` is what the
     run came to (EXECUTED, DUPLICATE, REFUSED, or DECLINED when the owner said no); `ran` is true only when money or books changed.
     An approval the owner gave whose re-run was refused reads "approved, did not run" with the executor's reason, never "approved"."""
+    if actor != Actor.OWNER:
+        # APR-1: a caller without the owner's authority learns nothing about the owner's decision, only that it decides nothing
+        return {"id": approval_id, "decision": None, "execution_status": "NOT_RUN", "ran": False,
+                "text": t(lang, "Only the owner can decide an approval. Nothing ran.", "只有业主可以审批。未执行任何操作。")}
     rec = rt.store.get_approval(approval_id)
     decision = str(getattr(rec.status, "value", rec.status)) if rec is not None else "PENDING"
     if decision == "REJECTED" or (actor == Actor.OWNER and not approve):

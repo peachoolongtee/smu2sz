@@ -246,7 +246,7 @@ def test_only_the_owner_decides_an_approval(queued, decision: str) -> None:
     r = c.post(f"/approvals/{aid}", headers=AGENT_KEY, json={"decision": decision})
     assert r.status_code in (*REFUSED, 200)
     if r.status_code == 200:
-        assert r.json()["result"]["status"] == "REFUSED" and r.json()["approval"]["decision"] == "PENDING" and r.json()["approval"]["ran"] is False
+        assert r.json()["result"]["status"] == "REFUSED" and r.json()["approval"]["decision"] is None and r.json()["approval"]["ran"] is False  # APR-1: undisclosed to a non-owner
     after = snapshot(rt)
     assert after["approvals"] == before["approvals"] and after["state"] == before["state"] and after["executed"] == before["executed"]
 
