@@ -324,10 +324,10 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
     if v.counters:
         if not execute:
             for c in v.counters:
-                steps.add("COUNTER_OFFER", counter_line(ctx, c.label, c.text))
+                steps.add("COUNTER_OFFER", counter_line(ctx, c.label, c.text, v.offer_id))
             return []
         sent = send_counters(ctx, steps, v, v.counters, recipient)
-        lines = [counter_line(ctx, c.label, text) for c, text in sent]
+        lines = [counter_line(ctx, c.label, text, v.offer_id) for c, text in sent]
         if ViolationCode.DATA_EXTRACTION_REFUSED in codes:
             lines.insert(0, REFUSAL_REPLY_ZH if ctx.lang == "zh" else REFUSAL_REPLY)
         return lines
@@ -567,7 +567,7 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
     profile = slots.buyer_profile or ctx.session.buyer_profile or offer.counterparty_id
     if not execute:
         for c in v.counters:
-            steps.add("COUNTER_OFFER", counter_line(ctx, c.label, c.text))
+            steps.add("COUNTER_OFFER", counter_line(ctx, c.label, c.text, v.offer_id))
         steps.add("NEGOTIATE", t(ctx, "Bounded rounds with the buyer", "与买方有限轮次谈判"))
         follow = followups(ctx, steps, offer, v.counters)
         ready = t(ctx, "Plan ready. Reply 'go ahead' to send the counters.", "计划已就绪。回复“执行”发送反报价。")

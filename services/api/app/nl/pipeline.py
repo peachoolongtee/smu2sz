@@ -16,6 +16,7 @@ from app.api.presentation import no_simulated_reply_text
 from app.counterparties import BuyerKernel, CounterpartyError, UnknownBuyerProfile, negotiate
 from app.counterparties.books import fitted_profile
 from app.counterparties.profiles import get_profile
+from app.domain.claims import restate_not_on_record
 from app.domain.models import (
     AcceptOffer,
     CompiledOffer,
@@ -48,10 +49,15 @@ def t(ctx: NlContext, en: str, zh: str) -> str:
     return zh if ctx.lang == "zh" else en
 
 
-def counter_line(ctx: NlContext, label: str, text: str) -> str:
+def counter_line(ctx: NlContext, label: str, text: str, offer_id: str | None = None) -> str:
     """A counter as one line, "Option A: <terms>", in the reader's language. The counter's English text is the engine's (it is what
     the log holds and the egress guard scanned); in Chinese the line is that same text through the translation layer, so a Chinese
-    buyer or owner reads "方案 A：<条款>" with the same figures."""
+    buyer or owner reads "方案 A：<条款>" with the same figures.
+
+    `offer_id` is the offer the counter answers. The early-pay counter's lead says "No rebate is on record" for every claimed prior
+    agreement; the line names what the buyer claimed instead ("No payment-terms agreement is on record"), and only that clause changes."""
+    if offer_id is not None and (offer := ctx.store.get_offer(offer_id)) is not None:
+        text = restate_not_on_record(text, offer.obligations)
     if ctx.lang != "zh":
         return f"{label}: {text}"
     from app.api.engine_zh import translate
@@ -187,7 +193,7 @@ def send_counters(ctx: NlContext, steps: Steps, verdict: Verdict, counters: Sequ
         op = CounterOffer(**ctx.base("COUNTER_OFFER"), source_verdict_id=verdict.id, offer_id=verdict.offer_id,
                           counter_id=c.id)
         r = ctx.execute(op)
-        steps.result("COUNTER_OFFER", counter_line(ctx, c.label, text), r)
+        steps.result("COUNTER_OFFER", counter_line(ctx, c.label, text, verdict.offer_id), r)
         if r.status in LIVE_STATUSES:
             sent.append((c, text))
     return sent
