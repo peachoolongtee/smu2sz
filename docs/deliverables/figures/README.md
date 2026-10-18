@@ -194,6 +194,57 @@ own markers, not callouts.
 | `screen6-deal-tracker.png` | The deal tracker after the buyer's early payment arrived from the simulated bank feed: on plan, the stages, and the cost expected at agreement against the actual so far. |
 | `screen7-activity.png` | Activity after the owner approved a Tier 2 funding request: "Record chain checks passed", and the request's log entry with its hash, the previous hash and the executor's audit sentence. |
 
+### Refreshed frames from the submission build candidate (18 Oct 2026)
+
+Five frames retaken from `int/final3` at `2ce5265c` in **mock mode** (an export of that commit's `apps/web`, `pnpm install
+--frozen-lockfile`, `NEXT_PUBLIC_API_MODE=mock next dev -p 3571`; no API, no model, no money), same browser settings and
+annotation style. They replace the `../screenshots` frames of the same names (taken 17 Oct from `dev` `975e082f`).
+Capture: `SET=final WEB_DIR=<that apps/web> node src/capture_screens.mjs http://localhost:3571 <raw dir>`; cut:
+`uv run --no-project --with pillow python src/crop_screens.py <raw dir> final`.
+
+| Screen | Caption | Intended place |
+| --- | --- | --- |
+| `shot1-home.png` | Home on the opening books: without new funding cash falls to −¥105,000 within 30 days; the red card recommends securing ¥405,000 before payroll in 12 days (credit line ¥150,000 today, invoice financing ¥255,000 in 3 days) for ¥3,113.93, with no approval needed. | 01, "What the owner sees", or Appendix E (replaces `screenshots/shot1-home.png`) |
+| `shot3-approval.png` | An approval waiting (story scene 5, day 34): FLOW queued a ¥200,000 invoice-financing request because 32.5% a year is above the 15% ceiling the owner signed. It costs ¥1,782.19; nothing runs until the owner authorizes or declines. | 04 or 05, beside the tiered permissions (replaces `screenshots/shot3-approval.png`) |
+| `shot6-capex.png` | Capex, the quick check of the demo's ¥600,000 machine: worth doing on the owner's estimate (NPV ¥380,885.77, payback in month 31); the 36-month term loan is selected; the 18-month loan fails DSCR in months 1–3; figures that do not apply read "—", not "None". | 03, the capex screen, or Appendix E (replaces `screenshots/shot6-capex.png`) |
+| `shot9-attach.png` | Documents, attaching a contract: say what the file is and who it is with, then drop or upload a PDF with text, Word or plain text up to 5 MB; below, the documents already read, each confirmed by the owner. | 02, "Models, tools, data sources", or Appendix E (replaces `screenshots/shot9-attach.png`) |
+| `shot10-ask-answer.png` | Ask FLOW, full page, in its card: "Are we safe?" answered from the books, with the lead sentence, three key figures, the plan's cost and links. The mocks hold no recording of "Can I pay everyone?", so the frame shows the recorded "Are we safe?". | 03, Ask FLOW (replaces `screenshots/shot10-ask-answer.png` and `screen4-ask-answer.png`) |
+
+**Alt text and text equivalents.**
+
+- **shot1-home.png.** Home. Left, "Company cash outlook": −¥105,000 without new funding, ¥300,000 with plan, over a 36-day
+  step chart with the product's own numbered markers. Right, a red-bordered card: "Action needed: without funding your cash
+  falls to −¥105k in 30 days. What we recommend: Secure ¥405,000 before payroll in 12 days", cost to you ¥3,113.93, a bar
+  split into a credit-line draw of ¥150,000 today (37%) and invoice financing of ¥255,000 in 3 days (63%), "No approval
+  needed", and buttons "Check funding plan" and "Compare funding options". Callouts: 1 the −¥105,000 outlook, 2 the red
+  card, 3 the ¥405,000 to secure, 4 the ¥3,113.93 cost, 5 the split, 6 no approval needed.
+- **shot3-approval.png.** Approvals, one card: "Request ¥200,000 of invoice financing", marked "Waiting for your approval".
+  Why it needs you: "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval." What
+  you get ¥200,000.00; what it costs ¥1,782.19 (32.5% a year); when it lands: in 3 days if approved today. Funding source:
+  invoice financing (onboarded platform), on the ¥420,000.00 invoice to Foshan Home Retail Co. What if you decline:
+  ¥200,000.00 below the minimum cash reserve in 8 days. Buttons "Authorize the financing request" and "Decline". Callouts:
+  1 waiting, 2 why, 3 cost, 4 decline, 5 the two buttons.
+- **shot6-capex.png.** The "Test a machine without a contract" card. A purple verdict: worth doing on the owner's estimate,
+  NPV ¥380,885.77 at 10%, payback in month 31; finance with the 36-month term loan at 5.60% (¥18,144.62 a month), the lowest
+  total charges, ¥53,206.14, of the structures that pass; a new facility is Tier 2. Tiles: NPV, payback month 31, leverage
+  2.28× (limit 2.50×), 2.47× if the extension were also funded. A table of four structures with monthly payment, interest,
+  charges, DSCR for months 1–6 and the result: cash + credit line shows "—" in every figure and is infeasible (only
+  ¥250,000 above the reserve); the 18-month loan fails months 1–3 at 1.09× and is an illustration only; the 36-month loan
+  passes every month (1.37× to 1.71×) and is selected; the 48-month lease passes but costs ¥39,121.18 more. Callouts: 1 the
+  verdict, 2 the tiles, 3 the "—" row, 4 the failing DSCR months, 5 the selected structure.
+- **shot9-attach.png.** Documents. "Your own file": a "What it is" select (Contract with a buyer), a "Who it is with" select
+  with "+Add a new customer", and a dashed drop zone, "Drag and drop a document to check it" (PDF, Word or plain text, up to
+  5 MB) with an "Upload and read" button. Below, "Review a document": supply agreement FHR-2026-07 (Foshan Home Retail Co.,
+  18 terms read, 3 left blank), credit line agreement MB-CL-2026-031 (main bank, ¥150,000 at 6.40%) and invoice financing
+  agreement GBR-IF-2026-118 (¥350,000 at 7.80%), each "Confirmed by you today". Callouts: 1 what it is, 2 who it is with,
+  3 the drop zone, 4 upload and read, 5 the confirmed documents.
+- **shot10-ask-answer.png.** The Ask FLOW card. A warning, "Cash is close to your minimum in 30 days". The owner asks "Are
+  we safe?". FLOW: "Not on today's books: without new funding, cash falls below your ¥300,000 reserve from day 12, lowest
+  −¥105,000 on day 30 (¥405,000 short of the reserve)." Three tiles: ¥405,000 funding needed, −¥105,000 lowest cash, day 12
+  below reserve from. "FLOW's plan covers it for ¥3,113.93, and your loan covenants hold", with links to the cash forecast
+  and FLOW's plan and a collapsed "How FLOW worked this out". Suggested questions and the input box below. Callouts: 1 the
+  question, 2 the lead, 3 the figures, 4 the links, 5 how it was worked out, 6 the suggestions.
+
 ### Alt text
 
 - **screen1-home.png.** FLOW's Home page. Left: "Company cash outlook, −¥105,000 without new funding, ¥300,000 with plan" over

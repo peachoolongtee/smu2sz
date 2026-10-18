@@ -11,10 +11,15 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+//
+// The submission refresh (18 Oct 2026) adds a second set, taken from the build candidate int/final3 @ 2ce5265c:
+//   SET=final WEB_DIR=<a checkout of apps/web at 2ce5265c, with node_modules> node capture_screens.mjs http://localhost:3571 <out>
+// It writes 08-home, 09-approval, 10-capex-quick, 11-documents-attach and 12-ask-answer (see the end of this file).
 const here = dirname(fileURLToPath(import.meta.url));
-const web = resolve(here, "../../../../apps/web");
+const web = resolve(process.env.WEB_DIR ?? resolve(here, "../../../../apps/web"));
 const { chromium } = createRequire(join(web, "package.json"))("@playwright/test");
 
+const SET = process.env.SET ?? "walk";
 const BASE = process.argv[2] ?? "http://localhost:3561";
 const OUT = resolve(process.argv[3] ?? join(here, "..", "screens", "raw"));
 mkdirSync(OUT, { recursive: true });
@@ -78,6 +83,7 @@ async function walkStory(steps) {
   }
 }
 
+if (SET === "walk") {
 // 1. Home on the opening books: the recommendation card.
 await page.goto(`${BASE}/`);
 await page.getByTestId("home-v2").waitFor();
@@ -125,6 +131,55 @@ await page.goto(`${BASE}/activity`);
 await page.getByText("Evidence", { exact: true }).nth(1).click(); // the approval request's evidence: the log entry and its hashes
 await page.waitForTimeout(600);
 await shot("07-activity", []);
+}
+
+if (SET === "final" || SET === "explore") {
+  // 8. Home on the opening books (replaces screenshots/shot1-home).
+  await page.goto(`${BASE}/`);
+  await page.getByTestId("home-v2").waitFor();
+  await shot("08-home", ["home-v2", "hv2-outlook-card", "home-check-plan"]);
+
+  // 10. Capex: the quick check of the demo machine; a figure that does not apply reads "—".
+  await page.goto(`${BASE}/capex`);
+  await page.getByTestId("capex-quick").waitFor();
+  await page.getByTestId("capex-quick").getByRole("button", { name: /^Evaluate the/ }).click();
+  await page.getByTestId("capex-recommendation").first().waitFor();
+  await shot("10-capex-quick", ["capex-health", "capex-purchases", "capex-quick", "capex-recommendation", "capex-basis"]);
+
+  // 11. Documents: attach a contract (the drop zone and the upload button).
+  await page.goto(`${BASE}/documents`);
+  await page.getByTestId("doc-dropzone").waitFor();
+  await shot("11-documents-attach", ["doc-dropzone", "doc-upload", "doc-terms"]);
+
+  // 12. Ask FLOW, the full page, one recorded question answered as a card. The mocks hold no recording of
+  // "Can I pay everyone?", so the frame uses the recorded "Are we safe?".
+  await page.goto(`${BASE}/ask`);
+  await page.getByTestId("ask-page").waitFor();
+  await page.getByTestId("ask-page").getByTestId("prompt-ask-safe").click();
+  await page.getByTestId("ask-page").getByTestId("card-lead").last().waitFor();
+  await shot("12-ask-answer", ["ask-page", "card-lead"]);
+
+  // 9. An approval waiting: walk the demo story to the cure, open the approval and stop before authorising.
+  await page.goto(`${BASE}/demo`);
+  for (let i = 0; i < 12; i++) {
+    const button = page.getByTestId("demo-next");
+    await button.waitFor();
+    for (let t = 0; t < 60 && !(await button.isEnabled()); t++) await page.waitForTimeout(250);
+    const label = (await button.textContent()) ?? "";
+    console.log("story step", i, label.trim());
+    if (/Open the approval|Review the approval/.test(label)) {
+      await button.click();
+      break;
+    }
+    await button.click();
+    const dialog = page.getByTestId("books-dialog");
+    await dialog.waitFor({ state: "visible", timeout: 1500 }).catch(() => undefined);
+    if (await dialog.isVisible()) await page.getByTestId("books-dialog-confirm").click();
+    await page.waitForTimeout(800);
+  }
+  await page.getByRole("button", { name: /^Authorize/ }).first().waitFor();
+  await shot("09-approval", []);
+}
 
 writeFileSync(join(OUT, "boxes.json"), JSON.stringify(boxes, null, 2));
 await browser.close();
