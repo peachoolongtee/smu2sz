@@ -95,7 +95,10 @@ def test_why_are_we_countering_this_is_two_lines_in_business_words(client):
             ("zh", "FLOW 建议还价：此报价的未来让步在未来 12 个月内共需 ¥28,326.92，高于您 ¥5,000 的上限，并且现金将在47 天后低于您的最低现金储备。",
              "建议的回应：向买方发送方案 A。")):
         j = _say(client, "Why are we countering this?" if lang == "en" else "为什么要还价？", "e1", lang)
-        assert j["intent"] == "EXPLAIN" and j["reply"].splitlines() == [first, second]
+        # the counter is the plan waiting for "go ahead": every owner read says so (ASK-2b), after the two lines in business words
+        reply, _, reminder = j["reply"].partition(" Your earlier plan is still waiting" if lang == "en" else "您之前的方案仍在等待")
+        assert reminder and j["awaiting_confirmation"]
+        assert j["intent"] == "EXPLAIN" and reply.rstrip().splitlines() == [first, second]
         assert "Verdict" not in j["reply"] and "TIER" not in j["reply"] and not re.search(r"[A-Z_]{6,}", j["reply"])
     raw = _say(client, "Why are we countering this?", "e1", mode=None)  # the raw reply stays for the Demo
     assert raw["reply"].startswith("Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED")

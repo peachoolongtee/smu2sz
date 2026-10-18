@@ -48,7 +48,21 @@ _cancels = 0  # how many times the warm-ups were cancelled: a warm-up started be
 
 
 def warming_on() -> bool:
-    return os.environ.get("DEMO_WARM_STRATEGY", "").strip() == "1"
+    """The local demo only: DEMO_WARM_STRATEGY=1 and DEMO_MODE on (WARM-1: a deployment that set the flag by mistake starts nothing)."""
+    from app.api.auth import demo_mode
+
+    return os.environ.get("DEMO_WARM_STRATEGY", "").strip() == "1" and demo_mode()
+
+
+# WARM-1: the worker computes from the pickled job alone; it gets the few variables a Python process needs to start, never the API's
+# credentials or provider keys.
+_WORKER_ENV = ("PATH", "SYSTEMROOT", "SYSTEMDRIVE", "WINDIR", "TEMP", "TMP", "TMPDIR", "HOME", "USERPROFILE", "LANG", "LC_ALL",
+               "VIRTUAL_ENV", "PYTHONPATH")
+
+
+def _worker_env() -> dict[str, str]:
+    env = {k: v for k, v in os.environ.items() if k in _WORKER_ENV or k.startswith("FEATURE_")}
+    return {**env, "TERMSLEDGER_NO_DOTENV": "1", "PYTHONUTF8": "1", "DATABASE_URL": "memory", "LLM_MODE": "cache"}
 
 
 def _job() -> dict[str, Any] | None:
@@ -97,7 +111,7 @@ def _start(cancels: int) -> subprocess.Popen[bytes] | None:
     flags = 0
     if sys.platform == "win32":
         flags = subprocess.BELOW_NORMAL_PRIORITY_CLASS | subprocess.CREATE_NO_WINDOW
-    env = {**os.environ, "TERMSLEDGER_NO_DOTENV": "1", "PYTHONUTF8": "1"}  # the worker reads no configuration and no database
+    env = _worker_env()  # the worker reads no configuration and no database (WARM-1)
     with _lock:
         if cancels != _cancels:
             return None
@@ -126,16 +140,17 @@ def _run(job: dict[str, Any], cancels: int) -> None:
             with _lock:
                 if _current is proc:
                     _current = None
-        with _lock:
-            if cancels != _cancels:
-                log.info("strategy warm-up: abandoned (the books were replaced while it ran)")
-                return
         if proc.returncode != 0:
             log.warning("strategy warm-up: the worker stopped with exit code %s", proc.returncode)
             return
-        for kind, key, value in pickle.loads(out):  # this process's own worker, over its own pipe (never a request's data)
-            if value is not None:
-                _put(kind, key, value)
+        results = pickle.loads(out)  # this process's own worker, over its own pipe (never a request's data)
+        with _lock:  # the cancel check and the writes together, so a reset cannot land between them
+            if cancels != _cancels:
+                log.info("strategy warm-up: abandoned (the books were replaced while it ran)")
+                return
+            for kind, key, value in results:
+                if value is not None:
+                    _put(kind, key, value)
     except Exception:  # a warm-up never fails the reset or the setup that started it
         log.warning("strategy warm-up failed", exc_info=True)
 

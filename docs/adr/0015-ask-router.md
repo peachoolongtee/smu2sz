@@ -73,6 +73,14 @@ break-even, why cash is short, the page's late-payment read, what is waiting), *
 answer that from the books in chat yet" with the nearest read. The topic reads stay before the router because they are
 deterministic and some of them know the page's binding ("this invoice"), which the router cannot.
 
+ASK_BOOKS is reached two ways: from the rules (a question they read as one about the books) and from the classifier fallback
+(`service._parse`): an owner question the rules did not read, for which the classifier returned nothing, a low-confidence reading
+or OUT_OF_SCOPE, and that names something the books are about, goes to ASK_BOOKS as a "question" and from there to the router
+like any other. The router is skipped on that second route when the classifier's output for the text was rejected for a canary
+trip: the text has already drawn a leaking or hostile reply once, and a second model call would carry it again, so the owner gets
+the fixed "I cannot answer that yet" reply. A canary trip in the router's own output is recorded as a DATA_EXTRACTION security
+event, as the classifier's is.
+
 The router returns None, and the honest reply follows, on: the flag off; not the owner (the agent key and buyers never reach
 it, and `route` checks again); an empty question or one over 500 characters (never sent); a cache miss in cache mode; a
 provider error, a refusal, an empty reply or the deadline (12 s, the whole call); a rejected response; `none: true`; a tool that
@@ -114,11 +122,11 @@ likely questions; it is there to correlate, not to protect.
 ## Consequences
 
 - An owner's wording FLOW's matcher does not hold can still get a figure-exact answer from the books, with no figure from a model.
-- Coverage depends on what reaches ASK_BOOKS. On the general set at day 0, 103 of 345 items are answered by the deterministic
-  answers, 87 more reach ASK_BOOKS on a topic the answers miss (the router's reach today), and **96 are not read as a question
-  about the books at all** (the rules return nothing and the intent classifier falls back to OUT_OF_SCOPE), so the router never
-  sees them. Widening the reach to those (an owner question the rules do not read, routed before the out-of-scope reply) is a
-  small follow-up in `app/nl/service.py._parse`, deliberately not part of this change.
+- Coverage depends on what reaches ASK_BOOKS. On the general set at day 0 (measured before the classifier fallback below existed),
+  103 of 345 items are answered by the deterministic answers, 87 more reach ASK_BOOKS on a topic the answers miss (the router's
+  reach then), and **96 were not read as a question about the books at all** (the rules return nothing and the intent classifier
+  falls back to OUT_OF_SCOPE). Since then `service._parse` sends such a question that names something the books are about to
+  ASK_BOOKS, so the router now sees it too (section 4); what is not about the books stays out of scope and is never sent.
 - Live mode costs one model call per routed question: about 3,300 input tokens with the 40-tool catalogue (an estimate of 3,250
   for the system prompt, identical on every call so provider prompt caching bills it at the cached rate, and about 36 for the
   question) and up to about 60 output tokens.

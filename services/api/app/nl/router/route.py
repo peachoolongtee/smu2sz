@@ -17,7 +17,9 @@ cache mode, or `"none": true` returns None, and the caller falls back to its hon
 
 Backends follow the classifier's chain: the recorded routes (`route_cache/`, keyed by the prompt version and the hash of the
 redacted question) always; in LLM_MODE=live, then the primary provider, one call, with a deadline. Only a hash of the question,
-the tool names, the backend, the latency and the outcome are logged, never the question.
+the tool names, the backend, the latency and the outcome are logged, never the question. A rejection is logged as a fixed
+reason code (`REJECT_CODES`), never the model's keys, values or text. `route_outcome` also returns what happened (`Outcome`), so
+the caller can put a canary trip on the security log; the router itself never touches the store.
 """
 
 from __future__ import annotations
@@ -39,7 +41,7 @@ from app.egress import canary, canary_tripped
 from app.financial import EngineError
 from app.nl.answers.answers import AnswerReply
 from app.nl.router import catalogue
-from app.nl.router.schema import problems, wire
+from app.nl.router.schema import coded_problems, wire
 
 log = structlog.get_logger("termsledger.nl.router")
 
@@ -266,19 +268,29 @@ class Call:
     slots: dict[str, Any]
 
 
+REJECT_CODES = frozenset({"canary", "malformed", "too_many_calls", "unknown_tool", "unknown_slot", "missing_slot", "wrong_type",
+                          "out_of_range", "bad_value", "extra_key"})
+
+
 class Rejected(Exception):
-    """The response is not a route this code will run; the reason is logged, the response is discarded."""
+    """The response is not a route this code will run; the response is discarded. `code` is one of `REJECT_CODES`: it is all that is
+    logged. `detail` may quote the model's own text, so it is for a debugger and is never logged or shown."""
+
+    def __init__(self, code: str, detail: str = "") -> None:
+        assert code in REJECT_CODES, code
+        super().__init__(code)
+        self.code, self.detail = code, detail
 
 
 def _no_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     keys = [k for k, _ in pairs]
     if len(keys) != len(set(keys)):
-        raise Rejected("duplicate key")
+        raise Rejected("malformed", "duplicate key")
     return dict(pairs)
 
 
 def _no_constants(name: str) -> Any:
-    raise Rejected(f"non-JSON constant {name}")
+    raise Rejected("malformed", f"non-JSON constant {name}")
 
 
 def parse_route(raw: str) -> list[Call] | None:
@@ -288,35 +300,39 @@ def parse_route(raw: str) -> list[Call] | None:
     try:
         data = json.loads(raw, object_pairs_hook=_no_duplicate_keys, parse_constant=_no_constants)
     except json.JSONDecodeError as e:
-        raise Rejected("not JSON") from e
-    if not isinstance(data, dict) or set(data) != {"calls", "none"}:
-        raise Rejected("top-level keys")
+        raise Rejected("malformed", "not JSON") from e
+    if not isinstance(data, dict):
+        raise Rejected("malformed", "top level is not an object")
+    if set(data) != {"calls", "none"}:
+        raise Rejected("extra_key" if set(data) > {"calls", "none"} else "malformed", "top-level keys")
     calls, none = data["calls"], data["none"]
     if not isinstance(none, bool) or not isinstance(calls, list):
-        raise Rejected("top-level types")
+        raise Rejected("malformed", "top-level types")
     if none:
         if calls:
-            raise Rejected("none with calls")
+            raise Rejected("malformed", "none with calls")
         return None
     if not calls:
-        raise Rejected("no calls")
+        raise Rejected("malformed", "no calls")
     if len(calls) > MAX_CALLS:
-        raise Rejected("too many calls")
+        raise Rejected("too_many_calls")
     out: list[Call] = []
     for c in calls:
-        if not isinstance(c, dict) or set(c) != {"tool", "slots"}:
-            raise Rejected("call keys")
+        if not isinstance(c, dict):
+            raise Rejected("malformed", "call is not an object")
+        if set(c) != {"tool", "slots"}:
+            raise Rejected("extra_key" if set(c) > {"tool", "slots"} else "malformed", "call keys")
         tool = catalogue.TOOLS.get(c["tool"]) if isinstance(c["tool"], str) else None
         if tool is None:
-            raise Rejected("unknown tool")
+            raise Rejected("unknown_tool")
         if not isinstance(c["slots"], dict):
-            raise Rejected("slots: not an object")
+            raise Rejected("malformed", "slots: not an object")
         try:  # the catalogue's own guard ...
             catalogue.validate_slots(tool, c["slots"])
         except catalogue.SlotError as e:
-            raise Rejected(f"slots: {e}") from e
-        if bad := problems(tool.slots_schema, c["slots"]):  # ... and the strict subset check (types, nulls, patterns), both
-            raise Rejected("slots: " + bad[0])
+            raise Rejected(e.code, str(e)) from e
+        if bad := coded_problems(tool.slots_schema, c["slots"]):  # ... and the strict subset check (types, nulls, patterns), both
+            raise Rejected(bad[0][0], bad[0][1])
         slots = {k: v for k, v in c["slots"].items() if v is not None}
         call = Call(tool.name, slots)
         if call not in out:  # the same call twice is one call
@@ -339,7 +355,8 @@ class Outcome:
     backend: str | None = None
     model: str | None = None
     tools: list[str] = field(default_factory=list)
-    outcome: str = "skipped"  # answered | none | rejected:<why> | failed | skipped:<why>
+    outcome: str = "skipped"  # answered | none | rejected:<code> | failed | skipped:<why> (fixed words only)
+    reject_code: str | None = None  # one of REJECT_CODES when the model's response was rejected
     latency_ms: float = 0.0
     tried: list[str] = field(default_factory=list)
 
@@ -368,12 +385,19 @@ def _combine(replies: list[AnswerReply], calls: list[Call], lang: str, model: st
 def route(question: str, lang: str, ctx: Any, backends: Sequence[RouteBackend] | None = None,
           deadline_s: float = DEADLINE_S) -> AnswerReply | None:
     """The answer the routed tools write for an owner's question, or None (the caller then says it cannot answer)."""
+    return route_outcome(question, lang, ctx, backends, deadline_s)[0]
+
+
+def route_outcome(question: str, lang: str, ctx: Any, backends: Sequence[RouteBackend] | None = None,
+                  deadline_s: float = DEADLINE_S) -> tuple[AnswerReply | None, Outcome]:
+    """`route`, with what happened: the answer or None, and the `Outcome` of this call (its `reject_code` is set when the model's
+    response was rejected, so the caller can record a canary trip on the security log; this module never writes to the store)."""
     global LAST
     t0 = time.perf_counter()
     oc = Outcome()
     LAST = oc
     try:
-        return _route(question, lang, ctx, backends, deadline_s, oc)
+        return _route(question, lang, ctx, backends, deadline_s, oc), oc
     finally:
         oc.latency_ms = round((time.perf_counter() - t0) * 1000, 1)
         log.info("ask.router", q_hash=oc.q_hash, backend=oc.backend, model=oc.model, tools=oc.tools, outcome=oc.outcome,
@@ -410,7 +434,7 @@ def _route(question: str, lang: str, ctx: Any, backends: Sequence[RouteBackend] 
         try:
             calls = parse_route(raw)
         except Rejected as e:
-            oc.outcome = f"rejected:{e}"
+            oc.reject_code, oc.outcome = e.code, f"rejected:{e.code}"  # the fixed code only: never the model's keys or values
             return None
         if calls is None:
             oc.outcome = "none"
