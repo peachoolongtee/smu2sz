@@ -650,6 +650,30 @@ def late_payment_impact(ctx: Any, buyer_id: str, days_late: int) -> Metric:
                    "already_late_fen": sum(x.outstanding_fen for x in already)})
 
 
+def invoice_financing_offer(ctx: Any, buyer_id: str | None) -> Metric:
+    """What the invoice-financing line would advance on a customer's open invoice (the earliest due), from the funding menu: the line,
+    its limit and room, the advance rate, the all-in cost, the days to cash. A read: nothing is drawn or submitted."""
+    r = R(ctx)
+    row = next((x for x in _menu(r) if x.kind == FacilityKind.INVOICE_FINANCING), None)
+    fac = next((f for f in r.state.facilities if f.kind == FacilityKind.INVOICE_FINANCING), None)
+    mine = [x for x in unpaid(r.state) if buyer_id is None or x.counterparty_id == buyer_id]
+    open_ = [x for x in mine if x.status == "OPEN"]
+    detail: dict[str, Any] = {"line": row is not None and fac is not None, "invoices": len(mine), "financed": len(mine) - len(open_)}
+    if row is None or fac is None:
+        return Metric("invoice_financing_offer", None, "none", None, "funding.menu_view", detail)
+    detail.update(committed=row.committed and row.owner_approved, status=row.status.value, limit_fen=row.limit_fen,
+                  available_fen=row.available_fen, all_in=row.all_in_display, days=row.time_to_cash_days,
+                  advance_rate=fmt_pct(bp(fac.advance_rate_bp), 0) if fac.advance_rate_bp is not None else None,
+                  rate=fmt_pct(bp(fac.rate_bp)))
+    if not open_ or fac.advance_rate_bp is None:
+        return Metric("invoice_financing_offer", None, "none", None, "funding.menu_view", detail)
+    inv = min(open_, key=lambda x: (x.due_day, x.id))
+    cap_ = invoice_financing_capacity(r, inv.id)
+    detail.update(invoice_fen=inv.outstanding_fen, due_day=inv.due_day, buyer_id=inv.counterparty_id,
+                  uncapped_fen=round_half_up(Fraction(inv.outstanding_fen - inv.advance_fen) * bp(fac.advance_rate_bp)))
+    return Metric("invoice_financing_offer", cap_.value, money(cap_.value), inv.due_day, "funding.menu_view, facility.advance_rate_bp", detail)
+
+
 # ================================================================ covenants
 
 

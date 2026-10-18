@@ -10,6 +10,7 @@ import re
 
 import pytest
 
+from app.api.presentation import whole
 from app.nl.answers import question_ids
 from app.nl.answers.answers import W, op_words
 from app.nl.answers.metrics import Reading
@@ -81,4 +82,50 @@ def test_an_operation_kind_without_a_verb_is_named_by_its_owner_words(rt) -> Non
 
 
 def test_the_beyond_top30_questions_are_not_among_the_top_30() -> None:
-    assert "ACT-05" not in question_ids() and "ACT-04" not in question_ids()
+    for qid in ("ACT-04", "ACT-05", "FUN-07", "CUS-09", "CUS-04"):
+        assert qid not in question_ids()
+
+
+# ---------------------------------------------------------------- borrowing against the Foshan invoice (item 3)
+
+
+def engine_facts(rt) -> dict:
+    """The invoice, the invoice-financing line and its menu row, as the engine holds them (never typed in here)."""
+    from app.funding import menu_view
+
+    state, mandate = rt.store.get_state(), rt.store.get_mandate()
+    foshan = next(c for c in state.counterparties if c.name.startswith("Foshan"))
+    inv = next(x for x in state.receivables if x.counterparty_id == foshan.id and x.status == "OPEN")
+    fac = next(f for f in state.facilities if f.kind.value == "INVOICE_FINANCING")
+    row = next(m for m in menu_view(state, mandate) if m.facility_id == fac.id)
+    advance = min(fac.limit_fen - fac.drawn_fen, inv.outstanding_fen * fac.advance_rate_bp // 10_000)
+    return {"invoice": inv, "fac": fac, "row": row, "advance": advance}
+
+
+@pytest.mark.parametrize(("text", "zh"), [("Can we borrow against the Foshan invoice?", False), ("佛山那张发票能拿去融资吗？", True),
+                                           ("Can we get an advance on the Foshan invoice?", False)])
+def test_borrowing_against_the_foshan_invoice_is_answered_from_the_funding_menu(client, rt, text: str, zh: bool) -> None:
+    f = engine_facts(rt)
+    before = len(rt.store.operations())
+    resp = say(client, text)
+    reply = resp["reply"]
+    assert "I can't do that" not in reply and "做不了" not in reply
+    assert (CJK.search(reply) is not None) == zh, reply
+    assert whole(f["advance"]) in reply and whole(f["invoice"].outstanding_fen) in reply
+    assert f"{f['fac'].advance_rate_bp // 100}%" in reply and whole(f["fac"].limit_fen) in reply
+    assert f["row"].all_in_display in reply and f"{f['row'].time_to_cash_days}" in reply
+    assert ("没有提交，也没有提款" if zh else "nothing was submitted or drawn") in reply
+    assert len(rt.store.operations()) == before and not resp["operations"]  # a read: nothing drawn, nothing submitted
+    no_ids(reply)
+
+
+@pytest.mark.parametrize(("text", "zh"), [("Can we borrow against the Dongguan invoice?", False), ("东莞那张发票能拿去融资吗？", True)])
+def test_a_customer_without_an_open_invoice_has_nothing_to_borrow_against(client, rt, text: str, zh: bool) -> None:
+    reply = say(client, text)["reply"]
+    assert reply.startswith("不能" if zh else "No:"), reply
+    assert ("没有可用于融资的未结发票" if zh else "no open invoice to borrow against") in reply
+
+
+def test_pledging_an_invoice_is_still_refused(client, rt) -> None:
+    resp = say(client, "Can we pledge the Foshan invoice as collateral?")
+    assert any(o["status"] == "REFUSED" for o in resp["operations"]), resp["reply"]

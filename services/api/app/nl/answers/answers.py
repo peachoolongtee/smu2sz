@@ -1498,6 +1498,53 @@ def a_needs_approval(w: W, q: str) -> AnswerReply:
         f"个人担保、抵押、股权和修改授权，FLOW 永远不能做。") + now, w.basis("mandate"))
 
 
+# ================================================================ borrowing against an invoice
+
+
+def a_invoice_financing(w: W, q: str) -> AnswerReply:
+    """"Can we borrow against the Foshan invoice?": what the invoice-financing line on the funding menu would advance on that customer's
+    open invoice (advance rate, limit, all-in cost, days to cash). A read: nothing is submitted or drawn."""
+    r = w.r
+    named = lx.find_counterparty(q, r.state)
+    buyer = named[0] if len(named) == 1 else None
+    off = w.m(mx.invoice_financing_offer(r, buyer))
+    d = off.detail
+    basis = w.basis("books")
+    read = w.t(" This is only a read: nothing was submitted or drawn.", "这只是查询：没有提交，也没有提款。")
+    who = w.buyer(buyer) if buyer else None
+    if not d["line"]:
+        return w.reply("FUN-07", w.t("No: there is no invoice-financing line on your funding menu, so nothing can be advanced on an invoice."
+                                     + read, "不能：您的融资菜单里没有发票融资额度，因此无法凭发票获得垫款。") + (read.strip() if w.zh else ""), basis)
+    if off.value is None and "invoice_fen" not in d:
+        if d["financed"] and buyer is not None:
+            return w.reply("FUN-07", w.t(f"No: {who}'s open invoice has already been financed, so there is nothing more to advance on it." + read,
+                                         f"不能：{who}的未结发票已经融资，无法再垫款。") + (read.strip() if w.zh else ""), basis)
+        return w.reply("FUN-07", w.t(f"No: {who or 'nobody'} has no open invoice to borrow against." + read,
+                                     f"不能：{who or '目前没有客户'}没有可用于融资的未结发票。") + (read.strip() if w.zh else ""), basis)
+    inv, day = w.fig("invoice", money(d["invoice_fen"])), d["due_day"]
+    name = w.fig("buyer", w.buyer(d["buyer_id"]))
+    full = money(d["uncapped_fen"])
+    rate, limit, cost = d["advance_rate"], money(d["limit_fen"]), w.fig("all_in", d["all_in"])
+    days = d["days"]
+    if not d["committed"]:
+        w.fig("answer", "no")
+        return w.reply("FUN-07", w.t(
+            f"Not yet: invoice financing is on your funding menu but it is not committed, so FLOW cannot rely on it and nothing would be advanced "
+            f"today. Once it is committed it would advance {rate} of {w.buyer_s(d['buyer_id'])} {inv} invoice (due {w.day(day)}), "
+            f"{full}, at {cost} a year all in, with cash in {days} days." + read,
+            f"现在还不能：发票融资虽在您的融资菜单上，但尚未承诺，FLOW 不能依赖它，今天不会垫付任何款项。承诺之后，可按{name}的"
+            f" {inv} 发票（{w.day(day)}到期）的 {rate} 垫付 {full}，综合年化成本 {cost}，{days} 天到账。") + (read.strip() if w.zh else ""), basis)
+    adv = w.fig("invoice_capacity", off.display)
+    w.fig("answer", "yes")
+    capped = (w.t(f" (the line's remaining room caps it; {rate} of the invoice would be {full})",
+                  f"（受额度剩余空间限制；按 {rate} 本应为 {full}）") if d["uncapped_fen"] > off.value else "")
+    return w.reply("FUN-07", w.t(
+        f"Yes: invoice financing would advance {adv}{capped} on {w.buyer_s(d['buyer_id'])} {inv} invoice (due {w.day(day)}): {rate} of the "
+        f"invoice, within the line's {limit} limit. It costs {cost} a year all in, and the cash lands in {days} days." + read,
+        f"可以：发票融资可对{name}的 {inv} 发票（{w.day(day)}到期）垫付 {adv}{capped}，即发票的 {rate}，在额度 {limit} 以内。综合年化成本 {cost}，"
+        f"{days} 天到账。") + (read.strip() if w.zh else ""), basis)
+
+
 # ================================================================ the audit log
 
 _REFUSED_ASK = re.compile(r"\b(?:refus\w*|block\w*|turned down|stopped)\b|拒绝|拦截|拦下|拦住", re.IGNORECASE)
@@ -1574,6 +1621,13 @@ Handler = Callable[[W, str], AnswerReply | None]
 # before the general ones whose words they share ("pays late" before "who is late", "debt service can we carry" before "debt
 # service", "payroll" before "is cash enough").
 QUESTIONS: tuple[tuple[str, re.Pattern[str], Handler], ...] = (
+    # borrowing against an invoice: before the debt and customer readings, whose words ("borrow", "invoice") it shares
+    ("FUN-07", _p(r"\b(?:borrow|finance|financing|advance|factor\w*|raise (?:money|cash|funds)|get (?:money|cash|funds|an advance))\b"
+                  r".{0,30}\b(?:against|on|using|with|for|from)\b.{0,30}\b(?:invoices?|receivables?)\b",
+                  r"\b(?:invoices?|receivables?)\b.{0,30}\b(?:be |get )?(?:financed|factored|borrowed against|used (?:as|for) (?:financing|a loan))\b",
+                  r"\bhow much\b.{0,20}\b(?:get|raise|borrow|advance|finance)\b.{0,30}\b(?:for|against|on)\b.{0,12}\binvoices?\b",
+                  r"(?:发票|应收)(?!.{0,4}最多).{0,8}(?:能|可以|能不能|可不可以).{0,8}(?:拿去|用来|去)?(?:融资|融|贴现|借钱|借款|变现|保理)",
+                  r"(?:用|拿).{0,8}(?:发票|应收).{0,8}(?:融资|融|借|变现|保理)"), a_invoice_financing),
     # the audit log: before every other reading, whose words ("log", "operations") it shares
     ("ACT-05", _p(r"\baudit\b.{0,12}\b(?:log|trail|chain|record)s?\b",
                   r"\b(?:log|ledger|chain|records?)\b.{0,25}\b(?:intact|tamper\w*|verif\w*|trustworth\w*|corrupt\w*|altered|modified)\b",
@@ -1788,7 +1842,7 @@ def answer(question: str, lang: str, ctx: Any) -> AnswerReply | None:
 
 
 # Questions owners asked beyond the top 30 (the live stress test of FLOW, 18 Oct 2026): answered the same way, but not among the 30.
-BEYOND_TOP30 = frozenset({"ACT-04", "ACT-05"})
+BEYOND_TOP30 = frozenset({"ACT-04", "ACT-05", "FUN-07"})
 
 
 def question_ids() -> list[str]:
