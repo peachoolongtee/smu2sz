@@ -1027,8 +1027,8 @@ measured availability and latency, not correctness or harm; section 03 gives its
 **Assurance and certification.** Every review was AI-assisted and internal; none was independent professional assurance.
 - **An audit and five red-team rounds by AI subagents (1 to 3 Oct)** found 39 issues. All are fixed, each with a regression
   test.
-- **An external red-team run (16 Oct)** ran 17 tests, including 100 live model calls, outside the team's sessions. Its report
-  is not in the repository; its results are its own and were not re-run, and its five observations were re-checked against
+- **An external red-team run (16 Oct)** ran 17 tests, including 100 live model calls. Its report is not in the
+  repository and who ran it is not recorded there, so we do not call it independent; its results are its own and were not re-run, and its five observations were re-checked against
   the code.
 - **The Security Lead** is an AI agent working in a separate session and worktree. It reproduced every finding, wrote each fix
   on its own branch with a regression test, re-ran its checks on each merged commit and certified it. It also wrote the fixes
