@@ -34,6 +34,7 @@ import { CostTable } from "./cost-table";
 import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { STRATEGY_ENVELOPE } from "@/lib/config";
 import { patchedHref } from "@/lib/selection";
+import { sendResultHead } from "@/lib/send-result";
 import { ChoicesTable, Recommendation, SectionNav, type SectionItem } from "./deal-overview";
 import { EnvelopePackages } from "./investigate";
 
@@ -89,13 +90,13 @@ function Announce({ text }: { text: string }) {
 /** What the buyer answered once a counter was sent (this tab's answer to the send; the deal's record carries it afterwards). */
 function SendResult({ n }: { n: NegotiationView }) {
   const { t } = useI18n();
-  const deal = n.outcome === "DEAL";
-  const accepted = n.rounds.find((r) => r.buyer_response === "ACCEPT");
+  // The buyer's yes says "on your books" only when the accept executed; one that waits for approval or was refused says so (FUND-2).
+  const head = sendResultHead(n);
   const summary = n.execution?.summary_text || null;
   return (
-    <div role="status" className="mt-4 rounded-tile border border-line bg-subtle px-4 py-3 text-sm" data-testid="deal-sent">
+    <div role="status" className="mt-4 rounded-tile border border-line bg-subtle px-4 py-3 text-sm" data-testid="deal-sent" data-accept={head.tone}>
       <p className="font-bold text-ink" data-testid="deal-negotiation">
-        {deal ? t("biz.deals.dealDone", { counter: accepted?.counter_label_when ?? accepted?.counter_label ?? "" }) : t("biz.deals.noDeal")}
+        {head.text ?? t(head.key, head.vars)}
       </p>
       {/* What ran, in the server's own words (the negotiation result's execution summary); the web adds no sentence of its own about the funding. */}
       {summary ? (
