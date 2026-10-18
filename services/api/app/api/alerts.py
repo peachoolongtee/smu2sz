@@ -20,6 +20,7 @@ from app.alerts import Alert, Severity, alerts, cure_operations, reconcile
 from app.api.auth import require_owner
 from app.api.decisions import record_fact
 from app.api.display import displayed
+from app.api.funding_report import act_summary, leg_views
 from app.api.presentation import (
     business_text,
     executed_words,
@@ -250,6 +251,9 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None, lang: str = "en"
 
     books_now = rt.store.get_state()
     agreements = {c.id: party_name(books_now, c.counterparty_id) for c in rt.store.commitments()}
+    legs = leg_views(books_now, [json.loads(op.model_dump_json()) for op in ops], [json.loads(r.model_dump_json()) for r in results],
+                     rt.day, lang)
+    run_status, run_message = act_summary(lang, legs, len(results), len(ops))
     return {
         "alert_id": alert_id,
         "decision_id": did,
@@ -260,6 +264,10 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None, lang: str = "en"
         # words for the ceiling, distances from today) in the page's language. A presentation read.
         # `event_text` / `event_detail`: the business sentence for what the operation did (`event_words`).
         "results": [_result_view(books_now, op, r, rt.day, lang, agreements) for op, r in zip(ops, results, strict=False)],
+        # What became of the steps after they all ran (SEC-28): the outcome and each step's own sentence, so a queued or refused step is
+        # never read as "done". Reporting only: the steps run as before.
+        "run_status": run_status,
+        "message_when": run_message,
         "executed": n(OperationStatus.EXECUTED),
         "pending_approval": n(OperationStatus.PENDING_APPROVAL),
         "refused": n(OperationStatus.REFUSED),
