@@ -28,7 +28,7 @@ from app.domain.models import (
 from app.domain.ports import LedgerStore
 from app.nl import ask as asking
 from app.nl import binding as page
-from app.nl import business, landing, plans, reads
+from app.nl import business, landing, plans, reads, smalltalk
 from app.nl import capabilities as cap
 from app.nl import classifier as clf
 from app.nl import lexicon as lx
@@ -362,6 +362,9 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         if t_.pending_clarification is not None:
             t_.pending_clarification.text = pc.text
         return t_
+    if "offtopic" in p.matched:  # a joke, the weather, trivia: the polite recovery, not "I can't do that" (which is for refused requests)
+        smalltalk.follow_language(ctx, text)
+        return reads.recovery(ctx)
     slots = p.slots
     if slots.counterparty_id is None and s.counterparty_id:
         slots = slots.model_copy(update={"counterparty_id": s.counterparty_id})
