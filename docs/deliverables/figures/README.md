@@ -1,6 +1,6 @@
 # Figures for the technical document
 
-Seven PNG figures for FLOW's final technical document. Each one is 2400 px wide (8 in at 300 dpi) on white. Each has a
+Eight PNG figures for FLOW's final technical document. Each one is 2400 px wide (8 in at 300 dpi) on white. Each has a
 matplotlib source in `src/` that regenerates it. The style lives in `src/flowstyle.py`:
 
 - **Palette:** the FLOW brand from `apps/web/app/globals.css`. Brand blue `#0368e9`, ink `#24324a`, purple `#9252dc`,
@@ -31,3 +31,15 @@ uv run --no-project --with matplotlib --with pillow python fig1_architecture.py
 | `fig5-heldout-results.png` | The compiler's held-out results, each labelled as unseen or tuned on: no misread message was accepted without the owner after ADR-0005. | `src/fig5_heldout_results.py` | First run and live DeepSeek rows: `services/api/evals/accuracy_summary.md` (1 Oct 2026, 389cfd9). Today rows and form baseline: `../evidence/EVIDENCE_PACK.md` section 1 (dev 975e082f, 17 Oct 2026) |
 | `fig6-contract-reading.png` | Reading Chinese contracts, by format: 98% on the tuned batch, 75% on the held-out batch, 86% after the fixes, and nothing from scans or photos, which have no OCR. | `src/fig6_contract_reading.py` | Scoring logs of 16–17 Oct 2026 (`b2fix/b1-redact.log`, `b2fix/b2-redact.log`, `contract-cn2/mismatches.csv` = `b2fix/b2-base.log`). These are not in the repo, so the script quotes the per-format rows. |
 | `fig7-security-results.png` | The attack catalogue: 279 stored cases by class (128 API, 151 chat), none violating the defined harm oracles; all reached their path, 120 of 128 API cases stopped by the named control. | `src/fig7_security_results.py` | `services/api/evals/security/latest_report.json` (regenerated on the round-five batch, 18 Oct 2026) |
+| `fig-eval-classes.png` | FLOW's accuracy results grouped by evidence class: unseen held-out first runs, the same sets after tuning on their failures, recorded model replays and live provider calls, each with what its own oracle scores wrong. | `src/fig_eval_classes.py` | Values printed in the script: `services/api/evals/heldout3_report.md`, `heldout2_report.md`, `heldout3_live_deepseek_report.md`; offline re-runs on `571ea64f`, 18 Oct 2026 (`../submission/work/eval/offline_reruns_20261018.json`); contract field scores (`../submission/work/eval/contracts_*_fields.json`); the 18 Oct live router grades (`../submission/work/eval/live_router_outcomes.json`) |
+
+**Alt text, `fig-eval-classes.png`.** A horizontal bar chart in four labelled groups. Unseen held-out, first run (blue):
+buyer messages held-out 3, 52% of verdicts right (33 of 63), with 4 of 8 autonomous accepts wrong; held-out 2, 60% (28 of
+47), 2 wrong accepts; owner wording held-out part, 89% (127 of 142), 3 wrong topics. After tuning on failures (purple):
+held-out 3, 70% (44 of 63), 0 of 1 accept wrong; the same against today's policy, 79% (50 of 63); held-out 2, 81% (38 of
+47), 0 of 2 accepts wrong; owner wording tuning part, 98% (199 of 203), 1 wrong topic; owner-question bank, 53% of in-books
+turns answered (228 of 427), 0 wrong. Recorded DeepSeek replay (grey): contracts batch 2 first reading, 75% of fields (215
+of 285), 12 wrong values and 18 stage items matching no key item; batch 2 after fixes, 86% (hatched, tuned); batch 1, 98%
+(hatched, tuned). Live DeepSeek calls (amber): held-out 3 on 1 Oct, 67% (42 of 63), no wrong accepts; Ask router answers
+on 18 Oct, 67% right (22 of 33), 1 wrong and 10 partial. A note says each bar is a share of its own row's denominator and
+rows with different oracles do not compare.

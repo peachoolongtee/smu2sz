@@ -1,0 +1,31 @@
+{
+ "build": "docs/sub-evaluation @ 571ea64f (= origin/docs/techdoc-chat-fixes), 18 Oct 2026",
+ "environment": "Windows 11, Python 3.12.14 via uv; LLM_MODE=cache DEMO_MODE=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory; no network, no live model, .env not read",
+ "caveat": "the full evaluation ran while the owner-question harnesses ran in parallel on the same machine, so its latency figures are inflated and are not quoted as performance",
+ "full_evaluation": {
+  "command": "uv run --project services/api python scripts/evaluate.py --out <scratch>/full",
+  "seconds": 707,
+  "targets_missed": 0,
+  "financial_exactness": "67/67",
+  "covenant_capex_golden": "27/27",
+  "boundaries": "20/20",
+  "runnable_optimality": "26/26",
+  "router_flags_vs_oracle": "26/26",
+  "e9_gap_all_lever_baseline": "9/26 (saving vs line first, all levers: -3,491.40 yuan over 21; not like-for-like, see EVIDENCE_PACK section 5)",
+  "default_offers_suite_fixtures_heldout": "45/50 verdicts, material 0/36 (held-out 1: relabelled and tuned on, not independent)",
+  "intent_accuracy_default_set": "40/47 (was 42/47 on 975e082f)",
+  "slot_accuracy": "30/30",
+  "scripted_tasks": "49/49 (88 turns)",
+  "no_deal_e5": "7/7",
+  "attacks_api_harm": "0/128",
+  "latency_in_process_contended": {"router_p50_p95_ms": [79, 259], "nl_turn_p50_p95_ms": [78, 2973], "scene1_p50_p95_ms": [4834, 6040]}
+ },
+ "heldout3_offers": {"verdict_agreement": "44/63", "form_baseline": "56/63", "compiler_equals_form_outcome": "50/63", "material_errors": "3/51", "silent_material_errors": 4, "abstention_precision": "14/16", "abstention_recall": "14/15", "autonomous_accepts": 1, "wrong_autonomous_accepts": 0, "labels_today_policy_disagrees_with": ["H3-A03", "H3-A04", "H3-A07", "H3-A08", "H3-N6B", "H3-T01", "H3-T01Z"], "compiler": "rules-v1 on all 66"},
+ "heldout2_offers": {"verdict_agreement": "38/47", "form_baseline": "40/47", "compiler_equals_form_outcome": "44/47", "material_errors": "0/37", "silent_material_errors": 0, "abstention_precision": "12/14", "abstention_recall": "12/12", "autonomous_accepts": 2, "wrong_autonomous_accepts": 0, "labels_today_policy_disagrees_with": ["H2A01_EMAIL_080", "H2A02_WECHAT_ZH_080", "H2A04_TYPO_085", "H2A06_PARTIAL_070", "H2P05_EARLY_PLUS_REBATE", "H2I01_OVERRIDE_EARLY", "H2I03_ZH_RESERVE_ZERO"], "compiler": "rules-v1 on all 49"},
+ "autonomy_funnel": {"command": "scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2 --out <scratch>", "messages": 115, "eligible_acceptable_today": 14, "accepted_alone_correctly": 3, "escalated_unnecessarily": 11, "escalated_correctly": 47, "countered_or_rejected_alone": 54, "wrong_autonomous_accepts": 0, "owner_interactions": 58},
+ "owner_question_bank": {"command": "services/api: uv run python scripts/owner_questions_baseline.py --out <scratch>", "turns": 503, "answered": 303, "partial": 46, "wrong": 0, "declined": 154, "in_books_turns": 427, "in_books_answered": 228, "in_books_partial": 45, "in_books_declined": 154, "not_in_books_turns": 76, "not_in_books_correctly_declined": 75, "questions_answered_in_every_wording": "62/122", "plans_proposed_awaiting_go_ahead": 3, "side_effects": {"verdicts_stored": 2, "security_events": 4}},
+ "everyday_wording": {"command": "services/api: uv run python scripts/owner_questions_general.py --part all --out <scratch>", "all": "326/345 right, 4 wrong, 15 miss", "heldout_part": "127/142 right, 3 wrong, 12 miss", "tuning_part": "199/203 right, 1 wrong, 3 miss", "critical_turns": 0, "change_vs_b4167053": "one tuning item ('are we going to be able to pay our bills this month') now gets the new pay-everyone answer LIQ-10, which the label (LIQ-01) scores wrong"},
+ "judge_pack": {"command": "uv run --project services/api python scripts/judge_eval.py --out <scratch>/judge/judge-report.md", "tasks": "49/49", "attacks": 279, "api": 128, "chat": 151, "harm": 0, "api_detection": "97.66%", "all_detection": "70.61%", "chain": "VALID", "tampered_copy": "rejected", "note": "the committed services/api/evals/judge/judge-report.md still reports the older 259-case run"},
+ "router_and_card_tests": {"command": "pytest tests/nl/test_ask_router.py tests/nl/test_router_tools.py tests/certification/test_ask_router_boundary.py tests/nl/test_answer_card.py tests/security/test_nl_attacks.py", "result": "452 passed, 1 skipped (433 passed on b4167053)"},
+ "attack_catalogue_compiler_paths": {"source": "services/api/evals/security/latest_report.json", "rules-v1": 78, "compromised-model (scripted)": 4, "recorded model (fixture-cache)": 0}
+}
