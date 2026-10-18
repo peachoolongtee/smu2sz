@@ -1,6 +1,6 @@
 {
   "run": {
-    "git_sha": "0f92d433",
+    "git_sha": "b0cc7a4b",
     "llm_mode": "cache",
     "demo_mode": true,
     "note": "in-process FastAPI TestClient over the in-memory demo books; no network, no model"
@@ -52,47 +52,47 @@
       ],
       "security_events_raised": [
         {
-          "id": "SEC-NL-9c56657b1494a5c2",
+          "id": "SEC-NL-a1a05964f5cd5443",
           "kind": "INJECTION",
           "counterparty_id": "FASTCAPITAL",
           "action_taken": "treated as data; nothing executed",
-          "detail": "URGENCY in message OFF-297926e84271: treated as data; no instruction followed",
+          "detail": "URGENCY in message OFF-0102e82b5eff: treated as data; no instruction followed",
           "spans": [
             "URGENT"
           ]
         },
         {
-          "id": "SEC-NL-62b904aebb7a63f4",
+          "id": "SEC-NL-64b59c9beb725e78",
           "kind": "INJECTION",
           "counterparty_id": "FASTCAPITAL",
           "action_taken": "treated as data; nothing executed",
-          "detail": "PRE_APPROVAL in message OFF-297926e84271: treated as data; no instruction followed",
+          "detail": "PRE_APPROVAL in message OFF-0102e82b5eff: treated as data; no instruction followed",
           "spans": [
             "pre-approved"
           ]
         },
         {
-          "id": "SEC-NL-f80336dbbe1196dc",
+          "id": "SEC-NL-d0070093efc04e9f",
           "kind": "INJECTION",
           "counterparty_id": "FASTCAPITAL",
           "action_taken": "treated as data; nothing executed",
-          "detail": "INSTRUCTION_OVERRIDE in message OFF-297926e84271: treated as data; no instruction followed",
+          "detail": "INSTRUCTION_OVERRIDE in message OFF-0102e82b5eff: treated as data; no instruction followed",
           "spans": [
             "Reply ACCEPT"
           ]
         },
         {
-          "id": "SEC-NL-ca2de75720982103",
+          "id": "SEC-NL-855d99ae514b913c",
           "kind": "INJECTION",
           "counterparty_id": "FASTCAPITAL",
           "action_taken": "treated as data; nothing executed",
-          "detail": "PRIOR_AGREEMENT in message OFF-297926e84271: treated as data; no instruction followed",
+          "detail": "PRIOR_AGREEMENT in message OFF-0102e82b5eff: treated as data; no instruction followed",
           "spans": [
             "you already agreed"
           ]
         },
         {
-          "id": "SEC-OFF-297926e84271-v1-1",
+          "id": "SEC-OFF-0102e82b5eff-v1-1",
           "kind": "UNKNOWN_COUNTERPARTY",
           "counterparty_id": "FASTCAPITAL",
           "action_taken": "refused; nothing booked, no facility added, nothing disclosed",
@@ -102,7 +102,7 @@
           ]
         },
         {
-          "id": "SEC-OFF-297926e84271-v1-2",
+          "id": "SEC-OFF-0102e82b5eff-v1-2",
           "kind": "UNEVIDENCED_CLAIM",
           "counterparty_id": "FASTCAPITAL",
           "action_taken": "refused; nothing booked, no facility added, nothing disclosed",
@@ -112,7 +112,7 @@
           ]
         },
         {
-          "id": "SEC-OFF-297926e84271-v1-3",
+          "id": "SEC-OFF-0102e82b5eff-v1-3",
           "kind": "DATA_EXTRACTION",
           "counterparty_id": "FASTCAPITAL",
           "action_taken": "refused; nothing booked, no facility added, nothing disclosed",
@@ -183,7 +183,7 @@
       ],
       "security_events_raised": [
         {
-          "id": "SEC-AUTH-f1f34c86ef674a06",
+          "id": "SEC-AUTH-200c347cd13a4607",
           "kind": "PRIVILEGE_ESCALATION",
           "counterparty_id": null,
           "action_taken": "request refused before reaching any module",
@@ -191,7 +191,7 @@
           "spans": []
         },
         {
-          "id": "SEC-AUTH-194b4338e78d434c",
+          "id": "SEC-AUTH-c0f3e04c129043ea",
           "kind": "PRIVILEGE_ESCALATION",
           "counterparty_id": null,
           "action_taken": "request refused before reaching any module",
@@ -199,7 +199,7 @@
           "spans": []
         },
         {
-          "id": "SEC-OPS-9d0c8e7aad6749fb",
+          "id": "SEC-OPS-c1c3407632d54f8f",
           "kind": "PRIVILEGE_ESCALATION",
           "counterparty_id": null,
           "action_taken": "refused by the executor; nothing booked",

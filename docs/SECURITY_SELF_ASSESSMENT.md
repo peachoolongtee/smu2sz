@@ -4,9 +4,9 @@ International AI Track | Security Self-Assessment
 
 | | |
 | --- | --- |
-| Team name | [TEAM: team name] |
+| Team name | ISMOGGER |
 | Competition track | International AI Track, Topic E (SME Finance Copilot) |
-| Submission date | [TEAM: submission date] |
+| Submission date | 20 October 2026 |
 
 **Document control.** Version 3.0, 17 Oct 2026. This assessment describes one build and nothing else: the **assessed build** in the release manifest below. Every status in it ("in the assessed build", "fixed", "open") is a statement about that build. Work done after it is not described as present.
 
@@ -695,7 +695,7 @@ Everything runs offline. The metrics are computed from the run, not asserted.
   - no zero-retention or training opt-out header;
   - where the provider processes the data;
   - how long the provider keeps it.
-- **Making live transmission visible.** The web app should say so whenever live mode is on [TEAM: confirm the indicator, or state that live mode is not demonstrated].
+- **Making live transmission visible.** The web app should say so whenever live mode is on. Live mode is not demonstrated: the demo, the demo video and every evidence run use `LLM_MODE=cache` (recorded readings, no network), and the web app's "Live API" label means a connection to the FastAPI service, not a live model.
 
 FLOW never attaches the books, mandate, reserve floor, facility limits, funding menu or other buyers' terms to a model request. A message can still contain such figures if a person typed them into it.
 
@@ -1019,7 +1019,7 @@ Every evidence file of the assessed build is in `docs/security/evidence/2026-10-
 | E6 | 0 wrong-and-material on the language boundary (recorded and scripted answers) | `python ../../scripts/certify_language_boundary.py --backend cache` and `--backend fake` | cache: 0 wrong-and-material, 1 wrong-harmless; fake: 0 wrong-and-material, 3 wrong-harmless (231 items each) | `lb_cache.txt`, `lb_fake.txt`, `language_boundary/` |
 | E7 | concurrency invariants on PostgreSQL 17 | `TERMSLEDGER_TEST_DATABASE_URL=<local database> pytest tests/concurrency` (three runs); the guard tests | 3 of 3 clean (31 passed, 10 on PostgreSQL each); guards 10 passed | `pg_concurrency_*.txt`, `pg_guards.txt` |
 | E8 | dependency scans; CSP in a browser | `pnpm audit --prod --json`; `pip-audit`; `csp_check.mjs` against a production build | 0 production advisories; `braces` (development only); pip-audit clean; 16 pages with the nonce policy, 0 violations, 0 page errors, injected handler and `javascript:` URL blocked | `pnpm_audit_*.json`, `pip_audit.txt`, `csp_browser.json` |
-| E9 | external run observations | the run's own report | as reported | [TEAM: report location] |
+| E9 | external run observations | the run's own report | as reported | held by the owner; not in the repository (section 02, external red-team run) |
 
 Earlier certifications keep their own folders: `docs/security/evidence/2026-10-14/`, `2026-10-16/` and `2026-10-17/dev-719c9dcf/`. Before 17 Oct, shard results were recorded as exit codes, not counts.
 
