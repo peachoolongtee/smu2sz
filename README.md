@@ -14,10 +14,14 @@ FinTechathon 2026 · International AI Track · Topic E: SME Finance Copilot · T
 > lenders and the bank feed are simulated, all data is synthetic (`fixtures/`), and no real money moves. FLOW is decision
 > support under the owner's own signed limits, not a lender, broker or adviser.
 
+> **Runs offline with one command.** After a one-time install, `pnpm demo` needs no account, no VPN, no API key and no
+> foreign service: it works in mainland China as delivered. The optional live-model mode (`pnpm demo --live-llm`) needs a
+> DeepSeek key in your shell.
+
 ![A buyer's request in FLOW: the verdict, why it cannot be accepted as asked, and the priced choices](docs/deliverables/screenshots/shot2-deal-decision.png)
 
 <sub>A buyer asks for 60-day terms, a 1.2% early-payment discount and a rebate. FLOW shows why the package cannot be accepted
-as asked, prices two counter-offers, and sends nothing without the owner.</sub>
+as asked and prices two counter-offers; the owner chooses which to send.</sub>
 
 **Contents:** [Project Overview](#project-overview) · [Environment and Dependencies](#environment-and-dependencies) ·
 [Installation and Execution](#installation-and-execution) · [What it does](#what-it-does) ·
@@ -409,4 +413,4 @@ compliance.
 
 Built by **Team ISMOGGER** for FinTechathon 2026 (International AI Track, Topic E), submitted 20 October 2026.
 
-Licence: to be decided by the team. There is no `LICENSE` file yet, so no licence is granted.
+Licence: all rights reserved (see [`LICENSE`](LICENSE)). The competition's organisers and judges may view, run and evaluate the code for judging. Third-party components keep their own licences.
