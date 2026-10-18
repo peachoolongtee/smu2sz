@@ -391,7 +391,9 @@ model never decides, prices, negotiates, writes an answer or executes.
 never attached, and a test on the compiler's imports keeps it so. The question router sees only the redacted question and the
 tool menu, and a test checks that its prompt is byte-identical whatever the books hold. In live mode every model call first
 redacts bank and card numbers, phones, emails, credit codes, ID and passport numbers and labelled addresses; redaction is
-pattern-based, so names, amounts and unlabelled addresses still reach the provider (PRIV-4, PRIV-5).
+pattern-based, so names, amounts, unlabelled addresses, messaging handles (e.g. WeChat IDs) and document filenames still
+reach the provider (PRIV-4, PRIV-5); `tests/security/test_model_privacy_paths.py` checks all five live paths send none of
+the redacted identifier types and that no log line holds them.
 
 **Three ways to run FLOW, never mixed in our results:** the web app on recorded mocks (the screenshots here); the real engine
 offline with the rules grammar (the demo, the tests and every evaluation figure unless stated); and the real engine with a live
@@ -656,7 +658,7 @@ several legs is not. The owner is told each leg's actual outcome (funded, waitin
 resumes legs, so atomicity across legs remains a disclosed limitation and recovery is manual (read Activity, compensate, ask
 again).
 
-**Owner control, the single-operator model and an external audit checkpoint.** {OWNER_CONTROL_TEXT} {CHECKPOINT_TEXT}
+**Owner control, the single-operator model and an external audit checkpoint.** The owner can pause FLOW's agent at any time (`POST /agent/pause`, owner token; `POST /agent/resume` to undo). While paused, every operation requested on the agent's or a buyer's authority is refused before it reaches the executor's gates, and each refusal is recorded as a security event; the owner's own operations and bank-feed receipts still run. The pause and the resume are entries on the hash-chained operations log, so the switch survives a restart. It does not revoke or replace the mandate: mandate revocation and renewal remain offline owner steps. The pause is API-only in this build. FLOW supports one operator: the owner signs the mandate offline and decides every Tier-2 item; the agent acts only inside that mandate at Tier 1 and can never decide an approval, change the mandate or run a Tier-3 operation. One owner credential is a single point of compromise for everything inside the signed limits; it cannot widen them. A second approver above a threshold is future work. The operations log is hash-chained. The owner can save a manual checkpoint of the chain head (entry count, head hash, day) with `scripts/verify_evidence.py --checkpoint-save` and keep it outside the database; a later export verified against it shows any truncation, rollback or rewrite of entries up to that point, and accepts entries appended after it. This is tamper evidence, not tamper-proofing: an administrator who can also change the kept checkpoint, or who changes the log after the latest checkpoint, is not detected by it. Checkpoints are manual; there is no external anchoring service.
 
 ### Protection against prompt injection, privilege escalation and privacy leakage
 
@@ -720,7 +722,7 @@ tests passed, 0 failed; 279 cases, 0 harm; PostgreSQL concurrency 3 of 3; 479 mo
 ([docs/security/CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md)). Disclosed with it: REG-8 (Low), REG-9 (Info), CT-2b (Low), and SEC-27 and SEC-28 (Medium),
 the last two deferred by the owner. **The submission build is not yet certified.** REG-8, REG-9 and CT-2b are fixed on it by the
 Security Lead's round-six commit `563de405`, and re-certification has been requested. It also adds the SEC-28 reporting fix
-({SEC28_COMMIT}), Ask FLOW's new answers, the classifier's read-intent routing, the Cash page's plan without a permanent source,
+(`f52870d1`), Ask FLOW's new answers, the classifier's read-intent routing, the Cash page's plan without a permanent source,
 the JSON 500 and `--live-llm` forcing redaction. The checks run on the submission commit are in Table V (Appendix B).
 
 **Table 7. Where FLOW may run, and what stands in the way.**
