@@ -12,6 +12,7 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 18 Oct | `5941e95a` (dev: the owner pause, funding report, small talk, pay everyone, the consent narrowing, round six) | everything since `70f23ac5` | **NOT CERTIFIED**: every automated check passes, but PAY-1 (Medium, consent bound to a plan not shown) is open; fixed by `sec/round-seven` |
 | 18 Oct | `70f23ac5` (dev: round five, the owner-approved engine half; **the final assessed build**) | everything since `6d2b6941` | **CERTIFIED** for scope S; REG-8 (Low) disclosed |
 | 18 Oct | `6d2b6941` (dev: batches 7 to 10; round five not merged) | everything since `85309b63` | **CONDITIONAL**: certified for scope S only with `FEATURE_CONTRACT_TERMS` off (CT-1, CT-2 open) |
 | 17 Oct | `85309b63` (dev: batches 5 and 6, code of `3f0ed53e`) | everything since `29fa0ea2` | **CERTIFIED** for scope S; ASK-1, ASK-2, REG-1 to REG-7 disclosed |
@@ -49,6 +50,43 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
   `app.api.decide.plan`, so it ran the real (runnable) plan and failed without testing the guard. Patched at the new site it passes, and
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
+
+## `5941e95a` (dev): NOT CERTIFIED, 18 Oct; superseded by round seven
+
+Since `70f23ac5`:
+- round six;
+- the owner's pause of the agent (`/agent/pause`, `/agent/resume`);
+- the funding report and claims wording;
+- small talk, "Can I pay everyone?" and the consent narrowing;
+- a wording change in `verifier/counters.py`;
+- `verify_evidence --checkpoint-save`;
+- the LICENSE.
+
+Evidence of the run is in the Security Lead's scratchpad (`cert5941`); it is not committed, because the build is not certified.
+
+**Automated checks:** all pass.
+
+| Check | Result |
+| --- | --- |
+| Full suite | 11,341 passed, 0 failed |
+| Catalogue | 0 harm on 279 cases |
+| Sweep | 0 policy violations; only the three pause routes are new, and every non-owner is refused on them |
+| Language boundary | 0 wrong-and-material |
+| PostgreSQL | 3 of 3 |
+| Scans | clean |
+| Mock browser suite | 479 passed |
+
+**Code reviews:**
+- **Sound:** the consent grammar narrowed and did not widen; the pause is owner-only, enforced in the executor, survives a restart and is chained; all 16 verdicts and the golden values are identical to `70f23ac5`; `verify_evidence` is not weakened.
+- **Found:**
+  - PAY-1 (Medium): "Can I pay everyone?" showed one plan and saved another, and "go ahead" ran the saved one;
+  - PAY-2 and PAY-3 (Low);
+  - PAUSE-1 (Low / Medium): the bank-feed key could still draw while the agent was paused;
+  - APR-1 (Low);
+  - PAUSE-2 (open; one process required);
+  - LOG-2 and LOG-3 (Info).
+
+**Verdict: NOT CERTIFIED.** `sec/round-seven` (bee9c50d) fixes PAY-1 to PAY-3, PAUSE-1 and APR-1. Its gate: full suite 11,368 passed, 0 failed; mock 479 passed. Its merge commit is the next build to certify.
 
 ## `70f23ac5` (dev): CERTIFIED for scope S, 18 Oct: the final assessed build
 
