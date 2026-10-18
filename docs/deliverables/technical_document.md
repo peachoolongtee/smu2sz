@@ -149,7 +149,7 @@ them in order.
 | **Receivables** (`/receivables`) | Records a payment; copies a chase message | What each invoice nets after financing; a payment's effect: the rest stays open, a financed invoice repays its lender first, and the reconciliation's reading |
 | **Activity** (`/activity`) | Reads what happened | Every operation and security event, newest first, with filters that hide but never remove, the chain check, the evidence per entry, and a *Reconciliation* tab |
 | **Approvals** (`/approvals`) | Approves or declines | One card per request, with its terms, the stored quote and today's price if it moved. No "approve all" |
-| **Ask FLOW** (header, side panel, `/ask`) | Asks in English or Chinese | Speaks first; answers from the books as cards with links to the page that shows the answer; proposes plans that run only on "go ahead" |
+| **Ask FLOW** (header, side panel, `/ask`) | Asks in English or Chinese | Speaks first; answers from the books as cards with links to the page that shows the answer; proposes plans that run only on "go ahead"; the full page holds the conversation in one card |
 | **Your limits** (`/limits`); **Security and evidence** (`/trust`) | Reads the signed limits in plain words; downloads the record | What FLOW may do alone, what waits and what never happens; the evidence export, verifiable offline; the security events and the FastCapital scene |
 | **Demo** (`/demo`, Demo mode) | Plays the six-scene story; moves the clock; loads other books | The story on the demo company, operator tools and the engine views (mandate, cash line, funding, verdict, ledger, alerts, reconciliation, security) |
 
@@ -347,6 +347,18 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
 - **A question never cancels a waiting plan.** Asked about an action while a plan waits for "go ahead" ("should we draw
   ¥100,000 on the line?"), FLOW says that the earlier plan is still waiting, what it does and what it costs, and that "go
   ahead" runs that plan, not what was just asked about.
+- **A terms question prices the terms asked for.** "From 45 to 60 days", "60 days instead of 45" or 账期从45天改成60天 is
+  read for the terms asked for apart from the ones they replace (to, instead of, 改成, 延长到). Day counts the words do not
+  tell apart are asked back, never guessed, and the days of an early-payment window ("2% off if they pay in 10 days") are not
+  terms. Terms no longer than the buyer's current ones are never priced and never called acceptable: FLOW says what the buyer
+  is on today and asks for the longer terms to test. The answer, the router's tool and the what-if share one writer.
+- **"Can I pay everyone?"** "Can I pay everyone?" or "Can I pay all my bills this month?" adds every outflow in the window
+  (this month, or the next 30 days when none is named): payroll, suppliers, loan payments and the rest. It checks them against
+  the reserve and against zero on the conservative forecast Home draws, and says yes or no, the first day below the reserve,
+  the day below zero and the lowest point. When cash falls short, the answer offers FLOW's plan with its cost and saves it as
+  "fund the cash gap" does, so the owner's "go ahead" runs it, or queues it for approval, through the executor and the
+  mandate checks. The answer itself runs nothing and adds no execution path, and it never replaces a different kind of plan
+  that waits.
 - **Everyday wording.** After the literal patterns, a scored matcher reads casual, misspelt or worried wording in both
   languages ("can my company survive this month?", 我们撑得过这个季度吗) and answers only when one question clearly wins. A
   horizon longer than the 120-day forecast is answered on the forecast and says so. A question about the business that no
@@ -355,9 +367,10 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
   three of 40 read-only tools and fill their typed slots; code answers. It sees only the redacted question, fenced as data,
   and the tool menu, never the books. Its output is validated strictly: a canary check, exact JSON with no extra or duplicate
   keys, known tools, every slot checked against its schema twice. One bad call rejects the whole response, and a rejection,
-  timeout, provider error or cache miss falls back to the honest "I cannot answer that yet" with the nearest read. It runs
+  timeout, provider error or cache miss falls back to the honest "I cannot answer that yet" with the nearest read. For a
+  terms question, code reads the day count from the owner's own words, whatever number the model copied into the slot. It runs
   for the owner only, behind `FEATURE_ASK_ROUTER`, and only in live mode: the flag is on in `pnpm demo`, but no routes are
-  recorded, so offline it changes nothing. Logs keep a hash of the question, never its text. The ADR is still *proposed*
+  recorded, so offline it changes nothing; `pnpm demo --live-llm` runs it live (section 05). Logs keep a hash of the question, never its text. The ADR is still *proposed*
   and the Security Lead's review is pending.
 - **Every id is checked against the registry.**
 - **An unmatched request gets the nearest capability**, not a flat refusal.
@@ -391,7 +404,7 @@ when the mandate forbids new borrowing, and no repayment while a reserve breach 
 
 **Ask FLOW, as the owner uses it.**
 - **Where.** A field in the page header, a side panel on every page, and a full page (`/ask`) for the same conversation.
-  Each page suggests questions it can answer. *New conversation* clears it here and on the server, so a later "go ahead"
+  The full page holds the conversation in one card: the thread scrolls inside it and the composer is pinned at its foot. Each page suggests questions it can answer. *New conversation* clears it here and on the server, so a later "go ahead"
   runs nothing.
 - **FLOW speaks first.** When the panel or page opens on an empty conversation, FLOW names what needs the owner and its
   priced cure, laid out like an answer, in the owner's words and with no internal ids (the opener).
@@ -412,7 +425,10 @@ operation from model output.
 
 **State.**
 - **Sessions.** A chat session holds only typed references: the last offer and verdict, a pending plan, a pending
-  clarification. Since SEC-21, it continues only for the caller that opened it.
+  clarification. Since SEC-21, it continues only for the caller that opened it. When a read-only answer asks which customer,
+  the session keeps the tool and the slots already read, such as the terms asked for (`Session.pending_ask`). The owner's next
+  turn, if it is a short reply naming one customer, finishes the question with those slots and no second model call; any other
+  turn drops it. A what-if clarification likewise resumes the words that raised it, not the answer ("Foshan").
 - **Books.** The store holds today's position. Commitments hold agreed changes not yet realised, and every projection runs on
   the two combined (ADR-0006).
 - **Time.** Time is a simulated day that moves only through the clock. Each move posts scheduled flows, issues recurring
@@ -575,6 +591,8 @@ monthly covenants:
 
 It ranks the feasible structures by total financing charges. On the synthetic ¥600,000 machine it selects the lease
 (¥92,327.32 of charges). The 36-month loan is cheaper (¥53,206.14) but leaves cash ¥3,144.62 below the reserve for three days.
+A figure that does not apply, such as the payment of a structure the funding menu rules out, shows a dash, and the result
+column says why the structure is ruled out.
 
 The search tests **one structure at a time**. A 36-month loan plus a three-day bridge on the credit line (interest ¥1.65)
 would have no breach and cost about **¥39,000 less** than the lease, but FLOW does not try that combination today. So the
@@ -927,8 +945,12 @@ The launcher starts the API with in-memory books, recorded model readings and th
 against it. It prints "Ready. Open http://localhost:3000" when both are up. The owner sign-in is prefilled with the published
 demo token. It switches on everything the demo shows: contracts and their set-up in the books (ADR-0014), customer exposure,
 the buy side, and the strategy views, whose envelope it computes in the background after each reset or setup. The question
-router's flag is on too, but the router acts only in live mode.
+router's flag is on too, but the router acts only in live mode. `pnpm demo` stays offline, on the cached model outputs.
 
+- `pnpm demo --live-llm` calls the model provider live for one run instead of the cached outputs: Ask FLOW's router answers
+  the questions the built-in answers miss, and new documents and buyer messages are read by the model. It uses the owner's
+  own key from the shell (`DEEPSEEK_API_KEY`, else `ANTHROPIC_API_KEY`), never `.env`, and does not start without one. Each
+  call is paid, and text is redacted before it leaves. It does not combine with `--mock`.
 - `pnpm demo:mock` runs the web app alone on recorded data.
 - `pnpm demo:keep` keeps the books in a local file, so uploads, confirmations and the day survive a restart; `pnpm demo:keep --fresh` starts over.
 - `pnpm demo:blank` starts with empty books, to set up your own company in six steps.
@@ -1002,7 +1024,7 @@ These are open production blockers. The supported way to run FLOW is the local l
 *Limits of the demo (by design):*
 - **Everything outside FLOW is simulated.** Lenders, buyers, rates and the bank feed are simulated, and no real money moves.
 - **Recorded readings only.** The demo replays recorded model readings. A new document gets the rules reading unless live mode
-  is on.
+  is on (`pnpm demo --live-llm`).
 - **The plain demo forgets on restart.** `pnpm demo` keeps the books in memory, so restarting it starts fresh. `pnpm demo:keep` keeps them in a local SQLite file instead.
 - **The buyer side on the owner's own books.** On books opened through setup, the buyer channel and the simulated buyer cover
   the first two customers, and the *Buyer messages* card holds the demo company's messages only. The full story is recorded
@@ -1189,11 +1211,16 @@ promised early payment. FLOW then proposes repaying the drawn credit line, and i
 
 <!-- figure: screenshots/shot10-ask-answer.png | Figure 12. Ask FLOW, day 0: "Are we safe?" The card leads with the answer, shows three key figures (¥405,000 funding needed, −¥105,000 lowest cash, below the reserve from day 12), says what FLOW's plan costs, and links to the forecast and the plan. -->
 
-**8. Ask FLOW.** *Screens:* the header's question field, the side panel, the full page (`/ask`). *The owner* opens the panel,
+**8. Ask FLOW.** *Screens:* the header's question field, the side panel, the full page (`/ask`), which holds the conversation
+in one card. *The owner* opens the panel,
 and FLOW speaks first, naming what needs attention and what fixing it costs. The owner asks "Are we safe?" and gets an answer
 card (Figure 12); 我们安全吗？ is answered in Chinese, and each link opens the page that shows the answer. "Fund the cash gap"
 proposes a plan with its operations and cost; *Yes, run it* runs exactly those, and a correction such as "make it 0.8%"
-amends a pending counter. A queued request is approved by "approve APR-000001", or by "approve it" right after it was shown.
+amends a pending counter. "Can I pay everyone?" adds the ¥505,000 due in the next 30 days and answers no: cash falls below the
+reserve from day 12 and below zero from day 20. It offers FLOW's ¥3,113.93 plan, and "go ahead" runs it like the fund-the-gap
+plan. 账期从45天改成60天，我该接受吗？ prices the 60 days asked for, not the 45 they replace: ¥24,326.92 of forward concessions
+for Foshan, above the ¥5,000 limit, so FLOW would counter. When the books do not point at one customer, FLOW asks which one,
+and the reply "Foshan" answers with the same terms. A queued request is approved by "approve APR-000001", or by "approve it" right after it was shown.
 "Sign a personal guarantee" is refused for everyone, asked as a question too, and "add a ¥80,000 bill to the forecast" is refused because chat never
 records facts. *New conversation* starts over.
 
