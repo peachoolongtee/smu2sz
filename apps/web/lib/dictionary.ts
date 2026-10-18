@@ -38,6 +38,7 @@ export const en = {
   "deal.left.compare": "Compare your funding options",
   "common.retry": "Retry",
   "common.none": "None",
+  "common.na": "—", // a figure that does not apply (a structure that cannot be costed): a dash, never the word "None"
   "common.yes": "Yes",
   "common.no": "No",
   "common.copy": "Copy to clipboard",
@@ -3774,6 +3775,7 @@ export const zh: Record<DictKey, string> = {
   "deal.left.compare": "比较您的融资方案",
   "common.retry": "重试",
   "common.none": "无",
+  "common.na": "—",
   "common.yes": "是",
   "common.no": "否",
   "common.copy": "复制到剪贴板",
