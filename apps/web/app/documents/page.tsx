@@ -280,6 +280,14 @@ function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterpar
   const offerTyped = canAdd && Boolean(needle) && !found && near.length === 0;
   const askWho = waiting !== null && !chosen;
 
+  // A file waits and the name typed is now, exactly, a company on the books (the list arrived after the owner typed it, or the
+  // typing finished): that is the company chosen, so the file is read now. A partial name never reads; the owner still picks.
+  const exact = matches.length === 1 ? matches[0].id : "";
+  useEffect(() => {
+    if (waiting && exact && !busy) void upload(waiting, exact);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- read once when the exact company appears for the waiting file
+  }, [waiting, exact]);
+
   // The server's sentence for the customer added stays a few seconds, quietly.
   useEffect(() => {
     if (!notice) return;

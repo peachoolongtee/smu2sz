@@ -82,6 +82,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, Query
 
 from app.api.auth import require_owner
+from app.api.caches import books_generation
 from app.api.customer_overview import customer_context
 from app.api.deal_offers import open_deals
 from app.api.decisions import Context, _agreed_terms, approval_decision, load_context
@@ -861,7 +862,8 @@ def _cached(rt: Runtime, lang: Lang, since_day: int | None, home: dict[str, Any]
     flags = tuple(sorted(get_settings().features.__dict__.items()))
     key = cache_key(state, mandate, max(rt.day, state.as_of_day), tuple(rt.store.commitments()), "worklist", lang, since_day,
                     inputs_from_store(rt.store).digest(), flags, rt.store.change_marker(), tuple(rt.documents),
-                    tuple((r.id, r.status, r.superseded_by) for r in rt.store.contract_guard_rows()))  # a contract confirmed moves no count
+                    tuple((r.id, r.status, r.superseded_by) for r in rt.store.contract_guard_rows()),  # a contract confirmed moves no count
+                    books_generation())  # the counts start again after a reset: an earlier set of books' rows never come back
     hit = _CACHE.get(key)
     if hit is not None:
         return hit

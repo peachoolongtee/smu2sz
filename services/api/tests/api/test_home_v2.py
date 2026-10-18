@@ -119,7 +119,7 @@ def test_before_the_plan_the_action_the_chart_and_the_links(api: TestClient) -> 
                   {"label": "Approval", "value": "No approval needed"}],
         "primary": {"label": "Run the funding plan", "href": "/cash#cash-options"},
         "secondary": {"label": "Compare", "href": "/cash#cash-options"}, "control": "RUN_PLAN",
-        "approval_text": "No approval needed", "approval_needed": False}
+        "approval_text": "No approval needed", "approval_needed": False, "covered": False}  # a plan to run: never the covered card
     chart = v2["chart"]
     assert chart["scope_title"] == "COMPANY CASH FORECAST"
     assert chart["legend"] == [{"label": "Current books · no new funding", "kind": "current"},
@@ -161,7 +161,9 @@ def test_after_the_plan_the_action_is_quiet_and_the_chart_has_the_one_line(api: 
         "title": "Your cash is covered on the plan that ran.",
         "text": "Next: ¥255k arrives in 3 days; Foshan pays ¥420k in 32 days (owed). Your worklist still holds 1 item for you.",
         "facts": [], "primary": None, "secondary": None, "control": None,
-        "approval_text": None, "approval_needed": False}
+        "approval_text": None, "approval_needed": False,
+        # the covered card is the server's decision and words (never "covered" under the minimum: tests/api/test_home_covered.py)
+        "covered": True, "covered_pill_text": "All clear", "covered_title_text": "You're covered!"}
     assert v2["chart"]["legend"] == [{"label": "Current books · the plan ran", "kind": "current"}]
     assert v2["chart"]["lowest_inspector"] == {
         "day_text": "The lowest point · in 30 days", "projected_display": "¥300,000", "minimum_display": "¥300,000",

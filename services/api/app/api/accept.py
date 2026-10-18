@@ -354,7 +354,10 @@ def _answer(rt: Runtime, offer_id: str, lang: str, *, accepting: bool) -> dict[s
         verdict = ds.verdict
         receipt_block = (decline_receipt(lang, ctx.state, verdict, buyer=party_name(ctx.state, ds.offer.counterparty_id))
                          if verdict is not None and ds.offer is not None else None)
-    return {"decision": detail, "receipt": receipt_block, "execution": {"summary_text": detail["execution"]["summary_text"]}}
+    # what the owner does next when the agreement left a reserve gap: these paths fund nothing themselves (`funding_next_step`)
+    next_step = (detail.get("agreement") or {}).get("funding_next") if accepting else None
+    return {"decision": detail, "receipt": receipt_block, "execution": {"summary_text": detail["execution"]["summary_text"]},
+            "next_step": next_step}
 
 
 # ---------------------------------------------------------------- the routes

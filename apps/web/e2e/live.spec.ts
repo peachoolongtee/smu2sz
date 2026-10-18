@@ -756,6 +756,20 @@ test("Deals: books set up with a customer and an open invoice, no contract, show
   await post("/demo/reset", {});
 });
 
+test("setup step 2: Fill from an agreement names the row after the lender the agreement names, never the uploaded file (demo recording, 18 Oct)", async ({ page, request }) => {
+  const post = ownerPost(request);
+  await post("/demo/reset?scenario=blank", {});
+  await page.goto("/setup?step=2");
+  await page.getByTestId("setup-fill-agreement").click();
+  const picker = page.getByTestId("setup-docs-LENDER_AGREEMENT");
+  await picker.locator('input[type="file"]').setInputFiles(join(__dirname, "..", "..", "..", "fixtures", "contracts", "mb-cl-2026-031-credit-line-agreement.pdf"));
+  await picker.getByRole("button", { name: "Read it" }).click();
+  const name = page.getByRole("textbox", { name: "Name" }).first();
+  await expect(name).toHaveValue("Pearl River Commercial Bank, Foshan Branch", { timeout: 30_000 });
+  await expect(name).not.toHaveValue(/\.pdf$/);
+  await post("/demo/reset", {});
+});
+
 test("own books: a contract given before its company is read once the customer is picked, and once confirmed it is on Deals with its summary and invoices (owner's report, 17 Oct)", async ({ page, request }) => {
   const post = ownerPost(request);
   await post("/demo/reset?scenario=blank", {});

@@ -20,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 from datetime import date, timedelta
 from fractions import Fraction
 from typing import Any, Literal
@@ -254,13 +255,52 @@ def _buyer_prefill(rec: ContractRecord, start: date | None, lg: Lang) -> dict:
     return {"row": row, "facts": facts, "progress": progress}
 
 
-def _lender_prefill(rec: ContractRecord) -> dict:
+# A document title that is only the name of the file it came from ("mb-cl-2026-031-credit-line-agreement.pdf").
+_FILE_NAME = re.compile(r"\.[A-Za-z0-9]{2,5}$")
+_PASTED_TITLES = ("Pasted document", "粘贴的文件")
+
+
+# The lender as the agreement's parties clause defines it: 'between Pearl River Commercial Bank, Foshan Branch (the "Bank") and ...',
+# '贷款人：珠江商业银行'. Only a party the clause gives a lender's role; the name is the document's own words.
+_DEFINED_LENDER = (
+    re.compile(r"(?:\bbetween|[:：])\s+([A-Z][A-Za-z0-9&.,'’\- ]{2,100}?)\s*\(\s*(?:the\s+)?[\"“]?(?:Bank|Lender|Financier|Factor|Creditor)[\"”]?\s*\)"),
+    re.compile(r"(?:贷款人|贷款方|出借人|授信人)\s*[：:]\s*([^\s，,。；;（(]{2,40})"),
+)
+
+
+def _defined_lender(text: str) -> str | None:
+    for pat in _DEFINED_LENDER:
+        m = pat.search(text)
+        if m and (name := m.group(1).strip(" ,")):
+            return name
+    return None
+
+
+def _lender_label(rec: ContractRecord, lg: Lang) -> str:
+    """The name a "Fill from an agreement" row gets: the lender the reading found in the agreement (its own words, from the text: the term
+    sheet's lender, else the party its parties clause calls the bank or lender), else a neutral label after the document's title, never the
+    name of the file it was uploaded as."""
+    from app.contracts.parties import found_names
+
+    names = found_names(rec)  # a term sheet's lender, when the reading found it in the text (never the sender it fell back to)
+    if names:
+        return names[0]
+    if (defined := _defined_lender(rec.document.text)) is not None:
+        return defined
+    title = (rec.title or "").strip()
+    uploaded_as = rec.source.split(":", 1)[-1] if rec.source else ""
+    if title and title not in _PASTED_TITLES and title != uploaded_as and not _FILE_NAME.search(title):
+        return t(lg, f"Lender from {title}", f"{title}中的贷款方")
+    return t(lg, "Lender from the agreement", "协议中的贷款方")
+
+
+def _lender_prefill(rec: ContractRecord, lg: Lang) -> dict:
     f = rec.term_sheet.proposed_facility if rec.term_sheet else None
     if f is None:
         return {"row": None, "facts": []}
     kind = {FacilityKind.CREDIT_LINE: "CREDIT_LINE", FacilityKind.INVOICE_FINANCING: "INVOICE_FINANCING"}.get(f.kind, "LOAN_TO_APPLY")
     clean = next((c.clean_down_days for c in f.covenants if c.clean_down_days), None)
-    row = {"name": rec.title, "kind": kind, "limit": _yuan_input(f.limit_fen), "drawn": "", "rate_pct": _pct_input(f.rate_bp),
+    row = {"name": _lender_label(rec, lg), "kind": kind, "limit": _yuan_input(f.limit_fen), "drawn": "", "rate_pct": _pct_input(f.rate_bp),
            "fee_pct": _pct_input(f.fee_bp_per_advance) if f.fee_bp_per_advance else "",
            "advance_pct": _pct_input(f.advance_rate_bp) if f.advance_rate_bp else "", "lead_time_days": f.lead_time_days,
            "agreed": True, "clean_down_days": clean, "term_months": f.term_months, "document_id": rec.id}
@@ -272,7 +312,7 @@ def _doc_view(rec: ContractRecord, start: date | None, lg: Lang) -> dict:
             "status": rec.status.value, "from_setup": rec.id in _setup_docs}
     if rec.kind == DocumentKind.BUYER_CONTRACT:
         return {**base, **_buyer_prefill(rec, start, lg)}
-    return {**base, **_lender_prefill(rec)}
+    return {**base, **_lender_prefill(rec, lg)}
 
 
 def _usable_documents() -> list[ContractRecord]:

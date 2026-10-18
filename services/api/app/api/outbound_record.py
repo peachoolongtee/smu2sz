@@ -283,6 +283,11 @@ def outbound_view(ctx: Any, ds: Any, inp: Any, lang: str) -> dict[str, Any] | No
             view["status_text"], view["tone"] = t(lang, "The agreement is not in force.", "该协议未生效。"), "neutral"
         consequences, links = (_consequences(ctx, ds, buyer, lang) if ds.state in (DealState.AGREED, DealState.MISSED, DealState.FULFILLED)
                                else ([], [customer]))
+        from app.api.decisions import funding_next_step
+
+        if (step := funding_next_step(ctx, ds, lang)) is not None:  # recording the yes funded nothing: the gap and FLOW's plan for it
+            consequences = [*consequences, step["text"]]
+            links = [{"label": step["label"], "href": step["href"], "primary": True}, *links]
         view["consequences"], view["links"] = consequences, links
         view["consequences_title_text"] = t(lang, "What changes now", "接下来的变化")
     elif answer == "countered":
