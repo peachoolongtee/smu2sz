@@ -30,6 +30,11 @@ it lapses when either changes. It is never a claim of absolute security or zero 
 | `0fde33fd` (dev, 17 Oct: SEC-08 executor check, OUT-1b, RT-2, RT-1) | **GO** (certified 17 Oct, with the #161 test exception) | **NO-GO** until one tested deployment profile exists (below); revised 17 Oct after the external review: the conditions were never exercised on a deployment, and SEC-19 provenance is not shown on the accept card or approvals | **NO-GO** |
 | `fe56b357` (dev head, 16 Oct: final UI, R-10 rounding) | not certified: OUT-1 still present (the chat paths do not check the outside mark); R-10 reassessed, residual Low | NO-GO until OUT-1 is fixed | **NO-GO** |
 
+**Submission build (integration lead's note, not a gate decision).** The build submitted on 20 Oct is {SUBMISSION_COMMIT}. It
+extends `70f23ac5` with `sec/round-six` (REG-8, REG-9, CT-2b), the SEC-28 reporting fix and later product changes. All are listed
+in the self-assessment's Appendix E, "Submission build addendum". This gate has no verdict for that commit until the Security Lead
+re-certifies it. The S verdict above is for `70f23ac5`.
+
 **Conditions for S on `e8e270f8`:** loopback only; nobody but the presenter holds the demo credentials; the presenter does not approve
 a second agreement for a request already agreed (SEC-02 is fixed only on the branch); results shown are simulation results.
 
