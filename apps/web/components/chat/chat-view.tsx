@@ -354,7 +354,7 @@ function ChatViewInner({ variant }: { variant: ChatVariant }) {
   const showChips = !welcome && (empty || draft.trim() === "");
 
   return (
-    <div className={`flex min-h-0 flex-col gap-3 ${variant === "panel" ? "h-full" : ""}`}>
+    <div className={`flex min-h-0 flex-col gap-3 ${variant === "panel" ? "h-full" : variant === "full" ? "flex-1" : ""}`}>
       {business || variant === "full" ? null : (
         <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
           <Segmented<NlActor>
@@ -414,7 +414,7 @@ function ChatViewInner({ variant }: { variant: ChatVariant }) {
         tabIndex={0}
         data-testid="chat-log"
         className={`min-h-0 space-y-5 overflow-y-auto rounded-tile px-1 py-2 outline-none focus-own ${
-          variant === "panel" ? "flex-1" : variant === "full" ? (welcome ? "" : "max-h-[calc(100dvh-19rem)] min-h-[12rem]") : "max-h-[60dvh] min-h-[20rem]"
+          variant === "panel" || variant === "full" ? "flex-1" : "max-h-[60dvh] min-h-[20rem]"
         }`}
       >
         {welcome ? (
