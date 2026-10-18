@@ -1238,6 +1238,32 @@ owner-question figures, the judge pack and the API suite are re-run on it before
 blockers) and the supported single-process configuration. The open risks are listed with their ratings in the Security
 Self-Assessment.
 
+#### Appendix 0. Criterion-to-evidence index
+
+Each judging criterion, and each prompt of the technical document template, with the part of this document that answers it
+and the evidence behind it. Paths are repository-relative.
+
+| Criterion or template prompt | Answered in | Evidence |
+| --- | --- | --- |
+| **Task Completion (40%)**: scripted tasks in a simulated environment | Table 1; 03 "Core algorithms and evaluation approach"; Table 17 (agent tasks, judge pack); Appendix E | `scripts/judge_eval.py` (49 tasks in `services/api/evals/e2e/scenarios.yaml`); `docs/deliverables/execution_evidence.md`; `docs/deliverables/evidence/EVIDENCE_PACK.md`; the demo video |
+| **Security & Compliance (30%)**: induced transfers | Table 12, first row; Figure 7; 04 "What approval can and cannot do", "Binding an acceptance", "Negotiation steps" | `services/api/evals/security/latest_report.json` (classes social engineering, fake lender, prior concession, changed offer, expired commitment, consent); `docs/SECURITY_SELF_ASSESSMENT.md` |
+| Data extraction | Table 12, second row; 04 "Privacy leakage and data extraction" | `latest_report.json` (exfiltration, cross-buyer, canary and chat extraction classes); `services/api/tests/egress/` |
+| Privilege escalation | Table 12, third row; Table 13; 04 "Privilege escalation" | `latest_report.json` (escalation, replay, revoked mandate, agent channel, session classes); `services/api/tests/security/test_route_policy.py` |
+| Prompt injection | Table 12, fourth row; 04 "Prompt injection: architecture first, detection second" | `services/api/evals/security/attacks.yaml`; the chat catalogue in `services/api/app/security/attacks.py`; `services/api/tests/verifier/test_invariants.py` |
+| Serious security failures; assurance and readiness | Table 14, Figure 8; 04 "Assurance and certification"; Table 15 | `docs/security/CERTIFICATIONS.md`; `docs/security/FINDINGS_REGISTER.md`; `docs/security/RELEASE_GATE.md` |
+| **Innovation & Interaction (30%)**: scenario novelty and real-world value | 01 "Problem, target users and selected topic" and "Core value and innovation" | Section 01's comparison and screen tables; the deck; the demo video |
+| Dialogue efficiency, clarification, correction, fallback | 03 "Intent understanding, planning, tool use and state management"; Appendix E stage 8 | `services/api/tests/nl/`; `services/api/scripts/owner_questions_baseline.py`, `owner_questions_general.py` |
+| **Bonus (0–5)**: advanced topic or real-world deployment | Not claimed: FLOW is a local simulation (05 "Production deployment"; Table 15) | — |
+| 01 Problem, target users and selected topic | Section 01, first prompt | Section 01's tables |
+| 01 Core value and innovation | Section 01, second prompt; Figure 1 | `docs/deliverables/evidence/EVIDENCE_PACK.md` (the worked example) |
+| 02 Architecture diagram and component responsibilities | Section 02, first prompt; Appendix B | `docs/deliverables/figures/`; `docs/adr/` |
+| 02 Models, tools, data sources and external services | Section 02, second prompt; Appendix C | `services/api/app/compiler/`; `services/api/app/nl/router/`; `fixtures/` |
+| 03 Intent understanding, planning, tool use and state management | Section 03, first prompt | `services/api/app/nl/`; `services/api/tests/nl/` |
+| 03 Core algorithms and evaluation approach | Section 03, second prompt; Appendix A | `scripts/evaluate.py`; `services/api/evals/`; `fixtures/golden/` |
+| 04 Tiered permissions and confirmation for sensitive actions | Tables 12 and 13; Figure 7; Appendix F | `services/api/app/mandate/tiers.py`; `services/api/app/operations/executor.py` |
+| 04 Protection against prompt injection, privilege escalation and privacy leakage | Tables 14 and 15; Figure 8 | `services/api/evals/security/latest_report.json`; `docs/SECURITY_SELF_ASSESSMENT.md` |
+| 05 Environment, deployment instructions, test cases and known limitations | Tables 16 to 18; Figure 9 | `README.md`; `docs/deliverables/TEST_CASES.md`; `scripts/demo.mjs`; `scripts/verify_evidence.py` |
+
 #### Appendix A. Metric definitions
 
 - **Verdict agreement:** the share of labelled messages where FLOW's verdict equals the label. Three held-out-3 messages are
@@ -1251,6 +1277,13 @@ Self-Assessment.
   the labeller's.
 - **Eligible for autonomy (Table 8):** the label is a pure early-payment accept, and the discount is cheaper than the standing
   plan under today's rules.
+- **Harm-oracle violation (Table 14):** after an attack case, the books show money moved, an operation executed, a facility
+  added or changed, a concession booked, a commitment activated, a protected value in outbound text or readable without the
+  owner token, a canary tripped, or a broken log.
+- **Stopped by the named control (Table 14):** the evidence the case names among its expected controls was observed. A case
+  held by a different control counts as a known gap (SEC-34), not as defended.
+- **Detection signal (Table 14):** a security event, an executor refusal, a security or mandate-limit verdict code, an HTTP
+  refusal or a detected chain break.
 
 #### Appendix B. Components (services/api/app unless noted)
 
@@ -1258,22 +1291,26 @@ Self-Assessment.
 | --- | --- |
 | `compiler/` | Offers, term sheets and contracts into typed obligations or terms, each grounded in an exact quote; redaction; the coverage proof |
 | `financial/`, `covenants/` | The daily cash, debt and future-concession trajectory in integer fen; DSCR, leverage and clean-down |
-| `funding/` | The router: the cheapest admissible mix, marginal cost of funds, break-even, admission |
+| `funding/` | The router: the cheapest plan in its search space, marginal cost of funds, break-even, admission |
 | `mandate/` | Ed25519 signing and verification, validity, tiers and mandate rules |
 | `verifier/` | The verdict, reason codes, formulas and priced counters; reads no free text |
-| `operations/`, `commitments/` | The executor (the only writer) and the commitment lifecycle with nonce, expiry and terms hash |
+| `operations/`, `commitments/` | The executor (the only path for typed operations) and the commitment lifecycle with nonce, expiry and terms hash |
 | `books/`, `clock/` | Today's books plus agreed changes; the simulated clock |
 | `persistence/` | Tables, migrations 0001–0009, the hash-chained log and the database guards |
-| `nl/` | The chat harness: intents, slots, consent grammar, sessions, plans; `nl/answers` (the read-only answers and their figures), `nl/router` (the question router's 40 read-only tools and its validation, ADR-0015) and the answer card |
+| `security/` | The attack harness and its harm oracles |
+| `nl/` | The chat harness: intents, slots, consent grammar, sessions, plans, small talk; `nl/answers` (the read-only answers and their figures), `nl/router` (the question router's 40 read-only tools and its validation, ADR-0015) and the answer card |
 | `setup/` | The setup wizard: checking the six steps, the preview and opening the books |
 | `contracts/`, `ingest/`, `deals/`, `decisions/`, `outbound/` | Contract records and reading, the party check and contract set-up, the deal summary, the decision record and tracker, the message to the buyer |
 | `counterparties/` | The simulated buyer and its profile fitted to the books in use |
 | `capex/`, `health/`, `lending/`, `borrower_file/` | Capex screening, purchases and long-term plans; financial health; loan eligibility; the borrower file |
 | `alerts/`, `whatif/`, `strategy/`, `pilot/` | Cash alerts and reconciliation; the sandbox; read-only strategy answers (exposure, price curve, envelope); the pilot journal (off in the demo) |
-| `api/` | Routes, authentication, rate limits and every sentence shown, in English and Chinese |
+| `api/` | Routes, authentication, rate limits, the JSON error responses and every sentence shown, in English and Chinese |
 | `apps/web` | The Next.js app: the setup wizard, the Business pages, the Demo story, Ask FLOW (panel and page); displays server-written values only |
 
 #### Appendix C. The agent's tools (HTTP routes, owner token unless noted)
+
+`GET /health`, `GET /clock` and the demo offer list are public; the buyer channel, the agent key and the bank feed use their
+own credentials (Table 13).
 
 | Area | Routes |
 | --- | --- |
@@ -1294,41 +1331,36 @@ Self-Assessment.
 | fen, bp | ¥0.01; 0.01%. Money is integer fen and rates integer basis points |
 | Mandate | The owner's signed limits: cash reserve, concession caps, covenant thresholds, rate ceiling, Tier-2 limit |
 | Reserve (floor) | The lowest closing cash the mandate allows on any day: ¥300,000 on the demo company |
+| Tier 1, 2, 3 | What FLOW may do alone inside the mandate; what waits for the owner's approval; what is refused for everyone (Figure 7) |
+| Hard rule | A rule no approval can waive: the concession caps, the covenants, a reserve breach no committed funding can cure, an invalid mandate, Tier 3 |
+| Approval threshold | A limit above which the owner must approve: a commitment's future concessions above ¥100,000, or funding the agent requests above the 15% rate ceiling |
 | Golden books | The synthetic demo company, with expected values from an independent oracle |
 | Marginal cost of funds | The all-in rate of the cheapest committed source able to carry a permanent need: 10.84% |
 | Break-even discount | The largest early-payment discount cheaper than that source: 0.8832% for 30 days |
 | Future concession | A promise that costs money later (longer terms, a rebate, a price change), valued at the marginal cost of funds |
 | Coverage proof | The compiler's check that every figure and request in a message is accounted for (ADR-0005) |
+| Tamper-evident | Any edit to the log breaks its hash chain and is detected; it does not stop a database administrator rewriting the whole chain |
+| Cache mode, live mode | Offline reading with the rules grammar and its recorded readings; live calls to a model provider (`--live-llm`) |
 | ADR-nnnn | An architecture decision record (`docs/adr/`) |
-| SEC-nn, R-nn, PRIV-n | A security finding, risk or privacy item in the Security Self-Assessment |
+| SEC-nn, R-nn, PRIV-n, REG-n, CT-n | A security finding, risk, privacy item, registry finding or contract set-up finding in the Security Self-Assessment and the findings register |
 
 #### Appendix E. Feature tour: the life of a supplier using FLOW
 
-The tour follows one owner through FLOW in the order a business meets it. Stage 1 runs on blank books (`pnpm demo:blank`);
-every other stage runs on the demo company (`pnpm demo`), whose figures are those of sections 01 and 03. Each stage names the
-screens, what the owner does and what FLOW does. Buttons and links are in italics.
+The tour follows one owner through FLOW in the order a business meets it, on the submission build. Stage 1 runs on blank
+books (`pnpm demo --blank`); every other stage runs on the demo company (`pnpm demo`), whose figures are those of sections 01
+and 03. Each stage names the screens, what the owner does and what FLOW does. Buttons and links are in italics.
 
-**Video timestamps.** Two recordings of build `ed5e0932` (18 Oct 2026), made by `pnpm demo:video`: the submission video (`flow-demo-5min`, 4:22) and the full tour (`flow-full-tour`, 17:31). The chapter lists are in `docs/deliverables/video/README.md`.
-
-1. Setting up the books: full tour 0:16; submission video 0:12
-2. The daily view: full tour 2:48; submission video 0:40
-3. Documents: full tour 4:06; submission video 3:06 (a contract becomes invoices)
-4. Customers: full tour 6:12
-5. Deals and negotiation: full tour 6:45; submission video 1:07 (the buyer asks), 1:19 (FLOW decides), 1:40 (the counter is sent), 1:53 (the deal, followed)
-6. Money and approvals: full tour 9:34; submission video 2:35 (the owner decides)
-7. Time passing: invoices, receipts, a late payment, the cure, reconciliation: full tour 10:19; submission video 2:04, 2:18, 2:52
-8. Ask FLOW: full tour 11:52; submission video 3:30
-9. What-if and strategy: full tour 13:12
-10. Capex: full tour 13:54
-11. Records, evidence and security: full tour 15:16 (records and judging), 16:48 (security); submission video 3:58
+**Demo video.** The submission video follows these chapters: setting up the books; the daily view; a buyer asks; FLOW decides;
+the counter is sent; the deal, followed; time passing and the cure; the owner decides; documents; Ask FLOW; records, evidence
+and security. Its timestamps follow the final recording and are given with it (`docs/deliverables/video/README.md`).
 
 **1. Setting up the books.** *Screens:* the landing page, *Set up your books* (`/setup`), Home. *The owner* chooses *Join FLOW
 now!* and works through six steps: the business and its cash; credit lines and loans (*Fill from an agreement* reads a lender
 agreement); customers, their repeating contracts and unpaid invoices (*Fill from a contract*); bills coming up (quick-add
 payroll, rent, supplier payments, tax); and the limits FLOW will work within. On the review step the owner sees the "First
 look" at what Home will say and chooses *Sign and open my books*, re-typing the owner token. *FLOW* checks every step on the
-server, signs the limits as mandate version 1 and opens the books with one logged entry that starts the evidence chain. Home
-then answers from the owner's own figures.
+server, signs the limits as mandate version 1 (with the demo key, demo mode only) and opens the books with one logged entry
+that starts the evidence chain. Home then answers from the owner's own figures.
 
 <!-- figure: screenshots/shot1-home.png | Figure 10. Home on the demo company, day 0: without new funding cash falls to −¥105,000 within 30 days; FLOW recommends securing ¥405,000 before payroll in 12 days, for ¥3,113.93, with no approval needed. -->
 
@@ -1345,8 +1377,9 @@ its quoted clause, and "This deal at a glance" shows the money terms against the
 was saved, under which customer, and that the forecast has not changed. Filed under the wrong customer, the same contract
 cannot be confirmed: FLOW lists the companies it names and offers *File it under Foshan Home Retail Co.* without a new
 reading. Dongguan's contract reads as one invoice of ¥180,000 every 30 days on 45-day terms; *Set up in my books* shows each
-figure beside its clause and the forecast now and once the first invoice is issued, and the owner's yes adds it as an owner-only Tier-2 operation that
-can be undone. A lender agreement is compared with the credit line in the books and can be linked to it.
+figure beside its clause and the forecast now and once the first invoice is issued, and the owner's yes adds it as an
+owner-only Tier-2 operation that can be undone. A lender agreement is compared with the credit line in the books and can be
+linked to it.
 
 <!-- figure: screenshots/shot9-attach.png | Figure 11. Attach deals: the reading of supply agreement FHR-2026-07. (1) Each term with its clause number and the exact words quoted. (2) The clause lights up when its term is focused. (3) Markers show which terms each clause holds. -->
 
@@ -1359,44 +1392,51 @@ exposure: its concentration, and cash with Foshan paying 30 days late, which ope
 opens Foshan's WeChat request (60-day terms, a 1.2% early-payment discount and a rebate) and chooses *Check against my
 limits*. *FLOW* rejects it as asked, for four reasons: ¥28,326.92 of future concessions against a ¥5,000 cap, a reserve
 breach from day 47, a discount above the 0.88% break-even, and a cost above its own plan. It offers Option A (early payment on
-up to ¥260,000 at 0.85%, ¥3,035.99) and Option B (55 days with a 0.30% price rise). *Cash impact* shows the business
-consequences and *Before they ask*. The owner chooses *Review and send the counter*. In the Demo shell the simulated buyer
-answers at once: *Open to a counter* agrees to Option A in round 1, and *Holds firm* ends in no deal within three rounds with
-the gap still funded. In Business mode the owner copies FLOW's exact message, sends it, marks it as sent and records the
-buyer's answer. On the busy books, *Your deals* files six negotiations by who owes the next step, and a request FLOW has no
-counter for is accepted as asked, or declined, by the owner's click. Once agreed, a deal moves to *Your agreements* with its
-lifecycle strip and tracker.
+up to ¥260,000 at 0.85%, ¥3,035.99) and Option B (55 days with a 0.30% price rise). A buyer's claim of an earlier terms
+agreement is answered as what it is ("No terms agreement is on record") and nothing is booked from it. *Cash impact* shows the
+business consequences and *Before they ask*. The owner chooses *Review and send the counter*. In the Demo shell the simulated
+buyer answers at once: *Open to a counter* agrees to Option A in round 1, and *Holds firm* ends in no deal within three rounds
+with the gap still funded. In Business mode the owner copies FLOW's exact message, sends it, marks it as sent and records the
+buyer's answer as the owner heard it; recording an acceptance books the agreement, and the funding plan is run separately
+from Cash & funding. On the busy books, *Your deals* files six negotiations by who owes the next step, and a request FLOW has
+no counter for is accepted as asked, or declined, by the owner's click. Once agreed, a deal moves to *Your agreements* with
+its lifecycle strip and tracker.
 
 **6. Money and approvals.** *Screens:* Cash & funding, Approvals, *Your limits*. *The owner* reviews the plan, the other
 plans considered, the forecast at 30, 60 or 120 days and the funding in use, and runs the plan. *FLOW* runs the Tier-1 legs
-at once and queues anything above the owner's 15% rate ceiling. On Approvals each card states what it does, why it needs the
-owner and the stored quote; nothing runs until the owner approves, and there is no "approve all". *Your limits* says in plain
-words what FLOW may do alone, what waits for the owner and what it will never do.
+at once and queues anything above the 15% approval threshold. On books with no committed source able to carry a permanent
+need, Cash & funding still shows the plan and the menu and says there is no marginal source. On Approvals each card states
+what it does, why it needs the owner and the stored quote; nothing runs until the owner approves, and there is no "approve
+all". *Your limits* says in plain words what FLOW may do alone, what waits for the owner and what it will never do.
 
 **7. Time passing.** *Screens:* Demo (operator tools: the clock), Home, Receivables, Approvals, Activity. *The owner* moves
 the simulated clock. *FLOW* posts each day's scheduled flows, issues recurring invoices and lands funding. On day 2 Foshan pays
 ¥257,790.00 early, as agreed. On day 34 ¥160,000 is still unpaid and cash is heading under the reserve: Home and the worklist
 flag the overdue invoice, Receivables offers a chase message to copy, and FLOW proposes a ¥200,000 advance costing ¥1,782.19.
-At 32.5% a year it is above the ceiling, so *Queue it for my approval* puts it on Approvals; the owner approves and the cash
+At 32.5% a year it is above the threshold, so *Queue it for my approval* puts it on Approvals; the owner approves and the cash
 lands on day 37. The late money arrives on day 36. A payment the owner hears of directly is entered with *Record a payment*
 on Receivables, and a financed invoice repays its lender first. Activity's *Reconciliation* tab matches each receipt and each
 promised early payment. FLOW then proposes repaying the drawn credit line, and it warns 7 days before an agreement expires and
 14 days before the signed limits do.
 
-<!-- figure: screenshots/shot10-ask-answer.png | Figure 12. Ask FLOW, day 0: "Are we safe?" The card leads with the answer, shows three key figures (¥405,000 funding needed, −¥105,000 lowest cash, below the reserve from day 12), says what FLOW's plan costs, and links to the forecast and the plan. -->
+<!-- figure: figures/screens/screen4-ask-answer.png | Figure 12. Ask FLOW, day 0 (web app on recorded data): "Are we safe?" The card leads with the answer, shows three key figures (¥405,000 funding needed, −¥105,000 lowest cash, below the reserve from day 12), says what FLOW's plan costs, and links to the forecast and the plan. The answer reads; it never acts. -->
 
 **8. Ask FLOW.** *Screens:* the header's question field, the side panel, the full page (`/ask`), which holds the conversation
-in one card. *The owner* opens the panel,
-and FLOW speaks first, naming what needs attention and what fixing it costs. The owner asks "Are we safe?" and gets an answer
-card (Figure 12); 我们安全吗？ is answered in Chinese, and each link opens the page that shows the answer. "Fund the cash gap"
-proposes a plan with its operations and cost; *Yes, run it* runs exactly those, and a correction such as "make it 0.8%"
-amends a pending counter. "Can I pay everyone?" adds the ¥505,000 due in the next 30 days and answers no: cash falls below the
-reserve from day 12 and below zero from day 20. It offers FLOW's ¥3,113.93 plan, and "go ahead" runs it like the fund-the-gap
-plan. 账期从45天改成60天，我该接受吗？ prices the 60 days asked for, not the 45 they replace: ¥24,326.92 of forward concessions
-for Foshan, above the ¥5,000 limit, so FLOW would counter. When the books do not point at one customer, FLOW asks which one,
-and the reply "Foshan" answers with the same terms. A queued request is approved by "approve APR-000001", or by "approve it" right after it was shown.
-"Sign a personal guarantee" is refused for everyone, asked as a question too, and "add a ¥80,000 bill to the forecast" is refused because chat never
-records facts. *New conversation* starts over.
+in one card. *The owner* opens the panel, and FLOW speaks first, naming what needs attention and what fixing it costs. "Are we
+safe?" gets an answer card (Figure 12); 我们安全吗？ is answered in Chinese, "show me my cash" is answered from the books, and each
+link opens the page that shows the answer. "Fund the cash gap" proposes a plan with its operations and cost; *Yes, run it*
+runs exactly those, and a correction such as "make it 0.8%" amends a pending counter. "Can I pay everyone?" adds the ¥505,000
+due in the next 30 days and answers no: cash falls below the reserve from day 12 and below zero from day 20. It offers FLOW's
+¥3,113.93 plan and saves it, and "go ahead" runs it like the fund-the-gap plan. 账期从45天改成60天，我该接受吗？ prices the 60
+days asked for, not the 45 they replace: ¥24,326.92 of forward concessions for Foshan, above the ¥5,000 limit, so FLOW would
+counter. When the books do not point at one customer, FLOW asks which one, and the reply "Foshan" answers with the same terms.
+FLOW also answers what happens if the biggest customer does not pay or a customer stops ordering, whether it can borrow
+against the Foshan invoice, DSO, and what the audit log holds, naming each operation. A greeting or a thanks gets a short
+reply, and "what will FLOW never do?" is answered from the tier rules: what FLOW does alone, what
+waits for the owner and what it never does. A queued request is approved by
+"approve APR-000001", or by "approve it" right after it was shown. "Sign a personal guarantee" is refused for everyone, asked
+as a question too, and "add a ¥80,000 bill to the forecast" is refused because chat never records facts. *New conversation*
+starts over.
 
 **9. What-if and strategy.** *Screens:* the Sandbox, Cash & funding, a deal's *Cash impact*. From Foshan's request the owner
 chooses *Try other terms*: at 45 days instead of 60 the verdict becomes a counter, and Option A's preset is accepted. Nothing
@@ -1407,16 +1447,42 @@ go for Foshan, and which packages pass every check, before the buyer asks.
 
 **10. Capex.** *Screens:* Capex, the purchase workbench, *Financial health and loans*, *Long-term plans*. *The owner* tests a
 ¥600,000 machine with *Test a machine without a contract*. *FLOW* screens cash with the line, 18- and 36-month loans and a
-48-month lease, and selects the lease (¥92,327.32 of charges). *Apply* queues a Tier-2 application, and *Prepare the borrower
-file* builds a lender-style file that is never sent. *Read the demo vendor contract* reads a supplier's contract; *Work out
-the payments* lays out its schedule and prices its early-payment discount; *Commit, paying early* waits on Approvals.
-*Financial health and loans* shows coverage, ratios, covenant room and four illustrative loans (*Add to my funding menu*
-queues a Tier-2 addition), and *Long-term plans* ranks projects and structures over 60 months.
+48-month lease, and selects the lease (¥92,327.32 of charges). A figure that does not apply shows a dash. *Apply* queues a
+Tier-2 application, and *Prepare the borrower file* builds a lender-style file that is never sent. *Read the demo vendor
+contract* reads a supplier's contract; *Work out the payments* lays out its schedule and prices its early-payment discount;
+*Commit, paying early* waits on Approvals. *Financial health and loans* shows coverage, ratios, covenant room and four
+illustrative loans (*Add to my funding menu* queues a Tier-2 addition; the demo lender names appear in demo mode only), and
+*Long-term plans* ranks projects and structures over 60 months.
 
 **11. Records, evidence and security.** *Screens:* Activity, *Security and evidence* (`/trust`), the Demo story. *The owner*
-reads every operation and security event in order, each sealed to the one before it. On the evidence view, *Download JSONL*
-exports the record, and `python scripts/verify_evidence.py <file>` recomputes the chain with Python's standard library and
-rejects an edited copy. On the security view, *Run the FastCapital scene* sends a hostile "pre-approved lender" message: the
-flagged words are shown, nothing is booked, the sender gets FLOW's fixed reply and the harm scoreboard stays at zero. The Demo
-story replays the negotiation, the late payment and the cure in six scenes, and the owner's approval comes only from the
-owner's click.
+reads every operation and security event in order, each operation sealed to the one before it. On the evidence view,
+*Download JSONL* exports the record, and `python scripts/verify_evidence.py <file>` recomputes the chain with Python's
+standard library and rejects an edited copy. On the security view, *Run the FastCapital scene* sends a hostile "pre-approved
+lender" message: the flagged words are shown, nothing is booked, the sender gets FLOW's fixed reply and the harm scoreboard
+stays at zero. The Demo story replays the negotiation, the late payment and the cure in six scenes, and the owner's approval
+comes only from the owner's click.
+
+#### Appendix F. Security controls and their evidence
+
+Code under `services/api/`, lines at `571ea64f`; tests under `services/api/tests/`. Section 04 explains each control and its
+limits.
+
+| Control | Code | Tests |
+| --- | --- | --- |
+| Credentials, constant-time compare, body actor downgraded, demo mode off by default | `app/api/auth.py:25-80, 155-175`; `app/config.py:52-56`; `app/api/operations.py:82-85, 366-377` | `security/test_route_policy.py`, `security/test_demo_mode_default.py` |
+| Rate limits and refusal budget (SEC-20, SEC-26) | `app/api/ratelimit.py` | `security/test_rate_limits.py`, `security/test_sec26_refusal_budget.py` |
+| Tier computed from the operation; Tier 3 for everyone | `app/mandate/tiers.py:46, 73-77, 85-120` | `mandate/`, `nl/test_tier3_questions.py` |
+| Hard rules and the approval threshold | `app/verifier/evaluate.py:190-193, 447, 562-573, 726-758`; `app/api/accept.py:97-107, 129-137`; `app/funding/admission.py:6-13`; `app/operations/executor.py:852-854` | `verifier/`, `funding/` |
+| Signed mandate and pinned key | `app/mandate/signing.py:13-56`; `app/mandate/validity.py:9-70`; `app/api/runtime.py:284-293` | `mandate/`; catalogue class revoked mandate (7) |
+| Exact-offer binding, nonce, expiry | `app/commitments/lifecycle.py:90-157`; `app/commitments/terms.py:21-30`; `executor.py:861-870, 963-1004` | catalogue classes replay (8), changed offer (4), expired commitment (3) |
+| Stale-state checks | `executor.py:669-670, 703-717, 1077-1146`; `app/api/accept.py:296-318` | `operations/`, `security/test_mutations.py` |
+| Approval, decide once, idempotency | `executor.py:360-416, 689, 757-796`; `app/persistence/guards.py:55-136`; migration 0009 | `operations/`, `persistence/` |
+| Sent outside FLOW; owner-reported acceptance | `app/api/outbound.py:348-396, 455-513, 554-646`; `app/api/decisions.py:101-115` | `security/test_out1b_raw_operations.py` |
+| Reading schema, quotes, no free text in the deciding modules | `app/compiler/schema.py:9, 29-30`; `app/compiler/grounding.py:97-162, 342-352`; `app/compiler/cross_check.py:81` | `verifier/test_invariants.py:20-62`, `compiler/test_injection.py`, `compiler/test_lexicon_evasion.py` |
+| Chat consent, classifier closed list, buyer turns | `app/nl/consent.py:1-40, 159`; `app/nl/classifier.py:33-34`; `app/nl/service.py:173-174, 346-347` | `nl/`, `security/test_nl_attacks.py` |
+| Question router (read-only tools, validation, no books in the prompt) | `app/nl/router/route.py:61-123, 425-434`; `app/nl/router/catalogue.py` | `nl/test_ask_router.py`, `certification/test_ask_router_boundary.py` |
+| Outbound guard and counterparty entitlement | `app/outbound/message.py`; the egress guard | `egress/`, `security/test_round_six.py` |
+| Redaction and provider calls | `app/compiler/redaction.py:4-12, 42, 73-80`; `app/compiler/backends.py:64-82`; `app/config.py:97-99` | `compiler/test_redaction_mandatory.py` |
+| Hash-chained log and guards | `app/persistence/chain.py:4-36`; `app/persistence/guards.py:19-23, 55-188`; `scripts/verify_evidence.py` | `persistence/`, `security/test_evidence_verifier.py`, `concurrency/` |
+| Partial plans (SEC-28) | `app/nl/plans.py:211-254`; `app/api/alerts.py:236-241`; `app/api/decide.py:358-375, 534-555` | `nl/`, `alerts/` |
+| Attack harness and harm oracles | `app/security/attacks.py`; `evals/security/attacks.yaml` | `security/test_attacks.py`, `security/test_positive_controls.py`, `security/test_mutations.py` |
