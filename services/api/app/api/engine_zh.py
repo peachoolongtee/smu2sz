@@ -19,6 +19,7 @@ import re
 from collections.abc import Callable, Sequence
 
 from app.api.financing_words import state_word
+from app.domain.claims import CLAIM_NOUNS_EN, CLAIM_NOUNS_ZH
 
 Rule = tuple["re.Pattern[str]", Callable[["re.Match[str]"], str]]
 
@@ -990,9 +991,24 @@ def _draw_requested(m: re.Match[str]) -> str:
     return f"{when_zh(m['w'])}提出提款申请；最终方案的规模和定价另行确定"
 
 
-@rule(r"Terms stay at (?P<d>\d+) days(?:, (?P<rebate>no rebate))?")
+_CLAIM_NOUN = "|".join(re.escape(n) for n in CLAIM_NOUNS_EN.values())
+_CLAIM_NOUNS = rf"(?:{_CLAIM_NOUN})(?: or (?:{_CLAIM_NOUN}))*"  # what a counter says is not on record: "rebate", "rebate or discount"
+
+
+def _claim_nouns_zh(nouns: str) -> str:
+    """The counter's English nouns ("rebate or payment-terms agreement") in Chinese ("返利或账期协议"); both come from one table."""
+    zh = {en: CLAIM_NOUNS_ZH[k] for k, en in CLAIM_NOUNS_EN.items()}
+    return "或".join(zh[n] for n in nouns.split(" or "))
+
+
+@rule(rf"No (?P<n>{_CLAIM_NOUNS}) is on record, so none applies")
+def _none_on_record(m: re.Match[str]) -> str:
+    return f"记录中没有{_claim_nouns_zh(m['n'])}，因此不适用"
+
+
+@rule(rf"Terms stay at (?P<d>\d+) days(?:, no (?P<n>{_CLAIM_NOUNS}))?")
 def _terms_stay(m: re.Match[str]) -> str:
-    return f"账期保持 {m['d']} 天" + ("，无返利" if m["rebate"] else "")
+    return f"账期保持 {m['d']} 天" + (f"，无{_claim_nouns_zh(m['n'])}" if m["n"] else "")
 
 
 @rule(rf"We will accept early settlement on up to (?P<amt>{M}) of this invoice at (?P<r>{PCT}), paid (?P<d>{DEADLINE})")

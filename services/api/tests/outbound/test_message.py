@@ -82,6 +82,43 @@ def test_every_term_the_buyer_asked_for_is_answered_and_never_left_to_everything
     assert "We are not able to offer the early-payment discount you asked for." in only_terms.clauses
 
 
+def _claim(quote: str, **kw) -> Obligation:
+    return Obligation(id="CTR-T-C", type=ObligationType.CLAIMED_PRIOR_CONCESSION, counterparty_id="BUYER-1",
+                      base=ObligationBase(kind=BaseKind.UNSPECIFIED), contingency=Contingency.CLAIMED_UNEVIDENCED,
+                      duration=Duration(kind=DurationKind.ONE_OFF), spans=[SourceSpan(doc_id="CTR-T", start=0, end=len(quote), text=quote)],
+                      confidence=0.9, **kw)
+
+
+@pytest.mark.parametrize(("claim", "en", "zh"), [
+    (_claim("the 2% rebate we agreed last month", rate_bp=200), "We are not able to offer the rebate you asked for.",
+     "我方无法提供贵方所要求的返利。"),
+    (_claim("the 60-day terms you agreed with us", target_terms_days=60),
+     "We have no record of an agreement on payment terms; payment terms on future invoices stay at 45 days.",
+     "我方没有关于账期的协议记录；今后发票的付款期限维持 45 天。"),
+    (_claim("上个月说好的60天账期", target_terms_days=60),
+     "We have no record of an agreement on payment terms; payment terms on future invoices stay at 45 days.",
+     "我方没有关于账期的协议记录；今后发票的付款期限维持 45 天。"),
+    (_claim("you promised us a 2% early payment discount", rate_bp=200), "We have no record of an agreement on a discount.",
+     "我方没有关于折扣的协议记录。"),
+    (_claim("the price cut we agreed", rate_bp=100), "We have no record of an agreement on prices.", "我方没有关于价格的协议记录。"),
+    (_claim("the deal we agreed"), "We have no record of the agreement you mention.", "我方没有贵方所提及协议的记录。"),
+])
+def test_a_claimed_agreement_is_answered_for_what_it_claims(claim: Obligation, en: str, zh: str) -> None:
+    for lang, want in (("en", en), ("zh", zh)):
+        msg = render(_counter(_discount()), _state(), buyer_name="B", terms_hash="h" * 64, valid_until_day=4, lang=lang, asked=[claim],
+                     current_terms_days=45)
+        assert msg.clauses[1:] == (want,)
+    assert "rebate" not in en or "2% rebate" in claim.spans[0].text  # only a claimed rebate is answered as a rebate
+
+
+def test_a_claimed_terms_agreement_without_known_terms_does_not_promise_a_number() -> None:
+    msg = render(_counter(_discount()), _state(), buyer_name="B", terms_hash="h" * 64, valid_until_day=4, lang="en",
+                 asked=[_claim("the 60-day terms you agreed with us", target_terms_days=60)])
+    assert msg.clauses[1] == ("We have no record of an agreement on payment terms; we are not able to change the payment terms on "
+                              "future invoices.")
+    assert len(msg.clauses) == 2
+
+
 @pytest.mark.parametrize(("duration", "scope"), [
     (Duration(kind=DurationKind.RECURRING_PERPETUAL), "future invoices"),
     (Duration(kind=DurationKind.RECURRING_BOUNDED, invoices=3), "the next 3 invoices"),
