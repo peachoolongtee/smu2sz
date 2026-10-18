@@ -26,6 +26,16 @@ from app.api.decisions import (
     sent_outside_conflict,
 )
 from app.api.display import displayed
+from app.api.funding_report import (
+    FUNDED,
+    NOT_FUNDED,
+    accept_head,
+    funding_clause,
+    funding_status,
+    leg_views,
+    outcomes,
+    refusal_reason,
+)
 from app.api.home import _alert_actions, _series, next_action
 from app.api.presentation import (
     RECOMMENDED_PLAN_KEY,
@@ -356,11 +366,12 @@ class NegotiateIn(BaseModel):
     state_version: int | None = None
 
 
-def _ops_for_plan(rt: Runtime, actions: list[FundingAction], key: str) -> list[dict]:
+def _ops_for_plan(rt: Runtime, actions: list[FundingAction], key: str) -> tuple[list[dict], list[dict]]:
     """Turn a committed funding plan into Tier-1 operations for the executor. Only a plan whose every leg is a draw or
     an advance gets here (`_runnable`): a buyer's early payment or a bill discount has no operation, and dropping it
-    would run part of a plan and call the gap funded."""
-    results = []
+    would run part of a plan and call the gap funded. Returns each leg's result and its payload (the reply is worded from what
+    each leg's status turned out to be); every leg is still sent, in order."""
+    results, payloads = [], []
     m = rt.store.get_mandate()
     for i, a in enumerate(actions):
         common = {"op_id": f"{key}-{i}", "idempotency_key": f"{key}-{i}", "mandate_version": m.version,
@@ -373,7 +384,8 @@ def _ops_for_plan(rt: Runtime, actions: list[FundingAction], key: str) -> list[d
         else:  # pragma: no cover - `_runnable` keeps such a plan out
             raise ValueError(f"{a.kind.value} on {a.facility_id} is not an operation the executor can run")
         results.append(json.loads(rt.executor.execute(op).model_dump_json()))
-    return results
+        payloads.append(json.loads(op.model_dump_json()))
+    return results, payloads
 
 
 _runnable = runnable  # the refused send's check, shared with the picture (`app.api.refusal`)
@@ -518,6 +530,9 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str =
                            "buyer_text": g.text_out})
         operations: list[dict] = []
         funding_ops: list[dict] = []
+        funding_legs: list[dict] = []
+        status_of_funding = NOT_FUNDED
+        accept_status: str | None = None
         commitment = None
         if t.outcome == Outcome.ACCEPT and t.accepted_counter_id:
             c = rt.executor.propose_commitment(verdict.id, expires_day=rt.day + 7, counter_id=t.accepted_counter_id)
@@ -525,26 +540,34 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str =
                                  requested_by=Actor.AGENT, source_verdict_id=verdict.id, day=rt.day,
                                  offer_id=offer.offer_id, offer_version=offer.version, terms_hash=c.terms_hash,
                                  nonce=c.nonce)
-            operations.append(json.loads(rt.executor.execute(accept).model_dump_json()))
+            accept_result = json.loads(rt.executor.execute(accept).model_dump_json())
+            operations.append(accept_result)
+            accept_status = str(accept_result["status"])
             commitment = rt.store.get_commitment(c.id)
             # The accept has executed: when it took effect, the counter's obligations are already live in the
             # books, so the gap is planned on the books as they now stand (never `accepted.obligations` again).
             # A queued (PENDING_APPROVAL) or refused accept is not live and leaves the books as they were.
             books = current_books(rt.store.get_state(), rt.store.commitments())
             gap_plan = plan(books.state, books.with_([]), mandate)
-            message = f"{t.accepted_counter_id} accepted; commitment recorded; remaining gap funded."
             accepted_label = option_label(by_id[t.accepted_counter_id].label, lang) if t.accepted_counter_id in by_id else ""
-            head_when = _t(lang, f"{accepted_label or 'The counter'} was accepted and the agreement is recorded",
-                          f"{accepted_label or '还价'}已被接受，协议已记录")
-            funded_when = _t(lang, "the remaining gap is funded.", "其余缺口已融资。")
+            now = rt.store.get_state()
+            why_en, why_lang = refusal_reason(now, accept_result, rt.day, "en"), refusal_reason(now, accept_result, rt.day, lang)
+            # the head is worded from the accept's own status (SEC-28): "recorded" only when it executed
+            head = (f"{t.accepted_counter_id} accepted; commitment recorded" if accept_status == "EXECUTED"
+                    else f"{t.accepted_counter_id} accepted by the buyer; the agreement waits for owner approval"
+                    if accept_status == "PENDING_APPROVAL"
+                    else f"{t.accepted_counter_id} accepted by the buyer; the agreement was not recorded"
+                    + (f" ({why_en})" if why_en else ""))
+            head_when = accept_head(lang, accepted_label, accept_status, why_lang)
+            gap_kind = "remaining"
         else:
             gap_plan = refusal_plan(state, rt.store.commitments(), mandate)
-            message = "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap."
+            head = "NO DEAL after bounded rounds"
             head_when = _t(lang, "No deal after the buyer's replies", "买方回复后未能成交")
-            funded_when = _t(lang, "the near-term gap is funded another way.", "近期缺口将通过其他方式融资。")
+            gap_kind = "near-term"
         blocked = _runnable(gap_plan)
         if blocked is not None:
-            head = message.rsplit(";", 1)[0]
+            status_of_funding = NOT_FUNDED
             message = (f"{head}; the near-term gap is not funded: the router's plan cannot run today ({blocked}). "
                        f"Nothing was executed from it.")
             why_blocked = business_text(state, blocked, rt.day, lang) or ""
@@ -552,9 +575,19 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str =
                                    f"Nothing was executed from it.",
                              f"{head_when}；近期缺口未获融资：该方案今天无法执行（{why_blocked}）。未据此执行任何操作。")
         else:
-            message_when = f"{head_when}{_t(lang, '; ', '；')}{funded_when}"
-            funding_ops = _ops_for_plan(rt, list(gap_plan.actions), f"fund-{offer_id}-{body.buyer_profile}")
+            funding_ops, payloads = _ops_for_plan(rt, list(gap_plan.actions), f"fund-{offer_id}-{body.buyer_profile}")
             operations += funding_ops
+            # worded from what each leg did, after they all ran: a leg may wait for approval or be refused (SEC-28)
+            now = rt.store.get_state()
+            funding_legs = leg_views(now, payloads, funding_ops, rt.day, lang)
+            status_of_funding = funding_status(outcomes(funding_legs))
+            legs_en = funding_legs if lang == "en" else leg_views(now, payloads, funding_ops, rt.day, "en")
+            if status_of_funding == FUNDED:  # the engine's own sentences, as they were
+                message = (f"{head}; remaining gap funded." if commitment is not None
+                           else f"{head}; the Debt Desk funds the near-term gap.")
+            else:
+                message = f"{head}; {funding_clause('en', gap_kind, status_of_funding, legs_en)}"
+            message_when = f"{head_when}{_t(lang, '; ', '；')}{funding_clause(lang, gap_kind, status_of_funding, funding_legs)}"
         # The fact is written after the canonical events (the commitment, the accept, each funding unit), in this lock, so no
         # read sees them without it. A failure here never undoes them: the record then reads "not recorded".
         did = deal_id(offer_id)
@@ -604,6 +637,11 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str =
         "plan": plan_when(state, displayed(json.loads(gap_plan.model_dump_json())), rt.day, lang),
         "message": message,
         "message_when": message_when,
+        # What became of the funding legs after they all ran (SEC-28): FUNDED, WAITING_APPROVAL, PARTLY_FUNDED or NOT_FUNDED (also
+        # when the plan could not run today), and each leg's own status and sentence. Not stored on the decision record.
+        "funding_status": status_of_funding,
+        "funding_legs": funding_legs,
+        "accept_status": accept_status,
         "lang": lang,
         "transcript_hash": t.transcript_hash,
     }
