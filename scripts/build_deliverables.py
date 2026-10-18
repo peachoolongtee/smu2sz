@@ -499,7 +499,7 @@ class Renderer:
     def render(self, blocks: list[Block], anchor: Paragraph) -> int:
         count = 0
         skip_next_code = False
-        for b in blocks:
+        for bi, b in enumerate(blocks):
             if b.kind == "fallback":
                 skip_next_code = self.last_figure_embedded
                 continue
@@ -511,6 +511,11 @@ class Renderer:
             if b.kind == "para":
                 p = self.para_before(anchor)
                 self.inline(p, b.text)
+                t = b.text.strip()
+                nxt = blocks[bi + 1].kind if bi + 1 < len(blocks) else None
+                if (t.startswith("**") and t.endswith("**") and t.count("**") == 2) or nxt == "table":
+                    # a bold lead-in, a table caption or a table's lead-in never ends a page on its own
+                    p.paragraph_format.keep_with_next = True
             elif b.kind == "para_in_list":
                 p = self.para_before(anchor)
                 p.paragraph_format.left_indent = Inches(0.5 + 0.25 * b.level)
@@ -554,6 +559,7 @@ class Renderer:
         shd.set(qn("w:fill"), "F3F5F9")
         ppr.append(shd)
         p.paragraph_format.space_after = Pt(6)
+        p.paragraph_format.keep_together = True  # a short code block never splits across pages
         lines = text.split("\n")
         size = Pt(7) if max((len(x) for x in lines), default=0) > 90 else Pt(8)
         for n, line in enumerate(lines):
@@ -597,7 +603,7 @@ class Renderer:
         th.set(qn("w:val"), "true")
         trpr.append(th)
         for row, cells in zip(t.rows, rows, strict=False):
-            if sum(len(c) for c in cells) > 360:
+            if sum(len(c) for c in cells) > 1400:
                 continue  # a long row may break across pages rather than leave most of a page empty
             cs = OxmlElement("w:cantSplit")
             cs.set(qn("w:val"), "true")
@@ -663,6 +669,7 @@ class Renderer:
             width = Inches(min(6.2, MAX_FIG_HEIGHT_IN * img.px_width / img.px_height))
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.add_run().add_picture(str(path), width=width)
+        p.paragraph_format.keep_with_next = True  # a figure never leaves its caption on the next page
         c = self.para_before(anchor, "Caption")
         c.add_run(caption)
 

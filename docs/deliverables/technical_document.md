@@ -186,10 +186,6 @@ The supplier kept its 45-day terms and gave no rebate. It avoided ¥28,326.92 of
 a day-47 breach, and the reserve held on every day (Figure 2). Assumptions: the buyer pays the ¥160,000 on day 36 and the
 next invoice on its due day 47; the owner approves on day 34; no other cash flow is added.
 
-<!-- figure: figures/screens/screen2-deal-verdict.png | Figure 1. Foshan's request after FLOW checked it (web app on recorded mocks, build 571ea64f). (1) The verdict: counter with Option A. (2) Why the request cannot be accepted as asked. (3) Option A is within the signed mandate. (4) Nothing is sent until the owner sends it. (5) The priced choices: Option A, early payment on up to ¥260,000 at 0.85%, costs ¥3,035.99; Option B is 55-day terms with a 0.30% price rise. | page -->
-
-<!-- figure: figures/fig11-cash-scenarios.png | Figure 2. The demo company's closing cash, days 0 to 62, against the ¥300,000 reserve. Today's books fall to −¥105,000 on days 30–31; FLOW's standing plan (¥3,113.93) touches the reserve on day 30 and never goes below it; the request accepted as asked falls ¥90,040 short on day 47; Option A as the demo runs it holds the reserve every day, including the new ¥200,000 payroll on day 42. Numbered markers date the events. Data: the financial audit's independent recomputation, equal to the engine to the fen (synthetic golden books, mandate v1, build 571ea64f). | page -->
-
 **What is new.** Each building block exists somewhere: negotiation agents, cash-flow forecasts, loan marketplaces and
 covenant monitoring. What FLOW adds is the combination, on the supplier's side:
 
@@ -211,6 +207,10 @@ covenant monitoring. What FLOW adds is the combination, on the supplier's side:
 | MYbank 百灵 / AI票据管家 | Lender agents that tailor the bank's own credit and bill products | FLOW is supplier-owned and compares several sources, starting from the trade terms that cause the need |
 | Xero JAX Cash Flow Actions | Ledger-side cash-gap detection and suggested plans | FLOW reads incoming offers and decides them inside a signed mandate and covenants |
 | Cerebro Capital, Capitalise, Codat, Lendio | Lender marketplaces and debt-capacity tools for banks or mid-market firms | FLOW starts before the owner decides to borrow, at the request that creates the need |
+
+<!-- figure: figures/screens/screen2-deal-verdict.png | Figure 1. Foshan's request after FLOW checked it (web app on recorded mocks, build 571ea64f). (1) The verdict: counter with Option A. (2) Why the request cannot be accepted as asked. (3) Option A is within the signed mandate. (4) Nothing is sent until the owner sends it. (5) The priced choices: Option A, early payment on up to ¥260,000 at 0.85%, costs ¥3,035.99; Option B is 55-day terms with a 0.30% price rise. | page -->
+
+<!-- figure: figures/fig11-cash-scenarios.png | Figure 2. The demo company's closing cash, days 0 to 62, against the ¥300,000 reserve. Today's books fall to −¥105,000 on days 30–31; FLOW's standing plan (¥3,113.93) touches the reserve on day 30 and never goes below it; the request accepted as asked falls ¥90,040 short on day 47; Option A as the demo runs it holds the reserve every day, including the new ¥200,000 payroll on day 42. Numbered markers date the events. Data: the financial audit's independent recomputation, equal to the engine to the fen (synthetic golden books, mandate v1, build 571ea64f). | page -->
 
 #### Innovation & Interaction: what the owner sees
 
@@ -258,8 +258,6 @@ talk only through typed contracts in `app/domain/`, and import cycles are forbid
 calls it, the three places a model assists, the deterministic core that computes every figure, and the action path through
 which every operation that commits the business or moves money must pass.
 
-<!-- figure: figures/fig8-system-architecture.png | Figure 3. FLOW's architecture. A model assists in three places only (reading documents and buyer messages, classifying a chat request the rules miss, routing an owner's question to read-only tools); in live mode it gets text with identifying numbers redacted, and code validates its typed output. Deterministic code computes every figure; every typed operation passes the signed mandate and the executor, which records each outcome in a hash-chained log. Buyer, lenders and bank feed are simulated. Build 571ea64f. | page -->
-
 **Table 5. The roles in the pipeline.**
 
 | Role | Code | May | May not |
@@ -291,8 +289,6 @@ reports the cash and reconciliation marks the promise.
    before it reaches the executor is recorded as a security event instead.
 8. **Settle.** The bank feed (simulated) or the owner records each receipt; a receipt on a financed invoice repays the lender
    first; reconciliation reports each promised payment as awaited, received, lapsed or settled otherwise.
-
-<!-- figure: figures/fig9-request-to-settlement.png | Figure 4. One buyer request from request to settlement. Steps 1 to 6 are proposed terms: nothing binds and no money moves. The executor's acceptance screen authorises the operation, the commitment is recorded in the hash-chained log, the funding plan runs as authorised operations, and the deal settles only when the simulated bank feed reports the cash and reconciliation marks the promise. Badge shapes show who acts: code, model, owner or a simulated party. Build 571ea64f. | page -->
 
 **How agreement happens, and what is simulated.** A counter reaches the buyer in one of three ways. All three pass through
 the same gates afterwards: the single-use nonce, the terms hash, re-verification on that day's books, and the hash-chained
@@ -331,6 +327,10 @@ deal facts and chat sessions are records, not books.
   with the CORS and security headers, so the web app reports a server error instead of "cannot reach the API".
 
 The full component list is Appendix B.
+
+<!-- figure: figures/fig8-system-architecture.png | Figure 3. FLOW's architecture. A model assists in three places only (reading documents and buyer messages, classifying a chat request the rules miss, routing an owner's question to read-only tools); in live mode it gets text with identifying numbers redacted, and code validates its typed output. Deterministic code computes every figure; every typed operation passes the signed mandate and the executor, which records each outcome in a hash-chained log. Buyer, lenders and bank feed are simulated. Build 571ea64f. | page -->
+
+<!-- figure: figures/fig9-request-to-settlement.png | Figure 4. One buyer request from request to settlement. Steps 1 to 6 are proposed terms: nothing binds and no money moves. The executor's acceptance screen authorises the operation, the commitment is recorded in the hash-chained log, the funding plan runs as authorised operations, and the deal settles only when the simulated bank feed reports the cash and reconciliation marks the promise. Badge shapes show who acts: code, model, owner or a simulated party. Build 571ea64f. | page -->
 
 ### Models, tools, data sources and external services
 
@@ -683,16 +683,18 @@ says "breached by ¥135k for 15 days"? Both are right: ¥90,040 is the shortfall
 
 **Table 8. The EX01 request, every figure in one place (golden books, day 0, books version 1, reserve ¥300,000; CNY).**
 
-| Scenario | Funding | Lowest cash | Breach | Discount | Funding cost | Future concessions | Can run today? | Who decides |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Today's books, no request | none | −¥105,000 (days 30–31) | days 12–31 (20 days), at worst ¥405,000 short | — | — | ¥0 | — | — |
-| Today's books + FLOW's standing plan | line ¥150,000 + invoice financing ¥255,000 | ¥300,000 (day 30) | none | — | **¥3,113.93** | ¥0 | yes | Tier 1 |
-| **EX01 as asked** (1.2% early pay, 60-day terms, rebate), no new funding | none | ¥164,960 (day 60) | first day 47, ¥90,040 short; worst day 60, **¥135,040** short; 15 days | ¥5,040.00 | — | **¥28,326.92** (terms ¥24,326.92 over 13 invoices + rebate ¥4,000), against a ¥5,000 cap | — | **Rejected**: concession cap, reserve, above break-even, dearer than the plan |
-| EX01 + its cheapest cure | invoice financing ¥135,040 on an invoice issued on day 32 | ¥300,000 | none | ¥5,040.00 | ¥2,406.67 | ¥28,326.92 | **no**: the invoice does not exist yet | — |
-| EX01 + the plan that can run | credit line ¥135,040, drawn today, repaid day 62 | ¥300,000 | none | ¥5,040.00 | ¥1,468.05 | ¥28,326.92 | yes | — |
-| Early-payment test inside the verdict | with the early payment: ¥6,508.05; without it (same terms): ¥3,873.58 | — | — | — | — | — | — | the early payment is dearer, so countered |
-| **Option A** (FLOW's counter) | credit line ¥147,210 | ¥300,000 (day 30) | none | ¥2,210.00 on ¥260,000 at 0.85% | ¥825.99; total **¥3,035.99** | ¥0 | yes | **Accept, Tier 1** |
-| Option B (FLOW's counter) | line ¥90,000 + invoice financing ¥315,000 | ¥300,000 (day 30) | none | — | **¥3,706.46** (¥592.53 more than the standing plan) | 55 days + 0.30% price rise: a net forward gain of ¥162.05 over 13 invoices | the router's plan, yes | needs the owner (terms lengthen) |
+| Scenario | Funding | Lowest cash; breach | Discount + funding cost | Future concessions | Runs today? Who decides |
+| --- | --- | --- | --- | --- | --- |
+| Today's books, no request | none | −¥105,000 (days 30–31); below the reserve days 12–31 (20 days), at worst ¥405,000 short | — | ¥0 | — |
+| Today's books + FLOW's standing plan | line ¥150,000 + invoice financing ¥255,000 | ¥300,000 (day 30); no breach | — + **¥3,113.93** | ¥0 | yes; Tier 1 |
+| **EX01 as asked** (1.2% early pay, 60-day terms, rebate), no new funding | none | ¥164,960 (day 60); first day 47, ¥90,040 short; worst day 60, **¥135,040** short; 15 days | ¥5,040.00 + — | **¥28,326.92** (terms ¥24,326.92 over 13 invoices + rebate ¥4,000), against a ¥5,000 cap | **Rejected**: concession cap, reserve, above break-even, dearer than the plan |
+| EX01 + its cheapest cure | invoice financing ¥135,040 on an invoice issued on day 32 | ¥300,000; no breach | ¥5,040.00 + ¥2,406.67 | ¥28,326.92 | **no**: the invoice does not exist yet |
+| EX01 + the plan that can run | credit line ¥135,040, drawn today, repaid day 62 | ¥300,000; no breach | ¥5,040.00 + ¥1,468.05 | ¥28,326.92 | yes |
+| **Option A** (FLOW's counter) | credit line ¥147,210 | ¥300,000 (day 30); no breach | ¥2,210.00 (¥260,000 at 0.85%) + ¥825.99 = **¥3,035.99** | ¥0 | yes; **Accept, Tier 1** |
+| Option B (FLOW's counter) | line ¥90,000 + invoice financing ¥315,000 | ¥300,000 (day 30); no breach | — + **¥3,706.46** (¥592.53 more than the standing plan) | 55 days + 0.30% price rise: a net forward gain of ¥162.05 over 13 invoices | the router's plan, yes; needs the owner (terms lengthen) |
+
+*The early-payment test inside the verdict: on the same terms, funding costs ¥6,508.05 with the early payment and
+¥3,873.58 without it, so the early payment is dearer and is countered.*
 
 *Funding cost and future concessions overlap: the EX01 cure pays for the cash effect of the first invoice's 15 extra days,
 which ¥24,326.92 already prices. Do not add them. On FLOW's pricing, accepting as asked gives away ¥5,040 now and ¥28,326.92
@@ -771,8 +773,6 @@ day, one sample of a non-deterministic system); *rules* (no model); *scripted* (
 result comes from a deployed system.** A test count measures the size of a suite, not correctness. Labels for buyer
 messages were written by AI agents in separate sessions, not by people. Figure 5 groups the accuracy results by class.
 
-<!-- figure: figures/fig-eval-classes.png | Figure 5. FLOW's accuracy results grouped by evidence class: unseen held-out first runs, the same sets after tuning on their failures, recorded DeepSeek readings and live DeepSeek calls. Each bar is a share of its own row's denominator (shown beside it), and the right-hand column shows what that row's own oracle scores wrong. Rows with different oracles do not compare. Offline re-runs on 571ea64f, 18 Oct 2026; live rows on the dates shown. | page -->
-
 #### Task Completion: scripted tasks in a simulated environment
 
 - **49 of 49 scripted conversations pass their own checks** (88 turns, 18 Oct, `571ea64f`), each with a verifiable
@@ -782,6 +782,8 @@ messages were written by AI agents in separate sessions, not by people. Figure 5
 - **The engine** matches an independently written oracle on 67 of 67 golden financial values to the fen, and on 27 of 27
   covenant and capex values; mandate and covenant limits hold at the threshold and break one unit past it (20 of 20). The
   oracle shares the team and the specification, so a shared misreading of a rule would pass.
+
+<!-- figure: figures/fig-eval-classes.png | Figure 5. FLOW's accuracy results grouped by evidence class: unseen held-out first runs, the same sets after tuning on their failures, recorded DeepSeek readings and live DeepSeek calls. Each bar is a share of its own row's denominator (shown beside it), and the right-hand column shows what that row's own oracle scores wrong. Rows with different oracles do not compare. Offline re-runs on 571ea64f, 18 Oct 2026; live rows on the dates shown. | page -->
 
 #### Reading buyer messages: safety beside usefulness
 
@@ -921,25 +923,23 @@ oracle or diff the books.
 ### Tiered permissions and confirmation for sensitive actions
 
 **The rubric's four threats.** The Security & Compliance criterion names four: induced transfers, data extraction,
-privilege escalation and prompt injection. Table 13 names, for each, the control that stops it, where it is in the code, the
-attack cases that exercise it and what it does not cover. The rest of this section explains the controls under the two
+privilege escalation and prompt injection. Table 13 names, for each, what an attacker tries, the control that stops it, the
+attack cases that exercise it and what it does not cover; Appendix F gives each control's code and tests. The rest of this section explains the controls under the two
 template prompts. Code paths are under `services/api/` and line numbers are those of `571ea64f`, the last base read line by
 line; Appendix F lists every control with its lines. The attack figures are from the stored catalogue (Table 15): the
 grouping of its classes under the four threats is ours.
 
 **Table 13. The four threats in the rubric, the control that stops each, and its limits.**
 
-| Threat | What an attacker tries | Control that stops it | Evidence | Attack cases (all reached their path; 0 harm) | Limits |
-| --- | --- | --- | --- | --- | --- |
-| **Induced transfers** (money moved or the business committed because someone said so) | "The owner has approved this", a pasted approval, a "pre-approved lender", a claimed earlier deal, a conditional or negated "go ahead", a changed or expired offer | No operation has a payee or account field. Money moves only through typed operations whose tier the executor computes. A Tier-2 operation runs only on the owner's approval, and a Tier-3 one never. Chat consent is a whole-message closed command. A claim is never a fact: a claimed concession is never booked, and a named lender becomes a logged claim, never a facility | `app/domain/models.py` (operation types); `app/mandate/tiers.py:85-120`; `app/operations/executor.py:360-416`; `app/nl/consent.py:1-40`; `app/domain/claims.py` | 32 API (social engineering 8, fake lender 10, claimed prior concession 7, changed offer 4, expired commitment 3): 29 stopped by the named control, 3 by another. 75 chat (41 consent, 18 Tier-3 requests put as questions, 16 owner quoting a buyer) | Inside the mandate FLOW acts alone (Tier 1): the agent key or a registered buyer's keyed message can draw on a committed facility up to its limit, and there is no aggregate draw limit (R-3). FLOW cannot tell whether a buyer the owner reports as agreeing really did |
-| **Data extraction** (the owner's limits, books or another buyer's terms got out) | A buyer asking for the reserve, the floor or the limits; probing the counter; asking for another buyer's terms; planting a canary; reading routes without a token | Every read of the books needs the owner token. Outbound text comes from approved templates. An outbound guard blocks a whole message that holds a protected value in any common rendering. The agent's chat view is an allow-list of its own amounts. Contract terms are entitled to their own counterparty only. In live mode, model prompts carry redacted text and never the books | `app/api/auth.py:25-80`; `tests/egress/` (guard, canaries, renderings); `app/nl/router/route.py:61-123` | 22 API (reserve and facility 6, mandate 5, another buyer 6, canary 5): 20 stopped by the named control, 2 by another. 42 chat (buyer extraction 38, counter probing 4) | `/health`, `/clock` and the demo offer list are public (`/health` shows the model mode and flags, SEC-13). A keyed buyer can learn within one ¥10,000 step where the counter cap lies (R-10, Low). Redaction is pattern-based and can be switched off (PRIV-4, PRIV-5). No catalogue case reaches the outbound guard itself; `tests/egress` tests it directly (SEC-32) |
-| **Privilege escalation** (acting above one's credential) | Self-approval, a body field "requested_by: OWNER", a caller-supplied tier, a forged or edited mandate, a reused nonce, a backdated operation, an agent resetting the circuit breaker, a session taken over | Tiers, actors and approvals come from code and credentials, never from the request. The executor pins one mandate key. Nonces are single use, operations are dated by the executor, approvals are decided once by the owner only, and a session continues only for the caller that opened it | `app/api/auth.py:155-175`; `app/api/operations.py:82-85`; `app/mandate/validity.py:9-70`; `app/commitments/lifecycle.py:149-153`; `app/persistence/guards.py:55-136`; route-policy test `tests/security/test_route_policy.py` | 37 API (escalation 22, replay 8, revoked mandate 7): 37 stopped by the named control. 16 chat (agent channel 7, session replay 9). Every route is also called as every kind of caller | One person holds the owner token and the signing key (R-2). Code inside the process is trusted (R-5). The database owner can rewrite the log (R-13). There is no route to revoke or renew the mandate (R-14) |
-| **Prompt injection** (text becoming an instruction) | Override lines, fake system messages, role-play, encoded, full-width, zero-width or homoglyph text, a clause addressed to the agent, an instruction inside a contract | The architecture, not detection: the reading schema has no field for an operation, approval, tier or facility; every term must quote the source; the deciding modules never read free text; the classifier's closed list has no approve or reject; buyer turns never reach a classifier; the router's 40 tools are read-only. Detection is logged, but refusal never depends on it | `app/compiler/schema.py:9, 29-30`; `app/compiler/grounding.py:97-162`; `tests/verifier/test_invariants.py:20-62`; `app/nl/classifier.py:33-34`; `app/nl/service.py:173-174` | 17 API (14 stopped by the named control, 3 by another) and 18 chat buyer injections; injection text also runs through most other classes (70 API text attacks) | Offline, attack text was read by the rules grammar (78 readings) and a scripted hostile model (4); no real model, recorded or live, read an attack. Live mode is outside every certification |
+| Threat, and what an attacker tries | Control that stops it | Attack cases (all reached their path; 0 harm) | Limits |
+| --- | --- | --- | --- |
+| **Induced transfers** (money moved or the business committed because someone said so): "the owner has approved this", a pasted approval, a "pre-approved lender", a claimed earlier deal, a conditional or negated "go ahead", a changed or expired offer | No operation has a payee or account field. Money moves only through typed operations whose tier the executor computes. A Tier-2 operation runs only on the owner's approval, and a Tier-3 one never. Chat consent is a whole-message closed command. A claim is never a fact: a claimed concession is never booked, and a named lender becomes a logged claim, never a facility | 32 API (social engineering 8, fake lender 10, claimed prior concession 7, changed offer 4, expired commitment 3): 29 stopped by the named control, 3 by another. 75 chat (41 consent, 18 Tier-3 requests put as questions, 16 owner quoting a buyer) | Inside the mandate FLOW acts alone (Tier 1): the agent key or a registered buyer's keyed message can draw on a committed facility up to its limit, and there is no aggregate draw limit (R-3). FLOW cannot tell whether a buyer the owner reports as agreeing really did |
+| **Data extraction** (the owner's limits, books or another buyer's terms got out): a buyer asking for the reserve, the floor or the limits; probing the counter; asking for another buyer's terms; planting a canary; reading routes without a token | Every read of the books needs the owner token. Outbound text comes from approved templates. An outbound guard blocks a whole message that holds a protected value in any common rendering. The agent's chat view is an allow-list of its own amounts. Contract terms are entitled to their own counterparty only. In live mode, model prompts carry redacted text and never the books | 22 API (reserve and facility 6, mandate 5, another buyer 6, canary 5): 20 stopped by the named control, 2 by another. 42 chat (buyer extraction 38, counter probing 4) | `/health`, `/clock` and the demo offer list are public (`/health` shows the model mode and flags, SEC-13). A keyed buyer can learn within one ¥10,000 step where the counter cap lies (R-10, Low). Redaction is pattern-based and can be switched off (PRIV-4, PRIV-5). No catalogue case reaches the outbound guard itself; `tests/egress` tests it directly (SEC-32) |
+| **Privilege escalation** (acting above one's credential): self-approval, a body field "requested_by: OWNER", a caller-supplied tier, a forged or edited mandate, a reused nonce, a backdated operation, an agent resetting the circuit breaker, a session taken over | Tiers, actors and approvals come from code and credentials, never from the request. The executor pins one mandate key. Nonces are single use, operations are dated by the executor, approvals are decided once by the owner only, and a session continues only for the caller that opened it | 37 API (escalation 22, replay 8, revoked mandate 7): 37 stopped by the named control. 16 chat (agent channel 7, session replay 9). Every route is also called as every kind of caller | One person holds the owner token and the signing key (R-2). Code inside the process is trusted (R-5). The database owner can rewrite the log (R-13). There is no route to revoke or renew the mandate (R-14) |
+| **Prompt injection** (text becoming an instruction): override lines, fake system messages, role-play, encoded, full-width, zero-width or homoglyph text, a clause addressed to the agent, an instruction inside a contract | The architecture, not detection: the reading schema has no field for an operation, approval, tier or facility; every term must quote the source; the deciding modules never read free text; the classifier's closed list has no approve or reject; buyer turns never reach a classifier; the router's 40 tools are read-only. Detection is logged, but refusal never depends on it | 17 API (14 stopped by the named control, 3 by another) and 18 chat buyer injections; injection text also runs through most other classes (70 API text attacks) | Offline, attack text was read by the rules grammar (78 readings) and a scripted hostile model (4); no real model, recorded or live, read an attack. Live mode is outside every certification |
 
 Integrity and recovery are a fifth class in the catalogue: 20 failure-recovery cases (partial writes, double execution, an
 erased log), all stopped by the named control.
-
-<!-- figure: figures/fig10-authority-matrix.png | Figure 7. Who may do what. Tier 1 runs inside the owner-signed mandate; Tier 2 waits for the owner; Tier 3 is refused for everyone, the owner included. The tier is computed from the typed operation alone, and the demo mandate's limits are shown below. -->
 
 **Who can act.** Credentials travel in headers and are compared in constant time (`hmac.compare_digest`,
 `app/api/auth.py:25-80`). Every refused credential is logged as a security event, within a budget of 300 an hour and 30 per
@@ -983,6 +983,8 @@ address.
 - **Tier 3, never.** A personal guarantee, collateral, equity, changing the mandate, a facility the owner did not request,
   or any unknown operation type (`tiers.py:46, 94-99`). Refused for every caller, the owner included; an approved Tier-3
   operation stays refused.
+
+<!-- figure: figures/fig10-authority-matrix.png | Figure 7. Who may do what. Tier 1 runs inside the owner-signed mandate; Tier 2 waits for the owner; Tier 3 is refused for everyone, the owner included. The tier is computed from the typed operation alone, and the demo mandate's limits are shown below. -->
 
 **What approval can and cannot do.** The owner's approval releases a Tier-2 operation. It never waives a hard rule. The hard
 rules are refused for everyone, the owner included: the concession caps (aggregate and per buyer), the covenants (DSCR,
@@ -1659,6 +1661,7 @@ limits.
 | --- | --- | --- |
 | Credentials, constant-time compare, body actor downgraded, demo mode off by default | `app/api/auth.py:25-80, 155-175`; `app/config.py:52-56`; `app/api/operations.py:82-85, 366-377` | `security/test_route_policy.py`, `security/test_demo_mode_default.py` |
 | Rate limits and refusal budget (SEC-20, SEC-26) | `app/api/ratelimit.py` | `security/test_rate_limits.py`, `security/test_sec26_refusal_budget.py` |
+| No payee or account field; claims are never facts | `app/domain/models.py` (operation types); `app/domain/claims.py` | catalogue classes fake lender (10), claimed prior concession (7) |
 | Tier computed from the operation; Tier 3 for everyone | `app/mandate/tiers.py:46, 73-77, 85-120` | `mandate/`, `nl/test_tier3_questions.py` |
 | Hard rules and the approval threshold | `app/verifier/evaluate.py:190-193, 447, 562-573, 726-758`; `app/api/accept.py:97-107, 129-137`; `app/funding/admission.py:6-13`; `app/operations/executor.py:852-854` | `verifier/`, `funding/` |
 | Signed mandate and pinned key | `app/mandate/signing.py:13-56`; `app/mandate/validity.py:9-70`; `app/api/runtime.py:284-293` | `mandate/`; catalogue class revoked mandate (7) |
