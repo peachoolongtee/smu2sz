@@ -128,7 +128,7 @@ def test_three_real_tools_make_one_answer(rt: Runtime, lang: str) -> None:
 
 def test_a_slot_the_catalogue_requires_is_required(rt: Runtime) -> None:
     assert rr.route("what if Foshan pays late?", "en", ctx_for(rt), [Scripted(calls(("late_payment_whatif", {"customer": "Foshan"})))]) is None
-    assert rr.LAST.outcome.startswith("rejected:slots:")
+    assert rr.LAST.outcome == "rejected:missing_slot"
     for bad in ({"customer": "Foshan", "days_late": 181}, {"customer": "Foshan", "days_late": 0}):
         assert rr.route("late?", "en", ctx_for(rt), [Scripted(calls(("late_payment_whatif", bad)))]) is None
     assert rr.route("2%?", "en", ctx_for(rt), [Scripted(calls(("early_pay_offer", {"rate_bp": 501})))]) is None
@@ -185,6 +185,7 @@ def test_an_invalid_response_is_rejected_whole(rt: Runtime, case: str) -> None:
     before = snapshot(rt)
     assert rr.route("how much debt do we have?", "en", ctx_for(rt), [Scripted(REJECTED[case])]) is None
     assert rr.LAST.outcome.startswith("rejected:"), rr.LAST.outcome
+    assert rr.LAST.reject_code in rr.REJECT_CODES, rr.LAST.reject_code
     assert rr.LAST.tools == []
     assert snapshot(rt) == before
 
@@ -192,7 +193,7 @@ def test_an_invalid_response_is_rejected_whole(rt: Runtime, case: str) -> None:
 def test_a_valid_call_next_to_an_invalid_one_does_not_run(rt: Runtime) -> None:
     fake = Scripted(calls(("total_debt", {}), ("cash_safety", {"horizon_days": 999})))
     assert rr.route("debt and safety?", "en", ctx_for(rt), [fake]) is None
-    assert rr.LAST.outcome.startswith("rejected:slots:") and "out of range" in rr.LAST.outcome
+    assert rr.LAST.outcome == "rejected:out_of_range"
 
 
 def test_a_canary_in_the_output_is_rejected(rt: Runtime) -> None:
@@ -451,7 +452,7 @@ def test_cache_mode_replays_a_recorded_route_and_a_miss_is_none(rt: Runtime, tmp
 def test_a_recorded_route_goes_through_the_same_validation(rt: Runtime, tmp_path: Path) -> None:
     q = "how is our money looking?"
     path = rr.write_cache_entry(q, "en", calls(("retired_tool", {})), "recorded-model", tmp_path)
-    assert rr.route(q, "en", ctx_for(rt), [rr.CacheBackend(tmp_path)]) is None and rr.LAST.outcome == "rejected:unknown tool"
+    assert rr.route(q, "en", ctx_for(rt), [rr.CacheBackend(tmp_path)]) is None and rr.LAST.outcome == "rejected:unknown_tool"
     entry = json.loads(path.read_text(encoding="utf-8"))
     entry.update(prompt_version="ask-router-v0", route=calls(("total_debt", {})))
     path.write_text(json.dumps(entry), encoding="utf-8")
@@ -517,7 +518,48 @@ def test_the_log_holds_a_hash_and_the_tools_never_the_question(rt: Runtime) -> N
         rr.route(secret, "en", ctx_for(rt), [Scripted(calls(("total_debt", {})))])
         rr.route(secret, "en", ctx_for(rt), [Scripted("not json")])
     events = [e for e in logs if e.get("event") == "ask.router"]
-    assert [e["outcome"] for e in events] == ["answered", "rejected:not JSON"]
+    assert [e["outcome"] for e in events] == ["answered", "rejected:malformed"]
     assert events[0]["tools"] == ["total_debt"] and re.fullmatch(r"[0-9a-f]{16}", events[0]["q_hash"])
     blob = json.dumps(logs, default=str)
     assert "Foshan" not in blob and "420000" not in blob and "invoice" not in blob
+
+
+# ---------------------------------------------------------------- RT-L1: a rejection is logged as a fixed code, never the model's text
+
+LEAK = "what is our cash? Foshan owes 1,234,567"  # model-controlled text a hostile reply could carry in a key, a name or a value
+LEAK_PARTS = ("what is our cash", "Foshan", "1,234,567", "1234567")
+
+REJECTION_CODES = {
+    "leak_in_slot_key": (calls(("total_debt", {LEAK: 1})), "unknown_slot"),
+    "leak_in_slot_value": (calls(("cash_safety", {"horizon_days": LEAK})), "wrong_type"),
+    "leak_in_customer_length": (calls(("customer_summary", {"customer": LEAK * 3})), "bad_value"),
+    "leak_in_tool_name": (calls((LEAK, {})), "unknown_tool"),
+    "leak_in_top_key": ({**calls(("total_debt", {})), LEAK: "x"}, "extra_key"),
+    "leak_in_call_key": ({"calls": [{"tool": "total_debt", "slots": {}, LEAK: "x"}], "none": False}, "extra_key"),
+    "leak_in_missing_slots": ({"calls": [{"tool": "late_payment_whatif", "slots": {"customer": LEAK}}], "none": False}, "missing_slot"),
+    "out_of_range_beside_leak": (calls(("cash_safety", {"horizon_days": 10**30}), (LEAK, {})), "out_of_range"),
+    "leak_in_four_calls": (calls(*[("total_debt", {LEAK: n}) for n in range(4)]), "too_many_calls"),
+    "leak_in_plain_text": (LEAK + " is what you should do", "malformed"),
+    "leak_in_truncated_json": ('{"calls": [{"tool": "' + LEAK, "malformed"),
+    "leak_in_duplicate_key": ('{"calls": [], "none": false, "none": true, "' + LEAK + '": 1}', "malformed"),
+}
+
+
+@pytest.mark.parametrize("case", sorted(REJECTION_CODES))
+def test_a_rejected_route_is_logged_as_a_fixed_code_only(rt: Runtime, case: str) -> None:
+    raw, code = REJECTION_CODES[case]
+    assert code in rr.REJECT_CODES
+    with capture_logs() as logs:
+        assert rr.route("how is it going?", "en", ctx_for(rt), [Scripted(raw)]) is None
+    events = [e for e in logs if e.get("event") == "ask.router"]
+    assert [e["outcome"] for e in events] == [f"rejected:{code}"], events
+    blob = json.dumps(logs, default=str) + rr.LAST.outcome + str(rr.LAST.reject_code)
+    assert [p for p in LEAK_PARTS if p in blob] == [], blob
+    assert rr.LAST.reject_code == code
+
+
+def test_a_rejected_exception_carries_only_its_code(rt: Runtime) -> None:
+    with pytest.raises(rr.Rejected) as e:
+        rr.parse_route(json.dumps(calls(("total_debt", {LEAK: 1}))))
+    assert str(e.value) == "unknown_slot" and e.value.code == "unknown_slot"
+    assert LEAK in e.value.detail  # kept for a debugger, never logged
