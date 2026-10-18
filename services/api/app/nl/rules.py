@@ -227,11 +227,21 @@ def cash_look(text: str) -> bool:
     return lx.CASH_LOOK.fullmatch(lx.norm(smalltalk.strip_greeting(text)).strip()) is not None
 
 
+def plan_reply(raw: str) -> bool:
+    """Whether a message is the owner's answer to a plan that waits: one the consent grammar judges (a yes or a no) or one that declines it
+    (no, cancel, stop, 取消, 不要 ...). Small talk and a "which customer?" reply step aside for it, so the plan logic decides; consent itself
+    is not asked for more than it already says ("Foshan, go ahead" is judged as before: not a go-ahead)."""
+    return (consent.confirmation(raw) is not None or lx.DECLINE.search(raw) is not None
+            or consent._NO_CORE.search(consent.normalise(raw)) is not None)
+
+
 def _small_talk(raw: str, s: Slots, pending_plan: bool) -> Parsed | None:
     """Greetings, thanks, "who are you?", "what will FLOW never do?" and a joke, the weather or trivia (app/nl/smalltalk.py). A greeting,
     thanks or identity question must be the whole message, so "hi, fund the gap" is not one; limits and off-topic are never tried on
     a message that names a Tier-3 subject, an amount, an approval, a fixture or quoted text, so those go on through the rules as before."""
     if s.tier3 or s.approval_id or s.fixture_id or s.quoted_text or s.quoted_approval:
+        return None
+    if pending_plan and plan_reply(raw):  # "no, cancel. tell me a joke": the cancel is the plan's, not small talk's
         return None
     kind = smalltalk.whole_message(raw, allow_filler=not pending_plan)
     if kind is None and s.amount_fen is None and s.rate_bp is None:

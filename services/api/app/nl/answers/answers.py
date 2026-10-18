@@ -591,12 +591,52 @@ def a_pay_all(w: W, q: str) -> AnswerReply:
             f"No: paying all {count} due in {span}, {total} in all, takes cash {path_en}, and down to {lo} on {w.on(low.day)} "
             f"({short} short of the reserve).",
             f"不能：{span}内到期的 {count}，合计 {total}，付清后现金将{path_en}，最低在{w.on(low.day)}降至 {lo}（比储备低 {short}）。")
-    reply = w.reply("LIQ-10", lead + made_of + listing + note + w.t(" ", "") + _plan_with_legs(w))
+    clause = _plan_with_legs(w)
+    reply = w.reply("LIQ-10", lead + made_of + listing + note + w.t(" ", "") + clause)
     p = mx.standing_plan(r)
     if p.value is not None:
         reply.extra["offers_plan"] = True
         reply.extra["needs_owner"] = bool(p.detail["needs_owner"])
+        # what the clause shows, so the caller can check it against the plan it saves (and reword it from that plan when they differ)
+        reply.extra["plan_clause"] = clause
+        reply.extra["plan_shown"] = {
+            "legs": [(x["operation_kind"], x["receivable_id"] or "", int(x["amount_fen"])) for x in p.value],
+            "cost_fen": _fen_of(p.detail["cost"])}
     return reply
+
+
+def _fen_of(display: str | None) -> int | None:
+    """Fen from a figure as the answers write it ("¥1,782.19", "¥3,000", "−¥105,000"); None when it states none."""
+    m = re.search(r"(\d[\d,]*)(?:\.(\d{1,2}))?", display or "")
+    if m is None:
+        return None
+    return int(m.group(1).replace(",", "")) * 100 + int((m.group(2) or "0").ljust(2, "0"))
+
+
+def saved_plan_clause(ctx: Any, lang: str, ops: list[Any], cost_fen: int | None, needs_owner: bool) -> str | None:
+    """The plan clause worded from a SAVED plan: its legs (the operations a "go ahead" sends, in order) and its total cost. None when a
+    leg is not one the clause can say (then the caller offers no go-ahead). Read-only."""
+    from app.domain.models import DrawFacility, SubmitInvoiceForFinancing
+    from app.nl import landing
+
+    w = W(Reading.of(ctx), "zh" if lang == "zh" else "en")
+    legs: list[dict[str, Any]] = []
+    for o in ops:
+        if not isinstance(o, DrawFacility | SubmitInvoiceForFinancing):
+            return None
+        fac = next((f for f in w.r.state.facilities if f.id == o.facility_id), None)
+        rid = getattr(o, "receivable_id", None)
+        legs.append({"operation_kind": str(o.kind), "facility_kind": mx.facility_kind(w.r.state, o.facility_id),
+                     "facility": fac.name if fac else "", "receivable_id": rid, "buyer_id": mx.buyer_of(w.r.state, rid),
+                     "amount_fen": landing.amount_of(o), "cost": "", "lands_day": landing.landing_day(ctx, o, executed=False)})
+    words = legs_words(w, legs, with_cost=False)
+    if not words:
+        return None
+    cost = money(cost_fen) if cost_fen is not None else None
+    owner_en, owner_zh = (" and needs your approval", "，需要您批准") if needs_owner else ("", "")
+    head = (w.t(f"The plan I would run costs {cost}{owner_en}", f"我将执行的方案成本为 {cost}{owner_zh}") if cost
+            else w.t(f"The plan I would run{owner_en}", f"我将执行的方案{owner_zh}"))
+    return head + w.t(": ", "：") + ("，并".join(words) if w.zh else joined(w, words)) + w.t(".", "。")
 
 
 def _plan_with_legs(w: W) -> str:
@@ -2131,5 +2171,5 @@ def question_ids() -> list[str]:
     return list(dict.fromkeys(qid for qid, _, _ in QUESTIONS if qid != "general_advice" and qid not in BEYOND_TOP30))
 
 
-__all__ = ["AnswerReply", "answer", "match", "question_ids"]
+__all__ = ["AnswerReply", "answer", "match", "question_ids", "saved_plan_clause"]
 
