@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.accept import router as accept_router
 from app.api.activity import router as activity_router
+from app.api.agent_pause import router as agent_pause_router
 from app.api.alerts import router as alerts_router
 from app.api.auth import demo_mode
 from app.api.borrower_file import router as borrower_file_router
@@ -128,6 +129,7 @@ app.include_router(accept_router)
 app.include_router(outbound_router)
 app.include_router(worklist_router)
 app.include_router(setup_router)
+app.include_router(agent_pause_router)  # R-14: the owner's pause of the agent and buyer channels
 
 
 @app.get("/health")

@@ -67,6 +67,9 @@ OWNER: set[Key] = {
     ("POST", "/capex/plans"),
     ("GET", "/cash/price-curve"),
     ("POST", "/commitments/{commitment_id}/revoke"),
+    ("GET", "/agent/pause"),  # R-14: the owner's pause of the agent and buyer channels (app/api/agent_pause.py)
+    ("POST", "/agent/pause"),
+    ("POST", "/agent/resume"),
     ("GET", "/customers"),
     ("POST", "/customers"),
     ("GET", "/customers/{customer_id}/overview"),
@@ -489,6 +492,8 @@ PLAN[("POST", "/capex/plans")] = _post("/capex/plans", {"projects": [{
     "id": "robot", "label": "Packing robot", "price_fen": 40_000_000, "monthly_uplift_fen": 1_500_000, "uplift_start_month": 4,
     "start_offsets": [0, 3]}]})
 PLAN[("POST", "/commitments/{commitment_id}/revoke")] = _post_ids("/commitments/{commitment_id}/revoke", commitment_id="commitment")
+PLAN[("POST", "/agent/pause")] = _post("/agent/pause")
+PLAN[("POST", "/agent/resume")] = _post("/agent/resume")
 PLAN[("POST", "/demo/bank-receipt")] = _post("/demo/bank-receipt")
 PLAN[("POST", "/demo/reset")] = _post("/demo/reset", scenario="blank")
 PLAN[("POST", "/demo/restore")] = _post("/demo/restore")
