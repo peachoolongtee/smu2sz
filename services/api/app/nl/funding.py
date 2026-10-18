@@ -164,6 +164,7 @@ def fund_gap(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
         when = landing.line(ctx, legs, executed=False)
         pending = PendingPlan(Intent.FUND_GAP, slots, steps.items, {"actions": list(plan.actions)})
         pending.bind(ctx, legs, plan.total_cost_fen)
+        pending.data["needs_owner"] = bool(flagged)  # as shown: a leg above the borrowing ceiling waits for the owner's approval
         if legs:
             quoting.stash(pending, lambda: quoting.of_plan(ctx, legs, plan=plan))
         return Turn(intent=Intent.FUND_GAP,

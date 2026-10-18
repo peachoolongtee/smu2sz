@@ -77,11 +77,27 @@ def _extra(reply: Any) -> dict[str, Any]:
     return v if isinstance(v, dict) else {}
 
 
-def _offer_plan(ctx: NlContext, turn: Turn) -> None:
+def _saved_clause(ctx: NlContext, pending: Any) -> str | None:
+    """The plan clause worded from the saved plan itself (its legs and cost), or None when it cannot be said."""
+    from app.nl.answers.answers import saved_plan_clause
+
+    return saved_plan_clause(ctx, ctx.lang, list(pending.ops), pending.quoted_cost_fen, bool(pending.data.get("needs_owner")))
+
+
+def _legs_of(ops: Any) -> list[tuple[str, str, int]]:
+    from app.nl import landing
+
+    return [(str(o.kind), getattr(o, "receivable_id", None) or "", landing.amount_of(o)) for o in ops]
+
+
+def _offer_plan(ctx: NlContext, turn: Turn, extra: dict[str, Any]) -> None:
     """An answer that offers FLOW's funding plan ("Can I pay everyone this month?", no) saves it the way "fund the cash gap" does, so that
     a later "go ahead" runs it, or queues it for the owner's approval, down the same path (`service._confirm` -> `plans.send`: the
     executor, the mandate checks, the approval rules). This builds the very plan `funding.fund_gap(execute=False)` proposes, with the
     same pending plan, steps and verdict; it executes nothing and adds no path of its own.
+    The plan-binding rule holds here too: what the reply shows is the plan that is saved. The answer's own clause comes from Home's
+    recommendation, which can be another plan on the same books, so when its legs or cost differ from the saved plan's the clause is
+    reworded from the saved plan; when that cannot be done nothing is saved and no go-ahead is promised.
     It never replaces a plan that already waits for its go-ahead, of any kind: what the owner was shown and may confirm stays
     exactly that (the reminder then says so; a different plan is asked for by name). When no plan can be stored
     (the cheapest committed plan cannot run today) the reply says why instead of promising a go-ahead."""
@@ -100,9 +116,19 @@ def _offer_plan(ctx: NlContext, turn: Turn) -> None:
         if proposed.reply and proposed.verdict is not None:  # the plan could not be stored: the fund-gap turn says why
             turn.reply = f"{turn.reply}{'' if ctx.lang == 'zh' else ' '}{proposed.reply}"
         return
+    pending = proposed.pending
+    shown = extra.get("plan_shown")
+    same = isinstance(shown, dict) and shown.get("legs") == _legs_of(pending.ops) and shown.get("cost_fen") == pending.quoted_cost_fen
+    if not same:
+        old = extra.get("plan_clause")
+        new = _saved_clause(ctx, pending)
+        body = turn.reply.rstrip()
+        if not new or not isinstance(old, str) or not old or not body.endswith(old):
+            return  # the reply's plan is not the saved one and cannot be made so: no plan is saved, no go-ahead is offered
+        turn.reply = body[: len(body) - len(old)] + new
     turn.reply = turn.reply + t(ctx, " Nothing has run yet: reply 'go ahead' to run this plan, or 'cancel' to drop it.",
                                 "目前尚未执行任何操作：回复“执行”以运行该方案，或回复“取消”放弃。")
-    turn.pending, turn.awaiting, turn.plan, turn.verdict = proposed.pending, True, proposed.plan, proposed.verdict
+    turn.pending, turn.awaiting, turn.plan, turn.verdict = pending, True, proposed.plan, proposed.verdict
 
 
 def _metric_ids(reply: Any) -> list[str]:
@@ -582,6 +608,6 @@ def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         turn = Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": topic, "metric_ids": _metric_ids(got)}},
                     card=answer_card.from_reply(got, ctx.lang, ctx.state()))  # the card's figures and links; laid out in the response
         if _extra(got).get("offers_plan"):
-            _offer_plan(ctx, turn)  # "can I pay everyone?" answered no: FLOW's plan is saved for the owner's "go ahead"
+            _offer_plan(ctx, turn, _extra(got))  # "can I pay everyone?" answered no: FLOW's plan is saved for the owner's "go ahead"
         return turn
     return _fallback(ctx, topic, slots, text, use_router=NO_ROUTER not in p.matched)
