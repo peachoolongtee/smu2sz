@@ -44,7 +44,7 @@ of 285), 12 wrong values and 18 stage items matching no key item; batch 2 after 
 on 18 Oct, 67% right (22 of 33), 1 wrong and 10 partial. A note says each bar is a share of its own row's denominator and
 rows with different oracles do not compare.
 | `fig8-system-architecture.png` | FLOW's architecture: the three model-assisted steps see redacted text only and propose typed output; deterministic code computes every figure, and every typed operation goes through the executor; a footnote names the logged writes outside it (clock, books setup, a new customer) and the demo reset. | `src/fig8_system_architecture.py` | Read from the code on `docs/techdoc-chat-fixes` `571ea64f`: `app/main.py` routers, `app/compiler`, `app/nl/classifier.py`, `app/nl/router`, `app/egress/guard.py`, `app/operations/executor.py`, `app/persistence` |
-| `fig9-request-to-settlement.png` | One buyer request from request to settlement, marking what is only proposed, what is authorised, what is recorded and what has actually settled. | `src/fig9_request_to_settlement.py` | `app/api/offers.py`, `decide.py`, `accept.py`, `outbound.py`, the executor's `AcceptOffer`, `app/commitments`, `app/api/alerts.py`, `app/alerts/reconcile.py` (`571ea64f`) |
+| `fig9-request-to-settlement.png` | One buyer request from request to settlement: a registered buyer on its own channel key is answered by FLOW alone inside the signed mandate (Tier 1), any other request waits for the owner; the figure marks what is only proposed, what is authorised, what is recorded, what has settled, and the end state "agreement recorded; funding incomplete". | `src/fig9_request_to_settlement.py` | `app/api/offers.py`, `decide.py`, `accept.py`, `outbound.py`, the executor's `AcceptOffer`, `app/commitments`, `app/api/alerts.py`, `app/alerts/reconcile.py` (`571ea64f`); the Tier-1 branch and outcome 9b re-checked on `int/final3` `2ce5265c`: `app/api/nl.py` (channel key binds the sender), `app/nl/offers.py` `counterparty_message`, `app/mandate/tiers.py` `tier_for`, `app/api/accept.py` `funding_next` |
 | `fig10-authority-matrix.png` | The authority matrix: what FLOW may do inside the signed mandate (Tier 1), what waits for the owner (Tier 2) and what is refused whoever asks (Tier 3), with the demo mandate's limits. | `src/fig10_authority_matrix.py` | `app/mandate/tiers.py` `tier_for`; `fixtures/scenarios/golden_sme.mandate.signed.json` (`571ea64f`) |
 | `fig11-cash-scenarios.png` | The demo company's closing cash under four scenarios, days 0 to 62, against the ¥300,000 reserve, with nine dated events. Supersedes `fig4-golden-cash.png` in the technical document (Figure 4). | `src/fig11_cash_scenarios.py` | `../submission/work/fin/daily_cash.csv` and `events.csv` (financial audit, 18 Oct 2026): the independent recomputation from the golden fixtures, equal to the engine replayed through the API to the fen (`work/fin/compare.csv`, 39 of 39) |
 
@@ -71,13 +71,24 @@ helper shows a complete example; the financial chart of `docs/sub-financial-audi
   mandate, the executor and the hash-chained log. The executor writes every typed operation to storage (PostgreSQL, SQLite or
   in memory) and moves money only on simulated lenders; counter text leaves through the egress guard to the simulated buyer,
   or the owner copies it. A footnote names the writes outside the executor, each logged, and the demo reset.
-- **fig9-request-to-settlement.png.** Vertical flow of eleven steps with a status bracket on the right. Steps 1 to 6
-  (request, reading, verdict and counters, owner gate, send by simulated channel or by the owner's manual copy, reply from
-  the simulated buyer or reported by the owner) are bracketed "proposed terms: nothing binds, no money moves". Step 7, the
-  executor's acceptance screen, is "authorised operation"; step 8, commitment recorded in the hash-chained log, is
-  "recorded commitment"; step 9, the funding plan, is "authorised funding operations"; steps 10 and 11, the bank-feed
-  receipt and reconciliation, are "actual settlement". Badge shapes mark who acts: square for code, diamond for the model,
-  circle for the owner, hexagon for a simulated party.
+- **fig9-request-to-settlement.png.** Vertical flow of eleven steps with a status bracket on the right. Steps 1 to 3
+  (request, reading, verdict and counters) run for every request. After step 3 the flow splits. Left, step 4a "Tier 1,
+  alone": a registered buyer writing on its own channel key; FLOW counters, declines, or accepts a plain early-payment
+  discount inside the signed mandate, with no owner step; counters and declines go back on the channel through the egress
+  guard and bind nothing; an acceptance goes on to step 7. Right, for any other sender: step 4b, the owner gate, then send
+  (5a simulated channel, 5b the owner copies it) and reply (6a simulated buyer, 6b owner-reported), joining step 7. Steps 1
+  to 6 are bracketed "proposed terms: nothing binds, no money moves". Step 7, the executor's acceptance screen (a refusal
+  records nothing), is "authorised operation"; step 8, commitment recorded in the hash-chained log, is "recorded
+  commitment"; step 9, the funding plan, is "authorised funding operations, or queued / refused", with a dashed end-state
+  box 9b beside it: "agreement recorded; funding incomplete: a leg queued or refused after step 8". Steps 10 and 11, the
+  bank-feed receipt and reconciliation, are "actual settlement". Badge shapes mark who acts: square for code, diamond for
+  the model, circle for the owner, hexagon for a simulated party. A footnote says every outcome, refusals included, goes to
+  the hash-chained log.
+
+  *Text equivalent.* Request → reading → verdict. Buyer's own channel key → FLOW alone (Tier 1: counter, decline, or accept
+  an early-payment discount inside the mandate) → acceptance → executor screen. Any other sender → owner gate → send → reply
+  → executor screen. Executor screen → commitment recorded → funding plan → either funded, or agreement recorded with
+  funding incomplete (a leg queued for the owner or refused) → bank-feed receipt → reconciliation.
 - **fig10-authority-matrix.png.** A three-column matrix, Tier 1 (FLOW may act inside the signed mandate), Tier 2 (needs the
   owner's approval) and Tier 3 (never, whoever asks), with rows for buyer offers, funding, cash received, purchases and
   contracts, and ownership and control. Examples: Tier 1 counters, rejects, accepts early payment on a named invoice, draws

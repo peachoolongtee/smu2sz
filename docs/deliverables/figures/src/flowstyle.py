@@ -128,6 +128,7 @@ def save(fig, name: str) -> Path:
 # Non-colour channels: every category below also has a shape, a pattern or a word, so a figure printed in grey still reads.
 
 BUILD = "docs/techdoc-chat-fixes @ 571ea64f"  # the build the submission figures were checked against
+BUILD_FINAL = "int/final3 @ 2ce5265c"  # the submission build candidate (figures and screens refreshed 18 Oct 2026)
 GREY_HATCH = "#b9c2d0"  # the hatch lines of a simulated party
 
 # Kinds of component or step. `tag` is the word printed on the box's top edge; `hatch` marks the simulated parties.
