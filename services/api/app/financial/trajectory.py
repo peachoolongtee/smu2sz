@@ -208,7 +208,8 @@ def _receivables(state: FinancialState, issue_bound: int, mode: Mode = Mode.CONS
             rid = recurring_receivable_id(ri.counterparty_id, d)
             if rid in out:
                 raise ObligationError(f"duplicate recurring invoice {rid}")
-            out[rid] = _Rcv(rid, ri.counterparty_id, ri.face_fen, d, ri.terms_days, True, True, ri.face_fen)
+            # CT-2: a contract set-up's schedule is unconfirmed until the clock issues its first invoice
+            out[rid] = _Rcv(rid, ri.counterparty_id, ri.face_fen, d, ri.terms_days, ri.confirmed, True, ri.face_fen)
             d += ri.every_days
     adjs = [a for a in state.invoice_adjustments if mode == Mode.EXPECTED or not a.contingent_gain]
     for r in out.values():

@@ -2,9 +2,11 @@
 to the books, by an owner operation, with the forecast before and after.
 
 Owner only, every route (the reserve, the headroom and the forecast are protected values; the agent and counterparty keys
-never reach them), behind FEATURE_CONTRACTS and FEATURE_CONTRACT_TERMS (default off).
+never reach them), behind FEATURE_CONTRACTS and FEATURE_CONTRACT_TERMS (default off); the undo is behind FEATURE_CONTRACTS only,
+so a set-up made while the step was on can always be undone (CT-6).
 
-- `GET  /documents/{id}/terms`: what the contract would set up, whether it can, and the forecast before and after; every
+- `GET  /documents/{id}/terms`: what the contract would set up, whether it can, and the forecast now and once the first
+  invoice is issued (the set-up's invoices count from then, CT-2); every
   figure and sentence written here, in English or Chinese (INVARIANT 13).
 - `POST /documents/{id}/terms`: set it up. One `SetUpContractTerms` requested by the owner, bound to the document's hash and
   the terms hash shown; it is Tier 2, so it is queued (logged) and the owner's press is its approval: the route decides it as
@@ -49,8 +51,10 @@ from app.financial import EngineError, project
 from app.operations.log import read_entries
 from app.persistence import ApprovalAlreadyDecided, ApprovalStatus, NotFound
 
-router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature("contracts")),
-                                 Depends(require_feature("contract_terms"))])
+router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature("contracts"))])
+# CT-6: the view and the set-up are behind FEATURE_CONTRACT_TERMS; the undo is not, so the owner can always remove what a set-up
+# wrote, also once the step is switched off
+_TERMS_ON = [Depends(require_feature("contract_terms"))]
 
 Lang = Literal["en", "zh"]
 SET_UP_KIND = "SET_UP_CONTRACT_TERMS"
@@ -195,7 +199,10 @@ def _forecast(rt: Runtime, d: TermsSetUp, lang: Lang) -> dict[str, Any] | None:
         return None
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     books = current_books(state, rt.store.commitments())
-    after_state = books.state.model_copy(update={"recurring_invoices": [*books.state.recurring_invoices, d.recurring]})
+    # CT-2: the set-up writes the schedule unconfirmed, and the forecast counts it once the clock has issued the first
+    # invoice; "after" is the forecast from then, on today's books (the schedule as the clock leaves it, confirmed)
+    counted = d.recurring.model_copy(update={"confirmed": True})
+    after_state = books.state.model_copy(update={"recurring_invoices": [*books.state.recurring_invoices, counted]})
     try:
         before = _reading(books.state, list(books.obligations), mandate, d.counterparty_id)
         after = _reading(after_state, list(books.obligations), mandate, d.counterparty_id)
@@ -233,13 +240,15 @@ def _forecast(rt: Runtime, d: TermsSetUp, lang: Lang) -> dict[str, Any] | None:
          "before": money_in(before), "after": money_in(after), "changed": before["customer_in_n"] != after["customer_in_n"]},
     ]
     gain = after["end_fen"] - before["end_fen"]
-    text = _t(lang, f"Over the next {mandate.horizon_days} days the forecast would count on {money_in(after)} from {name}; "
-                    f"cash at the end of the forecast rises by {fmt_yuan(gain)}. The forecast then relies on this money "
-                    f"arriving on time.",
-              f"未来 {mandate.horizon_days} 天内，预测将计入来自{name}的{money_in(after)}；预测期末现金增加 {fmt_yuan(gain)}。"
-              f"此后预测将依赖这些款项按时到账。")
+    first = _day_words(state, d.recurring.next_issue_day, today, lang)
+    text = _t(lang, f"The forecast counts these invoices once the first one is issued, on {first}; until then it does not "
+                    f"count on them. From then, over the next {mandate.horizon_days} days, it counts on {money_in(after)} "
+                    f"from {name}, and cash at the end of the forecast rises by {fmt_yuan(gain)}. The forecast then relies on "
+                    f"this money arriving on time.",
+              f"首张发票于{first}开出后，预测才会计入这些发票；在此之前不计入。此后未来 {mandate.horizon_days} 天内，预测将计入"
+              f"来自{name}的{money_in(after)}，预测期末现金增加 {fmt_yuan(gain)}。此后预测将依赖这些款项按时到账。")
     return {"rows": rows, "text": text, "horizon_days": mandate.horizon_days,
-            "before": before, "after": after}
+            "counts_from_day": d.recurring.next_issue_day, "before": before, "after": after}
 
 
 # ---------------------------------------------------------------- the view
@@ -289,15 +298,17 @@ def terms_view(rt: Runtime, record: ContractRecord, lang: Lang) -> dict[str, Any
         "doc_hash": record.doc_hash, "terms_hash": d.terms_hash if status == "READY" else None,
         "button": _t(lang, "Set up in my books", "记入我的账簿"),
         "labels": {"from_contract": _t(lang, "From the contract", "来自合同"), "forecast": _t(lang, "Your forecast", "您的预测"),
-                   "before": _t(lang, "Now", "现在"), "after": _t(lang, "After the set-up", "设置之后"),
+                   "before": _t(lang, "Now", "现在"),
+                   "after": _t(lang, "Once the first invoice is issued", "首张发票开出后"),
                    "not_set_up": _t(lang, "Not set up from this contract", "不会根据本合同设置"),
                    "why_not": _t(lang, "Why it cannot be set up", "无法设置的原因"),
                    "busy": _t(lang, "Setting up…", "正在设置…"), "undo_busy": _t(lang, "Undoing…", "正在撤销…")},
         "confirm": {
             "title": _t(lang, f"Set up {name}'s invoices in your books?", f"将{name}的发票记入账簿？"),
-            "body": _t(lang, "Your forecast will count on this money arriving on time. Only these invoices are added; you can "
-                             "undo it later. This is logged.",
-                       "您的预测将依赖这些款项按时到账。只添加这些发票；之后可以撤销。此操作会被记录。"),
+            "body": _t(lang, "Your forecast will count on this money arriving on time. It counts it from the day the first "
+                             "invoice is issued. Only these invoices are added; you can undo it later. This is logged.",
+                       "您的预测将依赖这些款项按时到账。首张发票开出之日起，预测才会计入。只添加这些发票；之后可以撤销。"
+                       "此操作会被记录。"),
             "yes": _t(lang, "Yes, set them up", "确认记入"), "no": _t(lang, "Not now", "暂不"),
         },
         "set_up": None, "lang": lang, "day": today,
@@ -392,14 +403,14 @@ def _result_text(r: OperationResult, done: str, lang: Lang, *, after_refusal: bo
     return "Nothing changed in your books: " + (r.violations[0].message if r.violations else r.message)
 
 
-@router.get("/documents/{document_id}/terms")
+@router.get("/documents/{document_id}/terms", dependencies=_TERMS_ON)
 def get_terms(document_id: str, lang: Lang = "en") -> dict:
     rt = get_runtime()
     with rt.lock:
         return {"terms": terms_view(rt, _record(rt, document_id), lang)}
 
 
-@router.post("/documents/{document_id}/terms")
+@router.post("/documents/{document_id}/terms", dependencies=_TERMS_ON)
 def post_terms(document_id: str, body: SetUpIn, lang: Lang = "en") -> dict:
     rt = get_runtime()
     with rt.lock:

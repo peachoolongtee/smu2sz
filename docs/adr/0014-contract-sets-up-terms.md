@@ -218,6 +218,36 @@ For the Security Lead:
   terms (read from the log), so a press refused at decision time no longer makes the next press a DUPLICATE; a DUPLICATE after a
   refusal says the earlier press was refused.
 
+### Round five, 18 Oct 2026 (engine, approved by the owner; `fix/r5-engine`)
+
+The engine halves the Security Lead left open, each minimal and tested (`tests/operations/test_contract_terms_r5.py`):
+
+- **CT-2, the conservative forecast waits for the first invoice.** `RecurringInvoice` gains `confirmed` (default true, left
+  out of the serialised form while true, so every other state and every golden value serialises and hashes as before). The
+  executor writes a set-up's repeating invoice `confirmed=false`; `trajectory._receivables` gives the invoices it generates
+  that confirmation, so the CONSERVATIVE projection skips them exactly as it skips any unconfirmed receivable, and EXPECTED
+  counts them as before. The clock confirms the schedule when it issues the first invoice (the issued receivable is confirmed,
+  as every issued invoice is). The executor's re-derivation now gets the mandate, so it applies the preview's caps
+  (OUTSIZED by the mandate ceiling as well as the customer's history). The preview's "after" column is the forecast once the
+  first invoice is issued, and the step says so: "The forecast counts these invoices once the first one is issued, on
+  <date>; until then it does not count on them" (en and zh; the column is headed "Once the first invoice is issued").
+  This supersedes the CT-2 note above ("the executor does not yet") and closes the open half.
+- **CT-6, the flag is checked before queueing; the undo is never switched off.** A `SetUpContractTerms` with
+  FEATURE_CONTRACT_TERMS off is refused before it is queued (FEATURE_DISABLED, `refusal: CONTRACT_TERMS_OFF`, logged, no
+  approval row); the run-time check stays for a set-up queued while the flag was on. `UndoContractTerms` runs with the flag
+  off, and `POST /documents/{id}/terms/undo` is behind FEATURE_CONTRACTS only, so a set-up can always be undone.
+- **CT-7, owner-only first.** For both operations the executor's owner-only check runs before idempotency, dating, the
+  mandate and any record lookup: a non-owner gets the same refusal (INSUFFICIENT_AUTHORITY, `CONTRACT_TERMS_OWNER_ONLY`, a
+  PRIVILEGE_ESCALATION event, logged REFUSED) whatever the operation carries. The owner's own operations still meet every gate.
+  `CommitPurchase` keeps its order (not in this change).
+- **REG-5, the executor half.** `decide_document` answers a repeated decision with the first one only when the logged entry is
+  that decision (CONFIRM_DOCUMENT or REJECT_DOCUMENT). A record closed by a refile (REJECTED by its REFILE_DOCUMENT entry,
+  superseded) is never answered with the refile entry: deciding it again is refused ("was filed again as <id> ... and is
+  closed"), logged, and the record is unchanged. A refile-closed or PARTY_NOT_NAMED record already sets nothing up at
+  execution (`derive`: NOT_CONFIRMED / SUPERSEDED / FLAGGED); the tests now pin that.
+- **Deferred:** SEC-27 (a refused approval re-run leaves the approval record APPROVED) and SEC-28 (multi-leg plans are atomic
+  per leg) are not part of this change.
+
 ## Considered and rejected
 
 - **Setting the terms on confirmation.** Confirming is a statement about the reading; setting up is a change to the forecast.

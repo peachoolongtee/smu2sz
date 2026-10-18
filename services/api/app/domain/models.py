@@ -565,6 +565,17 @@ class RecurringInvoice(Contract):
     every_days: int
     next_issue_day: Day
     terms_days: int
+    # CT-2 (ADR-0014): False for the invoices a contract set-up adds, until the clock has issued the first one; the
+    # CONSERVATIVE projection does not count an unconfirmed schedule's invoices (as for an unconfirmed receivable). Omitted
+    # while True, so every other state serialises and hashes as before.
+    confirmed: bool = True
+
+    @model_serializer(mode="wrap")
+    def _serialise(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]
+        data = handler(self)
+        if isinstance(data, dict) and self.confirmed:
+            data.pop("confirmed", None)
+        return data
 
 
 class DebtPosition(Contract):
