@@ -12789,7 +12789,7 @@
           "evaluations": 10,
           "seconds": 0,
           "shape_text": "按一笔今天支付、且在预测期内不会收回的一次性付款 X计算，无需新增融资额度或您的批准，且每一步 FLOW 今天都能执行。",
-          "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（47 天后到期）融资 ¥1,000.00：年化成本 15.49% 高于您签署的无需批准融资上限 15.00%（¥1,000.00 计息 42 天（从5 天后到47 天后），年化 15.49%）",
+          "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（47 天后到期）融资 ¥1,000.00：年化成本 15.49% 高于您签署的无需批准融资的批准线 15.00%（¥1,000.00 计息 42 天（从5 天后到47 天后），年化 15.49%）",
           "refused_text": null,
           "x_star_display": "¥2,000.00",
           "today_display": "¥81,000.00",

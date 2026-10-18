@@ -171,7 +171,7 @@ _CAP_TAIL = (rf"; that is above the (?P<cap>{PCT}) limit you signed for funding 
 
 
 def _cap_zh(cap: str | None) -> str:
-    return f"；该方案的年化成本高于您签署的无需批准融资上限 {cap}，因此执行前需要您批准" if cap else ""
+    return f"；该方案的年化成本高于您签署的无需批准融资的批准线 {cap}，因此执行前需要您批准" if cap else ""
 
 
 # ---------------------------------------------------------------- the owner's approval queue and the executor's results
@@ -183,10 +183,11 @@ def _queued(m: re.Match[str]) -> str:
 
 
 @rule(rf"the yearly cost of (?P<r>{PCT}) is above the (?P<cap>{PCT}) limit you signed for funding without your approval"
-      r"(?: \((?P<tail>[^;]+)\))?")
+      r"(?P<w1>, so it waits for your approval)?(?: \((?P<tail>[^;]+)\))?(?P<w2>, so it waits for your approval)?")
 def _ceiling(m: re.Match[str]) -> str:
-    out = f"年化成本 {m['r']} 高于您签署的无需批准融资上限 {m['cap']}"
-    return out + (f"（{tr(m['tail'])}）" if m["tail"] else "")
+    out = f"年化成本 {m['r']} 高于您签署的无需批准融资的批准线 {m['cap']}"
+    waits = "，因此需等您批准" if (m["w1"] or m["w2"]) else ""
+    return out + (f"（{tr(m['tail'])}）" if m["tail"] else "") + waits
 
 
 @rule(rf"(?P<r>{PCT}) simple")

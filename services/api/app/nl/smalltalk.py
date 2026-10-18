@@ -197,10 +197,10 @@ _NEVER_EN = ("FLOW never signs a personal guarantee, pledges your assets as coll
 _NEVER_ZH = ("FLOW 永远不会签署个人担保、把您的资产抵押出去、增发股权、修改您的授权或限额，也不会自行把新的融资额度或其他借款加入您的账目；"
              "它只会在您签署的授权范围内，使用您已承诺的融资额度。")
 _APPROVE_EN = ("It asks you first (Tier 2) before applying for a new facility, buying equipment, setting up what a contract "
-               "requires, drawing on a facility that is not committed, making a single commitment above your mandate's limit, "
+               "requires, drawing on a facility that is not committed, making a single commitment above the approval threshold in your mandate, "
                "agreeing to longer payment terms or any promise to a customer beyond an early-payment discount, or booking a "
                "payment that someone else reports.")
-_APPROVE_ZH = ("以下事项它会先请您批准（二级）：申请新的融资额度、购买设备、落实合同所要求的设置、动用未承诺的额度、单笔承诺超过您授权的上限、"
+_APPROVE_ZH = ("以下事项它会先请您批准（二级）：申请新的融资额度、购买设备、落实合同所要求的设置、动用未承诺的额度、单笔承诺超过您授权的批准线、"
                "同意更长的账期或在提前付款折扣之外对客户作出任何承诺，以及记录他人报告的收款。")
 _LOGGED_EN = "Every action it takes or refuses is written to a tamper-evident log. This answer only read; nothing was run."
 _LOGGED_ZH = "它执行或拒绝的每一项操作都会写入防篡改的日志。这条回答只是读取，没有执行任何操作。"

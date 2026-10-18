@@ -5536,7 +5536,7 @@
       "cost_leg_label": "the invoice-financing leg",
       "cost_total_display": "¥1,782.19",
       "cost_total_label": "the whole plan",
-      "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval."
+      "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval."
     },
     "deals_card": {
       "rows": [],
@@ -5664,7 +5664,7 @@
             "repaid_when": null,
             "state": "PLANNED",
             "state_text": "Planned",
-            "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+            "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
             "share_text": "100%"
           }
         ],
@@ -5788,8 +5788,8 @@
       "lands_day": 37,
       "lands_when": "in 3 days",
       "needs_owner": true,
-      "needs_owner_reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
-      "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+      "needs_owner_reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
+      "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
       "if_nothing": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
       "after": "Cash stays at or above your minimum cash reserve for the next 120 days.",
       "why": "The cheapest option, ¥1,702.20 in all (including ¥774.37 less in other interest and fees across the forecast), needs 2 separate approvals; this one needs one. Both are under your funding options.",
@@ -5816,7 +5816,7 @@
         "net_display": null,
         "when_text": "The last funds land in 3 days.",
         "assumptions_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
-        "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+        "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
         "remaining_text": null
       },
       "after_lowest_display": "¥300,000.00"
@@ -11488,7 +11488,7 @@
       "cost_leg_label": "发票融资部分",
       "cost_total_display": "¥1,782.19",
       "cost_total_label": "整个方案",
-      "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。"
+      "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资的批准线 15.00%，因此需等您批准。"
     },
     "deals_card": {
       "rows": [],
@@ -11616,7 +11616,7 @@
             "repaid_when": null,
             "state": "PLANNED",
             "state_text": "计划中",
-            "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
+            "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资的批准线 15.00%，因此需等您批准。",
             "share_text": "100%"
           }
         ],
@@ -11740,12 +11740,12 @@
       "lands_day": 37,
       "lands_when": "3 天后",
       "needs_owner": true,
-      "needs_owner_reason": "年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
-      "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
+      "needs_owner_reason": "年化成本 32.5% 高于您签署的无需批准融资的批准线 15.00%，因此需等您批准。",
+      "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资的批准线 15.00%，因此需等您批准。",
       "if_nothing": "8 天后比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00。",
       "after": "未来 120 天现金都不低于您的最低现金储备。",
       "why": "最便宜的方案合计 ¥1,702.20（含预测期内其他利息与费用少付的 ¥774.37），但需要 2 次单独批准；此方案只需一次。两者都在“您的融资方案”中。",
-      "detail": "预计现金将在8 天后降至 ¥100,000.00，比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00，持续到12 天后。有可用的融资方案：以发票在Invoice financing (onboarded platform)融资 ¥200,000.00，成本 ¥1,782.19（年化 32.5%，10 天）；该方案的年化成本高于您签署的无需批准融资上限 15.00%，因此执行前需要您批准。",
+      "detail": "预计现金将在8 天后降至 ¥100,000.00，比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00，持续到12 天后。有可用的融资方案：以发票在Invoice financing (onboarded platform)融资 ¥200,000.00，成本 ¥1,782.19（年化 32.5%，10 天）；该方案的年化成本高于您签署的无需批准融资的批准线 15.00%，因此执行前需要您批准。",
       "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
       "pending_approval_id": null,
       "state_version": 7,
@@ -11768,7 +11768,7 @@
         "net_display": null,
         "when_text": "最后一笔资金将于 3 天后到账。",
         "assumptions_text": "发票融资按整 30 天计费，直至发票付清。",
-        "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
+        "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资的批准线 15.00%，因此需等您批准。",
         "remaining_text": null
       },
       "after_lowest_display": "¥300,000.00"

@@ -96,7 +96,7 @@ def _leg_name(ctx: NlContext, plan: FundingPlan, i: int) -> str:
 
 
 def approval_sentences(ctx: NlContext, plan: FundingPlan) -> list[str]:
-    """One plain sentence per leg above the mandate's ceiling: its cost, its yearly rate and the ceiling. The numbers
+    """One plain sentence per leg above the borrowing approval threshold: its cost, its yearly rate and the threshold. The numbers
     are the router's (the cost line and the reason it wrote); the sentence only says them."""
     out: list[str] = []
     aligned = len(plan.costs) == len(plan.actions)
@@ -109,9 +109,9 @@ def approval_sentences(ctx: NlContext, plan: FundingPlan) -> list[str]:
             out.append(t(ctx, f"{name}: {cl.approval_reason}.", f"{name}：{cl.approval_reason}。"))
             continue
         cost, rate, cap = fmt_yuan(cl.fen), m["rate"], m["cap"]
-        out.append(t(ctx, f"{name} costs {cost}, which is {rate} a year, above your {cap} yearly ceiling for what I may "
-                          f"borrow alone.",
-                     f"{name}：费用 {cost}，年化 {rate}，高于您 {cap} 的年度融资成本上限（我可自行借款的范围）。"))
+        out.append(t(ctx, f"{name} costs {cost}, which is {rate} a year, above the {cap} you signed for me to "
+                          f"borrow without your approval, so it waits for your approval.",
+                     f"{name}：费用 {cost}，年化 {rate}，高于您签署的无需批准即可借款的 {cap} 批准线，因此需等您批准。"))
     return out
 
 

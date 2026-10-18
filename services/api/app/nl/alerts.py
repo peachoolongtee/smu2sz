@@ -118,17 +118,17 @@ def _cost_clause(ctx: NlContext, op: Operation, s: SuggestedAction | None, end: 
 
 
 def _cap_sentence(ctx: NlContext, mandate: Mandate, op: Operation) -> str:
-    """Above the ceiling the agent may not borrow alone: the executor queues the cure for the owner's approval."""
+    """Above the approval threshold the agent may not borrow alone: the executor queues the cure for the owner's approval."""
     cap = fmt_pct(bp(mandate.max_apr_bp))
     queue_en = ("so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not "
                 "run until you do.")
     queue_zh = "所以需要您批准：您确认后我会把它放入待批队列，您批准之前不会执行。"
     if isinstance(op, SubmitInvoiceForFinancing):
-        return t(ctx, f" That is above your {cap} yearly ceiling for funding (invoice financing is billed in whole "
-                      f"30-day periods), {queue_en}",
-                 f"这高于您 {cap} 的年度融资成本上限（发票融资按整 30 天计费），{queue_zh}")
-    return t(ctx, f" That is above your {cap} yearly ceiling for funding, {queue_en}",
-             f"这高于您 {cap} 的年度融资成本上限，{queue_zh}")
+        return t(ctx, f" That is above the {cap} you signed for FLOW to borrow without your approval (invoice financing is "
+                      f"billed in whole 30-day periods), {queue_en}",
+                 f"这高于您签署的无需批准即可借款的 {cap} 批准线（发票融资按整 30 天计费），{queue_zh}")
+    return t(ctx, f" That is above the {cap} you signed for FLOW to borrow without your approval, {queue_en}",
+             f"这高于您签署的无需批准即可借款的 {cap} 批准线，{queue_zh}")
 
 
 def _if_approved(ctx: NlContext, op: Operation) -> str:
@@ -152,9 +152,9 @@ def _queued_sentence(ctx: NlContext, mandate: Mandate, s: SuggestedAction | None
         cost, rate = fmt_yuan(s.cost_fen), fmt_pct(s.annual_rate.value, 1)
         cost_en = f"It costs {cost} by day {end}, which is {rate} a year for those {s.cost_days} days. "
         cost_zh = f"到第 {end} 天费用为 {cost}，相当于这 {s.cost_days} 天的年化 {rate}。"
-    return t(ctx, f"{cost_en}That is above your {cap} ceiling, so it needs your approval. I have not run it: it is "
+    return t(ctx, f"{cost_en}That is above the {cap} you signed for borrowing without your approval, so it waits for your approval. I have not run it: it is "
                   f"queued as {ref}. Say \"approve {ref}\" or use the approval card.",
-             f"{cost_zh}这高于您 {cap} 的上限，需要您批准。我尚未执行：已列入待批队列，编号 {ref}。"
+             f"{cost_zh}这高于您签署的无需批准即可借款的 {cap} 批准线，需要您批准。我尚未执行：已列入待批队列，编号 {ref}。"
              f"请说“批准 {ref}”或使用审批卡。") + (_if_approved(ctx, op) if op is not None else "")
 
 
@@ -246,13 +246,13 @@ def _waiting_sentence(ctx: NlContext, state: FinancialState, mandate: Mandate, a
             facts["waiting_op"] = op
             facts["waiting_cost_fen"] = line.fen if line is not None else (sg.cost_fen if sg is not None else None)
         if line is not None:
-            cost_en = f" It costs {fmt_yuan(line.fen)}" + (f", above your {fmt_pct(bp(mandate.max_apr_bp))} ceiling" if line.needs_owner_approval else "") + "."
-            cost_zh = f"费用 {fmt_yuan(line.fen)}" + (f"，高于您 {fmt_pct(bp(mandate.max_apr_bp))} 的上限" if line.needs_owner_approval else "") + "。"
+            cost_en = f" It costs {fmt_yuan(line.fen)}" + (f", above the {fmt_pct(bp(mandate.max_apr_bp))} you signed for borrowing without your approval" if line.needs_owner_approval else "") + "."
+            cost_zh = f"费用 {fmt_yuan(line.fen)}" + (f"，高于您签署的无需批准借款的 {fmt_pct(bp(mandate.max_apr_bp))} 批准线" if line.needs_owner_approval else "") + "。"
         elif sg is not None and sg.cost_fen is not None and sg.annual_rate is not None and sg.cost_days is not None and end:
             cap = fmt_pct(bp(mandate.max_apr_bp))
             cost, rate = fmt_yuan(sg.cost_fen), fmt_pct(sg.annual_rate.value, 1)
-            over_en = f", above your {cap} ceiling" if sg.above_apr_cap else ""
-            over_zh = f"，高于您 {cap} 的上限" if sg.above_apr_cap else ""
+            over_en = f", above the {cap} you signed for borrowing without your approval" if sg.above_apr_cap else ""
+            over_zh = f"，高于您签署的无需批准借款的 {cap} 批准线" if sg.above_apr_cap else ""
             cost_en = f" It costs {cost} by day {end}, which is {rate} a year for those {sg.cost_days} days{over_en}."
             cost_zh = f"到第 {end} 天费用为 {cost}，相当于这 {sg.cost_days} 天的年化 {rate}{over_zh}。"
     return t(ctx, f"The cure is already waiting for your approval ({rec.id}){what_en}.{cost_en} I have not run it. To approve "

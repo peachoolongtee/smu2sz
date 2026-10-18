@@ -2507,7 +2507,7 @@
     "lowest_if_approved_short": "¥300k",
     "lowest_if_approved_when": "今天",
     "execution_status": "PENDING",
-    "reason": "年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
+    "reason": "年化成本 32.5% 高于您签署的无需批准融资的批准线 15.00%，因此需等您批准。",
     "next_step_text": null,
     "next_step_href": null,
     "result_state_text": "等待您批准",
@@ -2564,7 +2564,7 @@
     "net_display": null,
     "when_text": "资金将于 3 天后到账。",
     "assumptions_text": "发票融资按整 30 天计费，直至发票付清。",
-    "authority_text": "年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
+    "authority_text": "年化成本 32.5% 高于您签署的无需批准融资的批准线 15.00%，因此需等您批准。",
     "remaining_text": null
   },
   "commit_label": "授权融资申请",

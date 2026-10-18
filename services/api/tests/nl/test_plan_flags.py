@@ -99,7 +99,7 @@ def test_an_owner_session_is_promised_the_same_queue(world):
     ceiling waits for the owner's explicit approval too, and the proposal says so."""
     rt, client = world(SHORT_HOLD)
     r = Chat(client, "flag-own").say(GOAL["en"])
-    assert "costs ¥801.99, which is 32.53% a year, above your 15.00% yearly ceiling" in r["reply"]
+    assert "costs ¥801.99, which is 32.53% a year, above the 15.00% you signed for me to borrow without your approval, so it waits for your approval" in r["reply"]
     assert "will wait for your approval (APR-…)" in r["reply"]
     go = Chat(client, "flag-own").say("go ahead")
     assert [o["status"] for o in go["operations"] if o["kind"] == "SUBMIT_INVOICE_FOR_FINANCING"] == ["PENDING_APPROVAL"]
@@ -142,9 +142,9 @@ def test_the_compare_reply_shows_both_flags_in_words(world):
     rt, client = world(SHORT_HOLD)
     # SHORT_HOLD has no gap on day 0 once the golden draws are made; ask on the books as they stand
     en = Chat(client, "cmp-sh").say(COMPARE["en"])["reply"]
-    assert "It needs your approval: " in en and "32.53% a year, above your 15.00% yearly ceiling" in en
-    assert "legs above your ceiling will wait for your approval" in en  # the same queue in an owner session
-    assert "its rate alone is above your 15.00% yearly ceiling, so any use of it needs your approval" in en
+    assert "It needs your approval: " in en and "32.53% a year, above the 15.00% you signed for me to borrow without your approval" in en
+    assert "legs above your approval threshold will wait for your approval" in en  # the same queue in an owner session
+    assert "its rate alone is above the 15.00% you signed for borrowing without your approval, so any use of it waits for your approval" in en
 
     rt, client = world(UNISSUED)
     en = Chat(client, "cmp-un").say(COMPARE["en"])["reply"]
@@ -154,8 +154,8 @@ def test_the_compare_reply_shows_both_flags_in_words(world):
     assert "该方案今天无法执行：" in zh and "今天回复“补足资金缺口”也不会执行该方案" in zh
     rt, client = world(SHORT_HOLD)
     zh = Chat(client, "cmp-sh-zh").say(COMPARE["zh"])["reply"]
-    assert "该方案需要您批准：" in zh and "年化 32.53%，高于您 15.00% 的年度融资成本上限" in zh
-    assert "其利率本身高于您 15.00% 的年度上限" in zh
+    assert "该方案需要您批准：" in zh and "年化 32.53%，高于您签署的无需批准即可借款的 15.00% 批准线" in zh
+    assert "其利率本身高于您签署的无需批准即可借款的 15.00% 批准线" in zh
 
 
 def test_the_compare_reply_lists_a_flagged_alternative_priced_by_the_router(client, rt):
@@ -169,6 +169,6 @@ def test_the_compare_reply_lists_a_flagged_alternative_priced_by_the_router(clie
     en = Chat(client, "cmp-alt").say(COMPARE["en"])["reply"]
     assert "It needs your approval" not in en  # the selected plan is the one that needs no one
     line = next(x for x in en.splitlines() if x.startswith("- Also priced:"))
-    assert "needs your approval: " in line and "above the mandate's 15.00% ceiling" in line
+    assert "waits for your approval: " in line and "is above the 15.00% you signed for borrowing without your approval" in line and "ceiling" not in line
     zh = Chat(client, "cmp-alt-zh").say(COMPARE["zh"])["reply"]
-    assert "- 另有测算：" in zh and "需要您批准：年化" in zh and "高于 15.00% 上限" in zh
+    assert "- 另有测算：" in zh and "需要您批准：年化" in zh and "高于您签署的无需批准即可借款的 15.00% 批准线" in zh

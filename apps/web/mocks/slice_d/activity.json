@@ -2990,7 +2990,7 @@
       "title_text": "动态",
       "state_word": "等待您处理",
       "state_tone": "warn",
-      "state_text": "最新，今天：等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。 有 1 项批准事项在等您。",
+      "state_text": "最新，今天：等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资的批准线 15.00%。 有 1 项批准事项在等您。",
       "summary": {
         "business_count": 7,
         "security_alert_count": 0,
@@ -3040,7 +3040,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "今天",
-          "title_text": "等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。",
+          "title_text": "等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资的批准线 15.00%。",
           "detail_text": null,
           "why_text": "报价成本 ¥1,782.19；资金将于3 天后到账。",
           "why_as_of_text": null,
@@ -3065,7 +3065,7 @@
             "kind_text": "已申请发票融资",
             "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
           },
-          "search_text": "等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。 报价成本 ¥1,782.19；资金将于3 天后到账。 等待您批准；资金需要在8 天后到位。 foshan home retail co. 现金"
+          "search_text": "等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资的批准线 15.00%。 报价成本 ¥1,782.19；资金将于3 天后到账。 等待您批准；资金需要在8 天后到位。 foshan home retail co. 现金"
         },
         {
           "id": "op:8",
@@ -3842,7 +3842,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "今天",
-          "title_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。",
+          "title_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资的批准线 15.00%。",
           "detail_text": null,
           "why_text": "报价成本 ¥1,782.19；资金将于3 天后到账。",
           "why_as_of_text": null,
@@ -3867,7 +3867,7 @@
             "kind_text": "已申请发票融资",
             "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
           },
-          "search_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。 报价成本 ¥1,782.19；资金将于3 天后到账。 等待invoice financing (onboarded platform)于3 天后放款到账。 foshan home retail co. 现金"
+          "search_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资的批准线 15.00%。 报价成本 ¥1,782.19；资金将于3 天后到账。 等待invoice financing (onboarded platform)于3 天后放款到账。 foshan home retail co. 现金"
         },
         {
           "id": "op:8",
@@ -4710,7 +4710,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "4 天前",
-          "title_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。",
+          "title_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资的批准线 15.00%。",
           "detail_text": null,
           "why_text": "报价成本 ¥1,782.19；资金将于昨天到账。",
           "why_as_of_text": null,
@@ -4735,7 +4735,7 @@
             "kind_text": "已申请发票融资",
             "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
           },
-          "search_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。 报价成本 ¥1,782.19；资金将于昨天到账。 foshan home retail co. 现金"
+          "search_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资的批准线 15.00%。 报价成本 ¥1,782.19；资金将于昨天到账。 foshan home retail co. 现金"
         },
         {
           "id": "op:8",
@@ -6146,7 +6146,7 @@
           "category": "cash",
           "category_label": "现金",
           "when": "4 天前",
-          "title_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。",
+          "title_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资的批准线 15.00%。",
           "detail_text": null,
           "why_text": "报价成本 ¥1,782.19；资金将于昨天到账。",
           "why_as_of_text": null,
@@ -6171,7 +6171,7 @@
             "kind_text": "已申请发票融资",
             "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
           },
-          "search_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。 报价成本 ¥1,782.19；资金将于昨天到账。 foshan home retail co. 现金"
+          "search_text": "已请求批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资的批准线 15.00%。 报价成本 ¥1,782.19；资金将于昨天到账。 foshan home retail co. 现金"
         },
         {
           "id": "op:8",
