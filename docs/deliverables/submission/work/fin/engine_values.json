@@ -1,0 +1,4626 @@
+{
+ "baseline": {
+  "min_cash_fen": -10500000,
+  "min_cash_day": 30,
+  "first_breach_day": 12,
+  "days": [
+   {
+    "day": 0,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 1,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 2,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 3,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 4,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 5,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 6,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 7,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 8,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 9,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 10,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 11,
+    "closing_fen": 40000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 12,
+    "closing_fen": 6000000,
+    "debt_fen": 150000000,
+    "events": [
+     [
+      "FLOW",
+      -34000000,
+      "Payroll",
+      "F-PAYROLL"
+     ]
+    ]
+   },
+   {
+    "day": 13,
+    "closing_fen": 6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 14,
+    "closing_fen": 6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 15,
+    "closing_fen": 6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 16,
+    "closing_fen": 6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 17,
+    "closing_fen": 6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 18,
+    "closing_fen": 6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 19,
+    "closing_fen": 6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 20,
+    "closing_fen": -6000000,
+    "debt_fen": 150000000,
+    "events": [
+     [
+      "FLOW",
+      -12000000,
+      "Supplier payment",
+      "F-SUPPLIER"
+     ]
+    ]
+   },
+   {
+    "day": 21,
+    "closing_fen": -6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 22,
+    "closing_fen": -6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 23,
+    "closing_fen": -6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 24,
+    "closing_fen": -6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 25,
+    "closing_fen": -6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 26,
+    "closing_fen": -6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 27,
+    "closing_fen": -6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 28,
+    "closing_fen": -6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 29,
+    "closing_fen": -6000000,
+    "debt_fen": 150000000,
+    "events": []
+   },
+   {
+    "day": 30,
+    "closing_fen": -10500000,
+    "debt_fen": 145500000,
+    "events": [
+     [
+      "FLOW",
+      -4500000,
+      "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+      "D-EQUIP"
+     ]
+    ]
+   },
+   {
+    "day": 31,
+    "closing_fen": -10500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 32,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": [
+     [
+      "RECEIPT",
+      42000000,
+      "Receipt RCV-A from BUYER-1",
+      "RCV-A"
+     ]
+    ]
+   },
+   {
+    "day": 33,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 34,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 35,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 36,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 37,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 38,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 39,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 40,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 41,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 42,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 43,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 44,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 45,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 46,
+    "closing_fen": 31500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 47,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": [
+     [
+      "RECEIPT",
+      42000000,
+      "Receipt RI:BUYER-1:2 from BUYER-1",
+      "RI:BUYER-1:2"
+     ],
+     [
+      "FLOW",
+      -10000000,
+      "Operating bill",
+      "F-BILL47"
+     ]
+    ]
+   },
+   {
+    "day": 48,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 49,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 50,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 51,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 52,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 53,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 54,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 55,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 56,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 57,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 58,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 59,
+    "closing_fen": 63500000,
+    "debt_fen": 145500000,
+    "events": []
+   },
+   {
+    "day": 60,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": [
+     [
+      "FLOW",
+      -4500000,
+      "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+      "D-EQUIP"
+     ]
+    ]
+   },
+   {
+    "day": 61,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 62,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 63,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 64,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 65,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 66,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 67,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 68,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 69,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 70,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 71,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 72,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 73,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 74,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 75,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 76,
+    "closing_fen": 59000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 77,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": [
+     [
+      "RECEIPT",
+      42000000,
+      "Receipt RI:BUYER-1:32 from BUYER-1",
+      "RI:BUYER-1:32"
+     ]
+    ]
+   },
+   {
+    "day": 78,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 79,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 80,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 81,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 82,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 83,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 84,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 85,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 86,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 87,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 88,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 89,
+    "closing_fen": 101000000,
+    "debt_fen": 141000000,
+    "events": []
+   },
+   {
+    "day": 90,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": [
+     [
+      "FLOW",
+      -4500000,
+      "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+      "D-EQUIP"
+     ]
+    ]
+   },
+   {
+    "day": 91,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 92,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 93,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 94,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 95,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 96,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 97,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 98,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 99,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 100,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 101,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 102,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 103,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 104,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 105,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 106,
+    "closing_fen": 96500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 107,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": [
+     [
+      "RECEIPT",
+      42000000,
+      "Receipt RI:BUYER-1:62 from BUYER-1",
+      "RI:BUYER-1:62"
+     ]
+    ]
+   },
+   {
+    "day": 108,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 109,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 110,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 111,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 112,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 113,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 114,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 115,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 116,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 117,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 118,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 119,
+    "closing_fen": 138500000,
+    "debt_fen": 136500000,
+    "events": []
+   },
+   {
+    "day": 120,
+    "closing_fen": 134000000,
+    "debt_fen": 132000000,
+    "events": [
+     [
+      "FLOW",
+      -4500000,
+      "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+      "D-EQUIP"
+     ]
+    ]
+   }
+  ],
+  "months": [
+   {
+    "month": 1,
+    "ebitda_fen": 9000000,
+    "debt_service_fen": 4500000,
+    "total_debt_fen": 145500000,
+    "dscr": "2.00",
+    "leverage": "1.35"
+   },
+   {
+    "month": 2,
+    "ebitda_fen": 9000000,
+    "debt_service_fen": 4500000,
+    "total_debt_fen": 141000000,
+    "dscr": "2.00",
+    "leverage": "1.31"
+   },
+   {
+    "month": 3,
+    "ebitda_fen": 9000000,
+    "debt_service_fen": 4500000,
+    "total_debt_fen": 136500000,
+    "dscr": "2.00",
+    "leverage": "1.26"
+   },
+   {
+    "month": 4,
+    "ebitda_fen": 9000000,
+    "debt_service_fen": 4500000,
+    "total_debt_fen": 132000000,
+    "dscr": "2.00",
+    "leverage": "1.22"
+   }
+  ]
+ },
+ "standing_plan": {
+  "total_cost_fen": 311393,
+  "need_fen": 40500000,
+  "costs": {
+   "FAC-LINE": 84164,
+   "FAC-IF": 227229
+  },
+  "actions": [
+   {
+    "kind": "DRAW",
+    "facility": "FAC-LINE",
+    "day": 0,
+    "amount_fen": 15000000,
+    "repay_day": 32,
+    "receivable": null
+   },
+   {
+    "kind": "FINANCE_INVOICE",
+    "facility": "FAC-IF",
+    "day": 0,
+    "amount_fen": 25500000,
+    "repay_day": null,
+    "receivable": "RCV-A"
+   }
+  ],
+  "trajectory": {
+   "min_cash_fen": 30000000,
+   "min_cash_day": 30,
+   "first_breach_day": null,
+   "interest": 247643,
+   "fees": 63750,
+   "days": [
+    {
+     "day": 0,
+     "closing_fen": 55000000,
+     "debt_fen": 165000000,
+     "events": [
+      [
+       "DRAW",
+       15000000,
+       "Draw Bank credit line",
+       "FAC-LINE"
+      ]
+     ]
+    },
+    {
+     "day": 1,
+     "closing_fen": 55000000,
+     "debt_fen": 165000000,
+     "events": []
+    },
+    {
+     "day": 2,
+     "closing_fen": 55000000,
+     "debt_fen": 165000000,
+     "events": []
+    },
+    {
+     "day": 3,
+     "closing_fen": 80500000,
+     "debt_fen": 190500000,
+     "events": [
+      [
+       "ADVANCE",
+       25500000,
+       "Advance on RCV-A, Invoice financing (onboarded platform)",
+       "FAC-IF"
+      ]
+     ]
+    },
+    {
+     "day": 4,
+     "closing_fen": 80500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 5,
+     "closing_fen": 80500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 6,
+     "closing_fen": 80500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 7,
+     "closing_fen": 80500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 8,
+     "closing_fen": 80500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 9,
+     "closing_fen": 80500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 10,
+     "closing_fen": 80500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 11,
+     "closing_fen": 80500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 12,
+     "closing_fen": 46500000,
+     "debt_fen": 190500000,
+     "events": [
+      [
+       "FLOW",
+       -34000000,
+       "Payroll",
+       "F-PAYROLL"
+      ]
+     ]
+    },
+    {
+     "day": 13,
+     "closing_fen": 46500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 14,
+     "closing_fen": 46500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 15,
+     "closing_fen": 46500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 16,
+     "closing_fen": 46500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 17,
+     "closing_fen": 46500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 18,
+     "closing_fen": 46500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 19,
+     "closing_fen": 46500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 20,
+     "closing_fen": 34500000,
+     "debt_fen": 190500000,
+     "events": [
+      [
+       "FLOW",
+       -12000000,
+       "Supplier payment",
+       "F-SUPPLIER"
+      ]
+     ]
+    },
+    {
+     "day": 21,
+     "closing_fen": 34500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 22,
+     "closing_fen": 34500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 23,
+     "closing_fen": 34500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 24,
+     "closing_fen": 34500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 25,
+     "closing_fen": 34500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 26,
+     "closing_fen": 34500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 27,
+     "closing_fen": 34500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 28,
+     "closing_fen": 34500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 29,
+     "closing_fen": 34500000,
+     "debt_fen": 190500000,
+     "events": []
+    },
+    {
+     "day": 30,
+     "closing_fen": 30000000,
+     "debt_fen": 186000000,
+     "events": [
+      [
+       "FLOW",
+       -4500000,
+       "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+       "D-EQUIP"
+      ]
+     ]
+    },
+    {
+     "day": 31,
+     "closing_fen": 30000000,
+     "debt_fen": 186000000,
+     "events": []
+    },
+    {
+     "day": 32,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": [
+      [
+       "RECEIPT",
+       42000000,
+       "Receipt RCV-A from BUYER-1",
+       "RCV-A"
+      ],
+      [
+       "INTEREST",
+       -84164,
+       "Interest, Bank credit line",
+       "FAC-LINE"
+      ],
+      [
+       "REPAYMENT",
+       -15000000,
+       "Repay Bank credit line",
+       "FAC-LINE"
+      ],
+      [
+       "INTEREST",
+       -163479,
+       "Interest, Invoice financing (onboarded platform) on RCV-A",
+       "FAC-IF"
+      ],
+      [
+       "FEE",
+       -63750,
+       "Fee, Invoice financing (onboarded platform) on RCV-A",
+       "FAC-IF"
+      ],
+      [
+       "REPAYMENT",
+       -25500000,
+       "Repay advance on RCV-A",
+       "FAC-IF"
+      ]
+     ]
+    },
+    {
+     "day": 33,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 34,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 35,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 36,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 37,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 38,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 39,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 40,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 41,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 42,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 43,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 44,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 45,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 46,
+     "closing_fen": 31188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 47,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": [
+      [
+       "RECEIPT",
+       42000000,
+       "Receipt RI:BUYER-1:2 from BUYER-1",
+       "RI:BUYER-1:2"
+      ],
+      [
+       "FLOW",
+       -10000000,
+       "Operating bill",
+       "F-BILL47"
+      ]
+     ]
+    },
+    {
+     "day": 48,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 49,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 50,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 51,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 52,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 53,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 54,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 55,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 56,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 57,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 58,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 59,
+     "closing_fen": 63188607,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 60,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": [
+      [
+       "FLOW",
+       -4500000,
+       "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+       "D-EQUIP"
+      ]
+     ]
+    },
+    {
+     "day": 61,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 62,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 63,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 64,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 65,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 66,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 67,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 68,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 69,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 70,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 71,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 72,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 73,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 74,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 75,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 76,
+     "closing_fen": 58688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 77,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": [
+      [
+       "RECEIPT",
+       42000000,
+       "Receipt RI:BUYER-1:32 from BUYER-1",
+       "RI:BUYER-1:32"
+      ]
+     ]
+    },
+    {
+     "day": 78,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 79,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 80,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 81,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 82,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 83,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 84,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 85,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 86,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 87,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 88,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 89,
+     "closing_fen": 100688607,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 90,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": [
+      [
+       "FLOW",
+       -4500000,
+       "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+       "D-EQUIP"
+      ]
+     ]
+    },
+    {
+     "day": 91,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 92,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 93,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 94,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 95,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 96,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 97,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 98,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 99,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 100,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 101,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 102,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 103,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 104,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 105,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 106,
+     "closing_fen": 96188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 107,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": [
+      [
+       "RECEIPT",
+       42000000,
+       "Receipt RI:BUYER-1:62 from BUYER-1",
+       "RI:BUYER-1:62"
+      ]
+     ]
+    },
+    {
+     "day": 108,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 109,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 110,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 111,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 112,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 113,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 114,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 115,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 116,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 117,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 118,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 119,
+     "closing_fen": 138188607,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 120,
+     "closing_fen": 133688607,
+     "debt_fen": 132000000,
+     "events": [
+      [
+       "FLOW",
+       -4500000,
+       "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+       "D-EQUIP"
+      ]
+     ]
+    }
+   ],
+   "months": [
+    {
+     "month": 1,
+     "ebitda_fen": 9000000,
+     "debt_service_fen": 4500000,
+     "total_debt_fen": 186000000,
+     "dscr": "2.00",
+     "leverage": "1.72"
+    },
+    {
+     "month": 2,
+     "ebitda_fen": 9000000,
+     "debt_service_fen": 4811393,
+     "total_debt_fen": 141000000,
+     "dscr": "1.87",
+     "leverage": "1.31"
+    },
+    {
+     "month": 3,
+     "ebitda_fen": 9000000,
+     "debt_service_fen": 4500000,
+     "total_debt_fen": 136500000,
+     "dscr": "2.00",
+     "leverage": "1.26"
+    },
+    {
+     "month": 4,
+     "ebitda_fen": 9000000,
+     "debt_service_fen": 4500000,
+     "total_debt_fen": 132000000,
+     "dscr": "2.00",
+     "leverage": "1.22"
+    }
+   ]
+  }
+ },
+ "break_even": {
+  "exact": "1301/147301",
+  "bp_trunc": 88,
+  "marginal_rate": "1301/12000",
+  "source": "FAC-IF"
+ },
+ "ex01": {
+  "outcome": "REJECT",
+  "codes": [
+   "AGG_CONCESSION_EXCEEDED",
+   "RESERVE_BREACH",
+   "DISCOUNT_ABOVE_BREAK_EVEN",
+   "EARLY_PAY_DEARER_THAN_PLAN"
+  ],
+  "forward_concession_total_fen": 2832692,
+  "concession_values": [
+   {
+    "id": "OFF-f806f79b6c21-O1",
+    "value_fen": 0,
+    "per_invoice_fen": null,
+    "basis": "immediate discount: settled in cash now and capped separately, not a forward concession",
+    "formula": "0 (see the immediate-discount cap)"
+   },
+   {
+    "id": "OFF-f806f79b6c21-O2",
+    "value_fen": 2432692,
+    "per_invoice_fen": 187130,
+    "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
+    "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92"
+   },
+   {
+    "id": "OFF-f806f79b6c21-O3",
+    "value_fen": 400000,
+    "per_invoice_fen": null,
+    "basis": "contingent rebate counted at maximum",
+    "formula": "1% × 400,000.00 = 4,000.00"
+   }
+  ],
+  "violations": [
+   {
+    "code": "AGG_CONCESSION_EXCEEDED",
+    "observed": "¥28,326.92",
+    "limit": "¥5,000.00",
+    "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00",
+    "inputs": {
+     "scope": "aggregate",
+     "existing": "¥0.00",
+     "new_concessions": "¥28,326.92",
+     "firm_gains_netted": "¥0.00",
+     "contingent_gains_ignored": "¥0.00",
+     "total": "¥28,326.92",
+     "total_fen": "2832692",
+     "cap": "¥5,000.00",
+     "netting_rule": "only FIRM gains offset concessions; contingent gains count as zero"
+    },
+    "cure_cost_fen": null,
+    "day": null
+   },
+   {
+    "code": "RESERVE_BREACH",
+    "observed": "¥209,960.00",
+    "limit": "¥300,000.00",
+    "formula": "closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00",
+    "inputs": {
+     "day": "47",
+     "closing_cash": "¥209,960.00",
+     "baseline_closing_cash": "¥635,000.00",
+     "min_cash": "¥300,000.00",
+     "shortfall": "¥90,040.00",
+     "shortfall_fen": "9004000",
+     "max_shortfall": "¥135,040.00",
+     "max_shortfall_day": "60",
+     "recovery_day": "62",
+     "days_below_floor": "15",
+     "mode": "CONSERVATIVE",
+     "rule": "charged to the offer only where its cash is below the floor and below the no-offer baseline",
+     "structural_cost_per_invoice": "¥1,871.30",
+     "covenant_pro_forma_dscr": "1.92x",
+     "covenant_pro_forma_leverage": "1.47x",
+     "covenant_pro_forma_leverage_month": "1",
+     "covenant_pro_forma_leverage_debt": "¥1,590,040.00",
+     "covenant_pro_forma_leverage_basis": "projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m)",
+     "cure_plan": "committed plan: ¥2,406.67 (cannot run today)",
+     "cure_executable_now": "false",
+     "cure_not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32"
+    },
+    "cure_cost_fen": 240667,
+    "day": 47
+   },
+   {
+    "code": "DISCOUNT_ABOVE_BREAK_EVEN",
+    "observed": "1.20%",
+    "limit": "< 0.88%",
+    "formula": "d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods)",
+    "inputs": {
+     "discount": "1.20%",
+     "days_early": "30",
+     "receivable_id": "RCV-A",
+     "implied_annual_rate": "14.7773%",
+     "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
+     "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93",
+     "break_even": "0.8832%",
+     "break_even_bp_floor": "88",
+     "break_even_days": "30"
+    },
+    "cure_cost_fen": null,
+    "day": null
+   },
+   {
+    "code": "EARLY_PAY_DEARER_THAN_PLAN",
+    "observed": "¥6,508.05",
+    "limit": "< ¥3,873.58",
+    "formula": "C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required",
+    "inputs": {
+     "plan_with_offer": "committed plan: ¥1,468.05",
+     "plan_without_offer": "committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58",
+     "cost_with_offer": "¥6,508.05",
+     "cost_without_offer": "¥3,873.58",
+     "legs": "RCV-A at 1.20%"
+    },
+    "cure_cost_fen": null,
+    "day": null
+   }
+  ],
+  "passed": [
+   {
+    "code": "MAX_APR",
+    "observed": "14.78%",
+    "inputs": {
+     "discount": "1.20%",
+     "days_early": "30",
+     "receivable_id": "RCV-A",
+     "implied_annual_rate": "14.7773%",
+     "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
+     "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93"
+    }
+   },
+   {
+    "code": "DSCR_MIN",
+    "observed": "1.92x",
+    "inputs": {
+     "EBITDA_m": "¥90,000.00",
+     "DS_m": "¥46,897.29",
+     "extra_receivables": "¥210,000.00",
+     "extra_monthly_debt_service": "¥1,897.29",
+     "extra_receivables_basis": "estimate: the steady-state receivables the extension ties up (face × Δdays / invoice interval), funded permanently at the marginal rate; no plan funds that steady state yet",
+     "pro_forma_dscr": "1.92x",
+     "pro_forma_leverage": "1.47x",
+     "pro_forma_leverage_month": "1",
+     "pro_forma_leverage_debt": "¥1,590,040.00",
+     "pro_forma_leverage_basis": "projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m)",
+     "source": "mandate v1"
+    }
+   },
+   {
+    "code": "LEVERAGE_MAX",
+    "observed": "1.47x",
+    "inputs": {
+     "month": "1",
+     "Debt_m": "¥1,590,040.00",
+     "EBITDA_m": "¥90,000.00",
+     "leverage_exact": "39751/27000",
+     "definition": "DebtPosition principal + drawn balances counted in leverage, at month end"
+    }
+   },
+   {
+    "code": "CLEAN_DOWN",
+    "observed": "59 days at zero",
+    "inputs": {
+     "facility_id": "FAC-LINE",
+     "run_start_day": "62",
+     "run_end_day": "120",
+     "horizon_days": "120"
+    }
+   }
+  ],
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 120,
+    "days_delta": null,
+    "amount_fen": null,
+    "base_amount_fen": 42000000,
+    "receivable": "RCV-A"
+   },
+   {
+    "type": "TERMS_EXTENSION",
+    "rate_bp": null,
+    "days_delta": 15,
+    "amount_fen": null,
+    "base_amount_fen": null,
+    "receivable": null
+   },
+   {
+    "type": "CONTINGENT_REBATE",
+    "rate_bp": 100,
+    "days_delta": null,
+    "amount_fen": null,
+    "base_amount_fen": 40000000,
+    "receivable": null
+   }
+  ],
+  "comparison": [
+   {
+    "key": "full_discount",
+    "cost_fen": 504000,
+    "actions": [
+     {
+      "kind": "EARLY_PAY",
+      "facility": "FAC-EARLYPAY",
+      "day": 0,
+      "amount_fen": 42000000,
+      "repay_day": null,
+      "receivable": "RCV-A"
+     }
+    ]
+   },
+   {
+    "key": "line_partial_early_pay",
+    "cost_fen": 393881,
+    "actions": [
+     {
+      "kind": "DRAW",
+      "facility": "FAC-LINE",
+      "day": 0,
+      "amount_fen": 15000000,
+      "repay_day": 32,
+      "receivable": null
+     },
+     {
+      "kind": "EARLY_PAY",
+      "facility": "FAC-EARLYPAY",
+      "day": 0,
+      "amount_fen": 25809717,
+      "repay_day": null,
+      "receivable": "RCV-A"
+     }
+    ]
+   },
+   {
+    "key": "router_optimum",
+    "cost_fen": 311393,
+    "actions": [
+     {
+      "kind": "DRAW",
+      "facility": "FAC-LINE",
+      "day": 0,
+      "amount_fen": 15000000,
+      "repay_day": 32,
+      "receivable": null
+     },
+     {
+      "kind": "FINANCE_INVOICE",
+      "facility": "FAC-IF",
+      "day": 0,
+      "amount_fen": 25500000,
+      "repay_day": null,
+      "receivable": "RCV-A"
+     }
+    ]
+   },
+   {
+    "key": "line_guaranteed_loan",
+    "cost_fen": null,
+    "actions": [
+     {
+      "kind": "DRAW",
+      "facility": "FAC-LINE",
+      "day": 0,
+      "amount_fen": 15000000,
+      "repay_day": 32,
+      "receivable": null
+     },
+     {
+      "kind": "DRAW",
+      "facility": "FAC-GGL",
+      "day": 0,
+      "amount_fen": 25500000,
+      "repay_day": null,
+      "receivable": null
+     }
+    ]
+   },
+   {
+    "key": "line_only",
+    "cost_fen": 84164,
+    "actions": [
+     {
+      "kind": "DRAW",
+      "facility": "FAC-LINE",
+      "day": 0,
+      "amount_fen": 15000000,
+      "repay_day": 32,
+      "receivable": null
+     }
+    ]
+   }
+  ],
+  "trajectory": {
+   "min_cash_fen": 16496000,
+   "min_cash_day": 60,
+   "first_breach_day": 47,
+   "days": [
+    {
+     "day": 0,
+     "closing_fen": 40000000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 1,
+     "closing_fen": 40000000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 2,
+     "closing_fen": 81496000,
+     "debt_fen": 150000000,
+     "events": [
+      [
+       "EARLY_RECEIPT",
+       42000000,
+       "Early settlement of RCV-A (OFF-f806f79b6c21-O1)",
+       "RCV-A"
+      ],
+      [
+       "DISCOUNT",
+       -504000,
+       "Discount on early settlement of RCV-A (OFF-f806f79b6c21-O1)",
+       "OFF-f806f79b6c21-O1"
+      ]
+     ]
+    },
+    {
+     "day": 3,
+     "closing_fen": 81496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 4,
+     "closing_fen": 81496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 5,
+     "closing_fen": 81496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 6,
+     "closing_fen": 81496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 7,
+     "closing_fen": 81496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 8,
+     "closing_fen": 81496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 9,
+     "closing_fen": 81496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 10,
+     "closing_fen": 81496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 11,
+     "closing_fen": 81496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 12,
+     "closing_fen": 47496000,
+     "debt_fen": 150000000,
+     "events": [
+      [
+       "FLOW",
+       -34000000,
+       "Payroll",
+       "F-PAYROLL"
+      ]
+     ]
+    },
+    {
+     "day": 13,
+     "closing_fen": 47496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 14,
+     "closing_fen": 47496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 15,
+     "closing_fen": 47496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 16,
+     "closing_fen": 47496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 17,
+     "closing_fen": 47496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 18,
+     "closing_fen": 47496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 19,
+     "closing_fen": 47496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 20,
+     "closing_fen": 35496000,
+     "debt_fen": 150000000,
+     "events": [
+      [
+       "FLOW",
+       -12000000,
+       "Supplier payment",
+       "F-SUPPLIER"
+      ]
+     ]
+    },
+    {
+     "day": 21,
+     "closing_fen": 35496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 22,
+     "closing_fen": 35496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 23,
+     "closing_fen": 35496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 24,
+     "closing_fen": 35496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 25,
+     "closing_fen": 35496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 26,
+     "closing_fen": 35496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 27,
+     "closing_fen": 35496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 28,
+     "closing_fen": 35496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 29,
+     "closing_fen": 35496000,
+     "debt_fen": 150000000,
+     "events": []
+    },
+    {
+     "day": 30,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": [
+      [
+       "FLOW",
+       -4500000,
+       "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+       "D-EQUIP"
+      ]
+     ]
+    },
+    {
+     "day": 31,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 32,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 33,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 34,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 35,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 36,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 37,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 38,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 39,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 40,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 41,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 42,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 43,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 44,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 45,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 46,
+     "closing_fen": 30996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 47,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": [
+      [
+       "FLOW",
+       -10000000,
+       "Operating bill",
+       "F-BILL47"
+      ]
+     ]
+    },
+    {
+     "day": 48,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 49,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 50,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 51,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 52,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 53,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 54,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 55,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 56,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 57,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 58,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 59,
+     "closing_fen": 20996000,
+     "debt_fen": 145500000,
+     "events": []
+    },
+    {
+     "day": 60,
+     "closing_fen": 16496000,
+     "debt_fen": 141000000,
+     "events": [
+      [
+       "FLOW",
+       -4500000,
+       "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+       "D-EQUIP"
+      ]
+     ]
+    },
+    {
+     "day": 61,
+     "closing_fen": 16496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 62,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": [
+      [
+       "RECEIPT",
+       42000000,
+       "Receipt RI:BUYER-1:2 from BUYER-1",
+       "RI:BUYER-1:2"
+      ]
+     ]
+    },
+    {
+     "day": 63,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 64,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 65,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 66,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 67,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 68,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 69,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 70,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 71,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 72,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 73,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 74,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 75,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 76,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 77,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 78,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 79,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 80,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 81,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 82,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 83,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 84,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 85,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 86,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 87,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 88,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 89,
+     "closing_fen": 58496000,
+     "debt_fen": 141000000,
+     "events": []
+    },
+    {
+     "day": 90,
+     "closing_fen": 53996000,
+     "debt_fen": 136500000,
+     "events": [
+      [
+       "FLOW",
+       -4500000,
+       "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+       "D-EQUIP"
+      ]
+     ]
+    },
+    {
+     "day": 91,
+     "closing_fen": 53996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 92,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": [
+      [
+       "RECEIPT",
+       42000000,
+       "Receipt RI:BUYER-1:32 from BUYER-1",
+       "RI:BUYER-1:32"
+      ]
+     ]
+    },
+    {
+     "day": 93,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 94,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 95,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 96,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 97,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 98,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 99,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 100,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 101,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 102,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 103,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 104,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 105,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 106,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 107,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 108,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 109,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 110,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 111,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 112,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 113,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 114,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 115,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 116,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 117,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 118,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 119,
+     "closing_fen": 95996000,
+     "debt_fen": 136500000,
+     "events": []
+    },
+    {
+     "day": 120,
+     "closing_fen": 91496000,
+     "debt_fen": 132000000,
+     "events": [
+      [
+       "FLOW",
+       -4500000,
+       "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+       "D-EQUIP"
+      ]
+     ]
+    }
+   ],
+   "months": [
+    {
+     "month": 1,
+     "ebitda_fen": 9000000,
+     "debt_service_fen": 4500000,
+     "total_debt_fen": 145500000,
+     "dscr": "2.00",
+     "leverage": "1.35"
+    },
+    {
+     "month": 2,
+     "ebitda_fen": 9000000,
+     "debt_service_fen": 4500000,
+     "total_debt_fen": 141000000,
+     "dscr": "2.00",
+     "leverage": "1.31"
+    },
+    {
+     "month": 3,
+     "ebitda_fen": 9000000,
+     "debt_service_fen": 4500000,
+     "total_debt_fen": 136500000,
+     "dscr": "2.00",
+     "leverage": "1.26"
+    },
+    {
+     "month": 4,
+     "ebitda_fen": 9000000,
+     "debt_service_fen": 4500000,
+     "total_debt_fen": 132000000,
+     "dscr": "2.00",
+     "leverage": "1.22"
+    }
+   ]
+  },
+  "counters": [
+   {
+    "label": "Option A",
+    "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
+    "supplier_cost_fen": 303599,
+    "obligations": [
+     {
+      "type": "IMMEDIATE_DISCOUNT",
+      "rate_bp": 85,
+      "days_delta": null,
+      "base_amount_fen": 26000000,
+      "receivable": "RCV-A"
+     }
+    ],
+    "fields": {
+     "id": "CTR-ce19415db1d4",
+     "supplier_cost_fen": 303599,
+     "forward_value_fen": 0,
+     "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
+     "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99"
+    }
+   },
+   {
+    "label": "Option B",
+    "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
+    "supplier_cost_fen": 0,
+    "obligations": [
+     {
+      "type": "TERMS_EXTENSION",
+      "rate_bp": null,
+      "days_delta": 10,
+      "base_amount_fen": null,
+      "receivable": null
+     },
+     {
+      "type": "PRICE_ADJUSTMENT",
+      "rate_bp": 30,
+      "days_delta": null,
+      "base_amount_fen": 42000000,
+      "receivable": null
+     }
+    ],
+    "fields": {
+     "id": "CTR-11497d2ec759",
+     "supplier_cost_fen": 0,
+     "forward_value_fen": 0,
+     "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
+     "formula": "smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)"
+    }
+   }
+  ]
+ },
+ "covenants": {
+  "dscr_pro_forma": "2.00",
+  "leverage_month1_untouched": "1.35",
+  "plan_months": [
+   {
+    "month": 1,
+    "ebitda_fen": 9000000,
+    "debt_service_fen": 4500000,
+    "total_debt_fen": 186000000,
+    "dscr": "2.00",
+    "leverage": "1.72"
+   },
+   {
+    "month": 2,
+    "ebitda_fen": 9000000,
+    "debt_service_fen": 4811393,
+    "total_debt_fen": 141000000,
+    "dscr": "1.87",
+    "leverage": "1.31"
+   },
+   {
+    "month": 3,
+    "ebitda_fen": 9000000,
+    "debt_service_fen": 4500000,
+    "total_debt_fen": 136500000,
+    "dscr": "2.00",
+    "leverage": "1.26"
+   },
+   {
+    "month": 4,
+    "ebitda_fen": 9000000,
+    "debt_service_fen": 4500000,
+    "total_debt_fen": 132000000,
+    "dscr": "2.00",
+    "leverage": "1.22"
+   }
+  ]
+ },
+ "capex": {
+  "request": {
+   "label": "¥600k die-cutting line",
+   "price_fen": 60000000,
+   "monthly_uplift_fen": 2200000,
+   "uplift_start_month": 4,
+   "life_months": 60,
+   "hurdle_bp": 1000,
+   "payback_limit_months": 36,
+   "candidates": [
+    {
+     "facility_id": "FAC-ETL",
+     "term_months": 18
+    },
+    {
+     "facility_id": "FAC-ETL",
+     "term_months": 36
+    },
+    {
+     "facility_id": "FAC-LEASE",
+     "term_months": 48
+    }
+   ],
+   "include_cash_line": true,
+   "extension_target_terms_days": 60,
+   "extension_counterparty_id": null
+  },
+  "npv_fen": 38088577,
+  "payback_month": 31,
+  "npv_positive": true,
+  "payback_within_limit": true,
+  "worth_doing": true,
+  "estimate_note": "Owner's estimate, not observed by the system: +¥22,000.00 a month of operating cash flow from month 4 through month 60.",
+  "structures": [
+   {
+    "id": "cash_line",
+    "label": "Cash + credit line",
+    "kind": "CASH_LINE",
+    "facility_id": null,
+    "term_months": null,
+    "rate_bp": null,
+    "monthly_payment_fen": null,
+    "total_interest_fen": null,
+    "upfront_fee_fen": null,
+    "charges_total_fen": null,
+    "hypothetical": false,
+    "feasible": false,
+    "result": "INFEASIBLE",
+    "violations": [
+     {
+      "code": "RESERVE_BREACH",
+      "message": "Only ¥250,000.00 is available above the ¥300,000.00 reserve (cash plus the ¥150,000.00 line) for a ¥600,000.00 price; cash falls to −¥50,000.00 on purchase day.",
+      "day": 0,
+      "month": null,
+      "observed": "−¥50,000.00",
+      "limit": "≥ ¥300,000.00",
+      "curable": false,
+      "cure_cost_fen": null,
+      "cure_note": null,
+      "formula": "(cash − min_cash) + line_available ≥ price: (¥400,000.00 − ¥300,000.00) + ¥150,000.00 = ¥250,000.00 < ¥600,000.00; conservative closing cash on day 0 = −¥50,000.00",
+      "inputs": {
+       "cash": "¥400,000.00",
+       "min_cash": "¥300,000.00",
+       "line_available": "¥150,000.00",
+       "available_above_reserve": "¥250,000.00",
+       "price": "¥600,000.00",
+       "shortfall": "¥350,000.00",
+       "closing_cash": "−¥50,000.00"
+      },
+      "spans": []
+     },
+     {
+      "code": "CLEAN_DOWN_BREACH",
+      "message": "Bank credit line must return to zero for its clean-down period, so it cannot carry a permanent purchase",
+      "day": null,
+      "month": null,
+      "observed": null,
+      "limit": null,
+      "curable": null,
+      "cure_cost_fen": null,
+      "cure_note": null,
+      "formula": "a clean-down line cannot fund a permanent need",
+      "inputs": {
+       "facility_id": "FAC-LINE"
+      },
+      "spans": []
+     }
+    ],
+    "dscr_by_month": [],
+    "min_dscr": null,
+    "leverage": null,
+    "extra_cost_vs_selected_fen": null,
+    "note": "Infeasible: only ¥250,000.00 available above the reserve; RESERVE_BREACH on purchase day.",
+    "workings": [
+     {
+      "label": "Available above the reserve",
+      "value": "¥250,000.00",
+      "formula": "(cash − min_cash) + committed line available",
+      "inputs": {
+       "cash": "¥400,000.00",
+       "min_cash": "¥300,000.00",
+       "line_available": "¥150,000.00",
+       "available_above_reserve": "¥250,000.00",
+       "price": "¥600,000.00"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Lowest projected cash",
+      "value": "−¥555,000.00",
+      "formula": "min over days 0..120 of the conservative closing cash on current books, with the purchase on day 0",
+      "inputs": {
+       "day": "30",
+       "min_cash": "¥300,000.00",
+       "live_obligations": "0"
+      },
+      "evidence": null
+     }
+    ]
+   },
+   {
+    "id": "loan_18m",
+    "label": "18-month term loan, 5.60%",
+    "kind": "LOAN",
+    "facility_id": "FAC-ETL",
+    "term_months": 18,
+    "rate_bp": 560,
+    "monthly_payment_fen": 3483060,
+    "total_interest_fen": 2695084,
+    "upfront_fee_fen": 0,
+    "charges_total_fen": 2695084,
+    "hypothetical": true,
+    "feasible": false,
+    "result": "REJECTED",
+    "violations": [
+     {
+      "code": "DSCR_BREACH",
+      "message": "DSCR is 1.13× in month 1, below the 1.25× minimum (fails in months 1–3 of 18).",
+      "day": null,
+      "month": 1,
+      "observed": "1.13×",
+      "limit": "≥ 1.25×",
+      "curable": null,
+      "cure_cost_fen": null,
+      "cure_note": null,
+      "formula": "(EBITDA_m + uplift_m) / (existing DS_m + payment) = ¥90,000.00 / (¥45,000.00 + ¥34,830.60) = 1.13× < 1.25×",
+      "inputs": {
+       "EBITDA_m": "¥90,000.00",
+       "uplift_m": "¥0.00",
+       "existing_debt_service": "¥45,000.00",
+       "new_payment": "¥34,830.60",
+       "DS_m": "¥79,830.60",
+       "failing_months": "1–3",
+       "limit_source": "mandate v1"
+      },
+      "spans": []
+     },
+     {
+      "code": "RESERVE_BREACH",
+      "message": "Cash falls to ¥280,169.40 on day 44, below the ¥300,000.00 reserve, once the ¥600,000.00 purchase, the loan proceeds, the ¥0.00 upfront fee and the scheduled payments are counted. Current books alone already fall to −¥105,000.00 on day 30, below the ¥300,000.00 reserve, before any purchase.",
+      "day": 44,
+      "month": null,
+      "observed": "¥280,169.40",
+      "limit": "≥ ¥300,000.00",
+      "curable": false,
+      "cure_cost_fen": null,
+      "cure_note": null,
+      "formula": "conservative closing cash on day 44 on current books with the purchase, proceeds, fee and payments = ¥280,169.40 < ¥300,000.00 and < ¥315,000.00 without them",
+      "inputs": {
+       "price": "¥600,000.00",
+       "proceeds": "¥600,000.00",
+       "upfront_fee": "¥0.00",
+       "purchase_day": "14",
+       "min_cash": "¥300,000.00",
+       "live_obligations": "0",
+       "closing_cash": "¥280,169.40",
+       "closing_cash_without_purchase": "¥315,000.00"
+      },
+      "spans": []
+     }
+    ],
+    "dscr_by_month": [
+     {
+      "month": 1,
+      "dscr": {
+       "num": 150000,
+       "den": 133051
+      },
+      "passes": false,
+      "ebitda_fen": 9000000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 2,
+      "dscr": {
+       "num": 150000,
+       "den": 133051
+      },
+      "passes": false,
+      "ebitda_fen": 9000000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 3,
+      "dscr": {
+       "num": 150000,
+       "den": 133051
+      },
+      "passes": false,
+      "ebitda_fen": 9000000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 4,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 5,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 6,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 7,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 8,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 9,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 10,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 11,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 12,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 13,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 14,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 15,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 16,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 17,
+      "dscr": {
+       "num": 560000,
+       "den": 399153
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983060
+     },
+     {
+      "month": 18,
+      "dscr": {
+       "num": 1400000,
+       "den": 997883
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 7983064
+     }
+    ],
+    "min_dscr": {
+     "num": 150000,
+     "den": 133051
+    },
+    "leverage": {
+     "num": 137,
+     "den": 72
+    },
+    "extra_cost_vs_selected_fen": null,
+    "note": "Illustration at 18 months, not the facility's actual term; never selected or applied for. Rejected: DSCR_BREACH@month 1 (1.13× < 1.25×).",
+    "workings": [
+     {
+      "label": "Monthly payment",
+      "value": "¥34,830.60",
+      "formula": "P·r / (1 − (1 + r)^−n), r = 5.60%/12 (nominal annual rate ÷ 12), n = 18; rounded half-up once",
+      "inputs": {
+       "P": "¥600,000.00",
+       "nominal_annual_rate": "5.60%",
+       "n": "18"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Total interest",
+      "value": "¥26,950.84",
+      "formula": "Σ interest over 18 months at 5.60% nominal annual; the final payment (¥34,830.64) clears the balance",
+      "inputs": {
+       "P": "¥600,000.00",
+       "payment": "¥34,830.60",
+       "final_payment": "¥34,830.64"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Upfront fee",
+      "value": "¥0.00",
+      "formula": "principal × upfront fee = ¥600,000.00 × 0.00%, rounded once",
+      "inputs": {
+       "P": "¥600,000.00",
+       "upfront_fee": "0.00%"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Total financing charges",
+      "value": "¥26,950.84",
+      "formula": "total interest + upfront fee = ¥26,950.84 + ¥0.00; not discounted, the quantity structures are ranked on",
+      "inputs": {
+       "interest": "¥26,950.84",
+       "upfront_fee": "¥0.00"
+      },
+      "evidence": null
+     },
+     {
+      "label": "DSCR by month",
+      "value": "1.13× / 1.40×",
+      "formula": "(EBITDA_m + uplift_m) / (existing DS_m + payment_m), tested in every month of the term; existing DS_m includes the contractual service on every balance already drawn",
+      "inputs": {
+       "EBITDA_m": "¥90,000.00",
+       "existing_debt_service_month_1": "¥45,000.00",
+       "uplift_m": "¥22,000.00 from month 4",
+       "min_dscr": "1.25×",
+       "limit_source": "mandate v1"
+      },
+      "evidence": "OWNER_ESTIMATE"
+     },
+     {
+      "label": "Leverage",
+      "value": "1.90×",
+      "formula": "month-end debt (DebtPosition principal + drawn balances counted in leverage) / (12 × EBITDA_m), highest month = ¥2,055,000.00 / (12 × ¥90,000.00)",
+      "inputs": {
+       "Debt_m": "¥2,055,000.00",
+       "EBITDA_m": "¥90,000.00",
+       "principal": "¥600,000.00",
+       "basis": "projection with the ¥600,000.00 loan drawn from its request day, month 1",
+       "month": "1",
+       "max_leverage": "2.50×",
+       "limit_source": "FAC-LINE-LEV"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Lowest projected cash",
+      "value": "−¥105,000.00",
+      "formula": "min over days 0..555 of the conservative closing cash on current books with the ¥600,000.00 purchase on day 14, the ¥600,000.00 proceeds and ¥0.00 upfront fee, and the scheduled payments (the owner's uplift is not counted as cash)",
+      "inputs": {
+       "price": "¥600,000.00",
+       "proceeds": "¥600,000.00",
+       "upfront_fee": "¥0.00",
+       "purchase_day": "14",
+       "min_cash": "¥300,000.00",
+       "live_obligations": "0",
+       "day": "30"
+      },
+      "evidence": null
+     }
+    ]
+   },
+   {
+    "id": "loan_36m",
+    "label": "36-month term loan, 5.60%",
+    "kind": "LOAN",
+    "facility_id": "FAC-ETL",
+    "term_months": 36,
+    "rate_bp": 560,
+    "monthly_payment_fen": 1814462,
+    "total_interest_fen": 5320614,
+    "upfront_fee_fen": 0,
+    "charges_total_fen": 5320614,
+    "hypothetical": false,
+    "feasible": false,
+    "result": "REJECTED",
+    "violations": [
+     {
+      "code": "RESERVE_BREACH",
+      "message": "Cash falls to ¥296,855.38 on day 44, below the ¥300,000.00 reserve, once the ¥600,000.00 purchase, the loan proceeds, the ¥0.00 upfront fee and the scheduled payments are counted. Current books alone already fall to −¥105,000.00 on day 30, below the ¥300,000.00 reserve, before any purchase.",
+      "day": 44,
+      "month": null,
+      "observed": "¥296,855.38",
+      "limit": "≥ ¥300,000.00",
+      "curable": false,
+      "cure_cost_fen": null,
+      "cure_note": null,
+      "formula": "conservative closing cash on day 44 on current books with the purchase, proceeds, fee and payments = ¥296,855.38 < ¥300,000.00 and < ¥315,000.00 without them",
+      "inputs": {
+       "price": "¥600,000.00",
+       "proceeds": "¥600,000.00",
+       "upfront_fee": "¥0.00",
+       "purchase_day": "14",
+       "min_cash": "¥300,000.00",
+       "live_obligations": "0",
+       "closing_cash": "¥296,855.38",
+       "closing_cash_without_purchase": "¥315,000.00"
+      },
+      "spans": []
+     }
+    ],
+    "dscr_by_month": [
+     {
+      "month": 1,
+      "dscr": {
+       "num": 4500000,
+       "den": 3157231
+      },
+      "passes": true,
+      "ebitda_fen": 9000000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 2,
+      "dscr": {
+       "num": 4500000,
+       "den": 3157231
+      },
+      "passes": true,
+      "ebitda_fen": 9000000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 3,
+      "dscr": {
+       "num": 4500000,
+       "den": 3157231
+      },
+      "passes": true,
+      "ebitda_fen": 9000000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 4,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 5,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 6,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 7,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 8,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 9,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 10,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 11,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 12,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 13,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 14,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 15,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 16,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 17,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 18,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 19,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 20,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 21,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 22,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 23,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 24,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 25,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 26,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 27,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 28,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 29,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 30,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 31,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 32,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 33,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 34,
+      "dscr": {
+       "num": 800000,
+       "den": 451033
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 6314462
+     },
+     {
+      "month": 35,
+      "dscr": {
+       "num": 5600000,
+       "den": 907231
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1814462
+     },
+     {
+      "month": 36,
+      "dscr": {
+       "num": 2800000,
+       "den": 453611
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1814444
+     }
+    ],
+    "min_dscr": {
+     "num": 4500000,
+     "den": 3157231
+    },
+    "leverage": {
+     "num": 137,
+     "den": 72
+    },
+    "extra_cost_vs_selected_fen": null,
+    "note": "Rejected: RESERVE_BREACH@day 44.",
+    "workings": [
+     {
+      "label": "Monthly payment",
+      "value": "¥18,144.62",
+      "formula": "P·r / (1 − (1 + r)^−n), r = 5.60%/12 (nominal annual rate ÷ 12), n = 36; rounded half-up once",
+      "inputs": {
+       "P": "¥600,000.00",
+       "nominal_annual_rate": "5.60%",
+       "n": "36"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Total interest",
+      "value": "¥53,206.14",
+      "formula": "Σ interest over 36 months at 5.60% nominal annual; the final payment (¥18,144.44) clears the balance",
+      "inputs": {
+       "P": "¥600,000.00",
+       "payment": "¥18,144.62",
+       "final_payment": "¥18,144.44"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Upfront fee",
+      "value": "¥0.00",
+      "formula": "principal × upfront fee = ¥600,000.00 × 0.00%, rounded once",
+      "inputs": {
+       "P": "¥600,000.00",
+       "upfront_fee": "0.00%"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Total financing charges",
+      "value": "¥53,206.14",
+      "formula": "total interest + upfront fee = ¥53,206.14 + ¥0.00; not discounted, the quantity structures are ranked on",
+      "inputs": {
+       "interest": "¥53,206.14",
+       "upfront_fee": "¥0.00"
+      },
+      "evidence": null
+     },
+     {
+      "label": "DSCR by month",
+      "value": "1.43× / 1.77× / 6.17×",
+      "formula": "(EBITDA_m + uplift_m) / (existing DS_m + payment_m), tested in every month of the term; existing DS_m includes the contractual service on every balance already drawn",
+      "inputs": {
+       "EBITDA_m": "¥90,000.00",
+       "existing_debt_service_month_1": "¥45,000.00",
+       "uplift_m": "¥22,000.00 from month 4",
+       "min_dscr": "1.25×",
+       "limit_source": "mandate v1"
+      },
+      "evidence": "OWNER_ESTIMATE"
+     },
+     {
+      "label": "Leverage",
+      "value": "1.90×",
+      "formula": "month-end debt (DebtPosition principal + drawn balances counted in leverage) / (12 × EBITDA_m), highest month = ¥2,055,000.00 / (12 × ¥90,000.00)",
+      "inputs": {
+       "Debt_m": "¥2,055,000.00",
+       "EBITDA_m": "¥90,000.00",
+       "principal": "¥600,000.00",
+       "basis": "projection with the ¥600,000.00 loan drawn from its request day, month 1",
+       "month": "1",
+       "max_leverage": "2.50×",
+       "limit_source": "FAC-LINE-LEV"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Lowest projected cash",
+      "value": "−¥105,000.00",
+      "formula": "min over days 0..1095 of the conservative closing cash on current books with the ¥600,000.00 purchase on day 14, the ¥600,000.00 proceeds and ¥0.00 upfront fee, and the scheduled payments (the owner's uplift is not counted as cash)",
+      "inputs": {
+       "price": "¥600,000.00",
+       "proceeds": "¥600,000.00",
+       "upfront_fee": "¥0.00",
+       "purchase_day": "14",
+       "min_cash": "¥300,000.00",
+       "live_obligations": "0",
+       "day": "30"
+      },
+      "evidence": null
+     }
+    ]
+   },
+   {
+    "id": "lease_48m",
+    "label": "48-month lease, 7.20%",
+    "kind": "LEASE",
+    "facility_id": "FAC-LEASE",
+    "term_months": 48,
+    "rate_bp": 720,
+    "monthly_payment_fen": 1442349,
+    "total_interest_fen": 9232732,
+    "upfront_fee_fen": 0,
+    "charges_total_fen": 9232732,
+    "hypothetical": false,
+    "feasible": true,
+    "result": "SELECTED",
+    "violations": [],
+    "dscr_by_month": [
+     {
+      "month": 1,
+      "dscr": {
+       "num": 1000000,
+       "den": 660261
+      },
+      "passes": true,
+      "ebitda_fen": 9000000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 2,
+      "dscr": {
+       "num": 1000000,
+       "den": 660261
+      },
+      "passes": true,
+      "ebitda_fen": 9000000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 3,
+      "dscr": {
+       "num": 1000000,
+       "den": 660261
+      },
+      "passes": true,
+      "ebitda_fen": 9000000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 4,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 5,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 6,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 7,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 8,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 9,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 10,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 11,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 12,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 13,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 14,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 15,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 16,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 17,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 18,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 19,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 20,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 21,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 22,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 23,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 24,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 25,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 26,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 27,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 28,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 29,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 30,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 31,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 32,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 33,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 34,
+      "dscr": {
+       "num": 1600000,
+       "den": 848907
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 5942349
+     },
+     {
+      "month": 35,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 36,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 37,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 38,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 39,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 40,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 41,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 42,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 43,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 44,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 45,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 46,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 47,
+      "dscr": {
+       "num": 11200000,
+       "den": 1442349
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442349
+     },
+     {
+      "month": 48,
+      "dscr": {
+       "num": 1600000,
+       "den": 206047
+      },
+      "passes": true,
+      "ebitda_fen": 11200000,
+      "debt_service_fen": 1442329
+     }
+    ],
+    "min_dscr": {
+     "num": 1000000,
+     "den": 660261
+    },
+    "leverage": {
+     "num": 137,
+     "den": 72
+    },
+    "extra_cost_vs_selected_fen": null,
+    "note": "Selected: lowest total financing charges (interest + fees, not discounted) among the structures that hold DSCR and leverage in every month and do not push daily cash below the reserve.",
+    "workings": [
+     {
+      "label": "Monthly payment",
+      "value": "¥14,423.49",
+      "formula": "P·r / (1 − (1 + r)^−n), r = 7.20%/12 (nominal annual rate ÷ 12), n = 48; rounded half-up once",
+      "inputs": {
+       "P": "¥600,000.00",
+       "nominal_annual_rate": "7.20%",
+       "n": "48"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Total interest",
+      "value": "¥92,327.32",
+      "formula": "Σ interest over 48 months at 7.20% nominal annual; the final payment (¥14,423.29) clears the balance",
+      "inputs": {
+       "P": "¥600,000.00",
+       "payment": "¥14,423.49",
+       "final_payment": "¥14,423.29"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Upfront fee",
+      "value": "¥0.00",
+      "formula": "principal × upfront fee = ¥600,000.00 × 0.00%, rounded once",
+      "inputs": {
+       "P": "¥600,000.00",
+       "upfront_fee": "0.00%"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Total financing charges",
+      "value": "¥92,327.32",
+      "formula": "total interest + upfront fee = ¥92,327.32 + ¥0.00; not discounted, the quantity structures are ranked on",
+      "inputs": {
+       "interest": "¥92,327.32",
+       "upfront_fee": "¥0.00"
+      },
+      "evidence": null
+     },
+     {
+      "label": "DSCR by month",
+      "value": "1.51× / 1.88× / 7.77×",
+      "formula": "(EBITDA_m + uplift_m) / (existing DS_m + payment_m), tested in every month of the term; existing DS_m includes the contractual service on every balance already drawn",
+      "inputs": {
+       "EBITDA_m": "¥90,000.00",
+       "existing_debt_service_month_1": "¥45,000.00",
+       "uplift_m": "¥22,000.00 from month 4",
+       "min_dscr": "1.25×",
+       "limit_source": "mandate v1"
+      },
+      "evidence": "OWNER_ESTIMATE"
+     },
+     {
+      "label": "Leverage",
+      "value": "1.90×",
+      "formula": "month-end debt (DebtPosition principal + drawn balances counted in leverage) / (12 × EBITDA_m), highest month = ¥2,055,000.00 / (12 × ¥90,000.00)",
+      "inputs": {
+       "Debt_m": "¥2,055,000.00",
+       "EBITDA_m": "¥90,000.00",
+       "principal": "¥600,000.00",
+       "basis": "projection with the ¥600,000.00 lease drawn from its request day, month 1",
+       "month": "1",
+       "max_leverage": "2.50×",
+       "limit_source": "FAC-LINE-LEV"
+      },
+      "evidence": null
+     },
+     {
+      "label": "Lowest projected cash",
+      "value": "−¥105,000.00",
+      "formula": "min over days 0..1451 of the conservative closing cash on current books with the ¥600,000.00 purchase on day 10, the ¥600,000.00 proceeds and ¥0.00 upfront fee, and the scheduled payments (the owner's uplift is not counted as cash)",
+      "inputs": {
+       "price": "¥600,000.00",
+       "proceeds": "¥600,000.00",
+       "upfront_fee": "¥0.00",
+       "purchase_day": "10",
+       "min_cash": "¥300,000.00",
+       "live_obligations": "0",
+       "day": "30"
+      },
+      "evidence": null
+     }
+    ]
+   }
+  ],
+  "selected_id": "lease_48m",
+  "selected_facility_id": "FAC-LEASE",
+  "leverage_financed": {
+   "num": 137,
+   "den": 72
+  },
+  "leverage_with_extension": {
+   "num": 151,
+   "den": 72
+  },
+  "extension_extra_receivables_fen": 21000000,
+  "dscr_limit_bp": 12500,
+  "leverage_limit_bp": 25000,
+  "required_tier": "TIER_2",
+  "recommendation": "Worth doing on the owner's estimate: NPV ¥380,885.77 at 10.00%, payback in month 31. Finance with the 48-month lease, 7.20% (¥14,423.49 a month): it has the lowest total financing charges (interest + fees, not discounted) of the structures that pass, ¥92,327.32. The lower-charge 36-month term loan, 5.60% is rejected (RESERVE_BREACH). A new facility is Tier 2: the agent recommends and the owner applies.",
+  "workings": [
+   {
+    "label": "NPV at the hurdle",
+    "value": "¥380,885.77",
+    "formula": "−price + Σ_(m=4..60) uplift / (1 + r_m)^m, r_m = (1 + 10.00%)^(1/12) − 1 = 0.797414%; 50-digit Decimal, rounded once",
+    "inputs": {
+     "price": "¥600,000.00",
+     "uplift": "¥22,000.00",
+     "start_month": "4",
+     "life_months": "60",
+     "hurdle": "10.00%"
+    },
+    "evidence": "OWNER_ESTIMATE"
+   },
+   {
+    "label": "Simple payback",
+    "value": "month 31",
+    "formula": "first month m with −price + Σ_(k≤m) uplift_k ≥ 0; limit 36 months → within the limit",
+    "inputs": {
+     "price": "¥600,000.00",
+     "uplift": "¥22,000.00",
+     "start_month": "4",
+     "payback_limit_months": "36"
+    },
+    "evidence": "OWNER_ESTIMATE"
+   },
+   {
+    "label": "Leverage, financed (estimate)",
+    "value": "1.90×",
+    "formula": "(current books' highest month-end debt + principal) / (12 × EBITDA_m) = (¥1,455,000.00 + ¥600,000.00) / (12 × ¥90,000.00); an estimate before a structure is projected: each structure's own leverage is read from its projection",
+    "inputs": {
+     "Debt_m": "¥1,455,000.00",
+     "basis": "estimate: current books, month 1 (highest month-end leverage of the projection), debt ¥1,455,000.00 + ¥600,000.00",
+     "principal": "¥600,000.00",
+     "EBITDA_m": "¥90,000.00",
+     "max_leverage": "2.50×"
+    },
+    "evidence": null
+   },
+   {
+    "label": "Leverage, financed and the terms extension funded (estimate)",
+    "value": "2.10×",
+    "formula": "(current books' highest month-end debt + principal + extra receivables) / (12 × EBITDA_m) = (¥1,455,000.00 + ¥600,000.00 + ¥210,000.00) / (12 × ¥90,000.00)",
+    "inputs": {
+     "extra_receivables": "¥210,000.00",
+     "basis": "estimate: current books, month 1 (highest month-end leverage of the projection), debt ¥1,455,000.00 + ¥810,000.00",
+     "extra_receivables_formula": "estimate: face × Δdays / invoice interval, terms → 60 days, funded permanently",
+     "max_leverage": "2.50×"
+    },
+    "evidence": null
+   }
+  ],
+  "assumptions": [
+   "Structures are ranked on lowest total financing charges (interest + fees, not discounted). Residual value, tax, discounting of financing flows and per-period fees are not modelled; this is a screen, not an investment appraisal.",
+   "A structure is evaluated only at its facility's actual term. Any other term is a hypothetical illustration: it is never selected and never applied for.",
+   "Liquidity is tested day by day on current books: the purchase is paid on the day the loan proceeds land (request day + the facility's lead time), and the proceeds, the upfront fee and every scheduled payment post. A day below the reserve fails a structure when the structure makes that day's cash lower than the same day on current books without the purchase; a shortfall the books already have is reported beside it, not blamed on the structure. The owner's uplift is not counted as cash in that test.",
+   "Monthly debt service includes every balance already drawn on a facility that counts in debt service: an amortising facility at its annuity payment over its term, a bullet term loan at (principal + interest) / term (ADR-0008), a revolving line interest-only. Leverage is month-end debt (principal of existing debt + drawn balances that count in leverage) / (12 × monthly EBITDA), read from each structure's own projection; a committed line's undrawn room is not debt. The leverage figures before a structure is projected (financed, and with a terms extension funded) are labelled estimates. The upfront fee is a cash cost, not debt service.",
+   "Rates are nominal annual rates divided by 12 for monthly schedules, leases included; they are not effective annual rates.",
+   "The uplift is the owner's estimate and is treated as EBITDA in the DSCR test and as cash in NPV and payback; the system has not observed it."
+  ],
+  "as_of_day": 0,
+  "mandate_version": 1,
+  "state_version": 1
+ }
+}
