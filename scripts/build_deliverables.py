@@ -64,6 +64,9 @@ HEADER = {
     "Competition track": "International AI Track — Topic E: SME Finance Copilot",
     "Submission date": "20 October 2026",
 }
+# Repository links in the technical document resolve here unless --repo-url names another base (for example the
+# submission commit: https://github.com/peachoolongtee/smu2sz/blob/<commit>).
+TECHDOC_REPO_URL = "https://github.com/peachoolongtee/smu2sz/blob/main"
 BODY_PT = Pt(10)
 MAX_FIG_HEIGHT_IN = 4.8
 PAGE_FIG_HEIGHT_IN = 8.4  # "| page" figures: the tallest a figure may be with its caption on a Letter page
@@ -609,6 +612,11 @@ class Renderer:
         for cell in t.rows[0].cells:  # a header row never ends a page on its own
             for par in cell.paragraphs:
                 par.paragraph_format.keep_with_next = True
+        if self.compact and len(rows) <= 6:  # a short table (an index, a box) stays on one page
+            for row in t.rows[:-1]:
+                for cell in row.cells:
+                    for par in cell.paragraphs:
+                        par.paragraph_format.keep_with_next = True
         trpr = t.rows[0]._tr.get_or_add_trPr()
         th = OxmlElement("w:tblHeader")
         th.set(qn("w:val"), "true")
@@ -716,6 +724,8 @@ def fill(md_path: Path, template: Path, out_path: Path, repo_url: str | None) ->
     fill_header(doc)
     md = md_path.read_text(encoding="utf-8")
     pre, sections = split_markdown(md)
+    if repo_url is None and md_path.name == "technical_document.md":
+        repo_url = TECHDOC_REPO_URL  # its evidence paths are submitted as links to the public repository
     r = Renderer(doc, md_path.parent, repo_url, compact=md_path.name == "technical_document.md")
     paras = body_paragraphs(doc)
     headings = [p for p in paras if p.style.name == "Heading 1"]
@@ -959,7 +969,8 @@ def main() -> int:
     ap.add_argument("--word", action="store_true",
                     help="Windows with Word: update the contents and page numbers, and export a PDF beside each file")
     ap.add_argument("--repo-url", default=None,
-                    help="base URL for repo links, e.g. https://github.com/<org>/<repo>/blob/<ref> (default: print paths)")
+                    help="base URL for repo links, e.g. https://github.com/<org>/<repo>/blob/<ref> (default: print paths; the "
+                         "technical document links to TECHDOC_REPO_URL)")
     args = ap.parse_args()
 
     if args.refresh_evidence:
