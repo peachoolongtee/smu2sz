@@ -58,8 +58,7 @@ def test_a_part_run_plan_reports_each_leg_the_funding_still_to_arrange_and_never
     assert ops(r) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "PENDING_APPROVAL")]
     reply = r["reply"]
     assert "Draw ¥150,000.00 on FAC-LINE: done" in reply and "queued, not executed" in reply
-    assert "Still to arrange: ¥90,000.00" in reply and "not fully funded" in reply
-    assert "Cash in now: ¥150,000.00" in reply  # what is available now, apart from the advance still waiting
+    assert "Still to arrange: ¥90,000.00" in reply and "the cash gap is still open" in reply
     assert "funded." not in reply.replace("not fully funded.", "")
     assert drawn(rt, "FAC-IF") == 0
 
