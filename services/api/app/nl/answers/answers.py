@@ -458,6 +458,8 @@ def a_payments(w: W, q: str) -> AnswerReply:
 
 
 def a_payroll(w: W, q: str) -> AnswerReply:
+    if q and PAY_ALL_ANY.search(_normal(q)):  # "can I pay everyone / all my bills this month?" asks about every obligation, not the payroll
+        return a_pay_all(w, q)
     r = w.r
     pc = w.m(mx.payroll_cover(r))
     res = w.fig("reserve", money(r.floor))
@@ -489,6 +491,123 @@ def a_payroll(w: W, q: str) -> AnswerReply:
         f"No, not on today's books: after the {amt} payroll on {w.on(day)}, cash would be {money(closing)}. ",
         f"按今日账目不够：{w.on(day)}支付 {amt} 工资后，现金将为 {money(closing)}。") + plan_clause(w)
         + ("" if plan_clause(w).endswith((".", "。")) else w.t(".", "。")))
+
+
+# ---------------------------------------------------------------- "can I pay everyone / all my bills / everything this month?"
+
+_VERBS = r"(?:pay|paying|cover|covering|settle|settling|meet|meeting|afford|make|making)"
+_EN_OBJECT = (r"(?:everyone|everybody|everything|all(?: of)?\s+(?:the |my |our |these |those )?"
+              r"(?:bills|payments|obligations|dues|commitments|invoices|outgoings|expenses|payables)"
+              r"|(?:my|our|the)\s+(?:bills|obligations|payments|commitments|dues)|(?:every|each)\s+(?:single\s+)?(?:bill|payment|obligation))")
+_PAY_OFF = r"\bpay(?:ing)?\s+off\s+(?:all(?: of)?\s+)?(?:the |my |our )?(?:bills|obligations|payments)\b"
+_ZH_THINGS = r"(?:所有|全部|一切|各项|每一?[笔项个]?)(?:的)?(?:账单|款项|应付款|应付账款|应付|付款|欠款|开支|支出|费用|账款|供应商|人)"
+_ZH_PAYS = (
+    rf"(?:付清|付完|结清|付得起|付得出|付得完|付的起|还清|支付|结算|付){_ZH_THINGS}",
+    rf"{_ZH_THINGS}.{{0,6}}(?:都|全部|全)?(?:能|可以|付得起|付得出|付得完|付的起|付清|付完|结清|够|能够)",
+    r"(?:账单|款项|欠款)(?:都|全)(?:能)?(?:付|结|还)(?:得起|清|完|得出|了)",
+)
+# Anywhere in the text: the wording that asks for the whole of what is owed (the payroll alone is "payroll", "wages", "staff")
+PAY_ALL_ANY = re.compile("|".join([rf"\b{_VERBS}\s+(?:for\s+)?{_EN_OBJECT}", _PAY_OFF, *_ZH_PAYS]), re.IGNORECASE)
+# The question form that reaches this answer: a yes/no question about us paying it, never a how-to ("how do I make sure I can pay
+# the bills ...") and never put to FLOW ("can you pay ...").
+_ASKED = r"^\W*(?:(?:so|and|ok|okay|hey|hi|please|well)\W+)*(?:can|could|will|would|am|are|is|do|does|have|may|might)\b(?!\s+you\b)[^?.!]{0,40}?"
+_PAY_ALL_ASKED = (_ASKED + rf"\b{_VERBS}\s+(?:for\s+)?{_EN_OBJECT}", _ASKED + _PAY_OFF, *_ZH_PAYS)
+
+_KIND_WORDS = {  # what the outflows of one kind are called when the payments are added up: (en, zh)
+    FlowKind.PAYROLL.value: ("payroll", "工资"), FlowKind.SUPPLIER.value: ("supplier payments", "供应商付款"),
+    FlowKind.DEBT_SERVICE.value: ("loan payments", "贷款还款"), FlowKind.OPERATING.value: ("operating costs", "经营支出"),
+    FlowKind.CAPEX.value: ("equipment payments", "设备款"), FlowKind.OTHER.value: ("other bills", "其他支出"),
+}
+
+
+def a_pay_all(w: W, q: str) -> AnswerReply:
+    """"Can I pay everyone / all my bills / everything this month?": every outflow in the window (payroll, suppliers, loan payments,
+    tax and the rest; "this month" and no window at all are the next 30 days), against the reserve and against zero, on the conservative
+    forecast Home draws. It says yes or no, the first day cash falls below the reserve, the day it goes below zero and the lowest
+    point, and, when cash falls short, FLOW's plan and its cost. The plan is saved for a "go ahead" by the caller
+    (`extra["offers_plan"]`, app/nl/ask.py), never here."""
+    r = w.r
+    days = min(30, r.horizon)
+    win = window_of(w, q) or Window(30, days, r.today + days, 30 > r.horizon)
+    fb, neg = w.m(mx.first_breach(r)), w.m(mx.first_negative_cash_day(r))
+    w.m(mx.lowest_point(r))
+    out = w.m(mx.upcoming_outflows(r, window=win.days + 1))  # the window runs to its last day, as the cash answers read it
+    outs: list[Event] = out.value
+    res = w.fig("reserve", money(r.floor))
+    low = low_within(r, win.end)
+    lo = w.fig("lowest", money(low.closing_fen))
+    w.fig("lowest_day", str(low.day))
+    w.fig("window_days", str(win.days))
+    note = w.t(f" {horizon_note(w)}; nothing later is forecast yet.", f"{horizon_note(w)}，更晚的付款尚无预测。") if win.longer else ""
+    span = w.t(f"the next {win.days} days", f"未来 {win.days} 天")
+    breach = fb.value is not None and fb.value <= win.end
+    below_zero = neg.value is not None and neg.value <= win.end
+    if not outs:
+        w.fig("answer", "yes")
+        w.fig("total", money(0))
+        return w.reply("LIQ-10", w.t(
+            f"Yes: nothing is due in {span}, so there is nothing to pay; cash stays at or above your {res} reserve, and the lowest "
+            f"point is {lo} on {w.on(low.day)}.",
+            f"可以：{span}没有到期的付款；现金都不低于您 {res} 的最低现金储备，最低点是{w.on(low.day)}的 {lo}。") + note)
+    total = w.fig("total", money(out.detail["total_fen"]))
+    count = w.t(n_en(len(outs), "payment", "payments"), f"{len(outs)} 笔付款")
+    kinds: dict[str, int] = {}
+    for e in outs:
+        kinds[e.kind] = kinds.get(e.kind, 0) - e.amount_fen
+    parts = [w.t(f"{_KIND_WORDS.get(k, _KIND_WORDS['OTHER'])[0]} {money(v)}", f"{_KIND_WORDS.get(k, _KIND_WORDS['OTHER'])[1]} {money(v)}")
+             for k, v in kinds.items()]
+    made_of = w.t(f" That is {joined(w, parts)}.", f"其中{joined(w, parts)}。") if len(parts) > 1 else ""
+    items = [w.t(f"{w.outflow(e)} {money(-e.amount_fen)} on {w.on(e.day)}", f"{w.on(e.day)}{w.outflow(e)} {money(-e.amount_fen)}")
+             for e in outs[:6]]
+    more = len(outs) - len(items)
+    tail = w.t(f"; and {more} more", f"；另有 {more} 笔") if more > 0 else ""
+    listing = w.t(" The payments: ", "付款明细：") + w.t("; ", "；").join(items) + tail + w.t(".", "。")
+    if not breach and not below_zero and low.closing_fen >= r.floor:
+        w.fig("answer", "yes")
+        return w.reply("LIQ-10", w.t(
+            f"Yes: you can pay all {count} due in {span}, {total} in all, and cash stays at or above your {res} reserve; the lowest "
+            f"point is {lo} on {w.on(low.day)}.",
+            f"可以：{span}内到期的 {count}，合计 {total}，都付得起，现金也不低于您 {res} 的最低现金储备；最低点是{w.on(low.day)}的 {lo}。")
+            + made_of + listing + note)
+    short = w.fig("need", money(max(0, r.floor - low.closing_fen)))
+    if breach:
+        w.fig("first_breach_day", str(fb.value))
+    if below_zero:
+        w.fig("zero_day", str(neg.value))
+    reserve_en = w.t(f"below your {res} reserve from {w.on(fb.value)}", f"从{w.on(fb.value)}起低于您 {res} 的最低现金储备") if breach else ""
+    if low.closing_fen >= 0:  # all of it can be paid, but not inside the reserve
+        w.fig("answer", "yes")
+        lead = w.t(
+            f"Yes, but not inside your reserve: paying all {count} due in {span}, {total} in all, keeps cash above zero but takes it "
+            f"{reserve_en}, lowest {lo} on {w.on(low.day)} ({short} short of the reserve).",
+            f"可以付清，但会动用储备：{span}内到期的 {count}，合计 {total}，付清后现金仍在零以上，但会{reserve_en}，"
+            f"最低在{w.on(low.day)}降至 {lo}（比储备低 {short}）。")
+    else:
+        w.fig("answer", "no")
+        zero_en = w.t(f"below zero from {w.on(neg.value)}", f"从{w.on(neg.value)}起跌破零") if below_zero else ""
+        path_en = w.t(", ", "，").join(x for x in (reserve_en, zero_en) if x)
+        lead = w.t(
+            f"No: paying all {count} due in {span}, {total} in all, takes cash {path_en}, and down to {lo} on {w.on(low.day)} "
+            f"({short} short of the reserve).",
+            f"不能：{span}内到期的 {count}，合计 {total}，付清后现金将{path_en}，最低在{w.on(low.day)}降至 {lo}（比储备低 {short}）。")
+    reply = w.reply("LIQ-10", lead + made_of + listing + note + w.t(" ", "") + _plan_with_legs(w))
+    p = mx.standing_plan(r)
+    if p.value is not None:
+        reply.extra["offers_plan"] = True
+        reply.extra["needs_owner"] = bool(p.detail["needs_owner"])
+    return reply
+
+
+def _plan_with_legs(w: W) -> str:
+    """The plan clause with what the plan does, in words ("FLOW's plan covers it for ¥3,113.93: draw ... and finance ...")."""
+    plan = plan_clause(w)
+    p = w.m(mx.standing_plan(w.r))
+    if p.value is None or plan.endswith((".", "。")):
+        return plan
+    legs = legs_words(w, p.value)
+    if legs:
+        plan += w.t(": ", "：") + ("，并".join(legs) if w.zh else joined(w, legs))
+    return plan + w.t(".", "。")
 
 
 def a_why(w: W, q: str) -> AnswerReply:
@@ -1545,7 +1664,8 @@ QUESTIONS: tuple[tuple[str, re.Pattern[str], Handler], ...] = (
                   r"\b(?:do we|are we) (?:meet|pass|comply with)\b.{0,20}\bcovenants?\b",
                   r"(?:满足|符合|达标|违反).{0,10}(?:贷款)?契约.{0,4}(?:吗|么|没有)", r"契约.{0,8}(?:达标|满足|符合).{0,4}(?:吗|么)",
                   r"契约指标都达标"), a_covenants),
-    ("LIQ-10", _p(r"\b(?:make|meet|cover|covered|afford|pay)\b.{0,20}\b(?:payroll|wages|salaries)\b",
+    ("LIQ-10", _p(*_PAY_ALL_ASKED,
+                  r"\b(?:make|meet|cover|covered|afford|pay)\b.{0,20}\b(?:payroll|wages|salaries)\b",
                   r"\b(?:payroll|wages|salaries)\b.{0,20}\b(?:covered|ok|okay|safe|enough|afford)\b",
                   r"\benough\b.{0,20}\b(?:payroll|wages|salaries)\b",
                   r"(?:工资|薪水|薪资|发薪).{0,10}(?:够|发得出|发不出|能发|付得起)", r"(?:够|能).{0,6}(?:发工资|发薪)"), a_payroll),
