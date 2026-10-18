@@ -86,7 +86,7 @@ each source.**
 | Reading contracts | 75% of key fields on 17 unseen Chinese contracts with a text layer (45% over all 30: 13 scans and photos are refused) | Unseen, recorded model replay |
 | Owner questions | 228 of 427 answerable bank questions answered, 45 partly, 0 wrong (tuned bank); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic | Tuned; held-out |
 | Live model | One live DeepSeek run per component: buyer messages 42 of 63 verdicts, no wrong accept (1 Oct); the question router was fully correct on 22 of the 63 questions that reached it (22 of 33 when it answered), by one reviewer (18 Oct) | Live, single runs |
-| Security | 279 stored attack cases (128 API, 151 chat): none violated the harm oracles (rules path and a scripted hostile model; no real model read an attack). Internal review by an AI Security Lead, not external assurance | Tests |
+| Security | 279 stored attack cases (128 API, 151 chat): none violated the harm oracles (rules path and a scripted hostile model; no real model read any of the 279 catalogue cases). Internal review by an AI Security Lead, not external assurance | Tests |
 | Task completion | 49 of 49 scripted conversations pass their own checks (88 turns); the 17-step demo walk ends with a 14-entry hash chain that verifies, and a tampered copy is rejected | Scripted tasks, simulated environment |
 | Tests | Passed, failed and skipped counts for the API, web-unit and browser suites on the submission commit: Table V (Appendix B). Last historical runs: API 10,674 passed, 0 failed, 47 skipped and mock browser 479 passed, 0 failed, 77 skipped (`70f23ac5`); live browser 139 passed with three known failures, `live.spec.ts:334` and `:348` (#157) and `tracker.spec.ts:216` (`975e082f`). A count measures the size of a suite, not correctness | Tests |
 
@@ -304,8 +304,9 @@ fills outbound templates; the **treasurer** finds the cheapest funding plan and 
 This run shows the model doing its work on inputs it has never seen. It is separate from the certified offline evidence,
 which uses the rules grammar and recorded readings, and it is not part of any certification.
 
-- **Execution mode.** `pnpm demo --live-llm` on loopback: the real engine with a live model, redaction forced on, on the demo
-  books. Live mode is outside every security certification.
+- **Execution mode.** The API started directly with uvicorn on loopback in `LLM_MODE=live` (redaction on, its default), on the
+  demo books; the model-alone evaluation run also set `LLM_LIVE_RAW=1`. Owners reach the same mode with `pnpm demo --live-llm`.
+  Live mode is outside every security certification.
 - **Provider.** DeepSeek, `deepseek-flash` alias through the OpenAI-compatible API (the underlying model version is not
   recorded).
 - **Inputs.** A new Chinese buyer message and a new contract, written for this run and in no fixture, recording or tuning set.
@@ -313,10 +314,10 @@ which uses the rules grammar and recorded readings, and it is not part of any ce
   whose quote is not in the text. (2) Deterministic code evaluates the terms: the cash projection, the funding price, the
   mandate and the verdict, with its formula and figures. (3) The permission gate: the executor computes the tier, anything
   outside Tier 1 waits for the owner, and nothing the model returned can act on its own.
-- **Date and outcome.** Run on 18 October 2026 (17:08 UTC+8) on code commit `5941e95a`, API in `LLM_MODE=live` with DeepSeek `deepseek-flash`, redaction on; inputs written for this run and in no fixture or cache ([evidence](docs/deliverables/evidence/live-2026-10-18/live_demo_2026-10-18.json)).
+- **Date and outcome.** Run on 18 October 2026 (17:08 UTC+8) on code commit `5941e95a` (by the operator's record; the result files carry the date, not the commit), API in `LLM_MODE=live` with DeepSeek `deepseek-flash`, redaction on; inputs written for this run and in no fixture or cache ([evidence](docs/deliverables/evidence/live-2026-10-18/live_demo_2026-10-18.json)).
   - *A new Chinese buyer message* on Foshan's channel key. The model read all three terms in 1.8 s, each with its quoted words: 60-day terms (“把账期延长到60天”), 1% off for paying 10 days early (“提前10天付，给1%折扣”), and a 0.5% reduction tied to higher orders. FLOW's rules grammar read two of the terms differently, so FLOW booked nothing, returned NO VERDICT and asked the buyer, in Chinese, to confirm: a disagreement between the two readers never reaches a verdict.
-  - *A new synthetic contract* for Dongguan ([text](docs/deliverables/evidence/live-2026-10-18/dongguan_framework_agreement.md)). The model returned 13 terms in 3.6 s, each with its clause quoted: the parties in their roles, the dates, RMB 180,000 every 30 days, 60-day terms, 1.2% off within 10 days and late interest. It did not return the 2% volume rebate (clause 6.1) or the termination clause; confirming the reading stays the owner's.
-  - *A new owner question* (“Which of my debts costs me the most, and what would early collection from Foshan save?”) was routed live to two read-only tools (`debt_service`, `early_pay_offer`) in 1.3 s; FLOW's code computed the answer.
+  - *A new synthetic contract* for Dongguan ([text](docs/deliverables/evidence/live-2026-10-18/dongguan_framework_agreement.md)). The model returned 13 terms in 3.39 s, each with its clause quoted: the parties in their roles, the dates, RMB 180,000 every 30 days, 60-day terms, 1.2% off within 10 days and late interest. It did not return the 2% volume rebate (clause 6.1) or the termination clause; confirming the reading stays the owner's.
+  - *A new owner question* (“Which of my debts costs me the most, and what would early collection from Foshan save?”) was routed live to two read-only tools (`debt_service`, `early_pay_offer`) in 1.48 s; FLOW's code computed the answer.
   - *Frozen evaluation* (20 new items, 10 English and 10 Chinese, labels written blind before any run and fixed by hash; [results](services/api/evals/live_frozen/)). Single runs on one day with one provider; untuned:
 
 | Out of 20 | Rules grammar only (offline) | Model alone (live) | FLOW as shipped (model + rules check) |
@@ -675,7 +676,7 @@ several legs is not. The owner is told each leg's actual outcome (funded, waitin
 resumes legs, so atomicity across legs remains a disclosed limitation and recovery is manual (read Activity, compensate, ask
 again).
 
-**Owner control, the single-operator model and an external audit checkpoint.** The owner can pause FLOW's agent at any time (`POST /agent/pause`, owner token; `POST /agent/resume` to undo). While paused, every operation requested on the agent's or a buyer's authority is refused before it reaches the executor's gates, and each refusal is recorded as a security event; the owner's own operations and bank-feed receipts still run. The pause and the resume are entries on the hash-chained operations log, so the switch survives a restart. It does not revoke or replace the mandate: mandate revocation and renewal remain offline owner steps. The pause is API-only in this build. FLOW supports one operator: the owner signs the mandate offline and decides every Tier-2 item; the agent acts only inside that mandate at Tier 1 and can never decide an approval, change the mandate or run a Tier-3 operation. One owner credential is a single point of compromise for everything inside the signed limits; it cannot widen them. A second approver above a threshold is future work. The operations log is hash-chained. The owner can save a manual checkpoint of the chain head (entry count, head hash, day) with `scripts/verify_evidence.py --checkpoint-save` and keep it outside the database; a later export verified against it shows any truncation, rollback or rewrite of entries up to that point, and accepts entries appended after it. This is tamper evidence, not tamper-proofing: an administrator who can also change the kept checkpoint, or who changes the log after the latest checkpoint, is not detected by it. Checkpoints are manual; there is no external anchoring service.
+**Owner control, the single-operator model and a chain checkpoint kept outside the database.** The owner can pause FLOW's agent at any time (`POST /agent/pause`, owner token; `POST /agent/resume` to undo). While paused, every operation requested on the agent's or a buyer's authority is refused before it reaches the executor's gates, and each refusal is recorded as a security event; the owner's own operations and bank-feed receipts still run. The pause and the resume are entries on the hash-chained operations log, so the switch survives a restart. It does not revoke or replace the mandate: mandate revocation and renewal remain offline owner steps. The pause is API-only in this build. FLOW supports one operator: the owner signs the mandate offline and decides every Tier-2 item; the agent acts only inside that mandate at Tier 1 and can never decide an approval, change the mandate or run a Tier-3 operation. One owner credential is a single point of compromise for everything inside the signed limits; it cannot widen them. A second approver above a threshold is future work. The operations log is hash-chained. The owner can save a manual checkpoint of the chain head (entry count, head hash, day) with `scripts/verify_evidence.py --checkpoint-save` and keep it outside the database; a later export verified against it shows any truncation, rollback or rewrite of entries up to that point, and accepts entries appended after it. This is tamper evidence, not tamper-proofing: an administrator who can also change the kept checkpoint, or who changes the log after the latest checkpoint, is not detected by it. Checkpoints are manual; there is no external anchoring service.
 
 ### Protection against prompt injection, privilege escalation and privacy leakage
 
@@ -692,7 +693,8 @@ again).
   executes; the router picks only read-only tools and its prompt never holds the books.
 - **Privilege escalation.** The executor trusts no caller-supplied tier, actor or approval. Self-approval, an agent's circuit
   reset, a forged mandate, a reused nonce, a backdated operation and a decision by anyone but the owner are refused and logged.
-  A route-policy test calls all 106 routes as every kind of caller, with demo mode on, off and unset.
+  A route-policy test calls all 110 routes as every kind of caller, with demo mode on and off; the certification's route sweep
+  covers the 106 API routes and the 3 documentation routes in three modes (demo mode on, off and unset).
 - **Privacy and data extraction.** Outbound text is filled from an approved template; a request for data gets one fixed reply.
   **An outbound guard blocks the whole message** if it states a value the recipient is not entitled to: the owner's protected
   internal values (the reserve, a cap, a limit, the marginal rate, a facility's terms), confidential terms belonging to other
@@ -725,7 +727,7 @@ result). Figure 7 (Appendix J) breaks them down by class.**
 
 The harm oracles compare the books before and after each case. Six positive controls pass through the same runtime, and
 switching off one control at a time makes the harness report harm, so the clean result is not a system that refuses
-everything. **No real model, recorded or live, read an attack.** The catalogue is the team's own: a test result within a scope,
+everything. **No real model, recorded or live, read any of the 279 catalogue cases.** The catalogue is the team's own: a test result within a scope,
 not proof that no exploitable path exists, and no running deployment has had a penetration test.
 
 **Assurance and certification.** Every review was internal and AI-assisted; none was independent professional assurance. The
@@ -736,7 +738,7 @@ its results are its own and were not re-run, and its observations were re-checke
 a separate session and worktree, reproduced every finding, wrote each fix with a regression test (so it certified fixes it
 wrote) and certified dev **`70f23ac5`, the final assessed build**, for the local simulation with live mode excluded: 10,674 API
 tests passed, 0 failed; 279 cases, 0 harm; PostgreSQL concurrency 3 of 3; 479 mock browser tests passed; 0 CSP violations
-([docs/security/CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md)). Disclosed with it: REG-8 (Low), REG-9 (Info), CT-2b (Low), and SEC-27 and SEC-28 (Medium),
+([docs/security/CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md)). Disclosed with it: REG-8 (Low), REG-9 (Info), CT-2b (Low), SEC-27 (Low) and SEC-28 (Medium),
 the last two deferred by the owner. **The submission build is not yet certified.** REG-8, REG-9 and CT-2b are fixed on it by the
 Security Lead's round-six commit `563de405`, and re-certification has been requested. It also adds the SEC-28 reporting fix
 (`f52870d1`), Ask FLOW's new answers, the classifier's read-intent routing, the Cash page's plan without a permanent source,
