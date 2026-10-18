@@ -46,7 +46,9 @@ rows with different oracles do not compare.
 | `fig8-system-architecture.png` | FLOW's architecture: the three model-assisted steps see redacted text only and propose typed output; deterministic code computes every figure, and every typed operation goes through the executor; a footnote names the logged writes outside it (clock, books setup, a new customer) and the demo reset. | `src/fig8_system_architecture.py` | Read from the code on `docs/techdoc-chat-fixes` `571ea64f`: `app/main.py` routers, `app/compiler`, `app/nl/classifier.py`, `app/nl/router`, `app/egress/guard.py`, `app/operations/executor.py`, `app/persistence` |
 | `fig9-request-to-settlement.png` | One buyer request from request to settlement: a registered buyer on its own channel key is answered by FLOW alone inside the signed mandate (Tier 1), any other request waits for the owner; the figure marks what is only proposed, what is authorised, what is recorded, what has settled, and the end state "agreement recorded; funding incomplete". | `src/fig9_request_to_settlement.py` | `app/api/offers.py`, `decide.py`, `accept.py`, `outbound.py`, the executor's `AcceptOffer`, `app/commitments`, `app/api/alerts.py`, `app/alerts/reconcile.py` (`571ea64f`); the Tier-1 branch and outcome 9b re-checked on `int/final3` `2ce5265c`: `app/api/nl.py` (channel key binds the sender), `app/nl/offers.py` `counterparty_message`, `app/mandate/tiers.py` `tier_for`, `app/api/accept.py` `funding_next` |
 | `fig10-authority-matrix.png` | The authority matrix: what FLOW may do inside the signed mandate (Tier 1), what waits for the owner (Tier 2) and what is refused whoever asks (Tier 3), with the demo mandate's limits. | `src/fig10_authority_matrix.py` | `app/mandate/tiers.py` `tier_for`; `fixtures/scenarios/golden_sme.mandate.signed.json` (`571ea64f`) |
-| `fig11-cash-scenarios.png` | The demo company's closing cash under four scenarios, days 0 to 62, against the ¥300,000 reserve, with nine dated events. Supersedes `fig4-golden-cash.png` in the technical document (Figure 4). | `src/fig11_cash_scenarios.py` | `../submission/work/fin/daily_cash.csv` and `events.csv` (financial audit, 18 Oct 2026): the independent recomputation from the golden fixtures, equal to the engine replayed through the API to the fen (`work/fin/compare.csv`, 39 of 39) |
+| `fig11-cash-scenarios.png` | The demo company's closing cash under four scenarios, days 0 to 62, against the ¥300,000 reserve, with nine dated events. Superseded by `fig11a` and `fig11b` (18 Oct 2026), which separate the like-for-like alternatives from what happened after the choice; kept, and its source still renders. | `src/fig11_cash_scenarios.py` | `../submission/work/fin/daily_cash.csv` and `events.csv` (financial audit, 18 Oct 2026): the independent recomputation from the golden fixtures, equal to the engine replayed through the API to the fen (`work/fin/compare.csv`, 39 of 39) |
+| `fig11a-cash-alternatives.png` | The financing alternatives for Foshan's request, like for like: the same events in every series, so the lines differ only by the choice made on day 0. No action falls to −¥105,000; accepting as asked with no funding falls below the ¥300,000 reserve on days 47–61; the standing plan, Option A and Option B each touch the reserve exactly on days 30–31. Day-62 cash is ¥590,000 minus each choice's net cost. | `src/fig11a_cash_alternatives.py` | `daily_cash.csv` columns `baseline_no_funding_cny`, `standing_plan_line150k_if255k_cny`, `ex01_as_asked_no_funding_cny`, `option_a_as_quoted_cny`, `option_b_with_its_funding_cny`; `events.csv`; costs from `work/financial_audit.md` §4 (the script asserts day 62 = 590,000.00 − net cost) |
+| `fig11b-cash-disruption.png` | What happened after Option A was agreed, as the demo runs it: a ¥200,000 month-2 payroll added on day 25 and ¥160,000 of the invoice paid late; FLOW's ¥200,000 cure, queued for the owner on day 34 and landing on day 37, keeps cash at or above the reserve on every day, for ¥5,205.36 in all against ¥3,035.99 quoted. | `src/fig11b_cash_disruption.py` | `daily_cash.csv` columns `option_a_as_quoted_cny`, `option_a_as_quoted_plus_month2_payroll_cny`, `demo_actual_option_a_late_residual_cure_cny`; `events.csv` (scenario `demo`); `work/financial_audit.md` §4.4–4.9 (the script asserts each day-62 value) |
 
 Figures 8 to 10 (18 Oct 2026) supersede figures 1 to 3 for the submission: figure 1 named the compiler as the only model
 step, while the build has three (the compiler, the chat intent classifier and the Ask FLOW question router). Figure 3 stays
@@ -107,6 +109,40 @@ helper shows a complete example; the financial chart of `docs/sub-financial-audi
   scheduled (25), loan payment (30), the invoice due with ¥160,000 unpaid (32), the advance proposed and approved (34), the
   advance landing (37), the next invoice paid and the bill (47), loan payment (60). The bottom line names the books, the
   currency, the data file and the build.
+- **fig11a-cash-alternatives.png.** A step chart of closing cash in CNY (minus ¥150k to ¥1,000k) over days 0 to 62, with a
+  dashed line at the ¥300,000 reserve and the area below it shaded. Five series, each with its own colour, dash pattern and
+  marker shape: A0 no action (grey, dash-dot, diamonds), A1 FLOW's standing plan (blue, solid, circles), A2 the request
+  accepted as asked with no funding (amber, dashed, squares), A3 Option A with its credit line (purple, dotted, triangles),
+  A4 Option B with its funding plan (teal, dash-dot-dot, inverted triangles). Callouts: A0 reaches −¥105,000 on days
+  30–31; A2 is ¥209,960 on day 47 and ¥164,960 on days 60–61; A1, A3 and A4 touch ¥300,000 on days 30–31. Eleven numbered
+  markers along the top date the shared events, explained in a key below the chart, followed by a table of each series'
+  lowest cash, day-62 cash and net cost, and the reconciliation rule. The bottom line names the books, the currency, the
+  data files and the build.
+
+  *Text equivalent.* Same events in every series (payroll ¥340,000 on day 12, supplier ¥120,000 on day 20, loan ¥45,000 on
+  days 30 and 60, bill ¥100,000 on day 47, each invoice paid on its due day). Lowest cash, day-62 cash, net cost: A0 no
+  action −¥105,000.00 (days 30–31, below the reserve from day 12), ¥590,000.00, ¥0.00. A1 standing plan (line ¥150,000 +
+  invoice financing ¥255,000) ¥300,000.00, ¥586,886.07, ¥3,113.93. A2 EX01 as asked (60 days, 1.2% early payment), no
+  funding ¥164,960.00 (below the reserve days 47–61), ¥584,960.00, ¥5,040.00. A3 Option A (0.85% early payment on ¥260,000,
+  line ¥147,210) ¥300,000.00, ¥586,964.01, ¥3,035.99. A4 Option B (55 days, +0.30%; line ¥90,000 + financing ¥315,000 for
+  ¥3,706.46, less a ¥1,260.00 premium) ¥300,000.00, ¥587,553.54, ¥2,446.46. Day-62 cash = ¥590,000.00 − net cost.
+- **fig11b-cash-disruption.png.** A step chart of closing cash in CNY (¥0 to ¥1,000k) over days 0 to 62, with the dashed
+  ¥300,000 reserve and the area below it shaded. Three Option A series: B0 as quoted on day 0 (grey, dash-dot, diamonds,
+  a reference), B1 with the month-2 payroll added but the residual paid on time and no cure (amber, dashed, squares), and
+  B2 as the demo ran (purple, thick solid, triangles). Callouts: B2 holds at ¥300,000 on days 32–35 with the line not
+  repaid; B2 is ¥460,000 on day 42 after the payroll, so the reserve held; B1 falls to ¥111,964.01 on days 42–46,
+  ¥188,035.99 short. Eleven numbered markers date the events, explained below, followed by a table of lowest cash, day-62
+  cash and cost per series and the reconciliation. The bottom line names the books, the currency, the data and the build.
+
+  *Text equivalent.* Day 0 Option A agreed, line ¥147,210 drawn; day 2 buyer pays ¥257,790 (¥260,000 at 0.85%), ¥160,000
+  due day 32; day 25 a ¥200,000 payroll is scheduled for day 42; day 32 the ¥160,000 is not paid and the line cannot be
+  repaid (cash ¥300,000); day 34 FLOW proposes ¥200,000 of invoice financing (¥1,782.19, 32.5% a year, above the 15%
+  ceiling), queued as APR-000001 and approved by the owner; day 36 the ¥160,000 arrives (¥460,000); day 37 the advance
+  lands (¥660,000); day 42 payroll (¥460,000); day 47 invoice +¥420,000, bill −¥100,000, advance repaid ¥201,782.19, line
+  repaid ¥148,423.17 (¥429,794.64); day 60 loan −¥45,000 (¥384,794.64). Lowest, day 62, cost: B0 ¥300,000.00,
+  ¥586,964.01, ¥3,035.99; B1 ¥111,964.01, ¥386,964.01, ¥3,035.99; B2 ¥300,000.00, ¥384,794.64, ¥5,205.36. Day 62 =
+  ¥590,000.00 − ¥200,000.00 payroll (B1, B2) − cost; B2's ¥2,169.37 overrun is ¥387.18 of extra line interest and ¥1,782.19
+  for the cure.
 
 ## Product screenshots (`screens/`)
 
