@@ -12,9 +12,11 @@ import structlog
 
 @pytest.fixture(autouse=True)
 def _structlog_config_restored():
-    """Every test starts and ends on the same structlog configuration. A script entry point a test runs (evals.common.quiet,
-    scripts/research) installs a WARNING filter for the whole process; left in place, a later test's capture_logs() saw
-    no info events (the router's log tests failed in a gate chunk and passed alone)."""
-    saved = structlog.get_config()
+    """Every test starts and ends on structlog's defaults, the configuration the app runs with (it never configures structlog
+    itself). Script entry points a test runs (evals.common.quiet, run_certification in scripts/certify_language_boundary.py,
+    judge_eval, run_scenarios) install a WARNING filter for the whole process, sometimes from a module-scoped fixture that runs
+    before this one; left in place, a later test's capture_logs() saw no info events (the router's log tests failed after
+    tests/certification and passed alone)."""
+    structlog.reset_defaults()
     yield
-    structlog.configure(**saved)
+    structlog.reset_defaults()

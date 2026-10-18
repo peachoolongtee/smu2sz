@@ -102,9 +102,11 @@ def test_offline_and_flag_off_keep_the_classifier_reading(name: str, router: Scr
 
 def test_a_statement_or_an_off_topic_question_labelled_show_status_stays_as_it_was(router: Scripted, monkeypatch: pytest.MonkeyPatch) -> None:
     live(monkeypatch)
-    for text in ("show me where the money stands", "who won the football match?"):
-        resp, _store = run([stub(STATUS)], text)
-        assert resp.intent == Intent.SHOW_STATUS and resp.parse_source == "llm:stub-model", text
+    resp, _store = run([stub(STATUS)], "show me where the money stands")
+    assert resp.intent == Intent.SHOW_STATUS and resp.parse_source == "llm:stub-model"
+    # an off-topic question is now answered by the small-talk rules (app/nl/smalltalk.py) before the classifier: still never routed
+    resp, _store = run([stub(STATUS)], "who won the football match?")
+    assert resp.intent == Intent.OUT_OF_SCOPE
     assert router.prompts == []
 
 
