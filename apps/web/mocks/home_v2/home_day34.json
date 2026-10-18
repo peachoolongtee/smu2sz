@@ -5608,7 +5608,8 @@
           "with_plan": {
             "label": "with plan",
             "value_text": "¥300,000"
-          }
+          },
+          "basis_label": "With the funding in place"
         },
         "funding": {
           "state": "PROPOSED",
@@ -11559,7 +11560,8 @@
           "with_plan": {
             "label": "采用方案后",
             "value_text": "¥300,000"
-          }
+          },
+          "basis_label": "已计入已安排的融资"
         },
         "funding": {
           "state": "PROPOSED",

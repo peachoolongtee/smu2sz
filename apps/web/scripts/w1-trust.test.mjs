@@ -48,7 +48,9 @@ test("the agreement label follows the commitment's status", () => {
   assert.equal(agreementState(null), "none");
 });
 
-const t = (key, vars) => en[key].replace(/\{(\w+)\}/g, (_, k) => String(vars?.[k]));
+// The dictionary's interpolation (lib/i18n.ts): `{n|one|other}` picks the word for a count, then `{n}` is the value.
+const t = (key, vars) =>
+  en[key].replace(/\{(\w+)\|([^|{}]*)\|([^|{}]*)\}/g, (_, k, one, other) => (Number(vars?.[k]) === 1 ? one : other)).replace(/\{(\w+)\}/g, (_, k) => String(vars?.[k]));
 
 test("a deadline that has passed is a distance in the past and is never rewritten to today", () => {
   assert.equal(whenText(2, 34, t), "32 days ago");

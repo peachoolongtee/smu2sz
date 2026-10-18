@@ -24,7 +24,15 @@ if (!existsSync(NEXT_BIN)) {
 const env =
   mode === "mock"
     ? { NEXT_PUBLIC_API_MODE: "mock" }
-    : { NEXT_PUBLIC_API_MODE: "live", NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000", NEXT_PUBLIC_DEMO: "1" };
+    : {
+        NEXT_PUBLIC_API_MODE: "live",
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+        NEXT_PUBLIC_DEMO: "1",
+        // The strategy surfaces, as `pnpm demo` builds them (the price of earlier cash); the API needs FEATURE_PRICE_CURVE (and
+        // FEATURE_COLLECTIONS_WORTH for the receivables fallback). The envelope and the pilot journal keep their own flags, off here
+        // (NEXT_PUBLIC_STRATEGY_ENVELOPE, NEXT_PUBLIC_PILOT_JOURNAL; lib/config.ts).
+        NEXT_PUBLIC_STRATEGY_MVP: "1",
+      };
 
 const child = spawn(process.execPath, [NEXT_BIN, "dev", ...nextArgs], { cwd: WEB_DIR, stdio: "inherit", env: { ...process.env, ...env } });
 for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) {

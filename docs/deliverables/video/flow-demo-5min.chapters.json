@@ -1,0 +1,114 @@
+{
+  "cut": "5min",
+  "name": "flow-demo-5min",
+  "total_seconds": 262.065,
+  "chapters": [
+    {
+      "n": 1,
+      "id": "title",
+      "title": "FLOW",
+      "about": "Title card over the landing page: what FLOW is, and that everything outside FLOW is simulated.",
+      "at": 0.365
+    },
+    {
+      "n": 2,
+      "id": "setup-clip",
+      "title": "Own books in six steps",
+      "about": "Blank books: sign-in, the saved setup draft walked through its six steps, the first forecast, signing the limits; Home answers from the owner's own figures.",
+      "at": 12.921
+    },
+    {
+      "n": 3,
+      "id": "golden-home",
+      "title": "Am I safe?",
+      "about": "Second take, on the golden demo books: Home says cash becomes unsafe in 12 days and recommends a ¥405,000 plan costing ¥3,113.93.",
+      "at": 40.219
+    },
+    {
+      "n": 4,
+      "id": "buyer-asks",
+      "title": "The buyer asks",
+      "about": "Demo shell chat in the buyer's role: Foshan's message (EX01: 1.2% early settlement for 60-day terms and a 1% rebate); the buyer sees only FLOW's two counters.",
+      "at": 67.711
+    },
+    {
+      "n": 5,
+      "id": "verdict",
+      "title": "FLOW decides",
+      "about": "Deals: the request checked against the limits: ¥28,326.92 over 12 months against the ¥5,000 cap and a reserve breach; Options A and B side by side; Cash impact and Business consequences.",
+      "at": 79.526
+    },
+    {
+      "n": 6,
+      "id": "negotiate",
+      "title": "The counter is sent",
+      "about": "Review and send Option A to the simulated buyer (Demo, open to a counter): agreed in round 1, the planned funding runs.",
+      "at": 100.911
+    },
+    {
+      "n": 7,
+      "id": "agreement",
+      "title": "The deal, followed",
+      "about": "The deal tracker (promised against actual) and Your agreements.",
+      "at": 113.851
+    },
+    {
+      "n": 8,
+      "id": "bank-and-time",
+      "title": "The bank, then time",
+      "about": "Day 2: the synthetic bank event posts the agreed early payment (matched on Receivables); the clock moves to day 34.",
+      "at": 124.291
+    },
+    {
+      "n": 9,
+      "id": "late-payment",
+      "title": "A late payment",
+      "about": "Day 34: Home's alarm and priced cure; Receivables: ¥160,000 two days late, Chase payment; Ask FLOW speaks first: the late payment, the breach and the cure, waiting for the owner's yes.",
+      "at": 138.61
+    },
+    {
+      "n": 10,
+      "id": "cure",
+      "title": "The owner decides",
+      "about": "Cash & funding: Queue it for my approval; Approvals: ¥200,000 at 32.5% a year, above the 15% the owner signed; the owner authorizes.",
+      "at": 155.65
+    },
+    {
+      "n": 11,
+      "id": "landed",
+      "title": "The loop closes",
+      "about": "Day 38: the advance has landed (Cash & funding); Activity › Reconciliation: the receipt matched, chain valid.",
+      "at": 172.287
+    },
+    {
+      "n": 12,
+      "id": "contract-set-up",
+      "title": "A contract becomes invoices",
+      "about": "Third take, fresh golden books: Dongguan's supply agreement read clause by clause, confirmed, then “Set up in my books” with the forecast before and after and the owner's yes (Tier 2).",
+      "at": 186.965
+    },
+    {
+      "n": 13,
+      "id": "ask-flow",
+      "title": "Ask FLOW",
+      "about": "Ask FLOW: “Are we safe?” as an answer card whose link opens the cash forecast, then “我们安全吗？” answered in Chinese, then a personal guarantee refused (Tier 3).",
+      "at": 210.75
+    },
+    {
+      "n": 14,
+      "id": "evidence",
+      "title": "The record",
+      "about": "Security and evidence: Download JSONL, then scripts/verify_evidence.py on the downloaded file prints VALID.",
+      "at": 238.182
+    },
+    {
+      "n": 15,
+      "id": "closing",
+      "title": "Results",
+      "about": "Closing card with the offline judge results (scripts/judge_eval.py: functional tasks and adversarial attacks).",
+      "at": 250.045
+    }
+  ],
+  "problems": [],
+  "recorded": "2026-10-18"
+}

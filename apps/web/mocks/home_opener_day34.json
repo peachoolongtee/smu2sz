@@ -26,6 +26,72 @@
   "trace_id": "rec-home-en:1",
   "context_echo": null,
   "scope_used": null,
+  "card": {
+    "lead": "Cash falls below your ¥300,000 reserve in 8 days, ¥200,000 short.",
+    "figures": [
+      {
+        "label": "Short of your reserve",
+        "value": "¥200,000",
+        "tone": "danger"
+      },
+      {
+        "label": "Lowest cash",
+        "value": "¥100,000",
+        "tone": "danger"
+      },
+      {
+        "label": "FLOW's plan costs",
+        "value": "¥1,782.19",
+        "tone": "neutral"
+      }
+    ],
+    "body": "FLOW's plan: finance ¥200,000 of the ¥420,000 invoice to Foshan Home Retail Co. (due in 13 days), cash in 3 days; ¥1,782.19 in all. It needs your approval before it runs.\n¥160,000 on the ¥420,000 invoice to Foshan Home Retail Co. was due 2 days ago and has not arrived. 1 more warning: Cash is close to your minimum today.",
+    "basis": "Today's books, day 34",
+    "all_figures": [
+      {
+        "label": "Short of your reserve",
+        "value": "¥200,000",
+        "tone": "danger"
+      },
+      {
+        "label": "Lowest cash",
+        "value": "¥100,000",
+        "tone": "danger"
+      },
+      {
+        "label": "FLOW's plan costs",
+        "value": "¥1,782.19",
+        "tone": "neutral"
+      },
+      {
+        "label": "Below reserve",
+        "value": "in 8 days",
+        "tone": "danger"
+      },
+      {
+        "label": "Overdue",
+        "value": "¥160,000",
+        "tone": "danger"
+      }
+    ],
+    "actions": [
+      {
+        "label": "Open FLOW's plan",
+        "href": "/#home-v2-action",
+        "kind": "link"
+      },
+      {
+        "label": "See the cash forecast",
+        "href": "/cash#cash-chart",
+        "kind": "link"
+      },
+      {
+        "label": "See Foshan Home Retail Co.'s invoices",
+        "href": "/receivables?customer=BUYER-1",
+        "kind": "link"
+      }
+    ]
+  },
   "proactive": true,
   "has_news": true
 }

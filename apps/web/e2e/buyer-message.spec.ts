@@ -198,6 +198,13 @@ test("they accepted, with their message as evidence: the exact terms, what it bi
   await expect(ending.getByTestId("outbound-ending-consequences")).toContainText(done.outbound!.consequences_title_text!);
   for (const c of done.outbound!.consequences!) await expect(ending.getByTestId("outbound-ending-consequences")).toContainText(c);
   for (const l of done.outbound!.links) await expect(ending.getByRole("link", { name: l.label })).toHaveAttribute("href", l.href);
+  // Recording the buyer's yes funds nothing (the owner runs the plan): the reserve gap still ahead and the way to FLOW's plan come first.
+  const next = done.agreement!.funding_next!;
+  expect(next.text).toMatch(/^The agreement ran no funding: cash still falls ¥[\d,.]+ below your minimum/);
+  await expect(ending.getByTestId("outbound-ending-consequences")).toContainText(next.text);
+  await expect(ending.getByTestId("outbound-ending-primary")).toHaveText(next.label);
+  await expect(ending.getByTestId("outbound-ending-primary")).toHaveAttribute("href", "/cash");
+  await expect(page.getByTestId("deal-funding-next")).toHaveCount(0); // said once, in the ending, not again beside the tracker
   await expect(page.getByTestId("deal-history-accepted")).toContainText(done.history!.find((h) => h.kind === "accepted")!.text);
   await expect(ending.getByTestId("deal-agreement-receipt")).toBeHidden();
   await ending.getByTestId("outbound-agreement-details").locator("summary").click();

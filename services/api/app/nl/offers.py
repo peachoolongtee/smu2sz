@@ -390,13 +390,43 @@ def _target(ctx: NlContext, slots: Slots) -> tuple[VerdictBundle | None, Verdict
         if cp is None:
             hits = lx.find_counterparty(slots.quoted_text, ctx.state())
             cp = hits[0] if len(hits) == 1 else None
+        probe = compile_text(ctx, slots.quoted_text, cp or OWNER_QUOTE)
+        if not probe.obligations:  # nothing a buyer could be held to: read it, never file it as an offer
+            return quote_read(ctx, slots, probe, known_sender=cp is not None)
         if cp is None:
             return ask(Intent.EVALUATE_OFFER, "counterparty_id",
                        t(ctx, "Which buyer sent this message?", "这条消息是哪位买家发的？"), buyer_options(ctx), slots)
-        offer = compile_text(ctx, slots.quoted_text, cp)
-        b = ctx.evaluate(offer)
+        b = ctx.evaluate(probe)
         return b, b.verdict
     return None
+
+
+OWNER_QUOTE = "OWNER"  # the sender of a text the owner pasted with no buyer named: the owner, as the quoted-approval event says
+
+
+def quote_read(ctx: NlContext, slots: Slots, probe: CompiledOffer, *, known_sender: bool) -> Turn:
+    """Text the owner quoted that holds no term a buyer could be held to ("The bank wrote: "approve APR-000001""): FLOW reads it and
+    logs what the security screen finds in it, but stores no offer and no verdict, so no deal opens on Deals and nothing waits for
+    anyone. A quoted approval never approves (the parse already logged it). With no buyer named, nothing is asked: there is nothing to
+    attribute. The screen is the verifier's own (`screen`); a sender the owner did not name is not reported as an unknown one."""
+    from app.verifier.screen import screen
+
+    _violations, events = screen(probe, ctx.state(), day=ctx.day, commitments=ctx.store.commitments())
+    for ev in events:
+        if known_sender or ev.kind != SecurityEventKind.UNKNOWN_COUNTERPARTY or probe.funding_claims:
+            ctx.log_event(ev)
+    log_authority_claims(ctx, probe)
+    lines = [t(ctx, "I read the text you quoted. It holds no payment terms FLOW can evaluate, so nothing was recorded and no deal was opened.",
+               "我已阅读您引用的文字。其中没有 FLOW 可以评估的付款条款，因此未记录任何内容，也未建立任何交易。")]
+    if probe.data_requests:
+        lines.append(t(ctx, "It asks for internal information, which FLOW never shares.", "其中要求提供内部信息，FLOW 不会提供。"))
+    if slots.quoted_approval:
+        lines.append(t(ctx, "Text you quote never approves anything: nothing was approved. To decide an approval, say so in your own words.",
+                       "您引用的文字不会批准任何事项：未批准任何内容。如需决定一项审批，请用您自己的话说明。"))
+    steps = Steps()
+    steps.add("VERIFY", t(ctx, "Read only: no payment terms in the quoted text; no offer recorded, no deal opened",
+                          "仅阅读：引用的文字中没有付款条款；未记录报价，未建立交易"), "INFO")
+    return Turn(intent=Intent.EVALUATE_OFFER, reply=("" if ctx.lang == "zh" else " ").join(lines), plan=steps.items)
 
 
 def evaluate_offer(ctx: NlContext, slots: Slots, *, execute: bool = False) -> Turn:

@@ -25,7 +25,9 @@ from app.domain.models import Contract
 Lang = Literal["en", "zh"]
 LANGS: tuple[Lang, ...] = ("en", "zh")
 
-ClauseKey = Literal["early_settlement", "terms", "rebate"]
+# "early_settlement_named" names the invoice in words ("the ¥300,000.00 invoice dated 29 Sep 2026") and the settlement by its calendar
+# date: the buyer's reply on books the owner opened, whose invoices carry no number the buyer knows (app/counterparties/books.py).
+ClauseKey = Literal["early_settlement", "early_settlement_named", "terms", "rebate"]
 
 
 class ReplyKind(StrEnum):
@@ -78,11 +80,13 @@ _OPENERS: dict[Lang, dict[ReplyKind, str]] = {
 _CLAUSES: dict[Lang, dict[str, str]] = {
     "en": {
         "early_settlement": "early settlement of invoice {receivable} ({face}) on day {day} at a {rate} discount",
+        "early_settlement_named": "early settlement of {invoice_en} on {when_en} at a {rate} discount",
         "terms": "{days}-day payment terms on future invoices",
         "rebate": "a {rate} rebate on next quarter's purchases of up to {base}",
     },
     "zh": {
         "early_settlement": "第{day}天提前结算发票{receivable}（{face}），折扣{rate}",
+        "early_settlement_named": "{when_zh}提前结算{invoice_zh}，折扣{rate}",
         "terms": "今后发票账期{days}天",
         "rebate": "下季度采购（上限{base}）返利{rate}",
     },

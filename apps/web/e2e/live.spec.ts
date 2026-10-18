@@ -1,4 +1,5 @@
 import type { APIRequestContext, Page } from "@playwright/test";
+import { join } from "node:path";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
 import { checkedDeal as readDeal, demoMode, openCashOptions, openCompare, openOperatorTools, openReview, runPlan, sendCounter, walkStory } from "./helpers";
 
@@ -752,5 +753,71 @@ test("Deals: books set up with a customer and an open invoice, no contract, show
   await expect(invoice).toHaveCount(1);
   await expect(invoice).toHaveAttribute("data-status", "NOT_DUE");
   await expect(invoice).toContainText("¥120,000.00");
+  await post("/demo/reset", {});
+});
+
+test("setup step 2: Fill from an agreement names the row after the lender the agreement names, never the uploaded file (demo recording, 18 Oct)", async ({ page, request }) => {
+  const post = ownerPost(request);
+  await post("/demo/reset?scenario=blank", {});
+  await page.goto("/setup?step=2");
+  await page.getByTestId("setup-fill-agreement").click();
+  const picker = page.getByTestId("setup-docs-LENDER_AGREEMENT");
+  await picker.locator('input[type="file"]').setInputFiles(join(__dirname, "..", "..", "..", "fixtures", "contracts", "mb-cl-2026-031-credit-line-agreement.pdf"));
+  await picker.getByRole("button", { name: "Read it" }).click();
+  const name = page.getByRole("textbox", { name: "Name" }).first();
+  await expect(name).toHaveValue("Pearl River Commercial Bank, Foshan Branch", { timeout: 30_000 });
+  await expect(name).not.toHaveValue(/\.pdf$/);
+  await post("/demo/reset", {});
+});
+
+test("own books: a contract given before its company is read once the customer is picked, and once confirmed it is on Deals with its summary and invoices (owner's report, 17 Oct)", async ({ page, request }) => {
+  const post = ownerPost(request);
+  await post("/demo/reset?scenario=blank", {});
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const today = new Date();
+  const sent = new Date(today.getTime() - 16 * 86_400_000);
+  const draft = {
+    business: { company_name: "Lingnan Homeware", start_date: iso(today), cash: "400,000", monthly_sales: "500,000", monthly_costs: "410,000" },
+    borrowing: [],
+    loans: [],
+    customers: [{ name: "Foshan Home Retail Co.", invoices: [{ sent_on: iso(sent), amount: "120,000", terms_days: 30 }] }],
+    bills: [],
+    limits: { min_cash: "100,000", max_apr_pct: "15", concession_cap: "5,000", approval_above: "100,000", valid_days: 90 },
+  };
+  await post("/setup/open", { draft, password: TOKEN });
+  // Before any contract the buyer is its invoices' row.
+  await page.goto("/deals");
+  await expect(page.getByTestId(/^invoices-BUYER/)).toContainText("Invoices to Foshan Home Retail Co.");
+  await expect(page.getByTestId(/^contract-BUYER/)).toHaveCount(0);
+
+  // Attach deals: the file first, then the customer from the list (no typing); the file is read at once.
+  await page.goto("/documents");
+  const form = page.locator("#docs-read");
+  const chooser = page.waitForEvent("filechooser");
+  await page.getByTestId("doc-upload").click();
+  await (await chooser).setFiles(join(__dirname, "..", "..", "..", "fixtures", "contracts", "fhr-2026-07-supply-agreement.md"));
+  await expect(page.getByTestId("doc-waiting")).toHaveText("Ready to read: fhr-2026-07-supply-agreement.md");
+  await expect(form.getByTestId("doc-ask-who")).toHaveText("Who is this contract with? Choose a customer or add a new one.");
+  await form.getByTestId("doc-counterparty-list").getByRole("option", { name: "Foshan Home Retail Co." }).click();
+  const review = page.getByTestId("doc-review");
+  await expect(review).toHaveAttribute("data-status", "PROPOSED");
+  await page.getByTestId("doc-confirm").click();
+  await expect(review).toHaveAttribute("data-status", "CONFIRMED");
+
+  // Deals: the confirmed contract is a row of its own, listed once, the server's sentence as its line and the summary inside.
+  await page.goto("/deals");
+  const agreements = page.getByTestId("deals-agreements");
+  const row = agreements.getByTestId(/^contract-BUYER/);
+  await expect(row).toContainText("Contract with Foshan Home Retail Co.");
+  await expect(row.getByTestId("contract-line")).toHaveText("Contract on file; no deal agreed yet. Open invoices: 1, ¥120,000.00 due in 14 days.");
+  await expect(agreements.getByTestId(/^invoices-BUYER/)).toHaveCount(0);
+  await row.getByTestId("commitment-toggle").click();
+  const deal = row.getByTestId(/^deal-summary-BUYER/);
+  await expect(deal).toHaveCount(1);
+  await expect(deal.getByTestId("deal-facts")).toContainText("12 months");
+  await deal.getByTestId(/^deal-details-BUYER/).locator("summary").click();
+  await expect(deal.getByTestId("deal-contract")).toContainText("45 days from the invoice date");
+  const invoice = deal.locator('[data-testid^="deal-invoice-"]');
+  await expect(invoice.first()).toContainText("¥120,000.00");
   await post("/demo/reset", {});
 });

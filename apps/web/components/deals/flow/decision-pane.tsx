@@ -17,7 +17,7 @@ import { useAsync } from "@/lib/use-async";
 import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
-import type { DecisionView, NegotiationView, OfferedResult, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
+import type { DecisionView, FundingNextStep, NegotiationView, OfferedResult, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
 import { AcceptBlock, type AcceptOutcome } from "./accept-block";
 import { HistoryStrip } from "./deal-history";
 import { arrivalText, EndingStep, reviewRows, StepHeading, TermSentences, TermsRows, Timeline, WaitingStep, Workspace } from "./workspace";
@@ -32,7 +32,7 @@ import { TrackerBody } from "@/components/tracker/tracker-body";
 import { useTracker } from "@/lib/tracker";
 import { CostTable } from "./cost-table";
 import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
-import { STRATEGY_MVP } from "@/lib/config";
+import { STRATEGY_ENVELOPE } from "@/lib/config";
 import { patchedHref } from "@/lib/selection";
 import { ChoicesTable, Recommendation, SectionNav, type SectionItem } from "./deal-overview";
 import { EnvelopePackages } from "./investigate";
@@ -119,6 +119,20 @@ function AcceptResult({ outcome }: { outcome: AcceptOutcome }) {
   );
 }
 
+/** An agreement the owner made themself funded nothing while a reserve gap is ahead: the server's sentence and the way to FLOW's plan for it (an offer sent outside FLOW says it in its own ending). */
+function FundingNext({ step }: { step: FundingNextStep }) {
+  return (
+    <div role="status" className="mb-5 rounded-tile border border-line bg-subtle px-4 py-3 text-sm text-ink" data-testid="deal-funding-next">
+      <p data-testid="deal-funding-next-text">{step.text}</p>
+      <p className="mt-1.5">
+        <Link href={step.href} className={`${quietLink} px-0`} data-testid="deal-funding-next-link">
+          {step.label}
+        </Link>
+      </p>
+    </div>
+  );
+}
+
 /** The record's own account of where a negotiation stands, for one that is out of the owner's hands or finished. */
 /** The quiet link to the deal's decision record. */
 function RecordLink({ decision }: { decision: string }) {
@@ -177,6 +191,7 @@ function RecordBlock({ record, decision }: { record: DecisionView; decision: str
         </div>
       ) : null}
       {record.agreement?.receipt ? <CommitmentReceipt receipt={record.agreement.receipt} id={`${decision}-agreement-receipt`.replace(/[^A-Za-z0-9_-]/g, "-")} title={t("receipt.title.agreed")} testId="deal-agreement-receipt" /> : null}
+      {record.agreement?.funding_next && !record.outbound ? <FundingNext step={record.agreement.funding_next} /> : null}
       {record.remaining_task?.text && record.remaining_task.text !== waiting ? (
         <p className="text-sm text-ink-2" data-testid="deal-left">
           {record.remaining_task.text}
@@ -642,6 +657,7 @@ export function DecisionPane({
           <div id={`${uid}-panel-overview`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-overview" data-agreed="true">
             {outcome ? <AcceptResult outcome={outcome} /> : null}
             {sent ? <SendResult n={sent} /> : null}
+            {record?.agreement?.funding_next && !record.outbound ? <FundingNext step={record.agreement.funding_next} /> : null}
             {agreedView && trackerRead ? (
               <div className="flex flex-col gap-6" data-testid="deal-tracker">
                 <TrackerBody d={trackerRead} mode="deal" />
@@ -814,7 +830,7 @@ export function DecisionPane({
           <div id={`${uid}-panel-cash`} className="flow-card p-5 sm:p-7" data-testid="deal-panel-cash">
             <CashTab offerId={offer.offer.offer_id} picture={picture} paths={paths} />
             {/* The evidence behind the choices: what the owner can live with for this buyer, then the envelope's packages by who may send them (the strategy build). */}
-            {STRATEGY_MVP ? (
+            {STRATEGY_ENVELOPE ? (
               <div className="mt-8" data-testid="deal-before-they-ask">
                 <BeforeTheyAsk buyerId={buyerId ?? ""} />
               </div>

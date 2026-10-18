@@ -17,7 +17,11 @@ The order of the answer:
      not hold {thing}." and the nearest thing FLOW can show, chosen by the subject.
   3. The read-only answer layer, `app.nl.answers.answer(question, lang, ctx)`, when it is installed and answers.
   4. Otherwise the existing read that answers the topic right (the financing comparison for the gap and the plan's cost,
-     the cash status for why cash is short, the late-payment read, what is waiting), or the nearest-capability reply.
+     the cash status for why cash is short, the late-payment read, what is waiting).
+  5. Otherwise, with FEATURE_ASK_ROUTER on, the router (`app.nl.router.route`, ADR-0015): a model picks read-only tools from a
+     closed catalogue for the question and code writes the answer. The model sees the redacted question and the catalogue
+     only. None (flag off, cache miss, a failed or rejected route, nothing fits) goes on to 6.
+  6. The plain "cannot answer that yet" with the nearest read, or the nearest-capability reply.
 """
 
 from __future__ import annotations
@@ -285,7 +289,37 @@ def break_even(ctx: NlContext, slots: Slots) -> Turn | None:
 
 
 def _fallback(ctx: NlContext, topic: str, slots: Slots, text: str) -> Turn:
-    """The existing read that answers the topic right, else the plain 'cannot yet' with the nearest read."""
+    """The existing read that answers the topic right, else the router's answer, else the plain 'cannot yet' with the nearest
+    read."""
+    if (read := _topic_read(ctx, topic, slots)) is not None:
+        return read
+    if (got := router_reply(ctx, slots.question or text)) is not None:
+        return Turn(intent=Intent.ASK_BOOKS, reply=got[0],
+                    facts={"ask": {"topic": topic, "metric_ids": got[1], "router": got[2]}})
+    if topic == "books":
+        return _old_reply(ctx, slots, text)
+    return cannot_yet(ctx, topic)
+
+
+def router_reply(ctx: NlContext, question: str) -> tuple[str, list[str], list[str]] | None:
+    """The router's answer (its text, its metric ids, the tools it ran), or None: the flag is off, the turn is not the
+    owner's, or the router has no route (cache miss, failure, rejection, nothing fits). Read-only (ADR-0015)."""
+    from app.config import get_settings
+
+    if not get_settings().features.ask_router or not ctx.owner_authenticated:
+        return None
+    from app.nl.router.route import route
+
+    got = route(question, ctx.lang, ctx)
+    text = _reply_text(got, ctx.lang) if got is not None else None
+    if got is None or not text:
+        return None
+    tools = (got.extra or {}).get("router", {}).get("tools", [])
+    return text, _metric_ids(got), [str(x) for x in tools]
+
+
+def _topic_read(ctx: NlContext, topic: str, slots: Slots) -> Turn | None:
+    """The existing read that answers the topic right, or None."""
     from app.nl import capabilities as cap
     from app.nl import reads
     from app.nl.funding import repay, status
@@ -308,9 +342,7 @@ def _fallback(ctx: NlContext, topic: str, slots: Slots, text: str) -> Turn:
             return said
     except EngineError:
         pass
-    if topic == "books":
-        return _old_reply(ctx, slots, text)
-    return cannot_yet(ctx, topic)
+    return None
 
 
 def _old_reply(ctx: NlContext, slots: Slots, text: str) -> Turn:
@@ -328,9 +360,8 @@ def _old_reply(ctx: NlContext, slots: Slots, text: str) -> Turn:
 # ---------------------------------------------------------------- the handler
 
 
-def layer_reply(ctx: NlContext, question: str) -> tuple[str, list[str]] | None:
-    """The answer layer's reply (its text in the turn's language, its metric ids), or None when it is not installed or
-    has no answer."""
+def layer_answer(ctx: NlContext, question: str) -> Any:
+    """The answer layer's own reply object, or None when it is not installed, has no answer or has no text in the turn's language."""
     fn = answer_layer()
     if fn is None:
         return None
@@ -338,6 +369,13 @@ def layer_reply(ctx: NlContext, question: str) -> tuple[str, list[str]] | None:
         got = fn(question, ctx.lang, ctx)
     except EngineError:
         return None
+    return got if got is not None and _reply_text(got, ctx.lang) else None
+
+
+def layer_reply(ctx: NlContext, question: str) -> tuple[str, list[str]] | None:
+    """The answer layer's reply (its text in the turn's language, its metric ids), or None when it is not installed or
+    has no answer."""
+    got = layer_answer(ctx, question)
     text = _reply_text(got, ctx.lang) if got is not None else None
     return (text, _metric_ids(got)) if text else None
 
@@ -398,6 +436,10 @@ def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         return tier3_info(ctx, topic.split(":", 1)[1], question)
     if topic.startswith("not_held:"):
         return not_held(ctx, topic.split(":", 1)[1])
-    if (got := layer_reply(ctx, question)) is not None:
-        return Turn(intent=Intent.ASK_BOOKS, reply=got[0], facts={"ask": {"topic": topic, "metric_ids": got[1]}})
+    if (got := layer_answer(ctx, question)) is not None:
+        from app.nl import answer_card
+
+        text = _reply_text(got, ctx.lang) or ""
+        return Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": topic, "metric_ids": _metric_ids(got)}},
+                    card=answer_card.from_reply(got, ctx.lang, ctx.state()))  # the card's figures and links; laid out in the response
     return _fallback(ctx, topic, slots, text)

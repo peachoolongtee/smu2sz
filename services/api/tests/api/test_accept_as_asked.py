@@ -188,7 +188,9 @@ def test_accepting_zhuhai_agrees_the_terms_under_the_owners_authority_and_nothin
     r = busy.post(f"/offers/{offer_id}/accept", json=_body(v))
     assert r.status_code == 200, r.text
     body = r.json()
-    assert set(body) == {"decision", "receipt", "execution"}
+    # `next_step` (additive, 18 Oct): the accept funds nothing, so the busy books' reserve gap ahead is said with the way to the options
+    assert set(body) == {"decision", "receipt", "execution", "next_step"}
+    assert body["next_step"] == body["decision"]["agreement"]["funding_next"] and body["next_step"]["href"] == "/cash#cash-options"
 
     d = body["decision"]
     assert busy.get(f"/decisions/{d['id']}").json()["state"] == d["state"] == "AGREED"

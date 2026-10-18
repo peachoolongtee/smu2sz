@@ -203,12 +203,18 @@ def _top_question(text: str) -> str | None:
     return found[0] if found else None
 
 
+_RUN_OUT = re.compile(r"\brun(?:s|ning)? (?:out|dry)\b|\bhit zero\b|\blast\b|用完|花光|撑|没钱|耗尽", re.IGNORECASE)
+
+
 def _page_read(text: str) -> bool:
     """A question the Business pages ask with a read of their own (app/nl/reads.py): what changed, what we are waiting for,
     when money arrives, what is overdue, who owes us, what needs the owner (the alerts and their cure), and a late payment of
     "this" invoice, which is the page's own. Those reads answer them already and know the page's binding, so the answer
-    module does not take them over."""
-    if any(p.search(text) for p in (lx.CHANGES_ASK, lx.WAITING_ASK, lx.ARRIVAL_ASK, lx.OVERDUE_ASK, lx.OWED_ASK)):
+    module does not take them over. "When will the money run out?" and 账上的钱能撑到什么时候 ask about the runway, not
+    about money arriving."""
+    if any(p.search(text) for p in (lx.CHANGES_ASK, lx.WAITING_ASK, lx.OVERDUE_ASK, lx.OWED_ASK)):
+        return True
+    if lx.ARRIVAL_ASK.search(text) and not _RUN_OUT.search(text):
         return True
     if lx.ALERTS.search(text) and not lx.ACCELERATE.search(text):
         return True

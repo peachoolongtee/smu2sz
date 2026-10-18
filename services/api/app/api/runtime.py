@@ -132,11 +132,23 @@ class Runtime:
             return n
 
     def hydrate(self) -> None:
-        """Read the clock and the seeded scenario from the stored books (start-up; nothing is written)."""
+        """Read the clock and the kind of books from the store (start-up; nothing is written): a demo scenario's books carry its name
+        (the golden books, the busy company, the blank books); books the owner opened at setup carry none and are the owner's own
+        ("own", as `POST /setup/open` sets it). Defaulting those to the golden scenario took a kept file's own books for the demo's after
+        a restart (`pnpm demo:keep`): the Demo page offered the golden story on them and the evidence header named and hashed the golden
+        fixture (feature inventory, gap 12)."""
         state = self.store.get_state()
         self.day = state.as_of_day
         if state.scenario:
             self.scenario = state.scenario
+        elif self._opened_at_setup():
+            self.scenario = "own"
+
+    def _opened_at_setup(self) -> bool:
+        """Whether the operations log holds the entry `POST /setup/open` writes first on the books it opens."""
+        from app.api.setup import OPEN_BOOKS_KIND
+
+        return any(e.kind == OPEN_BOOKS_KIND for e in self.store.operations())
 
     def is_owner(self, token: str | None) -> bool:
         from app.api.auth import is_owner
@@ -176,10 +188,11 @@ class Runtime:
             self.clear_session_caches()
 
     def clear_session_caches(self) -> None:
-        """Forget what was computed on books that have just been replaced: verdicts, inbound documents, the intake count, the NL
-        sessions and the exposure answers (shared by `reset` and Set up your books)."""
-        from app.api.strategy_exposure import clear_cache as clear_exposure_cache
-        from app.nl import reset_sessions
+        """Forget what was computed on books that have just been replaced (shared by `reset`, so a demo reset, restore or swap, and by
+        Set up your books): verdicts, inbound documents, the intake count, then `app.api.caches.books_replaced`, the one place that moves
+        the books' generation on, clears every read cache whose key is not pure in the books' contents (the worklist and the Deals queue,
+        the customer overview, the pictures, the exposure answers, the NL sessions, ...) and abandons the strategy warm-up of the old books."""
+        from app.api.caches import books_replaced
 
         with self.lock:
             self.latest_verdict.clear()
@@ -187,11 +200,7 @@ class Runtime:
             self.intake_day, self.intake_count = 0, 0
             self.buyer_attempts.clear()
             self.buyer_refusals.clear()
-            from app.api.offer_picture import clear_cache as clear_picture_cache
-
-            reset_sessions()
-            clear_exposure_cache()  # the answers were computed on the books that were just replaced
-            clear_picture_cache()  # as were the pictures (keyed by the state version, which a reset can bring back to the same number)
+            books_replaced()
 
     def reset_demo(self, scenario: str = "golden_sme") -> None:
         """POST /demo/reset: the scenario's books (`reset`), then, on the golden books, the demo documents read by the
@@ -369,3 +378,6 @@ def set_runtime(rt: Runtime | None) -> None:
         _runtime = rt
         _failure = None
         ratelimit.reset()  # a new runtime starts with empty request buckets (SEC-20)
+    from app.api.caches import books_replaced
+
+    books_replaced()  # other books: nothing read on the previous runtime's books is served from the caches keyed by the generation

@@ -3,7 +3,7 @@
 import { Button, Card, Chip, LoadingBlock, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { Disclosure } from "@/components/business/kit";
 import { getEnvelope } from "@/lib/api";
-import { STRATEGY_MVP } from "@/lib/config";
+import { STRATEGY_ENVELOPE } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { EnvelopeLeverView, EnvelopePackageView, EnvelopeView } from "@/lib/types";
@@ -163,7 +163,7 @@ function Ceilings({ levers }: { levers: EnvelopeLeverView[] }) {
 }
 
 /**
- * "Before they ask" on Deals (behind STRATEGY_MVP): what the owner can live with for this buyer, in the server's words, before the
+ * "Before they ask" on Deals (behind STRATEGY_ENVELOPE): what the owner can live with for this buyer, in the server's words, before the
  * buyer asks: three ceiling tiles, "Your limits, not an opening offer" as their caption, the reason and the money beneath. The card sends nothing and
  * carries no button of its own (Option A is the response card below; "Compare another option" there opens Option B). Loading takes several seconds on a cold server, so the card holds its place with a
  * caption; an unreachable server says so in one line; a buyer the server has no envelope for (feature off) mounts nothing.
@@ -173,7 +173,7 @@ export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
   const { t, lang } = useI18n();
   const mode = useMode();
   // The first answer for a set of books is the slow one; every later read is cached on the server.
-  const envelope = useAsync(async () => (STRATEGY_MVP ? await getEnvelope(buyerId, lang, true) : null), [buyerId, lang]);
+  const envelope = useAsync(async () => (STRATEGY_ENVELOPE ? await getEnvelope(buyerId, lang, true) : null), [buyerId, lang]);
   const e = envelope.data;
   const eyebrow = <span className={labelCls}>{t("biz.strategy.envelope.eyebrow")}</span>;
 

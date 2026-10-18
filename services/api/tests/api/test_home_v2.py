@@ -100,7 +100,7 @@ def test_before_the_plan_the_three_kpis(api: TestClient) -> None:
                                  "note": "¥405k below your minimum in 30 days · current books, no new funding",
                                  "short_note": "¥405k shortfall in 30 days",
                                  "with_plan_hint": "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned.",
-                                 "with_plan": {"label": "with plan", "value_text": "¥300,000"}}
+                                 "with_plan": {"label": "with plan", "value_text": "¥300,000"}, "basis_label": "Without new funding"}
     assert k["funding"] == {"state": "PROPOSED", "eyebrow": "PLANNED FUNDING", "value_display": "¥405,000",
                             "note": "¥150k credit line today + ¥255k invoice financing in 3 days", "status_text": "Ready to run",
                             "hint": "Conditional on you running the plan; not counted as cash."}
@@ -119,7 +119,7 @@ def test_before_the_plan_the_action_the_chart_and_the_links(api: TestClient) -> 
                   {"label": "Approval", "value": "No approval needed"}],
         "primary": {"label": "Run the funding plan", "href": "/cash#cash-options"},
         "secondary": {"label": "Compare", "href": "/cash#cash-options"}, "control": "RUN_PLAN",
-        "approval_text": "No approval needed", "approval_needed": False}
+        "approval_text": "No approval needed", "approval_needed": False, "covered": False}  # a plan to run: never the covered card
     chart = v2["chart"]
     assert chart["scope_title"] == "COMPANY CASH FORECAST"
     assert chart["legend"] == [{"label": "Current books · no new funding", "kind": "current"},
@@ -144,7 +144,8 @@ def test_after_the_plan_the_three_kpis(api: TestClient) -> None:
     assert k["lowest_ahead"] == {"eyebrow": "LOWEST CASH AHEAD", "value_display": "¥300,000", "tone": "warn",
                                  "note": "reaches your minimum in 30 days · current books, the plan ran",
                                  "short_note": "At your minimum in 30 days",
-                                 "with_plan_hint": "No hypothetical applied.", "with_plan": None}
+                                 "with_plan_hint": "No hypothetical applied.", "with_plan": None,
+                                 "basis_label": "With the funding in place"}  # the plan's operations ran: never "Without new funding"
     assert k["funding"] == {"state": "ARRANGED", "eyebrow": "FUNDING ARRANGED", "value_display": "¥255,000 pending",
                             "note": "¥150k credit-line draw received today · ¥255k invoice financing expected in 3 days",
                             "status_text": "Arranged",
@@ -160,7 +161,9 @@ def test_after_the_plan_the_action_is_quiet_and_the_chart_has_the_one_line(api: 
         "title": "Your cash is covered on the plan that ran.",
         "text": "Next: ¥255k arrives in 3 days; Foshan pays ¥420k in 32 days (owed). Your worklist still holds 1 item for you.",
         "facts": [], "primary": None, "secondary": None, "control": None,
-        "approval_text": None, "approval_needed": False}
+        "approval_text": None, "approval_needed": False,
+        # the covered card is the server's decision and words (never "covered" under the minimum: tests/api/test_home_covered.py)
+        "covered": True, "covered_pill_text": "All clear", "covered_title_text": "You're covered!"}
     assert v2["chart"]["legend"] == [{"label": "Current books · the plan ran", "kind": "current"}]
     assert v2["chart"]["lowest_inspector"] == {
         "day_text": "The lowest point · in 30 days", "projected_display": "¥300,000", "minimum_display": "¥300,000",
@@ -343,6 +346,7 @@ def test_the_chinese_fields_before_the_plan(api: TestClient) -> None:
     k = zh["kpis"]
     assert (k["cash_available"]["eyebrow"], k["cash_available"]["note"]) == ("可用现金", "比您 ¥300k 的最低现金高 ¥100k")
     assert k["lowest_ahead"]["note"] == "比您的最低现金低 ¥405k（30 天后） · 当前账目，未新增融资"
+    assert k["lowest_ahead"]["basis_label"] == "未新增融资"
     assert k["lowest_ahead"]["with_plan_hint"] == "如果 FLOW 的方案执行：¥300,000，前提是资金按计划到账。"
     assert (k["funding"]["eyebrow"], k["funding"]["hint"]) == ("计划中的融资", "取决于您是否执行方案；不计入现金。")
     assert (k["funding"]["status_text"], k["lowest_ahead"]["short_note"]) == ("可以执行", "30 天后缺口 ¥405k")
@@ -360,6 +364,7 @@ def test_the_chinese_fields_after_the_plan(api: TestClient) -> None:
     assert not english_leaks(zh, NAMES, raw_fields=[HREFS])
     k = zh["kpis"]
     assert k["lowest_ahead"]["note"] == "30 天后达到您的最低现金 · 当前账目，方案已执行"
+    assert k["lowest_ahead"]["basis_label"] == "已计入已安排的融资"
     assert (k["funding"]["eyebrow"], k["funding"]["value_display"]) == ("已安排的融资", "待到账 ¥255,000")
     assert (k["funding"]["status_text"], k["lowest_ahead"]["short_note"]) == ("已安排", "30 天后正好是最低现金")
     assert k["funding"]["note"] == "¥150k 信用额度提款已到账（今天） · ¥255k 发票融资预计 3 天后到账"

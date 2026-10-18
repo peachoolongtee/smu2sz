@@ -2,7 +2,7 @@
 
 import "@/app/flow-look.css";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useId, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { Suspense, useEffect, useId, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type RefObject } from "react";
 import { CheckIcon } from "@/components/icons";
 import { DocumentReview } from "@/components/document-review";
 import { contractsOff, DocStatusBadge, whenWords } from "@/components/documents";
@@ -241,8 +241,9 @@ function KindSelect({ id, value, onChange, className }: { id: string; value: Doc
 }
 
 /**
- * The owner's own file, as a drop zone: say what it is and who it is with, then drop the file (it is read at once) or choose it and press
- * Upload and read.
+ * The owner's own file, as a drop zone: say what it is and who it is with, then drop the file or choose it with Upload and read. The file may come first
+ * (owner's report, 17 Oct): a file given before the company is kept here, named ("Ready to read: …"), and the company field opens with its question; the file
+ * is read as soon as a company is chosen or added, and nothing is sent before (the server reads documents only for companies on the books). Remove discards it.
  */
 function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterparty[]; onRead: (req: SubmitDocumentRequest) => Promise<void>; onPartiesChanged: () => void }) {
   const { t } = useI18n();
@@ -251,27 +252,41 @@ function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterpar
   const fileId = useId();
   const input = useRef<HTMLInputElement>(null);
   const partyInput = useRef<HTMLInputElement>(null);
+  const removeButton = useRef<HTMLButtonElement>(null);
   const [kind, setKind] = useState<DocumentKind>("BUYER_CONTRACT");
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The file given before the company: kept here, never sent, until a company is chosen (then it is read at once) or the owner removes it.
+  const [waiting, setWaiting] = useState<File | null>(null);
   // A customer added here is chosen at once, before the companies on the books are read again.
   const [added, setAdded] = useState<Counterparty[]>([]);
-  const [adding, setAdding] = useState(false);
+  // The add panel is open with this name in it ("" for an empty one); null: closed.
+  const [adding, setAdding] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const role = kind === "BUYER_CONTRACT" ? "BUYER" : "LENDER";
   const known = [...parties, ...added.filter((a) => !parties.some((p) => p.id === a.id))];
   const options = known.filter((c) => c.role === role && c.known);
-  // The company is typed by name: an exact name, else the one company whose name contains what was typed. Nothing that is not on the books can be chosen.
+  // The company is chosen from the list, or typed by name: an exact name, else the one company whose name contains what was typed. Nothing that is not on the books can be chosen.
   const needle = typed.trim().toLowerCase();
   const matches = needle ? options.filter((c) => c.name.toLowerCase() === needle) : [];
   const near = needle && matches.length === 0 ? options.filter((c) => c.name.toLowerCase().includes(needle)) : [];
   const found = matches[0] ?? (near.length === 1 ? near[0] : undefined);
   const chosen = found?.id ?? "";
-  const listId = useId();
-  // A contract with a buyer the books do not have yet: the owner can add the buyer right here, by the name typed.
-  const canAdd = role === "BUYER" && Boolean(needle) && !found && near.length === 0;
+  // A contract with a buyer: a new customer can always be added here (lender agreements only choose a lender on the books).
+  const canAdd = role === "BUYER";
+  // The name typed is not on the books: the add offer names it.
+  const offerTyped = canAdd && Boolean(needle) && !found && near.length === 0;
+  const askWho = waiting !== null && !chosen;
+
+  // A file waits and the name typed is now, exactly, a company on the books (the list arrived after the owner typed it, or the
+  // typing finished): that is the company chosen, so the file is read now. A partial name never reads; the owner still picks.
+  const exact = matches.length === 1 ? matches[0].id : "";
+  useEffect(() => {
+    if (waiting && exact && !busy) void upload(waiting, exact);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- read once when the exact company appears for the waiting file
+  }, [waiting, exact]);
 
   // The server's sentence for the customer added stays a few seconds, quietly.
   useEffect(() => {
@@ -279,19 +294,6 @@ function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterpar
     const id = window.setTimeout(() => setNotice(null), 6000);
     return () => window.clearTimeout(id);
   }, [notice]);
-
-  /** The customer added is chosen; `said` null: it was on the books already (a 409), and the owner is told so by its name there. */
-  function choose(c: Counterparty, said: string | null) {
-    const there = known.find((p) => p.id === c.id);
-    const picked = there ?? c;
-    if (!there) setAdded((list) => [...list, c]);
-    setTyped(picked.name);
-    setAdding(false);
-    setError(null);
-    setNotice(said ?? t("docs.newCustomer.exists", { name: picked.name }));
-    onPartiesChanged();
-    partyInput.current?.focus();
-  }
 
   // The server answers once, when the reading is done, so the bar is the work in hand: it climbs toward the end while the file is sent and read, and fills when the answer arrives.
   const [progress, setProgress] = useState(0);
@@ -301,25 +303,68 @@ function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterpar
     return () => window.clearInterval(id);
   }, [busy]);
 
-  async function upload(f: File | null) {
+  // The list of companies, opened by the field (see CompanyField). `ask` is set when a file waits for its company.
+  const [listOpen, setListOpen] = useState(false);
+  const quietFocus = useRef(false);
+  const focusField = (open: boolean) => {
+    quietFocus.current = !open;
+    partyInput.current?.focus();
+    quietFocus.current = false;
+    setListOpen(open);
+  };
+
+  /** The file is read for company `id`; without one it waits here and the company field asks who it is with. */
+  async function upload(f: File | null, id = chosen) {
     if (!f) return;
-    if (!chosen) {
-      setError(t("docs.counterparty.pick"));
-      return;
-    }
     if (f.size > MAX_BYTES) {
       setError(t("docs.tooBig"));
       return;
     }
+    if (!id) {
+      setWaiting(f);
+      setError(null);
+      focusField(true);
+      return;
+    }
+    setWaiting(null);
     setProgress(6);
     setBusy(f.name);
     setError(null);
     try {
-      await onRead({ kind, counterparty_id: chosen, filename: f.name, content_base64: await toBase64(f) });
+      await onRead({ kind, counterparty_id: id, filename: f.name, content_base64: await toBase64(f) });
       setProgress(100);
     } finally {
       setBusy(null);
     }
+  }
+
+  /** A company picked from the list (or typed and confirmed): it is the one in the field, and a file waiting for it is read now. */
+  function commit(c: Counterparty) {
+    setTyped(c.name);
+    setListOpen(false);
+    setNotice(null);
+    setAdding(null);
+    setError(null);
+    if (waiting && !busy) void upload(waiting, c.id);
+  }
+
+  /** The customer added is chosen; `said` null: it was on the books already (a 409), and the owner is told so by its name there. */
+  function choose(c: Counterparty, said: string | null) {
+    const there = known.find((p) => p.id === c.id);
+    const picked = there ?? c;
+    if (!there) setAdded((list) => [...list, c]);
+    setTyped(picked.name);
+    setAdding(null);
+    setError(null);
+    setNotice(said ?? t("docs.newCustomer.exists", { name: picked.name }));
+    onPartiesChanged();
+    focusField(false);
+    if (waiting && !busy) void upload(waiting, picked.id);
+  }
+
+  function openAdd() {
+    setListOpen(false);
+    setAdding(found ? "" : typed.trim());
   }
 
   async function onDrop(e: DragEvent<HTMLDivElement>) {
@@ -336,6 +381,10 @@ function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterpar
   }
 
   const field = `${inputClass} ${FOCUS} w-full touch:min-h-11`;
+  const hintId = `${partyId}-hint`;
+  const askId = `${partyId}-ask`;
+  const askText = role === "BUYER" ? t("docs.counterparty.ask") : t("docs.counterparty.askLender");
+  const describedBy = [needle && !found && adding === null ? hintId : null, askWho ? askId : null].filter(Boolean).join(" ") || undefined;
   return (
     <section className="min-w-0">
       <h3 className="text-base font-bold text-ink">{t("docs.own")}</h3>
@@ -350,53 +399,70 @@ function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterpar
           <label htmlFor={partyId} className="mb-1 block text-meta font-bold text-ink-2">
             {t("docs.counterparty")}
           </label>
-          <input
-            ref={partyInput}
+          <CompanyField
             id={partyId}
-            list={listId}
+            inputRef={partyInput}
+            quietFocus={quietFocus}
             value={typed}
-            onChange={(e) => {
-              setTyped(e.target.value);
+            onType={(v) => {
+              setTyped(v);
               setNotice(null);
-              setAdding(false);
+              setAdding(null);
             }}
-            autoComplete="off"
-            placeholder={t("docs.counterparty.placeholder")}
-            aria-invalid={needle && !found ? true : undefined}
-            aria-describedby={needle && !found && !(adding && canAdd) ? `${partyId}-hint` : undefined}
+            options={options}
+            found={found}
+            canAdd={canAdd}
+            addLabel={offerTyped ? t("docs.newCustomer.offer", { name: typed.trim() }) : t("docs.newCustomer.any")}
+            open={listOpen}
+            onOpen={setListOpen}
+            onPick={commit}
+            onAdd={openAdd}
+            onLeave={(to) => {
+              // The exact name typed while a file waits is the company chosen: the file is read when the owner leaves the field (not on the way to Remove).
+              if (waiting && matches[0] && to !== removeButton.current) commit(matches[0]);
+            }}
+            ask={askWho ? askText : null}
+            invalid={Boolean(needle && !found)}
+            describedBy={describedBy}
             className={field}
-            data-testid="doc-counterparty"
           />
-          <datalist id={listId}>
-            {options.map((c) => (
-              <option key={c.id} value={c.name} />
-            ))}
-          </datalist>
-          {adding && canAdd ? (
+          {adding !== null && canAdd ? (
             <NewCustomerPanel
-              typed={typed.trim()}
+              key={adding}
+              typed={adding}
               onAdded={choose}
               onCancel={() => {
-                setAdding(false);
-                partyInput.current?.focus();
+                setAdding(null);
+                focusField(false);
               }}
             />
-          ) : canAdd ? (
-            <p id={`${partyId}-hint`} className="mt-0.5 text-meta">
-              <span className="sr-only">{t("docs.counterparty.none")} </span>
-              <button type="button" onClick={() => setAdding(true)} className={`${textLinkClass} -ml-2`} data-testid="doc-new-customer">
-                {t("docs.newCustomer.offer", { name: typed.trim() })}
-              </button>
-            </p>
-          ) : needle && !found ? (
-            <p id={`${partyId}-hint`} className="mt-1 text-meta text-bad-fg">
-              {near.length > 1 ? t("docs.counterparty.many") : t("docs.counterparty.none")}
-            </p>
-          ) : notice ? (
-            <p role="status" className="mt-1 text-meta text-ink-3" data-testid="doc-new-customer-done">
-              {notice}
-            </p>
-          ) : null}
+          ) : (
+            <>
+              {askWho ? (
+                <p id={askId} role="status" className="mt-1 text-meta font-bold text-ink" data-testid="doc-ask-who">
+                  {askText}
+                </p>
+              ) : null}
+              {needle && !found && !offerTyped ? (
+                <p id={hintId} className="mt-1 text-meta text-bad-fg">
+                  {near.length > 1 ? t("docs.counterparty.many") : t("docs.counterparty.none")}
+                </p>
+              ) : notice ? (
+                <p role="status" className="mt-1 text-meta text-ink-3" data-testid="doc-new-customer-done">
+                  {notice}
+                </p>
+              ) : null}
+              {canAdd ? (
+                <p id={offerTyped ? hintId : undefined} className="mt-0.5 text-meta">
+                  {offerTyped ? <span className="sr-only">{t("docs.counterparty.none")} </span> : null}
+                  <button type="button" onClick={openAdd} className={`${textLinkClass} -ml-2`} data-testid="doc-new-customer">
+                    <span aria-hidden>+ </span>
+                    {offerTyped ? t("docs.newCustomer.offer", { name: typed.trim() }) : t("docs.newCustomer.any")}
+                  </button>
+                </p>
+              ) : null}
+            </>
+          )}
         </div>
       </div>
       <div
@@ -419,7 +485,9 @@ function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterpar
             <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
           </svg>
         </span>
-        <p className="mt-3 text-base font-bold text-ink">{busy ? t("docs.drop.reading", { name: busy }) : over ? t("docs.drop.active") : t("docs.drop.title")}</p>
+        <p className="mt-3 max-w-full break-words text-base font-bold text-ink" data-testid={waiting && !busy && !over ? "doc-waiting" : undefined}>
+          {busy ? t("docs.drop.reading", { name: busy }) : over ? t("docs.drop.active") : waiting ? t("docs.waiting.ready", { name: waiting.name }) : t("docs.drop.title")}
+        </p>
         <p className="mt-1 max-w-md text-meta text-ink-3">{t("docs.drop.sub")}</p>
         {busy !== null ? (
           <div className="mt-4 w-full max-w-sm" data-testid="doc-progress">
@@ -434,14 +502,29 @@ function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterpar
               variant="primary"
               size="sm"
               onClick={() => {
-                if (!chosen) return setError(t("docs.counterparty.pick"));
                 setError(null);
+                // A file already waits: Upload and read reads it for the company chosen, or asks again who it is with.
+                if (waiting) return chosen ? void upload(waiting) : focusField(true);
                 input.current?.click();
               }}
               data-testid="doc-upload"
             >
               {t("docs.upload")}
             </Button>
+            {waiting ? (
+              <Button
+                ref={removeButton}
+                size="sm"
+                aria-label={t("docs.waiting.removeLabel", { name: waiting.name })}
+                onClick={() => {
+                  setWaiting(null);
+                  setListOpen(false);
+                }}
+                data-testid="doc-waiting-remove"
+              >
+                {t("docs.waiting.remove")}
+              </Button>
+            ) : null}
           </div>
         )}
         <label htmlFor={fileId} className="mt-3 block text-meta text-ink-3">
@@ -469,6 +552,194 @@ function UploadForm({ parties, onRead, onPartiesChanged }: { parties: Counterpar
   );
 }
 
+type Choice = { kind: "company"; c: Counterparty } | { kind: "add" };
+
+/**
+ * "Who it is with": a combobox in the page's look (the field and a list of the books' companies of the right role). The list opens when the field is focused,
+ * clicked or ArrowDown is pressed, so every company shows without typing; typing filters it. Arrow keys move, Enter or a click picks, Escape and Tab close, a
+ * press outside closes. For a contract with a buyer, the last choice adds a new customer. `ask` is the question shown on top of the list while a file waits.
+ */
+function CompanyField({
+  id,
+  inputRef,
+  quietFocus,
+  value,
+  onType,
+  options,
+  found,
+  canAdd,
+  addLabel,
+  open,
+  onOpen,
+  onPick,
+  onAdd,
+  onLeave,
+  ask,
+  invalid,
+  describedBy,
+  className,
+}: {
+  id: string;
+  inputRef: RefObject<HTMLInputElement | null>;
+  quietFocus: RefObject<boolean>;
+  value: string;
+  onType: (v: string) => void;
+  options: Counterparty[];
+  found: Counterparty | undefined;
+  canAdd: boolean;
+  addLabel: string;
+  open: boolean;
+  onOpen: (open: boolean) => void;
+  onPick: (c: Counterparty) => void;
+  onAdd: () => void;
+  /** The focus left the field (for `to`, null when it left the page). */
+  onLeave: (to: EventTarget | null) => void;
+  ask: string | null;
+  invalid: boolean;
+  describedBy: string | undefined;
+  className: string;
+}) {
+  const { t } = useI18n();
+  const root = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(-1);
+  const listId = `${id}-list`;
+  const optId = (i: number) => `${id}-opt-${i}`;
+  const needle = value.trim().toLowerCase();
+  // The whole list while nothing is typed or the name typed is the company chosen; else the companies whose name has what was typed.
+  const shown = !needle || (found && found.name.toLowerCase() === needle) ? options : options.filter((c) => c.name.toLowerCase().includes(needle));
+  const choices: Choice[] = [...shown.map((c) => ({ kind: "company" as const, c })), ...(canAdd ? [{ kind: "add" as const }] : [])];
+  const expanded = open && choices.length > 0;
+
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) onOpen(false);
+    };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [open, onOpen]);
+
+  // The active choice stays in sight in a long list.
+  useEffect(() => {
+    if (expanded && active >= 0) document.getElementById(`${id}-opt-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [expanded, active, id]);
+
+  const show = (at?: number) => {
+    const current = found ? shown.findIndex((c) => c.id === found.id) : -1;
+    setActive(at ?? current);
+    onOpen(true);
+  };
+  const pick = (choice: Choice) => {
+    setActive(-1);
+    if (choice.kind === "add") onAdd();
+    else onPick(choice.c);
+  };
+
+  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    const n = choices.length;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!n) return;
+      if (!expanded) return show(e.key === "ArrowDown" ? Math.max(0, found ? shown.findIndex((c) => c.id === found.id) : 0) : n - 1);
+      setActive((i) => (e.key === "ArrowDown" ? (i + 1) % n : i <= 0 ? n - 1 : i - 1));
+    } else if (e.key === "Enter") {
+      if (expanded && active >= 0 && active < n) {
+        e.preventDefault();
+        pick(choices[active]);
+      } else if (found) {
+        e.preventDefault();
+        onPick(found);
+      }
+    } else if (e.key === "Escape") {
+      if (expanded) {
+        e.preventDefault();
+        onOpen(false);
+      }
+    } else if (e.key === "Tab") {
+      onOpen(false);
+    }
+  }
+
+  return (
+    <div ref={root} className="relative">
+      <input
+        ref={inputRef}
+        id={id}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={expanded}
+        aria-controls={expanded ? listId : undefined}
+        aria-activedescendant={expanded && active >= 0 ? optId(active) : undefined}
+        value={value}
+        onChange={(e) => {
+          onType(e.target.value);
+          setActive(-1);
+          // A name typed in full is the company chosen: the list steps aside (it opens again on a click, ArrowDown or more typing).
+          const typedName = e.target.value.trim().toLowerCase();
+          onOpen(!options.some((c) => c.name.toLowerCase() === typedName));
+        }}
+        onFocus={() => {
+          if (!quietFocus.current && !found) show();
+        }}
+        onClick={() => {
+          if (!expanded) show();
+        }}
+        onBlur={(e) => onLeave(e.relatedTarget)}
+        onKeyDown={onKeyDown}
+        autoComplete="off"
+        spellCheck={false}
+        placeholder={t("docs.counterparty.placeholder")}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        className={`${className} pr-9 ${expanded ? "border-ink" : ""}`}
+        data-testid="doc-counterparty"
+      />
+      <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 transition-transform duration-(--dur-fast) ${expanded ? "rotate-180" : ""}`}>
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+      {expanded ? (
+        // A press inside the list keeps the focus in the field, so the field's own state (and a screen reader's place) is not lost on the way to the click.
+        <div onMouseDown={(e) => e.preventDefault()} className="absolute left-0 right-0 top-full z-20 mt-1.5 overflow-hidden rounded-card border border-line bg-surface shadow-pop" data-testid="doc-counterparty-popup">
+          {ask ? (
+            <p aria-hidden className="border-b border-line px-3 py-2 text-meta font-bold text-ink">
+              {ask}
+            </p>
+          ) : null}
+          <ul id={listId} role="listbox" aria-label={t("docs.counterparty.list")} className="max-h-72 overflow-y-auto p-1.5" data-testid="doc-counterparty-list">
+            {choices.map((choice, i) => {
+              const selected = choice.kind === "company" && choice.c.id === found?.id;
+              return (
+                <li
+                  key={choice.kind === "add" ? "+add" : choice.c.id}
+                  id={optId(i)}
+                  role="option"
+                  aria-selected={selected}
+                  onPointerEnter={() => setActive(i)}
+                  onClick={() => pick(choice)}
+                  className={`flex min-h-10 cursor-pointer items-center gap-3 rounded-tile px-3 py-2 text-sm touch:min-h-11 ${i === active ? "bg-subtle" : ""} ${choice.kind === "add" ? "font-bold text-brand-700" : "text-ink"}`}
+                  data-testid={choice.kind === "add" ? "doc-counterparty-add" : undefined}
+                >
+                  {choice.kind === "add" ? (
+                    <>
+                      <span aria-hidden>+</span>
+                      <span className="min-w-0 flex-1 break-words">{addLabel}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="min-w-0 flex-1 break-words">{choice.c.name}</span>
+                      {selected ? <CheckIcon aria-hidden className="shrink-0 text-ink" /> : null}
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** A failed request's sentence for the owner: the server's own message when it sent one in words, else the app's. */
 function saidOf(e: unknown, fallback: string): string {
   if (e instanceof ApiError) {
@@ -479,7 +750,7 @@ function saidOf(e: unknown, fallback: string): string {
 }
 
 /**
- * A buyer who is not on the books yet, added from "Who it is with": the name as typed, a short name if the owner wants one,
+ * A buyer who is not on the books yet, added from "Who it is with" (its list's last choice or the link under it): the name as typed (or empty), a short name if the owner wants one,
  * Add customer or Cancel. The customer added (or the one already on the books with that name) is chosen in the field.
  */
 function NewCustomerPanel({ typed, onAdded, onCancel }: { typed: string; onAdded: (c: Counterparty, said: string | null) => void; onCancel: () => void }) {

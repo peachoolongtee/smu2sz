@@ -178,6 +178,17 @@
 //   cd services/api && FEATURE_CONTRACT_TERMS=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8031
 //   node scripts/record-mocks.mjs --api http://localhost:8031 --contract-terms
 
+// --receipts records ONLY apps/web/mocks/receipts.json and exits (the owner records a payment, feature inventory gap 1): POST /operations with the owner's
+// RECEIVE_PAYMENT (lib/api.ts recordReceipt, the live adapter's own call) at two points of the story the mock serves, each answer { en, zh } (the same post made
+// on the same books once per language) and, after the English post, GET /receivables { en, zh } (the books the page reloads):
+//   day0     the opening books, the ¥420,000 invoice open: full (the whole outstanding), partial (¥100,000), too_much (¥500,000: refused, nothing booked; no after)
+//   settled  day 38 of the main walk (the cure's invoice financing received): full on the financed invoice, so the lender is repaid first
+// { <point>: { receivable_id, answers: [{ variant, amount_fen, answer: { en, zh }, after: { en, zh } | null }] } }. The keys are fixed (rec-<point>-<variant>), and
+// the chain hashes are re-derived by first appearance (the settled books carry the deal's random commitment id). The API needs FEATURE_EXPOSURE=1, as the
+// receivables recordings:
+//   cd services/api && FEATURE_EXPOSURE=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8251
+//   node scripts/record-mocks.mjs --api http://localhost:8251 --receipts
+
 import { createHash } from "node:crypto";
 import { register } from "node:module";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -191,7 +202,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --deals-short | --exposure | --home-v2 | --slice-d | --buyside | --tracker | --buyer-message | --contract-terms]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --deals-short | --exposure | --home-v2 | --slice-d | --buyside | --tracker | --buyer-message | --contract-terms | --receipts]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
@@ -209,6 +220,7 @@ const BUYER_MESSAGE = process.argv.includes("--buyer-message");
 const BUYSIDE = process.argv.includes("--buyside");
 const CONTRACT_TERMS = process.argv.includes("--contract-terms");
 const DEALS_SHORT = process.argv.includes("--deals-short");
+const RECEIPTS = process.argv.includes("--receipts");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -247,7 +259,7 @@ async function inLang(lang, read) {
   }
 }
 
-const RECHAIN_BY_APPEARANCE = new Set(["slice_d/activity.json", "slice_d/story.json", "slice_d/restore.json", "nl_script.json", "home_reconciliation_day2.json", "bank_receipt.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
+const RECHAIN_BY_APPEARANCE = new Set(["receipts.json", "slice_d/activity.json", "slice_d/story.json", "slice_d/restore.json", "nl_script.json", "home_reconciliation_day2.json", "bank_receipt.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
 const lossTokens = new Map(); // slice_d file -> its loss tokens, by order of first appearance
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
 const secIds = new Map(); // SEC-<KIND>-<16 hex> security event ids, random per event since the security fixes -> a fixed id by first appearance
@@ -510,6 +522,49 @@ if (CONTRACT_TERMS) {
   await live.demoReset();
   for (const name of Object.keys(files).sort()) write(name, files[name]);
   console.log(`recorded ${written.length} contract-terms file into ${OUT} from ${API}`);
+  process.exit(0);
+}
+
+// --receipts: receipts.json and nothing else (see the header).
+if (RECEIPTS) {
+  const toSettled = async () => {
+    await toDay34();
+    const alerts = await live.getAlerts();
+    const reserve = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
+    if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
+    const act = await live.actOnAlert(reserve.id, {
+      state_version: alerts.state_version,
+      suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+    });
+    const queued = act.results.find((r) => r.status === "PENDING_APPROVAL");
+    if (!queued) throw new Error("the day-34 cure no longer waits for approval: the demo path has changed");
+    await live.decideApproval(queued.approval_id, "APPROVE");
+    await live.advanceClock(38 - 34);
+  };
+  const POINTS = {
+    day0: { books: reset, receivable_id: "RCV-A", variants: [["full", 42000000], ["partial", 10000000], ["too_much", 50000000]] },
+    settled: { books: toSettled, receivable_id: "RI:BUYER-1:2", variants: [["full", 42000000]] },
+  };
+  const out = {};
+  for (const [point, { books, receivable_id, variants }] of Object.entries(POINTS)) {
+    out[point] = { receivable_id, answers: [] };
+    for (const [variant, amount_fen] of variants) {
+      const req = { receivable_id, amount_fen, key: `rec-${point}-${variant}` };
+      const answer = {};
+      let after = null;
+      for (const lang of ["en", "zh"]) {
+        await books();
+        answer[lang] = await live.recordReceipt(req, lang);
+        if (lang === "en" && answer.en.result.status === "EXECUTED") after = { en: await live.getReceivables("en"), zh: await live.getReceivables("zh") };
+      }
+      if (!answer.en.receipt) throw new Error(`the receipt at ${point} (${variant}) came back without the owner's words: start the API from a branch that writes them`);
+      out[point].answers.push({ variant, amount_fen, answer, after });
+    }
+  }
+  if (!out.settled.answers[0].answer.en.receipt.lines[0].includes("first")) throw new Error("the receipt on the financed invoice no longer repays the lender first");
+  await live.demoReset();
+  write("receipts.json", out);
+  console.log(`recorded ${written.length} receipts file into ${OUT} from ${API}`);
   process.exit(0);
 }
 
@@ -1611,6 +1666,32 @@ async function pointReads(point, since) {
   }
   return out;
 }
+// Ask FLOW's answer cards (the owner's redesign, 17 Oct): mocks/nl_ask.json, { point: { question: response } }. The Ask FLOW page's four questions
+// (lib/chat-prompts.ts askPrompts) and one question per other destination a card links to, each in English and Chinese, asked in its own language
+// (the reply follows the question's language), at the same four points of the story as the page questions. lib/mock/nl.ts answers a question
+// with exactly this text from the recording of the point the mock is at.
+const ASK_QUESTIONS = [
+  ["Are we safe?", "en"], ["我们安全吗？", "zh"],
+  ["How much do we need to raise?", "en"], ["我们需要融多少？", "zh"],
+  ["Are we inside our covenants?", "en"], ["我们满足契约吗？", "zh"],
+  ["Which customer owes us the most?", "en"], ["哪个客户欠我们最多？", "zh"],
+  ["How much debt do we have?", "en"], ["我们总负债多少？", "zh"],
+  ["Is anything waiting for my approval?", "en"], ["有待审批的吗？", "zh"],
+  ["What did FLOW do recently?", "en"], ["FLOW 最近做了什么？", "zh"],
+  ["Can we afford the die-cutting machine?", "en"], ["模切线买得起吗？", "zh"],
+  ["What can FLOW do without me?", "en"], ["不经过我，FLOW 能做什么？", "zh"],
+  ["Should we take the early payment?", "en"], ["提前付款划算吗？", "zh"],
+];
+async function askReads(point) {
+  const out = {};
+  for (const [i, [text, lang]] of ASK_QUESTIONS.entries()) {
+    const r = await live.nl({ session_id: `rec-ask-${point}-${i}`, actor: "OWNER", text, lang, context: { page: "/ask" } });
+    if (r.intent !== "ASK_BOOKS" || !r.card) throw new Error(`"${text}" got no answer card (${r.intent}): the API has changed`);
+    out[text] = r;
+  }
+  return out;
+}
+const nlAsk = {};
 const nlPage = {};
 await reset();
 await step("inbox").run();
@@ -1627,8 +1708,10 @@ await step("trajectory").run();
 }
 await reset();
 nlPage.day0 = await pointReads("day0", null);
+nlAsk.day0 = await askReads("day0");
 await toDay34();
 nlPage.day34 = await pointReads("day34", 0);
+nlAsk.day34 = await askReads("day34");
 {
   const alerts = await live.getAlerts();
   const reserve = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
@@ -1639,10 +1722,13 @@ nlPage.day34 = await pointReads("day34", 0);
   });
 }
 nlPage.pending = await pointReads("pending", 0);
+nlAsk.pending = await askReads("pending");
 await live.decideApproval((await live.getApprovals())[0].id, "APPROVE");
 nlPage.after = await pointReads("after", 0);
+nlAsk.after = await askReads("after");
 if (nlPage.pending.changes.intent !== "CHANGES" || !nlPage.pending.changes.reply.includes("Waiting for your approval")) throw new Error("the queued cure is not in 'what changed': the API has changed");
 files["nl_page.json"] = nlPage;
+files["nl_ask.json"] = nlAsk;
 
 await live.demoReset();
 

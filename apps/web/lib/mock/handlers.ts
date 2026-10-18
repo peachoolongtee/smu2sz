@@ -85,6 +85,8 @@ import type {
   BuyerExposureView,
   CompareView,
   ReceivablesRead,
+  RecordReceiptRequest,
+  RecordReceiptResult,
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
@@ -111,6 +113,7 @@ import type { TrackerView } from "../tracker"; // Deal tracker
 import * as home from "./home";
 import * as homeV2 from "./home-v2";
 import * as receivablesMock from "./receivables";
+import * as receiptsMock from "./receipts";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
@@ -1222,7 +1225,21 @@ export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead
     throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  // A payment the owner recorded at this point of the story: the read recorded after it (lib/mock/receipts.ts).
+  const after = await receiptsMock.receivablesAfterReceipt(home.receivablesPoint(dealt), lang);
+  if (after) return { ...after, day: home.mockClock().day };
   return receivablesMock.mockReceivables(dealt, lang);
+}
+
+/** POST /operations with the owner's RECEIVE_PAYMENT ("Record a payment"): the recorded answer of the real route (lib/mock/receipts.ts). Owner only, as live. */
+export async function recordReceipt(req: RecordReceiptRequest, lang: "en" | "zh"): Promise<RecordReceiptResult> {
+  await delay();
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
+  }
+  const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  return receiptsMock.mockRecordReceipt(home.receivablesPoint(dealt), req, lang);
 }
 
 /** GET /buyers/{id}/exposure: the recording for BUYER-1 (the opening books' before day 34, day 34's from it); any other buyer is unknown (null). */
@@ -1471,6 +1488,7 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
   memory = seededStore();
   save();
   home.resetHome();
+  receiptsMock.resetReceipts();
   documents.resetDocuments();
   customers.resetCustomers();
   buyside.resetBuyside();

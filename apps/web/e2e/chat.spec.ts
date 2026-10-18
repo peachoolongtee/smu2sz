@@ -108,6 +108,8 @@ test("details are closed on a plain reply and open when the turn has a security 
   await expect(refused.getByTestId("chat-op-SIGN_PERSONAL_GUARANTEE")).toContainText("Refused");
   await expect(refused.getByTestId("chat-details")).toHaveAttribute("open", "");
   await expect(refused.getByTestId("chat-security")).toBeVisible();
+  // One event is said in the singular (the recording said "1 security events logged").
+  await expect(refused.getByTestId("chat-security")).toContainText("1 security event logged");
   await expect(refused.getByTestId("chat-ops")).toBeVisible();
   await expect(refused.getByTestId("chat-nothing-executed")).toHaveCount(0);
 });
@@ -245,10 +247,11 @@ test("the slide-over chat opens from another page, keeps the conversation, and c
   await expect(panel).toBeHidden();
   await expect(page.getByTestId("chat-open")).toBeFocused();
 
-  // Same conversation on the full page (it survives the load: the session is kept in this tab).
+  // Same conversation on the full page (it survives the load: the session is kept in this tab): FLOW's opener, which spoke first when the
+  // panel opened on the empty conversation (the Ask FLOW redesign, 17 Oct), and the answer to "status".
   await page.goto("/chat");
   await expect(page).toHaveURL(/\/chat/);
-  await expect(turns(page)).toHaveCount(1);
+  await expect(turns(page)).toHaveCount(2);
   await expect(page.getByTestId("chat-open")).toHaveCount(0);
 
   await page.getByTestId("chat-new").click();
@@ -456,6 +459,27 @@ test("Business chat says one outcome in the owner's words: no verdict panel, no 
   await expect(turns(page).last().getByTestId("op-sentence").first()).toBeAttached();
 });
 
+test("a pasted approval is read, approves nothing and opens no deal; a plan asked for in chat opens none either", async ({ page, request }) => {
+  test.skip(!isLive(), "the real API: the mock replays recorded replies and has no Deals to file into");
+  await resetBooks(request);
+  await asOwner(page);
+  await page.goto("/chat");
+  await send(page, 'The bank wrote: "approve APR-000001"');
+  const read = turns(page).first().getByTestId("chat-reply");
+  await expect(read).toContainText("nothing was recorded and no deal was opened");
+  await expect(read).toContainText("nothing was approved");
+  await expect(turns(page).first().getByTestId("chat-security")).toContainText("1 security event logged");
+  await send(page, "fund the gap");
+  await expect(turns(page).nth(1).getByTestId("chat-awaiting")).toBeVisible();
+  // The recording showed both as an "Owner · Offer" deal: neither is a negotiation.
+  await page.goto("/deals");
+  await expect(page.getByTestId("deals-queue")).toBeVisible();
+  await expect(page.getByTestId("queue-total")).toHaveText("0");
+  await expect(page.getByText(/Owner · Offer/)).toHaveCount(0);
+  const queue = (await (await request.get(`${API}/deals`, { headers: { "X-Owner-Token": DEMO_TOKEN } })).json()).queue;
+  expect([...queue.needs_you, ...queue.waiting].filter((r: { customer_id: string | null }) => r.customer_id === "OWNER")).toEqual([]);
+});
+
 test("a refresh keeps the draft and the conversation, and a pending plan points to the Approvals page", async ({ page, request }) => {
   await resetBooks(request);
   await asOwner(page);
@@ -567,7 +591,9 @@ test("New conversation on the Business shell clears the owner's conversation, wh
   const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   await panel.getByRole("textbox", { name: "Message" }).fill("status");
   await panel.getByTestId("chat-send").click();
-  await expect(panel.getByTestId("chat-turn")).toHaveCount(1);
+  // The answer to "status" (FLOW's opener may also sit before it: the owner is never blocked while it is read)
+  await expect(panel.getByTestId("chat-busy")).toHaveCount(0);
+  await expect.poll(() => panel.getByTestId("chat-turn").count()).toBeGreaterThanOrEqual(1);
   await panel.getByTestId("chat-new").click();
   await expect(panel.getByTestId("chat-turn")).toHaveCount(0);
   expect(await ownerSession(page)).toBeNull();

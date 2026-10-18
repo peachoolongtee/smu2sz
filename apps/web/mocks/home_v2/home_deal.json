@@ -4197,7 +4197,8 @@
           "short_note": "At your minimum in 30 days",
           "tone": "warn",
           "with_plan_hint": "No hypothetical applied.",
-          "with_plan": null
+          "with_plan": null,
+          "basis_label": "With the funding in place"
         },
         "funding": {
           "state": "NONE",
@@ -8636,7 +8637,8 @@
           "short_note": "30 天后正好是最低现金",
           "tone": "warn",
           "with_plan_hint": "未应用任何假设。",
-          "with_plan": null
+          "with_plan": null,
+          "basis_label": "已计入已安排的融资"
         },
         "funding": {
           "state": "NONE",

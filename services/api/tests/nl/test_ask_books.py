@@ -81,7 +81,8 @@ WRONG_CASES = [
     ("FLOW一共动了多少钱？", "zh", "SHOW_STATUS", r"暂时还不能.*今天有什么变化"),
     ("Did anyone try to change our limits?", "en", "OUT_OF_SCOPE", r"^No\. Nobody has tried to change your mandate"),
     ("有人试图修改我们的限额吗？", "zh", "OUT_OF_SCOPE", r"^没有。没有人尝试修改您的授权或限额"),
-    ("授权什么时候到期？", "zh", "SHOW_STATUS", r"暂时还不能"),
+    # the broad reading (fix/ask-general) answers it with the signed mandate, valid to day 90
+    ("授权什么时候到期？", "zh", "SHOW_STATUS", r"有效至第 90 天"),
     # not in the books
     ("What's our VAT position this quarter?", "en", "SHOW_STATUS", r"^FLOW's books do not hold VAT\."),
     ("本季度增值税情况怎么样？", "zh", "SHOW_STATUS", r"^FLOW 的账目中没有增值税数据。"),

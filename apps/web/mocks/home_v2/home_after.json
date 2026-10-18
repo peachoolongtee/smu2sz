@@ -4166,7 +4166,8 @@
           "short_note": "At your minimum today",
           "tone": "warn",
           "with_plan_hint": "No hypothetical applied.",
-          "with_plan": null
+          "with_plan": null,
+          "basis_label": "With the funding in place"
         },
         "funding": {
           "state": "ARRANGED",
@@ -8600,7 +8601,8 @@
           "short_note": "今天正好是最低现金",
           "tone": "warn",
           "with_plan_hint": "未应用任何假设。",
-          "with_plan": null
+          "with_plan": null,
+          "basis_label": "已计入已安排的融资"
         },
         "funding": {
           "state": "ARRANGED",

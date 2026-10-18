@@ -52,6 +52,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.alerts import alerts
 from app.api.auth import require_owner
+from app.api.caches import books_generation
 from app.api.deal_offers import lapsed_offers, open_deals, open_offers
 from app.api.decisions import Context, latest_verdict_for, load_context
 from app.api.financing_words import State, state_of, state_word
@@ -1385,7 +1386,8 @@ def _cached(rt: Runtime, buyer_id: str, lang: Lang) -> dict[str, Any]:
     documents (an offer received and not yet evaluated surfaces through them). Nothing is loaded in full for the key."""
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     key = cache_key(state, mandate, max(rt.day, state.as_of_day), tuple(rt.store.commitments()), "customer-overview", buyer_id, lang,
-                    inputs_from_store(rt.store).digest(), _exposure_on(), _economics_on(), rt.store.change_marker(), tuple(rt.documents))
+                    inputs_from_store(rt.store).digest(), _exposure_on(), _economics_on(), rt.store.change_marker(), tuple(rt.documents),
+                    books_generation())  # the counts start again after a reset: an earlier set of books' page never comes back
     hit = _CACHE.get(key)
     if hit is not None:
         return hit
