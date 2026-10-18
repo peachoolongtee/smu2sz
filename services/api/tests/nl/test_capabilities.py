@@ -244,8 +244,8 @@ def test_a_counterparty_never_reaches_them(client, rt, intent, text):
 # ---------------------------------------------------------------- the nearest capability
 
 
-@pytest.mark.parametrize("text", ["Email the loan officer about our rates", "Print the invoice as a PDF",
-                                  "Tell me a joke about the payments"])
+# "Tell me a joke about the payments" is no longer here: a joke is off topic and gets the polite wording (tests/nl/test_small_talk.py)
+@pytest.mark.parametrize("text", ["Email the loan officer about our rates", "Print the invoice as a PDF"])
 def test_out_of_scope_names_the_closest_capability_and_an_example(client, rt, text):
     r = Chat(client, "cap-oos").say(text)
     assert r["intent"] == "OUT_OF_SCOPE" and r["operations"] == []

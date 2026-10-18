@@ -180,6 +180,17 @@ STATUS_QUESTION = _re(
     r"\bhow much (?:can|could) (?:i|we) (?:spend|use|take out)\b", r"(?:能|可以)(?:动用|用|花)多少(?:钱|现金)?",
     r"(?:够不够|够)(?:用的?)?(?:现金|资金|钱)", r"现金跑道", r"(?:现金|资金|钱).{0,6}(?:能|可以)?撑(?:多久|多长时间|几天)",
     r"现金(?:怎么样|如何|还好吗|还行吗)")
+# A plain request to look at the cash position and nothing else ("帮我看看现金", 看一下现金, 帮我查一下现金, "what is our cash?",
+# "show me our cash"): the WHOLE message must be this, so any other word (an action, an amount, a counterparty) is not a match.
+# Used on the message with a leading greeting stripped (rules.cash_look); it reads the same status as "show cash status".
+CASH_LOOK = re.compile(
+    r"(?:(?:请|麻烦|劳驾)?(?:你|您)?(?:帮我|帮忙|给我|替我|帮)?|我?(?:想|要|想要))"
+    r"(?:看|查|瞧|了解|瞅)(?:一下|一看|看|下|查)?(?:我们|咱们|公司|目前|现在|今天)?(?:的)?现金(?:状况|情况|余额)?(?:吧|呀|啊|嘛|呢)?[。.!！~\s]*"
+    r"|(?:please\s+)?(?:(?:can|could|would) you\s+)?(?:(?:help me|let me|i(?:'d| would)? (?:like|want) to|i want to|i need to)\s+)?"
+    r"(?:show|check|see|look at|view|pull up|tell)(?: me)?\s+(?:our|my|the)?\s*(?:current )?cash(?: (?:position|status|balance))?"
+    r"(?: for me)?(?: please| today| now)?\s*[?.!]*"
+    r"|what(?:'s|s| is| are)\s+(?:our|my|the)\s+(?:current )?cash(?: (?:position|status|balance))?(?: (?:today|now|right now))?\s*[?.!]*",
+    re.IGNORECASE)
 REPAY = _re(r"\brepay", r"\bpay (?:back|down|off)\b", r"\bpay (?:the |our )?(?:credit |bank )?line (?:back|down|off)\b",
             r"\bclear (?:the |our )?(?:balance on the |outstanding balance on the |outstanding )?(?:credit |bank )?line\b",
             r"\bsettle (?:the |our )?(?:credit |bank )?line\b", r"还款", r"偿还", r"还清", r"归还",

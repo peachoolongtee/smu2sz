@@ -19,7 +19,7 @@ import re
 
 from app.domain.fixtures import load_offers
 from app.domain.models import FinancialState
-from app.nl import consent
+from app.nl import consent, smalltalk
 from app.nl import lexicon as lx
 from app.nl.models import Intent, Parsed, Slots
 
@@ -221,11 +221,38 @@ def _page_read(text: str) -> bool:
     return bool(lx.LATE_PAYMENT_ASK.search(text) and lx.THIS_PAYMENT.search(text))
 
 
+def cash_look(text: str) -> bool:
+    """Whether the owner's whole message, after a leading greeting, is a plain request to see the cash ("帮我看看现金", "hi, what is our
+    cash?"). Only the greeting is dropped; nothing else is, so an action word, an amount or a name makes this False."""
+    return lx.CASH_LOOK.fullmatch(lx.norm(smalltalk.strip_greeting(text)).strip()) is not None
+
+
+def _small_talk(raw: str, s: Slots, pending_plan: bool) -> Parsed | None:
+    """Greetings, thanks, "who are you?", "what will FLOW never do?" and a joke, the weather or trivia (app/nl/smalltalk.py). A greeting,
+    thanks or identity question must be the whole message, so "hi, fund the gap" is not one; limits and off-topic are never tried on
+    a message that names a Tier-3 subject, an amount, an approval, a fixture or quoted text, so those go on through the rules as before."""
+    if s.tier3 or s.approval_id or s.fixture_id or s.quoted_text or s.quoted_approval:
+        return None
+    kind = smalltalk.whole_message(raw, allow_filler=not pending_plan)
+    if kind is None and s.amount_fen is None and s.rate_bp is None:
+        kind = smalltalk.limits_kind(raw)
+    if kind is not None:
+        slots = s.model_copy(update={"tier3": None, "execute_now": False, "question": raw})
+        return Parsed(intent=Intent.ASK_BOOKS, slots=slots, matched=["ask", f"ask:smalltalk:{kind}"])
+    if s.counterparty_id is None and smalltalk.off_topic(raw):
+        return Parsed(intent=Intent.OUT_OF_SCOPE, slots=s.model_copy(update={"execute_now": False}), matched=["offtopic"])
+    return None
+
+
 def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Parsed | None:
     """Owner request -> intent + typed slots, or None when no rule applies."""
     s = slots_from(text, state)
+    raw = text
     text = split_provenance(text)[0]  # every cue below is read from what the owner typed, never from quoted text
     asks_why = bool(lx.EXPLAIN.search(text))  # "why was it rejected?" / "为什么被拒绝?" asks; it declines nothing
+
+    if (small := _small_talk(raw, s, pending_plan)) is not None:
+        return small
 
     def hit(intent: Intent, cue: str, **kw: bool) -> Parsed:
         return Parsed(intent=intent, slots=s, matched=[cue], **kw)
@@ -359,6 +386,8 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.SHOW_DEAL, "deal")  # read-only: the confirmed contract beside the live books
     if lx.STATUS_QUESTION.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_STATUS, "status_question")
+    if not (s.tier3 or s.approval_id or s.fixture_id or s.quoted_text or s.quoted_approval) and cash_look(text):
+        return hit(Intent.SHOW_STATUS, "cash_look")  # "帮我看看现金", "hi, what is our cash?": the same read as "show cash status"
     # the action rules: a question that names an action is asked about it, so it is answered (ASK_BOOKS), never proposed
     # "can we pay off all our loans?", 我们能把债务还清吗 (a question about the term debt, not "could you repay the loan")
     debt_ask = bool(lx.DEBT_ASK.search(text)) and (asks or (lx.is_asking(text) and not lx.ASK_YOU.search(text)))

@@ -40,6 +40,7 @@ from app.domain.models import FlowKind, SecurityEventKind
 from app.domain.money import fmt_yuan
 from app.financial import EngineError
 from app.nl import lexicon as lx
+from app.nl import smalltalk
 from app.nl.context import NlContext
 from app.nl.models import Intent, Parsed, Slots
 from app.nl.pipeline import t
@@ -550,6 +551,10 @@ def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         kind = topic.split(":", 1)[1]
         if not ctx.owner_authenticated or not lx.tier3_is_information(question):
             return tier3_request(ctx, kind, slots)
+    if topic.startswith("smalltalk:"):
+        kind = topic.split(":", 1)[1]
+        if kind in smalltalk.OPEN_KINDS or ctx.owner_authenticated:
+            return smalltalk.turn(ctx, kind, question)  # a greeting, thanks, "who are you?" (no books) or what FLOW never does; read-only
     if not ctx.owner_authenticated:
         if topic == "books":
             return _old_reply(ctx, slots, text)  # the agent key gets exactly what it got before
