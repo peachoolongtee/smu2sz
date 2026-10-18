@@ -38,11 +38,13 @@ CORRECTION = _re(r"\bactually\b", r"\binstead\b", r"\bmake (?:it|that)\b", r"\bc
 CONFIRM = _re(r"^\s*(?:yes|yep|yeah|ok(?:ay)?|sure|go ahead|proceed|confirm(?:ed)?|do it|lgtm|execute|run it)\b",
               r"\bgo ahead\b", r"\bapprove[ds]?\b", r"\bconfirm\b", r"批准", r"同意", r"确认", r"^\s*执行", r"^\s*好的?",
               r"就这么办", r"可以执行", r"办吧", r"照办", r"去办", r"^\s*行(?:吧|的)?\s*[。!！]?\s*$", r"^\s*可以\s*[。!！]?\s*$")
-# A confirmation that names nothing ("yes do it", "好的办吧"): it can only bind to what this session just showed.
-BARE_CONFIRM = _re(r"^\s*(?:yes|yep|yeah|ya|ok(?:ay)?|sure|go ahead|proceed|do it|lgtm|execute|run it|confirm(?:ed)?|fine|alright)"
+# A confirmation that names nothing ("yes do it", "好的办吧"): it can only bind to what this session just showed. It must
+# carry an explicit word (yes / go ahead / do it / execute ...); a bare acknowledgement ("ok", "sure", "fine", 好的, 行,
+# 可以, 没问题) is not consent, alone or with thanks, and matches nothing here. A weak lead-in may precede an explicit word.
+BARE_CONFIRM = _re(r"^\s*(?:(?:ok(?:ay)?|sure|alright|fine)[\s,.!]+)?(?:yes|yep|yeah|ya|go ahead|proceed|do it|lgtm|execute|run it|confirm(?:ed)?)"
                    r"(?:[\s,.!]+(?:yes|please|pls|do it|go ahead|go|proceed|then|now|thanks?|sure|ok))*[\s.!]*$",
-                   r"^\s*(?:好的?|行|可以|同意|确认|执行|没问题)(?:的|吧|啊|呀)?[，,。.!！\s]*(?:办吧|就这么办|去办|照办|执行吧?|做吧|弄吧)?[。.!！\s]*$",
-                   r"^\s*(?:就这么办|照办|办吧|执行吧)[。.!！\s]*$")
+                   r"^\s*(?:(?:好的?|行|可以|没问题)[，,。.!！\s]*)?(?:同意|确认|执行)(?:的|吧|啊|呀)?[，,。.!！\s]*(?:办吧|就这么办|去办|照办|执行吧?|做吧|弄吧)?[。.!！\s]*$",
+                   r"^\s*(?:(?:好的?|行|可以|没问题)[，,。.!！\s]*)?(?:就这么办|照办|办吧|执行吧|去办|做吧|弄吧)[。.!！\s]*$")
 APPROVE_VERB = _re(r"\bapprove[ds]?\b", r"批准", r"审批通过")
 DECLINE = _re(r"^\s*(?:no|nope|cancel|stop|abort|don'?t|do not)\b", r"\breject\b", r"\bdecline\b", r"\bdeny\b",
               r"\bcancel\b", r"驳回", r"拒绝", r"取消", r"^\s*不要", r"算了")

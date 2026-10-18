@@ -90,10 +90,7 @@ def _reply_words(ctx: Any, offer_id: str) -> str | None:
 
 def _changes(ctx: Any, ours: Any, theirs: Any, buyer: str | None, lang: str) -> list[dict[str, Any]]:
     """Our last offer beside their reply, row by row (payment terms, early payment, rebate or price), each in the offer picture's own words."""
-    from app.api.offer_picture import (  # the picture's reading of terms; it reads the record, so imported here
-        _TERM_ROWS,
-        _term_rows,
-    )
+    from app.api.offer_picture import _TERM_ROWS, _term_rows  # the picture's reading of terms; it reads the record, so imported here
 
     mine = _term_rows(ctx.state, list(ours or []), buyer, lang)
     them = _term_rows(ctx.state, list(theirs or []), buyer, lang)
@@ -283,11 +280,13 @@ def outbound_view(ctx: Any, ds: Any, inp: Any, lang: str) -> dict[str, Any] | No
             view["status_text"], view["tone"] = t(lang, "The agreement is not in force.", "该协议未生效。"), "neutral"
         consequences, links = (_consequences(ctx, ds, buyer, lang) if ds.state in (DealState.AGREED, DealState.MISSED, DealState.FULFILLED)
                                else ([], [customer]))
-        from app.api.decisions import funding_next_step
+        from app.api.decisions import funding_next_step, funding_none_needed
 
         if (step := funding_next_step(ctx, ds, lang)) is not None:  # recording the yes funded nothing: the gap and FLOW's plan for it
             consequences = [*consequences, step["text"]]
             links = [{"label": step["label"], "href": step["href"], "primary": True}, *links]
+        elif (none_needed := funding_none_needed(ctx, ds, lang)) is not None:  # or that no funding is needed
+            consequences = [*consequences, none_needed]
         view["consequences"], view["links"] = consequences, links
         view["consequences_title_text"] = t(lang, "What changes now", "接下来的变化")
     elif answer == "countered":

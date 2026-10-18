@@ -737,6 +737,17 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
     intent = Intent.APPROVE if approve else Intent.REJECT
     if aid is None:
         shown = [a for a in ctx.session.shown_approvals if a in {p.id for p in pending}]
+        if bare and shown:
+            # "go ahead" / "yes, do it" / 好的办吧 confirm a PLAN. They never decide a queued approval, even the one just
+            # shown: a retried "go ahead" would otherwise approve the leg the first one queued, which the owner has not
+            # read yet. Deciding an approval takes the word approve / reject (alone it binds to the one item shown) or
+            # its id.
+            ids = ", ".join(shown)
+            first = shown[0]
+            return Turn(intent=Intent.AMBIGUOUS, reply=t(
+                ctx, f"I have not approved or declined anything: \"go ahead\" does not decide a waiting approval. "
+                     f"To approve {ids}, say \"approve {first}\"; to decline it, say \"reject {first}\".",
+                f"我没有批准或驳回任何事项：“执行”不能用来审批待批事项。要批准 {ids}，请说“批准 {first}”；要驳回，请说“拒绝 {first}”。"))
         if len(shown) == 1:
             aid = shown[0]
         elif not pending:
@@ -748,8 +759,6 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
                             ("3", t(ctx, "get an invoice paid early", "提前收款"), Intent.ACCELERATE_RECEIPT.value)],
                            slots)
             return Turn(intent=intent, reply=t(ctx, "Nothing is waiting for approval.", "目前没有待审批的操作。"))
-        elif len(pending) == 1 and lx.APPROVAL_REF.search(text) and not bare:
-            aid = pending[0].id  # "approve the pending one": the owner names the queue, which holds one item
         else:
             q = (t(ctx, "Nothing in this conversation is waiting for a yes. Which pending operation do you mean?",
                    "本次对话中没有待确认的事项。您指的是哪一项待审批操作？") if bare and not shown
@@ -775,6 +784,9 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
                        "Logged.", f"已拒绝：只有业主可以审批 {aid}，此请求没有业主凭证。已记录。")
     else:
         reply = r.message
+        if approve and r.status == OperationStatus.REFUSED:  # the decision and the run are two facts: approved, but it did not run
+            reply = t(ctx, f"You approved {aid}, but it could not run: {r.message} Nothing was executed and no money moved.",
+                      f"您已批准 {aid}，但未能执行：{r.message} 未执行任何操作，资金未动。")
         funded = approve and rec is not None and r.status == OperationStatus.EXECUTED  # a funding leg: when its cash lands
         if funded and (note := landing.executor_note(ctx, parse_operation(rec.op_json), r.message)):  # type: ignore[union-attr]
             reply += f" ({note})"
