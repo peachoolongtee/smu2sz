@@ -694,6 +694,7 @@ _KIND_TEXT = {
     "UNDO_CONTRACT_TERMS": ("Contract terms undone", "合同条款已撤销"),  # ADR-0014
     "OPEN_BOOKS": ("Books opened", "账簿已开立"),
     "ADD_CUSTOMER": ("Customer added", "已添加客户"), "REFILE_DOCUMENT": ("Document filed again", "文件已改归"),
+    "PAUSE_AGENT": ("Agent paused", "代理已暂停"), "RESUME_AGENT": ("Agent resumed", "代理已恢复"),  # app/api/agent_pause.py
 }
 
 

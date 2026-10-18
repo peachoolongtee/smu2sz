@@ -70,7 +70,11 @@ class Runtime:
 
     @property
     def executor(self) -> Executor:
-        return Executor(self.store, trusted_owner_key_hex=self.owner_key_hex, clock=self.clock,
+        """The executor behind the owner's pause (`app.api.agent_pause`): while paused, an AGENT or COUNTERPARTY operation is refused
+        before the executor's gates; everything else is the executor's own."""
+        from app.api.agent_pause import PausableExecutor
+
+        return PausableExecutor(self.store, trusted_owner_key_hex=self.owner_key_hex, clock=self.clock,
                         reverify=self.reverify, admit=self.admit)
 
     def admit(self, op: Any, state: FinancialState, mandate: Mandate) -> Any:
