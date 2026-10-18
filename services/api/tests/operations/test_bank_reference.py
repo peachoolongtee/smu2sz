@@ -43,14 +43,14 @@ def test_the_same_reference_with_a_different_amount_is_a_conflicting_event_and_a
 
 
 def test_without_a_reference_behaviour_is_unchanged():
-    store, ex = _setup()
+    _store, ex = _setup()
     assert _pay(ex, "RCV-B", 5_000_000, 1).status == OperationStatus.EXECUTED
     assert _pay(ex, "RCV-B", 5_000_000, 2).status == OperationStatus.EXECUTED  # no way to tell it from a second payment
     assert _pay(ex, "RCV-B", 5_000_000, 3, "BANK-9").status == OperationStatus.EXECUTED  # a reference nobody used yet
 
 
 def test_a_reference_is_per_receivable_and_a_refused_receipt_does_not_burn_it():
-    store, ex = _setup()
+    _store, ex = _setup()
     assert _pay(ex, "RCV-A", 10_000_000, 1, "BANK-10").status == OperationStatus.EXECUTED
     assert _pay(ex, "RCV-B", 10_000_000, 2, "BANK-10").status == OperationStatus.EXECUTED  # another receivable
     over = _pay(ex, "RCV-B", 99_000_000_000, 3, "BANK-11")  # refused: more than is owed
@@ -59,7 +59,7 @@ def test_a_reference_is_per_receivable_and_a_refused_receipt_does_not_burn_it():
 
 
 def test_the_same_key_is_still_an_idempotent_replay():
-    store, ex = _setup()
+    _store, ex = _setup()
     _pay(ex, "RCV-B", 10_000_000, 1, "BANK-12")
     again = _pay(ex, "RCV-B", 10_000_000, 1, "BANK-12")
     assert again.status == OperationStatus.DUPLICATE

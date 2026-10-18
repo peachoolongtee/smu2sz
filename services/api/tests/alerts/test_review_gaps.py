@@ -14,7 +14,6 @@ from app.financial import project
 from tests.alerts.test_act import _client, _log
 from tests.alerts.test_alerts import _of, _run, _store
 
-
 # ---------------------------------------------------------------- G2: the mandate lifecycle
 
 
@@ -143,7 +142,7 @@ def test_a_stale_state_version_is_409_alert_changed_and_nothing_runs(act_client)
 
 def test_a_stale_version_for_an_alert_that_is_gone_answers_with_a_null_alert(act_client):
     rt = get_runtime()
-    b, v = _breach(act_client)
+    _b, v = _breach(act_client)
     rt.store.put_state(rt.store.get_state().model_copy(update={"state_version": v + 1}))
     r = act_client.post("/alerts/ALERT-NO-SUCH/act", json={"state_version": v})
     assert r.status_code == 409 and r.json()["detail"]["alert"] is None

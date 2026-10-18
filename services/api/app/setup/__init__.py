@@ -15,7 +15,7 @@ from __future__ import annotations
 import calendar
 import re
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Literal
 
@@ -52,8 +52,8 @@ MAX_ROWS = 200  # SETUP-5: rows in any one list (customers, invoices of a custom
 MAX_INVOICES = 1000  # and invoices in all
 MAX_FIELD_CHARS = 200  # one typed text, name or amount
 MAX_NUMBER_CHARS = 40  # SETUP-4: an amount longer than this is not a number FLOW can keep; never reaches Decimal
-DSCR_RANGE = (Decimal("1"), Decimal("10"))
-LEVERAGE_RANGE = (Decimal("0.5"), Decimal("10"))
+DSCR_RANGE = (Decimal(1), Decimal(10))
+LEVERAGE_RANGE = (Decimal("0.5"), Decimal(10))
 ORG_ID = "OWN-1"
 
 Money = str | int | float
@@ -207,7 +207,7 @@ def parse_date(raw: str) -> date | None:
 
 def today() -> date:
     """Today's date as the server knows it (the start date is bounded against this, whatever the browser sent)."""
-    return date.today()
+    return datetime.now().astimezone().date()
 
 
 def add_months(d: date, months: int) -> date:
@@ -279,7 +279,7 @@ class _Checker:
         return int(bp)
 
     def times_bp(self, step: int, path: str, raw: Money | None, what: tuple[str, str],
-                 bounds: tuple[Decimal, Decimal] = (Decimal("0.01"), Decimal("100"))) -> int | None:
+                 bounds: tuple[Decimal, Decimal] = (Decimal("0.01"), Decimal(100))) -> int | None:
         try:
             value = parse_decimal(raw)
         except ValueError:

@@ -132,7 +132,7 @@ def test_bad_requests_are_refused_with_a_code(state, mandate, projects, code):
 
 
 def test_too_many_permutations_are_refused_not_sampled(state, mandate):
-    many = [PlanProject(id=f"p{i}", price_fen=1_000_000, start_offsets=list(range(0, 13)), optional=True)
+    many = [PlanProject(id=f"p{i}", price_fen=1_000_000, start_offsets=list(range(13)), optional=True)
             for i in range(4)]
     with pytest.raises(PlanRefused) as exc:
         plan(PlanRequest(projects=many), state, mandate, [])

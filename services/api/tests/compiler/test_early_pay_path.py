@@ -61,8 +61,8 @@ def test_clear_early_pay_below_break_even_is_read_and_accepted(rules_compiler: C
 
 @pytest.mark.parametrize("text", [
     # a stated settlement window and "provided you allow"
-    "Hello, our treasury can transfer the ¥420,000 for your invoice (due late October) within 3 business days "
-    "provided you allow a 0.6% discount.",
+    ("Hello, our treasury can transfer the ¥420,000 for your invoice (due late October) within 3 business days "
+     "provided you allow a 0.6% discount."),
     "420,000元那张invoice我们下周early pay, discount 0.6% 可以吗",
     # zh window "两天内付清"
     "42万那张发票我们两天内付清，折扣0.6%",
@@ -99,8 +99,8 @@ def test_early_pay_on_several_invoices_abstains(rules_compiler: Compiler, text: 
 
 
 @pytest.mark.parametrize(("text", "part"), [
-    ("Happy to pay 60% of the ¥420,000 invoice (¥252,000) tomorrow for 0.5% off that portion; the rest on the "
-     "due date.", 25_200_000),
+    (("Happy to pay 60% of the ¥420,000 invoice (¥252,000) tomorrow for 0.5% off that portion; the rest on the "
+      "due date."), 25_200_000),
     ("We'll wire ¥150,000 of the ¥420k invoice today, 0.6% discount on that part, balance on the due date.", 15_000_000),
     ("我们可以先付一半货款（21万），提前付的部分扣0.6%。", None),
     ("先付一部分 invoice, early at 0.5%, 尾款按原来的日期付", None),

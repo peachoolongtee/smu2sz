@@ -5,6 +5,7 @@ CONFLICTING_SOURCES, and text addressed to the agent is never read as a term."""
 
 from __future__ import annotations
 
+import itertools
 import json
 from pathlib import Path
 
@@ -23,7 +24,12 @@ from app.compiler.contract import (
 )
 from app.compiler.contract_parsing import parse_count, parse_date, parse_days, parse_money, parse_months
 from app.compiler.contract_rules import rules_contract
-from app.compiler.prompts import CONTRACT_PROMPT_VERSION, CONTRACT_SYSTEM_PROMPT, PROMPT_CANARY, contract_user_message
+from app.compiler.prompts import (
+    CONTRACT_PROMPT_VERSION,
+    CONTRACT_SYSTEM_PROMPT,
+    PROMPT_CANARY,
+    contract_user_message,
+)
 from app.compiler.record_cache import contract_documents
 from app.compiler.rules import RulesBackend
 from app.compiler.schema import ContractExtraction, XContractTerm
@@ -156,7 +162,7 @@ def test_a_ten_page_contract_is_read_in_chunks_with_offsets_into_the_whole_docum
     chunks = chunk_document(doc)
     assert len(chunks) >= 5
     assert chunks[0].start == 0 and chunks[-1].end == len(text)
-    assert all(a.end == b.start for a, b in zip(chunks, chunks[1:], strict=False))
+    assert all(a.end == b.start for a, b in itertools.pairwise(chunks))
     assert all(c.end - c.start <= MAX_CHUNK_CHARS for c in chunks)
     long = Compiler([RulesBackend()]).compile_contract(doc)
     short = Compiler([RulesBackend()]).compile_contract(_doc(_demo_text()))
@@ -283,8 +289,8 @@ class _Hostile:
 
     def extract_contract(self, chunk: SourceDocument) -> ContractResult:
         def term(field: ContractField, quote: str, **kw: str | None) -> XContractTerm:
-            base = dict(value_text=None, date_text=None, period_text=None, basis_text=None, unit_text=None,
-                        trigger_text=None, reference_text=None, confidence=0.99)
+            base = {"value_text": None, "date_text": None, "period_text": None, "basis_text": None, "unit_text": None,
+                    "trigger_text": None, "reference_text": None, "confidence": 0.99}
             base.update(kw)
             return XContractTerm(field=field, quote=quote, **base)
 

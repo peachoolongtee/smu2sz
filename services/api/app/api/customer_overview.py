@@ -290,11 +290,6 @@ def sales_held(state: FinancialState, inputs: CustomerInputs, buyer_id: str, tod
     return _sales(Held(state, today, buyer_id, inputs))
 
 
-def projected_sales_fen(state: FinancialState, buyer_id: str, today: int) -> int | None:
-    """The books' own projection of the buyer's sales over the next 12 months (`_projected_sales_fen`), whatever the owner entered."""
-    return _projected_sales_fen(Held(state, today, buyer_id, CustomerInputs()))
-
-
 def projection_text(state: FinancialState, buyer_id: str, today: int, lang: Lang) -> str | None:
     """Where the projection comes from, in the books' own terms: "From your books: ¥420,000 every 30 days, 13 invoices in the next 12
     months", each recurring schedule counted by `recurring_issue_days` as `_projected_sales_fen` counts it. None with no schedule."""
