@@ -735,6 +735,17 @@ def funding_next_step(ctx: Context, ds: DecisionState, lang: str) -> dict[str, s
     return {"text": text, "label": t(lang, "Review the funding plan", "查看融资方案"), "href": "/cash"}
 
 
+def funding_none_needed(ctx: Context, ds: DecisionState, lang: str) -> str | None:
+    """The other half of `funding_next_step`: after an agreement the owner made themself, when no reserve breach is ahead, say that no
+    funding is needed (and that the agreement ran none), so the record never leaves the owner to infer it from silence."""
+    if ds.family != "DEAL" or ds.state != DealState.AGREED or ds.sent is not None:
+        return None
+    if any(a.kind.value == RESERVE_ALERT for a in ctx.open_alerts):
+        return None
+    return t(lang, "The agreement ran no funding, and none is needed: no cash shortfall below your minimum is ahead on today's books.",
+             "该协议未执行任何融资，也无需融资：按今天的账目，未来不会出现低于最低现金储备的缺口。")
+
+
 def _outbound(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> dict[str, Any] | None:
     """An offer the owner sent outside FLOW and what came of it (`app.api.outbound_record`); None for any other decision. A supporting read:
     when it cannot be built the record says nothing of it rather than fail."""
