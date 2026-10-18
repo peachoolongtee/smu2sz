@@ -1,0 +1,584 @@
+{
+ "baseline_lowest_cash": {
+  "value": -10500000,
+  "cny": "-105,000.00",
+  "note": "day 30"
+ },
+ "baseline_first_breach_day": {
+  "value": 12,
+  "cny": null,
+  "note": "first closing below the 300,000 reserve"
+ },
+ "baseline_days_below_reserve": {
+  "value": 20,
+  "cny": null,
+  "note": "days 12-31"
+ },
+ "baseline_peak_shortfall": {
+  "value": 40500000,
+  "cny": "405,000.00",
+  "note": "reserve - lowest cash (days 30-31)"
+ },
+ "baseline_shortfall_day12": {
+  "value": 24000000,
+  "cny": "240,000.00",
+  "note": "shortfall on the first breach day only"
+ },
+ "funding_need": {
+  "value": 40500000,
+  "cny": "405,000.00",
+  "note": "340,000 + 120,000 + 45,000 + 300,000 - 400,000"
+ },
+ "due_next_30_days": {
+  "value": 50500000,
+  "cny": "505,000.00",
+  "note": "payroll + supplier + loan payment, days 12/20/30"
+ },
+ "plan_line_interest": {
+  "value": 84164,
+  "cny": "841.64",
+  "note": "150,000 x 6.4% x 32/365"
+ },
+ "plan_if_interest": {
+  "value": 163479,
+  "cny": "1,634.79",
+  "note": "255,000 x 7.8% x 1x30/365 (29 days used, one whole period billed)"
+ },
+ "plan_if_fee": {
+  "value": 63750,
+  "cny": "637.50",
+  "note": "255,000 x 0.25% x 1 period"
+ },
+ "plan_total": {
+  "value": 311393,
+  "cny": "3,113.93",
+  "note": "sum of posted parts"
+ },
+ "plan_if_effective_rate_pct": {
+  "value": "11.2155",
+  "cny": null,
+  "note": "on the 29 days held"
+ },
+ "plan_if_within_advance_rate": {
+  "value": true,
+  "cny": null,
+  "note": "80% of 420,000 = 336,000"
+ },
+ "plan_lowest_cash": {
+  "value": 30000000,
+  "cny": "300,000.00",
+  "note": "day 30"
+ },
+ "full_discount_alternative": {
+  "value": 504000,
+  "cny": "5,040.00",
+  "note": "1.2% of the whole 420,000 invoice"
+ },
+ "if_all_in_rate_pct": {
+  "value": "10.8417",
+  "cny": null,
+  "note": "7.8% + 0.25% x 365/30 (fee spread daily: a pricing convention)"
+ },
+ "break_even_pct": {
+  "value": "0.8832",
+  "cny": null,
+  "note": "d < c/(1+c), c = 7.8% x 30/365 + 0.25% (one whole IF period)"
+ },
+ "break_even_vs_line_pct": {
+  "value": "0.5233",
+  "cny": null,
+  "note": "the same test against the credit line, for comparison only"
+ },
+ "ep_1_2pct_annualised_pct": {
+  "value": "14.7773",
+  "cny": null,
+  "note": "d/(1-d) x 365/30"
+ },
+ "whole_invoice_0_75pct": {
+  "value": 315000,
+  "cny": "3,150.00",
+  "note": "vs plan 3,113.93"
+ },
+ "whole_invoice_0_74pct": {
+  "value": 310800,
+  "cny": "3,108.00",
+  "note": "vs plan 3,113.93"
+ },
+ "invoices_issued_in_365_days": {
+  "value": 13,
+  "cny": null,
+  "note": "issue days 2..362"
+ },
+ "ext_per_invoice": {
+  "value": 187130,
+  "cny": "1,871.30",
+  "note": "420,000 x 15/365 x 10.8417%"
+ },
+ "ext_per_invoice_equivalence": {
+  "value": 187130,
+  "cny": "1,871.30",
+  "note": "the same figure: ONE whole-period IF advance of 210,000 (half the face) for 30 days"
+ },
+ "ext_13_invoices_round_once": {
+  "value": 2432692,
+  "cny": "24,326.92",
+  "note": "engine convention: exact sum, rounded once"
+ },
+ "ext_13_x_rounded_per_invoice": {
+  "value": 2432690,
+  "cny": "24,326.90",
+  "note": "13 x 1,871.30: differs by 2 fen"
+ },
+ "ext_12_invoices": {
+  "value": 2245562,
+  "cny": "22,455.62",
+  "note": "if 'a year' meant 12 monthly invoices"
+ },
+ "ext_average_extra_receivables": {
+  "value": 21000000,
+  "cny": "210,000.00",
+  "note": "420,000 x 15/30: an average; the peak is 420,000 for 15 of every 30 days"
+ },
+ "ext_steady_state_annual": {
+  "value": 2276750,
+  "cny": "22,767.50",
+  "note": "210,000 x 10.8417% x 365/365"
+ },
+ "ext_monthly_service_estimate": {
+  "value": 189729,
+  "cny": "1,897.29",
+  "note": "steady-state interest only, used in the DSCR 1.92 estimate"
+ },
+ "ext_first_365_days_cash_cost": {
+  "value": 2058432,
+  "cny": "20,584.32",
+  "note": "only the 11 invoices whose 15 extra days start inside days 0-364 (extra days fall 45-60 days after issue)"
+ },
+ "ext_executable_if_per_invoice": {
+  "value": 299408,
+  "cny": "2,994.08",
+  "note": "actually advancing the most the platform allows (80% = 336,000.00) for the 15 extra days: one whole period"
+ },
+ "ext_executable_if_uncovered": {
+  "value": 8400000,
+  "cny": "84,000.00",
+  "note": "of each invoice's 420,000 peak, not advanceable at 80%"
+ },
+ "rebate_max": {
+  "value": 400000,
+  "cny": "4,000.00",
+  "note": "1% of the 400,000 expected (not firm) next-quarter order, counted at its maximum"
+ },
+ "ex01_forward_total": {
+  "value": 2832692,
+  "cny": "28,326.92",
+  "note": "terms 24,326.92 + rebate 4,000"
+ },
+ "ex01_immediate_discount": {
+  "value": 504000,
+  "cny": "5,040.00",
+  "note": "1.2% x 420,000, paid in cash on day 2, outside the forward cap"
+ },
+ "ex01_all_asks_first_year": {
+  "value": 3336692,
+  "cny": "33,366.92",
+  "note": "forward 28,326.92 + immediate 5,040 (what 'accept as asked' gives away, on FLOW's pricing)"
+ },
+ "ex01_cap_multiple": {
+  "value": "5.67",
+  "cny": null,
+  "note": "forward total / 5,000 cap"
+ },
+ "ex01_cash_day20": {
+  "value": 35496000,
+  "cny": "354,960.00",
+  "note": ""
+ },
+ "ex01_cash_day47": {
+  "value": 20996000,
+  "cny": "209,960.00",
+  "note": "first breach day"
+ },
+ "ex01_shortfall_day47": {
+  "value": 9004000,
+  "cny": "90,040.00",
+  "note": ""
+ },
+ "ex01_lowest": {
+  "value": 16496000,
+  "cny": "164,960.00",
+  "note": "day 60"
+ },
+ "ex01_worst_shortfall": {
+  "value": 13504000,
+  "cny": "135,040.00",
+  "note": ""
+ },
+ "ex01_days_below": {
+  "value": 15,
+  "cny": null,
+  "note": "days 47-61"
+ },
+ "ex01_cash_day47_at_45_days": {
+  "value": 62996000,
+  "cny": "629,960.00",
+  "note": ""
+ },
+ "ex01_cure_if": {
+  "value": 240667,
+  "cny": "2,406.67",
+  "note": "IF 135,040.00 on the invoice issued day 32: lands day 35, repaid day 92 (60-day terms), 2 periods"
+ },
+ "ex01_cure_line": {
+  "value": 146805,
+  "cny": "1,468.05",
+  "note": "line 135,040 drawn day 0 (decision day), repaid day 62"
+ },
+ "ex01_cure_line_just_in_time": {
+  "value": 35517,
+  "cny": "355.17",
+  "note": "the same draw made on day 47 instead: not what the router does"
+ },
+ "ex01_ep_test_with": {
+  "value": 650805,
+  "cny": "6,508.05",
+  "note": "discount + the plan that funds the offer"
+ },
+ "ex01_ep_test_without": {
+  "value": 387358,
+  "cny": "3,873.58",
+  "note": "same terms, no early payment: line 135,000 day 0->62 + IF 270,000 on RCV-A day 3->32 (one period)"
+ },
+ "option_a_rate_bp": {
+  "value": 85,
+  "cny": null,
+  "note": "largest whole-5bp rate below break-even"
+ },
+ "option_a_grossed_up_exact": {
+  "value": 25718608,
+  "cny": "257,186.08",
+  "note": "255,000 / (1 - 0.85%)"
+ },
+ "option_a_face": {
+  "value": 26000000,
+  "cny": "260,000.00",
+  "note": "rounded up to a whole 10,000"
+ },
+ "option_a_discount": {
+  "value": 221000,
+  "cny": "2,210.00",
+  "note": ""
+ },
+ "option_a_receipt_day2": {
+  "value": 25779000,
+  "cny": "257,790.00",
+  "note": ""
+ },
+ "option_a_line_draw": {
+  "value": 14721000,
+  "cny": "147,210.00",
+  "note": "405,000 - 257,790"
+ },
+ "option_a_line_interest_to_day32": {
+  "value": 82599,
+  "cny": "825.99",
+  "note": ""
+ },
+ "option_a_quoted_cost": {
+  "value": 303599,
+  "cny": "3,035.99",
+  "note": ""
+ },
+ "option_a_saving_vs_plan": {
+  "value": 7794,
+  "cny": "77.94",
+  "note": ""
+ },
+ "option_a_old_100_yuan_face_cost": {
+  "value": 302777,
+  "cny": "3,027.77",
+  "note": "stale figure: face rounded to 100 (257,200.00), the version before the 16 Oct addendum"
+ },
+ "option_a_lowest": {
+  "value": 30000000,
+  "cny": "300,000.00",
+  "note": "day 30"
+ },
+ "option_b_per_invoice_cost": {
+  "value": 124753,
+  "cny": "1,247.53",
+  "note": "420,000 x 10/365 x 10.8417%"
+ },
+ "option_b_price_bp": {
+  "value": 30,
+  "cny": null,
+  "note": ""
+ },
+ "option_b_13_ext": {
+  "value": 1621795,
+  "cny": "16,217.95",
+  "note": ""
+ },
+ "option_b_13_price_gain": {
+  "value": -1638000,
+  "cny": "-16,380.00",
+  "note": ""
+ },
+ "option_b_net_13": {
+  "value": -16205,
+  "cny": "-162.05",
+  "note": ""
+ },
+ "option_b_unfunded_day47": {
+  "value": 21500000,
+  "cny": "215,000.00",
+  "note": "before any funding: the day-2 invoice now pays on day 57"
+ },
+ "option_b_unfunded_lowest": {
+  "value": -10500000,
+  "cny": "-105,000.00",
+  "note": "day 30"
+ },
+ "option_b_funding_line": {
+  "value": 89951,
+  "cny": "899.51",
+  "note": "90,000 x 6.4% x 57/365"
+ },
+ "option_b_funding_if": {
+  "value": 280695,
+  "cny": "2,806.95",
+  "note": "315,000, one whole period"
+ },
+ "option_b_funding_total": {
+  "value": 370646,
+  "cny": "3,706.46",
+  "note": ""
+ },
+ "option_b_funding_vs_plan": {
+  "value": 59253,
+  "cny": "592.53",
+  "note": ""
+ },
+ "option_b_funded_lowest": {
+  "value": 30000000,
+  "cny": "300,000.00",
+  "note": "day 30"
+ },
+ "cure_if_interest": {
+  "value": 128219,
+  "cny": "1,282.19",
+  "note": "200,000 x 7.8% x 30/365 (10 days held, one period)"
+ },
+ "cure_if_fee": {
+  "value": 50000,
+  "cny": "500.00",
+  "note": ""
+ },
+ "cure_cost": {
+  "value": 178219,
+  "cny": "1,782.19",
+  "note": ""
+ },
+ "cure_effective_rate_pct": {
+  "value": "32.525",
+  "cny": null,
+  "note": "all charges / 200,000 x 365/10"
+ },
+ "cure_tariff_all_in_pct": {
+  "value": "10.8417",
+  "cny": null,
+  "note": "the same facility's tariff, for contrast"
+ },
+ "demo_cash_day34": {
+  "value": 30000000,
+  "cny": "300,000.00",
+  "note": "residual 160,000 overdue since day 32; line still drawn"
+ },
+ "demo_day42_without_cure": {
+  "value": 10000000,
+  "cny": "100,000.00",
+  "note": "the 200,000 month-2 payroll the bookkeeper added on day 25"
+ },
+ "demo_day42_if_residual_on_time": {
+  "value": 11196401,
+  "cny": "111,964.01",
+  "note": "even if the 160,000 had arrived on day 32 (and the line been repaid), day 42 would still breach"
+ },
+ "demo_line_interest_day47": {
+  "value": 121317,
+  "cny": "1,213.17",
+  "note": "147,210 x 6.4% x 47/365: the line stayed out 15 days longer than quoted"
+ },
+ "demo_total_charges": {
+  "value": 520536,
+  "cny": "5,205.36",
+  "note": "discount + line interest + cure interest + cure fee"
+ },
+ "demo_overrun_vs_quote": {
+  "value": 216937,
+  "cny": "2,169.37",
+  "note": ""
+ },
+ "demo_cash_day62": {
+  "value": 38479464,
+  "cny": "384,794.64",
+  "note": ""
+ },
+ "demo_lowest_after_deal": {
+  "value": 30000000,
+  "cny": "300,000.00",
+  "note": "day 30"
+ },
+ "demo_cash_identity": {
+  "value": 38479464,
+  "cny": "384,794.64",
+  "note": "cash day 62 = 400k + two receipts - all outflows - all charges"
+ },
+ "dscr_untouched": {
+  "value": "2.0",
+  "cny": null,
+  "note": "90,000 / 45,000, month by month"
+ },
+ "leverage_untouched_m1": {
+  "value": "1.3472",
+  "cny": null,
+  "note": "1,455,000 / 1,080,000"
+ },
+ "leverage_with_plan_m1": {
+  "value": "1.7222",
+  "cny": null,
+  "note": "the line and the advance are still drawn at month-1 end (day 30)"
+ },
+ "dscr_with_plan_m2": {
+  "value": "1.8706",
+  "cny": null,
+  "note": "plan charges posted in month 2"
+ },
+ "dscr_ggl_500k": {
+  "value": "1.0141",
+  "cny": null,
+  "note": "bullet loan serviced on a level basis"
+ },
+ "dscr_ebitda_minus_20": {
+  "value": "1.4964",
+  "cny": null,
+  "note": ""
+ },
+ "leverage_ebitda_minus_20": {
+  "value": "2.1528",
+  "cny": null,
+  "note": ""
+ },
+ "stress_10d_late_cost": {
+  "value": 564925,
+  "cny": "5,649.25",
+  "note": "line to day 42 + advance day 3->42 (2 periods)"
+ },
+ "stress_10d_late_advance_rate_pct": {
+  "value": "16.68",
+  "cny": null,
+  "note": ""
+ },
+ "capex_structures": {
+  "value": {
+   "loan_18m": {
+    "payment": 3483060,
+    "interest": 2695084,
+    "pv_payments_at_10pct": 58187933,
+    "first_instalment_day": 44,
+    "dscr_m1": 1.1274
+   },
+   "loan_36m": {
+    "payment": 1814462,
+    "interest": 5320614,
+    "pv_payments_at_10pct": 56586630,
+    "first_instalment_day": 44,
+    "dscr_m1": 1.4253
+   },
+   "lease_48m": {
+    "payment": 1442349,
+    "interest": 9232732,
+    "pv_payments_at_10pct": 57335975,
+    "first_instalment_day": 40,
+    "dscr_m1": 1.5146
+   }
+  },
+  "cny": null,
+  "note": ""
+ },
+ "capex_lease_minus_loan36": {
+  "value": 3912118,
+  "cny": "39,121.18",
+  "note": "undiscounted charges"
+ },
+ "capex_lease_minus_loan36_pv": {
+  "value": 749345,
+  "cny": "7,493.45",
+  "note": "PV of the payments at the 10% hurdle (effective monthly), fen rounded"
+ },
+ "capex_npv": {
+  "value": 38088577,
+  "cny": "380,885.77",
+  "note": "-600,000 + 22,000 a month, months 4-60, at (1.10)^(1/12)-1; no residual value, tax or maintenance; unlevered"
+ },
+ "capex_payback_month": {
+  "value": 31,
+  "cny": null,
+  "note": "simple, undiscounted"
+ },
+ "capex_discounted_payback_month": {
+  "value": 35,
+  "cny": null,
+  "note": "at the 10% hurdle"
+ },
+ "capex_loan36_day44": {
+  "value": 29685538,
+  "cny": "296,855.38",
+  "note": "untouched books after RCV-A (315,000) minus instalment"
+ },
+ "capex_loan36_shortfall": {
+  "value": 314462,
+  "cny": "3,144.62",
+  "note": ""
+ },
+ "capex_loan36_bridge": {
+  "value": 165,
+  "cny": "1.65",
+  "note": "3 days on the line"
+ },
+ "capex_lease_day40_untouched": {
+  "value": 30057651,
+  "cny": "300,576.51",
+  "note": ""
+ },
+ "capex_lease_day40_with_plan": {
+  "value": 29746258,
+  "cny": "297,462.58",
+  "note": "after FLOW's plan has paid its 3,113.93 on day 32: below the reserve"
+ },
+ "capex_lease_shortfall_with_plan": {
+  "value": 253742,
+  "cny": "2,537.42",
+  "note": ""
+ },
+ "capex_loan36_day44_with_plan": {
+  "value": 29374145,
+  "cny": "293,741.45",
+  "note": ""
+ },
+ "capex_lease_bridge_with_plan": {
+  "value": 311,
+  "cny": "3.11",
+  "note": "days 40-46 on the line (repaid on the day-47 receipt)"
+ },
+ "capex_loan36_bridge_with_plan": {
+  "value": 329,
+  "cny": "3.29",
+  "note": "days 44-46"
+ },
+ "capex_loan36_minus_lease_net_of_bridge": {
+  "value": 3911953,
+  "cny": "39,119.53",
+  "note": ""
+ }
+}
