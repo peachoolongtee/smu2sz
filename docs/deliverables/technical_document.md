@@ -109,7 +109,10 @@ agents over their own credit and bill products (MYbank's 2026 small-business age
 and decides alone whether to accept 60-day terms, and separately, often later, whether to borrow to survive them.
 
 **The insight: a longer payment term is a loan from the supplier to the buyer.** It moves no money today, so spending limits
-and approval rules let it through, but the supplier has to fund the gap. On the demo company, whose largest buyer, Foshan Home
+and approval rules let it through, but the supplier has to fund the gap. This is why the usual safeguards in SME finance
+tools, which act on money leaving the business (payment approvals, two-person sign-off, spending limits, kill switches),
+cannot protect the supplier here: by the time a payment exists, the commitment that caused it was agreed weeks earlier.
+FLOW works upstream, at the request itself, and still keeps those controls on every operation that moves money. On the demo company, whose largest buyer, Foshan Home
 Retail, receives a ¥420,000 invoice every 30 days on 45-day terms, the buyer's request (EX01) asks for three things:
 
 - **Terms from 45 to 60 days on every future invoice.** That ties up ¥210,000 more in receivables on average (¥420,000 for 15
