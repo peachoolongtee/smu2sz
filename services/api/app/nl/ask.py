@@ -305,6 +305,61 @@ def _fallback(ctx: NlContext, topic: str, slots: Slots, text: str, use_router: b
     return cannot_yet(ctx, topic)
 
 
+def note_pending(ctx: NlContext, got: Any, question: str) -> None:
+    """An answer that asked which customer (`extra.needs == "customer"`) leaves the tool and the slots already read in the session, so
+    the owner's next turn that names a customer finishes the question with them (the new terms are not forgotten)."""
+    from app.nl.sessions import PendingAsk
+
+    extra = (got.get("extra") if isinstance(got, dict) else getattr(got, "extra", None)) or {}
+    if extra.get("needs") == "customer" and extra.get("tool"):
+        ctx.session.pending_ask = PendingAsk(str(extra["tool"]), dict(extra.get("slots") or {}), question)
+
+
+_SHORT_REPLY_WORDS = 6
+_SHORT_REPLY_CHARS = 40
+
+
+def resume_parse(ctx: NlContext, pending: Any, text: str) -> Parsed | None:
+    """The owner's turn after "which customer?": a short reply that names exactly one customer finishes the pending question. Anything
+    else (a new question, a name the books do not have, two customers) is not an answer to it and is read as usual."""
+    from app.nl.answers.metrics import Reading
+    from app.nl.router.tools.common import resolve_customer
+
+    said = text.strip()
+    if not said or len(said) > _SHORT_REPLY_CHARS or len(said.split()) > _SHORT_REPLY_WORDS:
+        return None
+    res = resolve_customer(Reading.of(ctx), said)
+    if res.buyer_id is None:
+        return None
+    ctx.resumed_ask = (pending, res.buyer_id)
+    return Parsed(intent=Intent.ASK_BOOKS, slots=Slots(question=pending.question, counterparty_id=res.buyer_id, execute_now=False),
+                  source="clarification", matched=["ask", "ask:resume"])
+
+
+def _resume_ask(ctx: NlContext) -> Turn | None:
+    """Run the tool that asked which customer, with the slots it had read and the customer now named: the same answer the question
+    would have had if it had named the customer."""
+    from app.nl import answer_card
+    from app.nl.router import catalogue
+
+    pending, buyer = ctx.resumed_ask
+    ctx.resumed_ask = None
+    tool = catalogue.TOOLS.get(pending.tool)
+    name = next((c.name for c in ctx.state().counterparties if c.id == buyer), None)
+    if tool is None or name is None:
+        return None
+    try:
+        got = tool.answer(ctx, ctx.lang, {**pending.slots, "customer": name})
+    except EngineError:
+        return None
+    text = _reply_text(got, ctx.lang)
+    if not text:
+        return None
+    note_pending(ctx, got, pending.question)
+    return Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": "resume", "metric_ids": _metric_ids(got), "tool": pending.tool}},
+                card=answer_card.from_reply(got, ctx.lang, ctx.state()))
+
+
 def router_reply(ctx: NlContext, question: str) -> tuple[str, list[str], list[str]] | None:
     """The router's answer (its text, its metric ids, the tools it ran), or None: the flag is off, the turn is not the
     owner's, or the router has no route (cache miss, failure, rejection, nothing fits). Read-only (ADR-0015)."""
@@ -323,6 +378,7 @@ def router_reply(ctx: NlContext, question: str) -> tuple[str, list[str], list[st
     if got is None or not text:
         return None
     tools = (got.extra or {}).get("router", {}).get("tools", [])
+    note_pending(ctx, got, question)
     return text, _metric_ids(got), [str(x) for x in tools]
 
 
@@ -466,6 +522,8 @@ def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         from app.nl import capabilities as cap
 
         return cap.needs_sign_in(ctx, Intent.ASK_BOOKS)  # nothing is read, disclosed or logged
+    if ctx.resumed_ask is not None and (resumed := _resume_ask(ctx)) is not None:
+        return resumed
     if topic.startswith("tier3:"):
         return tier3_info(ctx, topic.split(":", 1)[1], question)
     if topic.startswith("not_held:"):
@@ -474,6 +532,7 @@ def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         from app.nl import answer_card
 
         text = _reply_text(got, ctx.lang) or ""
+        note_pending(ctx, got, question)
         return Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": topic, "metric_ids": _metric_ids(got)}},
                     card=answer_card.from_reply(got, ctx.lang, ctx.state()))  # the card's figures and links; laid out in the response
     return _fallback(ctx, topic, slots, text, use_router=NO_ROUTER not in p.matched)

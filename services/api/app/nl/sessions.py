@@ -59,6 +59,17 @@ class PendingClarification:
     options: list[ClarifyOption]
     slots: Slots
     values: dict[str, Any] = field(default_factory=dict)  # option id -> typed slot value
+    text: str = ""  # the owner's words that raised the question: the answer resumes THEM ("60 days instead of 45"), not "Foshan"
+
+
+@dataclass
+class PendingAsk:
+    """A read-only question that asked which customer (app/nl/ask.py): the tool that was running and the slots already read from the
+    question (the new terms, the rate ...). The owner's next turn that names a customer finishes it with those slots; any other turn drops it."""
+
+    tool: str
+    slots: dict[str, Any]
+    question: str
 
 
 @dataclass
@@ -82,6 +93,7 @@ class Session:
     offer_fixtures: dict[str, str] = field(default_factory=dict)  # offer id -> fixture id (declared costs)
     pending_plan: PendingPlan | None = None
     pending_clarification: PendingClarification | None = None
+    pending_ask: PendingAsk | None = None
     requests: dict[str, list[Any]] = field(default_factory=dict)  # request_id -> typed ops sent
     history: list[tuple[int, str]] = field(default_factory=list)  # (turn, intent)
     # approval ids the previous turn showed the owner: the only queue items a bare "approve it" / "yes" may decide
