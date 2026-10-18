@@ -31,8 +31,10 @@ mode, which is outside every security certification.
   usually decides the first alone, from a chat message, and discovers the second later.
 - **Why it matters financially.** On the demo company's books, a buyer asks for 60-day terms instead of 45, 1.2% off for
   paying one invoice early and a 1% rebate. Priced at the supplier's own cost of borrowing, accepting as asked gives away
-  **CNY 33,366.92**: a ¥5,040 discount now and ¥28,326.92 of future concessions over the next 365 days, 5.7 times the
-  owner's limit for such promises. It also takes cash below the owner's safety reserve from day 47.
+  **CNY 33,366.92**: a ¥5,040 discount now and ¥28,326.92 of future concessions, 5.7 times the owner's limit for such
+  promises. Of these, ¥24,326.92 are valued concessions on the invoices issued during the next 365 days (an exposure
+  valuation, not cash necessarily paid in that window) and ¥4,000 is the rebate. It also takes cash below the owner's safety
+  reserve from day 47.
 - **Where the model works.** Three places only, each with a closed, typed output that code checks: **reading** buyer
   messages and contracts into typed terms tied to the words they came from; **classifying** an owner's chat request the
   deterministic parser cannot read; and **routing** an owner's question to at most three of 40 read-only tools (Table 4).
@@ -99,10 +101,11 @@ and approval rules let it through, but the supplier has to fund the gap. On the 
 Retail, receives a ¥420,000 invoice every 30 days on 45-day terms, the buyer's request (EX01) asks for three things:
 
 - **Terms from 45 to 60 days on every future invoice.** That ties up ¥210,000 more in receivables on average (¥420,000 for 15
-  days in every 30). Priced at 10.84% a year, the all-in rate of invoice financing, the cheapest committed source that the
-  credit line's 30-day clean-down rule allows, each invoice's 15 extra days cost ¥1,871.30, which is **¥24,326.92 over the 13
-  invoices issued in the next 365 days**. (10.84% is a tariff equivalent; an advance held for less than a whole 30-day period
-  costs more.)
+  days in every 30). Priced at 10.84% a year, a pricing proxy (tariff equivalent): the all-in rate of invoice financing, the
+  cheapest committed source the credit line's 30-day clean-down rule leaves for a recurring need. Each invoice's 15 extra days
+  are valued at ¥1,871.30, so the request carries **¥24,326.92 of valued concessions on the invoices issued during the next 365
+  days** (13 invoices; an exposure valuation, not cash necessarily paid in that window). An advance held for less than a whole
+  30-day period costs more than the proxy.
 - **A 1.2% discount for paying the current ¥420,000 invoice early:** ¥5,040, given up now.
 - **A 1% rebate on next quarter's expected ¥400,000 of orders,** counted at its maximum, ¥4,000.
 
@@ -176,12 +179,15 @@ operation has passed the executor's checks; a **recorded** commitment is in the 
 | **Total** | **¥3,035.99** | **¥5,205.36** |
 
 The supplier kept its 45-day terms and gave no rebate. It avoided ¥28,326.92 of future concessions, the ¥5,040 discount and a
-day-47 breach, and the reserve held on every day (Figure 2). Assumptions: the ¥160,000 is paid on day 36 and the next invoice
-on its due day 47; the owner approves on day 34; no other cash flow is added.
+day-47 breach, and the reserve held on every day. Figure 2a compares the financing alternatives like for like; Figure 2b
+shows the disruption and cure as the demo ran them. Assumptions: the ¥160,000 is paid on day 36 and the next invoice on its
+due day 47; the owner approves on day 34; no other cash flow is added.
 
 <!-- figure: figures/screens/screen2-deal-verdict.png | Figure 1. Foshan's request after FLOW checked it (web app on recorded mocks, build 571ea64f). (1) The verdict: counter with Option A. (2) Why the request cannot be accepted as asked. (3) Option A is within the signed mandate. (4) Nothing is sent until the owner sends it. (5) The priced choices: Option A, early payment on up to ¥260,000 at 0.85%, costs ¥3,035.99; Option B is 55-day terms with a 0.30% price rise. | h=3.4 -->
 
-<!-- figure: figures/fig11-cash-scenarios.png | Figure 2. The demo company's closing cash, days 0 to 62, against the ¥300,000 reserve. Today's books fall to −¥105,000 on days 30–31; FLOW's standing plan (¥3,113.93) touches the reserve on day 30 and never goes below it; the request accepted as asked falls ¥90,040 short on day 47; Option A as the demo runs it holds the reserve every day, including the new ¥200,000 payroll on day 42. Data: the financial audit's independent recomputation, equal to the engine to the fen (synthetic golden books, mandate v1, build 571ea64f). | h=3.6 -->
+<!-- figure: figures/fig11a-financing-alternatives.png | Figure 2a. Like-for-like financing alternatives: closing cash on the same day-0 books and the same scheduled events, against the ¥300,000 reserve. Today's books with no new funding fall to −¥105,000 on days 30–31; FLOW's standing plan (¥3,113.93) touches the reserve on day 30 and never goes below it; EX01 accepted as asked falls ¥90,040 short on day 47 (¥135,040 at worst, day 60); Option A (¥3,035.99) and Option B with its funding (¥3,706.46) hold the reserve. Data: the financial audit's independent recomputation, equal to the engine to the fen (synthetic golden books, mandate v1). | h=3.3 -->
+
+<!-- figure: figures/fig11b-disruption-and-cure.png | Figure 2b. The subsequent disruption and cure, as the demo ran them after Option A was agreed: a second ¥200,000 payroll scheduled for day 42, Foshan's ¥160,000 paid late (due day 32, received day 36), and the ¥200,000 advance FLOW proposed on day 34, approved by the owner and landed on day 37. The reserve holds on every day; the posted cost is ¥5,205.36 (Table 2). | h=3.3 -->
 
 **What is new.** Negotiation agents, cash-flow forecasts, loan marketplaces and covenant monitoring each exist. Pactum's agents
 negotiate for the buyer; MYbank's agents tailor the lender's own products; Xero's cash-flow actions work from the ledger;
@@ -279,8 +285,8 @@ supplier payment on day 20; a ¥100,000 bill on day 47; a ¥1,500,000 loan repai
 ¥90,000 a month; Foshan's ¥420,000 invoice due on day 32 and another every 30 days from day 2, on 45-day terms. The signed
 mandate: a ¥300,000 reserve; a ¥5,000 cap on future concessions; DSCR at least 1.25×, leverage at most 2.5×; funding above 15%
 a year and commitments above ¥100,000 of future concessions need the owner. The committed facilities are a ¥150,000 credit line
-(6.4%, 30-day clean-down), invoice financing (up to 80% of an invoice, 7.8% + 0.25% per whole 30-day period, 10.84% all-in
-tariff equivalent), the buyer's early-payment offer and bill discounting; uncommitted loans and a lease count as zero
+(6.4%, 30-day clean-down), invoice financing (up to 80% of an invoice, 7.8% + 0.25% per whole 30-day period; 10.84% all-in, a
+pricing proxy (tariff equivalent)), the buyer's early-payment offer and bill discounting; uncommitted loans and a lease count as zero
 (Appendix F, Table F2). Fixtures add 12 worked offers, three held-out message sets, three demo contracts and alternative books;
 70 synthetic Chinese contracts are kept outside the repository.
 
@@ -356,7 +362,8 @@ verdict is not standing authority: the executor re-checks at acceptance and appr
 **1. Daily cash trajectory.** `closing(t) = opening(t) + inflows(t) − outflows(t) − financing costs(t)`, tested against the
 reserve every day. Conservative: unconfirmed inflows and overdue receivables are ignored, only committed facilities count, a
 contingent concession counts at its maximum. Recurring invoices are assumed paid on time, so stress tests cover late payment
-(Appendix E). Invoice financing bills whole 30-day periods, so a shorter hold costs more than its 10.84% tariff.
+(Appendix E). Invoice financing bills whole 30-day periods, so a shorter hold costs more than its 10.84% pricing proxy (tariff
+equivalent).
 
 **2. Funding router.** The cheapest plan that keeps closing cash at or above the reserve every day, breaks no covenant and is
 allowed by the mandate, over up to three actions on a ¥10,000 grid, each requested today and landing after its lead time. A
@@ -364,9 +371,10 @@ plan FLOW may run alone ranks before a cheaper one that needs the owner; a plan 
 yet is labelled "cannot run today". It is within ¥1 of a bounded brute-force search on 26 of 26 scenarios: optimal within its
 search space, not over every amount or date.
 
-**3. Marginal cost and break-even.** FLOW prices a concession at invoice financing's 10.84% all-in, the cheapest committed
-source the credit line's clean-down rule allows to carry a permanent need; it is a pricing rate, not an executable quote (the
-platform advances at most 80% of an invoice and bills whole periods). A discount d beats borrowing only if d < c/(1+c), where c
+**3. Marginal cost and break-even.** FLOW prices a concession at 10.84%, a pricing proxy (tariff equivalent): invoice
+financing's all-in rate, the cheapest committed source the credit line's clean-down rule leaves for a recurring need. It is not
+an executable quote: the platform advances at most 80% of an invoice and bills whole 30-day periods, so no committed source
+carries the whole recurring need at that rate. A discount d beats borrowing only if d < c/(1+c), where c
 is that source's cost for the days paid early: for 30 days c = 0.8911%, so the break-even is **0.8832%**. An early payment is
 accepted only if it is below break-even, the cash is needed and it is cheaper than the plan without it (ADR-0007).
 
@@ -381,9 +389,11 @@ figure of EX01.
 
 **5. Capex screening.** FLOW screens each financing structure for a planned machine (cash with the line, 18- and 36-month
 loans, a 48-month lease) for daily liquidity and monthly covenants, one structure at a time, and ranks the feasible ones by
-undiscounted charges. On the synthetic ¥600,000 machine it selects the lease (¥92,327.32 of charges); the 36-month loan alone
-leaves cash ¥3,144.62 below the reserve for three days. A 36-month loan plus a three-day bridge on the line would cost **CNY
-7,493.45** less than the lease in present value, so the selection is the best *standalone* structure (Appendix F).
+undiscounted charges. On the synthetic ¥600,000 machine the screening ranks the lease first (¥92,327.32 of charges); the
+36-month loan alone leaves cash ¥3,144.62 below the reserve for three days. **A limitation of the current screening method:**
+a 36-month loan plus a small three-day bridge on the line would beat the chosen lease, at **CNY 7,493.45** less in present
+value, but the method tests one structure at a time and does not try that combination. FLOW screens structures; it does not
+claim to select the best financing (Appendix F).
 
 #### Evaluation approach: how to read our numbers
 
@@ -633,8 +643,8 @@ fail on a busy machine (set `SKIP_PERF_BENCH=1` on Windows).
 - **Settlement dates.** Good early-payment offers that name a settlement date go to the owner (Table 5); reading them is next.
 - **Funding search.** Up to three actions on a ¥10,000 grid, all requested today; 6 of 26 plans rely on actions FLOW cannot run
   yet and are labelled "cannot run today".
-- **Capex.** The search compares standalone structures only. It misses a loan plus a short bridge, which on the demo would save
-  about ¥39,000.
+- **Capex screening method.** It compares standalone structures only, so a loan plus a small bridge, which on the demo beats the
+  lease it ranks first (CNY 7,493.45 in present value), is not tried. FLOW does not claim to select the best financing.
 - **Contracts.** 75% of fields on unseen text-layer contracts; no OCR; one repeating invoice per contract is set up.
 - **Extra requests** are found by cue words and figures. A request with neither could pass the coverage check, but only for a
   pure early-payment discount below break-even.
@@ -851,7 +861,7 @@ breach lasts 15 days (47 to 61).
 | --- | --- | --- | --- | --- | --- |
 | Today's books, no request | none | −¥105,000 (days 30–31); below the reserve days 12–31 (20 days), at worst ¥405,000 short | — | ¥0 | — |
 | Today's books + FLOW's standing plan | line ¥150,000 + invoice financing ¥255,000 | ¥300,000 (day 30); no breach | — + **¥3,113.93** | ¥0 | yes; Tier 1 |
-| **EX01 as asked** (1.2% early pay, 60-day terms, rebate), no new funding | none | ¥164,960 (day 60); first day 47, ¥90,040 short; worst day 60, **¥135,040** short; 15 days | ¥5,040.00 + — | **¥28,326.92** (terms ¥24,326.92 over 13 invoices + rebate ¥4,000), against a ¥5,000 cap | **Rejected**: concession cap, reserve, above break-even, dearer than the plan |
+| **EX01 as asked** (1.2% early pay, 60-day terms, rebate), no new funding | none | ¥164,960 (day 60); first day 47, ¥90,040 short; worst day 60, **¥135,040** short; 15 days | ¥5,040.00 + — | **¥28,326.92** (terms: ¥24,326.92 of valued concessions on the 13 invoices issued during the next 365 days, an exposure valuation, not cash paid in that window; + rebate ¥4,000), against a ¥5,000 cap | **Rejected**: concession cap, reserve, above break-even, dearer than the plan |
 | EX01 + its cheapest cure | invoice financing ¥135,040 on an invoice issued on day 32 | ¥300,000; no breach | ¥5,040.00 + ¥2,406.67 | ¥28,326.92 | **no**: the invoice does not exist yet |
 | EX01 + the plan that can run | credit line ¥135,040, drawn today, repaid day 62 | ¥300,000; no breach | ¥5,040.00 + ¥1,468.05 | ¥28,326.92 | yes |
 | **Option A** (FLOW's counter) | credit line ¥147,210 | ¥300,000 (day 30); no breach | ¥2,210.00 (¥260,000 at 0.85%) + ¥825.99 = **¥3,035.99** | ¥0 | yes; **Accept, Tier 1** |
@@ -859,7 +869,8 @@ breach lasts 15 days (47 to 61).
 
 *The early-payment test inside the verdict: on the same terms, funding costs ¥6,508.05 with the early payment and ¥3,873.58
 without it, so the early payment is dearer and is countered.* *Funding cost and future concessions overlap: the EX01 cure pays
-for the cash effect of the first invoice's 15 extra days, which ¥24,326.92 already prices. Do not add them.* Option B offers 55
+for the cash effect of the first invoice's 15 extra days, which the ¥24,326.92 of valued concessions already prices. Do not add
+them.* Option B offers 55
 days, not 60, because at 60 days a later invoice would land after a loan payment with no committed cure.
 
 **Table F2. The demo company's funding options (synthetic; only the owner can add to them).**
@@ -867,7 +878,7 @@ days, not 60, because at 60 days a later invoice would land after a loan payment
 | Facility | Status | Price | Time to cash |
 | --- | --- | --- | --- |
 | Bank credit line, ¥150,000 limit, 30-day clean-down | Committed | 6.4% simple, Actual/365 | same day |
-| Invoice financing, up to 80% of an invoice's open face, ¥350,000 limit | Committed | 7.8% + 0.25% per whole 30-day period (10.84% all-in tariff equivalent) | 3 days |
+| Invoice financing, up to 80% of an invoice's open face, ¥350,000 limit | Committed | 7.8% + 0.25% per whole 30-day period (10.84% all-in: a pricing proxy (tariff equivalent)) | 3 days |
 | Buyer early-payment offer | Committed | 1.2% discount | 2 days |
 | Bank acceptance-bill discounting | Committed (no bill held at the start) | 0.58% a year | 1 day |
 | Government-guaranteed working-capital loan | Not applied | 5.0% all-in | 21 days |
@@ -877,8 +888,9 @@ days, not 60, because at 60 days a later invoice would land after a loan payment
 **Capex, in detail.** The ¥600,000 machine earns +¥22,000 a month from month 4 to month 60 (no residual value, tax or
 maintenance): NPV ¥380,885.77 at a 10% hurdle, simple payback in month 31, discounted payback in month 35. Once FLOW's
 ¥3,113.93 plan has been paid, every structure needs a few days' bridge on the line (the lease ¥3.11, the 36-month loan ¥3.29).
-The loan-plus-bridge combination has about ¥39,000 less interest than the lease undiscounted across a 36- and a 48-month
-tenor, and CNY 7,493.45 in present value. The owner's approval of an application records a simulated pending facility, which
+The loan-plus-bridge combination, which the one-structure-at-a-time screening does not try (a limitation of the current
+method), has about ¥39,000 less interest than the lease undiscounted across a 36- and a 48-month tenor, and CNY 7,493.45 less in
+present value. The owner's approval of an application records a simulated pending facility, which
 counts as zero until a lender commits. Around the screening, the Capex hub reads purchase contracts (*Commit* is Tier 2; a
 committed purchase has no cancel path yet, CAPEX-NC), shows financial health, reads four illustrative catalogue loans against
 the books, ranks long-term plans by NPV, and builds a lender-style borrower file that is prepared, never sent.
@@ -1066,7 +1078,7 @@ records, evidence and security (`docs/deliverables/video/README.md`).
    "approve it" when FLOW's previous reply named that one request (section 03); "sign a personal guarantee" is refused for
    everyone. Appendix G has the rest.
 9. **What-if and strategy.** *Try other terms* at 45 days instead of 60 turns the verdict into a counter; nothing is written.
-10. **Capex** (Figure 13). *Test a machine without a contract* screens the ¥600,000 machine (section 03, algorithm 8); *Apply*
+10. **Capex** (Figure 13). *Test a machine without a contract* screens the ¥600,000 machine (section 03, algorithm 5); *Apply*
     queues a Tier-2 application; *Read the demo vendor contract* and *Commit, paying early* wait on Approvals.
 11. **Records, evidence and security.** Activity seals each operation to the one before it; *Download JSONL* exports the
     record for `scripts/verify_evidence.py`; *Run the FastCapital scene* sends a hostile "pre-approved lender" message: the
@@ -1104,7 +1116,7 @@ records, evidence and security (`docs/deliverables/video/README.md`).
 | Hard rule | A rule no approval can waive: the concession caps, the covenants, a reserve breach no committed funding can cure, an invalid mandate, Tier 3 |
 | Approval threshold | A limit above which the owner must approve: a commitment's future concessions above ¥100,000, or funding the agent requests above 15% a year |
 | Golden books | The synthetic demo company, with expected values from an independent oracle |
-| Marginal cost of funds | The all-in rate of the cheapest committed source able to carry a permanent need: 10.84% |
+| Marginal cost of funds | 10.84%, a pricing proxy (tariff equivalent): invoice financing's all-in rate, the cheapest committed source the credit line's clean-down rule leaves for a recurring need. Not an executable quote: the platform advances at most 80% of an invoice's face and bills whole 30-day periods, so no committed source carries the whole recurring need at that rate |
 | Break-even discount | The largest early-payment discount cheaper than that source: 0.8832% for 30 days |
 | Future concession | A promise that costs money later (longer terms, a rebate, a price change), valued at the marginal cost of funds |
 | Coverage check | The compiler's check, over its supported language patterns, that every figure and request cue in a message is accounted for (ADR-0005). A request with no recognised cue or figure can escape it |
