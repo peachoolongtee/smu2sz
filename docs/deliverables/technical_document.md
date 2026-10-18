@@ -17,8 +17,9 @@ only one component, the executor, can change the books. Every action is recorded
 This is a working simulation. The engine, agent, security controls and web app are real code. The buyers, lenders and bank
 feed are simulated, and no real money moves.
 
-**Table 1. FLOW at a glance (offline. Engine, agent and test figures: `dev` at `975e082f`, 17 October 2026. Attack and
-Ask FLOW figures: `int/batch-9` at `b4167053`, 18 October 2026. Table 14 gives each source).**
+**Table 1. FLOW at a glance (offline. Engine, agent and test figures: `dev` at `975e082f`, 17 October 2026. Ask FLOW
+figures: `int/batch-9` at `b4167053`, 18 October 2026. Attack figures: `int/round-five` at `1294e941`, 18 October 2026.
+Table 14 gives each source).**
 
 | What | Result |
 | --- | --- |
@@ -27,7 +28,7 @@ Ask FLOW figures: `int/batch-9` at `b4167053`, 18 October 2026. Table 14 gives e
 | Funding router | Optimal against an exhaustive brute force on 26/26 scenarios |
 | Safety | 0 wrong autonomous accepts on two held-out sets (115 buyer messages) |
 | Usefulness | Answers 57 of 115 held-out buyer messages with no owner involvement. Only 3 of the 14 genuinely acceptable offers are accepted on its own; the other 11 go to the owner for one review (section 03, Table 8) |
-| Security | 261 stored attack cases (128 through the API, 133 through chat): 0 violations of the defined harm oracles in each specified run. Reviewed and certified by the team's Security Lead, an AI agent in a separate session (an internal review, not external accreditation) |
+| Security | 279 stored attack cases (128 through the API, 151 through chat): 0 violations of the defined harm oracles in each specified run. Reviewed and certified by the team's Security Lead, an AI agent in a separate session (an internal review, not external accreditation) |
 | Agent tasks | 49/49 scripted conversations completed, each with a verifiable evidence chain |
 | Owner questions | Ask FLOW answers 303 of 503 owner, CEO and CFO questions (122 questions in English and Chinese, with rewordings) directly from the books, 46 partly, with 0 wrong answers. On 345 everyday wordings it reaches the right answer for 327 (held-out part: 127 of 142, 89.4%) and a wrong topic for 3 (0.9%). A question is answered, never acted on |
 | Product | Setup, a daily view, documents, customers, deals, money over time, a chat, what-if and strategy views, capex and an evidence export: every screen in Table 3, and a supplier's journey through them in Appendix E |
@@ -139,7 +140,7 @@ them in order.
 | --- | --- | --- |
 | **Set up your books** (`/setup`, six steps) | Enters the company, cash, monthly sales and costs; credit lines and loans being repaid; customers with repeating contracts and unpaid invoices; bills coming up; the limits (minimum cash, the rate FLOW may borrow at alone, concessions a year, the approval threshold, covenants, validity). Can fill a lender or customer step from an uploaded agreement. Re-types the owner token to sign | Checks each step, shows a 90-day "First look" at what Home will say, signs mandate version 1 and opens the books with one entry that starts a new evidence chain. Bills and limits are fixed after setup; changing them means a new setup and a new signature |
 | **Home** (`/`) | Sees whether cash is safe and what waits | The cash outlook (lowest cash ahead, the forecast with its events, *What we recommend*: the plan, its cost and whether it needs approval); *Your worklist* (needs you, waiting, customers); cash available today with a funding ring; upcoming movements, including what customers owe late; what is owed, by customer |
-| **Attach deals** (`/documents`) | Drops a contract or lender agreement, then picks who it is with from the list of known companies, or adds a new customer from that list | Reads every term beside its clause; checks that the contract names the chosen company; offers to refile a misfiled reading; after *Confirm*, says what was saved, under which customer, and that the forecast is unchanged. Compares a lender agreement with the facility in the books. From a confirmed customer contract, *Set up in my books* adds its repeating invoice (Tier 2, undoable; ADR-0014) |
+| **Attach deals** (`/documents`) | Drops a contract or lender agreement, then picks who it is with from the list of known companies, or adds a new customer from that list | Reads every term beside its clause; checks that the chosen company is the contract's buyer, vendor or lender, as its kind needs; offers to refile a misfiled reading; after *Confirm*, says what was saved, under which customer, and that the forecast is unchanged. Compares a lender agreement with the facility in the books. From a confirmed customer contract, *Set up in my books* adds its repeating invoice (Tier 2, undoable; ADR-0014) |
 | **A customer** (`/customers/{id}`) | Opens any customer by name | What the customer is worth, what is outstanding, the financing linked to it and its share of what the business is owed; the receivable-to-cash flow; its deals and record; how it has paid; concentration and exposure, with a link that redraws Cash with that customer 30 days late; an inputs sheet for facts the books do not hold |
 | **Deals** (`/deals`) | Reads buyer messages, checks a request, sends or copies the reply, records the buyer's answer, accepts as asked or declines | *Buyer messages*; *Your deals*, filed by who owes the next step (all, needs you, waiting, agreed); the verdict with Options A and B; *Cash impact* with business consequences and *Before they ask*; *Your agreements*, grouped by payment late, awaiting payment and closed, with a row for a contract on file with no deal yet and for a customer with invoices only; each deal's lifecycle strip and tracker |
 | **Cash & funding** (`/cash`) | Runs or queues the plan | The plan, other plans considered, the 30/60/120-day forecast, the funding in use, the price of earlier cash, and the forecast with one customer paying late |
@@ -300,7 +301,7 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
   - Alternative books: busy, short of facilities, blank, and a set calibrated from a public filing.
 - **The owner's own books.** On blank books, the setup wizard turns what the owner types (and the agreements it reads)
   into books of the same shape.
-- **Test suites.** The 261-case attack catalogue, the 49 scripted agent tasks, the 503-turn owner-question bank and the
+- **Test suites.** The 279-case attack catalogue, the 49 scripted agent tasks, the 503-turn owner-question bank and the
   345 everyday owner wordings.
 
 **Table 6. The demo company's funding options (synthetic; only the owner can add to them).**
@@ -338,6 +339,14 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
   is answered from the books; it never proposes a repayment, compiles an offer, queues anything or writes to the log.
   Answers come from a read-only module of about 40 figures computed by the engine's own functions, so every number is the
   one the screens show, and each answer leads with the yes, the no or the figure.
+- **A Tier-3 request put as a question is still a request.** "Sign a personal guarantee?", "should we pledge the
+  equipment?" or 要不要签个人担保？ goes to the executor like the plain command: it is refused, logged and raises a Tier-3
+  security event. Only a question that plainly asks for information and proposes nothing ("What is a personal
+  guarantee?", "Is equity an option?") is answered, and only for the owner; the agent key's Tier-3 words are always a
+  request.
+- **A question never cancels a waiting plan.** Asked about an action while a plan waits for "go ahead" ("should we draw
+  ¥100,000 on the line?"), FLOW says that the earlier plan is still waiting, what it does and what it costs, and that "go
+  ahead" runs that plan, not what was just asked about.
 - **Everyday wording.** After the literal patterns, a scored matcher reads casual, misspelt or worried wording in both
   languages ("can my company survive this month?", 我们撑得过这个季度吗) and answers only when one question clearly wins. A
   horizon longer than the 120-day forecast is answered on the forecast and says so. A question about the business that no
@@ -416,21 +425,29 @@ operation from model output.
   on the books of that moment and refuses a commitment that no longer holds (STALE_VERDICT).
 - **The decision record** derives each deal's state from stored facts (ADR-0011).
 - **Contract records** hold a document's reading with each term's quoted clause and the owner's hash-bound decision
-  (ADR-0012). From a confirmed customer contract, the owner can set up that customer's repeating invoice in the books, so
-  the forecast counts it (ADR-0014).
+  (ADR-0012). From a confirmed customer contract, the owner can set up that customer's repeating invoice in the books; the
+  conservative forecast counts it from the first invoice the clock issues (ADR-0014).
 
 **From setup to settlement: what FLOW keeps track of.**
 - **Opening the books.** The setup wizard's six steps (section 01, Table 3) are checked by the server and previewed as a
   90-day forecast before anything is written. *Sign and open my books* signs mandate version 1 and writes one opening entry
   that heads a fresh evidence chain; it is refused once the books hold any activity.
 - **Documents.** The file comes first; the owner then picks the company from the books' list or adds a new customer from it
-  (Tier 2). The party check blocks *Confirm* when the contract does not name the chosen company and shows the companies it
-  does name; *refile* moves the reading to the right customer without a new model call. The confirmation card links to the
+  (Tier 2). The party check looks for the chosen company in the role the document's kind needs: the buyer of a customer
+  contract, the vendor of a purchase contract, the lender of a lender agreement. It matches by company (case, punctuation
+  and the legal-form suffix ignored), never by a first word or part of a name. It blocks *Confirm* when that party is
+  another company, and shows the companies the document does name; it also blocks a reading that found no party in that
+  role, and a lender agreement whose lender was not read, unless the agreement itself defines the chosen lender as a party
+  other than the borrower. The demo's lender agreements, picked from the list or uploaded unchanged under their own lender,
+  carry their lenders' names as the agreements write them. *Refile* moves the reading to the right customer without a new model call. The confirmation card links to the
   customer, the facility or the purchase. A lender agreement is compared with the facility already in the books and can be
   linked to it, which changes nothing in the facility.
 - **Customers.** Each customer's overview is computed from the books: gross contribution, outstanding, the financing linked
   to its invoices, its share of what the business is owed, its payment history, and its exposure: concentration, cash with
-  it paying 30 days late, the financing cost then and the capacity left.
+  it paying 30 days late, the financing cost then and the capacity left. A new customer is refused when its name looks like
+  a company already on the registry (look-alike letters, accents, or one name holding the other), reads as an id, is the
+  business's own name, or takes a short name another customer already answers to, including the short form the pages
+  show.
 - **Deals.** One queue files every request by who owes the next step. Once the owner has a reply, FLOW drafts it exactly;
   the owner sends it through the simulated buyer (Demo mode) or by their own channel, then records the buyer's yes, no or
   reply. When FLOW has no counter, *accept as asked* or *decline* is itself the owner's decision. A confirmed contract with
@@ -457,6 +474,7 @@ operation from model output.
   - Unconfirmed inflows are ignored.
   - Only committed facilities can be drawn; others count as zero.
   - A contingent concession counts at its maximum.
+  - A repeating invoice set up from a contract counts only once the clock has issued its first invoice (ADR-0014).
 - **What it does not cover.** Recurring invoices are assumed to be paid on their due day, so the forecast is not conservative
   about collections. The stress tests below cover that.
 - **Interest** is Actual/365 simple. Invoice financing bills whole 30-day periods.
@@ -661,8 +679,9 @@ never seen).
   - Wrong values fell from 31 to 21.
 - **The tuned batch scores 98%** (502 of 514) and stayed unchanged through every fix.
 - **Scans and photos are refused,** because FLOW has no OCR.
-- **Every term must quote its clause word for word,** and FLOW checks that the company the owner picked is one the contract
-  actually names. A contract that names other companies cannot be confirmed.
+- **Every term must quote its clause word for word,** and FLOW checks that the company the owner picked is the contract's
+  party in the role its kind needs (buyer, vendor or lender). A contract whose party in that role is another company, or
+  whose party in that role was not found in the reading, cannot be confirmed.
 
 **Table 10. Other evaluation results (offline, 17 Oct 2026 unless noted).**
 
@@ -781,16 +800,29 @@ several steps is not, so a plan refused part-way keeps its earlier steps and the
   the owner (ADR-0005).
 - **Contracts are read the same way.**
   - Every term quotes its clause, and its figures are parsed by code from the quoted words.
-  - A sentence addressed to the agent blocks confirmation and logs a security event.
-  - Documents are read only for counterparties on the owner's registry, and the contract must actually name the chosen
-    company.
+  - A sentence addressed to the agent blocks confirmation and logs a security event. A note to the agent, assistant or
+    system, and an instruction to add someone to the owner's customers or books, are flagged as instructions too, in
+    English and Chinese.
+  - Documents are read only for counterparties on the owner's registry, and the chosen company must be the document's party
+    in the role its kind needs (buyer, vendor or lender), matched by company. A reading with no party in that role is
+    blocked as well.
   - Confirming a document never changes the books. After confirming, FLOW says what was saved, under which customer, and that
-    the forecast is unchanged.
+    the forecast is unchanged. A record closed by a refile cannot be decided again: the attempt is refused and logged.
   - Only a separate owner step, "Set up in my books", can add a confirmed customer contract's repeating invoice
     (ADR-0014). It uses only terms quoted word for word and re-read by code, is bound to the document and the exact terms
     shown, is re-checked on today's books, is logged, and can be undone. The agent, buyers and the bank feed are refused.
+  - The set-up fails closed. It is refused for an interval under 7 days, for one invoice larger than both three times the
+    customer's largest invoice on the books and the mandate's ceiling (the larger of the Tier-2 limit and the cash reserve;
+    OUTSIZED), when the contract's buyer is not the customer's full registered name or the customer is named as supplier,
+    and when the contract's end date is not certain (END_NOT_CERTAIN). The owner-only check runs before every other gate,
+    so a non-owner is refused the same way whatever the operation carries. With the feature switched off, a set-up is
+    refused before it is queued, and undoing one is always allowed.
+  - A press refused at decision time can be pressed again. When a newer contract replaces one whose set-up is live, FLOW
+    names that set-up and offers its undo. The conservative forecast counts the set-up's invoices once the first one is
+    issued.
 - **Chat is inside the boundary.**
   - Pasted or quoted text never becomes an instruction or an approval.
+  - A Tier-3 request put as a question is refused, logged and raises a security event, like the plain command (section 03).
   - A session continues only for the caller that opened it.
   - Once the owner has sent a counter outside FLOW, no chat path can accept, decline or send on that request.
 
@@ -813,7 +845,8 @@ several steps is not, so a plan refused part-way keeps its earlier steps and the
   rate, a buyer's terms or a planted canary. It recognises the usual forms: ¥, k, 万, Chinese and 大写 numerals, English
   number words, percentages and per-mille.
 - **Every read view requires the owner token.**
-- **Contract terms are protected values of their counterparty.** Another buyer cannot read them.
+- **Contract terms are protected values of their counterparty.** Another buyer cannot read them, and a record refiled
+  under another customer, or one whose party check found another company, entitles no buyer to its terms.
 - **The web app sends a strict Content-Security-Policy** with a fresh nonce on each request (SEC-12).
 - **The model receives redacted text only** (section 02). The question router's prompt is built without the books, and an
   answer card, which carries the owner's figures, is attached only to the owner's own turns; the agent's allow-list and the
@@ -830,19 +863,21 @@ several steps is not, so a plan refused part-way keeps its earlier steps and the
 - **Not advice.** FLOW is decision support inside an owner-signed mandate, not a licensed lender, broker or adviser, and it
   makes no real payment.
 
-<!-- figure: figures/fig7-security-results.png | Figure 8. The attack catalogue on this build: 261 stored cases through the API and chat, by class (the Security Self-Assessment certified 260; DOC-05, adding a customer without the owner token, was added since). None violated the defined harm oracles. Every case reached the path it targets; of the 128 API cases, 120 were stopped by the control they name and 8 by another control. -->
+<!-- figure: figures/fig7-security-results.png | Figure 8. The attack catalogue on this build: 279 stored cases through the API and chat, by class (the Security Self-Assessment certified 260; DOC-05, adding a customer without the owner token, and 18 chat cases that put a Tier-3 request as a question were added since). None violated the defined harm oracles. Every case reached the path it targets; of the 128 API cases, 120 were stopped by the control they name and 8 by another control. -->
 
-**Table 13. Attack results (261 stored cases: 128 through the API, 133 through chat; each in a fresh in-memory runtime, offline, with recorded or scripted model answers; `b4167053`, 18 Oct 2026).**
+**Table 13. Attack results (279 stored cases: 128 through the API, 151 through chat; each in a fresh in-memory runtime, offline, with recorded or scripted model answers; `int/round-five` at `1294e941`, 18 Oct 2026).**
 
 | Measure | Result |
 | --- | --- |
-| Harm-oracle violations, in each specified run | 0 of 261 |
+| Harm-oracle violations, in each specified run | 0 of 279 |
 | Unauthorised operations executed / money moved by attacks | 0 / ¥0.00 |
 | Facilities added by non-owners; concessions booked from unproven claims | 0; 0 |
 | Integrity failures (partial write, double execution, erased log) | 0 |
 | Protected values disclosed in outbound text or readable without the owner token | 0 |
-| Cases that reached the path they target | 261 of 261. A case that never reaches its path no longer counts as defended |
-| API cases stopped by the control they name | 120 of 128. The other 8 were stopped by another control, with no harm (known gaps, SEC-34, each pinned by a test) |
+| Cases that reached the path they target | 279 of 279. A case that never reaches its path no longer counts as defended |
+| API cases stopped by the control they name | 120 of 128 (93.8%). The other 8 were stopped by another control, with no harm (known gaps, SEC-34, each pinned by a test) |
+| API cases with a detection signal / with a logged security event | 125 of 128 (97.7%) / 95 of 128 (74.2%). A signal is a security event, an executor refusal, a security or mandate-limit verdict code, an HTTP refusal or a detected chain break |
+| Tier-3 requests put as questions (chat, as the owner and as the agent key) | 18 of 18 refused, logged and raising a Tier-3 security event |
 
 This is a test result within a scope, not proof that no exploitable path exists. The catalogue drives part of the 105 routes;
 a separate route-policy test calls every route as every kind of caller. No running deployment has had a penetration test.
@@ -855,13 +890,21 @@ a separate route-policy test calls every route as every kind of caller. No runni
 - **The Security Lead (14 to 17 Oct)** is an AI agent in a separate session and worktree. It reproduced every finding, wrote each
   fix on its own branch with a regression test, re-ran its checks on each merged commit and certified it. It also wrote the
   security fixes it certified. "Certified" here is an internal release decision, not accreditation.
+- **Round five (17 to 18 Oct).** The Security Lead reviewed the registry, the party check, the contract set-up and Ask FLOW,
+  and wrote each fix on its own branch with a regression test: the party check by role (REG-2), new customers' names
+  (REG-3, REG-4), instructions inside documents (REG-6), refiled records (REG-1, REG-5), the contract set-up's guards
+  (CT-1 to CT-7) and Tier-3 requests put as questions (ASK-1, ASK-2). The engine halves of CT-2, CT-6, CT-7 and REG-5
+  followed with the owner's approval, and every golden value is unchanged. The attack report was regenerated on the merged batch
+  (Table 13).
 - **Verdicts (Security Self-Assessment v3).**
   - Local simulation on loopback: GO.
   - A demo over a network: NO-GO until a tested deployment profile exists; we demonstrate the local configuration.
   - Production with real customers, documents or money: NO-GO, because of the items in section 05.
 
-The full register is in the Security Self-Assessment (v3). It certified 260 cases on its assessed build; one case was added
-afterwards (DOC-05: a non-owner trying to add a customer, with its positive control), giving the 261 above. Live mode and
+The full register is in the Security Self-Assessment (v3). It certified 260 cases on its assessed build; 19 were added
+afterwards, giving the 279 above: DOC-05 (a non-owner trying to add a customer, with its positive control) and, in round
+five, NL-TQ01 to NL-TQ18 (nine Tier-3 requests put as questions, in English and Chinese, each as the owner and as the agent
+key). Live mode and
 the question router (ADR-0015) are outside its assessed scope; the router's review by the Security Lead is pending.
 
 ## 05 Deployment and Testing
@@ -898,7 +941,7 @@ and Security and evidence from the header and the account menu.
 **Check the evidence without the UI.**
 
 ```
-uv run --project services/api python scripts/judge_eval.py     # 2 to 4 min: 49 tasks, 261 attack cases, the demo walk, the chain check
+uv run --project services/api python scripts/judge_eval.py     # 2 to 4 min: 49 tasks, 279 attack cases, the demo walk, the chain check
 uv run --project services/api python scripts/evaluate.py       # about 8 min: the full offline evaluation
 ```
 
@@ -920,7 +963,7 @@ These are open production blockers. The supported way to run FLOW is the local l
 | API tests | `uv run pytest` (services/api) | 9,085 collected; 9,040 passed; 1 known failure (#161, a hash that differs by machine); the rest skipped by design |
 | Web tests | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` (apps/web) | clean; 169 passed |
 | Browser tests | `pnpm exec playwright test` (mock and live projects) | mock 445 passed, 0 failed; live 139 passed, with 2 known write-conflict retry failures (#157) |
-| Attacks | `uv run python -m app.security.attacks --report` (services/api, with `DEMO_MODE=1 DATABASE_URL=memory LLM_MODE=cache`; it runs both catalogues), on `b4167053`, 18 Oct | 261 cases (128 API, 133 chat), 0 harm-oracle violations; 261 of 261 reached their path; 120 of 128 API cases stopped by the control they name |
+| Attacks | `uv run python -m app.security.attacks --report` (services/api, with `DEMO_MODE=1 DATABASE_URL=memory LLM_MODE=cache`; it runs both catalogues), on `1294e941` (`int/round-five`), 18 Oct; committed as `services/api/evals/security/latest_report.json` | 279 cases (128 API, 151 chat), 0 harm-oracle violations; 279 of 279 reached their path; 120 of 128 API cases stopped by the control they name; API detection 97.7%, security events 74.2% |
 | Agent tasks | `scripts/run_scenarios.py --inproc` | 49/49; all evidence chains verify |
 | Owner questions | `uv run python scripts/owner_questions_baseline.py` (services/api), on `b4167053`, 18 Oct; the same as `BASELINE.md` section 8 | 303 answered, 46 partly, 0 wrong, 154 declined of 503 |
 | Everyday wording | `uv run python scripts/owner_questions_general.py --part all` (services/api), on `b4167053`, 18 Oct | 327/345 right, 3 wrong topic (0.9%); held-out 127/142 (89.4%); 0 critical turns |
@@ -941,12 +984,16 @@ These are open production blockers. The supported way to run FLOW is the local l
 | Consent | Negated, conditional, future-dated, foreign-currency or quoted instructions, in both languages | Nothing executes | 41 consent attacks |
 | Injection in a contract | A clause addressed to the agent | Never read as a term; cannot be confirmed; a security event is logged | Contract-ingestion attacks |
 | Wrong company | A contract naming two other companies, uploaded "with Foshan" | Cannot be confirmed; the companies it names are shown | Contract party tests |
+| Wrong role or no party | A contract naming Foshan only as the supplier, a buyer sharing only Foshan's first word, a reading with no parties, or a lender agreement whose lender was not read | Cannot be confirmed: the party check blocks it | `tests/contracts/test_party_roles.py` |
+| Look-alike customer | "Add a customer" with a homoglyph or accented copy of a registered name, an id-like name, the business's own name or a short name already taken | Refused (409 or 422); nothing is added | `tests/api/test_customer_lookalikes.py` |
 | Tier 3 by the owner | The owner asks to sign a personal guarantee | Refused for every caller | Permission tests |
+| Tier 3 as a question | "Sign a personal guarantee?", "should we pledge the equipment?", 要不要签个人担保？, as the owner or the agent key | Refused, logged, a Tier-3 security event; the owner's plain information question ("What is a personal guarantee?") is answered and writes nothing | 18 chat attacks (NL-TQ01 to 18), `tests/nl/test_tier3_questions.py` |
 | Tampered evidence | One log entry edited | The verifier rejects the copy; untouched chains verify | Judge report |
 | Two writers at once | Two processes act on the same books | Eight invariants hold; a serial replay gives identical books | Concurrency tests, SQLite and PostgreSQL 17 |
 | A question about acting | "Can we pay off all our loans?", 我们能还清所有贷款吗？ | "No. Repaying all ¥1,500,000 today…", in the question's language; nothing proposed, queued or logged | Owner-question bank (503 turns), `tests/nl/test_ask_books.py` |
 | Recording a payment | The owner records a payment, or part of one, on Receivables, including on a financed invoice | Tier 1; a financed invoice repays its lender first, the rest stays open; the same press twice is one payment | `e2e/record-payment.spec.ts`, `tests/api/test_owner_receipt.py` |
 | Contract set-up out of bounds | "Set up in my books" from a contract naming another buyer, even force-confirmed; or queued by the agent key | Nothing is set up; only the owner can queue it (Tier 2), bound to the document and the terms shown | `tests/api/test_contract_terms.py` |
+| Contract set-up past its guards | A quote-true contract of ¥90,000,000 every day; a term in months or "remains in force to …" the reading missed; the step switched off | Blocked as OUTSIZED or END_NOT_CERTAIN; with the step off, refused before it is queued, while undo still runs | `tests/contracts/test_terms_setup.py`, `tests/operations/test_contract_terms_r5.py` |
 
 <!-- figure: screenshots/shot3-approval.png | Figure 9. The owner stays in control. On day 34 FLOW proposes a ¥200,000 advance; because it costs 32.5% a year, above the owner's 15% ceiling, it waits on the Approvals page and nothing has run. -->
 
@@ -968,7 +1015,7 @@ These are open production blockers. The supported way to run FLOW is the local l
   about ¥39,000.
 - **Contracts.** Contract reading is 75% on unseen text-layer contracts. Scans and photos are refused, since there is no OCR.
   Setting up a contract's invoices covers one repeating invoice per contract; a contract that differs from a repeating
-  invoice already in the books is refused rather than replacing it, and rebates and milestones are shown, not set up.
+  invoice already in the books is refused rather than replacing it (when that invoice was set up from another contract, FLOW names it and offers its undo), and rebates and milestones are shown, not set up.
 - **Funding router.** Six of the 26 router plans rely on actions FLOW cannot run yet (asking a buyer to pay early, discounting a bill).
   They are labelled "cannot run today".
 - **Extra requests.** These are found by cue words and figures. A request with neither could pass the coverage proof, but only
@@ -1102,7 +1149,7 @@ its quoted clause, and "This deal at a glance" shows the money terms against the
 was saved, under which customer, and that the forecast has not changed. Filed under the wrong customer, the same contract
 cannot be confirmed: FLOW lists the companies it names and offers *File it under Foshan Home Retail Co.* without a new
 reading. Dongguan's contract reads as one invoice of ¥180,000 every 30 days on 45-day terms; *Set up in my books* shows each
-figure beside its clause and the forecast before and after, and the owner's yes adds it as an owner-only Tier-2 operation that
+figure beside its clause and the forecast now and once the first invoice is issued, and the owner's yes adds it as an owner-only Tier-2 operation that
 can be undone. A lender agreement is compared with the credit line in the books and can be linked to it.
 
 <!-- figure: screenshots/shot9-attach.png | Figure 11. Attach deals: the reading of supply agreement FHR-2026-07. (1) Each term with its clause number and the exact words quoted. (2) The clause lights up when its term is focused. (3) Markers show which terms each clause holds. -->
@@ -1147,7 +1194,7 @@ and FLOW speaks first, naming what needs attention and what fixing it costs. The
 card (Figure 12); 我们安全吗？ is answered in Chinese, and each link opens the page that shows the answer. "Fund the cash gap"
 proposes a plan with its operations and cost; *Yes, run it* runs exactly those, and a correction such as "make it 0.8%"
 amends a pending counter. A queued request is approved by "approve APR-000001", or by "approve it" right after it was shown.
-"Sign a personal guarantee" is refused for everyone, and "add a ¥80,000 bill to the forecast" is refused because chat never
+"Sign a personal guarantee" is refused for everyone, asked as a question too, and "add a ¥80,000 bill to the forecast" is refused because chat never
 records facts. *New conversation* starts over.
 
 **9. What-if and strategy.** *Screens:* the Sandbox, Cash & funding, a deal's *Cash impact*. From Foshan's request the owner
