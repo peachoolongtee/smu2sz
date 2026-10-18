@@ -113,6 +113,16 @@ class HomeRead:
     def floor(self) -> int:
         return self.mandate.min_cash_fen
 
+    @property
+    def below_now(self) -> bool:
+        """The cash in the bank right now is under the reserve (the projection's close of today may be above it: money due today)."""
+        return self.state.cash_fen < self.floor
+
+    @property
+    def covered(self) -> bool:
+        """The cash is covered: never under the reserve today (in the bank or at the close) nor on any day ahead (`cash.covered`)."""
+        return self.breach_day is None and not self.below_now and self.low[0] >= self.floor
+
 
 # ---------------------------------------------------------------- small words
 
@@ -235,7 +245,7 @@ def _clauses(c: HomeRead, lots: list[Any], receipts: list[dict[str, Any]]) -> st
 
 
 def _position(c: HomeRead, lots: list[Any], receipts: list[dict[str, Any]], low: tuple[int, int]) -> dict[str, Any]:
-    covered = c.breach_day is None
+    covered = c.covered
     floor = _short(c.floor)
     low_fen, low_day = low
     depends = covered and bool(lots or receipts)

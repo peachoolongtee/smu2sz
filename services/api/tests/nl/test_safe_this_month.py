@@ -47,7 +47,9 @@ def test_english_wordings_are_the_cash_runway_read(api: TestClient, text: str) -
     out = _ask(api, text, "en")
     assert out["operations"] == [] and not out["awaiting_confirmation"]
     if out["intent"] == "ASK_BOOKS":
-        assert re.match(r"^(?:Not on today's books|12 days to your reserve)", out["reply"]), out["reply"]
+        # "this month" is answered on the next 30 days (fix/ask-general): "Not in the next 30 days, on today's books: ..."
+        assert re.match(r"^(?:Not on today's books|Not in the next 30 days, on today's books|12 days to your reserve)", out["reply"]), \
+            out["reply"]
         assert "day 12" in out["reply"] and "¥300,000 reserve" in out["reply"]
     else:
         assert out["intent"] == "SHOW_STATUS"
@@ -61,7 +63,7 @@ def test_chinese_wordings_are_the_cash_runway_read(api: TestClient, text: str) -
     out = _ask(api, text, "zh")
     assert out["operations"] == [] and not out["awaiting_confirmation"]
     if out["intent"] == "ASK_BOOKS":  # the answer module's cash answer (LIQ-01 / LIQ-03), leading with the answer
-        assert re.match(r"^(?:按今日账目并不安全|距离跌破储备线还有 12 天)", out["reply"]), out["reply"]
+        assert re.match(r"^(?:按今日账目并不安全|未来 30 天并不安全：按今日账目|距离跌破储备线还有 12 天)", out["reply"]), out["reply"]
         assert "第 12 天" in out["reply"] and "¥300,000" in out["reply"]
     else:
         assert out["intent"] == "SHOW_STATUS"

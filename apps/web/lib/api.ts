@@ -66,6 +66,8 @@ import type {
   PurchasesView,
   ClockView,
   ContractFixture,
+  ContractTermsResult,
+  ContractTermsView,
   CustomerOverviewView,
   InputSaveRequest,
   InputSaveResult,
@@ -98,6 +100,8 @@ import type {
   PilotJournalView,
   PriceCurveView,
   ReceivablesRead,
+  RecordReceiptRequest,
+  RecordReceiptResult,
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
@@ -510,6 +514,15 @@ export async function demoBankReceipt(): Promise<BankReceiptResult> {
   return isMock ? (await mock()).demoBankReceipt() : (await live()).demoBankReceipt();
 }
 
+/**
+ * The owner records a payment they received on an open invoice: the existing RECEIVE_PAYMENT operation through POST /operations as the owner
+ * (owner action; one key per press, so a retry books once). The answer's `receipt` is the server's words for what it did: what reached cash,
+ * what repaid the lender first on a financed invoice, what is still open, how the reconciliation reads it, or why nothing was recorded.
+ */
+export async function recordReceipt(req: RecordReceiptRequest, lang: "en" | "zh"): Promise<RecordReceiptResult> {
+  return isMock ? (await mock()).recordReceipt(req, lang) : (await live()).recordReceipt(req, lang);
+}
+
 /** GET /borrower-file/{id}.html | .docx | .pdf: fetched with the owner token and saved. Live mode only. */
 export async function downloadFile(path: string, filename: string): Promise<void> {
   if (isMock) throw new ApiError(0, "Downloads are available in live mode, where the API renders the file.", undefined, "mock_download");
@@ -575,6 +588,24 @@ export function existingCustomerId(e: unknown): string | null {
   if (!(e instanceof ApiError) || e.status !== 409) return null;
   const d = e.detail as { code?: unknown; existing_id?: unknown } | undefined;
   return d?.code === "CUSTOMER_EXISTS" && typeof d.existing_id === "string" ? d.existing_id : null;
+}
+
+/**
+ * ADR-0014, GET /documents/{id}/terms?lang=: what a confirmed customer contract would set up in the books, whether it can, and the forecast
+ * before and after (behind FEATURE_CONTRACT_TERMS). Null when the step is switched off or does not apply to this document.
+ */
+export async function getContractTerms(id: string, lang: "en" | "zh" = "en"): Promise<ContractTermsView | null> {
+  return isMock ? (await mock()).getContractTerms(id, lang) : (await live()).getContractTerms(id, lang);
+}
+
+/** POST /documents/{id}/terms: set the contract's repeating invoice up in the books, bound to the document and the terms shown (the owner's Tier-2 operation, logged). */
+export async function setUpContractTerms(id: string, docHash: string, termsHash: string, lang: "en" | "zh" = "en"): Promise<ContractTermsResult> {
+  return isMock ? (await mock()).setUpContractTerms(id, docHash, termsHash, lang) : (await live()).setUpContractTerms(id, docHash, termsHash, lang);
+}
+
+/** POST /documents/{id}/terms/undo: the logged compensating operation of a set-up. */
+export async function undoContractTerms(id: string, setUpOpId: string, lang: "en" | "zh" = "en"): Promise<ContractTermsResult> {
+  return isMock ? (await mock()).undoContractTerms(id, setUpOpId, lang) : (await live()).undoContractTerms(id, setUpOpId, lang);
 }
 
 /** GET /fixtures/contracts: the demo documents (synthetic; each written to match the demo books). */

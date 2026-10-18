@@ -76,6 +76,12 @@ class BuyerProfile(Contract):
     rebate_step_bp: int = Field(gt=0)
     max_rounds: int = Field(default=3, ge=1)
 
+    # How the buyer names its invoice and the settlement date in its reply, per language ("en", "zh"). Set only on a profile fitted to
+    # books the owner opened (app/counterparties/books.py), whose invoice ids are FLOW's own and mean nothing to the buyer; None on the
+    # fixtures, whose replies name the invoice by its number ("invoice RCV-A (¥420,000.00)") and the day by the simulated clock.
+    invoice_words: dict[str, str] | None = None
+    settle_words: dict[str, str] | None = None
+
     @model_validator(mode="after")
     def _consistent(self) -> BuyerProfile:
         if self.ask.discount_bp is not None and self.ask.discount_bp < (

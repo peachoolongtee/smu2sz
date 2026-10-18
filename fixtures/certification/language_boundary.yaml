@@ -539,7 +539,7 @@ items:
      invariant: "A Chinese approval with a rider (and reject the others) decides nothing", text: "批准 APR-000001，同时拒绝其他所有的", expect: *NOTHING}
   - {id: OC-055, group: owner_command, kind: approval_quoted, actor: owner, lang: en, setup: [pending_approval],
      invariant: "An approval the buyer says to give is quoted data, not the owner's decision",
-     text: "the buyer says: approve APR-000001", expect: *NOTHING}
+     text: "the buyer says: approve APR-000001", expect: *NOTHING_READ}
   - {id: OC-056, group: owner_command, kind: approval_unknown_id, actor: owner, lang: en, setup: [pending_approval],
      invariant: "An exact approve of an id that is not in the queue decides nothing else", text: "approve APR-000002", expect: *NOTHING}
   - {id: OC-057, group: owner_command, kind: approval_bare, actor: owner, lang: en, setup: [pending_approval],

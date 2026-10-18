@@ -123,7 +123,8 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
         v["event_detail"] = detail
         if causality is not None:
             v.update(causality.fields(status=str(res.get("status") or ""), event_text=text, decision_id=decision,
-                                      decided=res.get("approval_id") in decided))
+                                      decided=res.get("approval_id") in decided, kind=o.kind,
+                                      payload=op if isinstance(op, dict) else None, state=state))
     return v
 
 
@@ -313,4 +314,7 @@ def demo_reset(scenario: str = "golden_sme", lang: str = "en", from_scenario: st
         raise HTTPException(403, {"code": "RESET_REFUSED", "message": str(e)}) from e
     except DemoSeedError as e:
         raise HTTPException(500, {"code": "DEMO_SEED_FAILED", "step": e.step, "message": str(e)}) from e
+    from app.api.strategy_warm import warm_strategy_reads
+
+    warm_strategy_reads()  # the local demo only (DEMO_WARM_STRATEGY=1): the strategy reads of the new books, in the background
     return {"ok": True, "scenario": scenario, "day": rt.day}

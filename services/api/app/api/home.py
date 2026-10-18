@@ -194,6 +194,29 @@ def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, tod
             plan_note = t(lang, "No committed funding can fix it: this needs your decision.",
                           "没有已承诺的融资能解决它，需要您决定。")
         return {"headline": head, "note": note, "worst": worst, "plan_note": plan_note}
+    low_short = fmt_short(low_fen)
+    if state is not None and state.cash_fen < mandate.min_cash_fen:
+        # No breach alert, because the projection's day closes after the money due today (a receipt due today, a draw landing): the cash in
+        # the bank right now is still under the reserve, so the Home never says it is covered (17 Oct, day 77 of a take: "You're covered!"
+        # beside "¥145k below your ¥300k minimum").
+        short = fmt_short(mandate.min_cash_fen - state.cash_fen)
+        head = t(lang, "Below reserve today.", "今天现金低于储备。")
+        if low_fen >= mandate.min_cash_fen:
+            note = t(lang, f"Cash is {short} below your {floor} minimum cash reserve right now. The forecast is back above it by the end of "
+                           f"today only if the money due today arrives.",
+                     f"现金目前比您 {floor} 的最低现金储备低 {short}。只有今天到期的款项到账，预测才会在今天结束前回到储备以上。")
+        else:
+            note = t(lang, f"Cash is {short} below your {floor} minimum cash reserve right now, and the forecast falls to {low_short} "
+                           f"{low_when}.",
+                     f"现金目前比您 {floor} 的最低现金储备低 {short}，预测将在{low_when}降至 {low_short}。")
+        worst = t(lang, f"Lowest cash ahead: {low_short} {low_when}.", f"未来最低现金：{low_when}的 {low_short}。")
+        return {"headline": head, "note": note, "worst": worst, "plan_note": None}
+    if low_fen < mandate.min_cash_fen:  # no breach alert, yet the projection goes under the reserve: never "covered" either
+        gap = fmt_short(mandate.min_cash_fen - low_fen)
+        head = t(lang, f"Your cash reserve becomes unsafe {low_when}.", f"您的现金储备将在{low_when}不再安全。")
+        note = t(lang, f"Cash falls to {low_short}, {gap} below your {floor} minimum cash reserve.",
+                 f"现金将降至 {low_short}，比您 {floor} 的最低现金储备低 {gap}。")
+        return {"headline": head, "note": note, "worst": None, "plan_note": None}
     warnings = [a for a in found if a.severity == Severity.WARNING]
     head = t(lang, "You're covered.", "您的现金是安全的。")
     if low_fen == mandate.min_cash_fen:  # the lowest point sits exactly on the reserve: "at or above", not "above"
@@ -966,7 +989,7 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
                            decision_id=did)}
         if causality is not None:
             item.update(causality.fields(status=e.result.status.value, event_text=item["event_text"], decision_id=did,
-                                         decided=e.result.approval_id in decided_ids))
+                                         decided=e.result.approval_id in decided_ids, kind=e.kind, payload=e.payload, state=state))
         items.append(item)
     for a in found:
         if a.kind == AlertKind.RECEIVABLE_PAST_DUE:
@@ -1168,6 +1191,9 @@ def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True
         approvals = rt.store.approvals()
         pending = [a for a in approvals if str(getattr(a.status, "value", a.status)) == "PENDING"]
         status = _status(found, len(pending))
+        below_now = state.cash_fen < mandate.min_cash_fen  # the cash in the bank right now, not the projection's close of today
+        if below_now and status in ("SAFE", "WATCH"):  # the badge agrees with the figure beside it: never "Covered" under the reserve
+            status = "ACTION_NEEDED"
         if since_day is not None and since_day > today:  # a marker from before a reset: the last week instead
             since_day = None
         low_fen, low_day = _lowest_ahead(traj, today)
@@ -1275,7 +1301,10 @@ def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True
             "lowest_headroom_fen": low_fen - mandate.min_cash_fen,
             "lowest_headroom_short": fmt_short(low_fen - mandate.min_cash_fen),
             "first_breach_day": breach_day,
-            "below_reserve_today": breach_day == today,
+            # Under the reserve today: the cash in the bank right now, or the projection's close of today (an outflow due today).
+            "below_reserve_today": breach_day == today or below_now,
+            # Nothing to fund and nothing under the reserve, today or on any day ahead: the one rule for the Home's "covered" words.
+            "covered": breach_day is None and not below_now and low_fen >= mandate.min_cash_fen and action is None,
             "first_breach_cash_fen": at_breach,
             "first_breach_cash_short": fmt_short(at_breach) if at_breach is not None else None,
             "cash_short": fmt_short(state.cash_fen),

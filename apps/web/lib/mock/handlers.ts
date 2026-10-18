@@ -47,6 +47,8 @@ import type {
   CapexRequest,
   CapexView,
   ContractFixture,
+  ContractTermsResult,
+  ContractTermsView,
   CustomerOverviewView,
   InputSaveRequest,
   InputSaveResult,
@@ -83,6 +85,8 @@ import type {
   BuyerExposureView,
   CompareView,
   ReceivablesRead,
+  RecordReceiptRequest,
+  RecordReceiptResult,
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
@@ -109,6 +113,7 @@ import type { TrackerView } from "../tracker"; // Deal tracker
 import * as home from "./home";
 import * as homeV2 from "./home-v2";
 import * as receivablesMock from "./receivables";
+import * as receiptsMock from "./receipts";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
@@ -1220,7 +1225,21 @@ export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead
     throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  // A payment the owner recorded at this point of the story: the read recorded after it (lib/mock/receipts.ts).
+  const after = await receiptsMock.receivablesAfterReceipt(home.receivablesPoint(dealt), lang);
+  if (after) return { ...after, day: home.mockClock().day };
   return receivablesMock.mockReceivables(dealt, lang);
+}
+
+/** POST /operations with the owner's RECEIVE_PAYMENT ("Record a payment"): the recorded answer of the real route (lib/mock/receipts.ts). Owner only, as live. */
+export async function recordReceipt(req: RecordReceiptRequest, lang: "en" | "zh"): Promise<RecordReceiptResult> {
+  await delay();
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required. Sign in with the owner token to use this.", undefined, "owner_required");
+  }
+  const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  return receiptsMock.mockRecordReceipt(home.receivablesPoint(dealt), req, lang);
 }
 
 /** GET /buyers/{id}/exposure: the recording for BUYER-1 (the opening books' before day 34, day 34's from it); any other buyer is unknown (null). */
@@ -1469,6 +1488,7 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
   memory = seededStore();
   save();
   home.resetHome();
+  receiptsMock.resetReceipts();
   documents.resetDocuments();
   customers.resetCustomers();
   buyside.resetBuyside();
@@ -1742,6 +1762,25 @@ export async function submitDocument(req: SubmitDocumentRequest): Promise<Docume
 export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null, lang: "en" | "zh" = "en"): Promise<DocumentDecision> {
   await delay();
   return documents.mockDecide(id, decision, docHash, linkFacilityId, (r) => appendRecorded({ ...r, requested_by: "OWNER" }), books(), lang);
+}
+
+/** ADR-0014: the recorded "Set up these terms in your books" step of the demo's supply agreement (already in the books). */
+export async function getContractTerms(id: string, lang: "en" | "zh" = "en"): Promise<ContractTermsView | null> {
+  await delay();
+  return documents.mockContractTerms(id, lang);
+}
+
+export async function setUpContractTerms(id: string, docHash: string, termsHash: string, lang: "en" | "zh" = "en"): Promise<ContractTermsResult> {
+  void docHash;
+  void termsHash;
+  await delay();
+  return documents.mockSetUpContractTerms(id, lang);
+}
+
+export async function undoContractTerms(id: string, setUpOpId: string, lang: "en" | "zh" = "en"): Promise<ContractTermsResult> {
+  void lang;
+  await delay();
+  return documents.mockUndoContractTerms(id, setUpOpId);
 }
 
 export async function getContractFixtures(): Promise<ContractFixture[]> {

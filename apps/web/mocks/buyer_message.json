@@ -1983,6 +1983,18 @@
               "actions": [],
               "tone": "ok"
             },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "in 32 days",
+              "text": "Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days.",
+              "tone": "mute"
+            },
             "open_offer": {
               "offer_id": "OFF-f806f79b6c21",
               "verdict_id": "VER-a899ca66120c",
@@ -2975,6 +2987,18 @@
               "actions": [],
               "tone": "ok"
             },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "32 天后",
+              "text": "合同已存档，尚未商定交易。未结发票 1 张，应收 ¥420,000.00，32 天后到期。",
+              "tone": "mute"
+            },
             "open_offer": {
               "offer_id": "OFF-f806f79b6c21",
               "verdict_id": "VER-a899ca66120c",
@@ -3401,6 +3425,11 @@
             "assumptions_text": null,
             "authority_text": "The buyer accepted the counter you sent; you recorded it.",
             "remaining_text": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+          },
+          "funding_next": {
+            "text": "The agreement ran no funding: cash still falls ¥102,210.00 below your minimum in 20 days. FLOW's plan to cover it is ready on Cash & funding; it runs only when you run it.",
+            "label": "Review the funding plan",
+            "href": "/cash"
           }
         },
         "outbound": {
@@ -3430,6 +3459,11 @@
           "tone": "ok",
           "links": [
             {
+              "label": "Review the funding plan",
+              "href": "/cash",
+              "primary": true
+            },
+            {
               "label": "View receivable",
               "href": "/receivables#RCV-A"
             },
@@ -3451,7 +3485,8 @@
           "consequences": [
             "Foshan Home Retail Co. can settle ¥260,000.00 of the invoice by paying ¥257,790.00 by 3 October 2026.",
             "The other ¥160,000.00 stays due on 2 November 2026.",
-            "No cash has been received yet; FLOW reconciles the payment when it arrives."
+            "No cash has been received yet; FLOW reconciles the payment when it arrives.",
+            "The agreement ran no funding: cash still falls ¥102,210.00 below your minimum in 20 days. FLOW's plan to cover it is ready on Cash & funding; it runs only when you run it."
           ],
           "consequences_title_text": "What changes now",
           "terms_title_text": "What was agreed"
@@ -3566,6 +3601,11 @@
       "execution": {
         "summary_text": "Agreement with Foshan Home Retail Co. recorded."
       },
+      "next_step": {
+        "text": "The agreement ran no funding: cash still falls ¥102,210.00 below your minimum in 20 days. FLOW's plan to cover it is ready on Cash & funding; it runs only when you run it.",
+        "label": "Review the funding plan",
+        "href": "/cash"
+      },
       "status": "agreed",
       "approval_id": null
     },
@@ -3676,6 +3716,11 @@
             "assumptions_text": null,
             "authority_text": "买方接受了您发出的还价；由您记录。",
             "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥257,790.00 应在2 天内到账；约定日尚未过。"
+          },
+          "funding_next": {
+            "text": "该协议未执行任何融资：现金仍将于20 天后比最低现金储备低 ¥102,210.00。FLOW 的补足方案已在“现金与融资”页准备好，只有在您执行后才会执行。",
+            "label": "查看融资方案",
+            "href": "/cash"
           }
         },
         "outbound": {
@@ -3705,6 +3750,11 @@
           "tone": "ok",
           "links": [
             {
+              "label": "查看融资方案",
+              "href": "/cash",
+              "primary": true
+            },
+            {
               "label": "查看应收账款",
               "href": "/receivables#RCV-A"
             },
@@ -3726,7 +3776,8 @@
           "consequences": [
             "Foshan Home Retail Co.可在2026年10月3日前支付 ¥257,790.00，结清发票中的 ¥260,000.00。",
             "其余 ¥160,000.00 仍于2026年11月2日到期。",
-            "尚未收到任何款项；款项到账后 FLOW 会进行对账。"
+            "尚未收到任何款项；款项到账后 FLOW 会进行对账。",
+            "该协议未执行任何融资：现金仍将于20 天后比最低现金储备低 ¥102,210.00。FLOW 的补足方案已在“现金与融资”页准备好，只有在您执行后才会执行。"
           ],
           "consequences_title_text": "接下来的变化",
           "terms_title_text": "达成的条款"
@@ -3841,6 +3892,11 @@
       "execution": {
         "summary_text": "已记录与Foshan Home Retail Co.的协议。"
       },
+      "next_step": {
+        "text": "该协议未执行任何融资：现金仍将于20 天后比最低现金储备低 ¥102,210.00。FLOW 的补足方案已在“现金与融资”页准备好，只有在您执行后才会执行。",
+        "label": "查看融资方案",
+        "href": "/cash"
+      },
       "status": "agreed",
       "approval_id": null
     }
@@ -3953,6 +4009,11 @@
             "assumptions_text": null,
             "authority_text": "The buyer accepted the counter you sent; you recorded it.",
             "remaining_text": "¥257,790.00 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+          },
+          "funding_next": {
+            "text": "The agreement ran no funding: cash still falls ¥102,210.00 below your minimum in 20 days. FLOW's plan to cover it is ready on Cash & funding; it runs only when you run it.",
+            "label": "Review the funding plan",
+            "href": "/cash"
           }
         },
         "outbound": {
@@ -3982,6 +4043,11 @@
           "tone": "ok",
           "links": [
             {
+              "label": "Review the funding plan",
+              "href": "/cash",
+              "primary": true
+            },
+            {
               "label": "View receivable",
               "href": "/receivables#RCV-A"
             },
@@ -4003,7 +4069,8 @@
           "consequences": [
             "Foshan Home Retail Co. can settle ¥260,000.00 of the invoice by paying ¥257,790.00 by 3 October 2026.",
             "The other ¥160,000.00 stays due on 2 November 2026.",
-            "No cash has been received yet; FLOW reconciles the payment when it arrives."
+            "No cash has been received yet; FLOW reconciles the payment when it arrives.",
+            "The agreement ran no funding: cash still falls ¥102,210.00 below your minimum in 20 days. FLOW's plan to cover it is ready on Cash & funding; it runs only when you run it."
           ],
           "consequences_title_text": "What changes now",
           "terms_title_text": "What was agreed"
@@ -4997,6 +5064,11 @@
             "assumptions_text": null,
             "authority_text": "买方接受了您发出的还价；由您记录。",
             "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥257,790.00 应在2 天内到账；约定日尚未过。"
+          },
+          "funding_next": {
+            "text": "该协议未执行任何融资：现金仍将于20 天后比最低现金储备低 ¥102,210.00。FLOW 的补足方案已在“现金与融资”页准备好，只有在您执行后才会执行。",
+            "label": "查看融资方案",
+            "href": "/cash"
           }
         },
         "outbound": {
@@ -5026,6 +5098,11 @@
           "tone": "ok",
           "links": [
             {
+              "label": "查看融资方案",
+              "href": "/cash",
+              "primary": true
+            },
+            {
               "label": "查看应收账款",
               "href": "/receivables#RCV-A"
             },
@@ -5047,7 +5124,8 @@
           "consequences": [
             "Foshan Home Retail Co.可在2026年10月3日前支付 ¥257,790.00，结清发票中的 ¥260,000.00。",
             "其余 ¥160,000.00 仍于2026年11月2日到期。",
-            "尚未收到任何款项；款项到账后 FLOW 会进行对账。"
+            "尚未收到任何款项；款项到账后 FLOW 会进行对账。",
+            "该协议未执行任何融资：现金仍将于20 天后比最低现金储备低 ¥102,210.00。FLOW 的补足方案已在“现金与融资”页准备好，只有在您执行后才会执行。"
           ],
           "consequences_title_text": "接下来的变化",
           "terms_title_text": "达成的条款"
@@ -6966,6 +7044,18 @@
               "actions": [],
               "tone": "ok"
             },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "in 32 days",
+              "text": "Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days.",
+              "tone": "mute"
+            },
             "open_offer": null,
             "needs_you": false,
             "needs_you_text": null
@@ -7742,6 +7832,18 @@
               "items": [],
               "actions": [],
               "tone": "ok"
+            },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "32 天后",
+              "text": "合同已存档，尚未商定交易。未结发票 1 张，应收 ¥420,000.00，32 天后到期。",
+              "tone": "mute"
             },
             "open_offer": null,
             "needs_you": false,
@@ -9422,6 +9524,18 @@
               "actions": [],
               "tone": "ok"
             },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "in 32 days",
+              "text": "Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days.",
+              "tone": "mute"
+            },
             "open_offer": {
               "offer_id": "OFF-3e92827af02f",
               "verdict_id": null,
@@ -10515,6 +10629,18 @@
               "items": [],
               "actions": [],
               "tone": "ok"
+            },
+            "contract_status": {
+              "count": 1,
+              "due_fen": 42000000,
+              "due_display": "¥420,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "32 天后",
+              "text": "合同已存档，尚未商定交易。未结发票 1 张，应收 ¥420,000.00，32 天后到期。",
+              "tone": "mute"
             },
             "open_offer": {
               "offer_id": "OFF-3e92827af02f",
@@ -11614,6 +11740,18 @@
               "actions": [],
               "tone": "ok"
             },
+            "contract_status": {
+              "count": 2,
+              "due_fen": 84000000,
+              "due_display": "¥840,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "in 29 days",
+              "text": "Contract on file; no deal agreed yet. Open invoices: 2, ¥840,000.00 due; the next due in 29 days.",
+              "tone": "mute"
+            },
             "open_offer": null,
             "needs_you": false,
             "needs_you_text": null
@@ -12360,6 +12498,18 @@
               "actions": [],
               "tone": "ok"
             },
+            "contract_status": {
+              "count": 2,
+              "due_fen": 84000000,
+              "due_display": "¥840,000.00",
+              "late_count": 0,
+              "late_fen": 0,
+              "late_display": "¥0.00",
+              "next_due_day": 32,
+              "next_due_when": "29 天后",
+              "text": "合同已存档，尚未商定交易。未结发票 2 张，应收 ¥840,000.00；下一张29 天后到期。",
+              "tone": "mute"
+            },
             "open_offer": null,
             "needs_you": false,
             "needs_you_text": null
@@ -12499,16 +12649,16 @@
       "offer_id": "OFF-96e709c2b1d8",
       "buyer_profile": "cooperative",
       "counterparty_id": "BUYER-3",
-      "message": "This buyer has no simulated reply in this environment; nothing was sent. Copy the message to the buyer instead.",
-      "message_when": "This buyer has no simulated reply in this environment; nothing was sent. Copy the message to the buyer instead."
+      "message": "The Demo has no simulated reply from this customer, so nothing was sent. Copy the message and send it yourself.",
+      "message_when": "The Demo has no simulated reply from this customer, so nothing was sent. Copy the message and send it yourself."
     },
     "zh": {
       "code": "NO_SIMULATED_BUYER",
       "offer_id": "OFF-96e709c2b1d8",
       "buyer_profile": "cooperative",
       "counterparty_id": "BUYER-3",
-      "message": "此环境中没有该买方的模拟回复；未发送任何内容。请改为复制发给买方的消息。",
-      "message_when": "此环境中没有该买方的模拟回复；未发送任何内容。请改为复制发给买方的消息。"
+      "message": "The Demo has no simulated reply from this customer, so nothing was sent. Copy the message and send it yourself.",
+      "message_when": "演示中没有该客户的模拟回复，因此未发送任何内容。请复制消息，自行发给对方。"
     }
   }
 }

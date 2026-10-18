@@ -1,0 +1,433 @@
+# General owner questions for Ask FLOW, held out from the matcher (branch fix/ask-general, 17 Oct 2026).
+#
+# How owners actually ask: casual, formal, typos, run-on, "my company" / "we" / "our business", time windows ("this
+# month", "the next 6 months", "this quarter", "until year end"), how-to and should-I questions, worried questions, and
+# natural Chinese. Written before the broader matcher, from the meaning of the top-30 ids (BASELINE.md section 4) only,
+# and not edited to fit it. The scorer (scripts/owner_questions_general.py) splits the items 60/40 by a hash of the text:
+# the matcher is tuned on the 60% part only and reported on the 40% held-out part, then on all.
+#
+# Fields
+#   q      the owner's words, sent as is to POST /nl as the owner, on the golden demo books (day 0)
+#   lang   en | zh
+#   id     the answer it should get: a top-30 id (LIQ-01 ...), `general_advice` (how to keep cash safe / what to do),
+#          `not_in_books` (the books do not hold it: the honest "FLOW's books do not hold ..." reply), or
+#          `out_of_scope_ok` (chatter: any reply that is not a books answer is right)
+#   also   other answers that are equally right for this wording (kept short; most items have none)
+version: 1
+books: "golden_sme, day 0"
+items:
+
+# ---------------------------------------------------------------- are we safe / will we survive (LIQ-01)
+- {lang: en, id: LIQ-01, q: "can my company survive this month?"}
+- {lang: en, id: LIQ-01, q: "Are we going to run out of money?", also: [LIQ-03]}
+- {lang: en, id: LIQ-01, q: "will we make it through the month"}
+- {lang: en, id: LIQ-01, q: "r we ok on cash"}
+- {lang: en, id: LIQ-01, q: "Is the business going to be alright financially over the next few weeks?"}
+- {lang: en, id: LIQ-01, q: "are we in trouble"}
+- {lang: en, id: LIQ-01, q: "Is my company at risk of going broke?"}
+- {lang: en, id: LIQ-01, q: "honestly, are we going to be ok cash-wise this quarter"}
+- {lang: en, id: LIQ-01, q: "Do we have enough money to keep going?"}
+- {lang: en, id: LIQ-01, q: "Should I be worried about cash?"}
+- {lang: en, id: LIQ-01, q: "can we stay afloat until year end?"}
+- {lang: en, id: LIQ-01, q: "Is there a cash crunch coming?", also: [LIQ-05]}
+- {lang: en, id: LIQ-01, q: "are we solvent for the next 3 months"}
+- {lang: en, id: LIQ-01, q: "Will the company survive the next 6 months?"}
+- {lang: en, id: LIQ-01, q: "How safe is our cash right now?"}
+- {lang: en, id: LIQ-01, q: "any risk we go bust soon?"}
+- {lang: en, id: LIQ-01, q: "are we heading for a cash crunch this quarter", also: [LIQ-05]}
+- {lang: en, id: LIQ-01, q: "Is our cashflow healthy?"}
+- {lang: en, id: LIQ-01, q: "Is everything fine with the money?"}
+- {lang: en, id: LIQ-01, q: "are we financially ok"}
+- {lang: en, id: LIQ-01, q: "we gonna be alright for cash next month?"}
+- {lang: en, id: LIQ-01, q: "Is there enough cash in the business for the next 90 days?"}
+- {lang: en, id: LIQ-01, q: "Am I going to run out of cash before the end of the month?", also: [LIQ-03, LIQ-05]}
+- {lang: en, id: LIQ-01, q: "can our business survive till the end of the year"}
+- {lang: en, id: LIQ-01, q: "Are we liquid enough?"}
+- {lang: en, id: LIQ-01, q: "is our company going to survive the next couple of months"}
+- {lang: en, id: LIQ-01, q: "will my buisness survive this quater"}
+- {lang: en, id: LIQ-01, q: "Can we keep the lights on for the next half year?"}
+- {lang: en, id: LIQ-01, q: "do we have enough cash to get to the end of the quarter"}
+- {lang: en, id: LIQ-01, q: "are we going to be able to pay our bills this month"}
+- {lang: en, id: LIQ-01, q: "Is our liquidity position safe for the coming 30 days?"}
+- {lang: en, id: LIQ-01, q: "so are we fine or not, money wise"}
+- {lang: en, id: LIQ-01, q: "will we make it"}
+- {lang: en, id: LIQ-01, q: "Could we go under in the next few weeks?"}
+- {lang: en, id: LIQ-01, q: "is my cash position ok for the next 4 months or am i in danger"}
+- {lang: en, id: LIQ-01, q: "is the company safe financially until december"}
+
+# ---------------------------------------------------------------- runway (LIQ-03)
+- {lang: en, id: LIQ-03, q: "how long can we last on the cash we have", also: [LIQ-05]}
+- {lang: en, id: LIQ-03, q: "How many weeks of cash do we have left?", also: [LIQ-05]}
+- {lang: en, id: LIQ-03, q: "when will the money run out", also: [LIQ-05]}
+- {lang: en, id: LIQ-03, q: "how long before we're broke", also: [LIQ-05]}
+- {lang: en, id: LIQ-03, q: "what's our runway looking like"}
+- {lang: en, id: LIQ-03, q: "How long can we keep paying the bills?", also: [LIQ-05]}
+- {lang: en, id: LIQ-03, q: "How many months can we survive with current cash?", also: [LIQ-05]}
+- {lang: en, id: LIQ-03, q: "when do we hit zero"}
+
+# ---------------------------------------------------------------- the lowest point (LIQ-04)
+- {lang: en, id: LIQ-04, q: "what's the worst our bank balance gets"}
+- {lang: en, id: LIQ-04, q: "How low does cash get over the next month?"}
+- {lang: en, id: LIQ-04, q: "when is cash tightest"}
+- {lang: en, id: LIQ-04, q: "what's the bottom of the cash curve"}
+- {lang: en, id: LIQ-04, q: "At its lowest point how much money will we have?"}
+
+# ---------------------------------------------------------------- below the reserve (LIQ-05)
+- {lang: en, id: LIQ-05, q: "when do we go under the minimum balance?"}
+- {lang: en, id: LIQ-05, q: "What day does cash drop below our safety buffer?"}
+- {lang: en, id: LIQ-05, q: "when do we first dip under the floor"}
+- {lang: en, id: LIQ-05, q: "How soon will we breach the cash reserve?"}
+- {lang: en, id: LIQ-05, q: "will we go below our minimum cash this month?", also: [LIQ-01]}
+
+# ---------------------------------------------------------------- what can I spend (LIQ-06)
+- {lang: en, id: LIQ-06, q: "How much money can I safely spend right now?"}
+- {lang: en, id: LIQ-06, q: "can i afford to spend 50k on marketing this month"}
+- {lang: en, id: LIQ-06, q: "what's safe to spend today"}
+- {lang: en, id: LIQ-06, q: "how much spare cash is there"}
+- {lang: en, id: LIQ-06, q: "How much can we take out of the business without getting into trouble?"}
+
+# ---------------------------------------------------------------- big payments (LIQ-09)
+- {lang: en, id: LIQ-09, q: "what bills are coming up"}
+- {lang: en, id: LIQ-09, q: "what are the big outgoings in the next month"}
+- {lang: en, id: LIQ-09, q: "Which large payments do we have to make soon?"}
+- {lang: en, id: LIQ-09, q: "what do we have to pay out over the next few weeks"}
+- {lang: en, id: LIQ-09, q: "any big expenses due soon?"}
+- {lang: en, id: LIQ-09, q: "what money is going out this month"}
+
+# ---------------------------------------------------------------- payroll (LIQ-10)
+- {lang: en, id: LIQ-10, q: "can I pay my staff this month?"}
+- {lang: en, id: LIQ-10, q: "Will we be able to pay salaries?"}
+- {lang: en, id: LIQ-10, q: "do we have enough to cover wages"}
+- {lang: en, id: LIQ-10, q: "is payroll covered"}
+- {lang: en, id: LIQ-10, q: "can we afford to pay everyone at the end of the month"}
+- {lang: en, id: LIQ-10, q: "will we make payroll next week"}
+- {lang: en, id: LIQ-10, q: "Are the wages safe?"}
+- {lang: en, id: LIQ-10, q: "Do we have enough cash for salaries on day 12?"}
+- {lang: en, id: LIQ-10, q: "can i pay my employees"}
+- {lang: en, id: LIQ-10, q: "will my workers get paid this month"}
+
+# ---------------------------------------------------------------- why short (LIQ-14)
+- {lang: en, id: LIQ-14, q: "why is cash going to be tight?"}
+- {lang: en, id: LIQ-14, q: "What's causing the cash shortfall?"}
+- {lang: en, id: LIQ-14, q: "why are we running low on money"}
+- {lang: en, id: LIQ-14, q: "How come we're going to be short?"}
+- {lang: en, id: LIQ-14, q: "what's draining our cash"}
+- {lang: en, id: LIQ-14, q: "Why does our balance drop so much?"}
+
+# ---------------------------------------------------------------- how much we need (LIQ-15)
+- {lang: en, id: LIQ-15, q: "How much money do we need to stay safe?"}
+- {lang: en, id: LIQ-15, q: "how much funding do we need to get through"}
+- {lang: en, id: LIQ-15, q: "How big is the cash gap?"}
+- {lang: en, id: LIQ-15, q: "How much do I need to borrow to be ok?"}
+- {lang: en, id: LIQ-15, q: "what's the shortfall in yuan"}
+- {lang: en, id: LIQ-15, q: "How much extra cash would keep us above the reserve?"}
+
+# ---------------------------------------------------------------- FLOW's recommendation and its cost (FUN-02, FUN-04)
+- {lang: en, id: FUN-02, q: "What does FLOW suggest we do?", also: [general_advice]}
+- {lang: en, id: FUN-02, q: "What's your recommendation for the cash gap?"}
+- {lang: en, id: FUN-02, q: "What's FLOW's plan?"}
+- {lang: en, id: FUN-02, q: "how should we fund the gap?"}
+- {lang: en, id: FUN-02, q: "whats the best way to cover the shortfall"}
+- {lang: en, id: FUN-02, q: "What is the plan to keep us solvent?", also: [general_advice]}
+- {lang: en, id: FUN-04, q: "how much will the plan cost us"}
+- {lang: en, id: FUN-04, q: "what does FLOW's funding cost"}
+- {lang: en, id: FUN-04, q: "How expensive is your proposal?"}
+- {lang: en, id: FUN-04, q: "what are the fees on the recommended plan"}
+
+# ---------------------------------------------------------------- debt (DEBT-01, 03, 04, 06, 08)
+- {lang: en, id: DEBT-01, q: "How much do we owe in total?"}
+- {lang: en, id: DEBT-01, q: "what's our total debt"}
+- {lang: en, id: DEBT-01, q: "how much are we borrowing at the moment"}
+- {lang: en, id: DEBT-01, q: "How much loan do we have outstanding?"}
+- {lang: en, id: DEBT-01, q: "how indebted are we"}
+- {lang: en, id: DEBT-01, q: "What do we owe the bank?"}
+- {lang: en, id: DEBT-03, q: "how much do our loans cost every month"}
+- {lang: en, id: DEBT-03, q: "What's our monthly debt repayment?"}
+- {lang: en, id: DEBT-03, q: "what are we paying on debt each month"}
+- {lang: en, id: DEBT-03, q: "How much interest are we paying?"}
+- {lang: en, id: DEBT-04, q: "can we pay off all our loans?"}
+- {lang: en, id: DEBT-04, q: "could we get rid of our debt"}
+- {lang: en, id: DEBT-04, q: "Is it possible to repay everything we owe now?"}
+- {lang: en, id: DEBT-04, q: "can we become debt free"}
+- {lang: en, id: DEBT-06, q: "how much more can we borrow"}
+- {lang: en, id: DEBT-06, q: "What credit is still available to us?"}
+- {lang: en, id: DEBT-06, q: "how much room is left on our facilities"}
+- {lang: en, id: DEBT-06, q: "What's our unused borrowing capacity?"}
+- {lang: en, id: DEBT-06, q: "can we get more financing if we need it"}
+- {lang: en, id: DEBT-08, q: "When's the next loan repayment due?"}
+- {lang: en, id: DEBT-08, q: "when do we next pay the bank"}
+- {lang: en, id: DEBT-08, q: "next loan installment date?"}
+- {lang: en, id: DEBT-08, q: "What's the next debt payment?"}
+
+# ---------------------------------------------------------------- customers (CUS-01, 03, 05, 07, 08)
+- {lang: en, id: CUS-01, q: "which customer owes us the most money"}
+- {lang: en, id: CUS-01, q: "who's our biggest debtor"}
+- {lang: en, id: CUS-01, q: "Who has the largest unpaid invoice?"}
+- {lang: en, id: CUS-01, q: "who owes us money"}
+- {lang: en, id: CUS-03, q: "Is any customer paying late?"}
+- {lang: en, id: CUS-03, q: "are customers late with payments"}
+- {lang: en, id: CUS-03, q: "who hasn't paid us on time"}
+- {lang: en, id: CUS-03, q: "Any overdue invoices?"}
+- {lang: en, id: CUS-05, q: "are we too reliant on one customer?"}
+- {lang: en, id: CUS-05, q: "How concentrated is our customer base?"}
+- {lang: en, id: CUS-05, q: "What happens if we lose our biggest customer?"}
+- {lang: en, id: CUS-05, q: "how much of our money comes from foshan"}
+- {lang: en, id: CUS-07, q: "what if foshan pays a month late?"}
+- {lang: en, id: CUS-07, q: "What happens to us if Foshan delays payment by 2 weeks?"}
+- {lang: en, id: CUS-07, q: "if Foshan is 20 days late, are we in trouble?"}
+- {lang: en, id: CUS-07, q: "what if our main customer pays late"}
+- {lang: en, id: CUS-08, q: "Should we take Foshan's 1.2% early payment discount?"}
+- {lang: en, id: CUS-08, q: "is it worth offering an early-pay discount of 1%?"}
+
+# ---------------------------------------------------------------- waiting, approvals, terms (DEAL-01, 02, 09)
+- {lang: en, id: DEAL-01, q: "what do I need to deal with today"}
+- {lang: en, id: DEAL-01, q: "Anything need my attention?"}
+- {lang: en, id: DEAL-01, q: "what's on my plate"}
+- {lang: en, id: DEAL-01, q: "what's waiting on me"}
+- {lang: en, id: DEAL-02, q: "Do I have anything to approve?"}
+- {lang: en, id: DEAL-02, q: "Are there approvals waiting?"}
+- {lang: en, id: DEAL-02, q: "anything pending my sign-off?"}
+- {lang: en, id: DEAL-09, q: "What would 60 day terms for Foshan cost us?"}
+- {lang: en, id: DEAL-09, q: "how much does it cost to extend Foshan to 90 days"}
+
+# ---------------------------------------------------------------- covenants, capex, activity, mandate
+- {lang: en, id: COV-01, q: "Are we within our bank covenants?"}
+- {lang: en, id: COV-01, q: "are we compliant with the loan conditions"}
+- {lang: en, id: COV-01, q: "Is our DSCR ok?"}
+- {lang: en, id: COV-01, q: "are we breaching any covenant"}
+- {lang: en, id: COV-05, q: "what would put us in breach of covenants?"}
+- {lang: en, id: COV-05, q: "How much more debt before we break the covenants?"}
+- {lang: en, id: COV-05, q: "how close are we to breaking the bank's covenants"}
+- {lang: en, id: COV-07, q: "would FLOW's plan break any covenants?"}
+- {lang: en, id: COV-07, q: "does the funding plan keep us inside the covenants?"}
+- {lang: en, id: CAP-01, q: "can we afford the new machine?"}
+- {lang: en, id: CAP-01, q: "Should I buy the equipment?"}
+- {lang: en, id: CAP-01, q: "is buying the 600k machine a good idea"}
+- {lang: en, id: ACT-01, q: "what has FLOW done lately"}
+- {lang: en, id: ACT-01, q: "What did you do this week?"}
+- {lang: en, id: ACT-01, q: "anything FLOW did without asking me?"}
+- {lang: en, id: MAN-01, q: "What are you allowed to do on your own?"}
+- {lang: en, id: MAN-01, q: "what can FLOW decide without me"}
+- {lang: en, id: MAN-01, q: "What's FLOW's authority?"}
+- {lang: en, id: MAN-02, q: "what do I have to approve myself"}
+- {lang: en, id: MAN-02, q: "When do you need my sign-off?"}
+- {lang: en, id: MAN-02, q: "which decisions need me"}
+
+# ---------------------------------------------------------------- what should I do (general_advice)
+- {lang: en, id: general_advice, q: "how do I ensure that my cashflow is safe for the next 6 months?"}
+- {lang: en, id: general_advice, q: "What should I do about cash?", also: [FUN-02]}
+- {lang: en, id: general_advice, q: "how do I keep our cash safe"}
+- {lang: en, id: general_advice, q: "what do I do about cash", also: [FUN-02]}
+- {lang: en, id: general_advice, q: "what should we do to stay safe for the next quarter"}
+- {lang: en, id: general_advice, q: "how can I make sure we don't run out of money"}
+- {lang: en, id: general_advice, q: "Give me some advice on our cash flow"}
+- {lang: en, id: general_advice, q: "what steps should I take to protect cash this month"}
+- {lang: en, id: general_advice, q: "How do we avoid a cash crunch?"}
+- {lang: en, id: general_advice, q: "what can I do to improve our cash position"}
+- {lang: en, id: general_advice, q: "how do i make sure i can pay the bills until year end"}
+- {lang: en, id: general_advice, q: "What's the best thing to do right now for our finances?", also: [FUN-02]}
+- {lang: en, id: general_advice, q: "Any tips to get through the next 3 months?"}
+- {lang: en, id: general_advice, q: "How should I manage our cashflow over the next half year?"}
+- {lang: en, id: general_advice, q: "what would you do in my position", also: [FUN-02]}
+- {lang: en, id: general_advice, q: "how do we stay afloat"}
+- {lang: en, id: general_advice, q: "What actions should I take to secure liquidity?"}
+- {lang: en, id: general_advice, q: "how to keep the company safe financially this quarter"}
+- {lang: en, id: general_advice, q: "what do we need to do to not go broke"}
+- {lang: en, id: general_advice, q: "help me keep cash healthy for the rest of the year"}
+- {lang: en, id: general_advice, q: "I'm worried about cash, what should I do?"}
+- {lang: en, id: general_advice, q: "how can we protect payroll", also: [LIQ-10]}
+- {lang: en, id: general_advice, q: "What would you advise us to do about cash flow?", also: [FUN-02]}
+- {lang: en, id: general_advice, q: "how do I make sure my business has enough money for the next 6 months"}
+- {lang: en, id: general_advice, q: "whats the smartest move to keep cashflow positive this quater"}
+- {lang: en, id: general_advice, q: "how do I protect my company from running out of cash"}
+- {lang: en, id: general_advice, q: "How can I guarantee we can pay everyone until the end of the year?"}
+- {lang: en, id: general_advice, q: "what should my priorities be for cash this month"}
+- {lang: en, id: general_advice, q: "Tell me how to get through the next 90 days without a cash problem."}
+- {lang: en, id: general_advice, q: "is there anything I should be doing about our cash flow"}
+
+# ---------------------------------------------------------------- the books do not hold it (not_in_books)
+- {lang: en, id: not_in_books, q: "how much tax do we owe this quarter"}
+- {lang: en, id: not_in_books, q: "What's our profit margin this year?"}
+- {lang: en, id: not_in_books, q: "how many employees do we have"}
+- {lang: en, id: not_in_books, q: "What's our inventory worth?"}
+- {lang: en, id: not_in_books, q: "What were our sales last year?"}
+- {lang: en, id: not_in_books, q: "How much VAT do we pay?"}
+- {lang: en, id: not_in_books, q: "what is the company worth"}
+- {lang: en, id: not_in_books, q: "how much do we pay each employee"}
+- {lang: en, id: not_in_books, q: "what are our competitors doing"}
+- {lang: en, id: not_in_books, q: "are we profitable this quarter"}
+
+# ---------------------------------------------------------------- chatter (out_of_scope_ok)
+- {lang: en, id: out_of_scope_ok, q: "tell me a joke"}
+- {lang: en, id: out_of_scope_ok, q: "what's the weather in Shenzhen"}
+- {lang: en, id: out_of_scope_ok, q: "who won the football last night"}
+- {lang: en, id: out_of_scope_ok, q: "hi"}
+- {lang: en, id: out_of_scope_ok, q: "thanks!"}
+- {lang: en, id: out_of_scope_ok, q: "can you write me a poem about money"}
+- {lang: en, id: out_of_scope_ok, q: "what's the capital of France"}
+- {lang: en, id: out_of_scope_ok, q: "what time is it in London"}
+- {lang: en, id: out_of_scope_ok, q: "I love this app"}
+- {lang: en, id: out_of_scope_ok, q: "good morning flow"}
+- {lang: en, id: out_of_scope_ok, q: "how are you today?"}
+
+# ================================================================ 中文
+
+# ---------------------------------------------------------------- 安全 / 撑不撑得住 (LIQ-01)
+- {lang: zh, id: LIQ-01, q: "公司能撑过这个月吗"}
+- {lang: zh, id: LIQ-01, q: "公司能撑过这个月吗？"}
+- {lang: zh, id: LIQ-01, q: "我们会不会断现金流", also: [LIQ-03]}
+- {lang: zh, id: LIQ-01, q: "我们的钱够用吗"}
+- {lang: zh, id: LIQ-01, q: "公司现金流安全吗"}
+- {lang: zh, id: LIQ-01, q: "这个季度资金会不会出问题"}
+- {lang: zh, id: LIQ-01, q: "咱们资金链没问题吧？"}
+- {lang: zh, id: LIQ-01, q: "公司会不会倒闭啊"}
+- {lang: zh, id: LIQ-01, q: "我们撑得到年底吗"}
+- {lang: zh, id: LIQ-01, q: "未来三个月钱够不够"}
+- {lang: zh, id: LIQ-01, q: "现金会不会不够用"}
+- {lang: zh, id: LIQ-01, q: "资金周转得过来吗"}
+- {lang: zh, id: LIQ-01, q: "我们会不会没钱了", also: [LIQ-03]}
+- {lang: zh, id: LIQ-01, q: "下个月我们还好吗"}
+- {lang: zh, id: LIQ-01, q: "账上的钱撑得住吗"}
+- {lang: zh, id: LIQ-01, q: "公司财务状况安全吗"}
+- {lang: zh, id: LIQ-01, q: "有没有资金断裂的风险"}
+- {lang: zh, id: LIQ-01, q: "这个月能挺过去吗"}
+- {lang: zh, id: LIQ-01, q: "未来半年公司资金安全吗"}
+- {lang: zh, id: LIQ-01, q: "我们的现金流健康吗"}
+- {lang: zh, id: LIQ-01, q: "会不会出现资金缺口"}
+- {lang: zh, id: LIQ-01, q: "公司还能活下去吗"}
+- {lang: zh, id: LIQ-01, q: "这季度钱紧不紧"}
+- {lang: zh, id: LIQ-01, q: "接下来30天现金够吗"}
+- {lang: zh, id: LIQ-01, q: "老实说我们是不是快没钱了", also: [LIQ-03]}
+- {lang: zh, id: LIQ-01, q: "资金链会不会断"}
+
+# ---------------------------------------------------------------- 还能撑多久 (LIQ-03)
+- {lang: zh, id: LIQ-03, q: "我们的钱还能用多久", also: [LIQ-05]}
+- {lang: zh, id: LIQ-03, q: "现金还能撑几个月", also: [LIQ-05]}
+- {lang: zh, id: LIQ-03, q: "多少天后会没钱", also: [LIQ-05]}
+- {lang: zh, id: LIQ-03, q: "账上的钱能撑到什么时候", also: [LIQ-05]}
+- {lang: zh, id: LIQ-03, q: "什么时候会把钱花光", also: [LIQ-05]}
+
+# ---------------------------------------------------------------- 最低点 (LIQ-04)
+- {lang: zh, id: LIQ-04, q: "现金最低的时候有多少"}
+- {lang: zh, id: LIQ-04, q: "哪天账上钱最少"}
+- {lang: zh, id: LIQ-04, q: "最紧张的时候余额是多少"}
+
+# ---------------------------------------------------------------- 跌破储备 (LIQ-05)
+- {lang: zh, id: LIQ-05, q: "什么时候会低于安全线"}
+- {lang: zh, id: LIQ-05, q: "哪天跌破最低余额"}
+- {lang: zh, id: LIQ-05, q: "现金什么时候低于储备"}
+
+# ---------------------------------------------------------------- 能花多少 (LIQ-06)
+- {lang: zh, id: LIQ-06, q: "现在能花多少钱"}
+- {lang: zh, id: LIQ-06, q: "我手上有多少闲钱可以用"}
+- {lang: zh, id: LIQ-06, q: "这个月还能支出多少"}
+
+# ---------------------------------------------------------------- 大额支出 (LIQ-09)
+- {lang: zh, id: LIQ-09, q: "最近有哪些大额支出"}
+- {lang: zh, id: LIQ-09, q: "接下来要付哪些钱"}
+- {lang: zh, id: LIQ-09, q: "这个月有什么大笔付款"}
+
+# ---------------------------------------------------------------- 工资 (LIQ-10)
+- {lang: zh, id: LIQ-10, q: "这个月工资发得出来吗"}
+- {lang: zh, id: LIQ-10, q: "能按时发工资吗"}
+- {lang: zh, id: LIQ-10, q: "员工工资够不够发"}
+- {lang: zh, id: LIQ-10, q: "发薪日钱够吗"}
+- {lang: zh, id: LIQ-10, q: "下次发工资有问题吗"}
+- {lang: zh, id: LIQ-10, q: "我能付得起员工的薪水吗"}
+
+# ---------------------------------------------------------------- 为什么缺钱 (LIQ-14)
+- {lang: zh, id: LIQ-14, q: "为什么钱会不够"}
+- {lang: zh, id: LIQ-14, q: "现金紧张的原因是什么"}
+- {lang: zh, id: LIQ-14, q: "钱怎么会不够用"}
+
+# ---------------------------------------------------------------- 缺口多大 (LIQ-15)
+- {lang: zh, id: LIQ-15, q: "需要融多少钱才安全"}
+- {lang: zh, id: LIQ-15, q: "资金缺口有多大"}
+- {lang: zh, id: LIQ-15, q: "我们差多少钱"}
+
+# ---------------------------------------------------------------- 方案 (FUN-02, FUN-04)
+- {lang: zh, id: FUN-02, q: "FLOW建议我们怎么做", also: [general_advice]}
+- {lang: zh, id: FUN-02, q: "你推荐什么融资方案"}
+- {lang: zh, id: FUN-02, q: "缺口怎么补"}
+- {lang: zh, id: FUN-04, q: "这个方案要花多少钱"}
+- {lang: zh, id: FUN-04, q: "融资方案的成本是多少"}
+
+# ---------------------------------------------------------------- 债务 (DEBT-01, 03, 04, 06, 08)
+- {lang: zh, id: DEBT-01, q: "我们一共欠了多少钱"}
+- {lang: zh, id: DEBT-01, q: "公司负债多少"}
+- {lang: zh, id: DEBT-01, q: "我们现在有多少贷款"}
+- {lang: zh, id: DEBT-03, q: "每个月还款多少"}
+- {lang: zh, id: DEBT-03, q: "每月的利息和还款是多少"}
+- {lang: zh, id: DEBT-04, q: "能把贷款都还清吗"}
+- {lang: zh, id: DEBT-04, q: "我们有能力还清所有债务吗"}
+- {lang: zh, id: DEBT-06, q: "还能借多少钱"}
+- {lang: zh, id: DEBT-06, q: "还有多少授信没用"}
+- {lang: zh, id: DEBT-06, q: "还能贷多少"}
+- {lang: zh, id: DEBT-08, q: "下次还贷是什么时候"}
+- {lang: zh, id: DEBT-08, q: "下一笔贷款什么时候还"}
+
+# ---------------------------------------------------------------- 客户 (CUS-01, 03, 05, 07, 08)
+- {lang: zh, id: CUS-01, q: "哪个客户欠我们最多"}
+- {lang: zh, id: CUS-01, q: "谁欠钱最多"}
+- {lang: zh, id: CUS-03, q: "有没有客户拖欠货款"}
+- {lang: zh, id: CUS-03, q: "谁付款晚了"}
+- {lang: zh, id: CUS-05, q: "我们是不是太依赖一个客户了"}
+- {lang: zh, id: CUS-05, q: "客户集中度高不高"}
+- {lang: zh, id: CUS-07, q: "要是佛山晚一个月付款会怎样"}
+- {lang: zh, id: CUS-07, q: "如果佛山拖20天付款会怎么样"}
+- {lang: zh, id: CUS-08, q: "佛山1.2%的提前付款折扣值得接受吗"}
+
+# ---------------------------------------------------------------- 待办、审批、账期 (DEAL-01, 02, 09)
+- {lang: zh, id: DEAL-01, q: "有什么需要我处理的"}
+- {lang: zh, id: DEAL-01, q: "今天我要做什么"}
+- {lang: zh, id: DEAL-02, q: "有待我审批的吗"}
+- {lang: zh, id: DEAL-02, q: "有没有要我批的"}
+- {lang: zh, id: DEAL-09, q: "给佛山60天账期要多少钱"}
+
+# ---------------------------------------------------------------- 契约、设备、动态、授权
+- {lang: zh, id: COV-01, q: "我们符合银行的契约要求吗"}
+- {lang: zh, id: COV-01, q: "贷款条款有没有违反"}
+- {lang: zh, id: COV-05, q: "什么情况下会违反契约"}
+- {lang: zh, id: COV-07, q: "融资方案会不会违反契约"}
+- {lang: zh, id: CAP-01, q: "买新设备买得起吗"}
+- {lang: zh, id: CAP-01, q: "这台机器该不该买"}
+- {lang: zh, id: ACT-01, q: "FLOW这周做了什么"}
+- {lang: zh, id: ACT-01, q: "最近系统做了哪些操作"}
+- {lang: zh, id: MAN-01, q: "FLOW可以自己做哪些事"}
+- {lang: zh, id: MAN-01, q: "不用我批准你能做什么"}
+- {lang: zh, id: MAN-02, q: "哪些事情需要我批准"}
+- {lang: zh, id: MAN-02, q: "什么时候需要我签字"}
+
+# ---------------------------------------------------------------- 该怎么做 (general_advice)
+- {lang: zh, id: general_advice, q: "怎么保证未来半年现金流安全"}
+- {lang: zh, id: general_advice, q: "怎么保证未来半年现金流安全？"}
+- {lang: zh, id: general_advice, q: "我该怎么做才能保证现金安全"}
+- {lang: zh, id: general_advice, q: "现金流方面我应该做什么", also: [FUN-02]}
+- {lang: zh, id: general_advice, q: "怎样才能不断现金流"}
+- {lang: zh, id: general_advice, q: "未来三个月我们该怎么管钱"}
+- {lang: zh, id: general_advice, q: "有什么办法让资金更安全"}
+- {lang: zh, id: general_advice, q: "现金紧张我该怎么办", also: [FUN-02]}
+- {lang: zh, id: general_advice, q: "怎么避免资金链断裂"}
+- {lang: zh, id: general_advice, q: "给点现金管理的建议"}
+- {lang: zh, id: general_advice, q: "到年底前我们要怎么做才稳"}
+- {lang: zh, id: general_advice, q: "我很担心现金，怎么办"}
+- {lang: zh, id: general_advice, q: "怎么确保发得出工资", also: [LIQ-10]}
+- {lang: zh, id: general_advice, q: "这个季度要怎样才能保证资金周转"}
+- {lang: zh, id: general_advice, q: "如何确保公司接下来六个月不缺钱"}
+- {lang: zh, id: general_advice, q: "我现在应该做些什么来保住现金流", also: [FUN-02]}
+
+# ---------------------------------------------------------------- 账目中没有 (not_in_books)
+- {lang: zh, id: not_in_books, q: "这个季度要交多少税"}
+- {lang: zh, id: not_in_books, q: "我们今年利润多少"}
+- {lang: zh, id: not_in_books, q: "公司有多少员工"}
+- {lang: zh, id: not_in_books, q: "库存值多少钱"}
+- {lang: zh, id: not_in_books, q: "去年销售额是多少"}
+- {lang: zh, id: not_in_books, q: "增值税要交多少"}
+
+# ---------------------------------------------------------------- 闲聊 (out_of_scope_ok)
+- {lang: zh, id: out_of_scope_ok, q: "讲个笑话"}
+- {lang: zh, id: out_of_scope_ok, q: "今天天气怎么样"}
+- {lang: zh, id: out_of_scope_ok, q: "你好"}
+- {lang: zh, id: out_of_scope_ok, q: "谢谢"}
+- {lang: zh, id: out_of_scope_ok, q: "你是谁"}
+- {lang: zh, id: out_of_scope_ok, q: "帮我写首诗"}

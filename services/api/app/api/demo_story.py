@@ -644,6 +644,9 @@ def demo_restore(lang: str = "en", from_scenario: str | None = None, confirm_los
         raise HTTPException(403, {"code": "RESET_REFUSED", "message": str(e)}) from e
     except DemoSeedError as e:
         raise HTTPException(500, {"code": "DEMO_SEED_FAILED", "step": e.step, "message": str(e)}) from e
+    from app.api.strategy_warm import warm_strategy_reads
+
+    warm_strategy_reads()  # the local demo only (DEMO_WARM_STRATEGY=1), as after a reset: the restore stopped the warm-up of the books it replaced
     return {"ok": True, "scenario": MAIN, "day": rt.day,
             "restored_text": t(lang, "The main books are back at the start of the story.", "主账目已回到故事的起点。"),
             "story": build_story(rt, lang)}

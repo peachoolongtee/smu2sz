@@ -690,6 +690,8 @@ _KIND_TEXT = {
     "ADD_FACILITY": ("Facility added", "已添加融资工具"), "REJECT_OFFER": ("Offer declined", "报价已拒绝"),
     "CONFIRM_DOCUMENT": ("Document confirmed", "文件已确认"), "REJECT_DOCUMENT": ("Document rejected", "文件已驳回"),
     "COMMIT_PURCHASE": ("Purchase committed", "采购已确定"),  # ADR-0013
+    "SET_UP_CONTRACT_TERMS": ("Contract terms set up", "合同条款已记入账簿"),  # ADR-0014
+    "UNDO_CONTRACT_TERMS": ("Contract terms undone", "合同条款已撤销"),  # ADR-0014
     "OPEN_BOOKS": ("Books opened", "账簿已开立"),
     "ADD_CUSTOMER": ("Customer added", "已添加客户"), "REFILE_DOCUMENT": ("Document filed again", "文件已改归"),
 }
@@ -711,6 +713,8 @@ def short_kind(kind: str, lang: Lang) -> str:
         "ACCEPT_OFFER": ("buyer agreement", "买方协议"),
         "RECORD_COMMITMENT": ("buyer agreement", "买方协议"),
         "COMMIT_PURCHASE": ("equipment purchase", "设备采购"),  # ADR-0013
+        "SET_UP_CONTRACT_TERMS": ("contract set-up", "合同条款设置"),  # ADR-0014
+        "UNDO_CONTRACT_TERMS": ("undo of a contract set-up", "撤销合同条款设置"),  # ADR-0014
     }
     en, zh = words.get(kind, (kind.replace("_", " ").lower(), kind))
     return t(lang, en, zh)
@@ -989,6 +993,11 @@ _DECIDED = {  # kind: (what was authorized, what FLOW did with it, what did not 
     "ACCEPT_OFFER": (("the agreement", "FLOW recorded it", "the agreement was not recorded"), ("该协议", "FLOW 已记录", "该协议未记录")),
     "COMMIT_PURCHASE": (("the purchase", "FLOW booked its payments", "nothing was booked"),
                         ("该采购", "FLOW 已记入其付款", "没有记入任何付款")),
+    "SET_UP_CONTRACT_TERMS": (("the contract set-up", "FLOW added the customer's repeating invoices to the forecast",
+                               "the forecast did not change"),
+                              ("该合同条款设置", "FLOW 已把该客户的循环发票计入预测", "预测没有变化")),  # ADR-0014
+    "UNDO_CONTRACT_TERMS": (("the undo", "FLOW removed the repeating invoices from the forecast", "the forecast did not change"),
+                            ("该撤销", "FLOW 已从预测中移除这些循环发票", "预测没有变化")),  # ADR-0014
 }
 _DECIDED_OTHER = (("the request", "FLOW ran it", "nothing ran"), ("该请求", "FLOW 已执行", "没有执行任何操作"))
 
@@ -1951,6 +1960,12 @@ def approving_text(kind: str, lang: Lang) -> str | None:
     if kind == "COMMIT_PURCHASE":  # ADR-0013
         return t(lang, "Approving books the contract's payments on the days they fall; each is paid from cash on its day.",
                  "批准后，合同的各笔付款将按到期日记入账簿；每笔款项在到期日从现金中支付。")
+    if kind == "SET_UP_CONTRACT_TERMS":  # ADR-0014
+        return t(lang, "Approving adds the customer's repeating invoices to your books; the forecast then counts on them.",
+                 "批准后，该客户的循环发票将记入账簿；预测随后会计入这些款项。")
+    if kind == "UNDO_CONTRACT_TERMS":  # ADR-0014
+        return t(lang, "Approving removes the repeating invoices the contract set up; invoices already sent stay.",
+                 "批准后，将移除该合同设置的循环发票；已开出的发票保留。")
     if kind in ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING", "REPAY_FACILITY"):
         return t(lang, "Approving sends the request as soon as you approve.", "批准后立即提交该请求。")
     return None
@@ -2010,6 +2025,17 @@ def abstention_words(reason: str, channels: Iterable[str], lang: Lang) -> str | 
     en_what, zh_what = _QUANTITY_WORDS.get(kind, (kind.replace("_", " "), kind.replace("_", " ")))
     en_n, zh_n = _COUNT_WORDS.get(n, (str(n), str(n)))
     return t(lang, f"{who} give {en_n} different {en_what}s.", f"{who}给出了{zh_n}个不同的{zh_what}。")
+
+
+def no_simulated_reply_text(state: FinancialState, buyer_id: str | None, lang: Lang) -> str:
+    """Why a simulated send to this customer did nothing: the Demo simulates replies only for the buyers it was written for, so the owner
+    sends the prepared message themself. The customer by name; one the books do not name is "this customer", never its id."""
+    name = next((c.name for c in state.counterparties if c.id == buyer_id), None)
+    if name:
+        return t(lang, f"The Demo has no simulated reply from {name}, so nothing was sent. Copy the message and send it to {name} yourself.",
+                 f"演示中没有{name}的模拟回复，因此未发送任何内容。请复制消息，自行发给{name}。")
+    return t(lang, "The Demo has no simulated reply from this customer, so nothing was sent. Copy the message and send it yourself.",
+             "演示中没有该客户的模拟回复，因此未发送任何内容。请复制消息，自行发给对方。")
 
 
 def lapsed_offer_text(lang: Lang, by_agreement: bool = True) -> str:

@@ -83,7 +83,29 @@ def post_operation(body: dict, x_owner_token: str | None = Header(default=None),
         body = {**body, "requested_by": Actor.AGENT.value}  # unauthenticated owner claim -> agent
     if body.get("requested_by") == Actor.SYSTEM.value and not is_bank_feed(x_bank_feed_key):
         body = {**body, "requested_by": Actor.AGENT.value}  # only the bank feed speaks as SYSTEM (F-02)
+    if body.get("kind") == "RECEIVE_PAYMENT" and body.get("requested_by") == Actor.OWNER.value:
+        return _owner_receipt(rt, body, lang)
     return run_operation(rt, body, lang)
+
+
+def _owner_receipt(rt: Runtime, body: dict, lang: str) -> dict:
+    """A payment the owner records themself (gap 1 of the feature inventory): the same typed operation and the same executor run as any
+    other, plus `receipt`, the owner's words for what it did (`app.api.receipt_words`), read from the books just before and after under
+    one lock. A failure of the words is logged and leaves `receipt` null; the executor's answer is unchanged."""
+    from app.api.receipt_words import receipt_words
+
+    lg = "zh" if lang == "zh" else "en"
+    with rt.lock:
+        before = rt.store.get_state()
+        out = run_operation(rt, body, lang)
+        try:
+            out["receipt"] = receipt_words(rt, before, rt.store.get_state(), payload={**body, "day": body.get("day", rt.day)},
+                                           result=out["result"], today=rt.day, lang=lg)
+        except Exception:
+            log.exception("the words for the owner's receipt %s could not be written", body.get("op_id"))
+            out["receipt"] = None
+    out["lang"] = lg
+    return out
 
 
 def run_operation(rt: Runtime, body: dict, lang: str = "en") -> dict:

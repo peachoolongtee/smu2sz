@@ -1017,10 +1017,19 @@ export interface AcceptRequest {
 }
 
 /** POST /offers/{id}/accept: the record as it stands after the acceptance, the receipt of what was agreed and what ran, in the server's words. */
+/** The owner's next step after an agreement that funded nothing while a reserve gap is ahead: the server's sentence and the link to the funding plan. */
+export interface FundingNextStep {
+  text: string;
+  label: string;
+  href: string;
+}
+
 export interface AcceptResult {
   decision: DecisionView;
   receipt?: CommitmentReceiptView | null;
   execution?: ExecutionBlock | null;
+  /** Additive: the agreement's `funding_next`, when it left a reserve gap (null otherwise). */
+  next_step?: FundingNextStep | null;
 }
 
 /** POST /offers/{id}/decline: the record as it stands once the request is closed. */
@@ -2313,6 +2322,36 @@ export interface ReceivableRow {
   collection_state?: CollectionState;
   collection_state_text?: string;
   collection_action?: { primary?: CollectionActionKind; label?: string; others?: { action: CollectionActionKind; label: string }[] };
+  /** The invoice's status in the books ("OPEN", "FINANCED", "SETTLED") and what is still owed on it, in fen: the record-a-payment form sends the
+   * outstanding as it is when the owner records the full amount (never added up here). */
+  status?: string;
+  outstanding_fen?: Fen;
+}
+
+/** What the owner sends to record a payment they received (the existing RECEIVE_PAYMENT operation, POST /operations as the owner). */
+export interface RecordReceiptRequest {
+  receivable_id: string;
+  amount_fen: Fen;
+  bank_reference?: string | null;
+  /** One per press of Record: the op id and the idempotency key, so a retried request books once. */
+  key: string;
+}
+
+/** The owner's words for a recorded payment (`receipt` on the POST /operations answer), written by the server in the page's language. */
+export interface ReceiptWords {
+  status: "EXECUTED" | "REFUSED" | "DUPLICATE" | "PENDING_APPROVAL" | string;
+  tone: "ok" | "bad" | "info" | "warn" | "neutral";
+  headline_text: string | null;
+  lines: string[];
+  /** How the reconciliation reads the receipt, as a sentence; the page puts its own "Reconciliation" label before it. */
+  reconciliation_text: string | null;
+}
+
+export interface RecordReceiptResult {
+  result: OperationResult;
+  /** Null when the server could not write the words (the executor's answer stands). */
+  receipt: ReceiptWords | null;
+  lang?: "en" | "zh";
 }
 
 export interface ReceivablesRead {
@@ -2597,6 +2636,35 @@ export interface NlResponse {
   /** An owner turn that decided something: the decision's record id, and whether the record was written. Absent on other turns and in older recordings. */
   decision_id?: string | null;
   decision_recorded?: boolean;
+  /** An answer with structure, laid out by the server (services/api/app/nl/answer_card.py); owner only, absent from an older server and on other turns. */
+  card?: NlAnswerCard | null;
+}
+
+/** One key figure of an answer card: the server's value and label, and its tone. */
+export interface NlCardFigure {
+  label: string;
+  value: string;
+  tone: "danger" | "ok" | "neutral";
+}
+
+/** A link under an answer card to the page that shows what it names. A link only: it never approves, sends or runs anything. */
+export interface NlCardAction {
+  label: string;
+  href: string;
+  kind: "link";
+}
+
+/**
+ * An answer card: the lead sentence (the yes/no or the figure), up to three key figures, the rest of the reply, what it was worked out from (with every figure), and links to the
+ * pages that show it. Every word and every href is the server's. The opener's card has no lead or body (its reply is shown as it is): only its links and basis.
+ */
+export interface NlAnswerCard {
+  lead: string;
+  figures: NlCardFigure[];
+  body: string;
+  basis: string;
+  all_figures?: NlCardFigure[];
+  actions: NlCardAction[];
 }
 
 /** POST /nl/opener: the agent speaks first. A pending cure sits in the owner's session until "go ahead". */
@@ -3243,6 +3311,11 @@ export interface HomeV2Action {
   /** The action's facts as label and value (Estimated cost, Funding, Approval); absent from an older server, then `text` is the one sentence. */
   facts?: { label: string; value: string }[];
   variant: "ACTION" | "QUIET";
+  /** The server's decision that the cash is covered (nothing to fund, never under the minimum today or on any day ahead): the "You're covered!" card. Absent from an older server or recording. */
+  covered?: boolean;
+  /** The covered card's pill and heading, the server's words ("All clear", "You're covered!"); absent from an older server (the dictionary's then). */
+  covered_pill_text?: string | null;
+  covered_title_text?: string | null;
   key: string | null;
   tone: HomeTone;
   eyebrow: string;
@@ -3296,6 +3369,8 @@ export interface HomeV2 {
       with_plan?: { label: string; value_text: string } | null;
       /** The note in a few words ("in 30 days · current books, no new funding"); absent until the server sends it (`note` then). */
       short_note?: string | null;
+      /** The label under the figure: "Without new funding", or "With the funding in place" once the plan's operations have run. Absent on older recordings (the dictionary's "Without new funding" then). */
+      basis_label?: string | null;
     };
     funding: HomeV2Kpi & { state: "PROPOSED" | "ARRANGED" | "NONE"; hint: string | null; /** "Ready to run" and its like, in the server's words. */ status_text?: string | null };
   };
@@ -3416,8 +3491,10 @@ export interface HomeView {
     first_breach_day: Day | null;
     first_breach_cash_fen: Fen | null;
     first_breach_cash_short: string | null;
-    /** Today's cash is already under the reserve: the first breach is today, its cash is today's, and no tile may say "N days ago". Absent in older recordings. */
+    /** Today's cash is already under the reserve: the cash in the bank right now, or the projection's close of today. Absent in older recordings. */
     below_reserve_today?: boolean;
+    /** The server's one rule for "covered": nothing to fund, and the cash under the reserve neither today nor on any day ahead. Absent in older recordings. */
+    covered?: boolean;
     cash_short: string;
     floor_short: string;
     lowest_short: string;
@@ -3721,8 +3798,78 @@ export interface OperationResultLike {
   message: string;
 }
 
+/**
+ * ADR-0014, GET /documents/{id}/terms: what a confirmed customer contract would set up in the books (its repeating invoice),
+ * whether it can, and the forecast before and after. Every figure and sentence is the server's, in the owner's language.
+ */
+export type ContractTermsStatus = "READY" | "ALREADY" | "SET_UP" | "CONFLICT" | "BLOCKED";
+
+export interface ContractTermsView {
+  document_id: string;
+  counterparty_id: string;
+  counterparty_name: string;
+  status: ContractTermsStatus;
+  status_text: string;
+  title: string;
+  intro: string;
+  /** The figures the contract gives (each invoice, the interval, the next invoice, the payment days), each with its clause and quote. */
+  terms: { field: string; label: string; value_display: string | null; clause: string | null; quote: string | null; span: TextSpan | null }[];
+  schedule_text: string | null;
+  /** What the contract says that this step never puts in the books, and why. */
+  not_set_up: { field: string; label: string; text: string }[];
+  /** Why it cannot be set up (BLOCKED). */
+  problems: { code: string; text: string }[];
+  /** Warnings that do not block (READY). */
+  notes: { code: string; text: string }[];
+  /** CONFLICT: the repeating invoice the books hold beside the one the contract gives. */
+  existing: { text: string; contract_text: string | null } | null;
+  /** READY only: the conservative forecast without and with the new invoices. */
+  forecast: { rows: { key: string; label: string; before: string; after: string; changed: boolean }[]; text: string; horizon_days: number } | null;
+  can_set_up: boolean;
+  doc_hash: string;
+  terms_hash: string | null;
+  button: string;
+  /** The step's own labels, in the owner's language (the browser writes no words of its own here). */
+  labels: { from_contract: string; forecast: string; before: string; after: string; not_set_up: string; why_not: string; busy: string; undo_busy: string };
+  confirm: { title: string; body: string; yes: string; no: string };
+  /** The set-up in force from this contract, if any, and its undo. */
+  set_up: {
+    op_id: string;
+    seq: number;
+    day: Day | null;
+    when: string;
+    text: string;
+    can_undo: boolean;
+    undo_button: string;
+    undo_confirm: { title: string; body: string; yes: string; no: string };
+  } | null;
+  lang: "en" | "zh";
+  day: Day;
+}
+
+/** POST /documents/{id}/terms and /terms/undo: the executor's answer, the server's sentence for it, and the step read again. */
+export interface ContractTermsResult {
+  result: OperationResultLike;
+  result_text: string;
+  terms: ContractTermsView;
+}
+
 export type StageState = "done" | "now" | "todo" | "skipped" | "pending" | "missed";
 export type DealTone = "ok" | "warn" | "bad" | "info" | "mute";
+
+/** What a buyer's invoice rows add up to, with the server's one sentence about them (`DealView.open_invoices`, `DealView.contract_status`). */
+export interface OpenInvoices {
+  count: number;
+  due_fen: Fen;
+  due_display: string;
+  late_count: number;
+  late_fen: Fen;
+  late_display: string;
+  next_due_day: Day | null;
+  next_due_when: string | null;
+  text: string;
+  tone: DealTone;
+}
 
 export interface DealView {
   counterparty_id: string;
@@ -3786,18 +3933,12 @@ export interface DealView {
    * ones, when the next falls due and the server's one sentence about them ("No contract on file yet. Open invoices: 1, ¥120,000.00 due in 14 days.").
    * Absent with a contract (its own fields say it) and for a buyer with no invoice.
    */
-  open_invoices?: {
-    count: number;
-    due_fen: Fen;
-    due_display: string;
-    late_count: number;
-    late_fen: Fen;
-    late_display: string;
-    next_due_day: Day | null;
-    next_due_when: string | null;
-    text: string;
-    tone: DealTone;
-  };
+  open_invoices?: OpenInvoices;
+  /**
+   * A confirmed contract with no deal agreed on it yet: the same counts as `open_invoices` and the server's one sentence for the row that lists it on
+   * Deals ("Contract on file; no deal agreed yet. Open invoices: 1, ¥420,000.00 due in 32 days."). Absent once a deal is agreed and without a contract.
+   */
+  contract_status?: OpenInvoices;
   owed_by_us?: {
     display_only: boolean;
     deliverables: { text: string | null; clause: string | null; quote: string }[];
@@ -4214,7 +4355,7 @@ export interface DecisionView extends DecisionSummary, DealLifeWords {
     decided_day: Day | null;
     decided_when: string | null;
   } | null;
-  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; /** Null for an agreement in force (it does not expire: the receipt says "In force."); the words and the line are then left out, never filled in. */ expires_day: Day | null; expires_when: string | null; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[]; /** The receipt of the agreement on the record. */ receipt?: CommitmentReceiptView | null } | null;
+  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; /** Null for an agreement in force (it does not expire: the receipt says "In force."); the words and the line are then left out, never filled in. */ expires_day: Day | null; expires_when: string | null; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[]; /** The receipt of the agreement on the record. */ receipt?: CommitmentReceiptView | null; /** An agreement the owner made themself (accept as asked, the buyer's yes recorded) runs no funding: while a reserve gap is ahead, the server's sentence for it and the link to the plan; null otherwise. */ funding_next?: FundingNextStep | null } | null;
   operations: DecisionOperation[];
   execution: ExecutionBlock;
   settlement: DecisionSettlementLot[];

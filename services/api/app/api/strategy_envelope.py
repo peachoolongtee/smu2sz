@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Sequence
 from dataclasses import replace
 from typing import Any, Literal
 
@@ -22,8 +23,9 @@ from app.api.customer_overview import share_of_year, twelve_months_of, year_held
 from app.api.display import displayed
 from app.api.features import require_feature
 from app.api.runtime import get_runtime
-from app.books import books_from_store
+from app.books import Books, books_from_store
 from app.config import get_settings
+from app.domain.models import Commitment, Mandate
 from app.financial import EngineError
 from app.strategy.cache import CACHE_SIZE, AnswerCache, cache_key
 from app.strategy.envelope import (
@@ -53,6 +55,32 @@ def clear_cache() -> None:
     _ask_cache.clear()
 
 
+def envelope_key(state: Any, mandate: Any, day: int, commitments: Any, buyer_id: str) -> str:
+    """The key of the sweep and of its table: pure in the books, the mandate, the day, the commitments and the buyer (shared with the
+    warm-up, `app.api.strategy_warm`, which computes them in its own process and puts them here under the same key)."""
+    return cache_key(state, mandate, day, commitments, buyer_id)
+
+
+def sweep_facts(books: Books, mandate: Mandate, day: int, buyer_id: str, owner_key_hex: str, commitments: Sequence[Commitment]) -> EnvelopeFacts:
+    """The sweep, as the route caches it: an engine error is the route's 422; a value off the levers' grids is the out-of-range facts."""
+    try:
+        return envelope_facts(books, mandate, store=None, day=day, buyer_id=buyer_id, trusted_owner_key_hex=owner_key_hex,
+                              commitments=commitments)
+    except EngineError as exc:
+        raise HTTPException(422, f"cannot project: {exc}") from None
+    except ValueError:  # WhatIfParamError or a value off the levers' grids: said in a sentence, never a 500
+        log.warning("envelope for %s is outside the levers' ranges", buyer_id, exc_info=True)
+        return out_of_range_facts(books, day=day, buyer_id=buyer_id)
+
+
+def zone_facts(books: Books, mandate: Mandate, day: int, buyer_id: str, owner_key_hex: str, commitments: Sequence[Commitment]) -> ZoneFacts:
+    """The zone table, as the route caches it: an engine error is the route's 422; a value off the grids raises `ValueError`."""
+    try:
+        return envelope_zone(books, mandate, day=day, buyer_id=buyer_id, trusted_owner_key_hex=owner_key_hex, commitments=commitments)
+    except EngineError as exc:
+        raise HTTPException(422, f"cannot project: {exc}") from None
+
+
 @router.get("/buyers/{buyer_id}/envelope")
 def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), ask: int | None = Query(None, ge=1, le=365),
                  lang: Literal["en", "zh"] = Query("en")) -> dict[str, Any]:
@@ -69,28 +97,12 @@ def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), ask: int | Non
     if not any(c.id == buyer_id for c in state.counterparties):
         raise HTTPException(404, detail={"code": "BUYER_NOT_FOUND", "message": f"There is no buyer {buyer_id} on the books."})
 
-    def sweep() -> EnvelopeFacts:
-        try:
-            return envelope_facts(books, mandate, store=rt.store, day=day, buyer_id=buyer_id,
-                                  trusted_owner_key_hex=rt.owner_key_hex, commitments=commitments)
-        except EngineError as exc:
-            raise HTTPException(422, f"cannot project: {exc}") from None
-        except ValueError:  # WhatIfParamError or a value off the levers' grids: said in a sentence, never a 500
-            log.warning("envelope for %s is outside the levers' ranges", buyer_id, exc_info=True)
-            return out_of_range_facts(books, day=day, buyer_id=buyer_id)
-
-    def zone_sweep() -> ZoneFacts:
-        try:
-            return envelope_zone(books, mandate, day=day, buyer_id=buyer_id, trusted_owner_key_hex=rt.owner_key_hex,
-                                 commitments=commitments)
-        except EngineError as exc:
-            raise HTTPException(422, f"cannot project: {exc}") from None
-
-    key = cache_key(state, mandate, day, commitments, buyer_id)
-    facts = _cache.get_or_compute(key, sweep)
+    owner_key = rt.owner_key_hex
+    key = envelope_key(state, mandate, day, commitments, buyer_id)
+    facts = _cache.get_or_compute(key, lambda: sweep_facts(books, mandate, day, buyer_id, owner_key, commitments))
     if zone and not facts.refused:  # the table is cached apart: a read of it after a read without it adds only its own cost
         try:
-            z = _zone_cache.get_or_compute(key, zone_sweep)
+            z = _zone_cache.get_or_compute(key, lambda: zone_facts(books, mandate, day, buyer_id, owner_key, commitments))
             facts = replace(facts, zone=z.rows, evaluations=facts.evaluations + z.evaluations, seconds=facts.seconds + z.seconds)
         except ValueError:  # a table row off the levers' grids: the same refusal the whole sweep would have given
             log.warning("envelope zone for %s is outside the levers' ranges", buyer_id, exc_info=True)

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Literal
@@ -209,17 +209,30 @@ def counter_plan(profile: BuyerProfile, round_no: int) -> list[_Planned]:
     if ask.discount_bp is not None and profile.receivable_id is not None:
         floor = profile.min_early_pay_discount_bp + profile.concession_step_bp
         rate = max(ask.discount_bp - profile.concession_step_bp * round_no, floor)
+        if profile.invoice_words and profile.settle_words:  # books the owner opened: the invoice and the date in words
+            clause = Clause(
+                key="early_settlement_named",
+                params={
+                    "invoice_en": profile.invoice_words["en"],
+                    "invoice_zh": profile.invoice_words["zh"],
+                    "when_en": profile.settle_words["en"],
+                    "when_zh": profile.settle_words["zh"],
+                    "rate": fmt_pct(bp(rate)),
+                },
+            )
+        else:
+            clause = Clause(
+                key="early_settlement",
+                params={
+                    "receivable": profile.receivable_id,
+                    "face": fmt_yuan(profile.invoice_face_fen),
+                    "day": str(profile.early_settlement_day),
+                    "rate": fmt_pct(bp(rate)),
+                },
+            )
         plan.append(
             _Planned(
-                clause=Clause(
-                    key="early_settlement",
-                    params={
-                        "receivable": profile.receivable_id,
-                        "face": fmt_yuan(profile.invoice_face_fen),
-                        "day": str(profile.early_settlement_day),
-                        "rate": fmt_pct(bp(rate)),
-                    },
-                ),
+                clause=clause,
                 type=ObligationType.IMMEDIATE_DISCOUNT,
                 rate_bp=rate,
                 effective_day=profile.early_settlement_day,
@@ -240,7 +253,7 @@ def counter_plan(profile: BuyerProfile, round_no: int) -> list[_Planned]:
                 duration=DurationKind.RECURRING_PERPETUAL,
             )
         )
-    if profile.max_rebate_bp:
+    if profile.max_rebate_bp and profile.next_quarter_purchases_fen:  # no purchases to rebate: no rebate clause
         floor = profile.min_rebate_bp + profile.rebate_step_bp if profile.min_rebate_bp else 0
         rate = max(profile.max_rebate_bp - profile.rebate_step_bp * round_no, floor)
         if rate > 0:
@@ -286,11 +299,20 @@ def _digest(payload: object) -> str:
 class BuyerKernel:
     """Deterministic buyer. The same profile, proposals and round always give the same response."""
 
-    def __init__(self, verbaliser_hook: VerbaliserHook | None = None) -> None:
+    def __init__(
+        self, verbaliser_hook: VerbaliserHook | None = None, profiles: Mapping[str, BuyerProfile] | None = None
+    ) -> None:
+        """`profiles` stands in for the fixture profile of the same id: a profile fitted to the books in use
+        (`app.counterparties.books.fitted_profile`). Any other id is read from the fixtures."""
         self._hook = verbaliser_hook
+        self._profiles = dict(profiles or {})
+
+    def _profile(self, profile_id: str) -> BuyerProfile:
+        fitted = self._profiles.get(profile_id)
+        return fitted if fitted is not None else get_profile(profile_id)
 
     def max_rounds(self, profile_id: str) -> int:
-        return get_profile(profile_id).max_rounds
+        return self._profile(profile_id).max_rounds
 
     def respond(
         self, profile_id: str, proposal: CounterProposal | list[Obligation], round: int
@@ -306,7 +328,7 @@ class BuyerKernel:
             raise ValueError("rounds start at 1")
         if not proposals:
             raise ValueError("nothing to respond to")
-        profile = get_profile(profile_id)
+        profile = self._profile(profile_id)
         inbound = [_inbound(p) for p in proposals]
         labels = list(dict.fromkeys(i.label for i in inbound))
         responding_to = [i.counter_id for i in inbound if i.counter_id is not None]

@@ -18,8 +18,8 @@
  *       FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 CORS_ORIGINS=http://localhost:3261 \
  *       uv run uvicorn app.main:app --port 8191
  *   Web (production build):
- *     cd apps/web && NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8191 NEXT_PUBLIC_STRATEGY_MVP=1 pnpm build
- *     NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8191 NEXT_PUBLIC_STRATEGY_MVP=1 pnpm exec next start -p 3261
+ *     cd apps/web && NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8191 NEXT_PUBLIC_STRATEGY_MVP=1 NEXT_PUBLIC_STRATEGY_ENVELOPE=1 pnpm build
+ *     NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8191 NEXT_PUBLIC_STRATEGY_MVP=1 NEXT_PUBLIC_STRATEGY_ENVELOPE=1 pnpm exec next start -p 3261
  *   Capture:
  *     node apps/web/scripts/capture-remediation.mjs
  *

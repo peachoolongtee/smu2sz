@@ -13,7 +13,7 @@ import { ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StatusPill } from "@/components/ui/status-pill";
 import { activityMissing, getActivity, getClock, getState } from "@/lib/api";
-import { API_MODE, STRATEGY_MVP } from "@/lib/config";
+import { API_MODE, PILOT_JOURNAL } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { readSelection } from "@/lib/selection";
 import { useAsync } from "@/lib/use-async";
@@ -95,7 +95,7 @@ function ActivityBody() {
             </>
           )}
           {/* The shadow pilot's journal: read-only, only with the strategy build flag and a live API (the mock has none). */}
-          {STRATEGY_MVP && API_MODE === "live" ? <PilotJournal /> : null}
+          {PILOT_JOURNAL && API_MODE === "live" ? <PilotJournal /> : null}
         </div>
       )}
     </div>

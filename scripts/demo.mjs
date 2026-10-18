@@ -6,6 +6,7 @@
 //   pnpm demo:mock                 the web app alone on the recorded mocks (no API, no Python)
 //   pnpm demo:keep                 like pnpm demo, but the books live in .demo-data/flow-demo.db and survive a restart
 //   pnpm demo:keep --fresh         the same, starting from new demo books (deletes that file first)
+//   pnpm demo:keep --data .demo-data/other.db   the same, with the books in another file (the default file is left alone)
 //   pnpm demo --web-port 3141 --api-port 8041   other ports (the API is told to allow the web origin)
 //
 // The API runs with the environment of scripts/dev-api.sh: in-memory books (DATABASE_URL=memory), the repo-root .env ignored
@@ -24,16 +25,16 @@ const API_DIR = path.join(ROOT, "services", "api");
 const WEB_DIR = path.join(ROOT, "apps", "web");
 const NEXT_BIN = path.join(WEB_DIR, "node_modules", "next", "dist", "bin", "next");
 const IS_WIN = process.platform === "win32";
-const KEEP_DIR = path.join(ROOT, ".demo-data");
-const KEEP_DB = path.join(KEEP_DIR, "flow-demo.db");
+const DEFAULT_KEEP_DB = path.join(ROOT, ".demo-data", "flow-demo.db");
 
-const USAGE = `usage: node scripts/demo.mjs [--api-port 8000] [--web-port 3000] [--blank | --mock] [--keep [--fresh]]
+const USAGE = `usage: node scripts/demo.mjs [--api-port 8000] [--web-port 3000] [--blank | --mock] [--keep [--fresh] [--data FILE]]
   --api-port N  port for the API (default 8000)
   --web-port N  port for the web app (default 3000)
   --blank       open on a new business with no books (DEMO_SCENARIO=blank), so the setup wizard can open new books
   --mock        the web app alone on the recorded mocks; no API, no Python needed
   --keep        keep the books in a local file (.demo-data/flow-demo.db): uploads, confirmations and the clock survive a restart
-  --fresh       with --keep: delete that file first and start from new demo books (new blank books with --blank)`;
+  --fresh       with --keep: delete that file first and start from new demo books (new blank books with --blank)
+  --data FILE   with --keep: keep the books in FILE instead (relative to the repository root; default .demo-data/flow-demo.db)`;
 
 function say(line) {
   console.log(`[demo] ${line}`);
@@ -45,7 +46,7 @@ function fail(line) {
 }
 
 function parseArgs(argv) {
-  const opts = { apiPort: 8000, webPort: 3000, blank: false, mock: false, keep: false, fresh: false };
+  const opts = { apiPort: 8000, webPort: 3000, blank: false, mock: false, keep: false, fresh: false, data: null };
   const port = (name, value) => {
     const n = Number(value);
     if (!Number.isInteger(n) || n < 1 || n > 65535) fail(`${name} needs a port number between 1 and 65535, not "${value ?? ""}".`);
@@ -61,6 +62,11 @@ function parseArgs(argv) {
     else if (flag === "--mock") opts.mock = true;
     else if (flag === "--keep") opts.keep = true;
     else if (flag === "--fresh") opts.fresh = true;
+    else if (flag === "--data") {
+      const v = value();
+      if (!v || v.startsWith("--")) fail(`--data needs a file path, not "${v ?? ""}".`);
+      opts.data = path.resolve(ROOT, v);
+    }
     else if (flag === "--help" || flag === "-h") {
       console.log(USAGE);
       process.exit(0);
@@ -69,6 +75,8 @@ function parseArgs(argv) {
   if (opts.blank && opts.mock) fail("--blank needs the API, and --mock runs without it: pick one.");
   if (opts.keep && opts.mock) fail("--keep keeps the API's books, and --mock runs without the API (its answers are recorded): pick one.");
   if (opts.fresh && !opts.keep) fail("--fresh starts the kept books again, so it only goes with --keep (pnpm demo:keep --fresh).");
+  if (opts.data && !opts.keep) fail("--data names the file the kept books live in, so it only goes with --keep (pnpm demo:keep --data FILE).");
+  opts.keepDb = opts.data ?? DEFAULT_KEEP_DB;
   if (!opts.mock && opts.apiPort === opts.webPort) fail(`the API and the web app cannot share port ${opts.apiPort}.`);
   return opts;
 }
@@ -102,23 +110,23 @@ function sqliteUrl(file) {
 
 /** --keep: make the folder and, with --fresh, delete the file (and SQLite's companion files) so the API seeds new books. */
 function prepareKeep(opts) {
-  mkdirSync(KEEP_DIR, { recursive: true });
+  mkdirSync(path.dirname(opts.keepDb), { recursive: true });
   if (opts.fresh) {
     for (const suffix of ["", "-journal", "-wal", "-shm"]) {
       try {
-        rmSync(KEEP_DB + suffix, { force: true });
+        rmSync(opts.keepDb + suffix, { force: true });
       } catch (err) {
-        fail(`could not delete ${KEEP_DB + suffix} (${err.code ?? err.message}). Is another demo still running on it? Stop it first.`);
+        fail(`could not delete ${opts.keepDb + suffix} (${err.code ?? err.message}). Is another demo still running on it? Stop it first.`);
       }
     }
   }
-  say(`keeping the books in ${KEEP_DB}`);
+  say(`keeping the books in ${opts.keepDb}`);
   say(
-    existsSync(KEEP_DB)
+    existsSync(opts.keepDb)
       ? "  opening the books it holds (nothing is reseeded). To start again from new books: pnpm demo:keep --fresh"
       : `  the file is new: the API seeds ${opts.blank ? "blank books" : "the demo books"} into it, and later starts keep what you do.`,
   );
-  return sqliteUrl(KEEP_DB);
+  return sqliteUrl(opts.keepDb);
 }
 
 /** Does something answer on this port (IPv4 or IPv6 loopback)? */
@@ -239,6 +247,19 @@ async function waitFor(url, what, seconds, child) {
   return false;
 }
 
+/**
+ * Reads the price curve and BUYER-1's envelope (with its table) once, in the background, while the web app compiles: the API caches
+ * both by the books, so the owner's first visit to Cash & funding and to a deal's Cash impact is a cache hit instead of a 17 s
+ * sweep. Read-only; a failure (a blank start has no BUYER-1) is ignored. The API repeats it after each reset and setup.
+ */
+function warmStrategy(apiPort) {
+  const headers = { "X-Owner-Token": "demo-owner-token" };
+  const base = `http://127.0.0.1:${apiPort}`;
+  for (const path of ["/cash/price-curve?lang=en", "/buyers/BUYER-1/envelope?lang=en&zone=1"]) {
+    fetch(`${base}${path}`, { headers, signal: AbortSignal.timeout(300_000) }).catch(() => {});
+  }
+}
+
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   checkTools(opts);
@@ -251,7 +272,7 @@ async function main() {
 
   if (!opts.mock) {
     const databaseUrl = opts.keep ? prepareKeep(opts) : "memory";
-    const books = opts.keep ? "books kept in .demo-data/flow-demo.db" : "in-memory books";
+    const books = opts.keep ? `books kept in ${path.relative(ROOT, opts.keepDb)}` : "in-memory books";
     say(`starting the API on ${apiOrigin} (${books}, demo credentials, cached LLM outputs${opts.blank ? ", blank books" : ""}) ...`);
     const api = start(
       "API",
@@ -271,6 +292,11 @@ async function main() {
         FEATURE_COLLECTIONS_WORTH: "1",
         FEATURE_EXPOSURE: "1",
         FEATURE_CAPEX_CONTRACTS: "1", // the buy side (ADR-0013, certified): the Capex hub shows Your purchases and Deals its Buying card
+        FEATURE_CONTRACT_TERMS: "1", // ADR-0014: a confirmed customer contract can set up its repeating invoice (owner, Tier 2)
+        FEATURE_ASK_ROUTER: "1", // ADR-0015: the model routes an unanswered owner question to read-only tools (live LLM mode only)
+        // After a demo reset or setup, the API reads the price curve and BUYER-1's envelope once in the background, so the first
+        // visit is a cache hit (app/api/strategy_warm.py); warmStrategy() below does the same for the books it starts with.
+        DEMO_WARM_STRATEGY: "1",
         CORS_ORIGINS: `${webOrigin},http://127.0.0.1:${opts.webPort}`,
         ...(opts.blank ? { DEMO_SCENARIO: "blank" } : {}),
       },
@@ -278,6 +304,7 @@ async function main() {
     // The first run installs the API's Python packages, so allow a few minutes.
     if (!(await waitFor(`http://127.0.0.1:${opts.apiPort}/health`, "API", 300, api))) return;
     say(`API ready on ${apiOrigin}.`);
+    warmStrategy(opts.apiPort);
   }
 
   say(`starting the web app on ${webOrigin} (${opts.mock ? "mock mode, recorded answers" : `live mode against ${apiOrigin}`}) ...`);
@@ -285,6 +312,13 @@ async function main() {
     ...(opts.mock
       ? { NEXT_PUBLIC_API_MODE: "mock" }
       : { NEXT_PUBLIC_API_MODE: "live", NEXT_PUBLIC_API_URL: apiOrigin, NEXT_PUBLIC_DEMO: "1" }),
+    // The strategy answers the API above switches on: the price of earlier cash on Cash & funding and the Safe Deal Envelope on a
+    // deal's Cash impact ("The most you can give", "What you could answer instead"). Read-only; the mock serves their recordings.
+    // The envelope's first read of a set of books is slow (about 17 s on the demo books), so the API reads it once in the background
+    // after each reset and setup (DEMO_WARM_STRATEGY above). The pilot journal stays off (NEXT_PUBLIC_PILOT_JOURNAL, the pilot's
+    // record of real owners, with FEATURE_PILOT_JOURNAL off). See apps/web/lib/config.ts.
+    NEXT_PUBLIC_STRATEGY_MVP: "1",
+    NEXT_PUBLIC_STRATEGY_ENVELOPE: "1",
     // Its own build folder: it never clashes with a `pnpm dev` already running in apps/web, nor mixes mock and live builds.
     NEXT_DIST_DIR: opts.mock ? ".next-demo-mock" : ".next-demo",
   });
@@ -292,7 +326,7 @@ async function main() {
   if (!(await waitFor(`${webOrigin}/`, "web app", 300, web))) return;
   say("");
   say(`Ready. Open ${webOrigin} in your browser.${opts.mock ? "" : " Owner token: demo-owner-token (prefilled)."}`);
-  if (opts.keep) say(`Your changes are kept in ${KEEP_DB}. To start again from new books: pnpm demo:keep --fresh`);
+  if (opts.keep) say(`Your changes are kept in ${opts.keepDb}. To start again from new books: pnpm demo:keep --fresh`);
   say("Press Ctrl+C here to stop.");
 }
 

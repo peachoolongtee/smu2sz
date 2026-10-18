@@ -664,7 +664,8 @@
     "parse_source": "rules",
     "trace_id": "rec-ex01-go:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "negotiate_ex01": {
     "session_id": "rec-ex01-go",
@@ -1369,7 +1370,8 @@
     "parse_source": "rules",
     "trace_id": "rec-ex01-go:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "cancel": {
     "session_id": "rec-ex01-cancel",
@@ -1462,7 +1464,8 @@
     "parse_source": "rules",
     "trace_id": "rec-ex01-cancel:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "explain_en": {
     "session_id": "rec-ex01-why",
@@ -1935,7 +1938,8 @@
     "parse_source": "rules",
     "trace_id": "rec-ex01-why:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "explain_zh": {
     "session_id": "rec-ex01-why-zh",
@@ -2408,7 +2412,8 @@
     "parse_source": "rules",
     "trace_id": "rec-ex01-why-zh:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "goal": {
     "session_id": "rec-goal-go",
@@ -2789,7 +2794,8 @@
     "parse_source": "rules",
     "trace_id": "rec-goal-go:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "goal_go": {
     "session_id": "rec-goal-go",
@@ -3091,7 +3097,8 @@
     "parse_source": "rules",
     "trace_id": "rec-goal-go:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "amend_08": {
     "session_id": "rec-goal-08",
@@ -3472,7 +3479,8 @@
     "parse_source": "rules",
     "trace_id": "rec-goal-08:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "amend_1_refused": {
     "session_id": "rec-goal-1",
@@ -3549,7 +3557,8 @@
     "parse_source": "rules",
     "trace_id": "rec-goal-1:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "amend_fin": {
     "session_id": "rec-goal-fin",
@@ -3767,7 +3776,8 @@
     "parse_source": "rules",
     "trace_id": "rec-goal-fin:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "fund_gap": {
     "session_id": "rec-fund",
@@ -3985,7 +3995,8 @@
     "parse_source": "rules",
     "trace_id": "rec-fund:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "fund_gap_go": {
     "session_id": "rec-fund",
@@ -4050,6 +4061,7 @@
     "trace_id": "rec-fund:2",
     "context_echo": null,
     "scope_used": null,
+    "card": null,
     "decision_id": "nl:rec-fund:t1:8f71b6b3dce3",
     "decision_recorded": true
   },
@@ -4071,7 +4083,8 @@
     "parse_source": "rules",
     "trace_id": "rec-status:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "clarify_cash": {
     "session_id": "rec-vague",
@@ -4107,7 +4120,8 @@
     "parse_source": "rules",
     "trace_id": "rec-vague:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "clarify_cash_zh": {
     "session_id": "rec-vague-zh",
@@ -4143,12 +4157,13 @@
     "parse_source": "rules",
     "trace_id": "rec-vague-zh:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "amend_08_zh": {
     "session_id": "rec-goal-08-zh",
     "turn": 2,
-    "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥260,000.00 按 0.80% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93。若对方接受，其余缺口：committed plan: ¥825.26。 若 BUYER-1 拒绝：今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
+    "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥260,000.00 按 0.80% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：已承诺方案：¥841.64 + ¥2,272.29 = ¥3,113.93。若对方接受，其余缺口：已承诺方案：¥825.26。 若 BUYER-1 拒绝：今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
     "intent": "ACCELERATE_RECEIPT",
     "lang": "zh",
     "plan": [
@@ -4524,12 +4539,13 @@
     "parse_source": "rules",
     "trace_id": "rec-goal-08-zh:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "goal_zh": {
     "session_id": "rec-goal-go-zh",
     "turn": 1,
-    "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥260,000.00 按 0.85% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93。若对方接受，其余缺口：committed plan: ¥825.99。 若 BUYER-1 拒绝：今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
+    "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥260,000.00 按 0.85% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：已承诺方案：¥841.64 + ¥2,272.29 = ¥3,113.93。若对方接受，其余缺口：已承诺方案：¥825.99。 若 BUYER-1 拒绝：今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
     "intent": "ACCELERATE_RECEIPT",
     "lang": "zh",
     "plan": [
@@ -4905,7 +4921,8 @@
     "parse_source": "rules",
     "trace_id": "rec-goal-go-zh:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "goal_go_zh": {
     "session_id": "rec-goal-go-zh",
@@ -5207,7 +5224,8 @@
     "parse_source": "rules",
     "trace_id": "rec-goal-go-zh:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "evaluate_ex01_zh": {
     "session_id": "rec-ex01-go-zh",
@@ -5874,7 +5892,8 @@
     "parse_source": "rules",
     "trace_id": "rec-ex01-go-zh:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "negotiate_ex01_zh": {
     "session_id": "rec-ex01-go-zh",
@@ -6579,7 +6598,8 @@
     "parse_source": "rules",
     "trace_id": "rec-ex01-go-zh:2",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "fund_gap_zh": {
     "session_id": "rec-fund-zh",
@@ -6797,7 +6817,8 @@
     "parse_source": "rules",
     "trace_id": "rec-fund-zh:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "fund_gap_go_zh": {
     "session_id": "rec-fund-zh",
@@ -6862,6 +6883,7 @@
     "trace_id": "rec-fund-zh:2",
     "context_echo": null,
     "scope_used": null,
+    "card": null,
     "decision_id": "nl:rec-fund-zh:t1:614bde508e02",
     "decision_recorded": true
   },
@@ -6883,7 +6905,8 @@
     "parse_source": "rules",
     "trace_id": "rec-status-zh:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "approve_none_zh": {
     "session_id": "rec-approve-zh",
@@ -6903,7 +6926,8 @@
     "parse_source": "rules",
     "trace_id": "rec-approve-zh:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "approve_none": {
     "session_id": "rec-approve",
@@ -6923,7 +6947,8 @@
     "parse_source": "rules",
     "trace_id": "rec-approve:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "out_of_scope": {
     "session_id": "rec-scope",
@@ -6943,7 +6968,8 @@
     "parse_source": "fallback",
     "trace_id": "rec-scope:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "tier3": {
     "session_id": "rec-tier3",
@@ -7003,7 +7029,8 @@
     "parse_source": "rules",
     "trace_id": "rec-tier3:1",
     "context_echo": null,
-    "scope_used": null
+    "scope_used": null,
+    "card": null
   },
   "fastcapital": {
     "session_id": "rec-buyer-fastcapital",

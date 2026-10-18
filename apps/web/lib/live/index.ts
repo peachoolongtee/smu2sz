@@ -62,6 +62,8 @@ import type {
   EnvelopeView,
   ExposureView,
   ContractFixture,
+  ContractTermsResult,
+  ContractTermsView,
   CustomerOverviewView,
   InputSaveRequest,
   InputSaveResult,
@@ -91,6 +93,8 @@ import type {
   PriceCurveView,
   ReceivablesRead,
   ReceivablesWorthView,
+  RecordReceiptRequest,
+  RecordReceiptResult,
   ReconciliationView,
   StateView,
   SubmitDocumentRequest,
@@ -346,6 +350,22 @@ export const live = {
   /** The guided Demo's synthetic bank event (owner, demo mode): the server posts the promised early payment as the bank feed would. */
   demoBankReceipt: () => http<BankReceiptResult>("POST", "/demo/bank-receipt", { body: {} }),
 
+  /**
+   * The owner records a payment they received: the existing typed RECEIVE_PAYMENT operation through POST /operations as the owner (Tier 1, the
+   * owner's receipt is a fact). The mandate version is the stored one's (the executor checks only its signature for an owner's receipt); the day
+   * is left to the server (today on its clock). The answer carries the server's words for what it did (`receipt`).
+   */
+  recordReceipt: async (req: RecordReceiptRequest, lang: "en" | "zh"): Promise<RecordReceiptResult> => {
+    const mandate = await http<MandateView>("GET", "/mandate");
+    const op = `owner-receipt-${req.key}`;
+    return http<RecordReceiptResult>("POST", `/operations?lang=${lang}`, {
+      body: {
+        kind: "RECEIVE_PAYMENT", op_id: op, idempotency_key: op, mandate_version: mandate.mandate.version, requested_by: "OWNER",
+        receivable_id: req.receivable_id, amount_fen: req.amount_fen, ...(req.bank_reference ? { bank_reference: req.bank_reference } : {}),
+      },
+    });
+  },
+
   getEvidence: () => http<string>("GET", "/evidence", { as: "text" }),
 
   // contract ingestion (brief 03): every route needs the owner token; the responses already have the page's shape
@@ -369,6 +389,20 @@ export const live = {
     (await http<{ document: DocumentView }>("POST", `/documents/${enc(id)}/refile?lang=${lang}`, { body: { counterparty_id: counterpartyId, doc_hash: docHash } })).document,
   addCustomer: (body: AddCustomerRequest, lang: "en" | "zh") => http<AddCustomerResponse>("POST", `/customers?lang=${lang}`, { body }),
   getContractFixtures: async (): Promise<ContractFixture[]> => (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/contracts")).contracts,
+  // ADR-0014: a confirmed customer contract's terms set up in the books (FEATURE_CONTRACT_TERMS). Switched off, the read answers 403
+  // FEATURE_DISABLED and the step is not shown.
+  getContractTerms: async (id: string, lang: "en" | "zh" = "en"): Promise<ContractTermsView | null> => {
+    try {
+      return (await http<{ terms: ContractTermsView }>("GET", `/documents/${enc(id)}/terms${lang === "zh" ? "?lang=zh" : ""}`)).terms;
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 403 && (e.detail as { code?: unknown } | undefined)?.code === "FEATURE_DISABLED") return null;
+      throw e;
+    }
+  },
+  setUpContractTerms: (id: string, docHash: string, termsHash: string, lang: "en" | "zh" = "en") =>
+    http<ContractTermsResult>("POST", `/documents/${enc(id)}/terms${lang === "zh" ? "?lang=zh" : ""}`, { body: { doc_hash: docHash, terms_hash: termsHash } }),
+  undoContractTerms: (id: string, setUpOpId: string, lang: "en" | "zh" = "en") =>
+    http<ContractTermsResult>("POST", `/documents/${enc(id)}/terms/undo${lang === "zh" ? "?lang=zh" : ""}`, { body: { set_up_op_id: setUpOpId } }),
 
   // the buy side (ADR-0013, FEATURE_CAPEX_CONTRACTS): every route needs the owner token; the responses already have the page's shape
   getPurchases: (lang: "en" | "zh" = "en") => http<PurchasesView>("GET", `/purchases${lang === "zh" ? "?lang=zh" : ""}`),

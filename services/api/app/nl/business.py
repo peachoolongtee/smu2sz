@@ -362,13 +362,13 @@ def alerts_reply(ctx: NlContext, turn: Turn) -> str | None:
         what = _list(ctx, _op_sentences(ctx, [op]) + ([_cost_line(ctx, cost)] if cost is not None else [])) if op is not None else ""
         return _join(ctx, _outcome(ctx, f),
                      _t(ctx, f"The plan is already waiting for your approval ({f['waiting']})" + (f": {what[:1].lower() + what[1:]}" if what else "")
-                        + ". I have not run it.", f"该方案已在等待您批准（{f['waiting']}）" + (f"：{what}" if what else "") + "。我尚未执行。"),
+                        + ". Nothing has run yet.", f"该方案已在等待您批准（{f['waiting']}）" + (f"：{what}" if what else "") + "。尚未执行。"),
                      approve_words(ctx))
     if ctx.sent and "cure" in f:
         return _cure_run(ctx, turn)
     if f.get("no_cure"):
-        return _join(ctx, _outcome(ctx, f), _t(ctx, "No committed facility can cover it, so there is nothing I can do on my own; this needs your decision.",
-                                               "没有已承诺的额度可以覆盖，我无法自行处理；需要您来决定。"))
+        return _join(ctx, _outcome(ctx, f), _t(ctx, "No committed facility can cover it, so FLOW cannot fix it on its own; this needs your decision.",
+                                               "没有已承诺的额度可以覆盖，FLOW 无法自行处理；需要您来决定。"))
     return _summary(ctx, f)
 
 
@@ -389,11 +389,11 @@ def _summary(ctx: NlContext, f: dict[str, Any]) -> str | None:
     m = f.get("mandate")
     if m is not None:
         when = landing_when(ctx, m["expires_day"])
-        parts.append(_t(ctx, f"Your mandate {'expired' if m['critical'] else 'expires'} {when}, so I can no longer act until you sign a new one. "
+        parts.append(_t(ctx, f"Your mandate {'expired' if m['critical'] else 'expires'} {when}, so FLOW can no longer act until you sign a new one. "
                              "Renewal is an offline step for you." if m["critical"] else
-                        f"Your mandate expires {when}; after that I can no longer act. Renewal is an offline step for you.",
-                        f"您的授权已于{when}到期，在您签署新授权之前我无法再执行任何操作。续期需要您线下完成。" if m["critical"] else
-                        f"您的授权将在{when}到期；之后我将无法执行任何操作。续期需要您线下完成。"))
+                        f"Your mandate expires {when}; after that FLOW can no longer act. Renewal is an offline step for you.",
+                        f"您的授权已于{when}到期，在您签署新授权之前 FLOW 无法再执行任何操作。续期需要您线下完成。" if m["critical"] else
+                        f"您的授权将在{when}到期；之后 FLOW 将无法执行任何操作。续期需要您线下完成。"))
     others = [(ctx.reads.words(x, ctx.lang) if ctx.reads is not None else x) for x in f.get("others") or []]
     if others:
         n = len(others) + int(f.get("more") or 0)

@@ -127,8 +127,11 @@ def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
     else:
         where = t(lang, f"{_short(-gap)} below your minimum {when}", f"比您的最低现金低 {_short(-gap)}（{when}）")
         short = t(lang, f"{_short(-gap)} shortfall {when}", f"{when}缺口 {_short(-gap)}")
-    basis = (t(lang, "current books, the plan ran", "当前账目，方案已执行") if _plan_has_run(c.state)
+    ran = _plan_has_run(c.state)
+    basis = (t(lang, "current books, the plan ran", "当前账目，方案已执行") if ran
              else t(lang, "current books, no new funding", "当前账目，未新增融资"))
+    # The label under the figure: once the plan's operations have executed the figure includes that funding, so "Without new funding" would be false.
+    basis_label = (t(lang, "With the funding in place", "已计入已安排的融资") if ran else t(lang, "Without new funding", "未新增融资"))
     if c.plan_traj is not None:
         plan_fen, _ = _lowest_ahead(c.plan_traj, c.today)
         hint = t(lang, f"If FLOW's plan executes: {whole(plan_fen)}, assuming the funds arrive as planned.",
@@ -138,7 +141,8 @@ def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
         hint = t(lang, "No hypothetical applied.", "未应用任何假设。")
         with_plan = None
     return {"eyebrow": _eyebrow(lang, "Lowest cash ahead", "未来最低现金"), "value_display": whole(low_fen),
-            "note": f"{where} · {basis}", "short_note": short, "tone": _tone(low_fen, floor), "with_plan_hint": hint, "with_plan": with_plan}
+            "note": f"{where} · {basis}", "short_note": short, "tone": _tone(low_fen, floor), "with_plan_hint": hint, "with_plan": with_plan,
+            "basis_label": basis_label}
 
 
 def _lot_kind(lot: FundingLot, lang: str) -> str:
@@ -424,6 +428,7 @@ def _consequence_text(c: HomeRead) -> str | None:
 
 def _action(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any] | None = None) -> dict[str, Any]:
     out = _action_body(c, att)
+    out.setdefault("covered", False)  # the "You're covered!" card: the server's decision (`cash.covered`), never the page's
     out["approval_text"], out["approval_needed"] = _approval_words(c, out)
     out["consequence_text"] = _consequence_text(c)
     out["legs"], out["cost_basis_text"] = _action_legs(c, out, funding_line)
@@ -478,9 +483,14 @@ def _action_body(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
     if c.breach_day is not None:  # the reserve is unsafe and there is no plan to run: say so, point to the options
         return {"variant": "ACTION", "key": None, "tone": "bad", "eyebrow": _breach_eyebrow(c), "title": c.headline, "text": c.note, "facts": [],
                 "primary": {"label": t(lang, "See the options", "查看选项"), "href": "/cash#cash-options"}, "secondary": None, "control": None}
+    if not c.covered:  # no alert and no plan, yet the cash is under the reserve today (in the bank) or on a day ahead: never "covered"
+        return {"variant": "ACTION", "key": None, "tone": "bad", "eyebrow": _eyebrow(lang, "Cash below your minimum", "现金低于最低额"),
+                "title": c.headline, "text": c.note, "facts": [],
+                "primary": {"label": t(lang, "See the options", "查看选项"), "href": "/cash#cash-options"}, "secondary": None, "control": None}
     n = _worklist_holds(c)
     held = (t(lang, f" Your worklist still holds {n} {'item' if n == 1 else 'items'} for you.", f"您的待办列表里还有 {n} 项等您处理。") if n else "")
-    return {"variant": "QUIET", "key": None, "tone": "ok",
+    return {"variant": "QUIET", "key": None, "tone": "ok", "covered": a is None,
+            "covered_pill_text": t(lang, "All clear", "一切正常"), "covered_title_text": t(lang, "You're covered!", "您的现金很安全！"),
             "eyebrow": _eyebrow(lang, "Nothing needs you from the company side", "公司层面没有需要您处理的事项"),
             "title": (t(lang, "Your cash is covered on the plan that ran.", "按已执行的方案，您的现金是安全的。") if _plan_has_run(c.state)
                       else t(lang, "Your cash is covered.", "您的现金是安全的。")),

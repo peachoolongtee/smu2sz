@@ -26,6 +26,72 @@
   "trace_id": "rec-home-zh:1",
   "context_echo": null,
   "scope_used": null,
+  "card": {
+    "lead": "现金将在8 天后低于您 ¥300,000 的最低现金储备，缺口 ¥200,000。",
+    "figures": [
+      {
+        "label": "储备缺口",
+        "value": "¥200,000",
+        "tone": "danger"
+      },
+      {
+        "label": "最低现金",
+        "value": "¥100,000",
+        "tone": "danger"
+      },
+      {
+        "label": "FLOW 方案成本",
+        "value": "¥1,782.19",
+        "tone": "neutral"
+      }
+    ],
+    "body": "FLOW 的方案：以Foshan Home Retail Co. 的 ¥420,000 发票（13 天后到期）融资 ¥200,000，3 天后到账；合计 ¥1,782.19。需要您批准后才会执行。\nFoshan Home Retail Co. 的 ¥420,000 发票的 ¥160,000 应于2 天前到账，至今未到。另有 1 项提醒：今天现金仅略高于最低现金储备。",
+    "basis": "今日账目，第 34 天",
+    "all_figures": [
+      {
+        "label": "储备缺口",
+        "value": "¥200,000",
+        "tone": "danger"
+      },
+      {
+        "label": "最低现金",
+        "value": "¥100,000",
+        "tone": "danger"
+      },
+      {
+        "label": "FLOW 方案成本",
+        "value": "¥1,782.19",
+        "tone": "neutral"
+      },
+      {
+        "label": "跌破储备线",
+        "value": "8 天后",
+        "tone": "danger"
+      },
+      {
+        "label": "逾期",
+        "value": "¥160,000",
+        "tone": "danger"
+      }
+    ],
+    "actions": [
+      {
+        "label": "查看 FLOW 的方案",
+        "href": "/#home-v2-action",
+        "kind": "link"
+      },
+      {
+        "label": "查看现金预测",
+        "href": "/cash#cash-chart",
+        "kind": "link"
+      },
+      {
+        "label": "查看Foshan Home Retail Co.的发票",
+        "href": "/receivables?customer=BUYER-1",
+        "kind": "link"
+      }
+    ]
+  },
   "proactive": true,
   "has_news": true
 }

@@ -10,6 +10,7 @@ import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
 import type { NlRequest, NlResponse } from "../types";
 import approveChat from "../../mocks/home_approve_chat.json";
+import ask from "../../mocks/nl_ask.json";
 import page from "../../mocks/nl_page.json";
 import script from "../../mocks/nl_script.json";
 import { appendRecorded, decideApproval, ensureHomeApproval, getApprovals } from "./handlers";
@@ -79,6 +80,18 @@ function pageRead(req: NlRequest): Recorded | null {
     return hit ? page[readPoint()][hit[1]] : null;
   })();
   return recorded ? ({ ...(JSON.parse(JSON.stringify(recorded)) as Recorded), context_echo: echo }) : null;
+}
+
+/**
+ * Ask FLOW's questions with an answer card (mocks/nl_ask.json): the Ask FLOW page's four and one per other page a card links to, in English and
+ * Chinese, replayed from what the real API answered at the point of the story the mock is at. The reply is in the question's own language,
+ * whatever the page's (as live: the question decides). Matched on the exact question, as the suggestion sends it.
+ */
+function askRead(req: NlRequest): Recorded | null {
+  if (req.actor !== "OWNER") return null;
+  const point = (ask as Record<string, Record<string, unknown>>)[readPoint()];
+  const recorded = point?.[req.text.trim()];
+  return recorded ? (JSON.parse(JSON.stringify(recorded)) as Recorded) : null;
 }
 
 function pick(req: NlRequest, s: Session): Key | null {
@@ -179,7 +192,7 @@ export async function mockNl(req: NlRequest): Promise<NlResponse> {
       return { ...(JSON.parse(JSON.stringify(approveChat)) as Recorded), session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };
     }
   }
-  const asked = pageRead(req);
+  const asked = askRead(req) ?? pageRead(req);
   if (asked) {
     s.turn += 1;
     s.pending = null;

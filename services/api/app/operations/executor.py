@@ -72,9 +72,11 @@ from app.domain.models import (
     RequestOwnerApproval,
     SecurityEvent,
     SecurityEventKind,
+    SetUpContractTerms,
     SignPersonalGuarantee,
     SubmitInvoiceForFinancing,
     Tier,
+    UndoContractTerms,
     Verdict,
     Violation,
     ViolationCode,
@@ -871,6 +873,8 @@ class Executor:
                 return offer.counterparty_id
             c = next((c for c in self._store.commitments() if c.offer_id == op.offer_id), None)
             return c.counterparty_id if c is not None else None
+        if isinstance(op, SetUpContractTerms | UndoContractTerms):
+            return op.counterparty_id
         facility_id = getattr(op, "facility_id", None)
         if isinstance(facility_id, str):
             f = next((f for f in state.facilities if f.id == facility_id), None)
@@ -996,6 +1000,14 @@ class Executor:
             self._owner_only_purchase(op)  # CAPEX-2: refused before it is queued, so the owner is never asked
             return (f"commit to the purchase under document {op.document_id}: {fmt_yuan(op.amount_fen)} on the "
                     f"contract's payment schedule" + (", the early-payment discount taken" if op.take_early_pay else ""))
+        if isinstance(op, SetUpContractTerms):
+            self._owner_only_terms(op)  # ADR-0014: refused before it is queued, so the owner is never asked
+            return (f"set up the repeating invoice of document {op.document_id} for {op.counterparty_id}: "
+                    f"{fmt_yuan(op.face_fen)} every {op.every_days} days from day {op.next_issue_day}, payable in "
+                    f"{op.terms_days} days")
+        if isinstance(op, UndoContractTerms):
+            self._owner_only_terms(op)
+            return f"undo the contract terms set up by {op.set_up_op_id} for {op.counterparty_id}"
         if isinstance(op, DrawFacility | SubmitInvoiceForFinancing):
             if ctx.admission is not None and ctx.admission.approval_reason:
                 return str(ctx.admission.approval_reason)
@@ -1039,6 +1051,10 @@ class Executor:
                 return self._apply(op, ctx)
             case CommitPurchase():
                 return self._commit_purchase(op, ctx)
+            case SetUpContractTerms():
+                return self._set_up_terms(op, ctx)
+            case UndoContractTerms():
+                return self._undo_terms(op, ctx)
             case RequestOwnerApproval():
                 return self._request_approval(op)
         raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"No handler for {getattr(op, 'kind', type(op).__name__)}")
@@ -1618,6 +1634,105 @@ class Executor:
         return _Effect(f"Purchase under document {rec.id} ({rec.title}) committed: {len(flows)} payment"
                        f"{'s' if len(flows) != 1 else ''} of {fmt_yuan(schedule.price_fen)} in all, on days {days}, "
                        f"booked as scheduled payments{registered}", state=new_state)
+
+    # ---------------------------------------------------------------- ADR-0014: what a contract sets up in the books
+
+    @staticmethod
+    def _owner_only_terms(op: SetUpContractTerms | UndoContractTerms) -> None:
+        """ADR-0014: only the owner changes what the forecast expects from a contract. The agent, a counterparty and the bank
+        feed never author the operation the owner is then asked to approve. Checked when it is queued and again when it runs."""
+        if op.requested_by != Actor.OWNER:
+            raise _refuse(Code.INSUFFICIENT_AUTHORITY,
+                          f"Only the owner can change what the books expect from a contract; {op.requested_by} cannot. "
+                          f"Nothing was queued and nothing was set up", SecurityEventKind.PRIVILEGE_ESCALATION,
+                          requested_by=op.requested_by, refusal="CONTRACT_TERMS_OWNER_ONLY")
+
+    @staticmethod
+    def _terms_feature_on() -> None:
+        from app.config import get_settings
+
+        if not get_settings().features.contract_terms:  # whichever route queued it (POST /operations included)
+            raise _refuse(Code.FEATURE_DISABLED, "Setting up a contract's terms in the books is switched off "
+                          "(FEATURE_CONTRACT_TERMS); nothing set up")
+
+    def _set_up_terms(self, op: SetUpContractTerms, ctx: _Ctx) -> _Effect:
+        """ADR-0014: add a confirmed customer contract's repeating invoice to the books (reached only after the owner's
+        approval: the operation is always Tier 2). The terms are derived again here, by code, from the stored record on
+        today's books (`app.contracts.terms_setup.derive`); they and their hash must be the ones the owner was shown."""
+        from app.contracts.terms_setup import derive
+        from app.domain.models import Mode
+        from app.financial import project
+
+        self._terms_feature_on()
+        self._owner_only_terms(op)
+        rec = self._store.get_contract_record(op.document_id)
+        if rec is None:
+            raise _refuse(Code.PRECONDITION_FAILED, f"Document {op.document_id} does not exist", document_id=op.document_id)
+        if not hmac.compare_digest(op.doc_hash.encode(), rec.doc_hash.encode()) or rec.counterparty_id != op.counterparty_id:
+            raise _refuse(Code.TERMS_CHANGED, f"The document shown is not document {rec.id} as stored; nothing set up. "
+                          f"Reload it and set up what is shown", document_id=rec.id)
+        assert ctx.mandate is not None
+        state = ctx.state
+        derived = derive(rec, state, today=max(ctx.now, state.as_of_day), horizon_days=ctx.mandate.horizon_days)
+        if derived.status == "BLOCKED":
+            raise _refuse(Code.PRECONDITION_FAILED, "The contract cannot set up invoices in the books: "
+                          + " ".join(p.en for p in derived.problems), document_id=rec.id, refusal="TERMS_BLOCKED",
+                          problems=[p.code for p in derived.problems])
+        if derived.status == "ALREADY":
+            raise _refuse(Code.PRECONDITION_FAILED, f"The books already expect these invoices from {rec.counterparty_id}; "
+                          f"nothing to set up", document_id=rec.id, refusal="TERMS_ALREADY_IN_BOOKS")
+        if derived.status == "CONFLICT":
+            raise _refuse(Code.PRECONDITION_FAILED, f"The books already expect other repeating invoices from "
+                          f"{rec.counterparty_id}; this contract does not replace them. Nothing set up",
+                          document_id=rec.id, refusal="REPEATING_INVOICE_EXISTS")
+        ri = derived.recurring
+        assert ri is not None and derived.terms_hash is not None
+        shown = (op.counterparty_id, op.face_fen, op.every_days, op.next_issue_day, op.terms_days)
+        if (not hmac.compare_digest(op.terms_hash.encode(), derived.terms_hash.encode())
+                or shown != (ri.counterparty_id, ri.face_fen, ri.every_days, ri.next_issue_day, ri.terms_days)):
+            raise _refuse(Code.TERMS_CHANGED, "The terms shown are not the terms the contract gives on today's books; "
+                          "nothing set up. Reload and set up what is shown", document_id=rec.id)
+        new_state = _bump(state, recurring_invoices=[*state.recurring_invoices, ri])
+        try:
+            project(new_state, [], [], Mode.CONSERVATIVE, ctx.mandate.horizon_days)
+        except EngineError as exc:
+            raise _refuse(Code.PRECONDITION_FAILED, f"The books cannot carry these invoices ({exc}); nothing set up",
+                          document_id=rec.id) from None
+        return _Effect(f"Document {rec.id} ({rec.title}) set up in the books for {ri.counterparty_id}: an invoice of "
+                       f"{fmt_yuan(ri.face_fen)} every {ri.every_days} days from day {ri.next_issue_day}, payable in "
+                       f"{ri.terms_days} days", state=new_state)
+
+    def _undo_terms(self, op: UndoContractTerms, ctx: _Ctx) -> _Effect:
+        """ADR-0014: the compensating operation. Removes the repeating invoice an executed set-up wrote, while it is still the
+        one in the books (same customer, amount, interval and terms; its next issue day on the same cadence, not earlier).
+        Invoices the clock has already issued from it stay: they are receivables now."""
+        self._terms_feature_on()
+        self._owner_only_terms(op)
+        entries = self._entries()
+        setup = next((e for e in entries if isinstance(e.op, SetUpContractTerms) and e.result.status == EXECUTED
+                      and e.op.op_id == op.set_up_op_id), None)
+        if setup is None or setup.op.counterparty_id != op.counterparty_id:
+            raise _refuse(Code.PRECONDITION_FAILED, f"No set-up {op.set_up_op_id} for {op.counterparty_id} was executed; "
+                          f"nothing to undo", set_up_op_id=op.set_up_op_id)
+        if any(isinstance(e.op, UndoContractTerms) and e.result.status == EXECUTED
+               and e.op.set_up_op_id == op.set_up_op_id for e in entries):
+            raise _refuse(Code.PRECONDITION_FAILED, f"The set-up {op.set_up_op_id} was already undone",
+                          set_up_op_id=op.set_up_op_id)
+        s: SetUpContractTerms = setup.op
+        state = ctx.state
+        mine = [r for r in state.recurring_invoices if r.counterparty_id == s.counterparty_id
+                and (r.face_fen, r.every_days, r.terms_days) == (s.face_fen, s.every_days, s.terms_days)
+                and r.next_issue_day >= s.next_issue_day and (r.next_issue_day - s.next_issue_day) % s.every_days == 0]
+        if len(mine) != 1:
+            raise _refuse(Code.PRECONDITION_FAILED, f"The repeating invoice {op.set_up_op_id} set up is no longer the one "
+                          f"in the books for {s.counterparty_id}; nothing undone", set_up_op_id=op.set_up_op_id)
+        kept = [r for r in state.recurring_invoices if r is not mine[0]]
+        issued = sum(1 for r in state.receivables if r.counterparty_id == s.counterparty_id
+                     and r.id.startswith(f"RI:{s.counterparty_id}:") and r.issue_day >= s.next_issue_day)
+        extra = f"; {issued} invoice(s) already issued from it stay in the books" if issued else ""
+        return _Effect(f"Set-up {op.set_up_op_id} undone by the owner: the books no longer expect invoices of "
+                       f"{fmt_yuan(s.face_fen)} every {s.every_days} days from {s.counterparty_id}{extra}",
+                       state=_bump(state, recurring_invoices=kept))
 
     def _request_approval(self, op: RequestOwnerApproval) -> _Effect:
         entries = [e for e in self._entries() if e.op is not None and e.op.op_id == op.payload_op_id]

@@ -19,6 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.accept import accept_block, answered_block
 from app.api.auth import require_owner
+from app.api.caches import books_generation
 from app.api.decisions import latest_verdict_for, offer_as_asked
 from app.api.home import _distance, _lowest_ahead, _series
 from app.api.lifecycle import workspace_words
@@ -1096,7 +1097,7 @@ def cached_picture(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     state = rt.store.get_state()
     verdict = latest_verdict_for(rt, offer_id)
     key = (state.state_version, rt.day, offer_id, verdict.id if verdict else None, rt.store.get_mandate().version, lang,
-           tuple(c.id + c.status.value for c in rt.store.commitments()))
+           tuple(c.id + c.status.value for c in rt.store.commitments()), books_generation())
     with _lock:
         hit = _cache.get(key)
         if hit is not None:
