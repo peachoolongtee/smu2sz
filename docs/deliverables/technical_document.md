@@ -104,8 +104,8 @@ speak first), **business financial analysis** (covenants, customer exposure, cap
 receipt against what was promised) and **operational recommendations** (verdicts, priced counters, funding plans).
 
 **The problem.** Large buyers now negotiate payment terms with software: procurement agents ask suppliers for longer terms,
-early-payment discounts and rebates "within parameters you define" (Pactum's public material). Lenders approve small-business
-credit by model in seconds (MYbank, WeBank). The supplier in the middle has neither: an owner reads a WeChat message at night
+early-payment discounts and rebates "within parameters you define" (Pactum's public material). Lenders now run AI
+agents over their own credit and bill products (MYbank's 2026 small-business agent [V11]). The supplier in the middle has neither: an owner reads a WeChat message at night
 and decides alone whether to accept 60-day terms, and separately, often later, whether to borrow to survive them.
 
 **The insight: a longer payment term is a loan from the supplier to the buyer.** It moves no money today, so spending limits
@@ -200,7 +200,8 @@ due day 47; the owner approves on day 34; no other cash flow is added.
 
 **What is new.** Negotiation agents, cash-flow forecasts, loan marketplaces and covenant monitoring each exist. Pactum's agents
 negotiate for the buyer; MYbank's agents tailor the lender's own products; Xero's cash-flow actions work from the ledger;
-Cerebro, Capitalise, Codat and Lendio match firms to lenders (vendor descriptions; Appendix L compares them). What FLOW adds is
+Cerebro, Capitalise and Codat match firms to lenders; Vendavo guides a seller's pricing and deal margins (Table L1 below
+compares them gap by gap). What FLOW adds is
 the combination, on the supplier's side:
 
 - **An AI agent the supplier owns, bounded by its own signed limits across both debt books:** what it may promise buyers and
@@ -226,7 +227,62 @@ verdict carries its failing rule, the figures, the formula and the source words;
 since ADR-0005, FLOW accepted 3 on its own and none was misread. We do not claim that FLOW is a lender, broker or adviser, that
 it complies with any bank's covenants, that it has been deployed, or that it reads contracts or messages perfectly.
 
-{GAP_MATRIX}
+#### Gap coverage: the combination no product we found offers
+
+Of the seven gaps an SME supplier faces between a buyer's request and the cash it needs, FLOW is the only product we found
+that covers all seven in one place. Every gap is covered at least partly by an existing product; the novelty is the
+combination on the supplier's side. No other product we found covers more than one gap fully: Xero JAX comes closest,
+with one full and three partial.
+
+**Table L1. Gap coverage, SME supplier's side (● covers; ◐ partly, or for another party; ○ not found in public
+material).**
+
+| Gap the SME supplier faces | Pactum | Vendavo | Xero JAX | MYbank 百灵 / AI票据管家 | SAP Taulia / C2FO | Cerebro / Capitalise / Codat | **FLOW** |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Price a buyer's terms request in cash before agreeing | ◐ for the buyer [V3*] | ◐ as margin [V4*] | ◐ coaching [V6*] | ○ [V11*] | ◐ supplier names a rate [V15*] | ○ [V17*, V19*] | ● §01, App. F |
+| Counter-offers inside limits the owner signed | ◐ buyer's guardrails [V1*] | ◐ margin floors [V5] | ○ [V7*] | ○ [V11*] | ○ [V14*] | ○ [V17*, V19*] | ● §03 alg. 4 |
+| Fund the gap a concession creates, across several sources | ○ [V2*] | ○ [V4*] | ◐ gap plans [V7*] | ◐ own products [V11*] | ◐ own levers [V14*] | ◐ loans only [V18, V19*] | ● §03 alg. 2, Table F2 |
+| Covenant and reserve checks that respect funding lead times | ○ [V2*] | ○ [V4*] | ○ [V7*] | ○ [V11*] | ○ [V14*] | ◐ covenants [V17*] | ● §03 alg. 1, 2, 4 |
+| Works for the supplier, not the buyer or lender | ○ [V2*] | ● [V5] | ● [V6*] | ○ [V11*] | ◐ buyer-led [V15*, V16] | ◐ [V17*, V20*] | ● §01 |
+| Reconcile what was promised against what was received | ◐ for the buyer [V3*] | ○ [V4*] | ◐ ledger match [V10*] | ○ [V11*] | ○ [V14*] | ○ [V19*] | ● Fig. 3 |
+| Chinese context: 银票 and guaranteed loans in one comparison | ○ [V2*] | ○ [V4*] | ○ no China offer found (team research, 27 Sep) | ◐ own bills [V12*] | ○ [V14*] | ○ UK/US [V19*] | ● Table F2 |
+
+*Method.* Desk research by the team, Sept–Oct 2026, from public vendor material and press. Cells marked `*` were
+re-checked on the vendor's or the cited publisher's page on 18 Oct 2026; the others are as recorded in our research of
+25–27 Sep 2026. ○ means not found in public material, not proven absent. FLOW's cells point to sections of this document
+and were checked against the code.
+
+*What this does not show.* This is a feature comparison from public material. It is not market validation.
+- Our research ran out of web-search budget early, and its coverage of Chinese-language products is weak, so a product
+  we did not find may exist.
+- Our customer evidence is two interviews with SME owners. There is no pilot, no willingness-to-pay data and no count of
+  how often suppliers face these requests.
+- The research found that a supplier typically meets a terms package of this kind only a few times a year per key
+  account.
+
+FLOW does not model a buyer that settles in bank acceptance bills; it treats bill discounting as a funding source.
+
+Sources V1–V20 are listed in Appendix L.
+
+**Why the gap matters outside the demo.**
+- **Late payment is widespread in China.** In Coface's 2026 Asia-Pacific payment survey, firms in mainland China
+  reported an average credit term of 81 days and an average payment delay of 73 days, against 68 days for the region.
+  86% had been paid late, and defaulted receivables were 11.2% of their receivables [V21].
+- **Collection is slow.** China's National Bureau of Statistics reports ¥28.88 trillion of receivables at industrial
+  firms above designated size at the end of July 2026, with an average collection period of 71.9 days, and 75.6 days at
+  private firms [V22].
+- **Defaults are common in Singapore.** In Singapore, 57% of firms surveyed had at least one customer default in the
+  past 12 months (45% across Asia-Pacific) [V23].
+
+These are self-reported surveys by a credit insurer, and official figures for all large industrial firms, not SME ledger
+data. We cite them for the scale of the problem, not as a measure of FLOW's effect.
+
+| Id | Publisher | Title | URL | Accessed |
+| --- | --- | --- | --- | --- |
+| V21 | Coface (via PR Newswire Asia) | 科法斯 2026 年亚太企业付款调查 | https://www.prnasia.com/story/543914-1.shtml | 18 Oct 2026 |
+| V22 | 国家统计局 | 2026年1—7月份全国规模以上工业企业利润增长17.6% | https://www.stats.gov.cn/sj/zxfb/202608/t20260827_1965126.html | 18 Oct 2026 |
+| V23 | TNGlobal (Coface APAC Payment Survey 2026) | Twice as many Singapore firms report worsening payment delays… | https://technode.global/2026/09/01/twice-as-many-singapore-firms-report-worsening-payment-delays-as-compared-to-improvements-coface/ | 18 Oct 2026 |
+
 
 ## 02 System Architecture
 
@@ -1184,14 +1240,41 @@ records, evidence and security ([docs/deliverables/video/README.md](../../docs/d
 
 ## Appendix L. Products in the same space
 
-**Table L1. Products in the same space (vendor descriptions; "difference" is our reading of public material).**
+Table L1, the gap-coverage matrix, is in section 01 ("Gap coverage"). This appendix lists its sources and how each product
+differs from FLOW.
+
+**Sources for Table L1.**
+
+| Id | Publisher | Title | URL | Accessed |
+| --- | --- | --- | --- | --- |
+| V1 | Pactum | Procurement agents | https://pactum.com/procurement-agents | 18 Oct 2026 |
+| V2 | Pactum | Homepage | https://pactum.com/ | 18 Oct 2026 |
+| V3 | Pactum | Campaigns agents | https://pactum.com/campaigns-agents | 18 Oct 2026 |
+| V4 | Vendavo | How to Use Waterfall Pricing to Increase Profits | https://www.vendavo.com/insights/blog/the-power-of-the-price-waterfall/ | 18 Oct 2026 |
+| V5 | Vendavo | Deal Guidance & Sales Negotiation Software | https://www.vendavo.com/solutions/deal-guidance-and-negotiation/ | 25 Sep 2026 |
+| V6 | Xero | JAX | https://www.xero.com/au/jax/ | 18 Oct 2026 |
+| V7 | Xero | Xerocon Denver 2026 | https://blog.xero.com/product-updates/xerocon-denver-2026-agentic-workflows-ai-era/ | 18 Oct 2026 |
+| V10 | Xero | Reconcile bank transactions | https://www.xero.com/au/accounting-software/reconcile-bank-transactions/ | 18 Oct 2026 |
+| V11 | 腾讯新闻 | 网商银行推出首个小微普惠金融Agent | https://news.qq.com/rain/a/20260911A0BUNV00 | 18 Oct 2026 |
+| V12 | 21世纪经济报道 | 网商银行2025年年报 | https://www.21jingji.com/article/20260423/herald/906853674ffe5c6f48b5769e1aa88858.html | 18 Oct 2026 |
+| V14 | SAP Taulia | AI-powered working capital innovations at SAP Sapphire | https://taulia.com/company/news/press-releases/sap-taulia-announces-ai-powered-working-capital-innovations-at-sap-sapphire/ | 18 Oct 2026 |
+| V15 | C2FO | Homepage | https://c2fo.com/ | 18 Oct 2026 |
+| V16 | PrimeRevenue | Why Most Supply Chain Finance Programs Plateau | https://primerevenue.com/resources/blog/why-most-supply-chain-finance-programs-plateau-and-how-leading-organizations-breakthrough | 27 Sep 2026 |
+| V17 | Cerebro Capital | Loan Compliance Navigator | https://www.cerebrocapital.com/loan-compliance-navigator | 18 Oct 2026 |
+| V18 | Cerebro Capital | Homepage | https://www.cerebrocapital.com/ | 27 Sep 2026 |
+| V19 | Capitalise | Homepage | https://www.capitalise.com/ | 18 Oct 2026 |
+| V20 | Codat | Working Capital Insights | https://codat.io/products/working-capital-insights/ | 18 Oct 2026 |
+
+**Table L2. Products in the same space (vendor descriptions; "difference" is our reading of public material).**
 
 | Product | What it does | How FLOW differs |
 | --- | --- | --- |
 | Pactum | Buyer-side agents that negotiate payment days, discounts and rebates | FLOW sits on the other side of the table |
+| Vendavo | Seller-side pricing and deal guidance: price waterfalls, margin floors | FLOW prices the cash cost of payment terms and funds the gap they create, inside limits the owner signed |
 | MYbank 百灵 / AI票据管家 | Lender agents that tailor the bank's own credit and bill products | FLOW is supplier-owned and compares several sources, starting from the trade terms that cause the need |
 | Xero JAX Cash Flow Actions | Ledger-side cash-gap detection and suggested plans | FLOW reads incoming offers and decides them inside a signed mandate and covenants |
-| Cerebro Capital, Capitalise, Codat, Lendio | Lender marketplaces and debt-capacity tools for banks or mid-market firms | FLOW starts before the owner decides to borrow, at the request that creates the need |
+| SAP Taulia, C2FO | Early-payment and working-capital programmes, mostly buyer-led | FLOW works for the supplier and weighs early payment against its other sources |
+| Cerebro Capital, Capitalise, Codat | Lender marketplaces and debt-capacity tools for banks or mid-market firms | FLOW starts before the owner decides to borrow, at the request that creates the need |
 
 ## Appendix M. Terms and codes
 
