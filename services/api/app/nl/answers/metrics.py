@@ -674,6 +674,65 @@ def invoice_financing_offer(ctx: Any, buyer_id: str | None) -> Metric:
     return Metric("invoice_financing_offer", cap_.value, money(cap_.value), inv.due_day, "funding.menu_view, facility.advance_rate_bp", detail)
 
 
+def customer_exposure(ctx: Any, buyer_id: str) -> Metric:
+    """What one customer holds of the books: its open invoices (what it owes, its share of what you are owed, the next due day)
+    and its recurring invoicing (per cycle, and its share of the invoicing per day)."""
+    r = R(ctx)
+    rows = receivables_by_customer(r).value
+    mine = next((x for x in rows if x["buyer_id"] == buyer_id), None)
+    rec = [x for x in r.state.recurring_invoices if x.counterparty_id == buyer_id]
+    per_day = {x.counterparty_id: Fraction(0) for x in r.state.recurring_invoices}
+    for x in r.state.recurring_invoices:
+        if x.every_days:
+            per_day[x.counterparty_id] += Fraction(x.face_fen, x.every_days)
+    total_day = sum(per_day.values())
+    share = per_day.get(buyer_id, Fraction(0)) / total_day if total_day else Fraction(0)
+    return Metric("customer_exposure", mine["owed_fen"] if mine else 0, money(mine["owed_fen"] if mine else 0), r.today,
+                  "worklist customers + state.recurring_invoices",
+                  {"owed_fen": mine["owed_fen"] if mine else 0, "invoices": mine["invoices"] if mine else 0,
+                   "share": mine["share"] if mine else Fraction(0), "next_due_day": mine["next_due_day"] if mine else None,
+                   "recurring": [{"face_fen": x.face_fen, "every_days": x.every_days, "next_issue_day": x.next_issue_day} for x in rec],
+                   "recurring_share": share})
+
+
+def customer_loss_impact(ctx: Any, buyer_id: str, *, orders_only: bool = False) -> Metric:
+    """The conservative forecast on a model copy of the books (never stored) without one customer's money: its open invoices (still
+    OPEN, not advanced) and its recurring invoicing; with `orders_only` only the invoicing still to be issued goes, the invoices
+    already issued stay. Compared with today's forecast: the first day below the reserve and below zero, the lowest point, what it
+    takes to stay at the reserve."""
+    r = R(ctx)
+    gone = [] if orders_only else [x for x in unpaid(r.state) if x.counterparty_id == buyer_id and x.status == "OPEN"]
+    gone_ids = {x.id for x in gone}
+    recurring = [x for x in r.state.recurring_invoices if x.counterparty_id == buyer_id]
+    base_ahead = r.ahead
+    base_low = min(base_ahead, key=lambda d: (d.closing_fen, d.day))
+    base_breach = next((d for d in base_ahead if d.closing_fen < r.floor), None)
+    base_zero = next((d for d in base_ahead if d.closing_fen < 0), None)
+    copy = r.state.model_copy(update={
+        "receivables": [x for x in r.state.receivables if x.id not in gone_ids],
+        "recurring_invoices": [x for x in r.state.recurring_invoices if x.counterparty_id != buyer_id],
+        "expected_orders": [x for x in r.state.expected_orders if x.counterparty_id != buyer_id]})
+    b = current_books(copy, r.store.commitments())
+    t = project(b.state, b.with_([]), [], Mode.CONSERVATIVE, r.horizon, r.floor)
+    ahead = [d for d in t.days if d.day >= r.today] or list(t.days)
+    low = min(ahead, key=lambda d: (d.closing_fen, d.day))
+    breach = next((d for d in ahead if d.closing_fen < r.floor), None)
+    zero = next((d for d in ahead if d.closing_fen < 0), None)
+    last = ahead[-1] if ahead else low
+    return Metric("customer_loss_impact", low.closing_fen, money(low.closing_fen), low.day, "financial.project on a model copy",
+                  {"invoice_fen": sum(x.outstanding_fen for x in gone), "invoice_days": sorted(x.due_day for x in gone),
+                   "recurring": [{"face_fen": x.face_fen, "every_days": x.every_days} for x in recurring],
+                   "breach_day": breach.day if breach else None, "breach_closing_fen": breach.closing_fen if breach else None,
+                   "zero_day": zero.day if zero else None, "zero_closing_fen": zero.closing_fen if zero else None,
+                   "low_fen": low.closing_fen, "low_day": low.day, "end_fen": last.closing_fen, "end_day": last.day,
+                   "need_fen": max(0, r.floor - low.closing_fen),
+                   "base_breach_day": base_breach.day if base_breach else None, "base_zero_day": base_zero.day if base_zero else None,
+                   "base_low_fen": base_low.closing_fen, "base_low_day": base_low.day,
+                   "base_need_fen": max(0, r.floor - base_low.closing_fen),
+                   "changed": [(d.day, d.closing_fen) for d in ahead] != [(d.day, d.closing_fen) for d in base_ahead],
+                   "orders_only": orders_only})
+
+
 # ================================================================ covenants
 
 

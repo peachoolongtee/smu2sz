@@ -86,6 +86,87 @@ def test_the_beyond_top30_questions_are_not_among_the_top_30() -> None:
         assert qid not in question_ids()
 
 
+# ---------------------------------------------------------------- the biggest customer does not pay (item 1), stops ordering (item 2)
+
+
+def forecast_without(rt, buyer_id: str, *, orders_only: bool = False) -> dict:
+    """The conservative forecast of a copy of the books without the customer's money, projected here with the engine."""
+    from app.books import current_books
+    from app.domain.models import Mode
+    from app.financial import project
+
+    state, mandate = rt.store.get_state(), rt.store.get_mandate()
+    keep = [x for x in state.receivables if orders_only or x.counterparty_id != buyer_id]
+    copy = state.model_copy(update={"receivables": keep, "recurring_invoices": [x for x in state.recurring_invoices
+                                                                                 if x.counterparty_id != buyer_id]})
+    b = current_books(copy, rt.store.commitments())
+    days = [d for d in project(b.state, b.with_([]), [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen).days
+            if d.day >= state.as_of_day]
+    low = min(days, key=lambda d: (d.closing_fen, d.day))
+    return {"reserve": mandate.min_cash_fen,
+            "breach": next((d.day for d in days if d.closing_fen < mandate.min_cash_fen), None),
+            "zero": next((d.day for d in days if d.closing_fen < 0), None), "low": low.closing_fen, "low_day": low.day}
+
+
+def foshan_id(rt) -> str:
+    return next(c.id for c in rt.store.get_state().counterparties if c.name.startswith("Foshan"))
+
+
+LOSS_EN = ["If my biggest customer doesn't pay, how long can we last?", "could I survive losing my biggest customer?",
+           "What if Foshan doesn't pay us at all, how long do we last?"]
+LOSS_ZH = ["最大的客户如果不付款，我们能撑多久？", "如果佛山不付款，我们还能撑多久？"]
+
+
+@pytest.mark.parametrize("text", LOSS_EN + LOSS_ZH)
+def test_the_biggest_customer_not_paying_is_answered_on_a_forecast_without_its_money(client, rt, text: str) -> None:
+    f = forecast_without(rt, foshan_id(rt))
+    base = forecast_without(rt, "nobody")
+    assert f["low"] != base["low"] and f["zero"] is not None  # the scenario is not today's forecast
+    zh = bool(CJK.search(text))
+    before = len(rt.store.operations())
+    resp = say(client, text)
+    reply = resp["reply"]
+    assert not reply.startswith(("12 days to your reserve", "距离跌破储备线还有")) and "accounts for 100%" not in reply[:30]
+    assert (CJK.search(reply) is not None) == zh, reply
+    for figure in (whole(f["reserve"]), whole(f["low"]), whole(base["low"]), whole(rt.store.get_state().receivables[0].face_fen)):
+        assert figure in reply, (figure, reply)
+    day = (lambda n: f"第 {n} 天") if zh else (lambda n: f"day {n}")
+    assert day(f["breach"]) in reply and day(f["zero"]) in reply and day(f["low_day"]) in reply, reply
+    assert ("没有更改任何内容" if zh else "nothing was changed") in reply
+    assert len(rt.store.operations()) == before
+    no_ids(reply)
+
+
+def test_losing_the_customer_leaves_the_stored_books_untouched(client, rt) -> None:
+    state = rt.store.get_state().model_dump_json()
+    say(client, LOSS_EN[0])
+    assert rt.store.get_state().model_dump_json() == state
+
+
+@pytest.mark.parametrize(("text", "zh"), [("What happens to cash if Dongguan stops ordering?", False), ("东莞如果不再下单，现金会怎样？", True)])
+def test_a_customer_with_no_invoices_stopping_orders_changes_nothing_and_says_so(client, rt, text: str, zh: bool) -> None:
+    dongguan = next(c.id for c in rt.store.get_state().counterparties if c.name.startswith("Dongguan"))
+    state = rt.store.get_state()
+    assert not [x for x in state.receivables if x.counterparty_id == dongguan]
+    assert not [x for x in state.recurring_invoices if x.counterparty_id == dongguan]
+    base = forecast_without(rt, "nobody")
+    reply = say(client, text)["reply"]
+    assert "Which change should I test" not in reply and "哪项更改" not in reply
+    assert (CJK.search(reply) is not None) == zh, reply
+    assert ("没有未结发票，也没有定期开票" if zh else "no open invoice and no recurring invoicing") in reply
+    assert ("预测也不会变化" if zh else "the forecast does not change") in reply
+    assert whole(base["low"]) in reply
+    assert "0%" in reply
+
+
+@pytest.mark.parametrize(("text", "zh"), [("What happens to cash if Foshan stops ordering?", False), ("佛山如果不再下单，现金会怎样？", True)])
+def test_stopping_orders_takes_out_the_recurring_invoicing_but_not_the_open_invoice(client, rt, text: str, zh: bool) -> None:
+    f = forecast_without(rt, foshan_id(rt), orders_only=True)
+    reply = say(client, text)["reply"]
+    assert whole(f["low"]) in reply and whole(rt.store.get_state().recurring_invoices[0].face_fen) in reply
+    assert ("仍会到期" if zh else "stays due") in reply
+
+
 # ---------------------------------------------------------------- borrowing against the Foshan invoice (item 3)
 
 
