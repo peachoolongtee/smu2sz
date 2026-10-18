@@ -30,6 +30,9 @@ export function RecordPayment({ row, onRecorded, scope = "" }: { row: Receivable
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<{ headline: string | null; lines: string[] } | null>(null);
   const amountRef = useRef<HTMLInputElement>(null);
+  // SEC-29: one idempotency key per payment being entered. A retry of the same amount and reference (after a lost answer) reuses it,
+  // so the server answers DUPLICATE instead of booking the payment a second time; a booked payment or a changed entry starts a new one.
+  const pending = useRef<{ key: string; sig: string } | null>(null);
   const rid = row.receivable_id;
   const tid = (name: string) => `recv3-pay-${scope}${name}`;
 
@@ -48,10 +51,13 @@ export function RecordPayment({ row, onRecorded, scope = "" }: { row: Receivable
     setBusy(true);
     setProblem(null);
     try {
-      const res = await recordReceipt({ receivable_id: rid, amount_fen: fen, bank_reference: reference.trim() || null, key: newKey() }, lang);
+      const sig = `${fen}|${reference.trim()}`;
+      if (pending.current?.sig !== sig) pending.current = { key: newKey(), sig };
+      const res = await recordReceipt({ receivable_id: rid, amount_fen: fen, bank_reference: reference.trim() || null, key: pending.current.key }, lang);
       const words = res.receipt;
       const status = res.result.status;
       if (status === "EXECUTED" || status === "DUPLICATE") {
+        pending.current = null;
         setOpen(false);
         setAmount("");
         setReference("");
