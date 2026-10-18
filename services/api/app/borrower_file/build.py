@@ -174,8 +174,9 @@ def _summary(state: FinancialState, before: Trajectory, subs: Any, day: int) -> 
     drawn = sum(f.drawn_fen for f in state.facilities)
     open_r = [r for r in state.receivables if r.status in ("OPEN", "FINANCED")]
     per_30: dict[str, Fraction] = {}
+    unconfirmed = [ri for ri in state.recurring_invoices if not ri.confirmed]
     for ri in state.recurring_invoices:
-        if ri.every_days > 0:
+        if ri.every_days > 0 and ri.confirmed:  # CT-2: a contract set-up not yet issued once is not shown to a lender as billing
             per_30[ri.counterparty_id] = per_30.get(ri.counterparty_id, Fraction(0)) + Fraction(
                 ri.face_fen * MONTH_DAYS, ri.every_days)
     billed = sum(per_30.values(), Fraction(0))
@@ -197,6 +198,10 @@ def _summary(state: FinancialState, before: Trajectory, subs: Any, day: int) -> 
         Row(label="Recurring invoicing per 30 days", figures=[money(post(billed), O, "state.recurring_invoices",
                                                                      "Σ face × 30 / every_days")]),
     ]
+    if unconfirmed:
+        rows.append(Row(label="Recurring invoicing set up from a contract, not yet issued",
+                        figures=[text(str(len(unconfirmed)), O, "state.recurring_invoices[confirmed=false]")],
+                        note="Not counted above: the first invoice has not been issued yet."))
     if billed > 0:
         top, amt = max(per_30.items(), key=lambda kv: (kv[1], kv[0]))
         rows.append(Row(label="Largest customer share of recurring invoicing",
