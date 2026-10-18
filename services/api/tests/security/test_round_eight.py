@@ -111,3 +111,25 @@ def test_fund1_no_gap_says_no_funding_is_needed(client, profile, lang, words):
     assert not any(w in n["message_when"] for w in FUNDED_WORDS), n["message_when"]
     assert n["message"].endswith("; no funding needed.")
 
+
+# ---------------------------------------------------------------- FUND-3
+
+
+@pytest.mark.parametrize("mode", ["business", None])
+@pytest.mark.parametrize("lang,yes,said", [("en", "go ahead", "The near-term gap of ¥405,000 is not funded: no admissible plan on the funding menu"),
+                                           ("zh", "好，执行", "近期缺口 ¥405,000 未获融资：融资菜单上没有可行的方案")])
+def test_fund3_go_ahead_with_no_admissible_plan_says_the_gap_is_not_funded(client, mode, lang, yes, said):
+    _cap_lines()
+    params = {"mode": mode} if mode else {}
+
+    def say(text: str) -> dict:
+        body = {"session_id": f"r8-{mode}-{lang}", "actor": "OWNER", "text": text, "lang": lang, "buyer_profile": "BUYER-1-HARDLINE"}
+        r = client.post("/nl", params=params, json=body)
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    say("Evaluate EX01")
+    reply = say(yes)["reply"]
+    assert "no gap to cover" not in reply and "无资金缺口" not in reply, reply
+    assert said in reply, reply
+    assert ("NO DEAL" if lang == "en" else "未成交") in reply
