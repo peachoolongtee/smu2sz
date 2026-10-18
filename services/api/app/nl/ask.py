@@ -1,10 +1,11 @@
 """ASK_BOOKS: an owner's question about the books, answered read-only (the question gate in app/nl/rules.py routes it here).
 
 Nothing here proposes a plan, compiles an offer, queues or executes an operation, or writes to the operations log or the
-security log: every branch reads the store and the books and writes words. The one exception is a Tier-3 request put as a
+security log: every branch reads the store and the books and writes words. The exceptions are a Tier-3 request put as a
 question ("sign a personal guarantee?", "should we pledge the equipment?"): it goes to the executor like the same words
 without the mark, so it is refused, logged and raises its security event, for every caller (ASK-1;
-lexicon.tier3_is_information). The server writes all of them, in English and
+lexicon.tier3_is_information); and a router response that trips the canary, which is discarded and raises a DATA_EXTRACTION
+security event, as the classifier's does (RT-L2). The server writes all of them, in English and
 Chinese. Owner only: with the agent key a question gets the sign-in reply (and a question the old rules did not read at
 all gets exactly the reply it got before).
 
@@ -20,7 +21,10 @@ The order of the answer:
      the cash status for why cash is short, the late-payment read, what is waiting).
   5. Otherwise, with FEATURE_ASK_ROUTER on, the router (`app.nl.router.route`, ADR-0015): a model picks read-only tools from a
      closed catalogue for the question and code writes the answer. The model sees the redacted question and the catalogue
-     only. None (flag off, cache miss, a failed or rejected route, nothing fits) goes on to 6.
+     only. None (flag off, cache miss, a failed or rejected route, nothing fits) goes on to 6. The router is reached from the
+     rules' own ASK_BOOKS and from the classifier fallback (service._parse: a question about the business that the classifier
+     did not read); it is skipped when the classifier's output for the text was rejected for a canary trip (RT-L3): that
+     text has already drawn a leaking or hostile model reply once, and a second call would carry it again.
   6. The plain "cannot answer that yet" with the nearest read, or the nearest-capability reply.
 """
 
@@ -30,7 +34,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from app.domain.models import FlowKind
+from app.domain.models import FlowKind, SecurityEventKind
 from app.domain.money import fmt_yuan
 from app.financial import EngineError
 from app.nl import lexicon as lx
@@ -288,12 +292,12 @@ def break_even(ctx: NlContext, slots: Slots) -> Turn | None:
     return Turn(intent=Intent.ASK_BOOKS, reply=reply, facts={"ask": {"topic": "break_even", "rate_bp": slots.rate_bp}})
 
 
-def _fallback(ctx: NlContext, topic: str, slots: Slots, text: str) -> Turn:
-    """The existing read that answers the topic right, else the router's answer, else the plain 'cannot yet' with the nearest
-    read."""
+def _fallback(ctx: NlContext, topic: str, slots: Slots, text: str, use_router: bool = True) -> Turn:
+    """The existing read that answers the topic right, else the router's answer (unless `use_router` is off), else the plain
+    'cannot yet' with the nearest read."""
     if (read := _topic_read(ctx, topic, slots)) is not None:
         return read
-    if (got := router_reply(ctx, slots.question or text)) is not None:
+    if use_router and (got := router_reply(ctx, slots.question or text)) is not None:
         return Turn(intent=Intent.ASK_BOOKS, reply=got[0],
                     facts={"ask": {"topic": topic, "metric_ids": got[1], "router": got[2]}})
     if topic == "books":
@@ -308,9 +312,13 @@ def router_reply(ctx: NlContext, question: str) -> tuple[str, list[str], list[st
 
     if not get_settings().features.ask_router or not ctx.owner_authenticated:
         return None
-    from app.nl.router.route import route
+    from app.nl.router.route import route_outcome
 
-    got = route(question, ctx.lang, ctx)
+    got, outcome = route_outcome(question, ctx.lang, ctx)
+    if outcome.reject_code == "canary":  # the same trip the classifier's output is recorded for (service._parse)
+        ctx.new_event(SecurityEventKind.DATA_EXTRACTION, "OWNER",
+                      f"ask router output from {outcome.backend} contained the prompt canary; discarded",
+                      action="router output discarded")
     text = _reply_text(got, ctx.lang) if got is not None else None
     if got is None or not text:
         return None
@@ -380,6 +388,11 @@ def layer_reply(ctx: NlContext, question: str) -> tuple[str, list[str]] | None:
     return (text, _metric_ids(got)) if text else None
 
 
+# Parsed.matched marker: the classifier's output for this text was rejected for a canary trip, so the router (a second model call
+# carrying the same text) is not consulted (RT-L3). It does not start with "ask:", so it is never read as a topic.
+NO_ROUTER = "router:skip_canary"
+
+
 def topic_of(p: Parsed) -> str:
     return next((m.split(":", 1)[1] for m in p.matched if m.startswith("ask:")), "books")
 
@@ -388,21 +401,32 @@ def topic_of(p: Parsed) -> str:
 ACTION_TOPICS = frozenset({"fund", "repay", "accelerate", "negotiate", "debt", "record"})
 
 
-def pending_reminder(ctx: NlContext, p: Parsed) -> tuple[str, str] | None:
-    """ASK-2. A question about an action asked while a plan waits for "go ahead": the reply must say that the earlier plan is
-    still waiting, what it does and what it costs, and that "go ahead" runs that plan and nothing the question named.
+# The owner turns that only read or decline: with a plan waiting for "go ahead" they leave it in place, so they say so (ASK-2b).
+# A turn that proposes, amends, confirms, cancels, records or runs something is none of these.
+READ_INTENTS = frozenset({Intent.ASK_BOOKS, Intent.SHOW_STATUS, Intent.SHOW_RATIOS, Intent.SHOW_ALERTS, Intent.CHANGES,
+                          Intent.COMPARE_FINANCING, Intent.RECONCILE, Intent.SHOW_DEAL, Intent.EXPLAIN, Intent.WHAT_IF,
+                          Intent.OUT_OF_SCOPE})
+
+
+def pending_reminder(ctx: NlContext, p: Parsed, intent: Intent = Intent.ASK_BOOKS) -> tuple[str, str] | None:
+    """ASK-2 / ASK-2b. A question asked while a plan waits for "go ahead": the reply must say that the earlier plan is still
+    waiting, what it does and what it costs, and that "go ahead" runs that plan. For a question about an action ("should we draw
+    ¥100,000?") it also says "go ahead" runs that plan and nothing the question named.
     Chosen: the plan is KEPT (a question never cancels anything, so the owner can still go on with it) and the reply says
-    so; clearing it would be a change the owner did not ask for."""
+    so; clearing it would be a change the owner did not ask for. This is the one sentence for every owner read turn."""
     pending = ctx.session.pending_plan
     if pending is None or not ctx.owner_authenticated:
-        return None
-    if topic_of(p) not in ACTION_TOPICS and p.slots.amount_fen is None:
         return None
     steps = [s.description for s in pending.steps if s.status == "PROPOSED"] or [s.description for s in pending.steps]
     what = "; ".join(d.rstrip(".") for d in steps) or pending.intent.value
     cost_en = f" (cost {fmt_yuan(pending.quoted_cost_fen)})" if pending.quoted_cost_fen is not None else ""
     cost_zh = f"（成本 {fmt_yuan(pending.quoted_cost_fen)}）" if pending.quoted_cost_fen is not None else ""
     amount = p.slots.amount_fen
+    about_action = intent == Intent.ASK_BOOKS and (topic_of(p) in ACTION_TOPICS or amount is not None)
+    if not about_action:
+        return ((f"Your earlier plan is still waiting and nothing has changed: {what}{cost_en}. "
+                 "Reply 'go ahead' and that plan runs; reply 'cancel' to drop it."),
+                f"您之前的方案仍在等待，没有任何变化：{what}{cost_zh}。回复“执行”将运行该方案；回复“取消”可放弃。")
     asked_en = f"the {fmt_yuan(amount)} you just asked about" if amount is not None else "what you just asked about"
     asked_zh = f"您刚才询问的 {fmt_yuan(amount)}" if amount is not None else "您刚才询问的内容"
     return (("Your earlier plan is still waiting and nothing has changed: "
@@ -410,12 +434,22 @@ def pending_reminder(ctx: NlContext, p: Parsed) -> tuple[str, str] | None:
             f"您之前的方案仍在等待，没有任何变化：{what}{cost_zh}。回复“执行”将运行该方案，而不是{asked_zh}；回复“取消”可放弃。")
 
 
+def remind_pending(ctx: NlContext, p: Parsed, turn: Turn) -> None:
+    """ASK-2b. Called on every owner turn after it is dispatched: while a plan waits for its go-ahead, a turn that only read
+    or declined (`READ_INTENTS`: the rules' reads, the answer layer's, the router's, the out-of-scope reply) keeps
+    `awaiting_confirmation` true and ends with the reminder sentence. It reads the session and writes only words: the plan is
+    never cleared, replaced or confirmed by a question."""
+    if (turn.intent not in READ_INTENTS or turn.pending is not None or turn.clear_pending or turn.awaiting
+            or turn.pending_clarification is not None or ctx.results):
+        return
+    if (note := pending_reminder(ctx, p, turn.intent)) is None:
+        return
+    turn.reply = f"{turn.reply}{'' if ctx.lang == 'zh' else ' '}{t(ctx, *note)}"
+    turn.awaiting = True  # the earlier plan is still waiting for its go-ahead
+
+
 def ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
-    turn = _ask_books(ctx, p, text)
-    if turn.intent == Intent.ASK_BOOKS and (note := pending_reminder(ctx, p)) is not None:
-        turn.reply = f"{turn.reply}{'' if ctx.lang == 'zh' else ' '}{t(ctx, *note)}"
-        turn.awaiting = True  # the earlier plan is still waiting for its go-ahead
-    return turn
+    return _ask_books(ctx, p, text)
 
 
 def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
@@ -442,4 +476,4 @@ def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         text = _reply_text(got, ctx.lang) or ""
         return Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": topic, "metric_ids": _metric_ids(got)}},
                     card=answer_card.from_reply(got, ctx.lang, ctx.state()))  # the card's figures and links; laid out in the response
-    return _fallback(ctx, topic, slots, text)
+    return _fallback(ctx, topic, slots, text, use_router=NO_ROUTER not in p.matched)

@@ -128,7 +128,7 @@ def test_three_real_tools_make_one_answer(rt: Runtime, lang: str) -> None:
 
 def test_a_slot_the_catalogue_requires_is_required(rt: Runtime) -> None:
     assert rr.route("what if Foshan pays late?", "en", ctx_for(rt), [Scripted(calls(("late_payment_whatif", {"customer": "Foshan"})))]) is None
-    assert rr.LAST.outcome.startswith("rejected:slots:")
+    assert rr.LAST.outcome == "rejected:missing_slot"
     for bad in ({"customer": "Foshan", "days_late": 181}, {"customer": "Foshan", "days_late": 0}):
         assert rr.route("late?", "en", ctx_for(rt), [Scripted(calls(("late_payment_whatif", bad)))]) is None
     assert rr.route("2%?", "en", ctx_for(rt), [Scripted(calls(("early_pay_offer", {"rate_bp": 501})))]) is None
@@ -185,6 +185,7 @@ def test_an_invalid_response_is_rejected_whole(rt: Runtime, case: str) -> None:
     before = snapshot(rt)
     assert rr.route("how much debt do we have?", "en", ctx_for(rt), [Scripted(REJECTED[case])]) is None
     assert rr.LAST.outcome.startswith("rejected:"), rr.LAST.outcome
+    assert rr.LAST.reject_code in rr.REJECT_CODES, rr.LAST.reject_code
     assert rr.LAST.tools == []
     assert snapshot(rt) == before
 
@@ -192,7 +193,7 @@ def test_an_invalid_response_is_rejected_whole(rt: Runtime, case: str) -> None:
 def test_a_valid_call_next_to_an_invalid_one_does_not_run(rt: Runtime) -> None:
     fake = Scripted(calls(("total_debt", {}), ("cash_safety", {"horizon_days": 999})))
     assert rr.route("debt and safety?", "en", ctx_for(rt), [fake]) is None
-    assert rr.LAST.outcome.startswith("rejected:slots:") and "out of range" in rr.LAST.outcome
+    assert rr.LAST.outcome == "rejected:out_of_range"
 
 
 def test_a_canary_in_the_output_is_rejected(rt: Runtime) -> None:
@@ -451,7 +452,7 @@ def test_cache_mode_replays_a_recorded_route_and_a_miss_is_none(rt: Runtime, tmp
 def test_a_recorded_route_goes_through_the_same_validation(rt: Runtime, tmp_path: Path) -> None:
     q = "how is our money looking?"
     path = rr.write_cache_entry(q, "en", calls(("retired_tool", {})), "recorded-model", tmp_path)
-    assert rr.route(q, "en", ctx_for(rt), [rr.CacheBackend(tmp_path)]) is None and rr.LAST.outcome == "rejected:unknown tool"
+    assert rr.route(q, "en", ctx_for(rt), [rr.CacheBackend(tmp_path)]) is None and rr.LAST.outcome == "rejected:unknown_tool"
     entry = json.loads(path.read_text(encoding="utf-8"))
     entry.update(prompt_version="ask-router-v0", route=calls(("total_debt", {})))
     path.write_text(json.dumps(entry), encoding="utf-8")
@@ -517,7 +518,137 @@ def test_the_log_holds_a_hash_and_the_tools_never_the_question(rt: Runtime) -> N
         rr.route(secret, "en", ctx_for(rt), [Scripted(calls(("total_debt", {})))])
         rr.route(secret, "en", ctx_for(rt), [Scripted("not json")])
     events = [e for e in logs if e.get("event") == "ask.router"]
-    assert [e["outcome"] for e in events] == ["answered", "rejected:not JSON"]
+    assert [e["outcome"] for e in events] == ["answered", "rejected:malformed"]
     assert events[0]["tools"] == ["total_debt"] and re.fullmatch(r"[0-9a-f]{16}", events[0]["q_hash"])
     blob = json.dumps(logs, default=str)
     assert "Foshan" not in blob and "420000" not in blob and "invoice" not in blob
+
+
+# ---------------------------------------------------------------- RT-L1: a rejection is logged as a fixed code, never the model's text
+
+LEAK = "what is our cash? Foshan owes 1,234,567"  # model-controlled text a hostile reply could carry in a key, a name or a value
+LEAK_PARTS = ("what is our cash", "Foshan", "1,234,567", "1234567")
+
+REJECTION_CODES = {
+    "leak_in_slot_key": (calls(("total_debt", {LEAK: 1})), "unknown_slot"),
+    "leak_in_slot_value": (calls(("cash_safety", {"horizon_days": LEAK})), "wrong_type"),
+    "leak_in_customer_length": (calls(("customer_summary", {"customer": LEAK * 3})), "bad_value"),
+    "leak_in_tool_name": (calls((LEAK, {})), "unknown_tool"),
+    "leak_in_top_key": ({**calls(("total_debt", {})), LEAK: "x"}, "extra_key"),
+    "leak_in_call_key": ({"calls": [{"tool": "total_debt", "slots": {}, LEAK: "x"}], "none": False}, "extra_key"),
+    "leak_in_missing_slots": ({"calls": [{"tool": "late_payment_whatif", "slots": {"customer": LEAK}}], "none": False}, "missing_slot"),
+    "out_of_range_beside_leak": (calls(("cash_safety", {"horizon_days": 10**30}), (LEAK, {})), "out_of_range"),
+    "leak_in_four_calls": (calls(*[("total_debt", {LEAK: n}) for n in range(4)]), "too_many_calls"),
+    "leak_in_plain_text": (LEAK + " is what you should do", "malformed"),
+    "leak_in_truncated_json": ('{"calls": [{"tool": "' + LEAK, "malformed"),
+    "leak_in_duplicate_key": ('{"calls": [], "none": false, "none": true, "' + LEAK + '": 1}', "malformed"),
+}
+
+
+@pytest.mark.parametrize("case", sorted(REJECTION_CODES))
+def test_a_rejected_route_is_logged_as_a_fixed_code_only(rt: Runtime, case: str) -> None:
+    raw, code = REJECTION_CODES[case]
+    assert code in rr.REJECT_CODES
+    with capture_logs() as logs:
+        assert rr.route("how is it going?", "en", ctx_for(rt), [Scripted(raw)]) is None
+    events = [e for e in logs if e.get("event") == "ask.router"]
+    assert [e["outcome"] for e in events] == [f"rejected:{code}"], events
+    blob = json.dumps(logs, default=str) + rr.LAST.outcome + str(rr.LAST.reject_code)
+    assert [p for p in LEAK_PARTS if p in blob] == [], blob
+    assert rr.LAST.reject_code == code
+
+
+def test_a_rejected_exception_carries_only_its_code(rt: Runtime) -> None:
+    with pytest.raises(rr.Rejected) as e:
+        rr.parse_route(json.dumps(calls(("total_debt", {LEAK: 1}))))
+    assert str(e.value) == "unknown_slot" and e.value.code == "unknown_slot"
+    assert LEAK in e.value.detail  # kept for a debugger, never logged
+
+
+# ---------------------------------------------------------------- RT-L2: a canary in router output is on the security log
+
+
+def test_a_canary_in_router_output_raises_one_data_extraction_event(client: Any, rt: Runtime, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.domain.models import SecurityEventKind
+
+    token = canary("CANARY-PROMPT").token or ""
+    assert token
+    fake = Scripted(json.dumps(calls(("total_debt", {}))) + " " + token)
+    monkeypatch.setattr(rr, "default_backends", lambda: [fake])
+    monkeypatch.setenv("FEATURE_ASK_ROUTER", "1")
+    before = len(rt.store.security_events())
+    r = Chat(client, "rt-l2").say("what is our exposure to the banks?")
+    new = rt.store.security_events()[before:]
+    assert len(fake.prompts) == 1
+    assert [e.kind for e in new] == [SecurityEventKind.DATA_EXTRACTION], [(e.kind, e.detail) for e in new]
+    assert r["security_events"] == [e.id for e in new] and token not in new[0].detail and new[0].counterparty_id == "OWNER"
+    assert token not in r["reply"]  # the discarded reply is not echoed; the honest fallback answers
+    assert r["operations"] == [] and rr.LAST.outcome == "rejected:canary"
+    assert rt.store.verify_chain()
+
+
+def test_the_router_reports_the_rejection_kind_and_only_a_canary_is_an_event(rt: Runtime, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.nl.ask import router_reply
+
+    token = canary("CANARY-PROMPT").token or ""
+    for raw, code in ((token, "canary"), (json.dumps(calls(("draw_facility", {}))), "unknown_tool"), ("nope", "malformed")):
+        got, oc = rr.route_outcome("how much debt?", "en", ctx_for(rt), [Scripted(raw)])
+        assert got is None and oc.reject_code == code and oc.outcome == f"rejected:{code}"
+    ok, oc = rr.route_outcome("how much debt?", "en", ctx_for(rt), [Scripted(calls(("total_debt", {})))])
+    assert ok is not None and oc.reject_code is None and oc.outcome == "answered"
+    monkeypatch.setenv("FEATURE_ASK_ROUTER", "1")
+    before = len(rt.store.security_events())
+    for raw in (json.dumps(calls(("draw_facility", {}))), "nope", json.dumps({"calls": [], "none": True})):
+        monkeypatch.setattr(rr, "default_backends", lambda raw=raw: [Scripted(raw)])
+        assert router_reply(ctx_for(rt), "how much debt?") is None
+    assert len(rt.store.security_events()) == before  # an ordinary rejection is not a security event
+    monkeypatch.setattr(rr, "default_backends", lambda: [Scripted(token)])
+    assert router_reply(ctx_for(rt), "how much debt?") is None
+    assert [e.kind.value for e in rt.store.security_events()[before:]] == ["DATA_EXTRACTION"]
+
+
+# ---------------------------------------------------------------- RT-L3: no second model call after a canary-rejected classifier output
+
+BUSINESS_QUESTION = "how long can we keep paying the bills?"  # no rule reads it: the classifier fallback sends it on to the books
+
+
+def _classified(payload: Any) -> Any:
+    from tests.nl.test_classifier import run, stub
+
+    return run([stub(payload)], BUSINESS_QUESTION)
+
+
+def test_the_router_is_reached_from_the_classifier_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    spy = Scripted(calls(("total_debt", {})))
+    monkeypatch.setattr(rr, "default_backends", lambda: [spy])
+    monkeypatch.setenv("FEATURE_ASK_ROUTER", "1")
+    for payload in ({"intent": "OUT_OF_SCOPE", "slots": {}, "confidence": 0.9}, {"intent": "FUND_GAP", "slots": {}, "confidence": 0.1},
+                    "not json"):
+        spy.prompts.clear()
+        resp, store = _classified(payload)
+        assert resp.parse_source == "question" and len(spy.prompts) == 1, payload  # the documented second consult
+        assert resp.reply.startswith("¥1,500,000") and store.security_events() == []
+
+
+@pytest.mark.parametrize("lead", ["", '{"intent": "OUT_OF_SCOPE", "slots": {}, "confidence": 0.9}'])
+def test_a_canary_rejected_classifier_output_means_the_router_is_not_asked(monkeypatch: pytest.MonkeyPatch, lead: str) -> None:
+    token = canary("CANARY-PROMPT").token or ""
+    spy = Scripted(calls(("total_debt", {})))
+    monkeypatch.setattr(rr, "default_backends", lambda: [spy])
+    monkeypatch.setenv("FEATURE_ASK_ROUTER", "1")
+    resp, store = _classified(lead + " " + token)
+    assert spy.prompts == []  # no second call carrying the same text
+    assert [e.kind.value for e in store.security_events()] == ["DATA_EXTRACTION"]  # the classifier's trip, once
+    assert resp.reply.startswith("I cannot answer that from the books in chat yet") and token not in resp.reply
+    assert resp.operations == [] and store.operations() == []
+
+
+def test_a_canary_rejected_classifier_output_still_answers_through_the_deterministic_layers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Only the router is skipped: a question the rules or the answer layer read never needed the classifier or the router."""
+    from tests.nl.test_classifier import run, stub
+
+    spy = Scripted(calls(("total_debt", {})))
+    monkeypatch.setattr(rr, "default_backends", lambda: [spy])
+    monkeypatch.setenv("FEATURE_ASK_ROUTER", "1")
+    resp, _store = run([stub(canary("CANARY-PROMPT").token or "")], "what is our exposure to the banks?")
+    assert resp.parse_source == "rules" and len(spy.prompts) == 1  # the rules read it; the classifier was never consulted
