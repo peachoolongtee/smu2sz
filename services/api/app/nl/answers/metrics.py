@@ -733,6 +733,23 @@ def customer_loss_impact(ctx: Any, buyer_id: str, *, orders_only: bool = False) 
                    "orders_only": orders_only})
 
 
+def days_sales_outstanding(ctx: Any) -> Metric:
+    """DSO as receivables over the invoicing run-rate: what customers owe now, divided by what the recurring invoices bill per day
+    (each face over its cycle), times one day. None when nothing bills regularly (the books then hold no sales rate). It is not a
+    measured collection time: the books keep no receipt history of their own, so the contract terms are reported beside it."""
+    r = R(ctx)
+    owed = sum(x.outstanding_fen for x in unpaid(r.state))
+    per_day = sum((Fraction(x.face_fen, x.every_days) for x in r.state.recurring_invoices if x.every_days), Fraction(0))
+    terms = sorted({x.terms_days for x in unpaid(r.state)} | {x.terms_days for x in r.state.recurring_invoices})
+    detail = {"owed_fen": owed, "per_day_fen": round_half_up(per_day), "terms_days": terms,
+              "invoiced_fen": sum(x.face_fen for x in r.state.recurring_invoices),
+              "cycles": sorted({x.every_days for x in r.state.recurring_invoices})}
+    if not per_day:
+        return Metric("days_sales_outstanding", None, "none", None, "receivables / recurring invoicing", detail)
+    dso = round_half_up(Fraction(owed) / per_day)
+    return Metric("days_sales_outstanding", dso, f"{dso} days", r.today, "receivables / recurring invoicing per day", detail)
+
+
 # ================================================================ covenants
 
 
@@ -975,7 +992,7 @@ METRICS: dict[str, Callable[[Any], Metric]] = {
         marginal_cost_of_funds, fastest_and_cheapest_source, standing_plan, alternatives_priced, break_even,
         invoice_financing_capacity, receivables_total, receivables_by_customer, overdue, next_receipt, recurring_billing,
         terms_by_customer, covenant_ratios, covenant_breakpoints, ebitda_month, mandate_limits_and_validity, activity_since,
-        what_waits, approvals_pending, payoff_all, payroll_cover, capex_case)
+        what_waits, approvals_pending, payoff_all, payroll_cover, capex_case, days_sales_outstanding)
 }
 """The metrics that take the context alone (the parametrised ones, `cash_on`, `late_payment_impact`, `terms_extension_cost`,
 take their subject as well)."""

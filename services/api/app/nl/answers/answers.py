@@ -1728,6 +1728,39 @@ def a_customer_loss(w: W, q: str) -> AnswerReply:
         f"这是对账目副本的预测，没有更改任何内容。"), basis)
 
 
+# ================================================================ days sales outstanding
+
+
+def a_dso(w: W, q: str) -> AnswerReply:
+    """"What is our DSO?": receivables divided by the daily invoicing rate (what the recurring invoices bill per day). The books keep no
+    receipt history of their own, so it is not a measured collection time, and the contract terms are said beside it."""
+    m = w.m(mx.days_sales_outstanding(w.r))
+    d = m.detail
+    owed = w.fig("receivables", money(d["owed_fen"]))
+    terms = d["terms_days"]
+    terms_en = (f", and your invoices are on {joined(w, [str(t) for t in terms])}-day terms" if terms else "")
+    terms_zh = (f"，您发票的账期是 {'、'.join(str(t) for t in terms)} 天" if terms else "")
+    basis = w.basis("books")
+    if m.value is None:
+        return w.reply("CUS-04", w.t(
+            f"I cannot give a DSO from these books: it needs your sales per day, and the books hold no recurring invoicing or sales history to take "
+            f"it from. They do show {owed} owed to you{terms_en}.",
+            f"按现有账目无法给出应收账款周转天数：它需要每日销售额，而账目里没有定期开票或销售历史可以推算。账目只显示客户欠您 {owed}{terms_zh}。"), basis)
+    dso = w.fig("dso", str(m.value))
+    daily = w.fig("invoiced_per_day", money(d["per_day_fen"]))
+    cycles = d["cycles"]
+    run = (w.t(f"{money(d['invoiced_fen'])} invoiced every {cycles[0]} days" if len(cycles) == 1 else f"{money(d['invoiced_fen'])} invoiced per cycle",
+               f"每 {cycles[0]} 天开票 {money(d['invoiced_fen'])}" if len(cycles) == 1 else f"每个周期开票 {money(d['invoiced_fen'])}"))
+    if not d["owed_fen"]:
+        return w.reply("CUS-04", w.t(f"0 days: nobody owes you anything right now, so no sales are outstanding (your invoicing runs at {daily} a day, "
+                                     f"{run}).", f"0 天：目前没有客户欠款，因此没有未收回的销售额（您的开票速度为每天 {daily}，{run}）。"), basis)
+    return w.reply("CUS-04", w.t(
+        f"{dso} days: customers owe you {owed}, which is {dso} days of your invoicing, and that runs at {daily} a day ({run}). Method: receivables "
+        f"divided by daily recurring invoicing. It is not a measured collection time, because the books hold no receipt history yet{terms_en}.",
+        f"{dso} 天：客户欠您 {owed}，相当于 {dso} 天的开票额，您的开票速度为每天 {daily}（{run}）。计算方法：应收账款除以每日定期开票额。"
+        f"这不是实测的回款时间，因为账目里还没有收款历史{terms_zh}。"), basis)
+
+
 # ================================================================ borrowing against an invoice
 
 
@@ -1865,6 +1898,9 @@ QUESTIONS: tuple[tuple[str, re.Pattern[str], Handler], ...] = (
                   r"(?:失去|丢了|丢掉|流失|损失|没有了).{0,6}(?:最大|主要)(?:的)?(?:客户|买家)",
                   r"(?:如果|万一|要是|假如).{0,12}(?:客户|佛山|东莞).{0,12}(?:不付|不再|停止|不下单|不买|流失|赖账|违约|跑路|倒闭|不给钱)",
                   r"(?:佛山|东莞|客户).{0,10}(?:不付款|不再下单|停止下单|不下单|不再订货|不再合作|赖账|违约|流失)"), a_customer_loss),
+    ("CUS-04", _p(r"\bdso\b", r"\bdays? sales? outstanding\b", r"\b(?:average )?collection period\b", r"\breceivables? days\b",
+                  r"\bhow long\b.{0,20}\b(?:customers?|clients?|buyers?)\b.{0,15}\b(?:take|takes)\b.{0,10}\bto pay\b",
+                  r"周转天数", r"回款天数", r"收款周期", r"客户.{0,6}平均.{0,6}(?:多久|多长时间).{0,4}付款", r"应收.{0,6}(?:天数|账期)"), a_dso),
     # borrowing against an invoice: before the debt and customer readings, whose words ("borrow", "invoice") it shares
     ("FUN-07", _p(r"\b(?:borrow|finance|financing|advance|factor\w*|raise (?:money|cash|funds)|get (?:money|cash|funds|an advance))\b"
                   r".{0,30}\b(?:against|on|using|with|for|from)\b.{0,30}\b(?:invoices?|receivables?)\b",
@@ -2087,7 +2123,7 @@ def answer(question: str, lang: str, ctx: Any) -> AnswerReply | None:
 
 
 # Questions owners asked beyond the top 30 (the live stress test of FLOW, 18 Oct 2026): answered the same way, but not among the 30.
-BEYOND_TOP30 = frozenset({"ACT-04", "ACT-05", "FUN-07", "CUS-09"})
+BEYOND_TOP30 = frozenset({"ACT-04", "ACT-05", "FUN-07", "CUS-09", "CUS-04"})
 
 
 def question_ids() -> list[str]:
