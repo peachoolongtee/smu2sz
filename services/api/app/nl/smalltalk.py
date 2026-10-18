@@ -99,6 +99,22 @@ def whole_message(text: str, *, allow_filler: bool = True) -> str | None:
     return None  # only fillers ("ok", "great")
 
 
+_LEAD = re.compile(rf"^(?:{_NAME}\s+)?{_GREET}(?:\s+{_NAME})*(?:[\s,;!.，。！、；~…:：]+|$)")
+
+
+def strip_greeting(text: str) -> str:
+    """The message without a leading greeting ("hi, ", "hello flow! ", "你好，", "您好 "), for routing a plain read only. Whatever follows
+    the greeting is kept as typed, so it is judged exactly as it would be alone; the caller never uses this for a confirmation, an
+    approval, a Tier-3 check or quoted text, which all read the whole message."""
+    t = _NAME_GLUE.sub(" ", _norm(text))
+    for _ in range(2):
+        stripped = _LEAD.sub("", t, count=1)
+        if stripped == t:
+            break
+        t = stripped.lstrip()
+    return t
+
+
 # ---- what FLOW never does, and the borrowing question
 _FLOW = r"(?:flow|you|the agent|the system|this app|it)"
 _LIMITS = re.compile("|".join((
@@ -229,4 +245,4 @@ def turn(ctx: NlContext, kind: str, text: str) -> Turn:
     return Turn(intent=Intent.ASK_BOOKS, reply=reply(kind, ctx.lang, text), facts={"ask": {"topic": f"smalltalk:{kind}", "metric_ids": []}})
 
 
-__all__ = ["KINDS", "OPEN_KINDS", "follow_language", "limits_kind", "off_topic", "reply", "turn", "whole_message"]
+__all__ = ["KINDS", "OPEN_KINDS", "follow_language", "limits_kind", "off_topic", "reply", "strip_greeting", "turn", "whole_message"]

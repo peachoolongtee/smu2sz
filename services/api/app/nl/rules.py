@@ -221,6 +221,12 @@ def _page_read(text: str) -> bool:
     return bool(lx.LATE_PAYMENT_ASK.search(text) and lx.THIS_PAYMENT.search(text))
 
 
+def cash_look(text: str) -> bool:
+    """Whether the owner's whole message, after a leading greeting, is a plain request to see the cash ("帮我看看现金", "hi, what is our
+    cash?"). Only the greeting is dropped; nothing else is, so an action word, an amount or a name makes this False."""
+    return lx.CASH_LOOK.fullmatch(lx.norm(smalltalk.strip_greeting(text)).strip()) is not None
+
+
 def _small_talk(raw: str, s: Slots, pending_plan: bool) -> Parsed | None:
     """Greetings, thanks, "who are you?", "what will FLOW never do?" and a joke, the weather or trivia (app/nl/smalltalk.py). A greeting,
     thanks or identity question must be the whole message, so "hi, fund the gap" is not one; limits and off-topic are never tried on
@@ -380,6 +386,8 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.SHOW_DEAL, "deal")  # read-only: the confirmed contract beside the live books
     if lx.STATUS_QUESTION.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_STATUS, "status_question")
+    if not (s.tier3 or s.approval_id or s.fixture_id or s.quoted_text or s.quoted_approval) and cash_look(text):
+        return hit(Intent.SHOW_STATUS, "cash_look")  # "帮我看看现金", "hi, what is our cash?": the same read as "show cash status"
     # the action rules: a question that names an action is asked about it, so it is answered (ASK_BOOKS), never proposed
     # "can we pay off all our loans?", 我们能把债务还清吗 (a question about the term debt, not "could you repay the loan")
     debt_ask = bool(lx.DEBT_ASK.search(text)) and (asks or (lx.is_asking(text) and not lx.ASK_YOU.search(text)))
