@@ -201,10 +201,10 @@ export function ContractWorkbench({ id, row, onCommitted }: { id: string; row: P
             <Panel id="financing" title={t("buy.financing.title")} sub={t("buy.financing.sub")}>
               <dl className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-3">
                 <Mini label={t("capex.npv")} value={evaluation.npv_display} bad={evaluation.npv_fen < 0} />
-                <Mini label={t("capex.payback")} value={evaluation.payback_month !== null ? t("capex.paybackValue", { n: evaluation.payback_month }) : t("common.none")} />
+                <Mini label={t("capex.payback")} value={evaluation.payback_month !== null ? t("capex.paybackValue", { n: evaluation.payback_month }) : t("common.na")} />
                 <Mini
                   label={t("buy.uplift.from")}
-                  value={ev.uplift_start_month !== null ? t("capex.paybackValue", { n: ev.uplift_start_month }) : t("common.none")}
+                  value={ev.uplift_start_month !== null ? t("capex.paybackValue", { n: ev.uplift_start_month }) : t("common.na")}
                   hint={ev.uplift_start_basis ?? undefined}
                 />
               </dl>
@@ -219,9 +219,9 @@ export function ContractWorkbench({ id, row, onCommitted }: { id: string; row: P
                           {selected ? <StatusPill tone="green">{t("capex.selected")}</StatusPill> : null}
                         </p>
                         <div className="shrink-0 text-right">
-                          <p className="font-display text-base font-bold tabular-nums text-ink">{s.monthly_payment_display ?? t("common.none")}</p>
+                          <p className="font-display text-base font-bold tabular-nums text-ink">{s.monthly_payment_display ?? t("common.na")}</p>
                           <p className="text-supporting tabular-nums text-ink-3">
-                            {t("capex.charges")} {s.charges_total_display ?? t("common.none")}
+                            {t("capex.charges")} {s.charges_total_display ?? t("common.na")}
                           </p>
                         </div>
                       </div>

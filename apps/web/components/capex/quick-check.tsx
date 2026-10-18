@@ -109,13 +109,13 @@ export function QuickCheck({ today, quiet = false }: { today: number; quiet?: bo
 
           <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Mini label={t("capex.npv")} value={capex.npv_display} hint={capex.request.label} bad={capex.npv_fen < 0} good={capex.npv_fen >= 0} />
-            <Mini label={t("capex.payback")} value={capex.payback_month !== null ? t("capex.paybackValue", { n: capex.payback_month }) : t("common.none")} />
+            <Mini label={t("capex.payback")} value={capex.payback_month !== null ? t("capex.paybackValue", { n: capex.payback_month }) : t("common.na")} />
             <Mini
               label={t("capex.leverage")}
-              value={capex.leverage_financed ? `${capex.leverage_financed.text}×` : t("common.none")}
+              value={capex.leverage_financed ? `${capex.leverage_financed.text}×` : t("common.na")}
               hint={t("capex.leverage.limit", { limit: capex.leverage_limit_display })}
             />
-            <Mini label={t("capex.leverageExt")} value={capex.leverage_with_extension ? `${capex.leverage_with_extension.text}×` : t("common.none")} hint={t("capex.leverageExt.hint")} />
+            <Mini label={t("capex.leverageExt")} value={capex.leverage_with_extension ? `${capex.leverage_with_extension.text}×` : t("common.na")} hint={t("capex.leverageExt.hint")} />
           </dl>
 
           <Part id="structures" title={t("capex.structures")} sub={`${t("capex.structures.sub", { limit: capex.dscr_limit_display })} ${t("dscr.readingNote")}`}>
@@ -149,9 +149,9 @@ export function QuickCheck({ today, quiet = false }: { today: number; quiet?: bo
                             </StatusPill>
                           ) : null}
                         </th>
-                        <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>{s.monthly_payment_display ?? t("common.none")}</td>
-                        <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{s.total_interest_display ?? t("common.none")}</td>
-                        <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>{s.charges_total_display ?? t("common.none")}</td>
+                        <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>{s.monthly_payment_display ?? t("common.na")}</td>
+                        <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{s.total_interest_display ?? t("common.na")}</td>
+                        <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>{s.charges_total_display ?? t("common.na")}</td>
                         {[1, 2, 3, 4, 5, 6].map((m) => {
                           const cell = s.dscr_by_month.find((d) => d.month === m);
                           return (
@@ -165,7 +165,7 @@ export function QuickCheck({ today, quiet = false }: { today: number; quiet?: bo
                                   {cell.dscr.text}&times;
                                 </span>
                               ) : (
-                                <span className="text-ink-3">{t("common.none")}</span>
+                                <span className="text-ink-3">{t("common.na")}</span>
                               )}
                             </td>
                           );
