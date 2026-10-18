@@ -44,6 +44,12 @@ mode, which is outside every security certification.
   moves and nothing comes from a deployed system. FLOW accepts only 3 of 14 acceptable buyer offers on its own, does not
   read scanned contracts (no OCR), and its live-model results are single runs.
 
+| Build and verification |
+| --- |
+| Submission commit: {SUBMISSION_COMMIT} |
+| Verification manifest: Table V (Appendix B), with each suite's passed, failed and skipped counts, the command, the build and the date of the run on the submission commit |
+| Earlier builds named beside a figure (`70f23ac5`, the certified build; `975e082f`; `571ea64f`) are historical evidence, labelled as such |
+
 **Where to look, by judging criterion** (the full index, with every template prompt and evidence file, is Appendix A).
 
 | Criterion | Where to look first |
@@ -545,14 +551,14 @@ wrote) and certified dev **`70f23ac5`, the final assessed build**, for the local
 tests passed, 0 failed; 279 cases, 0 harm; PostgreSQL concurrency 3 of 3; 479 mock browser tests passed; 0 CSP violations
 (`docs/security/CERTIFICATIONS.md`). Disclosed with it: REG-8, REG-9, CT-2b, and SEC-27 and SEC-28, deferred by the owner.
 **The submission build is not yet certified**: it adds the round-six fixes, Ask FLOW's new answers, the classifier's read-intent
-routing, the Cash page's plan without a permanent source, the JSON 500 and `--live-llm` forcing redaction. These go to the
-Security Lead as a short follow-up review.
+routing, the Cash page's plan without a permanent source, the JSON 500 and `--live-llm` forcing redaction. The checks run on
+the submission commit are in Table V (Appendix B).
 
 **Table 8. Where FLOW may run, and what stands in the way.**
 
 | Configuration | Verdict | Minimum blockers |
 | --- | --- | --- |
-| Local demo (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | **GO** | None for `70f23ac5`. The submission build's additions await the Security Lead's follow-up review |
+| Local demo (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | **GO** | None for `70f23ac5`. The submission build's additions are outside that certification; their checks are in Table V |
 | Live-LLM mode (`pnpm demo --live-llm`, opt-in) | **Not covered by any certification** | A certification run in live mode; the language-boundary set and attack catalogue against a live model; a provider agreement on retention and region; PRIV-4 and PRIV-5 |
 | A demo reachable over a network | **NO-GO** | A tested deployment profile: changed credentials and signing key, TLS with per-client limits, anonymous intake off (SEC-19), API docs hidden, one API process, the web dev server on loopback (DEMO-L1), the route sweep and browser checks run against it |
 | Production with real customers, documents or money | **NO-GO** | A runnable configuration (SEC-06); one API process enforced (SEC-11); separate custody of token and key (R-2); an external anchor and a log the database owner cannot rewrite (R-13); mandate revoke and renew (R-14); resumable or reversible plans (SEC-28); an aggregate draw limit (R-3); redaction gaps and a PIPL assessment; backups; a penetration test; real counterparties, lenders and bank feeds |
@@ -591,8 +597,7 @@ passed, 77 skipped on `70f23ac5`; live browser (against a local API) — 139 pas
 types and lint — 169 passed, clean on `975e082f`; scripted-model tests (router, boundary, cards, chat attacks) — 452 passed, 1
 skipped on `571ea64f`. Appendix D lists representative cases with inputs and expected results, and
 `docs/deliverables/TEST_CASES.md` the full catalogue. The submission build adds the changes listed under Assurance after the
-last measured base (`571ea64f`); the owner-question figures, the judge pack and the API suite are re-run on it before
-submission.
+last measured base (`571ea64f`); the results of the suites on the submission commit are in Table V (Appendix B).
 
 **Known failures.** Live browser suite: `e2e/live.spec.ts:334` and `:348`, the write-conflict retry tests (#157), and
 `e2e/tracker.spec.ts:216` ("after the owner's approval the page's figures are the API's own"); the first two fail the same way
@@ -640,6 +645,18 @@ and the evidence behind it. Paths are repository-relative.
 | 04 Tiered permissions and confirmation for sensitive actions | Table 6; Figure 6; Appendix J (Tables J1, J2) | `services/api/app/mandate/tiers.py`; `services/api/app/operations/executor.py` |
 | 04 Protection against prompt injection, privilege escalation and privacy leakage | Tables 7 and 8; Figure 8 (Appendix J) | `services/api/evals/security/latest_report.json`; `docs/SECURITY_SELF_ASSESSMENT.md` |
 | 05 Environment, deployment instructions, test cases and known limitations | Table D1; Appendices C and D | `README.md`; `docs/deliverables/TEST_CASES.md`; `scripts/demo.mjs`; `scripts/verify_evidence.py` |
+
+## Appendix B. Verification manifest
+
+The figures in sections 01 to 05 name the build they were measured on; those builds are historical evidence. Table V records
+the final re-measurement on the submission commit: each check's command (Appendix C), the build, the date, and the passed,
+failed and skipped counts. A suite with known failures lists them by name in the notes.
+
+**Table V. Verification manifest for the submission commit {SUBMISSION_COMMIT}.**
+
+| Check | Command (Appendix C) | Build | Date | Passed | Failed | Skipped | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+{VERIFICATION_TABLE_ROWS}
 
 ## Appendix C. Evidence commands and results
 

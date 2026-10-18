@@ -19,7 +19,8 @@ What it does:
      header table, headings, prompts and footer are kept. The header table gets [TEAM: ...] placeholders.
   3. Verifies every output: it reopens the file, checks that every template heading and prompt is present
      and followed by content, and that no "Write here" or "Please complete" placeholder is left.
-     Exits 1 on any failure.
+     Exits 1 on any failure. Deliberate {UPPER_CASE} tokens (for example {SUBMISSION_COMMIT} and
+     {VERIFICATION_TABLE_ROWS}, which the lead fills after the final re-measurement) are listed, not failed.
 
 Markdown supported: paragraphs, **bold**, *italic*, `code`, [links](url), bullet and numbered lists
 (nested by two-space indent), pipe tables, fenced code blocks, #### sub-headings, "> " quotes and
@@ -939,6 +940,18 @@ def team_placeholders(out_path: Path) -> list[str]:
     return sorted(set(re.findall(r"\[TEAM:[^\]]*\]", "\n".join(texts))))
 
 
+# Tokens the lead fills after the final re-measurement ({SUBMISSION_COMMIT}, {VERIFICATION_TABLE_ROWS}, ...): deliberate,
+# so the build lists them instead of failing. Any {UPPER_CASE} token counts.
+LEAD_TOKEN_RE = re.compile(r"\{[A-Z][A-Z0-9_]+\}")
+
+
+def lead_placeholders(out_path: Path) -> list[str]:
+    """The distinct {UPPER_CASE} tokens left in a built document, for the lead to fill before upload."""
+    doc = docx.Document(str(out_path))
+    texts = [p.text for p in doc.paragraphs] + [c.text for t in doc.tables for row in t.rows for c in row.cells]
+    return sorted(set(LEAD_TOKEN_RE.findall(" ".join(texts))))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--refresh-evidence", action="store_true", help="regenerate the evidence tables from the e2e run first")
@@ -970,6 +983,9 @@ def main() -> int:
         else:
             n = len(template_outline(template))
             print(f"OK   {rel}  ({n} template headings and prompts present, no placeholders left)")
+        lead = lead_placeholders(out_path)
+        if lead:
+            print(f"     {len(lead)} lead token(s) to fill before upload (listed, not a failure): {', '.join(lead)}")
         team = team_placeholders(out_path)
         if team:
             print(f"     {len(team)} [TEAM: ...] placeholder(s) for the team to fill:")
