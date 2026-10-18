@@ -12,8 +12,9 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 18 Oct | `70f23ac5` (dev: round five, the owner-approved engine half; **the final assessed build**) | everything since `6d2b6941` | **CERTIFIED** for scope S; REG-8 (Low) disclosed |
 | 18 Oct | `6d2b6941` (dev: batches 7 to 10; round five not merged) | everything since `85309b63` | **CONDITIONAL**: certified for scope S only with `FEATURE_CONTRACT_TERMS` off (CT-1, CT-2 open) |
-| 17 Oct | `85309b63` (dev: batches 5 and 6, code of `3f0ed53e`; **the assessed build**) | everything since `29fa0ea2` | **CERTIFIED** for scope S; ASK-1, ASK-2, REG-1 to REG-7 disclosed |
+| 17 Oct | `85309b63` (dev: batches 5 and 6, code of `3f0ed53e`) | everything since `29fa0ea2` | **CERTIFIED** for scope S; ASK-1, ASK-2, REG-1 to REG-7 disclosed |
 | 17 Oct | `29fa0ea2` (dev: round four, the redaction fix, self-assessment v3) | everything since `0fde33fd` | **CERTIFIED** for scope S; no test exception |
 | 17 Oct | `0fde33fd` (dev: SEC-08 executor check, OUT-1b, RT-2, RT-1, the 719c9dcf records) | the four merged branches | **CERTIFIED** for scope S; one test exception (#161, stale digest pin) |
 | 17 Oct | `719c9dcf` (dev: the five round-two branches, the OUT-1 fix, Dylan's ui-final) | everything since `0f92d433`: buyer messages, live readers, the setup lockout fix, the owner-approved engine fixes (`_priced`, `_attribute`, the R-10 rounding), model-privacy redaction, SEC-08 (database), SEC-12, SEC-20, SEC-21, SEC-22, OUT-1 | **CERTIFIED** for scope S |
@@ -49,6 +50,33 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
 
+## `70f23ac5` (dev): CERTIFIED for scope S, 18 Oct: the final assessed build
+
+Since `6d2b6941`:
+- round five, `sec/batch-r5` with `sec/router-guards`, which fixes every finding of the reviews of batches 5 to 10 (ASK-1 to ASK-2b, RT-L1 to RT-L3, REG-1 to REG-6, CT-1 to CT-5, WARM-1, DEMO-2 and SEC-29's owner path);
+- the owner-approved engine commit `1c49ce5e` (`fix/r5-engine`), covering CT-2, CT-6, CT-7 and REG-5's executor half;
+- the integration owner's lead fixes: Ask FLOW's customer names (superseded by `e19f7d29`), and the demo lender agreements uploaded unchanged (`_demo_upload_names`);
+- the structlog test isolation;
+- the REG-1 parity tests;
+- the certification records of `docs/certify-29fa`.
+
+Evidence: `evidence/2026-10-18/dev-70f23ac5/` (`certify_70f2.sh`, `MANIFEST.json`, `SHA256SUMS`; id `sha256:3fd43dcd8ffc4721`). The run took 04:58 to 05:45 UTC; the CSP check came after it.
+
+| Check | Result |
+| --- | --- |
+| Full suite (146 test processes) | **10,674 passed, 0 failed, 47 skipped**. One extra shard, `tests/__pycache__`, ran no tests (exit 5) |
+| Attack catalogue | 128 API + 151 chat cases, 0 with harm; 0 NOT_REACHED; 120 of 128 API cases stopped by the named control, 8 known gaps |
+| Sweep, three modes | 0 policy violations; one intended difference from `6d2b6941`: the owner's contract-terms undo no longer waits on `FEATURE_CONTRACT_TERMS` (CT-6) |
+| Reproductions; approval flip | refused; the database refuses the flip |
+| Language boundary | 0 wrong-and-material (cache and fake) |
+| PostgreSQL 17 | concurrency 3 of 3; guards 10 passed |
+| Dependency scans | `pnpm audit --prod` 0; `braces` (development only); `pip-audit` clean |
+| Mock browser suite | 479 passed, 77 skipped; typecheck, lint, unit pass |
+| CSP, production build (contract terms and the router on) | 16 pages, 0 violations, 0 page errors, injections blocked |
+| Code review of the delta | the engine commit is sound: a set-up stays out of the conservative forecast until its first issue, nothing else confirms it, the flag and owner gates run first, and the golden hashes are identical to `6d2b6941`. The amended tests keep their properties. The review found REG-8, REG-9 and CT-2b, fixed on `sec/round-six` and not in this build |
+
+**Verdict: CERTIFIED for scope S.** This is an internal release decision for the local simulation, with contract terms and the router on as `pnpm demo` sets them, and live model mode excluded. Disclosed: REG-8 (Low), REG-9 (Info), CT-2b (Low, partly accepted design), SEC-27 and SEC-28 (deferred by the owner), and the open risks of the self-assessment. Not a claim of absolute security.
+
 ## `6d2b6941` (dev): CONDITIONAL, 18 Oct
 
 Batches 7 to 10 since `85309b63`:
@@ -79,7 +107,7 @@ The code reviews found nothing Critical or High: the router is owner-only and re
 
 **Verdict: CONDITIONAL.** Certified for scope S **only with `FEATURE_CONTRACT_TERMS` off**; `pnpm demo` turns it on, so demonstrating this commit means turning that flag off. Merge `sec/batch-r5` with `sec/router-guards` and certify that merge commit as the assessed build. The self-assessment v3 stays on `85309b63` until then.
 
-## `85309b63` (dev): CERTIFIED for scope S, 17 Oct: the assessed build
+## `85309b63` (dev): CERTIFIED for scope S, 17 Oct
 
 Batches 5 and 6:
 - `fcc81a62`: Dylan's Attach page, the party check `PARTY_NOT_NAMED`, the demo inbox, the set-aside count, `--keep`, the outcome card, deals invoices without a contract;
