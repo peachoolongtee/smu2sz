@@ -12,6 +12,7 @@ import pytest
 
 from app.domain.fixtures import load_scenario
 from app.domain.models import DocumentFlag, DocumentStatus, SourceSpan
+from app.domain.ports import PARTY_NOT_NAMED_FLAG, guard_row
 from app.egress import contract_private_values, protected_for, scan
 from app.persistence import InMemoryLedgerStore, SqlLedgerStore
 from tests.egress.test_contract_values_extended import _record
@@ -105,3 +106,14 @@ def test_the_slim_rows_and_the_full_records_protect_the_same_values_for_a_refile
         rec = _record()
         store.add_contract_record(rec.model_copy(update={"counterparty_id": "BUYER-2", "flags": [*rec.flags, _not_named()]}))
         assert contract_private_values(store.contract_records(), state) == contract_private_values(store.contract_guard_rows(), state)
+        # the field itself, not only the values it protects: the SQL store's reading of the payload is the reference projection's
+        assert [r.party_not_named for r in store.contract_guard_rows()] == [guard_row(r).party_not_named for r in store.contract_records()]
+        assert [r.party_not_named for r in store.contract_guard_rows()].count(True) == 1
+
+
+def test_the_guard_rows_flag_name_is_the_party_checks_own():
+    """ports.PARTY_NOT_NAMED_FLAG is a copy of the kind app.contracts.parties raises (the domain imports no contracts module):
+    a rename on one side alone would silently turn the REG-1 guard off."""
+    from app.contracts.parties import PARTY_NOT_NAMED
+
+    assert PARTY_NOT_NAMED_FLAG == PARTY_NOT_NAMED

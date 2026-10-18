@@ -1,0 +1,160 @@
+{
+  "base": "http://localhost:3420",
+  "summary": {
+    "pages": 16,
+    "all_nonce": true,
+    "violations": 0,
+    "page_errors": 0,
+    "injected_ran": false,
+    "injected_blocked_reports": [
+      "script-src-attr inline",
+      "script-src-elem inline"
+    ]
+  },
+  "results": [
+    {
+      "route": "/",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/deals",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/documents",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/cash",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/receivables",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/approvals",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/activity",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/limits",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/customers/BUYER-1",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/customers/BUYER-1/inputs",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/capex",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/buy",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/buy/contract",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/finance",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/plans",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    },
+    {
+      "route": "/whatif",
+      "status": 200,
+      "nonce": true,
+      "strict_dynamic": true,
+      "frame_ancestors_none": true,
+      "violations": [],
+      "page_errors": []
+    }
+  ]
+}

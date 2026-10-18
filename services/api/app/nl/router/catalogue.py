@@ -65,7 +65,12 @@ def catalogue_for_prompt() -> list[dict[str, Any]]:
 
 
 class SlotError(ValueError):
-    """A model's slots that do not fit the tool's schema."""
+    """A model's slots that do not fit the tool's schema. `code` is a fixed reason (unknown_slot, missing_slot, wrong_type,
+    out_of_range, bad_value, malformed); the message may quote the model's own keys, so only the code is ever logged."""
+
+    def __init__(self, message: str, code: str = "malformed") -> None:
+        super().__init__(message)
+        self.code = code
 
 
 def validate_slots(tool: Tool | str, slots: Any) -> dict[str, Any]:
@@ -76,32 +81,32 @@ def validate_slots(tool: Tool | str, slots: Any) -> dict[str, Any]:
     if slots is None:
         slots = {}
     if not isinstance(slots, dict):
-        raise SlotError("slots must be an object")
+        raise SlotError("slots must be an object", "malformed")
     props: dict[str, Any] = schema.get("properties", {})
     extra = set(slots) - set(props)
     if extra and schema.get("additionalProperties") is False:
-        raise SlotError(f"unknown slots: {sorted(extra)}")
+        raise SlotError(f"unknown slots: {sorted(extra)}", "unknown_slot")
     missing = [k for k in schema.get("required", []) if k not in slots]
     if missing:
-        raise SlotError(f"missing slots: {missing}")
+        raise SlotError(f"missing slots: {missing}", "missing_slot")
     for key, value in slots.items():
         p = props[key]
         kind = p.get("type")
         if kind == "integer":
             if isinstance(value, bool) or not isinstance(value, int):
-                raise SlotError(f"{key} must be an integer")
+                raise SlotError(f"{key} must be an integer", "wrong_type")
             if "minimum" in p and value < p["minimum"] or "maximum" in p and value > p["maximum"]:
-                raise SlotError(f"{key} is out of range")
+                raise SlotError(f"{key} is out of range", "out_of_range")
         elif kind == "string":
             if not isinstance(value, str):
-                raise SlotError(f"{key} must be a string")
+                raise SlotError(f"{key} must be a string", "wrong_type")
             if len(value) < p.get("minLength", 0) or len(value) > p.get("maxLength", len(value)):
-                raise SlotError(f"{key} has the wrong length")
+                raise SlotError(f"{key} has the wrong length", "bad_value")
         elif kind == "boolean":
             if not isinstance(value, bool):
-                raise SlotError(f"{key} must be a boolean")
+                raise SlotError(f"{key} must be a boolean", "wrong_type")
         if "enum" in p and value not in p["enum"]:
-            raise SlotError(f"{key} is not one of the allowed values")
+            raise SlotError(f"{key} is not one of the allowed values", "bad_value")
     return dict(slots)
 
 

@@ -1,0 +1,26 @@
+14:25:04Z full suite: {'passed': 9740, 'failed': 0, 'skipped': 46, 'error': 0, 'xfailed': 0, 'deselected': 0} non-zero shards: 0 
+14:25:58Z attacks exit=0 detection_rate=0.9766 security_event_rate=0.7422 defended=120/128 not_reached=0 control_not_seen=0 gaps=8
+14:26:46Z sweep demo exit=0
+14:27:41Z sweep prod exit=0
+14:28:36Z sweep unset exit=0
+14:28:37Z sweep policy and diff exit=1
+14:28:40Z r3 exit=1
+14:28:43Z r4_bounded exit=0
+14:29:09Z repro1 exit=1
+14:29:32Z repro2 exit=0
+14:29:46Z repro3 exit=1
+14:30:00Z approval_flip exit=1
+14:30:04Z r_nl exit=0
+14:30:13Z r_paths exit=0
+14:30:22Z r_edge exit=0
+14:30:36Z language boundary cache exit=0 CORRECT_EXECUTABLE=63, CORRECT_READ_ONLY=6, SAFE_CLARIFICATION=54, SAFE_ABSTENTION=107, WRONG_HARMLESS=1, WRONG_MATERIAL=0; queued-for-owner=0; model answered rate=0.0
+14:30:51Z language boundary fake exit=0 CORRECT_EXECUTABLE=57, CORRECT_READ_ONLY=7, SAFE_CLARIFICATION=67, SAFE_ABSTENTION=97, WRONG_HARMLESS=3, WRONG_MATERIAL=0; queued-for-owner=2; model answered rate=0.8542
+14:31:06Z pg concurrency 1: 31 passed in 13.71s postgres-passed=10
+14:31:19Z pg concurrency 2: 31 passed in 12.12s postgres-passed=10
+14:31:33Z pg concurrency 3: 31 passed in 12.82s postgres-passed=10
+14:32:19Z pg guards: 10 passed in 44.14s
+14:32:25Z pip-audit exit=0 No known vulnerabilities found
+pnpm audit --prod exit=0
+pnpm audit all exit=1
+14:37:51Z web gate: e2e exit=0  71 skipped  453 passed (4.9m)  typecheck exit=0 lint exit=0 unit exit=0  
+14:37:52Z ALL DONE

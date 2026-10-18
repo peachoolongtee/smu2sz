@@ -46,9 +46,10 @@ modified.
 1. **Provider location.** With `LLM_PRIMARY=deepseek` the redacted question goes to a provider in mainland China. A deployer
    needs a data-processing agreement covering owner questions; the owner should be told that questions FLOW cannot answer by
    itself are sent, redacted and without the books. Customer names the owner types are part of the question and are sent.
-2. **A canary trip is logged, not written to the security log.** The router writes nothing to the store (that is what makes the
-   store-unchanged property simple to test). The classifier records a DATA_EXTRACTION event for the same trip. Decide whether the
-   router should too.
+2. **A canary trip is on the security log (closed, RT-L2).** The router itself writes nothing to the store (that is what makes
+   the store-unchanged property simple to test): `route_outcome` returns the rejection code, and `ask.router_reply` records one
+   DATA_EXTRACTION event for the owner when it is `canary`, as the classifier path does. Log lines carry the fixed rejection
+   code only (RT-L1), never the model's keys or values.
 3. **The question hash** (sha256 of the redacted question, 16 hex characters) correlates log lines; it does not protect a short
    question against a dictionary of likely questions. Consider a keyed hash if the logs leave the deployment.
 4. **Thread on timeout.** A live call past the deadline is abandoned, not killed; with `max_retries=0` and the client's own 12 s
@@ -56,5 +57,9 @@ modified.
 5. **The tools are on another branch** (`feat/ask-router-tools`). Each tool's writer must stay read-only and must resolve a
    customer slot by itself (never echo the slot text into the reply unresolved). `test_every_catalogue_schema_is_in_the_checked_subset`
    refuses a slot schema keyword the validator does not enforce.
-6. **Reach.** Only questions that reach ASK_BOOKS are routed. About a quarter of the general set never does (ADR-0015,
-   Consequences); widening that is a separate change to `app/nl/service.py` and would put more owner text in front of the model.
+6. **Reach.** Only questions that reach ASK_BOOKS are routed, and ASK_BOOKS is reached two ways: from the rules, and from the
+   classifier fallback in `service._parse` (a question about the business that the rules did not read and the classifier returned
+   nothing, a low-confidence reading or OUT_OF_SCOPE for). So an owner text can go to the classifier and then, if that did not
+   settle it, to the router: two model calls in live mode, each with the redacted text. When the classifier's output for the text
+   was rejected for a canary trip, the router is skipped and the owner gets the fixed "cannot answer yet" reply (RT-L3). A text
+   that is not about the books at all stays out of scope and goes to no router.

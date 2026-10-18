@@ -13,7 +13,7 @@ from collections import Counter
 
 PUBLIC = {("GET", "/health"), ("GET", "/clock"), ("GET", "/fixtures/offers"), ("GET", "/docs"), ("GET", "/redoc"),
           ("GET", "/openapi.json"), ("GET", "/docs/oauth2-redirect")}
-BUYER = {("POST", "/offers"), ("POST", "/nl")}
+BUYER = {("POST", "/offers"), ("POST", "/nl"), ("POST", "/nl/session/reset")}  # the reset ends only a session the caller may end
 AGENT = {("POST", "/operations"), ("POST", "/approvals/{approval_id}"), ("POST", "/circuit/{counterparty_id}/reset")}
 REFUSED = {401, 403, 503}
 

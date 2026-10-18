@@ -1,0 +1,66 @@
+<evidence>/sweep_demo.json: 106 routes; 0 policy violations; owner answers {200: 47, 404: 27, 409: 2, 422: 30}
+<evidence>/sweep_prod.json: 106 routes; 0 policy violations; owner answers {200: 43, 403: 2, 404: 30, 409: 1, 422: 30}
+<evidence>/sweep_unset.json: 106 routes; 0 policy violations; owner answers {200: 43, 403: 2, 404: 30, 409: 1, 422: 30}
+618 and 636 answers; 18 differ
+  - POST /customers as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as bad_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as owner: None -> 422:validation
+  - POST /documents/{document_id}/refile as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as bad_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as owner: None -> 422:validation
+  - POST /nl/session/reset as agent: None -> 422:validation
+  - POST /nl/session/reset as anon: None -> 422:validation
+  - POST /nl/session/reset as bad_owner: None -> 422:validation
+  - POST /nl/session/reset as bank: None -> 422:validation
+  - POST /nl/session/reset as buyer1: None -> 422:validation
+  - POST /nl/session/reset as owner: None -> 422:validation
+721 and 742 answers; 21 differ
+  - POST /customers as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as owner: None -> 422:validation
+  - POST /documents/{document_id}/refile as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as owner: None -> 422:validation
+  - POST /nl/session/reset as agent: None -> 422:validation
+  - POST /nl/session/reset as anon: None -> 422:validation
+  - POST /nl/session/reset as bank: None -> 422:validation
+  - POST /nl/session/reset as buyer1: None -> 422:validation
+  - POST /nl/session/reset as demo_agent: None -> 422:validation
+  - POST /nl/session/reset as demo_owner: None -> 422:validation
+  - POST /nl/session/reset as owner: None -> 422:validation
+721 and 742 answers; 21 differ
+  - POST /customers as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /customers as owner: None -> 422:validation
+  - POST /documents/{document_id}/refile as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/refile as owner: None -> 422:validation
+  - POST /nl/session/reset as agent: None -> 422:validation
+  - POST /nl/session/reset as anon: None -> 422:validation
+  - POST /nl/session/reset as bank: None -> 422:validation
+  - POST /nl/session/reset as buyer1: None -> 422:validation
+  - POST /nl/session/reset as demo_agent: None -> 422:validation
+  - POST /nl/session/reset as demo_owner: None -> 422:validation
+  - POST /nl/session/reset as owner: None -> 422:validation

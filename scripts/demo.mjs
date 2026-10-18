@@ -66,6 +66,10 @@ function parseArgs(argv) {
       const v = value();
       if (!v || v.startsWith("--")) fail(`--data needs a file path, not "${v ?? ""}".`);
       opts.data = path.resolve(ROOT, v);
+      // --fresh deletes this file: keep it to a .db file inside .demo-data/, never a path elsewhere on the machine
+      const dir = path.resolve(ROOT, ".demo-data");
+      if (path.relative(dir, opts.data).startsWith("..") || path.isAbsolute(path.relative(dir, opts.data)) || !opts.data.endsWith(".db"))
+        fail(`--data must name a .db file inside .demo-data/ (got "${v}").`);
     }
     else if (flag === "--help" || flag === "-h") {
       console.log(USAGE);

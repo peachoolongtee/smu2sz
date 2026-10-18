@@ -1,0 +1,17 @@
+Certification of dev 6d2b6941 (batches 5 to 10 since 29fa0ea2; round five NOT included), 18 Oct 2026, 00:53 to 01:30 UTC, then the
+browser gate re-run and the CSP check, by the Security Lead.
+
+full suite (shards)            10,375 passed, 0 failed, 47 skipped
+attack catalogue               128 API + 133 chat, 0 harm, 0 NOT_REACHED, 120/128 named control, 8 known gaps
+sweep, three modes             0 policy violations; only the three contract-terms routes differ from 85309b63 (sweep_policy.txt)
+reproductions; approval flip   refused; the database refuses the flip
+language boundary              cache 0 wrong-and-material; fake 0 wrong-and-material
+PostgreSQL 17                  concurrency 3/3; guards 10 passed
+pnpm audit --prod              0; full audit: braces (dev only); pip-audit clean
+mock browser suite             479 passed, 77 skipped (re-run on a free port); typecheck, lint, unit pass
+CSP, production build          16 pages, nonce policy, 0 violations, injections blocked (csp_browser.json)
+code reviews                   no Critical or High; open on this build: ASK-1 (Medium, detection), ASK-2/2b, CT-1 and CT-2 (Medium),
+                               CT-3 to CT-7, REG-1 to REG-6, RT-L1 to RT-L3, WARM-1, SEC-29 owner path (FINDINGS_REGISTER.md)
+
+Verdict: CERTIFIED for scope S ONLY WITH FEATURE_CONTRACT_TERMS OFF (CT-1, CT-2 open; `pnpm demo` turns it on). The round-five batch
+(sec/batch-r5 plus sec/router-guards) fixes the open items; certify its merge commit as the assessed build.

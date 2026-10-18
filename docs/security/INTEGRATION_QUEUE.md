@@ -2,6 +2,8 @@
 
 ## Round four, 17 Oct: after the external review of the self-assessment
 
+**Merged to dev `29fa0ea2` and certified 17 Oct as the assessed build** (`CERTIFICATIONS.md`).
+
 Built from dev `0fde33fd`, one concern each, no engine module touched. **Combined gate** on `sec/batch-17oct` @ `4fbb2946` (dev `0fde33fd`
 plus all six below, merged in this order, no conflicts):
 

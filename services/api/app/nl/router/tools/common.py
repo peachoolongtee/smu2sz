@@ -117,27 +117,31 @@ def customer_names(r: Reading) -> dict[str, list[str]]:
         if c.role != "BUYER":
             continue
         names = registry_names(c, extra.get(c.id, ()))
-        if (short := short_name(c.name)) and normalise(short) not in {normalise(n) for n in names}:
-            names.append(short)  # the pages' short form ("Foshan"): a question may use it (the party check does not, REG-2)
+        if (s := short_name(c.name)) and s not in names:
+            names.append(s)  # the pages' short form: how the owner names a customer in a question
         names += [a for a in aliases.get(c.id, ()) if not a.isascii() and a not in names]
         out[c.id] = names
     return out
 
 
-# Words every company name may carry: a contained name made of them alone ("Co., Ltd.") names no one.
+_CJK = re.compile(r"[㐀-鿿豈-﫿]")
 _GENERIC = re.compile(r"(?<![a-z0-9])(?:co|company|ltd|limited|inc|corp|corporation|llc|plc|group|the|and|of)(?![a-z0-9])"
                       r"|股份有限公司|有限责任公司|有限公司|公司|集团")
-_CJK = re.compile(r"[一-鿿]")
 
 
 def _inside(short: str, long: str) -> bool:
-    """`short` sits in `long` as whole words, and is enough of a name: 4 characters once legal-form words are set aside, or
-    2 Chinese. A question's loose reading only: the contract party check is strict (`parties.names_match`, REG-2), but a
-    question that names no one, or two, is asked about, never answered for the wrong customer."""
+    """`short` sits in `long` as whole words, and is enough of a name to point at a company (4 characters, or 2 Chinese, once
+    the legal-form words are set aside). This is how the owner's own question names a customer: a read, never an act. The
+    party check on documents is stricter (REG-2) and does not use it."""
     core = _GENERIC.sub(" ", short)
     if not short or not (len(_CJK.findall(core)) >= 2 or len(core.replace(" ", "")) >= 4):
         return False
     return re.search(rf"(?<![a-z0-9]){re.escape(short)}(?![a-z0-9])", long) is not None
+
+
+def _names_match(said: str, name: str) -> bool:
+    s, n = normalise(said), normalise(name)
+    return bool(s) and bool(n) and (s == n or _inside(n, s) or _inside(s, n))
 
 
 def _score(said: str, name: str) -> int:
@@ -148,7 +152,7 @@ def _score(said: str, name: str) -> int:
         return 0
     if s == n:
         return 3
-    if not (_inside(n, s) or _inside(s, n)):
+    if not _names_match(said, name):
         return 0
     return 2 if s in n else 1
 
