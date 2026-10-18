@@ -267,17 +267,21 @@ def _parse(ctx: NlContext, text: str, backends: Sequence[clf.IntentBackend] | No
         pc = s.pending_clarification
         return Parsed(intent=Intent.AMBIGUOUS, slots=pc.slots, source="clarification", matched=["re-ask"])
     got, rejected = clf.classify(text, backends)
+    canary_tripped = False
     for r in rejected:
         if r.reason.startswith("canary:"):
+            canary_tripped = True
             ctx.new_event(SecurityEventKind.DATA_EXTRACTION, "OWNER",
                           f"intent classifier output from {r.backend} contained {r.reason}; discarded",
                           action="classifier output discarded")
     if got is None or got.result.confidence < MIN_LLM_CONFIDENCE or got.result.intent == Intent.OUT_OF_SCOPE.value:
         # A question about the business that no rule read ("how long can we keep paying the bills?") is still asked of the
         # books: the answer layer, then the router (ADR-0015), then the honest "cannot answer yet". Anything else is out of scope.
+        # A classifier output rejected for a canary trip means this text already drew a hostile or leaking model reply: the router,
+        # a second model call carrying the same text, is not consulted (RT-L3).
         if lx.is_question(text) and _about_the_business(text):
             return Parsed(intent=Intent.ASK_BOOKS, slots=Slots(question=text, execute_now=False), source="question",
-                          matched=["ask", "ask:unread"])
+                          matched=["ask", "ask:unread", *([asking.NO_ROUTER] if canary_tripped else [])])
         return Parsed(intent=Intent.OUT_OF_SCOPE, source="fallback")
     ls = got.result.slots
     cps = lx.find_counterparty(ls.counterparty_name or "", state) if ls.counterparty_name else []

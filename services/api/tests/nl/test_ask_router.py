@@ -605,3 +605,50 @@ def test_the_router_reports_the_rejection_kind_and_only_a_canary_is_an_event(rt:
     monkeypatch.setattr(rr, "default_backends", lambda: [Scripted(token)])
     assert router_reply(ctx_for(rt), "how much debt?") is None
     assert [e.kind.value for e in rt.store.security_events()[before:]] == ["DATA_EXTRACTION"]
+
+
+# ---------------------------------------------------------------- RT-L3: no second model call after a canary-rejected classifier output
+
+BUSINESS_QUESTION = "how long can we keep paying the bills?"  # no rule reads it: the classifier fallback sends it on to the books
+
+
+def _classified(payload: Any) -> Any:
+    from tests.nl.test_classifier import run, stub
+
+    return run([stub(payload)], BUSINESS_QUESTION)
+
+
+def test_the_router_is_reached_from_the_classifier_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    spy = Scripted(calls(("total_debt", {})))
+    monkeypatch.setattr(rr, "default_backends", lambda: [spy])
+    monkeypatch.setenv("FEATURE_ASK_ROUTER", "1")
+    for payload in ({"intent": "OUT_OF_SCOPE", "slots": {}, "confidence": 0.9}, {"intent": "FUND_GAP", "slots": {}, "confidence": 0.1},
+                    "not json"):
+        spy.prompts.clear()
+        resp, store = _classified(payload)
+        assert resp.parse_source == "question" and len(spy.prompts) == 1, payload  # the documented second consult
+        assert resp.reply.startswith("¥1,500,000") and store.security_events() == []
+
+
+@pytest.mark.parametrize("lead", ["", '{"intent": "OUT_OF_SCOPE", "slots": {}, "confidence": 0.9}'])
+def test_a_canary_rejected_classifier_output_means_the_router_is_not_asked(monkeypatch: pytest.MonkeyPatch, lead: str) -> None:
+    token = canary("CANARY-PROMPT").token or ""
+    spy = Scripted(calls(("total_debt", {})))
+    monkeypatch.setattr(rr, "default_backends", lambda: [spy])
+    monkeypatch.setenv("FEATURE_ASK_ROUTER", "1")
+    resp, store = _classified(lead + " " + token)
+    assert spy.prompts == []  # no second call carrying the same text
+    assert [e.kind.value for e in store.security_events()] == ["DATA_EXTRACTION"]  # the classifier's trip, once
+    assert resp.reply.startswith("I cannot answer that from the books in chat yet") and token not in resp.reply
+    assert resp.operations == [] and store.operations() == []
+
+
+def test_a_canary_rejected_classifier_output_still_answers_through_the_deterministic_layers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Only the router is skipped: a question the rules or the answer layer read never needed the classifier or the router."""
+    from tests.nl.test_classifier import run, stub
+
+    spy = Scripted(calls(("total_debt", {})))
+    monkeypatch.setattr(rr, "default_backends", lambda: [spy])
+    monkeypatch.setenv("FEATURE_ASK_ROUTER", "1")
+    resp, _store = run([stub(canary("CANARY-PROMPT").token or "")], "what is our exposure to the banks?")
+    assert resp.parse_source == "rules" and len(spy.prompts) == 1  # the rules read it; the classifier was never consulted

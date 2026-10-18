@@ -21,7 +21,10 @@ The order of the answer:
      the cash status for why cash is short, the late-payment read, what is waiting).
   5. Otherwise, with FEATURE_ASK_ROUTER on, the router (`app.nl.router.route`, ADR-0015): a model picks read-only tools from a
      closed catalogue for the question and code writes the answer. The model sees the redacted question and the catalogue
-     only. None (flag off, cache miss, a failed or rejected route, nothing fits) goes on to 6.
+     only. None (flag off, cache miss, a failed or rejected route, nothing fits) goes on to 6. The router is reached from the
+     rules' own ASK_BOOKS and from the classifier fallback (service._parse: a question about the business that the classifier
+     did not read); it is skipped when the classifier's output for the text was rejected for a canary trip (RT-L3): that
+     text has already drawn a leaking or hostile model reply once, and a second call would carry it again.
   6. The plain "cannot answer that yet" with the nearest read, or the nearest-capability reply.
 """
 
@@ -289,12 +292,12 @@ def break_even(ctx: NlContext, slots: Slots) -> Turn | None:
     return Turn(intent=Intent.ASK_BOOKS, reply=reply, facts={"ask": {"topic": "break_even", "rate_bp": slots.rate_bp}})
 
 
-def _fallback(ctx: NlContext, topic: str, slots: Slots, text: str) -> Turn:
-    """The existing read that answers the topic right, else the router's answer, else the plain 'cannot yet' with the nearest
-    read."""
+def _fallback(ctx: NlContext, topic: str, slots: Slots, text: str, use_router: bool = True) -> Turn:
+    """The existing read that answers the topic right, else the router's answer (unless `use_router` is off), else the plain
+    'cannot yet' with the nearest read."""
     if (read := _topic_read(ctx, topic, slots)) is not None:
         return read
-    if (got := router_reply(ctx, slots.question or text)) is not None:
+    if use_router and (got := router_reply(ctx, slots.question or text)) is not None:
         return Turn(intent=Intent.ASK_BOOKS, reply=got[0],
                     facts={"ask": {"topic": topic, "metric_ids": got[1], "router": got[2]}})
     if topic == "books":
@@ -385,6 +388,11 @@ def layer_reply(ctx: NlContext, question: str) -> tuple[str, list[str]] | None:
     return (text, _metric_ids(got)) if text else None
 
 
+# Parsed.matched marker: the classifier's output for this text was rejected for a canary trip, so the router (a second model call
+# carrying the same text) is not consulted (RT-L3). It does not start with "ask:", so it is never read as a topic.
+NO_ROUTER = "router:skip_canary"
+
+
 def topic_of(p: Parsed) -> str:
     return next((m.split(":", 1)[1] for m in p.matched if m.startswith("ask:")), "books")
 
@@ -447,4 +455,4 @@ def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         text = _reply_text(got, ctx.lang) or ""
         return Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": topic, "metric_ids": _metric_ids(got)}},
                     card=answer_card.from_reply(got, ctx.lang, ctx.state()))  # the card's figures and links; laid out in the response
-    return _fallback(ctx, topic, slots, text)
+    return _fallback(ctx, topic, slots, text, use_router=NO_ROUTER not in p.matched)
