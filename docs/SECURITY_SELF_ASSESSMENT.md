@@ -1187,3 +1187,39 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 | Browser suite, real API | `playwright test` (live, 1 worker) | 174 passed, 3 failed (known: `live.spec.ts:334`, `:348`, `tracker.spec.ts:216`), 51 skipped |
 | Attack catalogue and judge pack | `scripts/judge_eval.py` | 49 of 49 tasks; 279 attacks, 0 with harm; detection 97.66% of 128 API attacks; chain VALID, tampered copy rejected |
 | Re-certification by the Security Lead | — | requested; not yet performed on this commit |
+
+### Security Lead's review of the submission build (18 to 19 Oct)
+
+The Security Lead reviewed every change in this addendum on `5941e95a` and ran its full certification checks there.
+
+**What was found sound:**
+- The consent grammar narrowed and did not widen: bare "ok", "sure" and 好的 no longer confirm.
+- The owner's pause is owner-only, enforced in the executor, survives a restart and is on the chain.
+- The verifier change is wording only: all 16 verdicts and the golden values are identical to `70f23ac5`.
+- `verify_evidence.py` is not weakened, the round-six fixes are intact, and every new route is owner-only.
+- Every model call path is redacted under the shipped default.
+
+**Automated checks on `5941e95a`:**
+
+| Check | Result |
+| --- | --- |
+| Full suite | 11,341 passed, 0 failed |
+| Catalogue | 0 harm on 279 cases |
+| Sweep | 0 policy violations |
+| Language boundary | 0 wrong-and-material |
+| PostgreSQL | 3 of 3 |
+| Scans | clean |
+| Mock browser suite | 479 passed |
+
+**Findings on `5941e95a`, and their fixes in round seven** (`sec/round-seven`, each with a regression test that fails before):
+- **PAY-1 (Medium).** "Can I pay everyone?" showed one plan and saved another, and "go ahead" ran the saved one. On the day-34 demo path, a ¥200,000 advance was shown, while a ¥2,790 draw and two different advances were saved. The reply now words the plan it saves, and nothing is saved when it cannot be worded.
+- **PAY-2 (Low).** An HTTP 500 when the books hold several cash gaps.
+- **PAY-3 (Low).** A cancel beside small talk, or a customer name, kept the plan; it now drops it. Consent is not widened.
+- **PAUSE-1 (Low; Medium in production).** While the agent was paused, the bank-feed key could still draw or finance by speaking as SYSTEM. SYSTEM is now accepted only for receipts.
+- **APR-1 (Low).** An agent key was told the owner's decision on an approval.
+- **Open and disclosed:**
+  - PAUSE-2: with more than one API process, a write can land just after a pause; one process is required (SEC-11).
+  - LOG-2 and LOG-3 (Info).
+
+**Verdict on `5941e95a`: not certified**, because of PAY-1. Round seven passed its full gate on `bee9c50d`: full suite 11,368 passed, 0 failed; mock 479 passed; typecheck, lint and unit pass. **The build to submit is the merge of round seven, and its certification is recorded here when it is done.** Until then, `70f23ac5` is the last certified build, and sections 01 to 04 describe it.
+
