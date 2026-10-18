@@ -64,9 +64,8 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --project . --frozen
-      - name: ruff (reports only until the 51 existing findings on dev are cleared; then remove continue-on-error)
+      - name: ruff
         if: matrix.shard == 0
-        continue-on-error: true
         run: uv run --project . ruff check app tests
       - name: pytest (shard ${{ matrix.shard }} of 8, by test file)
         run: |
