@@ -12,8 +12,9 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 19 Oct | `03215a20` (dev: round seven merged as `c707ee8c`, code `bee9c50d`; **the submission build**) | everything since `5941e95a`; the SEC-28 reporting fix re-reviewed | **CERTIFIED** for scope S, on a trusted machine and network (DEMO-L1); SEC-28 with FUND-1 to FUND-4 disclosed |
 | 18 Oct | `5941e95a` (dev: the owner pause, funding report, small talk, pay everyone, the consent narrowing, round six) | everything since `70f23ac5` | **NOT CERTIFIED**: every automated check passes, but PAY-1 (Medium, consent bound to a plan not shown) is open; fixed by `sec/round-seven` |
-| 18 Oct | `70f23ac5` (dev: round five, the owner-approved engine half; **the final assessed build**) | everything since `6d2b6941` | **CERTIFIED** for scope S; REG-8 (Low) disclosed |
+| 18 Oct | `70f23ac5` (dev: round five, the owner-approved engine half; last certified before the submission build) | everything since `6d2b6941` | **CERTIFIED** for scope S; REG-8 (Low) disclosed |
 | 18 Oct | `6d2b6941` (dev: batches 7 to 10; round five not merged) | everything since `85309b63` | **CONDITIONAL**: certified for scope S only with `FEATURE_CONTRACT_TERMS` off (CT-1, CT-2 open) |
 | 17 Oct | `85309b63` (dev: batches 5 and 6, code of `3f0ed53e`) | everything since `29fa0ea2` | **CERTIFIED** for scope S; ASK-1, ASK-2, REG-1 to REG-7 disclosed |
 | 17 Oct | `29fa0ea2` (dev: round four, the redaction fix, self-assessment v3) | everything since `0fde33fd` | **CERTIFIED** for scope S; no test exception |
@@ -51,6 +52,38 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
 
+## `03215a20` (dev): CERTIFIED for scope S, 19 Oct: the submission build
+
+Since `5941e95a`: round seven (`sec/round-seven` `bee9c50d`, merged as `c707ee8c`), which fixes PAY-1 to PAY-3, PAUSE-1 and APR-1
+and regenerates the attack report (NL-AC02 now HELD, LOG-3). The commits after `c707ee8c` change documentation, the document
+builder and recorded evaluation outputs only: no file under `services/api/app`, `apps/web` or the tests differs from `bee9c50d`.
+
+Evidence: `evidence/2026-10-19/dev-03215a20/` (`summary.txt`, `tools/certify_0321.sh`, `MANIFEST.json`, `SHA256SUMS`; id
+`sha256:712d6bd18b80e1ef`). The run took 16:59 to 17:26 UTC on 18 Oct, stopped when the session closed after the third
+reproduction, and resumed on the same clean checkout at 23:27 from the approval flip; the CSP check and the secret scan came after.
+
+| Check | Result |
+| --- | --- |
+| Full suite (155 test processes) | **11,368 passed, 0 failed, 47 skipped**. One extra shard, `tests/__pycache__`, ran no tests (exit 5) |
+| Attack catalogue | 128 API + 151 chat cases, 0 with harm; 0 NOT_REACHED; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66%, security events 74.22% |
+| Route-policy test | 16 tests pass over 113 routes; the owner reaches the handler on 96 of 97 owner and demo routes in demo mode and on 91 of 97 with `DEMO_MODE=0`. The one miss in both modes is `POST /documents/{id}/terms/undo`, which answers 404 `UNKNOWN_SET_UP` because the test world holds no set-up to undo; it is not a feature flag |
+| Sweep, three modes | 0 policy violations over 112 routes; the only difference from `70f23ac5`: the three pause routes, refused to every caller but the owner |
+| Reproductions; approval flip | refused, output identical to `70f23ac5` apart from timestamps; the database refuses the flip |
+| Language boundary | 0 wrong-and-material (cache and fake), counts identical to `70f23ac5` |
+| PostgreSQL 17 | concurrency 3 of 3; guards 10 passed |
+| Dependency scans | `pnpm audit --prod` 0; `braces` (development only); `pip-audit` clean |
+| Secret scan | tracked files at `03215a20` and the history of every branch: 0 findings; only the two `.env.example` files are tracked |
+| Mock browser suite | 479 passed, 77 skipped; typecheck, lint, unit pass |
+| CSP, production build (the flags `pnpm demo` sets) | 17 pages, nonce policy on every page, 0 violations, 0 page errors, injections blocked |
+| Code review | round seven was reviewed on its branch (18 to 19 Oct). The SEC-28 reporting fix (`f52870d1`) was reviewed on this build: queued and refused legs are now reported as they are on `/negotiate`, `/alerts/{id}/act` and the chat paths, and the commit changes no engine module. Still misreported: FUND-1 (Medium: a send with no admissible funding plan reads FUNDED), FUND-2 (Medium: the web's send result says the agreement is on the books while it waits for approval or was refused), FUND-3 (Low / Medium: chat "no gap to cover" with a gap open) and FUND-4 (Low). All four are in `70f23ac5` too; they are the remainder of SEC-28, which that build was certified with as a disclosed risk. Nothing runs without the owner's approval on these paths. Fixes for FUND-1 to FUND-3 are on `sec/round-eight` |
+
+**Verdict: CERTIFIED for scope S.** This is an internal release decision for the local simulation, with contract terms and the
+router on as `pnpm demo` sets them, on a trusted machine and network (DEMO-L1: the launcher serves the web app on every interface;
+fix on `sec/demo-loopback`). Live model mode is excluded. Disclosed: SEC-28 with FUND-1 to FUND-4 (its reporting is partly fixed,
+not closed), PAUSE-2 (one process required), SEC-27, LOG-2, LOG-3, CT-2b beyond the borrower file, and the open risks of the
+self-assessment, whose ratings are unchanged from `70f23ac5`: the pause limits but does not revoke a mandate (R-14), and a part-run
+plan is still not reversed (SEC-28). Not a claim of absolute security.
+
 ## `5941e95a` (dev): NOT CERTIFIED, 18 Oct; superseded by round seven
 
 Since `70f23ac5`:
@@ -77,7 +110,7 @@ Evidence of the run is in the Security Lead's scratchpad (`cert5941`); it is not
 | Mock browser suite | 479 passed |
 
 **Code reviews:**
-- **Sound:** the consent grammar narrowed and did not widen; the pause is owner-only, enforced in the executor, survives a restart and is chained; all 16 verdicts and the golden values are identical to `70f23ac5`; `verify_evidence` is not weakened.
+- **Sound:** the consent grammar narrowed and did not widen; the pause is owner-only, enforced in front of the executor (it wraps `Executor.execute`; corrected 19 Oct from "in the executor"), survives a restart and is chained; all 16 verdicts and the golden values are identical to `70f23ac5`; `verify_evidence` is not weakened.
 - **Found:**
   - PAY-1 (Medium): "Can I pay everyone?" showed one plan and saved another, and "go ahead" ran the saved one;
   - PAY-2 and PAY-3 (Low);
@@ -88,7 +121,7 @@ Evidence of the run is in the Security Lead's scratchpad (`cert5941`); it is not
 
 **Verdict: NOT CERTIFIED.** `sec/round-seven` (bee9c50d) fixes PAY-1 to PAY-3, PAUSE-1 and APR-1. Its gate: full suite 11,368 passed, 0 failed; mock 479 passed. Its merge commit is the next build to certify.
 
-## `70f23ac5` (dev): CERTIFIED for scope S, 18 Oct: the final assessed build
+## `70f23ac5` (dev): CERTIFIED for scope S, 18 Oct (amended 19 Oct: DEMO-L1 applies, see the release gate)
 
 Since `6d2b6941`:
 - round five, `sec/batch-r5` with `sec/router-guards`, which fixes every finding of the reviews of batches 5 to 10 (ASK-1 to ASK-2b, RT-L1 to RT-L3, REG-1 to REG-6, CT-1 to CT-5, WARM-1, DEMO-2 and SEC-29's owner path);

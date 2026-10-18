@@ -1,0 +1,66 @@
+C:/Users/ian/AppData/Local/Temp/claude/C--Users-ian-Documents-Projects-smu2sz/aa96fbfb-4038-45c2-8bb9-e28d412a5861/scratchpad/cert0321/sweep_demo.json: 112 routes; 0 policy violations; owner answers {200: 50, 403: 2, 404: 27, 409: 2, 422: 31}
+C:/Users/ian/AppData/Local/Temp/claude/C--Users-ian-Documents-Projects-smu2sz/aa96fbfb-4038-45c2-8bb9-e28d412a5861/scratchpad/cert0321/sweep_prod.json: 112 routes; 0 policy violations; owner answers {200: 46, 403: 4, 404: 30, 409: 1, 422: 31}
+C:/Users/ian/AppData/Local/Temp/claude/C--Users-ian-Documents-Projects-smu2sz/aa96fbfb-4038-45c2-8bb9-e28d412a5861/scratchpad/cert0321/sweep_unset.json: 112 routes; 0 policy violations; owner answers {200: 46, 403: 4, 404: 30, 409: 1, 422: 31}
+654 and 672 answers; 18 differ
+  - GET /agent/pause as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as bad_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as owner: None -> 200
+  - POST /agent/pause as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as bad_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as owner: None -> 200
+  - POST /agent/resume as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as bad_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as owner: None -> 200
+763 and 784 answers; 21 differ
+  - GET /agent/pause as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as owner: None -> 200
+  - POST /agent/pause as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as owner: None -> 200
+  - POST /agent/resume as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as owner: None -> 200
+763 and 784 answers; 21 differ
+  - GET /agent/pause as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /agent/pause as owner: None -> 200
+  - POST /agent/pause as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/pause as owner: None -> 200
+  - POST /agent/resume as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /agent/resume as owner: None -> 200

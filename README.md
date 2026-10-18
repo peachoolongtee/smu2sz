@@ -284,13 +284,14 @@ DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.p
 
 The language model only reads text; deterministic code decides, and only the executor writes. Actions are split into three
 permission tiers under an owner-signed, expiring mandate, with nonces, idempotency, a circuit breaker and a hash-chained log.
-The [Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) (v2.0, 17 Oct 2026, assessed on `dev` at `719c9dcf`) gives
-the verdicts:
+The [Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) gives the verdicts for the submission build, `dev` at
+`03215a20`, certified by the Security Lead on 19 Oct 2026 for the local simulation (`docs/security/CERTIFICATIONS.md`):
 
 | Use | Verdict |
 | --- | --- |
-| Local simulation on loopback (`DEMO_MODE=1`, cache mode, simulated counterparties) | **GO** |
-| Demo reachable over a network | **conditional GO**: changed credentials, a TLS reverse proxy with rate and body limits, documentation hidden |
+| Local simulation (`DEMO_MODE=1`, cache mode, simulated counterparties, one API process) | **GO**, on a trusted machine and network: `pnpm demo` serves the web app on every interface (DEMO-L1) |
+| Live model mode (`pnpm demo --live-llm`) | **not certified** |
+| Demo reachable over a network | **NO-GO** until one tested deployment profile exists (changed credentials and signing key, a TLS reverse proxy with rate and body limits, documentation hidden, anonymous intake off) |
 | Production with real customers, documents or money | **NO-GO** |
 
 - **Permission tiers.** Tier 1 runs alone inside the signed mandate; Tier 2 (for example funding above the cost the owner

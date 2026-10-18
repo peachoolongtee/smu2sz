@@ -35,12 +35,12 @@ money moves. We claim neither regulatory compliance nor absolute security.
   separate session and worktree; it also wrote the security fixes it then certified. The team accepted the residual risks.
   "Certified" in this document means **an internal release decision for a stated build and scope**, not external
   accreditation.
-- **Certification status.** The last certified build is `70f23ac5` (18 Oct). The Security Lead reviewed the next build,
+- **Certification status.** Before the submission build, the last certified build was `70f23ac5` (18 Oct). The Security Lead reviewed the next build,
   `5941e95a`, and did not certify it because of PAY-1 (Medium): "can I pay everyone?" showed one plan and saved another. Round
-  seven (`bee9c50d`) fixes PAY-1 with four other findings and passed the Security Lead's full gate; **the submission build is
-  that code, and its certification has been requested** (the build box below, and Appendix C).
-- **Verdict.** Local simulation on loopback: **GO** for `70f23ac5`; for the submission build, every automated check passes
-  and the certification is pending (section 4.6). Live model mode (`pnpm demo --live-llm`): **not certified**, outside every
+  seven (`bee9c50d`) fixes PAY-1 with four other findings. **The submission build, dev `03215a20` (that code, merged as
+  `c707ee8c`), was certified by the Security Lead on 19 Oct for scope S** (the build box below, and Appendix C).
+- **Verdict.** Local simulation on loopback: **GO** for the submission build `03215a20` (certified 19 Oct), on a trusted
+  machine and network because the launcher's web server listens on every interface (DEMO-L1; section 4.6). Live model mode (`pnpm demo --live-llm`): **not certified**, outside every
   assessed scope (section 3.2). A demo over a network: **NO-GO** until a tested deployment profile exists. Production with
   real customers, documents or money: **NO-GO** (section 04).
 - **Largest residual risks** (section 4.2, all rated Moderate for production):
@@ -49,16 +49,17 @@ money moves. We claim neither regulatory compliance nor absolute security.
   - the audit chain is tamper-evident only against parties who cannot write the database, or up to a checkpoint kept
     outside it (R-13);
   - an anonymous offer can name a registered buyer and be acted on by the owner (SEC-19);
-  - a plan of several legs can stop part-way, and is reported truthfully but not reversed (SEC-28);
+  - a plan of several legs can stop part-way and is not reversed; queued and refused legs are now reported as they are, but a
+    send with no admissible funding plan, and the web's send result while an approval waits, still misreport (SEC-28, FUND-1 to FUND-4);
   - redaction before a model is pattern-based, so live mode stays outside the assessed scope (PRIV-4, PRIV-5).
 
 | Build and assessment | |
 | --- | --- |
 | Submission build | Code commit `bee9c50d` (the Security Lead's round seven), merged into `dev` as `c707ee8c`; the later commits on `dev` change documentation only. Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) |
-| Its certification | Requested from the Security Lead on 19 Oct; the Security Lead's own gate on `bee9c50d` passed (Appendix C). Until the certification is recorded, the statements in this document about the submission build are the team's, checked by the runs in Table 3 |
-| Last certified build | `70f23ac5` (18 Oct 2026), for scope S, the local simulation (Appendix C); evidence in `docs/security/evidence/2026-10-18/dev-70f23ac5/`, evidence id `sha256:3fd43dcd8ffc4721` (the hash of its `SHA256SUMS`) |
+| Its certification | **Certified for scope S by the Security Lead on 19 Oct**, on dev `03215a20` (full SHA `03215a2073a49e9bd72603561fcad67c3810c902`, working tree clean); evidence in `docs/security/evidence/2026-10-19/dev-03215a20/`, evidence id `sha256:712d6bd18b80e1ef` (the hash of its `SHA256SUMS`). Disclosed: SEC-28 with FUND-1 to FUND-4, DEMO-L1, PAUSE-2 |
+| Previous certified build | `70f23ac5` (18 Oct 2026), for scope S, the local simulation (Appendix C); evidence in `docs/security/evidence/2026-10-18/dev-70f23ac5/`, evidence id `sha256:3fd43dcd8ffc4721` (the hash of its `SHA256SUMS`) |
 | Not certified | `5941e95a` (18 Oct): PAY-1 (Medium); fixed in round seven |
-| Configuration assessed | Loopback; one API process; `LLM_MODE=cache` (no model provider is called); in-memory or SQLite store; synthetic fixtures; `DEMO_MODE=1` with the published demo credentials, and the same checks with `DEMO_MODE=0` and unset |
+| Configuration assessed | The API on loopback, the web app as `pnpm demo` serves it (every interface: DEMO-L1); one API process; `LLM_MODE=cache` (no model provider is called); in-memory or SQLite store; synthetic fixtures; `DEMO_MODE=1` with the published demo credentials, and the same checks with `DEMO_MODE=0` and unset |
 | Runtime | Python 3.12 (uv); Node 24.11.1, pnpm 12.11.2; PostgreSQL 17 for the concurrency suite only. FastAPI 0.142.2, Pydantic 2.13.5, Starlette 1.7.0; Next.js 16.3.8, React 19.3.0 (lockfiles unchanged since `70f23ac5`) |
 | Explicit exclusions | Live model mode; real customer documents or money; more than one API process; any network-reachable or hosted deployment; the web app beyond the checks in section 2.8 |
 | Approved exception | `braces` (GHSA-vfj7-8cjw-p6xm), a development-only dependency of the lint tooling, accepted by the team (section 2.8). No failing test is excepted |
@@ -77,7 +78,7 @@ deductions." The template adds social engineering and failure recovery. Table 1 
 | **Privilege escalation** (越权操作) | Tiers computed by code; Tier 3 refused for everyone; Tier 2 waits for the owner; identity from the credential only; owner-only clock, circuit, approvals and pause | 1.2, 1.3, 1.5, 1.8 | privilege escalation (22), replay and expiry (11), revoked or forged mandate (7), changed offers (4); the route-policy test over every route and caller; the 207-case credential-bypass sweep; mutation tests | 0 unauthorised executions; 0 route-policy deviations; 0 bypasses |
 | **Prompt injection** (Prompt 注入) | The model fills typed data only, with exact source spans; the coverage check fails closed; the consent grammar for owner chat | 1.2, 1.6, 2.3 | prompt injection (17), consent (41), quoted approvals (16), buyer instructions (18); the internal red-team run's live tier (16 Oct, uncertified) | 0 executions from injected text; misreadings stay within typed rows (R-7) |
 | Social engineering (template) | The same controls: urgency, authority or a claimed payment changes no tier | 2.4 | social engineering (8) | 0 harm |
-| Failure recovery (template) | One unit of work per operation; compare-and-swap; triggers; refusals fail closed; truthful reporting of each leg of a plan | 1.10, 1.12 | failure recovery (20); the concurrency suite; a database failure mid-execute (FR-06); the funding-status tests | 0 partial writes; plans are atomic per operation only (SEC-28) |
+| Failure recovery (template) | One unit of work per operation; compare-and-swap; triggers; refusals fail closed; each leg of a plan reported as it ran (SEC-28 partly: FUND-1 to FUND-4) | 1.10, 1.12 | failure recovery (20); the concurrency suite; a database failure mid-execute (FR-06); the funding-status tests | 0 partial writes; plans are atomic per operation only (SEC-28) |
 
 The catalogue groups its cases by the technique they use; the technical document's Table 5 groups the same 128 API cases by
 the rubric threat they serve (for example, it counts the replay and changed-offer cases under induced transfers). Both
@@ -112,16 +113,16 @@ Table 3 gives the result on the certified build and, where it was run again, on 
 
 | Id | Evidence | `70f23ac5` (certified) | Submission build (code `bee9c50d`) |
 | --- | --- | --- | --- |
-| E1 | Attack catalogue: 128 API and 151 chat cases, stored as data and run through the real API and chat | 0 harm-oracle violations; 279 of 279 reached their path; 120 of 128 API cases stopped by the control they name, 8 by another (known gaps, SEC-34) | the same: 0 violations, 279 of 279 reached, 120 of 128; detection 97.66% of the API cases (judge pack, 19 Oct) |
-| E2 | Positive controls and mutation tests | 6 positive controls execute and the oracle sees each; 5 of 7 mutations detected by the catalogue, 2 found gaps (2.5) | passed within `tests/security` (19 Oct) |
-| E3 | Route authorization: the route-policy test (every route as every kind of caller) and the certification's sweep in three modes | 0 policy violations; sweep identical to the previous certified sweep | route-policy test passed, now over the 3 new pause routes too (19 Oct); the Security Lead's sweep on `5941e95a`: 0 violations |
+| E1 | Attack catalogue: 128 API and 151 chat cases, stored as data and run through the real API and chat | 0 harm-oracle violations; 279 of 279 reached their path; 120 of 128 API cases stopped by the control they name, 8 by another (known gaps, SEC-34) | the same: 0 violations, 279 of 279 reached, 120 of 128; detection 97.66% of the API cases, security events 74.22% (certification of `03215a20`) |
+| E2 | Positive controls and mutation tests | 6 positive controls execute and the oracle sees each; 5 of 7 mutations detected by the catalogue, 2 found gaps (2.5) | passed within `tests/security` (certification of `03215a20`) |
+| E3 | Route authorization: the route-policy test (every route as every kind of caller) and the certification's sweep in three modes | 0 policy violations; sweep identical to the previous certified sweep | route-policy test passed over 113 routes, the 3 pause routes included; sweep in three modes: 0 violations, the pause routes the only difference (certification of `03215a20`) |
 | E4 | Regression tests for every finding fixed since 14 Oct | each fails before its fix and passes after | the same, including the round-six and round-seven tests (Security Lead's gate) |
-| E5 | Full API suite | 10,674 passed, 0 failed, 47 skipped | 11,368 passed, 0 failed, 47 skipped (Security Lead's gate on `bee9c50d`) |
-| E6 | Language boundary: 231 adversarial items through `POST /nl`, scored from stored state | 0 wrong-and-material (recorded and scripted answers) | 0 wrong-and-material on `5941e95a` (Security Lead); round seven changes no reading path |
-| E7 | Concurrency suite on SQLite and PostgreSQL 17, two worker processes | 3 of 3 clean PostgreSQL runs | 3 of 3 on `5941e95a` (Security Lead) |
-| E8 | Dependency audits; the CSP in a browser | `pnpm audit --prod` 0 advisories; `pip-audit` clean; CSP 16 pages, 0 violations | lockfiles unchanged; both audits re-run on 19 Oct: 0 production advisories, `pip-audit` clean; `braces` only (development) |
+| E5 | Full API suite | 10,674 passed, 0 failed, 47 skipped | 11,368 passed, 0 failed, 47 skipped (certification of `03215a20`) |
+| E6 | Language boundary: 231 adversarial items through `POST /nl`, scored from stored state | 0 wrong-and-material (recorded and scripted answers) | 0 wrong-and-material (recorded and scripted answers), counts identical to `70f23ac5` (certification of `03215a20`) |
+| E7 | Concurrency suite on SQLite and PostgreSQL 17, two worker processes | 3 of 3 clean PostgreSQL runs | 3 of 3; guards 10 passed (certification of `03215a20`) |
+| E8 | Dependency audits; the CSP in a browser | `pnpm audit --prod` 0 advisories; `pip-audit` clean; CSP 16 pages, 0 violations | lockfiles unchanged; `pnpm audit --prod` 0, `pip-audit` clean, `braces` only (development); CSP 17 pages, 0 violations (certification of `03215a20`) |
 | E9 | Internal red-team run (16 Oct), with a live DeepSeek tier | 0 harmful outcomes reported; five observations, each with its status (2.6) | not re-run |
-| E10 | Repository secret scan (tracked files and every branch's history) | — | 19 Oct: no API key, token or private key other than the published DEMO ONLY fixtures; only `.env.example` files tracked |
+| E10 | Repository secret scan (tracked files and every branch's history) | — | 0 findings in the tracked files and the history of every branch; only the two `.env.example` files tracked (certification of `03215a20`, `secret_scan.txt`) |
 | E11 | Live-model runs on 18 Oct (frozen 20-item evaluation, demonstration) | — | uncertified evidence (2.9): model alone 2 wrong of 20; FLOW as shipped 0 wrong; every reading grounded in quoted source words |
 
 ## 01 Permission Model
@@ -276,11 +277,11 @@ production credentials; `DEMO_MODE` unset), and a diff compares each answer with
 | Demo and setup | `/demo/reset`, `/demo/restore`, `/demo/bank-receipt`, `/setup/*` | 401 | 401 | demo mode only; otherwise 403 |
 
 **Results.** On `70f23ac5`: 0 policy violations in any mode, and with `DEMO_MODE` off or unset every published demo
-credential was refused. On the submission build the route-policy test passes (16 of 16, 19 Oct) over 113 routes in demo mode,
+credential was refused. On the submission build the route-policy test passes (16 of 16, certification of `03215a20`) over 113 routes in demo mode,
 with the three pause routes in the owner class: the owner reaches the handler on 96 of 97 owner and demo routes in demo mode
 and on 91 of 97 in production mode. The rest are the five demo-only setup and bank-receipt routes (403 outside demo mode)
 and `POST /documents/{id}/terms/undo`, which answers 404 `UNKNOWN_SET_UP` because the test world holds no set-up to undo
-(earlier records attributed that one to a feature flag; the evidence shard shows the 404). A separate
+(earlier records attributed that one to a feature flag; the evidence shards of `70f23ac5` and `03215a20` show the 404). A separate
 207-case **credential-bypass sweep** (`tests/security/test_bypass_sweep.py`) sends every owner write and agent route each
 wrong or missing credential and each body-field claim of authority: none got through. The sweep's limits: it fills path
 parameters with a placeholder and sends empty bodies, so on about half the routes the owner's own request stops at
@@ -464,7 +465,7 @@ everyone up to a checkpoint kept outside the system** (R-13).
 | --- | --- | --- |
 | **Signing** | The mandate is signed offline with the owner's Ed25519 key. The executor pins the owner's public key from `OWNER_PUBLIC_KEY_HEX`, or the demo key in demo mode, read once at start-up | a mandate signed by another key, or edited without re-signing, fails every operation (`BAD_SIGNATURE`) |
 | **Expiry** | `expires_day` in the signed mandate; the last valid day is `expires_day` itself | every operation is refused `MANDATE_EXPIRED` except the two kinds in 1.8 |
-| **Pause** (new since `70f23ac5`) | `POST /agent/pause` and `POST /agent/resume`, owner token only; `GET /agent/pause` reads the state. Each switch is a `PAUSE_AGENT` or `RESUME_AGENT` entry on the hash-chained log, and the state is the latest such entry, so the pause survives a restart on a persistent store (a demo reset clears it); a repeated pause writes nothing. API only: the web app has no control for it | while paused, every operation requested by the agent or a buyer, and every `SYSTEM` operation other than a receipt, is refused in front of the executor's gates (`app/api/agent_pause.py`); each refusal is a `REVOKED` security event, not a chained entry, and uses up no idempotency key. That covers the agent's operations, agent and keyed-buyer chat, alert actions, `/negotiate` legs, chat funding plans and the capex draw. **Still runs:** the owner's own operations, bank-feed receipts, and the owner's decision on an approval queued before the pause (the decision re-runs the gates but not the pause check). Since round seven the bank-feed key may speak as `SYSTEM` only for receipts, so it cannot draw or finance while paused (PAUSE-1). With more than one API process a write could land just after a pause (PAUSE-2; one process is required, SEC-11) |
+| **Pause** (new since `70f23ac5`) | `POST /agent/pause` and `POST /agent/resume`, owner token only; `GET /agent/pause` reads the state. Each switch is a `PAUSE_AGENT` or `RESUME_AGENT` entry on the hash-chained log, and the state is the latest such entry, so the pause survives a restart on a persistent store (a demo reset clears it); a repeated pause writes nothing. API only: the web app has no control for it | while paused, every operation requested by the agent or a buyer, and every `SYSTEM` operation other than a receipt, is refused in front of the executor's gates (`app/api/agent_pause.py`); each refusal is a `REVOKED` security event, not a chained entry, and uses up no idempotency key. That covers the agent's operations, agent and keyed-buyer chat, alert actions, `/negotiate` legs, chat funding plans and the capex draw. Not covered: recording a *proposed* agreement (`Executor.propose_commitment`), which moves no money; accepting it is refused while paused. **Still runs:** the owner's own operations, bank-feed receipts, and the owner's decision on an approval queued before the pause (the decision re-runs the gates but not the pause check). Since round seven the bank-feed key may speak as `SYSTEM` only for receipts, so it cannot draw or finance while paused (PAUSE-1). With more than one API process a write could land just after a pause (PAUSE-2; one process is required, SEC-11) |
 | **Revocation** | The engine honours a `revoked` flag, signed or unsigned. The store is re-read on every operation, and on SQL a revocation is a new row that survives restart. **No API route, script or console action lets the owner revoke.** Revocation is reached only by writing the store directly, as the tests and the harness do | every operation is refused `MANDATE_REVOKED` except the two kinds in 1.8. An unsigned revocation also blocks those two, because its broken signature is kept |
 | **Renewal or replacement** | No route. `ChangeMandate` is Tier 3 and never executes. Outside the demo tools, replacing the mandate means writing a newly signed mandate into the store | the version check refuses operations dated to the old version |
 | **Key replacement** | No rotation. Changing the pinned public key needs a configuration change and a restart | |
@@ -705,8 +706,8 @@ missing credential and each body-field claim of authority; none got through.
 the team that built the system. 3 Oct: the principal audit by team members working with AI agents, and red-team rounds 1 to 5
 by AI subagents; every finding became a regression test. 14 to 19 Oct: the Security Lead, an AI agent in a separate session,
 with its certifications `0ba8e4c1`, `a6de32a2`, `b6d1e519`, `0f92d433`, `719c9dcf`, `0fde33fd`, `29fa0ea2` and `85309b63`,
-`6d2b6941` (conditional), `70f23ac5` (last certified), `5941e95a` (not certified, PAY-1) and `bee9c50d` (the submission
-build, certification requested). 16 Oct: the internal red-team run by team member Hao En, with a live DeepSeek tier and an
+`6d2b6941` (conditional), `70f23ac5`, `5941e95a` (not certified, PAY-1) and `03215a20` (the submission build, code
+`bee9c50d`, certified 19 Oct). 16 Oct: the internal red-team run by team member Hao En, with a live DeepSeek tier and an
 offline tier, not re-run. 16 to 18 Oct: the team's risk decisions. "Certified" means the stated checks ran on the exact
 merged commit, and the Security Lead also wrote the fixes it certified.
 
@@ -723,7 +724,7 @@ merged commit, and the Security Lead also wrote the fixes it certified.
 | Security Lead (14 to 19 Oct) | an AI agent (Claude, in Claude Code) in a separate session and git worktree, with delegated AI reviewer agents | did not build the product features it audited; **did write the security fixes it then certified**, each on its own branch with a test that fails first | yes: reproductions, sweeps and probes in `docs/security/evidence/` | the integration lead merged; the owner approved engine changes; the team accepted risks |
 | Internal red-team run (16 Oct) | team member Hao En; the report is not in the repository and no location is recorded | a team member; role in the implementation not recorded | yes | its five observations were re-checked by the Security Lead on the code; its live-tier results were not re-run |
 | Review of the self-assessment (17 Oct) | a written review supplied by the owner; the reviewer is not recorded | not recorded | it reviewed the documents, not the code | the Security Lead acted on each point (v3) |
-| Alignment with the submission build (19 Oct) | the integration lead | merges branches; did not write the security fixes | no | the Security Lead, at the certification of the submission build |
+| Alignment with the submission build (19 Oct) | the integration lead | merges branches; did not write the security fixes | no | the Security Lead, at the certification of `03215a20` (19 Oct) |
 | Risk acceptance | the team | | | recorded decisions of 16 to 18 Oct (section 04) |
 
 **What "certified" means here.** An internal release decision by the Security Lead: the stated checks were run on the exact
@@ -787,7 +788,7 @@ PAY-1. Round seven passed the Security Lead's full gate on `bee9c50d`.
 | 18 Oct | `6d2b6941` | batches 7 to 10: contract terms (ADR-0014), record a payment, the question router (ADR-0015), the warm-up worker | conditional: only with contract terms off |
 | 18 Oct | `70f23ac5` | round five: every finding of the reviews of batches 5 to 10 fixed, and the owner-approved engine half (CT-2, CT-6, CT-7, REG-5) | **certified (internal)**, with REG-8, REG-9, CT-2b, SEC-27 and SEC-28 disclosed |
 | 18 Oct | `5941e95a` | round six (REG-8, REG-9, CT-2b), the SEC-28 reporting fix, the owner's pause and checkpoint, the consent narrowing, Ask FLOW's new answers, live-mode routing of read intents (Appendix E) | **not certified**: PAY-1 (Medium) |
-| 19 Oct | `bee9c50d`, merged as `c707ee8c` (**the submission build**) | round seven: PAY-1 to PAY-3, PAUSE-1, APR-1 | the Security Lead's gate passed (full suite 11,368 passed, 0 failed, 47 skipped; mock browser 479 passed; typecheck, lint and unit pass); **certification requested** |
+| 19 Oct | dev `03215a20` (code `bee9c50d`, merged as `c707ee8c`; **the submission build**) | round seven: PAY-1 to PAY-3, PAUSE-1, APR-1 | **certified (internal)** on `03215a20` (19 Oct): full suite 11,368 passed, 0 failed, 47 skipped; 0 harm on 279; mock browser 479 passed; CSP 0 violations; SEC-28 with FUND-1 to FUND-4 and DEMO-L1 disclosed |
 
 Appendix C gives the checks and counts for each row. Certification records before 17 Oct report exit codes per shard, not
 counts; from `29fa0ea2` on, counts are recorded.
@@ -810,7 +811,7 @@ Chinese-language reads were settled by the owner's decision on buyer names of 16
 | --- | --- | --- | --- |
 | `pnpm audit --prod` | `apps/web/pnpm-lock.yaml` | 0 advisories (`next` 16.3.8, `source-map-js` 1.2.2) | |
 | `pnpm audit` (all, including development) | same | 1 high: `braces` (GHSA-vfj7-8cjw-p6xm), via `eslint-config-next` > `fast-glob` > `micromatch` | `braces`: a development-only dependency of the lint tooling, with no patched version published; it never ships in the production bundle and parses only our own source globs. Accepted by the team |
-| `pip-audit` | production dependencies exported from `services/api/uv.lock` (144 packages) | no known vulnerabilities | |
+| `pip-audit` | production dependencies exported from `services/api/uv.lock` (48 packages, `--no-dev`) | no known vulnerabilities | |
 | Secret scan (E10) | every tracked file at the submission build, and the history of every branch | no API key, token or private key other than the published DEMO ONLY fixtures; only the two `.env.example` files are tracked, with placeholder values | |
 
 RT-1 was rated by reachability. The advisories were in the web server (`next`), so they were reachable over HTTP. On
@@ -819,8 +820,8 @@ means only that the named scan of these lockfiles found no published advisory on
 
 #### 2.9 What was not verified
 
-- **The submission build's certification.** The Security Lead's gate on `bee9c50d` passed, and its certification is
-  requested; until it is recorded, the results on the submission build in Table 3 are those runs, not a certification.
+- **The integration lead's own runs on the merge** (the judge pack, the live browser suite) are not in the evidence folders;
+  the results on the submission build in Table 3 come from the Security Lead's certification of `03215a20`.
 - **A live model at scale.** The catalogue and the 231-item set ran on recorded or scripted answers. The live-model runs (the
   1 Oct held-out run, the 16 Oct red-team run's live tier, and the 18 Oct router stress test, demonstration and frozen
   evaluation of section 2.11) are uncertified evidence: the Security Lead did not re-run them, and their records do not stamp
@@ -862,7 +863,7 @@ Everything runs offline. The metrics are computed from the run, not asserted.
 The security claims above hold whatever the model does, because the model only fills typed data. We also ran a real model,
 to see what it does in practice. These runs are single runs on one day with one provider (DeepSeek `deepseek-flash`, through
 the OpenAI-compatible API; the underlying model version is not recorded), on `5941e95a` by the operator's record, with
-redaction on by default; they are outside every certification. The technical document reports their usefulness; the security
+redaction on as the code's default (the frozen-run result files do not record it); they are outside every certification. The technical document reports their usefulness; the security
 results are these.
 
 **Table 22. The 18 Oct live runs: security-relevant results.**
@@ -871,7 +872,7 @@ results are these.
 | --- | --- | --- |
 | Frozen evaluation, FLOW as shipped (20 items, labels written blind and fixed by hash before any run) | buyer messages and contracts in English and Chinese, including 3 injection items (LF18 to LF20) | 0 wrong of 20: the model's two misreadings in the model-alone run became clarification requests; the 3 injection items were rejected or held, with 4 to 5 authority flags and 4 to 10 security events each; 32 of 32 readings grounded in quoted source words; nothing booked or moved |
 | Frozen evaluation, model alone (`LLM_LIVE_RAW=1`, cross-check off) | the same 20 items | 2 wrong: an ambiguous message read and countered, and a conflicting one read and rejected, where the right answer was to ask; neither booked anything; the 3 injection items rejected; one drafted reply to a buyer stated a protected value (`mandate.max_apr`), and the egress guard withheld it and sent the safe template, logging a `DATA_EXTRACTION` event; requests for protected figures refused and logged |
-| Demonstration: a new Chinese buyer message, a new contract, an owner question | the message (3 terms, each quoted), the contract (13 terms, each quoted), the question (routed to two read-only tools) | the two readers disagreed on the message, so FLOW booked nothing and asked the buyer to confirm; the contract reading changed no books until the owner confirms it; the router's choice ran only read-only tools; every model call logged a `model.redaction` line |
+| Demonstration: a new Chinese buyer message, a new contract, an owner question | the message (3 terms, each quoted), the contract (13 terms, each quoted), the question (routed to two read-only tools) | the two readers disagreed on the message, so FLOW booked nothing and asked the buyer to confirm; the contract reading changed no books until the owner confirms it; the router's choice ran only read-only tools; the two reader calls logged a `model.redaction` line; the router's call redacts its text too but writes no count line (`app/nl/router/route.py`) |
 
 ## 03 Data and Privacy
 
@@ -1090,9 +1091,9 @@ are not on the map.
 | CAPEX-NC | A committed capex purchase has no cancel path | operational gap | privileged | Low | Moderate (F) | Low |
 | Minor | ASK-3, REG-7, CAPEX-4b, SETUP-2, 3, 6, 8, SEC-13, 14, 15, OUT-2 to OUT-4, DEMO-L1 (the demo's web dev server listens on all interfaces), LOG-2, LOG-3; the unlocked document and setup routes (S1); the export `content_sha256` scope (1.10) | various | | Low | Low | Low |
 
-The ratings are the Security Lead's for `70f23ac5`. Two changed facts since then lower the impact of R-14 and SEC-28 (the
-pause; truthful leg reporting), and the ratings stay as they are until the Security Lead re-rates them at the certification of
-the submission build. REG-8, the one Low risk of `70f23ac5` that is now closed, is in 4.5.
+The ratings are the Security Lead's, confirmed unchanged at the certification of `03215a20`: the pause limits R-14 but does
+not revoke or renew a mandate, and SEC-28's reporting is only partly fixed (FUND-1 to FUND-4) while part-run plans are still not
+reversed. REG-8, the one Low risk of `70f23ac5` that is now closed, is in 4.5.
 
 #### 4.3 Production and network prerequisites
 
@@ -1142,9 +1143,14 @@ stores nothing; `tests/security/test_anonymous_intake_switch.py`; it is on by de
 "unverified sender" on every view of the offer, and record provenance for chat intake too.
 
 **SEC-28: partial plans.** An owner action, Moderate × Moderate; it occurs in normal use whenever a later leg is refused or
-queued. The integrity of the books holds per operation (1.12). *Fixed on the submission build:* the reporting. `/negotiate`
-no longer tells the owner the gap is funded before its legs run; every path states each leg's actual outcome, and a part-run
-plan names the funding still missing (`f52870d1`, `f1b95e61`, owner-approved). *Still open:* `/negotiate` sends every leg
+queued. The integrity of the books holds per operation (1.12). *Partly fixed on the submission build:* the reporting.
+`/negotiate` no longer tells the owner the gap is funded before its legs run when a leg is queued or refused, `/alerts/{id}/act`
+and the chat say which step waits or failed, and a part-run plan names the funding still missing (`f52870d1`, `f1b95e61`,
+owner-approved). *Still misreported* (found at the certification of `03215a20`; all present in `70f23ac5`): a send with no
+admissible funding plan reads "funded" (FUND-1, Medium); the web's send result says "the agreement is on your books" while the
+agreement waits for approval or was refused (FUND-2, Medium); the chat's no-deal reply says "no gap to cover" with a gap open
+(FUND-3); smaller wording on the decision record and the fix-alert line (FUND-4). Fixes for FUND-1 to FUND-3 are on
+`sec/round-eight`, not in the submission build. *Still open:* `/negotiate` sends every leg
 without stopping, `/alerts/{id}/act` continues past a queued leg, and nothing reverses or resumes a part-run plan; recovery is
 manual (1.12). *Next step:* stop at the first leg that does not execute, and offer resumption after an approval; these change
 product behaviour and need the owner's approval.
@@ -1232,8 +1238,8 @@ Each was found by one of the reviews, reproduced, and closed by a fix whose regr
 | WARM-1, SEC-29 (owner path), DEMO-2 | read the API's credentials from the warm-up worker; book a payment twice by pressing again; delete a file outside the demo folder | an allow-listed environment and demo mode only; one key per payment entered; `.demo-data/` only | `tests/api/test_warm1_worker_env.py` | `70f23ac5` |
 | REG-8 | keep a buyer entitled, in the egress guard, to a contract blocked because its parties could not be checked | any blocking party flag, `PARTY_UNCHECKED` included, entitles nobody, in both stores | `tests/security/test_round_six.py` | submission build (round six, `563de405`) |
 | REG-9 | use the demo lender-name allowance outside demo mode | demo mode only | `tests/security/test_round_six.py` | submission build (round six) |
-| CT-2b | show lenders a contract set-up's invoices as recurring billing before the first is issued | the borrower file leaves them out until then and lists them on their own row | `tests/security/test_round_six.py` | submission build (round six) |
-| SEC-28 (reporting) | be told a gap is funded before the legs ran | each leg's actual outcome reported on every path | `tests/api/test_funding_status.py` | submission build (`f52870d1`) |
+| CT-2b (borrower file only) | show lenders a contract set-up's invoices as recurring billing before the first is issued | the borrower file leaves them out until then and lists them on their own row | `tests/security/test_round_six.py` | submission build (round six) |
+| SEC-28 (reporting, partly; FUND-1 to FUND-4 open) | be told a gap is funded before the legs ran | a queued or refused leg reported as it is on `/negotiate`, alert actions and chat; not yet a plan with no legs or the web's send result (FUND-1, FUND-2) | `tests/api/test_funding_status.py` | submission build (`f52870d1`) |
 | Authority audit | confirm a plan with a bare "ok"; approve a queued above-threshold advance by repeating "go ahead"; read an approval's decision as its run | explicit consent words only; a retried go-ahead cannot approve; decision and run reported apart; owner-recorded acceptance states its funding | `tests/nl/test_authority_audit.py`, `tests/api/test_approval_decision_vs_execution.py`, `tests/api/test_owner_reported_acceptance.py` | submission build (`386775ca`, `d9923e92`, `7404f798`, `f1b95e61`) |
 | PAY-1 (Medium) | be shown one plan while "go ahead" ran another | the reply words exactly the plan it saves, or saves none | `tests/security/test_round_seven.py`, `tests/nl/test_pay_everyone.py` | submission build (round seven, `123f63aa`) |
 | PAY-2, PAY-3 | get an HTTP 500 on books with several cash gaps; keep a plan after cancelling it beside small talk or a customer name | bounded gap index; a cancel drops the plan | `tests/security/test_round_seven.py` | submission build (`f23db573`, `3d4817f7`) |
@@ -1246,7 +1252,7 @@ Each was found by one of the reviews, reproduced, and closed by a fix whose regr
 
 | Deployment | Verdict | Conditions |
 | --- | --- | --- |
-| Local demo on loopback | **GO** for `70f23ac5`. **The submission build:** every automated check passes (Table 3); its certification is requested, and this row becomes GO for it when the Security Lead records it | **Operating constraints:** `DEMO_MODE=1`; memory or SQLite; one API process; `LLM_MODE=cache` (the question router on recorded answers only); synthetic fixtures only; contract terms on, as `pnpm demo` sets them; simulated counterparties; nobody but the presenter holds the demo credentials; a trusted machine and network, because the web dev server listens on all interfaces (DEMO-L1). **Not covered:** live mode or real documents |
+| Local demo on loopback | **GO** for the submission build `03215a20` (certified 19 Oct) and for `70f23ac5` (18 Oct; the DEMO-L1 condition, added 19 Oct, applies to it too) | **Operating constraints:** `DEMO_MODE=1`; memory or SQLite; one API process; `LLM_MODE=cache` (the question router on recorded answers only); synthetic fixtures only; contract terms on, as `pnpm demo` sets them; simulated counterparties; nobody but the presenter holds the demo credentials; a trusted machine and network, because the web dev server listens on all interfaces (DEMO-L1). **Not covered:** live mode or real documents |
 | Live-model mode (`pnpm demo --live-llm`) | **Not covered by any certification** | a certification run in live mode; the language-boundary set and attack catalogue against a live model; a provider agreement on retention and region; PRIV-4 and PRIV-5 |
 | Demo reachable over a network | **NO-GO** until one tested deployment profile exists. If none is tested before submission, we demonstrate the local configuration | **The profile must include:** credentials changed from the demo values, and a signing key other than the published fixture (a new owner key pair, with `OWNER_PUBLIC_KEY_HEX` set); one worker; synthetic fixtures; `LLM_MODE=cache` or a recorded live decision; documentation hidden (`DEMO_MODE=0`); a TLS reverse proxy with per-client rate and body-size limits; the web server on loopback behind it (DEMO-L1); anonymous intake off or labelled everywhere (SEC-19); a written stop procedure (the pause, then the steps of 1.11). **It must pass:** the route sweep and the browser checks (S3) against that deployment |
 | Production with real customers, documents or money | **NO-GO** | the prerequisites in 4.3; R-2, R-13, R-14, SEC-19, SEC-28; R-3's aggregate draw limit; PRIV-4, PRIV-5 and the deployment's privacy assessment (3.6); backups; a penetration test; real counterparties, lenders and bank feeds |
@@ -1260,7 +1266,7 @@ be compromised, change `AGENT_KEY` and restart the API; (6) `POST /agent/resume`
 #### 4.7 Planned improvements, in priority order
 
 1. **Engine follow-ups the owner deferred:** SEC-27 (record the run's outcome on the approval) and the rest of SEC-28 (stop at
-   the first leg that does not execute; resume after an approval). SEC-28's reporting is done.
+   the first leg that does not execute; resume after an approval). SEC-28's reporting is partly done: FUND-1 to FUND-3 are fixed on `sec/round-eight`, pending merge.
 2. **Before any network demo:** a tested deployment profile with the web server on loopback; anonymous intake off, or
    provenance shown everywhere (SEC-19); browser injection tests (S3).
 3. **Owner control:** mandate revoke and renew routes; a pause control in the web app; key rotation (R-14, OPS, R-2). The
@@ -1348,9 +1354,10 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 | `29fa0ea2` | the full suite; the catalogue; sweep in three modes with the policy check and a diff against `0fde33fd`; every reproduction refused, and the SQLite approval flip refused by the database ("a decision is recorded once"); the language boundary (cache and fake); PostgreSQL 17 concurrency ×3 and the guards; dependency scans; the mock browser suite; the CSP in a browser on a production build | 9,116 passed, 0 failed, 44 skipped; 0 harm; 0 policy violations, 0 sweep differences; mock 445 passed, 61 skipped; typecheck, lint, unit pass |
 | `85309b63` (code of `3f0ed53e`) | the full suite; the catalogue; sweep in three modes with the policy check and a diff against `29fa0ea2` (only the three new routes differ; every non-owner refused on the two new owner routes); every reproduction refused; the approval flip refused by the database; the language boundary; PostgreSQL 17 ×3 and the guards; dependency scans; the mock browser suite; the CSP in a browser on a production build; two code reviews of the new routes and owner questions | 9,740 passed, 0 failed, 46 skipped; 0 harm; 0 policy violations; mock 453 passed, 71 skipped; typecheck, lint, unit pass; CSP 16 pages, 0 violations |
 | `6d2b6941` | the full suite; the catalogue; the sweep; reproductions; language boundary; PostgreSQL; scans; the mock browser suite; the CSP; two code reviews | 10,375 passed, 0 failed; conditional (CT-1, CT-2 open) |
-| `70f23ac5` (**last certified**) | the full suite; the catalogue; the sweep in three modes with the policy check and a diff against `6d2b6941`; every reproduction refused; the approval flip refused by the database; the language boundary; PostgreSQL 17 ×3 and the guards; dependency scans; the mock browser suite; the CSP in a browser; a code review of the engine delta | 10,674 passed, 0 failed, 47 skipped; 0 harm on 279 cases; 0 policy violations; mock 479 passed, 77 skipped; CSP 0 violations |
+| `70f23ac5` (certified 18 Oct) | the full suite; the catalogue; the sweep in three modes with the policy check and a diff against `6d2b6941`; every reproduction refused; the approval flip refused by the database; the language boundary; PostgreSQL 17 ×3 and the guards; dependency scans; the mock browser suite; the CSP in a browser; a code review of the engine delta | 10,674 passed, 0 failed, 47 skipped; 0 harm on 279 cases; 0 policy violations; mock 479 passed, 77 skipped; CSP 0 violations |
 | `5941e95a` (not certified) | a review of every change since `70f23ac5`; the full suite; the catalogue; the sweep; the language boundary; PostgreSQL 17 ×3; scans; the mock browser suite; probes of the new paths | 11,341 passed, 0 failed; 0 harm on 279; 0 policy violations; 0 wrong-and-material; PostgreSQL 3 of 3; scans clean; mock 479 passed. **Not certified:** PAY-1 (Medium) |
-| `bee9c50d` (**the submission build's code**, merged as `c707ee8c`) | the Security Lead's gate: the full suite, the mock browser suite, typecheck, lint and unit tests; the integration lead on the merge: focused suites, the judge pack, the live browser suite, dependency and secret scans (Table 3) | full suite 11,368 passed, 0 failed, 47 skipped; mock 479 passed, 77 skipped; typecheck, lint, unit pass. **Certification requested** |
+| `bee9c50d` (round seven, on its branch) | the Security Lead's gate: the full suite, the mock browser suite, typecheck, lint and unit tests | full suite 11,368 passed, 0 failed; mock 479 passed |
+| `03215a20` (**the submission build, certified**; code `bee9c50d`, merged as `c707ee8c`) | the full suite; the catalogue; the route-policy test; the sweep in three modes with the policy check and a diff against `70f23ac5`; every reproduction refused; the approval flip refused by the database; the language boundary; PostgreSQL 17 ×3 and the guards; dependency and secret scans; the mock browser suite; the CSP in a browser; a review of the SEC-28 reporting fix. Evidence `evidence/2026-10-19/dev-03215a20/`, id `sha256:712d6bd18b80e1ef` | 11,368 passed, 0 failed, 47 skipped; 0 harm on 279 cases; 0 policy violations; 0 wrong-and-material; PostgreSQL 3 of 3; scans clean; mock 479 passed, 77 skipped; CSP 17 pages, 0 violations. **Certified for scope S**, with SEC-28 (FUND-1 to FUND-4) and DEMO-L1 disclosed. The integration lead's own runs on the merge (the judge pack; the live browser suite, 171 passed and 6 failed, uncertified) are its records, not in the evidence folders |
 
 **A note on reproduction scripts that exit 1.** Several reproduction scripts (`r3`, `repro1`, `repro3`) exit with status 1
 on fixed builds. They were written to print what the attack obtained, and they crash when it is refused: `r3`, for example,
@@ -1404,10 +1411,10 @@ attack routes, credentials, operations and the store directly.
 
 ## Appendix E. Changes since the certified build
 
-**What this appendix is.** `70f23ac5` is the last certified build. This appendix lists every change between it and the
+**What this appendix is.** `70f23ac5` is the last certified build before the submission build. This appendix lists every change between it and the
 submission build, with what each touches, the tests recorded with it and its status. The integration lead prepared it; the
-Security Lead reviewed every row up to `5941e95a` (section 2.6) and wrote round seven. Sections 01 to 04 describe the
-submission build, so each change below is also reflected there.
+Security Lead reviewed every row up to `5941e95a` (section 2.6), wrote round seven and certified the submission build
+`03215a20` on 19 Oct. Sections 01 to 04 describe the submission build, so each change below is also reflected there.
 
 **Table E1. Changes since `70f23ac5`.** Commits are on `int/final3`, `int/final4` or `sec/round-seven`, all merged into `dev`.
 The tests listed are those recorded with each commit; the full suites on the submission build are in Table 3.
@@ -1434,14 +1441,15 @@ The tests listed are those recorded with each commit; the full suites on the sub
 | `7fe9c8cd`, `a8d1c8fe` | a failed document decision keeps the page's own sentence; recorded web mocks re-recorded from the server (two identical runs per set) | web display only | live `documents.spec.ts:521`; mock browser suite 479 passed | reviewed on `5941e95a` |
 | `93dce96f`, `82a5fe09`, `089d2415` | the frozen 20-item live-reading evaluation set and its runner; the LICENSE (all rights reserved, judging permitted) | evaluation tooling and licence; no product change | rules-grammar baseline and two live runs (see the technical document) | not applicable |
 | `069dd754`, `1c736876`, `bf113abf`, `08c8dac0` | the Security Lead's own records: assessment v3, the register, the owner's deferral of SEC-27 and SEC-28, and the certification of `70f23ac5` | documentation and evidence; no code | none needed | documentation |
-| `123f63aa` (round seven) | PAY-1: "can I pay everyone?" words exactly the plan it saves, and saves nothing it cannot word; "go ahead" runs that plan | consent bound to the plan shown (section 1.6) | `tests/security/test_round_seven.py`, `tests/nl/test_pay_everyone.py` | fixed; in the submission build; certification requested |
+| `123f63aa` (round seven) | PAY-1: "can I pay everyone?" words exactly the plan it saves, and saves nothing it cannot word; "go ahead" runs that plan | consent bound to the plan shown (section 1.6) | `tests/security/test_round_seven.py`, `tests/nl/test_pay_everyone.py` | fixed; in the submission build, certified 19 Oct |
 | `f23db573` (round seven) | PAY-2: "can I pay everyone?" answers on books with several cash gaps instead of an HTTP 500 | owner-only; no state change | `tests/security/test_round_seven.py` | fixed; in the submission build |
 | `3d4817f7` (round seven) | PAY-3: a cancel beside small talk or a customer name drops the waiting plan | consent; not widened | `tests/security/test_round_seven.py` | fixed; in the submission build |
 | `c8c04a9d` (round seven) | PAUSE-1: `SYSTEM` only for receipts, at the route and at the pause; APR-1: an agent key is not told the owner's decision on an approval | the pause holds for the bank-feed key; no disclosure to the agent | `tests/security/test_round_seven.py` | fixed; in the submission build |
 | `bee9c50d` (round seven) | the attack report regenerated | evidence only | the catalogue: 0 harm on 279 | in the submission build |
 
 **Editorial changes to this document since the Security Lead's v3 (17 to 18 Oct).** None changes a finding's rating or a
-certification verdict; each aligns the text with the code or the records.
+certification verdict; each aligns the text with the code or the records. One condition was added to a verdict: the trusted
+machine and network for the local demo (DEMO-L1), which the Security Lead approved on 19 Oct for `70f23ac5` and `03215a20`.
 - Sections 01 to 04 now describe the submission build; statements about `70f23ac5` are labelled as such. The changes they
   reflect are the rows of Table E1.
 - The route counts: 109 API routes on the submission build (106 and the three pause routes); the route-policy test's 96 of 97
