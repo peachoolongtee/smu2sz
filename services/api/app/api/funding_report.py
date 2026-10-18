@@ -10,13 +10,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.api.presentation import business_text, executed_words, t
+from app.api.presentation import business_text, executed_words, t, whole
 from app.domain.models import FinancialState
 
 FUNDED = "FUNDED"
 WAITING_APPROVAL = "WAITING_APPROVAL"
 PARTLY_FUNDED = "PARTLY_FUNDED"
 NOT_FUNDED = "NOT_FUNDED"
+NOT_NEEDED = "NOT_NEEDED"  # the plan has no leg because the books need no funding (FUND-1): nothing was funded, nothing had to be
 
 _EXECUTED, _PENDING = "EXECUTED", "PENDING_APPROVAL"
 
@@ -37,9 +38,12 @@ def outcomes(legs: list[dict]) -> list[str]:
     return [_PENDING if leg["status"] == "DUPLICATE" and leg.get("approval_id") else str(leg["status"]) for leg in legs]
 
 
-def funding_status(statuses: list[str]) -> str:
+def funding_status(statuses: list[str], need_fen: int | None = None) -> str:
     """FUNDED: every leg executed. WAITING_APPROVAL: at least one leg waits for the owner and none was refused. NOT_FUNDED: no leg
-    executed and none waits (all refused). PARTLY_FUNDED: a leg was refused beside legs that executed or wait."""
+    executed and none waits (all refused). PARTLY_FUNDED: a leg was refused beside legs that executed or wait. With no leg at all
+    nothing was funded (FUND-1): NOT_NEEDED when the books need nothing (`need_fen` 0), else NOT_FUNDED (no admissible plan)."""
+    if not statuses:
+        return NOT_NEEDED if need_fen == 0 else NOT_FUNDED
     refused = [s for s in statuses if s not in (_EXECUTED, _PENDING)]
     if not refused and all(s == _EXECUTED for s in statuses):
         return FUNDED
@@ -61,6 +65,20 @@ def funding_clause(lang: str, gap: str, status: str, legs: list[dict]) -> str:
         NOT_FUNDED: t(lang, f"the {gap_en} gap is not funded.", f"{gap_zh}缺口未获融资。"),
     }[status]
     return lead + t(lang, " ", "") + t(lang, " ", "").join(leg["text"] for leg in legs)
+
+
+def no_leg_clause(lang: str, gap: str, need_fen: int) -> tuple[str, str, str]:
+    """(status, engine clause in en, clause in `lang`) for a gap plan with no leg (FUND-1): the books need no funding, or the router
+    found no admissible plan on the funding menu, so nothing was funded and nothing ran. Never "the gap is funded"."""
+    if need_fen <= 0:
+        return NOT_NEEDED, "no funding needed.", t(lang, "no funding is needed.", "无需融资。")
+    gap_en, gap_zh = ("remaining", "其余") if gap == "remaining" else ("near-term", "近期")
+    amount = whole(need_fen)
+    return (NOT_FUNDED,
+            f"the {gap_en} gap is not funded: no admissible plan on the funding menu covers it ({amount}). Nothing was executed for it.",
+            t(lang, f"the {gap_en} gap of {amount} is not funded: no admissible plan on the funding menu covers it. "
+                    f"Nothing was executed for it.",
+              f"{gap_zh}缺口 {amount} 未获融资：融资菜单上没有可行的方案能覆盖它。未执行任何融资操作。"))
 
 
 def accept_head(lang: str, label: str, status: str, why: str | None) -> str:

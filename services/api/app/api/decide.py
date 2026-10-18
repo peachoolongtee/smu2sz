@@ -33,6 +33,7 @@ from app.api.funding_report import (
     funding_clause,
     funding_status,
     leg_views,
+    no_leg_clause,
     outcomes,
     refusal_reason,
 )
@@ -566,7 +567,11 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str =
             head_when = _t(lang, "No deal after the buyer's replies", "买方回复后未能成交")
             gap_kind = "near-term"
         blocked = _runnable(gap_plan)
-        if blocked is not None:
+        if not gap_plan.actions:  # no leg: the books need nothing, or no admissible plan covers the gap; never "funded" (FUND-1)
+            status_of_funding, clause_en, clause_when = no_leg_clause(lang, gap_kind, gap_plan.need_fen)
+            message = f"{head}; {clause_en}"
+            message_when = f"{head_when}{_t(lang, '; ', '；')}{clause_when}"
+        elif blocked is not None:
             status_of_funding = NOT_FUNDED
             message = (f"{head}; the near-term gap is not funded: the router's plan cannot run today ({blocked}). "
                        f"Nothing was executed from it.")
@@ -580,7 +585,7 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str =
             # worded from what each leg did, after they all ran: a leg may wait for approval or be refused (SEC-28)
             now = rt.store.get_state()
             funding_legs = leg_views(now, payloads, funding_ops, rt.day, lang)
-            status_of_funding = funding_status(outcomes(funding_legs))
+            status_of_funding = funding_status(outcomes(funding_legs), gap_plan.need_fen)
             legs_en = funding_legs if lang == "en" else leg_views(now, payloads, funding_ops, rt.day, "en")
             if status_of_funding == FUNDED:  # the engine's own sentences, as they were
                 message = (f"{head}; remaining gap funded." if commitment is not None
@@ -638,7 +643,8 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, lang: str =
         "message": message,
         "message_when": message_when,
         # What became of the funding legs after they all ran (SEC-28): FUNDED, WAITING_APPROVAL, PARTLY_FUNDED or NOT_FUNDED (also
-        # when the plan could not run today), and each leg's own status and sentence. Not stored on the decision record.
+        # when the plan could not run today or no admissible plan covers the gap), NOT_NEEDED when the books need no funding (FUND-1),
+        # and each leg's own status and sentence. Not stored on the decision record.
         "funding_status": status_of_funding,
         "funding_legs": funding_legs,
         "accept_status": accept_status,
