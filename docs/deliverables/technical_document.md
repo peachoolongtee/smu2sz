@@ -5,65 +5,103 @@ International AI Track | Technical Document
 
 | Team name | ISMOGGER |
 | --- | --- |
-| Competition track | International AI Track, Topic E: SME Finance Copilot |
+| Competition track | International AI Track — Topic E: SME Finance Copilot |
 | Submission date | 20 October 2026 |
 
-**FLOW is an AI working-capital agent that works for a small supplier, not for its bank or its buyers.** When a large buyer
-asks for better payment terms, FLOW reads the request, works out what it would cost the supplier in cash and borrowing, and
-answers within limits the owner has signed. It counters, declines or accepts, arranges the funding the decision needs, and
-then follows the deal through to payment. A language model reads text and nothing more. Deterministic code decides, and
-only one component, the executor, can change the books. Every action is recorded in a tamper-evident log.
+**FLOW is a working-capital agent for a small supplier. When a large buyer asks for better payment terms, FLOW works out
+what the request would cost the supplier in cash and borrowing, answers within limits the owner has signed, and arranges
+and follows the funding the answer needs.**
 
-This is a working simulation. The engine, agent, security controls and web app are real code. The buyers, lenders and bank
-feed are simulated, and no real money moves.
+- **Who it is for.** The owner of a supplier business with roughly 20 to 100 staff, 10 to 40 business buyers, one bank
+  credit line and no finance team, who sells on credit to buyers larger than itself.
+- **The decision it improves.** Whether to grant a buyer's request for longer payment terms, an early-payment discount or a
+  rebate (trade credit the supplier gives), and how to fund what that costs (credit the supplier must then take). Today
+  the owner usually decides the first alone, from a chat message, and discovers the second later.
+- **Why it matters financially.** On the demo company's books, a buyer asks for 60-day terms instead of 45, 1.2% off for
+  paying one invoice early and a 1% rebate. Priced at the supplier's own cost of borrowing, accepting as asked gives away
+  **CNY 33,366.92**: a ¥5,040 discount now and ¥28,326.92 of future concessions over the next 365 days, 5.7 times the
+  owner's limit for such promises. It also takes cash below the owner's safety reserve from day 47.
+- **What FLOW does today.** It reads the request and the supplier's contracts; projects daily cash, debt and loan
+  covenants; returns a verdict with its reason, formula and priced counter-offers; finds a funding plan among the owner's
+  committed facilities; asks the owner for anything it may not do alone; follows the deal through receipts and
+  reconciliation; and answers the owner's questions from the books, in English and Chinese.
+- **Where AI contributes.** A language model assists in three places only: **reading** buyer messages, term sheets,
+  contracts and lender agreements into typed terms, each tied to the words it came from; **classifying** an owner's chat
+  request that the deterministic parser cannot read, into one intent from a closed list; and **routing** an owner's
+  question to at most three of 40 read-only tools. Deterministic code computes every figure, verdict and reply. In the
+  demo, the tests and every offline result, a deterministic rules grammar does the reading; a model is called only in
+  live mode.
+- **What limits its authority.** An owner-signed mandate (Ed25519) sets the reserve, the cap on future concessions, the
+  covenants and the rate above which borrowing needs approval. The executor decides each operation's tier from the
+  operation itself: **Tier 1** runs inside the mandate without an owner step, **Tier 2** waits for the owner's approval,
+  **Tier 3** (personal guarantees, collateral, equity, changing the mandate) is refused for everyone, the owner included.
+  No operation has a payee or account field.
+- **The evidence.** Table 1, with each result's evidence class and denominator; section 03 explains them.
+- **What is simulated, and what is incomplete.** Buyers, lenders, the bank feed and the clock are simulated. No real money
+  moves and no bank, lender or payment API is called. FLOW runs as a local simulation; nothing in this document comes from
+  a deployed system. FLOW accepts only 3 of 14 acceptable buyer offers on its own, does not read scanned or photographed
+  contracts (no OCR), and its live-model results are single runs.
 
-**Table 1. FLOW at a glance (offline. Engine, agent and test figures: `dev` at `975e082f`, 17 October 2026. Ask FLOW
-figures: `int/batch-9` at `b4167053`, 18 October 2026. Attack figures: `int/round-five` at `1294e941`, 18 October 2026.
-Table 14 gives each source).**
+All amounts are Chinese yuan (CNY, written ¥) on synthetic books. "Day 0" is 1 October 2026, the demo books' opening date.
 
-| What | Result |
-| --- | --- |
-| Decisions | Six verdicts (accept, counter, reject, no deal, needs the owner, no verdict), each with the failing rule, the figures and its formula |
-| Engine correctness | Financial values exact to the fen against an independent oracle: 67/67. Covenant and capex values: 27/27 |
-| Funding router | Optimal against an exhaustive brute force on 26/26 scenarios |
-| Safety | 0 wrong autonomous accepts on two held-out sets (115 buyer messages) |
-| Usefulness | Answers 57 of 115 held-out buyer messages with no owner involvement. Only 3 of the 14 genuinely acceptable offers are accepted on its own; the other 11 go to the owner for one review (section 03, Table 8) |
-| Security | 279 stored attack cases (128 through the API, 151 through chat): 0 violations of the defined harm oracles in each specified run. Reviewed and certified by the team's Security Lead, an AI agent in a separate session (an internal review, not external accreditation) |
-| Agent tasks | 49/49 scripted conversations completed, each with a verifiable evidence chain |
-| Owner questions | Ask FLOW answers 303 of 503 owner, CEO and CFO questions (122 questions in English and Chinese, with rewordings) directly from the books, 46 partly, with 0 wrong answers. On 345 everyday wordings it reaches the right answer for 327 (held-out part: 127 of 142, 89.4%) and a wrong topic for 3 (0.9%). A question is answered, never acted on |
-| Product | Setup, a daily view, documents, customers, deals, money over time, a chat, what-if and strategy views, capex and an evidence export: every screen in Table 3, and a supplier's journey through them in Appendix E |
-| Tests | 9,085 API tests (9,040 passed, 1 known machine-specific hash failure, the rest skipped by design), 169 web unit tests, 445 mock and 139 live browser tests |
-| Languages | Every Business screen and reply in English and Chinese. Chinese contracts are read with every term tied to its clause |
+**Table 1. FLOW at a glance. Engine and agent figures: dev `975e082f` (17 Oct 2026), re-run offline on `571ea64f`
+(18 Oct) with the same results. Owner-question and held-out figures: `571ea64f`, 18 Oct. Live figures: the dates given.
+Table 14 gives each source.**
 
-**How to read this document.** Section 01 explains the problem and what FLOW adds. Sections 02 and 03 explain how it works
-and how well, including where it falls short. Section 04 covers security and section 05 covers running, testing and known
-limits. Detailed inventories are in appendices at the end of section 05, and Appendix E is a tour of every feature in the
-order a supplier meets them. Every number is synthetic, from the repository's
-fixtures, and was measured on the build named in Table 1 unless a different date is given beside it.
+| What | Result | Evidence class |
+| --- | --- | --- |
+| Decisions | Six verdicts (accept, counter, reject, no deal, needs the owner, no verdict), each with the failing rule, the figures, its formula and the source words | Code |
+| Engine correctness | 67 of 67 golden financial values exact to the fen against an independently written oracle (same specification, same team); covenant and capex values 27 of 27 | Tests |
+| Funding router | Within ¥1 of a bounded brute-force search on 26 of 26 test scenarios; 19 plans run today, 6 are labelled "cannot run today", and in 1 scenario no admissible plan exists and the router says so | Tests |
+| Safety of autonomy | On 115 held-out buyer messages FLOW accepted 3 on its own, all correctly. Before the coverage proof (ADR-0005), the first runs on the same sets accepted 6 misread messages; that is why autonomy now requires proof | Unseen first runs, then tuned |
+| Usefulness | 57 of 115 messages handled with no owner step (54 counters or declines, 3 accepts). Only 3 of the 14 genuinely acceptable offers are accepted alone; the other 11 wait for one owner review (Table 8) | Tuned |
+| Reading contracts | 75% of key fields right on 17 unseen Chinese contracts with a text layer (45% over all 30, because 13 scans and photos are refused) | Unseen, recorded model replay |
+| Owner questions | Of 427 bank questions the books can answer, 228 answered from the books, 45 partly, 0 wrong (the bank the answers were built against). On 142 held-out everyday wordings, 127 reach the right answer (89%) and 3 a wrong topic (2%) | Tuned; held-out |
+| Live model | One live DeepSeek run per component: buyer messages 42 of 63 verdicts, no wrong accept (1 Oct); the question router answered 33 of the 63 questions that reached it on 18 Oct, 22 fully right by one reviewer's reading | Live, single runs |
+| Security | 279 stored attack cases (128 through the API, 151 through chat): none violated the defined harm oracles in the specified offline runs (rules path and a scripted hostile model; no real model read an attack). Internal review by the team's Security Lead, an AI agent; not external assurance (section 04) | Tests |
+| Task completion | 49 of 49 scripted conversations, written by the team, pass their own checks (88 turns); the 17-step demo walk ends with a 14-entry hash chain that verifies, and a tampered copy is rejected | Scripted tasks, simulated environment |
+| Product | Setup, a daily view, documents, customers, deals, money over time, approvals, a chat, what-if and strategy views, capex and an evidence export (Table 3), in English and Chinese | Code, browser tests |
+| Tests | The API, web-unit and browser suites pass on the builds named in Table 14. A count measures the size of a suite, not correctness | Tests |
+
+**How to read this document.** Section 01 follows one supplier through FLOW and states what is new. Section 02 explains how
+FLOW is built and where a model is used. Section 03 explains how the agent understands, plans and acts, the algorithms, and
+how well it works, including where it falls short. Section 04 covers security and section 05 running, testing and known
+limits; the appendices follow section 05. Every number is synthetic and was measured on the build named beside it. The
+submission build adds the Ask FLOW and error-handling changes described in sections 02 and 03 after the last measured
+build.
 
 ## 01 Project Overview
 
 ### Problem, target users and selected topic
 
-**Selected topic.** International AI Track, Topic E: SME Finance Copilot. The theme is "AI as a Financial Participant".
+**Selected topic.** International AI Track, Topic E: SME Finance Copilot, under the theme "AI as a Financial Participant".
+FLOW covers each part of the topic's scope: **financing-option matching** (the funding router compares the owner's
+facilities), **cash-flow management and alerts** (a daily cash forecast and alerts that speak first), **business financial
+analysis** (covenants, customer exposure, capex screening), **reconciliation** (each receipt matched against what was
+promised) and **operational recommendations** (verdicts, priced counter-offers and funding plans).
 
 **The problem.** Large buyers now negotiate payment terms with software. Procurement agents ask suppliers for longer terms,
 early-payment discounts and rebates "within parameters you define" (Pactum's public material describes this). Lenders
 approve small-business credit by model in seconds (MYbank, WeBank). The supplier in the middle usually has neither. An owner
-reads a WeChat message at night and decides alone whether to accept 60-day terms, and separately whether to borrow to
-survive them.
+reads a WeChat message at night and decides alone whether to accept 60-day terms, and separately, often later, whether to
+borrow to survive them.
 
-**The insight that drives FLOW: a longer payment term is a loan from the supplier to the buyer.** It moves no money today,
-so every spending limit, approval rule and wallet control lets it through. But the supplier must fund the gap, usually by
-borrowing. On the synthetic demo company, whose largest buyer takes a ¥420,000 invoice every month:
+**The insight behind FLOW: a longer payment term is a loan from the supplier to the buyer.** It moves no money today, so
+spending limits, approval rules and wallet controls let it through. But the supplier has to fund the gap, usually by
+borrowing. On the demo company, whose largest buyer, Foshan Home Retail, receives a ¥420,000 invoice every 30 days on
+45-day terms, the buyer's request (EX01) asks for three things:
 
-- moving that buyer from 45 to 60 days ties up **¥210,000** of extra receivables, permanently;
-- funding that on the cheapest committed source able to carry a permanent need (invoice financing at 10.84% all-in) costs
-  **¥1,871.30 per invoice**, or **¥24,326.92 a year**;
-- the same request also asks for a 1.2% early-payment discount (¥5,040) and a rebate of up to ¥4,000.
+- **Terms from 45 to 60 days on every future invoice.** That ties up ¥210,000 more in receivables on average for as long as
+  the terms last (¥420,000 for 15 days in every 30). Priced at 10.84% a year, the all-in rate of invoice financing, the
+  cheapest committed source that the credit line's 30-day clean-down rule allows, each invoice's 15 extra days cost
+  ¥1,871.30, which is **¥24,326.92 over the 13 invoices issued in the next 365 days**. (10.84% is a tariff equivalent; an
+  advance held for less than a whole 30-day period costs more.)
+- **A 1.2% discount for paying the current ¥420,000 invoice early:** ¥5,040, given up now.
+- **A 1% rebate on next quarter's expected ¥400,000 of orders,** counted at its maximum, ¥4,000.
 
-The owner sees "60 days instead of 45". FLOW shows that the package costs more than five times the owner's own limit for
-such promises, and that it would push cash below the safety reserve on day 47.
+The owner sees "60 days instead of 45". FLOW shows that the future concessions alone come to ¥28,326.92, 5.7 times the
+¥5,000 cap the owner signed for such promises; that accepting as asked gives away CNY 33,366.92 in all; and that cash would
+fall below the ¥300,000 reserve on day 47 and stay there until day 61.
 
 **Target users.** Supplier SMEs with roughly 20 to 100 staff, 10 to 40 business buyers, one bank credit line, at least one
 term loan, a bookkeeper and no finance team. Typical sectors are light-manufacturing subcontracting, packaging, logistics,
@@ -75,49 +113,90 @@ claim it.
 
 **What FLOW does for the owner.**
 
-1. **Reads the request.** It turns a buyer's message or contract, in Chinese or English, into typed terms. Each term is tied
-   to the exact words it came from.
+1. **Reads the request.** It turns a buyer's message or contract, in Chinese or English, into typed terms, each tied to the
+   exact words it came from.
 2. **Prices it in cash.** It projects the supplier's daily cash, debt and future promises with and without the request, and
    prices every concession at the supplier's own cost of borrowing.
 3. **Decides within the owner's limits.** It returns a verdict with the reason and the formula, and drafts priced
    counter-offers that keep the business safe.
-4. **Arranges the money.** It finds the cheapest admissible way to cover any cash gap from the owner's own committed
-   facilities, and checks loan covenants every month.
+4. **Arranges the money.** It searches the owner's committed facilities for the cheapest plan that keeps cash above the
+   reserve and meets the covenants, and checks the covenants every month.
 5. **Follows through.** It watches for late or partial payment, warns the owner first, proposes a fix inside the limits with
    its cost, and closes the loop when the money lands.
 
-**One engine, two jobs.** *Terms Guard* controls the credit the supplier gives its buyers through payment terms, discounts and
-rebates. *Debt Desk* controls the credit the supplier takes from lenders to survive those terms. They share one financial
-model, so each makes the other better. A concession is priced at the supplier's real marginal cost of debt. And because Debt
-Desk knows the funding alternative, FLOW can walk away from a bad deal and still cover the gap.
+**One engine, two jobs.** *Terms Guard* controls the credit the supplier gives its buyers through payment terms, discounts
+and rebates. *Debt Desk* controls the credit the supplier takes from lenders to survive those terms. They share one
+financial model: a concession is priced at the supplier's real marginal cost of debt, and because Debt Desk knows the
+funding alternative, FLOW can walk away from a bad deal and still cover the gap.
 
-**The demo story, end to end** (golden books, `scripts/demo_run.py`, 17 steps, re-run 17 Oct 2026):
+#### One supplier's journey, from documents to reconciliation
 
-1. Foshan Home Retail asks for 60-day terms, a 1.2% early-payment discount and a rebate. FLOW rejects the package as asked
-   and offers two counters.
-2. The buyer accepts **Option A**: early payment on up to ¥260,000 of its invoice at 0.85%. It pays **¥257,790.00 on day 2**.
-3. **Day 34:** ¥160,000 is still unpaid and cash is heading under the reserve. FLOW speaks first and proposes a ¥200,000
-   advance on the next invoice, costing ¥1,782.19.
-4. That cure costs 32.5% a year, above the owner's 15% ceiling. So "go ahead" **queues it for approval and nothing runs**.
-   Only the owner's explicit approval runs it, and the cash lands on day 37.
-5. The late money arrives on day 36. The financed invoice is paid on day 47 and its advance is repaid from that receipt.
-6. FLOW proposes repaying the credit-line draw, reconciliation closes the deal, and the record holds 14 hash-chained entries
-   that verify.
+The demo company's story, tied out to the fen by an independent recomputation and by the engine replayed day by day
+(`scripts/demo_run.py`, 17 steps). Each step says what state the money is in: **proposed** terms bind nobody; an
+**authorised** operation has passed the executor's checks; a **recorded** commitment is in the hash-chained log; **settled**
+means the (simulated) bank feed reported the cash.
 
-<!-- figure: screenshots/shot2-deal-decision.png | Figure 1. A buyer's request in FLOW. (1) The verdict and why the request cannot be accepted as asked. (2) The priced choices: Option A, early payment on ¥260,000 at 0.85%, costs ¥3,035.99; Option B is 55-day terms with a 0.30% price rise. (3) Nothing is sent or agreed without the owner. -->
+1. **Documents.** The owner attaches the supply agreement with Foshan Home Retail. FLOW reads each term beside its clause
+   (price ¥420,000 per batch, 45-day terms) and checks that Foshan is the contract's buyer. Nothing changes in the books
+   until the owner confirms the reading, and a confirmed contract becomes forecast invoices only through a separate,
+   undoable Tier-2 step.
+2. **Today's books already need money.** Cash is ¥400,000. Payroll of ¥340,000 (day 12), a supplier payment of ¥120,000
+   (day 20) and a loan payment of ¥45,000 (day 30) come before Foshan's ¥420,000 invoice is due on day 32. Untouched, cash is
+   below the reserve on days 12 to 31 and reaches −¥105,000 on days 30–31: a need of ¥405,000. FLOW's standing plan draws
+   the credit line (¥150,000 today, ¥841.64 of interest) and finances the Foshan invoice (¥255,000 landing on day 3,
+   ¥2,272.29 for one 30-day period): **¥3,113.93**, with cash exactly at the reserve on day 30.
+3. **The request and the verdict (proposed).** Foshan writes: "We'll settle the ¥420k early at 1.2% if you extend our
+   standard terms to 60 days going forward and give us 1% off next quarter." FLOW rejects the package as asked, for four
+   reasons: the concession cap (¥28,326.92 against ¥5,000); the reserve (¥90,040 short on day 47, ¥135,040 at worst on day 60);
+   break-even (1.2% is above 0.8832%, beyond which paying for 30 days' early cash costs more than borrowing it); and price (with the early
+   payment the funding costs ¥6,508.05, without it ¥3,873.58). It drafts two counters. **Option A**: terms stay at 45 days,
+   no rebate, early payment on up to ¥260,000 at 0.85%. **Option B**: 55 days with a 0.30% price rise, a forward gain of
+   ¥162.05 over 13 invoices, but its books still need **CNY 3,706.46** of funding. FLOW recommends Option A (Figure 1).
+4. **Agreement (authorised, then recorded).** The owner sends Option A. When the buyer's acceptance arrives, the executor
+   re-checks it on that day's books, binds it to the counter's terms hash and a single-use nonce, and records the
+   commitment. Its funding runs as a Tier-1 operation: the credit line draws ¥147,210 (405,000 − 257,790). Quoted cost:
+   ¥2,210.00 of discount plus ¥825.99 of interest, **¥3,035.99**, ¥77.94 below the standing plan, with no future concession.
+5. **First receipt (settled).** On day 2 the bank feed posts ¥257,790.00 (¥260,000 at 0.85%); ¥160,000 of the invoice is
+   still due on day 32. Reconciliation marks the promised early payment as received.
+6. **Reality diverges.** On day 25 the bookkeeper schedules a second payroll of ¥200,000 for day 42. On day 32 the ¥160,000
+   does not arrive. On day 34 FLOW speaks first: on the conservative forecast, which drops the overdue ¥160,000, cash would
+   close day 42 at ¥100,000, ¥200,000 below the reserve. The new payroll causes the breach (with the ¥160,000 paid on time,
+   day 42 would still close at ¥111,964.01); the late payment deepens it.
+7. **Approval.** FLOW proposes an advance of ¥200,000 on the invoice due on day 47: ¥1,782.19, because a whole 30-day period
+   is billed for a 10-day hold, which is 32.5% a year. That is above the 15% a year above which FLOW must ask, so "go ahead"
+   **queues it for approval and nothing runs**. The owner's "approve APR-000001" runs it.
+8. **Receipts and reconciliation (settled).** The ¥160,000 arrives on day 36 and the advance lands on day 37. After the
+   payroll on day 42 cash is ¥460,000. On day 47 Foshan's next invoice is paid, the advance is repaid from it first, and the
+   credit line is repaid with ¥1,213.17 of interest (47 days instead of the quoted 32). Reconciliation closes the deal, and
+   the record holds 14 hash-chained entries that verify.
 
-**What is new.** Each building block exists somewhere: negotiation agents, cash-flow forecasts, loan marketplaces and covenant
-monitoring. What FLOW adds is the combination, on the supplier's side:
+| Cost item | Quoted on day 0 | Actually posted |
+| --- | --- | --- |
+| Early-payment discount | ¥2,210.00 | ¥2,210.00 |
+| Credit-line interest | ¥825.99 (32 days) | ¥1,213.17 (47 days, ¥160,000 paid late) |
+| Advance to cover the new payroll | — | ¥1,782.19 |
+| **Total** | **¥3,035.99** | **¥5,205.36** |
+
+The supplier kept its 45-day terms and gave no rebate. It avoided ¥28,326.92 of future concessions, the ¥5,040 discount and
+a day-47 breach, and the reserve held on every day (Figure 2). Assumptions: the buyer pays the ¥160,000 on day 36 and the
+next invoice on its due day 47; the owner approves on day 34; no other cash flow is added.
+
+<!-- figure: figures/screens/screen2-deal-verdict.png | Figure 1. Foshan's request after FLOW checked it (web app on recorded mocks, build 571ea64f). (1) The verdict: counter with Option A. (2) Why the request cannot be accepted as asked. (3) Option A is within the signed mandate. (4) Nothing is sent until the owner sends it. (5) The priced choices: Option A, early payment on up to ¥260,000 at 0.85%, costs ¥3,035.99; Option B is 55-day terms with a 0.30% price rise. -->
+
+<!-- figure: figures/fig11-cash-scenarios.png | Figure 2. The demo company's closing cash, days 0 to 62, against the ¥300,000 reserve. Today's books fall to −¥105,000 on days 30–31; FLOW's standing plan (¥3,113.93) touches the reserve on day 30 and never goes below it; the request accepted as asked falls ¥90,040 short on day 47; Option A as the demo runs it holds the reserve every day, including the new ¥200,000 payroll on day 42. Numbered markers date the events. Data: the financial audit's independent recomputation, equal to the engine to the fen (synthetic golden books, mandate v1, build 571ea64f). -->
+
+**What is new.** Each building block exists somewhere: negotiation agents, cash-flow forecasts, loan marketplaces and
+covenant monitoring. What FLOW adds is the combination, on the supplier's side:
 
 - **An agent the supplier owns, bounded by its own signed limits across both debt books:** what it may promise buyers, and
   what it may borrow to keep those promises.
-- **A promise is treated as a liability before it costs anything.** A contingent concession counts at its maximum exposure,
+- **A promise is treated as a liability before it costs anything.** A contingent concession counts at its maximum exposure
   and an unapproved loan counts as zero, on a dated daily cash forecast. That forecast is a hard boundary for every decision,
   together with a cap on total concessions and the bank's covenants.
 - **Autonomy only with proof (ADR-0005).** FLOW may accept a buyer's offer on its own only when it can show it has accounted
   for every figure and request in the message. Otherwise the owner decides.
-- **One deterministic pipeline.** Reading, forecasting, funding, covenants, signed mandate, commitments and an
-  injection-resistant typed interface are a single pipeline, not a set of independent tools.
+- **One deterministic pipeline.** Reading, forecasting, funding, covenants, the signed mandate, commitments and an
+  injection-resistant typed interface form a single pipeline, not a set of independent tools.
 
 **Table 2. Products in the same space (vendor descriptions; "difference" is our reading of public material).**
 
@@ -128,28 +207,29 @@ monitoring. What FLOW adds is the combination, on the supplier's side:
 | Xero JAX Cash Flow Actions | Ledger-side cash-gap detection and suggested plans | FLOW reads incoming offers and decides them inside a signed mandate and covenants |
 | Cerebro Capital, Capitalise, Codat, Lendio | Lender marketplaces and debt-capacity tools for banks or mid-market firms | FLOW starts before the owner decides to borrow, at the request that creates the need |
 
-#### What the owner sees
+#### Innovation & Interaction: what the owner sees
 
 FLOW is one web app with eight pages on its menu (Home, Deals, Attach deals, Cash & funding, Sandbox, Capex, Receivables,
 Activity), a chat on every page, and an account menu. Table 3 lists every screen. Appendix E follows one supplier through
 them in order.
 
-**Table 3. Every screen, what the owner does there and what FLOW does (the web app writes no figure; the server does).**
+**Table 3. Every screen, what the owner does there and what FLOW does (the web app computes no figure; the server writes
+every figure and sentence).**
 
 | Screen | The owner | FLOW |
 | --- | --- | --- |
-| **Set up your books** (`/setup`, six steps) | Enters the company, cash, monthly sales and costs; credit lines and loans being repaid; customers with repeating contracts and unpaid invoices; bills coming up; the limits (minimum cash, the rate FLOW may borrow at alone, concessions a year, the approval threshold, covenants, validity). Can fill a lender or customer step from an uploaded agreement. Re-types the owner token to sign | Checks each step, shows a 90-day "First look" at what Home will say, signs mandate version 1 and opens the books with one entry that starts a new evidence chain. Bills and limits are fixed after setup; changing them means a new setup and a new signature |
+| **Set up your books** (`/setup`, six steps) | Enters the company, cash, monthly sales and costs; credit lines and loans being repaid; customers with repeating contracts and unpaid invoices; bills coming up; the limits (minimum cash, the rate above which FLOW must ask before borrowing, concessions a year, the approval threshold, covenants, validity). Can fill a lender or customer step from an uploaded agreement. Re-types the owner token to sign | Checks each step, shows a 90-day "First look" at what Home will say, signs mandate version 1 and opens the books with one entry that starts a new evidence chain. Bills and limits are fixed after setup; changing them means a new setup and a new signature |
 | **Home** (`/`) | Sees whether cash is safe and what waits | The cash outlook (lowest cash ahead, the forecast with its events, *What we recommend*: the plan, its cost and whether it needs approval); *Your worklist* (needs you, waiting, customers); cash available today with a funding ring; upcoming movements, including what customers owe late; what is owed, by customer |
 | **Attach deals** (`/documents`) | Drops a contract or lender agreement, then picks who it is with from the list of known companies, or adds a new customer from that list | Reads every term beside its clause; checks that the chosen company is the contract's buyer, vendor or lender, as its kind needs; offers to refile a misfiled reading; after *Confirm*, says what was saved, under which customer, and that the forecast is unchanged. Compares a lender agreement with the facility in the books. From a confirmed customer contract, *Set up in my books* adds its repeating invoice (Tier 2, undoable; ADR-0014) |
 | **A customer** (`/customers/{id}`) | Opens any customer by name | What the customer is worth, what is outstanding, the financing linked to it and its share of what the business is owed; the receivable-to-cash flow; its deals and record; how it has paid; concentration and exposure, with a link that redraws Cash with that customer 30 days late; an inputs sheet for facts the books do not hold |
-| **Deals** (`/deals`) | Reads buyer messages, checks a request, sends or copies the reply, records the buyer's answer, accepts as asked or declines | *Buyer messages*; *Your deals*, filed by who owes the next step (all, needs you, waiting, agreed); the verdict with Options A and B; *Cash impact* with business consequences and *Before they ask*; *Your agreements*, grouped by payment late, awaiting payment and closed, with a row for a contract on file with no deal yet and for a customer with invoices only; each deal's lifecycle strip and tracker |
-| **Cash & funding** (`/cash`) | Runs or queues the plan | The plan, other plans considered, the 30/60/120-day forecast, the funding in use, the price of earlier cash, and the forecast with one customer paying late |
+| **Deals** (`/deals`) | Reads buyer messages, checks a request, sends or copies the reply, records the buyer's answer as the owner heard it, accepts as asked or declines | *Buyer messages*; *Your deals*, filed by who owes the next step (all, needs you, waiting, agreed); the verdict with Options A and B; *Cash impact* with business consequences and *Before they ask*; *Your agreements*, grouped by payment late, awaiting payment and closed, with a row for a contract on file with no deal yet and for a customer with invoices only; each deal's lifecycle strip and tracker |
+| **Cash & funding** (`/cash`) | Runs or queues the plan | The plan, other plans considered, the 30/60/120-day forecast, the funding in use, the price of earlier cash, and the forecast with one customer paying late. On books with no committed source able to carry a permanent need, the plan and the menu still show, and the page says that no marginal source exists |
 | **Sandbox** (`/whatif`) | Moves the terms, discount, rebate, price rise and early-settled amount of a real request | The verdict, lowest cash, concession cost and covenants. Nothing is written |
-| **Capex** (`/capex`, with `/buy`, `/finance`, `/plans`) | Tests a machine, works through a vendor contract, commits a purchase | Health figures, the financing structures screened, *Apply* (Tier 2), the borrower file, financial health, loan eligibility and long-term plans |
+| **Capex** (`/capex`, with `/buy`, `/finance`, `/plans`) | Tests a machine, works through a vendor contract, commits a purchase | Health figures, the financing structures screened (a figure that does not apply shows a dash, with the reason), *Apply* (Tier 2), the borrower file, financial health, loan eligibility and long-term plans |
 | **Receivables** (`/receivables`) | Records a payment; copies a chase message | What each invoice nets after financing; a payment's effect: the rest stays open, a financed invoice repays its lender first, and the reconciliation's reading |
 | **Activity** (`/activity`) | Reads what happened | Every operation and security event, newest first, with filters that hide but never remove, the chain check, the evidence per entry, and a *Reconciliation* tab |
 | **Approvals** (`/approvals`) | Approves or declines | One card per request, with its terms, the stored quote and today's price if it moved. No "approve all" |
-| **Ask FLOW** (header, side panel, `/ask`) | Asks in English or Chinese | Speaks first; answers from the books as cards with links to the page that shows the answer; proposes plans that run only on "go ahead"; the full page holds the conversation in one card |
+| **Ask FLOW** (header, side panel, `/ask`) | Asks in English or Chinese, including small talk and "what will FLOW never do?" | Speaks first; answers from the books as cards with links to the page that shows the answer; proposes plans that run only on "go ahead"; the full page holds the conversation in one card |
 | **Your limits** (`/limits`); **Security and evidence** (`/trust`) | Reads the signed limits in plain words; downloads the record | What FLOW may do alone, what waits and what never happens; the evidence export, verifiable offline; the security events and the FastCapital scene |
 | **Demo** (`/demo`, Demo mode) | Plays the six-scene story; moves the clock; loads other books | The story on the demo company, operator tools and the engine views (mandate, cash line, funding, verdict, ledger, alerts, reconciliation, security) |
 
@@ -159,10 +239,10 @@ explains twelve pages, opening by itself on a first visit.
 **What we claim, and what we do not.** Claims:
 - No model output alone can create a commitment, borrow or move money in FLOW.
 - Every verdict carries its failing rule, the figures, the formula and the source words.
-- In the cases we tested, no misread message was accepted without the owner after ADR-0005.
+- On the 115 held-out buyer messages tested since ADR-0005, FLOW accepted 3 on its own and none of them was misread.
 
-We do not claim that FLOW is a lender, broker or adviser, that it complies with any bank's covenants, or that it reads
-contracts or messages perfectly. It does not. Section 03 says by how much.
+We do not claim that FLOW is a lender, broker or adviser, that it complies with any bank's covenants, that it has been
+deployed, or that it reads contracts or messages perfectly. It does not. Section 03 says by how much.
 
 ## 02 System Architecture
 

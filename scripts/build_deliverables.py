@@ -23,7 +23,8 @@ What it does:
 
 Markdown supported: paragraphs, **bold**, *italic*, `code`, [links](url), bullet and numbered lists
 (nested by two-space indent), pipe tables, fenced code blocks, #### sub-headings, "> " quotes and
-<!-- figure: file.png | caption --> (embedded when the file exists). A code block right after
+<!-- figure: file.png | caption --> (embedded when the file exists; end with " | page" to put a tall
+diagram on a page of its own at 6.2 in wide). A code block right after
 <!-- ascii-fallback --> is dropped when the preceding figure was embedded.
 """
 
@@ -58,11 +59,12 @@ E2E_REL = "services/api/evals/e2e/latest"
 
 HEADER = {
     "Team name": "ISMOGGER",
-    "Competition track": "International AI Track, Topic E: SME Finance Copilot",
+    "Competition track": "International AI Track — Topic E: SME Finance Copilot",
     "Submission date": "20 October 2026",
 }
 BODY_PT = Pt(10)
 MAX_FIG_HEIGHT_IN = 4.8
+PAGE_FIG_HEIGHT_IN = 8.9  # "| page" figures: the tallest a figure may be with its caption on a Letter page
 
 JOBS = [
     ("technical_document.md", "international-technical-document-en.docx", "Technical_Document.docx"),
@@ -261,10 +263,10 @@ def parse_blocks(lines: list[str]) -> list[Block]:
             i = j + 1
             last_list_indent = None
             continue
-        m_fig = re.match(r"^<!--\s*figure:\s*(\S+)\s*\|\s*(.*?)\s*-->$", s)
+        m_fig = re.match(r"^<!--\s*figure:\s*(\S+)\s*\|\s*(.*?)(?:\s*\|\s*(page))?\s*-->$", s)
         if m_fig:
             flush()
-            blocks.append(Block("figure", m_fig.group(2), rows=[[m_fig.group(1)]]))
+            blocks.append(Block("figure", m_fig.group(2), rows=[[m_fig.group(1), m_fig.group(3) or ""]]))
             i += 1
             continue
         if s == "<!-- ascii-fallback -->":
@@ -538,7 +540,7 @@ class Renderer:
             elif b.kind == "table":
                 self.table(anchor, b.rows)
             elif b.kind == "figure":
-                self.figure(anchor, b.rows[0][0], b.text)
+                self.figure(anchor, b.rows[0][0], b.text, page=b.rows[0][1] == "page")
             if b.kind in ("para", "para_in_list", "bullet", "number"):
                 self.tighten(p)
         return count
@@ -642,14 +644,20 @@ class Renderer:
             for cell in t.columns[ci].cells:
                 cell.width = Inches(w)
 
-    def figure(self, anchor: Paragraph, name: str, caption: str) -> None:
+    def figure(self, anchor: Paragraph, name: str, caption: str, page: bool = False) -> None:
         path = (self.md_dir / name)
         self.last_figure_embedded = path.exists()
         if not path.exists():
             return
         p = self.para_before(anchor)
         width = Inches(6.4)
-        if self.compact:
+        if page:
+            # a tall diagram on a page of its own: 6.2 in wide, capped so that it and its caption fit one page
+            img = DocxImage.from_file(str(path))
+            width = Inches(min(6.2, PAGE_FIG_HEIGHT_IN * img.px_width / img.px_height))
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.page_break_before = True
+        elif self.compact:
             img = DocxImage.from_file(str(path))
             # cap the height so a tall screenshot does not take a whole page
             width = Inches(min(6.2, MAX_FIG_HEIGHT_IN * img.px_width / img.px_height))
