@@ -1,7 +1,7 @@
 {
   "session_id": "rec-home-go",
   "turn": 2,
-  "reply": "It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above your 15.00% ceiling, so it needs your approval. I have not run it: it is queued as APR-000001. Say \"approve APR-000001\" or use the approval card. Once it runs, the cash lands after the lead time: day 37 if that is today. The alert is still open.",
+  "reply": "It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for borrowing without your approval, so it waits for your approval. I have not run it: it is queued as APR-000001. Say \"approve APR-000001\" or use the approval card. Once it runs, the cash lands after the lead time: day 37 if that is today. The alert is still open.",
   "intent": "SHOW_ALERTS",
   "lang": "en",
   "plan": [

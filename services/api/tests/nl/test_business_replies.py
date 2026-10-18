@@ -141,15 +141,15 @@ def test_yes_run_it_on_an_alert_cure_queues_it_for_approval_and_keeps_the_approv
     assert [(o["kind"], o["status"]) for o in queued["operations"]] == [("SUBMIT_INVOICE_FOR_FINANCING", "PENDING_APPROVAL")]
     aid = queued["operations"][0]["approval_id"]
     assert queued["reply"] == (f"This needs your approval before it runs ({aid}): requests ¥200,000.00 of invoice financing, arriving in 3 days. "
-                               'Estimated cost ¥1,782.19. I have not run it. Reply "Yes, do it" to approve it.')
+                               'Estimated cost ¥1,782.19. I have not run it. Reply "Approve it" to approve it.')
     _owner_words(queued["reply"])
     assert SESSIONS.get("ac4").shown_approvals == [aid]  # the consent code still finds the id, in the parenthesis
     waiting = _say(client, "what needs me today?", "ac5")
     assert waiting["reply"] == ("Cash would fall ¥200,000.00 below your minimum in 8 days. The plan is already waiting for your approval "
                                 f"({aid}): requests ¥200,000.00 of invoice financing, arriving in 3 days; estimated cost ¥1,782.19. Nothing has run "
-                                'yet. Reply "Yes, do it" to approve it.')  # the alerts turn speaks of FLOW, never "I" (lead, 17 Oct)
+                                'yet. Reply "Approve it" to approve it.')  # the alerts turn speaks of FLOW, never "I" (lead, 17 Oct)
     _owner_words(waiting["reply"])
-    done = _say(client, "Yes, do it", "ac5")
+    done = _say(client, "Approve it", "ac5")
     assert [(o["kind"], o["status"]) for o in done["operations"]] == [("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     assert done["intent"] == "APPROVE" and done["reply"] == "Approved and done. Requested ¥200,000.00 of invoice financing, arriving in 3 days."
     _owner_words(done["reply"])
@@ -160,9 +160,9 @@ def test_the_same_cure_run_in_chinese_and_the_raw_run_unchanged_without_the_mode
     _say(client, "今天有什么需要我处理的？", "ac6", "zh")
     queued = _say(client, "好，执行", "ac6", "zh")
     aid = queued["operations"][0]["approval_id"]
-    assert queued["reply"] == (f"这需要您批准后才会执行（{aid}）：申请 ¥200,000.00 的发票融资，3 天后到账。预计成本 ¥1,782.19。我尚未执行。回复“好，执行”即可批准。")
+    assert queued["reply"] == (f"这需要您批准后才会执行（{aid}）：申请 ¥200,000.00 的发票融资，3 天后到账。预计成本 ¥1,782.19。我尚未执行。回复“批准”即可批准。")
     _owner_words(queued["reply"])
-    done = _say(client, "好，执行", "ac6", "zh")
+    done = _say(client, "批准", "ac6", "zh")
     assert done["reply"] == "已批准并完成。已申请 ¥200,000.00 的发票融资，3 天后到账。"
 
 
@@ -214,7 +214,7 @@ def test_a_funding_plan_run_that_waits_for_the_owner_says_what_ran_what_waits_an
     aid = next(o for o in j["operations"] if o["kind"] == "SUBMIT_INVOICE_FOR_FINANCING")["approval_id"]
     assert j["reply"] == (f"Done so far: Drew ¥2,790.00 on the Bank credit line today. This needs your approval before it runs ({aid}): requests ¥80,000.00 of invoice financing, arriving in 3 days. The plan's "
                           "estimated cost is ¥1,702.20 in all. I have not run it. Not sent: requests ¥117,210.00 of invoice financing, arriving in 3 "
-                          'days. Reply "Yes, do it" to approve it.')
+                          'days. Reply "Approve it" to approve it.')
     _owner_words(j["reply"])
     raw = _say(client, "fund the gap", "fg2", mode=None)
     assert "Submit RI:BUYER-1:32 to FAC-IF" in raw["reply"] or "RI:BUYER-1:32" in raw["reply"]

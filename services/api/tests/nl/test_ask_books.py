@@ -62,7 +62,7 @@ WRONG_CASES = [
     ("Does the investment pay off?", "en", "REPAY_FACILITY", r"NPV ¥380,885\.77.*payback in month 31"),
     # customers, deals and funding
     ("谁拖欠我们的款？", "zh", "RECORD_FACT", r"目前没有逾期款项"),
-    ("我们的应收账款周转天数是多少？", "zh", "FUND_GAP", r"谁欠我们钱"),
+    ("我们的应收账款周转天数是多少？", "zh", "FUND_GAP", r"^30 天：客户欠您 ¥420,000.*没有收款历史"),
     ("What if Foshan pays 30 days late?", "en", None, r"\(day 62 instead of day 32\).*nothing was changed"),
     ("如果佛山晚30天付款会怎样？", "zh", None, r"（第 62 天而不是第 32 天）.*没有更改任何内容"),
     ("Any open negotiations?", "en", "NEGOTIATE", r"Nothing is waiting on you or on anyone else"),

@@ -184,13 +184,15 @@ def _and(w: W, parts: list[str]) -> str:
     return " and ".join(parts) if len(parts) <= 2 else ", ".join(parts[:-1]) + " and " + parts[-1]
 
 
-def ask_which_customer(w: W, tool: str, res: Resolved) -> AnswerReply:
+def ask_which_customer(w: W, tool: str, res: Resolved, slots: Mapping[str, Any] | None = None) -> AnswerReply:
     """The reply when a customer slot names no one on the books, or more than one: it asks which, naming only the customers
-    the owner already sees on the Deals page (in Chinese, those with a Chinese name; the rest are counted)."""
+    the owner already sees on the Deals page (in Chinese, those with a Chinese name; the rest are counted). The reply carries what is
+    needed to finish the question once the owner names the customer (`extra`: needs, tool and the slots already read); the session
+    keeps it for the next turn (app/nl/ask.py)."""
     if not res.candidates:
         text_ = w.t("There is no customer on your books yet, so I cannot answer that for a customer.",
                     "您的账目中还没有客户，因此无法针对客户回答。")
-        return _clarify(w, tool, text_)
+        return _clarify(w, tool, text_, slots)
     if w.zh:
         known = customer_names(w.r)  # a customer's Chinese name: the owner's own short name for it, or the lexicon's city name
         named = [n for cid in res.candidates if (n := next((a for a in known.get(cid, ()) if not a.isascii()), None))]
@@ -206,19 +208,19 @@ def ask_which_customer(w: W, tool: str, res: Resolved) -> AnswerReply:
             listed = _and(w, named) + (f"，以及另外 {rest} 位客户" if rest and named else "")
             text_ = (f"您指的是哪位客户？我无法从问题中确定。您的客户有{listed}。" if named
                      else f"您指的是哪位客户？我无法从问题中确定。您的账目中有 {rest} 位客户，请用客户名称再问一次。")
-        return _clarify(w, tool, text_)
+        return _clarify(w, tool, text_, slots)
     full = {c.id: c.name for c in w.r.state.counterparties}
     names = [full.get(cid, "") for cid in res.candidates if full.get(cid)]
     if res.ambiguous:
         text_ = f"Which customer do you mean: {_or(w, names)}? Ask again with the customer's full name."
     else:
         text_ = f"Which customer do you mean? I could not tell from the question. Your customers are {_and(w, names)}."
-    return _clarify(w, tool, text_)
+    return _clarify(w, tool, text_, slots)
 
 
-def _clarify(w: W, tool: str, text_: str) -> AnswerReply:
+def _clarify(w: W, tool: str, text_: str, slots: Mapping[str, Any] | None = None) -> AnswerReply:
     return AnswerReply(text=w.end(text_), metric_ids=[], figures={}, basis=w.basis("books"), question_id=tool, lang=w.lang,
-                       extra={"needs": "customer"})
+                       extra={"needs": "customer", "tool": tool, "slots": dict(slots or {})})
 
 
 __all__ = ["Resolved", "Spec", "ToolFn", "ask_which_customer", "customer", "customer_names", "flag", "horizon_note", "integer",

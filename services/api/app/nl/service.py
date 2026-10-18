@@ -28,7 +28,7 @@ from app.domain.models import (
 from app.domain.ports import LedgerStore
 from app.nl import ask as asking
 from app.nl import binding as page
-from app.nl import business, landing, plans, reads
+from app.nl import business, landing, plans, reads, smalltalk
 from app.nl import capabilities as cap
 from app.nl import classifier as clf
 from app.nl import lexicon as lx
@@ -178,7 +178,9 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
     else:
         parsed = _parse(ctx, req.text, classifier_backends)
         parse_source = parsed.source
-        turn = _dispatch(ctx, parsed, req.text)
+        turn = _dispatch(ctx, parsed, parsed.resumed_text or req.text)
+        if turn.pending_clarification is not None and not turn.pending_clarification.text:
+            turn.pending_clarification.text = req.text  # what the answer to the question resumes
         _honour_scope(ctx, scoped, store.get_state(), lang)
 
     if turn.pending is not None and turn.pending.state_version is None:
@@ -253,9 +255,29 @@ def _about_the_business(text: str) -> bool:
     return bool(cues(canon(text)))
 
 
+# ADR-0015, round six: the plain read-only intents. When the classifier labels an owner QUESTION about the business with one of these
+# (it returns SHOW_STATUS for "what's my biggest risk right now"), the owner would get a raw status dump instead of an answer, so in live
+# mode with the router on the question goes to ASK_BOOKS (answer layer, then the router). Reads only: no action intent is ever listed here
+# (FUND_GAP, ACCELERATE_RECEIPT, EVALUATE_OFFER, NEGOTIATE, REPAY_FACILITY, APPROVE, REJECT, WHAT_IF, EXPLAIN, RECONCILE, CAPEX,
+# BORROWER_FILE, RECORD_FACT, COUNTERPARTY_MESSAGE stay as the classifier said). Today the classifier's vocabulary can return only
+# SHOW_STATUS from this set; the rest guard a wider vocabulary.
+_CLASSIFIER_READ_INTENTS = frozenset({Intent.SHOW_STATUS, Intent.SHOW_ALERTS, Intent.SHOW_RATIOS, Intent.CHANGES,
+                                      Intent.COMPARE_FINANCING, Intent.SHOW_DEAL})
+
+
+def _router_reads_enabled() -> bool:
+    from app.config import get_settings
+
+    s = get_settings()
+    return s.features.ask_router and s.llm_mode == "live"
+
+
 def _parse(ctx: NlContext, text: str, backends: Sequence[clf.IntentBackend] | None) -> Parsed:
     s = ctx.session
     state = ctx.state()
+    pending_ask, s.pending_ask = s.pending_ask, None  # a question that asked which customer is finished by the very next turn or dropped
+    if pending_ask is not None and ctx.owner_authenticated and (resumed := asking.resume_parse(ctx, pending_ask, text)) is not None:
+        return resumed
     if s.pending_clarification is not None:
         resolved = _resolve_clarification(ctx, text)
         if resolved is not None:
@@ -286,6 +308,11 @@ def _parse(ctx: NlContext, text: str, backends: Sequence[clf.IntentBackend] | No
             return Parsed(intent=Intent.ASK_BOOKS, slots=Slots(question=text, execute_now=False), source="question",
                           matched=["ask", "ask:unread", *([asking.NO_ROUTER] if canary_tripped else [])])
         return Parsed(intent=Intent.OUT_OF_SCOPE, source="fallback")
+    # A plain read the classifier gave to an owner question (live mode, router on, no canary): the books are asked instead of the status dump.
+    if Intent(got.result.intent) in _CLASSIFIER_READ_INTENTS and not canary_tripped and _router_reads_enabled() \
+            and lx.is_question(text) and _about_the_business(text):
+        return Parsed(intent=Intent.ASK_BOOKS, slots=Slots(question=text, execute_now=False), source="question",
+                      matched=["ask", "ask:unread"])
     ls = got.result.slots
     cps = lx.find_counterparty(ls.counterparty_name or "", state) if ls.counterparty_name else []
     from app.domain.fixtures import load_offers
@@ -325,7 +352,9 @@ def _resolve_clarification(ctx: NlContext, text: str) -> Parsed | None:
     if pc.slot == "intent":
         return Parsed(intent=Intent(value), slots=pc.slots, source="clarification", matched=[f"option:{choice}"])
     slots = pc.slots.model_copy(update={pc.slot: value})
-    return Parsed(intent=pc.intent, slots=slots, source="clarification", matched=[f"option:{choice}"])
+    # a what-if resumes the words that raised the question (its terms, its discount), not the answer ("Foshan")
+    resumed = pc.text if pc.intent == Intent.WHAT_IF and pc.slot == "counterparty_id" and pc.text else None
+    return Parsed(intent=pc.intent, slots=slots, source="clarification", matched=[f"option:{choice}"], resumed_text=resumed)
 
 
 # ---------------------------------------------------------------- dispatch
@@ -352,7 +381,12 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         pc = s.pending_clarification
         t_ = ask(pc.intent, pc.slot, t(ctx, "Sorry, which one?", "抱歉，请问是哪一个？"),
                  [(o.id, o.label, pc.values[o.id]) for o in pc.options], pc.slots)
+        if t_.pending_clarification is not None:
+            t_.pending_clarification.text = pc.text
         return t_
+    if "offtopic" in p.matched:  # a joke, the weather, trivia: the polite recovery, not "I can't do that" (which is for refused requests)
+        smalltalk.follow_language(ctx, text)
+        return reads.recovery(ctx)
     slots = p.slots
     if slots.counterparty_id is None and s.counterparty_id:
         slots = slots.model_copy(update={"counterparty_id": s.counterparty_id})
@@ -703,6 +737,17 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
     intent = Intent.APPROVE if approve else Intent.REJECT
     if aid is None:
         shown = [a for a in ctx.session.shown_approvals if a in {p.id for p in pending}]
+        if bare and shown:
+            # "go ahead" / "yes, do it" / 好的办吧 confirm a PLAN. They never decide a queued approval, even the one just
+            # shown: a retried "go ahead" would otherwise approve the leg the first one queued, which the owner has not
+            # read yet. Deciding an approval takes the word approve / reject (alone it binds to the one item shown) or
+            # its id.
+            ids = ", ".join(shown)
+            first = shown[0]
+            return Turn(intent=Intent.AMBIGUOUS, reply=t(
+                ctx, f"I have not approved or declined anything: \"go ahead\" does not decide a waiting approval. "
+                     f"To approve {ids}, say \"approve {first}\"; to decline it, say \"reject {first}\".",
+                f"我没有批准或驳回任何事项：“执行”不能用来审批待批事项。要批准 {ids}，请说“批准 {first}”；要驳回，请说“拒绝 {first}”。"))
         if len(shown) == 1:
             aid = shown[0]
         elif not pending:
@@ -714,8 +759,6 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
                             ("3", t(ctx, "get an invoice paid early", "提前收款"), Intent.ACCELERATE_RECEIPT.value)],
                            slots)
             return Turn(intent=intent, reply=t(ctx, "Nothing is waiting for approval.", "目前没有待审批的操作。"))
-        elif len(pending) == 1 and lx.APPROVAL_REF.search(text) and not bare:
-            aid = pending[0].id  # "approve the pending one": the owner names the queue, which holds one item
         else:
             q = (t(ctx, "Nothing in this conversation is waiting for a yes. Which pending operation do you mean?",
                    "本次对话中没有待确认的事项。您指的是哪一项待审批操作？") if bare and not shown
@@ -741,6 +784,9 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
                        "Logged.", f"已拒绝：只有业主可以审批 {aid}，此请求没有业主凭证。已记录。")
     else:
         reply = r.message
+        if approve and r.status == OperationStatus.REFUSED:  # the decision and the run are two facts: approved, but it did not run
+            reply = t(ctx, f"You approved {aid}, but it could not run: {r.message} Nothing was executed and no money moved.",
+                      f"您已批准 {aid}，但未能执行：{r.message} 未执行任何操作，资金未动。")
         funded = approve and rec is not None and r.status == OperationStatus.EXECUTED  # a funding leg: when its cash lands
         if funded and (note := landing.executor_note(ctx, parse_operation(rec.op_json), r.message)):  # type: ignore[union-attr]
             reply += f" ({note})"

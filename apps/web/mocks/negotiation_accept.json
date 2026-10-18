@@ -169,6 +169,17 @@
   },
   "message": "CTR-193394b6ba8b accepted; commitment recorded; remaining gap funded.",
   "message_when": "Option A was accepted and the agreement is recorded; the remaining gap is funded.",
+  "funding_status": "FUNDED",
+  "funding_legs": [
+    {
+      "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
+      "kind": "DRAW_FACILITY",
+      "status": "EXECUTED",
+      "approval_id": null,
+      "text": "¥147,210.00 drawn on the Bank credit line. Cash received today."
+    }
+  ],
+  "accept_status": "EXECUTED",
   "lang": "en",
   "transcript_hash": "25ee2e90a3baff56debf760d6dfb6e32e1a84761828d4cd34e96821c906cba57"
 }

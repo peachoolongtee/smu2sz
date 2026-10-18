@@ -326,13 +326,20 @@ def bare_verdict(text: str) -> Literal["approve", "reject"] | None:
 
 # ---------------------------------------------------------------- confirming or cancelling a pending plan
 
-_YES_EN = (r"go ahead|go for it|proceed|confirm(?:ed)?|do it|execute(?: it)?|run it|approve(?:d)?(?: it| that| this)?|"
-           r"lgtm|send it|make it so|sounds good|that'?s fine|that works|yes|yep|yeah|ya|yup|ok(?:ay)?|sure|alright|"
-           r"fine|great|perfect")
-_YES_ZH = (r"好的?|行|可以|同意|确认|确定|执行|是的?|对|没问题|就这么办|照办|办吧|去办|做吧|弄吧|继续|开始|批准|按这个来|办")
+# Explicit consent names a decision: "go ahead", "do it", "run it", "execute", "confirm", "approve it", "yes" ... A bare
+# acknowledgement ("ok", "sure", "fine", "sounds good", 好的, 行, 可以, 没问题, 对) says "I heard you", not "run it": on its
+# own, or with only thanks, it confirms nothing (the plan stays waiting and the reply says how to confirm). Combined with
+# an explicit word ("ok, do it", 好的，请执行) it still confirms.
+_YES_STRONG_EN = (r"go ahead|go for it|proceed|confirm(?:ed)?|do it|execute(?: it)?|run it|approve(?:d)?(?: it| that| this)?|"
+                  r"lgtm|send it|make it so|yes|yep|yeah|ya|yup")
+_YES_WEAK_EN = r"sounds good|that'?s fine|that works|ok(?:ay)?|sure|alright|fine|great|perfect"
+_YES_STRONG_ZH = r"同意|确认|确定|执行|是的?|就这么办|照办|办吧|去办|做吧|弄吧|继续|开始|批准|按这个来|办"
+_YES_WEAK_ZH = r"好的?|行|可以|没问题|对"
+_YES_EN = f"{_YES_STRONG_EN}|{_YES_WEAK_EN}"
+_YES_ZH = f"{_YES_STRONG_ZH}|{_YES_WEAK_ZH}"
 _FILLER = (r"please|pls|kindly|and|then|now|thanks|thank you|请|麻烦|谢谢|多谢|吧|啊|呀|的|了|现在|马上|立即|立刻")
 _YES_PLAN = re.compile(rf"(?:(?:{_FILLER}|{_YES_EN}|{_YES_ZH})[ ,，]*)+")
-_YES_CORE = re.compile(rf"(?<![a-z])(?:{_YES_EN})(?![a-z])|{_YES_ZH}")
+_YES_CORE = re.compile(rf"(?<![a-z])(?:{_YES_STRONG_EN})(?![a-z])|{_YES_STRONG_ZH}")
 _NO_EN = (r"no|nope|nah|cancel|stop|abort|don't|dont|do not|never ?mind|forget it|scrap it|hold off|not now|"
           r"that|it|this|just|anything|nothing|go ahead|proceed|do it|execute|run it|confirm")
 _NO_ZH = (r"先不要|暂时不要|暂不要|先别|暂时别|不要|别|不用|不必|取消|算了|不行|不|先不|停止|停下|撤销|作罢|不执行|不办|"

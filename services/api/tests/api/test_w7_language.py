@@ -65,7 +65,7 @@ def test_the_executor_and_approval_sentences_are_said_in_chinese_with_their_figu
         "已于今天从Bank credit line提取 ¥150,000.00；资金将于3 天后到账，不是今天。")
     assert _zh("Queued for owner approval (APR-000001): the yearly cost of 6.40% is above the 5.00% limit you signed for funding "
                "without your approval (6.4% simple)") == (
-        "已排入待批准队列（APR-000001）：年化成本 6.40% 高于您签署的无需批准融资上限 5.00%（单利 6.4%）")
+        "已排入待批准队列（APR-000001）：年化成本 6.40% 高于您签署的无需批准融资的批准线 5.00%（单利 6.4%）")
     assert _zh("Declined by the owner (APR-000001); nothing executed") == "您已拒绝（APR-000001）；未执行任何操作"
     assert _zh("Refused: Draw ¥990,000,000.00 exceeds Bank credit line's available ¥150,000.00") == (
         "已拒绝：提款 ¥990,000,000.00 超过Bank credit line的可用额度 ¥150,000.00")
@@ -82,8 +82,8 @@ def test_a_plan_with_several_legs_keeps_each_legs_reason_and_figures():
             "(from in 3 days to in 32 days), annualised = 11.22%)")
     out = _zh(text)
     assert out == (
-        "Bank credit line：提款 ¥150,000.00，预计32 天后还款：年化成本 6.40% 高于您签署的无需批准融资上限 5.00%（单利 6.4%）；"
-        "Invoice financing (onboarded platform)：以发票 RCV-A融资 ¥255,000.00：年化成本 11.22% 高于您签署的无需批准融资上限 5.00%"
+        "Bank credit line：提款 ¥150,000.00，预计32 天后还款：年化成本 6.40% 高于您签署的无需批准融资的批准线 5.00%（单利 6.4%）；"
+        "Invoice financing (onboarded platform)：以发票 RCV-A融资 ¥255,000.00：年化成本 11.22% 高于您签署的无需批准融资的批准线 5.00%"
         "（¥255,000.00 计息 29 天（从3 天后到32 天后），年化 11.22%）")
     for figure in ("¥150,000.00", "¥255,000.00", "6.40%", "11.22%", "5.00%"):
         assert figure in out
@@ -212,7 +212,7 @@ def test_the_approvals_queue_in_chinese_end_to_end(client):
     en, zh = _both(client, "/approvals/queue", QUEUE_RAW)
     assert [r["status"] for r in zh["approvals"]] == ["PENDING"] and zh["approvals"][0]["presentation"]["headline"] == "申请 ¥157,790 的发票融资"
     p = zh["approvals"][0]["presentation"]
-    assert p["reason"].startswith("年化成本") and "您签署的无需批准融资上限" in p["reason"]
+    assert p["reason"].startswith("年化成本") and "您签署的无需批准融资的批准线" in p["reason"]
     assert p["created_when"] and p["if_decline"] and zh["approvals"][0]["quote"]["after"]
     _freshness(zh)
     client.post(f"/approvals/{zh['approvals'][0]['id']}", json={"decision": "APPROVE"})

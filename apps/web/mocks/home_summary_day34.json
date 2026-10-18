@@ -21,6 +21,7 @@
     "lowest_headroom_short": "−¥200k",
     "first_breach_day": 42,
     "below_reserve_today": false,
+    "covered": false,
     "first_breach_cash_fen": 10000000,
     "first_breach_cash_short": "¥100k",
     "cash_short": "¥300k",
@@ -5535,7 +5536,7 @@
     "cost_leg_label": "the invoice-financing leg",
     "cost_total_display": "¥1,782.19",
     "cost_total_label": "the whole plan",
-    "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval."
+    "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval."
   },
   "deals_card": {
     "rows": [],
@@ -5607,7 +5608,8 @@
         "with_plan": {
           "label": "with plan",
           "value_text": "¥300,000"
-        }
+        },
+        "basis_label": "With the funding in place"
       },
       "funding": {
         "state": "PROPOSED",
@@ -5648,6 +5650,7 @@
         "href": "/cash#cash-options"
       },
       "control": "RUN_PLAN",
+      "covered": false,
       "approval_text": "Needs your approval before it runs",
       "approval_needed": true,
       "consequence_text": "Cash first falls below your minimum in 8 days. Even with the plan that ran, the shortfall reaches ¥200k in 8 days.",
@@ -5662,7 +5665,7 @@
           "repaid_when": null,
           "state": "PLANNED",
           "state_text": "Planned",
-          "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+          "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
           "share_text": "100%"
         }
       ],
@@ -5786,8 +5789,8 @@
     "lands_day": 37,
     "lands_when": "in 3 days",
     "needs_owner": true,
-    "needs_owner_reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
-    "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+    "needs_owner_reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
+    "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
     "if_nothing": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
     "after": "Cash stays at or above your minimum cash reserve for the next 120 days.",
     "why": "The cheapest option, ¥1,702.20 in all (including ¥774.37 less in other interest and fees across the forecast), needs 2 separate approvals; this one needs one. Both are under your funding options.",
@@ -5814,7 +5817,7 @@
       "net_display": null,
       "when_text": "The last funds land in 3 days.",
       "assumptions_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
-      "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+      "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
       "remaining_text": null
     },
     "after_lowest_display": "¥300,000.00"

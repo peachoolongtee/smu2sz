@@ -89,6 +89,7 @@ FIGURES: dict[str, Fig] = {
     "undrawn_total": Fig("Undrawn", "未提用额度", tone="ok"),
     "invoice_capacity": Fig("Invoice financing room", "发票融资额度"),
     "interest_fees": Fig("Interest and fees", "利息与费用"),
+    "dso": Fig("Days sales outstanding", "应收账款周转天数", DAYS),
     "owed": Fig("Owed", "欠款"),
     "overdue": Fig("Overdue", "逾期", tone="zero_ok"),
     "share": Fig("Share of receivables", "应收占比"),
@@ -107,7 +108,7 @@ FIGURES: dict[str, Fig] = {
     "structure_monthly": Fig("A month", "每月"),
     "operations": Fig("Operations run", "已执行操作", COUNT),
     "refused": Fig("Refused", "已拒绝", COUNT),
-    "max_apr": Fig("Funding cost ceiling", "融资成本上限"),
+    "max_apr": Fig("Funding cost approval threshold", "融资成本批准线"),
     "max_discount": Fig("Discount limit", "折扣上限"),
     "concession_cap": Fig("Concession cap", "让步上限"),
     "tier2": Fig("Approval threshold", "审批门槛"),
@@ -227,6 +228,14 @@ def actions_for(qid: str, figures: dict[str, str], lang: str, state: Any) -> lis
         out.append(action("forecast", lang))
         if has_plan:
             out.append(action("plan", lang))
+    elif qid == "CUS-04":
+        out.append(action("receivables", lang))
+    elif qid == "CUS-09":
+        out += _customer_actions(state, figures.get("buyer"), lang)[:1]
+        out.append(action("forecast", lang))
+    elif qid == "FUN-07":
+        out.append(action("funding", lang))
+        out += _customer_actions(state, figures.get("buyer"), lang)[:1]
     elif qid in _DEBT:
         out.append(action("funding", lang))
         if qid == "DEBT-04":
@@ -249,7 +258,7 @@ def actions_for(qid: str, figures: dict[str, str], lang: str, state: Any) -> lis
         out.append(action("approvals", lang))
     elif qid == "CAP-01":
         out.append(action("capex", lang))
-    elif qid == "ACT-01":
+    elif qid in ("ACT-01", "ACT-04", "ACT-05"):
         out.append(action("activity", lang))
     elif qid in ("MAN-01", "MAN-02"):
         out.append(action("limits", lang))

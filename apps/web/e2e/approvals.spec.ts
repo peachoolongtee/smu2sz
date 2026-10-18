@@ -120,7 +120,7 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   // The reason the owner approves against is on the pending card itself, not behind a click.
   await expect(card.getByTestId("approval-reason")).toBeVisible();
   await expect(card.getByTestId("approval-reason").locator("xpath=preceding-sibling::dt")).toHaveText("Why it needs you");
-  await expect(card.getByTestId("approval-reason")).toContainText("The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.");
+  await expect(card.getByTestId("approval-reason")).toContainText("The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.");
   // The executor's working ("all charges on ¥200,000.00 held 10 days, annualised = 32.52%") is not in the sentence.
   await expect(card.getByTestId("approval-reason")).not.toContainText("annualised");
   await expect(card.getByTestId("approval-reason")).not.toContainText("32.52");

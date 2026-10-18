@@ -143,6 +143,10 @@ def _demo_upload_names(text: str, counterparty_id: str) -> list[str]:
     counterparty: the Documents page reads the demo files by upload only, so the file the owner picks from fixtures/contracts
     is checked as the demo list's pick would be. Any other text, or the same text under another counterparty, gets none
     (REG-2)."""
+    from app.api.auth import demo_mode
+
+    if not demo_mode():  # a demo allowance only: a deployment's own registry names its lenders (REG-2, review of 70f23ac5)
+        return []
     cp, names = _demo_texts().get(doc_hash(text), ("", []))
     return names if cp == counterparty_id else []
 

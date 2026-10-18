@@ -33,10 +33,10 @@ export function HealthFigures({ h, testId = "finance-stats" }: { h: FinanceHealt
         note={t("finance.lowest.vsMin", { amount: h.cash.lowest_headroom_display })}
         pill={{ tone: h.cash.lowest_headroom_fen < 0 ? "amber" : "green", text: t("finance.lowest.day", { day: h.cash.lowest_day }) }}
       />
-      <Figure title={t("finance.coverage")} value={h.coverage.ratio?.display ?? t("common.none")} note={t("finance.coverage.hint", { n: h.coverage.window_days })} />
+      <Figure title={t("finance.coverage")} value={h.coverage.ratio?.display ?? t("common.na")} note={t("finance.coverage.hint", { n: h.coverage.window_days })} />
       <Figure
         title={t("finance.dscr")}
-        value={c?.worst_dscr?.display ?? t("common.none")}
+        value={c?.worst_dscr?.display ?? t("common.na")}
         bad={c ? !c.dscr_ok : false}
         note={c ? t("finance.min", { v: c.min_dscr.display ?? "" }) : undefined}
       />

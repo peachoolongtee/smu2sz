@@ -25,6 +25,18 @@
       "superseded_by": null,
       "superseded_by_text": null,
       "label": "Read by the agent, confirmed by you",
+      "named_parties": [
+        {
+          "name": "Lingnan Homeware Manufacturing Co., Ltd.",
+          "role": "SUPPLIER",
+          "on_books_id": null
+        },
+        {
+          "name": "Foshan Home Retail Co.",
+          "role": "BUYER",
+          "on_books_id": "BUYER-1"
+        }
+      ],
       "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
       "document": {
         "doc_id": "DOC-b13cf763886d8d72",
@@ -559,6 +571,18 @@
       "superseded_by": null,
       "superseded_by_text": null,
       "label": "AI-generated, for reference",
+      "named_parties": [
+        {
+          "name": "Lingnan Homeware Manufacturing Co., Ltd.",
+          "role": "SUPPLIER",
+          "on_books_id": null
+        },
+        {
+          "name": "Foshan Home Retail Co.",
+          "role": "BUYER",
+          "on_books_id": "BUYER-1"
+        }
+      ],
       "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
       "document": {
         "doc_id": "DOC-b13cf763886d8d72",
@@ -1094,6 +1118,18 @@
         "superseded_by": null,
         "superseded_by_text": null,
         "label": "Read by the agent, confirmed by you",
+        "named_parties": [
+          {
+            "name": "Lingnan Homeware Manufacturing Co., Ltd.",
+            "role": "SUPPLIER",
+            "on_books_id": null
+          },
+          {
+            "name": "Foshan Home Retail Co.",
+            "role": "BUYER",
+            "on_books_id": "BUYER-1"
+          }
+        ],
         "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
         "document": {
           "doc_id": "DOC-b13cf763886d8d72",
@@ -1605,7 +1641,8 @@
           "title": "What did not change",
           "lines": [
             "Your books and forecast are unchanged. Confirming records what the contract says; it books no invoice and changes no payment terms.",
-            "New requests from Foshan Home Retail Co. are still checked against your books and your limits, not against this contract."
+            "New requests from Foshan Home Retail Co. are still checked against your books and your limits, not against this contract.",
+            "To add this contract's repeating invoice to your forecast, use “Set up in my books” below."
           ]
         },
         "link": {
@@ -1631,7 +1668,8 @@
             "title": "What did not change",
             "lines": [
               "Your books and forecast are unchanged. Confirming records what the contract says; it books no invoice and changes no payment terms.",
-              "New requests from Foshan Home Retail Co. are still checked against your books and your limits, not against this contract."
+              "New requests from Foshan Home Retail Co. are still checked against your books and your limits, not against this contract.",
+              "To add this contract's repeating invoice to your forecast, use “Set up in my books” below."
             ]
           },
           "link": {
@@ -1654,7 +1692,8 @@
             "title": "没有变化的",
             "lines": [
               "您的账本和预测没有变化。确认只是记录合同的内容，不会记入任何发票，也不会更改账期。",
-              "Foshan Home Retail Co.之后提出的新要求，仍按您的账本和限额核对，而不是按这份合同。"
+              "Foshan Home Retail Co.之后提出的新要求，仍按您的账本和限额核对，而不是按这份合同。",
+              "如需把这份合同的定期发票加入预测，请使用下方的“记入我的账簿”。"
             ]
           },
           "link": {
@@ -1741,6 +1780,18 @@
         "superseded_by": null,
         "superseded_by_text": null,
         "label": "AI-generated, for reference",
+        "named_parties": [
+          {
+            "name": "Lingnan Homeware Manufacturing Co., Ltd.",
+            "role": "SUPPLIER",
+            "on_books_id": null
+          },
+          {
+            "name": "Foshan Home Retail Co.",
+            "role": "BUYER",
+            "on_books_id": "BUYER-1"
+          }
+        ],
         "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
         "document": {
           "doc_id": "DOC-b13cf763886d8d72",
@@ -2283,6 +2334,7 @@
       "superseded_by": null,
       "superseded_by_text": null,
       "label": "Read by the agent, confirmed by you",
+      "named_parties": [],
       "doc_hash": "0b9e1ce4aafc6a686eaccc777a539bc0274f9cfbd22675ce41e74ae5d6aae8ac",
       "document": {
         "doc_id": "DOC-0b9e1ce4aafc6a68",
@@ -2472,6 +2524,7 @@
       "superseded_by": null,
       "superseded_by_text": null,
       "label": "AI-generated, for reference",
+      "named_parties": [],
       "doc_hash": "0b9e1ce4aafc6a686eaccc777a539bc0274f9cfbd22675ce41e74ae5d6aae8ac",
       "document": {
         "doc_id": "DOC-0b9e1ce4aafc6a68",
@@ -2662,6 +2715,7 @@
         "superseded_by": null,
         "superseded_by_text": null,
         "label": "Read by the agent, confirmed by you",
+        "named_parties": [],
         "doc_hash": "0b9e1ce4aafc6a686eaccc777a539bc0274f9cfbd22675ce41e74ae5d6aae8ac",
         "document": {
           "doc_id": "DOC-0b9e1ce4aafc6a68",
@@ -3000,6 +3054,7 @@
         "superseded_by": null,
         "superseded_by_text": null,
         "label": "AI-generated, for reference",
+        "named_parties": [],
         "doc_hash": "0b9e1ce4aafc6a686eaccc777a539bc0274f9cfbd22675ce41e74ae5d6aae8ac",
         "document": {
           "doc_id": "DOC-0b9e1ce4aafc6a68",
@@ -3197,6 +3252,7 @@
       "superseded_by": null,
       "superseded_by_text": null,
       "label": "Read by the agent, confirmed by you",
+      "named_parties": [],
       "doc_hash": "76cfc556bff0a5ff882b89c7190b95464c7cf6ff046a8dc5c16e0177d8529bd0",
       "document": {
         "doc_id": "DOC-76cfc556bff0a5ff",
@@ -3368,6 +3424,7 @@
       "superseded_by": null,
       "superseded_by_text": null,
       "label": "AI-generated, for reference",
+      "named_parties": [],
       "doc_hash": "76cfc556bff0a5ff882b89c7190b95464c7cf6ff046a8dc5c16e0177d8529bd0",
       "document": {
         "doc_id": "DOC-76cfc556bff0a5ff",
@@ -3540,6 +3597,7 @@
         "superseded_by": null,
         "superseded_by_text": null,
         "label": "Read by the agent, confirmed by you",
+        "named_parties": [],
         "doc_hash": "76cfc556bff0a5ff882b89c7190b95464c7cf6ff046a8dc5c16e0177d8529bd0",
         "document": {
           "doc_id": "DOC-76cfc556bff0a5ff",
@@ -3860,6 +3918,7 @@
         "superseded_by": null,
         "superseded_by_text": null,
         "label": "AI-generated, for reference",
+        "named_parties": [],
         "doc_hash": "76cfc556bff0a5ff882b89c7190b95464c7cf6ff046a8dc5c16e0177d8529bd0",
         "document": {
           "doc_id": "DOC-76cfc556bff0a5ff",

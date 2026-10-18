@@ -1,7 +1,9 @@
 """ASK_BOOKS: an owner's question about the books, answered read-only (the question gate in app/nl/rules.py routes it here).
 
-Nothing here proposes a plan, compiles an offer, queues or executes an operation, or writes to the operations log or the
-security log: every branch reads the store and the books and writes words. The exceptions are a Tier-3 request put as a
+Nothing here compiles an offer, queues or executes an operation, or writes to the operations log or the
+security log: every branch reads the store and the books and writes words. The exceptions are: an answer that offers FLOW's funding
+plan ("Can I pay everyone this month?", no) saves it as the pending plan "fund the cash gap" saves, for the owner's "go ahead"
+(`_offer_plan`; still nothing runs here); a Tier-3 request put as a
 question ("sign a personal guarantee?", "should we pledge the equipment?"): it goes to the executor like the same words
 without the mark, so it is refused, logged and raises its security event, for every caller (ASK-1;
 lexicon.tier3_is_information); and a router response that trips the canary, which is discarded and raises a DATA_EXTRACTION
@@ -38,6 +40,7 @@ from app.domain.models import FlowKind, SecurityEventKind
 from app.domain.money import fmt_yuan
 from app.financial import EngineError
 from app.nl import lexicon as lx
+from app.nl import smalltalk
 from app.nl.context import NlContext
 from app.nl.models import Intent, Parsed, Slots
 from app.nl.pipeline import t
@@ -67,6 +70,39 @@ def _reply_text(reply: Any, lang: str) -> str | None:
         if isinstance(v, str) and v.strip():
             return v.strip()
     return None
+
+
+def _extra(reply: Any) -> dict[str, Any]:
+    v = reply.get("extra") if isinstance(reply, dict) else getattr(reply, "extra", None)
+    return v if isinstance(v, dict) else {}
+
+
+def _offer_plan(ctx: NlContext, turn: Turn) -> None:
+    """An answer that offers FLOW's funding plan ("Can I pay everyone this month?", no) saves it the way "fund the cash gap" does, so that
+    a later "go ahead" runs it, or queues it for the owner's approval, down the same path (`service._confirm` -> `plans.send`: the
+    executor, the mandate checks, the approval rules). This builds the very plan `funding.fund_gap(execute=False)` proposes, with the
+    same pending plan, steps and verdict; it executes nothing and adds no path of its own.
+    It never replaces a plan that already waits for its go-ahead, of any kind: what the owner was shown and may confirm stays
+    exactly that (the reminder then says so; a different plan is asked for by name). When no plan can be stored
+    (the cheapest committed plan cannot run today) the reply says why instead of promising a go-ahead."""
+    from app.nl.funding import fund_gap
+
+    waiting = ctx.session.pending_plan
+    if waiting is not None:
+        return
+    try:
+        proposed = fund_gap(ctx, Slots(), execute=False)
+        if proposed.pending_clarification is not None:  # more than one gap ahead: the plan covers them all
+            proposed = fund_gap(ctx, Slots(gap_index=99), execute=False)
+    except EngineError:
+        return
+    if proposed.pending is None or not proposed.awaiting:
+        if proposed.reply and proposed.verdict is not None:  # the plan could not be stored: the fund-gap turn says why
+            turn.reply = f"{turn.reply}{'' if ctx.lang == 'zh' else ' '}{proposed.reply}"
+        return
+    turn.reply = turn.reply + t(ctx, " Nothing has run yet: reply 'go ahead' to run this plan, or 'cancel' to drop it.",
+                                "目前尚未执行任何操作：回复“执行”以运行该方案，或回复“取消”放弃。")
+    turn.pending, turn.awaiting, turn.plan, turn.verdict = proposed.pending, True, proposed.plan, proposed.verdict
 
 
 def _metric_ids(reply: Any) -> list[str]:
@@ -181,6 +217,12 @@ _TIER3_WORDS = {
     "CHANGE_MANDATE": ("changing your mandate or its limits", "修改您的授权或限额", "to change your mandate or its limits",
                        "修改您的授权或限额"),
 }
+
+
+def tier3_name(kind: str, lang: str) -> str | None:
+    """A Tier-3 operation kind in the owner's words ("signing a personal guarantee"), or None for any other kind."""
+    words = _TIER3_WORDS.get(kind)
+    return None if words is None else words[1 if lang == "zh" else 0]
 
 
 def tier3_info(ctx: NlContext, kind: str, text: str) -> Turn:
@@ -305,6 +347,61 @@ def _fallback(ctx: NlContext, topic: str, slots: Slots, text: str, use_router: b
     return cannot_yet(ctx, topic)
 
 
+def note_pending(ctx: NlContext, got: Any, question: str) -> None:
+    """An answer that asked which customer (`extra.needs == "customer"`) leaves the tool and the slots already read in the session, so
+    the owner's next turn that names a customer finishes the question with them (the new terms are not forgotten)."""
+    from app.nl.sessions import PendingAsk
+
+    extra = (got.get("extra") if isinstance(got, dict) else getattr(got, "extra", None)) or {}
+    if extra.get("needs") == "customer" and extra.get("tool"):
+        ctx.session.pending_ask = PendingAsk(str(extra["tool"]), dict(extra.get("slots") or {}), question)
+
+
+_SHORT_REPLY_WORDS = 6
+_SHORT_REPLY_CHARS = 40
+
+
+def resume_parse(ctx: NlContext, pending: Any, text: str) -> Parsed | None:
+    """The owner's turn after "which customer?": a short reply that names exactly one customer finishes the pending question. Anything
+    else (a new question, a name the books do not have, two customers) is not an answer to it and is read as usual."""
+    from app.nl.answers.metrics import Reading
+    from app.nl.router.tools.common import resolve_customer
+
+    said = text.strip()
+    if not said or len(said) > _SHORT_REPLY_CHARS or len(said.split()) > _SHORT_REPLY_WORDS:
+        return None
+    res = resolve_customer(Reading.of(ctx), said)
+    if res.buyer_id is None:
+        return None
+    ctx.resumed_ask = (pending, res.buyer_id)
+    return Parsed(intent=Intent.ASK_BOOKS, slots=Slots(question=pending.question, counterparty_id=res.buyer_id, execute_now=False),
+                  source="clarification", matched=["ask", "ask:resume"])
+
+
+def _resume_ask(ctx: NlContext) -> Turn | None:
+    """Run the tool that asked which customer, with the slots it had read and the customer now named: the same answer the question
+    would have had if it had named the customer."""
+    from app.nl import answer_card
+    from app.nl.router import catalogue
+
+    pending, buyer = ctx.resumed_ask
+    ctx.resumed_ask = None
+    tool = catalogue.TOOLS.get(pending.tool)
+    name = next((c.name for c in ctx.state().counterparties if c.id == buyer), None)
+    if tool is None or name is None:
+        return None
+    try:
+        got = tool.answer(ctx, ctx.lang, {**pending.slots, "customer": name})
+    except EngineError:
+        return None
+    text = _reply_text(got, ctx.lang)
+    if not text:
+        return None
+    note_pending(ctx, got, pending.question)
+    return Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": "resume", "metric_ids": _metric_ids(got), "tool": pending.tool}},
+                card=answer_card.from_reply(got, ctx.lang, ctx.state()))
+
+
 def router_reply(ctx: NlContext, question: str) -> tuple[str, list[str], list[str]] | None:
     """The router's answer (its text, its metric ids, the tools it ran), or None: the flag is off, the turn is not the
     owner's, or the router has no route (cache miss, failure, rejection, nothing fits). Read-only (ADR-0015)."""
@@ -323,6 +420,7 @@ def router_reply(ctx: NlContext, question: str) -> tuple[str, list[str], list[st
     if got is None or not text:
         return None
     tools = (got.extra or {}).get("router", {}).get("tools", [])
+    note_pending(ctx, got, question)
     return text, _metric_ids(got), [str(x) for x in tools]
 
 
@@ -460,12 +558,18 @@ def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         kind = topic.split(":", 1)[1]
         if not ctx.owner_authenticated or not lx.tier3_is_information(question):
             return tier3_request(ctx, kind, slots)
+    if topic.startswith("smalltalk:"):
+        kind = topic.split(":", 1)[1]
+        if kind in smalltalk.OPEN_KINDS or ctx.owner_authenticated:
+            return smalltalk.turn(ctx, kind, question)  # a greeting, thanks, "who are you?" (no books) or what FLOW never does; read-only
     if not ctx.owner_authenticated:
         if topic == "books":
             return _old_reply(ctx, slots, text)  # the agent key gets exactly what it got before
         from app.nl import capabilities as cap
 
         return cap.needs_sign_in(ctx, Intent.ASK_BOOKS)  # nothing is read, disclosed or logged
+    if ctx.resumed_ask is not None and (resumed := _resume_ask(ctx)) is not None:
+        return resumed
     if topic.startswith("tier3:"):
         return tier3_info(ctx, topic.split(":", 1)[1], question)
     if topic.startswith("not_held:"):
@@ -474,6 +578,10 @@ def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         from app.nl import answer_card
 
         text = _reply_text(got, ctx.lang) or ""
-        return Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": topic, "metric_ids": _metric_ids(got)}},
+        note_pending(ctx, got, question)
+        turn = Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": topic, "metric_ids": _metric_ids(got)}},
                     card=answer_card.from_reply(got, ctx.lang, ctx.state()))  # the card's figures and links; laid out in the response
+        if _extra(got).get("offers_plan"):
+            _offer_plan(ctx, turn)  # "can I pay everyone?" answered no: FLOW's plan is saved for the owner's "go ahead"
+        return turn
     return _fallback(ctx, topic, slots, text, use_router=NO_ROUTER not in p.matched)

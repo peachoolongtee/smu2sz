@@ -72,8 +72,10 @@ def _row_line(ctx: NlContext, row: ComparisonRow) -> str:
     en, zh = [], []
     if row.needs_owner_approval:
         rates = [m for m in ABOVE_CEILING.finditer(row.approval_reason)]
-        en.append("needs your approval: " + row.approval_reason)
-        zh.append("需要您批准：" + ("；".join(f"年化 {m['rate']}，高于 {m['cap']} 上限" for m in rates) or row.approval_reason))
+        said = ABOVE_CEILING.sub(lambda m: f"effective annual cost {m['rate']} is above the {m['cap']} you signed for borrowing without your approval",
+                                 row.approval_reason).replace(" for what the agent may borrow alone", "")
+        en.append("waits for your approval: " + said)
+        zh.append("需要您批准：" + ("；".join(f"年化 {m['rate']}，高于您签署的无需批准即可借款的 {m['cap']} 批准线" for m in rates) or row.approval_reason))
     if not row.executable_now:
         en.append("cannot run today: it relies on an invoice that is not issued yet")
         zh.append("今天无法执行：它依赖一张尚未开出的发票")
@@ -132,8 +134,8 @@ def compare_financing(ctx: NlContext) -> Turn:
                                 f"{r.time_to_cash_days} 天到账"))
         state_en = "committed" if r.committed else r.status.value.lower().replace("_", " ")
         state_zh = "已承诺" if r.committed else {"NOT_APPLIED": "未申请", "PENDING": "审批中"}.get(r.status.value, state_en)
-        over = (t(ctx, f"; its rate alone is above your {cap} yearly ceiling, so any use of it needs your approval",
-                  f"；其利率本身高于您 {cap} 的年度上限，任何使用都需要您批准") if r.needs_owner_approval else "")
+        over = (t(ctx, f"; its rate alone is above the {cap} you signed for borrowing without your approval, so any use of it waits for your approval",
+                  f"；其利率本身高于您签署的无需批准即可借款的 {cap} 批准线，任何使用都需等您批准") if r.needs_owner_approval else "")
         if not gap:
             lines.append(t(ctx, f"- {r.name}: {r.all_in_display} all-in a year, {cash}, up to {r.available_display}{over}.",
                            f"- {r.name}：综合年化 {r.all_in_display}，{cash}，可用 {r.available_display}{over}。"))
@@ -165,9 +167,9 @@ def compare_financing(ctx: NlContext) -> Turn:
             lines.append(t(ctx, "Nothing was executed, and 'fund the gap' would not run this plan today.",
                            "未执行任何操作；今天回复“补足资金缺口”也不会执行该方案。"))
         elif committed.admissible and committed.needs_owner_approval:
-            lines.append(t(ctx, "Nothing was executed. If you say 'fund the gap', the legs above your ceiling will wait "
+            lines.append(t(ctx, "Nothing was executed. If you say 'fund the gap', the legs above your approval threshold will wait "
                                 "for your approval rather than run.",
-                           "未执行任何操作。若您回复“补足资金缺口”，高于上限的步骤会等待您批准，而不会直接执行。"))
+                           "未执行任何操作。若您回复“补足资金缺口”，高于批准线的步骤会等待您批准，而不会直接执行。"))
         else:
             lines.append(t(ctx, "Nothing was executed. Say 'fund the gap' to have me do it.",
                            "未执行任何操作。回复“补足资金缺口”，我来办理。"))

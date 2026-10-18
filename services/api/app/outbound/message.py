@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Literal
 
+from app.domain.claims import ClaimKind, claim_kinds
 from app.domain.models import (
     BaseKind,
     Contingency,
@@ -185,6 +186,24 @@ _CLAUSES = {
 }
 
 
+def _claimed_clause(kind: ClaimKind, current_terms_days: int | None, lang: Lang) -> str:
+    """The answer to a prior agreement the buyer claims and the books do not hold: it names what was claimed, in neutral words.
+    A claimed rebate keeps the rebate wording (said once with a rebate that was asked for, deduplicated by the caller)."""
+    if kind == "rebate":
+        return _t(lang, "We are not able to offer the rebate you asked for.", "我方无法提供贵方所要求的返利。")
+    if kind == "terms":
+        if current_terms_days:
+            return _t(lang, f"We have no record of an agreement on payment terms; payment terms on future invoices stay at {current_terms_days} days.",
+                      f"我方没有关于账期的协议记录；今后发票的付款期限维持 {current_terms_days} 天。")
+        return _t(lang, "We have no record of an agreement on payment terms; we are not able to change the payment terms on future invoices.",
+                  "我方没有关于账期的协议记录；我方无法更改今后发票的付款期限。")
+    if kind == "discount":
+        return _t(lang, "We have no record of an agreement on a discount.", "我方没有关于折扣的协议记录。")
+    if kind == "price":
+        return _t(lang, "We have no record of an agreement on prices.", "我方没有关于价格的协议记录。")
+    return _t(lang, "We have no record of the agreement you mention.", "我方没有贵方所提及协议的记录。")
+
+
 def _not_offered(asked: Sequence[Obligation], counter: CounterProposal, current_terms_days: int | None, lang: Lang) -> list[str]:
     """One clause for each kind of term the buyer asked for that the counter does not offer, in a fixed order, each said once."""
     offered = {o.type for o in counter.obligations}
@@ -197,7 +216,9 @@ def _not_offered(asked: Sequence[Obligation], counter: CounterProposal, current_
                        else _t(lang, "We are not able to change the payment terms on future invoices.", "我方无法更改今后发票的付款期限。"))
         elif k == ObligationType.IMMEDIATE_DISCOUNT:
             out.append(_t(lang, "We are not able to offer the early-payment discount you asked for.", "我方无法提供贵方所要求的提前付款折扣。"))
-        elif k in (ObligationType.CONTINGENT_REBATE, ObligationType.CLAIMED_PRIOR_CONCESSION):  # said once for both (deduplicated below)
+        elif k == ObligationType.CLAIMED_PRIOR_CONCESSION:  # a claimed agreement is answered for what it claims, not as a rebate
+            out += [_claimed_clause(kind, current_terms_days, lang) for kind in claim_kinds(asked)]
+        elif k == ObligationType.CONTINGENT_REBATE:  # a claimed rebate says the same (deduplicated below)
             out.append(_t(lang, "We are not able to offer the rebate you asked for.", "我方无法提供贵方所要求的返利。"))
         elif k == ObligationType.PRICE_ADJUSTMENT:
             out.append(_t(lang, "Prices on future invoices stay as they are.", "今后发票的价格保持不变。"))

@@ -84,6 +84,7 @@ class Parsed(_Strict):
     confirm_plan: bool = False  # APPROVE/REJECT aimed at the pending plan, not an executor approval
     tentative: bool = False  # a loose reading (a need described, not an instruction): propose, never execute
     source: str = "rules"  # "rules" | "llm:<model>" | "clarification" | "fallback"
+    resumed_text: str | None = None  # a clarification's answer resumes the words that raised it (a what-if's terms), not the answer's
     matched: list[str] = Field(default_factory=list)
 
 

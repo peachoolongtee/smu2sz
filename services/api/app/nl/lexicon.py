@@ -38,11 +38,13 @@ CORRECTION = _re(r"\bactually\b", r"\binstead\b", r"\bmake (?:it|that)\b", r"\bc
 CONFIRM = _re(r"^\s*(?:yes|yep|yeah|ok(?:ay)?|sure|go ahead|proceed|confirm(?:ed)?|do it|lgtm|execute|run it)\b",
               r"\bgo ahead\b", r"\bapprove[ds]?\b", r"\bconfirm\b", r"批准", r"同意", r"确认", r"^\s*执行", r"^\s*好的?",
               r"就这么办", r"可以执行", r"办吧", r"照办", r"去办", r"^\s*行(?:吧|的)?\s*[。!！]?\s*$", r"^\s*可以\s*[。!！]?\s*$")
-# A confirmation that names nothing ("yes do it", "好的办吧"): it can only bind to what this session just showed.
-BARE_CONFIRM = _re(r"^\s*(?:yes|yep|yeah|ya|ok(?:ay)?|sure|go ahead|proceed|do it|lgtm|execute|run it|confirm(?:ed)?|fine|alright)"
+# A confirmation that names nothing ("yes do it", "好的办吧"): it can only bind to what this session just showed. It must
+# carry an explicit word (yes / go ahead / do it / execute ...); a bare acknowledgement ("ok", "sure", "fine", 好的, 行,
+# 可以, 没问题) is not consent, alone or with thanks, and matches nothing here. A weak lead-in may precede an explicit word.
+BARE_CONFIRM = _re(r"^\s*(?:(?:ok(?:ay)?|sure|alright|fine)[\s,.!]+)?(?:yes|yep|yeah|ya|go ahead|proceed|do it|lgtm|execute|run it|confirm(?:ed)?)"
                    r"(?:[\s,.!]+(?:yes|please|pls|do it|go ahead|go|proceed|then|now|thanks?|sure|ok))*[\s.!]*$",
-                   r"^\s*(?:好的?|行|可以|同意|确认|执行|没问题)(?:的|吧|啊|呀)?[，,。.!！\s]*(?:办吧|就这么办|去办|照办|执行吧?|做吧|弄吧)?[。.!！\s]*$",
-                   r"^\s*(?:就这么办|照办|办吧|执行吧)[。.!！\s]*$")
+                   r"^\s*(?:(?:好的?|行|可以|没问题)[，,。.!！\s]*)?(?:同意|确认|执行)(?:的|吧|啊|呀)?[，,。.!！\s]*(?:办吧|就这么办|去办|照办|执行吧?|做吧|弄吧)?[。.!！\s]*$",
+                   r"^\s*(?:(?:好的?|行|可以|没问题)[，,。.!！\s]*)?(?:就这么办|照办|办吧|执行吧|去办|做吧|弄吧)[。.!！\s]*$")
 APPROVE_VERB = _re(r"\bapprove[ds]?\b", r"批准", r"审批通过")
 DECLINE = _re(r"^\s*(?:no|nope|cancel|stop|abort|don'?t|do not)\b", r"\breject\b", r"\bdecline\b", r"\bdeny\b",
               r"\bcancel\b", r"驳回", r"拒绝", r"取消", r"^\s*不要", r"算了")
@@ -180,6 +182,17 @@ STATUS_QUESTION = _re(
     r"\bhow much (?:can|could) (?:i|we) (?:spend|use|take out)\b", r"(?:能|可以)(?:动用|用|花)多少(?:钱|现金)?",
     r"(?:够不够|够)(?:用的?)?(?:现金|资金|钱)", r"现金跑道", r"(?:现金|资金|钱).{0,6}(?:能|可以)?撑(?:多久|多长时间|几天)",
     r"现金(?:怎么样|如何|还好吗|还行吗)")
+# A plain request to look at the cash position and nothing else ("帮我看看现金", 看一下现金, 帮我查一下现金, "what is our cash?",
+# "show me our cash"): the WHOLE message must be this, so any other word (an action, an amount, a counterparty) is not a match.
+# Used on the message with a leading greeting stripped (rules.cash_look); it reads the same status as "show cash status".
+CASH_LOOK = re.compile(
+    r"(?:(?:请|麻烦|劳驾)?(?:你|您)?(?:帮我|帮忙|给我|替我|帮)?|我?(?:想|要|想要))"
+    r"(?:看|查|瞧|了解|瞅)(?:一下|一看|看|下|查)?(?:我们|咱们|公司|目前|现在|今天)?(?:的)?现金(?:状况|情况|余额)?(?:吧|呀|啊|嘛|呢)?[。.!！~\s]*"
+    r"|(?:please\s+)?(?:(?:can|could|would) you\s+)?(?:(?:help me|let me|i(?:'d| would)? (?:like|want) to|i want to|i need to)\s+)?"
+    r"(?:show|check|see|look at|view|pull up|tell)(?: me)?\s+(?:our|my|the)?\s*(?:current )?cash(?: (?:position|status|balance))?"
+    r"(?: for me)?(?: please| today| now)?\s*[?.!]*"
+    r"|what(?:'s|s| is| are)\s+(?:our|my|the)\s+(?:current )?cash(?: (?:position|status|balance))?(?: (?:today|now|right now))?\s*[?.!]*",
+    re.IGNORECASE)
 REPAY = _re(r"\brepay", r"\bpay (?:back|down|off)\b", r"\bpay (?:the |our )?(?:credit |bank )?line (?:back|down|off)\b",
             r"\bclear (?:the |our )?(?:balance on the |outstanding balance on the |outstanding )?(?:credit |bank )?line\b",
             r"\bsettle (?:the |our )?(?:credit |bank )?line\b", r"还款", r"偿还", r"还清", r"归还",
@@ -385,6 +398,66 @@ def rates(text: str) -> list[Found]:
 def days(text: str) -> list[Found]:
     t = unicodedata.normalize("NFKC", text)
     return [Found(int(m.group("num")), m.start(), m.end()) for m in _DAYS_RE.finditer(t) if 0 < int(m.group("num")) <= 365]
+
+
+@dataclass(frozen=True)
+class TermsChange:
+    """The payment-terms change a sentence names, in days: `target` is the terms asked for ("60 days"), `current` the ones they replace
+    ("instead of 45", 从45天), either may be None. `ambiguous` is true when the sentence holds day counts but the one asked for cannot
+    be told from the other (so nothing is priced from it: the owner is asked)."""
+
+    target: int | None = None
+    current: int | None = None
+    ambiguous: bool = False
+
+
+_CUR_CUE = r"from|instead of|rather than|up from|currently|current|now|vs\.?|versus|从|由|原来|原先|本来|现在|目前|现行"
+_TGT_CUE = (r"to|into|up to|extend(?:ed|ing)? (?:it )?to|moves? to|moving to|go(?:ing)? to|change[ds]? to|switch(?:ed)? to|"
+            r"改成|改为|变成|变为|换成|延长到|延长至|延期到|延期至|延到|延至|增加到|拉长到|调到|调整为|调整到|提到|给|到")
+_CUE_RE = re.compile(rf"(?P<cur>(?<![a-z])(?:{_CUR_CUE})(?![a-z]))|(?P<tgt>(?<![a-z])(?:{_TGT_CUE})(?![a-z]))", re.IGNORECASE)
+_AFTER_TGT = re.compile(r"^[^\d]{0,24}?(?<![a-z])(?:instead|rather than)(?![a-z])", re.IGNORECASE)
+
+
+_DISCOUNT_CUE = re.compile(r"discount|\boff\b|early|rebate|折扣|返点|返利|提前|贴现", re.IGNORECASE)
+_TERMS_CUE = re.compile(r"\bterms?\b|账期|付款期", re.IGNORECASE)
+_PAY_WINDOW = re.compile(r"(?<![a-z])(?:within|in|by|inside|under|after)\s+(?:the\s+)?(?:next\s+)?\d{1,3}\s*(?:-\s*)?days?|\d{1,3}\s*[天日]\s*内", re.IGNORECASE)
+
+
+def terms_change(text: str) -> TermsChange:
+    """Read "from 45 to 60 days", "60 days instead of 45", 账期从45天改成60天, "give Foshan 60 days" for the terms asked for. One day
+    count alone is the target (it is what the owner names); two or more are told apart by the words around them; when they cannot be
+    told apart the change is `ambiguous` and has no target."""
+    t = unicodedata.normalize("NFKC", text)
+    found = days(t)
+    if found and _DISCOUNT_CUE.search(t) and not _TERMS_CUE.search(t):
+        # "2% off if they pay in 10 days", 10天内付款给2%折扣: the days are the window an early-payment discount is paid in, not terms
+        found = [f for f in found if not _PAY_WINDOW.search(t[max(0, f.start - 14):f.end + 2])]
+    if not found:
+        return TermsChange()
+    tags: list[str] = []
+    for f in found:
+        before = t[max(0, f.start - 16):f.start]
+        last = None
+        for m in _CUE_RE.finditer(before):
+            last = m
+        if last is not None:
+            tags.append("cur" if last.group("cur") else "tgt")
+        elif _AFTER_TGT.search(t[f.end:f.end + 40]):
+            tags.append("tgt")
+        else:
+            tags.append("")
+    if len(found) == 1:
+        return TermsChange(target=found[0].value)
+    targets = [f.value for f, g in zip(found, tags, strict=True) if g == "tgt"]
+    currents = [f.value for f, g in zip(found, tags, strict=True) if g == "cur"]
+    plain = [f.value for f, g in zip(found, tags, strict=True) if g == ""]
+    if len(set(targets)) == 1:
+        return TermsChange(target=targets[0], current=currents[0] if currents else None)
+    if not targets and len(set(plain)) == 1 and currents:
+        return TermsChange(target=plain[0], current=currents[0])
+    if len({f.value for f in found}) == 1:
+        return TermsChange(target=found[0].value)
+    return TermsChange(ambiguous=True)
 
 
 def invoices(text: str) -> int | None:

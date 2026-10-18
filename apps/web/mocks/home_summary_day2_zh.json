@@ -21,6 +21,7 @@
     "lowest_headroom_short": "¥0.00",
     "first_breach_day": null,
     "below_reserve_today": false,
+    "covered": true,
     "first_breach_cash_fen": null,
     "first_breach_cash_short": null,
     "cash_short": "¥805k",
@@ -4110,7 +4111,8 @@
         "short_note": "28 天后正好是最低现金",
         "tone": "warn",
         "with_plan_hint": "未应用任何假设。",
-        "with_plan": null
+        "with_plan": null,
+        "basis_label": "已计入已安排的融资"
       },
       "funding": {
         "state": "NONE",
@@ -4125,6 +4127,9 @@
       "variant": "QUIET",
       "key": null,
       "tone": "ok",
+      "covered": true,
+      "covered_pill_text": "一切正常",
+      "covered_title_text": "您的现金很安全！",
       "eyebrow": "公司层面没有需要您处理的事项",
       "title": "按已执行的方案，您的现金是安全的。",
       "text": "接下来：Foshan将于 30 天后支付 ¥160k（应收）。",

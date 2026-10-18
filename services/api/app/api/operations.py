@@ -393,7 +393,36 @@ def decide(approval_id: str, body: Decision, request: Request, x_owner_token: st
                                lang=lang, agreements={c.id: party_name(state, c.counterparty_id) for c in rt.store.commitments()})
     except Exception:
         log.exception("the words for the decision on %s could not be written", approval_id)
-    return {"result": {**raw, **words}, "lang": lang}
+    return {"result": {**raw, **words}, "approval": _decision_outcome(rt, approval_id, body.decision.upper() == "APPROVE", actor, r, lang),
+            "lang": lang}
+
+
+def _decision_outcome(rt, approval_id: str, approve: bool, actor: Actor, result: OperationResult, lang: str) -> dict:
+    """SEC-27, the visible half: the owner's DECISION and what the re-run did are two facts, said separately. `decision` is what is
+    recorded for the approval (APPROVED / REJECTED, or PENDING when nobody with authority decided it); `execution_status` is what the
+    run came to (EXECUTED, DUPLICATE, REFUSED, or DECLINED when the owner said no); `ran` is true only when money or books changed.
+    An approval the owner gave whose re-run was refused reads "approved, did not run" with the executor's reason, never "approved"."""
+    rec = rt.store.get_approval(approval_id)
+    decision = str(getattr(rec.status, "value", rec.status)) if rec is not None else "PENDING"
+    if decision == "REJECTED" or (actor == Actor.OWNER and not approve):
+        execution = "DECLINED"
+    elif decision == "PENDING":
+        execution = "NOT_RUN"
+    else:
+        execution = result.status.value
+    ran = execution in ("EXECUTED", "DUPLICATE")
+    if decision == "PENDING":
+        text = t(lang, "Not decided: only the owner can decide an approval. Nothing ran.", "未处理：只有业主可以审批。未执行任何操作。")
+    elif execution == "DECLINED":
+        text = t(lang, "You declined it. Nothing ran.", "您已拒绝。未执行任何操作。")
+    elif execution == "REFUSED":
+        text = t(lang, f"You approved it, but it could not run: {result.message}. No money moved.",
+                 f"您已批准，但未能执行：{result.message}。资金未动。")
+    elif execution == "DUPLICATE":
+        text = t(lang, "You approved it; it had already run, so nothing was repeated.", "您已批准；此前已执行，未重复执行。")
+    else:
+        text = t(lang, "You approved it and it ran.", "您已批准，且已执行。")
+    return {"id": approval_id, "decision": decision, "execution_status": execution, "ran": ran, "text": text}
 
 
 @router.post("/circuit/{counterparty_id}/reset", dependencies=[Depends(require_owner_or_agent)])

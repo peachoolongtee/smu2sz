@@ -62,10 +62,13 @@ class ContractGuardRow:
     terms: tuple[ContractTerm, ...] = ()
     facility: Facility | None = None
     clause_quotes: tuple[str, ...] = ()
-    party_not_named: bool = False  # a blocking PARTY_NOT_NAMED flag: the text is not with the counterparty it is filed under
+    party_not_named: bool = False  # a blocking party flag (PARTY_NOT_NAMED or PARTY_UNCHECKED): the text is not shown to be with
+    # the counterparty it is filed under, so it entitles nobody (REG-1, REG-8)
 
 
-PARTY_NOT_NAMED_FLAG = "PARTY_NOT_NAMED"  # the kind app.contracts.parties raises; the guard row carries only whether it is set
+PARTY_NOT_NAMED_FLAG = "PARTY_NOT_NAMED"  # the kinds app.contracts.parties raises; the guard row carries only whether one is set
+PARTY_UNCHECKED_FLAG = "PARTY_UNCHECKED"
+PARTY_BLOCKING_FLAGS = frozenset({PARTY_NOT_NAMED_FLAG, PARTY_UNCHECKED_FLAG})
 
 
 def guard_row(record: ContractRecord) -> ContractGuardRow:
@@ -78,7 +81,7 @@ def guard_row(record: ContractRecord) -> ContractGuardRow:
         terms=tuple(record.contract.terms) if record.contract else (),
         facility=ts.proposed_facility if ts else None,
         clause_quotes=tuple(c.span.text for c in ts.clauses) if ts else (),
-        party_not_named=any(f.blocking and f.kind == PARTY_NOT_NAMED_FLAG for f in record.flags))
+        party_not_named=any(f.blocking and f.kind in PARTY_BLOCKING_FLAGS for f in record.flags))
 
 
 class TrajectoryEngine(Protocol):

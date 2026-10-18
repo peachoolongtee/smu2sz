@@ -102,7 +102,7 @@ def test_a_cure_under_the_cap_is_not_flagged_and_has_no_cap_sentence(client, rt)
     assert (f"cost {fmt_yuan(inv.cost_fen)} ({fmt_pct(inv.annual_rate.value, 1)} a year for {inv.cost_days} days)"
             in b.detail)
     r = client.post("/nl/opener", json={"session_id": "uc-1"}, headers=OWNER).json()  # day 0: the golden gap
-    assert r["has_news"] and "yearly ceiling" not in r["reply"] and "needs your approval" not in r["reply"]
+    assert r["has_news"] and "without your approval" not in r["reply"] and "needs your approval" not in r["reply"]
     # the opener proposes the recommendation the home shows (wayfinder #15): the router's plan, priced all-in
     assert "finance ¥255,000.00 of invoice RCV-A" in r["reply"] and "it will cost ¥2,272.29" in r["reply"]
     assert "about ¥841.64 interest if it is repaid on day 32 as expected" in r["reply"]
@@ -128,12 +128,12 @@ def test_the_opener_states_the_price_and_go_ahead_still_runs_one_operation(clien
     en = client.post("/nl/opener", json={"session_id": "pc-1"}, headers=OWNER).json()["reply"]
     assert f"it will cost {cost} by day 47, which is {rate} a year for those {s['cost_days']} days." in en
     assert s["cost_days"] == 10 and rate == "32.5%"
-    assert (f"That is above your {cap} yearly ceiling for funding (invoice financing is billed in whole 30-day "
-            f"periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it "
+    assert (f"That is above the {cap} you signed for FLOW to borrow without your approval (invoice financing is billed in whole "
+            f"30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it "
             f"does not run until you do.") in en
     # the router's cheaper two-invoice plan would need two approvals: the cure is proposed and the option is named
     assert "A cheaper plan exists, ¥1,702.20 in all, but it would need 2 separate approvals; this one needs one. Go ahead?" in en
-    assert en.endswith("Go ahead?") and en.index("a year") < en.index("yearly ceiling")
+    assert en.endswith("Go ahead?") and en.index("a year") < en.index("you signed for FLOW to borrow")
     zh = client.post("/nl/opener", json={"session_id": "pc-2", "lang": "zh"}, headers=OWNER).json()["reply"]
     for figure in (cost, rate, str(s["cost_days"]), cap, "47", "需要您批准"):
         assert figure in zh
@@ -146,7 +146,7 @@ def test_the_opener_states_the_price_and_go_ahead_still_runs_one_operation(clien
     approval_id = done["operations"][0]["approval_id"]
     assert f"it is queued as {approval_id}" in done["reply"] and f'"approve {approval_id}"' in done["reply"]
     assert cost in done["reply"] and rate in done["reply"] and f"for those {s['cost_days']} days" in done["reply"]
-    assert f"above your {cap} ceiling, so it needs your approval" in done["reply"]
+    assert f"above the {cap} you signed for borrowing without your approval, so it waits for your approval" in done["reply"]
     assert len(rt.store.operations()) == logged + 1  # the queued request is logged; nothing is booked
     assert rt.store.get_state().cash_fen == cash
     assert next(f.drawn_fen for f in rt.store.get_state().facilities if f.id == s["facility_id"]) == drawn

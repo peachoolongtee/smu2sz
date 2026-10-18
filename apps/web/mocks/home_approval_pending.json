@@ -2507,7 +2507,7 @@
     "lowest_if_approved_short": "¥300k",
     "lowest_if_approved_when": "today",
     "execution_status": "PENDING",
-    "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+    "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
     "next_step_text": null,
     "next_step_href": null,
     "result_state_text": "Waiting for your approval",
@@ -2564,7 +2564,7 @@
     "net_display": null,
     "when_text": "The cash lands in 3 days.",
     "assumptions_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
-    "authority_text": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+    "authority_text": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
     "remaining_text": null
   },
   "commit_label": "Authorize the financing request",

@@ -21,6 +21,7 @@
     "lowest_headroom_short": "−¥300k",
     "first_breach_day": 38,
     "below_reserve_today": true,
+    "covered": false,
     "first_breach_cash_fen": 20000000,
     "first_breach_cash_short": "¥200k",
     "cash_short": "¥200k",
@@ -4128,7 +4129,8 @@
         "short_note": "4 天后缺口 ¥300k",
         "tone": "bad",
         "with_plan_hint": "未应用任何假设。",
-        "with_plan": null
+        "with_plan": null,
+        "basis_label": "已计入已安排的融资"
       },
       "funding": {
         "state": "NONE",
@@ -4153,6 +4155,7 @@
       },
       "secondary": null,
       "control": null,
+      "covered": false,
       "approval_text": null,
       "approval_needed": false,
       "consequence_text": "现金将在今天首次低于您的最低现金。即使方案已执行，缺口仍将在 4 天后达到 ¥300k。",

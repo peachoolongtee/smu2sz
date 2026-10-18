@@ -51,7 +51,7 @@
     "lowest_if_approved_when": null,
     "lowest_if_approved_fen": null,
     "execution_status": "EXECUTED",
-    "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+    "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.",
     "next_step_text": null,
     "next_step_href": null,
     "result_state_text": "Approved, cash arrives in 3 days",

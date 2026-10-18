@@ -379,7 +379,22 @@ def _combine(replies: list[AnswerReply], calls: list[Call], lang: str, model: st
     tools = [c.tool for c in calls]
     return AnswerReply(text=sep.join(texts), metric_ids=metric_ids, figures=figures, basis=basis,
                        question_id="router:" + "+".join(tools), lang="zh" if lang == "zh" else "en",
-                       extra={"router": {"tools": tools, "model": model, "prompt_version": PROMPT_VERSION}})
+                       extra={"router": {"tools": tools, "model": model, "prompt_version": PROMPT_VERSION},
+                              # one tool that asked which customer: the session keeps its slots for the owner's answer
+                              **({k: replies[0].extra[k] for k in ("needs", "tool", "slots")}
+                                 if len(replies) == 1 and replies[0].extra.get("needs") else {})})
+
+
+def _read_from_question(tool: str, slots: dict[str, Any], question: str) -> dict[str, Any]:
+    """The terms a terms question names are read from the owner's own words by code, whatever number the model copied into `days`
+    ("from 45 to 60 days": 60, never the 45 they replace). The slots were validated before; this only replaces a value inside its range."""
+    if tool == "terms_extension_cost":
+        from app.nl import lexicon as lx
+
+        target = lx.terms_change(question).target
+        if target is not None and 1 <= target <= 180:
+            return {**slots, "days": target}
+    return slots
 
 
 def route(question: str, lang: str, ctx: Any, backends: Sequence[RouteBackend] | None = None,
@@ -448,7 +463,7 @@ def _route(question: str, lang: str, ctx: Any, backends: Sequence[RouteBackend] 
     done: list[Call] = []
     for c in calls:
         try:
-            got = catalogue.TOOLS[c.tool].answer(ctx, lang, dict(c.slots))
+            got = catalogue.TOOLS[c.tool].answer(ctx, lang, _read_from_question(c.tool, dict(c.slots), text))
         except EngineError:
             continue
         if got is not None and got.text.strip():

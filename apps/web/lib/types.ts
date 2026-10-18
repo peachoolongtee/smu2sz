@@ -984,6 +984,10 @@ export interface NegotiationView {
   message: string;
   /** The message in the requested language (distances from today); absent in older recordings. */
   message_when?: string | null;
+  /** What became of the funding legs once they all ran (SEC-28): the web does not read these yet. Absent in older recordings. */
+  funding_status?: "FUNDED" | "WAITING_APPROVAL" | "PARTLY_FUNDED" | "NOT_FUNDED";
+  accept_status?: string | null;
+  funding_legs?: { op_id: string; kind: string; status: string; approval_id: string | null; text: string }[];
   /** The deal's record, and whether this send was written to it. Absent in older recordings. */
   decision_id?: string;
   decision_recorded?: boolean;
@@ -1432,7 +1436,8 @@ export interface FundingView {
   committed: Displayed<FundingPlan>;
   expected: Displayed<FundingPlan>;
   menu: MenuRow[];
-  marginal: MarginalCostView;
+  /** Null when no committed, owner-approved source can carry a permanent need (for example books whose only lender is a clean-down line). */
+  marginal: MarginalCostView | null;
   comparison: ComparisonRow[];
   /** The y axis shared by every row's `series` over the whole horizon, and one per window ("30", "60", "120"); absent from an older server. */
   series_axis?: PictureAxis | null;
@@ -1949,6 +1954,9 @@ export interface AlertActResult {
   refused: number;
   /** The server's answer to "is this alert gone now". */
   cured: boolean;
+  /** What became of the steps once they all ran (SEC-28), with each step's outcome in the server's words. Absent in older recordings. */
+  run_status?: "FUNDED" | "WAITING_APPROVAL" | "PARTLY_FUNDED" | "NOT_FUNDED";
+  message_when?: string;
   alerts_after: { counts: Record<AlertSeverity, number> };
 }
 

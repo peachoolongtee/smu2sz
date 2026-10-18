@@ -37,9 +37,9 @@ from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
 from app.nl.pipeline import (
     Steps,
-    counter_line,
     accept,
     committed_plan,
+    counter_line,
     funding_ops,
     package_offer,
     reject,
@@ -324,10 +324,10 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
     if v.counters:
         if not execute:
             for c in v.counters:
-                steps.add("COUNTER_OFFER", counter_line(ctx, c.label, c.text))
+                steps.add("COUNTER_OFFER", counter_line(ctx, c.label, c.text, v.offer_id))
             return []
         sent = send_counters(ctx, steps, v, v.counters, recipient)
-        lines = [counter_line(ctx, c.label, text) for c, text in sent]
+        lines = [counter_line(ctx, c.label, text, v.offer_id) for c, text in sent]
         if ViolationCode.DATA_EXTRACTION_REFUSED in codes:
             lines.insert(0, REFUSAL_REPLY_ZH if ctx.lang == "zh" else REFUSAL_REPLY)
         return lines
@@ -567,7 +567,7 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
     profile = slots.buyer_profile or ctx.session.buyer_profile or offer.counterparty_id
     if not execute:
         for c in v.counters:
-            steps.add("COUNTER_OFFER", counter_line(ctx, c.label, c.text))
+            steps.add("COUNTER_OFFER", counter_line(ctx, c.label, c.text, v.offer_id))
         steps.add("NEGOTIATE", t(ctx, "Bounded rounds with the buyer", "与买方有限轮次谈判"))
         follow = followups(ctx, steps, offer, v.counters)
         ready = t(ctx, "Plan ready. Reply 'go ahead' to send the counters.", "计划已就绪。回复“执行”发送反报价。")
@@ -711,7 +711,7 @@ def what_if(ctx: NlContext, slots: Slots, text: str) -> Turn:
         return Turn(intent=Intent.WHAT_IF, reply=t(
             ctx, "A late payment is not a change to the buyer's terms, so I have not tested it as one; nothing was changed.",
             "延迟付款并不是买家条款的变化，因此我没有把它当作条款来测试；未做任何更改。"))
-    if not (lx.days(text) or lx.rates(text)) and lx.ACCEPT_ASK.search(text) and not slots.fixture_id and not slots.quoted_text:
+    if not (_names_days(text) or lx.rates(text)) and lx.ACCEPT_ASK.search(text) and not slots.fixture_id and not slots.quoted_text:
         return reads.accept_original(ctx)  # the verdict already held on their terms as written
     state = ctx.state()
     cp = slots.counterparty_id or ctx.session.counterparty_id
@@ -722,7 +722,7 @@ def what_if(ctx: NlContext, slots: Slots, text: str) -> Turn:
     if cp is None:
         # An early-pay discount needs an open invoice: when exactly one buyer has one, the question names it.
         low = lx.norm(text)
-        early_only = (any(w in low for w in ("early", "discount", "提前", "折扣", "贴现")) and not lx.days(text)
+        early_only = (any(w in low for w in ("early", "discount", "提前", "折扣", "贴现")) and not _names_days(text)
                       and not any(w in low for w in ("next quarter", "rebate", "off next", "返利", "下季度", "返点")))
         holders = sorted({x.counterparty_id for x in state.receivables if x.status == "OPEN"})
         if early_only and len(holders) == 1:
@@ -744,16 +744,33 @@ def what_if(ctx: NlContext, slots: Slots, text: str) -> Turn:
     doc = owner_doc_for(ctx, text)
     obs: list[Obligation] = []
     lowered = lx.norm(doc.text)
-    for i, d in enumerate(lx.days(doc.text)):
-        dur = (Duration(kind=DurationKind.RECURRING_BOUNDED, invoices=slots.invoices) if slots.invoices
-               else Duration(kind=DurationKind.RECURRING_PERPETUAL))
-        obs.append(Obligation(id=f"{doc.doc_id}-T{i}", type=ObligationType.TERMS_EXTENSION, counterparty_id=cp,
-                              target_terms_days=d.value, base=ObligationBase(kind=BaseKind.FUTURE_INVOICES),
-                              contingency=Contingency.FIRM, duration=dur, spans=[span_of(doc, d.start, d.end)],
-                              confidence=1.0))
-        break
+    change = lx.terms_change(doc.text)
+    if change.ambiguous:
+        # day counts the words do not tell apart ("45 days or 60 days?"): the terms asked for are asked back, never guessed
+        return Turn(intent=Intent.WHAT_IF, reply=t(
+            ctx, "I could not tell which payment terms you want tested. Name them, for example '60-day terms for Foshan'; "
+                 "nothing was priced and nothing was changed.",
+            "我无法确定您要测试哪一个账期。请直接说出，例如“给佛山 60 天账期”；没有测算任何成本，也没有更改任何内容。"))
+    if change.target is not None:
+        current = next((x.terms_days for x in state.recurring_invoices if x.counterparty_id == cp), None)
+        found = next((d for d in lx.days(doc.text) if d.value == change.target), None)
+        if current is not None and change.target <= current and not lx.rates(doc.text):
+            # terms that are not longer than the buyer's own change nothing: no-op is never priced as a request, nor said to be in the limits
+            who = next((c.name for c in state.counterparties if c.id == cp), cp)
+            return Turn(intent=Intent.WHAT_IF, reply=t(
+                ctx, f"{who} is on {current}-day terms today, so {change.target}-day terms would not be an extension: there is nothing to "
+                     f"price and nothing to accept. Tell me the longer terms you want tested (for example 60 days). Nothing was changed.",
+                f"{who}目前的账期是 {current} 天，{change.target} 天并不比现在更长，因此没有可测算的成本，也没有需要接受的内容。"
+                f"请告诉我要测试的更长账期（例如 60 天）。没有更改任何内容。"))
+        if found is not None and not (current is not None and change.target <= current):
+            dur = (Duration(kind=DurationKind.RECURRING_BOUNDED, invoices=slots.invoices) if slots.invoices
+                   else Duration(kind=DurationKind.RECURRING_PERPETUAL))
+            obs.append(Obligation(id=f"{doc.doc_id}-T0", type=ObligationType.TERMS_EXTENSION, counterparty_id=cp,
+                                  target_terms_days=change.target, base=ObligationBase(kind=BaseKind.FUTURE_INVOICES),
+                                  contingency=Contingency.FIRM, duration=dur, spans=[span_of(doc, found.start, found.end)],
+                                  confidence=1.0))
     rebate_cue = any(w in lowered for w in ("next quarter", "rebate", "off next", "返利", "下季度", "返点"))
-    early_cue = any(w in lowered for w in ("early", "discount", "提前", "折扣", "贴现"))
+    early_cue = any(w in lowered for w in ("early", "discount", "提前", "折扣", "贴现")) or bool(re.search(r"\boff\b", lowered))
     for i, r in enumerate(lx.rates(doc.text)):
         if rebate_cue:
             obs.append(Obligation(id=f"{doc.doc_id}-R{i}", type=ObligationType.CONTINGENT_REBATE, counterparty_id=cp,
@@ -790,10 +807,16 @@ _BUYER_TERMS_WORDS = ("early", "discount", "rebate", "terms", "days", "off next"
                       "提前", "折扣", "贴现", "返利", "返点", "账期", "天", "下季度", "买家", "发票")
 
 
+def _names_days(text: str) -> bool:
+    """The text names payment terms in days (the days of an early-payment window, "if they pay in 10 days", are not terms)."""
+    change = lx.terms_change(text)
+    return change.target is not None or change.ambiguous
+
+
 def _buyer_what_if(text: str) -> bool:
     """True when the hypothetical is a change to a buyer's terms (days, a discount or a rebate)."""
     low = lx.norm(text)
-    return bool(lx.days(text)) or any(w in low for w in _BUYER_TERMS_WORDS)
+    return _names_days(text) or any(w in low for w in _BUYER_TERMS_WORDS)
 
 
 def owner_doc_for(ctx: NlContext, text: str) -> SourceDocument:

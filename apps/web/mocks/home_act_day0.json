@@ -38,6 +38,8 @@
       "event_detail": "Financed through Invoice financing (onboarded platform)."
     }
   ],
+  "run_status": "FUNDED",
+  "message_when": "Every step ran. ¥150,000.00 drawn on the Bank credit line. Cash received today. ¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
   "executed": 2,
   "pending_approval": 0,
   "refused": 0,

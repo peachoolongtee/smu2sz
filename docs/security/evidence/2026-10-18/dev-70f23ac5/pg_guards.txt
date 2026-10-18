@@ -1,0 +1,53 @@
+..........                                                               [100%]
+=================================== PASSES ====================================
+________ test_sqlite_a_rejected_approval_cannot_be_put_back_to_pending ________
+---------------------------- Captured stdout setup ----------------------------
+2026-10-18 13:36:55 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:02 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.5 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:04 [info     ] compiler.call                  backend=cache doc_hash=39cabafae4ee1e7944bdc0a52c469c0836013cca8f72b3aeb892fd96b081d506 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:05 [info     ] compiler.call                  backend=cache doc_hash=80047a9654396def08426567680368202582eb51b2028cf652ab81c4a96cbc85 latency_ms=0.6 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:05 [info     ] compiler.call                  backend=cache doc_hash=ea1ac57ae2a03aebb8a9d7e2612fb0c5da266b41504563c6feccdc391d590015 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:07 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.5 model=fixture-cache outcome=ok prompt_version=offer-v4
+_ test_sqlite_approvals_cannot_be_deleted_or_rewritten_and_security_events_are_append_only _
+---------------------------- Captured stdout setup ----------------------------
+2026-10-18 13:37:09 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:14 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.5 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:16 [info     ] compiler.call                  backend=cache doc_hash=39cabafae4ee1e7944bdc0a52c469c0836013cca8f72b3aeb892fd96b081d506 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:18 [info     ] compiler.call                  backend=cache doc_hash=80047a9654396def08426567680368202582eb51b2028cf652ab81c4a96cbc85 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:18 [info     ] compiler.call                  backend=cache doc_hash=ea1ac57ae2a03aebb8a9d7e2612fb0c5da266b41504563c6feccdc391d590015 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:19 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+____ test_sqlite_deciding_a_pending_approval_and_the_demo_reset_still_work ____
+---------------------------- Captured stdout setup ----------------------------
+2026-10-18 13:37:21 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:27 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:28 [info     ] compiler.call                  backend=cache doc_hash=39cabafae4ee1e7944bdc0a52c469c0836013cca8f72b3aeb892fd96b081d506 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:30 [info     ] compiler.call                  backend=cache doc_hash=80047a9654396def08426567680368202582eb51b2028cf652ab81c4a96cbc85 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:30 [info     ] compiler.call                  backend=cache doc_hash=ea1ac57ae2a03aebb8a9d7e2612fb0c5da266b41504563c6feccdc391d590015 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:32 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.5 model=fixture-cache outcome=ok prompt_version=offer-v4
+---------------------------- Captured stdout call -----------------------------
+2026-10-18 13:37:33 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=0.6 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-18 13:37:33 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-18 13:37:33 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+_ test_postgres_no_session_setting_lifts_the_guard_and_approvals_decide_once __
+---------------------------- Captured stdout call -----------------------------
+2026-10-18 13:37:34 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.5 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:41 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:42 [info     ] compiler.call                  backend=cache doc_hash=39cabafae4ee1e7944bdc0a52c469c0836013cca8f72b3aeb892fd96b081d506 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:44 [info     ] compiler.call                  backend=cache doc_hash=80047a9654396def08426567680368202582eb51b2028cf652ab81c4a96cbc85 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:44 [info     ] compiler.call                  backend=cache doc_hash=ea1ac57ae2a03aebb8a9d7e2612fb0c5da266b41504563c6feccdc391d590015 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:45 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.5 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-18 13:37:47 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=0.5 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-18 13:37:47 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-18 13:37:47 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+=========================== short test summary info ===========================
+PASSED tests/persistence/test_audit_guards.py::test_sqlite_a_rejected_approval_cannot_be_put_back_to_pending
+PASSED tests/persistence/test_audit_guards.py::test_sqlite_approvals_cannot_be_deleted_or_rewritten_and_security_events_are_append_only
+PASSED tests/persistence/test_audit_guards.py::test_sqlite_deciding_a_pending_approval_and_the_demo_reset_still_work
+PASSED tests/persistence/test_audit_guards.py::test_postgres_no_session_setting_lifts_the_guard_and_approvals_decide_once
+PASSED tests/operations/test_sec08_decided_in_log.py::test_a_declined_approval_put_back_to_pending_is_not_approved[memory]
+PASSED tests/operations/test_sec08_decided_in_log.py::test_a_declined_approval_put_back_to_pending_is_not_approved[sqlite]
+PASSED tests/operations/test_sec08_decided_in_log.py::test_an_approved_approval_put_back_to_pending_runs_once[memory]
+PASSED tests/operations/test_sec08_decided_in_log.py::test_an_approved_approval_put_back_to_pending_runs_once[sqlite]
+PASSED tests/operations/test_sec08_decided_in_log.py::test_another_actors_refused_attempt_is_not_the_owners_decision[memory]
+PASSED tests/operations/test_sec08_decided_in_log.py::test_another_actors_refused_attempt_is_not_the_owners_decision[sqlite]
+10 passed in 56.33s

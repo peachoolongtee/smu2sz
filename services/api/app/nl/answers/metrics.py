@@ -650,6 +650,106 @@ def late_payment_impact(ctx: Any, buyer_id: str, days_late: int) -> Metric:
                    "already_late_fen": sum(x.outstanding_fen for x in already)})
 
 
+def invoice_financing_offer(ctx: Any, buyer_id: str | None) -> Metric:
+    """What the invoice-financing line would advance on a customer's open invoice (the earliest due), from the funding menu: the line,
+    its limit and room, the advance rate, the all-in cost, the days to cash. A read: nothing is drawn or submitted."""
+    r = R(ctx)
+    row = next((x for x in _menu(r) if x.kind == FacilityKind.INVOICE_FINANCING), None)
+    fac = next((f for f in r.state.facilities if f.kind == FacilityKind.INVOICE_FINANCING), None)
+    mine = [x for x in unpaid(r.state) if buyer_id is None or x.counterparty_id == buyer_id]
+    open_ = [x for x in mine if x.status == "OPEN"]
+    detail: dict[str, Any] = {"line": row is not None and fac is not None, "invoices": len(mine), "financed": len(mine) - len(open_)}
+    if row is None or fac is None:
+        return Metric("invoice_financing_offer", None, "none", None, "funding.menu_view", detail)
+    detail.update(committed=row.committed and row.owner_approved, status=row.status.value, limit_fen=row.limit_fen,
+                  available_fen=row.available_fen, all_in=row.all_in_display, days=row.time_to_cash_days,
+                  advance_rate=fmt_pct(bp(fac.advance_rate_bp), 0) if fac.advance_rate_bp is not None else None,
+                  rate=fmt_pct(bp(fac.rate_bp)))
+    if not open_ or fac.advance_rate_bp is None:
+        return Metric("invoice_financing_offer", None, "none", None, "funding.menu_view", detail)
+    inv = min(open_, key=lambda x: (x.due_day, x.id))
+    cap_ = invoice_financing_capacity(r, inv.id)
+    detail.update(invoice_fen=inv.outstanding_fen, due_day=inv.due_day, buyer_id=inv.counterparty_id,
+                  uncapped_fen=round_half_up(Fraction(inv.outstanding_fen - inv.advance_fen) * bp(fac.advance_rate_bp)))
+    return Metric("invoice_financing_offer", cap_.value, money(cap_.value), inv.due_day, "funding.menu_view, facility.advance_rate_bp", detail)
+
+
+def customer_exposure(ctx: Any, buyer_id: str) -> Metric:
+    """What one customer holds of the books: its open invoices (what it owes, its share of what you are owed, the next due day)
+    and its recurring invoicing (per cycle, and its share of the invoicing per day)."""
+    r = R(ctx)
+    rows = receivables_by_customer(r).value
+    mine = next((x for x in rows if x["buyer_id"] == buyer_id), None)
+    rec = [x for x in r.state.recurring_invoices if x.counterparty_id == buyer_id]
+    per_day = {x.counterparty_id: Fraction(0) for x in r.state.recurring_invoices}
+    for x in r.state.recurring_invoices:
+        if x.every_days:
+            per_day[x.counterparty_id] += Fraction(x.face_fen, x.every_days)
+    total_day = sum(per_day.values())
+    share = per_day.get(buyer_id, Fraction(0)) / total_day if total_day else Fraction(0)
+    return Metric("customer_exposure", mine["owed_fen"] if mine else 0, money(mine["owed_fen"] if mine else 0), r.today,
+                  "worklist customers + state.recurring_invoices",
+                  {"owed_fen": mine["owed_fen"] if mine else 0, "invoices": mine["invoices"] if mine else 0,
+                   "share": mine["share"] if mine else Fraction(0), "next_due_day": mine["next_due_day"] if mine else None,
+                   "recurring": [{"face_fen": x.face_fen, "every_days": x.every_days, "next_issue_day": x.next_issue_day} for x in rec],
+                   "recurring_share": share})
+
+
+def customer_loss_impact(ctx: Any, buyer_id: str, *, orders_only: bool = False) -> Metric:
+    """The conservative forecast on a model copy of the books (never stored) without one customer's money: its open invoices (still
+    OPEN, not advanced) and its recurring invoicing; with `orders_only` only the invoicing still to be issued goes, the invoices
+    already issued stay. Compared with today's forecast: the first day below the reserve and below zero, the lowest point, what it
+    takes to stay at the reserve."""
+    r = R(ctx)
+    gone = [] if orders_only else [x for x in unpaid(r.state) if x.counterparty_id == buyer_id and x.status == "OPEN"]
+    gone_ids = {x.id for x in gone}
+    recurring = [x for x in r.state.recurring_invoices if x.counterparty_id == buyer_id]
+    base_ahead = r.ahead
+    base_low = min(base_ahead, key=lambda d: (d.closing_fen, d.day))
+    base_breach = next((d for d in base_ahead if d.closing_fen < r.floor), None)
+    base_zero = next((d for d in base_ahead if d.closing_fen < 0), None)
+    copy = r.state.model_copy(update={
+        "receivables": [x for x in r.state.receivables if x.id not in gone_ids],
+        "recurring_invoices": [x for x in r.state.recurring_invoices if x.counterparty_id != buyer_id],
+        "expected_orders": [x for x in r.state.expected_orders if x.counterparty_id != buyer_id]})
+    b = current_books(copy, r.store.commitments())
+    t = project(b.state, b.with_([]), [], Mode.CONSERVATIVE, r.horizon, r.floor)
+    ahead = [d for d in t.days if d.day >= r.today] or list(t.days)
+    low = min(ahead, key=lambda d: (d.closing_fen, d.day))
+    breach = next((d for d in ahead if d.closing_fen < r.floor), None)
+    zero = next((d for d in ahead if d.closing_fen < 0), None)
+    last = ahead[-1] if ahead else low
+    return Metric("customer_loss_impact", low.closing_fen, money(low.closing_fen), low.day, "financial.project on a model copy",
+                  {"invoice_fen": sum(x.outstanding_fen for x in gone), "invoice_days": sorted(x.due_day for x in gone),
+                   "recurring": [{"face_fen": x.face_fen, "every_days": x.every_days} for x in recurring],
+                   "breach_day": breach.day if breach else None, "breach_closing_fen": breach.closing_fen if breach else None,
+                   "zero_day": zero.day if zero else None, "zero_closing_fen": zero.closing_fen if zero else None,
+                   "low_fen": low.closing_fen, "low_day": low.day, "end_fen": last.closing_fen, "end_day": last.day,
+                   "need_fen": max(0, r.floor - low.closing_fen),
+                   "base_breach_day": base_breach.day if base_breach else None, "base_zero_day": base_zero.day if base_zero else None,
+                   "base_low_fen": base_low.closing_fen, "base_low_day": base_low.day,
+                   "base_need_fen": max(0, r.floor - base_low.closing_fen),
+                   "changed": [(d.day, d.closing_fen) for d in ahead] != [(d.day, d.closing_fen) for d in base_ahead],
+                   "orders_only": orders_only})
+
+
+def days_sales_outstanding(ctx: Any) -> Metric:
+    """DSO as receivables over the invoicing run-rate: what customers owe now, divided by what the recurring invoices bill per day
+    (each face over its cycle), times one day. None when nothing bills regularly (the books then hold no sales rate). It is not a
+    measured collection time: the books keep no receipt history of their own, so the contract terms are reported beside it."""
+    r = R(ctx)
+    owed = sum(x.outstanding_fen for x in unpaid(r.state))
+    per_day = sum((Fraction(x.face_fen, x.every_days) for x in r.state.recurring_invoices if x.every_days), Fraction(0))
+    terms = sorted({x.terms_days for x in unpaid(r.state)} | {x.terms_days for x in r.state.recurring_invoices})
+    detail = {"owed_fen": owed, "per_day_fen": round_half_up(per_day), "terms_days": terms,
+              "invoiced_fen": sum(x.face_fen for x in r.state.recurring_invoices),
+              "cycles": sorted({x.every_days for x in r.state.recurring_invoices})}
+    if not per_day:
+        return Metric("days_sales_outstanding", None, "none", None, "receivables / recurring invoicing", detail)
+    dso = round_half_up(Fraction(owed) / per_day)
+    return Metric("days_sales_outstanding", dso, f"{dso} days", r.today, "receivables / recurring invoicing per day", detail)
+
+
 # ================================================================ covenants
 
 
@@ -759,7 +859,8 @@ def activity_since(ctx: Any, since_day: int | None = None) -> Metric:
     moved = sum(abs(_op_amount(e)) for e in ran if e.kind != ADVANCE_CLOCK_KIND)
     return Metric("activity_since", len(ran), f"{len(ran)} operations", start, "store.operations, security_events, verify_chain",
                   {"ran": [(e.kind, _op_amount(e), e.op) for e in ran], "refused": len(refused), "queued": len(queued),
-                   "security_events": len(sec), "moved_fen": moved, "chain_valid": r.store.verify_chain()})
+                   "security_events": len(sec), "moved_fen": moved, "chain_valid": r.store.verify_chain(),
+                   "refused_kinds": [e.kind for e in refused], "queued_kinds": [e.kind for e in queued]})
 
 
 def approvals_pending(ctx: Any) -> Metric:
@@ -858,9 +959,17 @@ def capex_case(ctx: Any) -> Metric:
 
 def terms_extension_cost(ctx: Any, buyer_id: str | None, terms_days: int) -> Metric:
     """What longer terms for a buyer cost (`whatif.simulate`: the verifier on a hypothetical package; it writes nothing)."""
-    from app.whatif import WhatIfParamError, WhatIfParams, simulate
+    from app.whatif import WhatIfParamError, WhatIfParams, resolve, simulate
 
     r = R(ctx)
+    try:
+        # the terms the buyer is on today: terms that are not longer than these change nothing, so they are never priced as a request
+        current = resolve(r.state, r.day, buyer_id).recurring.terms_days
+    except (WhatIfParamError, ValueError) as exc:
+        return Metric("terms_extension_cost", None, "none", None, "whatif.simulate", {"error": str(exc)})
+    if terms_days <= current:
+        return Metric("terms_extension_cost", None, "none", None, "whatif.simulate",
+                      {"no_extension": True, "current_terms_days": current, "asked_terms_days": terms_days})
     try:
         params = WhatIfParams(terms_days=terms_days, discount_bp=0, rebate_bp=0)
         w = simulate(r.state, r.mandate, params, trusted_owner_key_hex=r.owner_key_hex, day=r.day,
@@ -871,7 +980,8 @@ def terms_extension_cost(ctx: Any, buyer_id: str | None, terms_days: int) -> Met
     breach = next((v.get("day") for v in w.violations if v.get("code") == "RESERVE_BREACH"), None)
     return Metric("terms_extension_cost", fwd.get("total_fen"), money(int(fwd.get("total_fen") or 0)), None, "whatif.simulate",
                   {"cap_fen": fwd.get("cap_fen"), "over_cap": bool(fwd.get("over_cap")), "outcome": w.outcome,
-                   "breach_day": breach, "counters": len(w.counters), "codes": list(w.codes)})
+                   "breach_day": breach, "counters": len(w.counters), "codes": list(w.codes),
+                   "current_terms_days": current})
 
 
 METRICS: dict[str, Callable[[Any], Metric]] = {
@@ -882,7 +992,7 @@ METRICS: dict[str, Callable[[Any], Metric]] = {
         marginal_cost_of_funds, fastest_and_cheapest_source, standing_plan, alternatives_priced, break_even,
         invoice_financing_capacity, receivables_total, receivables_by_customer, overdue, next_receipt, recurring_billing,
         terms_by_customer, covenant_ratios, covenant_breakpoints, ebitda_month, mandate_limits_and_validity, activity_since,
-        what_waits, approvals_pending, payoff_all, payroll_cover, capex_case)
+        what_waits, approvals_pending, payoff_all, payroll_cover, capex_case, days_sales_outstanding)
 }
-"""The metrics that take the context alone (the parametrised ones, `cash_on`, `late_payment_impact` and `terms_extension_cost`,
+"""The metrics that take the context alone (the parametrised ones, `cash_on`, `late_payment_impact`, `terms_extension_cost`,
 take their subject as well)."""

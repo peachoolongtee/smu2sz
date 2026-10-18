@@ -84,7 +84,7 @@ function problemOf(e: unknown): Problem {
     const code = (e.detail as { code?: unknown } | undefined)?.code;
     if (e.status === 409 && code === "TERMS_CHANGED") return { kind: "changed" };
     if (e.status === 409 && code === "ALREADY_DECIDED") return { kind: "decided" };
-    if (e.status === 401 || e.status === 403 || e.code) return { kind: "error", error: e };
+    if (e.status === 401 || e.status === 403 || (e.code && e.code !== "server_error")) return { kind: "error", error: e }; // a 500 keeps the page's own sentence
   }
   return { kind: "generic" };
 }

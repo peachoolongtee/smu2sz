@@ -27,14 +27,17 @@ const NEXT_BIN = path.join(WEB_DIR, "node_modules", "next", "dist", "bin", "next
 const IS_WIN = process.platform === "win32";
 const DEFAULT_KEEP_DB = path.join(ROOT, ".demo-data", "flow-demo.db");
 
-const USAGE = `usage: node scripts/demo.mjs [--api-port 8000] [--web-port 3000] [--blank | --mock] [--keep [--fresh] [--data FILE]]
+const USAGE = `usage: node scripts/demo.mjs [--api-port 8000] [--web-port 3000] [--blank | --mock] [--keep [--fresh] [--data FILE]] [--live-llm]
   --api-port N  port for the API (default 8000)
   --web-port N  port for the web app (default 3000)
   --blank       open on a new business with no books (DEMO_SCENARIO=blank), so the setup wizard can open new books
   --mock        the web app alone on the recorded mocks; no API, no Python needed
   --keep        keep the books in a local file (.demo-data/flow-demo.db): uploads, confirmations and the clock survive a restart
   --fresh       with --keep: delete that file first and start from new demo books (new blank books with --blank)
-  --data FILE   with --keep: keep the books in FILE instead (relative to the repository root; default .demo-data/flow-demo.db)`;
+  --data FILE   with --keep: keep the books in FILE instead (relative to the repository root; default .demo-data/flow-demo.db)
+  --live-llm    call the model provider live (LLM_MODE=live) instead of the cached outputs: Ask FLOW's router answers the questions
+                the built-in answers miss, and new documents and buyer messages are read by the model. Needs DEEPSEEK_API_KEY (or
+                ANTHROPIC_API_KEY) set in this shell; .env is never read. Costs money per call; text is redacted before it leaves.`;
 
 function say(line) {
   console.log(`[demo] ${line}`);
@@ -46,7 +49,7 @@ function fail(line) {
 }
 
 function parseArgs(argv) {
-  const opts = { apiPort: 8000, webPort: 3000, blank: false, mock: false, keep: false, fresh: false, data: null };
+  const opts = { apiPort: 8000, webPort: 3000, blank: false, mock: false, keep: false, fresh: false, data: null, liveLlm: false };
   const port = (name, value) => {
     const n = Number(value);
     if (!Number.isInteger(n) || n < 1 || n > 65535) fail(`${name} needs a port number between 1 and 65535, not "${value ?? ""}".`);
@@ -62,6 +65,7 @@ function parseArgs(argv) {
     else if (flag === "--mock") opts.mock = true;
     else if (flag === "--keep") opts.keep = true;
     else if (flag === "--fresh") opts.fresh = true;
+    else if (flag === "--live-llm") opts.liveLlm = true;
     else if (flag === "--data") {
       const v = value();
       if (!v || v.startsWith("--")) fail(`--data needs a file path, not "${v ?? ""}".`);
@@ -77,6 +81,7 @@ function parseArgs(argv) {
     } else fail(`unknown option "${argv[i]}".\n${USAGE}`);
   }
   if (opts.blank && opts.mock) fail("--blank needs the API, and --mock runs without it: pick one.");
+  if (opts.liveLlm && opts.mock) fail("--live-llm calls the model from the API, and --mock runs without it: pick one.");
   if (opts.keep && opts.mock) fail("--keep keeps the API's books, and --mock runs without the API (its answers are recorded): pick one.");
   if (opts.fresh && !opts.keep) fail("--fresh starts the kept books again, so it only goes with --keep (pnpm demo:keep --fresh).");
   if (opts.data && !opts.keep) fail("--data names the file the kept books live in, so it only goes with --keep (pnpm demo:keep --data FILE).");
@@ -274,21 +279,32 @@ async function main() {
   const webOrigin = `http://localhost:${opts.webPort}`;
   const apiOrigin = `http://localhost:${opts.apiPort}`;
 
+  // --live-llm: the key comes from this shell only (the API never reads .env here); DeepSeek first when its key is set.
+  const llm = { LLM_MODE: "cache" };
+  if (opts.liveLlm) {
+    const deepseek = Boolean(process.env.DEEPSEEK_API_KEY), claude = Boolean(process.env.ANTHROPIC_API_KEY);
+    if (!deepseek && !claude)
+      fail("--live-llm needs DEEPSEEK_API_KEY or ANTHROPIC_API_KEY set in this shell (PowerShell: $env:DEEPSEEK_API_KEY = \"...\"). .env is not read.");
+    // redaction is forced on and the raw mode off, whatever this shell says: the line below promises it
+    Object.assign(llm, { LLM_MODE: "live", LLM_PRIMARY: process.env.LLM_PRIMARY ?? (deepseek ? "deepseek" : "claude"), LLM_REDACT: "1", LLM_LIVE_RAW: "0" });
+    say(`live model calls ON (${llm.LLM_PRIMARY}): each unanswered question, new document or buyer message is a paid call; text is redacted first.`);
+  }
+
   if (!opts.mock) {
     const databaseUrl = opts.keep ? prepareKeep(opts) : "memory";
     const books = opts.keep ? `books kept in ${path.relative(ROOT, opts.keepDb)}` : "in-memory books";
-    say(`starting the API on ${apiOrigin} (${books}, demo credentials, cached LLM outputs${opts.blank ? ", blank books" : ""}) ...`);
+    say(`starting the API on ${apiOrigin} (${books}, demo credentials, ${opts.liveLlm ? "LIVE model calls" : "cached LLM outputs"}${opts.blank ? ", blank books" : ""}) ...`);
     const api = start(
       "API",
       "uv",
       ["run", "--project", API_DIR, "--directory", API_DIR, "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", String(opts.apiPort)],
       API_DIR,
       {
-        // Exactly scripts/dev-api.sh: never the repo-root .env, never a real database, never a live LLM.
+        // Exactly scripts/dev-api.sh: never the repo-root .env, never a real database, never a live LLM unless --live-llm.
         TERMSLEDGER_NO_DOTENV: "1",
         DATABASE_URL: databaseUrl, // "memory", or with --keep the local SQLite file (never a hosted database)
         DEMO_MODE: "1",
-        LLM_MODE: "cache",
+        ...llm,
         PYTHONUTF8: "1",
         SKIP_PERF_BENCH: "1",
         FEATURE_ENVELOPE: "1",

@@ -705,7 +705,7 @@
     "What did FLOW do recently?": {
       "session_id": "rec-ask-day0-12",
       "turn": 1,
-      "reply": "3 operations in the last 7 days: ran one other operation; ran one other operation; ran one other operation. 0 refused, 0 waiting for your approval, 0 security events; the log's chain verifies.",
+      "reply": "3 operations in the last 7 days: document confirmed; document confirmed; document confirmed. 0 refused, 0 waiting for your approval, 0 security events; the log's chain verifies.",
       "intent": "ASK_BOOKS",
       "lang": "en",
       "plan": [],
@@ -722,7 +722,7 @@
       "context_echo": null,
       "scope_used": null,
       "card": {
-        "lead": "3 operations in the last 7 days: ran one other operation; ran one other operation; ran one other operation.",
+        "lead": "3 operations in the last 7 days: document confirmed; document confirmed; document confirmed.",
         "figures": [
           {
             "label": "Operations run",
@@ -761,7 +761,7 @@
     "FLOW 最近做了什么？": {
       "session_id": "rec-ask-day0-13",
       "turn": 1,
-      "reply": "最近 7 天执行了 3 项操作：执行了另一项操作；执行了另一项操作；执行了另一项操作。被拒绝 0 项，待您审批 0 项，安全事件 0 起；日志的哈希链校验通过。",
+      "reply": "最近 7 天执行了 3 项操作：文件已确认；文件已确认；文件已确认。被拒绝 0 项，待您审批 0 项，安全事件 0 起；日志的哈希链校验通过。",
       "intent": "ASK_BOOKS",
       "lang": "zh",
       "plan": [],
@@ -778,7 +778,7 @@
       "context_echo": null,
       "scope_used": null,
       "card": {
-        "lead": "最近 7 天执行了 3 项操作：执行了另一项操作；执行了另一项操作；执行了另一项操作。",
+        "lead": "最近 7 天执行了 3 项操作：文件已确认；文件已确认；文件已确认。",
         "figures": [
           {
             "label": "已执行操作",
@@ -949,7 +949,7 @@
         "lead": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all.",
         "figures": [
           {
-            "label": "Funding cost ceiling",
+            "label": "Funding cost approval threshold",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -968,7 +968,7 @@
         "basis": "Your signed mandate (version 1), day 0",
         "all_figures": [
           {
-            "label": "Funding cost ceiling",
+            "label": "Funding cost approval threshold",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -1025,7 +1025,7 @@
         "lead": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。",
         "figures": [
           {
-            "label": "融资成本上限",
+            "label": "融资成本批准线",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -1044,7 +1044,7 @@
         "basis": "您签署的授权（第 1 版），第 0 天",
         "all_figures": [
           {
-            "label": "融资成本上限",
+            "label": "融资成本批准线",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -2161,7 +2161,7 @@
         "lead": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all.",
         "figures": [
           {
-            "label": "Funding cost ceiling",
+            "label": "Funding cost approval threshold",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -2180,7 +2180,7 @@
         "basis": "Your signed mandate (version 1), day 34",
         "all_figures": [
           {
-            "label": "Funding cost ceiling",
+            "label": "Funding cost approval threshold",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -2237,7 +2237,7 @@
         "lead": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。",
         "figures": [
           {
-            "label": "融资成本上限",
+            "label": "融资成本批准线",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -2256,7 +2256,7 @@
         "basis": "您签署的授权（第 1 版），第 34 天",
         "all_figures": [
           {
-            "label": "融资成本上限",
+            "label": "融资成本批准线",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -3373,7 +3373,7 @@
         "lead": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all.",
         "figures": [
           {
-            "label": "Funding cost ceiling",
+            "label": "Funding cost approval threshold",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -3392,7 +3392,7 @@
         "basis": "Your signed mandate (version 1), day 34",
         "all_figures": [
           {
-            "label": "Funding cost ceiling",
+            "label": "Funding cost approval threshold",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -3449,7 +3449,7 @@
         "lead": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。",
         "figures": [
           {
-            "label": "融资成本上限",
+            "label": "融资成本批准线",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -3468,7 +3468,7 @@
         "basis": "您签署的授权（第 1 版），第 34 天",
         "all_figures": [
           {
-            "label": "融资成本上限",
+            "label": "融资成本批准线",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -4481,7 +4481,7 @@
         "lead": "Inside your signed mandate (valid to day 90), FLOW may use your committed facilities at up to 15.00% a year while keeping ¥300,000 in cash, give early-payment discounts up to 1.50% and future concessions up to ¥5,000 in all.",
         "figures": [
           {
-            "label": "Funding cost ceiling",
+            "label": "Funding cost approval threshold",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -4500,7 +4500,7 @@
         "basis": "Your signed mandate (version 1), day 34",
         "all_figures": [
           {
-            "label": "Funding cost ceiling",
+            "label": "Funding cost approval threshold",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -4557,7 +4557,7 @@
         "lead": "在您签署的授权内（有效至第 90 天），FLOW 可以使用已承诺的融资额度，年化成本不超过 15.00%，同时保持现金不低于 ¥300,000；可给予不超过 1.50% 的提前付款折扣，远期让步合计不超过 ¥5,000。",
         "figures": [
           {
-            "label": "融资成本上限",
+            "label": "融资成本批准线",
             "value": "15.00%",
             "tone": "neutral"
           },
@@ -4576,7 +4576,7 @@
         "basis": "您签署的授权（第 1 版），第 34 天",
         "all_figures": [
           {
-            "label": "融资成本上限",
+            "label": "融资成本批准线",
             "value": "15.00%",
             "tone": "neutral"
           },

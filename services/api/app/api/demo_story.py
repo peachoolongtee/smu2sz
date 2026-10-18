@@ -79,7 +79,7 @@ _STEP = {  # id -> (label en, label zh, description en, description zh, the cont
              "时钟走到买方第二笔付款逾期的那一天。没有任何东西被记为已收到。", "Let time pass", "让时间流逝"),
     "queue": ("The cure is queued for the owner", "解决方案排队等待老板批准",
               "The cure costs more than the agent may approve alone, so it waits for the owner. Nothing has run.",
-              "这项解决方案的成本超过代理可独自批准的上限，因此等待老板。尚未执行任何操作。", "Queue the cure for the owner", "把解决方案交给老板批准"),
+              "这项解决方案的成本高于代理无需批准即可借款的批准线，因此等待老板批准。尚未执行任何操作。", "Queue the cure for the owner", "把解决方案交给老板批准"),
     "approve": ("The owner approves", "老板批准",
                 "FLOW prepared the funding plan. It is outside what FLOW may run alone, so it waits for the owner, who decides on the approval card.",
                 "FLOW 已准备好融资方案。它超出了 FLOW 可独自执行的范围，因此等待老板，由老板在批准卡上作出决定。", "Review the approval", "查看批准事项"),
