@@ -109,8 +109,8 @@ def _offer_plan(ctx: NlContext, turn: Turn, extra: dict[str, Any]) -> None:
     try:
         proposed = fund_gap(ctx, Slots(), execute=False)
         if proposed.pending_clarification is not None:  # more than one gap ahead: the plan covers them all
-            proposed = fund_gap(ctx, Slots(gap_index=99), execute=False)
-    except EngineError:
+            proposed = fund_gap(ctx, Slots().model_copy(update={"gap_index": 99}), execute=False)  # 99 = all; Slots() validates 1..20
+    except (EngineError, ValueError):  # ValueError: pydantic's ValidationError; never a 500 for a question
         return
     if proposed.pending is None or not proposed.awaiting:
         if proposed.reply and proposed.verdict is not None:  # the plan could not be stored: the fund-gap turn says why
