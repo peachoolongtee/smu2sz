@@ -73,7 +73,7 @@ each source.**
 | Usefulness | About half of messages need no owner review (57 of 115); only 3 of the 14 genuinely acceptable offers are accepted alone (Table 5) | Tuned |
 | Reading contracts | 75% of key fields on 17 unseen Chinese contracts with a text layer (45% over all 30: 13 scans and photos are refused) | Unseen, recorded model replay |
 | Owner questions | 228 of 427 answerable bank questions answered, 45 partly, 0 wrong (tuned bank); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic | Tuned; held-out |
-| Live model | One live DeepSeek run per component: buyer messages 42 of 63 verdicts, no wrong accept (1 Oct); the question router answered 33 of the 63 questions that reached it, 22 fully right by one reviewer (18 Oct) | Live, single runs |
+| Live model | One live DeepSeek run per component: buyer messages 42 of 63 verdicts, no wrong accept (1 Oct); the question router was fully correct on 22 of the 63 questions that reached it (22 of 33 when it answered), by one reviewer (18 Oct) | Live, single runs |
 | Security | 279 stored attack cases (128 API, 151 chat): none violated the harm oracles (rules path and a scripted hostile model; no real model read an attack). Internal review by an AI Security Lead, not external assurance | Tests |
 | Task completion | 49 of 49 scripted conversations pass their own checks (88 turns); the 17-step demo walk ends with a 14-entry hash chain that verifies, and a tampered copy is rejected | Scripted tasks, simulated environment |
 | Tests | Passed, failed and skipped counts for the API, web-unit and browser suites on the submission commit: Table V (Appendix B). Last historical runs: API 10,674 passed, 0 failed, 47 skipped and mock browser 479 passed, 0 failed, 77 skipped (`70f23ac5`); live browser 139 passed with three known failures, `live.spec.ts:334` and `:348` (#157) and `tracker.spec.ts:216` (`975e082f`). A count measures the size of a suite, not correctness | Tests |
@@ -185,9 +185,9 @@ due day 47; the owner approves on day 34; no other cash flow is added.
 
 <!-- figure: figures/screens/screen2-deal-verdict.png | Figure 1. Foshan's request after FLOW checked it (web app on recorded mocks, build 571ea64f). (1) The verdict: counter with Option A. (2) Why the request cannot be accepted as asked. (3) Option A is within the signed mandate. (4) Nothing is sent until the owner sends it. (5) The priced choices: Option A, early payment on up to ¥260,000 at 0.85%, costs ¥3,035.99; Option B is 55-day terms with a 0.30% price rise. | h=3.4 -->
 
-<!-- figure: figures/fig11a-financing-alternatives.png | Figure 2a. Like-for-like financing alternatives: closing cash on the same day-0 books and the same scheduled events, against the ¥300,000 reserve. Today's books with no new funding fall to −¥105,000 on days 30–31; FLOW's standing plan (¥3,113.93) touches the reserve on day 30 and never goes below it; EX01 accepted as asked falls ¥90,040 short on day 47 (¥135,040 at worst, day 60); Option A (¥3,035.99) and Option B with its funding (¥3,706.46) hold the reserve. Data: the financial audit's independent recomputation, equal to the engine to the fen (synthetic golden books, mandate v1). | h=3.3 -->
+<!-- figure: figures/fig11a-cash-alternatives.png | Figure 2a. The financing alternatives for Foshan's request, like for like: five series of closing cash under the same events, differing only by the day-0 choice, against the ¥300,000 reserve. No action (A0) falls to −¥105,000 on days 30–31; EX01 accepted as asked with no funding (A2) is below the reserve on days 47–61 (¥209,960 on day 47, ¥164,960 on days 60–61); the standing plan (A1, ¥3,113.93), Option A (A3, ¥3,035.99) and Option B with its plan (A4, ¥3,706.46 less a ¥1,260 price rise, ¥2,446.46 net) touch the reserve exactly on days 30–31. Data: the financial audit's recomputation, equal to the engine to the fen (synthetic golden books, mandate v1). | h=5.2 -->
 
-<!-- figure: figures/fig11b-disruption-and-cure.png | Figure 2b. The subsequent disruption and cure, as the demo ran them after Option A was agreed: a second ¥200,000 payroll scheduled for day 42, Foshan's ¥160,000 paid late (due day 32, received day 36), and the ¥200,000 advance FLOW proposed on day 34, approved by the owner and landed on day 37. The reserve holds on every day; the posted cost is ¥5,205.36 (Table 2). | h=3.3 -->
+<!-- figure: figures/fig11b-cash-disruption.png | Figure 2b. The subsequent disruption and cure, as the demo ran them after Option A was agreed: a second ¥200,000 payroll scheduled on day 25 for day 42, Foshan's ¥160,000 residual paid late (due day 32, received day 36), and the ¥200,000 advance FLOW proposed on day 34 (32.5% a year, so queued as APR-000001), approved by the owner and landed on day 37. As run (B2), cash stays at or above the reserve every day, for ¥5,205.36 against ¥3,035.99 quoted (B0); with the payroll and no cure (B1), cash would be ¥111,964.01 on days 42–46. | h=5.2 -->
 
 **What is new.** Negotiation agents, cash-flow forecasts, loan marketplaces and covenant monitoring each exist. Pactum's agents
 negotiate for the buyer; MYbank's agents tailor the lender's own products; Xero's cash-flow actions work from the ledger;
@@ -307,9 +307,9 @@ checks it and computes everything that follows. None of them can price, decide o
 
 | Capability | The model sees | It returns | Code then | Evidence class and result |
 | --- | --- | --- | --- | --- |
-| **Reading documents and contracts** (the compiler): term sheets, contracts, lender agreements, setup's *Fill from an agreement* | The document (redacted in live mode) and the output schema; never the books or the mandate | Typed terms, each with the exact quoted source span | Drops any term whose quote is not found word for word; parses values from the quote; checks stage sums and totals; nothing changes until the owner confirms | Unseen, recorded DeepSeek readings: 75% of key fields on 17 text-layer Chinese contracts; not reproducible from the repository |
+| **Reading documents and contracts** (the compiler): term sheets, contracts, lender agreements, setup's *Fill from an agreement* | The document (redacted in live mode) and the output schema; never the books or the mandate | Typed terms, each with the exact quoted source span | Drops any term whose quote is not found word for word; parses values from the quote; checks stage sums and totals; nothing changes until the owner confirms | Unseen, recorded DeepSeek readings: 75% of key fields on 17 text-layer Chinese contracts. **Not reproducible from the repository** (contracts and readings kept outside it) |
 | **Reading buyer messages; classifying owner requests** | A buyer's message (redacted); or an owner's request the deterministic parser could not read | Typed obligations with source spans, or abstention; one intent from a closed list of 10 with no approve, reject or buyer-message intent | A coverage check decides whether FLOW may act alone; the verifier prices and decides; the classifier's label never executes | Unseen first runs 33/63 and 28/47 verdicts (rules path), then tuned; one live DeepSeek run 42/63, no wrong accept (1 Oct) |
-| **Routing owner questions** (Ask FLOW, ADR-0015, live mode only) | The redacted question, fenced as data, and the menu of 40 read-only tools; never the books | Up to three tool calls with typed slots | Validates strictly (canary, exact JSON, known tools, slots checked twice), runs the tools and writes every word and figure; any failure falls back to "I cannot answer that yet" | Live, single run (18 Oct): 33 answered of the 63 questions that reached it, 22 fully right by one reviewer |
+| **Routing owner questions** (Ask FLOW, ADR-0015, live mode only) | The redacted question, fenced as data, and the menu of 40 read-only tools; never the books | Up to three tool calls with typed slots | Validates strictly (canary, exact JSON, known tools, slots checked twice), runs the tools and writes every word and figure; any failure falls back to "I cannot answer that yet" | Live, single run (18 Oct): 22 fully correct of the 63 questions that reached it (22 of 33 when it answered), by one reviewer |
 
 **Why a model at all.** The rules grammar is precise but narrow: on 17 unseen Chinese contracts it found no party names (it
 has no Chinese party pattern), while recorded DeepSeek readings found both parties for 14 and swapped buyer and seller in 3
@@ -405,7 +405,14 @@ of a non-deterministic provider); *rules*; *scripted* (a fake model we wrote); a
 system.** Labels for buyer messages were written by AI agents in separate sessions, not by people. Appendix C gives every
 command.
 
-<!-- figure: figures/fig-eval-classes.png | Figure 5. FLOW's accuracy results grouped by evidence class: unseen held-out first runs, the same sets after tuning on their failures, recorded DeepSeek readings and live DeepSeek calls. Each bar is a share of its own row's denominator (shown beside it), and the right-hand column shows what that row's own oracle scores wrong. Rows with different oracles do not compare. Offline re-runs on 571ea64f, 18 Oct 2026; live rows on the dates shown. -->
+Three compact panels show the accuracy results, one per reader, because their oracles differ and do not compare across
+panels. Each bar is a share of its own denominator, shown beside it, and its evidence class is named.
+
+<!-- figure: figures/fig-eval-buyer.png | Figure 5a. Buyer messages: the share of verdicts that match the label on the unseen first runs (33/63 and 28/47), after tuning (44/63 and 38/47), against today's policy (50/63 and 44/47) and in one live DeepSeek run on 1 Oct (42/63), each with its wrong autonomous accepts (4 of 8 and 2 in the first runs; 0 since). Rules path unless marked live. | h=4.2 -->
+
+<!-- figure: figures/fig-eval-contracts.png | Figure 5b. Contract fields, recorded DeepSeek readings: the unseen batch's first reading got 215 of 285 fields right on the 17 text-layer contracts (75%), 45% over all 30 with the 13 scans refused; of the 234 decision-critical fields, 178 right, 45 missing, 11 wrong. The tuned sets (hatched) reach 85% and 97% of decision-critical fields. Not reproducible from the repository: the contracts and readings are kept outside it. | h=3.1 -->
+
+<!-- figure: figures/fig-eval-questions.png | Figure 5c. Owner questions: the bank the answers were built against answers 228 of 427 in-books turns (0 wrong, tuned); everyday wording 326 of 345, held-out part 127 of 142; the live router (one run, 18 Oct) was fully correct on 22 of the 63 questions that reached it, 22 of the 33 it answered. | h=3.1 -->
 
 #### Task Completion: scripted tasks in a simulated environment
 
@@ -441,16 +448,18 @@ failure classes, so today's figures are tuned.
 - **That caution has a cost: 11 of the 14 good offers wait for the owner.** Ten name a settlement date ("tmrw", "国庆后") that
   FLOW does not yet read, so the coverage check cannot account for it. Appendix E has the reader's error rates.
 
-**Contracts.** On 30 new synthetic Chinese contracts, 13 scans and photos are refused (no OCR); on the 17 with a text layer,
-recorded DeepSeek readings got **215 of 285 key fields (75%)**, 76% of the fields that move money, with payment triggers
-weakest (17 of 33). After fixes chosen from these failures: 86%, no longer unseen. The contracts and readings are outside the
-repository, so these figures cannot be reproduced from it, and a reading changes nothing until the owner confirms it.
+**Contracts (a benchmark that cannot be reproduced from the repository).** The 70 synthetic contracts and their recorded
+DeepSeek readings are kept outside the repository, so a judge cannot re-run these figures; they are supporting evidence, not
+the central proof, and a reading changes nothing until the owner confirms it. On 30 new contracts, 13 scans and photos are
+refused (no OCR); on the 17 with a text layer the readings got **215 of 285 key fields (75%)**, 76% of the fields that move
+money, with payment triggers weakest (17 of 33). After fixes chosen from these failures: 86%, no longer unseen.
 
 **Owner questions.** On the bank the answers were built against (tuned), 228 of 427 answerable turns are answered, 45 partly,
 0 wrong. On **142 held-out everyday wordings**, 127 reach the right answer (89.4%) and 3 a wrong topic (2.1%); offline, no
 question executed or changed the books. **The live stress test (18 Oct, `28738f19`, DeepSeek, router on):** 658 owner turns all
-returned HTTP 200; of 589 sweep questions the rules answered 546 and 63 reached the router, which answered 33 (one reviewer:
-22 right, 10 partial, 1 wrong topic), said "cannot answer yet" for 29 and rejected 1. The classifier turned 4 questions into
+returned HTTP 200; of 589 sweep questions the rules answered 546 and 63 reached the router. It was fully correct on 22 of
+those 63 (22 of 33 when it answered; one reviewer, not blinded: 10 more partial, 1 wrong topic), said "cannot answer yet" for
+29 and rejected 1. The classifier turned 4 questions into
 proposed plans that waited for "go ahead". Latency p50 0.13 s, p95 1.17 s. It measured availability and paths, not
 correctness by oracle.
 
