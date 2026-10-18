@@ -66,7 +66,7 @@ HEADER = {
 }
 # Repository links in the technical document resolve here unless --repo-url names another base (for example the
 # submission commit: https://github.com/peachoolongtee/smu2sz/blob/<commit>).
-TECHDOC_REPO_URL = "https://github.com/peachoolongtee/smu2sz/blob/main"
+TECHDOC_REPO_URL = "https://github.com/peachoolongtee/smu2sz/blob/49f017cf3250662fba0c78aa033a098dff818e6e"
 BODY_PT = Pt(10)
 MAX_FIG_HEIGHT_IN = 4.8
 PAGE_FIG_HEIGHT_IN = 8.4  # "| page" figures: the tallest a figure may be with its caption on a Letter page
