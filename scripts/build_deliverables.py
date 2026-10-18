@@ -612,7 +612,7 @@ class Renderer:
         for cell in t.rows[0].cells:  # a header row never ends a page on its own
             for par in cell.paragraphs:
                 par.paragraph_format.keep_with_next = True
-        if self.compact and len(rows) <= 6:  # a short table (an index, a box) stays on one page
+        if self.compact and len(rows) <= 8:  # a short table (an index, a box) stays on one page
             for row in t.rows[:-1]:
                 for cell in row.cells:
                     for par in cell.paragraphs:
