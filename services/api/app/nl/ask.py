@@ -82,12 +82,13 @@ def _offer_plan(ctx: NlContext, turn: Turn) -> None:
     a later "go ahead" runs it, or queues it for the owner's approval, down the same path (`service._confirm` -> `plans.send`: the
     executor, the mandate checks, the approval rules). This builds the very plan `funding.fund_gap(execute=False)` proposes, with the
     same pending plan, steps and verdict; it executes nothing and adds no path of its own.
-    It never replaces another kind of plan that waits for its go-ahead (the reminder then says so), and when no plan can be stored
+    It never replaces a plan that already waits for its go-ahead, of any kind: what the owner was shown and may confirm stays
+    exactly that (the reminder then says so; a different plan is asked for by name). When no plan can be stored
     (the cheapest committed plan cannot run today) the reply says why instead of promising a go-ahead."""
     from app.nl.funding import fund_gap
 
     waiting = ctx.session.pending_plan
-    if waiting is not None and waiting.intent != Intent.FUND_GAP:
+    if waiting is not None:
         return
     try:
         proposed = fund_gap(ctx, Slots(), execute=False)

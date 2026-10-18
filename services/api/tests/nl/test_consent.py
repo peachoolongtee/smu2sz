@@ -216,8 +216,8 @@ def test_a_question_does_not_confirm_but_leaves_the_plan_waiting(client, rt):
     assert len(ops(c.say("go ahead"))) == 2
 
 
-@pytest.mark.parametrize("text", ["go ahead", "Go ahead!", "yes", "yes please", "confirm", "ok, do it", "sure", "好的", "确认",
-                                  "执行", "好的，请执行", "proceed"])
+@pytest.mark.parametrize("text", ["go ahead", "Go ahead!", "yes", "yes please", "confirm", "ok, do it", "yes, run it", "确认",
+                                  "执行", "好的，请执行", "proceed", "确认执行", "do it"])
 def test_confirmation_words_still_confirm(client, rt, text):
     c = Chat(client, "consent-ok")
     c.say("Fund the cash gap")
@@ -369,12 +369,16 @@ def test_a_statement_of_the_past_is_not_an_instruction(text):
 # (message, confirmation verdict): the tag questions 对吧 / 是吧 / 好吧 / 行吧 / 可以吧 and any assent word + 吧 or ？ ask,
 # they never confirm; the do-verbs 办吧 / 做吧 ("do it") still do.
 P04_CONFIRMATIONS = [
-    ("go ahead", "yes"), ("yes", "yes"), ("好的", "yes"), ("确认", "yes"), ("行吧", None), ("对吧", None), ("是吧", None),
+    ("go ahead", "yes"), ("yes", "yes"), ("好的", None), ("确认", "yes"), ("行吧", None), ("对吧", None), ("是吧", None),
     ("好吧", None), ("可以吧", None), ("确定吧", None), ("执行吧", None), ("对吧？", None), ("好的？", None), ("可以？", None),
     ("不", "no"), ("不行", "no"), ("go ahead?", None), ("go ahead if cash is low", None), ("yes, not now", None),
-    ("执行", "yes"), ("不执行", "no"), ("办吧", "yes"), ("做吧", "yes"), ("好的办吧", "yes"), ("对", "yes"),
+    ("执行", "yes"), ("不执行", "no"), ("办吧", "yes"), ("做吧", "yes"), ("好的办吧", "yes"), ("对", None),
     ("yes yes no", None), ("go ahead, cancel", "no"), ("嗯", None), ("yes 不", None), ("行不", None), ("确定吗", None),
-    ("就这么办", "yes"), ("ok 👍", None), ("ok?", None), ("好的，谢谢", "yes"),
+    ("就这么办", "yes"), ("ok 👍", None), ("ok?", None), ("好的，谢谢", None),
+    # a bare acknowledgement is not consent, alone or with thanks; with an explicit word it is
+    ("ok", None), ("ok thanks", None), ("thanks", None), ("好的谢谢", None), ("sure", None), ("fine", None), ("sounds good", None),
+    ("行", None), ("可以", None), ("没问题", None), ("ok, do it", "yes"), ("好的，请执行", "yes"), ("yes, run it", "yes"),
+    ("确认执行", "yes"),
 ]
 
 

@@ -251,6 +251,16 @@ def run_legs(ctx: NlContext, steps: Steps, ops: Sequence[Any], condition: str | 
                        "未发送：" + "；".join(describe(ctx, o) for o in rest) + "。其余均未执行。"))
     if ok and (total := landing.line(ctx, done, executed=True)):
         lines.append(total)
+    if not ok:
+        # the plan did not fund what it set out to: say how much is not in place (the stopped step and every step after it),
+        # and what already ran, so "funded" is never inferred from a part-run plan
+        left = sum(getattr(o, "amount_fen", None) or getattr(o, "advance_fen", 0) or 0
+                   for o in ops if o not in done and isinstance(o, DrawFacility | SubmitInvoiceForFinancing))
+        if left:
+            lines.append(t(ctx, f"Still to arrange: {fmt_yuan(left)} of the funding is not in place; the gap is not fully funded.",
+                           f"仍需安排：{fmt_yuan(left)} 的融资尚未到位，资金缺口尚未完全补足。"))
+        if done and (ran := landing.line(ctx, done, executed=True)):
+            lines.append(ran)  # cash in now vs cash still to land, for the steps that ran
     return lines, ok
 
 

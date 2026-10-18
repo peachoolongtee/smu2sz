@@ -273,9 +273,10 @@ def _void_line(ctx: NlContext) -> str:
 
 
 def approve_words(ctx: NlContext) -> str:
-    """The words that approve what this session just showed. "Yes, run it" confirms a plan; an approval that waits in the queue is decided by
-    the closed bare-confirm grammar (`lexicon.BARE_CONFIRM`, unchanged), which takes "yes" and "yes, do it" but not "yes, run it"."""
-    return _t(ctx, 'Reply "Yes, do it" to approve it.', "回复“好，执行”即可批准。")
+    """The words that approve what this session just showed. "Yes, run it" confirms a plan; an approval that waits in the queue is decided
+    only by the word approve (`consent.bare_verdict`: "approve it" binds to the one item just shown) or by its id. "Yes, do it" does not
+    approve it, so a retried "go ahead" cannot approve the leg the first one queued."""
+    return _t(ctx, 'Reply "Approve it" to approve it.', "回复“批准”即可批准。")
 
 
 def _join(ctx: NlContext, *parts: str) -> str:

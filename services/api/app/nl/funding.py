@@ -43,9 +43,9 @@ from app.nl.models import Intent, Slots
 from app.nl.offers import buyer_options, owner_doc_for, verdict_line
 from app.nl.pipeline import (
     Steps,
-    counter_line,
     accept,
     committed_plan,
+    counter_line,
     funding_ops,
     package_offer,
     run_negotiation,
