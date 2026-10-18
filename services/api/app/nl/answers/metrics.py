@@ -858,9 +858,17 @@ def capex_case(ctx: Any) -> Metric:
 
 def terms_extension_cost(ctx: Any, buyer_id: str | None, terms_days: int) -> Metric:
     """What longer terms for a buyer cost (`whatif.simulate`: the verifier on a hypothetical package; it writes nothing)."""
-    from app.whatif import WhatIfParamError, WhatIfParams, simulate
+    from app.whatif import WhatIfParamError, WhatIfParams, resolve, simulate
 
     r = R(ctx)
+    try:
+        # the terms the buyer is on today: terms that are not longer than these change nothing, so they are never priced as a request
+        current = resolve(r.state, r.day, buyer_id).recurring.terms_days
+    except (WhatIfParamError, ValueError) as exc:
+        return Metric("terms_extension_cost", None, "none", None, "whatif.simulate", {"error": str(exc)})
+    if terms_days <= current:
+        return Metric("terms_extension_cost", None, "none", None, "whatif.simulate",
+                      {"no_extension": True, "current_terms_days": current, "asked_terms_days": terms_days})
     try:
         params = WhatIfParams(terms_days=terms_days, discount_bp=0, rebate_bp=0)
         w = simulate(r.state, r.mandate, params, trusted_owner_key_hex=r.owner_key_hex, day=r.day,
@@ -871,7 +879,8 @@ def terms_extension_cost(ctx: Any, buyer_id: str | None, terms_days: int) -> Met
     breach = next((v.get("day") for v in w.violations if v.get("code") == "RESERVE_BREACH"), None)
     return Metric("terms_extension_cost", fwd.get("total_fen"), money(int(fwd.get("total_fen") or 0)), None, "whatif.simulate",
                   {"cap_fen": fwd.get("cap_fen"), "over_cap": bool(fwd.get("over_cap")), "outcome": w.outcome,
-                   "breach_day": breach, "counters": len(w.counters), "codes": list(w.codes)})
+                   "breach_day": breach, "counters": len(w.counters), "codes": list(w.codes),
+                   "current_terms_days": current})
 
 
 METRICS: dict[str, Callable[[Any], Metric]] = {

@@ -178,7 +178,9 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
     else:
         parsed = _parse(ctx, req.text, classifier_backends)
         parse_source = parsed.source
-        turn = _dispatch(ctx, parsed, req.text)
+        turn = _dispatch(ctx, parsed, parsed.resumed_text or req.text)
+        if turn.pending_clarification is not None and not turn.pending_clarification.text:
+            turn.pending_clarification.text = req.text  # what the answer to the question resumes
         _honour_scope(ctx, scoped, store.get_state(), lang)
 
     if turn.pending is not None and turn.pending.state_version is None:
@@ -256,6 +258,9 @@ def _about_the_business(text: str) -> bool:
 def _parse(ctx: NlContext, text: str, backends: Sequence[clf.IntentBackend] | None) -> Parsed:
     s = ctx.session
     state = ctx.state()
+    pending_ask, s.pending_ask = s.pending_ask, None  # a question that asked which customer is finished by the very next turn or dropped
+    if pending_ask is not None and ctx.owner_authenticated and (resumed := asking.resume_parse(ctx, pending_ask, text)) is not None:
+        return resumed
     if s.pending_clarification is not None:
         resolved = _resolve_clarification(ctx, text)
         if resolved is not None:
@@ -325,7 +330,9 @@ def _resolve_clarification(ctx: NlContext, text: str) -> Parsed | None:
     if pc.slot == "intent":
         return Parsed(intent=Intent(value), slots=pc.slots, source="clarification", matched=[f"option:{choice}"])
     slots = pc.slots.model_copy(update={pc.slot: value})
-    return Parsed(intent=pc.intent, slots=slots, source="clarification", matched=[f"option:{choice}"])
+    # a what-if resumes the words that raised the question (its terms, its discount), not the answer ("Foshan")
+    resumed = pc.text if pc.intent == Intent.WHAT_IF and pc.slot == "counterparty_id" and pc.text else None
+    return Parsed(intent=pc.intent, slots=slots, source="clarification", matched=[f"option:{choice}"], resumed_text=resumed)
 
 
 # ---------------------------------------------------------------- dispatch
@@ -352,6 +359,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         pc = s.pending_clarification
         t_ = ask(pc.intent, pc.slot, t(ctx, "Sorry, which one?", "抱歉，请问是哪一个？"),
                  [(o.id, o.label, pc.values[o.id]) for o in pc.options], pc.slots)
+        if t_.pending_clarification is not None:
+            t_.pending_clarification.text = pc.text
         return t_
     slots = p.slots
     if slots.counterparty_id is None and s.counterparty_id:

@@ -10,7 +10,7 @@ from typing import Any
 from app.domain.money import bp, fmt_pct
 from app.nl.answers import AnswerReply
 from app.nl.answers import metrics as mx
-from app.nl.answers.answers import W, a_dependence, a_late, a_owes_most, n_en, pct0
+from app.nl.answers.answers import W, a_dependence, a_late, a_owes_most, n_en, pct0, terms_cost_reply
 from app.nl.answers.metrics import money
 from app.nl.router.tools.common import (
     Resolved,
@@ -250,42 +250,10 @@ def early_pay_offer(ctx: Any, lang: str, slots: dict[str, Any]) -> AnswerReply:
 
 def terms_extension_cost(ctx: Any, lang: str, slots: dict[str, Any]) -> AnswerReply:
     w = writer(ctx, lang)
-    r = w.r
     buyer, ask = _customer(w, "terms_extension_cost", slots.get("customer"))
     if ask is not None:
         return ask
-    n = int(slots["days"])
-    name = w.buyer(buyer)
-    c = w.m(mx.terms_extension_cost(r, buyer, n))
-    if c.value is None:
-        return w.reply("DEAL-09", w.t(
-            f"I could not price {n}-day terms for {name} on today's books: the what-if needs a recurring invoice of theirs and an open, "
-            f"unfinanced invoice to apply them to, and the books hold none. Nothing was changed.",
-            f"按今日账目，我无法为{name}测算 {n} 天账期的成本：假设分析需要该客户的定期发票和一张未融资的未结发票，而账目中没有。没有更改任何内容。"),
-            w.basis("hypothetical"))
-    d = c.detail
-    h = r.mandate.forward_concession_horizon_days
-    span = w.t(f"the next {h // 365 * 12} months" if h % 365 == 0 else f"the next {h} days",
-               f"未来 {h // 365 * 12} 个月" if h % 365 == 0 else f"未来 {h} 天")
-    total = w.fig("concession_cost", c.display)
-    capf = money(int(d["cap_fen"] or 0))
-    text = w.t(f"{total} in forward concessions over {span} of {name} invoices on {n}-day terms, "
-               + (f"above your {capf} limit" if d["over_cap"] else f"within your {capf} limit"),
-               f"{span}{name}的发票共产生远期让步 {total}（按 {n} 天账期），" + (f"超过您 {capf} 的上限" if d["over_cap"] else f"在您 {capf} 的上限内"))
-    if d["breach_day"] is not None:
-        w.fig("breach_day", str(d["breach_day"]))
-        text += w.t(f", and cash would fall below your reserve on {w.on(d['breach_day'])}", f"，且现金将在{w.on(d['breach_day'])}低于您的储备线")
-    outcome = d["outcome"]
-    if outcome == "ACCEPT":
-        text += w.t("; FLOW could accept it within your limits.", "；FLOW 可在您的授权内接受。")
-    elif outcome == "NEEDS_OWNER_APPROVAL":
-        text += w.t("; it would need your approval.", "；需要您批准。")
-    elif d["counters"]:
-        text += w.t("; FLOW would counter rather than accept.", "；FLOW 会提出还价，而不是直接接受。")
-    else:
-        text += w.t("; FLOW would decline it.", "；FLOW 会拒绝。")
-    text += w.t(" Nothing was booked or sent.", "没有记账，也没有发送任何内容。")
-    return w.reply("DEAL-09", text, w.basis("hypothetical"))
+    return terms_cost_reply(w, buyer, int(slots["days"]), on_terms=True)
 
 
 SPECS: tuple[Spec, ...] = (

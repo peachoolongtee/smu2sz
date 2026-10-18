@@ -1133,15 +1133,20 @@ def a_approvals(w: W, q: str) -> AnswerReply:
         f"有，共 {len(ap)} 项：" + "；".join(approval_words(w, x) for x in ap) + "。请在审批页面逐项批准或拒绝。"), w.basis("log"))
 
 
-def a_terms_cost(w: W, q: str) -> AnswerReply | None:
+def terms_cost_reply(w: W, buyer: str | None, n: int, *, on_terms: bool = False) -> AnswerReply:
+    """What `n`-day terms for `buyer` cost, from the what-if (`whatif.simulate`, the verifier on a hypothetical package). Terms that are not
+    longer than the buyer's current ones are no request: nothing is priced and nothing is said to be within the owner's limits."""
     r = w.r
-    found = lx.days(q)
-    if not found:
-        return None
-    n = found[0].value
-    buyer = _buyer_asked(r, q)
     name = w.buyer(buyer)
     c = w.m(mx.terms_extension_cost(r, buyer, n))
+    if c.detail.get("no_extension"):
+        cur = int(c.detail["current_terms_days"])
+        w.fig("terms_days", str(n))
+        return w.reply("DEAL-09", w.t(
+            f"{name} is on {cur}-day terms today, so {n}-day terms would not be an extension: there is nothing to price and nothing to "
+            f"accept. Tell me the longer terms you want tested (for example 60 days). Nothing was changed.",
+            f"{name}目前的账期是 {cur} 天，{n} 天并不比现在更长，因此没有可测算的成本，也没有需要接受的内容。"
+            f"请告诉我要测试的更长账期（例如 60 天）。没有更改任何内容。"), w.basis("hypothetical"))
     if c.value is None:
         return w.reply("DEAL-09", w.t(
             f"I could not price {n}-day terms for {name} on today's books: the what-if needs a recurring invoice of theirs and an open, "
@@ -1153,10 +1158,13 @@ def a_terms_cost(w: W, q: str) -> AnswerReply | None:
     span = w.t(f"the next {h // 365 * 12} months" if h % 365 == 0 else f"the next {h} days",
                f"未来 {h // 365 * 12} 个月" if h % 365 == 0 else f"未来 {h} 天")
     total = w.fig("concession_cost", c.display)
+    w.fig("terms_days", str(n))
     capf = money(int(d["cap_fen"] or 0))
-    text = w.t(f"{total} in forward concessions over {span} of {name} invoices, " + (f"above your {capf} limit" if d["over_cap"]
-                                                                                   else f"within your {capf} limit"),
-               f"{span}{name}的发票共产生远期让步 {total}，" + (f"超过您 {capf} 的上限" if d["over_cap"] else f"在您 {capf} 的上限内"))
+    over = "above" if d["over_cap"] else "within"
+    on = f" on {n}-day terms" if on_terms else ""
+    on_zh = f"（按 {n} 天账期）" if on_terms else ""
+    text = w.t(f"{total} in forward concessions over {span} of {name} invoices{on}, {over} your {capf} limit",
+               f"{span}{name}的发票共产生远期让步 {total}{on_zh}，" + (f"超过您 {capf} 的上限" if d["over_cap"] else f"在您 {capf} 的上限内"))
     if d["breach_day"] is not None:
         w.fig("breach_day", str(d["breach_day"]))
         text += w.t(f", and cash would fall below your reserve on {w.on(d['breach_day'])}",
@@ -1172,6 +1180,33 @@ def a_terms_cost(w: W, q: str) -> AnswerReply | None:
         text += w.t("; FLOW would decline it.", "；FLOW 会拒绝。")
     text += w.t(" Nothing was booked or sent.", "没有记账，也没有发送任何内容。")
     return w.reply("DEAL-09", text, w.basis("hypothetical"))
+
+
+def which_terms(w: W) -> AnswerReply:
+    """The question asked back when a question holds payment terms in days but not which ones it asks about ("from 45 or 60 days?")."""
+    return w.reply("DEAL-09", w.t(
+        "I could not tell which payment terms you are asking about. Tell me the terms you want tested, for example \"60 days for Foshan\". "
+        "Nothing was priced and nothing was changed.",
+        "我无法确定您问的是哪一个账期。请告诉我要测试的账期，例如“给佛山 60 天账期”。没有测算任何成本，也没有更改任何内容。"),
+        w.basis("hypothetical"))
+
+
+def a_terms_cost(w: W, q: str) -> AnswerReply | None:
+    from app.nl.router.tools.common import ask_which_customer, resolve_customer
+
+    r = w.r
+    change = lx.terms_change(q)
+    if change.ambiguous:
+        return which_terms(w)
+    if change.target is None:
+        return None
+    n = change.target
+    buyer = _buyer_asked(r, q)
+    if buyer is None:
+        # no customer is named and more than one has open invoices: the question is asked back, and the terms asked about are kept for the
+        # answer ("Foshan" next turn answers for this n)
+        return ask_which_customer(w, "terms_extension_cost", resolve_customer(r, None), {"days": n})
+    return terms_cost_reply(w, buyer, n)
 
 
 # ================================================================ covenants, capex
@@ -1481,7 +1516,16 @@ QUESTIONS: tuple[tuple[str, re.Pattern[str], Handler], ...] = (
                    r"\b\d{1,3}[- ]?days?\b",
                    r"\b(?:give|giving|extend(?:ing)?|move|moving)\b.{0,40}\b\d{1,3}[- ]?days?\b.{0,40}\b(?:cost|costs|price)\b",
                    r"(?:账期|延到|延长到|给).{0,12}\d{1,3}\s*天.{0,16}(?:多少钱|成本|代价|花多少|要花)",
-                   r"\d{1,3}\s*天账期.{0,12}(?:多少钱|成本|代价|花)"), a_terms_cost),
+                   r"\d{1,3}\s*天账期.{0,12}(?:多少钱|成本|代价|花)",
+                   # a longer-terms request put as "should I accept it?": "Should I accept 60-day terms instead of 45?", "60 days instead of 45",
+                   # "from 45 to 60 days", 账期从45天改成60天，我该接受吗
+                   r"\b(?:accept|agree to|approve|okay|ok)\w*\b.{0,50}\b\d{1,3}[- ]?days?\b.{0,16}\bterms?\b",
+                   r"\b\d{1,3}[- ]?days?\b.{0,24}\b(?:instead of|rather than|up from)\b.{0,12}\d{1,3}\b",
+                   r"\b(?:from|extend\w*|move|moving|change\w*)\b.{0,16}\b\d{1,3}\b.{0,12}\b(?:to|into)\b.{0,3}\d{1,3}[- ]?days?\b",
+                   r"(?:账期|付款期).{0,12}\d{1,3}\s*天.{0,4}(?:改成|改为|变成|变为|换成|延长到|延长至|延到|延至|增加到|拉长到|调到)",
+                   r"(?:账期|付款期).{0,16}\d{1,3}\s*天.{0,24}(?:接受|同意|答应|划算|该不该|可以吗|行不行)",
+                   r"(?:接受|同意|答应).{0,10}\d{1,3}\s*天(?:的)?账期",
+                   r"(?:延长|延期|拉长).{0,6}账期.{0,16}\d{1,3}\s*天"), a_terms_cost),
     ("CUS-08", _p(r"\b(?:should we|shall we|do we|would you|is it|is the|is that|is this|worth)\b.{0,60}\b(?:early[- ]pay(?:ment)?|pay(?:s|ing)? "
                   r"early|early settlement)\b",
                   r"\bearly[- ]pay(?:ment)?\b.{0,60}\b(?:worth it|a good deal|worth taking|should we)\b",
