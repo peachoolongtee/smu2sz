@@ -112,7 +112,7 @@ def test_an_approved_advance_says_what_was_requested_and_when_the_cash_lands(cli
     aid = r.json()["results"][0]["approval_id"]
     [queued] = client.get("/approvals/queue", headers=OWNER).json()["approvals"]
     assert queued["presentation"]["reason"] == ("The yearly cost of 32.5% is above the 15.00% limit you signed for funding without "
-                                                "your approval.")
+                                                "your approval, so it waits for your approval.")
     client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}, headers=OWNER)
     [done] = client.get("/approvals/queue", headers=OWNER).json()["approvals"]
     assert done["presentation"]["result_message"] == "¥200,000.00 of invoice financing was requested today; the cash lands in 3 days."

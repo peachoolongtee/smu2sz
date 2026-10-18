@@ -2259,7 +2259,7 @@
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
           "kind_text": "已申请发票融资",
           "status": "PENDING_APPROVAL",
-          "event_text": "等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。",
+          "event_text": "等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资的批准线 15.00%。",
           "day": 34,
           "when": "今天",
           "approval_id": "APR-000001",

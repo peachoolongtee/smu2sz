@@ -623,6 +623,10 @@ _FORMULA_PAREN = re.compile(r"\s*\(all charges on [^()]*(?:\([^()]*\)[^()]*)*\)"
 _YEARLY_COST = re.compile(r"\b(yearly cost of )(\d+(?:\.\d+)?)%")
 
 
+# the owner's words for the rate threshold (see `owner_words`), with nothing after it yet that says what the card does about it
+_THRESHOLD_WAITS = re.compile(r"(limit you signed for funding without your approval)(?!, so it waits)(?=[.;]|$|\s*\()")
+
+
 def approval_reason_words(state: FinancialState, text: str | None, today: int, lang: Lang = "en") -> str | None:
     """Why a request needs the owner, for the card, as a full sentence: the Business sentence without the executor's working (the "all charges on
     ¥… annualised = …" parenthesis stays at the audit level) and the yearly cost to one decimal, as the home says it
@@ -631,6 +635,7 @@ def approval_reason_words(state: FinancialState, text: str | None, today: int, l
     if out is None:
         return None
     out = _FORMULA_PAREN.sub("", out)
+    out = _THRESHOLD_WAITS.sub(lambda m: f"{m.group(1)}, so it waits for your approval", out)  # an approval threshold, never a ceiling: say why the card waits
     return _sentence(in_language(_YEARLY_COST.sub(lambda m: f"{m.group(1)}{fmt_pct(Fraction(m.group(2)) / 100, 1)}", out), lang, state) or "")
 
 
@@ -765,10 +770,10 @@ def needs_owner_reason(mandate: Mandate, legs: list[dict[str, Any]], lang: Lang)
     cap = fmt_pct(bp(mandate.max_apr_bp))
     rate = next((leg["rate_text"] for leg in over if leg["rate_text"]), None)
     if rate:
-        return t(lang, f"The yearly cost of {rate} is above the {cap} limit you signed for funding without your approval.",
-                 f"年化成本 {rate} 高于您签署的无需批准融资上限 {cap}。")
-    return t(lang, f"The yearly cost is above the {cap} limit you signed for funding without your approval.",
-             f"年化成本高于您签署的无需批准融资上限 {cap}。")
+        return t(lang, f"The yearly cost of {rate} is above the {cap} limit you signed for funding without your approval, so it waits for your approval.",
+                 f"年化成本 {rate} 高于您签署的无需批准融资的批准线 {cap}，因此需等您批准。")
+    return t(lang, f"The yearly cost is above the {cap} limit you signed for funding without your approval, so it waits for your approval.",
+             f"年化成本高于您签署的无需批准融资的批准线 {cap}，因此需等您批准。")
 
 
 # ---------------------------------------------------------------- an approval row
@@ -1457,7 +1462,7 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
             rate = fmt_pct(Fraction(m.group(1)) / 100, 1)
             return {"event_text": t(lang, f"{lead}: {asked} at {rate} a year, above the {m.group(2)} limit you "
                                           f"signed for funding without your approval.",
-                                    f"{lead}：{asked}，年化成本 {rate}，高于您签署的无需批准融资上限 {m.group(2)}。"),
+                                    f"{lead}：{asked}，年化成本 {rate}，高于您签署的无需批准融资的批准线 {m.group(2)}。"),
                     "event_detail": None}
         detail = _sentence(business_text(state, reason, today, lang, agreements) or "") if reason else None
         return {"event_text": _stop(f"{lead}: {asked}" if lang == "en" else f"{lead}：{asked}", lang), "event_detail": detail or None}

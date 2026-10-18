@@ -62,7 +62,7 @@ def test_the_opener_proposes_the_cure_and_go_ahead_runs_it(client, rt):
     assert [s["status"] for s in body["plan"]] == ["PROPOSED"]
     assert _critical(client) == 1
 
-    assert "above your 15.00% yearly ceiling" in reply and "so it needs your approval" in reply
+    assert "above the 15.00% you signed for FLOW to borrow without your approval" in reply and "so it needs your approval" in reply
     assert "32.5% a year for those 10 days" in reply
     state = rt.store.get_state()
     cash, drawn = state.cash_fen, next(f.drawn_fen for f in state.facilities if f.id == "FAC-IF")

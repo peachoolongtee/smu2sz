@@ -51,7 +51,7 @@
     "lowest_if_approved_when": null,
     "lowest_if_approved_fen": null,
     "execution_status": "EXECUTED",
-    "reason": "年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
+    "reason": "年化成本 32.5% 高于您签署的无需批准融资的批准线 15.00%，因此需等您批准。",
     "next_step_text": null,
     "next_step_href": null,
     "result_state_text": "已批准，资金将于3 天后到账",

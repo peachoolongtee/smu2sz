@@ -25,7 +25,7 @@ def test_the_opener_says_a_queued_cure_waits_instead_of_offering_it_again(client
     assert body["has_news"] is True and body["awaiting_confirmation"] is False and body["operations"] == []
     assert SESSIONS.get("op-2").pending_plan is None
     assert f"waiting for your approval ({aid})" in reply and f'"approve {aid}"' in reply and "approval card" in reply
-    assert "It costs" in reply and "32.5% a year for those 10 days" in reply and "above your 15.00% ceiling" in reply
+    assert "It costs" in reply and "32.5% a year for those 10 days" in reply and "above the 15.00% you signed for borrowing without your approval" in reply
     assert "if you say go ahead" not in reply and "Go ahead?" not in reply
     # there is no plan to run, so a go-ahead never queues a second approval: the one queue item it can decide is the
     # approval the opener just named (the owner's yes to what they were shown)

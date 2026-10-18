@@ -108,7 +108,7 @@ FIGURES: dict[str, Fig] = {
     "structure_monthly": Fig("A month", "每月"),
     "operations": Fig("Operations run", "已执行操作", COUNT),
     "refused": Fig("Refused", "已拒绝", COUNT),
-    "max_apr": Fig("Funding cost ceiling", "融资成本上限"),
+    "max_apr": Fig("Funding cost approval threshold", "融资成本批准线"),
     "max_discount": Fig("Discount limit", "折扣上限"),
     "concession_cap": Fig("Concession cap", "让步上限"),
     "tier2": Fig("Approval threshold", "审批门槛"),

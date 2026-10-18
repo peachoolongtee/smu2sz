@@ -212,7 +212,7 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     assert not any("Clock moved" in c["text"] for c in h["changes"])
     a = h["next_action"]
     assert a["cost_display"] == "¥1,782.19" and a["cost_total_display"] == "¥1,782.19" and a["rate_text"] == "32.5%" and a["lands_day"] == 37
-    assert a["needs_owner_reason"] == "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval."
+    assert a["needs_owner_reason"] == "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval."
     assert a["authority_text"].startswith("Needs your approval: The yearly cost of 32.5%")
     assert a["lands_when"] == "in 3 days" and a["after"] == "Cash stays at or above your minimum cash reserve for the next 120 days."
     # The router's cheapest plan (the line's last ¥2,790, left by the rounded early-pay face (R-10), then ¥80,000 on
@@ -243,7 +243,7 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     # one cure, one horizon: the approval card says what the home says (the plan projected on the books), on the home and in the queue
     assert card["protects"] == a["after"] == "Cash stays at or above your minimum cash reserve for the next 120 days."
     [row] = client.get("/approvals/queue").json()["approvals"]
-    assert row["presentation"]["reason"] == ("The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.")
+    assert row["presentation"]["reason"] == ("The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval, so it waits for your approval.")
     assert card["reason"] == row["presentation"]["reason"]
     assert row["presentation"]["protects"] == a["after"]
     assert client.get("/home?lang=zh").json()["approvals"][0]["protects"] == client.get("/home?lang=zh").json()["next_action"]["after"]
