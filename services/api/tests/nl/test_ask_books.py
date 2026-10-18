@@ -219,8 +219,8 @@ TIER3_QUESTIONS = [
     ("Is a personal guarantee ever needed?", "en", "SIGN_PERSONAL_GUARANTEE"),
     ("个人担保是什么意思？", "zh", "SIGN_PERSONAL_GUARANTEE"),
     ("Does the bank want collateral?", "en", "PLEDGE_COLLATERAL"),
-    ("要不要抵押设备？", "zh", "PLEDGE_COLLATERAL"),
-]
+    ("抵押设备是什么意思？", "zh", "PLEDGE_COLLATERAL"),
+]  # a request put as a question (要不要抵押设备？) is refused and logged: test_tier3_questions.py
 
 
 @pytest.mark.parametrize(("text", "lang", "kind"), TIER3_QUESTIONS)
@@ -424,9 +424,10 @@ def test_without_the_answer_layer_the_branch_runs_on_its_own():
 
 def test_with_the_agent_key_a_routed_question_reads_nothing(client, rt):
     before = fingerprint(rt)
-    r = Chat(client, "ask-agent", owner=False).say("Is equity an option?")
+    r = Chat(client, "ask-agent", owner=False).say("Do we have any capex contracts?")
     assert r["operations"] == [] and fingerprint(rt) == before
     assert "sign-in" in r["reply"] or r["intent"] == "ASK_BOOKS"
+    # a Tier-3 subject is the exception: from the agent key it is a request, refused and logged (test_tier3_questions.py)
 
 
 # ---------------------------------------------------------------- the small fixes

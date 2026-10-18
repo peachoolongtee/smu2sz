@@ -13,17 +13,21 @@ Only figures that survive every check below are used; anything missing or unchec
 - PRICE (per delivery), INVOICING (a day interval with a first date) and PAYMENT_TERMS (calendar days from the invoice
   date) are each stated once, each quotes the document verbatim, and each figure is parsed again by the reader's own code
   from the quoted words; no abstention other than a note, and no failed cross-check, touches them;
-- the contract does not end inside today's forecast window (the engine's repeating invoice has no end).
+- the contract's end is certain and not inside today's forecast window (the engine's repeating invoice has no end): exactly
+  one checked END_DATE, or a term in months from a checked start date, and no unexplained term, renewal or expiry wording;
+  END_NOT_CERTAIN blocks otherwise (CT-1).
 
 Pure: no store, no clock, no I/O.
 """
 
 from __future__ import annotations
 
+import calendar
 import hashlib
 import json
 import re
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from typing import Literal
 
 from app.compiler.contract_parsing import (
@@ -33,10 +37,12 @@ from app.compiler.contract_parsing import (
     parse_date,
     parse_days,
     parse_money,
+    parse_months,
     unit_of,
 )
+from app.compiler.contract_rules import DURATION, END, START
 from app.contracts.derive import buyer_terms, day_of
-from app.contracts.parties import PARTY_FLAG_KINDS, party_matches, registry_names
+from app.contracts.parties import PARTY_FLAG_KINDS, names_match
 from app.domain.models import (
     CompileStatus,
     ContractField,
@@ -46,10 +52,13 @@ from app.domain.models import (
     DocumentKind,
     DocumentStatus,
     FinancialState,
+    Mandate,
     PaymentBasis,
     PriceUnit,
     RecurringInvoice,
 )
+from app.domain.money import fmt_yuan
+from app.operations.party_names import same_company_key
 
 F = ContractField
 Status = Literal["READY", "ALREADY", "CONFLICT", "BLOCKED"]
@@ -114,29 +123,45 @@ def terms_hash(document_id: str, doc_hash: str, ri: RecurringInvoice, sources: t
 
 # ---------------------------------------------------------------- who the contract is with
 #
-# The comparison is the party check's own (`app.contracts.parties`, the owner's rule of 17 Oct): the registry name and its short
-# form against the names the reading found. That check already blocks confirming a document that does not name the chosen
-# counterparty at all; here the contract must name the customer as its BUYER, never as its supplier.
+# Stricter than the party check at confirmation (`app.contracts.parties`, where a short form such as "Dongguan" counts when it
+# sits inside a party name, which is right for "does this document concern the counterparty I chose"). Here money is set up, so
+# (CT-3): the contract's buyer must be the customer's full registry name (`same_company_key`: NFKC, case, punctuation and the
+# legal-form suffix are ignored, nothing else), the buyer's quote must be found in the document text, and the customer must not
+# be the contract's supplier (the supplier is checked against the full name, whole words, by the party check's own rule).
+
+
+def _in_text(record: ContractRecord, t: ContractTerm, name: str) -> bool:
+    """The party term quotes the document verbatim and the name it gives is inside that quote."""
+    text = record.document.text
+    return (0 <= t.span.start < t.span.end <= len(text) and text[t.span.start:t.span.end] == t.span.text
+            and name in t.span.text and name in text)
 
 
 def _party_problem(record: ContractRecord, party: Counterparty) -> Problem | None:
     assert record.contract is not None
-    names = registry_names(party)
-    buyers = [(t.text or t.value_text or "").strip() for t in record.contract.terms if t.field == F.PARTY_BUYER]
+    buyers = [t for t in record.contract.terms if t.field == F.PARTY_BUYER]
     suppliers = [(t.text or t.value_text or "").strip() for t in record.contract.terms if t.field == F.PARTY_SUPPLIER]
-    if party_matches(suppliers, names) and not party_matches(buyers, names):
+    key = same_company_key(party.name)
+    if any(same_company_key(x) == key or names_match(x, party.name) for x in suppliers if x):
         return Problem("PARTY_IS_SUPPLIER",
-                       f"The contract names {party.name} as the supplier, not the buyer: it is not a contract under which "
-                       f"this customer pays you.",
-                       f"合同把{party.name}列为供货方而非买方：这不是该客户向您付款的合同。")
-    if not [x for x in buyers if x]:
+                       f"The contract names {party.name} as the supplier: it is not a contract under which this customer "
+                       f"pays you.",
+                       f"合同把{party.name}列为供货方：这不是该客户向您付款的合同。")
+    named = [(t, (t.text or t.value_text or "").strip()) for t in buyers]
+    named = [(t, n) for t, n in named if n]
+    if not named:
         return Problem("PARTY_NOT_READ", "The reading found no buyer named in the contract, so it cannot be checked "
                        "that the contract is with this customer.",
                        "未从合同中读出买方名称，无法核实合同是与该客户签订的。")
-    if not party_matches(buyers, names):
-        return Problem("PARTY_NOT_THIS_CUSTOMER",
-                       f"The contract's buyer is {buyers[0]}, not {party.name.rstrip('.')}.",
-                       f"合同的买方是{buyers[0]}，而不是{party.name}。")
+    for t, n in named:
+        if same_company_key(n) != key:
+            return Problem("PARTY_NOT_THIS_CUSTOMER",
+                           f"The contract's buyer is {n}, not {party.name.rstrip('.')}.",
+                           f"合同的买方是{n}，而不是{party.name}。")
+    for t, n in named:
+        if not _in_text(record, t, n):
+            return Problem("PARTY_NOT_IN_TEXT", "The buyer the reading names cannot be found in the contract's own words.",
+                           "读取到的买方名称在合同原文中找不到。")
     return None
 
 
@@ -232,6 +257,162 @@ def _abstention_problems(record: ContractRecord) -> list[Problem]:
     return out
 
 
+# ---------------------------------------------------------------- when the contract ends (CT-1: fail closed)
+#
+# The engine's repeating invoice has no end, so a contract that ends inside the forecast window cannot be set up. That check
+# is only as good as the end date it is given. An end is used when exactly one END_DATE term quotes the document, re-parses
+# from its quote to the same date, and agrees with any term in months counted from the start date. Wording about a term,
+# renewal, expiry or lapse that no checked end or term covers blocks: the contract may end sooner than the reading says. "The
+# contract states no end date" is said only when nothing in the reading or the text points to an end.
+
+# Wording that points to an end. Deliberately narrow on "term" and "until" (payment terms; "withheld until acceptance").
+_END_WORDING = re.compile(
+    r"\b(?:term|period|duration)\s+of\s+[^.;\n]{0,30}?\b(?:months?|years?)\b"
+    r"|\bfor\s+(?:a\s+)?(?:(?:fixed|initial)\s+)?(?:term|period)\b"
+    r"|\bfor\s+(?:\w+\s+)?(?:\(\d{1,3}\)|\d{1,3})\s*(?:months?|years?)\b"
+    r"|\b(?:renew\w*|expir\w*|lapse[sd]?|lapsing|duration)\b"
+    r"|\bremains?\s+in\s+(?:force|effect)\b|\bcontinues?\s+(?:in\s+(?:force|effect)|until|to|for)\b"
+    r"|\bvalid\s+(?:for|until|through|to)\b|\buntil\b(?=[^.;\n]{0,40}\d)|\b(?:ends?|ending|terminates?)\s+(?:on|at|by)\b"
+    r"|有效期|期限|到期|届满|续约|续期|自动续|终止日期|终止之日", re.IGNORECASE)
+
+
+def _end_problem(en: str, zh: str) -> Problem:
+    return Problem("END_NOT_CERTAIN", en, zh)
+
+
+def _dated_term_ok(record: ContractRecord, t: ContractTerm, pattern: re.Pattern[str]) -> bool:
+    """The term quotes the document, its date is the one its value fragment states, and the reader's own pattern, run again
+    over the quote, finds that date. A date the reader derived rather than found written never passes."""
+    if t.date is None or (t.text or "").startswith("derived: ") or not _quoted(record, t):
+        return False
+    if parse_date(t.value_text).value != t.date:
+        return False
+    return any(parse_date(g).value == t.date for m in pattern.finditer(t.span.text)
+               for g in (m.group("d"), m.group("d2"), m.group("dz")) if g)
+
+
+def _months_ok(record: ContractRecord, t: ContractTerm) -> bool:
+    if t.months is None or not _quoted(record, t) or parse_months(t.value_text).value != t.months:
+        return False
+    return any(parse_months(g).value == t.months for m in DURATION.finditer(t.span.text)
+               for g in (m.group("p"), m.group("p2"), m.group("pz")) if g)
+
+
+def _add_months(iso: str, months: int) -> date:
+    d = date.fromisoformat(iso)
+    y, m = divmod(d.month - 1 + months, 12)
+    return date(d.year + y, m + 1, min(d.day, calendar.monthrange(d.year + y, m + 1)[1]))
+
+
+def _end_of(record: ContractRecord, state: FinancialState, *, today: int,
+            horizon_days: int) -> tuple[int | None, list[Problem], bool]:
+    """(the contract's last day as a day number or None, the problems it raises, whether the reading or text suggests an end)."""
+    assert record.contract is not None
+    c = record.contract
+    ends = [t for t in c.terms if t.field == F.END_DATE]
+    durations = [t for t in c.terms if t.field == F.DURATION]
+    starts = [t for t in c.terms if t.field == F.START_DATE]
+    problems: list[Problem] = []
+    suggested = bool(ends or durations)
+    if any(a.field.removeprefix("note:") in (F.END_DATE.value, F.DURATION.value) for a in c.abstentions):
+        problems.append(_end_problem("Part of the contract about its end or term could not be read exactly.",
+                                     "合同中关于到期或期限的部分无法准确读取。"))
+        suggested = True
+    end_iso: str | None = None
+    if len(ends) > 1:
+        problems.append(_end_problem("The contract states more than one end date.", "合同写明了不止一个到期日。"))
+    elif ends:
+        if _dated_term_ok(record, ends[0], END):
+            end_iso = ends[0].date
+        else:
+            problems.append(_end_problem("The end date the reading gives is not the one its quoted words state.",
+                                         "读取到的到期日与所引用原文中的日期不一致。"))
+    # a term in months counted from the start date is an end of its own, and a check on the stated one
+    counted: date | None = None
+    if len(durations) > 1:
+        problems.append(_end_problem("The contract states more than one term.", "合同写明了不止一个期限。"))
+    elif len(durations) == 1 and len(starts) == 1 and _months_ok(record, durations[0]) and _dated_term_ok(record, starts[0], START):
+        counted = _add_months(starts[0].date, durations[0].months) - timedelta(days=1)  # type: ignore[arg-type]
+    if counted is not None and end_iso is not None:
+        if date.fromisoformat(end_iso) not in (counted, counted + timedelta(days=1)):
+            problems.append(_end_problem("The contract's term and its end date do not agree.", "合同的期限与到期日不一致。"))
+    elif counted is not None and not problems:
+        end_iso = counted.isoformat()
+    # wording that points to an end and that no checked end or term covers
+    covered = [(t.span.start, t.span.end) for t in (*ends, *durations) if _quoted(record, t)]
+    if any(not any(a <= m.start() < b for a, b in covered) for m in _END_WORDING.finditer(record.document.text)):
+        suggested = True
+        if not problems:
+            problems.append(_end_problem(
+                "The contract mentions a term, renewal or expiry, but the reading does not give one end date that can be "
+                "checked against its words, so FLOW will not guess when invoices stop.",
+                "合同提到了期限、续期或到期，但读取结果没有给出一个可与原文核对的到期日，FLOW 不会猜测发票何时停止。"))
+    if problems:
+        return None, problems, suggested
+    end_day = day_of(end_iso, state.as_of) if end_iso is not None else None
+    if end_day is not None and end_day < today:
+        problems.append(Problem("CONTRACT_ENDED", "The contract has already ended.", "该合同已经到期。"))
+    elif end_day is not None and end_day <= today + horizon_days:
+        problems.append(Problem("ENDS_IN_FORECAST",
+                                f"The contract ends inside your {horizon_days}-day forecast, and the books cannot yet stop "
+                                f"repeating invoices at a contract's end.",
+                                f"合同在您 {horizon_days} 天的预测期内到期，而账簿目前还不能在合同到期时停止循环发票。"))
+    return end_day, problems, suggested
+
+
+# ---------------------------------------------------------------- the figures have bounds (CT-2)
+#
+# A contract is text written by a counterparty and the conservative forecast counts every invoice it generates as money that
+# arrives. A quote-true price of RMB 90,000,000 every day was set up and made the forecast show no reserve breach and no alert,
+# so the agent stopped funding the gap. The figures are therefore bounded against the owner's own books and mandate:
+#
+# - an invoice interval under MIN_EVERY_DAYS days is outsized whatever the amount (no customer is invoiced every day or two on
+#   a supply contract; a weekly interval is the shortest accepted);
+# - one invoice may not exceed the larger of HISTORY_FACTOR times this customer's largest receivable face on the books (open,
+#   financed or settled) and the mandate's ceiling for a single invoice. The ceiling is the larger of
+#   `tier2_single_commitment_fen` (the most the mandate lets FLOW agree to on its own) and `min_cash_fen` (the owner's own
+#   statement of the scale of cash the business must hold: one invoice larger than the reserve could on its own cover a breach
+#   of it). `per_buyer_caps_fen` caps forward concessions to a buyer, not invoices, and is not used. With no receivable history
+#   the mandate's ceiling alone bounds the amount; without a mandate (the executor's call today) only the history can.
+#
+# The deeper fix, not counting a set-up invoice as confirmed money in the conservative forecast until the first is issued, is
+# in the engine (`financial.trajectory._receivables`) and is not made here.
+
+MIN_EVERY_DAYS = 7
+HISTORY_FACTOR = 3
+
+
+def mandate_invoice_ceiling_fen(mandate: Mandate) -> int:
+    """The most one invoice from a customer with no history may be: the larger of the mandate's single-commitment limit and its
+    cash reserve."""
+    return max(mandate.tier2_single_commitment_fen, mandate.min_cash_fen)
+
+
+def _outsized(state: FinancialState, counterparty_id: str, face_fen: int, every_days: int,
+              mandate: Mandate | None) -> list[Problem]:
+    out: list[Problem] = []
+    if every_days < MIN_EVERY_DAYS:
+        out.append(Problem("OUTSIZED", f"The contract invoices every {every_days} days; FLOW will not set up invoices closer "
+                           f"together than {MIN_EVERY_DAYS} days from a contract alone. If the contract is right, enter it in "
+                           f"the setup.",
+                           f"合同每 {every_days} 天开一次发票；仅凭合同，FLOW 不会设置间隔短于 {MIN_EVERY_DAYS} 天的发票。"
+                           f"如合同无误，请在账簿设置中录入。"))
+    history = max((r.face_fen for r in state.receivables if r.counterparty_id == counterparty_id), default=None)
+    ceilings: list[tuple[int, str, str]] = []
+    if history is not None:
+        ceilings.append((HISTORY_FACTOR * history, f"{HISTORY_FACTOR} times this customer's largest invoice ({fmt_yuan(history)})",
+                         f"该客户最大一张发票（{fmt_yuan(history)}）的 {HISTORY_FACTOR} 倍"))
+    if mandate is not None:
+        cap = mandate_invoice_ceiling_fen(mandate)
+        ceilings.append((cap, f"the limit in your mandate ({fmt_yuan(cap)})", f"您的授权中的上限（{fmt_yuan(cap)}）"))
+    if ceilings and face_fen > max(c for c, _, _ in ceilings):
+        _, en, zh = max(ceilings, key=lambda c: c[0])
+        out.append(Problem("OUTSIZED", f"One invoice of {fmt_yuan(face_fen)} is more than {en}, so FLOW will not count on it "
+                           f"from a contract alone. If the contract is right, enter it in the setup.",
+                           f"单张发票 {fmt_yuan(face_fen)} 超过{zh}，FLOW 不会仅凭合同就计入。如合同无误，请在账簿设置中录入。"))
+    return out
+
+
 # ---------------------------------------------------------------- the derivation
 
 
@@ -253,8 +434,10 @@ def _collides(state: FinancialState, ri: RecurringInvoice) -> bool:
     return False
 
 
-def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon_days: int) -> TermsSetUp:
-    """What `record` sets up on the books `state` of day `today`, and whether it can (`status`)."""
+def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon_days: int,
+           mandate: Mandate | None = None) -> TermsSetUp:
+    """What `record` sets up on the books `state` of day `today`, and whether it can (`status`). `mandate` bounds the size of
+    one invoice (CT-2); without it only the customer's own history can."""
     base = {"document_id": record.id, "doc_hash": record.doc_hash, "counterparty_id": record.counterparty_id}
     existing_all = _recurring_of(state, record.counterparty_id)
     existing = existing_all[0] if len(existing_all) == 1 else None
@@ -300,16 +483,12 @@ def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon
         sources.append(Source(field=f, clause=t.clause, quote=t.span.text, value_text=t.value_text or "",
                               start=t.span.start, end=t.span.end))
     problems += _abstention_problems(record)
+    price, cadence = terms.get(F.PRICE), terms.get(F.INVOICING)
+    if price is not None and cadence is not None and price.amount_fen is not None and cadence.days is not None:
+        problems += _outsized(state, record.counterparty_id, price.amount_fen, cadence.days, mandate)
     early = next(iter(t for t in c.terms if t.field == F.EARLY_PAYMENT), None)
-    ends = [t for t in c.terms if t.field == F.END_DATE and t.date]
-    end_day = day_of(ends[0].date, state.as_of) if len(ends) == 1 and ends[0].date else None  # type: ignore[arg-type]
-    if end_day is not None and end_day < today:
-        problems.append(Problem("CONTRACT_ENDED", "The contract has already ended.", "该合同已经到期。"))
-    elif end_day is not None and end_day <= today + horizon_days:
-        problems.append(Problem("ENDS_IN_FORECAST",
-                                f"The contract ends inside your {horizon_days}-day forecast, and the books cannot yet stop "
-                                f"repeating invoices at a contract's end.",
-                                f"合同在您 {horizon_days} 天的预测期内到期，而账簿目前还不能在合同到期时停止循环发票。"))
+    end_day, end_problems, _ = _end_of(record, state, today=today, horizon_days=horizon_days)
+    problems += end_problems
     if len(existing_all) > 1:
         problems.append(Problem("SEVERAL_REPEATING", "Your books hold more than one repeating invoice for this customer.",
                                 "您的账簿中该客户有不止一项循环发票。"))
@@ -323,7 +502,7 @@ def derive(record: ContractRecord, state: FinancialState, *, today: int, horizon
     h = terms_hash(record.id, record.doc_hash, ri, tuple(sources))
     more: dict[str, object] = {"sources": tuple(sources), "end_day": end_day, "early_payment": early, "terms_hash": h}
     notes: list[Problem] = []
-    if end_day is None:
+    if end_day is None:  # no problem was raised, so neither the reading nor the text points to an end
         notes.append(Problem("NO_END_DATE", "The contract states no end date: the books will expect these invoices until "
                              "you undo the set-up.", "合同未写明到期日：在您撤销设置之前，账簿会一直预计这些发票。"))
     else:

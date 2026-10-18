@@ -94,7 +94,7 @@ class PrivateValue:
         return cls(label, ValueKind.RATIO, bp, owner, category, owner_visible)
 
     @classmethod
-    def terms(cls, label: str, days: int, *, owner: str, aliases: tuple[str, ...],
+    def terms(cls, label: str, days: int, *, owner: str | None, aliases: tuple[str, ...],
               category: Category = Category.COUNTERPARTY_TERMS, owner_visible: bool = True) -> PrivateValue:
         return cls(label, ValueKind.TERMS, days, owner, category, owner_visible, tuple(aliases))
 

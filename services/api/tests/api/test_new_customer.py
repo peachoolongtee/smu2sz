@@ -50,7 +50,7 @@ class _Reader:
     def extract_contract(self, chunk):  # type: ignore[no-untyped-def]
         type(self).calls += 1
         terms = [_term(ContractField.PARTY_SUPPLIER if m["role"] == "Supplier" else ContractField.PARTY_BUYER, m[0], m["name"])
-                 for m in re.finditer(r'\(\d\) (?P<name>.+?) \(the "(?P<role>Supplier|Buyer)"\)', chunk.text)]
+                 for m in re.finditer(r'\(\d\) (?P<name>.+?)(?:, a company[^(\n]*)? \(the "(?P<role>Supplier|Buyer)"\)', chunk.text)]
         return ContractResult(ContractExtraction(terms=terms, authority_claims=[], data_requests=[]), self.name)
 
 

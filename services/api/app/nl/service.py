@@ -750,26 +750,33 @@ TIER3_OPS = {"SIGN_PERSONAL_GUARANTEE": SignPersonalGuarantee, "PLEDGE_COLLATERA
              "ISSUE_EQUITY": IssueEquity, "CHANGE_MANDATE": ChangeMandate}
 
 
-def _out_of_scope(ctx: NlContext, slots: Slots, text: str = "") -> Turn:
+def refuse_tier3(ctx: NlContext, slots: Slots, tail: tuple[str, str] | None = None) -> Turn:
+    """A typed Tier-3 request goes to the executor so its refusal is on the hash-chained log (and raises its security event):
+    tiers are enforced by code, not by this parser (INVARIANTS 6 and 12). `tail` is the (English, Chinese) text that follows
+    the refusal; the capability list when absent. A request put as a question reaches this too (app/nl/ask.py)."""
     steps = Steps()
+    kind = slots.tier3
+    assert kind is not None
+    base = ctx.base(kind)
+    facility = slots.facility_id or next((f.id for f in ctx.state().facilities), "UNSPECIFIED")
+    if kind in ("SIGN_PERSONAL_GUARANTEE", "PLEDGE_COLLATERAL"):
+        op = TIER3_OPS[kind](**base, facility_id=facility)
+    elif kind == "ISSUE_EQUITY":
+        op = IssueEquity(**base, amount_fen=slots.amount_fen or 0)
+    else:
+        op = ChangeMandate(**base, new_version=ctx.mandate().version + 1)
+    r = ctx.execute(op)
+    steps.result(kind, t(ctx, f"{kind} requested", f"请求 {kind}"), r)
+    tail_en, tail_zh = tail if tail is not None else (CAPABILITIES_EN, CAPABILITIES_ZH)
+    return Turn(intent=Intent.OUT_OF_SCOPE, plan=steps.items, reply=t(
+        ctx, f"Refused: {kind.replace('_', ' ').lower()} is a Tier-3 action. The agent can never do it, whoever "
+             f"asks; it was refused by the executor and logged. " + tail_en,
+        f"已拒绝：{kind} 属于三级操作，代理在任何情况下都不能执行；执行器已拒绝并记录。" + tail_zh))
+
+
+def _out_of_scope(ctx: NlContext, slots: Slots, text: str = "") -> Turn:
     if slots.tier3:
-        # The typed request goes to the executor so its refusal is on the hash-chained log: tiers are
-        # enforced by code, not by this parser (INVARIANTS 6 and 12).
-        kind = slots.tier3
-        base = ctx.base(kind)
-        facility = slots.facility_id or next((f.id for f in ctx.state().facilities), "UNSPECIFIED")
-        if kind in ("SIGN_PERSONAL_GUARANTEE", "PLEDGE_COLLATERAL"):
-            op = TIER3_OPS[kind](**base, facility_id=facility)
-        elif kind == "ISSUE_EQUITY":
-            op = IssueEquity(**base, amount_fen=slots.amount_fen or 0)
-        else:
-            op = ChangeMandate(**base, new_version=ctx.mandate().version + 1)
-        r = ctx.execute(op)
-        steps.result(kind, t(ctx, f"{kind} requested", f"请求 {kind}"), r)
-        return Turn(intent=Intent.OUT_OF_SCOPE, plan=steps.items, reply=t(
-            ctx, f"Refused: {kind.replace('_', ' ').lower()} is a Tier-3 action. The agent can never do it, whoever "
-                 f"asks; it was refused by the executor and logged. " + CAPABILITIES_EN,
-            f"已拒绝：{kind} 属于三级操作，代理在任何情况下都不能执行；执行器已拒绝并记录。" + CAPABILITIES_ZH))
+        return refuse_tier3(ctx, slots)
     if ctx.owner_authenticated and lx.READ_QUESTION.search(text.strip()) and cap.closest_capability(text) is None:
         return reads.recovery(ctx)  # an ordinary question with no read: one way forward, not every capability
     return cap.nearest_reply(ctx, text, CAPABILITIES_EN, CAPABILITIES_ZH)

@@ -535,6 +535,45 @@ def is_asking(text: str) -> bool:
     return bool(t) and bool(ASK_EN.search(t) or ASK_ZH.search(t) or re.search(r"^\s*(?:can|could)\s+(?:we|i)\b", t, re.IGNORECASE))
 
 
+# ---- a Tier-3 subject in a question: information, or a request put as a question (ASK-1)
+#
+# A question that names a Tier-3 subject is a REQUEST unless it plainly asks for information, because a request written with
+# a question mark ("sign a personal guarantee?", "should we pledge the equipment?", 要不要签个人担保？, "raise the discount limit
+# to 5%?") must still reach the executor, be refused, be logged and raise its security event, as the same words without the
+# mark do. The information reading is a narrow allowlist, owner only, and fails closed: anything not clearly information is
+# a request. A message from any other caller is always a request.
+#   information = ONE sentence that (a) asks about someone's attempt ("Did anyone try to change our limits?", 有人试图修改限额吗),
+#   or (b) opens with a wh-word or an inverted auxiliary, or ends 吗 / 什么意思 ("Is equity an option?", "Does the bank want
+#   collateral?", 个人担保是什么意思？), and (c) proposes nothing: no should/can/could, "to <act>", "-ing <act>", "what if",
+#   "how do we", "is it ok to", 要不要 / 能不能 / 该不该, no second sentence.
+TIER3_ATTEMPT = _re(r"\b(?:anyone|anybody|someone|somebody)\b.{0,25}\b(?:tr(?:y|ied|ying)|attempt\w*)\b",
+                    r"\b(?:any|were there|was there|have there been)\b.{0,15}\battempts?\b", r"有人.{0,10}(?:试图|尝试|企图)")
+_TIER3_ACTS = (r"sign|pledge|issue|sell|give|raise|lower|increase|decrease|change|edit|modify|update|override|bypass|ignore|"
+               r"mortgage|grant|offer|post|put|use|take|go|do|add|cut|set|waive|remove|cancel|approve|accept|agree|pay|draw|repay")
+_TIER3_ING = r"(?:sign|pledg|issu|sell|giv|rais|lower|increas|decreas|chang|edit|modif|updat|overrid|bypass|ignor|mortgag|grant|offer)ing"
+TIER3_INFO_OPEN = _re(
+    r"^\s*(?:(?:so|and|ok|okay|hey|hi|also|but|then|right|now|quick question|one question|question)[ ,:]+)*"
+    r"(?:what|what['’]s|whats|which|who|who['’]s|when|where|why|how(?!\s+about\b)"
+    r"|is|isn['’]t|are|aren['’]t|was|were|does|doesn['’]t|do|did|didn['’]t|has|hasn['’]t|have|haven['’]t|had)\b",
+    r"(?:吗|么)\s*[?？。.!！~～]*\s*$", r"什么意思", r"是什么", r"什么是", r"是否|有没有|多少")
+TIER3_PROPOSES = _re(
+    r"\b(?:should|shall|must|ought|need to|needs to|have to|want to|wants to|would you|could you|can you|can we|could we|can i)\b",
+    rf"\bto\s+(?:{_TIER3_ACTS})\b", rf"\b{_TIER3_ING}\b", r"\bwhat\s+(?:if|about|should)\b", r"\bhow\s+(?:do|can|could|should|would)\b",
+    r"\bis it\s+(?:ok|okay|fine|worth|wise|safe|allowed|possible|permitted|a good idea)\b", r"\bgood idea\b", r"\bso\s+(?:you|we|that)\b",
+    r"\bplease\b", r"\bgo ahead\b", r"要不要", r"能不能", r"可不可以", r"该不该", r"应不应该", r"应该", r"能否", r"可否", r"需不需要",
+    r"是否(?:要|该|应|可以|能)", r"帮", r"麻烦", r"^\s*请", r"可以[^，。？?]{0,20}(?:吗|么)", r"能[^，。？?]{0,20}(?:吗|么)")
+
+
+def tier3_is_information(text: str) -> bool:
+    """Whether a question that names a Tier-3 subject only asks for information (see the block above). Fails closed."""
+    t = unicodedata.normalize("NFKC", text).strip()
+    if not t or re.search(r"[?？。!！;；]\s*\S|\.\s+\S", t):
+        return False  # empty, or more than one sentence: whatever follows the question may be the request
+    if TIER3_ATTEMPT.search(t):
+        return True
+    return bool(TIER3_INFO_OPEN.search(t)) and not TIER3_PROPOSES.search(t)
+
+
 # Questions that a read cue would answer wrongly, each routed to ASK_BOOKS with its topic (rules.py, before the reads).
 ASK_TOPICS: tuple[tuple[str, re.Pattern[str]], ...] = (
     # "Do we have any capex contracts?", 有哪些设备采购合同: the contracts on file, not the built-in capex case

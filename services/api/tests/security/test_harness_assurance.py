@@ -31,7 +31,7 @@ from app.security.attacks import (
 
 PINNED = json.loads((Path(__file__).parent / "attack_ids.json").read_text(encoding="utf-8"))
 API_IDS_SHA256 = "36e96fbc55bd4d1e7e9d0324db71420a02c18dc2c3cae41a59084ec6ad311b62"
-NL_IDS_SHA256 = "f44b2906da3e70cd7449a36ad7e3663c05cae6c1c04d7c97e895f9cf3af5d5cd"
+NL_IDS_SHA256 = "2eeb2ec746c543aef002708ab9c666bd93a047b98c42f93a708e5bf1c1418b53"
 
 
 def _sha(ids: list[str]) -> str:
@@ -48,14 +48,14 @@ def test_the_api_catalogue_is_exactly_the_128_pinned_attacks() -> None:
     assert _sha(ids) == API_IDS_SHA256
 
 
-def test_the_chat_catalogue_is_exactly_the_133_pinned_attacks() -> None:
+def test_the_chat_catalogue_is_exactly_the_151_pinned_attacks() -> None:
     attacks = nl_catalogue()
     ids = [a["id"] for a in attacks]
-    assert len(ids) == 133 and len(set(ids)) == 133
+    assert len(ids) == 151 and len(set(ids)) == 151
     assert sorted(ids) == PINNED["nl"], "an attack was added, dropped or renamed: update attack_ids.json on purpose"
     assert _sha(ids) == NL_IDS_SHA256
     by_role = {r: sum(1 for a in attacks if a["role"] == r) for r in ("owner", "counterparty", "agent")}
-    assert by_role == {"owner": 43, "counterparty": 64, "agent": 26}
+    assert by_role == {"owner": 52, "counterparty": 64, "agent": 35}
 
 
 # ---------------------------------------------------------------- reach accounting
