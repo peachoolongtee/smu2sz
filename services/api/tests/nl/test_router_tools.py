@@ -354,16 +354,17 @@ def test_customer_resolution(fresh) -> None:
         assert res.buyer_id is None and not res.ambiguous and set(res.candidates) == {"BUYER-1", "BUYER-2"}, said
     both = resolve_customer(r, "Foshan or Dongguan")
     assert both.buyer_id is None and both.ambiguous and set(both.candidates) == {"BUYER-1", "BUYER-2"}
-    # a second Foshan company, added with a short name of its own
-    added = client.post("/customers", json={"name": "Foshan Metal Works Ltd.", "short_name": "Metalworks", "idempotency_key": "rt-1"})
+    # a second Foshan company is refused (REG-3: "Foshan" is the pages' name for BUYER-1), so "Foshan" stays one customer
+    refused = client.post("/customers", json={"name": "Foshan Metal Works Ltd.", "short_name": "Metalworks", "idempotency_key": "rt-1"})
+    assert refused.status_code == 409 and refused.json()["detail"]["code"] == "SHORT_NAME_TAKEN", refused.text
+    # a new customer resolves by its name and by the short name the owner gave it
+    added = client.post("/customers", json={"name": "Shenzhen Precision Parts Co.", "short_name": "Precision", "idempotency_key": "rt-1b"})
     assert added.status_code == 200, added.text
     new_id = added.json()["customer"]["id"]
     r = Reading.of(nl_ctx(rt, "en"))
-    same = resolve_customer(r, "Foshan")
-    assert same.ambiguous and set(same.candidates) == {"BUYER-1", new_id}
-    assert resolve_customer(r, "Foshan Home Retail").buyer_id == "BUYER-1"
-    assert resolve_customer(r, "Foshan Metal Works").buyer_id == new_id
-    assert resolve_customer(r, "metalworks").buyer_id == new_id
+    assert resolve_customer(r, "Foshan").buyer_id == "BUYER-1"
+    assert resolve_customer(r, "Shenzhen Precision Parts").buyer_id == new_id
+    assert resolve_customer(r, "precision").buyer_id == new_id
 
 
 def test_an_unknown_or_ambiguous_customer_is_asked_about(fresh) -> None:
@@ -384,12 +385,11 @@ def test_an_unknown_or_ambiguous_customer_is_asked_about(fresh) -> None:
     both = run(rt, "customer_summary", "en", {"customer": "Foshan or Dongguan"})
     assert both.text.startswith("Which customer do you mean: Foshan Home Retail Co. or Dongguan Office Supplies Ltd.?"), both.text
     assert run(rt, "customer_summary", "zh", {"customer": "佛山还是东莞"}).text.startswith("您指的是哪位客户：佛山还是东莞？")
-    client.post("/customers", json={"name": "Foshan Metal Works Ltd.", "idempotency_key": "rt-2"})
-    two = run(rt, "customer_summary", "en", {"customer": "Foshan"})
-    assert two.text.startswith("Which customer do you mean: Foshan Home Retail Co. or Foshan Metal Works Ltd.?"), two.text
-    two_zh = run(rt, "customer_summary", "zh", {"customer": "佛山"})
-    assert two_zh.text == "有 2 位客户都符合，请用完整的客户名称再问一次。", two_zh.text
-    check_language(two_zh, "customer_summary")
+    # two customers that share a word: "Supplies" names both, so it is asked about (a second "Foshan" is refused, REG-3)
+    client.post("/customers", json={"name": "Shenzhen Office Supplies Co.", "short_name": "SZ Office", "idempotency_key": "rt-2"})
+    two = run(rt, "customer_summary", "en", {"customer": "Office Supplies"})
+    assert two.text.startswith("Which customer do you mean: Dongguan Office Supplies Ltd. or Shenzhen Office Supplies Co.?"), two.text
+    check_language(two, "customer_summary")
 
 
 def test_a_named_customer_is_answered_for_that_customer(day0) -> None:

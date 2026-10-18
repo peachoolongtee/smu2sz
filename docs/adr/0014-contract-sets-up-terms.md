@@ -192,6 +192,62 @@ For the Security Lead:
 - Tests: `tests/contracts/test_terms_setup.py`, `tests/operations/test_contract_terms.py` (both stores),
   `tests/api/test_contract_terms.py`, `tests/mandate/test_tiers.py`.
 
+### Security review fixes, 17 Oct 2026 (batch 7)
+
+- **CT-1, the end fails closed.** The end is used only when exactly one END_DATE term quotes the document and re-parses to its
+  date (and a DURATION counted from a checked START_DATE agrees); an END_DATE abstention, two end dates, a derived end, a term the
+  reading could not turn into an end, or term / renewal / expiry / "until <date>" / "lapses" / "remains in force" wording that no
+  checked term covers blocks the step as END_NOT_CERTAIN. "The contract states no end date" is said only when neither the
+  reading nor the text points to an end. A term in months is counted from the start date and blocked inside the window like an
+  explicit end.
+- **CT-2, the figures have bounds.** `derive` blocks as OUTSIZED an interval under 7 days, and one invoice above the larger of
+  3 times the customer's largest receivable face on the books (any status) and the mandate's ceiling, which is the larger of
+  `tier2_single_commitment_fen` and `min_cash_fen` (`per_buyer_caps_fen` caps forward concessions, not invoices, so it is not
+  used). The demo agreement (RMB 180,000 every 30 days, no history) is inside it: the demo ceiling is RMB 300,000. The route
+  passes the mandate; the executor does not yet, so it re-checks the interval and the history but not the mandate ceiling.
+  Not counting a set-up invoice as confirmed in the conservative forecast until the first is issued is engine work, still open.
+- **CT-3, the buyer check is exact.** For this step the PARTY_BUYER name must equal the customer's full registry name under
+  `same_company_key` (case, punctuation and the legal-form suffix ignored; a short form no longer counts), its quote must be
+  found in the document, and the customer may not be the contract's PARTY_SUPPLIER (full name, whole words). This supersedes
+  §4's "or its short form inside it"; the confirmation-time party check keeps the short-form rule.
+- **CT-4, a replaced contract's set-up is named.** When the contract a set-up came from is replaced, the repeating invoice stays
+  in the books until the owner undoes it. The new contract's view carries `live_set_up` (the other document, its `set_up_op_id`,
+  the undo route and button) whatever its status, so the CONFLICT says where the invoices came from and offers the undo. A Home
+  alert for it is engine (`alerts`) and is not made.
+- **CT-5, a refused press can be pressed again.** The idempotency key gains `-r<k>` for k earlier refused presses of the same
+  terms (read from the log), so a press refused at decision time no longer makes the next press a DUPLICATE; a DUPLICATE after a
+  refusal says the earlier press was refused.
+
+### Round five, 18 Oct 2026 (engine, approved by the owner; `fix/r5-engine`)
+
+The engine halves the Security Lead left open, each minimal and tested (`tests/operations/test_contract_terms_r5.py`):
+
+- **CT-2, the conservative forecast waits for the first invoice.** `RecurringInvoice` gains `confirmed` (default true, left
+  out of the serialised form while true, so every other state and every golden value serialises and hashes as before). The
+  executor writes a set-up's repeating invoice `confirmed=false`; `trajectory._receivables` gives the invoices it generates
+  that confirmation, so the CONSERVATIVE projection skips them exactly as it skips any unconfirmed receivable, and EXPECTED
+  counts them as before. The clock confirms the schedule when it issues the first invoice (the issued receivable is confirmed,
+  as every issued invoice is). The executor's re-derivation now gets the mandate, so it applies the preview's caps
+  (OUTSIZED by the mandate ceiling as well as the customer's history). The preview's "after" column is the forecast once the
+  first invoice is issued, and the step says so: "The forecast counts these invoices once the first one is issued, on
+  <date>; until then it does not count on them" (en and zh; the column is headed "Once the first invoice is issued").
+  This supersedes the CT-2 note above ("the executor does not yet") and closes the open half.
+- **CT-6, the flag is checked before queueing; the undo is never switched off.** A `SetUpContractTerms` with
+  FEATURE_CONTRACT_TERMS off is refused before it is queued (FEATURE_DISABLED, `refusal: CONTRACT_TERMS_OFF`, logged, no
+  approval row); the run-time check stays for a set-up queued while the flag was on. `UndoContractTerms` runs with the flag
+  off, and `POST /documents/{id}/terms/undo` is behind FEATURE_CONTRACTS only, so a set-up can always be undone.
+- **CT-7, owner-only first.** For both operations the executor's owner-only check runs before idempotency, dating, the
+  mandate and any record lookup: a non-owner gets the same refusal (INSUFFICIENT_AUTHORITY, `CONTRACT_TERMS_OWNER_ONLY`, a
+  PRIVILEGE_ESCALATION event, logged REFUSED) whatever the operation carries. The owner's own operations still meet every gate.
+  `CommitPurchase` keeps its order (not in this change).
+- **REG-5, the executor half.** `decide_document` answers a repeated decision with the first one only when the logged entry is
+  that decision (CONFIRM_DOCUMENT or REJECT_DOCUMENT). A record closed by a refile (REJECTED by its REFILE_DOCUMENT entry,
+  superseded) is never answered with the refile entry: deciding it again is refused ("was filed again as <id> ... and is
+  closed"), logged, and the record is unchanged. A refile-closed or PARTY_NOT_NAMED record already sets nothing up at
+  execution (`derive`: NOT_CONFIRMED / SUPERSEDED / FLAGGED); the tests now pin that.
+- **Deferred:** SEC-27 (a refused approval re-run leaves the approval record APPROVED) and SEC-28 (multi-leg plans are atomic
+  per leg) are not part of this change.
+
 ## Considered and rejected
 
 - **Setting the terms on confirmation.** Confirming is a statement about the reading; setting up is a change to the forecast.

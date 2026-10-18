@@ -8,11 +8,12 @@ registry with the contract parties matcher (`app.contracts.parties`), so a regis
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Any, NamedTuple
 
-from app.contracts.parties import names_match, normalise, registry_names
+from app.contracts.parties import normalise, registry_names, short_name
 from app.nl import lexicon as lx
 from app.nl.answers import AnswerReply
 from app.nl.answers.answers import W
@@ -116,9 +117,27 @@ def customer_names(r: Reading) -> dict[str, list[str]]:
         if c.role != "BUYER":
             continue
         names = registry_names(c, extra.get(c.id, ()))
+        if (short := short_name(c.name)) and normalise(short) not in {normalise(n) for n in names}:
+            names.append(short)  # the pages' short form ("Foshan"): a question may use it (the party check does not, REG-2)
         names += [a for a in aliases.get(c.id, ()) if not a.isascii() and a not in names]
         out[c.id] = names
     return out
+
+
+# Words every company name may carry: a contained name made of them alone ("Co., Ltd.") names no one.
+_GENERIC = re.compile(r"(?<![a-z0-9])(?:co|company|ltd|limited|inc|corp|corporation|llc|plc|group|the|and|of)(?![a-z0-9])"
+                      r"|股份有限公司|有限责任公司|有限公司|公司|集团")
+_CJK = re.compile(r"[一-鿿]")
+
+
+def _inside(short: str, long: str) -> bool:
+    """`short` sits in `long` as whole words, and is enough of a name: 4 characters once legal-form words are set aside, or
+    2 Chinese. A question's loose reading only: the contract party check is strict (`parties.names_match`, REG-2), but a
+    question that names no one, or two, is asked about, never answered for the wrong customer."""
+    core = _GENERIC.sub(" ", short)
+    if not short or not (len(_CJK.findall(core)) >= 2 or len(core.replace(" ", "")) >= 4):
+        return False
+    return re.search(rf"(?<![a-z0-9]){re.escape(short)}(?![a-z0-9])", long) is not None
 
 
 def _score(said: str, name: str) -> int:
@@ -129,7 +148,7 @@ def _score(said: str, name: str) -> int:
         return 0
     if s == n:
         return 3
-    if not names_match(said, name):
+    if not (_inside(n, s) or _inside(s, n)):
         return 0
     return 2 if s in n else 1
 

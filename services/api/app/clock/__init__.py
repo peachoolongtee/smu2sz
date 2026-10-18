@@ -99,7 +99,9 @@ def close_days(state: FinancialState, to_day: int) -> tuple[FinancialState, Cloc
                                               confirmed=True, **terms))  # type: ignore[arg-type]
                 issued.append(rid)
             d += ri.every_days
-        recurring.append(ri.model_copy(update={"next_issue_day": d}))
+        # CT-2: once the clock has issued an invoice from a contract set-up's schedule, the schedule is confirmed
+        first_issued = d > ri.next_issue_day
+        recurring.append(ri.model_copy(update={"next_issue_day": d, "confirmed": ri.confirmed or first_issued}))
     # ADR-0009 §7: a finite adjustment whose every invoice is now issued is consumed
     ids = {r.id for r in receivables}
     done = [a for a in state.invoice_adjustments if consumed(a, ids, to_day)]

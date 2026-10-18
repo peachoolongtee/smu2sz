@@ -85,6 +85,9 @@ test.describe("against the live API", () => {
     await expect(forecast.locator('tr[data-key="customer"]')).toContainText("¥540,000.00 from 3 invoices");
     await expect(forecast.locator('tr[data-key="end"]')).toContainText("¥1,340,000.00");
     await expect(forecast.locator('tr[data-key="end"]')).toContainText("¥1,880,000.00");
+    // CT-2: the set-up's invoices count once the clock has issued the first one, and the step says so.
+    await expect(forecast.locator("thead")).toContainText("Once the first invoice is issued");
+    await expect(step.getByTestId("terms-forecast-text")).toContainText("once the first one is issued, on 15 Oct 2026");
     await expect(step.getByTestId("terms-not-set-up")).toContainText("Early payment");
 
     // The owner presses, reads the confirmation, and can still say no: nothing changes.

@@ -9,7 +9,9 @@ contract writes it, the contract reference, and the clauses' own words (each quo
 protected and the SME's own name, its identity in every message, is not.
 
 Who may be told: **a buyer may be told values from its own contract and never another counterparty's.** Every value is owned by
-the counterparty the record is with, so a reply to that counterparty may state them (the guard's `entitled`), a reply to anyone
+the counterparty the record is with (except a record the owner closed by filing the text again under another counterparty, and
+one whose text does not name the counterparty it is filed under: those are owned by nobody, so a mis-filing never entitles the
+wrong buyer), so a reply to that counterparty may state them (the guard's `entitled`), a reply to anyone
 else may not, and the owner sees all. The supplier's own name in a contract is the sender's identity in every message and is not
 protected.
 
@@ -28,7 +30,14 @@ from collections.abc import Sequence
 from datetime import date
 from typing import Any
 
-from app.domain.models import ContractField, ContractRecord, Counterparty, DocumentKind, FinancialState
+from app.domain.models import (
+    ContractField,
+    ContractRecord,
+    Counterparty,
+    DocumentKind,
+    DocumentStatus,
+    FinancialState,
+)
 from app.domain.ports import ContractGuardRow, guard_row
 from app.egress.protected import ProtectedSet, counterparty_aliases
 from app.egress.values import Category, PrivateValue
@@ -62,8 +71,13 @@ def contract_private_values(records: Sequence[ContractRecord | ContractGuardRow]
     out: list[PrivateValue] = []
     for rec in records:
         r = rec if isinstance(rec, ContractGuardRow) else guard_row(rec)
-        owner = r.counterparty_id
-        cp = known.get(owner) or Counterparty(id=owner, name=owner, role="BUYER")
+        filed_under = r.counterparty_id
+        # A record that is not that counterparty's contract entitles nobody: one the owner closed by filing the text again
+        # under another counterparty (REJECTED and superseded_by set), and one whose party check failed (the text does not
+        # name the counterparty it is filed under). Its values stay protected from every recipient but the owner.
+        refiled = r.status == DocumentStatus.REJECTED.value and r.superseded_by is not None
+        owner: str | None = None if refiled or r.party_not_named else filed_under
+        cp = known.get(filed_under) or Counterparty(id=filed_under, name=filed_under, role="BUYER")
         names, extra = counterparty_aliases(cp)
         p = f"contract.{r.id}"
         # The counterparty's party in the contract is protected; the SME's own party is its identity and is not. A buyer
@@ -72,12 +86,12 @@ def contract_private_values(records: Sequence[ContractRecord | ContractGuardRow]
         their_party = ContractField.PARTY_SUPPLIER if capex else ContractField.PARTY_BUYER
         own_party = ContractField.PARTY_BUYER if capex else ContractField.PARTY_SUPPLIER
 
-        def terms(label: str, days: int, owner: str = owner, names: tuple[str, ...] = names,
+        def terms(label: str, days: int, owner: str | None = owner, names: tuple[str, ...] = names,
                   extra: tuple[str, ...] = extra) -> None:
             if days > 0:
                 out.append(PrivateValue.terms(label, days, owner=owner, aliases=(*names, *extra)))
 
-        def words(label: str, text: str, *aliases: str, owner: str = owner, minimum: int = 3) -> None:
+        def words(label: str, text: str, *aliases: str, owner: str | None = owner, minimum: int = 3) -> None:
             if len(text.strip()) >= minimum:
                 out.append(PrivateValue.text(label, text, owner=owner, aliases=aliases, category=T))
 
@@ -101,7 +115,7 @@ def contract_private_values(records: Sequence[ContractRecord | ContractGuardRow]
             if t.field == ContractField.CONTRACT_REFERENCE and t.text:
                 words(f"{label}.text", t.text)
             elif t.field == their_party and t.text:
-                party_names, _ = counterparty_aliases(Counterparty(id=owner, name=t.text.strip(), role="BUYER"))
+                party_names, _ = counterparty_aliases(Counterparty(id=filed_under, name=t.text.strip(), role="BUYER"))
                 words(f"{label}.party", party_names[0], *party_names[1:-1])  # the contract's name, and without its suffix
             elif t.text and t.field != own_party:
                 words(f"{label}.clause_text", t.text, minimum=_MIN_CLAUSE_CHARS)

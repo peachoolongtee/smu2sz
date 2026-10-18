@@ -2,14 +2,19 @@
 to the books, by an owner operation, with the forecast before and after.
 
 Owner only, every route (the reserve, the headroom and the forecast are protected values; the agent and counterparty keys
-never reach them), behind FEATURE_CONTRACTS and FEATURE_CONTRACT_TERMS (default off).
+never reach them), behind FEATURE_CONTRACTS and FEATURE_CONTRACT_TERMS (default off); the undo is behind FEATURE_CONTRACTS only,
+so a set-up made while the step was on can always be undone (CT-6).
 
-- `GET  /documents/{id}/terms`: what the contract would set up, whether it can, and the forecast before and after; every
+- `GET  /documents/{id}/terms`: what the contract would set up, whether it can, and the forecast now and once the first
+  invoice is issued (the set-up's invoices count from then, CT-2); every
   figure and sentence written here, in English or Chinese (INVARIANT 13).
 - `POST /documents/{id}/terms`: set it up. One `SetUpContractTerms` requested by the owner, bound to the document's hash and
   the terms hash shown; it is Tier 2, so it is queued (logged) and the owner's press is its approval: the route decides it as
   the owner, and the executor re-derives the terms on today's books before it writes. A stale preview is answered 409.
 - `POST /documents/{id}/terms/undo`: the compensating `UndoContractTerms`, the same way.
+
+The view also names another document's live set-up of the same customer (`live_set_up`: its document, `set_up_op_id` and the undo
+route), so a replacing contract's CONFLICT says where the invoices in the books came from (CT-4).
 """
 
 from __future__ import annotations
@@ -46,8 +51,10 @@ from app.financial import EngineError, project
 from app.operations.log import read_entries
 from app.persistence import ApprovalAlreadyDecided, ApprovalStatus, NotFound
 
-router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature("contracts")),
-                                 Depends(require_feature("contract_terms"))])
+router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature("contracts"))])
+# CT-6: the view and the set-up are behind FEATURE_CONTRACT_TERMS; the undo is not, so the owner can always remove what a set-up
+# wrote, also once the step is switched off
+_TERMS_ON = [Depends(require_feature("contract_terms"))]
 
 Lang = Literal["en", "zh"]
 SET_UP_KIND = "SET_UP_CONTRACT_TERMS"
@@ -84,6 +91,27 @@ def _set_ups(rt: Runtime, document_id: str) -> tuple[list[Any], set[str]]:
     undone = {e.op.set_up_op_id for e in entries if isinstance(e.op, UndoContractTerms)
               and e.result.status == OperationStatus.EXECUTED and e.op.set_up_op_id in ids}
     return done, undone
+
+
+def _refused_presses(rt: Runtime, base_key: str) -> list[str]:
+    """CT-5: the idempotency keys of earlier presses of this set-up that were refused (queued, then refused at decision time or
+    at the queue). A refused press set nothing up, so it must not make the next press a DUPLICATE."""
+    entries, _ = read_entries(rt.store.operations())
+    return sorted({e.idempotency_key for e in entries if isinstance(e.op, SetUpContractTerms)
+                   and (e.idempotency_key == base_key or e.idempotency_key.startswith(base_key + "-r"))
+                   and e.result.status == OperationStatus.REFUSED})
+
+
+def _live_elsewhere(rt: Runtime, record: ContractRecord) -> Any | None:
+    """CT-4: the latest executed, not undone set-up of this customer that came from another document, if any (a replaced
+    contract's repeating invoice stays in the books until the owner undoes it)."""
+    entries, _ = read_entries(rt.store.operations())
+    done = [e for e in entries if isinstance(e.op, SetUpContractTerms) and e.op.counterparty_id == record.counterparty_id
+            and e.op.document_id != record.id and e.result.status == OperationStatus.EXECUTED]
+    undone = {e.op.set_up_op_id for e in entries if isinstance(e.op, UndoContractTerms)
+              and e.result.status == OperationStatus.EXECUTED}
+    live = [e for e in done if e.op.op_id not in undone]
+    return live[-1] if live else None
 
 
 # ---------------------------------------------------------------- words
@@ -171,7 +199,10 @@ def _forecast(rt: Runtime, d: TermsSetUp, lang: Lang) -> dict[str, Any] | None:
         return None
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     books = current_books(state, rt.store.commitments())
-    after_state = books.state.model_copy(update={"recurring_invoices": [*books.state.recurring_invoices, d.recurring]})
+    # CT-2: the set-up writes the schedule unconfirmed, and the forecast counts it once the clock has issued the first
+    # invoice; "after" is the forecast from then, on today's books (the schedule as the clock leaves it, confirmed)
+    counted = d.recurring.model_copy(update={"confirmed": True})
+    after_state = books.state.model_copy(update={"recurring_invoices": [*books.state.recurring_invoices, counted]})
     try:
         before = _reading(books.state, list(books.obligations), mandate, d.counterparty_id)
         after = _reading(after_state, list(books.obligations), mandate, d.counterparty_id)
@@ -209,13 +240,15 @@ def _forecast(rt: Runtime, d: TermsSetUp, lang: Lang) -> dict[str, Any] | None:
          "before": money_in(before), "after": money_in(after), "changed": before["customer_in_n"] != after["customer_in_n"]},
     ]
     gain = after["end_fen"] - before["end_fen"]
-    text = _t(lang, f"Over the next {mandate.horizon_days} days the forecast would count on {money_in(after)} from {name}; "
-                    f"cash at the end of the forecast rises by {fmt_yuan(gain)}. The forecast then relies on this money "
-                    f"arriving on time.",
-              f"未来 {mandate.horizon_days} 天内，预测将计入来自{name}的{money_in(after)}；预测期末现金增加 {fmt_yuan(gain)}。"
-              f"此后预测将依赖这些款项按时到账。")
+    first = _day_words(state, d.recurring.next_issue_day, today, lang)
+    text = _t(lang, f"The forecast counts these invoices once the first one is issued, on {first}; until then it does not "
+                    f"count on them. From then, over the next {mandate.horizon_days} days, it counts on {money_in(after)} "
+                    f"from {name}, and cash at the end of the forecast rises by {fmt_yuan(gain)}. The forecast then relies on "
+                    f"this money arriving on time.",
+              f"首张发票于{first}开出后，预测才会计入这些发票；在此之前不计入。此后未来 {mandate.horizon_days} 天内，预测将计入"
+              f"来自{name}的{money_in(after)}，预测期末现金增加 {fmt_yuan(gain)}。此后预测将依赖这些款项按时到账。")
     return {"rows": rows, "text": text, "horizon_days": mandate.horizon_days,
-            "before": before, "after": after}
+            "counts_from_day": d.recurring.next_issue_day, "before": before, "after": after}
 
 
 # ---------------------------------------------------------------- the view
@@ -224,7 +257,7 @@ def _forecast(rt: Runtime, d: TermsSetUp, lang: Lang) -> dict[str, Any] | None:
 def terms_view(rt: Runtime, record: ContractRecord, lang: Lang) -> dict[str, Any]:
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     today = state.as_of_day
-    d = derive(record, state, today=today, horizon_days=mandate.horizon_days)
+    d = derive(record, state, today=today, horizon_days=mandate.horizon_days, mandate=mandate)
     name = _name(state, record.counterparty_id)
     done, undone = _set_ups(rt, record.id)
     live = [e for e in done if e.op.op_id not in undone]
@@ -265,19 +298,22 @@ def terms_view(rt: Runtime, record: ContractRecord, lang: Lang) -> dict[str, Any
         "doc_hash": record.doc_hash, "terms_hash": d.terms_hash if status == "READY" else None,
         "button": _t(lang, "Set up in my books", "记入我的账簿"),
         "labels": {"from_contract": _t(lang, "From the contract", "来自合同"), "forecast": _t(lang, "Your forecast", "您的预测"),
-                   "before": _t(lang, "Now", "现在"), "after": _t(lang, "After the set-up", "设置之后"),
+                   "before": _t(lang, "Now", "现在"),
+                   "after": _t(lang, "Once the first invoice is issued", "首张发票开出后"),
                    "not_set_up": _t(lang, "Not set up from this contract", "不会根据本合同设置"),
                    "why_not": _t(lang, "Why it cannot be set up", "无法设置的原因"),
                    "busy": _t(lang, "Setting up…", "正在设置…"), "undo_busy": _t(lang, "Undoing…", "正在撤销…")},
         "confirm": {
             "title": _t(lang, f"Set up {name}'s invoices in your books?", f"将{name}的发票记入账簿？"),
-            "body": _t(lang, "Your forecast will count on this money arriving on time. Only these invoices are added; you can "
-                             "undo it later. This is logged.",
-                       "您的预测将依赖这些款项按时到账。只添加这些发票；之后可以撤销。此操作会被记录。"),
+            "body": _t(lang, "Your forecast will count on this money arriving on time. It counts it from the day the first "
+                             "invoice is issued. Only these invoices are added; you can undo it later. This is logged.",
+                       "您的预测将依赖这些款项按时到账。首张发票开出之日起，预测才会计入。只添加这些发票；之后可以撤销。"
+                       "此操作会被记录。"),
             "yes": _t(lang, "Yes, set them up", "确认记入"), "no": _t(lang, "Not now", "暂不"),
         },
         "set_up": None, "lang": lang, "day": today,
     }
+    view["live_set_up"] = _live_set_up_view(rt, record, name, today, lang)
     if in_force is not None:
         op = in_force.op
         view["set_up"] = {
@@ -297,6 +333,35 @@ def terms_view(rt: Runtime, record: ContractRecord, lang: Lang) -> dict[str, Any
             },
         }
     return view
+
+
+def _live_set_up_view(rt: Runtime, record: ContractRecord, name: str, today: int,
+                      lang: Lang) -> dict[str, Any] | None:
+    """CT-4: another contract's set-up of this customer that is still in the books, and the owner's way to undo it. Named for
+    any contract of the customer that is not itself set up, so a replacing contract's CONFLICT says where the invoices came from."""
+    e = _live_elsewhere(rt, record)
+    if e is None:
+        return None
+    op, other = e.op, rt.store.get_contract_record(e.op.document_id)
+    replaced = other is not None and other.superseded_by == record.id
+    when = when_text(e.day, today, lang) if e.day is not None else ""
+    text = _t(lang, f"{name}'s invoices of {fmt_yuan(op.face_fen)} every {op.every_days} days, paid in {op.terms_days} days, were "
+                    f"set up {when} from another contract and are still in your books"
+                    f"{'; this contract replaced that one' if replaced else ''}. Undo that set-up before setting up this one.",
+              f"{name}的发票（每 {op.every_days} 天 {fmt_yuan(op.face_fen)}，{op.terms_days} 天内付款）已于{when}根据另一份合同设置，"
+              f"仍在您的账簿中{'；本合同已取代那份合同' if replaced else ''}。请先撤销该设置，再设置本合同。")
+    return {
+        "document_id": op.document_id, "set_up_op_id": op.op_id, "seq": e.seq, "day": e.day, "when": when,
+        "superseded": other is not None and other.superseded_by is not None, "replaced_by_this_contract": replaced,
+        "text": text,
+        "undo": {"method": "POST", "route": f"/documents/{op.document_id}/terms/undo", "body": {"set_up_op_id": op.op_id},
+                 "button": _t(lang, "Undo that set-up", "撤销该设置"),
+                 "confirm": {"title": _t(lang, f"Stop expecting {name}'s invoices from the earlier contract?",
+                                         f"不再计入{name}根据较早合同设置的发票？"),
+                             "body": _t(lang, "The repeating invoices that contract set up leave your forecast. Invoices already "
+                                              "sent stay. This is logged.", "该合同设置的循环发票将从预测中移除。已开出的发票保留。此操作会被记录。"),
+                             "yes": _t(lang, "Yes, undo it", "确认撤销"), "no": _t(lang, "Keep it", "保留")}},
+    }
 
 
 def _record(rt: Runtime, document_id: str) -> ContractRecord:
@@ -325,9 +390,12 @@ def _result(r: OperationResult) -> dict[str, Any]:
     return json.loads(r.model_dump_json())
 
 
-def _result_text(r: OperationResult, done: str, lang: Lang) -> str:
+def _result_text(r: OperationResult, done: str, lang: Lang, *, after_refusal: bool = False) -> str:
     if r.status == OperationStatus.EXECUTED:
         return done
+    if r.status == OperationStatus.DUPLICATE and after_refusal:
+        return _t(lang, "The earlier press was refused, so nothing was set up; nothing ran again.",
+                  "先前的操作已被拒绝，没有设置任何内容；也没有重复执行。")
     if r.status == OperationStatus.DUPLICATE:
         return _t(lang, "This was already done; nothing ran again.", "此操作已完成；没有重复执行。")
     if lang == "zh":  # the executor's reason is the audit level's English; the page says what it means
@@ -335,14 +403,14 @@ def _result_text(r: OperationResult, done: str, lang: Lang) -> str:
     return "Nothing changed in your books: " + (r.violations[0].message if r.violations else r.message)
 
 
-@router.get("/documents/{document_id}/terms")
+@router.get("/documents/{document_id}/terms", dependencies=_TERMS_ON)
 def get_terms(document_id: str, lang: Lang = "en") -> dict:
     rt = get_runtime()
     with rt.lock:
         return {"terms": terms_view(rt, _record(rt, document_id), lang)}
 
 
-@router.post("/documents/{document_id}/terms")
+@router.post("/documents/{document_id}/terms", dependencies=_TERMS_ON)
 def post_terms(document_id: str, body: SetUpIn, lang: Lang = "en") -> dict:
     rt = get_runtime()
     with rt.lock:
@@ -354,7 +422,7 @@ def post_terms(document_id: str, body: SetUpIn, lang: Lang = "en") -> dict:
         if repeat is not None:  # the same press again (a retry): the executor answers DUPLICATE, nothing runs twice
             result = rt.executor.execute(repeat.op)
             return {"result": _result(result), "result_text": _result_text(result, "", lang), "terms": terms_view(rt, rec, lang)}
-        d = derive(rec, state, today=state.as_of_day, horizon_days=mandate.horizon_days)
+        d = derive(rec, state, today=state.as_of_day, horizon_days=mandate.horizon_days, mandate=mandate)
         if d.status != "READY" or d.recurring is None or d.terms_hash is None:
             raise HTTPException(409, {"code": "TERMS_NOT_READY", "status": d.status,
                                       "message": "these terms cannot be set up on today's books",
@@ -364,17 +432,20 @@ def post_terms(document_id: str, body: SetUpIn, lang: Lang = "en") -> dict:
                                       "gives on today's books; read them again", "terms": terms_view(rt, rec, lang)})
         n = len(undone)  # a set-up undone and made again is a new operation, not a duplicate of the first
         ri, h = d.recurring, d.terms_hash
+        base_key = f"contract-terms:{rec.id}:{h[:16]}:{n}"
+        refused = len(_refused_presses(rt, base_key))  # CT-5: each refused press gets a fresh key, so the retry runs
+        suffix = f"-r{refused}" if refused else ""
         op = SetUpContractTerms(
-            op_id=f"terms-{rec.id}-{h[:12]}-{n}", idempotency_key=f"contract-terms:{rec.id}:{h[:16]}:{n}",
+            op_id=f"terms-{rec.id}-{h[:12]}-{n}{suffix}", idempotency_key=base_key + suffix,
             mandate_version=mandate.version, requested_by=Actor.OWNER, day=rt.day, document_id=rec.id,
             doc_hash=rec.doc_hash, terms_hash=h, counterparty_id=ri.counterparty_id, face_fen=ri.face_fen,
             every_days=ri.every_days, next_issue_day=ri.next_issue_day, terms_days=ri.terms_days)
         result = _approve(rt, rt.executor.execute(op))
         name = _name(state, rec.counterparty_id)
-        text = _result_text(result, _t(lang, f"Set up: your books now expect {name} to pay "
-                                             f"{_schedule_text(ri, state, state.as_of_day, lang)}.",
-                                       f"已设置：您的账簿现已预计{name}按以下安排付款：{_schedule_text(ri, state, state.as_of_day, lang)}。"),
-                            lang)
+        schedule = _schedule_text(ri, state, state.as_of_day, lang)
+        done_text = _t(lang, f"Set up: your books now expect {name} to pay {schedule}.",
+                       f"已设置：您的账簿现已预计{name}按以下安排付款：{schedule}。")
+        text = _result_text(result, done_text, lang, after_refusal=bool(refused))
         return {"result": _result(result), "result_text": text, "terms": terms_view(rt, rec, lang)}
 
 

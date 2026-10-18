@@ -85,7 +85,7 @@
           "from_contract": "From the contract",
           "forecast": "Your forecast",
           "before": "Now",
-          "after": "After the set-up",
+          "after": "Once the first invoice is issued",
           "not_set_up": "Not set up from this contract",
           "why_not": "Why it cannot be set up",
           "busy": "Setting up…",
@@ -93,13 +93,14 @@
         },
         "confirm": {
           "title": "Set up Foshan Home Retail Co.'s invoices in your books?",
-          "body": "Your forecast will count on this money arriving on time. Only these invoices are added; you can undo it later. This is logged.",
+          "body": "Your forecast will count on this money arriving on time. It counts it from the day the first invoice is issued. Only these invoices are added; you can undo it later. This is logged.",
           "yes": "Yes, set them up",
           "no": "Not now"
         },
         "set_up": null,
         "lang": "en",
-        "day": 0
+        "day": 0,
+        "live_set_up": null
       },
       "zh": {
         "document_id": "DOC-000001",
@@ -185,7 +186,7 @@
           "from_contract": "来自合同",
           "forecast": "您的预测",
           "before": "现在",
-          "after": "设置之后",
+          "after": "首张发票开出后",
           "not_set_up": "不会根据本合同设置",
           "why_not": "无法设置的原因",
           "busy": "正在设置…",
@@ -193,13 +194,14 @@
         },
         "confirm": {
           "title": "将Foshan Home Retail Co.的发票记入账簿？",
-          "body": "您的预测将依赖这些款项按时到账。只添加这些发票；之后可以撤销。此操作会被记录。",
+          "body": "您的预测将依赖这些款项按时到账。首张发票开出之日起，预测才会计入。只添加这些发票；之后可以撤销。此操作会被记录。",
           "yes": "确认记入",
           "no": "暂不"
         },
         "set_up": null,
         "lang": "zh",
-        "day": 0
+        "day": 0,
+        "live_set_up": null
       }
     },
     "superseded": {
@@ -275,7 +277,7 @@
           "from_contract": "From the contract",
           "forecast": "Your forecast",
           "before": "Now",
-          "after": "After the set-up",
+          "after": "Once the first invoice is issued",
           "not_set_up": "Not set up from this contract",
           "why_not": "Why it cannot be set up",
           "busy": "Setting up…",
@@ -283,13 +285,14 @@
         },
         "confirm": {
           "title": "Set up Foshan Home Retail Co.'s invoices in your books?",
-          "body": "Your forecast will count on this money arriving on time. Only these invoices are added; you can undo it later. This is logged.",
+          "body": "Your forecast will count on this money arriving on time. It counts it from the day the first invoice is issued. Only these invoices are added; you can undo it later. This is logged.",
           "yes": "Yes, set them up",
           "no": "Not now"
         },
         "set_up": null,
         "lang": "en",
-        "day": 0
+        "day": 0,
+        "live_set_up": null
       },
       "zh": {
         "document_id": "DOC-000001",
@@ -363,7 +366,7 @@
           "from_contract": "来自合同",
           "forecast": "您的预测",
           "before": "现在",
-          "after": "设置之后",
+          "after": "首张发票开出后",
           "not_set_up": "不会根据本合同设置",
           "why_not": "无法设置的原因",
           "busy": "正在设置…",
@@ -371,13 +374,14 @@
         },
         "confirm": {
           "title": "将Foshan Home Retail Co.的发票记入账簿？",
-          "body": "您的预测将依赖这些款项按时到账。只添加这些发票；之后可以撤销。此操作会被记录。",
+          "body": "您的预测将依赖这些款项按时到账。首张发票开出之日起，预测才会计入。只添加这些发票；之后可以撤销。此操作会被记录。",
           "yes": "确认记入",
           "no": "暂不"
         },
         "set_up": null,
         "lang": "zh",
-        "day": 0
+        "day": 0,
+        "live_set_up": null
       }
     }
   }

@@ -538,6 +538,10 @@ class Executor:
                 again = self._same_decision(rec, confirm=confirm, doc_hash=doc_hash, link_facility_id=link_facility_id)
                 if again is not None:  # the same decision sent twice: answered with the first, nothing appended
                     return again
+                if rec.superseded_by is not None and rec.status == DocumentStatus.REJECTED:  # REG-5: closed by a refile
+                    return refuse(Code.PRECONDITION_FAILED, f"Document {document_id} was filed again as {rec.superseded_by} "
+                                                            f"(day {rec.decided_day}) and is closed; nothing was {verb}ed",
+                                  status=rec.status.value, superseded_by=rec.superseded_by)
                 return refuse(Code.PRECONDITION_FAILED, f"Document {document_id} is already {rec.status.value.lower()} "
                                                         f"(day {rec.decided_day})", status=rec.status.value)
             if not hmac.compare_digest(doc_hash.encode(), rec.doc_hash.encode()):
@@ -586,7 +590,9 @@ class Executor:
                 or not hmac.compare_digest(doc_hash.encode(), rec.doc_hash.encode())):
             return None
         entry = next((e for e in reversed(self._store.operations()) if e.seq == rec.decided_seq), None)
-        if entry is None:
+        # REG-5: only the owner's own decision of that kind is answered again; a record closed by a refile is REJECTED by its
+        # REFILE_DOCUMENT entry, which is not a reject and is never handed back as one
+        if entry is None or entry.kind != (CONFIRM_DOCUMENT_KIND if confirm else REJECT_DOCUMENT_KIND):
             return None
         return OperationResult.model_validate_json(entry.result_json).model_copy(
             update={"seq": entry.seq, "entry_hash": entry.entry_hash, "prev_hash": entry.prev_hash})
@@ -635,6 +641,14 @@ class Executor:
     def _run(self, op: Any, *, approved: bool) -> OperationResult:
         now = self._clock()
         kind = getattr(op, "kind", type(op).__name__)
+
+        # 0. CT-7, CT-6: who may change what a contract sets up is checked before anything else (no idempotency, dating,
+        # mandate or record lookup first), so anyone but the owner gets the same refusal whatever the operation carries;
+        # and a set-up is refused while the step is switched off, before it is queued. The undo is never switched off.
+        if isinstance(op, SetUpContractTerms | UndoContractTerms):
+            early = self._terms_gate(op, now)
+            if early is not None:
+                return early
 
         # 1. idempotency ------------------------------------------------------------
         dup = self._duplicate(op, approved)
@@ -1002,6 +1016,7 @@ class Executor:
                     f"contract's payment schedule" + (", the early-payment discount taken" if op.take_early_pay else ""))
         if isinstance(op, SetUpContractTerms):
             self._owner_only_terms(op)  # ADR-0014: refused before it is queued, so the owner is never asked
+            self._terms_feature_on()  # CT-6: a set-up that could never run is not queued either
             return (f"set up the repeating invoice of document {op.document_id} for {op.counterparty_id}: "
                     f"{fmt_yuan(op.face_fen)} every {op.every_days} days from day {op.next_issue_day}, payable in "
                     f"{op.terms_days} days")
@@ -1647,13 +1662,30 @@ class Executor:
                           f"Nothing was queued and nothing was set up", SecurityEventKind.PRIVILEGE_ESCALATION,
                           requested_by=op.requested_by, refusal="CONTRACT_TERMS_OWNER_ONLY")
 
+    def _terms_gate(self, op: SetUpContractTerms | UndoContractTerms, now: int) -> OperationResult | None:
+        """CT-7: the owner-only refusal comes first, before idempotency, dating, the mandate or any lookup, so a non-owner's
+        operation is refused the same way (and logged with its PRIVILEGE_ESCALATION event) whatever else it carries. CT-6: a
+        set-up is refused while FEATURE_CONTRACT_TERMS is off, before it is queued (logged, nothing queued); the undo is not
+        switched off, so the owner can always remove what a set-up wrote. None: go on through the pipeline."""
+        try:
+            self._owner_only_terms(op)
+            if isinstance(op, SetUpContractTerms):
+                self._terms_feature_on()
+        except _Refused as exc:
+            if exc.security is not None:
+                self._security(exc.security, op, now, op.counterparty_id, exc.violations[0].message)
+            return self._log(op, OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
+                                                 violations=exc.violations, effective_day=now,
+                                                 message="Refused: " + "; ".join(v.message for v in exc.violations)))
+        return None
+
     @staticmethod
     def _terms_feature_on() -> None:
         from app.config import get_settings
 
         if not get_settings().features.contract_terms:  # whichever route queued it (POST /operations included)
             raise _refuse(Code.FEATURE_DISABLED, "Setting up a contract's terms in the books is switched off "
-                          "(FEATURE_CONTRACT_TERMS); nothing set up")
+                          "(FEATURE_CONTRACT_TERMS); nothing was queued and nothing set up", refusal="CONTRACT_TERMS_OFF")
 
     def _set_up_terms(self, op: SetUpContractTerms, ctx: _Ctx) -> _Effect:
         """ADR-0014: add a confirmed customer contract's repeating invoice to the books (reached only after the owner's
@@ -1663,8 +1695,8 @@ class Executor:
         from app.domain.models import Mode
         from app.financial import project
 
+        self._owner_only_terms(op)  # CT-7: first
         self._terms_feature_on()
-        self._owner_only_terms(op)
         rec = self._store.get_contract_record(op.document_id)
         if rec is None:
             raise _refuse(Code.PRECONDITION_FAILED, f"Document {op.document_id} does not exist", document_id=op.document_id)
@@ -1673,7 +1705,9 @@ class Executor:
                           f"Reload it and set up what is shown", document_id=rec.id)
         assert ctx.mandate is not None
         state = ctx.state
-        derived = derive(rec, state, today=max(ctx.now, state.as_of_day), horizon_days=ctx.mandate.horizon_days)
+        # CT-2: the same caps as the preview (one invoice bounded by the mandate as well as the customer's history)
+        derived = derive(rec, state, today=max(ctx.now, state.as_of_day), horizon_days=ctx.mandate.horizon_days,
+                         mandate=ctx.mandate)
         if derived.status == "BLOCKED":
             raise _refuse(Code.PRECONDITION_FAILED, "The contract cannot set up invoices in the books: "
                           + " ".join(p.en for p in derived.problems), document_id=rec.id, refusal="TERMS_BLOCKED",
@@ -1692,6 +1726,8 @@ class Executor:
                 or shown != (ri.counterparty_id, ri.face_fen, ri.every_days, ri.next_issue_day, ri.terms_days)):
             raise _refuse(Code.TERMS_CHANGED, "The terms shown are not the terms the contract gives on today's books; "
                           "nothing set up. Reload and set up what is shown", document_id=rec.id)
+        # CT-2: written unconfirmed; the conservative forecast counts these invoices once the clock has issued the first
+        ri = ri.model_copy(update={"confirmed": False})
         new_state = _bump(state, recurring_invoices=[*state.recurring_invoices, ri])
         try:
             project(new_state, [], [], Mode.CONSERVATIVE, ctx.mandate.horizon_days)
@@ -1705,8 +1741,7 @@ class Executor:
     def _undo_terms(self, op: UndoContractTerms, ctx: _Ctx) -> _Effect:
         """ADR-0014: the compensating operation. Removes the repeating invoice an executed set-up wrote, while it is still the
         one in the books (same customer, amount, interval and terms; its next issue day on the same cadence, not earlier).
-        Invoices the clock has already issued from it stay: they are receivables now."""
-        self._terms_feature_on()
+        Invoices the clock has already issued from it stay: they are receivables now. Never switched off (CT-6)."""
         self._owner_only_terms(op)
         entries = self._entries()
         setup = next((e for e in entries if isinstance(e.op, SetUpContractTerms) and e.result.status == EXECUTED

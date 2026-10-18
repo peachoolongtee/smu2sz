@@ -80,19 +80,28 @@ def test_the_owner_sees_the_terms_and_the_forecast_before_and_after_then_sets_th
     assert s["unauthorised_executions"] == 0 and s["chain_valid"]
 
 
-def test_the_forecast_reads_the_new_invoices_after_the_set_up(client, on, rt):
+def test_the_forecast_reads_the_new_invoices_once_the_first_is_issued(client, on, rt):
+    """CT-2: the conservative forecast counts a set-up's invoices once the clock has issued the first one (day 14); the
+    expected forecast counts them from the set-up. The preview says so."""
     d = _confirmed(client)
     v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    assert v["forecast"]["counts_from_day"] == 14 and "once the first one is issued, on 15 Oct 2026" in v["forecast"]["text"]
+    assert v["labels"]["after"] == "Once the first invoice is issued"
     client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]})
     from app.books import current_books
     from app.domain.models import Mode
     from app.financial import project
 
-    m = rt.store.get_mandate()
-    books = current_books(rt.store.get_state(), rt.store.commitments())
-    traj = project(books.state, list(books.obligations), [], Mode.CONSERVATIVE, m.horizon_days, m.min_cash_fen)
-    receipts = [e for p in traj.days for e in p.events if (e.ref or "").startswith("RI:BUYER-2:")]
-    assert [(e.day, e.amount_fen) for e in receipts] == [(59, 18_000_000), (89, 18_000_000), (119, 18_000_000)]
+    def receipts(mode: Mode) -> list[tuple[int, int]]:
+        m = rt.store.get_mandate()
+        books = current_books(rt.store.get_state(), rt.store.commitments())
+        traj = project(books.state, list(books.obligations), [], mode, m.horizon_days, m.min_cash_fen)
+        return [(p.day, e.amount_fen) for p in traj.days for e in p.events if (e.ref or "").startswith("RI:BUYER-2:")]
+
+    assert receipts(Mode.CONSERVATIVE) == []
+    assert receipts(Mode.EXPECTED) == [(59, 18_000_000), (89, 18_000_000), (119, 18_000_000)]
+    rt.advance_to(15)  # the clock issues RI:BUYER-2:14
+    assert receipts(Mode.CONSERVATIVE)[:3] == [(59, 18_000_000), (89, 18_000_000), (119, 18_000_000)]
 
 
 def test_a_repeat_press_is_answered_as_a_duplicate(client, on, rt):
@@ -220,6 +229,19 @@ def test_the_undo_leaves_the_invoices_already_issued(client, on, rt):
     assert client.get("/security/summary").json()["unauthorised_executions"] == 0
 
 
+def test_ct6_switched_off_the_set_up_is_closed_but_the_owner_can_still_undo(client, on, rt, monkeypatch):
+    d = _confirmed(client)
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    set_up = client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]}).json()
+    op_id = set_up["terms"]["set_up"]["op_id"]
+    monkeypatch.setenv("FEATURE_CONTRACT_TERMS", "0")
+    assert client.get(f"/documents/{d['id']}/terms").status_code == 403
+    assert client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]}).status_code == 403
+    assert _client(AGENT).post(f"/documents/{d['id']}/terms/undo", json={"set_up_op_id": op_id}).status_code == 401
+    r = client.post(f"/documents/{d['id']}/terms/undo", json={"set_up_op_id": op_id})
+    assert r.status_code == 200 and r.json()["result"]["status"] == "EXECUTED" and not _buyer2(rt)
+
+
 def test_the_queued_set_up_and_undo_say_what_they_do_not_a_funding_quote(client, on, rt):
     """Activity used to answer the queued set-up's "why it matters" with the funding approvals' "The quoted cost was not recorded."; a
     contract set-up has no quoted cost, so it says what it does to the forecast, in both languages, and so does its undo."""
@@ -270,3 +292,148 @@ def test_chinese_the_step_is_written_in_chinese(client, on):
     raw = [r"\.terms\[\]\.quote", r"\.(doc_hash|terms_hash|status|document_id|counterparty_id|lang)",
            r"\.(terms|not_set_up|problems|notes)\[\]\.(field|code)", r"\.forecast\.rows\[\]\.key"]
     assert english_leaks(v, names, raw) == []
+
+
+_TERM = ("2.1 This Agreement takes effect on 1 October 2026 and continues for a term of twenty-four (24) months, "
+         "until 30 September 2028.")
+
+
+@pytest.mark.parametrize("sentence", [
+    "2.1 This Agreement takes effect on 1 October 2026 and continues for a term of two (2) months.",
+    ("2.1 This Agreement takes effect on 1 October 2026. It is valid for the deliveries of October and November 2026 only "
+     "and lapses after the last of them."),
+    "2.1 This Agreement takes effect on 1 October 2026 and remains in force to 30 November 2026.",
+])
+def test_ct1_a_contract_that_may_end_inside_the_forecast_cannot_be_set_up(client, on, rt, sentence):
+    """Review 7, CT-1: each of these was READY with 'The contract states no end date' and was set up."""
+    d = _confirmed(client, DGOS.replace(_TERM, sentence))
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    assert v["status"] == "BLOCKED" and not v["can_set_up"] and v["terms_hash"] is None
+    assert not any(n["code"] == "NO_END_DATE" for n in v["notes"])
+    r = client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": "a" * 64})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "TERMS_NOT_READY" and not _buyer2(rt)
+    zh = client.get(f"/documents/{d['id']}/terms", params={"lang": "zh"}).json()["terms"]
+    assert zh["problems"] and all(p["text"] and not p["text"].isascii() for p in zh["problems"])
+
+
+def _alert_kinds(rt) -> list[str]:  # type: ignore[no-untyped-def]
+    from app.alerts import alerts
+
+    return sorted(str(getattr(a.kind, "value", a.kind)) for a in alerts(rt.store.get_state(), rt.store.get_mandate(), rt.store, rt.day))
+
+
+@pytest.mark.parametrize(("face", "every", "first"), [
+    ("RMB 90,000,000", "one (1) day", "2 October 2026"),
+    ("RMB 2,000,000", "two (2) days", "2 October 2026"),
+])
+def test_ct2_an_outsized_contract_cannot_be_set_up_and_the_alerts_stay(client, on, rt, face, every, first):
+    """Review 7, CT-2 (probe p4): these were set up, and the forecast then showed no reserve breach and no alert."""
+    alerts_before = _alert_kinds(rt)
+    assert alerts_before  # the demo's starting books carry alerts
+    text = (DGOS.replace("RMB 180,000 (one hundred and eighty thousand yuan) for each Batch", f"{face} for each Batch")
+            .replace("Batches are delivered every thirty (30) days, the first regular Batch on 15 October 2026.",
+                     f"Batches are delivered every {every}, the first regular Batch on {first}."))
+    d = _confirmed(client, text)
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    assert v["status"] == "BLOCKED" and not v["can_set_up"] and v["forecast"] is None
+    assert {p["code"] for p in v["problems"]} == {"OUTSIZED"}
+    zh = client.get(f"/documents/{d['id']}/terms", params={"lang": "zh"}).json()["terms"]
+    assert all(not p["text"].isascii() for p in zh["problems"])
+    r = client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": "a" * 64})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "TERMS_NOT_READY"
+    assert not _buyer2(rt) and _alert_kinds(rt) == alerts_before
+
+
+def test_ct3_another_dongguan_company_as_buyer_cannot_be_set_up(client, on, rt):
+    """Review 7, CT-3: 'Dongguan Steel Works Ltd.' filed under BUYER-2 was set up for Dongguan Office Supplies."""
+    d = _confirmed(client, DGOS.replace("(2) Dongguan Office Supplies Ltd.,", "(2) Dongguan Steel Works Ltd.,"))
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    assert v["status"] == "BLOCKED" and not v["can_set_up"]
+    # REG-2's party check now blocks the confirmation itself, so the step says the contract is not confirmed; without it,
+    # the set-up's own buyer check (CT-3) would say the party is not this customer. Either way nothing is set up.
+    assert {p["code"] for p in v["problems"]} <= {"PARTY_NOT_THIS_CUSTOMER", "NOT_CONFIRMED"} and v["problems"]
+    assert not _buyer2(rt)
+
+
+def test_ct3_the_customer_named_as_buyer_and_supplier_cannot_be_set_up(client, on, rt):
+    d = _confirmed(client, DGOS.replace("(1) Lingnan Homeware Manufacturing Co., Ltd.,", "(1) Dongguan Office Supplies Ltd.,"))
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    assert v["status"] == "BLOCKED" and "PARTY_IS_SUPPLIER" in {p["code"] for p in v["problems"]}
+    assert not _buyer2(rt)
+
+
+def _replacement(client, price: str = "RMB 200,000 (two hundred thousand yuan)") -> tuple[dict, dict]:  # type: ignore[no-untyped-def]
+    """The customer's contract is set up, then a later contract with another price is confirmed and replaces it."""
+    first = _confirmed(client)
+    v = client.get(f"/documents/{first['id']}/terms").json()["terms"]
+    done = client.post(f"/documents/{first['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]}).json()
+    assert done["result"]["status"] == "EXECUTED"
+    second = _confirmed(client, DGOS.replace("RMB 180,000 (one hundred and eighty thousand yuan)", price))
+    return first, second
+
+
+def test_ct4_a_replacing_contract_names_the_live_set_up_of_the_one_it_replaced_and_offers_its_undo(client, on, rt):
+    """Review 7, CT-4: the replaced contract's repeating invoice stayed in the books and the new contract's page said only that
+    other invoices were there."""
+    first, second = _replacement(client)
+    assert client.get(f"/documents/{first['id']}").json()["document"]["superseded_by"] == second["id"]
+    v = client.get(f"/documents/{second['id']}/terms").json()["terms"]
+    assert v["status"] == "CONFLICT" and not v["can_set_up"]
+    live = v["live_set_up"]
+    assert live["document_id"] == first["id"] and live["replaced_by_this_contract"] is True
+    op_id = client.get(f"/documents/{first['id']}/terms").json()["terms"]["set_up"]["op_id"]
+    assert live["set_up_op_id"] == op_id
+    assert live["undo"] == {"method": "POST", "route": f"/documents/{first['id']}/terms/undo", "body": {"set_up_op_id": op_id},
+                            "button": "Undo that set-up", "confirm": live["undo"]["confirm"]}
+    assert "¥180,000.00 every 30 days" in live["text"] and "DOC-" not in live["text"]
+    zh = client.get(f"/documents/{second['id']}/terms", params={"lang": "zh"}).json()["terms"]["live_set_up"]
+    assert zh["undo"]["button"] == "撤销该设置" and not zh["text"].isascii() and zh["undo"]["route"] == live["undo"]["route"]
+    # following the offer: undo it, and the new contract can be set up
+    undone = client.post(live["undo"]["route"], json=live["undo"]["body"]).json()
+    assert undone["result"]["status"] == "EXECUTED" and not _buyer2(rt)
+    after = client.get(f"/documents/{second['id']}/terms").json()["terms"]
+    assert after["status"] == "READY" and after["live_set_up"] is None
+
+
+def test_ct4_a_contract_with_no_other_live_set_up_has_none_to_name_and_an_undone_one_is_not_named(client, on, rt):
+    d = _confirmed(client)
+    assert client.get(f"/documents/{d['id']}/terms").json()["terms"]["live_set_up"] is None
+    _, second = _replacement(client)  # the pair set up after an unrelated first document
+    live = client.get(f"/documents/{second['id']}/terms").json()["terms"]["live_set_up"]
+    client.post(live["undo"]["route"], json=live["undo"]["body"])
+    assert client.get(f"/documents/{second['id']}/terms").json()["terms"]["live_set_up"] is None
+
+
+def test_ct5_a_press_refused_at_decision_time_can_be_pressed_again(client, on, rt, monkeypatch):
+    """Review 7, CT-5 (probe p5): the key of a press refused at decision time matched its queued row, so the second press was
+    answered 'This was already done' although nothing had been set up."""
+    import app.contracts.terms_setup as ts
+
+    d = _confirmed(client)
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    body = {"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]}
+    real, calls = ts.derive, {"n": 0}
+
+    def refuse_once(*a, **k):  # type: ignore[no-untyped-def]
+        calls["n"] += 1
+        out = real(*a, **k)
+        return out if calls["n"] > 1 else out.__class__(**{**out.__dict__, "status": "BLOCKED", "recurring": None})
+
+    monkeypatch.setattr(ts, "derive", refuse_once)  # the route bound its own name; only the executor's lookup sees this
+    first = client.post(f"/documents/{d['id']}/terms", json=body).json()
+    assert first["result"]["status"] == "REFUSED" and not _buyer2(rt)
+    second = client.post(f"/documents/{d['id']}/terms", json=body).json()
+    assert second["result"]["status"] == "EXECUTED" and len(_buyer2(rt)) == 1
+    assert second["terms"]["status"] == "SET_UP"
+    third = client.post(f"/documents/{d['id']}/terms", json=body).json()  # now a true repeat
+    assert third["result"]["status"] == "DUPLICATE" and len(_buyer2(rt)) == 1
+    keys = [o.idempotency_key for o in rt.store.operations() if o.kind == "SET_UP_CONTRACT_TERMS"]
+    assert len(set(keys)) == 2 and any(k.endswith("-r1") for k in keys)
+
+
+def test_ct5_the_text_of_a_duplicate_after_a_refusal_says_the_earlier_press_was_refused():
+    from app.api.contract_terms import _result_text
+    from app.domain.models import OperationResult, OperationStatus, Tier
+
+    r = OperationResult(op_id="x", status=OperationStatus.DUPLICATE, message="dup", kind="SET_UP_CONTRACT_TERMS", tier=Tier.TIER_2)
+    assert "refused" in _result_text(r, "", "en", after_refusal=True) and "already done" in _result_text(r, "", "en")

@@ -76,8 +76,9 @@ def test_the_owners_approval_sets_up_the_repeating_invoice_and_the_log_holds_bot
     version = store.get_state().state_version
     r = _run(ex, _set_up(store, clock, rid))
     assert r.status == EXECUTED and r.tier == Tier.TIER_2 and r.approval_id
+    # CT-2: written unconfirmed, until the clock issues the first invoice
     assert _buyer2(store) == [RecurringInvoice(counterparty_id="BUYER-2", face_fen=18_000_000, every_days=30,
-                                               next_issue_day=14, terms_days=45)]
+                                               next_issue_day=14, terms_days=45, confirmed=False)]
     assert store.get_state().state_version == version + 1
     rows = [(o.kind, OperationStatus(__import__("json").loads(o.result_json)["status"])) for o in store.operations()[-2:]]
     assert rows == [("SET_UP_CONTRACT_TERMS", PENDING), ("SET_UP_CONTRACT_TERMS", EXECUTED)]
