@@ -105,7 +105,7 @@ Package-import tests enforce one direction of this split: the compiler package c
 
 | Actor | Credential | May do | Can never |
 | --- | --- | --- | --- |
-| Owner | `X-Owner-Token`. The mandate is Ed25519-signed; the owner's public key is pinned in the executor at start-up | decide Tier-2 approvals; add a facility (Tier 2); reset a circuit breaker; read every view; upload, confirm, reject or refile a document; add a customer to the registry; ask questions about the books (answered read-only); move the simulated clock; demo and setup tools (demo mode only) | execute a Tier-3 operation; revoke or renew the mandate through the API (no such route exists, R-14) |
+| Owner | `X-Owner-Token`. The mandate is Ed25519-signed; the owner's public key is pinned in the executor at start-up | decide Tier-2 approvals; add a facility (Tier 2); reset a circuit breaker; read every view; upload, confirm, reject or refile a document; add a customer to the registry; set up or undo a confirmed contract's repeating invoice (Tier 2); record a payment received; ask questions about the books (answered read-only); move the simulated clock; demo and setup tools (demo mode only) | execute a Tier-3 operation; revoke or renew the mandate through the API (no such route exists, R-14) |
 | Agent | `X-Agent-Key` | Tier-1 operations inside the mandate; queue Tier-2 operations (never a capex purchase); in chat, an allow-list view with only its own amounts (R-11) | approve, reset a circuit, read owner views, move the clock |
 | Bank feed (`SYSTEM`) | `X-Bank-Feed-Key` | record a received payment at Tier 1 | anything else, including the clock (SEC-09) |
 | Registered buyer | `X-Counterparty-Key`; the server maps the key to the buyer and ignores any id in the body | send offers (at most 5 documents of 4,000 characters) or chat: 5 per simulated day across both routes, then 429 `BUYER_BUDGET_EXHAUSTED` (R-10) | cause execution by itself; its chat answer carries the reply and a session id only |
@@ -151,6 +151,7 @@ An owner could therefore accept a request believing the named buyer sent it. Sec
 | `RequestOwnerApproval` | 1 (it only queues) | agent | the queued reason is the operation's own description, never the requester's text |
 | `ApplyForFacility`, `AddFacility` | 2 (`AddFacility` from anyone but the owner: 3) | owner | a lender named in a message is a security event, never a facility |
 | `CommitPurchase` (capex) | 2 | owner only (`PURCHASE_OWNER_ONLY`) | **Bound to:** the SHA-256 of the confirmed contract and of the schedule shown. **Rules:** every payment is money out; one contract commits once; the vendor is never the business itself. |
+| `SetUpContractTerms`, `UndoContractTerms` (ADR-0014) | 2 | owner only (`CONTRACT_TERMS_OWNER_ONLY`, checked before any other gate, so a non-owner attempt is always refused and logged) | **Bound to:** the confirmed contract's text hash and the hash of the terms shown, derived again by code on today's books. **Rules:** one repeating invoice per customer; the contract's end must be certain and outside the forecast window; an interval of at least 7 days and one invoice at most the larger of three times the customer's largest invoice and the mandate's scale; the buyer must be the customer by full name and never the supplier. **Forecast:** a set-up's invoices do not count in the conservative forecast until the first one is issued. Undo is a logged compensating operation. Behind `FEATURE_CONTRACT_TERMS`, checked before queueing |
 | `SignPersonalGuarantee`, `PledgeCollateral`, `IssueEquity`, `ChangeMandate`, any unknown type | 3 | nobody | refused for every caller (fail closed) |
 
 **Counter terms are binding, not presentation (R-10).** When FLOW counters an early-pay request, the face it offers is rounded up to two significant figures and capped at the outstanding amount. On the golden books, ¥257,186 becomes ¥260,000 at the same rate of 0.85%. The rounded face is:
@@ -207,7 +208,7 @@ A policy check then compares each answer with the class below, and a diff compar
 | **Untrusted text never becomes an operation by itself.** Buyer and anonymous text goes to the compiler, whose output is typed rows with exact spans; deterministic code builds operations from a verdict, and only `app/operations` executes them. The owner's own chat is a separate path: it executes only through the consent grammar below | package-import tests; the executor is the only writer; the catalogue's compromised-agent step | that a typed row was read correctly (R-7) |
 | **Each half is blind to the other's inputs.** The verifier sees typed rows plus the books, mandate and funding menu, never free text. FLOW never attaches the books, mandate or menu to a model request | import tests; the prompt templates | that nobody pastes confidential figures into a message the compiler reads |
 | **Only the owner adds lenders.** A pre-approval in a message is an `UnsolicitedFundingClaim`: a security event and a rejection | tiers; catalogue FL-* cases | |
-| **Conservative mode decides.** Uncommitted facilities count as zero, contingent concessions at their maximum and contingent gains at zero | verifier tests | that contingency was read correctly |
+| **Conservative mode decides.** Uncommitted facilities count as zero, contingent concessions at their maximum and contingent gains at zero; a contract set-up's invoices count only once the first is issued (CT-2) | verifier tests | that contingency was read correctly |
 | **Outbound text is template-filled,** and a deterministic egress guard is the last step | egress tests; canaries | derived values and paraphrases (R-1, SEC-22) |
 | **A verdict is not standing authority.** It is re-verified at commitment against the receivables, the one-agreement rules, the caps and the state version | ADR-0006; executor gate 6 | |
 | **The executor admits what the planner admits.** Every draw, advance and repayment is judged on today's books inside the executor's transaction | `tests/operations/test_admission.py` | |
@@ -229,7 +230,8 @@ The rest of the chat path is bound in the same way:
 - **Counters sent outside FLOW:** once the owner has sent a buyer a counter outside FLOW, no chat path and no raw operation accepts, declines or counters that request (OUT-1, OUT-1b).
 - **Asserted facts:** `RECORD_FACT` answers "cannot record it", so chat cannot change the books by assertion.
 - **Sessions:** a session continues only for the caller that opened it (SEC-21).
-- **Owner questions.** A question about the books ("what is our cash?") is answered by a read-only module (`app/nl/answers`) that writes nothing and has no route of its own. Only the owner gets figures: the agent key gets the sign-in sentence, and buyer and anonymous chat never reach the module. A review on the assessed build found no protected value reaching a non-owner, and no question executing anything. It did find that a Tier-3 request phrased as a question was answered rather than refused and logged (ASK-1), and that a question asked while a plan waits did not say so (ASK-2); both are in section 4.4.
+- **Owner questions.** A question about the books ("what is our cash?") is answered by a read-only module (`app/nl/answers`) that writes nothing and has no route of its own. Only the owner gets figures: the agent key gets the sign-in sentence, and buyer and anonymous chat never reach the module. A question never acts. A Tier-3 request phrased as a question ("sign a personal guarantee?") is still refused and logged like the imperative (ASK-1), and while a plan waits for the owner's go-ahead every read says so and names what "go ahead" will run (ASK-2). Answer cards are built for owner turns only.
+- **The question router** (ADR-0015, proposed; `FEATURE_ASK_ROUTER`). When the rules cannot place an owner question, a model may choose among 40 read-only tools. The model receives only the redacted question and the tool catalogue, never the books. Its reply is validated strictly: an allow-listed tool name, typed and bounded arguments, nothing else. A canary in the prompt is checked in the reply, and a trip is a security event (RT-L2). Logs carry a hash of the question and fixed reason codes, never model text (RT-L1). The router is owner-only, and no tool writes, plans or approves. In the assessed configuration (`LLM_MODE=cache`) it runs on recorded or scripted answers; it has not been run against a live model.
 - **Ending a chat session** (`POST /nl/session/reset`). A caller with no credential can end only an anonymous session; the owner can end any. Ending someone else's session answers exactly as for a missing one, so it reveals nothing.
 
 ### Confirmation, verification and rollback mechanisms
@@ -670,6 +672,7 @@ Everything runs offline. The metrics are computed from the run, not asserted.
 | Operations log, approvals, security events | the executor and the API | store; log hash-chained; all three trigger-guarded | owner token | never |
 | Evidence exports (`GET /evidence`) | the owner | wherever the owner saves them: every operation's payload and result (amounts, ids, messages) and every security event, including quoted spans of document text | whoever holds the file | never |
 | Application logs | the API | standard output: model call metadata (backend, model, document hash, latency), redaction counts per kind, rate-limit and refusal warnings, error traces naming ids; some planning lines include fen amounts. No document text or credentials. The server's access log records method, path with query string, status and client address | operators | never |
+| Strategy warm-up (demo only) | the API, after a demo reset or setup | a separate low-priority process that receives the books over a pipe, computes three read caches and exits; it opens no store and no port, gets an allow-listed environment with no credentials (WARM-1), and is killed when the books are replaced | the API's own caches, read by the owner | never |
 | Browser storage | the web app | `sessionStorage`: the owner token, the last 12 chat turns, a chat draft, the last funding run; `localStorage`: language and layout settings and the **setup draft** (company name, cash, sales, costs, loans, customers, invoices), which is cleared after the books are opened but not on sign-out (PRIV-6) | anyone with access to that browser profile | never |
 | Backups | none | no backup exists in the assessed configuration | | |
 
@@ -695,6 +698,7 @@ Everything runs offline. The metrics are computed from the run, not asserted.
   - no zero-retention or training opt-out header;
   - where the provider processes the data;
   - how long the provider keeps it.
+- **The question router** (`FEATURE_ASK_ROUTER`, live mode only for a real model) sends a provider the owner's redacted question and the tool catalogue, never the books; the reply is a tool choice, validated before anything runs. It has not been run live.
 - **Making live transmission visible.** The web app should say so whenever live mode is on [TEAM: confirm the indicator, or state that live mode is not demonstrated].
 
 FLOW never attaches the books, mandate, reserve floor, facility limits, funding menu or other buyers' terms to a model request. A message can still contain such figures if a person typed them into it.
@@ -833,12 +837,7 @@ Each risk is rated for **a production deployment of the code as it stands**. The
 | PRIV-6 | The setup draft stays in the browser after sign-out | vulnerability | local | Low | Low (C) | Low |
 | R-5 | The in-process actor is trusted; authentication happens only in the API layer | by design | | Low | Moderate (I) | Low |
 | CAPEX-NC | A committed capex purchase has no cancel path | operational gap | privileged | Low | Moderate (F) | Low |
-| REG-1 | After a refile, or while a record is blocked by the party check, the egress guard counts the wrongly filed buyer as entitled to the other buyer's contract values | vulnerability | privileged (owner action) | Low | Moderate (C) | Low |
-| REG-2 | The party check ignores roles and accepts a short name or a containing name; a reading with no party names is not blocked | vulnerability | any document sender, then the owner | Moderate | Low (H) | Low |
-| REG-3 | Adding a customer accepts lookalike names and the business itself; the review screen offers names read from the document | vulnerability | privileged (owner action, document-prompted) | Low | Moderate (H) | Low |
-| ASK-1 | A Tier-3 request phrased as a question is answered, not refused and logged | vulnerability (detection) | authenticated | Moderate | Low (I) | Low |
-| ASK-2 | A question asked while a plan waits does not say the plan is still waiting | vulnerability | privileged (owner) | Low | Moderate (H) | Low |
-| Minor | REG-4, REG-5, REG-6, ASK-3, REG-7, CAPEX-4b, SETUP-2, 3, 6, 8, SEC-13, 14, 15, OUT-2 to OUT-4, DEMO-L1; the unlocked document and setup routes (S1); the export `content_sha256` scope (1.10) | various | | Low | Low | Low |
+| Minor | ASK-3, REG-7, CAPEX-4b, SETUP-2, 3, 6, 8, SEC-13, 14, 15, OUT-2 to OUT-4, DEMO-L1; the unlocked document and setup routes (S1); the export `content_sha256` scope (1.10) | various | | Low | Low | Low |
 
 #### 4.3 Production and network prerequisites
 
@@ -942,18 +941,15 @@ These keep production at NO-GO. Several also have security consequences of their
 - **Exposure and rationale:** Low × Low. The setup draft (company figures) stays in `localStorage` after sign-out. It matters only on a shared browser.
 - **Next step:** clear it on sign-out.
 
-**Found on the assessed build: REG-1 to REG-7 and ASK-1 to ASK-3.** Two code reviews of batches 5 and 6 found nothing Critical or High. Every new route is owner-only (checked as every caller, in both modes), and no protected value reached a non-owner. What they found:
-- **REG-1.** Refiling leaves the wrongly filed buyer entitled to the other buyer's contract values in the egress guard's eyes. This is defence in depth: replies to buyers are fixed templates.
-- **REG-2.** The party check is loose: roles are ignored, and short or containing names are accepted.
-- **REG-3.** Adding a customer accepts lookalike names. Together with REG-2, a document could lead the owner to file a genuine contract under a lookalike buyer.
-- **REG-4.** A crafted idempotency key gives a 500.
-- **REG-5.** The outcome card's wording.
-- **REG-6.** A coverage gap in DOC-05.
-- **ASK-1.** A detection regression.
-- **ASK-2.** Clarity of the owner's consent.
-- **ASK-3 and REG-7.** Missing events (informational).
+**Found and fixed in round five (17 to 18 Oct).** Code reviews of each batch merged after the first assessed build found nothing Critical or High: every new route is owner-only, and no protected value reached a non-owner. They did find the items below, now **fixed in the assessed build**, each with a regression test that fails before its fix:
+- **Chat:** ASK-1, a Tier-3 request phrased as a question left no trail; ASK-2 and ASK-2b, a read while a plan waited did not say so; RT-L1 to RT-L3, router logs, canary events and a second model call after a canary.
+- **Documents and the registry:** REG-1, a refiled or blocked contract still entitled the wrong buyer in the egress guard; REG-2, the party check ignored roles and accepted short or containing names; REG-3, lookalike customer names; REG-4, a 500; REG-5, the outcome card and the executor's replay of a refile; REG-6, an injection pattern for registry notes.
+- **Contract terms (ADR-0014):** CT-1, an uncertain end date set up indefinitely; CT-2, an unbounded set-up could switch off the reserve alerts, now bounded and excluded from the conservative forecast until its first invoice; CT-3 to CT-5, the buyer check, a superseded set-up, a retry; CT-6 and CT-7 (engine, approved by the owner), the feature flag and the owner check before every other gate.
+- **Other:** WARM-1, the strategy warm-up worker inherited the API's credentials; SEC-29's owner path, the payment form made a new key on every press; DEMO-2, a demo script could delete any path.
 
-Each needs an owner action, the agent key, or a document the owner chooses to upload. Fixes with regression tests are built (round five: `sec/ask-books-trace`, `sec/registry-guards`, `sec/party-roles`) but are **not in the assessed build**. REG-5's executor half needs the owner's approval.
+Two informational items stay open: the chat session reset and a party mismatch write no event (ASK-3, REG-7).
+
+**A demo-only allowance (REG-2).** The demo registry names its two lenders generically ("Main bank"), and the demo lender agreements do not use those names. So the stricter party check could not confirm them. An unchanged copy of a demo lender agreement, uploaded under its own lender, is checked against the names that fixture declares (`party_names`). An edited text, another lender, or a request carrying names of its own gets none. A real deployment would register its lenders' names instead.
 
 **R-7, R-10, R-16, SEC-22, R-1, R-5, CAPEX-NC.** Unchanged from the register (`docs/security/FINDINGS_REGISTER.md`):
 - misreadings are caught by the coverage proof and the cross-check, and contract readings change no books (R-7, R-16);
@@ -979,6 +975,11 @@ Each was found by one of the reviews, reproduced, and closed by a fix whose regr
 | RT-1, RT-2 | reach published `next` advisories; get a 500 with a traceback | upgraded; 422 | E8; `tests/security/test_rt2_malformed_documents.py` |
 | Evidence verifier | mislead a reader with fields beside the hash; pass a cut-short file | fields and count checked; checkpoint | `tests/security/test_evidence_verifier.py` |
 | Harness (SEC-24, SEC-25) | count an attack that never reached its control as defended; claim a sweep result no code checked | NOT_REACHED; required expectations; exact counts; positive controls; mutation tests; route policy test | `tests/security/test_harness_assurance.py`, `test_positive_controls.py`, `test_mutations.py`, `test_route_policy.py` |
+| ASK-1, ASK-2, ASK-2b | attempt a Tier-3 action as a question with no trail; be unclear what "go ahead" will run | refused and logged; the waiting plan named on every read | `tests/nl/test_tier3_questions.py`, `test_pending_plan_reminder.py`; NL-TQ01 to TQ18 |
+| RT-L1 to RT-L3 | copy text into the router's logs; trip the canary unseen; reach the router twice | fixed reason codes; a DATA_EXTRACTION event; no router call after a canary | `tests/nl/test_ask_router.py` and the router tests |
+| REG-1 to REG-6 | keep the wrong buyer entitled after a refile; pass the party check by a short or containing name; add a lookalike customer; get a 500; misword the card; slip a registry note past the injection check | ownerless records; role and full-name matching; lookalike refusals; 409; the card and the executor's replay; a new pattern | `tests/egress/test_refile_entitlement.py`, `tests/contracts/test_party_roles.py`, `tests/api/test_customer_lookalikes.py`, `test_reg5_refile_card.py`, `tests/compiler/test_registry_instruction.py` |
+| CT-1 to CT-7 | set up a contract's invoices with an uncertain end, unbounded, for another company, or past the flag; switch off the reserve alerts | fail-closed end; bounds; conservative forecast excludes a set-up until its first invoice; strict buyer; flag and owner checks before every gate | `tests/contracts/test_terms_setup.py`, `tests/api/test_contract_terms.py`, `tests/operations/` contract-terms tests |
+| WARM-1, SEC-29 (owner path), DEMO-2 | read the API's credentials from the warm-up worker; book a payment twice by pressing again; delete a file outside the demo folder | an allow-listed environment and demo mode only; one key per payment entered; `.demo-data/` only | `tests/api/test_warm1_worker_env.py` |
 
 #### 4.6 Release gate by deployment (`docs/security/RELEASE_GATE.md`)
 
@@ -990,7 +991,7 @@ Each was found by one of the reviews, reproduced, and closed by a fix whose regr
 
 #### 4.7 Planned improvements, in priority order
 
-1. **Round five, built and not yet merged:** ASK-1, ASK-2, REG-1 to REG-4, REG-6 and the card half of REG-5.
+1. **Engine follow-ups the owner deferred:** SEC-27 (an approval record after a refused re-run) and SEC-28 (plans that stop part-way).
 2. **Before any network demo:**
    - a tested deployment profile;
    - anonymous intake off, or provenance shown everywhere (SEC-19);
