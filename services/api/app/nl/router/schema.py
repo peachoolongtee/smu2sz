@@ -68,33 +68,40 @@ def _is(value: Any, t: str) -> bool:
     return False
 
 
-def problems(schema: dict[str, Any], value: Any) -> list[str]:
-    """Why `value` does not satisfy `schema` (empty when it does)."""
+def coded_problems(schema: dict[str, Any], value: Any) -> list[tuple[str, str]]:
+    """(reason code, message) for each way `value` does not satisfy `schema` (empty when it does). The code is fixed
+    (unknown_slot, missing_slot, wrong_type, bad_value, out_of_range, malformed); the message may quote the model's own keys and
+    is never logged."""
     if not isinstance(value, dict):
-        return ["slots must be an object"]
+        return [("malformed", "slots must be an object")]
     props: dict[str, Any] = schema.get("properties", {})
-    out = [f"unknown slot {k!r}" for k in value if k not in props]
-    out += [f"missing slot {k!r}" for k in schema.get("required", []) if k not in value]
+    out = [("unknown_slot", f"unknown slot {k!r}") for k in value if k not in props]
+    out += [("missing_slot", f"missing slot {k!r}") for k in schema.get("required", []) if k not in value]
     for k, v in value.items():
         spec = props.get(k)
         if spec is None:
             continue
         if not any(_is(v, t) for t in _types(spec)):
-            out.append(f"slot {k!r} has the wrong type")
+            out.append(("wrong_type", f"slot {k!r} has the wrong type"))
             continue
         if v is None:
             continue
         if "enum" in spec and v not in spec["enum"]:
-            out.append(f"slot {k!r} is not one of its values")
+            out.append(("bad_value", f"slot {k!r} is not one of its values"))
         if isinstance(v, int | float) and not isinstance(v, bool) and (
                 "minimum" in spec and v < spec["minimum"] or "maximum" in spec and v > spec["maximum"]):
-            out.append(f"slot {k!r} is out of range")
+            out.append(("out_of_range", f"slot {k!r} is out of range"))
         if isinstance(v, str):
             if "minLength" in spec and len(v) < spec["minLength"] or "maxLength" in spec and len(v) > spec["maxLength"]:
-                out.append(f"slot {k!r} has the wrong length")
+                out.append(("bad_value", f"slot {k!r} has the wrong length"))
             if "pattern" in spec and re.fullmatch(spec["pattern"], v) is None:
-                out.append(f"slot {k!r} does not match its pattern")
+                out.append(("bad_value", f"slot {k!r} does not match its pattern"))
     return out
+
+
+def problems(schema: dict[str, Any], value: Any) -> list[str]:
+    """Why `value` does not satisfy `schema` (empty when it does)."""
+    return [msg for _, msg in coded_problems(schema, value)]
 
 
 def wire(spec: Any) -> Any:

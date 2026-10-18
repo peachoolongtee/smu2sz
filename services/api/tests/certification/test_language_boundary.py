@@ -262,6 +262,9 @@ def test_setup_is_not_scored_and_runs_offline_even_in_fake_mode(fixture):
 
 
 COMPILER_REJECTED = ["MM-001", "MM-002", "MM-003", "MM-004", "MM-005", "MM-006", "MM-020", "MM-021"]
+# The rejected classifier items that may be read as a question about the business ("remember what we discussed yesterday?" names
+# the books), so they reach the read-only answer layer and, with the flag on, the router. Any other item taking "question" fails.
+QUESTION_SOURCE_ALLOWED = {"MC-012"}
 CLASSIFIER_REJECTED = ["MC-001", "MC-002", "MC-003", "MC-004", "MC-005", "MC-010", "MC-011", "MC-012", "MC-013",
                        "MC-016", "MC-017", "MC-020"]
 
@@ -282,9 +285,16 @@ def test_malformed_classifier_outputs_are_rejected_by_the_production_adapter(fak
         mp = by[i]["model_path"]
         assert mp["invocations"] == 1 and mp["answered_by"] == [None], i
         assert mp["rejected"], i
-        # the model's output was discarded: the turn fell back (out of scope), or, for a question about the business, went to
-        # the read-only answer layer (ASK_BOOKS, source "question"); never "llm:<model>"
-        assert by[i]["diff"]["turns"][0]["parse_source"] in ("fallback", "question"), i
+        # the model's output was discarded: the turn fell back (out of scope), or, for the pinned question about the business, went
+        # to the read-only answer layer (ASK_BOOKS, source "question"); never "llm:<model>"
+        turn = by[i]["diff"]["turns"][0]
+        assert not turn["parse_source"].startswith("llm:"), i
+        if i in QUESTION_SOURCE_ALLOWED:
+            assert turn["parse_source"] in ("fallback", "question"), i
+            assert turn["intent"] in ("OUT_OF_SCOPE", "ASK_BOOKS"), (i, turn["intent"])
+            assert by[i]["diff"]["ops"] == [], i  # a read: no operation
+        else:
+            assert turn["parse_source"] == "fallback" and turn["intent"] == "OUT_OF_SCOPE", (i, turn["parse_source"])
     assert any("canary" in x for x in by["MC-010"]["model_path"]["rejected"])
     assert "DATA_EXTRACTION" in by["MC-010"]["diff"]["events"]
 
