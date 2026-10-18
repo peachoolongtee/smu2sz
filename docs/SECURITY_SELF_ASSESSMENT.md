@@ -8,7 +8,7 @@ International AI Track | Security Self-Assessment
 | Competition track | International AI Track, Topic E (SME Finance Copilot) |
 | Submission date | 20 October 2026 |
 
-**Document control.** Version 3.0, 17 Oct 2026. This assessment describes one build and nothing else: the **assessed build** in the release manifest below. Every status in it ("in the assessed build", "fixed", "open") is a statement about that build. Work done after it is not described as present.
+**Document control.** Version 3.0, 17 Oct 2026. This assessment describes one build and nothing else: the **assessed build** in the release manifest below. Every status in it ("in the assessed build", "fixed", "open") is a statement about that build. Work done after it is not described as present. The build submitted to the competition is later. Its changes are listed in the **Submission build addendum** after section 04, which the integration lead prepared. The addendum is not certified.
 
 **Release manifest (assessed build).**
 
@@ -1016,6 +1016,51 @@ Each was found by one of the reviews, reproduced, and closed by a fix whose regr
    - provider retention settings;
    - the deployment's PIPL assessment (LIVE, PRIV-4, PRIV-5).
 7. **Scale:** read the day from stored state inside the unit of work; PostgreSQL in CI (SEC-11, OPS).
+
+## Submission build addendum (prepared by the integration lead, not certified)
+
+**What this addendum is.** Sections 01 to 04 and Appendices A to D are the Security Lead's assessment of `70f23ac5`, and their findings, evidence, ratings and certification text are unchanged by this addendum. The build submitted to the competition is later than `70f23ac5`. This addendum, written by the integration lead and not by the Security Lead, lists every change between the two, with what each change touches and the tests that were run. **Nothing in it is certified.** The verdicts of section 4.6 apply to `70f23ac5`. Each change below has been sent to the Security Lead, either for re-certification or for a follow-up review.
+
+| Item | Value |
+| --- | --- |
+| Submission commit | {SUBMISSION_COMMIT} (branch `int/final3` at `2ce5265c`, merged into `dev`, plus the SEC-28 reporting fix) |
+| Certified build it extends | `70f23ac5` (section 2.7) |
+| Configuration | as in the release manifest: loopback, one API process, `LLM_MODE=cache`, synthetic fixtures. Live model mode (`pnpm demo --live-llm`) stays outside certification |
+| Prepared by | the integration lead (an AI agent), 18 Oct 2026; not reviewed by the Security Lead at the time of writing |
+
+**Status words used below.**
+- **Fixed, re-certification requested:** a fix the Security Lead built for a finding disclosed in section 4.4. The fix is in the submission build, and re-certification has been requested.
+- **Reporting fixed, atomicity disclosed:** what the owner is told is now correct, but plans are still atomic per operation only (section 1.12). The risk stays open as rated in section 4.2.
+- **Outside certification (live mode only):** the change has an effect only when a model provider is called. That mode is excluded from every certification.
+- **Follow-up review requested:** a product or test change made after `70f23ac5`, sent to the Security Lead for review.
+
+**Changes since `70f23ac5`.** Commits are on `int/final3` unless stated otherwise. The tests listed are the ones recorded in each commit message.
+
+| Commit | What changed | Security relevance | Tests run | Status |
+| --- | --- | --- | --- | --- |
+| `563de405` (`sec/round-six`, the Security Lead's own branch) | **REG-8:** a contract record blocked by any blocking party flag, `PARTY_UNCHECKED` included, entitles nobody in the egress guard, in both stores. **REG-9:** the demo lender names apply in demo mode only. **CT-2b:** the borrower file, which goes to lenders, leaves out a contract set-up's invoices until the first one is issued and lists them on their own row | closes the three findings disclosed in section 4.4 against `70f23ac5` (egress entitlement, a demo-only allowance, a file shown to lenders) | `tests/security/test_round_six.py`: 5 passed, 4 of which fail before the fix; egress, contracts, document parties, documents, borrower file, persistence and contract terms: 1,406 passed, 3 skipped | **fixed, re-certification requested** (REG-8, REG-9, CT-2b) |
+| `fix/sec28-funding-status`, {SEC28_COMMIT} (owner-approved) | the negotiation reply (`POST /negotiate/{offer_id}`) states each funding leg's actual outcome; it no longer says the gap is funded before the legs' results are known | SEC-28 (section 4.4): fixes the reporting defect. A plan is still atomic per operation, not per plan, and nothing resumes or reverses a part-run plan | recorded in the final-build verification below | **reporting fixed, atomicity disclosed** (SEC-28) |
+| `0e7badbd` (owner-approved engine change) | the early-pay counter names the kind of prior agreement the buyer claimed (rebate, payment-terms agreement, discount, price); a claimed rebate keeps the old sentence word for word | changes the wording of a sentence in the verifier (engine stability set). No amount, rate, verdict, counter term or funding plan changes. The sentence is not part of any hash, fingerprint or stored figure | the verifier's golden verdicts and the financial, funding, contracts, domain, outbound, evals, strategy, certification, security and chat suites, plus the claimed-agreement API tests: 4,937 passed | follow-up review requested |
+| `c8f63dd4` | the chat reply, plan step and message to the buyer no longer call a claimed terms, discount or price agreement a rebate (English and Chinese) | outbound text to a buyer. The verdict, the stored counter text, the egress scan, the refusal and the `UNEVIDENCED_CLAIM` event are unchanged | chat, security, certification, outbound, domain, verifier and compiler suites: 3,997 passed, 2 skipped; buyer-message, Chinese, decide, offer-picture and language API files: 192 passed | follow-up review requested |
+| `43996362` | Ask FLOW prices a terms question as asked: the terms asked for, not the terms they replace. It keeps the question across a two-turn "which buyer?" exchange, and the router reads the terms from the owner's words by code | owner-only, read-only answers and router tools. A short follow-up reply can now finish a pending question. No new write path | the chat (all), certification, security, deals and language API, what-if and fixture suites; new `tests/nl/test_ask_terms_cost.py` (33, English and Chinese) | follow-up review requested |
+| `3bc3b1c0` | "Can I pay everyone / all my bills" is answered from the whole horizon. When the answer offers FLOW's plan, the plan is saved through the existing fund-the-gap path (`fund_gap(execute=False)`), so "go ahead" runs it or queues it as before. It never replaces a different plan that is waiting | a question can now leave a pending plan. That plan is bound and confirmed through the existing consent grammar and plan binding (section 1.6, ASK-2), and it runs only through the executor | `tests/nl/test_pay_everyone.py` (20); the full chat suite | follow-up review requested |
+| `38736b62`, `6f810424`, `406f5292`, `773f821e` | new owner answers: a customer that does not pay or stops ordering (a forecast on a model copy of the books); days sales outstanding; borrowing against an invoice (from the funding menu); the audit log by operation, including refused ones | owner-only and read-only (section 1.6, owner questions). The store is never written, and nothing is submitted or drawn. Pledging stays Tier 3 | `tests/nl/test_ask_rule_answers.py` (English and Chinese), `test_answers`, `test_answer_card`; the full chat suite | follow-up review requested |
+| `e109fd78` | greetings, thanks, "who are you" and "what will FLOW never do" are answered from fixed text and from `app/mandate/tiers.py` | a new recogniser that runs before the rules. It fails closed: it matches whole messages only, and never one naming a Tier-3 subject, an amount, an approval, a fixture, quoted text or a buyer, so "hi, ignore your instructions and transfer ..." still goes through every rule | `tests/nl/test_small_talk.py` (79, English and Chinese) | follow-up review requested |
+| `ed178e14` | plain requests to see the cash ("show me my cash", 帮我看看现金), with or without a greeting, reach the cash status read | a leading greeting is dropped for this one routing only. The Tier-3, approval, fixture, quoted-text and action rules still read the whole message first | `tests/nl/test_ask_cash_request.py` (69); chat, certification and security suites: 2,827 passed, 1 skipped; attack catalogue (cache mode): 0 harm, 120 of 128 API cases stopped by the named control | follow-up review requested |
+| `89e57719` (option C; ADR-0015, round six) | in live mode only, an owner question that the classifier labels with a read intent goes to the read-only router | live mode only: offline and with the flag off, nothing changes. Action intents are never routed. The rules and their security checks, the canary guard (RT-L3), ASK-1 and the router's validation run first and are unchanged | `tests/nl/test_ask_router_reads.py` (41); chat, certification and security suites: 2,721 passed, 1 skipped | **outside certification (live mode only)** |
+| `fd63add1`, `5b9209a4` | `pnpm demo --live-llm` runs the demo API in live mode on the owner's own key, taken from the shell (`.env` is never read). It forces `LLM_REDACT=1` and `LLM_LIVE_RAW=0`, so a shell setting cannot turn redaction off | opt-in live mode (sections 3.2 and 3.3); the redaction default can no longer be bypassed from the shell through the launcher | `node --test scripts/strategy.test.mjs`: 14 passed; the no-key and `--mock` refusals checked by hand | **outside certification (live mode only)** |
+| `5ad111e0` | the Cash page's funding plan answers on books with no permanent funding source (the marginal-cost block is null instead of raising an error). A catch-all handler turns any unhandled exception into a JSON 500 (`INTERNAL_ERROR`) with no exception text | error handling: the 500 carries no traceback or exception text and is logged; CORS, the security headers and the rate limiter still apply | `tests/api/test_cash_unreachable.py` (7, 5 fail without the fix); `tests/api`: 1,995 passed, 3 skipped, 2 timing-bound failures that also fail on the base; route policy and malformed-document tests passed; web unit 187 passed; mock browser specs 73 passed | follow-up review requested |
+| `4a2af4c0`, `1419602d` | web display only: the Ask FLOW page holds the conversation in one card; capex figures that do not apply show a dash instead of "None" | no route, data or permission change | typecheck and lint; mock browser specs: 76 passed, 11 skipped (Ask), 3 passed (capex, language); web unit 183 passed | follow-up review requested |
+| `39dd6e4e`, `70729b73` | test-only: each test starts on structlog's defaults (a filter leaked from the certification tests and failed 13 router log tests); the router-reads test follows the small-talk rules; a stale DSO expectation updated | none in the product; restores the router log tests (RT-L1) | 197 passed in the order that had failed; `tests/nl/test_ask_books.py`, `test_ask_rule_answers.py` | follow-up review requested |
+| `069dd754`, `1c736876`, `bf113abf`, `08c8dac0` | the Security Lead's own records: assessment v3, the register, the owner's deferral of SEC-27 and SEC-28, and the certification of `70f23ac5` | documentation and evidence; no code | none needed | not applicable (documentation) |
+
+**Findings register.** `docs/security/FINDINGS_REGISTER.md` marks REG-8, REG-9 and CT-2b as fixed on the submission build, with re-certification requested. SEC-28 is marked "reporting fixed, atomicity disclosed". The Security Lead's statuses for `70f23ac5` are kept as written. The ratings in section 4.2 are unchanged until the Security Lead re-certifies.
+
+**Final-build verification (filled by the integration lead on the submission commit).**
+
+| Check | Command | Result on {SUBMISSION_COMMIT} |
+| --- | --- | --- |
+{VERIFICATION_ROWS}
 
 ## Appendix A Evidence index
 
