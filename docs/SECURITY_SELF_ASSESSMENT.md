@@ -556,10 +556,10 @@ Both assert zero unauthorised executions, an unchanged mandate and facility menu
 | --- | --- | --- | --- | --- |
 | Implementation | the owner (a person) with AI coding agents (Claude Code sessions); an integration agent merges branches into `dev` | | | |
 | Attack catalogue (1 Oct) | the implementation team | written by the people and agents who built the system: "our own" | yes | the reviews below |
-| Principal audit (3 Oct) | three bounded reviewers and a principal; [TEAM: confirm whether people, AI agents or both] | separate review of the code | yes | the owner |
+| Principal audit (3 Oct) | three bounded reviewers and a principal: {TEAM_AUDIT_WHO} | separate review of the code | yes | the owner |
 | Red-team rounds 1 to 5 (3 Oct) | AI subagents started with minimal context about the backlog | no implementation role | yes | the owner; every finding became a regression test |
 | Security Lead (14 to 18 Oct) | an AI agent (Claude, in Claude Code) in a separate session and git worktree, with delegated AI reviewer agents | did not build the product features it audited; **did write the security fixes it then certified**, each on its own branch with a test that fails first | yes: reproductions, sweeps and probes in `docs/security/evidence/` | the integration agent merged; the owner approved engine changes and accepted risks |
-| External red-team run (16 Oct) | [TEAM: who ran it]; its report was supplied by the owner and is not in the repository | not recorded | yes | its five observations were re-checked by the Security Lead on the code; its live-tier results were not re-run |
+| External red-team run (16 Oct) | {TEAM_REDTEAM_WHO}; its report was supplied by the owner and is not in the repository | not recorded | yes | its five observations were re-checked by the Security Lead on the code; its live-tier results were not re-run |
 | Risk acceptance | the owner (a person) | | | recorded decisions of 16 and 17 Oct (section 04) |
 
 **What "certified" means here.** An internal release decision by the Security Lead: the stated checks were run on the exact merged commit, and nothing found blocks the stated scope. It is not accreditation, an audit opinion or a penetration test.
@@ -581,7 +581,7 @@ Both assert zero unauthorised executions, an unchanged mandate and facility menu
   - 40 injection cases, 20 leak requests and 9 prompt-extraction cases;
   - 12 deliberately misleading buyer messages and 6 poisoned contracts, each read without adopting a planted value;
   - 82 offer readings in all, 30 of which disagreed with the rules grammar, and every one of those was sent to the owner.
-- **Gaps in the record:** the report does not give the model identifier, settings or retry handling, and it does not reconcile its 100 calls with its 82 readings. [TEAM: attach the report or its settings.]
+- **Gaps in the record:** the report does not give the model identifier, settings or retry handling, and it does not reconcile its 100 calls with its 82 readings. {TEAM_REDTEAM_REPORT}
 - **Status:** these results are the run's own. They were not re-run, and they are evidence, not certification.
 
 Its five observations, with their status on the assessed build:
@@ -627,7 +627,7 @@ The certification records before 17 Oct report exit codes per shard, not counts.
 | Scan | Lockfile | Result | Exceptions |
 | --- | --- | --- | --- |
 | `pnpm audit --prod` | `apps/web/pnpm-lock.yaml` at the assessed build | 0 advisories (`next` 16.3.8, `source-map-js` 1.2.2) | |
-| `pnpm audit` (all, including development) | same | 1 high: `braces` (GHSA-vfj7-8cjw-p6xm), via `eslint-config-next` > `fast-glob` > `micromatch` | `braces`: a development-only dependency of the lint tooling, with no patched version published; it never ships in the production bundle and parses only our own source globs. Accepted by [TEAM] |
+| `pnpm audit` (all, including development) | same | 1 high: `braces` (GHSA-vfj7-8cjw-p6xm), via `eslint-config-next` > `fast-glob` > `micromatch` | `braces`: a development-only dependency of the lint tooling, with no patched version published; it never ships in the production bundle and parses only our own source globs. Accepted by {TEAM_BRACES_OWNER} |
 | `pip-audit` | production dependencies exported from `services/api/uv.lock` | no known vulnerabilities | |
 
 RT-1 was rated by reachability. The advisories were in the web server (`next`), so they were reachable over HTTP. On loopback, with nobody but the presenter, likelihood was Low; for a network demo it would have been Moderate. A clean result means only that the named scan of these lockfiles found no published advisory on that date.
@@ -772,7 +772,7 @@ These describe what the code does on the assessed build. They are not legal advi
 - **Personal information and cross-border transfer.** If FLOW were deployed with real documents and live mode, a buyer document could contain personal information. A deployer would then have to determine, for its own deployment and the rules that apply to it, whether sending that text to a provider outside mainland China is a cross-border transfer under China's Personal Information Protection Law (PIPL), and what legal basis, security assessment or standard contract would be needed. We have not done that assessment. Redaction reduces the exposure without removing it.
 - **AI-generated content.** Outbound text is template-filled from typed fields, not model prose. The web labels extracted terms "AI-generated, for reference" (由 AI 生成，仅供参考) until the owner confirms them, then "Read by the agent, confirmed by you".
 - **Decision support, not advice.** The agent acts only inside an owner-signed mandate. It is not a licensed lender, broker or adviser; it signs and guarantees nothing, and it moves no real money. Every facility, buyer and bank feed is simulated.
-- **Licence.** [TEAM: the licence, or "all rights reserved"; and confirm that third-party dependencies' licences permit it]
+- **Licence.** {TEAM_LICENCE}
 
 ## 04 Known Risks
 
