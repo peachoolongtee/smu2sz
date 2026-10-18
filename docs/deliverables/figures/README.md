@@ -46,6 +46,7 @@ rows with different oracles do not compare.
 | `fig8-system-architecture.png` | FLOW's architecture: the three model-assisted steps see redacted text only and propose typed output; deterministic code computes every figure, and only the executor changes the books. | `src/fig8_system_architecture.py` | Read from the code on `docs/techdoc-chat-fixes` `571ea64f`: `app/main.py` routers, `app/compiler`, `app/nl/classifier.py`, `app/nl/router`, `app/egress/guard.py`, `app/operations/executor.py`, `app/persistence` |
 | `fig9-request-to-settlement.png` | One buyer request from request to settlement, marking what is only proposed, what is authorised, what is recorded and what has actually settled. | `src/fig9_request_to_settlement.py` | `app/api/offers.py`, `decide.py`, `accept.py`, `outbound.py`, the executor's `AcceptOffer`, `app/commitments`, `app/api/alerts.py`, `app/alerts/reconcile.py` (`571ea64f`) |
 | `fig10-authority-matrix.png` | The authority matrix: what FLOW may do inside the signed mandate (Tier 1), what waits for the owner (Tier 2) and what is refused whoever asks (Tier 3), with the demo mandate's limits. | `src/fig10_authority_matrix.py` | `app/mandate/tiers.py` `tier_for`; `fixtures/scenarios/golden_sme.mandate.signed.json` (`571ea64f`) |
+| `fig11-cash-scenarios.png` | The demo company's closing cash under four scenarios, days 0 to 62, against the ¥300,000 reserve, with nine dated events. Supersedes `fig4-golden-cash.png` in the technical document (Figure 4). | `src/fig11_cash_scenarios.py` | `../submission/work/fin/daily_cash.csv` and `events.csv` (financial audit, 18 Oct 2026): the independent recomputation from the golden fixtures, equal to the engine replayed through the API to the fen (`work/fin/compare.csv`, 39 of 39) |
 
 Figures 8 to 10 (18 Oct 2026) supersede figures 1 to 3 for the submission: figure 1 named the compiler as the only model
 step, while the build has three (the compiler, the chat intent classifier and the Ask FLOW question router). Figure 3 stays
@@ -84,6 +85,17 @@ helper shows a complete example; the financial chart of `docs/sub-financial-audi
   ¥100,000, uncommitted facilities, applying for a facility, a payment reported by the agent or a buyer, buying equipment,
   setting up a contract's terms; Tier 3 a facility the owner did not request, personal guarantees, collateral, equity,
   changing the mandate and any unknown operation. Below: the demo mandate's limits.
+- **fig11-cash-scenarios.png.** A step chart of closing cash in CNY (minus ¥100k to ¥900k) over days 0 to 62, with a dashed
+  line and a shaded band below the ¥300,000 reserve. Four lines: today's books with no new funding (grey, dash-dot) fall
+  below the reserve on day 12 and to −¥105,000 on days 30–31; FLOW's standing plan (blue, solid; credit line ¥150,000 plus
+  invoice financing ¥255,000, cost ¥3,113.93) touches the reserve exactly on day 30 and never goes below it; the buyer's
+  request accepted as asked with no new funding (amber, dashed) stays above the reserve until day 47, then falls to
+  ¥209,960 (¥90,040 short) and to ¥164,960 on day 60; Option A as the demo runs it (purple, dotted) holds the reserve on
+  every day, reaching ¥460,000 on day 42 after the month-2 payroll, because the owner approved a ¥200,000 advance on day 34.
+  Nine numbered markers along the top date the events: early payment (day 2), payroll (12), the month-2 payroll being
+  scheduled (25), loan payment (30), the invoice due with ¥160,000 unpaid (32), the advance proposed and approved (34), the
+  advance landing (37), the next invoice paid and the bill (47), loan payment (60). The bottom line names the books, the
+  currency, the data file and the build.
 
 ## Product screenshots (`screens/`)
 
