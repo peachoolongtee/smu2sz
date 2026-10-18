@@ -35,9 +35,10 @@ backend, kept apart from the certified offline evidence.
   **CNY 33,366.92**: a ¥5,040 discount now and ¥28,326.92 of future concessions, 5.7 times the owner's limit for such
   promises. Of these, ¥24,326.92 are valued concessions on the invoices issued during the next 365 days (an exposure
   valuation, not cash necessarily paid in that window) and ¥4,000 is the rebate. It also takes cash below the owner's safety
-  reserve from day 47. FLOW's counter (Option A) is quoted at **CNY 3,035.99** and keeps the reserve: about **CNY 30,331
-  protected on one buyer request** (33,366.92 − 3,035.99; synthetic books, illustrative). As the demo ran, with a late payment
-  and an extra payroll, Option A's posted cost was ¥5,205.36 (Table 2).
+  reserve from day 47. FLOW's counter (Option A) gives away none of the **¥28,326.92 of model-valued future concessions** and keeps the
+  reserve. It costs **CNY 3,035.99** up front in discount and interest, against ¥3,113.93 for the standing funding plan the
+  books need with no request at all (synthetic books, illustrative). As the demo ran, with a late payment and an extra
+  payroll, Option A's posted cost was ¥5,205.36 (Table 2).
 - **Built for a Chinese SME.** It reads Chinese contracts and Chinese, English and mixed buyer messages; its funding menu
   includes bank acceptance-bill (银票) discounting and a government-guaranteed working-capital loan beside the credit line and
   invoice financing; and every answer is written by the server in English or Chinese, following the question.
@@ -57,12 +58,13 @@ backend, kept apart from the certified offline evidence.
 
 | Build and verification |
 | --- |
-| Submission commit: `5941e95a` (code, verified); the repository head adds documentation only |
+| Submission build: code commit `bee9c50d` (the Security Lead's round seven), merged into `dev` as `c707ee8c`; later commits change documentation only. Its security certification is requested (section 04); the last certified build is `70f23ac5` |
 | Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz). Evidence files named in this document link to their repository paths |
 | Demo video: International-AI-Track-ISMOGGER-DemoVideo.mp4, submitted alongside this document |
 | Runs fully offline with one command (`pnpm demo`): no account, no VPN, no API key and no foreign service needed — it works in mainland China as delivered (cache mode, in-memory books, published demo credentials; the dependencies are installed once, by `pnpm install` and the first `pnpm demo`). The optional live mode (`pnpm demo --live-llm`) needs a DeepSeek key |
 | Verification manifest: Table V (Appendix B), with each suite's passed, failed and skipped counts, the command, the build and the date of the run on the submission commit |
-| Earlier builds named beside a figure (`70f23ac5`, the certified build; `975e082f`; `571ea64f`) are historical evidence, labelled as such |
+| Earlier builds named beside a figure (`70f23ac5`, the last certified build; `5941e95a`, reviewed and not certified; `975e082f`; `571ea64f`) are historical evidence, labelled as such |
+| Licence: all rights reserved; the organisers and judges may view, run and evaluate the repository for judging ([LICENSE](../../LICENSE)) |
 
 **Where to look, by judging criterion** (the full index, with every template prompt and evidence file, is Appendix A).
 
@@ -85,10 +87,10 @@ each source.**
 | Usefulness | About half of messages need no owner review (57 of 115); only 3 of the 14 genuinely acceptable offers are accepted alone (Table 4) | Tuned |
 | Reading contracts | 75% of key fields on 17 unseen Chinese contracts with a text layer (45% over all 30: 13 scans and photos are refused) | Unseen, recorded model replay |
 | Owner questions | 228 of 427 answerable bank questions answered, 45 partly, 0 wrong (tuned bank); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic | Tuned; held-out |
-| Live model | One live DeepSeek run per component: buyer messages 42 of 63 verdicts, no wrong accept (1 Oct); the question router was fully correct on 22 of the 63 questions that reached it (22 of 33 when it answered), by one reviewer (18 Oct) | Live, single runs |
+| Live model | Single live DeepSeek runs: buyer messages 42 of 63 verdicts, no wrong accept (1 Oct); the question router was fully correct on 22 of the 63 questions that reached it (22 of 33 when it answered), by one reviewer (18 Oct) | Live, single runs |
 | Security | 279 stored attack cases (128 API, 151 chat): none violated the harm oracles (rules path and a scripted hostile model; no real model read any of the 279 catalogue cases). Internal review by an AI Security Lead, not external assurance | Tests |
 | Task completion | 49 of 49 scripted conversations pass their own checks (88 turns); the 17-step demo walk ends with a 14-entry hash chain that verifies, and a tampered copy is rejected | Scripted tasks, simulated environment |
-| Tests | Passed, failed and skipped counts for the API, web-unit and browser suites on the submission commit: Table V (Appendix B). Last historical runs: API 10,674 passed, 0 failed, 47 skipped and mock browser 479 passed, 0 failed, 77 skipped (`70f23ac5`); live browser 139 passed with three known failures, `live.spec.ts:334` and `:348` (#157) and `tracker.spec.ts:216` (`975e082f`). A count measures the size of a suite, not correctness | Tests |
+| Tests | Passed, failed and skipped counts for the API, web-unit and browser suites on the submission build: Table V (Appendix B). Last historical runs: API 10,674 passed, 0 failed, 47 skipped and mock browser 479 passed, 0 failed, 77 skipped (`70f23ac5`); live browser 139 passed with three known failures, `live.spec.ts:334` and `:348` (#157) and `tracker.spec.ts:216` (`975e082f`). A count measures the size of a suite, not correctness | Tests |
 
 **How to read this document.** Sections 01 to 05 follow the official template; detail (command lists, code-line
 inventories, long tables, the screen-by-screen tour) is in the appendices. Every number is synthetic and was measured on
@@ -110,9 +112,10 @@ and decides alone whether to accept 60-day terms, and separately, often later, w
 
 **The insight: a longer payment term is a loan from the supplier to the buyer.** It moves no money today, so spending limits
 and approval rules let it through, but the supplier has to fund the gap. This is why the usual safeguards in SME finance
-tools, which act on money leaving the business (payment approvals, two-person sign-off, spending limits, kill switches),
-cannot protect the supplier here: by the time a payment exists, the commitment that caused it was agreed weeks earlier.
-FLOW works upstream, at the request itself, and still keeps those controls on every operation that moves money. On the demo company, whose largest buyer, Foshan Home
+tools, which act on money leaving the business (payment approvals, spending limits, kill switches), do not price or
+constrain the future liquidity cost of agreed commercial terms: by the time a payment exists, the commitment that caused it
+was agreed weeks earlier. FLOW works upstream, at the request itself, and every operation that moves money still passes the
+owner's signed limits, the tiers and, above Tier 1, the owner's approval. On the demo company, whose largest buyer, Foshan Home
 Retail, receives a ¥420,000 invoice every 30 days on 45-day terms, the buyer's request (EX01) asks for three things:
 
 - **Terms from 45 to 60 days on every future invoice.** That ties up ¥210,000 more in receivables on average (¥420,000 for 15
@@ -165,8 +168,9 @@ operation has passed the executor's checks; a **recorded** commitment is in the 
    concession cap (¥28,326.92 against ¥5,000); the reserve (¥90,040 short on day 47, ¥135,040 at worst on day 60); break-even
    (1.2% is above 0.8832%); and price (with the early payment the funding costs ¥6,508.05, without it ¥3,873.58). It drafts
    **Option A** (terms stay at 45 days, no rebate, early payment on up to ¥260,000 at 0.85%) and **Option B** (55 days with a
-   0.30% price rise, a forward gain of ¥162.05 over 13 invoices, but still **CNY 3,706.46** of funding), and recommends A
-   (Figure 10, Appendix K).
+   0.30% price rise, a forward gain of ¥162.05 over 13 invoices, but still **CNY 3,706.46** of funding), and recommends A:
+   over the year it costs less (¥3,035.99 against ¥3,544.41 for B once B's forward gain is netted), it changes no terms, and
+   it runs at Tier 1 while B needs the owner (Figure 10, Appendix K).
 4. **Agreement (authorised, then recorded).** The owner sends Option A. When the buyer's acceptance arrives, the executor
    re-checks it on that day's books, binds it to the counter's terms hash and a single-use nonce, and records the commitment.
    Its funding runs as a Tier-1 operation: the credit line draws ¥147,210 (405,000 − 257,790). Quoted cost: ¥2,210.00 of
@@ -199,6 +203,8 @@ day-47 breach, and the reserve held on every day. Figure 1a compares the financi
 shows the disruption and cure as the demo ran them. Assumptions: the ¥160,000 is paid on day 36 and the next invoice on its
 due day 47; the owner approves on day 34; no other cash flow is added.
 
+<!-- figure: figures/fig11a-cash-alternatives.png | Figure 1a. The financing alternatives for Foshan's request, like for like: five series of closing cash under the same events, differing only by the day-0 choice, against the ¥300,000 reserve. No action (A0) falls to −¥105,000 on days 30–31; EX01 accepted as asked with no funding (A2) is below the reserve on days 47–61 (¥209,960 on day 47, ¥164,960 on days 60–61); the standing plan (A1, ¥3,113.93), Option A (A3, ¥3,035.99) and Option B with its plan (A4) touch the reserve exactly on days 30–31. B's cost by day 62 (¥3,706.46 of funding less the ¥1,260 price rise collected by then, ¥2,446.46) looks lower only because its price rise arrives before the cost of its longer terms: over the year the 0.30% rise exceeds the cost of 55-day terms on 13 invoices by just ¥162.05, so B costs ¥3,544.41 against A's ¥3,035.99, and B needs the owner because terms change. Data: the financial audit's recomputation, equal to the engine to the fen (synthetic golden books, mandate v1). | h=4.8 -->
+
 <!-- figure: figures/fig11b-cash-disruption.png | Figure 1b. The subsequent disruption and cure, as the demo ran them after Option A was agreed: a second ¥200,000 payroll scheduled on day 25 for day 42, Foshan's ¥160,000 residual paid late (due day 32, received day 36), and the ¥200,000 advance FLOW proposed on day 34 (32.5% a year, so queued as APR-000001), approved by the owner and landed on day 37. As run (B2), cash stays at or above the reserve every day, for ¥5,205.36 against ¥3,035.99 quoted (B0); with the payroll and no cure (B1), cash would be ¥111,964.01 on days 42–46. | h=4.8 -->
 
 **What is new.** Negotiation agents, cash-flow forecasts, loan marketplaces and covenant monitoring each exist. Pactum's agents
@@ -218,7 +224,6 @@ the combination, on the supplier's side:
 - **One deterministic pipeline.** Reading, forecasting, funding, covenants, the signed mandate, commitments and an
   injection-resistant typed interface form one pipeline, not a set of tools.
 
-<!-- figure: figures/fig11a-cash-alternatives.png | Figure 1a. The financing alternatives for Foshan's request, like for like: five series of closing cash under the same events, differing only by the day-0 choice, against the ¥300,000 reserve. No action (A0) falls to −¥105,000 on days 30–31; EX01 accepted as asked with no funding (A2) is below the reserve on days 47–61 (¥209,960 on day 47, ¥164,960 on days 60–61); the standing plan (A1, ¥3,113.93), Option A (A3, ¥3,035.99) and Option B with its plan (A4, ¥3,706.46 less a ¥1,260 price rise, ¥2,446.46 net) touch the reserve exactly on days 30–31. Data: the financial audit's recomputation, equal to the engine to the fen (synthetic golden books, mandate v1). | h=4.8 -->
 
 **What the owner sees.** One web app in English and Chinese: Home, Deals, Attach deals, Cash & funding, Sandbox, Capex,
 Receivables and Activity, with Ask FLOW (a header field, a side panel on every page and a full page) and Approvals. The browser
@@ -232,10 +237,12 @@ it complies with any bank's covenants, that it has been deployed, or that it rea
 
 #### Gap coverage: the combination no product we found offers
 
-Of the seven gaps an SME supplier faces between a buyer's request and the cash it needs, FLOW is the only product we found
-that covers all seven in one place. Every gap is covered at least partly by an existing product; the novelty is the
-combination on the supplier's side. No other product we found covers more than one gap fully: Xero JAX comes closest,
-with one full and three partial.
+Table L1 is a scoped comparison of the particular combination FLOW demonstrates: seven gaps an SME supplier faces between
+a buyer's request and the cash it needs, as we define them from the supplier's side, judged from public material. It is not
+a ranking of products built for other users or purposes. On that basis FLOW is the only product we found that addresses all
+seven in one place, and it does so as a local simulation, not a deployed service. Every gap is covered at least partly by an
+existing product, often for another party (the buyer or the lender); the novelty is the combination on the supplier's side.
+Xero JAX comes closest, with one gap fully covered and three in part.
 
 **Table L1. Gap coverage, SME supplier's side (● covers; ◐ partly, or for another party; ○ not found in public
 material).**
@@ -253,7 +260,9 @@ material).**
 *Method.* Desk research by the team, Sept–Oct 2026, from public vendor material and press. Cells marked `*` were
 re-checked on the vendor's or the cited publisher's page on 18 Oct 2026; the others are as recorded in our research of
 25–27 Sep 2026. ○ means not found in public material, not proven absent. FLOW's cells point to sections of this document
-and were checked against the code.
+and were checked against the code. The same standard applies to every column, with one difference stated plainly: a
+competitor's ● describes a shipped product, while FLOW's ● describes what its simulation implements on synthetic
+counterparties (section 05, "Known limitations").
 
 *What this does not show.* This is a feature comparison from public material. It is not market validation.
 - Our research ran out of web-search budget early, and its coverage of Chinese-language products is weak, so a product
@@ -314,11 +323,11 @@ which uses the rules grammar and recorded readings, and it is not part of any ce
   whose quote is not in the text. (2) Deterministic code evaluates the terms: the cash projection, the funding price, the
   mandate and the verdict, with its formula and figures. (3) The permission gate: the executor computes the tier, anything
   outside Tier 1 waits for the owner, and nothing the model returned can act on its own.
-- **Date and outcome.** Run on 18 October 2026 (17:08 UTC+8) on code commit `5941e95a` (by the operator's record; the result files carry the date, not the commit), API in `LLM_MODE=live` with DeepSeek `deepseek-flash`, redaction on; inputs written for this run and in no fixture or cache ([evidence](docs/deliverables/evidence/live-2026-10-18/live_demo_2026-10-18.json)).
+- **Date and outcome.** Run on 18 October 2026 (17:08 UTC+8) on code commit `5941e95a` (by the operator's record; the result files carry the date, not the commit; a build later found not certifiable, section 04), API in `LLM_MODE=live` with DeepSeek `deepseek-flash`, redaction on (its default; the demonstration's log shows a `model.redaction` line for each call, while the frozen-run files carry no redaction stamp); inputs written for this run and in no fixture or cache ([evidence](evidence/live-2026-10-18/live_demo_2026-10-18.json)).
   - *A new Chinese buyer message* on Foshan's channel key. The model read all three terms in 1.8 s, each with its quoted words: 60-day terms (“把账期延长到60天”), 1% off for paying 10 days early (“提前10天付，给1%折扣”), and a 0.5% reduction tied to higher orders. FLOW's rules grammar read two of the terms differently, so FLOW booked nothing, returned NO VERDICT and asked the buyer, in Chinese, to confirm: a disagreement between the two readers never reaches a verdict.
-  - *A new synthetic contract* for Dongguan ([text](docs/deliverables/evidence/live-2026-10-18/dongguan_framework_agreement.md)). The model returned 13 terms in 3.39 s, each with its clause quoted: the parties in their roles, the dates, RMB 180,000 every 30 days, 60-day terms, 1.2% off within 10 days and late interest. It did not return the 2% volume rebate (clause 6.1) or the termination clause; confirming the reading stays the owner's.
+  - *A new synthetic contract* for Dongguan ([text](evidence/live-2026-10-18/dongguan_framework_agreement.md)). The model returned 13 terms in 3.39 s, each with its clause quoted: the parties in their roles, the dates, RMB 180,000 every 30 days, 60-day terms, 1.2% off within 10 days and late interest. It did not return the 2% volume rebate (clause 6.1) or the termination clause; confirming the reading stays the owner's.
   - *A new owner question* (“Which of my debts costs me the most, and what would early collection from Foshan save?”) was routed live to two read-only tools (`debt_service`, `early_pay_offer`) in 1.48 s; FLOW's code computed the answer.
-  - *Frozen evaluation* (20 new items, 10 English and 10 Chinese, labels written blind before any run and fixed by hash; [results](services/api/evals/live_frozen/)). Single runs on one day with one provider; untuned:
+  - *Frozen evaluation* (20 new items, 10 English and 10 Chinese, labels written blind before any run and fixed by hash; [results](../../services/api/evals/live_frozen/)). Single runs on one day with one provider; untuned:
 
 | Out of 20 | Rules grammar only (offline) | Model alone (live) | FLOW as shipped (model + rules check) |
 | --- | --- | --- | --- |
@@ -329,7 +338,18 @@ which uses the rules grammar and recorded readings, and it is not part of any ce
 | Held back wrongly | 2 | 1 | 5 |
 | Readings grounded in quoted source words | 23 of 23 | 35 of 35 | 32 of 32 |
 
-  The live model reads nearly twice as many items correctly as the rules alone, but on its own it was wrong on one ambiguous and one conflicting message. FLOW's cross-check turns those two errors into clarification requests (0 wrong) at the cost of five items it holds back for the owner. No item, in any mode, booked a commitment or moved money. Requests for protected figures
+  *What the table shows, and what it does not.* Two findings, both stated plainly. **The model raises what can be read:**
+  alone it reads 10 items fully correctly against the rules grammar's 6. **The shipped cross-check trades that gain for
+  safety:** it turns the model's two errors (one ambiguous, one conflicting message) into clarification requests, so FLOW as
+  shipped is wrong on none, but it also holds back five items the model read correctly, and its fully correct count (5) is
+  one below the rules grammar's. So the live run does not show that adding the model improves the shipped system's task
+  completion today; it shows a safety–usefulness trade-off, with the model's extra reading held back whenever FLOW cannot
+  confirm it. Narrowing when the cross-check holds a reading back is the next step (section 05, "Known limitations"). No item, in any
+  mode, booked a commitment or moved money.
+  *A successful live reading through the shipped path* (item LF05, a new English supply-terms letter for Foshan): the live
+  model returned the price (RMB 380,000 a monthly delivery), 50-day terms from the invoice date and 0.7% off for payment
+  within 8 days, each with its quoted clause, in 2.03 s; every quote matched the letter, the reading was COMPILED with no flag,
+  and confirming it stays the owner's ([results](../../services/api/evals/live_frozen/results_live_2026-10-18.md)). Requests for protected figures
 (the reserve, the credit limit) were refused and logged; in the model-alone run one drafted reply to the buyer stated a
 protected limit, and the outbound guard withheld it and sent the safe template instead.
 
@@ -417,7 +437,7 @@ the redacted identifier types and that no log line holds them.
 offline with the rules grammar (the demo, the tests and every evaluation figure unless stated); and the real engine with a live
 model (`pnpm demo --live-llm`; opt-in, outside every security certification).
 
-**Tools and data.** Every tool is an HTTP route with a strict schema that rejects unknown fields: 105 routes under `app/api`
+**Tools and data.** Every tool is an HTTP route with a strict schema that rejects unknown fields: 108 routes under `app/api`
 plus `/health` (Appendix I). Operations are typed (offer, funding, owner and Tier-3 operations), and none has a payee or
 account field. All data is synthetic: the demo company's books ("golden books": the journey in section 01, with a ¥100,000
 bill on day 47, a ¥1,500,000 loan repaid ¥45,000 every 30 days and EBITDA fixed at ¥90,000 a month), the signed mandate
@@ -523,8 +543,8 @@ every rule (daily reserve, concession caps, discount cap, implied rate, covenant
 clauses), the early-payment tests and the autonomy rule; every failed rule carries its code, day, observed value, limit,
 formula and inputs. The autonomy rule (ADR-0005) keeps an ACCEPT at Tier 1 only for a plain early-payment discount on a named
 whole invoice whose message passed the coverage check. Counters are priced below the marginal cost and re-evaluated as offers:
-Option A at the largest whole-5-basis-point rate below break-even, its amount rounded up to ¥10,000 so the counter does not
-reveal the exact gap (R-10); Option B with the smallest price rise that covers the longer terms. Appendix F reconciles every
+Option A at the largest whole-5-basis-point rate below break-even, its amount rounded up to two significant figures (¥10,000 steps on
+Foshan's invoice) so the counter does not reveal the exact gap (R-10); Option B with the smallest price rise that covers the longer terms. Appendix F reconciles every
 figure of EX01.
 
 **5. Capex screening.** FLOW screens each financing structure for a planned machine (cash with the line, 18- and 36-month
@@ -617,9 +637,9 @@ ours.
 | Threat, and what an attacker tries | Control that stops it | Attack cases (all reached their path; 0 harm) | Limits |
 | --- | --- | --- | --- |
 | **Induced transfers**: "the owner has approved this", a pasted approval, a "pre-approved lender", a claimed earlier deal, a conditional or negated "go ahead", a changed or expired offer | **Structural:** no operation has a free payee or account field; money moves only between the business's own registered facilities, registered buyers and its books, through typed operations that name them by id (`app/domain/models.py`, operation types), and the executor refuses a facility not on the owner's funding menu or a receivable not owed by a registered buyer (`executor.py:253-258, 1297`). A message cannot introduce a new account or payee. The executor computes every tier; Tier 2 runs only on the owner's approval under the signed mandate, Tier 3 never, whoever asks. Chat consent is a whole-message closed command. A claim is never a fact | 32 API (social engineering, fake lender, claimed concession, changed offer, expired commitment): 29 stopped by the named control, 3 by another. 75 chat (41 consent, 18 Tier-3 questions, 16 owner quoting a buyer) | Inside the mandate FLOW acts alone: the agent key or a keyed buyer message can draw on a committed facility up to its limit, with no aggregate draw limit (R-3). Single-operator model: there is no second approver, so whoever holds the one owner credential holds Tier-2 authority (R-2). FLOW cannot tell whether a buyer the owner reports as agreeing really did |
-| **Data extraction**: a buyer asking for the reserve or limits; probing the counter; asking for another buyer's terms; planting a canary; reading routes without a token | Every read of the books needs the owner token. Outbound text comes from approved templates, and an outbound guard blocks a whole message stating, in any common rendering, a protected internal value or another counterparty's confidential terms; the recipient's own authorised counter passes by design. Model prompts carry redacted text and never the books | 22 API (reserve, mandate, another buyer, canary): 20 stopped by the named control, 2 by another. 42 chat (buyer extraction, counter probing) | `/health`, `/clock` and the demo offer list are public (SEC-13). A keyed buyer can learn within one ¥10,000 step where the counter cap lies (R-10). Redaction is pattern-based (PRIV-4, PRIV-5). No catalogue case reaches the guard itself; `tests/egress` tests it (SEC-32) |
+| **Data extraction**: a buyer asking for the reserve or limits; probing the counter; asking for another buyer's terms; planting a canary; reading routes without a token | Every read of the books needs the owner token. Outbound text comes from approved templates, and an outbound guard blocks a whole message stating, in any common rendering, a protected internal value or another counterparty's confidential terms; the recipient's own authorised counter passes by design. Model prompts carry redacted text and never the books | 22 API (reserve, mandate, another buyer, canary): 20 stopped by the named control, 2 by another. 42 chat (buyer extraction, counter probing) | `/health`, `/clock` and the demo offer list are public (SEC-13). A keyed buyer can learn within one rounding step (two significant figures; ¥10,000 on Foshan's invoice) where the counter cap lies (R-10). Redaction is pattern-based (PRIV-4, PRIV-5). No catalogue case reaches the guard itself; `tests/egress` tests it (SEC-32) |
 | **Privilege escalation**: self-approval, a body field "requested_by: OWNER", a caller-supplied tier, a forged mandate, a reused nonce, a backdated operation, an agent resetting the circuit breaker, a session taken over | Tiers, actors and approvals come from code and credentials, never from the request. One pinned mandate key; single-use nonces; operations dated by the executor; approvals decided once, by the owner only; sessions bound to their caller | 37 API (escalation, replay, revoked mandate): all stopped by the named control. 16 chat. Every route is also called as every kind of caller | One person holds the owner token and the signing key (R-2). Code inside the process is trusted (R-5). The database owner can rewrite the log (R-13). No route revokes or renews the mandate (R-14) |
-| **Prompt injection**: override lines, fake system messages, role-play, encoded, full-width, zero-width or homoglyph text, an instruction inside a contract | The architecture, not detection: the reading schema has no field for an operation, approval, tier or facility; every term must quote the source; the deciding modules never read free text; the classifier's closed list has no approve or reject; buyer turns never reach a classifier; the router's tools are read-only | 17 API (14 by the named control, 3 by another) and 18 chat injections; injection text also runs through 70 other API text attacks | Offline, attack text was read by the rules grammar and a scripted hostile model; no real model, recorded or live, read an attack. Live mode is outside every certification |
+| **Prompt injection**: override lines, fake system messages, role-play, encoded, full-width, zero-width or homoglyph text, an instruction inside a contract | The architecture, not detection: the reading schema has no field for an operation, approval, tier or facility; every term must quote the source; the deciding modules never read free text; the classifier's closed list has no approve or reject; buyer turns never reach a classifier; the router's tools are read-only | 17 API (14 by the named control, 3 by another) and 18 chat injections; 70 API text attacks in all carry hostile text through an inbound channel | Offline, the 279 catalogue cases were read by the rules grammar and a scripted hostile model; no real model read any of them. Injection text has been read by a live model only in uncertified runs (the 16 Oct red-team run's live tier; three items of the 18 Oct frozen set, all rejected or held). Live mode is outside every certification |
 
 A fifth class, integrity and recovery (20 cases: partial writes, double execution, an erased log), is all stopped by the named
 control. **Credentials** (owner token, agent key, bank-feed key, buyer channel key) travel in headers and are compared in
@@ -671,12 +691,13 @@ an hour and 30 per address, and a request refused by validation (an unknown fiel
 log. The database refuses to edit or delete history; and
 [scripts/verify_evidence.py](../../scripts/verify_evidence.py) recomputes an export with Python's standard library. A database administrator can rewrite the
 chain consistently (R-13), and its head is not anchored outside the system. **Mistakes** are corrected by new, logged
-compensating operations, never by editing history. **Partial execution (SEC-28, Medium).** Each operation is atomic; a plan of
-several legs is not. The owner is told each leg's actual outcome (funded, waiting for approval or refused); nothing reverses or
-resumes legs, so atomicity across legs remains a disclosed limitation and recovery is manual (read Activity, compensate, ask
+compensating operations, never by editing history. **Partial execution (SEC-28, a Moderate risk).** Each operation is atomic; a plan of
+several legs is not. On the submission build the owner is told each leg's actual outcome (funded, waiting for approval or
+refused) on every path; `/negotiate` still sends every leg and an alert's cure continues past a queued leg, and nothing reverses
+or resumes legs, so atomicity across legs remains a disclosed limitation and recovery is manual (read Activity, compensate, ask
 again).
 
-**Owner control, the single-operator model and a chain checkpoint kept outside the database.** The owner can pause FLOW's agent at any time (`POST /agent/pause`, owner token; `POST /agent/resume` to undo). While paused, every operation requested on the agent's or a buyer's authority is refused before it reaches the executor's gates, and each refusal is recorded as a security event; the owner's own operations and bank-feed receipts still run. The pause and the resume are entries on the hash-chained operations log, so the switch survives a restart. It does not revoke or replace the mandate: mandate revocation and renewal remain offline owner steps. The pause is API-only in this build. FLOW supports one operator: the owner signs the mandate offline and decides every Tier-2 item; the agent acts only inside that mandate at Tier 1 and can never decide an approval, change the mandate or run a Tier-3 operation. One owner credential is a single point of compromise for everything inside the signed limits; it cannot widen them. A second approver above a threshold is future work. The operations log is hash-chained. The owner can save a manual checkpoint of the chain head (entry count, head hash, day) with `scripts/verify_evidence.py --checkpoint-save` and keep it outside the database; a later export verified against it shows any truncation, rollback or rewrite of entries up to that point, and accepts entries appended after it. This is tamper evidence, not tamper-proofing: an administrator who can also change the kept checkpoint, or who changes the log after the latest checkpoint, is not detected by it. Checkpoints are manual; there is no external anchoring service.
+**Owner control, the single-operator model and a chain checkpoint kept outside the database.** The owner can pause FLOW's agent at any time (`POST /agent/pause`, owner token; `POST /agent/resume` to undo). While paused, every operation requested by the agent or a buyer, and every bank-feed operation other than a receipt, is refused before it reaches the executor's gates, and each refusal is recorded as a security event; the owner's own operations, bank-feed receipts and the owner's decision on an approval queued before the pause still run. The pause and the resume are entries on the hash-chained operations log, so the switch survives a restart. It does not revoke or replace the mandate: no API route or script revokes or renews it, which takes writing a newly signed mandate into the store (R-14). The pause is API-only in this build and needs one API process (PAUSE-2). The Security Lead's review found that the bank-feed key could still draw while paused (PAUSE-1); round seven fixed it. FLOW supports one operator: the owner signs the mandate offline and decides every Tier-2 item; the agent acts only inside that mandate at Tier 1 and can never decide an approval, change the mandate or run a Tier-3 operation. One owner credential is a single point of compromise for everything inside the signed limits; it cannot widen them. A second approver above a threshold is future work. The operations log is hash-chained. The owner can save a manual checkpoint of the chain head (entry count, head hash, day) with `scripts/verify_evidence.py <export> --checkpoint-save <file>` and keep it outside the database; `--checkpoint <file>` verifies a later export against it, and `--checkpoint-out` prints the same checkpoint as `COUNT:HEAD`; a later export verified against it shows any truncation, rollback or rewrite of entries up to that point, and accepts entries appended after it. This is tamper evidence, not tamper-proofing: an administrator who can also change the kept checkpoint, or who changes the log after the latest checkpoint, is not detected by it. Checkpoints are manual; there is no external anchoring service.
 
 ### Protection against prompt injection, privilege escalation and privacy leakage
 
@@ -693,8 +714,10 @@ again).
   executes; the router picks only read-only tools and its prompt never holds the books.
 - **Privilege escalation.** The executor trusts no caller-supplied tier, actor or approval. Self-approval, an agent's circuit
   reset, a forged mandate, a reused nonce, a backdated operation and a decision by anyone but the owner are refused and logged.
-  A route-policy test calls all 110 routes as every kind of caller, with demo mode on and off; the certification's route sweep
-  covers the 106 API routes and the 3 documentation routes in three modes (demo mode on, off and unset).
+  A route-policy test calls all 113 routes of the submission build (109 API routes and 4 documentation routes) as every kind
+  of caller, with demo mode on and off; the certification's route sweep calls the API routes and 3 documentation routes in
+  three modes (demo mode on, off and unset); a 207-case sweep tries every owner write and agent route with each wrong or
+  missing credential, and none got through.
 - **Privacy and data extraction.** Outbound text is filled from an approved template; a request for data gets one fixed reply.
   **An outbound guard blocks the whole message** if it states a value the recipient is not entitled to: the owner's protected
   internal values (the reserve, a cap, a limit, the marginal rate, a facility's terms), confidential terms belonging to other
@@ -712,8 +735,8 @@ again).
   broker or adviser.
 
 **Table 6. Attack results (279 stored cases: 128 API, 151 chat; each in a fresh in-memory runtime, offline, rules grammar and
-a scripted hostile model; generated on `1294e941`, certified as part of `70f23ac5`, re-run on `571ea64f` with the same
-result). Figure 7 (Appendix J) breaks them down by class.**
+a scripted hostile model; certified as part of `70f23ac5`; regenerated by the Security Lead on `bee9c50d`, the submission
+build's code, with the same result). Figure 7 (Appendix J) breaks them down by class.**
 
 | Measure | Result |
 | --- | --- |
@@ -738,20 +761,25 @@ its results are its own and were not re-run, and its observations were re-checke
 a separate session and worktree, reproduced every finding, wrote each fix with a regression test (so it certified fixes it
 wrote) and certified dev **`70f23ac5`, the final assessed build**, for the local simulation with live mode excluded: 10,674 API
 tests passed, 0 failed; 279 cases, 0 harm; PostgreSQL concurrency 3 of 3; 479 mock browser tests passed; 0 CSP violations
-([docs/security/CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md)). Disclosed with it: REG-8 (Low), REG-9 (Info), CT-2b (Low), SEC-27 (Low) and SEC-28 (Medium),
-the last two deferred by the owner. **The submission build is not yet certified.** REG-8, REG-9 and CT-2b are fixed on it by the
-Security Lead's round-six commit `563de405`, and re-certification has been requested. It also adds the SEC-28 reporting fix
-(`f52870d1`), Ask FLOW's new answers, the classifier's read-intent routing, the Cash page's plan without a permanent source,
-the JSON 500 and `--live-llm` forcing redaction. The checks run on the submission commit are in Table V (Appendix B).
+([docs/security/CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md)). Disclosed with it: REG-8 (Low), REG-9 (Info), CT-2b (Low), SEC-27 (Low) and SEC-28 (Moderate),
+the last two deferred by the owner. **The next build, `5941e95a`, was reviewed and not certified.** The Security Lead
+reviewed every change after `70f23ac5` on it (the round-six fixes for REG-8, REG-9 and CT-2b, the SEC-28 reporting fix, the
+owner's pause and checkpoint, the consent narrowing, Ask FLOW's new answers, the live-mode routing of read intents, the JSON
+500 and `--live-llm` forcing redaction) and found them sound except for PAY-1 (Medium): "can I pay everyone?" showed one plan
+and saved another, which "go ahead" would have run. It also found PAY-2, PAY-3, PAUSE-1 and APR-1 (Low). **Round seven
+(`bee9c50d`) fixes all five, passed the Security Lead's full gate (11,368 API tests passed, 0 failed; 479 mock browser tests),
+and is the submission build; its certification is requested.** Open and disclosed: PAUSE-2 (one API process is required) and
+two Info items. The checks run on the submission build are in Table V (Appendix B); the Security Self-Assessment gives every
+finding, rating and status.
 
 **Table 7. Where FLOW may run, and what stands in the way.**
 
 | Configuration | Verdict | Minimum blockers |
 | --- | --- | --- |
-| Local demo (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | **GO** | None for `70f23ac5`. The submission build's additions are outside that certification; their checks are in Table V |
+| Local demo (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | **GO** for `70f23ac5`. **The submission build:** every check in Table V passes; certification requested | The Security Lead's certification of the submission build. Run on a trusted machine and network: the web dev server listens on all interfaces (DEMO-L1); nobody but the presenter holds the demo credentials |
 | Live-LLM mode (`pnpm demo --live-llm`, opt-in) | **Not covered by any certification** | A certification run in live mode; the language-boundary set and attack catalogue against a live model; a provider agreement on retention and region; PRIV-4 and PRIV-5 |
 | A demo reachable over a network | **NO-GO** | A tested deployment profile: changed credentials and signing key, TLS with per-client limits, anonymous intake off (SEC-19), API docs hidden, one API process, the web dev server on loopback (DEMO-L1), the route sweep and browser checks run against it |
-| Production with real customers, documents or money | **NO-GO** | A runnable configuration (SEC-06); one API process enforced (SEC-11); separate custody of token and key (R-2); an external anchor and a log the database owner cannot rewrite (R-13); mandate revoke and renew (R-14); resumable or reversible plans (SEC-28); an aggregate draw limit (R-3); redaction gaps and a PIPL assessment; backups; a penetration test; real counterparties, lenders and bank feeds |
+| Production with real customers, documents or money | **NO-GO** | A runnable configuration (SEC-06); one API process enforced (SEC-11); separate custody of token and key (R-2); an external anchor and a log the database owner cannot rewrite (R-13); mandate revoke and renew (R-14); resumable or reversible plans (SEC-28); an aggregate draw limit (R-3); unverified-sender marking or anonymous intake off (SEC-19); redaction gaps and a PIPL assessment; backups; a penetration test; real counterparties, lenders and bank feeds |
 
 **Supported configuration: one API process.** The concurrency tests prove that the store's compare-and-swap holds (SQLite, and
 PostgreSQL 17 in 3 of 3 runs), not two API processes: route checks use a per-process lock and each process keeps its own clock
@@ -788,7 +816,7 @@ below, on `975e082f`; web unit,
 types and lint — 169 passed, clean on `975e082f`; scripted-model tests (router, boundary, cards, chat attacks) — 452 passed, 1
 skipped on `571ea64f`. Appendix D lists representative cases with inputs and expected results, and
 [docs/deliverables/TEST_CASES.md](../../docs/deliverables/TEST_CASES.md) the full catalogue. The submission build adds the changes listed under Assurance after the
-last measured base (`571ea64f`); the results of the suites on the submission commit are in Table V (Appendix B).
+last measured base (`571ea64f`); the results of every suite on the submission build are in Table V (Appendix B).
 
 **Known failures (the same three in every table).** Live browser suite: `e2e/live.spec.ts:334` and `:348`, the write-conflict
 retry tests (#157), which fail the same way on the base; and `e2e/tracker.spec.ts:216`, a third, separate known failure: the
@@ -806,7 +834,8 @@ fail on a busy machine (set `SKIP_PERF_BENCH=1` on Windows).
 - **Extra requests** are found by cue words and figures. A request with neither could pass the coverage check, but only for a
   pure early-payment discount below break-even.
 - **Live models.** Each live result is one run on one day; the provider's model version is not recorded; the language-boundary
-  set has not been run against a live model.
+  set has not been run against a live model. The shipped path is conservative: 5 of the 20 frozen items were held back
+  wrongly; narrowing when FLOW holds a live reading back is next.
 - **Chat approval card.** The card does not print the approval's id; the reply's sentence names it ("APR-000001"), so the
   contextual "approve it" (section 03) binds to the single request that reply showed.
 - **Business-mode acceptance.** Recording a buyer's acceptance books the agreement; the funding plan is run separately.
@@ -819,15 +848,15 @@ and the evidence behind it. Paths are repository-relative.
 | Criterion or template prompt | Answered in | Evidence |
 | --- | --- | --- |
 | **Task Completion (40%)**: scripted tasks in a simulated environment | Table 1; the journey and Table 2 (01); 03 "Task completion"; Appendices C, D and K | [scripts/judge_eval.py](../../scripts/judge_eval.py) (49 tasks in [services/api/evals/e2e/scenarios.yaml](../../services/api/evals/e2e/scenarios.yaml)); [docs/deliverables/execution_evidence.md](../../docs/deliverables/execution_evidence.md); [docs/deliverables/evidence/EVIDENCE_PACK.md](../../docs/deliverables/evidence/EVIDENCE_PACK.md); the demo video, International-AI-Track-ISMOGGER-DemoVideo.mp4 |
-| **Security & Compliance (30%)**: induced transfers | Table 5, first row; Figure 5; 04 "What approval can and cannot do", "Binding an acceptance", "Owner-reported acceptance" | [services/api/evals/security/latest_report.json](../../services/api/evals/security/latest_report.json); [docs/SECURITY_SELF_ASSESSMENT.md](../../docs/SECURITY_SELF_ASSESSMENT.md) |
-| Data extraction | Table 5, second row; 04 "Privacy leakage and data extraction" | `latest_report.json` (exfiltration, cross-buyer, canary and chat extraction classes); [services/api/tests/egress/](../../services/api/tests/egress/) |
+| **Security & Compliance (30%)**: induced transfers | Table 5, first row; Figure 5; 04 "What approval can and cannot do", "Binding, signing and gates", "Owner-reported acceptance" | [services/api/evals/security/latest_report.json](../../services/api/evals/security/latest_report.json); [docs/SECURITY_SELF_ASSESSMENT.md](../../docs/SECURITY_SELF_ASSESSMENT.md) |
+| Data extraction | Table 5, second row; 04 "Privacy and data extraction" | `latest_report.json` (exfiltration, cross-buyer, canary and chat extraction classes); [services/api/tests/egress/](../../services/api/tests/egress/) |
 | Privilege escalation | Table 5, third row; Table J1; 04 "Privilege escalation" | `latest_report.json`; [services/api/tests/security/test_route_policy.py](../../services/api/tests/security/test_route_policy.py) |
-| Prompt injection | Table 5, fourth row; 04 "Prompt injection: architecture first, detection second" | [services/api/evals/security/attacks.yaml](../../services/api/evals/security/attacks.yaml); [services/api/app/security/attacks.py](../../services/api/app/security/attacks.py); [services/api/tests/verifier/test_invariants.py](../../services/api/tests/verifier/test_invariants.py) |
+| Prompt injection | Table 5, fourth row; 04 "Injection: architecture first, detection second" | [services/api/evals/security/attacks.yaml](../../services/api/evals/security/attacks.yaml); [services/api/app/security/attacks.py](../../services/api/app/security/attacks.py); [services/api/tests/verifier/test_invariants.py](../../services/api/tests/verifier/test_invariants.py) |
 | Serious security failures; assurance and readiness | Table 6, Figure 7; 04 "Assurance and certification"; Table 7 | [docs/security/CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md); [docs/security/FINDINGS_REGISTER.md](../../docs/security/FINDINGS_REGISTER.md); [docs/security/RELEASE_GATE.md](../../docs/security/RELEASE_GATE.md) |
 | **Innovation & Interaction (30%)**: scenario novelty and real-world value | Opening; 01 "Core value and innovation", "What is new" | Table L1; the demo video, International-AI-Track-ISMOGGER-DemoVideo.mp4 |
 | AI contribution | Opening; 02 "The AI at work: a live run on the real model backend"; Table 3 (03); Figure 2 | [services/api/app/compiler/](../../services/api/app/compiler/); [services/api/app/nl/router/](../../services/api/app/nl/router/) |
 | Dialogue efficiency, clarification, correction, fallback | 03 "Innovation & Interaction"; Appendix G | [services/api/tests/nl/](../../services/api/tests/nl/); [services/api/scripts/owner_questions_baseline.py](../../services/api/scripts/owner_questions_baseline.py), `owner_questions_general.py` |
-| **Bonus (0–5)**: advanced topic or real-world deployment | Not claimed: FLOW is a local simulation (05 "Production deployment"; Table 7) | — |
+| **Bonus (0–5)**: advanced topic or real-world deployment | Not claimed: FLOW is a local simulation (05 "Run it" and "Known limitations"; Table 7) | — |
 | 01 Problem, target users and selected topic | Section 01, first prompt | Section 01's tables |
 | 01 Core value and innovation | Section 01, second prompt; Figures 1a and 1b | [docs/deliverables/evidence/EVIDENCE_PACK.md](../../docs/deliverables/evidence/EVIDENCE_PACK.md) (the worked example); Appendix F |
 | 02 Architecture diagram and component responsibilities | Section 02, first prompt; Figures 2 and 3; Appendix H | [docs/deliverables/figures/](../../docs/deliverables/figures/); [docs/adr/](../../docs/adr/) |
@@ -841,22 +870,23 @@ and the evidence behind it. Paths are repository-relative.
 ## Appendix B. Verification manifest
 
 The figures in sections 01 to 05 name the build they were measured on; those builds are historical evidence. Table V records
-the final re-measurement on the submission commit: each check's command (Appendix C), the build, the date, and the passed,
-failed and skipped counts. A suite with known failures lists them by name in the notes; the live browser suite's are
-`live.spec.ts:334` and `:348` (#157) and `tracker.spec.ts:216` (section 05).
+the final measurement on the submission build: each check's command (Appendix C), where and when it ran, and the passed,
+failed and skipped counts. The submission build's code is `bee9c50d`; the merge that brings it into `dev` (`c707ee8c`) and
+every later commit change documentation only, so a check run on either is a check of that code.
 
-**Table V. Verification manifest for the submission commit `5941e95a` (every check run on 18 October 2026).**
+**Table V. Verification manifest for the submission build (code `bee9c50d`; checks run on 19 October 2026).**
 
 | Check | Command (Appendix C) | Passed | Failed | Skipped | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Web typecheck and lint | `pnpm typecheck`, `pnpm lint` | clean | 0 | 0 | Windows 11 (lead) and Linux, 2 cores (team member) |
-| Web unit tests | `pnpm test:unit` | 187 | 0 | 0 | Both machines |
-| API suite (all of `services/api/tests`) | `uv run pytest` | 11,341 | 0 | 47 | Linux, Python 3.12, two workers (pytest-xdist); 11,388 collected; run by a team member |
-| Focused suites on the changed paths (NL, security incl. the 207-case bypass sweep, certification, alerts) | `uv run pytest tests/nl tests/security tests/certification tests/alerts …` | 3,402 | 0 | 1 | Windows 11 |
-| Browser suite, recorded data | `playwright test` (mock, 6 workers) | 479 | 0 | 77 | Windows 11. On a 2-core container with an older Chromium, timing and layout specs failed under load; each passed on a one-worker rerun there or here |
-| Browser suite, real API | `playwright test` (live, 1 worker) | 174 | 3 | 51 | The three known failures: `live.spec.ts:334`, `:348` (#157) and `tracker.spec.ts:216` |
+| API suite (all of `services/api/tests`) | `uv run pytest` | 11,368 | 0 | 47 | The Security Lead's gate on `bee9c50d` |
+| Web typecheck, lint and unit tests | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` | clean; 187 unit tests | 0 | 0 | Windows 11, on the merge; also the Security Lead's gate on `bee9c50d` |
+| Browser suite, recorded data | `playwright test` (mock, 6 workers) | 479 | 0 | 77 | The Security Lead's gate |
+| Focused suites on the changed paths (NL, security incl. the route-policy test and the 207-case bypass sweep, certification, alerts, the pause, funding status, approvals) | `uv run pytest tests/nl tests/security tests/certification tests/alerts …` | 3,371 | 0 | 1 | Windows 11, on the merge |
+| Browser suite, real API | `playwright test` (live, 1 worker) | 171 | 6 | 51 | Windows 11, on the merge. The three known failures (`live.spec.ts:334`, `:348` (#157), `tracker.spec.ts:216`); `accept-as-asked.spec.ts:205` and `:233`, which passed when re-run alone; and `demo.spec.ts:378`, a double-click timing test at 390 px, which passed once and failed once in two more runs (flaky; no web code changed since `5941e95a`, where the suite had only the three known failures) |
 | Judge pack: scripted tasks, attack catalogue, demo walk, evidence chain | `scripts/judge_eval.py` | 49 of 49 tasks; 279 attacks, 0 with harm | 0 | — | Detection 97.66% of the 128 API attacks (70.25% across all 279); walk OK; chain VALID; tampered copy rejected |
-| Live-model demonstration and frozen evaluation | `ai_demo.py`, `evals/live_frozen/run.py` | see "The AI at work" | — | — | DeepSeek `deepseek-flash`, redaction on; single runs |
+| Dependency and secret scans | `pnpm audit --prod`; `pip-audit`; a pattern scan of every tracked file and branch history | 0 production advisories; no known vulnerabilities; no secret | 0 | — | `braces` (development only, accepted by the team); lockfiles unchanged since `70f23ac5` |
+| Security Lead's review checks on `5941e95a` (the round-seven code changes only the chat plan and consent paths, the pause and the approval reply) | the certification scripts | sweep 0 policy violations; language boundary 0 wrong-and-material; PostgreSQL 17 concurrency 3 of 3; scans clean | 0 | — | Certification of the submission build requested |
+| Live-model demonstration and frozen evaluation | `ai_demo.py`, `evals/live_frozen/run.py` | see "The AI at work" | — | — | DeepSeek `deepseek-flash`, redaction on; single runs on `5941e95a`, uncertified |
 
 ## Appendix C. Evidence commands and results
 
@@ -1150,7 +1180,7 @@ own credentials (Table J1).
 | Chat | `POST /nl` (a buyer sends its channel key); `POST /nl/opener`; `POST /nl/session/reset`, `/nl/reset` |
 | Offers and negotiation | `POST /offers`, `/offers/{id}/evaluate`, `/negotiate/{id}`, `/offers/{id}/accept`, `/decline`; `GET /offers/{id}/picture`, `/scenarios`, `/compare`, `/exposure`; the message to the buyer, marked sent, withdrawn, accepted or declined (`/offers/{id}/counters/{cid}/…`), `POST /offers/{id}/buyer-reply` |
 | Funding and capex | `POST /router/plan`, `/facilities/compile`, `/capex/evaluate`, `/capex/apply`, `/capex/plans`, `/capex/contracts/{id}/evaluate`, `/capex/contracts/{id}/commit`; `GET /purchases`; `GET`/`POST /finance/health`, `/lending/eligibility`; `POST /lending/products/{id}/add-to-menu`; `POST /borrower-file`, `GET /borrower-file/{id}.html`, `.docx`, `.pdf` |
-| Execution | `POST /operations` (including the owner's recorded payment); `GET /approvals/queue`; `POST /approvals/{id}`; `POST /commitments/{id}/revoke`; `POST /circuit/{id}/reset` |
+| Execution | `POST /agent/pause`, `/agent/resume`, `GET /agent/pause` (the owner's pause); `POST /operations` (including the owner's recorded payment); `GET /approvals/queue`; `POST /approvals/{id}`; `POST /commitments/{id}/revoke`; `POST /circuit/{id}/reset` |
 | Clock, alerts, reconciliation | `GET /clock`, `POST /clock/advance`; `GET /alerts`; `POST /alerts/{id}/act`; `GET /reconciliation`; `GET /receivables`, `/receivables/{id}/chase` |
 | Contracts, customers and deals | `POST /documents`; `GET /documents`, `/documents/{id}`; `POST /documents/{id}/confirm`, `/reject`, `/refile`; `GET`/`POST /documents/{id}/terms`, `POST /documents/{id}/terms/undo`; `GET`/`POST /customers`; `GET /customers/{id}/overview`; `GET`/`POST /buyers/{id}/inputs`, `/firm/inputs`; `GET /deals`, `/deals/{buyer}`; `GET /decisions/{id}/tracker`, `/compare`, `/exposure` |
 | Sandbox and strategy | `GET /whatif/presets`, `POST /whatif`; `GET /cash/price-curve`, `/buyers/{id}/envelope`, `/buyers/{id}/exposure`, `/receivables/worth`; `GET`/`POST /pilot/journal` |
@@ -1158,7 +1188,7 @@ own credentials (Table J1).
 
 ## Appendix J. Security controls and their evidence
 
-Code under [services/api/](../../services/api/), lines at `571ea64f`; tests under [services/api/tests/](../../services/api/tests/). Section 04 explains each control and its
+Code under [services/api/](../../services/api/), lines at `571ea64f` (files changed since keep the same functions; the pause and round seven are listed with their files); tests under [services/api/tests/](../../services/api/tests/). Section 04 explains each control and its
 limits.
 
 **Table J1. Credentials and what each confers.**
@@ -1194,6 +1224,8 @@ limits.
 | Outbound guard and counterparty entitlement | `app/outbound/message.py`; `app/egress/guard.py`, `app/egress/protected.py` | `egress/`, `security/test_round_six.py` |
 | Redaction and provider calls | `app/compiler/redaction.py:4-12, 42, 73-80`; `app/compiler/backends.py:64-82`; `app/config.py:97-99` | `compiler/test_redaction_mandatory.py` |
 | Hash-chained log and guards | `app/persistence/chain.py:4-36`; `app/persistence/guards.py:19-23, 55-188`; [scripts/verify_evidence.py](../../scripts/verify_evidence.py) | `persistence/`, `security/test_evidence_verifier.py`, `concurrency/` |
+| The owner's pause; the bank feed limited to receipts (PAUSE-1) | `app/api/agent_pause.py`; `app/api/operations.py` | `api/test_agent_pause.py`, `security/test_round_seven.py` |
+| Consent narrowing; the plan shown is the plan saved (PAY-1) | `app/nl/consent.py`; `app/nl/ask.py` | `nl/test_authority_audit.py`, `nl/test_pay_everyone.py`, `security/test_round_seven.py` |
 | Partial plans (SEC-28) | `app/nl/plans.py:211-254`; `app/api/alerts.py:236-241`; `app/api/decide.py:358-375, 534-555` | `nl/`, `alerts/` |
 | Attack harness and harm oracles | `app/security/attacks.py`; `evals/security/attacks.yaml` | `security/test_attacks.py`, `security/test_positive_controls.py`, `security/test_mutations.py` |
 

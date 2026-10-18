@@ -105,7 +105,7 @@ for i, (n, t) in enumerate(KEY):
 
 # the series key with reconciled values (lowest closing cash, day-62 cash, net cost)
 y0 = 0.225
-for x, h in ((0.66, "lowest"), (0.82, "day 62"), (0.975, "net cost")):
+for x, h in ((0.66, "lowest"), (0.82, "day 62"), (0.975, "cost*")):
     fig.text(x, y0 + 0.021, h, ha="right", fontsize=12.5, fontweight="bold", color=INK, va="center")
 for i, (k, ident, label, cost, color, ls, mk) in enumerate(LINES):
     yy = y0 - i * 0.022
@@ -121,9 +121,11 @@ for i, (k, ident, label, cost, color, ls, mk) in enumerate(LINES):
     fig.text(0.66, yy, ("−" if low < 0 else "") + f"¥{abs(low):,.2f}", ha="right", va="center", fontsize=12.5, color=INK)
     fig.text(0.82, yy, f"¥{series[k][-1]:,.2f}", ha="right", va="center", fontsize=12.5, color=INK)
     fig.text(0.975, yy, f"¥{cost:,.2f}", ha="right", va="center", fontsize=12.5, color=INK)
-fig.text(0.012, y0 - 5 * 0.022 - 0.008, "Net cost = discount + interest + fees − premium received (A4: ¥3,706.46 − ¥1,260.00).\n"
-         "Day 62 = ¥590,000.00 (no action) − net cost. A2 is below the reserve on days 47–61.", ha="left", va="top",
-         fontsize=12.5, color=INK_2, linespacing=1.3)
+fig.text(0.012, y0 - 5 * 0.022 - 0.008,
+         "* By day 62: discount + interest + fees − price rise received (A4: ¥3,706.46 − ¥1,260.00).\n"
+         "Over the year A4 costs more: its 0.30% rise beats its 55-day terms by only ¥162.05 on 13 invoices,\n"
+         "so ¥3,544.41 against A3's ¥3,035.99, and A4 needs the owner. A2 is below the reserve on days 47–61.", ha="left", va="top",
+         fontsize=11.5, color=INK_2, linespacing=1.3)
 stamp(fig, "Golden books (synthetic), mandate v1, request EX01; same events in every series; CNY.\n"
            "Data: work/fin/daily_cash.csv, events.csv (= the engine to the fen) · " + BUILD_FINAL)
 save(fig, "fig11a-cash-alternatives.png")

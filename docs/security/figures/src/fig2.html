@@ -11,7 +11,7 @@
 .note .box{height:100%}
 </style>
 <div class="fig" id="fig" style="padding:14px 22px">
-<div class="box unt" style="margin-bottom:6px;padding:5px 10px"><b>Typed operation</b><small>from the owner, the agent, the bank feed or a verdict. A body cannot claim a tier or an actor</small></div>
+<div class="box unt" style="margin-bottom:6px;padding:5px 10px"><b>Typed operation</b><small>from the owner, the agent, the bank feed or a verdict. A body cannot claim a tier or an actor. Before gate 1, the owner's pause refuses agent, buyer and non-receipt bank-feed operations</small></div>
 <div class="gates">
 <div class="g box det"><div class="h"><span class="n">1</span><b>Idempotency</b></div><small>same key, same operation</small><div class="out"><span class="chip c-blu">DUPLICATE</span><span class="chip c-red">REPLAY</span></div></div>
 <div class="g box det"><div class="h"><span class="n">2</span><b>Dating</b></div><small>day equals the executor's clock</small><div class="out"><span class="chip c-red">STALE_OPERATION</span></div></div>
