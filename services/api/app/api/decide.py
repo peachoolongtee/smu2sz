@@ -95,6 +95,7 @@ from app.egress import (
 )
 from app.financial import EngineError, extension_pro_forma, project
 from app.funding import (
+    NoPermanentSourceError,
     break_even_discount,
     compare,
     extension_cost_bases,
@@ -649,6 +650,38 @@ def _speed(days: int, lang: str) -> str:
     return t(lang, "same day" if days == 0 else f"{days} day" if days == 1 else f"{days} days", "当天" if days == 0 else f"{days} 天")
 
 
+def _marginal_view(state, mandate) -> dict | None:
+    """The marginal source, the early-pay break-even and the terms-extension costs it prices. None when no committed,
+    owner-approved source can carry a permanent need (books whose only lender is a clean-down credit line, whose platform is not
+    agreed yet, or whose permanent sources are drawn to their limits): the plan and the comparison still answer, and the 500 this
+    used to raise reached the browser without CORS headers, so the Cash page said the API could not be reached."""
+    probe = _extension_probe(state)
+    try:
+        rate, fid = marginal_cost(state, mandate)
+        d, be_bp = break_even_discount(state, mandate)
+        bases = extension_cost_bases(state, probe, mandate)
+    except NoPermanentSourceError:
+        return None
+    pro_forma = extension_pro_forma(probe, state, rate.value, mandate.forward_concession_horizon_days)
+    by_label = {b.basis: b for b in bases}
+    names = {f.id: f.name for f in state.facilities}
+    notional, committed_b, expected_b = (bases + [None, None, None])[:3]
+    return displayed({
+        "rate": {"num": rate.num, "den": rate.den}, "rate_display": fmt_pct(rate.value, 4),
+        "facility_id": fid, "facility_name": names.get(fid, fid),
+        "break_even_bp": be_bp, "break_even_display": fmt_pct(d.value),
+        "break_even_formula": "d / (1 − d) < c, c = marginal cost share for 30 days → d < c / (1 + c)",
+        "excluded_note": "The credit line is excluded: its 30-day clean-down rules out a permanent need.",
+        "extension_extra_receivables_fen": post(pro_forma.extra_debt) if pro_forma else 0,
+        "extension_per_invoice_fen": committed_b.per_invoice_fen if committed_b and committed_b.per_invoice_fen else 0,
+        "extension_committed_12m_fen": committed_b.value_fen if committed_b else 0,
+        "extension_notional_line_12m_fen": notional.value_fen if notional else 0,
+        "extension_expected_12m_fen": expected_b.value_fen if expected_b else 0,
+        "extension_formula": committed_b.formula if committed_b else "",
+        "bases": [json.loads(b.model_dump_json()) for b in by_label.values()],
+    })
+
+
 @router.post("/router/plan", dependencies=[Depends(require_feature("debt_desk"))])
 def router_plan(lang: str = "en") -> dict:
     """The router's plan, its menu and the §7.4 comparison. Each comparison row carries its `role` for the owner
@@ -662,11 +695,6 @@ def router_plan(lang: str = "en") -> dict:
     books = current_books(state, rt.store.commitments())
     committed = plan(books.state, books.with_([]), mandate)
     expected = plan(books.state, books.with_([]), mandate, basis="EXPECTED") if get_settings().features.expected_plans else None
-    rate, fid = marginal_cost(state, mandate)
-    d, be_bp = break_even_discount(state, mandate)
-    probe = _extension_probe(state)
-    bases = extension_cost_bases(state, probe, mandate)
-    pro_forma = extension_pro_forma(probe, state, rate.value, mandate.forward_concession_horizon_days)
     fac = {f.id: f for f in state.facilities}
     menu = []
     for r in menu_view(state, mandate, need_fen=committed.need_fen or None):
@@ -695,27 +723,11 @@ def router_plan(lang: str = "en") -> dict:
     comparison, recommended_key = with_roles(rows, action, state, rt.day, lang)
     _add_series(comparison, {r.key: list(r.actions) for r in compared}, found if action is not None else [], books, mandate,
                 max(rt.day, state.as_of_day), lang)
-    by_label = {b.basis: b for b in bases}
-    names = {f.id: f.name for f in state.facilities}
-    notional, committed_b, expected_b = (bases + [None, None, None])[:3]
     return {
         "committed": plan_when(state, displayed(json.loads(committed.model_dump_json())), rt.day, lang),
         "expected": plan_when(state, displayed(json.loads(expected.model_dump_json())), rt.day, lang) if expected else None,
         "menu": menu,
-        "marginal": displayed({
-            "rate": {"num": rate.num, "den": rate.den}, "rate_display": fmt_pct(rate.value, 4),
-            "facility_id": fid, "facility_name": names.get(fid, fid),
-            "break_even_bp": be_bp, "break_even_display": fmt_pct(d.value),
-            "break_even_formula": "d / (1 − d) < c, c = marginal cost share for 30 days → d < c / (1 + c)",
-            "excluded_note": "The credit line is excluded: its 30-day clean-down rules out a permanent need.",
-            "extension_extra_receivables_fen": post(pro_forma.extra_debt) if pro_forma else 0,
-            "extension_per_invoice_fen": committed_b.per_invoice_fen if committed_b and committed_b.per_invoice_fen else 0,
-            "extension_committed_12m_fen": committed_b.value_fen if committed_b else 0,
-            "extension_notional_line_12m_fen": notional.value_fen if notional else 0,
-            "extension_expected_12m_fen": expected_b.value_fen if expected_b else 0,
-            "extension_formula": committed_b.formula if committed_b else "",
-            "bases": [json.loads(b.model_dump_json()) for b in by_label.values()],
-        }),
+        "marginal": _marginal_view(state, mandate),
         "comparison": comparison,
         "series_axis": series_axis([r.get("series") for r in comparison], mandate.min_cash_fen),
         "series_axes": series_axes([r.get("series") for r in comparison], mandate.min_cash_fen, (30, 60, 120)),

@@ -49,6 +49,13 @@ const REJECTED = "The API rejected the owner token. Sign in again with the corre
 export const NOT_CONFIGURED = "Server credentials not configured. Set OWNER_TOKEN and AGENT_KEY on the API, or run it in demo mode.";
 const unreachable = () => new ApiError(0, `Cannot reach the API at ${API_URL}. Is the service running?`, undefined, "unreachable", { url: API_URL });
 
+const SERVER_ERROR = "The service hit an error and could not answer. Try again; if it keeps happening, the service log has the details.";
+const serverError = (status: number, detail?: unknown) => new ApiError(status, `${SERVER_ERROR} (${status})`, detail, "server_error", { status });
+/** The API's catch-all answer to an unhandled exception (services/api/app/main.py). */
+function isInternalErrorDetail(detail: unknown): boolean {
+  return Boolean(detail) && typeof detail === "object" && (detail as { code?: unknown }).code === "INTERNAL_ERROR";
+}
+
 function unauthorized(opts: Pick<HttpOptions, "auth" | "token" | "silent">): ApiError {
   const hadToken = Boolean(opts.token ?? getOwnerToken());
   if (!opts.silent && opts.auth !== "none") requestSignIn(hadToken ? "rejected" : "required");
@@ -132,6 +139,9 @@ async function request<T>(method: "GET" | "POST", path: string, opts: HttpOption
       if (e instanceof ApiError) throw e;
       /* keep the status line */
     }
+    // A crash on the server (the API's INTERNAL_ERROR, or a 5xx with no words of its own) is a server error with its status, said in the
+    // page's language: never "cannot reach the API", which sends the owner to restart a service that is running.
+    if (res.status >= 500 && (detail === undefined || isInternalErrorDetail(detail))) throw serverError(res.status, detail);
     throw new ApiError(res.status, message, detail, busy ? "books_busy" : undefined);
   }
   return (opts.as === "text" ? await res.text() : await res.json()) as T;

@@ -52,7 +52,7 @@ test("trajectory adapter: the position today, then the offer applied", async () 
 test("funding, negotiation and ledger adapters keep the golden numbers and fill the operation fields", async () => {
   const plan = await live.planFunding({});
   expect(plan.committed.total_cost_display).toBe("¥3,113.93");
-  expect(plan.marginal.rate_display).toBe("10.8417%");
+  expect(plan.marginal?.rate_display).toBe("10.8417%");
 
   await live.demoReset();
   const offer = await live.submitOffer({ fixture_id: "EX01_PACKAGE" });

@@ -1432,7 +1432,8 @@ export interface FundingView {
   committed: Displayed<FundingPlan>;
   expected: Displayed<FundingPlan>;
   menu: MenuRow[];
-  marginal: MarginalCostView;
+  /** Null when no committed, owner-approved source can carry a permanent need (for example books whose only lender is a clean-down line). */
+  marginal: MarginalCostView | null;
   comparison: ComparisonRow[];
   /** The y axis shared by every row's `series` over the whole horizon, and one per window ("30", "60", "120"); absent from an older server. */
   series_axis?: PictureAxis | null;

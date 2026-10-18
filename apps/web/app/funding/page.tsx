@@ -140,31 +140,41 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
         <PlanCard plan={plan} id="plan" highlight leadTimes={Object.fromEntries(view.menu.map((r) => [r.facility.id, r.facility.lead_time_days]))} />
 
         <div className="min-w-0 space-y-6">
-          <Card id="marginal" title={t("fund.marginal")} subtitle={t("fund.marginal.sub")}>
-            <dl className="grid grid-cols-2 gap-3">
-              <Stat label={t("fund.marginalRate")} value={m.rate_display} hint={m.facility_name} tone="brand" />
-              <Stat label={t("fund.breakEven")} value={m.break_even_display} hint={t("fund.breakEven.hint")} tone="brand" />
-            </dl>
-            <div className="mt-3 space-y-2">
-              <Formula>{m.break_even_formula}</Formula>
-              <p className="text-meta text-ink-2">{m.excluded_note}</p>
-            </div>
-          </Card>
+          {m ? (
+            <>
+              <Card id="marginal" title={t("fund.marginal")} subtitle={t("fund.marginal.sub")}>
+                <dl className="grid grid-cols-2 gap-3">
+                  <Stat label={t("fund.marginalRate")} value={m.rate_display} hint={m.facility_name} tone="brand" />
+                  <Stat label={t("fund.breakEven")} value={m.break_even_display} hint={t("fund.breakEven.hint")} tone="brand" />
+                </dl>
+                <div className="mt-3 space-y-2">
+                  <Formula>{m.break_even_formula}</Formula>
+                  <p className="text-meta text-ink-2">{m.excluded_note}</p>
+                </div>
+              </Card>
 
-          <Card id="extension" title={t("fund.extension")} subtitle={t("fund.extension.sub")}>
-            <KeyValueList
-              items={[
-                { k: t("fund.ext.receivables"), v: m.extension_extra_receivables_display },
-                { k: t("fund.ext.perInvoice"), v: m.extension_per_invoice_display },
-                { k: t("fund.ext.committed"), v: m.extension_committed_12m_display },
-                { k: t("fund.ext.notional"), v: m.extension_notional_line_12m_display },
-                { k: t("fund.ext.expected"), v: m.extension_expected_12m_display },
-              ]}
-            />
-            <div className="mt-3">
-              <Formula>{m.extension_formula}</Formula>
-            </div>
-          </Card>
+              <Card id="extension" title={t("fund.extension")} subtitle={t("fund.extension.sub")}>
+                <KeyValueList
+                  items={[
+                    { k: t("fund.ext.receivables"), v: m.extension_extra_receivables_display },
+                    { k: t("fund.ext.perInvoice"), v: m.extension_per_invoice_display },
+                    { k: t("fund.ext.committed"), v: m.extension_committed_12m_display },
+                    { k: t("fund.ext.notional"), v: m.extension_notional_line_12m_display },
+                    { k: t("fund.ext.expected"), v: m.extension_expected_12m_display },
+                  ]}
+                />
+                <div className="mt-3">
+                  <Formula>{m.extension_formula}</Formula>
+                </div>
+              </Card>
+            </>
+          ) : (
+            <Card id="marginal" title={t("fund.marginal")} subtitle={t("fund.marginal.sub")}>
+              <p className="text-sm text-ink-2" data-testid="fund-marginal-none">
+                {t("fund.marginal.none")}
+              </p>
+            </Card>
+          )}
 
           <Card id="compare" title={t("fund.compare")} subtitle={t("fund.compare.sub")}>
             <ul className="divide-y divide-line">
