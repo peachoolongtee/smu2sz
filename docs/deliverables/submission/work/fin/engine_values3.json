@@ -1,0 +1,324 @@
+{
+ "with_early_pay": {
+  "total_fen": 146805,
+  "costs": {
+   "FAC-LINE": 146805
+  },
+  "actions": [
+   [
+    "DRAW",
+    "FAC-LINE",
+    0,
+    13504000,
+    62,
+    null
+   ]
+  ],
+  "discounts_fen": 504000,
+  "min_cash_fen": 30000000,
+  "min_day": 60,
+  "events": [
+   [
+    0,
+    53504000,
+    [
+     [
+      "DRAW",
+      13504000,
+      "Draw Bank credit line"
+     ]
+    ]
+   ],
+   [
+    2,
+    95000000,
+    [
+     [
+      "EARLY_RECEIPT",
+      42000000,
+      "Early settlement of RCV-A (OFF-f806f79b6"
+     ],
+     [
+      "DISCOUNT",
+      -504000,
+      "Discount on early settlement of RCV-A (O"
+     ]
+    ]
+   ],
+   [
+    12,
+    61000000,
+    [
+     [
+      "FLOW",
+      -34000000,
+      "Payroll"
+     ]
+    ]
+   ],
+   [
+    20,
+    49000000,
+    [
+     [
+      "FLOW",
+      -12000000,
+      "Supplier payment"
+     ]
+    ]
+   ],
+   [
+    30,
+    44500000,
+    [
+     [
+      "FLOW",
+      -4500000,
+      "Debt service (principal), Existing equip"
+     ]
+    ]
+   ],
+   [
+    47,
+    34500000,
+    [
+     [
+      "FLOW",
+      -10000000,
+      "Operating bill"
+     ]
+    ]
+   ],
+   [
+    60,
+    30000000,
+    [
+     [
+      "FLOW",
+      -4500000,
+      "Debt service (principal), Existing equip"
+     ]
+    ]
+   ],
+   [
+    62,
+    58349195,
+    [
+     [
+      "RECEIPT",
+      42000000,
+      "Receipt RI:BUYER-1:2 from BUYER-1"
+     ],
+     [
+      "INTEREST",
+      -146805,
+      "Interest, Bank credit line"
+     ],
+     [
+      "REPAYMENT",
+      -13504000,
+      "Repay Bank credit line"
+     ]
+    ]
+   ],
+   [
+    90,
+    53849195,
+    [
+     [
+      "FLOW",
+      -4500000,
+      "Debt service (principal), Existing equip"
+     ]
+    ]
+   ],
+   [
+    92,
+    95849195,
+    [
+     [
+      "RECEIPT",
+      42000000,
+      "Receipt RI:BUYER-1:32 from BUYER-1"
+     ]
+    ]
+   ]
+  ]
+ },
+ "without_early_pay": {
+  "total_fen": 387358,
+  "costs": {
+   "FAC-LINE": 146762,
+   "FAC-IF": 240596
+  },
+  "actions": [
+   [
+    "DRAW",
+    "FAC-LINE",
+    0,
+    13500000,
+    62,
+    null
+   ],
+   [
+    "FINANCE_INVOICE",
+    "FAC-IF",
+    0,
+    27000000,
+    null,
+    "RCV-A"
+   ]
+  ],
+  "discounts_fen": 0,
+  "min_cash_fen": 30000000,
+  "min_day": 30,
+  "events": [
+   [
+    0,
+    53500000,
+    [
+     [
+      "DRAW",
+      13500000,
+      "Draw Bank credit line"
+     ]
+    ]
+   ],
+   [
+    3,
+    80500000,
+    [
+     [
+      "ADVANCE",
+      27000000,
+      "Advance on RCV-A, Invoice financing (onb"
+     ]
+    ]
+   ],
+   [
+    12,
+    46500000,
+    [
+     [
+      "FLOW",
+      -34000000,
+      "Payroll"
+     ]
+    ]
+   ],
+   [
+    20,
+    34500000,
+    [
+     [
+      "FLOW",
+      -12000000,
+      "Supplier payment"
+     ]
+    ]
+   ],
+   [
+    30,
+    30000000,
+    [
+     [
+      "FLOW",
+      -4500000,
+      "Debt service (principal), Existing equip"
+     ]
+    ]
+   ],
+   [
+    32,
+    44759404,
+    [
+     [
+      "RECEIPT",
+      42000000,
+      "Receipt RCV-A from BUYER-1"
+     ],
+     [
+      "INTEREST",
+      -173096,
+      "Interest, Invoice financing (onboarded p"
+     ],
+     [
+      "FEE",
+      -67500,
+      "Fee, Invoice financing (onboarded platfo"
+     ],
+     [
+      "REPAYMENT",
+      -27000000,
+      "Repay advance on RCV-A"
+     ]
+    ]
+   ],
+   [
+    47,
+    34759404,
+    [
+     [
+      "FLOW",
+      -10000000,
+      "Operating bill"
+     ]
+    ]
+   ],
+   [
+    60,
+    30259404,
+    [
+     [
+      "FLOW",
+      -4500000,
+      "Debt service (principal), Existing equip"
+     ]
+    ]
+   ],
+   [
+    62,
+    58612642,
+    [
+     [
+      "RECEIPT",
+      42000000,
+      "Receipt RI:BUYER-1:2 from BUYER-1"
+     ],
+     [
+      "INTEREST",
+      -146762,
+      "Interest, Bank credit line"
+     ],
+     [
+      "REPAYMENT",
+      -13500000,
+      "Repay Bank credit line"
+     ]
+    ]
+   ],
+   [
+    90,
+    54112642,
+    [
+     [
+      "FLOW",
+      -4500000,
+      "Debt service (principal), Existing equip"
+     ]
+    ]
+   ],
+   [
+    92,
+    96112642,
+    [
+     [
+      "RECEIPT",
+      42000000,
+      "Receipt RI:BUYER-1:32 from BUYER-1"
+     ]
+    ]
+   ]
+  ]
+ }
+}

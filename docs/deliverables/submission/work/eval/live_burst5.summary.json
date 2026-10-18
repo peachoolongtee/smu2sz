@@ -1,0 +1,12 @@
+{
+ "n": 5,
+ "ok": 5,
+ "non200": [],
+ "p50": 2.86,
+ "p95": 3.0,
+ "max": 3.01,
+ "sources": {
+  "rules": 4,
+  "llm:deepseek-flash": 1
+ }
+}

@@ -1,0 +1,217 @@
+{
+ "date": "2026-10-18 17:08:50 +0800",
+ "base": "http://127.0.0.1:8582",
+ "health": {
+  "llm_mode": "live"
+ },
+ "provider": "DeepSeek (deepseek-flash via the OpenAI-compatible API), redaction on",
+ "steps": [
+  {
+   "step": "buyer message read by the live model",
+   "status": 200,
+   "seconds": 1.81,
+   "input": "我们下个月起想把账期延长到60天，如果你们同意，这张发票我们可以提前10天付，给1%折扣。另外下个季度的订单量会增加，希望价格能优惠0.5%。",
+   "compiler": "deepseek-flash",
+   "prompt_version": "offer-v4",
+   "obligations": [
+    {
+     "type": "TERMS_EXTENSION",
+     "rate_bp": null,
+     "days_delta": null,
+     "target_terms_days": 60,
+     "base": {
+      "kind": "UNSPECIFIED",
+      "amount_fen": null,
+      "receivable_id": null,
+      "events_per_year": null
+     },
+     "contingency": "FIRM",
+     "spans": [
+      {
+       "doc_id": "LIVE-DEMO-ZH-2",
+       "start": 0,
+       "end": 16,
+       "text": "我们下个月起想把账期延长到60天"
+      }
+     ],
+     "unresolved": [
+      "current_terms_days",
+      "end_date"
+     ]
+    },
+    {
+     "type": "IMMEDIATE_DISCOUNT",
+     "rate_bp": 100,
+     "days_delta": null,
+     "target_terms_days": null,
+     "base": {
+      "kind": "INVOICE",
+      "amount_fen": null,
+      "receivable_id": null,
+      "events_per_year": null
+     },
+     "contingency": "FIRM",
+     "spans": [
+      {
+       "doc_id": "LIVE-DEMO-ZH-2",
+       "start": 24,
+       "end": 44,
+       "text": "这张发票我们可以提前10天付，给1%折扣"
+      }
+     ],
+     "unresolved": [
+      "receivable_id"
+     ]
+    },
+    {
+     "type": "CONTINGENT_REBATE",
+     "rate_bp": 50,
+     "days_delta": null,
+     "target_terms_days": null,
+     "base": {
+      "kind": "PERIOD_PURCHASES",
+      "amount_fen": null,
+      "receivable_id": null,
+      "events_per_year": null
+     },
+     "contingency": "CONTINGENT",
+     "spans": [
+      {
+       "doc_id": "LIVE-DEMO-ZH-2",
+       "start": 45,
+       "end": 70,
+       "text": "另外下个季度的订单量会增加，希望价格能优惠0.5%"
+      }
+     ],
+     "unresolved": [
+      "base_amount",
+      "scope",
+      "end_date"
+     ]
+    }
+   ],
+   "abstentions": [
+    {
+     "field": "offer.readers_disagree.TERMS_EXTENSION",
+     "reason": "readers disagree: the model and the rules grammar read this term differently; clarification needed, nothing booked",
+     "reason_when": "FLOW 对这条消息中的某项条款有两种不同的理解，因此未就此记录任何内容。请查看高亮的文字，或请买方确认。"
+    },
+    {
+     "field": "offer.readers_disagree.CONTINGENT_REBATE",
+     "reason": "readers disagree: the model and the rules grammar read this term differently; clarification needed, nothing booked",
+     "reason_when": "FLOW 对这条消息中的某项条款有两种不同的理解，因此未就此记录任何内容。请查看高亮的文字，或请买方确认。"
+    }
+   ],
+   "model_log": [
+    "2026-10-18 17:08:50 [info     ] compiler.call                  backend=cache doc_hash=5a268fe31e9fc19d750d912a86012a7ff29cd8799550ff75221b9b26bfb0861e error=CacheMiss latency_ms=0.2 outcome=fallback prompt_version=offer-v4",
+    "2026-10-18 17:08:50 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0",
+    "2026-10-18 17:08:52 [info     ] compiler.call                  backend=deepseek doc_hash=5a268fe31e9fc19d750d912a86012a7ff29cd8799550ff75221b9b26bfb0861e latency_ms=1784.4 model=deepseek-flash outcome=ok prompt_version=offer-v4",
+    "2026-10-18 17:08:52 [info     ] compiler.cross_check           doc_hash=5a268fe31e9fc19d750d912a86012a7ff29cd8799550ff75221b9b26bfb0861e model=deepseek-flash outcome=disagree prompt_version=offer-v4"
+   ]
+  },
+  {
+   "step": "deterministic evaluation and the permission gate",
+   "status": 200,
+   "seconds": 0.19,
+   "outcome": "NO_VERDICT",
+   "required_tier": "TIER_1",
+   "summary": "NO VERDICT: UNRESOLVED_SCOPE (offer.readers_disagree.TERMS_EXTENSION, offer.readers_disagree.CONTINGENT_REBATE vs one grounded value per material field). Clarification requested from Foshan Home Retail Co.; nothing booked.",
+   "codes": [
+    "UNRESOLVED_SCOPE"
+   ],
+   "counters": [],
+   "accepted_alone": false
+  },
+  {
+   "step": "contract read by the live model",
+   "status": 200,
+   "seconds": 3.39,
+   "compiler": "deepseek-flash",
+   "reading_status": "COMPILED",
+   "can_confirm": true,
+   "flags": [],
+   "terms": [
+    {
+     "field": "CONTRACT_REFERENCE",
+     "value_display": "DOS-LH-2026-221",
+     "quote": "Agreement No. DOS-LH-2026-221"
+    },
+    {
+     "field": "SIGNED_DATE",
+     "value_display": "15 Oct 2026 (in 14 days)",
+     "quote": "This Agreement is made on 15 October 2026 between:"
+    },
+    {
+     "field": "PARTY_SUPPLIER",
+     "value_display": "Lingnan Homeware Manufacturing Co., Ltd.",
+     "quote": "Lingnan Homeware Manufacturing Co., Ltd. (the \"Supplier\"); and"
+    },
+    {
+     "field": "PARTY_BUYER",
+     "value_display": "Dongguan Office Supplies Ltd.",
+     "quote": "Dongguan Office Supplies Ltd. (the \"Buyer\")."
+    },
+    {
+     "field": "DELIVERABLE",
+     "value_display": "The Supplier shall supply desk organisers, filing trays and storage boxes to the Buyer under purchase orders issued under this Agreement.",
+     "quote": "The Supplier shall supply desk organisers, filing trays and storage boxes to the Buyer under purchase orders issued under this Agreement."
+    },
+    {
+     "field": "END_DATE",
+     "value_display": "31 Oct 2027 (in 395 days)",
+     "quote": "This Agreement starts on 1 November 2026 and ends on 31 October 2027, unless terminated earlier under clause 8."
+    },
+    {
+     "field": "START_DATE",
+     "value_display": "1 Nov 2026 (in 31 days)",
+     "quote": "This Agreement starts on 1 November 2026 and ends on 31 October 2027, unless terminated earlier under clause 8."
+    },
+    {
+     "field": "PRICE",
+     "value_display": "¥180,000.00",
+     "quote": "The Buyer shall order goods with an invoice value of RMB 180,000 in each period of thirty (30) days, starting on 1 November 2026."
+    },
+    {
+     "field": "INVOICING",
+     "value_display": "Every 30 days",
+     "quote": "The Supplier shall issue one invoice for each thirty-day period on the first day of that period."
+    },
+    {
+     "field": "PAYMENT_TERMS",
+     "value_display": "60 days from the invoice date",
+     "quote": "The Buyer shall pay each invoice in full within sixty (60) days after the invoice date."
+    },
+    {
+     "field": "EARLY_PAYMENT",
+     "value_display": "The buyer may settle early at 1.20% off, within 10 days",
+     "quote": "If the Buyer pays an invoice within ten (10) days after the invoice date, the Buyer may deduct an early-payment discount of one point two per cent (1.2%) of the invoice amount."
+    },
+    {
+     "field": "LATE_INTEREST",
+     "value_display": "0.05% per day",
+     "quote": "Amounts not paid when due bear late interest at 0.05% per day."
+    },
+    {
+     "field": "DELIVERABLE",
+     "value_display": "The Supplier shall deliver within seven (7) days after each purchase order.",
+     "quote": "The Supplier shall deliver within seven (7) days after each purchase order."
+    }
+   ],
+   "model_log": [
+    "2026-10-18 17:08:52 [info     ] compiler.call                  backend=cache doc_hash=b9135a69dd8d985d079732c839ccfec7f547ee31044bd3e821e53048fa098c90 error=CacheMiss latency_ms=0.2 outcome=fallback prompt_version=contract-v1",
+    "2026-10-18 17:08:52 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=contract total=0 uscc=0",
+    "2026-10-18 17:08:56 [info     ] compiler.call                  backend=deepseek doc_hash=b9135a69dd8d985d079732c839ccfec7f547ee31044bd3e821e53048fa098c90 latency_ms=3337.9 model=deepseek-flash outcome=ok prompt_version=contract-v1"
+   ]
+  },
+  {
+   "step": "owner question routed by the live model",
+   "status": 200,
+   "seconds": 1.48,
+   "parse_source": "rules",
+   "reply": "¥45,000 a month of debt service: the existing equipment loan's scheduled payment; the books record no interest rate for it. Interest and fees on your facilities over the forecast: ¥0. No. 1.20% is above your 0.88% break-even, so your own funding is cheaper: discounting the whole invoice costs ¥5,040, against ¥3,113.93 for FLOW's plan.",
+   "model_log": [
+    "2026-10-18 17:08:57 [info     ] ask.router                     backend=deepseek latency_ms=1449.1 model=deepseek-flash outcome=answered prompt_version=ask-router-v1 q_hash=13a6353065ffe527 tools=['debt_service', 'early_pay_offer']"
+   ]
+  }
+ ]
+}

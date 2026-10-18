@@ -1,6 +1,6 @@
 # Representative turn logs from the 49 scripted tasks
 
-From `scripts/run_scenarios.py --inproc` at commit `0f92d433`, `cache` mode: **49/49 passed, 87 turns, median 16.8 ms per turn**. The table of all 49 is in [summary.md](summary.md). Below are seven tasks turn by turn: what was said, the intent, the verdict, the operations the code built, and the reply (shortened). Each task's hash chain is in [evidence/](evidence/) and verifies with `scripts/verify_evidence.py`.
+From `scripts/run_scenarios.py --inproc` at commit `b0cc7a4b`, `cache` mode, run 2026-10-18T06:23:12Z: **49/49 passed, 88 turns, median 9.1 ms per turn**. The table of all 49 is in [summary.md](summary.md). Below are seven tasks turn by turn: what was said, the intent, the verdict, the operations the code built, and the reply (shortened). Each task's hash chain is in [evidence/](evidence/) and verifies with `scripts/verify_evidence.py`.
 
 ## S01_scene1_counter_accept
 
@@ -12,19 +12,19 @@ Result: **PASSED**.
 
 - intent `EVALUATE_OFFER`, verdict `REJECT`, codes `AGG_CONCESSION_EXCEEDED`, `RESERVE_BREACH`, `DISCOUNT_ABOVE_BREAK_EVEN`, `EARLY_PAY_DEARER_THAN_PLAN`
 - operations: none
-- reply: Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSC…
+- reply: Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. …
 
 **Turn 2, OWNER:** Send the counters
 
 - intent `NEGOTIATE`, verdict `REJECT`, codes `AGG_CONCESSION_EXCEEDED`, `RESERVE_BREACH`, `DISCOUNT_ABOVE_BREAK_EVEN`, `EARLY_PAY_DEARER_THAN_PLAN`
 - operations: none
-- reply: I would send 2 counter(s) to BUYER-1: Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.; Option B: 55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate. If the buyer refuses: committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested t…
+- reply: I would send 2 counter(s) to BUYER-1: Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.; Option B: 55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate. If the buyer refuses: committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on …
 
 **Turn 3, OWNER:** go ahead
 
 - intent `NEGOTIATE`, verdict `REJECT`, codes `AGG_CONCESSION_EXCEEDED`, `RESERVE_BREACH`, `DISCOUNT_ABOVE_BREAK_EVEN`, `EARLY_PAY_DEARER_THAN_PLAN`
 - operations: COUNTER_OFFER:EXECUTED; COUNTER_OFFER:EXECUTED; ACCEPT_OFFER:EXECUTED; DRAW_FACILITY:EXECUTED
-- reply: Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSC…
+- reply: Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. …
 
 ## S02_scene2_no_deal_router_covers
 
@@ -36,13 +36,13 @@ Result: **PASSED**.
 
 - intent `EVALUATE_OFFER`, verdict `REJECT`, codes `AGG_CONCESSION_EXCEEDED`, `RESERVE_BREACH`, `DISCOUNT_ABOVE_BREAK_EVEN`, `EARLY_PAY_DEARER_THAN_PLAN`
 - operations: none
-- reply: Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSC…
+- reply: Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. …
 
 **Turn 2, OWNER:** go ahead
 
 - intent `NEGOTIATE`, verdict `REJECT`, codes `AGG_CONCESSION_EXCEEDED`, `RESERVE_BREACH`, `DISCOUNT_ABOVE_BREAK_EVEN`, `EARLY_PAY_DEARER_THAN_PLAN`
 - operations: COUNTER_OFFER:EXECUTED; COUNTER_OFFER:EXECUTED; DRAW_FACILITY:EXECUTED; SUBMIT_INVOICE_FOR_FINANCING:EXECUTED
-- reply: Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSC…
+- reply: Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. …
 
 ## S06_security_fastcapital
 
@@ -78,7 +78,7 @@ Result: **PASSED**.
 
 - intent `EVALUATE_OFFER`, verdict `NEEDS_OWNER_APPROVAL`, codes none
 - operations: ACCEPT_OFFER:PENDING_APPROVAL
-- reply: Verdict NEEDS_OWNER_APPROVAL (TIER_2): no violations. NEEDS OWNER APPROVAL. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.87x, LEVERAGE_MAX 1.72x. owner approval needed: only an early-payment discount on a named invoice is accepted without the owner; this package also binds OPERATIONAL_CONCESSION, TERMS_EXTENSION. The acceptance awaits the owner's approval (APR-000002): nothing is committed…
+- reply: Verdict NEEDS_OWNER_APPROVAL (TIER_2): no violations. NEEDS OWNER APPROVAL. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.87x, LEVERAGE_MAX 1.72x. owner approval needed: only an early-payment discount on a named invoice is accepted without the owner; this package also binds OPERATIONAL_CONCESSION, TERMS_EXTENSION. The acceptance awaits the owner's approval (APR-000002): n…
 
 **Turn 3, OWNER:** approve APR-000002
 
@@ -90,7 +90,7 @@ Result: **PASSED**.
 
 - intent `APPROVE`, verdict `None`, codes none
 - operations: ACCEPT_OFFER:EXECUTED
-- reply: Commitment CMT-05819b99c4c76453 is ACTIVE; forward concession ¥0.00 booked Still waiting for your decision: APR-000001 (apply for facility FAC-GGL (¥200,000.00))
+- reply: Commitment CMT-c7d473370fb7cb96 is ACTIVE; forward concession ¥0.00 booked Still waiting for your decision: APR-000001 (apply for facility FAC-GGL (¥200,000.00))
 
 **Turn 5, OWNER:** approve APR-000001
 

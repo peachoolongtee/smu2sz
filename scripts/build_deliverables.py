@@ -19,11 +19,14 @@ What it does:
      header table, headings, prompts and footer are kept. The header table gets [TEAM: ...] placeholders.
   3. Verifies every output: it reopens the file, checks that every template heading and prompt is present
      and followed by content, and that no "Write here" or "Please complete" placeholder is left.
-     Exits 1 on any failure.
+     Exits 1 on any failure. Deliberate {UPPER_CASE} tokens (for example {SUBMISSION_COMMIT} and
+     {VERIFICATION_TABLE_ROWS}, which the lead fills after the final re-measurement) are listed, not failed.
 
 Markdown supported: paragraphs, **bold**, *italic*, `code`, [links](url), bullet and numbered lists
 (nested by two-space indent), pipe tables, fenced code blocks, #### sub-headings, "> " quotes and
-<!-- figure: file.png | caption --> (embedded when the file exists). A code block right after
+<!-- figure: file.png | caption --> (embedded when the file exists; end with " | page" to put a tall
+diagram on a page of its own at 6.2 in wide, or with " | h=3.5" to cap its height in inches), and <!-- pagebreak --> (a page break; the technical document uses it
+after its contents page). A code block right after
 <!-- ascii-fallback --> is dropped when the preceding figure was embedded.
 """
 
@@ -58,11 +61,15 @@ E2E_REL = "services/api/evals/e2e/latest"
 
 HEADER = {
     "Team name": "ISMOGGER",
-    "Competition track": "International AI Track, Topic E: SME Finance Copilot",
+    "Competition track": "International AI Track — Topic E: SME Finance Copilot",
     "Submission date": "20 October 2026",
 }
+# Repository links in the technical document resolve here unless --repo-url names another base (for example the
+# submission commit: https://github.com/peachoolongtee/smu2sz/blob/<commit>).
+TECHDOC_REPO_URL = "https://github.com/peachoolongtee/smu2sz/blob/main"
 BODY_PT = Pt(10)
 MAX_FIG_HEIGHT_IN = 4.8
+PAGE_FIG_HEIGHT_IN = 8.4  # "| page" figures: the tallest a figure may be with its caption on a Letter page
 
 JOBS = [
     ("technical_document.md", "international-technical-document-en.docx", "Technical_Document.docx"),
@@ -226,7 +233,7 @@ def refresh_evidence(md_path: Path, latest: Path) -> None:
 
 @dataclass
 class Block:
-    kind: str  # para, bullet, number, table, code, heading, figure, quote, fallback
+    kind: str  # para, bullet, number, table, code, heading, figure, quote, fallback, pagebreak
     text: str = ""
     level: int = 0
     rows: list[list[str]] = field(default_factory=list)
@@ -261,10 +268,15 @@ def parse_blocks(lines: list[str]) -> list[Block]:
             i = j + 1
             last_list_indent = None
             continue
-        m_fig = re.match(r"^<!--\s*figure:\s*(\S+)\s*\|\s*(.*?)\s*-->$", s)
+        m_fig = re.match(r"^<!--\s*figure:\s*(\S+)\s*\|\s*(.*?)(?:\s*\|\s*(page|h=[\d.]+))?\s*-->$", s)
         if m_fig:
             flush()
-            blocks.append(Block("figure", m_fig.group(2), rows=[[m_fig.group(1)]]))
+            blocks.append(Block("figure", m_fig.group(2), rows=[[m_fig.group(1), m_fig.group(3) or ""]]))
+            i += 1
+            continue
+        if s == "<!-- pagebreak -->":
+            flush()
+            blocks.append(Block("pagebreak"))
             i += 1
             continue
         if s == "<!-- ascii-fallback -->":
@@ -497,7 +509,7 @@ class Renderer:
     def render(self, blocks: list[Block], anchor: Paragraph) -> int:
         count = 0
         skip_next_code = False
-        for b in blocks:
+        for bi, b in enumerate(blocks):
             if b.kind == "fallback":
                 skip_next_code = self.last_figure_embedded
                 continue
@@ -509,6 +521,11 @@ class Renderer:
             if b.kind == "para":
                 p = self.para_before(anchor)
                 self.inline(p, b.text)
+                t = b.text.strip()
+                nxt = blocks[bi + 1].kind if bi + 1 < len(blocks) else None
+                if (t.startswith("**") and t.endswith("**") and t.count("**") == 2) or nxt == "table":
+                    # a bold lead-in, a table caption or a table's lead-in never ends a page on its own
+                    p.paragraph_format.keep_with_next = True
             elif b.kind == "para_in_list":
                 p = self.para_before(anchor)
                 p.paragraph_format.left_indent = Inches(0.5 + 0.25 * b.level)
@@ -538,7 +555,11 @@ class Renderer:
             elif b.kind == "table":
                 self.table(anchor, b.rows)
             elif b.kind == "figure":
-                self.figure(anchor, b.rows[0][0], b.text)
+                opt = b.rows[0][1]
+                height = float(opt[2:]) if opt.startswith("h=") else None
+                self.figure(anchor, b.rows[0][0], b.text, page=opt == "page", max_height=height)
+            elif b.kind == "pagebreak":
+                self.para_before(anchor).add_run().add_break(WD_BREAK.PAGE)
             if b.kind in ("para", "para_in_list", "bullet", "number"):
                 self.tighten(p)
         return count
@@ -552,6 +573,7 @@ class Renderer:
         shd.set(qn("w:fill"), "F3F5F9")
         ppr.append(shd)
         p.paragraph_format.space_after = Pt(6)
+        p.paragraph_format.keep_together = True  # a short code block never splits across pages
         lines = text.split("\n")
         size = Pt(7) if max((len(x) for x in lines), default=0) > 90 else Pt(8)
         for n, line in enumerate(lines):
@@ -590,12 +612,17 @@ class Renderer:
         for cell in t.rows[0].cells:  # a header row never ends a page on its own
             for par in cell.paragraphs:
                 par.paragraph_format.keep_with_next = True
+        if self.compact and len(rows) <= 8:  # a short table (an index, a box) stays on one page
+            for row in t.rows[:-1]:
+                for cell in row.cells:
+                    for par in cell.paragraphs:
+                        par.paragraph_format.keep_with_next = True
         trpr = t.rows[0]._tr.get_or_add_trPr()
         th = OxmlElement("w:tblHeader")
         th.set(qn("w:val"), "true")
         trpr.append(th)
         for row, cells in zip(t.rows, rows, strict=False):
-            if sum(len(c) for c in cells) > 360:
+            if sum(len(c) for c in cells) > 1400:
                 continue  # a long row may break across pages rather than leave most of a page empty
             cs = OxmlElement("w:cantSplit")
             cs.set(qn("w:val"), "true")
@@ -642,19 +669,27 @@ class Renderer:
             for cell in t.columns[ci].cells:
                 cell.width = Inches(w)
 
-    def figure(self, anchor: Paragraph, name: str, caption: str) -> None:
+    def figure(self, anchor: Paragraph, name: str, caption: str, page: bool = False,
+               max_height: float | None = None) -> None:
         path = (self.md_dir / name)
         self.last_figure_embedded = path.exists()
         if not path.exists():
             return
         p = self.para_before(anchor)
         width = Inches(6.4)
-        if self.compact:
+        if page:
+            # a tall diagram on a page of its own: 6.2 in wide, capped so that it and its caption fit one page
+            img = DocxImage.from_file(str(path))
+            width = Inches(min(6.2, PAGE_FIG_HEIGHT_IN * img.px_width / img.px_height))
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.page_break_before = True
+        elif self.compact:
             img = DocxImage.from_file(str(path))
             # cap the height so a tall screenshot does not take a whole page
-            width = Inches(min(6.2, MAX_FIG_HEIGHT_IN * img.px_width / img.px_height))
+            width = Inches(min(6.2, (max_height or MAX_FIG_HEIGHT_IN) * img.px_width / img.px_height))
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.add_run().add_picture(str(path), width=width)
+        p.paragraph_format.keep_with_next = True  # a figure never leaves its caption on the next page
         c = self.para_before(anchor, "Caption")
         c.add_run(caption)
 
@@ -689,6 +724,8 @@ def fill(md_path: Path, template: Path, out_path: Path, repo_url: str | None) ->
     fill_header(doc)
     md = md_path.read_text(encoding="utf-8")
     pre, sections = split_markdown(md)
+    if repo_url is None and md_path.name == "technical_document.md":
+        repo_url = TECHDOC_REPO_URL  # its evidence paths are submitted as links to the public repository
     r = Renderer(doc, md_path.parent, repo_url, compact=md_path.name == "technical_document.md")
     paras = body_paragraphs(doc)
     headings = [p for p in paras if p.style.name == "Heading 1"]
@@ -787,10 +824,10 @@ def finish(doc, title: str, contents: bool) -> None:
             marker._p.addnext(toc._p)
             _field(toc, 'TOC \\o "1-3" \\h \\z \\u', "Open in Word and update fields to show the contents.")
     cp = doc.core_properties
-    cp.title = f"FLOW (TermsLedger): {title}"
+    cp.title = f"FLOW: {title}"
     cp.subject = "2026 FinTechathon, International AI Track, Topic E"
-    cp.author = cp.last_modified_by = "TermsLedger team"
-    cp.keywords = "FLOW; TermsLedger; security; FinTechathon 2026"
+    cp.author = cp.last_modified_by = "ISMOGGER"
+    cp.keywords = "FLOW; TermsLedger (code name); security; FinTechathon 2026"
     now = datetime.now(UTC).replace(microsecond=0, tzinfo=None)
     cp.created = cp.modified = now
     cp.revision = 1
@@ -913,6 +950,18 @@ def team_placeholders(out_path: Path) -> list[str]:
     return sorted(set(re.findall(r"\[TEAM:[^\]]*\]", "\n".join(texts))))
 
 
+# Tokens the lead fills after the final re-measurement ({SUBMISSION_COMMIT}, {VERIFICATION_TABLE_ROWS}, ...): deliberate,
+# so the build lists them instead of failing. Any {UPPER_CASE} token counts.
+LEAD_TOKEN_RE = re.compile(r"\{[A-Z][A-Z0-9_]+\}")
+
+
+def lead_placeholders(out_path: Path) -> list[str]:
+    """The distinct {UPPER_CASE} tokens left in a built document, for the lead to fill before upload."""
+    doc = docx.Document(str(out_path))
+    texts = [p.text for p in doc.paragraphs] + [c.text for t in doc.tables for row in t.rows for c in row.cells]
+    return sorted(set(LEAD_TOKEN_RE.findall(" ".join(texts))))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--refresh-evidence", action="store_true", help="regenerate the evidence tables from the e2e run first")
@@ -920,7 +969,8 @@ def main() -> int:
     ap.add_argument("--word", action="store_true",
                     help="Windows with Word: update the contents and page numbers, and export a PDF beside each file")
     ap.add_argument("--repo-url", default=None,
-                    help="base URL for repo links, e.g. https://github.com/<org>/<repo>/blob/<ref> (default: print paths)")
+                    help="base URL for repo links, e.g. https://github.com/<org>/<repo>/blob/<ref> (default: print paths; the "
+                         "technical document links to TECHDOC_REPO_URL)")
     args = ap.parse_args()
 
     if args.refresh_evidence:
@@ -944,6 +994,9 @@ def main() -> int:
         else:
             n = len(template_outline(template))
             print(f"OK   {rel}  ({n} template headings and prompts present, no placeholders left)")
+        lead = lead_placeholders(out_path)
+        if lead:
+            print(f"     {len(lead)} lead token(s) to fill before upload (listed, not a failure): {', '.join(lead)}")
         team = team_placeholders(out_path)
         if team:
             print(f"     {len(team)} [TEAM: ...] placeholder(s) for the team to fill:")

@@ -4,11 +4,11 @@ International AI Track | Security Self-Assessment
 
 | | |
 | --- | --- |
-| Team name | [TEAM: team name] |
+| Team name | ISMOGGER |
 | Competition track | International AI Track, Topic E (SME Finance Copilot) |
-| Submission date | [TEAM: submission date] |
+| Submission date | 20 October 2026 |
 
-**Document control.** Version 3.0, 17 Oct 2026. This assessment describes one build and nothing else: the **assessed build** in the release manifest below. Every status in it ("in the assessed build", "fixed", "open") is a statement about that build. Work done after it is not described as present.
+**Document control.** Version 3.0, 17 Oct 2026. The manifest, figures and certification history were updated at the `70f23ac5` certification, 18 Oct 2026. This assessment describes one build and nothing else: the **assessed build** in the release manifest below. Every status in it ("in the assessed build", "fixed", "open") is a statement about that build. Work done after it is not described as present. The build submitted to the competition is later. Its changes are listed in **Appendix E, the submission build addendum**, which the integration lead prepared. The addendum is not certified.
 
 **Release manifest (assessed build).**
 
@@ -30,9 +30,9 @@ International AI Track | Security Self-Assessment
 
 **Executive summary.** TermsLedger v2 (FLOW) lets an SME owner delegate supplier-side credit decisions (buyer concessions, early-pay offers, draws on committed facilities and capex purchases) to an AI agent, under a mandate the owner signs. The design question is *what can a hostile message, a hostile caller or a fully persuaded language model make the system do?* The design answer is that **the model only fills typed data; deterministic code checks it and deterministic code executes it, under permission tiers that code computes**. FLOW is a simulation: lenders, buyers and the bank feed are simulated. We claim neither regulatory compliance nor absolute security.
 
-- **Test result, with its limits.** In the specified runs on the assessed build, the 279 stored attack cases (128 through the API, 151 through chat) produced **zero observed violations of the defined harm oracles** (section 2.4). This is a test result within a scope, not evidence that no exploitable path exists. Each case ran in a fresh in-memory runtime, offline, with recorded or scripted model answers; the catalogue drives only part of the 100 API routes, though a route policy test calls every route as every kind of caller (section 1.5); and no running deployment has had a penetration test.
+- **Test result, with its limits.** In the specified runs on the assessed build, the 279 stored attack cases (128 through the API, 151 through chat) produced **zero observed violations of the defined harm oracles** (section 2.4). This is a test result within a scope, not evidence that no exploitable path exists. Each case ran in a fresh in-memory runtime, offline, with recorded or scripted model answers; the catalogue drives only part of the 106 API routes, though a route policy test calls every route as every kind of caller (section 1.5); and no running deployment has had a penetration test.
 - **Review arrangement.** The reviews were AI-assisted and internal (section 2.6). The Security Lead is an AI agent working in a separate session and worktree. It also wrote the security fixes it then certified. The owner, a person, accepted the residual risks. "Certified" in this document means an **internal release decision for a stated build and scope**. It is not external accreditation, and no professional penetration test was done.
-- **Verdict.** Local simulation on loopback: **GO** for the assessed build. Demo over a network: **NO-GO** until a tested deployment profile exists (section 4.6). Production with real customers, documents or money: **NO-GO** (section 04).
+- **Verdict.** Local simulation on loopback: **GO** for the assessed build. Live model mode (`pnpm demo --live-llm`): **not certified**; it is outside the assessed scope (section 3.2). Demo over a network: **NO-GO** until a tested deployment profile exists (section 4.6). Production with real customers, documents or money: **NO-GO** (section 04).
 - **Largest residual risks.**
   - One person holds every approval credential (R-2).
   - The owner has no route to revoke or renew the mandate (R-14).
@@ -76,7 +76,7 @@ International AI Track | Security Self-Assessment
 | E6 | Language-boundary set: 231 adversarial items through `POST /nl`, scored from stored state | 0 wrong-and-material, on recorded and scripted model answers (not a live model) |
 | E7 | Concurrency suite: eight invariants, two worker processes, SQLite and PostgreSQL 17 | 3 of 3 clean PostgreSQL runs (31 passed, 10 on PostgreSQL each) |
 | E8 | Dependency audits of the assessed lockfiles | `pnpm audit --prod`: 0 advisories; `pip-audit`: no known vulnerabilities; the CSP verified in a browser on a production build; exceptions in section 2.8 |
-| E9 | External red-team run (16 Oct), including a live DeepSeek tier | 0 harmful outcomes reported; five observations, each with its status in section 2.6 |
+| E9 | Internal red-team run (16 Oct), including a live DeepSeek tier | 0 harmful outcomes reported; five observations, each with its status in section 2.6 |
 
 ## 01 Permission Model
 
@@ -145,7 +145,7 @@ An owner could therefore accept a request believing the named buyer sent it. Sec
 | --- | --- | --- | --- |
 | `AcceptOffer`, `RecordCommitment` | 1 only for a pure early-pay discount on a named invoice; otherwise 2 | agent, owner | **Tier 1 needs all of:** a discount strictly below the exact break-even for its days early (0.8832% for 30 days on the golden books); the cash is needed and the offer beats the router's plan (ADR-0007); the compiler's coverage proof (ADR-0005); the message states the invoice's whole face; at most ¥100,000. **Always Tier 2:** rebates, and changes to terms, price, volume or operations. **Limits:** one live agreement per invoice and per buyer request (SEC-02). |
 | `CounterOffer`, `RejectOffer` | 1 | agent, owner | within the mandate; only the owner's decline closes a request |
-| `DrawFacility`, `SubmitInvoiceForFinancing` | 1 on a committed, owner-approved facility at or below the rate ceiling; otherwise 2 | agent, owner | the executor's admission on today's books (DSCR, leverage, reserve, landing day); above the ceiling the leg is queued with its cost, and admission runs again at approval |
+| `DrawFacility`, `SubmitInvoiceForFinancing` | 1 on a committed, owner-approved facility at or below the rate ceiling; otherwise 2 (above the ceiling, only when the agent requests it) | agent, owner | the executor's admission on today's books (DSCR, leverage, reserve, landing day); above the ceiling the leg is queued with its cost, and admission runs again at approval. **The rate ceiling (15% a year in the demo mandate) is an approval threshold, not a hard rule.** Above it, a leg the agent requests waits for the owner. The owner may approve it or draw directly (`app/operations/executor.py`). Admission and the covenants apply to everyone |
 | `RepayFacility` | 1 | agent, owner | admission still applies |
 | `ReceivePayment` | 1 from the bank feed or the owner; 2 from the agent (F-02) | bank feed, owner, agent | one `bank_reference` books once; a receipt larger than the open amount is refused; a receipt with no reference is identified only by its idempotency key (section 4.4, SEC-29) |
 | `RequestOwnerApproval` | 1 (it only queues) | agent | the queued reason is the operation's own description, never the requester's text |
@@ -546,9 +546,9 @@ Each executes with its expected state change, and the oracle reports that change
 
 Both assert zero unauthorised executions, an unchanged mandate and facility menu, a valid chain and no leaks.
 
-#### 2.6 Review arrangement and independent observations
+#### 2.6 Review arrangement and internal observations
 
-<!-- figure: security/figures/fig6-assurance-timeline.png | Figure 5. Assurance timeline: audits, red-team rounds, certifications and the external red-team run. -->
+<!-- figure: security/figures/fig6-assurance-timeline.png | Figure 5. Assurance timeline: audits, red-team rounds, certifications and the internal red-team run. -->
 
 **Who did what.** The reviews were AI-assisted, and none was external professional assurance.
 
@@ -556,24 +556,24 @@ Both assert zero unauthorised executions, an unchanged mandate and facility menu
 | --- | --- | --- | --- | --- |
 | Implementation | the owner (a person) with AI coding agents (Claude Code sessions); an integration agent merges branches into `dev` | | | |
 | Attack catalogue (1 Oct) | the implementation team | written by the people and agents who built the system: "our own" | yes | the reviews below |
-| Principal audit (3 Oct) | three bounded reviewers and a principal; [TEAM: confirm whether people, AI agents or both] | separate review of the code | yes | the owner |
+| Principal audit (3 Oct) | three bounded reviewers and a principal: team members working with AI agents | separate review of the code | yes | the owner |
 | Red-team rounds 1 to 5 (3 Oct) | AI subagents started with minimal context about the backlog | no implementation role | yes | the owner; every finding became a regression test |
-| Security Lead (14 to 17 Oct) | an AI agent (Claude, in Claude Code) in a separate session and git worktree, with delegated AI reviewer agents | did not build the product features it audited; **did write the security fixes it then certified**, each on its own branch with a test that fails first | yes: reproductions, sweeps and probes in `docs/security/evidence/` | the integration agent merged; the owner approved engine changes and accepted risks |
-| External red-team run (16 Oct) | [TEAM: who ran it]; its report was supplied by the owner and is not in the repository | not recorded | yes | its five observations were re-checked by the Security Lead on the code; its live-tier results were not re-run |
+| Security Lead (14 to 18 Oct) | an AI agent (Claude, in Claude Code) in a separate session and git worktree, with delegated AI reviewer agents | did not build the product features it audited; **did write the security fixes it then certified**, each on its own branch with a test that fails first | yes: reproductions, sweeps and probes in `docs/security/evidence/` | the integration agent merged; the owner approved engine changes and accepted risks |
+| Internal red-team run (16 Oct) | run by team member Hao En | not recorded | yes | its five observations were re-checked by the Security Lead on the code; its live-tier results were not re-run |
 | Risk acceptance | the owner (a person) | | | recorded decisions of 16 and 17 Oct (section 04) |
 
 **What "certified" means here.** An internal release decision by the Security Lead: the stated checks were run on the exact merged commit, and nothing found blocks the stated scope. It is not accreditation, an audit opinion or a penetration test.
 
-**Independent audit and five red-team rounds (1 to 3 Oct).** Every finding became a regression test before it was closed. Appendix B lists them, and the reports and probes are in `docs/research/`.
+**Internal audit and five red-team rounds (1 to 3 Oct).** Every finding became a regression test before it was closed. Appendix B lists them, and the reports and probes are in `docs/research/`.
 
-**Security Lead (14 to 17 Oct).**
+**Security Lead (14 to 18 Oct).**
 - Audited `e8e270f8` and every later merge.
 - Reproduced each finding before recording it.
 - Built each fix on its own branch, with a regression test that fails before and passes after.
 - After the integration agent merged, re-ran the checks on the exact merged commit.
 - Records: `docs/security/FINDINGS_REGISTER.md`, `CERTIFICATIONS.md`, `RELEASE_GATE.md` and `evidence/`.
 
-**External red-team run (16 Oct).**
+**Internal red-team run (16 Oct).**
 - **Shape:** 17 tests on a branch based on `dev`, in two tiers:
   - a live tier, which used a DeepSeek key for 100 model calls (about US$0.04);
   - an offline tier.
@@ -581,7 +581,7 @@ Both assert zero unauthorised executions, an unchanged mandate and facility menu
   - 40 injection cases, 20 leak requests and 9 prompt-extraction cases;
   - 12 deliberately misleading buyer messages and 6 poisoned contracts, each read without adopting a planted value;
   - 82 offer readings in all, 30 of which disagreed with the rules grammar, and every one of those was sent to the owner.
-- **Gaps in the record:** the report does not give the model identifier, settings or retry handling, and it does not reconcile its 100 calls with its 82 readings. [TEAM: attach the report or its settings.]
+- **Gaps in the record:** the report does not give the model identifier, settings or retry handling, and it does not reconcile its 100 calls with its 82 readings.
 - **Status:** these results are the run's own. They were not re-run, and they are evidence, not certification.
 
 Its five observations, with their status on the assessed build:
@@ -627,7 +627,7 @@ The certification records before 17 Oct report exit codes per shard, not counts.
 | Scan | Lockfile | Result | Exceptions |
 | --- | --- | --- | --- |
 | `pnpm audit --prod` | `apps/web/pnpm-lock.yaml` at the assessed build | 0 advisories (`next` 16.3.8, `source-map-js` 1.2.2) | |
-| `pnpm audit` (all, including development) | same | 1 high: `braces` (GHSA-vfj7-8cjw-p6xm), via `eslint-config-next` > `fast-glob` > `micromatch` | `braces`: a development-only dependency of the lint tooling, with no patched version published; it never ships in the production bundle and parses only our own source globs. Accepted by [TEAM] |
+| `pnpm audit` (all, including development) | same | 1 high: `braces` (GHSA-vfj7-8cjw-p6xm), via `eslint-config-next` > `fast-glob` > `micromatch` | `braces`: a development-only dependency of the lint tooling, with no patched version published; it never ships in the production bundle and parses only our own source globs. Accepted by the team |
 | `pip-audit` | production dependencies exported from `services/api/uv.lock` | no known vulnerabilities | |
 
 RT-1 was rated by reachability. The advisories were in the web server (`next`), so they were reachable over HTTP. On loopback, with nobody but the presenter, likelihood was Low; for a network demo it would have been Moderate. A clean result means only that the named scan of these lockfiles found no published advisory on that date.
@@ -702,7 +702,7 @@ Everything runs offline. The metrics are computed from the run, not asserted.
   - where the provider processes the data;
   - how long the provider keeps it.
 - **The question router** (`FEATURE_ASK_ROUTER`, live mode only for a real model) sends a provider the owner's redacted question and the tool catalogue, never the books; the reply is a tool choice, validated before anything runs. It has not been run live.
-- **Making live transmission visible.** The web app should say so whenever live mode is on [TEAM: confirm the indicator, or state that live mode is not demonstrated].
+- **Making live transmission visible.** The web app should say so whenever live mode is on. Live mode is opt-in (`pnpm demo --live-llm`, which prints that live calls are on and forces redaction) and outside every certification; the demo, the demo video and every evidence run use `LLM_MODE=cache`. The web app itself shows no live-model indicator.
 
 FLOW never attaches the books, mandate, reserve floor, facility limits, funding menu or other buyers' terms to a model request. A message can still contain such figures if a person typed them into it.
 
@@ -772,7 +772,7 @@ These describe what the code does on the assessed build. They are not legal advi
 - **Personal information and cross-border transfer.** If FLOW were deployed with real documents and live mode, a buyer document could contain personal information. A deployer would then have to determine, for its own deployment and the rules that apply to it, whether sending that text to a provider outside mainland China is a cross-border transfer under China's Personal Information Protection Law (PIPL), and what legal basis, security assessment or standard contract would be needed. We have not done that assessment. Redaction reduces the exposure without removing it.
 - **AI-generated content.** Outbound text is template-filled from typed fields, not model prose. The web labels extracted terms "AI-generated, for reference" (由 AI 生成，仅供参考) until the owner confirms them, then "Read by the agent, confirmed by you".
 - **Decision support, not advice.** The agent acts only inside an owner-signed mandate. It is not a licensed lender, broker or adviser; it signs and guarantees nothing, and it moves no real money. Every facility, buyer and bank feed is simulated.
-- **Licence.** [TEAM: the licence, or "all rights reserved"; and confirm that third-party dependencies' licences permit it]
+- **Licence.** All rights reserved (`LICENSE`, added 18 Oct): the code is not licensed for reuse; the competition's organisers and judges may view, run and evaluate it for judging. Third-party licences were checked and permit this: dependencies are MIT, BSD, Apache-2.0, ISC or 0BSD, plus MPL-2.0 (certifi, hypothesis) and LGPL-3.0 (psycopg) used unmodified as libraries, an OFL-1.1 web font and a CC-BY-4.0 data file; no GPL or AGPL component.
 
 ## 04 Known Risks
 
@@ -1031,13 +1031,13 @@ Every evidence file of the assessed build is in `docs/security/evidence/2026-10-
 | E6 | 0 wrong-and-material on the language boundary (recorded and scripted answers) | `python ../../scripts/certify_language_boundary.py --backend cache` and `--backend fake` | cache: 0 wrong-and-material, 1 wrong-harmless; fake: 0 wrong-and-material, 3 wrong-harmless (231 items each) | `lb_cache.txt`, `lb_fake.txt`, `language_boundary/` |
 | E7 | concurrency invariants on PostgreSQL 17 | `TERMSLEDGER_TEST_DATABASE_URL=<local database> pytest tests/concurrency` (three runs); the guard tests | 3 of 3 clean (31 passed, 10 on PostgreSQL each); guards 10 passed | `pg_concurrency_*.txt`, `pg_guards.txt` |
 | E8 | dependency scans; CSP in a browser | `pnpm audit --prod --json`; `pip-audit`; `csp_check.mjs` against a production build | 0 production advisories; `braces` (development only); pip-audit clean; 16 pages with the nonce policy, 0 violations, 0 page errors, injected handler and `javascript:` URL blocked | `pnpm_audit_*.json`, `pip_audit.txt`, `csp_browser.json` |
-| E9 | external run observations | the run's own report | as reported | [TEAM: report location] |
+| E9 | external run observations | the run's own report | as reported | see section 02, internal red-team run |
 
 Earlier certifications keep their own folders: `docs/security/evidence/2026-10-14/`, `2026-10-16/` and `2026-10-17/dev-719c9dcf/`. Before 17 Oct, shard results were recorded as exit codes, not counts.
 
 ## Appendix B Findings history
 
-**Independent audit and five red-team rounds (1 to 3 Oct).**
+**Internal audit and five red-team rounds (1 to 3 Oct).**
 
 | Round | What was found | Closed by |
 | --- | --- | --- |
@@ -1122,3 +1122,67 @@ Each has its reproduction, fix, regression test and merge commit in `docs/securi
 | Changed offer after the verdict | privilege escalation | terms changed between verdict and acceptance, at Tier 2 and at Tier 1 (TC-04) | 4 | 0 | 4 | |
 | Failure recovery | failure recovery | model error, timeout and garbage; a database failure mid-execute; five tamper variants; malformed bodies | 20 | 0 | 20 | |
 | **Total** | | | **128** | **0** | **120** | **8** |
+
+## Appendix E Submission build addendum (prepared by the integration lead, not certified)
+
+**What this addendum is.** Sections 01 to 04 and Appendices A to D are the Security Lead's assessment of `70f23ac5`, and their findings, evidence, ratings and certification text are unchanged by this addendum. The build submitted to the competition is later than `70f23ac5`. This addendum, written by the integration lead and not by the Security Lead, lists every change between the two, with what each change touches and the tests that were run. **Nothing in it is certified.** The verdicts of section 4.6 apply to `70f23ac5`. Each change below has been sent to the Security Lead, either for re-certification or for a follow-up review.
+
+| Item | Value |
+| --- | --- |
+| Submission commit | `5941e95a` (branch `int/final4`, merged into `dev`; the repository head adds documentation only) |
+| Certified build it extends | `70f23ac5` (section 2.7) |
+| Configuration | as in the release manifest: loopback, one API process, `LLM_MODE=cache`, synthetic fixtures. Live model mode (`pnpm demo --live-llm`) stays outside certification |
+| Prepared by | the integration lead (an AI agent), 18 Oct 2026; not reviewed by the Security Lead at the time of writing |
+
+**Status words used below.**
+- **Fixed, re-certification requested:** a fix the Security Lead built for a finding disclosed in section 4.4. The fix is in the submission build, and re-certification has been requested.
+- **Reporting fixed, atomicity disclosed:** what the owner is told is now correct, but plans are still atomic per operation only (section 1.12). The risk stays open as rated in section 4.2.
+- **Outside certification (live mode only):** the change has an effect only when a model provider is called. That mode is excluded from every certification.
+- **Follow-up review requested:** a product or test change made after `70f23ac5`, sent to the Security Lead for review.
+
+**Changes since `70f23ac5`.** Commits are on `int/final3` unless stated otherwise. The tests listed are the ones recorded in each commit message.
+
+| Commit | What changed | Security relevance | Tests run | Status |
+| --- | --- | --- | --- | --- |
+| `563de405` (`sec/round-six`, the Security Lead's own branch) | **REG-8:** a contract record blocked by any blocking party flag, `PARTY_UNCHECKED` included, entitles nobody in the egress guard, in both stores. **REG-9:** the demo lender names apply in demo mode only. **CT-2b:** the borrower file, which goes to lenders, leaves out a contract set-up's invoices until the first one is issued and lists them on their own row | closes the three findings disclosed in section 4.4 against `70f23ac5` (egress entitlement, a demo-only allowance, a file shown to lenders) | `tests/security/test_round_six.py`: 5 passed, 4 of which fail before the fix; egress, contracts, document parties, documents, borrower file, persistence and contract terms: 1,406 passed, 3 skipped | **fixed, re-certification requested** (REG-8, REG-9, CT-2b) |
+| `fix/sec28-funding-status`, `f52870d1` (owner-approved) | the negotiation reply (`POST /negotiate/{offer_id}`) states each funding leg's actual outcome; it no longer says the gap is funded before the legs' results are known | SEC-28 (section 4.4): fixes the reporting defect. A plan is still atomic per operation, not per plan, and nothing resumes or reverses a part-run plan | recorded in the final-build verification below | **reporting fixed, atomicity disclosed** (SEC-28) |
+| `0e7badbd` (owner-approved engine change) | the early-pay counter names the kind of prior agreement the buyer claimed (rebate, payment-terms agreement, discount, price); a claimed rebate keeps the old sentence word for word | changes the wording of a sentence in the verifier (engine stability set). No amount, rate, verdict, counter term or funding plan changes. The sentence is not part of any hash, fingerprint or stored figure | the verifier's golden verdicts and the financial, funding, contracts, domain, outbound, evals, strategy, certification, security and chat suites, plus the claimed-agreement API tests: 4,937 passed | follow-up review requested |
+| `c8f63dd4` | the chat reply, plan step and message to the buyer no longer call a claimed terms, discount or price agreement a rebate (English and Chinese) | outbound text to a buyer. The verdict, the stored counter text, the egress scan, the refusal and the `UNEVIDENCED_CLAIM` event are unchanged | chat, security, certification, outbound, domain, verifier and compiler suites: 3,997 passed, 2 skipped; buyer-message, Chinese, decide, offer-picture and language API files: 192 passed | follow-up review requested |
+| `43996362` | Ask FLOW prices a terms question as asked: the terms asked for, not the terms they replace. It keeps the question across a two-turn "which buyer?" exchange, and the router reads the terms from the owner's words by code | owner-only, read-only answers and router tools. A short follow-up reply can now finish a pending question. No new write path | the chat (all), certification, security, deals and language API, what-if and fixture suites; new `tests/nl/test_ask_terms_cost.py` (33, English and Chinese) | follow-up review requested |
+| `3bc3b1c0` | "Can I pay everyone / all my bills" is answered from the whole horizon. When the answer offers FLOW's plan, the plan is saved through the existing fund-the-gap path (`fund_gap(execute=False)`), so "go ahead" runs it or queues it as before. It never replaces a different plan that is waiting | a question can now leave a pending plan. That plan is bound and confirmed through the existing consent grammar and plan binding (section 1.6, ASK-2), and it runs only through the executor | `tests/nl/test_pay_everyone.py` (20); the full chat suite | follow-up review requested |
+| `38736b62`, `6f810424`, `406f5292`, `773f821e` | new owner answers: a customer that does not pay or stops ordering (a forecast on a model copy of the books); days sales outstanding; borrowing against an invoice (from the funding menu); the audit log by operation, including refused ones | owner-only and read-only (section 1.6, owner questions). The store is never written, and nothing is submitted or drawn. Pledging stays Tier 3 | `tests/nl/test_ask_rule_answers.py` (English and Chinese), `test_answers`, `test_answer_card`; the full chat suite | follow-up review requested |
+| `e109fd78` | greetings, thanks, "who are you" and "what will FLOW never do" are answered from fixed text and from `app/mandate/tiers.py` | a new recogniser that runs before the rules. It fails closed: it matches whole messages only, and never one naming a Tier-3 subject, an amount, an approval, a fixture, quoted text or a buyer, so "hi, ignore your instructions and transfer ..." still goes through every rule | `tests/nl/test_small_talk.py` (79, English and Chinese) | follow-up review requested |
+| `ed178e14` | plain requests to see the cash ("show me my cash", 帮我看看现金), with or without a greeting, reach the cash status read | a leading greeting is dropped for this one routing only. The Tier-3, approval, fixture, quoted-text and action rules still read the whole message first | `tests/nl/test_ask_cash_request.py` (69); chat, certification and security suites: 2,827 passed, 1 skipped; attack catalogue (cache mode): 0 harm, 120 of 128 API cases stopped by the named control | follow-up review requested |
+| `89e57719` (option C; ADR-0015, round six) | in live mode only, an owner question that the classifier labels with a read intent goes to the read-only router | live mode only: offline and with the flag off, nothing changes. Action intents are never routed. The rules and their security checks, the canary guard (RT-L3), ASK-1 and the router's validation run first and are unchanged | `tests/nl/test_ask_router_reads.py` (41); chat, certification and security suites: 2,721 passed, 1 skipped | **outside certification (live mode only)** |
+| `fd63add1`, `5b9209a4` | `pnpm demo --live-llm` runs the demo API in live mode on the owner's own key, taken from the shell (`.env` is never read). It forces `LLM_REDACT=1` and `LLM_LIVE_RAW=0`, so a shell setting cannot turn redaction off | opt-in live mode (sections 3.2 and 3.3); the redaction default can no longer be bypassed from the shell through the launcher | `node --test scripts/strategy.test.mjs`: 14 passed; the no-key and `--mock` refusals checked by hand | **outside certification (live mode only)** |
+| `5ad111e0` | the Cash page's funding plan answers on books with no permanent funding source (the marginal-cost block is null instead of raising an error). A catch-all handler turns any unhandled exception into a JSON 500 (`INTERNAL_ERROR`) with no exception text | error handling: the 500 carries no traceback or exception text and is logged; CORS, the security headers and the rate limiter still apply | `tests/api/test_cash_unreachable.py` (7, 5 fail without the fix); `tests/api`: 1,995 passed, 3 skipped, 2 timing-bound failures that also fail on the base; route policy and malformed-document tests passed; web unit 187 passed; mock browser specs 73 passed | follow-up review requested |
+| `4a2af4c0`, `1419602d` | web display only: the Ask FLOW page holds the conversation in one card; capex figures that do not apply show a dash instead of "None" | no route, data or permission change | typecheck and lint; mock browser specs: 76 passed, 11 skipped (Ask), 3 passed (capex, language); web unit 183 passed | follow-up review requested |
+| `39dd6e4e`, `70729b73` | test-only: each test starts on structlog's defaults (a filter leaked from the certification tests and failed 13 router log tests); the router-reads test follows the small-talk rules; a stale DSO expectation updated | none in the product; restores the router log tests (RT-L1) | 197 passed in the order that had failed; `tests/nl/test_ask_books.py`, `test_ask_rule_answers.py` | follow-up review requested |
+| `386775ca`, `d9923e92`, `7404f798`, `f1b95e61` | authority audit: a bare acknowledgement ("ok", "thanks", 好的) is not consent and a retried go-ahead cannot approve; the approval decision response separates the owner's decision from the run's result; an owner-recorded buyer yes states its funding requirement; a part-run plan names the funding still missing | consent and approval binding (closes a path where a repeated go-ahead approved a queued above-threshold advance); truthful execution status | `tests/nl/test_authority_audit.py` (47), `tests/api/test_approval_decision_vs_execution.py`, `tests/api/test_owner_reported_acceptance.py` | follow-up review requested |
+| `16480b3f`, `30d0f105` | the 15% APR and the single-commitment limit worded as approval thresholds (en/zh, server and web); a credential-bypass sweep of every owner write and agent route | wording only; the sweep found no route-level gap | `tests/security/test_approval_thresholds.py`, `tests/security/test_bypass_sweep.py` (207) | follow-up review requested |
+| `0af4a6bc`, `464617b3`, `ab8bac83` | owner pause of everything run on the agent's or a buyer's authority (`POST /agent/pause`, `/agent/resume`, on the hash-chained log); a saved chain checkpoint and verification against it; a test that every live model path receives redacted text only | new owner control; tamper evidence against a kept checkpoint; privacy | `tests/api/test_agent_pause.py`, `tests/security/test_evidence_verifier.py`, `tests/security/test_model_privacy_paths.py` | follow-up review requested |
+| `7fe9c8cd`, `a8d1c8fe` | a failed document decision keeps the page's own sentence; recorded web mocks re-recorded from the server (two identical runs per set) | web display only | live `documents.spec.ts:521`; mock browser suite 479 passed | follow-up review requested |
+| `93dce96f`, `82a5fe09`, `089d2415` | the frozen 20-item live-reading evaluation set and its runner; the LICENSE (all rights reserved, judging permitted) | evaluation tooling and licence; no product change | rules-grammar baseline and two live runs (see the technical document) | not applicable |
+| `069dd754`, `1c736876`, `bf113abf`, `08c8dac0` | the Security Lead's own records: assessment v3, the register, the owner's deferral of SEC-27 and SEC-28, and the certification of `70f23ac5` | documentation and evidence; no code | none needed | not applicable (documentation) |
+
+**Findings register.** `docs/security/FINDINGS_REGISTER.md` marks REG-8, REG-9 and CT-2b as fixed on the submission build, with re-certification requested. SEC-28 is marked "reporting fixed, atomicity disclosed". The Security Lead's statuses for `70f23ac5` are kept as written. The ratings in section 4.2 are unchanged until the Security Lead re-certifies.
+
+**Editorial corrections to sections 01 to 04, by the integration lead.** These corrections align the text with the certification records and with the code. No finding, rating, result or certification statement was changed.
+- Document control: the date of the 18 Oct manifest update is given beside the version date.
+- Executive summary: "100 API routes" now reads 106, the count in sections 1.5 and 2.9. Live model mode is named in the verdict as not certified, as sections 3.2 and 4.3 already state.
+- Section 1.3: the rate ceiling (15% a year) is described as an approval threshold for the agent, as `app/operations/executor.py` implements it. The owner's own draw above it is not raised to Tier 2.
+- Section 2.6: the Security Lead's dates read 14 to 18 Oct, because the certification of `70f23ac5` and the review that found REG-8 date from 18 Oct.
+- Figures 4 and 5: Figure 4 showed the 259-case catalogue of 16 Oct (126 API, 133 chat), and now shows 279 (128, 151), as in the text. In Figure 5, the Security Lead's dates now run to 18 Oct, and the certifications `29fa0ea2`, `85309b63`, `6d2b6941` (conditional) and `70f23ac5` (the assessed build) are shown. Before this change, the "assessed build (final)" label followed `0fde33fd`.
+- The team's five questions were answered by the owner on 18 Oct and are filled in (the audit, the red-team run, the dependency advisory and the licence).
+
+**Final-build verification (filled by the integration lead on the submission commit).**
+
+| Check | Command | Result on `5941e95a` |
+| --- | --- | --- |
+| Web typecheck, lint, unit tests | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` | clean; 187 passed, 0 failed |
+| API suite | `uv run pytest` | 11,341 passed, 0 failed, 47 skipped (11,388 collected; Linux, two workers) |
+| Focused suites on the changed paths, incl. the 207-case bypass sweep | `uv run pytest tests/nl tests/security tests/certification tests/alerts …` | 3,402 passed, 0 failed, 1 skipped |
+| Browser suite, recorded data | `playwright test` (mock) | 479 passed, 0 failed, 77 skipped |
+| Browser suite, real API | `playwright test` (live, 1 worker) | 174 passed, 3 failed (known: `live.spec.ts:334`, `:348`, `tracker.spec.ts:216`), 51 skipped |
+| Attack catalogue and judge pack | `scripts/judge_eval.py` | 49 of 49 tasks; 279 attacks, 0 with harm; detection 97.66% of 128 API attacks; chain VALID, tampered copy rejected |
+| Re-certification by the Security Lead | — | requested; not yet performed on this commit |

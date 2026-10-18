@@ -1,0 +1,28 @@
+day,scenario,event,amount_cny
+0,all,Decision day: FLOW reads Foshan's request (EX01),
+0,standing_plan,Credit line drawn,150000.00
+0,option_a/demo,Credit line drawn,147210.00
+2,ex01,"RCV-A paid early at 1.2% (discount 5,040.00)",414960.00
+2,option_a/demo,"260,000 of RCV-A paid early at 0.85% (discount 2,210.00)",257790.00
+3,standing_plan,Invoice-financing advance on RCV-A lands,255000.00
+12,all,Payroll,-340000.00
+12,baseline,First day below the reserve,
+20,all,Supplier payment,-120000.00
+25,demo,"Bookkeeper schedules month-2 payroll of 200,000 for day 42",
+30,all,Existing loan payment,-45000.00
+30,baseline,"Lowest cash -105,000.00 (405,000.00 below the reserve)",
+32,baseline/standing_plan,"RCV-A due (420,000)",420000.00
+32,standing_plan,"Line and advance repaid; 3,113.93 of charges paid",-408113.93
+32,demo,"RCV-A residual 160,000 due, not paid",
+34,demo,"FLOW proposes 200,000 invoice financing (1,782.19, 32.5% a year); queued, owner approves",
+36,demo,Late residual arrives,160000.00
+37,demo,Cure advance lands,200000.00
+42,demo,Payroll month 2,-200000.00
+47,all,Operating bill,-100000.00
+47,baseline/standing_plan/option_a/demo,Invoice issued day 2 paid (45-day terms),420000.00
+47,ex01,"First breach under 60-day terms: 209,960.00 (90,040.00 short)",
+47,demo,"Advance repaid (201,782.19); line repaid (148,423.17)",-350205.36
+57,option_b,"Invoice issued day 2 paid at 55 days, +0.30%",421260.00
+60,all,Existing loan payment,-45000.00
+60,ex01,"Lowest 164,960.00 (135,040.00 short)",
+62,ex01,Invoice issued day 2 paid (60-day terms); breach ends,420000.00
