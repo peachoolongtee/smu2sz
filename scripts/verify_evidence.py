@@ -16,16 +16,26 @@ or replaced by an older valid export verifies as VALID. Against those, keep a ch
 write (print one with --checkpoint-out) and verify later files with --checkpoint COUNT:HEAD: the file must then hold at least
 COUNT entries, and entry COUNT must have exactly that hash.
 
+A checkpoint can also be saved as a small JSON file (--checkpoint-save FILE): the entry count, the head hash, the simulated day of
+the last entry, the export's own simulated day and recording time, the export file's sha256 and when the checkpoint was saved. Copy
+that file somewhere the database administrator cannot write (another machine, a USB key, an email to yourself) and pass the file to
+--checkpoint later instead of COUNT:HEAD. The checkpoint is only as trustworthy as the place it is kept: whoever can edit both the
+database and the kept copy can make a rewrite verify. Entries appended after the checkpoint are accepted and counted.
+
 Usage:
   python scripts/verify_evidence.py evidence.jsonl
   python scripts/verify_evidence.py evidence.jsonl --checkpoint-out          # print COUNT:HEAD to keep elsewhere
+  python scripts/verify_evidence.py evidence.jsonl --checkpoint-save cp.json # save the checkpoint as a file to copy elsewhere
   python scripts/verify_evidence.py evidence.jsonl --checkpoint 12:3f2a...   # this file extends that checkpoint
+  python scripts/verify_evidence.py evidence.jsonl --checkpoint cp.json      # the same, from a saved checkpoint file
 Exit 0 if valid, 1 if not, 2 on usage errors.
 """
 import argparse
 import hashlib
 import json
+import os
 import sys
+from datetime import UTC, datetime
 
 GENESIS = "0" * 64
 REQUIRED = ("seq", "payload_json", "result_json", "prev_hash", "entry_hash")
@@ -119,27 +129,89 @@ def verify(path: str, checkpoint: tuple[int, str] | None = None) -> tuple[list[s
     return problems, ops, events
 
 
+CHECKPOINT_FORMAT = "termsledger-evidence-checkpoint-v1"
+_HEX = set("0123456789abcdef")
+
+
+def parse_checkpoint(value: str) -> tuple[int, str] | None:
+    """COUNT:HEAD, or the path of a file written by --checkpoint-save. None when it is neither."""
+    if os.path.isfile(value):
+        try:
+            with open(value, encoding="utf-8") as f:
+                saved = json.load(f)
+        except (OSError, ValueError):
+            return None
+        if not isinstance(saved, dict) or saved.get("format") != CHECKPOINT_FORMAT:
+            return None
+        value = f"{saved.get('count')}:{saved.get('head')}"
+    count, sep, h = value.partition(":")
+    if not sep or not count.isdigit() or int(count) < 1 or len(h) != 64 or not set(h) <= _HEX:
+        return None
+    return int(count), h
+
+
+def _day_of(op: dict) -> int | None:
+    result = _obj(op.get("result_json")) or {}
+    payload = _obj(op.get("payload_json")) or {}
+    day = result.get("effective_day", payload.get("day"))
+    return day if isinstance(day, int) else None
+
+
+def checkpoint_record(path: str, ops: list[dict]) -> dict:
+    """What --checkpoint-save writes: enough to find the same point again, and to say when and from which export it was taken."""
+    run: dict = {}
+    with open(path, encoding="utf-8") as f:
+        for raw in f:
+            try:
+                rec = json.loads(raw)
+            except ValueError:
+                continue
+            if isinstance(rec, dict) and rec.get("record") == "run":
+                run = rec
+                break
+    with open(path, "rb") as fb:
+        digest = hashlib.sha256(fb.read()).hexdigest()
+    return {
+        "format": CHECKPOINT_FORMAT,
+        "count": len(ops),
+        "head": ops[-1].get("entry_hash", "") if ops else GENESIS,
+        "last_entry_day": _day_of(ops[-1]) if ops else None,
+        "export_simulated_day": run.get("simulated_day"),
+        "export_recorded_at": run.get("recorded_at"),
+        "export_sha256": digest,
+        "saved_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "keep": "copy this file somewhere the database administrator cannot write; verify later exports with --checkpoint <this file>",
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("evidence")
-    ap.add_argument("--checkpoint", help="COUNT:HEAD kept from an earlier export; the file must extend it")
+    ap.add_argument("--checkpoint", help="COUNT:HEAD, or a file saved by --checkpoint-save, from an earlier export; the file must extend it")
     ap.add_argument("--checkpoint-out", action="store_true", help="print COUNT:HEAD of this file to keep elsewhere")
+    ap.add_argument("--checkpoint-save", metavar="FILE", help="save this file's checkpoint as JSON to FILE (only when it verifies)")
     args = ap.parse_args(argv)
     cp = None
     if args.checkpoint:
-        count, sep, h = args.checkpoint.partition(":")
-        if not sep or not count.isdigit() or int(count) < 1 or len(h) != 64:
-            print("--checkpoint must be COUNT:HEAD with a 64-character hash", file=sys.stderr)
+        cp = parse_checkpoint(args.checkpoint)
+        if cp is None:
+            print("--checkpoint must be COUNT:HEAD with a 64-character hex hash, or a file saved by --checkpoint-save", file=sys.stderr)
             return 2
-        cp = (int(count), h)
     problems, ops, events = verify(args.evidence, cp)
     head = ops[-1].get("entry_hash", "") if ops else GENESIS
     status = "VALID" if not problems else "INVALID"
     print(f"{status}: {len(ops)} operations, {events} security events, head {head[:16]}…")
     for p in problems:
         print("  -", p)
+    if cp is not None and not problems:
+        print(f"extends checkpoint {cp[0]}:{cp[1][:16]}…; {len(ops) - cp[0]} entries appended since")
     if args.checkpoint_out and not problems:
         print(f"checkpoint {len(ops)}:{head}")
+    if args.checkpoint_save and not problems:
+        with open(args.checkpoint_save, "w", encoding="utf-8") as f:
+            json.dump(checkpoint_record(args.evidence, ops), f, ensure_ascii=False, indent=2, sort_keys=True)
+            f.write("\n")
+        print(f"checkpoint saved to {args.checkpoint_save}: keep a copy outside the database administrator's reach")
     return 0 if not problems else 1
 
 

@@ -108,3 +108,62 @@ def test_a_consistent_cut_or_rewrite_is_caught_only_against_a_kept_checkpoint(tm
     assert run(tmp_path, lines).returncode == 0
     out = run(tmp_path, lines, "--checkpoint", keep)
     assert out.returncode == 1 and "history rewritten" in out.stdout, out.stdout
+
+
+# ---------------------------------------------------------------- a checkpoint saved as a file and kept outside the database
+
+
+def _export(c: TestClient) -> list[dict]:
+    return [json.loads(x) for x in c.get("/evidence", headers=OWNER).text.splitlines() if x.strip()]
+
+
+def test_a_saved_checkpoint_accepts_later_entries_and_catches_a_rewrite_before_it(tmp_path):
+    rt = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
+    rt.reset()
+    set_runtime(rt)
+    from app.main import app
+
+    c = TestClient(app)
+    try:
+        for i in range(2):
+            c.post("/operations", json=op("DRAW_FACILITY", f"cp-{i}", facility_id="FAC-LINE", amount_fen=1_000_000), headers=AGENT)
+        first = _export(c)
+        saved = tmp_path / "kept" / "checkpoint.json"
+        saved.parent.mkdir()
+        out = run(tmp_path, first, "--checkpoint-save", str(saved))
+        assert out.returncode == 0 and "checkpoint saved to" in out.stdout, out.stdout
+        kept = json.loads(saved.read_text(encoding="utf-8"))
+        assert kept["count"] == len(ops(first)) and kept["head"] == ops(first)[-1]["entry_hash"]
+        assert kept["last_entry_day"] == rt.day and kept["export_simulated_day"] == rt.day and kept["export_recorded_at"]
+        assert len(kept["export_sha256"]) == 64 and kept["saved_at"]
+
+        c.post("/operations", json=op("SIGN_PERSONAL_GUARANTEE", "cp-t3", facility_id="FAC-LINE"), headers=AGENT)
+        later = _export(c)
+    finally:
+        set_runtime(None)
+    out = run(tmp_path, later, "--checkpoint", str(saved))  # appended after the checkpoint: accepted, and counted
+    assert out.returncode == 0 and "1 entries appended since" in out.stdout, out.stdout
+
+    payload = json.loads(ops(later)[0]["payload_json"])  # a rewrite before the checkpoint, every link recomputed
+    payload["amount_fen"] = 9_000_000
+    ops(later)[0]["payload_json"] = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    rehash(later)
+    assert run(tmp_path, later).returncode == 0  # on its own it verifies: the documented limit
+    out = run(tmp_path, later, "--checkpoint", str(saved))
+    assert out.returncode == 1 and "history rewritten" in out.stdout, out.stdout
+
+    rolled_back = [x for x in first if x is not ops(first)[-1]]  # an older, consistent export: one entry short of the checkpoint
+    rehash(rolled_back)
+    out = run(tmp_path, rolled_back, "--checkpoint", str(saved))
+    assert out.returncode == 1 and "fewer than the" in out.stdout, out.stdout
+
+
+def test_a_checkpoint_whose_head_does_not_match_is_refused(tmp_path, lines):
+    n = len(ops(lines))
+    wrong = "f" * 64
+    out = run(tmp_path, lines, "--checkpoint", f"{n}:{wrong}")
+    assert out.returncode == 1 and f"entry {n} is not the checkpointed entry" in out.stdout, out.stdout
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"format": "something else", "count": n, "head": wrong}), encoding="utf-8")
+    for value in (str(bad), "4:not-a-hash", f"0:{wrong}"):
+        assert run(tmp_path, lines, "--checkpoint", value).returncode == 2
