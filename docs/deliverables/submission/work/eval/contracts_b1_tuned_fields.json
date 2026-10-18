@@ -1,0 +1,126 @@
+{
+ "label": "batch 1, tuned on (17 Oct)",
+ "contracts": 40,
+ "read": 30,
+ "refused_before_model": 10,
+ "fields": {
+  "contract_no": {
+   "key": 30,
+   "correct": 30,
+   "wrong": 0,
+   "missing": 0,
+   "extra_predicted": 0,
+   "financial_use": "record only"
+  },
+  "sign_date": {
+   "key": 30,
+   "correct": 30,
+   "wrong": 0,
+   "missing": 0,
+   "extra_predicted": 0,
+   "financial_use": "record only"
+  },
+  "buyer.name": {
+   "key": 30,
+   "correct": 30,
+   "wrong": 0,
+   "missing": 0,
+   "extra_predicted": 0,
+   "financial_use": "party check / payer direction"
+  },
+  "seller.name": {
+   "key": 30,
+   "correct": 30,
+   "wrong": 0,
+   "missing": 0,
+   "extra_predicted": 0,
+   "financial_use": "party check / payer direction"
+  },
+  "amount_total": {
+   "key": 30,
+   "correct": 30,
+   "wrong": 0,
+   "missing": 0,
+   "extra_predicted": 0,
+   "financial_use": "cash amount"
+  },
+  "performance.start_date": {
+   "key": 30,
+   "correct": 30,
+   "wrong": 0,
+   "missing": 0,
+   "extra_predicted": 0,
+   "financial_use": "record only"
+  },
+  "performance.end_date": {
+   "key": 30,
+   "correct": 30,
+   "wrong": 0,
+   "missing": 0,
+   "extra_predicted": 0,
+   "financial_use": "set-up guard (END_NOT_CERTAIN)"
+  },
+  "retention_pct": {
+   "key": 30,
+   "correct": 30,
+   "wrong": 0,
+   "missing": 0,
+   "extra_predicted": 0,
+   "financial_use": "cash withheld"
+  },
+  "late_payment_interest": {
+   "key": 30,
+   "correct": 22,
+   "wrong": 0,
+   "missing": 8,
+   "extra_predicted": 0,
+   "financial_use": "cost of late payment"
+  },
+  "payment_stages[].percent": {
+   "key": 61,
+   "correct": 60,
+   "wrong": 0,
+   "missing": 1,
+   "extra_predicted": 0,
+   "financial_use": "cash timing/amount"
+  },
+  "payment_stages[].days_after_trigger": {
+   "key": 61,
+   "correct": 60,
+   "wrong": 0,
+   "missing": 1,
+   "extra_predicted": 0,
+   "financial_use": "cash timing"
+  },
+  "payment_stages[].days_unit": {
+   "key": 61,
+   "correct": 60,
+   "wrong": 0,
+   "missing": 1,
+   "extra_predicted": 0,
+   "financial_use": "cash timing"
+  },
+  "payment_stages[].trigger": {
+   "key": 61,
+   "correct": 60,
+   "wrong": 0,
+   "missing": 1,
+   "extra_predicted": 0,
+   "financial_use": "cash timing"
+  }
+ },
+ "all_fields": {
+  "key": 514,
+  "correct": 502,
+  "wrong": 0,
+  "missing": 12,
+  "extra_predicted": 0
+ },
+ "decision_fields": {
+  "key": 424,
+  "correct": 412,
+  "wrong": 0,
+  "missing": 12,
+  "extra_predicted": 0
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "reads": 3,
+ "non200": [],
+ "read_p50": 0.58,
+ "read_max": 3.55,
+ "slowest": [
+  [
+   "/trajectory",
+   200,
+   3.55,
+   ""
+  ],
+  [
+   "/home",
+   200,
+   0.58,
+   ""
+  ],
+  [
+   "/cash/price-curve",
+   200,
+   0.0,
+   ""
+  ]
+ ],
+ "health_max": 0.0
+}
