@@ -195,4 +195,17 @@ when the provider error itself quotes the original text. Existing: `tests/compil
 
 ## Tests run
 
-See the decision log and the final report for the exact suites and counts.
+All with `uv run pytest <paths> -q -p no:randomly -o addopts=""`, on this branch, Windows, 18 Oct:
+
+- `tests/security tests/certification` (with the pause in place): **435 passed**.
+- `tests/api/test_agent_pause.py` 5 passed; `tests/security/test_evidence_verifier.py` 7 passed; `tests/security/test_model_privacy_paths.py`
+  6 passed.
+- `tests/nl tests/compiler` plus the executor-facing API files (`test_operations`, `test_owner_receipt`, `test_purchases`, `test_receipt`,
+  `test_ledger_events`, `test_startup_hydrate`, `test_write_conflict_409`, `test_lending_api`, `test_offer_picture_authority`,
+  `test_time_semantics`, `test_lapsed_offers`): **3677 passed, 2 skipped**.
+- `tests/api` up to `test_exposure_routes.py` (the first ~930 tests of a serial full run, cut by a timeout): all passed except
+  `test_exposure_routes.py::test_the_golden_cost_of_a_cold_full_read_is_under_three_seconds…`, a wall-clock bound (3.25 s / 4.9 s against
+  3 s) that **also fails on the base `origin/int/final3`** (5.6 s) on this machine: load, not this change.
+- Not run: the rest of `tests/api` (≈ 4,600 tests serially, over an hour here), the web mock browser suite (no web change). The lead's
+  integration gate should run both.
+- ruff clean on every changed file; mypy clean on `app/api/agent_pause.py`, `app/api/runtime.py`, `app/main.py`.
