@@ -1,0 +1,9 @@
+2026-10-18 09:22:57 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+negotiate: 409 {"detail":{"code":"OFFER_SENT_OUTSIDE","offer_id":"OFF-4f6bf9834d4d","decision_id":"deal:OFF-4f6bf9834d4d","message":"You sent the buyer a c
+t1 NEGOTIATE You sent the buyer a counter yourself; record their answer on the deal instead.
+t2 yes, go ahead AMBIGUOUS What should I go ahead with? Nothing in this conversation is waiting for a yes. (1) show cash status (2) fund the projected gap (3) get an invoice paid early []
+t2 confirm AMBIGUOUS What should I go ahead with? Nothing in this conversation is waiting for a yes. (1) show cash status (2) fund the projected gap (3) get an invoice paid early []
+t2 do it AMBIGUOUS What should I go ahead with? Nothing in this conversation is waiting for a yes. (1) show cash status (2) fund the projected gap (3) get an invoice paid early []
+ops: []
+state: AWAITING_BUYER ['received', 'checked', 'offered']
+commitments: []

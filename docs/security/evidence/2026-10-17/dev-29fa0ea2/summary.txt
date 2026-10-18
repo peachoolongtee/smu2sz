@@ -1,0 +1,16 @@
+Certification of dev 29fa0ea2 (the assessed build of the self-assessment v3), 17 Oct 2026, 10:51 to 11:37 UTC, by the Security Lead.
+Script: certify_29fa.sh; results by step: steps.txt; totals: suite_totals.txt.
+
+full suite (130 processes)     9,116 passed, 0 failed, 44 skipped
+attack catalogue               127 API + 133 chat, 0 harm, 0 NOT_REACHED, 119/127 named control, 8 known gaps
+sweep, three modes             0 policy violations; 0 differences from 0fde33fd (sweep_policy.txt)
+reproductions                  refused (r3, repro1, repro3 exit 1 by crashing on the refusal)
+approval flip (run correctly)  refused by the database: "a decision is recorded once"
+language boundary              cache 0 wrong-and-material; fake 0 wrong-and-material (231 items each)
+PostgreSQL 17                  concurrency 3/3 (31 passed, 10 on PostgreSQL); guards 10 passed
+pnpm audit --prod              0; full audit: braces (dev only)
+pip-audit                      no known vulnerabilities
+mock browser suite             445 passed, 61 skipped; typecheck, lint, unit pass (web/)
+CSP, production build          16 pages with the nonce policy, 0 violations, 0 page errors, injections blocked (csp_browser.json)
+
+Verdict: CERTIFIED for scope S (local simulation). Not a claim of absolute security.

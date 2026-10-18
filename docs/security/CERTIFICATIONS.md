@@ -12,6 +12,9 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 18 Oct | `6d2b6941` (dev: batches 7 to 10; round five not merged) | everything since `85309b63` | **CONDITIONAL**: certified for scope S only with `FEATURE_CONTRACT_TERMS` off (CT-1, CT-2 open) |
+| 17 Oct | `85309b63` (dev: batches 5 and 6, code of `3f0ed53e`; **the assessed build**) | everything since `29fa0ea2` | **CERTIFIED** for scope S; ASK-1, ASK-2, REG-1 to REG-7 disclosed |
+| 17 Oct | `29fa0ea2` (dev: round four, the redaction fix, self-assessment v3) | everything since `0fde33fd` | **CERTIFIED** for scope S; no test exception |
 | 17 Oct | `0fde33fd` (dev: SEC-08 executor check, OUT-1b, RT-2, RT-1, the 719c9dcf records) | the four merged branches | **CERTIFIED** for scope S; one test exception (#161, stale digest pin) |
 | 17 Oct | `719c9dcf` (dev: the five round-two branches, the OUT-1 fix, Dylan's ui-final) | everything since `0f92d433`: buyer messages, live readers, the setup lockout fix, the owner-approved engine fixes (`_priced`, `_attribute`, the R-10 rounding), model-privacy redaction, SEC-08 (database), SEC-12, SEC-20, SEC-21, SEC-22, OUT-1 | **CERTIFIED** for scope S |
 | 16 Oct | `fe56b357` (dev: final UI, R-10 rounding) | R-10 reassessed; the five round-two branches re-checked on it | R-10: **residual Low**; dev itself not certified while OUT-1 is open |
@@ -46,6 +49,99 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
 
+## `6d2b6941` (dev): CONDITIONAL, 18 Oct
+
+Batches 7 to 10 since `85309b63`:
+- ADR-0014 contract terms, an engine change;
+- contracts on Deals, file-first upload and record a payment;
+- the owner-question router (ADR-0015, proposed, `FEATURE_ASK_ROUTER`), the answer cards and the question gate;
+- the strategy warm-up worker;
+- fixes from the demo recording.
+
+Round five (`sec/batch-r5`, `sec/router-guards`) is **not** in this commit. Evidence: `evidence/2026-10-18/dev-6d2b6941/`.
+
+Every automated check passes:
+
+| Check | Result |
+| --- | --- |
+| Full suite | 10,375 passed, 0 failed |
+| Catalogue | 0 harm; 120 of 128 API cases stopped by the control they name |
+| Sweep | 0 policy violations |
+| Language boundary | 0 wrong-and-material |
+| PostgreSQL | 3 of 3 |
+| Dependency scans | clean |
+| Mock browser suite | 479 passed, 77 skipped. A first run failed because the Security Lead's own test run had taken the port; it was re-run on a free one |
+| CSP in a browser | 0 violations |
+
+The code reviews found nothing Critical or High: the router is owner-only and read-only, record a payment is gated, and no route was added. They also found these, open in this commit:
+- **Medium:** CT-1 and CT-2 (contract terms can be set up with no certain end and no bound, and switch off reserve alerts), and ASK-1 (an agent-key Tier-3 request phrased as a question leaves no trail).
+- **Low:** ASK-2 and ASK-2b, CT-3 to CT-7, REG-1 to REG-6, RT-L1 to RT-L3, WARM-1, and SEC-29's owner path.
+
+**Verdict: CONDITIONAL.** Certified for scope S **only with `FEATURE_CONTRACT_TERMS` off**; `pnpm demo` turns it on, so demonstrating this commit means turning that flag off. Merge `sec/batch-r5` with `sec/router-guards` and certify that merge commit as the assessed build. The self-assessment v3 stays on `85309b63` until then.
+
+## `85309b63` (dev): CERTIFIED for scope S, 17 Oct: the assessed build
+
+Batches 5 and 6:
+- `fcc81a62`: Dylan's Attach page, the party check `PARTY_NOT_NAMED`, the demo inbox, the set-aside count, `--keep`, the outcome card, deals invoices without a contract;
+- `3f0ed53e`: `POST /customers` (ADD_CUSTOMER), `POST /documents/{id}/refile` (REFILE_DOCUMENT), `POST /nl/session/reset`, owner questions (ASK_BOOKS, the read-only `app/nl/answers`), DOC-05, PC-06;
+- then the technical document (`85309b63`, docs only; the code is that of `3f0ed53e`).
+
+Evidence: `evidence/2026-10-17/dev-85309b63/` (script `certify_8530.sh`). The run took 14:01 to 14:38 UTC; the CSP check came after it.
+
+| Check | Result |
+| --- | --- |
+| Full suite (135 processes) | **9,740 passed, 0 failed, 46 skipped** |
+| Attack catalogue | 128 API + 133 chat, 0 with harm; 0 NOT_REACHED; 120 of 128 API cases stopped by the named control, 8 known gaps |
+| Sweep, three modes | 0 policy violations; against `29fa0ea2` only the three new routes differ: every non-owner gets 401 on `POST /customers` and `/documents/{id}/refile`, and `POST /nl/session/reset` is open as a buyer channel |
+| Route policy test (in the suite) | 107 routes; no class disagreement; the owner reaches the handler on 91 of 91 in demo mode and 86 of 91 in production mode |
+| Reproductions; approval flip | refused; the database refuses the flip |
+| Language boundary | 0 wrong-and-material (cache and fake) |
+| PostgreSQL 17 | concurrency 3 of 3; guards 10 passed |
+| Dependency scans | `pnpm audit --prod` 0; `braces` (development only); `pip-audit` clean |
+| Mock browser suite | 453 passed, 71 skipped; typecheck, lint, unit pass |
+| CSP, production build | 16 pages with the nonce policy, 0 violations, 0 page errors, injections blocked |
+| Code review of the new routes and owner questions (two reviewer agents, probes in the scratchpad) | nothing Critical or High; ASK-1 to ASK-3 and REG-1 to REG-7 recorded in the register |
+
+**Verdict: CERTIFIED for scope S.** It is certified with the review findings disclosed. None lets a non-owner act or read: each needs an owner action, the agent key, or a document the owner uploads. Fixes are built in round five and are not in this build.
+
+## `29fa0ea2` (dev): CERTIFIED for scope S, 17 Oct
+
+The build the self-assessment v3 describes. Contents since `0fde33fd`:
+- the redaction fix (`sec/redaction-mandatory` 817bcaad, PRIV-1 to PRIV-3), via `975e082f`;
+- Dylan's Attach deals and the capex hub (web only; `pnpm demo` turns on `FEATURE_CAPEX_CONTRACTS`, the buy side certified on `b6d1e519`);
+- self-assessment v2, then v3 (`e103bab8`);
+- round four:
+  - `sec/refusal-budget` 089ff973;
+  - `sec/evidence-verifier` aa050d85;
+  - `sec/anonymous-intake-switch` d8d22332;
+  - `sec/harness-assurance` 28133edc;
+  - `sec/route-policy` 3c4bd9ed;
+  - `e658ba64` cherry-picked alone.
+
+Every branch head is an ancestor of `29fa0ea2`; `e658ba64` came in as its cherry-pick `fda20f6a`. Since `0fde33fd` the backend changes are exactly those branches. The web changes are layout, a sign-in animation (`lib/ripple.ts`, inline styles set through the CSSOM, allowed by the CSP) and routing, with no change to `proxy.ts` or `lib/csp.ts`.
+
+Evidence: `evidence/2026-10-17/dev-29fa0ea2/` (script `certify_29fa.sh`, `MANIFEST.json`, `SHA256SUMS`). The run took 10:51 to 11:37 UTC.
+
+| Check | Result |
+| --- | --- |
+| Full suite, one process per test directory and per `tests/api` file (130 processes) | **9,116 passed, 0 failed, 44 skipped**; no shard non-zero; #161 passes |
+| Attack catalogue | 127 API + 133 chat cases, 0 with harm; 0 NOT_REACHED; 119 of 127 API cases stopped by the control they name, 8 known gaps (SEC-34) |
+| Positive controls, mutation tests, route policy test (in the suite) | pass: 5 controls execute and the oracle sees them; every mutation detected or recorded; 0 route policy deviations |
+| Authorization sweep, three modes | 0 policy violations; 0 differences from `0fde33fd`, caller by caller |
+| Reproductions | all refused (the scripts that exit 1 crash on the refusal; see below) |
+| SQLite approval flip, run correctly | refused by the database: "approvals: a decision is recorded once; UPDATE refused" |
+| Language boundary, 231 items | cache: 0 wrong-and-material (1 wrong-harmless); fake: 0 wrong-and-material (3 wrong-harmless) |
+| PostgreSQL 17 | concurrency 3 of 3 clean (31 passed, 10 on PostgreSQL each); guards and the SEC-08 executor test 10 passed |
+| `pnpm audit --prod` | 0 advisories |
+| `pnpm audit` including development | 1 high, `braces` (lint tooling only, no patch) |
+| `pip-audit` (production dependencies) | no known vulnerabilities |
+| Mock browser suite | 445 passed, 61 skipped; typecheck, lint, unit pass |
+| CSP on a production build (live API on loopback) | 16 pages with the nonce policy, `strict-dynamic` and `frame-ancestors 'none'`; 0 violations, 0 page errors; an injected `onerror` handler and a `javascript:` URL blocked (`csp_browser.json`) |
+
+**Verdict: CERTIFIED for scope S.** This is an internal release decision for the local simulation, with the conditions in `RELEASE_GATE.md`. A network demo stays NO-GO until a deployment profile is tested; production stays NO-GO.
+
+**Correction to the `719c9dcf` and `0fde33fd` entries.** In both runs `approval_flip.py` never started, because it needs a scratch folder argument and none was passed. Its exit status 1 was read as a refusal. The database guard was covered on both commits by `tests/persistence/test_audit_guards.py` on SQLite and PostgreSQL 17. On `29fa0ea2` the script ran correctly and was refused.
+
 ## `0fde33fd` (dev): CERTIFIED for scope S, 17 Oct
 
 Covers the merge of `security/lead-audit` 4cdda790, `sec/decide-once-log` 2ebb59d0, `sec/out1b-raw-operations` f3392196,
@@ -57,7 +153,7 @@ Covers the merge of `security/lead-audit` 4cdda790, `sec/decide-once-log` 2ebb59
 | The merged regression tests (SEC-08 executor, OUT-1b, RT-2) | 22 passed |
 | tests/operations, verifier, security, persistence | 412 passed 1 skipped; 263 passed; 305 passed; 161 passed 1 skipped |
 | Authorization sweep, 103 routes, three modes | 0 policy violations (`tools/sweep_policy.py`); 0 differences from `719c9dcf`, caller by caller (`tools/sweep_diff.py`). Owner answers: 43 to 47 reach a handler (200); the rest stop at validation on the sweep's placeholder ids and empty bodies, so the sweep shows who is refused, not that each owner route works |
-| 14 and 16 Oct reproductions | all refused. `r3`, `repro1`, `repro3` and `approval_flip` exit 1 because they crash printing what a successful attack would have returned (for example `r3` gets 409 and has no offer to print); each output shows the refusal |
+| 14 and 16 Oct reproductions | all refused. `r3`, `repro1` and `repro3` exit 1 because they crash printing what a successful attack would have returned (for example `r3` gets 409 and has no offer to print); each output shows the refusal |
 | Attack catalogue | 126 API + 133 chat cases, 0 with harm |
 | Issue #161 tests alone | 1 failed, 32 passed: `test_no_commitments_trajectory_and_router_plan_are_unchanged`, computed `24f1dc649f4363e3`, pinned `252b9812e99b4aee`. The same value on Linux CI: a stale pin, not machine-dependent as recorded earlier. Cause: "1 days" became "1 day" in one menu display string (`61eb4576`, 13 Oct); nothing the executor uses changed. Golden update `e658ba64` exists on `ci/linux-green` only |
 | PostgreSQL 17 | concurrency 3 of 3 clean (31 passed, 10 on PostgreSQL each); guards and the SEC-08 executor test 10 passed |

@@ -16,6 +16,7 @@ import hashlib
 import json
 import platform
 import re
+import shutil
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -35,8 +36,11 @@ WEB_PACKAGES = ("next", "react", "react-dom", "source-map-js")
 
 
 def _run(*cmd: str, cwd: Path = ROOT) -> str:
+    exe = shutil.which(cmd[0])  # on Windows pnpm is pnpm.cmd
+    if exe is None:
+        return "not installed"
     try:
-        return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=False).stdout.strip()
+        return subprocess.run([exe, *cmd[1:]], cwd=cwd, capture_output=True, text=True, check=False).stdout.strip()
     except OSError:
         return "not installed"
 
@@ -63,6 +67,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("folder", help="the evidence folder of this certification")
     ap.add_argument("--assessor", required=True)
+    ap.add_argument("--checkout", default=str(ROOT), help="the checkout that was certified (default: this one)")
     ap.add_argument("--scope", default="local simulation: loopback, one API process, cache mode, synthetic data")
     ap.add_argument("--exception", action="append", default=[], help="an approved exception, repeatable")
     ap.add_argument("--exclusion", action="append", default=[], help="an explicit exclusion, repeatable")
@@ -70,25 +75,29 @@ def main() -> int:
     folder = (ROOT / args.folder).resolve() if not Path(args.folder).is_absolute() else Path(args.folder)
     folder.mkdir(parents=True, exist_ok=True)
 
-    sha = _run("git", "rev-parse", "HEAD")
-    dirty = _run("git", "status", "--porcelain", "--untracked-files=no")
+    co = Path(args.checkout).resolve()
+    sha = _run("git", "rev-parse", "HEAD", cwd=co)
+    dirty = _run("git", "status", "--porcelain", "--untracked-files=no", cwd=co)
     manifest = {
         "commit": sha,
         "working_tree_clean": not dirty,
         "build": f"source checkout at {sha[:12]}; no container image (local simulation)",
-        "assessed_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "manifest_written_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "assessment_window_utc": " to ".join(
+            (folder / n).read_text(encoding="utf-8").strip() for n in ("started_utc.txt", "finished_utc.txt") if (folder / n).exists()
+        ) or "not recorded",
         "assessor": args.assessor,
         "scope": args.scope,
         "runtime": {
             "os": platform.platform(),
-            "python": _run("uv", "run", "--no-sync", "--project", "services/api", "python", "--version"),
+            "python": _run("uv", "run", "--no-sync", "--project", "services/api", "python", "--version", cwd=co),
             "uv": _run("uv", "--version"),
             "node": _run("node", "--version"),
-            "pnpm": _run("pnpm", "--version", cwd=ROOT / "apps" / "web"),
+            "pnpm": _run("pnpm", "--version", cwd=co / "apps" / "web"),
             "postgresql": "17 (local, for tests/concurrency only)",
         },
-        "python_packages": _uv_lock_versions(ROOT / "services" / "api" / "uv.lock"),
-        "web_packages": _pnpm_lock_versions(ROOT / "apps" / "web" / "pnpm-lock.yaml"),
+        "python_packages": _uv_lock_versions(co / "services" / "api" / "uv.lock"),
+        "web_packages": _pnpm_lock_versions(co / "apps" / "web" / "pnpm-lock.yaml"),
         "configuration": RUN_CONFIG,
         "exclusions": args.exclusion,
         "approved_exceptions": args.exception,

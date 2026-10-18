@@ -1,0 +1,66 @@
+<evidence>/sweep_demo.json: 109 routes; 0 policy violations; owner answers {200: 47, 403: 3, 404: 27, 409: 2, 422: 30}
+<evidence>/sweep_prod.json: 109 routes; 0 policy violations; owner answers {200: 43, 403: 5, 404: 30, 409: 1, 422: 30}
+<evidence>/sweep_unset.json: 109 routes; 0 policy violations; owner answers {200: 43, 403: 5, 404: 30, 409: 1, 422: 30}
+636 and 654 answers; 18 differ
+  - GET /documents/{document_id}/terms as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as bad_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as owner: None -> 403:FEATURE_DISABLED
+  - POST /documents/{document_id}/terms as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as bad_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as owner: None -> 403:FEATURE_DISABLED
+  - POST /documents/{document_id}/terms/undo as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as bad_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as owner: None -> 403:FEATURE_DISABLED
+742 and 763 answers; 21 differ
+  - GET /documents/{document_id}/terms as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as owner: None -> 403:FEATURE_DISABLED
+  - POST /documents/{document_id}/terms as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as owner: None -> 403:FEATURE_DISABLED
+  - POST /documents/{document_id}/terms/undo as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as owner: None -> 403:FEATURE_DISABLED
+742 and 763 answers; 21 differ
+  - GET /documents/{document_id}/terms as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - GET /documents/{document_id}/terms as owner: None -> 403:FEATURE_DISABLED
+  - POST /documents/{document_id}/terms as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms as owner: None -> 403:FEATURE_DISABLED
+  - POST /documents/{document_id}/terms/undo as agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as anon: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as bank: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as buyer1: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as demo_agent: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as demo_owner: None -> 401:OWNER_TOKEN_REQUIRED
+  - POST /documents/{document_id}/terms/undo as owner: None -> 403:FEATURE_DISABLED
