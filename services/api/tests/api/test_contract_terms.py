@@ -80,19 +80,28 @@ def test_the_owner_sees_the_terms_and_the_forecast_before_and_after_then_sets_th
     assert s["unauthorised_executions"] == 0 and s["chain_valid"]
 
 
-def test_the_forecast_reads_the_new_invoices_after_the_set_up(client, on, rt):
+def test_the_forecast_reads_the_new_invoices_once_the_first_is_issued(client, on, rt):
+    """CT-2: the conservative forecast counts a set-up's invoices once the clock has issued the first one (day 14); the
+    expected forecast counts them from the set-up. The preview says so."""
     d = _confirmed(client)
     v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    assert v["forecast"]["counts_from_day"] == 14 and "once the first one is issued, on 15 Oct 2026" in v["forecast"]["text"]
+    assert v["labels"]["after"] == "Once the first invoice is issued"
     client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]})
     from app.books import current_books
     from app.domain.models import Mode
     from app.financial import project
 
-    m = rt.store.get_mandate()
-    books = current_books(rt.store.get_state(), rt.store.commitments())
-    traj = project(books.state, list(books.obligations), [], Mode.CONSERVATIVE, m.horizon_days, m.min_cash_fen)
-    receipts = [e for p in traj.days for e in p.events if (e.ref or "").startswith("RI:BUYER-2:")]
-    assert [(e.day, e.amount_fen) for e in receipts] == [(59, 18_000_000), (89, 18_000_000), (119, 18_000_000)]
+    def receipts(mode: Mode) -> list[tuple[int, int]]:
+        m = rt.store.get_mandate()
+        books = current_books(rt.store.get_state(), rt.store.commitments())
+        traj = project(books.state, list(books.obligations), [], mode, m.horizon_days, m.min_cash_fen)
+        return [(p.day, e.amount_fen) for p in traj.days for e in p.events if (e.ref or "").startswith("RI:BUYER-2:")]
+
+    assert receipts(Mode.CONSERVATIVE) == []
+    assert receipts(Mode.EXPECTED) == [(59, 18_000_000), (89, 18_000_000), (119, 18_000_000)]
+    rt.advance_to(15)  # the clock issues RI:BUYER-2:14
+    assert receipts(Mode.CONSERVATIVE)[:3] == [(59, 18_000_000), (89, 18_000_000), (119, 18_000_000)]
 
 
 def test_a_repeat_press_is_answered_as_a_duplicate(client, on, rt):
@@ -218,6 +227,19 @@ def test_the_undo_leaves_the_invoices_already_issued(client, on, rt):
     # from day 20 the contract's next invoice is day 44: it could be set up again, the invoice of day 14 stays as issued
     assert r["terms"]["set_up"] is None and r["terms"]["status"] == "READY"
     assert client.get("/security/summary").json()["unauthorised_executions"] == 0
+
+
+def test_ct6_switched_off_the_set_up_is_closed_but_the_owner_can_still_undo(client, on, rt, monkeypatch):
+    d = _confirmed(client)
+    v = client.get(f"/documents/{d['id']}/terms").json()["terms"]
+    set_up = client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]}).json()
+    op_id = set_up["terms"]["set_up"]["op_id"]
+    monkeypatch.setenv("FEATURE_CONTRACT_TERMS", "0")
+    assert client.get(f"/documents/{d['id']}/terms").status_code == 403
+    assert client.post(f"/documents/{d['id']}/terms", json={"doc_hash": v["doc_hash"], "terms_hash": v["terms_hash"]}).status_code == 403
+    assert _client(AGENT).post(f"/documents/{d['id']}/terms/undo", json={"set_up_op_id": op_id}).status_code == 401
+    r = client.post(f"/documents/{d['id']}/terms/undo", json={"set_up_op_id": op_id})
+    assert r.status_code == 200 and r.json()["result"]["status"] == "EXECUTED" and not _buyer2(rt)
 
 
 def test_the_queued_set_up_and_undo_say_what_they_do_not_a_funding_quote(client, on, rt):
