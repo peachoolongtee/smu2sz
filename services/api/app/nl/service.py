@@ -55,7 +55,7 @@ from app.nl.offers import (
     what_if,
 )
 from app.nl.pipeline import Steps, committed_plan, package_offer, status_quo_offer, t
-from app.nl.rules import parse
+from app.nl.rules import parse, plan_reply
 from app.nl.sessions import SESSIONS, Session, SessionStore
 from app.nl.turn import Turn, ask
 from app.operations import Executor
@@ -278,7 +278,9 @@ def _parse(ctx: NlContext, text: str, backends: Sequence[clf.IntentBackend] | No
     pending_ask, s.pending_ask = s.pending_ask, None  # a question that asked which customer is finished by the very next turn or dropped
     if pending_ask is not None and ctx.owner_authenticated and (resumed := asking.resume_parse(ctx, pending_ask, text)) is not None:
         return resumed
-    if s.pending_clarification is not None:
+    # a reply that answers the waiting plan (a yes or a no, or a cancel that names a customer) is the plan's: it is not read as the
+    # choice a clarification asked for ("cancel Foshan" is not "Foshan")
+    if s.pending_clarification is not None and not (s.pending_plan is not None and plan_reply(text)):
         resolved = _resolve_clarification(ctx, text)
         if resolved is not None:
             return resolved
@@ -367,7 +369,9 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         return _correct(ctx, p, text)
     if llm and p.intent in (Intent.APPROVE, Intent.REJECT):  # the classifier can never decide an approval or confirm a plan
         return _consent_turn(ctx, p, "approval_llm", text)
-    if p.intent in (Intent.APPROVE, Intent.REJECT) and not llm and not _direct_command(ctx, text):
+    # a plain cancel of the session's waiting plan may name a customer ("cancel Foshan"): it can only drop the plan, never run anything
+    declines_plan = p.intent == Intent.REJECT and p.confirm_plan and s.pending_plan is not None
+    if p.intent in (Intent.APPROVE, Intent.REJECT) and not llm and not _direct_command(ctx, text, names_ok=declines_plan):
         return _not_a_direct_command(ctx, p)
     if "confirm_unclear" in p.matched and s.pending_plan is not None:
         return Turn(intent=Intent.AMBIGUOUS, awaiting=True, reply=t(
@@ -456,14 +460,15 @@ _PASTE_MARKS = re.compile(r"^\s*>|[:：]\s*\S|\b(forward(ed)?|attach(ed|ment)?|d
                           r"|转发|附件|粘贴|来自|发来|说[:：]?", re.IGNORECASE)
 
 
-def _direct_command(ctx: NlContext, text: str) -> bool:
+def _direct_command(ctx: NlContext, text: str, *, names_ok: bool = False) -> bool:
     """An approval, a decline or a "go ahead" counts only as the owner's own short instruction: one line, at most
     MAX_COMMAND_CHARS, naming no counterparty and carrying no mark of forwarded, attached or pasted content.
-    Anything longer may hold someone else's words, however it is formatted, so it decides nothing (fail closed)."""
+    Anything longer may hold someone else's words, however it is formatted, so it decides nothing (fail closed). `names_ok` lets a
+    decline of the waiting plan name a customer; everything else about it stays as strict."""
     body = text.strip()
     if "\n" in body or len(body) > MAX_COMMAND_CHARS or _PASTE_MARKS.search(body):
         return False
-    return not lx.find_counterparty(body, ctx.state())
+    return names_ok or not lx.find_counterparty(body, ctx.state())
 
 
 def _not_a_direct_command(ctx: NlContext, p: Parsed) -> Turn:

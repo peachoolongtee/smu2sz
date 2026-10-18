@@ -392,10 +392,13 @@ def resume_parse(ctx: NlContext, pending: Any, text: str) -> Parsed | None:
     else (a new question, a name the books do not have, two customers) is not an answer to it and is read as usual."""
     from app.nl.answers.metrics import Reading
     from app.nl.router.tools.common import resolve_customer
+    from app.nl.rules import plan_reply
 
     said = text.strip()
     if not said or len(said) > _SHORT_REPLY_CHARS or len(said.split()) > _SHORT_REPLY_WORDS:
         return None
+    if ctx.session.pending_plan is not None and plan_reply(said):
+        return None  # "cancel Foshan" / "no, Foshan" answers the plan that waits, not the question: the plan logic decides
     res = resolve_customer(Reading.of(ctx), said)
     if res.buyer_id is None:
         return None
