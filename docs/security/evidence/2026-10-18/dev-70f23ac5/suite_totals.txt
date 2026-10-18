@@ -1,0 +1,3 @@
+{'passed': 10674, 'failed': 0, 'skipped': 47, 'error': 0, 'xfailed': 0, 'deselected': 0}
+non-zero shards: 1
+  tests/__pycache__ exit=5 no tests ran in 0.61s
