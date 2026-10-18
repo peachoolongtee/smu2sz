@@ -141,15 +141,36 @@ def test_a_lender_agreement_pasted_as_text_is_blocked_when_the_registry_does_not
     from app.domain.fixtures import contract_fixture_bytes
 
     text = contract_fixture_bytes("MB_CREDIT_LINE_AGREEMENT")[1].decode("utf-8")
-    d = _post(client, kind="LENDER_AGREEMENT", counterparty_id="BANK-1", text=text)
+    edited = text.replace("This Agreement is made", "This agreement is made")  # one letter: no longer the demo document
+    d = _post(client, kind="LENDER_AGREEMENT", counterparty_id="BANK-1", text=edited)
     assert [f["kind"] for f in d["flags"]] == ["PARTY_UNCHECKED"] and d["can_confirm"] is False
     c = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]}).json()
     assert c["result"]["status"] == "REFUSED"
+    # the unchanged demo document under the other lender: its names are the bank's, not the platform's
+    other = _post(client, kind="LENDER_AGREEMENT", counterparty_id="PLATFORM-1", text=text)
+    assert [f["kind"] for f in other["flags"]] == ["PARTY_UNCHECKED"] and other["can_confirm"] is False
+
+
+@pytest.mark.parametrize(("fixture_id", "lender"), [("MB_CREDIT_LINE_AGREEMENT", "BANK-1"),
+                                                     ("GBR_INVOICE_FINANCING_AGREEMENT", "PLATFORM-1")])
+@pytest.mark.parametrize("fmt", ["md", "docx", "pdf"])
+def test_a_demo_lender_agreement_uploaded_unchanged_under_its_own_lender_is_checked_as_the_demo_pick(client, fixture_id, lender,
+                                                                                                    fmt):
+    """The Documents page reads the demo files by upload only: the unchanged file, under its own lender, gets the names the
+    demo list's pick gets (fixtures/contracts `party_names`), so it can be confirmed."""
+    import base64
+
+    from app.domain.fixtures import contract_fixture_bytes
+
+    name, data = contract_fixture_bytes(fixture_id, None if fmt == "md" else fmt)
+    d = _post(client, kind="LENDER_AGREEMENT", counterparty_id=lender, filename=name,
+              content_base64=base64.b64encode(data).decode())
+    assert d["flags"] == [] and d["can_confirm"] is True
 
 
 def test_the_demo_lender_names_come_only_from_the_fixture_the_server_picks(client):
-    """`party_names` in fixtures/contracts/contracts.yaml is read only for a fixture_id post; a request cannot carry names of
-    its own, and the same text posted as pasted text or an upload gets no such names."""
+    """`party_names` in fixtures/contracts/contracts.yaml is read for a fixture_id post, or for the unchanged demo file under
+    its own lender (above); a request cannot carry names of its own."""
     ok = _post(client, fixture_id="MB_CREDIT_LINE_AGREEMENT")
     assert ok["flags"] == [] and ok["can_confirm"] is True
     r = client.post("/documents", json={"kind": "LENDER_AGREEMENT", "counterparty_id": "BANK-1", "text": "x",
