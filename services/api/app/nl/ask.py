@@ -1,7 +1,9 @@
 """ASK_BOOKS: an owner's question about the books, answered read-only (the question gate in app/nl/rules.py routes it here).
 
-Nothing here proposes a plan, compiles an offer, queues or executes an operation, or writes to the operations log or the
-security log: every branch reads the store and the books and writes words. The exceptions are a Tier-3 request put as a
+Nothing here compiles an offer, queues or executes an operation, or writes to the operations log or the
+security log: every branch reads the store and the books and writes words. The exceptions are: an answer that offers FLOW's funding
+plan ("Can I pay everyone this month?", no) saves it as the pending plan "fund the cash gap" saves, for the owner's "go ahead"
+(`_offer_plan`; still nothing runs here); a Tier-3 request put as a
 question ("sign a personal guarantee?", "should we pledge the equipment?"): it goes to the executor like the same words
 without the mark, so it is refused, logged and raises its security event, for every caller (ASK-1;
 lexicon.tier3_is_information); and a router response that trips the canary, which is discarded and raises a DATA_EXTRACTION
@@ -67,6 +69,38 @@ def _reply_text(reply: Any, lang: str) -> str | None:
         if isinstance(v, str) and v.strip():
             return v.strip()
     return None
+
+
+def _extra(reply: Any) -> dict[str, Any]:
+    v = reply.get("extra") if isinstance(reply, dict) else getattr(reply, "extra", None)
+    return v if isinstance(v, dict) else {}
+
+
+def _offer_plan(ctx: NlContext, turn: Turn) -> None:
+    """An answer that offers FLOW's funding plan ("Can I pay everyone this month?", no) saves it the way "fund the cash gap" does, so that
+    a later "go ahead" runs it, or queues it for the owner's approval, down the same path (`service._confirm` -> `plans.send`: the
+    executor, the mandate checks, the approval rules). This builds the very plan `funding.fund_gap(execute=False)` proposes, with the
+    same pending plan, steps and verdict; it executes nothing and adds no path of its own.
+    It never replaces another kind of plan that waits for its go-ahead (the reminder then says so), and when no plan can be stored
+    (the cheapest committed plan cannot run today) the reply says why instead of promising a go-ahead."""
+    from app.nl.funding import fund_gap
+
+    waiting = ctx.session.pending_plan
+    if waiting is not None and waiting.intent != Intent.FUND_GAP:
+        return
+    try:
+        proposed = fund_gap(ctx, Slots(), execute=False)
+        if proposed.pending_clarification is not None:  # more than one gap ahead: the plan covers them all
+            proposed = fund_gap(ctx, Slots(gap_index=99), execute=False)
+    except EngineError:
+        return
+    if proposed.pending is None or not proposed.awaiting:
+        if proposed.reply and proposed.verdict is not None:  # the plan could not be stored: the fund-gap turn says why
+            turn.reply = f"{turn.reply}{'' if ctx.lang == 'zh' else ' '}{proposed.reply}"
+        return
+    turn.reply = turn.reply + t(ctx, " Nothing has run yet: reply 'go ahead' to run this plan, or 'cancel' to drop it.",
+                                "目前尚未执行任何操作：回复“执行”以运行该方案，或回复“取消”放弃。")
+    turn.pending, turn.awaiting, turn.plan, turn.verdict = proposed.pending, True, proposed.plan, proposed.verdict
 
 
 def _metric_ids(reply: Any) -> list[str]:
@@ -474,6 +508,9 @@ def _ask_books(ctx: NlContext, p: Parsed, text: str) -> Turn:
         from app.nl import answer_card
 
         text = _reply_text(got, ctx.lang) or ""
-        return Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": topic, "metric_ids": _metric_ids(got)}},
+        turn = Turn(intent=Intent.ASK_BOOKS, reply=text, facts={"ask": {"topic": topic, "metric_ids": _metric_ids(got)}},
                     card=answer_card.from_reply(got, ctx.lang, ctx.state()))  # the card's figures and links; laid out in the response
+        if _extra(got).get("offers_plan"):
+            _offer_plan(ctx, turn)  # "can I pay everyone?" answered no: FLOW's plan is saved for the owner's "go ahead"
+        return turn
     return _fallback(ctx, topic, slots, text, use_router=NO_ROUTER not in p.matched)
