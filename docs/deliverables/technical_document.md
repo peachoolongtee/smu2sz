@@ -22,7 +22,8 @@ payment terms and arranges funding within a mandate the owner has signed. Its de
 model reads and routes; deterministic code computes every figure and enforces every limit.** That is what lets an owner
 trust an AI agent near money: no model output alone can price a deal, create a commitment, borrow or move money. In the
 demo, the tests and every offline result a deterministic rules grammar does the reading; a model is called only in live
-mode, which is outside every security certification.
+mode, which is outside every security certification. Section 02 shows the AI at work in a live run on the real model
+backend, kept apart from the certified offline evidence.
 
 - **Who it is for.** The owner of a supplier with roughly 20 to 100 staff, 10 to 40 business buyers, one bank credit line
   and no finance team, who sells on credit to buyers larger than itself.
@@ -58,7 +59,7 @@ mode, which is outside every security certification.
 | --- | --- |
 | **Task Completion (40%)** | The supplier's journey and Table 2 (01); Table 1; "Task completion" and Table 5 (03); Appendices C and D |
 | **Security & Compliance (30%)** | Table 6, the four threats and their controls; Figure 6, the tiers; Table 7, attack results; Table 8, readiness (all 04) |
-| **Innovation & Interaction (30%)** | This opening; "What is new" (01); Table 4, the three model-assisted capabilities, and the dialogue (03); Appendix K, the screens |
+| **Innovation & Interaction (30%)** | This opening; "What is new" (01); "The AI at work: a live run on the real model backend" (02); Table 4, the three model-assisted capabilities, and the dialogue (03); Appendix K, the screens |
 | **Bonus (0–5)** | Not claimed: FLOW is a local simulation (Table 8) |
 
 **Table 1. FLOW at a glance. Engine and agent figures: dev `975e082f` (17 Oct 2026), re-run offline on `571ea64f` (18 Oct)
@@ -226,6 +227,25 @@ or moves money must pass. Five roles divide the work (Appendix H): the **compile
 typed obligations tied to source words and sees no books; the **chat front** reads the owner's requests with rules first; the
 **verifier** projects cash, tests the mandate and covenants and never reads free text; the **negotiator** prices counters and
 fills outbound templates; the **treasurer** finds the cheapest funding plan and executes typed operations through the gates.
+
+#### The AI at work: a live run on the real model backend
+
+This run shows the model doing its work on inputs it has never seen. It is separate from the certified offline evidence,
+which uses the rules grammar and recorded readings, and it is not part of any certification.
+
+- **Execution mode.** `pnpm demo --live-llm` on loopback: the real engine with a live model, redaction forced on, on the demo
+  books. Live mode is outside every security certification.
+- **Provider.** DeepSeek, `deepseek-flash` alias through the OpenAI-compatible API (the underlying model version is not
+  recorded).
+- **Inputs.** A new Chinese buyer message and a new contract, written for this run and in no fixture, recording or tuning set.
+- **The path.** (1) The live model reads each into typed terms, every term with its quoted source span; code drops any term
+  whose quote is not in the text. (2) Deterministic code evaluates the terms: the cash projection, the funding price, the
+  mandate and the verdict, with its formula and figures. (3) The permission gate: the executor computes the tier, anything
+  outside Tier 1 waits for the owner, and nothing the model returned can act on its own.
+- **Date and outcome.** {LIVE_DEMO_RESULT}
+
+The existing live evidence stays as it was: the 18 Oct stress test of the question router and the 1 Oct buyer-message run
+(section 03), each a single run.
 
 <!-- figure: figures/fig8-system-architecture.png | Figure 3. FLOW's architecture. A model assists in three places only (reading documents and buyer messages, classifying a chat request the rules miss, routing an owner's question to read-only tools); in live mode it gets text with identifying numbers redacted, and code validates its typed output. Deterministic code computes every figure; every typed operation passes the signed mandate and the executor, which records each outcome in a hash-chained log. Buyer, lenders and bank feed are simulated. Build 571ea64f. | page -->
 
@@ -677,7 +697,7 @@ and the evidence behind it. Paths are repository-relative.
 | Prompt injection | Table 6, fourth row; 04 "Prompt injection: architecture first, detection second" | `services/api/evals/security/attacks.yaml`; `services/api/app/security/attacks.py`; `services/api/tests/verifier/test_invariants.py` |
 | Serious security failures; assurance and readiness | Table 7, Figure 8; 04 "Assurance and certification"; Table 8 | `docs/security/CERTIFICATIONS.md`; `docs/security/FINDINGS_REGISTER.md`; `docs/security/RELEASE_GATE.md` |
 | **Innovation & Interaction (30%)**: scenario novelty and real-world value | Opening; 01 "Core value and innovation", "What is new" | Table L1; the demo video |
-| AI contribution | Opening; Table 4 (03); Figure 3 | `services/api/app/compiler/`; `services/api/app/nl/router/` |
+| AI contribution | Opening; 02 "The AI at work: a live run on the real model backend"; Table 4 (03); Figure 3 | `services/api/app/compiler/`; `services/api/app/nl/router/` |
 | Dialogue efficiency, clarification, correction, fallback | 03 "Innovation & Interaction"; Appendix G | `services/api/tests/nl/`; `services/api/scripts/owner_questions_baseline.py`, `owner_questions_general.py` |
 | **Bonus (0–5)**: advanced topic or real-world deployment | Not claimed: FLOW is a local simulation (05 "Production deployment"; Table 8) | — |
 | 01 Problem, target users and selected topic | Section 01, first prompt | Section 01's tables |
