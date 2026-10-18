@@ -1,6 +1,7 @@
 # Figures for the technical document
 
-Eleven PNG figures and seven product screenshots for FLOW's final technical document. Each figure is 2400 px wide (8 in at
+PNG figures and product screenshots for FLOW's final technical document (the 18 Oct 2026 refresh adds `fig11a`,
+`fig11b`, the three `fig-eval-*` panels and five frames retaken from `int/final3`; `work/figures.md` maps each to its place). Each figure is 2400 px wide (8 in at
 300 dpi) on white. Each has a matplotlib source in `src/` that regenerates it. The style lives in `src/flowstyle.py`:
 
 - **Palette:** the FLOW brand from `apps/web/app/globals.css`. Brand blue `#0368e9`, ink `#24324a`, purple `#9252dc`,
