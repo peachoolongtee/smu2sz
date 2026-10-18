@@ -31,7 +31,10 @@ uv run --no-project --with matplotlib --with pillow python fig1_architecture.py
 | `fig5-heldout-results.png` | The compiler's held-out results, each labelled as unseen or tuned on: no misread message was accepted without the owner after ADR-0005. | `src/fig5_heldout_results.py` | First run and live DeepSeek rows: `services/api/evals/accuracy_summary.md` (1 Oct 2026, 389cfd9). Today rows and form baseline: `../evidence/EVIDENCE_PACK.md` section 1 (dev 975e082f, 17 Oct 2026) |
 | `fig6-contract-reading.png` | Reading Chinese contracts, by format: 98% on the tuned batch, 75% on the held-out batch, 86% after the fixes, and nothing from scans or photos, which have no OCR. | `src/fig6_contract_reading.py` | Scoring logs of 16–17 Oct 2026 (`b2fix/b1-redact.log`, `b2fix/b2-redact.log`, `contract-cn2/mismatches.csv` = `b2fix/b2-base.log`). These are not in the repo, so the script quotes the per-format rows. |
 | `fig7-security-results.png` | The attack catalogue: 279 stored cases by class (128 API, 151 chat), none violating the defined harm oracles; all reached their path, 120 of 128 API cases stopped by the named control. | `src/fig7_security_results.py` | `services/api/evals/security/latest_report.json` (regenerated on the round-five batch, 18 Oct 2026) |
-| `fig-eval-classes.png` | FLOW's accuracy results grouped by evidence class: unseen held-out first runs, the same sets after tuning on their failures, recorded model replays and live provider calls, each with what its own oracle scores wrong. | `src/fig_eval_classes.py` | Values printed in the script: `services/api/evals/heldout3_report.md`, `heldout2_report.md`, `heldout3_live_deepseek_report.md`; offline re-runs on `571ea64f`, 18 Oct 2026 (`../submission/work/eval/offline_reruns_20261018.json`); contract field scores (`../submission/work/eval/contracts_*_fields.json`); the 18 Oct live router grades (`../submission/work/eval/live_router_outcomes.json`) |
+| `fig-eval-buyer.png` | Buyer messages: how often FLOW's verdict is the labelled one, on the unseen first runs, after tuning on their misses, against today's policy and with a live model, each with its denominator and its wrong autonomous accepts (6 in the first runs, 0 of 3 today). | `src/fig_eval_panels.py` | `services/api/evals/heldout3_report.md`, `heldout2_report.md`, `heldout3_live_deepseek_report.md` (1 Oct 2026); `../submission/work/eval/offline_reruns_20261018.json` (`571ea64f`, 18 Oct) |
+| `fig-eval-contracts.png` | Contract fields: on the unseen batch 2, the first reading got 75% of fields right on the 17 text-layer contracts and 45% over all 30 (13 scans refused); decision-critical fields split into right, missing and wrong; the tuned sets are hatched. | `src/fig_eval_panels.py` | `../submission/work/evaluation.md` §5 (recorded DeepSeek readings re-scored with `eval_contracts.py score`; the documents and keys are outside the repo) |
+| `fig-eval-questions.png` | Owner questions: the bank answers 228 of 427 turns the books can answer (0 wrong); everyday wording 326/345 (held-out part 127/142); the live router got 22 fully right of the 63 questions that reached it, 22 of the 33 it answered. | `src/fig_eval_panels.py` | `offline_reruns_20261018.json`; `../submission/work/eval/live_router_outcomes.json` |
+| `fig-eval-classes.png` | Superseded by the three panels above (18 Oct 2026), which do not put different oracles on one axis. FLOW's accuracy results grouped by evidence class: unseen held-out first runs, the same sets after tuning on their failures, recorded model replays and live provider calls, each with what its own oracle scores wrong. | `src/fig_eval_classes.py` | Values printed in the script: `services/api/evals/heldout3_report.md`, `heldout2_report.md`, `heldout3_live_deepseek_report.md`; offline re-runs on `571ea64f`, 18 Oct 2026 (`../submission/work/eval/offline_reruns_20261018.json`); contract field scores (`../submission/work/eval/contracts_*_fields.json`); the 18 Oct live router grades (`../submission/work/eval/live_router_outcomes.json`) |
 
 **Alt text, `fig-eval-classes.png`.** A horizontal bar chart in four labelled groups. Unseen held-out, first run (blue):
 buyer messages held-out 3, 52% of verdicts right (33 of 63), with 4 of 8 autonomous accepts wrong; held-out 2, 60% (28 of
@@ -143,6 +146,33 @@ helper shows a complete example; the financial chart of `docs/sub-financial-audi
   ¥586,964.01, ¥3,035.99; B1 ¥111,964.01, ¥386,964.01, ¥3,035.99; B2 ¥300,000.00, ¥384,794.64, ¥5,205.36. Day 62 =
   ¥590,000.00 − ¥200,000.00 payroll (B1, B2) − cost; B2's ¥2,169.37 overrun is ¥387.18 of extra line interest and ¥1,782.19
   for the cure.
+- **fig-eval-buyer.png.** Horizontal bars in four labelled groups, each bar a share of its own row's labelled messages,
+  split into "right" (solid blue, or hatched when the set was tuned on, with a TUNED tag) and "other verdict" (white). The
+  words under each bar repeat the counts; a column gives the share and another the wrong autonomous accepts. A footnote
+  defines both measures and says the panel is not comparable with the other two.
+
+  *Text equivalent.* Unseen first runs, rules path, 1 Oct 2026: held-out 3, 33 of 63 right (52%), 4 of 8 autonomous accepts
+  wrong; held-out 2, 28 of 47 (60%), 2 wrong accepts. After tuning on their misses (571ea64f, 18 Oct): held-out 3, 44 of 63
+  (70%), 0 of 1 accept wrong; held-out 2, 38 of 47 (81%), 0 of 2. Against today's policy, reading only: held-out 3, 50 of 63
+  (79%); held-out 2, 44 of 47 (94%). Live DeepSeek, 1 Oct: held-out 3, 42 of 63 (67%), no wrong accepts.
+- **fig-eval-contracts.png.** Horizontal stacked bars in two groups, each bar split into right (blue; hatched on tuned
+  sets, tagged TUNED), missing (white), wrong (amber) and refused (light grey), with the counts written under each bar, the
+  share right and the number stated wrongly beside it, and a footnote defining the terms.
+
+  *Text equivalent.* Batch 2, first reading, unseen, recorded DeepSeek readings: all scored fields on the 17 text-layer
+  contracts, 215 right, 58 missing, 12 wrong of 285 (75%); over all 30 contracts, the same plus 189 fields of the 13 scans
+  and photos refused before reading, 215 of 474 (45%); decision-critical fields, 178 right, 45 missing, 11 wrong of 234
+  (76%), plus 18 payment-stage items matching no key item. Tuned sets, decision-critical fields: batch 2 after five fixes,
+  198 right, 34 missing, 2 wrong of 234 (85%), plus 18 stage items; batch 1, 412 right, 12 missing, 0 wrong of 424 (97%).
+- **fig-eval-questions.png.** Horizontal stacked bars in two groups, each split into right (blue; hatched when tuned),
+  partly (light blue), declined (white), wrong (amber) and rejected (light grey), with the counts under each bar, the share
+  right and the wrong count beside it, and a footnote defining the terms.
+
+  *Text equivalent.* Offline, rules path, 571ea64f, 18 Oct 2026: owner-question bank (tuned), 427 turns the books can
+  answer, 228 answered (53%), 45 partly, 154 declined, 0 wrong; everyday wording, all 345 phrasings (mostly tuned), 326 right
+  (94%), 15 missed, 4 wrong topic; its held-out part, 127 of 142 right (89%), 12 missed, 3 wrong topic. Live question
+  router, DeepSeek, 18 Oct, one unblinded grader: of the 63 questions that reached it, 22 fully right (35%), 10 partly, 1
+  wrong topic, 29 "cannot answer yet", 1 rejected; of the 33 it answered, 22 right (67%), 10 partly, 1 wrong.
 
 ## Product screenshots (`screens/`)
 
