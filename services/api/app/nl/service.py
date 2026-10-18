@@ -255,6 +255,23 @@ def _about_the_business(text: str) -> bool:
     return bool(cues(canon(text)))
 
 
+# ADR-0015, round six: the plain read-only intents. When the classifier labels an owner QUESTION about the business with one of these
+# (it returns SHOW_STATUS for "what's my biggest risk right now"), the owner would get a raw status dump instead of an answer, so in live
+# mode with the router on the question goes to ASK_BOOKS (answer layer, then the router). Reads only: no action intent is ever listed here
+# (FUND_GAP, ACCELERATE_RECEIPT, EVALUATE_OFFER, NEGOTIATE, REPAY_FACILITY, APPROVE, REJECT, WHAT_IF, EXPLAIN, RECONCILE, CAPEX,
+# BORROWER_FILE, RECORD_FACT, COUNTERPARTY_MESSAGE stay as the classifier said). Today the classifier's vocabulary can return only
+# SHOW_STATUS from this set; the rest guard a wider vocabulary.
+_CLASSIFIER_READ_INTENTS = frozenset({Intent.SHOW_STATUS, Intent.SHOW_ALERTS, Intent.SHOW_RATIOS, Intent.CHANGES,
+                                      Intent.COMPARE_FINANCING, Intent.SHOW_DEAL})
+
+
+def _router_reads_enabled() -> bool:
+    from app.config import get_settings
+
+    s = get_settings()
+    return s.features.ask_router and s.llm_mode == "live"
+
+
 def _parse(ctx: NlContext, text: str, backends: Sequence[clf.IntentBackend] | None) -> Parsed:
     s = ctx.session
     state = ctx.state()
@@ -291,6 +308,11 @@ def _parse(ctx: NlContext, text: str, backends: Sequence[clf.IntentBackend] | No
             return Parsed(intent=Intent.ASK_BOOKS, slots=Slots(question=text, execute_now=False), source="question",
                           matched=["ask", "ask:unread", *([asking.NO_ROUTER] if canary_tripped else [])])
         return Parsed(intent=Intent.OUT_OF_SCOPE, source="fallback")
+    # A plain read the classifier gave to an owner question (live mode, router on, no canary): the books are asked instead of the status dump.
+    if Intent(got.result.intent) in _CLASSIFIER_READ_INTENTS and not canary_tripped and _router_reads_enabled() \
+            and lx.is_question(text) and _about_the_business(text):
+        return Parsed(intent=Intent.ASK_BOOKS, slots=Slots(question=text, execute_now=False), source="question",
+                      matched=["ask", "ask:unread"])
     ls = got.result.slots
     cps = lx.find_counterparty(ls.counterparty_name or "", state) if ls.counterparty_name else []
     from app.domain.fixtures import load_offers

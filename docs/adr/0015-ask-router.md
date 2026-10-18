@@ -140,3 +140,37 @@ typed placeholders (`{lowest_cash}`, `{first_breach_day}`) drawn from a closed l
 placeholder belongs to the tools it called, fills them, and runs the result through the egress scan. That would give more
 natural wording for compound questions while keeping figures out of the model, at the cost of free text that is shown, so it
 needs its own review. Not part of this decision.
+
+## Round six, 18 Oct 2026: classifier read intents in live mode
+
+**What changed.** At the end of the classifier step in `service._parse`, an owner question that the classifier labelled with a plain
+read-only intent now goes to ASK_BOOKS (the same `Parsed` the classifier fallback in section 4 returns: the answer layer answers
+first, then the router, then the honest "cannot answer yet"). One branch, in `app/nl/service.py` (`_CLASSIFIER_READ_INTENTS`,
+`_router_reads_enabled`).
+
+**Why.** A live stress test showed the classifier labelling many owner questions as SHOW_STATUS ("what's my biggest risk right
+now", "what should I worry about this week", "Have all expected payments arrived?", "How long can we keep paying the bills?"). The
+status read answers none of them: the owner got the engine's cash dump instead of an answer.
+
+**The conditions (all must hold).**
+
+- `FEATURE_ASK_ROUTER` is on and `LLM_MODE` is `live`;
+- the classifier returned a reading at or above the confidence floor whose intent is in the read set;
+- `lexicon.is_question(text)` and the text is about the business (`_about_the_business`), the tests the fallback uses; a request put
+  as a question ("can you fund the gap?") is not a question by that test, so it keeps the classifier's action reading;
+- no backend's output was rejected for a canary trip on this text.
+
+**The read set** (explicit; reads only): SHOW_STATUS, SHOW_ALERTS, SHOW_RATIOS, CHANGES, COMPARE_FINANCING, SHOW_DEAL. The classifier's
+vocabulary (`LlmIntent`) can return only SHOW_STATUS from this set today; the others guard a wider vocabulary. Never in the set, and
+unchanged when the classifier returns them: FUND_GAP, ACCELERATE_RECEIPT, EVALUATE_OFFER, NEGOTIATE, REPAY_FACILITY, WHAT_IF, EXPLAIN,
+RECONCILE, CAPEX, BORROWER_FILE, RECORD_FACT, APPROVE, REJECT and any other intent that proposes, queues, records or runs.
+
+**What is untouched.** The rules and every security check in them run first (a Tier-3 request put as a question is refused, logged
+and raises its event before the classifier is asked: ASK-1). The classifier still runs, its canary check still records
+DATA_EXTRACTION, and a canary trip still blocks the router (RT-L3). The router's validation, fixed reject codes (RT-L1) and canary
+event (RT-L2) are as before; a rejected route changes nothing and the owner gets the fixed honest reply. Offline and cache mode
+(`pnpm demo`, the certified build) and the flag off behave exactly as before: the classifier's reading stands.
+
+**Known limits.** The branch reuses `is_question` and the business cues, so a question those do not see stays as the classifier read
+it (for example 我们的钱还能用多久 has no question word or mark, and 还有哪些决策没完成 names no topic the cues know). Widening either is
+a lexicon change, not part of this round. Tests: `tests/nl/test_ask_router_reads.py`.
