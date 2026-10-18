@@ -12,6 +12,7 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 18 Oct | `6d2b6941` (dev: batches 7 to 10; round five not merged) | everything since `85309b63` | **CONDITIONAL**: certified for scope S only with `FEATURE_CONTRACT_TERMS` off (CT-1, CT-2 open) |
 | 17 Oct | `85309b63` (dev: batches 5 and 6, code of `3f0ed53e`; **the assessed build**) | everything since `29fa0ea2` | **CERTIFIED** for scope S; ASK-1, ASK-2, REG-1 to REG-7 disclosed |
 | 17 Oct | `29fa0ea2` (dev: round four, the redaction fix, self-assessment v3) | everything since `0fde33fd` | **CERTIFIED** for scope S; no test exception |
 | 17 Oct | `0fde33fd` (dev: SEC-08 executor check, OUT-1b, RT-2, RT-1, the 719c9dcf records) | the four merged branches | **CERTIFIED** for scope S; one test exception (#161, stale digest pin) |
@@ -47,6 +48,36 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
   `app.api.decide.plan`, so it ran the real (runnable) plan and failed without testing the guard. Patched at the new site it passes, and
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
+
+## `6d2b6941` (dev): CONDITIONAL, 18 Oct
+
+Batches 7 to 10 since `85309b63`:
+- ADR-0014 contract terms, an engine change;
+- contracts on Deals, file-first upload and record a payment;
+- the owner-question router (ADR-0015, proposed, `FEATURE_ASK_ROUTER`), the answer cards and the question gate;
+- the strategy warm-up worker;
+- fixes from the demo recording.
+
+Round five (`sec/batch-r5`, `sec/router-guards`) is **not** in this commit. Evidence: `evidence/2026-10-18/dev-6d2b6941/`.
+
+Every automated check passes:
+
+| Check | Result |
+| --- | --- |
+| Full suite | 10,375 passed, 0 failed |
+| Catalogue | 0 harm; 120 of 128 API cases stopped by the control they name |
+| Sweep | 0 policy violations |
+| Language boundary | 0 wrong-and-material |
+| PostgreSQL | 3 of 3 |
+| Dependency scans | clean |
+| Mock browser suite | 479 passed, 77 skipped. A first run failed because the Security Lead's own test run had taken the port; it was re-run on a free one |
+| CSP in a browser | 0 violations |
+
+The code reviews found nothing Critical or High: the router is owner-only and read-only, record a payment is gated, and no route was added. They also found these, open in this commit:
+- **Medium:** CT-1 and CT-2 (contract terms can be set up with no certain end and no bound, and switch off reserve alerts), and ASK-1 (an agent-key Tier-3 request phrased as a question leaves no trail).
+- **Low:** ASK-2 and ASK-2b, CT-3 to CT-7, REG-1 to REG-6, RT-L1 to RT-L3, WARM-1, and SEC-29's owner path.
+
+**Verdict: CONDITIONAL.** Certified for scope S **only with `FEATURE_CONTRACT_TERMS` off**; `pnpm demo` turns it on, so demonstrating this commit means turning that flag off. Merge `sec/batch-r5` with `sec/router-guards` and certify that merge commit as the assessed build. The self-assessment v3 stays on `85309b63` until then.
 
 ## `85309b63` (dev): CERTIFIED for scope S, 17 Oct: the assessed build
 

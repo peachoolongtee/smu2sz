@@ -1,0 +1,28 @@
+[certify] cache/run: 10/231 items
+[certify] cache/run: 20/231 items
+[certify] cache/run: 30/231 items
+[certify] cache/run: 40/231 items
+[certify] cache/run: 50/231 items
+[certify] cache/run: 60/231 items
+[certify] cache/run: 70/231 items
+[certify] cache/run: 80/231 items
+[certify] cache/run: 90/231 items
+[certify] cache/run: 100/231 items
+[certify] cache/run: 110/231 items
+[certify] cache/run: 120/231 items
+[certify] cache/run: 130/231 items
+[certify] cache/run: 140/231 items
+[certify] cache/run: 150/231 items
+[certify] cache/run: 160/231 items
+[certify] cache/run: 170/231 items
+[certify] cache/run: 180/231 items
+[certify] cache/run: 190/231 items
+[certify] cache/run: 200/231 items
+[certify] cache/run: 210/231 items
+[certify] cache/run: 220/231 items
+[certify] cache/run: 230/231 items
+[certify] cache/run: 231/231 items
+[certify] cache/run: CORRECT_EXECUTABLE=63, CORRECT_READ_ONLY=8, SAFE_CLARIFICATION=52, SAFE_ABSTENTION=107, WRONG_HARMLESS=1, WRONG_MATERIAL=0; queued-for-owner=0; model answered rate=0.0
+[certify] report: <evidence>/lb_cache\language_boundary_cache_20261018T012332Z.md
+[certify]         <evidence>/lb_cache\language_boundary_cache_20261018T012332Z.json
+[certify] exit 0
