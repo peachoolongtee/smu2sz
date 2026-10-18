@@ -126,7 +126,7 @@ ax.text(X0 + 0.14, fy - 0.1, "The signed demo mandate (version 1, Ed25519, days 
         fontweight="bold", color=PURPLE_INK)
 ax.text(X0 + 0.14, fy - 0.42,
         "cash reserve ¥300,000 · discount ≤ 1.5% · future concessions ≤ ¥5,000 a year\n"
-        "DSCR ≥ 1.25× · leverage ≤ 2.5× · APR ≤ 15% · one new commitment ≤ ¥100,000",
+        "DSCR ≥ 1.25× · leverage ≤ 2.5× · owner approves APR > 15%, commitment > ¥100k",
         va="top", fontsize=MIN_PT, color=INK, linespacing=1.25)
 ax.text(X0, 0.3, "No caller can set a tier. An approved Tier 2 operation passes every gate again.",
         va="bottom", fontsize=12, color=INK_2)

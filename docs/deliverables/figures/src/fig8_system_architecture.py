@@ -14,8 +14,8 @@ services/api:
        the read-only tools of the closed catalogue with typed slots; the tools (code) write every word and figure.
 - Deterministic: app/financial (trajectory), app/covenants, app/health; app/verifier (verdict, counters); app/funding/router.py;
   app/egress/guard.py (outbound text, POST /negotiate and the outbound message, app/api/decide.py and outbound.py);
-  app/mandate (Ed25519-signed, pinned to the owner key); app/operations/executor.py (tiers, gates, the only writer of the
-  books); app/operations/log.py + app/persistence/chain.py (hash-chained log).
+  app/mandate (Ed25519-signed, pinned to the owner key); app/operations/executor.py (tiers and gates for every typed
+  operation; the clock, books setup and adding a customer write outside it, each logged, and a demo reset erases the books); app/operations/log.py + app/persistence/chain.py (hash-chained log).
 - Simulated: the buyer (app/counterparties, deterministic kernel, or the owner pastes a real buyer's words), the lenders and
   facilities (effects inside the executor) and the bank feed (RECEIVE_PAYMENT as SYSTEM; app/api/demo_bank.py in demo mode).
 - Storage: app/persistence: SqlLedgerStore (PostgreSQL via Docker or Supabase with RLS; SQLite locally) or InMemoryLedgerStore.
@@ -24,11 +24,13 @@ services/api:
 from matplotlib import patheffects as pe
 from matplotlib.patches import FancyBboxPatch, Rectangle
 
-from flowstyle import (AMBER, AMBER_INK, AMBER_SOFT, BLUE, BLUE_SOFT, BUILD, GREY, GREY_HATCH, GREY_SOFT, INK, MIN_PT,
+from flowstyle import (AMBER, AMBER_INK, AMBER_SOFT, BLUE, BLUE_SOFT, BUILD, GREY, GREY_HATCH, GREY_SOFT, INK, INK_2, MIN_PT,
                        PURPLE, PURPLE_SOFT, WHITE, arrow, box, canvas, kbox, save, stamp)
 
 H = 11.74
-fig, ax = canvas(H)
+FOOT = 0.66  # room below y = 0 for the note on writes outside the executor
+fig, ax = canvas(H + FOOT)
+ax.set_ylim(-FOOT, H)  # one data unit is still one inch
 W, G = 1.765, 0.1
 X = [0.3 + i * (W + G) for i in range(4)]  # four columns
 CX = [x + W / 2 for x in X]
@@ -69,7 +71,7 @@ CZ0, CZ1 = 4.75, 6.7
 PZ0, PZ1 = 2.3, 4.1
 zone(MZ0, MZ1, "Model-assisted", "sees redacted text only", AMBER_INK)
 zone(CZ0, CZ1, "Deterministic core", "computes every figure", BLUE, at="bottom-right")
-zone(PZ0, PZ1, "Action path", "only the executor writes", INK, at="top-left")
+zone(PZ0, PZ1, "Action path", "every typed operation", INK, at="top-left")
 
 # model row: router, classifier, compiler, backend
 MY0, MY1 = 7.32, 8.88
@@ -101,9 +103,9 @@ PY0, PY1 = 2.5, 3.78
 box(ax, X[0], PY0, W, PY1 - PY0, "Egress guard", "template text;\nblocks protected\nfigures", fill=BLUE_SOFT, edge=BLUE,
     **T)
 kbox(ax, X[1], PY0, W, PY1 - PY0, "Signed\nmandate", "Ed25519 · limits\n3 tiers", "owner", **T)
-box(ax, X[2], PY0, W, PY1 - PY0, "Executor", "tiers and gates,\nre-verification;\nthe only writer", fill=WHITE, edge=INK,
+box(ax, X[2], PY0, W, PY1 - PY0, "Executor", "every typed\noperation: tiers,\ngates, re-checks", fill=WHITE, edge=INK,
     lw=2.6, **T)
-box(ax, X[3], PY0, W, PY1 - PY0 - 0.08, "Hash-chained\nlog", "every outcome,\nrefusals too", fill=GREY_SOFT, edge=INK,
+box(ax, X[3], PY0, W, PY1 - PY0 - 0.08, "Hash-chained\nlog", "every executor\noutcome", fill=GREY_SOFT, edge=INK,
     **T)
 
 # bottom: simulated lenders, storage
@@ -170,6 +172,9 @@ ax.plot([3.4, 3.74], [LY[1], LY[1]], color=INK, lw=2.2, ls=(0, (6, 3)))
 ax.text(3.84, LY[1], "trust boundary", va="center", fontsize=MIN_PT, color=INK)
 ax.plot([5.25, 5.59], [LY[1], LY[1]], color=AMBER, lw=1.8, ls=(0, (3, 2)))
 ax.text(5.69, LY[1], "redacted text to model", va="center", fontsize=MIN_PT, color=INK)
+ax.text(0.3, -0.36, "Outside the executor, each logged: the clock, books setup, a new customer.\n"
+        "A demo reset (demo mode only) erases the books and the log.", va="bottom", fontsize=12, color=INK_2,
+        linespacing=1.2)
 stamp(fig, f"Checked against the code on {BUILD} · synthetic data, no real money", y_in=0.03)
 
 save(fig, "fig8-system-architecture.png")

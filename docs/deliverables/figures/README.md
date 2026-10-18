@@ -43,7 +43,7 @@ of 285), 12 wrong values and 18 stage items matching no key item; batch 2 after 
 (hatched, tuned). Live DeepSeek calls (amber): held-out 3 on 1 Oct, 67% (42 of 63), no wrong accepts; Ask router answers
 on 18 Oct, 67% right (22 of 33), 1 wrong and 10 partial. A note says each bar is a share of its own row's denominator and
 rows with different oracles do not compare.
-| `fig8-system-architecture.png` | FLOW's architecture: the three model-assisted steps see redacted text only and propose typed output; deterministic code computes every figure, and only the executor changes the books. | `src/fig8_system_architecture.py` | Read from the code on `docs/techdoc-chat-fixes` `571ea64f`: `app/main.py` routers, `app/compiler`, `app/nl/classifier.py`, `app/nl/router`, `app/egress/guard.py`, `app/operations/executor.py`, `app/persistence` |
+| `fig8-system-architecture.png` | FLOW's architecture: the three model-assisted steps see redacted text only and propose typed output; deterministic code computes every figure, and every typed operation goes through the executor; a footnote names the logged writes outside it (clock, books setup, a new customer) and the demo reset. | `src/fig8_system_architecture.py` | Read from the code on `docs/techdoc-chat-fixes` `571ea64f`: `app/main.py` routers, `app/compiler`, `app/nl/classifier.py`, `app/nl/router`, `app/egress/guard.py`, `app/operations/executor.py`, `app/persistence` |
 | `fig9-request-to-settlement.png` | One buyer request from request to settlement, marking what is only proposed, what is authorised, what is recorded and what has actually settled. | `src/fig9_request_to_settlement.py` | `app/api/offers.py`, `decide.py`, `accept.py`, `outbound.py`, the executor's `AcceptOffer`, `app/commitments`, `app/api/alerts.py`, `app/alerts/reconcile.py` (`571ea64f`) |
 | `fig10-authority-matrix.png` | The authority matrix: what FLOW may do inside the signed mandate (Tier 1), what waits for the owner (Tier 2) and what is refused whoever asks (Tier 3), with the demo mandate's limits. | `src/fig10_authority_matrix.py` | `app/mandate/tiers.py` `tier_for`; `fixtures/scenarios/golden_sme.mandate.signed.json` (`571ea64f`) |
 | `fig11-cash-scenarios.png` | The demo company's closing cash under four scenarios, days 0 to 62, against the ¥300,000 reserve, with nine dated events. Supersedes `fig4-golden-cash.png` in the technical document (Figure 4). | `src/fig11_cash_scenarios.py` | `../submission/work/fin/daily_cash.csv` and `events.csv` (financial audit, 18 Oct 2026): the independent recomputation from the golden fixtures, equal to the engine replayed through the API to the fen (`work/fin/compare.csv`, 39 of 39) |
@@ -68,9 +68,9 @@ helper shows a complete example; the financial chart of `docs/sub-financial-audi
   router, the intent classifier and the compiler, each sending redacted text to a model backend (recorded cache by default,
   a live provider only when opted in) and passing only typed output down. The deterministic core holds the read-only tools,
   the financial engine, the verifier and the funding router. The action path holds the egress guard, the owner-signed
-  mandate, the executor and the hash-chained log. The executor alone writes the books to storage (PostgreSQL, SQLite or
+  mandate, the executor and the hash-chained log. The executor writes every typed operation to storage (PostgreSQL, SQLite or
   in memory) and moves money only on simulated lenders; counter text leaves through the egress guard to the simulated buyer,
-  or the owner copies it.
+  or the owner copies it. A footnote names the writes outside the executor, each logged, and the demo reset.
 - **fig9-request-to-settlement.png.** Vertical flow of eleven steps with a status bracket on the right. Steps 1 to 6
   (request, reading, verdict and counters, owner gate, send by simulated channel or by the owner's manual copy, reply from
   the simulated buyer or reported by the owner) are bracketed "proposed terms: nothing binds, no money moves". Step 7, the
