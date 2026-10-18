@@ -24,7 +24,8 @@ What it does:
 Markdown supported: paragraphs, **bold**, *italic*, `code`, [links](url), bullet and numbered lists
 (nested by two-space indent), pipe tables, fenced code blocks, #### sub-headings, "> " quotes and
 <!-- figure: file.png | caption --> (embedded when the file exists; end with " | page" to put a tall
-diagram on a page of its own at 6.2 in wide). A code block right after
+diagram on a page of its own at 6.2 in wide, or with " | h=3.5" to cap its height in inches), and <!-- pagebreak --> (a page break; the technical document uses it
+after its contents page). A code block right after
 <!-- ascii-fallback --> is dropped when the preceding figure was embedded.
 """
 
@@ -228,7 +229,7 @@ def refresh_evidence(md_path: Path, latest: Path) -> None:
 
 @dataclass
 class Block:
-    kind: str  # para, bullet, number, table, code, heading, figure, quote, fallback
+    kind: str  # para, bullet, number, table, code, heading, figure, quote, fallback, pagebreak
     text: str = ""
     level: int = 0
     rows: list[list[str]] = field(default_factory=list)
@@ -263,10 +264,15 @@ def parse_blocks(lines: list[str]) -> list[Block]:
             i = j + 1
             last_list_indent = None
             continue
-        m_fig = re.match(r"^<!--\s*figure:\s*(\S+)\s*\|\s*(.*?)(?:\s*\|\s*(page))?\s*-->$", s)
+        m_fig = re.match(r"^<!--\s*figure:\s*(\S+)\s*\|\s*(.*?)(?:\s*\|\s*(page|h=[\d.]+))?\s*-->$", s)
         if m_fig:
             flush()
             blocks.append(Block("figure", m_fig.group(2), rows=[[m_fig.group(1), m_fig.group(3) or ""]]))
+            i += 1
+            continue
+        if s == "<!-- pagebreak -->":
+            flush()
+            blocks.append(Block("pagebreak"))
             i += 1
             continue
         if s == "<!-- ascii-fallback -->":
@@ -545,7 +551,11 @@ class Renderer:
             elif b.kind == "table":
                 self.table(anchor, b.rows)
             elif b.kind == "figure":
-                self.figure(anchor, b.rows[0][0], b.text, page=b.rows[0][1] == "page")
+                opt = b.rows[0][1]
+                height = float(opt[2:]) if opt.startswith("h=") else None
+                self.figure(anchor, b.rows[0][0], b.text, page=opt == "page", max_height=height)
+            elif b.kind == "pagebreak":
+                self.para_before(anchor).add_run().add_break(WD_BREAK.PAGE)
             if b.kind in ("para", "para_in_list", "bullet", "number"):
                 self.tighten(p)
         return count
@@ -650,7 +660,8 @@ class Renderer:
             for cell in t.columns[ci].cells:
                 cell.width = Inches(w)
 
-    def figure(self, anchor: Paragraph, name: str, caption: str, page: bool = False) -> None:
+    def figure(self, anchor: Paragraph, name: str, caption: str, page: bool = False,
+               max_height: float | None = None) -> None:
         path = (self.md_dir / name)
         self.last_figure_embedded = path.exists()
         if not path.exists():
@@ -666,7 +677,7 @@ class Renderer:
         elif self.compact:
             img = DocxImage.from_file(str(path))
             # cap the height so a tall screenshot does not take a whole page
-            width = Inches(min(6.2, MAX_FIG_HEIGHT_IN * img.px_width / img.px_height))
+            width = Inches(min(6.2, (max_height or MAX_FIG_HEIGHT_IN) * img.px_width / img.px_height))
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.add_run().add_picture(str(path), width=width)
         p.paragraph_format.keep_with_next = True  # a figure never leaves its caption on the next page
