@@ -627,7 +627,7 @@ The certification records before 17 Oct report exit codes per shard, not counts.
 | Scan | Lockfile | Result | Exceptions |
 | --- | --- | --- | --- |
 | `pnpm audit --prod` | `apps/web/pnpm-lock.yaml` at the assessed build | 0 advisories (`next` 16.3.8, `source-map-js` 1.2.2) | |
-| `pnpm audit` (all, including development) | same | 1 high: `braces` (GHSA-vfj7-8cjw-p6xm), via `eslint-config-next` > `fast-glob` > `micromatch` | `braces`: a development-only dependency of the lint tooling, with no patched version published; it never ships in the production bundle and parses only our own source globs. Accepted by {TEAM_BRACES_OWNER} |
+| `pnpm audit` (all, including development) | same | 1 high: `braces` (GHSA-vfj7-8cjw-p6xm), via `eslint-config-next` > `fast-glob` > `micromatch` | `braces`: a development-only dependency of the lint tooling, with no patched version published; it never ships in the production bundle and parses only our own source globs. Accepted by the team |
 | `pip-audit` | production dependencies exported from `services/api/uv.lock` | no known vulnerabilities | |
 
 RT-1 was rated by reachability. The advisories were in the web server (`next`), so they were reachable over HTTP. On loopback, with nobody but the presenter, likelihood was Low; for a network demo it would have been Moderate. A clean result means only that the named scan of these lockfiles found no published advisory on that date.
@@ -772,7 +772,7 @@ These describe what the code does on the assessed build. They are not legal advi
 - **Personal information and cross-border transfer.** If FLOW were deployed with real documents and live mode, a buyer document could contain personal information. A deployer would then have to determine, for its own deployment and the rules that apply to it, whether sending that text to a provider outside mainland China is a cross-border transfer under China's Personal Information Protection Law (PIPL), and what legal basis, security assessment or standard contract would be needed. We have not done that assessment. Redaction reduces the exposure without removing it.
 - **AI-generated content.** Outbound text is template-filled from typed fields, not model prose. The web labels extracted terms "AI-generated, for reference" (由 AI 生成，仅供参考) until the owner confirms them, then "Read by the agent, confirmed by you".
 - **Decision support, not advice.** The agent acts only inside an owner-signed mandate. It is not a licensed lender, broker or adviser; it signs and guarantees nothing, and it moves no real money. Every facility, buyer and bank feed is simulated.
-- **Licence.** {TEAM_LICENCE}
+- **Licence.** All rights reserved (`LICENSE`, added 18 Oct): the code is not licensed for reuse; the competition's organisers and judges may view, run and evaluate it for judging. Third-party licences were checked and permit this: dependencies are MIT, BSD, Apache-2.0, ISC or 0BSD, plus MPL-2.0 (certifi, hypothesis) and LGPL-3.0 (psycopg) used unmodified as libraries, an OFL-1.1 web font and a CC-BY-4.0 data file; no GPL or AGPL component.
 
 ## 04 Known Risks
 
