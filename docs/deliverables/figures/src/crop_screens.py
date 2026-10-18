@@ -73,6 +73,51 @@ FRAMES = {
 }
 
 
+# The submission refresh: `python crop_screens.py <raw dir> final` cuts the frames of `SET=final capture_screens.mjs`, taken from the
+# build candidate int/final3 @ 2ce5265c. They replace the old docs/deliverables/screenshots frames of the same names.
+if len(sys.argv) > 2 and sys.argv[2] == "final":
+    SCENARIO = "Mock mode, golden books (synthetic), int/final3 @ 2ce5265c, captured 18 Oct 2026 at 1440×900"
+    FRAMES = {
+        "shot1-home": ("08-home.png", (84, 136, 1412, 690), [
+            (330, 230, "Without new funding, cash falls to −¥105,000 within 30 days; with the plan it stays at ¥300,000."),
+            (1392, 172, "The red card: action needed before payroll in 12 days."),
+            (1120, 308, "The recommendation: secure ¥405,000."),
+            (1205, 318, "What the plan costs: ¥3,113.93."),
+            (1228, 461, "The split: credit line ¥150,000 today, invoice financing ¥255,000 in 3 days."),
+            (1098, 547, "Inside the signed limits: no approval needed."),
+        ]),
+        "shot3-approval": ("09-approval.png", (84, 228, 870, 1010), [
+            (644, 374, "Waiting for the owner's approval: the funding request is queued, not run."),
+            (730, 491, "Why it needs the owner: 32.5% a year is above the 15% ceiling the owner signed."),
+            (490, 551, "What it costs: ¥1,782.19 for ¥200,000."),
+            (814, 888, "What a decline means: ¥200,000 below the reserve in 8 days."),
+            (454, 966, "Nothing runs until the owner authorizes or declines."),
+        ]),
+        "shot6-capex": ("10-capex-quick.png", (84, 665, 1412, 1690), [
+            (1398, 757, "The verdict: worth doing on the owner's estimate; finance with the 36-month term loan (Tier 2)."),
+            (415, 895, "Key figures: NPV ¥380,885.77, payback in month 31, leverage 2.28× against a 2.50× limit."),
+            (302, 1132, "A figure that does not apply reads \"—\", not \"None\": cash + credit line is infeasible."),
+            (1302, 1230, "DSCR month by month: the 18-month loan fails months 1–3 (1.09× below 1.25×)."),
+            (289, 1414, "Selected: the lowest total charges among the structures that hold every covenant."),
+        ]),
+        "shot9-attach": ("11-documents-attach.png", (84, 86, 1412, 975), [
+            (191, 271, "What the file is: here, a contract with a buyer."),
+            (900, 342, "Who it is with: a known customer, or add a new one."),
+            (936, 475, "Drop a signed contract or lender agreement: PDF with text, Word or plain text, up to 5 MB."),
+            (828, 555, "Upload and read: the agent reads the terms; nothing changes until the owner confirms them."),
+            (1318, 803, "Documents already read, each confirmed by the owner."),
+        ]),
+        "shot10-ask-answer": ("12-ask-answer.png", (360, 92, 1138, 864), [
+            (986, 329, "The owner's question (a recorded one)."),
+            (403, 425, "The answer leads, worked out from the books by code."),
+            (1098, 428, "Three key figures, each a server value."),
+            (763, 550, "The plan's cost and links to the forecast and the plan; the answer acts on nothing."),
+            (626, 596, "How FLOW worked this out: the reads behind the answer."),
+            (1116, 670, "Suggested questions."),
+        ]),
+    }
+
+
 def font(px: int, bold=False):
     return ImageFont.truetype(FONT_B if bold else FONT, px)
 
