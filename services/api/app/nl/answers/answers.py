@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Any
 
+from app.api import presentation as pres
 from app.domain.models import FlowKind
 from app.domain.money import bp, fmt_pct
 from app.nl import lexicon as lx
@@ -1419,8 +1420,11 @@ def op_words(w: W, kind: str, amount: int, op: Any) -> str:
         "RECORD_COMMITMENT": ("recorded an agreement", "记录了一项协议"),
         "APPLY_FOR_FACILITY": (f"applied for {fac}", f"申请了{fac}"),
     }
-    en, zh = words.get(kind, ("ran one other operation", "执行了另一项操作"))
-    return w.t(en, zh)
+    if kind in words:
+        return w.t(*words[kind])
+    if pres.has_kind_text(kind):  # any other operation by its kind's owner words ("books opened", "customer added")
+        return w.t(lower_first(pres.kind_text(kind, "en")), pres.kind_text(kind, "zh"))
+    return w.t("ran one other operation", "执行了另一项操作")
 
 
 def a_activity(w: W, q: str) -> AnswerReply:
@@ -1494,6 +1498,69 @@ def a_needs_approval(w: W, q: str) -> AnswerReply:
         f"个人担保、抵押、股权和修改授权，FLOW 永远不能做。") + now, w.basis("mandate"))
 
 
+# ================================================================ the audit log
+
+_REFUSED_ASK = re.compile(r"\b(?:refus\w*|block\w*|turned down|stopped)\b|拒绝|拦截|拦下|拦住", re.IGNORECASE)
+_AUDIT_ASK = re.compile(r"\baudit\b|审计|\bintact\b|完整|\btamper\w*|篡改|\btrust\b|可信|校验|哈希", re.IGNORECASE)
+
+
+def kind_words(w: W, kind: str) -> str:
+    """An operation kind in the owner's words: the Tier-3 subjects as FLOW says them when it declines, every other kind as the Activity
+    page says it ("books opened", "credit line drawn"); never the raw kind."""
+    from app.nl.ask import tier3_name
+
+    if (t3 := tier3_name(kind, w.lang)) is not None:
+        return t3
+    if pres.has_kind_text(kind):
+        return w.t(lower_first(pres.kind_text(kind, "en")), pres.kind_text(kind, "zh"))
+    return w.t("another operation", "另一项操作")
+
+
+def a_audit(w: W, q: str) -> AnswerReply:
+    """"Is the audit log intact?", "Has anything been refused or blocked?": the chain check, then every operation in the log by name, and
+    the refused, waiting and security-event counts (all the log holds, not only the last week)."""
+    a = w.m(mx.activity_since(w.r, since_day=-(10 ** 6)))
+    d = a.detail
+    ok = d["chain_valid"]
+    asks_refused = bool(_REFUSED_ASK.search(q)) and not _AUDIT_ASK.search(q)
+    w.fig("operations", str(a.value))
+    w.fig("refused", str(d["refused"]))
+    chain = (w.t("the log's hash chain verifies", "日志的哈希链校验通过") if ok
+             else w.t("the log's hash chain does NOT verify", "日志的哈希链校验未通过"))
+    if asks_refused:
+        lead = (w.t("Nothing has been refused or blocked.", "没有操作被拒绝或拦截。") if not d["refused"]
+                else w.t(f"Yes: {n_en(d['refused'], 'operation was', 'operations were')} refused.", f"有：{d['refused']} 项操作被拒绝。"))
+    elif ok:
+        lead = w.t("Yes: the audit log is intact, its hash chain verifies.", "完整：审计日志的哈希链校验通过。")
+    else:
+        lead = w.t("No: the audit log's hash chain does NOT verify, so do not rely on it as it stands.",
+                   "不完整：审计日志的哈希链校验未通过，在核查之前请不要依赖它。")
+    ran = [op_words(w, kind, amount, op) for kind, amount, op in d["ran"]]
+    shown = ran[:10]
+    more = len(ran) - len(shown)
+    tail = w.t(f"; and {more} more", f"；另有 {more} 项") if more > 0 else ""
+
+    def named(kinds: list[str]) -> str:
+        words = [kind_words(w, k) for k in kinds[:6]]
+        if not words:
+            return ""
+        more_k = w.t(f", and {len(kinds) - 6} more", f"等共 {len(kinds)} 项") if len(kinds) > 6 else ""
+        return w.t(" (", "（") + w.t(", ", "、").join(words) + more_k + w.t(")", "）")
+
+    if w.zh:
+        body = ((f"日志里共执行了 {a.value} 项操作：" + "；".join(shown) + tail) if ran else "日志里还没有执行过任何操作")
+        body += (f"；被拒绝 {d['refused']} 项{named(d['refused_kinds'])}；待您审批 {d['queued']} 项{named(d['queued_kinds'])}；"
+                 f"安全事件 {d['security_events']} 起")
+        text = f"{lead}{body}" + (f"；{chain}" if asks_refused else "") + "。"
+    else:
+        body = ((f"The log holds {n_en(a.value, 'operation', 'operations')} that ran: " + "; ".join(shown) + tail) if ran
+                else "The log holds no operation that ran")
+        body += (f"; {d['refused']} refused{named(d['refused_kinds'])}; {d['queued']} waiting for your approval{named(d['queued_kinds'])}; "
+                 f"{n_en(d['security_events'], 'security event', 'security events')}")
+        text = f"{lead} {body}" + (f"; {chain}" if asks_refused else "") + "."
+    return w.reply("ACT-04" if asks_refused else "ACT-05", text, w.basis("log"))
+
+
 # ================================================================ the matcher
 
 
@@ -1507,6 +1574,18 @@ Handler = Callable[[W, str], AnswerReply | None]
 # before the general ones whose words they share ("pays late" before "who is late", "debt service can we carry" before "debt
 # service", "payroll" before "is cash enough").
 QUESTIONS: tuple[tuple[str, re.Pattern[str], Handler], ...] = (
+    # the audit log: before every other reading, whose words ("log", "operations") it shares
+    ("ACT-05", _p(r"\baudit\b.{0,12}\b(?:log|trail|chain|record)s?\b",
+                  r"\b(?:log|ledger|chain|records?)\b.{0,25}\b(?:intact|tamper\w*|verif\w*|trustworth\w*|corrupt\w*|altered|modified)\b",
+                  r"\b(?:trust|rely on)\b.{0,12}\b(?:the |our )?(?:audit |operations? )?(?:log|ledger)\b",
+                  r"审计", r"哈希链", r"日志.{0,6}(?:完整|可信|可靠|篡改|校验)", r"(?:校验|验证)通过", r"记录.{0,6}(?:被|有没有).{0,3}(?:篡改|改动)"),
+     a_audit),
+    ("ACT-04", _p(r"\b(?:has|have|had|was|were|is|are)\s+(?:anything|any\b.{0,20}\b(?:operations?|actions?|requests?|commands?))\b"
+                  r".{0,25}\b(?:refused|blocked|stopped|turned down)\b",
+                  r"\bany\s+(?:operations?|actions?|requests?)\b.{0,25}\b(?:refused|blocked)\b",
+                  r"\b(?:refused|blocked)\s+(?:operations?|actions?|requests?)\b",
+                  r"(?:被|有).{0,3}(?:拒绝|拦截|拦下|拦住).{0,6}(?:的)?(?:操作|请求|指令|动作)", r"(?:操作|请求).{0,4}被.{0,2}(?:拒绝|拦截|拦下|拦住)",
+                  r"有没有.{0,6}(?:拒绝|拦截)"), a_audit),
     ("CUS-07", _p(r"\b(?:what if|what happens if|what would happen if|suppose|if)\b.{0,60}\b(?:pays?|paid|payment|invoice|receipt|money)"
                   r"\b.{0,40}\b(?:late|slips?|slipped|delayed|later|overdue)\b",
                   r"\b(?:what if|what happens if|suppose)\b.{0,60}\b(?:slips?|delayed?)\b",
@@ -1708,9 +1787,13 @@ def answer(question: str, lang: str, ctx: Any) -> AnswerReply | None:
     return handler(w, question)
 
 
+# Questions owners asked beyond the top 30 (the live stress test of FLOW, 18 Oct 2026): answered the same way, but not among the 30.
+BEYOND_TOP30 = frozenset({"ACT-04", "ACT-05"})
+
+
 def question_ids() -> list[str]:
-    """The top 30 question ids (general_advice, the how-to answer, is not one of them)."""
-    return list(dict.fromkeys(qid for qid, _, _ in QUESTIONS if qid != "general_advice"))
+    """The top 30 question ids (general_advice, the how-to answer, and the questions beyond the 30 are not among them)."""
+    return list(dict.fromkeys(qid for qid, _, _ in QUESTIONS if qid != "general_advice" and qid not in BEYOND_TOP30))
 
 
 __all__ = ["AnswerReply", "answer", "match", "question_ids"]

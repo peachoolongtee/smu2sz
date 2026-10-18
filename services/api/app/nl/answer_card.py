@@ -249,7 +249,7 @@ def actions_for(qid: str, figures: dict[str, str], lang: str, state: Any) -> lis
         out.append(action("approvals", lang))
     elif qid == "CAP-01":
         out.append(action("capex", lang))
-    elif qid == "ACT-01":
+    elif qid in ("ACT-01", "ACT-04", "ACT-05"):
         out.append(action("activity", lang))
     elif qid in ("MAN-01", "MAN-02"):
         out.append(action("limits", lang))

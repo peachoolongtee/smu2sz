@@ -759,7 +759,8 @@ def activity_since(ctx: Any, since_day: int | None = None) -> Metric:
     moved = sum(abs(_op_amount(e)) for e in ran if e.kind != ADVANCE_CLOCK_KIND)
     return Metric("activity_since", len(ran), f"{len(ran)} operations", start, "store.operations, security_events, verify_chain",
                   {"ran": [(e.kind, _op_amount(e), e.op) for e in ran], "refused": len(refused), "queued": len(queued),
-                   "security_events": len(sec), "moved_fen": moved, "chain_valid": r.store.verify_chain()})
+                   "security_events": len(sec), "moved_fen": moved, "chain_valid": r.store.verify_chain(),
+                   "refused_kinds": [e.kind for e in refused], "queued_kinds": [e.kind for e in queued]})
 
 
 def approvals_pending(ctx: Any) -> Metric:
@@ -893,5 +894,5 @@ METRICS: dict[str, Callable[[Any], Metric]] = {
         terms_by_customer, covenant_ratios, covenant_breakpoints, ebitda_month, mandate_limits_and_validity, activity_since,
         what_waits, approvals_pending, payoff_all, payroll_cover, capex_case)
 }
-"""The metrics that take the context alone (the parametrised ones, `cash_on`, `late_payment_impact` and `terms_extension_cost`,
+"""The metrics that take the context alone (the parametrised ones, `cash_on`, `late_payment_impact`, `terms_extension_cost`,
 take their subject as well)."""
