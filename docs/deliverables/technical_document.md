@@ -313,7 +313,24 @@ which uses the rules grammar and recorded readings, and it is not part of any ce
   whose quote is not in the text. (2) Deterministic code evaluates the terms: the cash projection, the funding price, the
   mandate and the verdict, with its formula and figures. (3) The permission gate: the executor computes the tier, anything
   outside Tier 1 waits for the owner, and nothing the model returned can act on its own.
-- **Date and outcome.** {LIVE_DEMO_RESULT}
+- **Date and outcome.** Run on 18 October 2026 (17:08 UTC+8) on code commit `5941e95a`, API in `LLM_MODE=live` with DeepSeek `deepseek-flash`, redaction on; inputs written for this run and in no fixture or cache ([evidence](docs/deliverables/evidence/live-2026-10-18/live_demo_2026-10-18.json)).
+  - *A new Chinese buyer message* on Foshan's channel key. The model read all three terms in 1.8 s, each with its quoted words: 60-day terms (“把账期延长到60天”), 1% off for paying 10 days early (“提前10天付，给1%折扣”), and a 0.5% reduction tied to higher orders. FLOW's rules grammar read two of the terms differently, so FLOW booked nothing, returned NO VERDICT and asked the buyer, in Chinese, to confirm: a disagreement between the two readers never reaches a verdict.
+  - *A new synthetic contract* for Dongguan ([text](docs/deliverables/evidence/live-2026-10-18/dongguan_framework_agreement.md)). The model returned 13 terms in 3.6 s, each with its clause quoted: the parties in their roles, the dates, RMB 180,000 every 30 days, 60-day terms, 1.2% off within 10 days and late interest. It did not return the 2% volume rebate (clause 6.1) or the termination clause; confirming the reading stays the owner's.
+  - *A new owner question* (“Which of my debts costs me the most, and what would early collection from Foshan save?”) was routed live to two read-only tools (`debt_service`, `early_pay_offer`) in 1.3 s; FLOW's code computed the answer.
+  - *Frozen evaluation* (20 new items, 10 English and 10 Chinese, labels written blind before any run and fixed by hash; [results](services/api/evals/live_frozen/)). Single runs on one day with one provider; untuned:
+
+| Out of 20 | Rules grammar only (offline) | Model alone (live) | FLOW as shipped (model + rules check) |
+| --- | --- | --- | --- |
+| Correct | 6 | 10 | 5 |
+| Partly correct | 3 | 1 | 1 |
+| Wrong | 2 | 2 | 0 |
+| Held back correctly (ambiguous, conflicting, injection) | 7 | 6 | 9 |
+| Held back wrongly | 2 | 1 | 5 |
+| Readings grounded in quoted source words | 23 of 23 | 35 of 35 | 32 of 32 |
+
+  The live model reads nearly twice as many items correctly as the rules alone, but on its own it was wrong on one ambiguous and one conflicting message. FLOW's cross-check turns those two errors into clarification requests (0 wrong) at the cost of five items it holds back for the owner. No item, in any mode, booked a commitment or moved money. Requests for protected figures
+(the reserve, the credit limit) were refused and logged; in the model-alone run one drafted reply to the buyer stated a
+protected limit, and the outbound guard withheld it and sent the safe template instead.
 
 The existing live evidence stays as it was: the 18 Oct stress test of the question router and the 1 Oct buyer-message run
 (section 03), each a single run.
