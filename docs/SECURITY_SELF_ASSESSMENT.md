@@ -8,7 +8,7 @@ International AI Track | Security Self-Assessment
 | Competition track | International AI Track, Topic E (SME Finance Copilot) |
 | Submission date | 20 October 2026 |
 
-**Document control.** Version 3.0, 17 Oct 2026. This assessment describes one build and nothing else: the **assessed build** in the release manifest below. Every status in it ("in the assessed build", "fixed", "open") is a statement about that build. Work done after it is not described as present. The build submitted to the competition is later. Its changes are listed in the **Submission build addendum** after section 04, which the integration lead prepared. The addendum is not certified.
+**Document control.** Version 3.0, 17 Oct 2026. The manifest, figures and certification history were updated at the `70f23ac5` certification, 18 Oct 2026. This assessment describes one build and nothing else: the **assessed build** in the release manifest below. Every status in it ("in the assessed build", "fixed", "open") is a statement about that build. Work done after it is not described as present. The build submitted to the competition is later. Its changes are listed in the **Submission build addendum** after section 04, which the integration lead prepared. The addendum is not certified.
 
 **Release manifest (assessed build).**
 
@@ -30,9 +30,9 @@ International AI Track | Security Self-Assessment
 
 **Executive summary.** TermsLedger v2 (FLOW) lets an SME owner delegate supplier-side credit decisions (buyer concessions, early-pay offers, draws on committed facilities and capex purchases) to an AI agent, under a mandate the owner signs. The design question is *what can a hostile message, a hostile caller or a fully persuaded language model make the system do?* The design answer is that **the model only fills typed data; deterministic code checks it and deterministic code executes it, under permission tiers that code computes**. FLOW is a simulation: lenders, buyers and the bank feed are simulated. We claim neither regulatory compliance nor absolute security.
 
-- **Test result, with its limits.** In the specified runs on the assessed build, the 279 stored attack cases (128 through the API, 151 through chat) produced **zero observed violations of the defined harm oracles** (section 2.4). This is a test result within a scope, not evidence that no exploitable path exists. Each case ran in a fresh in-memory runtime, offline, with recorded or scripted model answers; the catalogue drives only part of the 100 API routes, though a route policy test calls every route as every kind of caller (section 1.5); and no running deployment has had a penetration test.
+- **Test result, with its limits.** In the specified runs on the assessed build, the 279 stored attack cases (128 through the API, 151 through chat) produced **zero observed violations of the defined harm oracles** (section 2.4). This is a test result within a scope, not evidence that no exploitable path exists. Each case ran in a fresh in-memory runtime, offline, with recorded or scripted model answers; the catalogue drives only part of the 106 API routes, though a route policy test calls every route as every kind of caller (section 1.5); and no running deployment has had a penetration test.
 - **Review arrangement.** The reviews were AI-assisted and internal (section 2.6). The Security Lead is an AI agent working in a separate session and worktree. It also wrote the security fixes it then certified. The owner, a person, accepted the residual risks. "Certified" in this document means an **internal release decision for a stated build and scope**. It is not external accreditation, and no professional penetration test was done.
-- **Verdict.** Local simulation on loopback: **GO** for the assessed build. Demo over a network: **NO-GO** until a tested deployment profile exists (section 4.6). Production with real customers, documents or money: **NO-GO** (section 04).
+- **Verdict.** Local simulation on loopback: **GO** for the assessed build. Live model mode (`pnpm demo --live-llm`): **not certified**; it is outside the assessed scope (section 3.2). Demo over a network: **NO-GO** until a tested deployment profile exists (section 4.6). Production with real customers, documents or money: **NO-GO** (section 04).
 - **Largest residual risks.**
   - One person holds every approval credential (R-2).
   - The owner has no route to revoke or renew the mandate (R-14).
@@ -145,7 +145,7 @@ An owner could therefore accept a request believing the named buyer sent it. Sec
 | --- | --- | --- | --- |
 | `AcceptOffer`, `RecordCommitment` | 1 only for a pure early-pay discount on a named invoice; otherwise 2 | agent, owner | **Tier 1 needs all of:** a discount strictly below the exact break-even for its days early (0.8832% for 30 days on the golden books); the cash is needed and the offer beats the router's plan (ADR-0007); the compiler's coverage proof (ADR-0005); the message states the invoice's whole face; at most ¥100,000. **Always Tier 2:** rebates, and changes to terms, price, volume or operations. **Limits:** one live agreement per invoice and per buyer request (SEC-02). |
 | `CounterOffer`, `RejectOffer` | 1 | agent, owner | within the mandate; only the owner's decline closes a request |
-| `DrawFacility`, `SubmitInvoiceForFinancing` | 1 on a committed, owner-approved facility at or below the rate ceiling; otherwise 2 | agent, owner | the executor's admission on today's books (DSCR, leverage, reserve, landing day); above the ceiling the leg is queued with its cost, and admission runs again at approval |
+| `DrawFacility`, `SubmitInvoiceForFinancing` | 1 on a committed, owner-approved facility at or below the rate ceiling; otherwise 2 (above the ceiling, only when the agent requests it) | agent, owner | the executor's admission on today's books (DSCR, leverage, reserve, landing day); above the ceiling the leg is queued with its cost, and admission runs again at approval. **The rate ceiling (15% a year in the demo mandate) is an approval threshold, not a hard rule.** Above it, a leg the agent requests waits for the owner. The owner may approve it or draw directly (`app/operations/executor.py`). Admission and the covenants apply to everyone |
 | `RepayFacility` | 1 | agent, owner | admission still applies |
 | `ReceivePayment` | 1 from the bank feed or the owner; 2 from the agent (F-02) | bank feed, owner, agent | one `bank_reference` books once; a receipt larger than the open amount is refused; a receipt with no reference is identified only by its idempotency key (section 4.4, SEC-29) |
 | `RequestOwnerApproval` | 1 (it only queues) | agent | the queued reason is the operation's own description, never the requester's text |
@@ -558,7 +558,7 @@ Both assert zero unauthorised executions, an unchanged mandate and facility menu
 | Attack catalogue (1 Oct) | the implementation team | written by the people and agents who built the system: "our own" | yes | the reviews below |
 | Principal audit (3 Oct) | three bounded reviewers and a principal; [TEAM: confirm whether people, AI agents or both] | separate review of the code | yes | the owner |
 | Red-team rounds 1 to 5 (3 Oct) | AI subagents started with minimal context about the backlog | no implementation role | yes | the owner; every finding became a regression test |
-| Security Lead (14 to 17 Oct) | an AI agent (Claude, in Claude Code) in a separate session and git worktree, with delegated AI reviewer agents | did not build the product features it audited; **did write the security fixes it then certified**, each on its own branch with a test that fails first | yes: reproductions, sweeps and probes in `docs/security/evidence/` | the integration agent merged; the owner approved engine changes and accepted risks |
+| Security Lead (14 to 18 Oct) | an AI agent (Claude, in Claude Code) in a separate session and git worktree, with delegated AI reviewer agents | did not build the product features it audited; **did write the security fixes it then certified**, each on its own branch with a test that fails first | yes: reproductions, sweeps and probes in `docs/security/evidence/` | the integration agent merged; the owner approved engine changes and accepted risks |
 | External red-team run (16 Oct) | [TEAM: who ran it]; its report was supplied by the owner and is not in the repository | not recorded | yes | its five observations were re-checked by the Security Lead on the code; its live-tier results were not re-run |
 | Risk acceptance | the owner (a person) | | | recorded decisions of 16 and 17 Oct (section 04) |
 
@@ -566,7 +566,7 @@ Both assert zero unauthorised executions, an unchanged mandate and facility menu
 
 **Independent audit and five red-team rounds (1 to 3 Oct).** Every finding became a regression test before it was closed. Appendix B lists them, and the reports and probes are in `docs/research/`.
 
-**Security Lead (14 to 17 Oct).**
+**Security Lead (14 to 18 Oct).**
 - Audited `e8e270f8` and every later merge.
 - Reproduced each finding before recording it.
 - Built each fix on its own branch, with a regression test that fails before and passes after.
@@ -1055,6 +1055,13 @@ Each was found by one of the reviews, reproduced, and closed by a fix whose regr
 | `069dd754`, `1c736876`, `bf113abf`, `08c8dac0` | the Security Lead's own records: assessment v3, the register, the owner's deferral of SEC-27 and SEC-28, and the certification of `70f23ac5` | documentation and evidence; no code | none needed | not applicable (documentation) |
 
 **Findings register.** `docs/security/FINDINGS_REGISTER.md` marks REG-8, REG-9 and CT-2b as fixed on the submission build, with re-certification requested. SEC-28 is marked "reporting fixed, atomicity disclosed". The Security Lead's statuses for `70f23ac5` are kept as written. The ratings in section 4.2 are unchanged until the Security Lead re-certifies.
+
+**Editorial corrections to sections 01 to 04, by the integration lead.** These corrections align the text with the certification records and with the code. No finding, rating, result or certification statement was changed.
+- Document control: the date of the 18 Oct manifest update is given beside the version date.
+- Executive summary: "100 API routes" now reads 106, the count in sections 1.5 and 2.9. Live model mode is named in the verdict as not certified, as sections 3.2 and 4.3 already state.
+- Section 1.3: the rate ceiling (15% a year) is described as an approval threshold for the agent, as `app/operations/executor.py` implements it. The owner's own draw above it is not raised to Tier 2.
+- Section 2.6: the Security Lead's dates read 14 to 18 Oct, because the certification of `70f23ac5` and the review that found REG-8 date from 18 Oct.
+- The five remaining questions for the team are marked as tokens for the integration lead to fill from the owner's answers.
 
 **Final-build verification (filled by the integration lead on the submission commit).**
 
