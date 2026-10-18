@@ -122,3 +122,88 @@ def save(fig, name: str) -> Path:
     with Image.open(path) as im:
         print(f"{path.name}: {im.size[0]}x{im.size[1]} px")
     return path
+
+
+# ---------------------------------------------------------------- shared helpers added for the submission figures (18 Oct 2026)
+# Non-colour channels: every category below also has a shape, a pattern or a word, so a figure printed in grey still reads.
+
+BUILD = "docs/techdoc-chat-fixes @ 571ea64f"  # the build the submission figures were checked against
+GREY_HATCH = "#b9c2d0"  # the hatch lines of a simulated party
+
+# Kinds of component or step. `tag` is the word printed on the box's top edge; `hatch` marks the simulated parties.
+KINDS = {
+    "model": dict(fill=AMBER_SOFT, edge=AMBER, ink=AMBER_INK, tag="MODEL-ASSISTED", hatch=None),
+    "code": dict(fill=BLUE_SOFT, edge=BLUE, ink=INK, tag=None, hatch=None),
+    "owner": dict(fill=PURPLE_SOFT, edge=PURPLE, ink=PURPLE_INK, tag="OWNER", hatch=None),
+    "sim": dict(fill=GREY_SOFT, edge=GREY, ink=INK, tag="SIMULATED", hatch="//"),
+    "store": dict(fill=WHITE, edge=INK, ink=INK, tag=None, hatch=None),
+}
+TAG_PT = 11  # the word tag on a box edge; it repeats the legend, so it may sit below MIN_PT
+
+
+def kbox(ax, x, y, w, h, title, body=None, kind="code", *, tag=True, title_pt=15, body_pt=MIN_PT, **kw):
+    """A component box of one KINDS kind: its fill, edge, hatch (simulated) and word tag on the top edge."""
+    k = KINDS[kind]
+    if k["hatch"]:
+        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.08", fc=k["fill"], ec=GREY_HATCH,
+                                    lw=0, hatch=k["hatch"], zorder=2.5))
+        box(ax, x, y, w, h, title, body, fill="none", edge=k["edge"], ink=k["ink"], title_pt=title_pt, body_pt=body_pt, **kw)
+    else:
+        box(ax, x, y, w, h, title, body, fill=k["fill"], edge=k["edge"], ink=k["ink"], title_pt=title_pt, body_pt=body_pt,
+            **kw)
+    if tag and k["tag"]:
+        ax.text(x + w - 0.1, y + h, k["tag"], ha="right", va="center", fontsize=TAG_PT, fontweight="bold",
+                color=k["ink"], zorder=6,
+                bbox=dict(boxstyle="round,pad=0.2,rounding_size=0.12", fc=WHITE, ec=k["edge"], lw=1.4))
+
+
+def stamp(fig, text: str, *, y_in: float = 0.08):
+    """The build / scenario identifier, bottom left."""
+    h = fig.get_size_inches()[1]
+    fig.text(0.08 / WIDTH_IN, y_in / h, text, ha="left", va="bottom", fontsize=12, color=INK_2)
+
+
+# ---------------------------------------------------------------- charts
+# For data figures (for example the financial chart of docs/sub-financial-audit): call chart(), plot each series with
+# **SERIES[i] (colour + marker + line style, so series never differ by colour alone), format money with yuan / yuan_k,
+# put the unit in the axis label, and stamp() the build and scenario. Example:
+#
+#     from flowstyle import BUILD, SERIES, chart, save, stamp, yuan_k
+#     fig, ax = chart(5.2, xlabel="day of the scenario", ylabel="closing cash (¥ thousand)")
+#     ax.plot(days, plan_k, label="with FLOW's plan", **SERIES[0])
+#     ax.plot(days, cash_k, label="no new funding", **SERIES[1])
+#     ax.yaxis.set_major_formatter(yuan_k)
+#     ax.legend(frameon=False)
+#     stamp(fig, "Golden books (synthetic) · GET /home · " + BUILD)
+#     save(fig, "fig8-name.png")
+
+SERIES = [
+    dict(color=BLUE, marker="o", ls="-", lw=3.0, ms=6, markevery=5),
+    dict(color=AMBER, marker="s", ls=(0, (6, 2.5)), lw=3.0, ms=6, markevery=5),
+    dict(color=PURPLE, marker="^", ls=(0, (2, 1.6)), lw=3.0, ms=7, markevery=5),
+    dict(color=GREY, marker="D", ls=(0, (6, 2, 1.5, 2)), lw=2.6, ms=6, markevery=5),
+]
+BAR_HATCHES = ["", "//", "..", "xx"]  # bars: pair with the SERIES colours so a grey print still separates them
+
+from matplotlib.ticker import FuncFormatter  # noqa: E402
+
+
+def _yuan(v: float, unit: str) -> str:
+    return ("−" if v < 0 else "") + "¥" + f"{abs(v):,.0f}" + unit
+
+
+yuan = FuncFormatter(lambda v, _p: _yuan(v, ""))  # tick values in yuan
+yuan_k = FuncFormatter(lambda v, _p: _yuan(v, "k"))  # tick values in thousands of yuan
+
+
+def chart(height_in: float, *, xlabel: str | None = None, ylabel: str | None = None, rect=(0.12, 0.16, 0.85, 0.78)):
+    """A data chart 8 in wide in the house style: light horizontal grid, no top/right spines, units in the axis labels."""
+    fig = plt.figure(figsize=(WIDTH_IN, height_in), dpi=DPI)
+    ax = fig.add_axes(rect)
+    ax.grid(axis="y", color="#e6e9ef", lw=1.0, zorder=0)
+    ax.set_axisbelow(True)
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    return fig, ax
