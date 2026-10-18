@@ -89,6 +89,7 @@ FIGURES: dict[str, Fig] = {
     "undrawn_total": Fig("Undrawn", "未提用额度", tone="ok"),
     "invoice_capacity": Fig("Invoice financing room", "发票融资额度"),
     "interest_fees": Fig("Interest and fees", "利息与费用"),
+    "dso": Fig("Days sales outstanding", "应收账款周转天数", DAYS),
     "owed": Fig("Owed", "欠款"),
     "overdue": Fig("Overdue", "逾期", tone="zero_ok"),
     "share": Fig("Share of receivables", "应收占比"),
@@ -227,6 +228,8 @@ def actions_for(qid: str, figures: dict[str, str], lang: str, state: Any) -> lis
         out.append(action("forecast", lang))
         if has_plan:
             out.append(action("plan", lang))
+    elif qid == "CUS-04":
+        out.append(action("receivables", lang))
     elif qid == "CUS-09":
         out += _customer_actions(state, figures.get("buyer"), lang)[:1]
         out.append(action("forecast", lang))

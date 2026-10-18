@@ -167,6 +167,35 @@ def test_stopping_orders_takes_out_the_recurring_invoicing_but_not_the_open_invo
     assert ("仍会到期" if zh else "stays due") in reply
 
 
+# ---------------------------------------------------------------- days sales outstanding (item 4)
+
+
+@pytest.mark.parametrize(("text", "zh"), [("What is our DSO?", False), ("我们的应收账款周转天数是多少？", True),
+                                           ("How long do customers take to pay us?", False), ("客户平均多久付款？", True)])
+def test_dso_is_computed_from_receivables_and_recurring_invoicing(client, rt, text: str, zh: bool) -> None:
+    state = rt.store.get_state()
+    owed = sum(x.outstanding_fen for x in state.receivables if x.status != "SETTLED")
+    ri = state.recurring_invoices[0]
+    dso = round(owed / (ri.face_fen / ri.every_days))
+    reply = say(client, text)["reply"]
+    assert "cannot answer" not in reply and "暂时还不能" not in reply
+    assert (CJK.search(reply) is not None) == zh, reply
+    assert reply.startswith(f"{dso} 天" if zh else f"{dso} days"), reply
+    assert whole(owed) in reply and whole(ri.face_fen) in reply and whole(ri.face_fen // ri.every_days) in reply
+    assert ("计算方法：应收账款除以每日定期开票额" if zh else "Method: receivables divided by daily recurring invoicing") in reply
+    assert ("没有收款历史" if zh else "no receipt history") in reply  # the honest limit of the figure
+    assert (f"账期是 {ri.terms_days} 天" if zh else f"{ri.terms_days}-day terms") in reply
+    no_ids(reply)
+
+
+def test_without_regular_invoicing_the_dso_answer_names_what_is_missing(client, rt) -> None:
+    rt.store.put_state(rt.store.get_state().model_copy(update={"recurring_invoices": []}))
+    for text, zh in (("What is our DSO?", False), ("我们的应收账款周转天数是多少？", True)):
+        reply = say(client, text, 1)["reply"]
+        assert ("无法给出应收账款周转天数" if zh else "I cannot give a DSO") in reply, reply
+        assert ("没有定期开票或销售历史" if zh else "no recurring invoicing or sales history") in reply
+
+
 # ---------------------------------------------------------------- borrowing against the Foshan invoice (item 3)
 
 
