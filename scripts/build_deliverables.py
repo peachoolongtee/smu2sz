@@ -64,7 +64,7 @@ HEADER = {
 }
 BODY_PT = Pt(10)
 MAX_FIG_HEIGHT_IN = 4.8
-PAGE_FIG_HEIGHT_IN = 8.9  # "| page" figures: the tallest a figure may be with its caption on a Letter page
+PAGE_FIG_HEIGHT_IN = 8.4  # "| page" figures: the tallest a figure may be with its caption on a Letter page
 
 JOBS = [
     ("technical_document.md", "international-technical-document-en.docx", "Technical_Document.docx"),

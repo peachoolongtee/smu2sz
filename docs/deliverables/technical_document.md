@@ -181,9 +181,9 @@ The supplier kept its 45-day terms and gave no rebate. It avoided ¥28,326.92 of
 a day-47 breach, and the reserve held on every day (Figure 2). Assumptions: the buyer pays the ¥160,000 on day 36 and the
 next invoice on its due day 47; the owner approves on day 34; no other cash flow is added.
 
-<!-- figure: figures/screens/screen2-deal-verdict.png | Figure 1. Foshan's request after FLOW checked it (web app on recorded mocks, build 571ea64f). (1) The verdict: counter with Option A. (2) Why the request cannot be accepted as asked. (3) Option A is within the signed mandate. (4) Nothing is sent until the owner sends it. (5) The priced choices: Option A, early payment on up to ¥260,000 at 0.85%, costs ¥3,035.99; Option B is 55-day terms with a 0.30% price rise. -->
+<!-- figure: figures/screens/screen2-deal-verdict.png | Figure 1. Foshan's request after FLOW checked it (web app on recorded mocks, build 571ea64f). (1) The verdict: counter with Option A. (2) Why the request cannot be accepted as asked. (3) Option A is within the signed mandate. (4) Nothing is sent until the owner sends it. (5) The priced choices: Option A, early payment on up to ¥260,000 at 0.85%, costs ¥3,035.99; Option B is 55-day terms with a 0.30% price rise. | page -->
 
-<!-- figure: figures/fig11-cash-scenarios.png | Figure 2. The demo company's closing cash, days 0 to 62, against the ¥300,000 reserve. Today's books fall to −¥105,000 on days 30–31; FLOW's standing plan (¥3,113.93) touches the reserve on day 30 and never goes below it; the request accepted as asked falls ¥90,040 short on day 47; Option A as the demo runs it holds the reserve every day, including the new ¥200,000 payroll on day 42. Numbered markers date the events. Data: the financial audit's independent recomputation, equal to the engine to the fen (synthetic golden books, mandate v1, build 571ea64f). -->
+<!-- figure: figures/fig11-cash-scenarios.png | Figure 2. The demo company's closing cash, days 0 to 62, against the ¥300,000 reserve. Today's books fall to −¥105,000 on days 30–31; FLOW's standing plan (¥3,113.93) touches the reserve on day 30 and never goes below it; the request accepted as asked falls ¥90,040 short on day 47; Option A as the demo runs it holds the reserve every day, including the new ¥200,000 payroll on day 42. Numbered markers date the events. Data: the financial audit's independent recomputation, equal to the engine to the fen (synthetic golden books, mandate v1, build 571ea64f). | page -->
 
 **What is new.** Each building block exists somewhere: negotiation agents, cash-flow forecasts, loan marketplaces and
 covenant monitoring. What FLOW adds is the combination, on the supplier's side:
@@ -253,7 +253,7 @@ talk only through typed contracts in `app/domain/`, and import cycles are forbid
 calls it, the three places a model assists, the deterministic core that computes every figure, and the action path through
 which every operation that commits the business or moves money must pass.
 
-<!-- figure: figures/fig8-system-architecture.png | Figure 3. FLOW's architecture. A model assists in three places only: reading documents and buyer messages (the compiler), classifying a chat request the rules miss, and routing an owner's question to read-only tools. In live mode it receives text with identifying numbers redacted, and its output is typed data that code validates. Deterministic code computes every figure. Every typed operation passes the signed mandate and the executor, which records each outcome in a hash-chained log. The buyer, the lenders and the bank feed are simulated. Build 571ea64f. | page -->
+<!-- figure: figures/fig8-system-architecture.png | Figure 3. FLOW's architecture. A model assists in three places only (reading documents and buyer messages, classifying a chat request the rules miss, routing an owner's question to read-only tools); in live mode it gets text with identifying numbers redacted, and code validates its typed output. Deterministic code computes every figure; every typed operation passes the signed mandate and the executor, which records each outcome in a hash-chained log. Buyer, lenders and bank feed are simulated. Build 571ea64f. | page -->
 
 **Table 4. The roles in the pipeline.**
 
@@ -454,49 +454,74 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
 - **A deterministic parser (Chinese and English) maps each chat request to one of 23 intents** and fills typed slots.
   Examples: evaluate an offer, negotiate, speed up a receipt, fund a gap, show status, compare financing, explain, what-if,
   approve, reject, answer from the books (ASK_BOOKS), out of scope.
-- **A question is answered, never acted on.** A question gate runs before every action rule. "Can we pay off our loans?"
+- **Who is asking comes from authentication, never from the text.** A buyer's message is never parsed for intents. It is
+  compiled and verified as an inbound offer.
+- **A question is answered, never executed.** A question gate runs before every action rule. "Can we pay off our loans?"
   is answered from the books; it never proposes a repayment, compiles an offer, queues anything or writes to the log.
   Answers come from a read-only module of about 40 figures computed by the engine's own functions, so every number is the
-  one the screens show, and each answer leads with the yes, the no or the figure.
+  one the screens show, and each answer leads with the yes, the no or the figure. (In live mode the intent classifier can
+  still turn a question into a *proposed* plan; the live stress test below counts how often.)
 - **A Tier-3 request put as a question is still a request.** "Sign a personal guarantee?", "should we pledge the
   equipment?" or 要不要签个人担保？ goes to the executor like the plain command: it is refused, logged and raises a Tier-3
   security event. Only a question that plainly asks for information and proposes nothing ("What is a personal
-  guarantee?", "Is equity an option?") is answered, and only for the owner; the agent key's Tier-3 words are always a
-  request.
+  guarantee?", "Is equity an option?") is answered, and only for the owner.
 - **A question never cancels a waiting plan.** Asked about an action while a plan waits for "go ahead" ("should we draw
   ¥100,000 on the line?"), FLOW says that the earlier plan is still waiting, what it does and what it costs, and that "go
   ahead" runs that plan, not what was just asked about.
-- **A terms question prices the terms asked for.** "From 45 to 60 days", "60 days instead of 45" or 账期从45天改成60天 is
-  read for the terms asked for apart from the ones they replace (to, instead of, 改成, 延长到). Day counts the words do not
-  tell apart are asked back, never guessed, and the days of an early-payment window ("2% off if they pay in 10 days") are not
-  terms. Terms no longer than the buyer's current ones are never priced and never called acceptable: FLOW says what the buyer
-  is on today and asks for the longer terms to test. The answer, the router's tool and the what-if share one writer.
+- **A terms question prices the terms asked for, with two-turn memory.** "From 45 to 60 days", "60 days instead of 45" or
+  账期从45天改成60天 is read for the terms asked for apart from the ones they replace (to, instead of, 改成, 延长到). Day
+  counts the words do not tell apart are asked back, never guessed, and the days of an early-payment window ("2% off if
+  they pay in 10 days") are not terms. Terms no longer than the buyer's current ones are never priced and never called
+  acceptable. When FLOW has to ask which customer, it keeps the terms already read, and the owner's next short reply
+  naming one customer finishes the question. The answer, the router's tool and the what-if share one writer.
 - **"Can I pay everyone?"** "Can I pay everyone?" or "Can I pay all my bills this month?" adds every outflow in the window
-  (this month, or the next 30 days when none is named): payroll, suppliers, loan payments and the rest. It checks them against
-  the reserve and against zero on the conservative forecast Home draws, and says yes or no, the first day below the reserve,
-  the day below zero and the lowest point. When cash falls short, the answer offers FLOW's plan with its cost and saves it as
-  "fund the cash gap" does, so the owner's "go ahead" runs it, or queues it for approval, through the executor and the
-  mandate checks. The answer itself runs nothing and adds no execution path, and it never replaces a different kind of plan
-  that waits.
+  (this month, or the next 30 days when none is named): payroll, suppliers, loan payments and the rest. It checks them
+  against the reserve and against zero on the conservative forecast Home draws, and says yes or no, the first day below the
+  reserve, the day below zero and the lowest point. When cash falls short, the answer offers FLOW's plan with its cost and
+  saves it, so the owner's "go ahead" runs it, or queues it for approval, through the executor and the mandate checks. The
+  answer itself runs nothing, and it never replaces a different kind of plan that waits.
+- **Customers, borrowing and the record.** "If my biggest customer doesn't pay, how long can we last?" and "what happens
+  if Dongguan stops ordering?" are answered on a model copy of the books without that customer's money (its open invoices
+  and recurring invoicing, or only the invoicing still to come), against today's forecast; a customer with nothing open is
+  said so plainly. "Can we borrow against the Foshan invoice?" gives what invoice financing would advance on it, the cost
+  and the days to cash; nothing is submitted or drawn. Days sales outstanding is answered from the receivables, and "what
+  did FLOW do?" names each operation in the audit log. Everyday ways of saying "show me my cash" open the cash answer.
+- **Small talk and limits.** Greetings, thanks and "who are you?" get a short reply in the message's language, and "what
+  will FLOW never do?" or "can FLOW borrow by itself?" is answered from the tier table: Tier 3 never, Tier 2 only after the
+  owner. Recognition is whole-message only, so "hi, fund the gap" or a greeting followed by an instruction goes through the
+  rules as before.
+- **Claims are named for what they are.** A buyer who writes "as agreed with your team, we will now pay on 60-day terms"
+  is told that no terms agreement is on record, in the chat reply and in the message to the buyer. Nothing is booked from a
+  claim, and the claim is logged as a security event.
 - **Everyday wording.** After the literal patterns, a scored matcher reads casual, misspelt or worried wording in both
   languages ("can my company survive this month?", 我们撑得过这个季度吗) and answers only when one question clearly wins. A
-  horizon longer than the 120-day forecast is answered on the forecast and says so. A question about the business that no
-  rule reads still goes to the books, never to a flat refusal.
-- **The question router (ADR-0015).** When the deterministic answers and the topic reads both miss, a model may choose up to
-  three of 40 read-only tools and fill their typed slots; code answers. It sees only the redacted question, fenced as data,
-  and the tool menu, never the books. Its output is validated strictly: a canary check, exact JSON with no extra or duplicate
-  keys, known tools, every slot checked against its schema twice. One bad call rejects the whole response, and a rejection,
-  timeout, provider error or cache miss falls back to the honest "I cannot answer that yet" with the nearest read. For a
-  terms question, code reads the day count from the owner's own words, whatever number the model copied into the slot. It runs
-  for the owner only, behind `FEATURE_ASK_ROUTER`, and only in live mode: the flag is on in `pnpm demo`, but no routes are
-  recorded, so offline it changes nothing; `pnpm demo --live-llm` runs it live (section 05). Logs keep a hash of the question, never its text. The ADR is still *proposed*
-  and the Security Lead's review is pending.
+  horizon longer than the 120-day forecast is answered on the forecast and says so.
+- **The intent classifier (live mode only)** is consulted only when the parser finds nothing, and may choose only from its
+  closed list; approve, reject and buyer messages are not in it, and its choice never executes. With the question router
+  on, a request it labels as a plain read goes to the answers and the router, not to a raw status view.
+- **The question router (ADR-0015, live mode only).** When the deterministic answers and the topic reads both miss, a model
+  may choose up to three of 40 read-only tools and fill their typed slots; code answers. It sees only the redacted
+  question, fenced as data, and the tool menu, never the books. Its output is validated strictly: a canary check, exact JSON
+  with no extra or duplicate keys, known tools, every slot checked against its schema twice. One bad call rejects the
+  whole response, and a rejection, timeout, provider error or cache miss falls back to the honest "I cannot answer that
+  yet" with the nearest read. For a terms question, code reads the day count from the owner's own words, whatever number
+  the model copied into the slot. It runs for the owner only, behind `FEATURE_ASK_ROUTER`; no routes are recorded, so
+  offline it changes nothing. Logs keep a hash of the question, never its text. The ADR is *proposed*; the Security Lead
+  reviewed the router on `6d2b6941` and its four findings were fixed in `70f23ac5`. Live mode, where the router acts, is
+  outside every security certification.
 - **Every id is checked against the registry.**
-- **An unmatched request gets the nearest capability**, not a flat refusal.
-- **The model classifier is consulted only when the parser finds nothing.** It may choose only from a closed list of intents.
-  Approve, reject and buyer messages are not in that list.
-- **Who is asking comes from authentication, never from the text.** A buyer's message is never parsed for intents. It is
-  compiled and verified as an inbound offer and can execute nothing.
+
+#### Innovation & Interaction: dialogue efficiency, clarification, correction and fallback
+
+- **Dialogue efficiency.** The 49 scripted tasks take 88 turns, 1.8 turns per task: most requests are answered or planned
+  in one turn, and "go ahead" is the second. FLOW speaks first after time moves or money lands, so the owner does not have
+  to ask what changed.
+- **Clarification.** "Fund it" with two open gaps asks which one. A terms question with an ambiguous day count asks back. A
+  question that needs a customer asks which, and finishes on the next turn.
+- **Correction.** "Make it 0.8%" amends the plan. "1%" is refused, because it is above the 0.88% break-even.
+- **Fallback.** An unmatched request gets the nearest thing FLOW can do, not a flat refusal; a question the books cannot
+  answer gets "I cannot answer that yet" with the nearest read; a model that fails, times out or returns invalid output
+  falls back to the rules grammar or the deterministic answers, never to a guess.
 
 **Consent: instructions that move money execute only when they are unambiguous.**
 - A financial instruction runs only when the whole message is one closed, affirmative command with exactly one RMB amount.
@@ -514,29 +539,27 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
 - **A goal.** "Get paid early on the Foshan invoice without giving anything away next quarter" becomes an early-payment
   counter at 0.85% with no future concession, with invoice financing as the fallback if the buyer refuses.
 - **Several steps.** Draw the line, finance an invoice, repay on receipt.
-- **Clarification.** "Fund it" with two open gaps asks which one.
-- **Correction.** "Make it 0.8%" amends the plan. "1%" is refused, because it is above the 0.88% break-even.
 
 **Acting first.** After time moves or money lands, FLOW names what needs the owner and proposes a cure found on the current
-books, priced as the executor will charge it. It then waits; the executor decides the permission tier. FLOW proposes no cure
-when the mandate forbids new borrowing, and no repayment while a reserve breach is open.
+books, priced as the executor will charge it. It then waits; the executor decides the permission tier. FLOW proposes no
+cure when the mandate forbids new borrowing, and no repayment while a reserve breach is open. Day 34 of the journey in
+section 01 is an example.
 
 **Ask FLOW, as the owner uses it.**
 - **Where.** A field in the page header, a side panel on every page, and a full page (`/ask`) for the same conversation.
-  The full page holds the conversation in one card: the thread scrolls inside it and the composer is pinned at its foot. Each page suggests questions it can answer. *New conversation* clears it here and on the server, so a later "go ahead"
+  The full page holds the conversation in one card: the thread scrolls inside it and the composer is pinned at its foot.
+  Each page suggests questions it can answer. *New conversation* clears it here and on the server, so a later "go ahead"
   runs nothing.
 - **FLOW speaks first.** When the panel or page opens on an empty conversation, FLOW names what needs the owner and its
-  priced cure, laid out like an answer, in the owner's words and with no internal ids (the opener).
+  priced cure, in the owner's words and with no internal ids.
 - **Answer cards.** An answer from the books leads with its sentence, shows up to three key figures, the rest of the reply,
-  how FLOW worked it out, and up to three links to the page that shows it: the cash forecast, FLOW's plan, the funding, the
-  covenant readings, who owes what, one customer, approvals, Deals, Capex, Activity or the limits. Links only open pages; a
-  card never approves, sends or runs anything, and only the owner's own turns carry one. Every word and link is written on
-  the server, and a browser test clicks each one.
+  how FLOW worked it out, and up to three links to the page that shows it. Links only open pages; a card never approves,
+  sends or runs anything. Every word and link is written on the server, and a browser test clicks each one.
 - **Language.** The reply follows the question: a Chinese question is answered in Chinese, an English one in English,
   whatever the page's language.
 - **Doing, not only answering.** A plan shows its exact operations and cost with *Yes, run it* and *Cancel*. "Approve
   APR-000002" approves that request; a bare "approve it" binds only to the request the conversation just showed. Chat
-  never records a fact ("add a ¥80,000 bill" is refused), and an unmatched request gets the nearest thing FLOW can do.
+  never records a fact ("add a ¥80,000 bill" is refused).
 
 **Tool use.** Handlers call module functions (compile, evaluate, plan, negotiate) and send typed operations to the executor.
 Each operation carries an idempotency key built from the session, turn and step. No handler can skip the verifier or build an
@@ -544,58 +567,46 @@ operation from model output.
 
 **State.**
 - **Sessions.** A chat session holds only typed references: the last offer and verdict, a pending plan, a pending
-  clarification. Since SEC-21, it continues only for the caller that opened it. When a read-only answer asks which customer,
-  the session keeps the tool and the slots already read, such as the terms asked for (`Session.pending_ask`). The owner's next
-  turn, if it is a short reply naming one customer, finishes the question with those slots and no second model call; any other
-  turn drops it. A what-if clarification likewise resumes the words that raised it, not the answer ("Foshan").
+  clarification, and a pending question with the slots already read (`Session.pending_ask`). Since SEC-21, it continues only
+  for the caller that opened it. A what-if clarification likewise resumes the words that raised it.
 - **Books.** The store holds today's position. Commitments hold agreed changes not yet realised, and every projection runs on
   the two combined (ADR-0006).
 - **Time.** Time is a simulated day that moves only through the clock. Each move posts scheduled flows, issues recurring
   invoices and expires lapsed commitments.
-- **Settlement.**
-  - Partial payments leave the residual open.
-  - A receipt on a financed invoice repays the lender first, from that receipt only.
-  - Reconciliation reports each promised early payment as awaited, received, lapsed or settled otherwise.
-- **Commitments are re-checked.** A verdict is not standing authority. At acceptance and at approval, the executor checks again
-  on the books of that moment and refuses a commitment that no longer holds (STALE_VERDICT).
+- **Settlement.** Partial payments leave the residual open. A receipt on a financed invoice repays the lender first, from
+  that receipt only. Reconciliation reports each promised early payment as awaited, received, lapsed or settled otherwise.
+- **Commitments are re-checked.** A verdict is not standing authority. At acceptance and at approval, the executor checks
+  again on the books of that moment and refuses a commitment that no longer holds (STALE_VERDICT).
 - **The decision record** derives each deal's state from stored facts (ADR-0011).
 - **Contract records** hold a document's reading with each term's quoted clause and the owner's hash-bound decision
   (ADR-0012). From a confirmed customer contract, the owner can set up that customer's repeating invoice in the books; the
   conservative forecast counts it from the first invoice the clock issues (ADR-0014).
 
 **From setup to settlement: what FLOW keeps track of.**
-- **Opening the books.** The setup wizard's six steps (section 01, Table 3) are checked by the server and previewed as a
-  90-day forecast before anything is written. *Sign and open my books* signs mandate version 1 and writes one opening entry
-  that heads a fresh evidence chain; it is refused once the books hold any activity.
+- **Opening the books.** The setup wizard's six steps (Table 3) are checked by the server and previewed as a 90-day
+  forecast before anything is written. *Sign and open my books* signs mandate version 1 and writes one opening entry that
+  heads a fresh evidence chain; it is refused once the books hold any activity.
 - **Documents.** The file comes first; the owner then picks the company from the books' list or adds a new customer from it
   (Tier 2). The party check looks for the chosen company in the role the document's kind needs: the buyer of a customer
   contract, the vendor of a purchase contract, the lender of a lender agreement. It matches by company (case, punctuation
   and the legal-form suffix ignored), never by a first word or part of a name. It blocks *Confirm* when that party is
-  another company, and shows the companies the document does name; it also blocks a reading that found no party in that
-  role, and a lender agreement whose lender was not read, unless the agreement itself defines the chosen lender as a party
-  other than the borrower. The demo's lender agreements, picked from the list or uploaded unchanged under their own lender,
-  carry their lenders' names as the agreements write them. *Refile* moves the reading to the right customer without a new model call. The confirmation card links to the
-  customer, the facility or the purchase. A lender agreement is compared with the facility already in the books and can be
-  linked to it, which changes nothing in the facility.
+  another company or was not found in that role, and shows the companies the document does name. *Refile* moves the
+  reading to the right customer without a new model call. A lender agreement is compared with the facility already in the
+  books and can be linked to it, which changes nothing in the facility.
 - **Customers.** Each customer's overview is computed from the books: gross contribution, outstanding, the financing linked
-  to its invoices, its share of what the business is owed, its payment history, and its exposure: concentration, cash with
-  it paying 30 days late, the financing cost then and the capacity left. A new customer is refused when its name looks like
-  a company already on the registry (look-alike letters, accents, or one name holding the other), reads as an id, is the
-  business's own name, or takes a short name another customer already answers to, including the short form the pages
-  show.
+  to its invoices, its share of what the business is owed, its payment history, and its exposure. A new customer is refused
+  when its name looks like a company already on the registry, reads as an id, is the business's own name, or takes a short
+  name another customer already answers to.
 - **Deals.** One queue files every request by who owes the next step. Once the owner has a reply, FLOW drafts it exactly;
   the owner sends it through the simulated buyer (Demo mode) or by their own channel, then records the buyer's yes, no or
-  reply. When FLOW has no counter, *accept as asked* or *decline* is itself the owner's decision. A confirmed contract with
-  no deal yet, and a customer with open invoices only, also appear under *Your agreements*. Each deal shows a lifecycle
-  strip (received, analysed, reply ready, sent, agreed) and, once agreed, a tracker of promised against actual (terms
-  negotiated, early payment in, collecting, fulfilled).
+  reply as the owner heard it. When FLOW has no counter, *accept as asked* or *decline* is itself the owner's decision. Each
+  deal shows a lifecycle strip (received, analysed, reply ready, sent, agreed) and, once agreed, a tracker of promised
+  against actual (terms negotiated, early payment in, collecting, fulfilled).
 - **Money over time.** The simulated clock posts scheduled flows, lands funding, issues recurring invoices and expires
-  lapsed commitments; it never records a receipt. The owner records a payment on Receivables (the whole outstanding or part
-  of it, with an optional bank reference) as a Tier-1 receipt, and FLOW says what reached cash, what repaid a lender first
-  and what is still open. Alerts are recomputed on each day's books: an overdue invoice (critical when it is financed), a
-  reserve breach ahead with its funding cure, repaying a drawn credit line once cash allows, an agreement expiring within
-  7 days, and the signed limits expiring within 14 days. Reconciliation matches each receipt and reports each promised early
-  payment as awaited, received, lapsed or settled otherwise.
+  lapsed commitments; it never records a receipt. The owner records a payment on Receivables as a Tier-1 receipt, and FLOW
+  says what reached cash, what repaid a lender first and what is still open. Alerts are recomputed on each day's books: an
+  overdue invoice (critical when it is financed), a reserve breach ahead with its funding cure, repaying a drawn credit
+  line once cash allows, an agreement expiring within 7 days, and the signed limits expiring within 14 days.
 
 ### Core algorithms and evaluation approach
 
@@ -605,119 +616,119 @@ operation from model output.
 
 - **Order within a day.** Inflows come first, then outflows, then financing costs. Closing cash is tested against the
   reserve. This is a closing-cash test; it does not model liquidity within a day.
-- **What "conservative" means.**
-  - Unconfirmed inflows are ignored.
-  - Only committed facilities can be drawn; others count as zero.
-  - A contingent concession counts at its maximum.
-  - A repeating invoice set up from a contract counts only once the clock has issued its first invoice (ADR-0014).
-- **What it does not cover.** Recurring invoices are assumed to be paid on their due day, so the forecast is not conservative
-  about collections. The stress tests below cover that.
-- **Interest** is Actual/365 simple. Invoice financing bills whole 30-day periods.
+- **What "conservative" means.** Unconfirmed inflows and overdue receivables are ignored; only committed facilities can be
+  drawn, others count as zero; a contingent concession counts at its maximum; a repeating invoice set up from a contract
+  counts only once the clock has issued its first invoice (ADR-0014).
+- **What it does not cover.** Recurring invoices are assumed to be paid on their due day, so the forecast is not
+  conservative about collections. The stress tests (Table 11) cover that.
+- **Charges.** Credit-line interest is Actual/365 simple, posted at repayment. Invoice financing bills interest and its fee
+  in whole 30-day periods, at least one, so an advance held for less than a period costs more than its 10.84% tariff.
 
-<!-- figure: figures/fig4-golden-cash.png | Figure 4. The demo company's cash over 60 days. Without new funding, cash falls below the ¥300,000 reserve on day 12 and reaches −¥105,000 on day 30. FLOW's plan (credit line ¥150,000 plus invoice financing ¥255,000, total cost ¥3,113.93) keeps cash at or above the reserve every day. -->
+Figure 2 (section 01) draws the trajectory of the demo books under four scenarios.
 
-**2. Funding router.** It finds the cheapest admissible combination of funding actions:
-- **Search.** Up to three actions, amounts on a ¥10,000 grid, each requested today and landing after its lead time.
-- **Admissible** means cash stays at or above the reserve every day, no covenant is broken, and new borrowing is allowed.
-- **Over the rate ceiling.** A leg above the mandate's rate ceiling flags the plan for the owner.
-- **Future invoices.** A plan that relies on an invoice not yet issued is flagged "cannot run today".
-- **Minimum size.** No action is smaller than ¥1,000.
+**2. Funding router.** It searches for the cheapest plan that keeps closing cash at or above the reserve on every day, breaks
+no covenant and is allowed by the mandate:
+- **Search space.** A discrete search: up to three actions, amounts on a ¥10,000 grid, no action below ¥1,000, every source
+  requested on the decision day and landing after its lead time. It searches amounts, not dates.
+- **Ranking.** A plan FLOW may run alone ranks before a cheaper plan with a leg that needs the owner (a leg above the 15%
+  approval threshold); within each class, the cheapest wins.
+- **Plans that cannot run.** A plan that relies on an action no operation can perform yet (a buyer's early payment, a bill
+  FLOW does not hold, an invoice not yet issued) is labelled "cannot run today". When no plan in the search space is
+  admissible, the router says so.
 - **On the demo company**, the ¥405,000 gap before day 32 is covered by the credit line (¥150,000, interest ¥841.64) plus
-  invoice financing (¥255,000, ¥2,272.29): **¥3,113.93**. Taking the buyer's 1.2% discount instead would cost ¥5,040.00.
-- **Optimality.** The router is within ¥1 of an exhaustive brute force on all 26 evaluation scenarios.
+  invoice financing (¥255,000, ¥2,272.29 for one 30-day period): **¥3,113.93**. Taking the buyer's 1.2% discount instead
+  would cost ¥5,040.00.
+- **How close to optimal.** Within ¥1 of a bounded brute-force search on all 26 evaluation scenarios (pairs on a ¥5,000
+  grid, triples on a ¥10,000 grid; the time budget was reached in 2 priced cases, judged against the best plan the brute
+  force found). The brute force is independent search code but uses the engine's own projection. This is optimality within
+  the search space, not over every possible amount or date.
 
 **3. Marginal cost and break-even.**
-- **Marginal cost of funds.** The all-in rate of the cheapest committed source that can carry a permanent need: invoice
-  financing at 10.84%. The credit line's clean-down rules it out.
-- **Break-even.** An early-payment discount d is cheaper than borrowing only if d < c/(1+c), where c is that source's cost for
-  the days paid early. For 30 days that is **0.8832%**.
-- **The early-payment rule (ADR-0007).** An early payment is accepted only if it passes three tests:
-  - it is below break-even for its actual days early;
-  - the cash is needed;
-  - it is cheaper than the router's plan without it.
+- **Marginal cost of funds.** The rate at which FLOW prices a concession: invoice financing's 10.84% all-in, the cheapest
+  committed source that the credit line's clean-down rule allows to carry a permanent need. It is a pricing rate, not an
+  executable quote: the platform advances at most 80% of an invoice and bills whole periods.
+- **Break-even.** An early-payment discount d is cheaper than borrowing only if d < c/(1+c), where c is that source's cost
+  for the days paid early. For 30 days c = 7.8% × 30/365 + 0.25% = 0.8911%, so the break-even is **0.8832%**.
+- **The early-payment rule (ADR-0007).** An early payment is accepted only if it passes three tests: it is below break-even
+  for its actual days early; the cash is needed; and it is cheaper than the router's plan without it. So 0.75% on the whole
+  ¥420,000 invoice costs ¥3,150.00, more than the ¥3,113.93 plan, and is countered; 0.74% costs ¥3,108.00 and is accepted.
 
-  So 0.75% on the whole ¥420,000 invoice costs ¥3,150.00, more than the ¥3,113.93 plan, and is countered. 0.74% costs
-  ¥3,108.00 and is accepted.
-
-**4. Covenants.** Each projected month is tested exactly, per facility definition:
-- **DSCR** = EBITDA ÷ debt service. A bullet loan is serviced on a level basis (ADR-0008).
-- **Leverage** = month-end debt ÷ annualised EBITDA.
+**4. Covenants.** Each projected 30-day month is tested against the synthetic credit line's definitions:
+- **DSCR** = EBITDA ÷ debt service, with EBITDA fixed at ¥90,000 a month and a bullet loan serviced on a level basis
+  (ADR-0008).
+- **Leverage** = month-end drawn debt ÷ (12 × monthly EBITDA).
 - **Clean-down** = the longest run of zero-balance days on a credit line.
 
-For example, a ¥500,000 government-guaranteed loan would bring DSCR to 1.01×, below the 1.25× covenant, and is refused.
+DSCR here is a **forward-looking monthly screening proxy** for a synthetic covenant, not the trailing-twelve-month test on
+reported accounts that a bank would normally apply. For example, a 12-month bullet ¥500,000 government-guaranteed loan,
+levelised, would bring DSCR to 1.01×, below the 1.25× covenant, so FLOW refuses it.
 
-**5. Verdict.** The verifier checks, in this order:
-- whether the offer was read completely;
-- the security screen;
-- mandate validity;
-- the projection;
-- every rule: daily reserve, the total and per-buyer concession caps, the discount cap, the APR ceiling, the covenants and the
-  Tier-3 clauses;
-- the three early-payment tests;
-- the autonomy rule.
+**5. Verdict.** The verifier checks, in this order: whether the offer was read completely; the security screen; mandate
+validity; the projection; every rule (daily reserve, the total and per-buyer concession caps, the discount cap, the implied
+rate of an early-payment discount against the 15% threshold, the covenants and the Tier-3 clauses); the three early-payment
+tests; and the autonomy rule. Every failed rule carries its code, the day or month, the observed value, the limit, a formula
+and its inputs. The autonomy rule (ADR-0005) keeps an ACCEPT at Tier 1 only for a plain early-payment discount on a named
+whole invoice that passes all three tests **and** whose message passed the coverage proof. Anything else that would be
+accepted becomes "needs the owner".
 
-Every failed rule carries its code, the day or month, the observed value, the limit, a formula and its inputs. The autonomy
-rule (ADR-0005) keeps an ACCEPT at Tier 1 only for a pure early-payment discount on a named whole invoice that passes all
-three tests **and** whose message passed the coverage proof. Anything else that would be accepted becomes "needs the owner".
+**The worked example, reconciled.** Table 7 traces the demo's central request (EX01) through every figure the document and
+the screens use, on the books of day 0. It answers a common question: why does the forecast say ¥90,040 while the deal page
+says "breached by ¥135k for 15 days"? Both are right: ¥90,040 is the shortfall on the **first** day below the reserve (day
+47), ¥135,040 the **worst** (day 60), and the breach lasts 15 days (47 to 61).
 
-**The worked example, reconciled.** Table 7 traces the demo's central request (EX01) through every figure the document and the
-screens use. It answers a common question: why does the forecast say ¥90,040 while the deal page says "breached by ¥135k for
-15 days"? Both readings are correct. The first is the shortfall on the **first** day below the reserve (day 47). The second is
-the **worst** shortfall (day 60), and the breach lasts 15 days.
-
-**Table 7. The EX01 request, every figure in one place (golden books, day 0, books version 1, reserve ¥300,000).**
+**Table 7. The EX01 request, every figure in one place (golden books, day 0, books version 1, reserve ¥300,000; CNY).**
 
 | Scenario | Funding | Lowest cash | Breach | Discount | Funding cost | Future concessions | Can run today? | Who decides |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Today's books, no request | none | −¥105,000 (day 30) | ¥405,000 short, days 12–31 | — | — | ¥0 | — | — |
-| Today's books + FLOW's standing plan | line ¥150,000 + invoice financing ¥255,000 | ¥300,000 | none | — | **¥3,113.93** | ¥0 | yes | Tier 1 |
-| **EX01 as asked** (1.2% early pay, 60-day terms, rebate), no new funding | none | ¥164,960 (day 60) | first day 47, ¥90,040 short; worst day 60, **¥135,040** short; 15 days | ¥5,040.00 | — | **¥28,326.92** (terms ¥24,326.92 + rebate ¥4,000), against a ¥5,000 cap | — | **Rejected**: concession cap, reserve, above break-even, dearer than the plan |
+| Today's books, no request | none | −¥105,000 (days 30–31) | days 12–31 (20 days), at worst ¥405,000 short | — | — | ¥0 | — | — |
+| Today's books + FLOW's standing plan | line ¥150,000 + invoice financing ¥255,000 | ¥300,000 (day 30) | none | — | **¥3,113.93** | ¥0 | yes | Tier 1 |
+| **EX01 as asked** (1.2% early pay, 60-day terms, rebate), no new funding | none | ¥164,960 (day 60) | first day 47, ¥90,040 short; worst day 60, **¥135,040** short; 15 days | ¥5,040.00 | — | **¥28,326.92** (terms ¥24,326.92 over 13 invoices + rebate ¥4,000), against a ¥5,000 cap | — | **Rejected**: concession cap, reserve, above break-even, dearer than the plan |
 | EX01 + its cheapest cure | invoice financing ¥135,040 on an invoice issued on day 32 | ¥300,000 | none | ¥5,040.00 | ¥2,406.67 | ¥28,326.92 | **no**: the invoice does not exist yet | — |
-| EX01 + the plan that can run | credit line ¥135,040, repaid day 62 | ¥300,000 | none | ¥5,040.00 | ¥1,468.05 | ¥28,326.92 | yes | — |
+| EX01 + the plan that can run | credit line ¥135,040, drawn today, repaid day 62 | ¥300,000 | none | ¥5,040.00 | ¥1,468.05 | ¥28,326.92 | yes | — |
 | Early-payment test inside the verdict | with the early payment: ¥6,508.05; without it (same terms): ¥3,873.58 | — | — | — | — | — | — | the early payment is dearer, so countered |
 | **Option A** (FLOW's counter) | credit line ¥147,210 | ¥300,000 (day 30) | none | ¥2,210.00 on ¥260,000 at 0.85% | ¥825.99; total **¥3,035.99** | ¥0 | yes | **Accept, Tier 1** |
-| Option B (FLOW's counter) | — | ¥300,000 (day 30) | none | — | — | 55 days + 0.30% price rise ≈ ¥0 net over 12 months | — | needs the owner (terms lengthen) |
+| Option B (FLOW's counter) | line ¥90,000 + invoice financing ¥315,000 | ¥300,000 (day 30) | none | — | **¥3,706.46** (¥592.53 more than the standing plan) | 55 days + 0.30% price rise: a net forward gain of ¥162.05 over 13 invoices | the router's plan, yes | needs the owner (terms lengthen) |
+
+*Funding cost and future concessions overlap: the EX01 cure pays for the cash effect of the first invoice's 15 extra days,
+which ¥24,326.92 already prices. Do not add them. On FLOW's pricing, accepting as asked gives away ¥5,040 now and ¥28,326.92
+of future concessions, CNY 33,366.92 in all, and still needs funding for days 47 to 61.*
 
 **6. Counters.**
 - **Option A, early payment.**
   - **Rate:** the largest whole-5-basis-point rate below break-even, here 0.85%.
-  - **Amount:** the cash needed, grossed up and rounded **up** to a whole ¥10,000, here ¥260,000. Rounding stops a buyer
-    reading FLOW's exact gap from the counter (R-10).
-  - **Cost:** ¥3,035.99, below the ¥3,113.93 standing plan. Tests show that it passes its own re-evaluation, stays within
-    every mandate limit and binds to a commitment with the same terms hash.
-- **Option B, terms.** Longer terms with the smallest price rise that covers the funding cost.
-  - Every counter is re-evaluated as an offer on the same books, so FLOW offers 55 days, not 60. At 60 days, a later invoice
-    would land after a loan payment with no committed cure.
-  - Outbound text is filled from an approved template, and the outbound guard checks it.
-- **Option A's saving over the standing plan is modest** (¥77.94). Its real value is that the supplier gets the cash it needs
-  without the ¥28,326.92 of future promises the buyer asked for.
+  - **Amount:** the cash needed after the credit line, grossed up and rounded **up** to a whole ¥10,000:
+    (405,000 − 150,000) ÷ (1 − 0.85%) = 257,186.08, so ¥260,000. Rounding stops a buyer reading FLOW's exact gap from the
+    counter (R-10).
+  - **Cost:** ¥3,035.99, ¥77.94 below the standing plan. It passes its own re-evaluation, stays within every mandate limit
+    and binds to a commitment with the same terms hash. Its real value is that the supplier gets the cash it needs without
+    the ¥28,326.92 of future promises the buyer asked for.
+- **Option B, terms.** Longer terms with the smallest price rise that covers the funding cost of the extra days (0.30% of
+  ¥420,000 = ¥1,260 against ¥1,247.53 per invoice). Every counter is re-evaluated as an offer on the same books, so FLOW
+  offers 55 days, not 60: at 60 days a later invoice would land after a loan payment with no committed cure. Its books still
+  need the ¥3,706.46 plan in Table 7, so FLOW recommends Option A.
+- Outbound text is filled from an approved template, and the outbound guard checks it.
 
 **7. Simulated buyer.** The buyer kernel works out its own surplus from a package: the discount, rebate and extra days, less
-its cost of paying early and any price rise.
-- It accepts when the surplus reaches its hidden reservation.
-- Otherwise it counters one step toward that reservation.
-- In its last round it refuses.
-
-With a hard-line reservation, the demo ends in NO DEAL within three rounds, and the router still covers the gap for
-¥3,113.93.
+its cost of paying early and any price rise. It accepts when the surplus reaches its hidden reservation, otherwise counters
+one step toward it, and refuses in its last round. In the one hard-line scenario tested, the demo ends in NO DEAL within
+three rounds, and the router still covers the gap for ¥3,113.93.
 
 **8. Capex screening.** For an owner's planned machine purchase, FLOW screens each financing structure for daily liquidity and
-monthly covenants:
-- cash with the line;
-- an 18-month loan;
-- a 36-month loan;
-- a 48-month lease.
+monthly covenants: cash with the line; an 18-month loan; a 36-month loan; a 48-month lease (modelled as a 7.2% amortising
+loan with no residual). It ranks the feasible structures by total financing charges, undiscounted.
 
-It ranks the feasible structures by total financing charges. On the synthetic ¥600,000 machine it selects the lease
-(¥92,327.32 of charges). The 36-month loan is cheaper (¥53,206.14) but leaves cash ¥3,144.62 below the reserve for three days.
-A figure that does not apply, such as the payment of a structure the funding menu rules out, shows a dash, and the result
-column says why the structure is ruled out.
+On the synthetic ¥600,000 machine (+¥22,000 a month from month 4 to month 60; no residual value, tax or maintenance; NPV
+¥380,885.77 at a 10% hurdle; simple payback in month 31, discounted payback in month 35), run on today's unfunded books,
+FLOW selects the lease (¥92,327.32 of charges). The 36-month loan is cheaper (¥53,206.14) but leaves cash ¥3,144.62 below
+the reserve for three days. Once FLOW's ¥3,113.93 plan has been paid, every structure needs a few days' bridge on the line
+(the lease ¥3.11, the 36-month loan ¥3.29).
 
 The search tests **one structure at a time**. A 36-month loan plus a three-day bridge on the credit line (interest ¥1.65)
-would have no breach and cost about **¥39,000 less** than the lease, but FLOW does not try that combination today. So the
-selection is the best *standalone* structure, and combined structures are on our roadmap. Applying for financing is a separate
-owner step that queues one Tier-2 application. The owner's approval records a simulated pending facility, which counts as zero
-until a lender commits.
+would have no breach and about ¥39,000 less interest than the lease, undiscounted across a 36- and a 48-month tenor; in
+present value at the 10% hurdle the gap is **CNY 7,493.45**. FLOW does not try that combination today, so the selection is
+the best *standalone* structure. Applying for financing is a separate owner step that queues one Tier-2 application; the
+owner's approval records a simulated pending facility, which counts as zero until a lender commits. A figure that does not
+apply, such as the payment of a structure the funding menu rules out, shows a dash, and the result says why.
 
 Around the screening, the Capex hub holds the rest of the buy side:
 - **Purchase contracts.** A vendor contract is read like any document. FLOW lays out its payment schedule against the
@@ -733,114 +744,170 @@ Around the screening, the Capex hub holds the rest of the buy side:
 **9. Strategy views.** Two read-only views answer before a buyer asks:
 - **The price of earlier cash**, on Cash & funding: what ¥10,000 arriving 30 days earlier is worth, by arrival day.
 - **Before they ask** (the safe deal envelope), on a deal's *Cash impact*: how far each lever (terms, price, early-payment
-  rate, rebate) can go on its own on today's books and what stops it, packages that pass every check, and the lowest price that works at each
-  length of terms. Each package is re-checked before anything is sent.
+  rate, rebate) can go on its own on today's books and what stops it, packages that pass every check, and the lowest price
+  that works at each length of terms. Each package is re-checked before anything is sent.
 
-Both are on in `pnpm demo`. The envelope repeats the funding search on its first read (about 17 s on the demo books), so
-the demo computes it once in the background after each reset or setup and the owner's first visit reads the cached answer
-(the cache is keyed by the books, mandate, day and commitments). Two further views are built behind flags that the demo
-leaves off: customer economics (sales and margin as context for deals) and a pilot journal (what the owner did against what
-FLOW said).
+Both are on in `pnpm demo`. The envelope repeats the funding search on its first read (about 17 s on the development
+machine, a single observation), so the demo computes it once in the background after each reset or setup, keyed by the
+books, mandate, day and commitments. Two further views are built behind flags that the demo leaves off: customer economics
+and a pilot journal.
 
-**Evaluation approach.** We evaluate on three levels:
-- **The engine against an independent oracle and a brute force.**
-- **The compiler on messages its authors had not seen.**
-- **The whole agent through scripted tasks and attacks.**
+#### Evaluation approach: how to read our numbers
 
-One offline command regenerates the engine and agent figures in about 8 minutes:
-`uv run --project services/api python scripts/evaluate.py`. Table 14 in section 05 lists every headline figure with its
-build, date and command.
+We evaluate on three levels: the engine against an independent oracle and a brute force; the readers (buyer messages,
+contracts, owner questions) on items their authors had not seen; and the whole agent through scripted tasks and attacks.
+One offline command regenerates the engine and agent figures (`uv run --project services/api python scripts/evaluate.py`,
+12 minutes on 18 Oct); Table 14 in section 05 gives every headline figure's build, date and command.
 
-**Is FLOW safe, and is it useful? The autonomy funnel.** "Zero unsafe accepts" alone could mean that FLOW sends everything to
-the owner. Table 8 shows both sides: how often FLOW was right to act alone, and how often it bothered the owner unnecessarily.
+Every result carries its **evidence class**: *unseen held-out* (labels written before the code saw the items, scored once,
+and that first score is the one quoted); *tuned* (re-scored after fixes chosen by studying its failures, or a set that was
+the development target); *recorded model replay* (a model's past reading replayed offline); *live* (a provider called that
+day, one sample of a non-deterministic system); *rules* (no model); *scripted* (a fake model we wrote); and *tests*. **No
+result comes from a deployed system.** A test count measures the size of a suite, not correctness. Labels for buyer
+messages were written by AI agents in separate sessions, not by people. Figure 5 groups the accuracy results by class.
 
-**Table 8. Autonomy on two held-out sets of buyer messages (115 messages, rules path, 17 Oct 2026).**
+<!-- figure: figures/fig-eval-classes.png | Figure 5. FLOW's accuracy results grouped by evidence class: unseen held-out first runs, the same sets after tuning on their failures, recorded DeepSeek readings and live DeepSeek calls. Each bar is a share of its own row's denominator (shown beside it), and the right-hand column shows what that row's own oracle scores wrong. Rows with different oracles do not compare. Offline re-runs on 571ea64f, 18 Oct 2026; live rows on the dates shown. | page -->
+
+#### Task Completion: scripted tasks in a simulated environment
+
+- **49 of 49 scripted conversations pass their own checks** (88 turns, 18 Oct, `571ea64f`), each with a verifiable
+  evidence chain; a tampered copy of the chain is rejected. The tasks and their pass conditions were written by the team
+  that built the handlers, so they show that the paths written work, not how real owners would talk.
+- **The demo walk** (17 steps, the journey in section 01) exits cleanly with 14 hash-chained operations that verify.
+- **The engine** matches an independently written oracle on 67 of 67 golden financial values to the fen, and on 27 of 27
+  covenant and capex values; mandate and covenant limits hold at the threshold and break one unit past it (20 of 20). The
+  oracle shares the team and the specification, so a shared misreading of a rule would pass.
+
+#### Reading buyer messages: safety beside usefulness
+
+Two held-out sets of WeChat- and email-style buyer messages (66 and 49, Chinese, English and mixed) were labelled by separate
+AI-agent sessions before the reader saw them. **Their first runs are our only unseen figures:** verdicts matched the label
+on 33 of 63 and 28 of 47, and FLOW accepted **6 misread messages on its own** (4 of its 8 accepts on the first set, 2 on the
+second). That result led to the coverage proof (ADR-0005): FLOW may now accept alone only when it can account for every
+figure and request in the message. We then fixed the failure classes, so today's figures are tuned.
+
+**Table 8. Autonomy on the two held-out sets of buyer messages today (115 messages, rules path, 18 Oct, `571ea64f`;
+both sets have guided later fixes).**
 
 | Step | Held-out 3 | Held-out 2 | Both |
 | --- | --- | --- | --- |
 | Buyer messages | 66 | 49 | 115 |
-| Genuinely acceptable as asked today (pure early payment, cheaper than the plan) | 10 | 4 | **14** |
-| … handled by FLOW alone, correctly | 1 | 2 | **3** |
-| … sent to the owner unnecessarily | 9 | 2 | **11** |
+| Genuinely acceptable as asked today (plain early payment, cheaper than the plan) | 10 | 4 | **14** |
+| … accepted by FLOW alone (autonomous acceptance coverage) | 1 | 2 | **3 (21%)** |
+| … sent to the owner unnecessarily (unnecessary escalation) | 9 | 2 | **11 (79%)** |
 | Not acceptable, and FLOW answered alone (counter or reject at Tier 1) | 29 | 25 | 54 |
 | Not acceptable, and FLOW asked the owner (correctly) | 27 | 20 | 47 |
-| **Wrong autonomous accepts** | **0** | **0** | **0** |
-| Owner interactions needed | 36 | 22 | 58 (50%) |
+| Refusals to read (NO_VERDICT) | 16 | 14 | 30 (26%) |
+| Owner reviews needed | 36 | 22 | 58 (50%) |
+| **Wrong autonomous accepts** | **0 of 1** | **0 of 2** | **0 of 3** |
+| *First run, 1 Oct, before ADR-0005* | *4 of 8 wrong* | *2 wrong* | *6 wrong* |
 
 **What Table 8 shows.**
-- **FLOW is safe.** It never accepted a message it had misread.
-- **Most answers need no owner.** It answers more than half of all messages on its own, mostly by countering or declining
-  within the mandate.
-- **Coverage of good offers is low: 3 of 14.** Ten of the 11 unnecessary escalations have one cause. The buyer named a
+- **Safety comes from a rule, not from a large sample.** With 3 autonomous accepts, "no wrong accept" is weak evidence by
+  itself; the evidence is that FLOW refuses to accept alone without proof, which the first runs showed is necessary.
+- **Most messages need no owner.** FLOW answers 57 of 115 on its own, mostly by countering or declining within the mandate.
+- **That caution has a cost: 11 of the 14 good offers wait for the owner.** Ten of the 11 have one cause: the buyer named a
   settlement date ("tmrw", "国庆后", "next Mon") that FLOW does not yet read into the terms, so the coverage proof cannot
-  account for it and sends the offer to the owner. Reading settlement dates is the next improvement. Until then, each such
-  offer costs the owner one review, with the verdict and the source words shown.
+  account for it. Reading settlement dates is the next improvement. Until then, each such offer costs the owner one review,
+  with the verdict and the source words shown.
 
-**Table 9. Compiler accuracy on the held-out sets.**
+**Table 9. Reading buyer messages on the held-out sets.**
 
-| Set and run | Independence | Path | Verdict agreement | Material errors | Silent material errors | Wrong autonomous accepts |
+| Set and run | Class | Path | Verdict agreement | Material errors | Silent material errors | Wrong autonomous accepts |
 | --- | --- | --- | --- | --- | --- | --- |
-| Held-out 3, first run (1 Oct, before ADR-0005) | unseen | rules | 33/63 (52%) | 4/51 | 7 | 4 of 8 accepts |
-| Held-out 3, today (17 Oct) | its failure classes guided later fixes | rules | 44/63 (70%) | 3/51 (5.9%) | 4 | 0 |
-| Held-out 3, after round 3 (1 Oct) | prompt not tuned on it; shared gates were | live DeepSeek | 42/63 (67%) | 3/51 | 5 | 0 |
-| Held-out 2, today (17 Oct) | guided round 2 | rules | 38/47 (81%) | 0/37 | 0 | 0 |
-| Form baseline (labels typed in, today) | — | no compiler | 56/63 (89%) | — | — | — |
+| Held-out 3, first run (1 Oct, before ADR-0005) | **unseen** | rules | 33/63 (52%) | 4/51 | 7 | 4 of 8 accepts |
+| Held-out 2, first run (1 Oct, before ADR-0005) | **unseen** | rules | 28/47 (60%) | 3/37 | 5 | 2 |
+| Held-out 3, today (18 Oct) | tuned | rules | 44/63 (70%); 50/63 (79%) against today's policy | 3/51 (5.9%) | 4 | 0 of 1 |
+| Held-out 2, today (18 Oct) | tuned | rules | 38/47 (81%); 44/47 (94%) against today's policy | 0/37 | 0 | 0 of 2 |
+| Held-out 3, one live run (1 Oct, build `389cfd9`) | live; shared gates tuned, prompt not | DeepSeek | 42/63 (67%) | 3/51 | 5 | 0 |
+| Form baseline (labels typed into today's verifier) | tests | no reader | 56/63 (89%) | — | — | — |
 
 **Reading Table 9.**
-- **Only the first held-out-3 row is an untuned accuracy figure.** Its four wrong autonomous accepts led directly to ADR-0005.
-- **The form baseline is the verifier's policy compared with the labeller's.** It is below 100% because the labels (written
-  on 1 Oct) predate the early-payment rule, which now counters some offers the labels expected to be accepted. This also
-  explains why today's figures are lower than earlier versions of this document.
-- **Targets not met.** The material-error target (≤ 5%) and the zero-silent-error target are not met on held-out 3.
-- **Silent errors never cause an autonomous accept.** Every silent error ended with the owner or in a rejection.
+- **Two agreement figures for today.** The 1 Oct labels predate the early-payment rule (ADR-0007), so 7 labels in each set
+  disagree with today's policy applied to the true terms. "Against today's policy" compares the reader's verdict with the
+  policy on the true terms, separating "the reader is wrong" from "the policy changed". The form baseline shows the same
+  drift from the policy side.
+- **Targets not met.** The material-error target (≤ 5%) and the zero-silent-error target are missed on held-out 3. No silent
+  error caused an autonomous accept: each ended with the owner or in a rejection.
+- **The live run is one sample** on an older build, with the provider's model version unrecorded; it was not repeated, so
+  run-to-run variation is unmeasured.
 
 Appendix A gives the exact definitions of each metric.
 
-<!-- figure: figures/fig5-heldout-results.png | Figure 5. Compiler results on the held-out sets, labelled unseen or tuned on. After ADR-0005 no misread message was accepted without the owner, while verdict agreement and material errors still miss our targets on held-out 3. -->
+#### Reading Chinese contracts
 
-**Reading Chinese contracts.** We generated 70 synthetic Chinese contracts:
-- government procurement, goods, services, construction subcontracts, equipment installation, processing, leases, logistics
-  and supplementary agreements;
-- in four formats: digital PDF, Word, scanned PDF and phone photo.
+We generated 70 synthetic Chinese contracts with their answer keys (government procurement, goods, services, construction
+subcontracts, equipment installation, processing, leases, logistics and supplementary agreements; digital PDF, Word, scanned
+PDF and phone photo) and built the reader on the first 40.
 
-We fixed the reader against batch 1 (40 contracts), then tested it on batch 2 (30 new contracts with six contract types it had
-never seen).
+- **Unseen: 75% of key fields on 17 contracts with a text layer.** Of 30 new contracts (six new contract types), 13 are
+  scans or phone photos and are refused before any reading, because FLOW has no OCR. On the 17 with a text layer, recorded
+  DeepSeek readings got **215 of 285** key fields right (**75%**; **45%**, 215 of 474, over all 30).
+- **The fields that decide money.** Of the 234 fields that move money or gate a decision (total amount, stage percentages,
+  days, day units and triggers, late interest, retention, end date, buyer and seller), **178 were right (76%)**, 11 were
+  stated wrongly (including buyer and seller swapped in 3 contracts), 45 were missed, and 18 stage items were stated that
+  match nothing in the contract. Payment triggers were the weakest field (17 of 33). The record-only fields (contract
+  number, signing and start dates) were right on 37 of 51.
+- **Tuned figures.** After five fixes chosen by studying these failures (slash and dot dates, a code check of who pays whom,
+  repeated terms, the payer's late interest, end dates), the same set scores 86%, no longer held out; on the 40 contracts
+  the reader was built on, 98%.
+- **What limits the damage.** Every term must quote its clause word for word; code checks that stage percentages sum to 100
+  and stage amounts match the total; a reading changes nothing until the owner confirms it, and only a separate Tier-2 *Set
+  up in my books* turns a contract into forecast invoices. Nothing here measures whether an owner would catch a plausible
+  wrong stage or trigger. The contracts and readings are outside the repository, so these figures cannot be reproduced
+  from it.
 
-<!-- figure: figures/fig6-contract-reading.png | Figure 6. Reading Chinese contracts, by format. 98% field accuracy on the tuned batch, 75% on the held-out batch, and 86% after fixes made by studying that batch (so no longer held out). Scans and phone photos are refused: FLOW has no OCR. -->
+<!-- figure: figures/fig6-contract-reading.png | Figure 6. Reading Chinese contracts, by format. Unseen text-layer contracts: 75% of key fields (recorded DeepSeek readings). After fixes made by studying them: 86% (no longer unseen). The contracts the reader was built on: 98%. Scans and phone photos are refused: FLOW has no OCR. -->
 
-- **The honest figure is 75% field accuracy on unseen contracts with a text layer** (215 of 285 fields; recorded DeepSeek
-  readings replayed, 17 Oct). After five fixes found by studying those failures, it rose to 86%, but that figure is no longer
-  held out.
-  - The fixes were slash and dot dates, a code check of who pays whom, repeated terms, the payer's late interest, and end
-    dates.
-  - Wrong values fell from 31 to 21.
-- **The tuned batch scores 98%** (502 of 514) and stayed unchanged through every fix.
-- **Scans and photos are refused,** because FLOW has no OCR.
-- **Every term must quote its clause word for word,** and FLOW checks that the company the owner picked is the contract's
-  party in the role its kind needs (buyer, vendor or lender). A contract whose party in that role is another company, or
-  whose party in that role was not found in the reading, cannot be confirmed.
+#### Owner questions and the live-provider stress test
 
-**Table 10. Other evaluation results (offline, 17 Oct 2026 unless noted).**
+- **The owner-question bank** (122 owner, CEO and CFO questions in English and Chinese with rewordings, 503 turns) is the
+  bank the answer module was built against, so it is a tuned set. Of the 427 turns the books can answer, FLOW answers 228
+  (53%), 45 partly and declines 154 naming the nearest read, with 0 wrong by the bank's own scorer; 75 of the 76 questions
+  the books cannot answer are declined honestly.
+- **Everyday wording.** 345 phrasings (219 English, 126 Chinese; casual, formal, misspelt and worried) were labelled with
+  the answer they should reach before the matcher was written, and split 60/40 by a hash. On the **142 held out** it reaches
+  the right answer for **127 (89.4%)** and a wrong topic for **3 (2.1%)**; on the 203 it was tuned on, 199 and 1. It scores
+  the topic of the answer, not its figures.
+- **Offline, no question executed, queued or changed the books**; three proposed a plan that waits for "go ahead".
+- These figures were measured on `571ea64f`, before the Ask FLOW additions described above (customers, borrowing against
+  an invoice, DSO, small talk); one tuning item now reaches the new "pay everyone" answer instead of its label.
 
-| Question | Result |
-| --- | --- |
-| Is the engine exact? | Financial values 67/67 and covenant and capex values 27/27 exact against the independent oracle; mandate and covenant boundaries exact at ±1 fen, basis point or day (20/20) |
-| Is the router optimal? | Within ¥1 of the brute force on 26/26 scenarios; no committed plan relies on an uncommitted facility |
-| Is the router worth it, against a fair baseline? | Against "credit line first" restricted to actions FLOW can actually run, on the 18 scenarios where both can be compared: cheaper in 3 (¥169.78 in total) and equal in 15. In 1 more scenario it finds a runnable plan where the baseline finds none. The router's value is mainly that it finds a safe plan, explains it, and says plainly when that plan cannot run today, not large savings |
-| Can every plan run today? | Of the 26 router plans, 19 can run now, 6 depend on an action no operation can perform yet (a buyer's early payment or a bill) and are labelled "cannot run today", and 1 scenario has no admissible plan, which the router says |
-| Does it walk away honestly? | A hard-line buyer ends in NO DEAL within 3 rounds and the gap is still funded; 7/7 checks |
-| Does the agent complete tasks? | 49/49 scripted chat tasks (87 turns); every evidence chain verifies, and a tampered copy is rejected |
-| Does it answer an owner's questions? | A bank of 122 owner, CEO and CFO questions in English and Chinese, with rewordings (503 asks): 303 answered directly from the books (60%), 46 partly, 0 wrong, 154 declined honestly, naming the nearest thing FLOW can show (288, 38, 0 and 177 before the everyday-wording matcher). All 30 priority questions are answered in every wording. No question executes or queues anything (`b4167053`, 18 Oct) |
-| Does it understand everyday wording? | 345 owner phrasings (219 English, 126 Chinese), casual, formal, misspelt and worried, each labelled with the answer it should reach and written before the matcher. Right: 327 of 345 (94.8%; 137 before). Held out from tuning: 127 of 142 (89.4%; 57 before). Wrong topic: 3 (0.9%). No turn executed, queued or changed anything (`b4167053`, 18 Oct, offline: the router does not run here) |
-| Is the router safe? | Its own accuracy is not measured: it runs only in live mode, and no live run is recorded. Its contract is tested with a scripted model: 24 kinds of malformed output rejected, the canary, timeouts and provider errors with no second paid call, injection attempts, a prompt that holds nothing from the books, and the 231-item language-boundary set with a hostile routing model. With the answer cards: 433 passed, 1 skipped (`b4167053`, 18 Oct) |
-| How fast is it? | Router p50 81 ms, p95 238 ms. Chat turn p50 9 ms, p95 567 ms. Full Scene 1 (read, decide, negotiate, execute) p50 1.08 s. All in process, cache mode |
-| Does language stay safe at the boundary? | 231 adversarial inputs through the real chat route: 0 wrong-and-material (recorded and scripted models, 3 Oct; not yet run against a live model) |
+**The live-provider stress test (18 Oct 2026).** On build `28738f19`, with DeepSeek live, the question router on and the demo
+books, a client sent 658 owner turns to a local API: 589 sweep questions (the bank's main wordings and the everyday set,
+each in a fresh session), 20 hard questions, 8 attack prompts, 6 two-turn exchanges and bursts of 5, 10 and 20 concurrent
+questions. It measured availability, latency, the path each turn took and the reply; it did not score correctness by
+oracle or diff the books.
+- **Availability.** All 589 sweep turns and all other turns returned HTTP 200.
+- **Path.** Of the 589, the rules answered 546, the question gate 10, the intent classifier 12 and the fallback 21. 63
+  reached the router: it answered 33, said "cannot answer yet" for 29 and rejected 1. One reviewer, not blinded, graded the
+  33 answers: 22 right, 10 partial, 1 wrong topic (a question about the cost of funds got debt service).
+- **Usefulness and safety in live mode.** The intent classifier turned 4 of 589 questions into proposed plans that waited
+  for "go ahead" (none was sent); the read-intent routing added since sends plain reads to the answers but does not change
+  action labels. A buyer message the model and the rules read differently gave NO VERDICT, where the offline path counters:
+  safe, less useful. The 8 attack prompts executed nothing visible in the replies, but none reached the router, so they do
+  not test it.
+- **Latency.** Sequential questions: p50 0.13 s, p95 1.17 s, max 5.8 s (at least 75 called the provider; a router call
+  took p50 0.91 s). Twenty concurrent questions were all answered, the slowest in 8.4 s.
+
+**Table 10. Other evaluation results (offline, 18 Oct 2026, `571ea64f`, unless noted).**
+
+| Question | Result | Class |
+| --- | --- | --- |
+| Is the engine exact? | Financial values 67/67 and covenant and capex values 27/27 exact against the independent oracle; limits exact at ±1 fen, basis point or day (20/20) | Tests |
+| How close to optimal is the router? | Within ¥1 of a bounded brute-force search on 26/26 scenarios (budget reached in 2 priced cases); no committed plan relies on an uncommitted facility | Tests |
+| Is the router worth it, against a fair baseline? | Against "credit line first" restricted to actions FLOW can run, on the 18 scenarios where both can be compared: cheaper in 3 (¥169.78 in total) and equal in 15; in 1 more it finds a runnable plan where the baseline finds none. Its value is mainly that it finds a safe plan, explains it and says when that plan cannot run today, not large savings | Tests |
+| Can every plan run today? | Of the 26 plans, 19 can run now, 6 depend on an action no operation can perform yet and are labelled "cannot run today", and in 1 scenario no admissible plan exists, which the router says | Tests |
+| Does it walk away honestly? | In the one hard-line scenario tested, NO DEAL within 3 rounds and the gap still funded; 7/7 checks | Tests, simulated buyer |
+| Is the router safe? | Every malformed or hostile output we scripted is rejected (24 kinds; 452 router, boundary, card and chat-attack tests pass). Nothing the router chose can act: its 40 tools are read-only | Scripted |
+| Does language stay safe at the boundary? | 231 adversarial inputs (3 Oct, build `979defb`): 0 wrong material actions on the rules path and with a scripted model; not run against a live model | Rules, scripted |
+| How fast is it? | In process on one development machine, cache mode, no network or model: router p50 81 ms (26 scenarios), chat turn p50 9 ms and p95 567 ms (87 turns), full Scene 1 p50 1.08 s (5 runs) (`975e082f`); these vary severalfold with machine load | Tests |
 
 **Table 11. Stress tests on the demo company (read-only copies of the books).**
 
 | Stress | Effect on cash | What FLOW does |
 | --- | --- | --- |
-| Foshan pays 10 days late | Same lowest point (day 30); 30 days below the reserve instead of 20 | Keeps the same funding longer (¥5,649.25) and **asks the owner**, because the advance's cost (16.7% a year) is now above the 15% ceiling |
+| Foshan pays 10 days late | Same lowest point (day 30); 30 days below the reserve instead of 20 | Keeps the same funding longer (¥5,649.25) and **asks the owner**, because the advance's effective cost (16.7% a year) is now above the 15% approval threshold |
 | Foshan pays only half | 35 days below the reserve | Its cheapest cover needs a buyer early payment on a future invoice, so it is labelled **cannot run today** |
 | EBITDA 20% lower | Cash unchanged | Covenants weaken but hold (DSCR 1.50× at worst, leverage 2.15×); the plan is unchanged |
 
