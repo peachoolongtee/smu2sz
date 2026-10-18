@@ -249,20 +249,25 @@ deployed, or that it reads contracts or messages perfectly. It does not. Section
 ### Architecture diagram and component responsibilities
 
 FLOW is a modular monolith: one FastAPI service (`services/api`), one Next.js web app (`apps/web`) and one database. Modules
-talk only through typed contracts in `app/domain/`, and import cycles are forbidden.
+talk only through typed contracts in `app/domain/`, and import cycles are forbidden. Figure 3 shows the whole system: who
+calls it, the three places a model assists, the deterministic core that computes every figure, and the action path through
+which every operation that commits the business or moves money must pass.
 
-<!-- figure: figures/fig1-architecture.png | Figure 2. FLOW in one picture. Untrusted text enters on the left, where the compiler is the only model-backed step. The deterministic core decides on typed obligations and never reads free text. Only the executor writes, and it records every outcome in a hash-chained log. -->
+<!-- figure: figures/fig8-system-architecture.png | Figure 3. FLOW's architecture. A model assists in three places only: reading documents and buyer messages (the compiler), classifying a chat request the rules miss, and routing an owner's question to read-only tools. In live mode it receives text with identifying numbers redacted, and its output is typed data that code validates. Deterministic code computes every figure. Every typed operation passes the signed mandate and the executor, which records each outcome in a hash-chained log. The buyer, the lenders and the bank feed are simulated. Build 571ea64f. | page -->
 
-**Table 4. The four roles in the pipeline.**
+**Table 4. The roles in the pipeline.**
 
 | Role | Code | May | May not |
 | --- | --- | --- | --- |
-| **Compiler** (the only model-backed role, untrusted) | `compiler/` | Turn text into typed obligations, each tied to the exact source words. Flag authority claims, data requests and unknown lenders. Prove whether it accounted for everything | See the books, the mandate, the funding options or a buyer's limits. Emit an operation, a tier or a reply |
+| **Compiler** (the main model-assisted role, untrusted) | `compiler/` | Turn text into typed obligations, each tied to the exact source words. Flag authority claims, data requests and unknown lenders. Prove whether it accounted for everything | See the books, the mandate, the funding options or a buyer's limits. Emit an operation, a tier or a reply |
+| **Chat front** (rules first; model-assisted in live mode only) | `nl/`, `nl/router/` | Read an owner's request with the deterministic parser; in live mode, label a request the parser misses from a closed list of intents, or route a question to read-only tools. Answer from the books; store a plan for "go ahead" | Execute anything a model chose; approve or reject through the classifier; read a buyer's message as a request |
 | **Verifier** | `financial/`, `covenants/`, `verifier/` | Project the cash trajectory, test the mandate and covenants, return a verdict with formulas and priced counters | Read free text (enforced by a test on its imports) |
 | **Negotiator** | `verifier/counters.py`, `counterparties/`, `egress/` | Price counters from the marginal cost of funds, run bounded rounds with the buyer, fill outbound templates | Reveal the reserve, caps, funding options or limits |
-| **Treasurer** | `funding/`, `operations/` | Find the cheapest admissible funding plan and execute typed operations through the permission gates | Rely on an uncommitted facility for a hard constraint; execute a Tier-3 action |
+| **Treasurer** | `funding/`, `operations/` | Find the cheapest plan in its search space and execute typed operations through the permission gates | Rely on an uncommitted facility for a hard constraint; execute a Tier-3 action |
 
-**One buyer request, end to end.**
+**One buyer request, end to end (Figure 4).** The terms stay *proposed* until the executor has screened the buyer's
+acceptance; they become an *authorised* operation and a *recorded* commitment; the deal is *settled* only when the bank feed
+reports the cash and reconciliation marks the promise.
 
 1. **Read.** The compiler proposes typed obligations, each with its source span, or abstains. A conflict between a message
    and its attachment, or a stated discount that does not equal rate × amount, gives NO_VERDICT. A coverage proof then
@@ -271,56 +276,82 @@ talk only through typed contracts in `app/domain/`, and import cycles are forbid
    security events. None of them can book anything.
 3. **Project.** The engine projects a conservative daily trajectory of cash, debt and future promises with the request's
    obligations.
-4. **Fund.** The router prices any gap from committed facilities and returns the marginal cost of funds. Future concessions
-   are valued at that rate.
+4. **Fund.** The router prices any gap from committed facilities and returns the marginal cost of funds. Future
+   concessions are valued at that rate.
 5. **Decide.** The verifier tests every day and every month against the mandate and covenants, applies the break-even and
    autonomy rules, and returns a verdict. A rejection or counter comes with counters priced below the marginal cost.
 6. **Negotiate.** The buyer answers within a bounded number of rounds. NO DEAL is a normal outcome.
-7. **Execute.** Code, never the model, turns the verdict into typed operations. The executor runs Tier 1, queues Tier 2 for
+7. **Execute.** Code, never a model, turns the verdict into typed operations. The executor runs Tier 1, queues Tier 2 for
    the owner, refuses Tier 3, and appends every outcome of an admitted operation to the hash-chained log. A request refused
    before it reaches the executor is recorded as a security event instead.
+8. **Settle.** The bank feed (simulated) or the owner records each receipt; a receipt on a financed invoice repays the lender
+   first; reconciliation reports each promised payment as awaited, received, lapsed or settled otherwise.
 
-<!-- figure: figures/fig2-offer-lifecycle.png | Figure 3. One buyer request from message to money. The figure marks which steps run on their own, which wait for the owner, and which are simulated in this build: the buyer's replies, the bank feed, the facilities and the clock. -->
+<!-- figure: figures/fig9-request-to-settlement.png | Figure 4. One buyer request from request to settlement. Steps 1 to 6 are proposed terms: nothing binds and no money moves. The executor's acceptance screen authorises the operation, the commitment is recorded in the hash-chained log, the funding plan runs as authorised operations, and the deal settles only when the simulated bank feed reports the cash and reconciliation marks the promise. Badge shapes show who acts: code, model, owner or a simulated party. Build 571ea64f. | page -->
 
-**How agreement happens, and what is simulated.** A counter can reach the buyer in two ways. Both pass through the same gates
-afterwards: nonce, terms hash, re-verification on today's books, and the hash-chained log.
+**How agreement happens, and what is simulated.** A counter reaches the buyer in one of three ways. All three pass through
+the same gates afterwards: the single-use nonce, the terms hash, re-verification on that day's books, and the hash-chained
+log.
 
-- **Through the simulated buyer.** The owner reviews the exact counter, then sends it with the verdict and books version it
-  was built on. A changed counter is refused (409). The buyer in this build is a deterministic simulation with a hidden
-  reservation price.
-- **Outside FLOW.** The owner sends the counter themselves, for example by WeChat, and marks it as sent. FLOW then waits for
-  the owner to record the buyer's answer, bound to the exact message hash. FLOW transmits nothing itself, and after a counter
-  is marked as sent outside, no other path can answer that request.
+- **Through the simulated buyer (Demo mode).** The owner reviews the exact counter, then sends it with the verdict and books
+  version it was built on. A changed counter is refused (409). The buyer in this build is a deterministic simulation with a
+  hidden reservation price.
+- **A registered buyer writing through its channel key.** FLOW answers at once within Tier 1, without an owner step: it
+  counters, declines, or accepts a plain early-payment discount on a named invoice that passes every test and the coverage
+  proof, inside the signed mandate. Anything else is queued for the owner (the authority matrix in section 04). A message without a
+  channel key is a proposal only and executes nothing.
+- **Outside FLOW.** The owner sends the counter themselves, for example by WeChat, and marks it as sent; the mark is bound to
+  the exact message. FLOW transmits nothing itself. When the buyer answers, the owner records it: "accepted" and "declined"
+  are bound to that message, and a pasted reply is read as a new request. FLOW does not authenticate the buyer's answer: an
+  agreement recorded this way is **the owner's report**, checked against the terms and that day's books, not proof that the
+  buyer agreed. After a counter is marked as sent outside, no other path can answer that request.
+
+**Who changes the books.** Every typed operation that commits the business or moves money (accepting, countering or
+rejecting an offer, a commitment, a draw, invoice financing, a repayment, a receipt, an approval decision, a document
+decision, a capex step, a facility addition, a contract set-up) goes through one component, the executor, which checks it
+and records it in the tamper-evident log. Outside the executor, three owner or demo actions also change the books, each
+logged: moving the simulated clock (ADVANCE_CLOCK), opening books from setup (OPEN_BOOKS, demo mode) and adding a customer
+(ADD_CUSTOMER). A demo reset erases the books and the log (demo mode only). Stored offers, verdicts, contract readings,
+deal facts and chat sessions are records, not books.
 
 **Design decisions that matter.**
-- **Exact money.** Money is integer fen and rates are integer basis points, rounded half-up once per posting (ADR-0002).
-- **Lead times are respected.** Funding is requested on the decision day and lands after its lead time, so a hard constraint
-  never relies on money that has not arrived (ADR-0003).
+- **Exact money.** Money is integer fen and rates are integer basis points, rounded half-up once per posting or valuation
+  (ADR-0002).
+- **Lead times are respected.** Funding is requested on the decision day and lands after its lead time, so a hard
+  constraint never relies on money that has not arrived (ADR-0003).
 - **Autonomy needs positive proof** (ADR-0005).
 - **The browser computes no money and no dates.** Every figure and sentence is written by the server in English and Chinese
   (INVARIANT 13).
+- **Errors say what they are.** An unexpected server error returns a JSON 500 with an error code and no exception text,
+  with the CORS and security headers, so the web app reports a server error instead of "cannot reach the API".
 
 The full component list is Appendix B.
 
 ### Models, tools, data sources and external services
 
-**Where the model is used.** In exactly three places:
-- **Compiling** buyer offers, term sheets and contracts into a strict JSON schema.
-- **Optionally classifying** a chat request into one intent from a closed list, when the deterministic parser finds nothing.
-- **Optionally routing** an owner's question that the deterministic answers miss to at most three tools from a closed menu of
-  40 read-only tools (ADR-0015, live mode only). Code runs the tools and writes every word and figure of the answer
-  (section 03).
+**Where a model is used: three model-assisted uses, each with a closed output.**
+1. **Reading documents and buyer messages (the compiler).** Buyer offers and messages (including a reply the owner pastes),
+   term sheets, contracts, lender agreements, and setup's *Fill from an agreement*, become a strict JSON schema of typed
+   terms. Setup is the one place a model-read number (a facility's limit, rate or fees) can reach the books, and only after
+   the owner reviews the row and signs.
+2. **Classifying an owner's chat request** that the deterministic parser cannot read, into one of 10 intents from a closed
+   list that has no approve, reject or buyer-message intent. Its output never executes. In live mode with the question
+   router on, a request it labels as a plain read (status, alerts, ratios, changes, comparing financing, a deal) is sent to
+   the read-only answers and the router instead of a raw status view; action intents are never redirected.
+3. **Routing an owner's question** that the deterministic answers miss to at most three tools from a closed menu of 40
+   read-only tools (ADR-0015, live mode only). Code runs the tools and writes every word and figure of the answer
+   (section 03).
 
-The model never decides, prices, negotiates, answers or executes.
+A model never decides, prices, negotiates, writes an answer or executes.
 
 **Table 5. Model backends.**
 
 | Backend | Model | Used for |
 | --- | --- | --- |
-| Cache (default) | Recorded outputs keyed by a hash of the documents and the prompt version | Tests, the demo, the scenario runner and the offline evaluation. No network. A message not in the cache goes to the rules grammar |
-| DeepSeek (live, opt-in) | `deepseek-flash` alias through the OpenAI-compatible API. The underlying model version is not recorded | A backend reachable from mainland China. Used for the live accuracy runs in section 03 |
+| Cache (default) | Recorded readings keyed by a hash of the documents and the prompt version. The 19 shipped recordings were made by the rules grammar; no model output ships in the repository | Tests, the demo, the scenario runner and the offline evaluation. No network. A message not in the cache goes to the rules grammar |
+| DeepSeek (live, opt-in) | `deepseek-flash` alias through the OpenAI-compatible API. The underlying model version is not recorded | A backend reachable from mainland China. Used for the live runs in section 03 |
 | Claude (live, opt-in) | `claude-sonnet-5-5`, with `claude-opus-5-5` for hard compilations | Alternative live backend |
-| Rules grammar | Deterministic regular expressions and lexicon, Chinese and English | Always available. The fallback when a backend fails, times out or returns invalid JSON |
+| Rules grammar | Deterministic regular expressions and lexicon, Chinese and English | Always available. Every offline reading, and the fallback when a backend fails, times out or returns invalid JSON |
 
 **What the model sees.**
 - **The document and the output schema, and nothing else.** The mandate, facility limits, buyers' limits and other buyers'
@@ -329,27 +360,29 @@ The model never decides, prices, negotiates, answers or executes.
 - **For the question router, only the redacted question and the tool menu.** The prompt is built without any access to the
   books; a test captures what the provider receives and checks that it holds no figure, name or limit, and that it is
   byte-identical whatever the books hold.
-- **Identifying data is redacted first, by every provider backend (PRIV-1 to 3).** Bank and card numbers, phone numbers,
-  email addresses, unified social credit codes, ID and passport numbers, and labelled street addresses are replaced with
-  stable placeholders before the text leaves the process. Amounts, dates, rates, party names and clauses are kept, because
-  FLOW reads them.
+- **Identifying numbers are redacted first, in live mode, by every model call** (compiler, intent classifier and question
+  router): bank and card numbers, phone numbers, email addresses, unified social credit codes, ID and passport numbers, and
+  addresses after a label become placeholders. Redaction is on by default, and `pnpm demo --live-llm` forces it on. It is
+  pattern-based: party names, amounts, clauses, chat ids, IBANs and unlabelled addresses still reach the provider (PRIV-4,
+  PRIV-5). It has been tested with scripted models only, and live mode is outside every security certification.
 - **Quotes are mapped back to the original** before grounding, so every term still points at the real words.
 - **Logging.** Only a document hash and timings are logged per call, never the text.
 
-**Why a model at all.** The rules grammar is precise but narrow. On our held-out set of Chinese contracts, it found the party
-names in **0 of 17** text-layer contracts. DeepSeek found them in **14 of 17**, and the other 3 had the right names with buyer
-and seller swapped. For example, the rules returned nothing for "甲方（承包人）：中山市华岳城建集团有限公司", while the model read
-both parties correctly. Both paths feed the same grounding and the same verifier: a term whose quote is not found word for word
-in the document is dropped, whichever backend proposed it.
+**Why a model at all.** The rules grammar is precise but narrow. On 17 unseen Chinese contracts with a text layer, the rules
+grammar, which has no Chinese party pattern, found no party names. Recorded DeepSeek readings found both parties for 14 and
+swapped buyer and seller in 3. For example, the rules returned nothing for "甲方（承包人）：中山市华岳城建集团有限公司",
+while the model read both parties correctly. Both paths feed the same grounding and the same verifier: a term whose quote is
+not found word for word in the document is dropped, whichever path proposed it.
 
 **Three ways to run FLOW. They are never mixed in our results.**
-1. **Web on recorded mocks.** The web app alone, no API. Useful for the interface only.
-2. **Real engine, recorded readings.** The full API with the model's past readings replayed from the cache. This is the demo,
-   the tests and every evaluation figure unless stated otherwise.
-3. **Real engine, live model.** The full API calling DeepSeek or Claude. Opt-in, and needs a key.
+1. **Web on recorded mocks.** The web app alone, no API. Useful for the interface only (the screenshots in this document).
+2. **Real engine, offline.** The full API with the rules grammar and its recorded readings. This is the demo, the tests and
+   every evaluation figure unless stated otherwise.
+3. **Real engine, live model.** The full API calling DeepSeek or Claude (`pnpm demo --live-llm`). Opt-in, needs a key, and
+   outside every security certification.
 
-**The agent's tools.** Every tool is an HTTP route with a strict schema that rejects unknown fields; 105 routes on this
-build (`scripts/security_route_inventory.py`). They cover:
+**The agent's tools.** Every tool is an HTTP route with a strict schema that rejects unknown fields: 105 routes under
+`app/api` plus `/health` on `571ea64f` (`scripts/security_route_inventory.py`). They cover:
 - setting up the books (demo mode only);
 - the chat harness (`POST /nl`, and the opener in which the agent speaks first);
 - offer intake, evaluation and negotiation, and the message to the buyer;
@@ -369,11 +402,16 @@ Appendix C lists them. Operations are typed:
 No operation has a payee or account field, so FLOW cannot send money to a third party.
 
 **Data (all synthetic).**
-- **The demo company ("golden books").**
-  - Cash ¥400,000, payroll ¥340,000 on day 12 and a supplier payment of ¥120,000 on day 20.
-  - An existing loan payment of ¥45,000 every 30 days, and Receivable A of ¥420,000 due on day 32.
-  - An owner-signed mandate with a ¥300,000 cash reserve and a ¥5,000 cap on future concessions. DSCR must be at least 1.25×,
-    leverage at most 2.5×, and APR at most 15%.
+- **The demo company ("golden books"), day 0 = 1 October 2026.**
+  - Cash ¥400,000; payroll ¥340,000 on day 12; a supplier payment of ¥120,000 on day 20; an operating bill of ¥100,000 on
+    day 47.
+  - An existing ¥1,500,000 loan at 0%, repaid ¥45,000 every 30 days; monthly EBITDA fixed at ¥90,000 (a fixture input).
+  - Foshan's Receivable A of ¥420,000 due on day 32, and a ¥420,000 invoice issued on day 2 and every 30 days after, on
+    45-day terms.
+  - An owner-signed mandate: a ¥300,000 cash reserve; a ¥5,000 cap on future concessions; DSCR at least 1.25× and leverage
+    at most 2.5× (the synthetic credit line's covenants, repeated in the mandate); funding that costs more than 15% a year
+    needs the owner's approval when FLOW asks for it; a commitment worth more than ¥100,000 in future concessions needs the
+    owner.
 - **Fixtures.**
   - 12 worked offers and three held-out sets of buyer messages.
   - Three demo contracts in Markdown, Word and PDF.
@@ -388,8 +426,8 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
 
 | Facility | Status | Price | Time to cash |
 | --- | --- | --- | --- |
-| Bank credit line, ¥150,000 limit, 30-day clean-down | Committed | 6.4% simple | same day |
-| Invoice financing, ¥350,000 limit | Committed | 7.8% + 0.25% per 30 days (10.84% all-in) | 3 days |
+| Bank credit line, ¥150,000 limit, 30-day clean-down | Committed | 6.4% simple, Actual/365 | same day |
+| Invoice financing, up to 80% of an invoice's open face, ¥350,000 limit | Committed | 7.8% + 0.25% per whole 30-day period (10.84% all-in tariff equivalent) | 3 days |
 | Buyer early-payment offer | Committed | 1.2% discount | 2 days |
 | Bank acceptance-bill discounting | Committed (no bill held at the start) | 0.58% a year | 1 day |
 | Government-guaranteed working-capital loan | Not applied | 5.0% all-in | 21 days |
@@ -399,7 +437,8 @@ No operation has a payee or account field, so FLOW cannot send money to a third 
 **External services.**
 - **No real finance APIs.** No bank, lender, payment or blockchain API is called.
 - **Model provider.** In live mode only, the configured provider (DeepSeek or Anthropic) receives the redacted inbound
-  documents and the schema, and, with the router switched on, an owner's redacted question with the tool menu.
+  documents and the schema, the redacted owner requests the parser cannot read, and, with the router switched on, an
+  owner's redacted question with the tool menu. With DeepSeek, text goes to a provider in mainland China.
 - **Database.** PostgreSQL (Docker Compose, or Supabase in Singapore), with row-level security on every table and no access
   for Supabase's public roles. Locally, SQLite or memory.
 - **Libraries.**
