@@ -76,7 +76,7 @@ International AI Track | Security Self-Assessment
 | E6 | Language-boundary set: 231 adversarial items through `POST /nl`, scored from stored state | 0 wrong-and-material, on recorded and scripted model answers (not a live model) |
 | E7 | Concurrency suite: eight invariants, two worker processes, SQLite and PostgreSQL 17 | 3 of 3 clean PostgreSQL runs (31 passed, 10 on PostgreSQL each) |
 | E8 | Dependency audits of the assessed lockfiles | `pnpm audit --prod`: 0 advisories; `pip-audit`: no known vulnerabilities; the CSP verified in a browser on a production build; exceptions in section 2.8 |
-| E9 | External red-team run (16 Oct), including a live DeepSeek tier | 0 harmful outcomes reported; five observations, each with its status in section 2.6 |
+| E9 | Internal red-team run (16 Oct), including a live DeepSeek tier | 0 harmful outcomes reported; five observations, each with its status in section 2.6 |
 
 ## 01 Permission Model
 
@@ -546,9 +546,9 @@ Each executes with its expected state change, and the oracle reports that change
 
 Both assert zero unauthorised executions, an unchanged mandate and facility menu, a valid chain and no leaks.
 
-#### 2.6 Review arrangement and independent observations
+#### 2.6 Review arrangement and internal observations
 
-<!-- figure: security/figures/fig6-assurance-timeline.png | Figure 5. Assurance timeline: audits, red-team rounds, certifications and the external red-team run. -->
+<!-- figure: security/figures/fig6-assurance-timeline.png | Figure 5. Assurance timeline: audits, red-team rounds, certifications and the internal red-team run. -->
 
 **Who did what.** The reviews were AI-assisted, and none was external professional assurance.
 
@@ -556,15 +556,15 @@ Both assert zero unauthorised executions, an unchanged mandate and facility menu
 | --- | --- | --- | --- | --- |
 | Implementation | the owner (a person) with AI coding agents (Claude Code sessions); an integration agent merges branches into `dev` | | | |
 | Attack catalogue (1 Oct) | the implementation team | written by the people and agents who built the system: "our own" | yes | the reviews below |
-| Principal audit (3 Oct) | three bounded reviewers and a principal: {TEAM_AUDIT_WHO} | separate review of the code | yes | the owner |
+| Principal audit (3 Oct) | three bounded reviewers and a principal: team members working with AI agents | separate review of the code | yes | the owner |
 | Red-team rounds 1 to 5 (3 Oct) | AI subagents started with minimal context about the backlog | no implementation role | yes | the owner; every finding became a regression test |
 | Security Lead (14 to 18 Oct) | an AI agent (Claude, in Claude Code) in a separate session and git worktree, with delegated AI reviewer agents | did not build the product features it audited; **did write the security fixes it then certified**, each on its own branch with a test that fails first | yes: reproductions, sweeps and probes in `docs/security/evidence/` | the integration agent merged; the owner approved engine changes and accepted risks |
-| External red-team run (16 Oct) | {TEAM_REDTEAM_WHO}; its report was supplied by the owner and is not in the repository | not recorded | yes | its five observations were re-checked by the Security Lead on the code; its live-tier results were not re-run |
+| Internal red-team run (16 Oct) | run by team member Hao En | not recorded | yes | its five observations were re-checked by the Security Lead on the code; its live-tier results were not re-run |
 | Risk acceptance | the owner (a person) | | | recorded decisions of 16 and 17 Oct (section 04) |
 
 **What "certified" means here.** An internal release decision by the Security Lead: the stated checks were run on the exact merged commit, and nothing found blocks the stated scope. It is not accreditation, an audit opinion or a penetration test.
 
-**Independent audit and five red-team rounds (1 to 3 Oct).** Every finding became a regression test before it was closed. Appendix B lists them, and the reports and probes are in `docs/research/`.
+**Internal audit and five red-team rounds (1 to 3 Oct).** Every finding became a regression test before it was closed. Appendix B lists them, and the reports and probes are in `docs/research/`.
 
 **Security Lead (14 to 18 Oct).**
 - Audited `e8e270f8` and every later merge.
@@ -573,7 +573,7 @@ Both assert zero unauthorised executions, an unchanged mandate and facility menu
 - After the integration agent merged, re-ran the checks on the exact merged commit.
 - Records: `docs/security/FINDINGS_REGISTER.md`, `CERTIFICATIONS.md`, `RELEASE_GATE.md` and `evidence/`.
 
-**External red-team run (16 Oct).**
+**Internal red-team run (16 Oct).**
 - **Shape:** 17 tests on a branch based on `dev`, in two tiers:
   - a live tier, which used a DeepSeek key for 100 model calls (about US$0.04);
   - an offline tier.
@@ -581,7 +581,7 @@ Both assert zero unauthorised executions, an unchanged mandate and facility menu
   - 40 injection cases, 20 leak requests and 9 prompt-extraction cases;
   - 12 deliberately misleading buyer messages and 6 poisoned contracts, each read without adopting a planted value;
   - 82 offer readings in all, 30 of which disagreed with the rules grammar, and every one of those was sent to the owner.
-- **Gaps in the record:** the report does not give the model identifier, settings or retry handling, and it does not reconcile its 100 calls with its 82 readings. {TEAM_REDTEAM_REPORT}
+- **Gaps in the record:** the report does not give the model identifier, settings or retry handling, and it does not reconcile its 100 calls with its 82 readings.
 - **Status:** these results are the run's own. They were not re-run, and they are evidence, not certification.
 
 Its five observations, with their status on the assessed build:
@@ -1031,13 +1031,13 @@ Every evidence file of the assessed build is in `docs/security/evidence/2026-10-
 | E6 | 0 wrong-and-material on the language boundary (recorded and scripted answers) | `python ../../scripts/certify_language_boundary.py --backend cache` and `--backend fake` | cache: 0 wrong-and-material, 1 wrong-harmless; fake: 0 wrong-and-material, 3 wrong-harmless (231 items each) | `lb_cache.txt`, `lb_fake.txt`, `language_boundary/` |
 | E7 | concurrency invariants on PostgreSQL 17 | `TERMSLEDGER_TEST_DATABASE_URL=<local database> pytest tests/concurrency` (three runs); the guard tests | 3 of 3 clean (31 passed, 10 on PostgreSQL each); guards 10 passed | `pg_concurrency_*.txt`, `pg_guards.txt` |
 | E8 | dependency scans; CSP in a browser | `pnpm audit --prod --json`; `pip-audit`; `csp_check.mjs` against a production build | 0 production advisories; `braces` (development only); pip-audit clean; 16 pages with the nonce policy, 0 violations, 0 page errors, injected handler and `javascript:` URL blocked | `pnpm_audit_*.json`, `pip_audit.txt`, `csp_browser.json` |
-| E9 | external run observations | the run's own report | as reported | held by the owner; not in the repository (section 02, external red-team run) |
+| E9 | external run observations | the run's own report | as reported | see section 02, internal red-team run |
 
 Earlier certifications keep their own folders: `docs/security/evidence/2026-10-14/`, `2026-10-16/` and `2026-10-17/dev-719c9dcf/`. Before 17 Oct, shard results were recorded as exit codes, not counts.
 
 ## Appendix B Findings history
 
-**Independent audit and five red-team rounds (1 to 3 Oct).**
+**Internal audit and five red-team rounds (1 to 3 Oct).**
 
 | Round | What was found | Closed by |
 | --- | --- | --- |
