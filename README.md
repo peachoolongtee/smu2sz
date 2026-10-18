@@ -19,15 +19,45 @@ FinTechathon 2026 · International AI Track · Topic E: SME Finance Copilot · T
 <sub>A buyer asks for 60-day terms, a 1.2% early-payment discount and a rebate. FLOW shows why the package cannot be accepted
 as asked, prices two counter-offers, and sends nothing without the owner.</sub>
 
-**Contents:** [Quickstart](#quickstart) · [What it does](#what-it-does) · [Architecture](#architecture) ·
-[Results](#results-at-a-glance) · [Deliverables](#deliverables) · [Repository layout](#repository-layout) ·
-[Testing](#testing) · [Security](#security) · [Known limitations](#known-limitations) ·
-[Reference](#reference) · [Documentation map](#documentation-map) · [Team and licence](#team-and-licence)
+**Contents:** [Project Overview](#project-overview) · [Environment and Dependencies](#environment-and-dependencies) ·
+[Installation and Execution](#installation-and-execution) · [What it does](#what-it-does) ·
+[System Architecture](#system-architecture) · [Results](#results-at-a-glance) · [Deliverables](#deliverables) ·
+[Repository layout](#repository-layout) · [Testing](#testing) · [Repository and Deployment](#repository-and-deployment) ·
+[Security Notes](#security-notes) · [Known limitations](#known-limitations) · [Reference](#reference) ·
+[Documentation map](#documentation-map) · [Team and licence](#team-and-licence)
 
 > **Names.** The product is **FLOW**. The code and package names still say **TermsLedger** (`termsledger`,
 > `termsledger-api`, `TERMSLEDGER_*` variables, the `termsledger.db` file): it is the same system.
 
-## Quickstart
+## Project Overview
+
+| Field | Value |
+| --- | --- |
+| Track | FinTechathon 2026, International AI Track, Topic E: SME Finance Copilot |
+| Team name | ISMOGGER |
+| Project name | FLOW (code name TermsLedger) |
+| One-line summary | An AI working-capital agent a small supplier owns: it prices buyers' payment-term requests and funding against limits the owner signed, acts alone only inside them, and logs every step in a verifiable hash chain |
+
+This README follows the competition's Source Code README template. Its seven sections are here:
+[Project Overview](#project-overview) · [System Architecture](#system-architecture) ·
+[Environment and Dependencies](#environment-and-dependencies) ·
+[Installation and Execution](#installation-and-execution) · [Testing](#testing) ·
+[Repository and Deployment](#repository-and-deployment) · [Security Notes](#security-notes).
+
+## Environment and Dependencies
+
+| Item | Value |
+| --- | --- |
+| Operating system | Windows 11, macOS or Linux. The evidence run of 18 Oct 2026 was made on Windows 11; CI runs on Ubuntu (`ubuntu-latest`, `.github/workflows/checks.yml`). Docker is needed only for the deployment stack |
+| Runtime versions | Python **3.12** (installed by `uv`; `pyproject.toml` allows 3.12 and 3.13), Node.js 22 or newer (CI uses **24**), pnpm (CI uses **12.11.2**), [uv](https://docs.astral.sh/uv/) any recent version |
+| Main dependencies, API | FastAPI, Uvicorn, Pydantic 2, SQLAlchemy 2 and Alembic, PyNaCl (Ed25519 mandate signatures), structlog, PyYAML, python-docx, pypdf, openpyxl, httpx, psycopg 3; the `anthropic` and `openai` clients are used only in live mode (`services/api/pyproject.toml`) |
+| Main dependencies, web | Next.js 16, React 19, Recharts, js-sha256 (`apps/web/package.json`); Playwright for the browser tests |
+| Data stores | In memory or SQLite locally; PostgreSQL in the deployment stack |
+| Environment variables | None are needed for the demo: the launcher sets `DATABASE_URL=memory`, `TERMSLEDGER_NO_DOTENV=1`, `DEMO_MODE=1` and `LLM_MODE=cache`. The full list is under [Configuration](#configuration); live mode alone needs a model key (`ANTHROPIC_API_KEY` or `DEEPSEEK_API_KEY`). Copy [`infra/.env.example`](infra/.env.example) for a deployment and never commit real secrets or real data: every figure in the repository is synthetic |
+
+## Installation and Execution
+
+The quickstart below takes a clean machine to a running demo: install, configure, launch and open it.
 
 **Prerequisites**
 
@@ -92,7 +122,7 @@ to `services/api/evals/judge/judge-report.md` (and `.json`):
 uv run --project services/api python scripts/judge_eval.py
 ```
 
-It runs the 49 scripted conversations, the 259-attack catalogue, the 17-step demo walk, and a hash-chain check of the walk's
+It runs the 49 scripted conversations, the 279-attack catalogue, the 17-step demo walk, and a hash-chain check of the walk's
 log together with a tampered copy that must fail; it exits non-zero on any failure. Eight questions to ask FLOW live, with the
 exact input and the real answer, are in [`docs/deliverables/JUDGING_QUESTIONS.md`](docs/deliverables/JUDGING_QUESTIONS.md).
 
@@ -126,7 +156,7 @@ closed affirmative command, and a plan runs only on the owner's "go ahead", as e
    cash lands on day 37.
 5. The late money arrives, the advance is repaid, reconciliation closes the deal, and the record's hash chain verifies.
 
-## Architecture
+## System Architecture
 
 ![FLOW in one picture: the compiler is the only model-backed step, the deterministic core decides, only the executor writes](docs/deliverables/figures/fig1-architecture.png)
 
@@ -157,8 +187,8 @@ the source for each.
 | Funding router | Optimal against an exhaustive brute force: **26/26** scenarios (runnable and priced) |
 | Safety of autonomy | **0 wrong autonomous accepts** on two held-out sets (115 buyer messages) |
 | Usefulness of autonomy | **3 of 14** economically eligible early-pay offers handled on its own; the other **11** go to the owner for one review |
-| Security | **259 attacks** (126 through the API, 133 through chat), **0 caused harm**; 98.41% of the API attacks detected |
-| Agent tasks | **49/49** scripted conversations (87 turns), each with an evidence chain |
+| Security | **279 attacks** (128 through the API, 151 through chat), **0 caused harm**; 97.66% of the API attacks detected (re-run on 18 Oct 2026 at `b0cc7a4b`; 259 at `975e082f`) |
+| Agent tasks | **49/49** scripted conversations (88 turns on 18 Oct 2026 at `b0cc7a4b`), each with an evidence chain |
 | Demo walk | 17 steps; audit chain **VALID** (14 operations); a tampered copy is rejected |
 | API tests | **9,085** collected; **9,040** passed; the one failure is **#161**, a hash that differs by machine |
 | Web and browser tests | **169** web unit tests; Playwright **445** mock passed, 0 failed; **139** live passed (known failures `live.spec:333` and `:347`) |
@@ -224,7 +254,7 @@ uv run --project services/api python scripts/judge_eval.py                     #
 DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py           # every offline suite, including the funding brute force
 DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout3   # a held-out set
 uv run --project services/api python scripts/run_scenarios.py --inproc         # the 49 scripted tasks and their evidence chains
-cd services/api && uv run python -m app.security.attacks --report              # the 259-attack catalogue
+cd services/api && uv run python -m app.security.attacks --report              # the 279-attack catalogue
 DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py   # the 17-step demo walk, no UI
 ```
 
@@ -232,7 +262,21 @@ DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.p
 [`apps/web/README.md`](apps/web/README.md#tests). **Verify an evidence chain** with the standard library only:
 `python scripts/verify_evidence.py <file.jsonl>` recomputes every `entry_hash = sha256(prev_hash + payload_json + result_json)`.
 
-## Security
+**Expected results.** `judge_eval.py` exits 0; the scripted tasks print `49/49 scenarios passed`; the attack catalogue prints
+0 in every zero-harm metric; the demo walk ends with `RESULT: … cure executed and alert cleared: True`; every chain prints
+`VALID`. The reference run, with its exact commands and output, is the
+[Execution Evidence](docs/deliverables/execution_evidence.md) (section 03). Known limitations are listed
+[below](#known-limitations).
+
+## Repository and Deployment
+
+| Item | Value |
+| --- | --- |
+| GitHub repository | https://github.com/peachoolongtee/smu2sz |
+| Live demo | None hosted. FLOW runs locally with one command (`pnpm demo`, see [Installation and Execution](#installation-and-execution)); the browser-free judge pack is `scripts/judge_eval.py` |
+| Deployment instructions | [Deployment (not production-ready)](#deployment-not-production-ready): a Docker Compose stack with PostgreSQL, the API and the web app. It does not yet produce a working API (SEC-06), so the supported way to run FLOW is the local launcher |
+
+## Security Notes
 
 The language model only reads text; deterministic code decides, and only the executor writes. Actions are split into three
 permission tiers under an owner-signed, expiring mandate, with nonces, idempotency, a circuit breaker and a hash-chained log.
@@ -244,6 +288,18 @@ the verdicts:
 | Local simulation on loopback (`DEMO_MODE=1`, cache mode, simulated counterparties) | **GO** |
 | Demo reachable over a network | **conditional GO**: changed credentials, a TLS reverse proxy with rate and body limits, documentation hidden |
 | Production with real customers, documents or money | **NO-GO** |
+
+- **Permission tiers.** Tier 1 runs alone inside the signed mandate; Tier 2 (for example funding above the owner's cost
+  ceiling, or accepting an offer that is not a qualifying early-pay discount) is queued and runs only after the owner approves
+  it with the owner token; Tier 3 (personal guarantees, mandate changes, collateral pledges, equity) is refused, whoever asks.
+- **Confirmation for sensitive operations.** Chat never executes on its own: "go ahead" queues what needs approval, the agent
+  key cannot decide an approval, a counterparty's "the owner agreed" is only an inbound message, and every operation carries
+  an idempotency key so a replay executes once.
+- **Data handling.** All data in the repository is synthetic. In the default cache mode nothing leaves the machine; in live
+  mode only redacted text goes to the model provider (see [Data and compliance](#data-and-compliance)). `GET /evidence`
+  needs the owner token.
+- **Known risks.** The hash chain's head is not anchored outside the system, key custody is single-operator, and the
+  deployment stack is not production-ready; the full risk register is in the Security Self-Assessment, section 04.
 
 The published demo credentials work only with `DEMO_MODE=1`, which is off by default. The mandate in `fixtures/keys/` is
 signed with a published key labelled DEMO ONLY.
