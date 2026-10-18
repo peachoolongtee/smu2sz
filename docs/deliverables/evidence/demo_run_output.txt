@@ -1,31 +1,31 @@
-verdict: REJECT | counters: ['Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.', '55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.']
+verdict: REJECT | counters: ['Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.', '55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.']
 negotiation: DEAL
-commitment CMT-322a93e6c6a1f7b5: ¥257,200.00 of RCV-A at 85 bp on day 2; agreed receipt ¥255,013.80
+commitment CMT-841499e5946cf2e2: ¥260,000.00 of RCV-A at 85 bp on day 2; agreed receipt ¥257,790.00
 
 == after the deal (day 0): {'CRITICAL': 0, 'WARNING': 1, 'INFO': 0}
   [WARNING] ALERT-HEADROOM-30: Reserve headroom thin on day 30
       Cash stays above the floor but only by ¥0.00 on day 30 (17 day(s) under 10% of the floor).
 
-bank receipt: EXECUTED Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)
+bank receipt: EXECUTED Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)
 
 == buyer has not paid the residual (day 34): {'CRITICAL': 1, 'WARNING': 2, 'INFO': 0}
   [CRITICAL] ALERT-RESERVE-42: Reserve breach ahead on day 42
       Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.
       -> SUBMIT_INVOICE_FOR_FINANCING FAC-IF RI:BUYER-1:2 ¥200,000.00
   [WARNING] ALERT-PASTDUE-RCV-A: Receivable RCV-A is 2 day(s) past due
-      ¥162,800.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.
-      -> RECEIVE_PAYMENT  RCV-A ¥162,800.00
+      ¥160,000.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.
+      -> RECEIVE_PAYMENT  RCV-A ¥160,000.00
   [WARNING] ALERT-HEADROOM-34: Reserve headroom thin on day 34
       Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).
 
 reconciliation: matched 1 flagged 0 lapsed promises 0
-  promised: RECEIVED the agreed ¥255,013.80 for RCV-A arrived (commitment CMT-322a93e6c6a1f7b5)
-  outstanding: RCV-A ¥162,800.00 due 32 past due
+  promised: RECEIVED the agreed ¥257,790.00 for RCV-A arrived (commitment CMT-841499e5946cf2e2)
+  outstanding: RCV-A ¥160,000.00 due 32 past due
   outstanding: RI:BUYER-1:2 ¥420,000.00 due 47 
   outstanding: RI:BUYER-1:32 ¥420,000.00 due 77 
 
 == agent opener (has_news True, awaiting True):
-  Day 34. Foshan Home Retail Co.'s ¥162,800.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above your 15.00% yearly ceiling for funding (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. A cheaper plan exists, ¥1,706.10 in all, but it would need 2 separate approvals; this one needs one. Go ahead?
+  Day 34. Foshan Home Retail Co.'s ¥160,000.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above your 15.00% yearly ceiling for funding (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. A cheaper plan exists, ¥1,702.20 in all, but it would need 2 separate approvals; this one needs one. Go ahead?
 == owner: go ahead
   It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above your 15.00% ceiling, so it needs your approval. I have not run it: it is queued as APR-000001. Say "approve APR-000001" or use the approval card. Once it runs, the cash lands after the lead time: day 37 if that is today. The alert is still open.
   SUBMIT_INVOICE_FOR_FINANCING PENDING_APPROVAL (tier TIER_2, seq 7)
@@ -35,8 +35,8 @@ reconciliation: matched 1 flagged 0 lapsed promises 0
       Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.
       -> SUBMIT_INVOICE_FOR_FINANCING FAC-IF RI:BUYER-1:2 ¥200,000.00
   [WARNING] ALERT-PASTDUE-RCV-A: Receivable RCV-A is 2 day(s) past due
-      ¥162,800.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.
-      -> RECEIVE_PAYMENT  RCV-A ¥162,800.00
+      ¥160,000.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.
+      -> RECEIVE_PAYMENT  RCV-A ¥160,000.00
   [WARNING] ALERT-HEADROOM-34: Reserve headroom thin on day 34
       Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).
 == owner: approve APR-000001
@@ -46,8 +46,8 @@ reconciliation: matched 1 flagged 0 lapsed promises 0
 
 == after the owner's approval (day 34): {'CRITICAL': 0, 'WARNING': 2, 'INFO': 1}
   [WARNING] ALERT-PASTDUE-RCV-A: Receivable RCV-A is 2 day(s) past due
-      ¥162,800.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.
-      -> RECEIVE_PAYMENT  RCV-A ¥162,800.00
+      ¥160,000.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.
+      -> RECEIVE_PAYMENT  RCV-A ¥160,000.00
   [WARNING] ALERT-HEADROOM-34: Reserve headroom thin on day 34
       Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).
   [INFO] ALERT-TRANSIT-alert:ALERT-RESERVE-42:v7:0: ¥200,000.00 requested on day 34 on Invoice financing (onboarded platform) lands on day 37
@@ -56,16 +56,16 @@ reconciliation: matched 1 flagged 0 lapsed promises 0
 cure: queued True -> approved by the owner -> executed True -> alert cleared True
 
 == day 36: the buyer pays the residual
-bank receipt RCV-A: EXECUTED Received ¥162,800.00 on RCV-A
-day 38: cure cash landed: alert:ALERT-RESERVE-42:v7:0 on day 37; cash ¥662,800.00
+bank receipt RCV-A: EXECUTED Received ¥160,000.00 on RCV-A
+day 38: cure cash landed: alert:ALERT-RESERVE-42:v7:0 on day 37; cash ¥660,000.00
 
 == day 47: RI:BUYER-1:2 is paid and repays its advance
 bank receipt RI:BUYER-1:2: EXECUTED Received ¥420,000.00 on RI:BUYER-1:2; repaid advance ¥200,000.00 + interest ¥1,282.19 + fee ¥500.00 (10 days billed as 1 whole period(s)) to FAC-IF
 
 == agent opener (has_news True, awaiting True):
-  Day 47. The ¥149,986.20 drawn on Bank credit line can be repaid today: cash stays above your floor (lowest ¥384,795.56 on day 60). Interest to date ¥1,236.05. I can repay it now. Go ahead?
+  Day 47. The ¥147,210.00 drawn on Bank credit line can be repaid today: cash stays above your floor (lowest ¥384,794.64 on day 60). Interest to date ¥1,213.17. I can repay it now. Go ahead?
 == owner: go ahead
-  Repaid ¥149,986.20 on FAC-LINE with interest ¥1,236.05 (¥149,986.20 × 640bp × 47/365 = ¥1,236.05) The repayment alert is now cleared.
+  Repaid ¥147,210.00 on FAC-LINE with interest ¥1,213.17 (¥147,210.00 × 640bp × 47/365 = ¥1,213.17) The repayment alert is now cleared.
 
 == after the receipts (day 47): {'CRITICAL': 0, 'WARNING': 0, 'INFO': 0}
 reconciliation: matched 3, flagged 0; balances still drawn: none

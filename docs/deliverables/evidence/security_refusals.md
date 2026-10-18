@@ -6,7 +6,7 @@ Four attacks, each run against the demo books in process (cache mode, no network
 DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/security_refusals_evidence.py OUT.json
 ```
 
-Run at commit `0f92d433` on branch `docs/submission-code`. In all four cases cash stayed at ¥400,000.00 and no facility balance moved. Each refusal that reached the executor is also a line in the hash-chained operations log.
+Run on 18 Oct 2026 at commit `b0cc7a4b` on branch `docs/submission` (the result is unchanged from the run of 16 Oct at `0f92d433` apart from generated identifiers). In all four cases cash stayed at ¥400,000.00 and no facility balance moved. Each refusal that reached the executor is also a line in the hash-chained operations log.
 
 | # | Attack | What the system did | Security events logged | Books moved |
 | --- | --- | --- | --- | --- |
@@ -24,4 +24,4 @@ Where the same behaviour is pinned by tests:
 - 3: `tests/operations/test_redteam_b.py` to `test_redteam_e.py`, `tests/operations/test_sec_authority_boundaries.py`, scripted task S10 and S35.
 - 4: `tests/security/test_buyer_budget.py` (R-10, the owner's decision of 16 Oct 2026).
 
-The whole attack catalogue is 259 attacks (126 through the API, 133 through chat), run with `uv run python -m app.security.attacks --report`; the result is in `services/api/evals/security/latest_report.md`.
+The whole attack catalogue is 279 attacks (128 through the API, 151 through chat), 0 with harm, re-run on 18 Oct 2026 at `b0cc7a4b` with `uv run python -m app.security.attacks` (`--report` rewrites `services/api/evals/security/latest_report.md`).
