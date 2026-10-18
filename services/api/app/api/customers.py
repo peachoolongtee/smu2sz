@@ -133,7 +133,9 @@ def _refuse_lookalikes(rt: Any, state: Any, extra: dict[str, list[str]], name: s
             raise _invalid(field, f"The {'name' if field == 'name' else 'short name'} reads as an identifier. Type the company's "
                            f"own name.", f"{'名称' if field == 'name' else '简称'}看起来像一个编号，请填写公司本身的名称。", lang)
     key = name_key(name)
-    mine = {k for k in (name_key(short_name(name)), name_key(short) if short else "") if k}
+    # the short name the pages will use: the owner's own when given, otherwise the name's first word. A second company from the
+    # same city ("Foshan Metal Works Ltd.") is welcome, with a short name of its own.
+    mine = {k for k in ((name_key(short),) if short else (name_key(short_name(name)),)) if k}
     own = _own_business_names(rt.store, state)
     for n in own:
         if keys_clash(key, name_key(n)):

@@ -384,7 +384,8 @@ def test_an_unknown_or_ambiguous_customer_is_asked_about(fresh) -> None:
     both = run(rt, "customer_summary", "en", {"customer": "Foshan or Dongguan"})
     assert both.text.startswith("Which customer do you mean: Foshan Home Retail Co. or Dongguan Office Supplies Ltd.?"), both.text
     assert run(rt, "customer_summary", "zh", {"customer": "佛山还是东莞"}).text.startswith("您指的是哪位客户：佛山还是东莞？")
-    client.post("/customers", json={"name": "Foshan Metal Works Ltd.", "idempotency_key": "rt-2"})
+    # REG-3: a second company whose first word is taken needs a short name of its own
+    client.post("/customers", json={"name": "Foshan Metal Works Ltd.", "short_name": "Metalworks", "idempotency_key": "rt-2"})
     two = run(rt, "customer_summary", "en", {"customer": "Foshan"})
     assert two.text.startswith("Which customer do you mean: Foshan Home Retail Co. or Foshan Metal Works Ltd.?"), two.text
     two_zh = run(rt, "customer_summary", "zh", {"customer": "佛山"})
