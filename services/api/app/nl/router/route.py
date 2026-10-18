@@ -18,7 +18,8 @@ cache mode, or `"none": true` returns None, and the caller falls back to its hon
 Backends follow the classifier's chain: the recorded routes (`route_cache/`, keyed by the prompt version and the hash of the
 redacted question) always; in LLM_MODE=live, then the primary provider, one call, with a deadline. Only a hash of the question,
 the tool names, the backend, the latency and the outcome are logged, never the question. A rejection is logged as a fixed
-reason code (`REJECT_CODES`), never the model's keys, values or text.
+reason code (`REJECT_CODES`), never the model's keys, values or text. `route_outcome` also returns what happened (`Outcome`), so
+the caller can put a canary trip on the security log; the router itself never touches the store.
 """
 
 from __future__ import annotations
@@ -384,12 +385,19 @@ def _combine(replies: list[AnswerReply], calls: list[Call], lang: str, model: st
 def route(question: str, lang: str, ctx: Any, backends: Sequence[RouteBackend] | None = None,
           deadline_s: float = DEADLINE_S) -> AnswerReply | None:
     """The answer the routed tools write for an owner's question, or None (the caller then says it cannot answer)."""
+    return route_outcome(question, lang, ctx, backends, deadline_s)[0]
+
+
+def route_outcome(question: str, lang: str, ctx: Any, backends: Sequence[RouteBackend] | None = None,
+                  deadline_s: float = DEADLINE_S) -> tuple[AnswerReply | None, Outcome]:
+    """`route`, with what happened: the answer or None, and the `Outcome` of this call (its `reject_code` is set when the model's
+    response was rejected, so the caller can record a canary trip on the security log; this module never writes to the store)."""
     global LAST
     t0 = time.perf_counter()
     oc = Outcome()
     LAST = oc
     try:
-        return _route(question, lang, ctx, backends, deadline_s, oc)
+        return _route(question, lang, ctx, backends, deadline_s, oc), oc
     finally:
         oc.latency_ms = round((time.perf_counter() - t0) * 1000, 1)
         log.info("ask.router", q_hash=oc.q_hash, backend=oc.backend, model=oc.model, tools=oc.tools, outcome=oc.outcome,

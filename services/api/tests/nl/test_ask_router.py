@@ -563,3 +563,45 @@ def test_a_rejected_exception_carries_only_its_code(rt: Runtime) -> None:
         rr.parse_route(json.dumps(calls(("total_debt", {LEAK: 1}))))
     assert str(e.value) == "unknown_slot" and e.value.code == "unknown_slot"
     assert LEAK in e.value.detail  # kept for a debugger, never logged
+
+
+# ---------------------------------------------------------------- RT-L2: a canary in router output is on the security log
+
+
+def test_a_canary_in_router_output_raises_one_data_extraction_event(client: Any, rt: Runtime, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.domain.models import SecurityEventKind
+
+    token = canary("CANARY-PROMPT").token or ""
+    assert token
+    fake = Scripted(json.dumps(calls(("total_debt", {}))) + " " + token)
+    monkeypatch.setattr(rr, "default_backends", lambda: [fake])
+    monkeypatch.setenv("FEATURE_ASK_ROUTER", "1")
+    before = len(rt.store.security_events())
+    r = Chat(client, "rt-l2").say("what is our exposure to the banks?")
+    new = rt.store.security_events()[before:]
+    assert len(fake.prompts) == 1
+    assert [e.kind for e in new] == [SecurityEventKind.DATA_EXTRACTION], [(e.kind, e.detail) for e in new]
+    assert r["security_events"] == [e.id for e in new] and token not in new[0].detail and new[0].counterparty_id == "OWNER"
+    assert token not in r["reply"]  # the discarded reply is not echoed; the honest fallback answers
+    assert r["operations"] == [] and rr.LAST.outcome == "rejected:canary"
+    assert rt.store.verify_chain()
+
+
+def test_the_router_reports_the_rejection_kind_and_only_a_canary_is_an_event(rt: Runtime, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.nl.ask import router_reply
+
+    token = canary("CANARY-PROMPT").token or ""
+    for raw, code in ((token, "canary"), (json.dumps(calls(("draw_facility", {}))), "unknown_tool"), ("nope", "malformed")):
+        got, oc = rr.route_outcome("how much debt?", "en", ctx_for(rt), [Scripted(raw)])
+        assert got is None and oc.reject_code == code and oc.outcome == f"rejected:{code}"
+    ok, oc = rr.route_outcome("how much debt?", "en", ctx_for(rt), [Scripted(calls(("total_debt", {})))])
+    assert ok is not None and oc.reject_code is None and oc.outcome == "answered"
+    monkeypatch.setenv("FEATURE_ASK_ROUTER", "1")
+    before = len(rt.store.security_events())
+    for raw in (json.dumps(calls(("draw_facility", {}))), "nope", json.dumps({"calls": [], "none": True})):
+        monkeypatch.setattr(rr, "default_backends", lambda raw=raw: [Scripted(raw)])
+        assert router_reply(ctx_for(rt), "how much debt?") is None
+    assert len(rt.store.security_events()) == before  # an ordinary rejection is not a security event
+    monkeypatch.setattr(rr, "default_backends", lambda: [Scripted(token)])
+    assert router_reply(ctx_for(rt), "how much debt?") is None
+    assert [e.kind.value for e in rt.store.security_events()[before:]] == ["DATA_EXTRACTION"]

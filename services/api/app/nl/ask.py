@@ -1,10 +1,11 @@
 """ASK_BOOKS: an owner's question about the books, answered read-only (the question gate in app/nl/rules.py routes it here).
 
 Nothing here proposes a plan, compiles an offer, queues or executes an operation, or writes to the operations log or the
-security log: every branch reads the store and the books and writes words. The one exception is a Tier-3 request put as a
+security log: every branch reads the store and the books and writes words. The exceptions are a Tier-3 request put as a
 question ("sign a personal guarantee?", "should we pledge the equipment?"): it goes to the executor like the same words
 without the mark, so it is refused, logged and raises its security event, for every caller (ASK-1;
-lexicon.tier3_is_information). The server writes all of them, in English and
+lexicon.tier3_is_information); and a router response that trips the canary, which is discarded and raises a DATA_EXTRACTION
+security event, as the classifier's does (RT-L2). The server writes all of them, in English and
 Chinese. Owner only: with the agent key a question gets the sign-in reply (and a question the old rules did not read at
 all gets exactly the reply it got before).
 
@@ -30,7 +31,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from app.domain.models import FlowKind
+from app.domain.models import FlowKind, SecurityEventKind
 from app.domain.money import fmt_yuan
 from app.financial import EngineError
 from app.nl import lexicon as lx
@@ -308,9 +309,13 @@ def router_reply(ctx: NlContext, question: str) -> tuple[str, list[str], list[st
 
     if not get_settings().features.ask_router or not ctx.owner_authenticated:
         return None
-    from app.nl.router.route import route
+    from app.nl.router.route import route_outcome
 
-    got = route(question, ctx.lang, ctx)
+    got, outcome = route_outcome(question, ctx.lang, ctx)
+    if outcome.reject_code == "canary":  # the same trip the classifier's output is recorded for (service._parse)
+        ctx.new_event(SecurityEventKind.DATA_EXTRACTION, "OWNER",
+                      f"ask router output from {outcome.backend} contained the prompt canary; discarded",
+                      action="router output discarded")
     text = _reply_text(got, ctx.lang) if got is not None else None
     if got is None or not text:
         return None
