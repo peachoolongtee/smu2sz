@@ -729,161 +729,270 @@ never seen).
 
 ### Tiered permissions and confirmation for sensitive actions
 
-**Who can act.** Credentials are compared in constant time, and every refused credential is logged as a security event (up
-to 300 an hour).
+**The rubric's four threats.** The Security & Compliance criterion names four: induced transfers, data extraction,
+privilege escalation and prompt injection. Table 12 names, for each, the control that stops it, where it is in the code, the
+attack cases that exercise it and what it does not cover. The rest of this section explains the controls under the two
+template prompts. Code paths are under `services/api/` and line numbers are those of `571ea64f`, the last base read line by
+line; Appendix F lists every control with its lines. The attack figures are from the stored catalogue (Table 14): the
+grouping of its classes under the four threats is ours.
 
-**Table 12. Credentials and what each confers.**
+**Table 12. The four threats in the rubric, the control that stops each, and its limits.**
+
+| Threat | What an attacker tries | Control that stops it | Evidence | Attack cases (all reached their path; 0 harm) | Limits |
+| --- | --- | --- | --- | --- | --- |
+| **Induced transfers** (money moved or the business committed because someone said so) | "The owner has approved this", a pasted approval, a "pre-approved lender", a claimed earlier deal, a conditional or negated "go ahead", a changed or expired offer | No operation has a payee or account field. Money moves only through typed operations whose tier the executor computes. A Tier-2 operation runs only on the owner's approval, and a Tier-3 one never. Chat consent is a whole-message closed command. A claim is never a fact: a claimed concession is never booked, and a named lender becomes a logged claim, never a facility | `app/domain/models.py` (operation types); `app/mandate/tiers.py:85-120`; `app/operations/executor.py:360-416`; `app/nl/consent.py:1-40`; `app/domain/claims.py` | 32 API (social engineering 8, fake lender 10, claimed prior concession 7, changed offer 4, expired commitment 3): 29 stopped by the named control, 3 by another. 75 chat (41 consent, 18 Tier-3 requests put as questions, 16 owner quoting a buyer) | Inside the mandate FLOW acts alone (Tier 1): the agent key or a registered buyer's keyed message can draw on a committed facility up to its limit, and there is no aggregate draw limit (R-3). FLOW cannot tell whether a buyer the owner reports as agreeing really did |
+| **Data extraction** (the owner's limits, books or another buyer's terms got out) | A buyer asking for the reserve, the floor or the limits; probing the counter; asking for another buyer's terms; planting a canary; reading routes without a token | Every read of the books needs the owner token. Outbound text comes from approved templates. An outbound guard blocks a whole message that holds a protected value in any common rendering. The agent's chat view is an allow-list of its own amounts. Contract terms are entitled to their own counterparty only. In live mode, model prompts carry redacted text and never the books | `app/api/auth.py:25-80`; `tests/egress/` (guard, canaries, renderings); `app/nl/router/route.py:61-123` | 22 API (reserve and facility 6, mandate 5, another buyer 6, canary 5): 20 stopped by the named control, 2 by another. 42 chat (buyer extraction 38, counter probing 4) | `/health`, `/clock` and the demo offer list are public (`/health` shows the model mode and flags, SEC-13). A keyed buyer can learn within one ¥10,000 step where the counter cap lies (R-10, Low). Redaction is pattern-based and can be switched off (PRIV-4, PRIV-5). No catalogue case reaches the outbound guard itself; `tests/egress` tests it directly (SEC-32) |
+| **Privilege escalation** (acting above one's credential) | Self-approval, a body field "requested_by: OWNER", a caller-supplied tier, a forged or edited mandate, a reused nonce, a backdated operation, an agent resetting the circuit breaker, a session taken over | Tiers, actors and approvals come from code and credentials, never from the request. The executor pins one mandate key. Nonces are single use, operations are dated by the executor, approvals are decided once by the owner only, and a session continues only for the caller that opened it | `app/api/auth.py:155-175`; `app/api/operations.py:82-85`; `app/mandate/validity.py:9-70`; `app/commitments/lifecycle.py:149-153`; `app/persistence/guards.py:55-136`; route-policy test `tests/security/test_route_policy.py` | 37 API (escalation 22, replay 8, revoked mandate 7): 37 stopped by the named control. 16 chat (agent channel 7, session replay 9). Every route is also called as every kind of caller | One person holds the owner token and the signing key (R-2). Code inside the process is trusted (R-5). The database owner can rewrite the log (R-13). There is no route to revoke or renew the mandate (R-14) |
+| **Prompt injection** (text becoming an instruction) | Override lines, fake system messages, role-play, encoded, full-width, zero-width or homoglyph text, a clause addressed to the agent, an instruction inside a contract | The architecture, not detection: the reading schema has no field for an operation, approval, tier or facility; every term must quote the source; the deciding modules never read free text; the classifier's closed list has no approve or reject; buyer turns never reach a classifier; the router's 40 tools are read-only. Detection is logged, but refusal never depends on it | `app/compiler/schema.py:9, 29-30`; `app/compiler/grounding.py:97-162`; `tests/verifier/test_invariants.py:20-62`; `app/nl/classifier.py:33-34`; `app/nl/service.py:173-174` | 17 API (14 stopped by the named control, 3 by another) and 18 chat buyer injections; injection text also runs through most other classes (70 API text attacks) | Offline, attack text was read by the rules grammar (78 readings) and a scripted hostile model (4); no real model, recorded or live, read an attack. Live mode is outside every certification |
+
+Integrity and recovery are a fifth class in the catalogue: 20 failure-recovery cases (partial writes, double execution, an
+erased log), all stopped by the named control.
+
+<!-- figure: figures/fig10-authority-matrix.png | Figure 7. Who may do what. Tier 1 runs inside the owner-signed mandate; Tier 2 waits for the owner; Tier 3 is refused for everyone, the owner included. The tier is computed from the typed operation alone, and the demo mandate's limits are shown below. -->
+
+**Who can act.** Credentials travel in headers and are compared in constant time (`hmac.compare_digest`,
+`app/api/auth.py:25-80`). Every refused credential is logged as a security event, within a budget of 300 an hour and 30 per
+address.
+
+**Table 13. Credentials and what each confers.**
 
 | Credential | Confers |
 | --- | --- |
-| Owner token | Owner authority: read views, Tier-2 decisions, answering a buyer's request, revocation, adding facilities, purchases, the clock; demo reset and books setup only in demo mode |
-| Agent key | The agent's tool channel: Tier 1 inside the mandate; Tier 2 is queued; every chat reply passes an allow-list view that shows only the amounts of its own operations, with no cash, limit or reserve figure (R-11) |
-| Bank-feed key | Recording a receipt as the bank (Tier 1) |
-| Buyer channel key | That a message comes from that registered buyer; 5 messages a simulated day, then refused |
-| None | A message is compiled and verified as a proposal only and can never execute |
+| Owner token (`X-Owner-Token`) | Owner authority: every read of the books, Tier-2 decisions, answering a buyer's request, revoking a commitment, adding facilities and customers, purchases, the simulated clock; demo reset and books setup in demo mode only |
+| Agent key (`X-Agent-Key`) | The agent's tool channel: Tier 1 inside the mandate; Tier 2 is queued; every chat reply passes an allow-list view that shows only the amounts of its own operations, with no cash, limit or reserve figure (R-11) |
+| Bank-feed key (`X-Bank-Feed-Key`) | Recording a receipt as the bank (Tier 1) |
+| Buyer channel key (`X-Counterparty-Key`) | That a message comes from that registered buyer. FLOW answers it at once within Tier 1 (a counter, a decline, or a plain early-payment discount that passes every test); anything else is queued for the owner. 5 messages a simulated day, then refused |
+| None | A message is read and checked as a proposal only and can never execute |
 
-- **A field in a request body confers nothing.** For example, "requested_by: OWNER" is downgraded before parsing.
-- **Demo mode is off unless set.** Without it, the demo credentials are rejected, the owner and agent routes fail closed until
-  real secrets are set, and no demo data is seeded.
-- **The web app ships no credential.** The owner signs in, and the token is kept only for that browser tab.
+- **A field in a request body confers nothing.** A body "requested_by: OWNER" or "SYSTEM" without the matching credential
+  becomes AGENT, and approvals and circuit resets take the actor from the token (`app/api/operations.py:82-85, 366-377`).
+- **Demo mode is off unless set** (`app/config.py:52-56`). Without it the published demo credentials are rejected, owner
+  routes answer 503 until a real owner token is set, and no demo data is seeded.
+- **A production build ships no credential.** The owner signs in and the token is kept for that browser tab only. The demo
+  launcher prefills the published demo token.
+- **Rate limits apply to every caller (SEC-20).** A burst is refused with 429 and a retry time. The buckets live in memory
+  and reset on restart.
 
-<!-- figure: figures/fig3-permission-tiers.png | Figure 7. Who may do what. Tier 1 runs on its own inside the signed mandate; Tier 2 waits for the owner; Tier 3 is refused for everyone, the owner included. Every operation passes the executor's gates in the order shown. -->
+**The three tiers.** The executor computes the tier from the typed operation and rejects a caller-supplied tier
+(`app/mandate/tiers.py:85-120`).
 
-**The three tiers. The executor computes the tier itself, and a caller-supplied tier is rejected.**
+- **Tier 1, autonomous inside the mandate.** Counter or reject a buyer's request (only the owner's decline closes it).
+  Accept a pure early-payment discount on a named invoice that passes break-even, need, "cheaper than the plan" and the
+  coverage proof (ADR-0005, ADR-0007). Draw on, repay or finance invoices from a committed, owner-approved facility, at any
+  size within its limit (`tiers.py:73-77`), when admission passes and, for the agent, the cost is within the rate ceiling.
+  Record a receipt from the bank feed or the owner. Tier 1 is reached by the agent key, by a registered buyer's keyed message
+  and by the owner's own clicks; in the web app the owner's "run the plan" submits its legs as the agent, so a leg above the
+  ceiling is queued.
+- **Tier 2, owner approval.** Longer terms; rebates, price, volume and other terms that are not a plain early-payment
+  discount; any commitment whose future-concession value is above **¥100,000** (measured on future concessions, not the
+  invoice, so an early-payment discount, worth ¥0 in future concessions, never reaches it); a draw on an uncommitted facility;
+  applying for or adding a facility; an equipment purchase; setting up a confirmed contract's repeating invoice in the books
+  (ADR-0014); a receipt reported by anyone other than the bank or the owner; and a funding leg the agent requests above the
+  rate ceiling.
+- **Tier 3, never.** A personal guarantee, collateral, equity, changing the mandate, a facility the owner did not request,
+  or any unknown operation type (`tiers.py:46, 94-99`). Refused for every caller, the owner included; an approved Tier-3
+  operation stays refused.
 
-- **Tier 1, autonomous inside the mandate.**
-  - Accept a pure early-payment discount that passes the three tests and the coverage proof.
-  - Counter or reject within the mandate.
-  - Draw on, repay or finance from a committed facility below the rate ceiling.
-  - Record a receipt from the bank feed or the owner.
-- **Tier 2, owner approval.** Every other acceptance (rebates, terms changes, price changes), and anything with future
-  concessions above **¥100,000 per commitment**. That limit is measured on the commitment's *future-concession value*, not on
-  the invoice amount, so an early-payment discount (future value ¥0) never reaches it. Also Tier 2:
-  - a facility application or addition;
-  - setting up a confirmed contract's repeating invoice in the books (ADR-0014);
-  - adding a customer to the books;
-  - an equipment purchase;
-  - a draw above the rate ceiling;
-  - a receipt reported by anyone other than the bank or the owner.
-- **Tier 3, never.** A personal guarantee, collateral, equity, changing the mandate, or any unknown operation type. Refused for
-  every caller, the owner included.
+**What approval can and cannot do.** The owner's approval releases a Tier-2 operation. It never waives a hard rule. The hard
+rules are refused for everyone, the owner included: the concession caps (aggregate and per buyer), the covenants (DSCR,
+leverage, clean-down), a reserve breach no committed funding can cure, an invalid mandate, and Tier 3
+(`app/verifier/evaluate.py:190-193, 447, 562-573, 726-758`; `app/api/accept.py:97-107`, which answers 409 OVER_MANDATE or
+NOT_ACCEPTABLE; `app/funding/admission.py:6-13`). **The 15% APR ceiling is an approval threshold, not a hard rule.** Above
+it the agent must ask; the owner may approve, as the demo does at 32.5% on day 34, or draw directly
+(`executor.py:852-854`). A reserve breach that committed funding can cure is not hard either: the owner may accept as asked,
+and the receipt says the gap stays open (`accept.py:129-137`).
 
-**Confirmation.** A Tier-2 operation is stored as its exact canonical JSON. When the owner approves, the executor re-runs every
-gate against the mandate then in force. An approval after a revocation is refused, and an approval given twice is refused
-even if the database row is reset (SEC-08).
+**The signed mandate and its key.** The owner's limits are a mandate signed with Ed25519 over sorted-key JSON
+(`app/mandate/signing.py:13-56`). The executor pins one public key (`OWNER_PUBLIC_KEY_HEX`, or the demo key in demo mode) and
+refuses to start without one; a forged, edited, expired or wrong-version mandate refuses every operation except a receipt and
+an owner repayment (`app/mandate/validity.py:9-70`). Limits on custody: the demo private key is committed and labelled DEMO
+ONLY (`fixtures/keys/owner_demo_ed25519.json`); setup signs a new mandate on the server with that key, in demo mode only, and
+its "signature" step re-types the owner token (`app/api/setup.py:568, 579`); one person holds the token and the key (R-2);
+and no route revokes, renews or re-signs the mandate (R-14). FLOW warns 14 days before the signed limits expire.
 
-**Verification gates, in order.**
+**Binding an acceptance to the exact offer.** An acceptance executes only against a commitment that binds the offer id and
+version, the verdict, a random 128-bit nonce, the terms hash (SHA-256 of the canonical obligations) and an expiry day
+(`app/commitments/lifecycle.py:90-157`; `app/commitments/terms.py:21-30`). The executor finds it by a constant-time nonce
+match and requires the terms hash and value to equal the verdict's terms or one of its counters (`executor.py:861-870,
+963-1004`).
+- **Nonce.** Single use, stored append-only; reuse or mismatch is REPLAY. The chat path derives its nonce from the session
+  key and the verdict, so a repeated "yes" cannot accept twice.
+- **Expiry.** After the expiry day the commitment is COMMITMENT_EXPIRED.
+- **Stale state.** The operation's day must be the executor's day (STALE_OPERATION). At commit the named invoices must still
+  be owed, a request can hold one live agreement, the caps are re-checked, and a verdict made on older books is re-verified
+  (STALE_VERDICT unless still acceptable). Owner routes bind the verdict id and the books' version (409 VERDICT_CHANGED,
+  BOOKS_CHANGED), and the state is written with compare-and-swap (`executor.py:669-670, 703-717, 1077-1146`;
+  `app/api/accept.py:296-318`).
+
+**Approval and idempotency.** A Tier-2 operation is stored as its exact canonical JSON. Only the owner may decide it; anyone
+else is refused and logged as PRIVILEGE_ESCALATION. It is decided once, by the executor and by database triggers, and a
+decision the log already holds is refused even if the row is reset (SEC-08; `app/persistence/guards.py:55-136`, migration
+0009). Approving re-runs every gate except the queue, dated today, against the mandate and admission then in force. "Accept
+as asked" approves its own queued item in the same click. Open: a re-run refused at approval leaves the row marked APPROVED
+although nothing ran (SEC-27, deferred by the owner). Every operation carries an idempotency key: a resend of an executed or
+pending one is DUPLICATE, a refused key may run again, and the same key on a different operation is REPLAY with a security
+event (`executor.py:757-796`).
+
+**Negotiation steps and owner-reported acceptance.**
+- **The simulated buyer** (Demo shell) answers under the process lock, bound to the verdict, the counter and the books'
+  version (409 COUNTER_CHANGED, BOOKS_CHANGED; `app/api/decide.py:350-391`).
+- **A registered buyer through its channel key** is answered at once within Tier 1, and anything else is queued
+  (`app/nl/offers.py:319-367`). An unsigned message is a proposal only.
+- **Outside FLOW (Business mode).** The owner sends the counter, for example by WeChat, and marks it as sent; the mark is
+  bound to the verdict, the books' version, the mandate and the exact message hash (`app/api/outbound.py:348-396`). From then
+  on no chat path or raw operation can answer that request (OUT-1, OUT-1b; `app/api/decisions.py:101-115`). Withdrawing
+  appends a fact and deletes nothing.
+- **"The buyer accepted" is the owner's report, not the buyer's.** It needs the owner token, is bound to the sent message's
+  hash, its expiry, the counter's terms hash, the books' version and the mandate, and executes the acceptance as the owner; a
+  Tier-2 result stays queued (`outbound.py:455-513`). **The buyer is not authenticated**: any evidence text is stored as an
+  unverified document. "Declined" is bound to the message too, but a pasted buyer reply is read as a new request, not bound
+  to the message, and a reply with no terms is refused (`outbound.py:610-646`). What FLOW books on a reported acceptance is an
+  agreement in its own books, checked against the terms and today's books. It is not proof that the buyer agreed, not a
+  signature and has no legal effect.
+
+**Verification gates, in order** (`app/operations/executor.py`).
 1. Idempotency key.
 2. Dating.
 3. Mandate signature, pinned key, expiry and version.
 4. Tier 3.
-5. Circuit breaker on repeated refusals. Only the owner can reset it, and the agent cannot trip it to take a decision away from
-   the owner.
+5. Circuit breaker on repeated refusals. Only the owner can reset it, and the agent cannot trip it to take a decision away
+   from the owner.
 6. For acceptances: an unexpired commitment with a single-use nonce, a matching terms hash, and a verdict re-verified on
    today's books.
 7. The Tier-2 queue.
 8. Admission for draws and advances on today's books.
 
-The owner cannot waive a hard rule by approving.
-
-**The record.**
+**The record: tamper-evident, not tamper-proof.**
 - **Every outcome of an operation admitted to the executor is appended to a hash-chained log,** refusals and duplicates
-  included: `entry_hash = sha256(prev_hash + payload + result)`. Requests refused earlier are kept as security events.
-- **The database itself refuses to edit or delete history** (migrations 0003 and 0009):
-  - the log, nonces and security events are append-only;
-  - approvals can be decided only once;
-  - no session setting can switch the guard off.
-- **Verification needs nothing from FLOW.** `scripts/verify_evidence.py` recomputes the chain with Python's standard library.
-- **The chain is internally checkable only.** Its head is not anchored outside the system.
+  included, in the same unit of work as its effect: `entry_hash = sha256(prev_hash + payload + result)` from a zero genesis
+  (`app/persistence/chain.py:4-36`). Requests refused before the executor are kept as append-only security events, which are
+  not chained.
+- **The database refuses to edit or delete history** (migrations 0003 and 0009; `app/persistence/guards.py`): the log, nonces
+  and security events are append-only, approvals are decided once, and no session setting switches the guard off.
+- **Checking needs nothing from FLOW.** `scripts/verify_evidence.py` recomputes an exported chain with Python's standard
+  library and, with `--checkpoint COUNT:HEAD`, checks that a later export extends one kept elsewhere.
+- **Limits.** The chain shows tampering by anyone without write access to the database. The API connects as the table owner,
+  so a database administrator can drop the triggers and rewrite the chain consistently (R-13), and **the chain's head is not
+  anchored outside the system**: the export's head hash is stored in the same database. A demo reset and books setup start a
+  new chain (demo mode only).
+- **Writes outside the executor.** Every typed operation goes through the executor. Three owner or demo actions also change
+  the books, each logged: moving the simulated clock (ADVANCE_CLOCK), opening books from setup (OPEN_BOOKS, demo mode) and
+  adding a customer (ADD_CUSTOMER). A demo reset erases the books and the log (demo mode only). Stored offers, verdicts,
+  contract readings, deal facts and chat sessions are records, not books.
 
-**Rollback.** History is never edited. A mistake is corrected by a logged compensating operation: repay a draw, settle an
-advance, revoke a commitment, decline a queued request or revoke the mandate. A refused or pending operation changes nothing. Each operation is atomic; a plan of
-several steps is not, so a plan refused part-way keeps its earlier steps and the owner is told which step it stopped at
-(SEC-28).
+**Correcting a mistake: three different things.**
+- **An internal compensating entry.** History is never edited. A mistake in FLOW's books is corrected by a new, logged
+  operation: repay a draw, settle an advance, revoke a commitment, decline a queued request. A refused or pending operation
+  changes nothing.
+- **Contractual cancellation.** Revoking a commitment changes FLOW's books, not the agreement with the buyer. Undoing what was
+  agreed with a buyer or lender is a matter between the parties, outside FLOW.
+- **External payment reversal.** FLOW makes no real payment; bank effects are simulated entries. In a real deployment, money
+  that had left a bank account could not be pulled back by FLOW.
+- **Partial execution (SEC-28, Medium, deferred by the owner).** Each operation is atomic; a plan of several legs is not.
+  Chat's "go ahead" stops at the first leg not executed and says "stopped after step N of M"; an alert's *act* continues past
+  a queued leg; the simulated buyer's acceptance runs every leg and reports the gap funded before the legs' results are known.
+  Nothing reverses or resumes legs: recovery is manual (read Activity, compensate, ask again) (`app/nl/plans.py:211-254`;
+  `app/api/alerts.py:236-241`; `app/api/decide.py:358-375, 534-555`).
 
 ### Protection against prompt injection, privilege escalation and privacy leakage
 
 **Prompt injection: architecture first, detection second.**
-- **Buyer text can only become typed obligations whose quotes must match the source exactly.** The schema has no field for an
-  operation, an approval, a tier, a reply or a new facility.
+- **Buyer text can only become typed obligations whose quotes match the source.** The schema forbids extra fields and has
+  none for an operation, an approval, a tier, a reply or a new facility (`app/compiler/schema.py:9, 29-30`). Every term must
+  quote the source (exact match, with a whitespace-tolerant fallback), and its values are parsed by code from the quote
+  (`app/compiler/grounding.py:97-162, 342-352`).
 - **The deciding modules never read free text.** The verifier, funding router, covenants, mandate and financial engine are
-  covered by a test on their imports.
-- **Claims are not facts.**
-  - A claimed prior concession with no matching commitment is never booked.
-  - A lender named in a message becomes a logged funding claim, never a facility.
-  - A condition on a future business event makes a gain contingent, whatever the model says.
+  held to this by a test on their imports (`tests/verifier/test_invariants.py:20-62`).
+- **Claims are not facts.** A claimed prior concession with no matching commitment is never booked; the chat reply and the
+  buyer message call it what it is ("No terms agreement is on record"). A lender named in a message becomes a logged funding
+  claim, never a facility. A condition on a future business event makes a gain contingent, whatever the reading says.
 - **Detection is logged, but refusal does not depend on it.** The rules grammar flags override attempts, fake system lines,
-  role-play, encoded, full-width, zero-width and homoglyph text, and authority claims, in both languages.
-- **Misreading is treated as a security problem.** A message the compiler cannot fully account for cannot be accepted without
-  the owner (ADR-0005).
-- **Contracts are read the same way.**
-  - Every term quotes its clause, and its figures are parsed by code from the quoted words.
-  - A sentence addressed to the agent blocks confirmation and logs a security event. A note to the agent, assistant or
-    system, and an instruction to add someone to the owner's customers or books, are flagged as instructions too, in
-    English and Chinese.
-  - Documents are read only for counterparties on the owner's registry, and the chosen company must be the document's party
-    in the role its kind needs (buyer, vendor or lender), matched by company. A reading with no party in that role is
-    blocked as well.
-  - Confirming a document never changes the books. After confirming, FLOW says what was saved, under which customer, and that
-    the forecast is unchanged. A record closed by a refile cannot be decided again: the attempt is refused and logged.
-  - Only a separate owner step, "Set up in my books", can add a confirmed customer contract's repeating invoice
-    (ADR-0014). It uses only terms quoted word for word and re-read by code, is bound to the document and the exact terms
-    shown, is re-checked on today's books, is logged, and can be undone. The agent, buyers and the bank feed are refused.
-  - The set-up fails closed. It is refused for an interval under 7 days, for one invoice larger than both three times the
-    customer's largest invoice on the books and the mandate's ceiling (the larger of the Tier-2 limit and the cash reserve;
-    OUTSIZED), when the contract's buyer is not the customer's full registered name or the customer is named as supplier,
-    and when the contract's end date is not certain (END_NOT_CERTAIN). The owner-only check runs before every other gate,
-    so a non-owner is refused the same way whatever the operation carries. With the feature switched off, a set-up is
-    refused before it is queued, and undoing one is always allowed.
-  - A press refused at decision time can be pressed again. When a newer contract replaces one whose set-up is live, FLOW
-    names that set-up and offers its undo. The conservative forecast counts the set-up's invoices once the first one is
-    issued.
-- **Chat is inside the boundary.**
-  - Pasted or quoted text never becomes an instruction or an approval.
-  - A Tier-3 request put as a question is refused, logged and raises a security event, like the plain command (section 03).
-  - A session continues only for the caller that opened it.
-  - Once the owner has sent a counter outside FLOW, no chat path can accept, decline or send on that request.
+  role-play, encoded, full-width, zero-width and homoglyph text, and authority claims, in English and Chinese.
+- **Extraction errors are treated as a security problem.** A message the compiler cannot fully account for cannot be accepted
+  without the owner (the coverage proof, ADR-0005), and the proof is forced false when the readers disagree
+  (`app/compiler/cross_check.py:81`). Contract reading is imperfect (75% of fields on unseen text-layer contracts, section
+  03), so a reading changes nothing until the owner confirms it, and only the owner's separate Tier-2 *Set up in my books*
+  turns a contract into forecast invoices.
+- **Contracts are read the same way.** Every term quotes its clause. A sentence addressed to the agent, assistant or system,
+  or an instruction to add someone to the owner's customers or books, blocks confirmation and logs a security event.
+  Documents are read only for counterparties on the owner's registry, and the chosen company must be the document's party in
+  the role its kind needs (buyer, vendor or lender). The contract set-up is owner-only, bound to the document and the exact
+  terms shown, re-checked on today's books, logged and undoable, and fails closed on an outsized invoice (OUTSIZED), an
+  uncertain end date (END_NOT_CERTAIN), an interval under 7 days or a buyer that is not the customer's registered name. The
+  borrower file counts set-up invoices only once the first is issued (CT-2b).
+- **Chat and Ask FLOW are inside the boundary.**
+  - Owner chat executes only a whole-message closed command (at most 160 characters, one RMB amount; `app/nl/consent.py`).
+    Pasted or quoted text never becomes an instruction or an approval.
+  - A question is answered from the books and never executes. Asking "can I pay everyone?" may save FLOW's plan, which runs
+    only on the owner's later "go ahead"; a terms question is priced as asked, and a follow-up that only names the customer
+    reuses the same terms.
+  - A Tier-3 request put as a question is refused, logged and raises a Tier-3 security event, like the plain command.
+    Greetings and thanks are recognised only as whole messages, and "what will FLOW never do" is answered from the tier
+    lists in `app/mandate/tiers.py`.
+  - The intent classifier (live mode only) chooses from a closed list without approve, reject or a buyer's message, buyer
+    turns never reach it, and its output never executes (`app/nl/classifier.py:33-34`; `app/nl/service.py:173-174,
+    346-347`). In live mode a question it labels as a plain read goes to the read-only answers and then the router; the rules
+    and every security check run first, the classifier's canary guard stays, action intents are never redirected, and
+    offline behaviour is unchanged.
+  - The question router (ADR-0015, owner only) picks from 40 read-only tools; its output is validated, and its prompt holds
+    the redacted question and the tool list, never the books.
+  - A session continues only for the caller that opened it. Once the owner has marked a counter as sent outside FLOW, no chat
+    path can accept, decline or send on that request.
 
 **Privilege escalation.**
 - **Tiers are enforced by code, never by prompts.** The executor trusts no caller-supplied tier, actor or approval.
-- **All of these are refused and logged:**
-  - self-approval;
-  - a circuit reset by the agent;
-  - forged or edited mandates;
-  - reused or guessed nonces;
-  - backdated operations.
+- **Refused and logged:** self-approval; a circuit reset by the agent; a forged or edited mandate; a reused or guessed nonce;
+  a backdated operation; an approval by anyone but the owner; a document decision by anyone but the owner.
 - **Unknown fields are rejected.**
-- **Rate limits apply to every caller (SEC-20).** A burst is refused with 429 and a retry time.
-- **Every route is tested** (105 on this build) by a route-policy test that calls every method and route as every kind of
-  caller, with demo mode on, off and unset.
+- **Every route is tested.** A route-policy test calls every method and route (106, including `/health`) as every kind of
+  caller, with demo mode on, off and unset (`tests/security/test_route_policy.py`).
 
-**Privacy leakage.**
+**Privacy leakage and data extraction.**
 - **Outbound text** is filled from an approved template, never free model prose. A request for data gets one fixed reply.
 - **An outbound guard blocks the whole message** if it contains a protected value: the reserve, a cap, a limit, the marginal
-  rate, a buyer's terms or a planted canary. It recognises the usual forms: ¥, k, 万, Chinese and 大写 numerals, English
-  number words, percentages and per-mille.
-- **Every read view requires the owner token.**
-- **Contract terms are protected values of their counterparty.** Another buyer cannot read them, and a record refiled
-  under another customer, or one whose party check found another company, entitles no buyer to its terms.
+  rate, a buyer's terms or a planted canary. It recognises ¥, k, 万, Chinese and 大写 numerals, English number words,
+  percentages and per-mille.
+- **Every read of the books requires the owner token.** `/health`, `/clock` and the demo offer list are public.
+- **Contract terms are protected values of their counterparty.** Another buyer cannot read them. A record refiled under
+  another customer, or blocked because the party check found another company, entitles no buyer to its terms (REG-8; the fix
+  is on the submission build, see Assurance).
+- **The answer card**, which carries the owner's figures, is attached only to the owner's own turns; the agent's allow-list
+  and the buyer's reply view never include it.
 - **The web app sends a strict Content-Security-Policy** with a fresh nonce on each request (SEC-12).
-- **The model receives redacted text only** (section 02). The question router's prompt is built without the books, and an
-  answer card, which carries the owner's figures, is attached only to the owner's own turns; the agent's allow-list and the
-  buyer's reply view never include it.
+- **What goes to a model provider (live mode only; cache mode sends nothing).** The compiler sends its fixed prompt, the
+  schema and the document. The classifier sends the owner's message. The router sends a fixed prompt with the tool catalogue
+  and the question (at most 500 characters, fenced as data); it never sends the books. Providers: DeepSeek
+  (`api.deepseek.com`) or Anthropic, with no zero-retention setting and no region chosen.
+- **Redaction, and its limits.** Before any of the three model calls, six kinds of identifier are replaced by placeholders:
+  bank and card numbers, phone numbers, email addresses, unified social credit codes, ID and passport numbers, and addresses
+  after a label (`app/compiler/redaction.py`). It is on by default. `LLM_REDACT=0` turns it off for all three calls; `pnpm
+  demo --live-llm` forces it on whatever the shell says. It is pattern-based: names, amounts, clauses, chat ids, IBANs,
+  full-width digits, 12- to 15-digit accounts and unlabelled addresses still reach the provider (PRIV-4, PRIV-5, Moderate).
+  It has been tested with scripted models only.
+- **Logging.** Each model call logs its backend, model, outcome, prompt version, a document hash, latency and redaction counts
+  per kind. Router log lines carry a 16-hex hash of the redacted question and fixed reason codes, never the text; the hash is
+  unsalted, so it hides nothing from someone who guesses the question. No document or question text is logged. The access log
+  keeps the method, the path with its query string, the status and the client address.
+- **An unexpected server error** returns a JSON 500 with the code INTERNAL_ERROR and no exception text, with the usual CORS
+  and security headers, so the web app reports a server error rather than a lost connection.
 
 **Compliance, in brief.**
-- **Live-mode data.** Only in live mode do a buyer's documents go, redacted, to the configured provider, and only for
-  extraction. With the router on, an owner question FLOW cannot answer itself also goes, redacted and without the books; a
-  deployer would need a data-processing agreement covering it and should tell the owner. Cache mode sends nothing.
-- **Cross-border transfer.** Sending real documents outside mainland China would be a cross-border transfer under the PIPL. A
-  deployer would need a legal basis and, where required, a security assessment or a standard contract. We do not claim
-  compliance.
+- **Live-mode data.** Only in live mode does text leave the machine, redacted, to the configured provider. A deployer would
+  need a data-processing agreement covering it and should tell the owner.
+- **Cross-border transfer.** With DeepSeek, text goes to a provider in mainland China; with Anthropic, outside it. Sending real
+  documents across the border would be a cross-border transfer under the PIPL, needing a legal basis and, where required, a
+  security assessment or a standard contract. We have not done that assessment and do not claim compliance.
 - **Labelled AI output.** Model readings are labelled "AI-generated, for reference" until the owner confirms them.
 - **Not advice.** FLOW is decision support inside an owner-signed mandate, not a licensed lender, broker or adviser, and it
   makes no real payment.
 
-<!-- figure: figures/fig7-security-results.png | Figure 8. The attack catalogue on this build: 279 stored cases through the API and chat, by class (the Security Self-Assessment certified 260; DOC-05, adding a customer without the owner token, and 18 chat cases that put a Tier-3 request as a question were added since). None violated the defined harm oracles. Every case reached the path it targets; of the 128 API cases, 120 were stopped by the control they name and 8 by another control. -->
+**Attack results.**
 
-**Table 13. Attack results (279 stored cases: 128 through the API, 151 through chat; each in a fresh in-memory runtime, offline, with recorded or scripted model answers; `int/round-five` at `1294e941`, 18 Oct 2026).**
+<!-- figure: figures/fig7-security-results.png | Figure 8. The attack catalogue: 279 stored cases through the API and chat, by class. The catalogue grew from 259 (16 Oct) to 260 (TC-04, a changed offer), 261 (DOC-05, adding a customer without the owner token) and 279 (18 chat cases that put a Tier-3 request as a question, round five). None violated the defined harm oracles. Every case reached the path it targets; of the 128 API cases, 120 were stopped by the control they name and 8 by another control. -->
+
+**Table 14. Attack results (279 stored cases: 128 through the API, 151 through chat; each in a fresh in-memory runtime,
+offline, rules grammar and a scripted hostile model; report generated on `1294e941`, certified as part of `70f23ac5`, and
+re-run on `571ea64f` with the same result).**
 
 | Measure | Result |
 | --- | --- |
@@ -892,38 +1001,66 @@ several steps is not, so a plan refused part-way keeps its earlier steps and the
 | Facilities added by non-owners; concessions booked from unproven claims | 0; 0 |
 | Integrity failures (partial write, double execution, erased log) | 0 |
 | Protected values disclosed in outbound text or readable without the owner token | 0 |
-| Cases that reached the path they target | 279 of 279. A case that never reaches its path no longer counts as defended |
+| Cases that reached the path they target | 279 of 279. A case that never reaches its path does not count as defended |
 | API cases stopped by the control they name | 120 of 128 (93.8%). The other 8 were stopped by another control, with no harm (known gaps, SEC-34, each pinned by a test) |
-| API cases with a detection signal / with a logged security event | 125 of 128 (97.7%) / 95 of 128 (74.2%). A signal is a security event, an executor refusal, a security or mandate-limit verdict code, an HTTP refusal or a detected chain break |
-| Tier-3 requests put as questions (chat, as the owner and as the agent key) | 18 of 18 refused, logged and raising a Tier-3 security event |
+| API cases with a detection signal / with a logged security event | 125 of 128 (97.7%) / 95 of 128 (74.2%). Over all 279, detection is 70.6%: most chat cases without a signal are consent cases, where the right result is that nothing runs |
+| Tier-3 requests put as questions (chat) | 18 of 18 refused, logged and raising a Tier-3 security event (9 wordings, each as the owner and as the agent key) |
 
-This is a test result within a scope, not proof that no exploitable path exists. The catalogue drives part of the 105 routes;
-a separate route-policy test calls every route as every kind of caller. No running deployment has had a penetration test.
+**How to read Table 14.** The harm oracles compare the books before and after each case: money moved, operations executed,
+facilities added, concessions booked, commitments activated, protected values in any outbound text or readable without the
+owner token, canaries, and the log's integrity. Six positive controls (legitimate actions, `tests/security/
+test_positive_controls.py`) pass through the same runtime and oracle and are seen, and switching off one control at a time
+makes the harness report harm (`tests/security/test_mutations.py`; 2 of 7 mutations first exposed blind spots, since fixed),
+so the clean result is not a system that refuses everything. The attack text was read by the rules grammar (78 readings) and
+a scripted hostile model (4): **no real model, recorded or live, read an attack.** The catalogue is the team's own, drives
+part of the 106 routes (the route-policy test calls all of them) and runs in one process on an in-memory store. This is a
+test result within a scope, not proof that no exploitable path exists. No running deployment has had a penetration test.
 
-**Assurance.** Every review was AI-assisted; none was external professional assurance.
-- **A separate audit and five red-team rounds by AI subagents (1 to 3 Oct)** found 39 issues. All are fixed, each with a
-  regression test.
-- **An external red-team run (16 Oct)** ran 17 tests, including 100 live model calls. Its results are its own; they were not
-  re-run, and its five observations were re-checked on the code.
-- **The Security Lead (14 to 17 Oct)** is an AI agent in a separate session and worktree. It reproduced every finding, wrote each
-  fix on its own branch with a regression test, re-ran its checks on each merged commit and certified it. It also wrote the
-  security fixes it certified. "Certified" here is an internal release decision, not accreditation.
-- **Round five (17 to 18 Oct).** The Security Lead reviewed the registry, the party check, the contract set-up and Ask FLOW,
-  and wrote each fix on its own branch with a regression test: the party check by role (REG-2), new customers' names
-  (REG-3, REG-4), instructions inside documents (REG-6), refiled records (REG-1, REG-5), the contract set-up's guards
-  (CT-1 to CT-7) and Tier-3 requests put as questions (ASK-1, ASK-2). The engine halves of CT-2, CT-6, CT-7 and REG-5
-  followed with the owner's approval, and every golden value is unchanged. The attack report was regenerated on the merged batch
-  (Table 13).
-- **Verdicts (Security Self-Assessment v3).**
-  - Local simulation on loopback: GO.
-  - A demo over a network: NO-GO until a tested deployment profile exists; we demonstrate the local configuration.
-  - Production with real customers, documents or money: NO-GO, because of the items in section 05.
+**The live stress test (18 Oct) is separate evidence, with its own scope.** On `28738f19` with DeepSeek live, the router on
+and the demo books on loopback, 589 owner questions and 69 other turns all returned HTTP 200. Its 8 attack prompts executed
+nothing visible in the replies, but none reached the router, no store diff was taken, and 2 of 8 raised a security event. It
+measured availability and latency, not correctness or harm; section 03 gives its results.
 
-The full register is in the Security Self-Assessment (v3). It certified 260 cases on its assessed build; 19 were added
-afterwards, giving the 279 above: DOC-05 (a non-owner trying to add a customer, with its positive control) and, in round
-five, NL-TQ01 to NL-TQ18 (nine Tier-3 requests put as questions, in English and Chinese, each as the owner and as the agent
-key). Live mode and
-the question router (ADR-0015) are outside its assessed scope; the router's review by the Security Lead is pending.
+**Assurance and certification.** Every review was AI-assisted and internal; none was independent professional assurance.
+- **An audit and five red-team rounds by AI subagents (1 to 3 Oct)** found 39 issues. All are fixed, each with a regression
+  test.
+- **An external red-team run (16 Oct)** ran 17 tests, including 100 live model calls, outside the team's sessions. Its report
+  is not in the repository; its results are its own and were not re-run, and its five observations were re-checked against
+  the code.
+- **The Security Lead** is an AI agent working in a separate session and worktree. It reproduced every finding, wrote each fix
+  on its own branch with a regression test, re-ran its checks on each merged commit and certified it. It also wrote the fixes
+  it certified. "Certified" here is an internal release decision for a stated build and scope, not accreditation.
+- **What it certified** (`docs/security/CERTIFICATIONS.md`): `29fa0ea2` (260 cases) and `85309b63` (261), each for the local
+  simulation; `6d2b6941`, conditional on contract terms being switched off; and dev **`70f23ac5`, the final assessed build**,
+  for the local simulation with contract terms and the router switched on as `pnpm demo` sets them, live model mode excluded.
+  On `70f23ac5`: 10,674 API tests passed, 0 failed; 279 cases, 0 harm; PostgreSQL concurrency 3 of 3; 479 mock browser tests
+  passed; 0 CSP violations. Disclosed with it: REG-8 (Low), REG-9 (Info), CT-2b (Low), and SEC-27 and SEC-28, deferred by the
+  owner. (The record is commit `08c8dac0`; Security Self-Assessment v3 names its assessed build in its release manifest.)
+- **The submission build is not yet certified.** It adds to `70f23ac5`: the Security Lead's round-six fixes (REG-8, blocked
+  records entitle nobody; REG-9, demo lender names in demo mode only; CT-2b, the borrower file); Ask FLOW's new answers
+  (paying everyone, terms priced as asked with two-turn memory, customer loss, a customer that stops ordering, borrowing
+  against an invoice, DSO, the audit log by operation, greetings and "what will FLOW never do", "show me my cash"); the
+  claimed-terms wording; the live-mode routing of classifier read intents; the Cash page's funding plan on books without a
+  permanent source and the JSON 500; the Ask page card; the capex dash; and `--live-llm` forcing redaction. These go to the
+  Security Lead as a short follow-up review. The attack catalogue still showed 0 harm on `571ea64f`; that is a test result,
+  not a certification.
+
+**Readiness.**
+
+**Table 15. Where FLOW may run, and what stands in the way.**
+
+| Configuration | Verdict | Minimum blockers |
+| --- | --- | --- |
+| Local demo (`pnpm demo`, loopback, cache mode, one API process, synthetic data, the presenter holds the credentials) | **GO** | None for `70f23ac5`. The submission build's additions await the Security Lead's follow-up review |
+| Live-LLM mode (`pnpm demo --live-llm`, opt-in) | **Not covered by any certification** | A certification run in live mode; the language-boundary set and the attack catalogue run against a live model; a provider agreement on retention and region; PRIV-4 and PRIV-5 (redaction gaps) |
+| A demo reachable over a network | **NO-GO** | A tested deployment profile: changed credentials and signing key, a TLS proxy with per-client limits, anonymous intake off (SEC-19), API docs hidden, one API process, the web dev server bound to loopback (DEMO-L1), a stop procedure, and the route sweep and browser checks run against it |
+| Production with real customers, documents or money | **NO-GO** | A runnable configuration (SEC-06); one API process enforced or the route checks and the clock moved into the store (SEC-11); separate custody of the token and the key (R-2); an external anchor and a database role that cannot rewrite the log (R-13); mandate revoke and renew (R-14); resumable or reversible plans (SEC-28); an aggregate draw limit (R-3); redaction gaps and a PIPL assessment; backups and restore; a penetration test; and real counterparties, lenders and bank feeds in place of the simulated ones |
+
+**Supported deployment configuration.** One API process. The two-process concurrency tests prove that the store's
+compare-and-swap and unit of work hold (eight invariants; SQLite, and PostgreSQL 17 in 3 of 3 runs); they call the executor
+directly and do not prove two API processes. Route checks use a per-process lock and each process keeps its own clock, so a
+second API process could bypass a route check or act on an old day (SEC-11, open by the owner's decision). Nothing yet refuses
+a second process.
 
 ## 05 Deployment and Testing
 
