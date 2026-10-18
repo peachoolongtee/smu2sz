@@ -98,7 +98,7 @@ SUSPECTED = code reading only. Severity is for the stated scope; **S** = hackath
 `70f23ac5`. Four rows above carry a "Submission build" note after the Security Lead's own status, which is kept as written:
 REG-8, REG-9 and CT-2b are fixed by `sec/round-six` `563de405`, with re-certification requested; SEC-28's reporting defect is
 fixed by `fix/sec28-funding-status` {SEC28_COMMIT}, and plans are still atomic per operation only. Every other change since
-`70f23ac5` is listed in the self-assessment's "Submission build addendum".
+`70f23ac5` is listed in the self-assessment's Appendix E, "Submission build addendum".
 
 Unverified areas and blockers are listed at the end; they are not passes.
 

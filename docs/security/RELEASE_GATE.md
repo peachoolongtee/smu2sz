@@ -32,7 +32,7 @@ it lapses when either changes. It is never a claim of absolute security or zero 
 
 **Submission build (integration lead's note, not a gate decision).** The build submitted on 20 Oct is {SUBMISSION_COMMIT}. It
 extends `70f23ac5` with `sec/round-six` (REG-8, REG-9, CT-2b), the SEC-28 reporting fix and later product changes. All are listed
-in the self-assessment's "Submission build addendum". This gate has no verdict for that commit until the Security Lead
+in the self-assessment's Appendix E, "Submission build addendum". This gate has no verdict for that commit until the Security Lead
 re-certifies it. The S verdict above is for `70f23ac5`.
 
 **Conditions for S on `e8e270f8`:** loopback only; nobody but the presenter holds the demo credentials; the presenter does not approve

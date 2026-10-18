@@ -64,7 +64,7 @@ editor is restructuring it. Line numbers refer to TD at `1cb0d2e2`.
 - 1.3: the rate ceiling (15%) described as an approval threshold for the agent (`app/operations/executor.py`: the admission's
   approval reason raises a leg to Tier 2 only when the requester is not the owner).
 - 2.6: Security Lead dates 14 to 18 Oct.
-- New section: Submission build addendum (integration lead, not certified), with tokens `{SUBMISSION_COMMIT}`, `{SEC28_COMMIT}` and
+- New section: Appendix E, Submission build addendum (integration lead, not certified), with tokens `{SUBMISSION_COMMIT}`, `{SEC28_COMMIT}` and
   `{VERIFICATION_ROWS}`.
 - `[TEAM]` placeholders replaced with the tokens `{TEAM_AUDIT_WHO}`, `{TEAM_REDTEAM_WHO}`, `{TEAM_REDTEAM_REPORT}`,
   `{TEAM_BRACES_OWNER}` and `{TEAM_LICENCE}`.
