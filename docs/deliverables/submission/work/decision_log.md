@@ -1,0 +1,13 @@
+# Decision log (append-only; one line per decision)
+
+item | class | acceptance condition | outcome | commit
+1 chat confirmation per-leg outcomes | P0 | reply names each leg done/queued/refused, the funding still to arrange, cash in now vs landing day; retry repeats no executed leg | per-leg lines and cash-landing already existed; added "Still to arrange" line for a part-run plan; retry test added (no pending plan after go-ahead, same request_id replays as DUPLICATE) | 386775ca
+1b retried go-ahead approved the queued above-ceiling leg | P0 | a plain yes/go ahead never decides a waiting approval | fixed: approvals need the word approve (or the id); Business wording now says Approve it | 386775ca
+2 bare acknowledgements as consent | P0 | ok / ok thanks / thanks / 好的谢谢 run nothing; go ahead / yes, run it / do it / 执行 / 确认执行 run the plan shown | fixed in consent.py and lexicon.BARE_CONFIRM; plan stays waiting | 386775ca
+2b pay-everyone offer replaced a waiting fund-gap plan | P1 | an answer that offers a plan never replaces a waiting plan | fixed (any waiting plan is kept) | 386775ca
+2c "approve the pending one" bound to an unshown queue | P1 | id-less approval binds only to the one approval named in the previous reply | fixed | 386775ca
+3 approved but re-run refused: visible status | P1 | decision response, queue row and chat all say approved-did-not-run | queue row already did (F14); added approval{decision,execution_status,ran,text} to POST /approvals/{id} and the chat sentence; row stays APPROVED (engine, SEC-27 unchanged) | d9923e92
+3b re-check at execution | P1 | stale books/mandate/offer refused at decision time | verified by tests (expired mandate, receipt booked after queueing, changed state on buyer yes); no change needed | d9923e92
+4 owner-reported buyer acceptance | P1 | bound to verdict, message hash, terms hash, expiry, books; evidence unverified; funding stated either way | binding already complete (tests added); added "none is needed" statement when no reserve gap is ahead | 7404f798
+5 thresholds wording | P1 | hard limits vs approval thresholds worded consistently | NOT DONE: Business card wording already says "limit you signed for funding without your approval"; chat plan sentence still says "yearly ceiling for what I may borrow alone" (app/nl/plans.py approval_sentences); hard-vs-threshold classification not pinned by tests | -
+6 bypass via actor/lower-level routes | P1 | agent key, counterparty key, no token cannot skip a gate | partly covered: chat approval by agent refused (existing), POST /approvals by agent refused, bank-feed receipt vs queued receipt; routes /documents/{id}/confirm, /negotiate, /alerts/{id}/act, /nl not re-swept; NOT DONE | -
