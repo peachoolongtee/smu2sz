@@ -802,10 +802,10 @@ def finish(doc, title: str, contents: bool) -> None:
             marker._p.addnext(toc._p)
             _field(toc, 'TOC \\o "1-3" \\h \\z \\u', "Open in Word and update fields to show the contents.")
     cp = doc.core_properties
-    cp.title = f"FLOW (TermsLedger): {title}"
+    cp.title = f"FLOW: {title}"
     cp.subject = "2026 FinTechathon, International AI Track, Topic E"
-    cp.author = cp.last_modified_by = "TermsLedger team"
-    cp.keywords = "FLOW; TermsLedger; security; FinTechathon 2026"
+    cp.author = cp.last_modified_by = "ISMOGGER"
+    cp.keywords = "FLOW; TermsLedger (code name); security; FinTechathon 2026"
     now = datetime.now(UTC).replace(microsecond=0, tzinfo=None)
     cp.created = cp.modified = now
     cp.revision = 1
