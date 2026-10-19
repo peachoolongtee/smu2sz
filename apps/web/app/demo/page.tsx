@@ -14,7 +14,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { getDemoStory, restoreDemo } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { changeBooks, resetScenarioOf, resetTo } from "@/lib/books-guard";
-import { goToMore, requestStart, runStoryAction, seenOf } from "@/lib/demo-control";
+import { goToMore, requestStart, runStoryAction, seenOf, storyControlWaits } from "@/lib/demo-control";
 import { MORE, type MoreId } from "@/lib/demo";
 import { reachedOf, resetSession, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -258,7 +258,7 @@ export default function DemoPage() {
                     <ArrowRightIcon />
                   </ButtonLink>
                 ) : (
-                  <Button variant="primary" loading={busy} onClick={() => void runStoryAction(view.next.action ?? "", router.push, view.books)} data-testid="demo-next">
+                  <Button variant="primary" loading={storyControlWaits(busy, story.loading)} onClick={() => void runStoryAction(view.next.action ?? "", router.push, view.books)} data-testid="demo-next">
                     {view.complete && view.next.action === "restart" ? t("demo.startAgain") : view.next.label}
                     <ArrowRightIcon />
                   </Button>

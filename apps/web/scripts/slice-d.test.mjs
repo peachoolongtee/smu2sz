@@ -89,3 +89,16 @@ test("the Demo reads the server's chain verdict and says its scope as text; the 
   assert.equal(story.short.en.books.scenario, "short_facilities");
   assert.equal(story.busy.en.books.scenario, "busy");
 });
+
+test("the story's next control waits while the story read is in flight, so a press never reruns the step just run", async () => {
+  // After a step the strip still holds the story read from before it until GET /demo/story answers; that read's action is the step just
+  // run. A press then ran it again and the live walk stopped one step short of the owner's approval (round-nine regression).
+  const { storyControlWaits } = await import("../lib/demo-control.ts");
+  assert.equal(storyControlWaits(false, true), true, "a read in flight is not pressable");
+  assert.equal(storyControlWaits(true, false), true, "a step running is not pressable");
+  assert.equal(storyControlWaits(false, false), false, "a settled read with nothing running is pressable");
+  for (const [file, busy] of [["components/demo-stepper.tsx", "demo.busy"], ["app/demo/page.tsx", "busy"]]) {
+    const src = read(file);
+    assert.ok(src.includes(`loading={storyControlWaits(${busy}, story.loading)}`), `${file}: the next button waits for a settled story read`);
+  }
+});
