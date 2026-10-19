@@ -1149,8 +1149,9 @@ and the chat say which step waits or failed, and a part-run plan names the fundi
 owner-approved). *Still misreported* (found at the certification of `03215a20`; all present in `70f23ac5`): a send with no
 admissible funding plan reads "funded" (FUND-1, Medium); the web's send result says "the agreement is on your books" while the
 agreement waits for approval or was refused (FUND-2, Medium); the chat's no-deal reply says "no gap to cover" with a gap open
-(FUND-3); smaller wording on the decision record and the fix-alert line (FUND-4). Fixes for FUND-1 to FUND-3 are on
-`sec/round-eight`, not in the submission build. *Still open:* `/negotiate` sends every leg
+(FUND-3), and the early-settlement chat says "no fallback needed" and "no gap to fund" in the same case (FUND-5, found after
+the certification); smaller wording on the decision record and the fix-alert line (FUND-4). Fixes for FUND-1 to FUND-3 and FUND-5
+are on `sec/round-eight`, not in the submission build. *Still open:* `/negotiate` sends every leg
 without stopping, `/alerts/{id}/act` continues past a queued leg, and nothing reverses or resumes a part-run plan; recovery is
 manual (1.12). *Next step:* stop at the first leg that does not execute, and offer resumption after an approval; these change
 product behaviour and need the owner's approval.
@@ -1266,7 +1267,7 @@ be compromised, change `AGENT_KEY` and restart the API; (6) `POST /agent/resume`
 #### 4.7 Planned improvements, in priority order
 
 1. **Engine follow-ups the owner deferred:** SEC-27 (record the run's outcome on the approval) and the rest of SEC-28 (stop at
-   the first leg that does not execute; resume after an approval). SEC-28's reporting is partly done: FUND-1 to FUND-3 are fixed on `sec/round-eight`, pending merge.
+   the first leg that does not execute; resume after an approval). SEC-28's reporting is partly done: FUND-1 to FUND-3 and FUND-5 are fixed on `sec/round-eight`, pending merge.
 2. **Before any network demo:** a tested deployment profile with the web server on loopback; anonymous intake off, or
    provenance shown everywhere (SEC-19); browser injection tests (S3).
 3. **Owner control:** mandate revoke and renew routes; a pause control in the web app; key rotation (R-14, OPS, R-2). The

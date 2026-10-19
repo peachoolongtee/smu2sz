@@ -84,6 +84,10 @@ not closed), PAUSE-2 (one process required), SEC-27, LOG-2, LOG-3, CT-2b beyond 
 self-assessment, whose ratings are unchanged from `70f23ac5`: the pause limits but does not revoke a mandate (R-14), and a part-run
 plan is still not reversed (SEC-28). Not a claim of absolute security.
 
+**Found after the verdict (19 Oct): FUND-5** (Low / Medium), the same misreport as FUND-3 in the early-settlement chat ("no
+fallback needed", "no gap to fund" with a gap open). It is in `70f23ac5` too, part of the disclosed SEC-28, and does not change
+the verdict. The fix is on `sec/round-eight`.
+
 ## `5941e95a` (dev): NOT CERTIFIED, 18 Oct; superseded by round seven
 
 Since `70f23ac5`:
