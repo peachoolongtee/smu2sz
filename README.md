@@ -126,8 +126,8 @@ into a folder of your choice, so the submitted report (`services/api/evals/judge
 uv run --project services/api python scripts/judge_eval.py --out out/judge-report.md
 ```
 
-The full, tested reproduction guide, with what each command should print, is
-[`docs/deliverables/REPRODUCE.md`](docs/deliverables/REPRODUCE.md).
+The tested reproduction steps, with what each command should print, are in the technical document's section 05 and the
+[execution evidence](docs/deliverables/execution_evidence.md) (the sandbox run on the submission build).
 
 It runs the 49 scripted conversations, the 279-attack catalogue, the 17-step demo walk, and a hash-chain check of the walk's
 log together with a tampered copy that must fail; it exits non-zero on any failure. Eight questions to ask FLOW live, with the
@@ -186,9 +186,9 @@ Full detail: the [technical document](docs/deliverables/technical_document.md) (
 
 ## Results at a glance
 
-Submission build: code commit ⟦FIN-SHA⟧ on `dev`, ⟦EB3C-VERDICT⟧ (see [Security Notes](#security-notes)). Offline
+Submission build: code commit `⟦SUB⟧` on `dev`, ⟦SUB-VERDICT⟧ (see [Security Notes](#security-notes)). Offline
 (`LLM_MODE=cache`, in-memory store). The full list of checks, with commands and counts, is the
-[verification manifest](docs/deliverables/VERIFICATION_MANIFEST.md).
+technical document's verification manifest (Appendix B, Table V).
 
 | Area | Result |
 | --- | --- |
@@ -198,13 +198,13 @@ Submission build: code commit ⟦FIN-SHA⟧ on `dev`, ⟦EB3C-VERDICT⟧ (see [S
 | Security | **279 attacks** (128 through the API, 151 through chat), **0 caused harm**; 120 of the 128 API attacks stopped by the control they name, 8 known gaps; 97.66% detected and logged |
 | Agent tasks | **49/49** scripted conversations, each with an evidence chain |
 | Demo walk | 17 steps; audit chain **VALID**; a tampered copy is rejected |
-| API tests | ⟦EB3C-SUITE⟧ |
-| Web and browser tests | web unit, typecheck and lint pass; mock browser ⟦EB3C-MOCK⟧; live browser ⟦EB3C-LIVE⟧ |
+| API tests | ⟦SUB-SUITE⟧ |
+| Web and browser tests | web unit, typecheck and lint pass; mock browser ⟦SUB-MOCK⟧; live browser ⟦SUB-LIVE⟧ |
 | Chinese contract reading | 75% of key fields on a held-out batch, 86% after fixes; 98% on the 30 text-layer contracts of the batch the reader was built on (scans are refused) |
 | What the model adds | On a frozen set of 20 new messages, the model reads phrasings the rules cannot (fully correct: rules alone 6, model alone 10), and the shipped checks turn its 2 wrong readings into questions for the owner, at a cost: 5 items held back that were readable (technical document, section 03) |
 
 Where FLOW falls short is stated beside these figures in the technical document (section 03) and the
-[audit dispositions](docs/deliverables/AUDIT_DISPOSITIONS.md).
+[Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) (section 04).
 
 ## Deliverables
 
@@ -224,9 +224,7 @@ PDFs and the table of contents, on Windows with Word installed).
 
 | Submission record | What it holds |
 | --- | --- |
-| [`VERIFICATION_MANIFEST.md`](docs/deliverables/VERIFICATION_MANIFEST.md) | The frozen build, documentation revision, configuration, evidence cutoff and every check's result |
-| [`REPRODUCE.md`](docs/deliverables/REPRODUCE.md) | Tested commands for judges, writing new results into `out/`, apart from the submitted evidence |
-| [`AUDIT_DISPOSITIONS.md`](docs/deliverables/AUDIT_DISPOSITIONS.md) | Every finding of the 19 Oct document audit and what was done about it |
+| [Technical document, Appendix B](docs/deliverables/technical_document.md) | The submission build, its configuration and every check's result (Table V) |
 | [`docs/security/CERTIFICATIONS.md`](docs/security/CERTIFICATIONS.md) | The Security Lead's certification records |
 
 ## Repository layout
@@ -297,7 +295,7 @@ DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.p
 The language model only reads text; deterministic code decides, and only the executor writes. Actions are split into three
 permission tiers under an owner-signed, expiring mandate, with nonces, idempotency, a circuit breaker and a hash-chained log.
 The [Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) gives the verdicts for the submission build, code commit
-`eb3c1059` on `dev`, ⟦EB3C-VERDICT⟧ by the Security Lead (`docs/security/CERTIFICATIONS.md`):
+`⟦SUB⟧` on `dev`, ⟦SUB-VERDICT⟧ by the Security Lead (`docs/security/CERTIFICATIONS.md`):
 
 | Use | Verdict |
 | --- | --- |

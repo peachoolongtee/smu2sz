@@ -11,6 +11,10 @@ app/domain/models.py placed by app/mandate/tiers.py `tier_for`, on docs/techdoc-
 - Tier 1 otherwise (_TIER1_BASE): AcceptOffer, CounterOffer, RejectOffer, RecordCommitment, DrawFacility, RepayFacility,
   SubmitInvoiceForFinancing, ReceivePayment, RequestOwnerApproval.
 The mandate figures are the signed demo mandate, fixtures/scenarios/golden_sme.mandate.signed.json (version 1).
+Revised 19 Oct 2026 to match the Security Self-Assessment's Table 5 and the submission build's code: a buyer cannot reach
+/operations, so a receipt is Tier 2 only when the agent reports it; a draw on a facility that is not committed and
+owner-approved is Tier 2; AddFacility by anyone but the owner is Tier 3; the ¥100,000 threshold compares a commitment's net
+new future concessions (an early-payment discount has none, so it never limits invoice face).
 """
 
 import matplotlib.patches as mp
@@ -23,29 +27,29 @@ LH = MIN_PT * 1.2 / 72
 GAP_ITEM = 0.07
 ROWS = [
     ("Buyer offers", [
-        ["counter or reject\nan offer", "accept early payment\non a named invoice"],
-        ["accept longer terms\nor other concessions", "a commitment above\n¥100,000"],
+        ["counter or reject\nan offer", "accept a plain early-\npayment discount on a\nnamed invoice (any face)"],
+        ["rebates; changes to\nterms, price or volume", "a commitment whose\nfuture concessions\nexceed ¥100,000"],
         [],
     ]),
     ("Funding", [
-        ["draw or advance on a\ncommitted facility", "repay a facility"],
-        ["draw on an\nuncommitted facility", "apply for a facility", "add a facility the\nowner requested"],
-        ["add a facility the\nowner did not\nrequest"],
+        ["draw or advance on a\ncommitted, owner-\napproved facility at\nor below 15% a year", "repay a facility"],
+        ["a draw the agent\nrequests above 15%", "draw on any other\nfacility", "apply for or add a\nfacility (the owner)"],
+        ["add a facility, by\nanyone but the owner"],
     ]),
     ("Cash received", [
         ["book a receipt from\nthe bank feed or\nthe owner"],
-        ["a payment reported\nby the agent or\na buyer"],
+        ["a receipt reported\nby the agent"],
         [],
     ]),
     ("Purchases and contracts", [
-        ["ask the owner for\napproval"],
-        ["commit a purchase", "set up or undo a\ncontract's terms"],
+        ["ask the owner for\napproval (only queues)"],
+        ["commit a purchase\n(owner only)", "set up or undo a\ncontract's terms\n(owner only)"],
         [],
     ]),
     ("Ownership, control and anything unknown", [
         None,
         None,
-        ["sign a personal\nguarantee", "pledge collateral,\nissue equity", "change the mandate",
+        ["sign a personal\nguarantee", "pledge collateral,\nissue equity", "change the mandate\nthrough the API",
          "an unknown operation\ntype (fails closed)"],
     ]),
 ]
@@ -64,7 +68,7 @@ def cell_h(items):
 
 
 heights = [BAND + max(cell_h(c) for c in cells) for _, cells in ROWS]
-HEAD, FOOT = 1.12, 1.62
+HEAD, FOOT = 1.12, 2.15
 H = 0.06 + HEAD + sum(heights) + FOOT
 fig, ax = canvas(H)
 X0, XR = 0.05, 7.95
@@ -120,16 +124,18 @@ ax.plot([X0, XR], [y, y], color="#c9d1dd", lw=1.2, zorder=1)
 
 # the signed mandate and the rule
 fy = y - 0.14
-ax.add_patch(FancyBboxPatch((X0, fy - 0.94), XR - X0, 0.94, boxstyle="round,pad=0,rounding_size=0.08", fc=PURPLE_SOFT,
+ax.add_patch(FancyBboxPatch((X0, fy - 1.45), XR - X0, 1.45, boxstyle="round,pad=0,rounding_size=0.08", fc=PURPLE_SOFT,
                             ec=PURPLE, lw=1.6, zorder=1))
 ax.text(X0 + 0.14, fy - 0.1, "The signed demo mandate (version 1, Ed25519, days 0–90)", va="top", fontsize=14.5,
         fontweight="bold", color=PURPLE_INK)
 ax.text(X0 + 0.14, fy - 0.42,
         "cash reserve ¥300,000 · discount ≤ 1.5% · future concessions ≤ ¥5,000 a year\n"
-        "DSCR ≥ 1.25× · leverage ≤ 2.5× · owner approves APR > 15%, commitment > ¥100k",
+        "DSCR ≥ 1.25× · leverage ≤ 2.5× · the owner approves a draw the agent\n"
+        "requests above 15% a year, and a commitment whose net new future concessions\n"
+        "exceed ¥100,000 (the ¥5,000 cap binds first)",
         va="top", fontsize=MIN_PT, color=INK, linespacing=1.25)
 ax.text(X0, 0.3, "No caller can set a tier. An approved Tier 2 operation passes every gate again.",
         va="bottom", fontsize=12, color=INK_2)
-stamp(fig, f"app/mandate/tiers.py and the golden-books mandate on {BUILD}", y_in=0.03)
+stamp(fig, "app/mandate/tiers.py, executor.py, golden-books mandate; checked on 5926ef29", y_in=0.03)
 
 save(fig, "fig10-authority-matrix.png")

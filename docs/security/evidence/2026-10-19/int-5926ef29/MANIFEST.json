@@ -2,7 +2,7 @@
   "commit": "5926ef29d7e3b4aaa34abfc42009c3e5a759298e",
   "working_tree_clean": true,
   "build": "source checkout at 5926ef29d7e3; no container image (local simulation)",
-  "manifest_written_utc": "2026-10-19T05:18:41Z",
+  "manifest_written_utc": "2026-10-19T05:56:24Z",
   "assessment_window_utc": "2026-10-19T04:14:15Z to 2026-10-19T05:00:40Z",
   "assessor": "Security Lead (AI agent)",
   "scope": "local simulation: loopback, one API process, cache mode, synthetic data",
