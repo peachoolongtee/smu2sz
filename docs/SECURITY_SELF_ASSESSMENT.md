@@ -27,7 +27,7 @@ money moves. We claim neither regulatory compliance nor absolute security.
 
 - **Test result, with its limits.** In the specified runs, the 279 stored attack cases (128 through the API, 151 through
   chat) produced **zero observed violations of the defined harm oracles** (section 2.4) on every gated build since
-  `70f23ac5`, the last being `5926ef29`; on the submission build: 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66%. Each case ran in a fresh in-memory runtime
+  `70f23ac5`, the last being the submission build `c66a5e61`: 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66%. Each case ran in a fresh in-memory runtime
   with recorded or scripted model answers; no real model read any of the 279 cases. A route-policy test calls every route
   as every kind of caller (section 1.5). This is a test result within a scope, not evidence that no exploitable path exists,
   and no running deployment has had a penetration test.
@@ -36,12 +36,12 @@ money moves. We claim neither regulatory compliance nor absolute security.
   accepted the residual risks for the team. **"Certified" in this document means that a build passed the Security Lead's
   internal release gate on that exact commit for the stated scope; it is not accreditation.**
 - **Release state** (section 2.7; every earlier gate is in Appendix C and
-  [CERTIFICATIONS.md](security/CERTIFICATIONS.md)). **The submission build `⟦SUB⟧`: ⟦SUB-VERDICT⟧.**
+  [CERTIFICATIONS.md](security/CERTIFICATIONS.md)). **The submission build `c66a5e61`: certified for scope S on 19 Oct.**
 - **Review of the submission build (19 Oct).** Team member Hao En, who did not write the fixes, reviewed the submission build. The review re-ran the sandbox, the judge pack and the security test folders on
   a fresh Linux machine (159 of 159 and 142 of 143 sandbox steps, 49 of 49 judge tasks, 279 attacks with 0 harm, 32 of 32
   evidence chains VALID) and probed the API with more than 160 attacks outside our catalogue. It found three defects; all three are
   fixed in the submission build, each with a regression test (REV-1 to REV-3, Table 27).
-- **Verdict by deployment** (section 4.6). Local simulation on loopback (scope S): certified for scope S on 19 Oct for `66c31e7e`. Live model
+- **Verdict by deployment** (section 4.6). Local simulation on loopback (scope S): certified for scope S on 19 Oct for `c66a5e61`. Live model
   mode (`pnpm demo --live-llm`): outside every certification. A demo over a network: **NO-GO** until a tested deployment
   profile exists. Production with real customers, documents or money: **NO-GO**.
 - **Residual risks are production prerequisites** (section 04). In the assessed local demo, none lets anyone but the owner
@@ -52,15 +52,15 @@ money moves. We claim neither regulatory compliance nor absolute security.
 
 | Build and assessment | |
 | --- | --- |
-| Submission build | `⟦SUB⟧` (full SHA `⟦SUB-FULL⟧`) on `dev`: `66c31e7e` (certified for scope S on 19 Oct) plus the three fixes of the 19 Oct review (REV-1 to REV-3). `66c31e7e` is dev `03215a20` with round eight (FUND-1, 2, 3, 5), the demo launcher on loopback (DEMO-L1), round nine (LOG-2, the SEC-19 display, CON-1 and pinned authority tests), the demo stepper fix, the API lint cleanup, the public-release cleanup and the unseen evaluation set. Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) |
-| Documentation revision | the `dev` commit tagged `submission-2026-10-20`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
-| Its release gate | ⟦SUB-VERDICT⟧, by the Security Lead on a clean checkout of `⟦SUB⟧`, ⟦SUB-WINDOW⟧; evidence [int-⟦SUB⟧/](security/evidence/⟦SUB-DATE⟧/int-⟦SUB⟧/), id `⟦SUB-ID⟧` (the hash of its `SHA256SUMS`); every result in Table C2 |
+| Submission build | `c66a5e61` (full SHA `c66a5e6189e0e34087c5d104197eb89c67d9c18f`) on `dev`: `66c31e7e` (certified for scope S on 19 Oct) plus the three fixes of the 19 Oct review (REV-1 to REV-3). `66c31e7e` is dev `03215a20` with round eight (FUND-1, 2, 3, 5), the demo launcher on loopback (DEMO-L1), round nine (LOG-2, the SEC-19 display, CON-1 and pinned authority tests), the demo stepper fix, the API lint cleanup, the public-release cleanup and the unseen evaluation set. Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) |
+| Documentation revision | the `dev` commit tagged `submission-2026-10-20b`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
+| Its release gate | certified for scope S on 19 Oct, by the Security Lead on a clean checkout of `c66a5e61`, 19 Oct 2026, 08:41 to 09:33 UTC; evidence [int-c66a5e61/](security/evidence/2026-10-19/int-c66a5e61/), id `sha256:37ff16748cf56bca` (the hash of its `SHA256SUMS`); every result in Table C2 |
 | Earlier gates | `66c31e7e`: certified for scope S on 19 Oct (`sha256:4a418fe4fb4c6c4d`); the builds before it in Appendix C |
 | Scope assessed (scope S) | `pnpm demo` on one machine: the API and the web app on 127.0.0.1; one API process; `DEMO_MODE=1` with the published demo credentials (the route checks also run with `DEMO_MODE=0` and unset); `DATABASE_URL=memory`; `LLM_MODE=cache` (no model provider is called); synthetic fixtures ([golden_sme.json](../fixtures/scenarios/golden_sme.json) and others). The CSP was checked on both the production build and the development server `pnpm demo` runs |
 | Not covered | live model mode; any network-reachable or hosted deployment; production; real customer documents or money; more than one API process |
 | Runtime | Python 3.12 (uv); Node 24 in CI and 24.11.1 at the gate; pnpm 12.11.2; PostgreSQL 17 for the concurrency suite only. FastAPI 0.142.2, Pydantic 2.13.5, Starlette 1.7.0; Next.js 16.3.8, React 19.3.0 (lockfiles unchanged since `70f23ac5`) |
 | CI | GitHub Actions has not run since 15 Oct because of a failed account payment, not a code failure. The checks it would run were run locally in each release gate; we claim nothing that CI currently enforces |
-| Approved exception | `braces` (GHSA-vfj7-8cjw-p6xm), a development-only dependency of the lint tooling, accepted by the project lead (section 2.8). No failing API test is excepted (submission build: ⟦SUB-SUITE⟧) |
+| Approved exception | `braces` (GHSA-vfj7-8cjw-p6xm), a development-only dependency of the lint tooling, accepted by the project lead (section 2.8). No failing API test is excepted (submission build: 11,426 passed, 0 failed, 47 skipped) |
 | Assessors | the Security Lead (an AI agent, 14 to 19 Oct) for every gate and, from 19 Oct at the project lead's request, the merges into `dev`; the integration lead (an AI agent) for the alignment of this document up to `03215a20` |
 
 **How this assessment answers the security criterion.** The competition's security criterion reads: "Defence against
@@ -106,19 +106,19 @@ own three-level scale, informed by the structure of **NIST SP 800-30 Rev. 1**. T
 true, the tests that exercise it, the outcome observed and where the evidence is. Each property is classed as
 **PREVENTED** (blocked before it has any effect), **DETECTED** (logged or flagged, not necessarily blocked), **UNTESTED**
 (stated, not tested) or **ACCEPTED LIMITATION** (a known gap, rated in section 04). Outcomes are the submission build's own. Gate files are in its evidence folder
-([int-⟦SUB⟧/](security/evidence/⟦SUB-DATE⟧/int-⟦SUB⟧/)). Sandbox cases are in
+([int-c66a5e61/](security/evidence/2026-10-19/int-c66a5e61/)). Sandbox cases are in
 [sandbox-2026-10-19/](deliverables/evidence/sandbox-2026-10-19/) (submission build: in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID). "Tests pass" means
-these tests passed inside the full API suite on the submission build `66c31e7e`: 11,421 passed, 0 failed, 47 skipped.
+these tests passed inside the full API suite on the submission build `c66a5e61`: 11,426 passed, 0 failed, 47 skipped.
 
 **Table 3. Security claims: the control, the tests, the outcome on the submission build with its evidence, and the class.**
 
-| Id | Claim, and the control that enforces it | Tests | Outcome on `66c31e7e`, and the evidence | Class |
+| Id | Claim, and the control that enforces it | Tests | Outcome on `c66a5e61`, and the evidence | Class |
 | --- | --- | --- | --- | --- |
 | CL1 | Untrusted text never becomes an operation by itself. *Control:* typed schemas with exact spans; code builds operations from a verdict; the compiler cannot import the books or mandate | [test_injection.py](../services/api/tests/compiler/test_injection.py) (no schema can express an operation; the import rule); the compromised-agent step on all 279 cases; the 231-item language boundary | 0 harm on 279 cases; 0 wrong-and-material on 231 items. *Evidence:* `latest_report.md`, `lb_cache.txt`, `lb_fake.txt`; sandbox: unauthorized actions | PREVENTED; a misreading inside a typed row reaches the owner and never runs alone: ACCEPTED LIMITATION (R-7) |
 | CL2 | A buyer's keyed message can at most counter, reject or accept a plain early-pay discount within Tier 1, as the agent; it never draws or requests an advance. *Control:* `decide()` in [offers.py](../services/api/app/nl/offers.py); tiers; key binding (SEC-18) | 64 buyer chat cases; [test_round_nine.py](../services/api/tests/security/test_round_nine.py) (pinned buyer rules) | 0 harm; tests pass. *Evidence:* `attacks.txt`; sandbox: journey | PREVENTED |
 | CL3 | An anonymous sender gets a proposal only; the agent never agrees to it. *Control:* proposal-only intake; `ANONYMOUS_INTAKE=0` | [test_anonymous_intake_switch.py](../services/api/tests/security/test_anonymous_intake_switch.py); anonymous catalogue cases | tests pass. *Evidence:* `shards/` | PREVENTED |
 | CL4 | An anonymous offer under a buyer's name is shown as unverified. *Control:* `sender_unverified` on the deal header, accept review and approval cards | the SEC-19 tests in `test_round_nine.py`; [unverified-sender.test.mjs](../apps/web/scripts/unverified-sender.test.mjs) | tests pass; web unit 197 passed. *Evidence:* `web/unit.txt` | DETECTED; the chat reply does not say so: ACCEPTED LIMITATION (SEC-19) |
-| CL5 | Identity comes from the credential only; each route refuses every caller it does not admit. *Control:* constant-time checks on bytes; an `OWNER`, `SYSTEM` or `COUNTERPARTY` claim in a body that the credential does not prove is rewritten to `AGENT` (REV-1); route classes (Table 6) | [test_route_policy.py](../services/api/tests/security/test_route_policy.py) (16 tests, 113 routes); [test_bypass_sweep.py](../services/api/tests/security/test_bypass_sweep.py) (207 cases); [test_review_19oct.py](../services/api/tests/api/test_review_19oct.py); the sweep in three modes (112 routes) | 16 tests pass over 113 routes; owner 96 of 97 (91 of 97 with DEMO_MODE=0); sweep 0 violations, 0 differences from `03215a20`. *Evidence:* `sweep_policy.txt`; sandbox: unauthorized actions | PREVENTED |
+| CL5 | Identity comes from the credential only; each route refuses every caller it does not admit. *Control:* constant-time checks on bytes; an `OWNER`, `SYSTEM` or `COUNTERPARTY` claim in a body that the credential does not prove is rewritten to `AGENT` (REV-1); route classes (Table 6) | [test_route_policy.py](../services/api/tests/security/test_route_policy.py) (16 tests, 113 routes); [test_bypass_sweep.py](../services/api/tests/security/test_bypass_sweep.py) (207 cases); [test_review_19oct.py](../services/api/tests/api/test_review_19oct.py); the sweep in three modes (112 routes) | 16 tests pass over 113 routes; owner 96 of 97 (91 of 97 with DEMO_MODE=0); sweep 0 violations, 0 differences from `c66a5e61`. *Evidence:* `sweep_policy.txt`; sandbox: unauthorized actions | PREVENTED |
 | CL6 | The tier is computed by code; Tier 3 is refused for everyone; Tier 2 waits for the owner. *Control:* [tiers.py](../services/api/app/mandate/tiers.py); executor gates 4 and 7 | [test_tiers.py](../services/api/tests/mandate/test_tiers.py); 22 escalation cases; the tier mutation (Table 18) | tests pass; 0 harm on 279. *Evidence:* `shards/` | PREVENTED |
 | CL7 | The ¥100,000 threshold applies to a commitment's net new future concessions; an early-pay discount counts ¥0. *Control:* `tier2_single_commitment_fen` | [test_approval_thresholds.py](../services/api/tests/security/test_approval_thresholds.py) (`test_a_single_commitment_above_the_threshold_is_tier_2_and_at_it_is_not`) | tests pass. *Evidence:* `shards/` | PREVENTED (above it, queued) |
 | CL8 | The agent's draw is Tier 1 only on a committed, owner-approved facility within the signed rate (15% a year); otherwise it waits for the owner. *Control:* tiers; the executor's rate threshold; admission | `test_approval_thresholds.py`; PC-05; [test_admission.py](../services/api/tests/operations/test_admission.py) | tests pass. *Evidence:* `shards/` | PREVENTED; a compromised agent's Tier-1 reach: ACCEPTED LIMITATION (R-3) |
@@ -136,10 +136,10 @@ these tests passed inside the full API suite on the submission build `66c31e7e`:
 | CL20 | One bank event books once; a receipt above the open amount is refused. *Control:* `bank_reference` | [test_bank_reference.py](../services/api/tests/operations/test_bank_reference.py); PC-04 | tests pass. *Evidence:* `shards/` | PREVENTED; a receipt with no reference: ACCEPTED LIMITATION (SEC-29) |
 | CL21 | What anyone can send is bounded. *Control:* size bounds; token buckets; the buyer budget | [test_intake_hardening.py](../services/api/tests/security/test_intake_hardening.py), [test_rate_limits.py](../services/api/tests/security/test_rate_limits.py), [test_buyer_budget.py](../services/api/tests/security/test_buyer_budget.py) | tests pass. *Evidence:* `shards/` | PREVENTED; probing within the budget: ACCEPTED LIMITATION (R-10) |
 | CL22 | A capex purchase is the owner's, bound to the confirmed contract, and only money goes out. *Control:* `PURCHASE_OWNER_ONLY`; document and schedule hashes | [test_capex_security.py](../services/api/tests/api/test_capex_security.py) | tests pass. *Evidence:* `shards/` | PREVENTED; a changed receiving account is not detected: ACCEPTED LIMITATION (CAPEX-ACCT) |
-| CL23 | The published demo credentials work only with `DEMO_MODE=1`; demo and setup routes behave as Table 6 states. *Control:* SEC-07; route classes | `test_route_policy.py`; [test_demo_mode_default.py](../services/api/tests/security/test_demo_mode_default.py); the sweep with `DEMO_MODE=0` and unset | 0 policy violations in three modes; 0 differences from `03215a20`. *Evidence:* `sweep_prod.json`, `sweep_unset.json` | PREVENTED |
+| CL23 | The published demo credentials work only with `DEMO_MODE=1`; demo and setup routes behave as Table 6 states. *Control:* SEC-07; route classes | `test_route_policy.py`; [test_demo_mode_default.py](../services/api/tests/security/test_demo_mode_default.py); the sweep with `DEMO_MODE=0` and unset | 0 policy violations in three modes; 0 differences from `c66a5e61`. *Evidence:* `sweep_prod.json`, `sweep_unset.json` | PREVENTED |
 | CL24 | The web's nonce CSP blocks injected script. *Control:* per-request nonce with `strict-dynamic` | a browser check of the production build and of `pnpm demo`'s development server | 17 pages each (production build and the development server), 0 violations, injection blocked; the development server adds `'unsafe-eval'`. *Evidence:* `csp/`, `csp_dev/` | PREVENTED (checked pages); stored and reflected injection: UNTESTED (S3) |
 | CL25 | Every live model path receives redacted text only. *Control:* provider backends redact by default | [test_model_privacy_paths.py](../services/api/tests/security/test_model_privacy_paths.py), [test_redaction_mandatory.py](../services/api/tests/compiler/test_redaction_mandatory.py) | tests pass. *Evidence:* `shards/` | PREVENTED (the listed identifier types); names and other formats: ACCEPTED LIMITATION (PRIV-4, PRIV-5) |
-| CL26 | No secret in the repository; no known vulnerable production dependency. *Control:* the secret scan; `pip-audit`; `pnpm audit` | the gate's scans | secret scan 0 findings (tree and every branch's history); `pip-audit` clean; `pnpm audit --prod` 0; `braces` only (development). *Evidence:* [secret_scan.txt](security/evidence/2026-10-19/int-66c31e7e/secret_scan.txt), `pip_audit.txt`, `pnpm_audit_*.json` | DETECTED (scans); `braces`: ACCEPTED LIMITATION |
+| CL26 | No secret in the repository; no known vulnerable production dependency. *Control:* the secret scan; `pip-audit`; `pnpm audit` | the gate's scans | secret scan 0 findings (tree and every branch's history); `pip-audit` clean; `pnpm audit --prod` 0; `braces` only (development). *Evidence:* [secret_scan.txt](security/evidence/2026-10-19/int-c66a5e61/secret_scan.txt), `pip_audit.txt`, `pnpm_audit_*.json` | DETECTED (scans); `braces`: ACCEPTED LIMITATION |
 | CL27 | The web app works as the API says, end to end. *Control:* the mock and the live browser suites (desktop and phone) | Playwright suites | mock 479 passed, 0 failed, 77 skipped; live 177 passed, 0 failed, 51 skipped (on `5926ef29` the live suite caught the stepper race, 2.7). *Evidence:* `web/mock_e2e.txt`, `live_e2e.txt` | DETECTED (the stepper race was found by this suite) |
 | CL28 | The authority claims hold against a live model, in a hosted deployment, and under races inside one API process. *Control:* none tested | not tested (LIVE, S10, S1) | not measured | UNTESTED |
 
@@ -303,11 +303,11 @@ mode).**
 **Results on `5926ef29`.** The route-policy test passes (16 of 16) over 113 routes. The owner reaches the handler on 96 of 97
 owner and demo routes in demo mode and on 91 of 97 with `DEMO_MODE=0`: the five 403s above, and in both modes
 `POST /documents/{id}/terms/undo`, which answers 404 `UNKNOWN_SET_UP` because the test world holds no set-up to undo. The
-sweep: 0 policy violations, 0 differences from `03215a20`. The 207-case **credential-bypass sweep**
+sweep: 0 policy violations, 0 differences from `c66a5e61`. The 207-case **credential-bypass sweep**
 ([test_bypass_sweep.py](../services/api/tests/security/test_bypass_sweep.py)) sends every owner write and agent route each
 wrong or missing credential and each body-field claim of authority: none got through. It fills path parameters with a
 placeholder and sends empty bodies, so on about half the routes the owner's own request stops at validation; the
-route-policy test is what shows each owner route works. Submission build: 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0); 0 policy violations in three modes; 0 differences from 03215a20.
+route-policy test is what shows each owner route works. Submission build: 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0); 0 policy violations in three modes; 0 differences from c66a5e61.
 
 #### 1.6 Architectural invariants ([INVARIANTS.md](INVARIANTS.md)), and what each proves
 
@@ -725,9 +725,10 @@ team that built the system. 3 Oct: the principal audit by team members working w
 AI subagents; every finding became a regression test. 14 to 19 Oct: the Security Lead, an AI agent in a separate session,
 with its gates: `0ba8e4c1`, `a6de32a2`, `b6d1e519`, `0f92d433`, `719c9dcf`, `0fde33fd`, `29fa0ea2` and `85309b63` passed;
 `6d2b6941` conditional; `70f23ac5` passed (18 Oct); `5941e95a` not passed (PAY-1); `03215a20` passed on a trusted network (19
-Oct); `5926ef29` gated, not released (a live browser failure); and `66c31e7e`, the submission build, whose verdict is stated
+Oct); `5926ef29` gated, not released (a live browser failure); `66c31e7e` passed; and `c66a5e61`, the submission build with the 19 Oct review's fixes, whose verdict is stated
 in the text (2.7), not in the figure. 16 Oct: the internal red-team run by team member Hao En, with a live DeepSeek tier and
-an offline tier, not re-run. 16 to 18 Oct: the project lead's risk decisions, for the team.
+an offline tier, not re-run. 16 to 18 Oct: the project lead's risk decisions, for the team. 19 Oct: team member Hao En's reviews of the submission build
+(REV-1 to REV-3, fixed in `c66a5e61`) and of a later branch (REV-4 disclosed; `feat/reader-dates` no-go).
 
 **Table 19. The review arrangement.**
 
@@ -777,7 +778,7 @@ records are in [CERTIFICATIONS.md](security/CERTIFICATIONS.md). Appendix C lists
   before it, and the gates that did not pass (`5941e95a`, PAY-1; `5926ef29`, a web demo timing race fixed in `cc1703cc`), are
   in Appendix C.
 - **`66c31e7e` (19 Oct): certified for scope S** (gate 05:55 to 06:46 UTC, evidence id `sha256:4a418fe4fb4c6c4d`).
-- **`⟦SUB⟧`, the submission build: ⟦SUB-VERDICT⟧** (gate ⟦SUB-WINDOW⟧, evidence id `⟦SUB-ID⟧`; Table C2). It is `66c31e7e`
+- **`c66a5e61`, the submission build: certified for scope S on 19 Oct** (gate 19 Oct 2026, 08:41 to 09:33 UTC, evidence id `sha256:37ff16748cf56bca`; Table C2). It is `c66a5e61`
   plus the three fixes of the 19 Oct review (REV-1 to REV-3).
 
 #### 2.8 Dependency and secret scans
@@ -792,7 +793,7 @@ records are in [CERTIFICATIONS.md](security/CERTIFICATIONS.md). Appendix C lists
 | Secret scan | every tracked file and the history of every branch | 0 findings; only the two `.env.example` files are tracked, with placeholder values; the DEMO ONLY fixtures are published by design | |
 
 Submission build: pip-audit clean; pnpm audit --prod 0; braces only (development); secret scan 0 findings in the tracked files and every branch's history, recorded in
-[secret_scan.txt](security/evidence/2026-10-19/int-66c31e7e/secret_scan.txt). RT-1 was rated by reachability: the advisories were
+[secret_scan.txt](security/evidence/2026-10-19/int-c66a5e61/secret_scan.txt). RT-1 was rated by reachability: the advisories were
 in the web server, reachable over HTTP; on loopback likelihood was Low, for a network demo Moderate. A clean result means only
 that the named scan found no published advisory on that date.
 
@@ -1068,7 +1069,7 @@ prerequisites, not rated risks, and are not on the map.
 | PRIV-4, PRIV-5 | Redaction misses names and some identifier formats (live mode only) | vulnerability | any document sender | Moderate | Moderate (C) | **Moderate** |
 | OPS | No backup, restore or PostgreSQL CI job; the pause is API-only | operational gap | privileged (the operator) | Moderate | Moderate (A, I) | **Moderate** |
 | S3 | Browser injection against the owner token has not been penetration-tested | unverified property | anonymous (content) | Low | High (credential) | **Moderate** |
-| R-7 | A buyer's refusal or qualified offer ("we won't pay early…", "half of…", "on every future invoice") can read as the plain discount; it never runs alone and reaches the owner as an approval, whose card shows the terms read, not the buyer's words | vulnerability | any message sender | Moderate | Moderate (H) | **Moderate** |
+| R-7 | A buyer's refusal or qualified offer ("we won't pay early…", "half of…", "on every future invoice") can read as the plain discount; it never runs alone and reaches the owner as an approval, whose card shows the terms read, not the buyer's words. A keyed buyer's message with the payer reversed ("You can pay …", 你们/贵司 … 支付) or wholly quoted (">", "»", "\|", 「…」) is accepted at Tier 1 as the plain discount, inside the mandate's caps (REV-4) | vulnerability | any message sender | Moderate | Moderate (H) | **Moderate** |
 | Low-rated | R-16 (a contract misread within a typed row; it changes no books); R-10 (a keyed buyer can probe the counter cap within 5 messages a day, and so learn the supplier is short of cash); FUND-4 and OPT-B (wording on two owner screens; the correct figures are one view away); PAUSE-Q; SEC-22 and R-1; SEC-29; RT-3; SEC-27; PRIV-6; R-5; CAPEX-NC; and minor items. Each has its record in [FINDINGS_REGISTER.md](security/FINDINGS_REGISTER.md) | various | various | Low or Moderate | Low or Moderate | Low |
 
 The ratings are the Security Lead's. R-7 was raised from Low to Moderate after the 19 Oct review showed that simple
@@ -1145,8 +1146,8 @@ recovered; the pause exists only through the API. *Next step:* see 4.3.
 
 **S3: browser injection against the owner token.** Low × High, unverified. The nonce CSP was checked in a browser on the
 production build and on the development server `pnpm demo` runs (`next dev`, whose policy adds `'unsafe-eval'` to
-`script-src` for hot reload): 17 pages each, 0 violations, injected script blocked (submission build: production ⟦SUB-CSP⟧; development server
-⟦SUB-CSPDEV⟧). Stored and reflected injection across offers, filenames, errors and exports was not penetration-tested. *Next
+`script-src` for hot reload): 17 pages each, 0 violations, injected script blocked (submission build: production 17 pages, 0 violations, injection blocked; development server
+17 pages, 0 violations; the header adds 'unsafe-eval'). Stored and reflected injection across offers, filenames, errors and exports was not penetration-tested. *Next
 step:* before any network demo, a browser test of injected content in each of those places.
 
 **FUND-4 and OPT-B: smaller misreports to the owner.** Moderate × Low each. They occur on ordinary paths, but each leaves the
@@ -1191,6 +1192,13 @@ nothing is agreed until FLOW confirms it. *Still open:* the approval card shows 
 unread words are on the verdict's detail page. *Next step:* the buyer's text and the unread words on the approval card; a
 negation cue makes the reader abstain.
 
+**REV-4: a reversed payer or a quoted message (found 19 Oct, open in this build).** Hao En's review of a later branch found
+that the coverage proof's filler list holds "you", 你们 and 贵司 and never counts quote marks, so "You can pay the ¥420,000 invoice
+early at a 0.5% discount" or the same offer behind ">" is accepted at Tier 1 from the buyer's own key. The commitment is the
+same verified early-payment discount the plain offer would make, within the mandate's caps, and the discount applies only to
+payment that arrives; the harm is agreeing to words the buyer did not say as its own. *Next step:* a second-person payer or a
+quoted line holds the message for the owner (a 14-line coverage change with 12 regression tests, gated separately).
+
 **R-10, R-16, SEC-22, R-1, R-5, CAPEX-NC.** Unchanged from the register: contract readings change no books (R-16); probing is
 budgeted to 5 messages a day, but within it a buyer can still learn that the supplier is short of cash, since the counter's
 face follows the gap (R-10); derived values are a known limit (SEC-22); the other items are low-impact by design or
@@ -1225,7 +1233,7 @@ Each was found by one of the reviews, reproduced, and closed by a fix whose regr
 | FUND-1, 2, 3, 5 | be told a gap is funded, or that there is none, when no admissible plan covers it; read "on your books" while the agreement waits | [test_round_eight.py](../services/api/tests/security/test_round_eight.py), [send-result.test.mjs](../apps/web/scripts/send-result.test.mjs) | round eight (`5926ef29`) |
 | DEMO-L1 | load the demo's pages and bundle (with the demo token) from another machine | the LAN address refused with the demo running | `da86b702` (`5926ef29`) |
 | LOG-2, SEC-19 (display), CON-1 | have the buyer read text other than the text scanned; accept an anonymous offer without seeing it is unverified; approve with a bare number after "yes" | [test_round_nine.py](../services/api/tests/security/test_round_nine.py), [unverified-sender.test.mjs](../apps/web/scripts/unverified-sender.test.mjs) | round nine (`66c31e7e`) |
-| REV-1, REV-2, REV-3 (review of 19 Oct) | file a draw or a receipt with the agent key that the log and the approval card attributed to the buyer; raise an unhandled error with a non-ASCII credential; have a refused or qualified buyer offer answered "our acceptance awaits the owner's approval" | [test_review_19oct.py](../services/api/tests/api/test_review_19oct.py) | the submission build (`⟦SUB⟧`) |
+| REV-1, REV-2, REV-3 (review of 19 Oct) | file a draw or a receipt with the agent key that the log and the approval card attributed to the buyer; raise an unhandled error with a non-ASCII credential; have a refused or qualified buyer offer answered "our acceptance awaits the owner's approval" | [test_review_19oct.py](../services/api/tests/api/test_review_19oct.py) | the submission build (`c66a5e61`) |
 
 #### 4.6 Release gate by deployment ([RELEASE_GATE.md](security/RELEASE_GATE.md))
 
@@ -1233,7 +1241,7 @@ Each was found by one of the reviews, reproduced, and closed by a fix whose regr
 
 | Deployment | Verdict | Conditions |
 | --- | --- | --- |
-| Local demo on loopback (scope S) | **certified for scope S on 19 Oct** for the submission build `66c31e7e`. Earlier: `03215a20` passed on a trusted machine and network (its launcher served the web app on every interface, DEMO-L1); `70f23ac5` passed (the same condition, found later); `5941e95a` and `5926ef29` were not released | **Operating constraints:** `DEMO_MODE=1`; memory or SQLite; one API process; `LLM_MODE=cache` (the router on recorded answers only); synthetic fixtures; contract terms on, as `pnpm demo` sets them; simulated counterparties; nobody but the presenter holds the demo credentials; the API and the web app on 127.0.0.1. **Not covered:** live mode or real documents |
+| Local demo on loopback (scope S) | **certified for scope S on 19 Oct** for the submission build `c66a5e61`. Earlier: `03215a20` passed on a trusted machine and network (its launcher served the web app on every interface, DEMO-L1); `70f23ac5` passed (the same condition, found later); `5941e95a` and `5926ef29` were not released | **Operating constraints:** `DEMO_MODE=1`; memory or SQLite; one API process; `LLM_MODE=cache` (the router on recorded answers only); synthetic fixtures; contract terms on, as `pnpm demo` sets them; simulated counterparties; nobody but the presenter holds the demo credentials; the API and the web app on 127.0.0.1. **Not covered:** live mode or real documents |
 | Live-model mode (`pnpm demo --live-llm`) | **not covered by any certification** | a gate run in live mode; the language-boundary set and catalogue against a live model; a provider agreement on retention and region; PRIV-4, PRIV-5 |
 | Demo reachable over a network | **NO-GO** until one tested deployment profile exists; otherwise we demonstrate the local configuration | **The profile must include:** credentials changed from the demo values and a new owner key pair (`OWNER_PUBLIC_KEY_HEX`); one worker; synthetic fixtures; `LLM_MODE=cache`; documentation hidden (`DEMO_MODE=0`); a TLS reverse proxy with per-client rate and body-size limits; the web server on loopback behind it; anonymous intake off (SEC-19); the stop procedure below. **It must pass:** the route sweep and the browser checks (S3) against that deployment |
 | Production with real customers, documents or money | **NO-GO** | the prerequisites in 4.3; R-2, R-13, R-14, SEC-19, SEC-28, CAPEX-ACCT; R-3's aggregate draw limit; PRIV-4, PRIV-5 and the privacy assessment (3.6); backups; a penetration test; real counterparties, lenders and bank feeds |
@@ -1274,7 +1282,7 @@ test process); `attacks.txt`, `latest_report.{json,md}` (the catalogue); `sweep_
 
 | Folder | Build | What it holds |
 | --- | --- | --- |
-| [int-66c31e7e/](security/evidence/2026-10-19/int-66c31e7e/) | `66c31e7e`, the submission build | its release gate (Table C2), id `sha256:4a418fe4fb4c6c4d` |
+| [int-c66a5e61/](security/evidence/2026-10-19/int-c66a5e61/) | `c66a5e61`, the submission build | its release gate (Table C2), id `sha256:37ff16748cf56bca` |
 | [int-5926ef29/](security/evidence/2026-10-19/int-5926ef29/) | `5926ef29` | the gate whose live browser suite failed once (a stepper race), with `bisect/`; id `sha256:1c728920b7f4559b` |
 | [dev-03215a20/](security/evidence/2026-10-19/dev-03215a20/) | `03215a20` | its gate and the SEC-28 review reproductions; id `sha256:712d6bd18b80e1ef` |
 | [dev-70f23ac5/](security/evidence/2026-10-18/dev-70f23ac5/) | `70f23ac5` | its gate; id `sha256:3fd43dcd8ffc4721` |
@@ -1337,28 +1345,28 @@ Each has its reproduction, fix, regression test and merge commit in [FINDINGS_RE
 | 19 Oct | `eb3c1059` | round eight and the loopback launcher, before round nine | intermediate gate, superseded; not a release; its live browser run (four workers by mistake) is not cited |
 | 19 Oct | `5926ef29` | round nine, the lint and public-release cleanups, the unseen evaluation set | **not released**: a live browser failure, a stepper race (2.7); every other check passed (Table C2) |
 | 19 Oct | `66c31e7e` | the demo stepper fix on `5926ef29` | **certified for scope S on 19 Oct** (`sha256:4a418fe4fb4c6c4d`; Table C2) |
-| ⟦SUB-WINDOW⟧ | `⟦SUB⟧` | the submission build: the three fixes of the 19 Oct review (REV-1 to REV-3) | **⟦SUB-VERDICT⟧** (Table C2) |
+| 19 Oct 2026, 08:41 to 09:33 UTC | `c66a5e61` | the submission build: the three fixes of the 19 Oct review (REV-1 to REV-3) | **certified for scope S on 19 Oct** (Table C2) |
 
 **Table C2. The release gate: `66c31e7e` (certified 19 Oct) and the submission build.**
 
-| Check | `66c31e7e` (19 Oct, 05:55 to 06:46 UTC) | Submission build `⟦SUB⟧` |
+| Check | `66c31e7e` (19 Oct, 05:55 to 06:46 UTC) | Submission build `c66a5e61` |
 | --- | --- | --- |
-| API suite (155 processes) | 11,421 passed, 0 failed, 47 skipped | ⟦SUB-SUITE⟧ |
-| Attack catalogue | 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66% | ⟦SUB-ATTACKS⟧ |
-| Route policy | 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0) | ⟦SUB-ROUTES⟧ |
-| Credential sweep, three modes | 0 policy violations in three modes; 0 differences from 03215a20 | ⟦SUB-SWEEP⟧ |
+| API suite (155 processes) | 11,421 passed, 0 failed, 47 skipped | 11,426 passed, 0 failed, 47 skipped |
+| Attack catalogue | 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66% | 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66% |
+| Route policy | 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0) | 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0) |
+| Credential sweep, three modes | 0 policy violations in three modes; 0 differences from 03215a20 | 0 policy violations in three modes; 0 differences from 66c31e7e |
 | Reproductions; approval flip | refused (outputs identical to the earlier runs apart from timestamps); the database refuses the flip | refused, as on `66c31e7e`: the gate's `approval_flip.txt` and `r*.txt` |
-| Language boundary, 231 items | 0 wrong-and-material (recorded and scripted answers) | ⟦SUB-LB⟧ |
-| PostgreSQL 17 | concurrency 3 of 3; audit guards 10 passed | ⟦SUB-PG⟧ |
-| Dependency audits | pip-audit clean; pnpm audit --prod 0; braces only (development) | ⟦SUB-AUDITS⟧ |
-| Secret scan | 0 findings in the tracked files and every branch's history | ⟦SUB-SECRETS⟧ |
-| Mock browser suite (desktop and phone) | 479 passed, 0 failed, 77 skipped | ⟦SUB-MOCK⟧ |
-| Web typecheck, lint, unit | typecheck and lint pass; 197 unit tests passed | ⟦SUB-WEB⟧ |
-| Live browser suite (real local API, one worker) | 177 passed, 0 failed, 51 skipped | ⟦SUB-LIVE⟧ |
-| CSP, production build | 17 pages, 0 violations, injection blocked | ⟦SUB-CSP⟧ |
-| CSP, development server (`pnpm demo`) | 17 pages, 0 violations; the header adds 'unsafe-eval' | ⟦SUB-CSPDEV⟧ |
-| Judge pack (`judge_eval.py --out`) | 49 of 49 tasks; 279 attacks, 0 harm; audit chain VALID | ⟦SUB-JUDGE⟧ |
-| Sandbox cases | in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID (runs on build `3ba36775`, whose product code equals `66c31e7e`) | ⟦SUB-SANDBOX⟧ |
+| Language boundary, 231 items | 0 wrong-and-material (recorded and scripted answers) | 0 wrong-and-material (recorded and scripted answers) |
+| PostgreSQL 17 | concurrency 3 of 3; audit guards 10 passed | concurrency 3 of 3; audit guards 10 passed |
+| Dependency audits | pip-audit clean; pnpm audit --prod 0; braces only (development) | pip-audit clean; pnpm audit --prod 0; braces only (development) |
+| Secret scan | 0 findings in the tracked files and every branch's history | 0 findings in the tracked files and every branch's history |
+| Mock browser suite (desktop and phone) | 479 passed, 0 failed, 77 skipped | 479 passed, 0 failed, 77 skipped |
+| Web typecheck, lint, unit | typecheck and lint pass; 197 unit tests passed | typecheck and lint pass; 197 unit tests passed |
+| Live browser suite (real local API, one worker) | 177 passed, 0 failed, 51 skipped | 177 passed, 0 failed, 51 skipped |
+| CSP, production build | 17 pages, 0 violations, injection blocked | 17 pages, 0 violations, injection blocked |
+| CSP, development server (`pnpm demo`) | 17 pages, 0 violations; the header adds 'unsafe-eval' | 17 pages, 0 violations; the header adds 'unsafe-eval' |
+| Judge pack (`judge_eval.py --out`) | 49 of 49 tasks; 279 attacks, 0 harm; audit chain VALID | 49 of 49 tasks; 279 attacks, 0 harm; audit chain VALID |
+| Sandbox cases | in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID (runs on build `3ba36775`, whose product code equals `66c31e7e`) | in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID |
 
 **The review of `5941e95a` (18 to 19 Oct), condensed.** The Security Lead reviewed every change after `70f23ac5` and found
 sound: the consent narrowing, the pause (owner-only, in front of the executor, on the chain), the verifier's wording change
@@ -1421,7 +1429,7 @@ attack routes, credentials, operations and the store directly.
 ## Appendix E. Changes since `70f23ac5`
 
 The integration lead prepared this list; the Security Lead reviewed every row up to `5941e95a`, wrote rounds six to nine, gated
-`03215a20` and `5926ef29`, and runs the submission build's gate (2.7). Sections 01 to 04 describe the submission build's code, so each
+`03215a20`, `5926ef29` and `66c31e7e`, and gated the submission build `c66a5e61` (2.7). Sections 01 to 04 describe the submission build's code, so each
 change is also reflected there. The tests recorded with each change are in Table 3 and Table 27.
 
 **Table E1. Changes since `70f23ac5`, grouped.**
@@ -1437,6 +1445,7 @@ change is also reflected there. The tests recorded with each change are in Table
 | `123f63aa`, `f23db573`, `3d4817f7`, `c8c04a9d` (round seven) | PAY-1, PAY-2, PAY-3, PAUSE-1, APR-1 | consent bound to the plan shown; the pause holds for the bank-feed key | in `03215a20` (passed) |
 | `da86b702`; `9fb43be7`, `4251fb46`, `61d4f363`, `ea6bb593` (round eight) | DEMO-L1; FUND-1, FUND-3, FUND-2, FUND-5 | the web app on 127.0.0.1; what the owner is told | in `5926ef29` |
 | `a12548fd`, `1b35d349`, `df35bf73`, `f360d880` (round nine) | LOG-2, SEC-19 display, CON-1, pinned authority tests | what is scanned and sent; what the owner sees; what decides an approval. `a12548fd` caused the web regression | in `5926ef29`; fix on `sec/round-nine-fix` |
+| `cc1703cc` (`66c31e7e`); `90116810`, `c66a5e61` (the 19 Oct review) | the demo stepper race; REV-1, REV-2, REV-3 | the live suite's walk; who the log names; a refused credential; what a buyer is told while the owner decides | fixed; in the submission build `c66a5e61` |
 | web, test-only, lint, public-release and evaluation commits | display fixes; re-recorded mocks; the lint and public-release cleanups; the frozen and unseen evaluation sets; the LICENSE | no route, data or permission change | in `5926ef29` |
 
 **Editorial changes since the Security Lead's v3 (17 Oct).** None changes a finding's rating or a gate's verdict; the one

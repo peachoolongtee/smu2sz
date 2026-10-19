@@ -54,15 +54,15 @@ release gate's scope. Section 02 measures what the model adds, on unseen items, 
 
 | Build and verification |
 | --- |
-| Submission: product code 66c31e7e (`66c31e7ec179fb29f4d5cebb01c1fcbf30652ae9`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20`, and the commits after the product code change documentation, evidence and the document build tooling only. Release state of 66c31e7e: certified for scope S on 19 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical and named as such (Table B2) |
+| Submission: product code c66a5e61 (`c66a5e6189e0e34087c5d104197eb89c67d9c18f`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20b`, and the commits after the product code change documentation, evidence and the document build tooling only. Release state of c66a5e61: certified for scope S on 19 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical and named as such (Table B2) |
 | Supported configuration (scope S): `pnpm demo` on one machine: API and web app on 127.0.0.1, one API process, `DEMO_MODE=1` with the published demo credentials, in-memory books, `LLM_MODE=cache` (no model provider called), synthetic fixtures. Not covered: live model mode, any network or hosted deployment, production |
-| Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20`). Repository paths in this document link to that revision |
+| Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20b`). Repository paths in this document link to that revision |
 | Runs offline after installation. Installing needs the npm and PyPI registries (uv also downloads Python 3.12, and the browser suites need Playwright's Chromium); users in mainland China may need registry mirrors. After that, no account, VPN, API key or foreign service is needed. Live mode (`pnpm demo --live-llm`) needs a DeepSeek or Anthropic API key |
-| Demo video: International-AI-Track-ISMOGGER-DemoVideo.mp4, submitted alongside this document |
+| Demo video: [https://youtu.be/6y5_fKPInIo](https://youtu.be/6y5_fKPInIo) |
 | Licence: all rights reserved; the organisers and judges may view, run and evaluate the repository for judging ([LICENSE](../../LICENSE)) |
 
 **Table R. The judging criteria, what FLOW demonstrates, and where to verify it.** Results are those of the submission build
-`66c31e7e` (Table V); the live-model row ran on the same reading code (`5926ef29`). The sandbox run is the Execution
+`c66a5e61` (Table V); the live-model row ran on the same reading code (`5926ef29`). The sandbox run is the Execution
 Evidence's sandbox run ([docs/deliverables/evidence/sandbox-2026-10-19/](evidence/sandbox-2026-10-19/), cases 1 to 5, each
 step with its request, response, the state read back and PASS or FAIL). Appendix A indexes every template prompt.
 
@@ -83,10 +83,10 @@ offline on `571ea64f` (18 Oct) with the same results. Appendix C gives each comm
 | Safety of autonomy | On 115 held-out buyer messages FLOW accepted 3 on its own, all correctly, but that is only 3 of the 14 genuinely acceptable offers, on sets tuned after their first runs (Table 4). The first runs, before the coverage check (ADR-0005), accepted 6 misread messages | Unseen first runs, then tuned |
 | Usefulness | About half of messages need no owner review (57 of 115); 11 of the 14 good offers wait for the owner (Table 4) | Tuned |
 | Reading contracts | 75% of key fields on 17 unseen Chinese contracts with a text layer; the other 13 of the 30, scans and photos, are refused | Unseen, recorded model readings |
-| Owner questions | 228 of 427 answerable bank questions answered, 45 partly, 0 wrong (tuned bank); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic (126 and 4 on `90116810`) | Tuned; held-out |
+| Owner questions | 228 of 427 answerable bank questions answered, 45 partly, 0 wrong (tuned bank); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic (126 and 4 on the submission build) | Tuned; held-out |
 | Live model | Unseen buyer messages, 19 Oct on `5926ef29`: shipped path 2 of 6 correct, 0 wrong; the question router fully correct on 22 of 63 questions (18 Oct, one reviewer) | Live, single runs; outside the release gate |
 | Security | 279 stored attack cases (128 API, 151 chat), 0 harm-oracle violations (`5926ef29`, 19 Oct; rules path and a scripted hostile model; no real model read any catalogue case) | Tests |
-| Tests | Every suite's passed, failed and skipped counts on 66c31e7e: Table V. Earlier builds: Table B2. A count measures the size of a suite, not correctness | Tests |
+| Tests | Every suite's passed, failed and skipped counts on c66a5e61: Table V. Earlier builds: Table B2. A count measures the size of a suite, not correctness | Tests |
 
 **How to read this document.** Sections 01 to 05 follow the official template; detail is in the appendices. Every number is
 synthetic and labelled with the build it was measured on, or points to Table V. Amounts are Chinese yuan (CNY, ¥) on
@@ -510,7 +510,7 @@ do not compare across panels.
 
 #### Task Completion: scripted tasks in a simulated environment
 
-**49 of 49 scripted conversations pass their own checks** (88 turns; judge pack on `5926ef29`, 19 Oct; on 66c31e7e see Table V),
+**49 of 49 scripted conversations pass their own checks** (88 turns; judge pack on `5926ef29`, 19 Oct; on c66a5e61 see Table V),
 each with a verifiable evidence chain; a tampered copy is rejected. The tasks were written by the team that built the
 handlers, so they show that the paths written work, not how real owners would talk. The demo walk (the journey in section 01)
 exits cleanly with 14 hash-chained operations that verify. The engine matches an independently written oracle on 67 of 67
@@ -555,7 +555,7 @@ contracts, 13 scans and photos are refused (no OCR); on the 17 with a text layer
 
 **Owner questions.** On the bank the answers were built against (tuned), 228 of 427 answerable turns are answered, 45 partly,
 0 wrong. On **142 held-out everyday wordings**, 127 reach the right answer (89.4%) and 3 a wrong topic (2.1%) on `571ea64f`;
-on `90116810`, 126 (88.7%) and 4 (2.8%). Offline, no question executed or changed the books. **The live stress test (18 Oct, `28738f19`, DeepSeek, router on):** 658 owner turns
+on the submission build, 126 (88.7%) and 4 (2.8%). Offline, no question executed or changed the books. **The live stress test (18 Oct, `28738f19`, DeepSeek, router on):** 658 owner turns
 all returned HTTP 200; of 589 sweep questions the rules parser read 546, the question gate 10 and the model classifier 12, and
 21 fell back; 63 questions the deterministic answers did not cover reached the router (Table M). The classifier turned 4
 questions into proposed plans that waited for "go ahead". Latency p50 0.13 s, p95 1.17 s.
@@ -572,7 +572,7 @@ exercise it and what it does not cover. The grouping under the four threats is o
 categories into six classes, and the SA's section 2 groups the same cases by technique; all three add up to the same cases.
 
 **Table 5. The four threats in the rubric, the control that stops each, and its limits (catalogue results on `5926ef29`,
-19 Oct; on 66c31e7e: Table V).**
+19 Oct; on c66a5e61: Table V).**
 
 | Threat, and what an attacker tries | Control that stops it | Attack cases (all reached their path; 0 harm) | Limits |
 | --- | --- | --- | --- |
@@ -661,7 +661,7 @@ resumed; recovery is manual (SA 1.12; sandbox run, 4c).
   refusal never depends on.
 - **Privilege escalation** (SA 1.5). The executor trusts no caller-supplied tier, actor or approval. A route-policy test calls
   every route as every kind of caller, with demo mode on and off, and the release gate's route sweep repeats it in three modes;
-  the counts on 66c31e7e are in Table V (16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0); sweep 0 policy violations in three modes; 0 differences from 03215a20). With `DEMO_MODE=0`, `/demo/bank-receipt` and the four
+  the counts on c66a5e61 are in Table V (16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0); sweep 0 policy violations in three modes; 0 differences from 66c31e7e). With `DEMO_MODE=0`, `/demo/bank-receipt` and the four
   setup actions answer 403; `/demo/reset` and `/demo/restore` stay owner-only and work on the in-memory store (refused on a
   persistent store).
 - **Privacy and data extraction** (SA 3.2 to 3.4). The outbound guard blocks a whole message stating a value the recipient is not
@@ -678,7 +678,7 @@ resumed; recovery is manual (SA 1.12; sandbox run, 4c).
   until the owner confirms them. FLOW is decision support, not a licensed lender, broker or adviser.
 
 **Table 6. Attack results (279 stored cases: 128 API, 151 chat; each in a fresh in-memory runtime, offline, rules grammar
-and a scripted hostile model). Measured on `5926ef29` (19 Oct) and with the same result on `03215a20`; on 66c31e7e:
+and a scripted hostile model). Measured on `5926ef29` (19 Oct) and with the same result on `03215a20`; on c66a5e61:
 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66%.**
 
 | Measure | Result |
@@ -697,7 +697,7 @@ and no running deployment has had a penetration test.
 
 **Assurance and release state** (SA 2.7, 4.6, Appendix C). Every review was internal and AI-assisted; none was independent assurance. The
 Security Lead, an AI agent in a separate session, reproduced findings, wrote fixes with regression tests (so it gated fixes it
-wrote) and runs the internal release gate on an exact commit. **The release state of 66c31e7e is certified for scope S on 19 Oct** (Table V);
+wrote) and runs the internal release gate on an exact commit. **The release state of c66a5e61 is certified for scope S on 19 Oct** (Table V);
 the history of earlier gates is Table B2. Still open and disclosed: SEC-28 with FUND-4, PAUSE-2 and SEC-11 (one API process),
 SEC-27, SEC-19 in chat, and the pause rated risk.
 
@@ -705,7 +705,7 @@ SEC-27, SEC-19 in chat, and the pause rated risk.
 
 | Configuration | Verdict | Minimum blockers |
 | --- | --- | --- |
-| Local demo, scope S (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | certified for scope S on 19 Oct for 66c31e7e (Table V) | A trusted machine; nobody but the presenter holds the published demo credentials |
+| Local demo, scope S (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | certified for scope S on 19 Oct for c66a5e61 (Table V) | A trusted machine; nobody but the presenter holds the published demo credentials |
 | Live-LLM mode (`pnpm demo --live-llm`, opt-in) | **Outside the release gate** | A gate run in live mode; the language-boundary set and attack catalogue against a live model; a provider agreement on retention and region; PRIV-4 and PRIV-5 |
 | A demo reachable over a network | **NO-GO** | A tested deployment profile: changed credentials and signing key, TLS with per-client limits, anonymous intake off (SEC-19), API docs hidden, one API process, the route sweep and browser checks run against it |
 | Production with real customers, documents or money | **NO-GO** | A runnable configuration (SEC-06); one API process enforced (SEC-11); separate custody of token and key (R-2); an external anchor and a log the database owner cannot rewrite (R-13); mandate revoke and renew (R-14); resumable or reversible plans (SEC-28); an aggregate draw limit (R-3); vendor account verification; a PIPL assessment; backups; a penetration test; real counterparties, lenders and bank feeds |
@@ -732,8 +732,8 @@ pnpm --dir apps/web install
 uv sync --directory services/api
 ```
 
-Expected: both installs finish without errors; `git diff --stat 66c31e7e submission-2026-10-20 -- services/api/app apps/web` prints nothing
-(the tag's product code is 66c31e7e).
+Expected: both installs finish without errors; `git diff --stat c66a5e61 submission-2026-10-20b -- services/api/app apps/web` prints nothing
+(the tag's product code is c66a5e61).
 
 **Commands, expected outcomes and where results go.** Every command writes new results under `out/`, which the repository
 ignores, so the submitted evidence is never overwritten. Run them from the repository root.
@@ -745,7 +745,7 @@ ignores, so the submitted evidence is never overwritten. Run them from the repos
 | The same against the running product | start `pnpm demo`, then, in a second terminal, `uv run --project services/api python docs/deliverables/evidence/sandbox-2026-10-19/run_sandbox.py --base-url http://127.0.0.1:8000` | the same cases; a step that needs a direct store write is recorded as SKIPPED ("in-process only") |
 | The scripted tasks with their evidence chains | `uv run --project services/api python scripts/run_scenarios.py --inproc --out out/e2e` | `49/49 scenarios passed`; each chain verifies |
 | Check a submitted chain without running anything | `python scripts/verify_evidence.py docs/deliverables/evidence/demo_walk/operations_log.jsonl` | `VALID` |
-| The API suite (this command runs it serially; the release gate ran it as 155 shards, 8 at a time, in 19 minutes, the shards' times summing to 1.7 hours: [tools/certify_66c3.sh](../security/evidence/2026-10-19/int-66c31e7e/tools/certify_66c3.sh)) | POSIX: `cd services/api && SKIP_PERF_BENCH=1 uv run pytest -q`; PowerShell: `cd services/api; $env:SKIP_PERF_BENCH = "1"; uv run pytest -q` | 11,421 passed, 0 failed, 47 skipped on 66c31e7e (Table V); the tests set `TERMSLEDGER_NO_DOTENV=1` and `DEMO_MODE=1` themselves |
+| The API suite (this command runs it serially; the release gate ran it as 155 shards, 8 at a time, in 20 minutes, the shards' times summing to 1.75 hours: [tools/certify_c66a.sh](../security/evidence/2026-10-19/int-c66a5e61/tools/certify_c66a.sh)) | POSIX: `cd services/api && SKIP_PERF_BENCH=1 uv run pytest -q`; PowerShell: `cd services/api; $env:SKIP_PERF_BENCH = "1"; uv run pytest -q` | 11,426 passed, 0 failed, 47 skipped on c66a5e61 (Table V); the tests set `TERMSLEDGER_NO_DOTENV=1` and `DEMO_MODE=1` themselves |
 | The product | `pnpm demo` (also `pnpm demo --blank` for empty books, `--web-port`/`--api-port` for other ports) | "Ready" and the address; API on 127.0.0.1:8000, web on 127.0.0.1:3000; Ctrl+C stops both |
 
 On Windows, set `PYTHONUTF8=1` for the Python scripts (PowerShell: `$env:PYTHONUTF8 = "1"`). The browser suites need
@@ -758,11 +758,11 @@ the six scenes, or use the Business pages directly (Appendix K).
 the oracle, verifier, router, executor, mandate, persistence, compiler, chat, security harness, route policy); the mock
 browser suite (Playwright on recorded JSON, every page against the golden values, desktop and phone); the live browser suite
 (Playwright against a local API, one worker); web unit, types and lint; scripted-model tests (router, language boundary,
-cards, chat attacks); the attack catalogue; and the sandbox run. Their counts on 66c31e7e are in Table V and on earlier builds in
+cards, chat attacks); the attack catalogue; and the sandbox run. Their counts on c66a5e61 are in Table V and on earlier builds in
 Table B2; Appendix D lists representative cases, and [TEST_CASES.md](TEST_CASES.md) the full catalogue.
 
 **Known failures.** On `5926ef29` the live browser suite failed one test, `tracker.spec.ts:216` ("after the owner's approval
-the page's figures are the API's own"), which kept `5926ef29` from release. It was a timing race in the web demo stepper: its next button re-enabled before the story read had settled, so a quick press re-ran the step just run and the walk ended one step short of the owner's approval. The race predates round nine and shows only under load; a bisect first pointed at round nine's `a12548fd`, but reverting that commit does not remove it. Fixed in `cc1703cc` (the button waits for a settled story read), with a web unit test that fails before the fix. The result on 66c31e7e
+the page's figures are the API's own"), which kept `5926ef29` from release. It was a timing race in the web demo stepper: its next button re-enabled before the story read had settled, so a quick press re-ran the step just run and the walk ended one step short of the owner's approval. The race predates round nine and shows only under load; a bisect first pointed at round nine's `a12548fd`, but reverting that commit does not remove it. Fixed in `cc1703cc` (the button waits for a settled story read), with a web unit test that fails before the fix. The result on c66a5e61
 is 177 passed, 0 failed, 51 skipped.
 Timing benches fail on a busy machine (`SKIP_PERF_BENCH=1`).
 
@@ -809,28 +809,28 @@ Each prompt of the technical document template, with the part of this document t
 
 ## Appendix B. Verification manifest
 
-**What was frozen.** Product code 66c31e7e (`66c31e7ec179fb29f4d5cebb01c1fcbf30652ae9`) on `dev`; it contains `5926ef29`: dev `03215a20` with round eight
+**What was frozen.** Product code c66a5e61 (`c66a5e6189e0e34087c5d104197eb89c67d9c18f`) on `dev`: `66c31e7e` (certified for scope S on 19 Oct) plus the three fixes of the 19 Oct review (REV-1 to REV-3). `66c31e7e` is `5926ef29` with the demo stepper fix; `5926ef29` is dev `03215a20` with round eight
 (FUND-1, 2, 3, 5), the demo launcher on loopback (DEMO-L1), round nine (LOG-2, SEC-19 display, CON-1, pinned authority tests),
 the API lint cleanup, the public-release cleanup and the unseen evaluation set. The documentation revision is the `dev` commit
-tagged `submission-2026-10-20`; every commit after the product code changes documentation, evidence and the document build
+tagged `submission-2026-10-20b`; every commit after the product code changes documentation, evidence and the document build
 tooling only. The gate covers scope S (section 05); live mode, networked or hosted deployments and production are outside it.
 The evidence folder is under [docs/security/evidence/2026-10-19/](../../docs/security/evidence/2026-10-19/) with
-`MANIFEST.json` and `SHA256SUMS` (evidence id sha256:4a418fe4fb4c6c4d, the sha256 of `SHA256SUMS`); the verdict is recorded in
+`MANIFEST.json` and `SHA256SUMS` (evidence id sha256:37ff16748cf56bca, the sha256 of `SHA256SUMS`); the verdict is recorded in
 [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md).
 
-**Table V. Verification manifest for the submission build 66c31e7e (the Security Lead's release gate, 19 Oct 2026, 05:55 to 06:46 UTC, on a
-clean checkout; evidence sha256:4a418fe4fb4c6c4d). Commands run from the repository root unless stated.**
+**Table V. Verification manifest for the submission build c66a5e61 (the Security Lead's release gate, 19 Oct 2026, 08:41 to 09:33 UTC, on a
+clean checkout; evidence sha256:37ff16748cf56bca). Commands run from the repository root unless stated.**
 
 | Check | Command | Result | Evidence |
 | --- | --- | --- | --- |
 | Release state, scope S | the release-gate scripts in the evidence folder | certified for scope S on 19 Oct | `CERTIFICATIONS.md`; the evidence folder |
-| API suite, per test folder and per [tests/api](../../services/api/tests/api/) file | `uv run pytest` (from [services/api](../../services/api/)) | 11,421 passed, 0 failed, 47 skipped | the folder's suite shards |
+| API suite, per test folder and per [tests/api](../../services/api/tests/api/) file | `uv run pytest` (from [services/api](../../services/api/)) | 11,426 passed, 0 failed, 47 skipped | the folder's suite shards |
 | Mock browser suite (desktop and phone) | `E2E_TARGET=mock pnpm exec playwright test --workers=6` (from [apps/web](../../apps/web/)) | 479 passed, 0 failed, 77 skipped | the folder's browser logs |
 | Live browser suite (a local API, one worker, as configured) | `E2E_TARGET=live pnpm exec playwright test` (from [apps/web](../../apps/web/)) | 177 passed, 0 failed, 51 skipped | the folder's browser logs |
 | Web typecheck, lint, unit | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` (from [apps/web](../../apps/web/)) | typecheck and lint pass; 197 unit tests passed | the folder |
 | Attack catalogue | `uv run python -m app.security.attacks --report` (from [services/api](../../services/api/)) | 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66% | `latest_report.json` in the folder |
 | Route policy | `uv run pytest tests/security/test_route_policy.py` (from [services/api](../../services/api/)) | 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0) | the folder |
-| Credential sweep, three modes | the folder's sweep scripts, compared with `03215a20` | 0 policy violations in three modes; 0 differences from 03215a20 | the folder's sweep files |
+| Credential sweep, three modes | the folder's sweep scripts, compared with `66c31e7e` | 0 policy violations in three modes; 0 differences from 66c31e7e | the folder's sweep files |
 | Language boundary, 231 items | `scripts/certify_language_boundary.py --backend cache` and `--backend fake` | 0 wrong-and-material (recorded and scripted answers) | the folder |
 | PostgreSQL 17: concurrency, three runs; audit guards | `TERMSLEDGER_TEST_DATABASE_URL=<empty local database> uv run pytest tests/concurrency tests/persistence/test_audit_guards.py` | concurrency 3 of 3; audit guards 10 passed | the folder |
 | Dependency audits | `pip-audit` on the exported production lockfile; `pnpm audit --prod`; `pnpm audit` | pip-audit clean; pnpm audit --prod 0; braces only (development) | the folder |
@@ -852,8 +852,9 @@ clean checkout; evidence sha256:4a418fe4fb4c6c4d). Commands run from the reposit
 | Round-seven merge (`c707ee8c`) | 19 Oct | — | Live browser 171 passed, 6 failed, 51 skipped (the three above, `accept-as-asked.spec.ts:205` and `:233`, which passed when re-run alone, and the flaky `demo.spec.ts:378`) |
 | `03215a20` | 19 Oct | Passed, scope S, on a trusted network (DEMO-L1); evidence `sha256:712d6bd18b80e1ef` | API 11,368 passed, 0 failed, 47 skipped; 279 cases, 0 harm; mock browser 479 passed, 77 skipped; web unit 187; CSP 17 pages, 0 violations; PostgreSQL 3 of 3 |
 | `eb3c1059` | 19 Oct | Intermediate gate only, superseded; never released | API 11,383 passed, 0 failed, 47 skipped; its live browser run used four workers by mistake and is not cited |
-| `5926ef29` | 19 Oct, 04:14–05:05 UTC | Not released: the live browser suite failed once, a demo stepper race (section 05, "Known failures") | API 11,421 passed, 0 failed, 47 skipped (155 processes; one empty shard exits 5); 279 cases, 0 harm, 120 of 128 by the named control; route policy 16 tests over 113 routes; sweep 0 violations and 0 differences from `03215a20`; reproductions and the approval flip refused; language boundary 0 wrong-and-material; PostgreSQL 3 of 3, guards 10 passed; pip-audit clean, `pnpm audit --prod` 0, `braces` (development only, no patched version, accepted by the project lead); secret scan 0; mock browser 479 passed, 0 failed, 77 skipped; web unit 196; live browser 176 passed, 1 failed, 51 skipped; CSP 17 pages, 0 violations in production and development builds; judge pack 49 of 49 |
-| 66c31e7e | 19 Oct 2026, 05:55 to 06:46 UTC | certified for scope S on 19 Oct | Table V |
+| `5926ef29` | 19 Oct, 04:14–05:05 UTC | Not released: the live browser suite failed once, a demo stepper race (section 05, "Known failures") | API 11,421 passed, 0 failed, 47 skipped (155 processes; one empty shard exits 5); 279 cases, 0 harm, 120 of 128 by the named control; route policy 16 tests over 113 routes; sweep 0 violations and 0 differences from `c66a5e61`; reproductions and the approval flip refused; language boundary 0 wrong-and-material; PostgreSQL 3 of 3, guards 10 passed; pip-audit clean, `pnpm audit --prod` 0, `braces` (development only, no patched version, accepted by the project lead); secret scan 0; mock browser 479 passed, 0 failed, 77 skipped; web unit 196; live browser 176 passed, 1 failed, 51 skipped; CSP 17 pages, 0 violations in production and development builds; judge pack 49 of 49 |
+| `66c31e7e` | 19 Oct, 05:55–06:46 UTC | Certified for scope S (`5926ef29` + the demo stepper fix); evidence `sha256:4a418fe4fb4c6c4d` | API 11,421 passed, 0 failed, 47 skipped; every other check as on `c66a5e61` |
+| `c66a5e61` | 19 Oct 2026, 08:41 to 09:33 UTC | certified for scope S on 19 Oct (`66c31e7e` + the review fixes REV-1 to REV-3) | Table V |
 
 ## Appendix C. Evaluation commands and results
 
@@ -866,7 +867,7 @@ noted. The gated suites are in Table V.
 | Everyday wording | `uv run python scripts/owner_questions_general.py --part all` | 326/345, 4 wrong topic (1.2%); held-out 127/142 (89.4%), 3 wrong (2.1%) (`571ea64f`). On `90116810`: 325/345, 5 wrong (1.4%); held-out 126/142 (88.7%), 4 wrong (2.8%) |
 | Router and answer cards | `uv run pytest tests/nl/test_ask_router.py tests/nl/test_router_tools.py tests/certification/test_ask_router_boundary.py tests/nl/test_answer_card.py tests/security/test_nl_attacks.py` | 452 passed, 1 skipped (`571ea64f`) |
 | Offline evaluation | `uv run --project services/api python scripts/evaluate.py --out out/eval` (about 8 minutes) | Every target in its own gate met on its default offers set ([fixtures/heldout](../../fixtures/heldout), used in tuning); on held-out 3, scored separately, the material-error and silent-error targets are not met (`975e082f`) |
-| Autonomy funnel | `uv run --project services/api python scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2 --out out/funnel` | Table 4 (`571ea64f`; the same counts on `90116810`) |
+| Autonomy funnel | `uv run --project services/api python scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2 --out out/funnel` | Table 4 (`571ea64f`; the same counts on the submission build) |
 | Unseen live set | the commands in [live_unseen/README.md](../../services/api/evals/live_unseen/README.md) (a model key; paid calls) | Table M (`5926ef29`, 19 Oct) |
 | Contract reading | [scripts/evaluate_contracts.py](../../scripts/evaluate_contracts.py) and the scorer [eval_contracts.py](../../services/api/scripts/eval_contracts.py), on 70 contracts kept outside the repository | 75% of fields on unseen text-layer contracts, 86% after fixes, 98% on the 30 it was tuned on (recorded DeepSeek readings, 16–17 Oct; scores in [submission/work/eval/](submission/work/eval/) `contracts_b2_heldout_fields.json`, `contracts_b2_afterfix_fields.json`, `contracts_b1_tuned_fields.json`). Not reproducible from the repository |
 | Evidence chain | `uv run --project services/api python scripts/verify_evidence.py <exported.jsonl>` (`--checkpoint-out` prints a `COUNT:HEAD` to keep elsewhere; `--checkpoint` checks a later export against it) | VALID; an edited copy is rejected |

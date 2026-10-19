@@ -19,6 +19,8 @@ FinTechathon 2026 · International AI Track · Topic E: SME Finance Copilot · T
 > mirrors of them, which users in mainland China may need). The optional live-model mode (`pnpm demo --live-llm`) needs a
 > DeepSeek or Anthropic API key in your shell, and is outside the security certification.
 
+> **Demo video:** [https://youtu.be/6y5_fKPInIo](https://youtu.be/6y5_fKPInIo)
+
 ![A buyer's request in FLOW: the verdict, why it cannot be accepted as asked, and the priced choices](docs/deliverables/screenshots/shot2-deal-decision.png)
 
 <sub>A buyer asks for 60-day terms, a 1.2% early-payment discount and a rebate. FLOW shows why the package cannot be accepted
@@ -189,7 +191,7 @@ Full detail: the [technical document](docs/deliverables/technical_document.md) (
 
 ## Results at a glance
 
-Submission build: code commit `66c31e7e` on `dev`, certified for scope S on 19 Oct (see [Security Notes](#security-notes)). Offline
+Submission build: code commit `c66a5e61` on `dev`, certified for scope S on 19 Oct (see [Security Notes](#security-notes)). Offline
 (`LLM_MODE=cache`, in-memory store). The full list of checks, with commands and counts, is the
 technical document's verification manifest (Appendix B, Table V).
 
@@ -201,7 +203,7 @@ technical document's verification manifest (Appendix B, Table V).
 | Security | **279 attacks** (128 through the API, 151 through chat), **0 caused harm**; 120 of the 128 API attacks stopped by the control they name, 8 known gaps; 97.66% detected and logged |
 | Agent tasks | **49/49** scripted conversations, each with an evidence chain |
 | Demo walk | 17 steps; audit chain **VALID**; a tampered copy is rejected |
-| API tests | 11,421 passed, 0 failed, 47 skipped |
+| API tests | 11,426 passed, 0 failed, 47 skipped |
 | Web and browser tests | web unit, typecheck and lint pass; mock browser 479 passed, 0 failed, 77 skipped; live browser 177 passed, 0 failed, 51 skipped |
 | Chinese contract reading | 75% of key fields on a held-out batch, 86% after fixes; 98% on the 30 text-layer contracts of the batch the reader was built on (scans are refused) |
 | What the model adds | On a frozen set of 20 new messages, the model reads phrasings the rules cannot (fully correct: rules alone 6, model alone 10), and the shipped checks turn its 2 wrong readings into questions for the owner, at a cost: 5 items held back that were readable (technical document, section 03) |
@@ -298,7 +300,7 @@ DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.p
 The language model only reads text; deterministic code decides, and every financial operation runs through the executor. Actions are split into three
 permission tiers under an owner-signed, expiring mandate, with nonces, idempotency, a circuit breaker and a hash-chained log.
 The [Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) gives the verdicts for the submission build, code commit
-`66c31e7e` on `dev`, certified for scope S on 19 Oct by the Security Lead (`docs/security/CERTIFICATIONS.md`):
+`c66a5e61` on `dev`, certified for scope S on 19 Oct by the Security Lead (`docs/security/CERTIFICATIONS.md`):
 
 | Use | Verdict |
 | --- | --- |
