@@ -10,11 +10,11 @@
 	request_body {
 		max_size 2MB
 	}
-	# documentation hidden, as the network profile requires (Security Self-Assessment, Table 28)
-	@docs path /api/docs /api/docs/* /api/redoc /api/redoc/* /api/openapi.json
-	respond @docs 404
-
 	handle_path /api/* {
+		# documentation hidden, as the network profile requires (Security Self-Assessment, Table 28). Inside this block, so it
+		# runs before the proxy (Caddy orders handle_path ahead of a top-level respond).
+		@docs path /docs /docs/* /redoc /redoc/* /openapi.json
+		respond @docs 404
 		reverse_proxy api:8000
 	}
 	handle {
