@@ -1,6 +1,6 @@
 """Run the FROZEN live evaluation set (items.yaml) against a running FLOW API and score it against the blind labels.
 
-    python run.py http://127.0.0.1:8582 --log /path/to/api.log [--expect-mode live]
+    python run.py http://127.0.0.1:8582 --log /path/to/api.log [--expect-mode live] [--items ../live_unseen/items.yaml]
 
 It sends nothing but the synthetic items in items.yaml, plus the control calls each item needs: GET /health once,
 POST /demo/reset before every item, GET /audit before and after, and the owner's POST /offers/{id}/evaluate after a buyer
@@ -14,7 +14,10 @@ With --log, the API's own `compiler.call` / `compiler.cross_check` lines written
 remembers the log's size before each reading request and reads what was appended after it (a buyer offer's lines are also
 matched by doc_hash, whose first 12 characters are the offer id).
 
-Outputs: results_<label>_<date>.json and .md in --out (default: this folder). The label is `live` when /health says
+--items scores another set in the same schema (default: this folder's items.yaml); its results go next to it unless --out
+says otherwise, and its optional top-level `set_name` titles the report. The scoring is the same for every set.
+
+Outputs: results_<label>_<date>.json and .md in --out (default: the items file's folder). The label is `live` when /health says
 llm_mode=live, `rules_baseline` otherwise, unless --label says otherwise.
 
 Scoring (per item; the labels are in items.yaml and are frozen):
@@ -55,6 +58,7 @@ except ImportError:  # pragma: no cover - the API's environment has it
 
 HERE = Path(__file__).resolve().parent
 ITEMS = HERE / "items.yaml"
+REPO = HERE.parents[3]
 OWNER_TOKEN = "demo-owner-token"
 BUYER_KEYS = {"BUYER-1": "demo-buyer-1-key", "BUYER-2": "demo-buyer-2-key"}
 HOLD_CODES = {"UNRESOLVED_SCOPE", "CONFLICTING_SOURCES", "UNKNOWN_COUNTERPARTY"}
@@ -551,12 +555,13 @@ def table(t: dict[str, dict[str, int]], head: str) -> list[str]:
 def markdown(res: dict[str, Any]) -> str:
     rows = res["items"]
     live = res["llm_mode"] == "live"
-    title = ("Live frozen set: results, model backend (untuned)" if live
-             else "Live frozen set: RULES GRAMMAR BASELINE (cache mode, not a model)")
+    name = res.get("set_name") or "Live frozen set"
+    title = (f"{name}: results, model backend (untuned)" if live
+             else f"{name}: RULES GRAMMAR BASELINE (cache mode, not a model)")
     lines = [f"# {title}", "",
              f"- Run: {res['started']} to {res['finished']} against `{res['base_url']}` (label `{res['label']}`)",
              f"- API /health: llm_mode=`{res['llm_mode']}`",
-             f"- Items: {len(rows)} from `items.yaml` (sha256 `{res['items_sha256']}`, frozen {res['frozen_on']}, labels {res['labels_written']})",
+             f"- Items: {len(rows)} from `{res['items_file']}` (sha256 `{res['items_sha256']}`, frozen {res['frozen_on']}, labels {res['labels_written']})",
              f"- Requests sent: {res['requests_sent']} (reading requests {res['reading_requests_sent']}; caps {res['caps']})",
              f"- API log: {res['log'] or 'not given (compiler source taken from the response only)'}", ""]
     if not live:
@@ -640,11 +645,20 @@ def markdown(res: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _repo_path(p: Path) -> str:
+    """The items file as the results name it: its path in the repository (a results file is committed), else its name."""
+    try:
+        return p.relative_to(REPO).as_posix()
+    except ValueError:
+        return p.name
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("base_url", help="the running API, e.g. http://127.0.0.1:8582")
     ap.add_argument("--log", help="the API's log file, to read its compiler.call lines (optional)")
-    ap.add_argument("--out", default=str(HERE), help="where to write results_<label>_<date>.json/.md (default: this folder)")
+    ap.add_argument("--items", default=str(ITEMS), help="the items file to score (default: this folder's items.yaml)")
+    ap.add_argument("--out", help="where to write results_<label>_<date>.json/.md (default: the items file's folder)")
     ap.add_argument("--label", help="results label (default: live when /health says llm_mode=live, else rules_baseline)")
     ap.add_argument("--expect-mode", choices=("live", "cache"), help="refuse to run unless /health reports this llm_mode")
     ap.add_argument("--only", help="comma-separated item ids (a partial run; report it as such)")
@@ -656,7 +670,8 @@ def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    raw = ITEMS.read_bytes()
+    items_path = Path(args.items).resolve()
+    raw = items_path.read_bytes()
     data = yaml.safe_load(raw.decode("utf-8"))
     items = data["items"]
     if args.only:
@@ -693,7 +708,7 @@ def main() -> int:
     res = {
         "label": label, "base_url": args.base_url, "llm_mode": mode, "health": health,
         "started": started, "finished": dt.datetime.now(dt.UTC).astimezone().isoformat(timespec="seconds"),
-        "items_file": "services/api/evals/live_frozen/items.yaml", "items_sha256": hashlib.sha256(raw).hexdigest(),
+        "set_name": data.get("set_name"), "items_file": _repo_path(items_path), "items_sha256": hashlib.sha256(raw).hexdigest(),
         "frozen_on": data.get("frozen_on"), "labels_written": data.get("labels_written"),
         "partial_run": bool(args.only) or len(out_rows) < len(items),
         "requests_sent": api.sent, "reading_requests_sent": api.reading_sent,
@@ -705,7 +720,7 @@ def main() -> int:
                           "read": sum(r["score"]["read"] for r in out_rows)},
         "items": out_rows,
     }
-    out = Path(args.out)
+    out = Path(args.out) if args.out else items_path.parent
     out.mkdir(parents=True, exist_ok=True)
     stem = f"results_{label}_{dt.datetime.now(dt.UTC).astimezone().date().isoformat()}"
     (out / f"{stem}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
