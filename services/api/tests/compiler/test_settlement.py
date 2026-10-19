@@ -135,3 +135,11 @@ def test_date_proof_does_not_claim_that_two_independent_readers_read_the_date():
     assert ob.payment_timing.proof == "calendar_grammar_v1"
     assert "payment_timing" not in ob.field_provenance
     assert checked.autonomy_eligible
+
+
+def test_a_date_in_a_separate_price_probe_is_not_the_discounts_settlement_date():
+    offer = reading("Your walk-away price: what's the lowest discount you would accept? "
+                    "Tell us and we'll close today. We can pay early at 1.5%.")
+    assert offer.data_requests
+    assert all("settlement_day" not in ob.unresolved for ob in offer.obligations)
+    assert not offer.autonomy_eligible

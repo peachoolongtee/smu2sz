@@ -989,7 +989,7 @@ def build_offer(
     # The binder consumes this typed gap; it never reads document text.
     ordered = [ob.model_copy(update={"unresolved": list(dict.fromkeys([*ob.unresolved, "settlement_day"]))})
                if len(ordered) == 1 and ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.payment_timing is None
-               and any(has_unread_timing(by_id[sp.doc_id]) for sp in ob.spans)
+               and any(has_unread_timing(by_id[sp.doc_id], ob.spans) for sp in ob.spans)
                else ob for ob in ordered]
     obligations: list[Obligation] = []
     conflict_values = set().union(*conflicts.values()) if conflicts else set()

@@ -98,17 +98,26 @@ def attach_payment_timing(docs: dict[str, SourceDocument], obligations: Sequence
     return [o.model_copy(update={"payment_timing": timing}) if o is ob else o for o in result]
 
 
-def has_unread_timing(doc: SourceDocument) -> bool:
+def has_unread_timing(doc: SourceDocument, spans: Sequence[SourceSpan]) -> bool:
     """Unconsumed timing in a single-discount message, excluding metadata headers.
 
     Multi-term packages retain their existing owner-reviewed semantics; assigning a
     period across several commercial clauses requires the later clarification build.
     """
     from app.compiler.coverage import ALLOWED, TIMING_RE, mentions
+    from app.compiler.lexicon import sentence_bounds
 
-    if any(m.kind in {"date", "days"} for m in mentions(doc)):
+    regions = [(sentence_bounds(doc.text, sp.start)[0], sentence_bounds(doc.text, max(sp.start, sp.end - 1))[1])
+               for sp in spans if sp.doc_id == doc.doc_id]
+
+    def in_payment(start: int, end: int) -> bool:
+        return any(lo <= start and end <= hi for lo, hi in regions)
+
+    if any(m.kind in {"date", "days"} and in_payment(m.start, m.end) for m in mentions(doc)):
         return True
-    text = fold(doc.text).text
+    folded = fold(doc.text)
+    text = folded.text
     allowed = [(m.start(), m.end()) for pat in ALLOWED for m in pat.finditer(text)]
-    return any(not any(start <= m.start() and m.end() <= end for start, end in allowed)
+    return any(in_payment(*folded.span(m.start(), m.end()))
+               and not any(start <= m.start() and m.end() <= end for start, end in allowed)
                for m in TIMING_RE.finditer(text))
