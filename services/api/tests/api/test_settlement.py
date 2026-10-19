@@ -38,4 +38,4 @@ def test_owner_words_state_the_condition_and_do_not_claim_receipt(client):
     assert "only to payment received by" in en
     assert "not yet received" not in en  # the same term is also shown in a paid agreement
     assert "payment received" in en
-    assert "享受折扣" in zh and "尚未收款" not in zh
+    assert "享受折扣" in zh and "含当日" in zh and "尚未收款" not in zh
