@@ -110,7 +110,7 @@ def test_an_existing_effective_day_cannot_override_the_quoted_date():
     assert result.verdict.outcome.value == "NO_VERDICT"
 
 
-@pytest.mark.parametrize("expression", ["after the holiday", "within 3 business days", "next Friday", "on Oct 12", "ｔｏｍｏｒｒｏｗ"])
+@pytest.mark.parametrize("expression", ["after the holiday", "within 3 business days", "next Friday", "on Oct 12", "ｔｏｍｏｒｒｏｗ", "10 days early"])
 def test_unsupported_timing_is_never_priced_on_a_default_day(expression):
     offer = reading(f"We will pay invoice RCV-A (¥420,000) {expression}, 0.5% off.")
     state, _ = load_scenario()
