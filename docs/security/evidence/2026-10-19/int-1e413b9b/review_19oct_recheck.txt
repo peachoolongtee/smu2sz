@@ -1,0 +1,12 @@
+P1  agent key files a receipt as COUNTERPARTY
+    queued: PENDING_APPROVAL | Queued for owner approval (APR-000001): receipt of ¥420,000.00 on RCV-A reported by AGENT; only the bank feed or the owner records a receipt without confirmation
+    owner's card: Authorize this payment receipt | sender_unverified: False
+    cash before / after the owner approves: ¥400,000.00 / ¥820,000.00
+
+P2  'We won't pay early' is read as an early-payment offer
+    reply sent to the buyer: Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you.
+    owner's card: Record the agreement with Foshan Home Retail Co. | ['The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)']
+    owner asks 'are we safe?': Yes: on today's books cash stays at or above your ¥300,000 reserve for the next 120 days; the lowest point is ¥312,900 on day 30. Your loan covenants hold.
+
+P3  non-ASCII credential header
+    GET /ledger with X-Owner-Token: 'démo' -> 401

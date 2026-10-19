@@ -1,0 +1,36 @@
+[0] We can pay the ¥420,000 invoice tomorrow at a 0.5% discount.
+    status 200 decision=None notes=None ops=[] queue=[]
+    reply: Agreed: payment of invoice RCV-A (¥420,000.00) on day 1 at a 0.50% discount. Nothing else in your message is agreed.
+[1] We won't pay the ¥420,000 invoice tomorrow at a 0.5% discount.
+    status 200 decision=None notes=None ops=[] queue=['ACCEPT_OFFER']
+    reply: Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you.
+[2] We can't pay the ¥420,000 invoice tomorrow at a 0.5% discount.
+    status 200 decision=None notes=None ops=[] queue=['ACCEPT_OFFER']
+    reply: Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you.
+[3] We will never pay the ¥420,000 invoice tomorrow at a 0.5% discount.
+    status 200 decision=None notes=None ops=[] queue=[]
+    reply: Please clarify the terms: we cannot establish them from your message.
+[4] We can pay half of the ¥420,000 invoice tomorrow at a 0.5% discount.
+    status 200 decision=None notes=None ops=[] queue=['ACCEPT_OFFER']
+    reply: Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you.
+[5] We can pay the ¥420,000 invoice tomorrow at a 0.5% discount, and the same 0.5% on every future invoice.
+    status 200 decision=None notes=None ops=[] queue=['ACCEPT_OFFER']
+    reply: Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you.
+[6] We can pay the ¥420,000 invoice tomorrow at a 0.5% discount once the goods pass inspection.
+    status 200 decision=None notes=None ops=[] queue=['ACCEPT_OFFER']
+    reply: Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you.
+[7] 我们明天不会以0.5%的折扣支付¥420,000的发票。
+    status 200 decision=None notes=None ops=[] queue=['ACCEPT_OFFER']
+    reply: 谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。
+[8] 我们明天可以以0.5%的折扣支付¥420,000的发票。
+    status 200 decision=None notes=None ops=[] queue=['ACCEPT_OFFER']
+    reply: 谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。
+[9] We can pay the ¥420,000 invoice within 5 days at a 0.5% discount.
+    status 200 decision=None notes=None ops=[] queue=[]
+    reply: Agreed: payment of invoice RCV-A (¥420,000.00) on day 5 at a 0.50% discount. Nothing else in your message is agreed.
+[10] We can pay the ¥420,000 invoice within 50 days at a 0.5% discount.
+    status 200 decision=None notes=None ops=[] queue=[]
+    reply: Please clarify the terms: we cannot establish them from your message.
+[11] We could pay the ¥420,000 invoice tomorrow at a 0.5% discount if you also extend our next invoice by 30 days.
+    status 200 decision=None notes=None ops=[] queue=[]
+    reply: Please clarify the terms: we cannot establish them from your message.

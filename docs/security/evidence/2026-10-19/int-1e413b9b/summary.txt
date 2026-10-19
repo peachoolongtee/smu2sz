@@ -1,0 +1,65 @@
+Review of the merge of feat/reader-dates (Builds A and B, 4604bfc9) onto fix/review-20oct (e5bc3f49): merge commit
+1e413b9b, branch int/reader-dates. Reviewer: Hao En (with an AI agent, Claude, in a separate cloud session), 19 Oct 2026,
+per HANDOFF_HaoEn_reader_dates.md. Environment: Linux, Python 3.12 (uv), cache mode (LLM_MODE=cache), DEMO_MODE=1, in-memory
+books, the golden books; no model provider was called.
+
+VERDICT: NO-GO. The section 7.3 adversarial review found Tier-1 accepts that the message does not plainly support (the
+handoff's blocker rule). Per section 14 the release gate was not run, and nothing in the submission changes: c66a5e61 is
+submitted as the fallback. This branch goes to dev after judging, with a fresh gate, once the blockers are fixed.
+
+Merge (section 6)
+  merge 1e413b9b: no conflicts; co-author trailers 0; ruff check app tests: all checks passed
+  prompt versions unchanged: offer-v4, termsheet-v3, contract-v1 (no file under app/compiler/prompts changed)
+  the REV fixes survive the merge (review_19oct_recheck.txt):
+    REV-1: COUNTERPARTY on POST /operations is recorded as AGENT
+    REV-2: a non-ASCII credential header gets 401, not 500
+    REV-3: a queued buyer message gets "Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+  the handoff's 12 messages (handoff_probe_12.txt) give the same outcomes as the Security Lead's spot check on 4604bfc9,
+  with the REV-3 reply
+
+Section 7.3, adversarial review (probe_7_3_table.md, probe_7_3_all.json; scripts in tools/)
+  201 messages, each from a fresh demo reset; outcome read from the ledger and the approval queue.
+  Outcomes: AUTO 59, QUEUED 68, COUNTER 13, HELD 61.
+  Verdicts: ok 155, missed (safe) 18, BLOCKER 20, rule gap 4, note 4.
+
+  BLOCKERS (Tier-1 "Agreed: payment of invoice RCV-A ... on day N" that the message does not plainly support):
+  B1  'from' / 'as of' / 'as from' + a supported time (7): "We can pay the ¥420,000 invoice from tomorrow at a 0.5%
+      discount", "... as of 2026-10-05 ...", "... from this Friday ...", "... from within 5 days ...". Cause: from, as and of
+      are on the coverage proof's filler list (app/compiler/coverage.py, _FILLER_EN), so the preposition is never unread,
+      and the grammar binds the time as on/by.
+  B2  the payer is the supplier, not the buyer (6): "You can pay the ¥420,000 invoice tomorrow at a 0.5% discount",
+      "You could pay ...", "You can pay ... within 5 days ...", "你们明天付清420,000元发票，折扣0.5%。", "你们5天内…", "贵司明天…".
+      Cause: you, your, 你们, 您 and 贵司 are filler, and nothing checks who pays. ("Can you pay ...?" is queued.)
+  B3  the whole message is a quoted or forwarded line (7): "> We can pay ...", ">> ...", "> > ...", "» ...", "| ...",
+      "> 我们明天付清…", "「我们明天付清…」". Cause: punctuation is never an unread word. Owner chat refuses "> go ahead" as
+      quoted text; the buyer channel accepts the same form.
+
+  Rule gaps and notes (not blockers; the day bound is the day stated):
+  - intraday times "9am", "9AM", "10am", "by 9am tomorrow" bind the day (am is filler); "9 am" with a space is held. The
+    documented rule says intraday timing holds.
+  - non-ASCII digits in an ISO date bind their true value (Arabic-Indic, Bengali, full-width), while "５天内" and
+    "within ५ days" are held. The Bengali four (৪) is drawn like an 8: "2026-10-0৪" binds 4 Oct.
+  - "this Thursday" asked on Thursday binds today (a reasonable reading).
+
+  What held: every negation without "not" (won't, can't, cannot, are unable to, refuse to, wouldn't, couldn't, could
+  hardly, see no way to, have no plan to, decline to, 不会, 不能, 无法, 没法, 拒绝, 不打算, 不愿意) was queued or held,
+  never AUTO. Also held: past dates, dates before the books day, dates on or after the due day, impossible dates, "this
+  Friday" asked on a Saturday, two dates, business or working days, "next week", bare "now", 下周, 周末, before, until,
+  after, BUYER-2's key, the anonymous sender, and the paused agent. Every other AUTO bound the day the message plainly
+  stated (tomorrow, within N days, this <weekday>, by the end of this week, ISO dates, 明天, 后天, N天内, 两天内, 本周内,
+  这周五, 今天, 马上).
+
+  Also seen (the earlier P2 finding, not changed by Build B): a queued accept whose stated time is unsupported (一周内,
+  三日内, 十天以内, 半个月内, 一百天内) carries the default day 2 into the owner's approval card, not the buyer's stated
+  window; and the card still shows neither the buyer's words nor the unread words.
+
+Not run (stopped at the 7.3 blocker, per section 14): sections 7.4 (language boundary harness), 7.5 (the six unseen items),
+7.6 (19 files under experiments/ still carry /Users paths), 8 (release gate), 9 (control run), 10 (sandbox).
+Section 7.1 and 7.2 (the project lead's written approvals): not requested, as the review is a no-go.
+
+Suggested fixes, for the Build B author (the reviewer does not gate their own fix):
+  B1  treat from, as of, as from, since and starting before a timing expression as unsafe (hold), or take from, as and of
+      off the filler list
+  B2  hold when the payment verb's subject is second person (you, your, 你们, 您, 贵司, 贵方)
+  B3  hold a message whose lines are quoted (a leading >, », | or a 「」 or “” wrapper), as the owner-chat consent grammar does
+  and add a pinned test for each of the 20 blocker messages.
