@@ -2,7 +2,7 @@
 # Nothing here reads .env, a real database or a model API: the API runs on the in-memory store with the recorded model cache.
 #   - web:      typecheck, lint, unit tests (includes the mock check), on every push and pull request (about 3 minutes).
 #   - api:      ruff and the whole pytest suite in eight shards; e2e-mock: the full mock browser suite (desktop and phone).
-#               Both are heavy (the repository is private, so they spend Actions minutes): they run on pushes to dev, int/* and ci/*,
+#               Both are heavy (they take the most runner time): they run on pushes to dev, int/* and ci/*,
 #               on pull requests into dev, and by hand (Actions > checks > Run workflow), not on every feature push.
 # The live browser suite stays with the lead's integration gate (it is serial and needs a running API).
 name: checks
@@ -12,6 +12,9 @@ on:
   pull_request:
     branches: [dev]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: checks-${{ github.ref }}
