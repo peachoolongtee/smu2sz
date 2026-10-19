@@ -342,8 +342,9 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
         if r is None:
             return []
         if r.status.value == "PENDING_APPROVAL":  # Tier 2: nothing is agreed until the owner decides
-            return [t(ctx, "Thank you. Our acceptance awaits the owner's approval; we will confirm once the owner "
-                           "has decided.", "谢谢。我方接受须经业主批准，业主决定后我方将予以确认。")]
+            # the reply commits to nothing: the message may say more than FLOW read (a refusal, a part payment), so it is not called an acceptance
+            return [t(ctx, "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you.",
+                      "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。")]
         if r.status.value in ("EXECUTED", "DUPLICATE"):
             return [acceptance_line(ctx, b, recipient)]
         return [t(ctx, "We are not able to confirm these terms.", "我方无法确认这些条款。")]

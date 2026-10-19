@@ -33,7 +33,7 @@ Durations are wall-clock seconds as measured by the shell wrapper (`EXIT` lines 
 | 3b | `E2E_TARGET=mock E2E_STRATEGY=1 E2E_PORT=3252 pnpm exec playwright test --retries=0` | 135 s | `24 skipped` / `144 passed (2.2m)` | `raw-3b-mock-strategy.txt` |
 | 4a | `E2E_TARGET=live E2E_LIVE_PORT=3253 E2E_API_PORT=8181 pnpm exec playwright test --retries=0` | 105 s | `12 skipped` / `69 passed (1.8m)` | `raw-4a-live-default.txt` |
 | 4b | `E2E_TARGET=live E2E_STRATEGY=1 E2E_LIVE_PORT=3254 E2E_API_PORT=8182 pnpm exec playwright test --retries=0` | 158 s | `4 skipped` / `77 passed (2.6m)` | `raw-4b-live-strategy.txt` |
-| 5a | `E2E_DATABASE_URL=sqlite:////Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/gate.db E2E_TARGET=live E2E_LIVE_PORT=3253 E2E_API_PORT=8181 pnpm exec playwright test --retries=0` | 105 s | `12 skipped` / `69 passed (1.8m)` | `raw-5a-live-default-sqlite.txt` |
+| 5a | `E2E_DATABASE_URL=sqlit<repo>/.claude/worktrees/w8-gate/gate.db E2E_TARGET=live E2E_LIVE_PORT=3253 E2E_API_PORT=8181 pnpm exec playwright test --retries=0` | 105 s | `12 skipped` / `69 passed (1.8m)` | `raw-5a-live-default-sqlite.txt` |
 | 5b | same as 5a on a fresh `gate.db`, plus `e2e/live.spec.ts --grep-invert 'Activity: each row says what changed'` | 37 s | `23 passed (37.0s)` | `raw-5b-live-spec-no-final-reset.txt` |
 | 5c | same env on a fresh `gate-cure.db`, `e2e/live.spec.ts --grep 'on day 34 the cure needs the owner'` | 8 s | `1 passed (8.0s)` | `raw-5c-live-day34-cure-only.txt` |
 | 5d | same env on a fresh `gate-demo.db`, `e2e/demo.spec.ts --grep 'the six scenes run with Next'` | 9 s | `1 passed (9.1s)` | `raw-5d-live-demo-six-scenes-only.txt` |

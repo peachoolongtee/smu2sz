@@ -12,7 +12,8 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
-| 19 Oct | `66c31e7e` (int/sl-final: `5926ef29` + the demo stepper fix `cc1703cc`; **the submission build**) | everything since `03215a20` | **CERTIFIED** for scope S (the local simulation, API and web app on 127.0.0.1); every check passes, the live browser suite included |
+| 19 Oct | `c66a5e61` (fix/review-20oct: `66c31e7e` + the review fixes REV-1 to REV-3; **the submission build**) | the three fixes and their tests | **CERTIFIED** for scope S; evidence `sha256:37ff16748cf56bca`; REV-4 disclosed (R-7) |
+| 19 Oct | `66c31e7e` (int/sl-final: `5926ef29` + the demo stepper fix `cc1703cc`; superseded by `c66a5e61`) | everything since `03215a20` | **CERTIFIED** for scope S (the local simulation, API and web app on 127.0.0.1); every check passes, the live browser suite included |
 | 19 Oct | `5926ef29` (int/sl-final: 03215a20 + rounds eight and nine, the demo launcher on loopback, the lint and public-release cleanups) | everything since `03215a20` | **NOT RELEASED**: every check passes except the live browser suite (tracker.spec.ts:216, a timing race in the web demo stepper, older than round nine); fixed in `cc1703cc` and gated again |
 | 19 Oct | `03215a20` (dev: round seven merged as `c707ee8c`, code `bee9c50d`; certified, then superseded) | everything since `5941e95a`; the SEC-28 reporting fix re-reviewed | **CERTIFIED** for scope S, on a trusted machine and network (DEMO-L1); SEC-28 with FUND-1 to FUND-4 disclosed |
 | 18 Oct | `5941e95a` (dev: the owner pause, funding report, small talk, pay everyone, the consent narrowing, round six) | everything since `70f23ac5` | **NOT CERTIFIED**: every automated check passes, but PAY-1 (Medium, consent bound to a plan not shown) is open; fixed by `sec/round-seven` |
@@ -54,7 +55,39 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
 
-## `66c31e7e` (int/sl-final, then `dev`): CERTIFIED for scope S, 19 Oct: the submission build
+## `c66a5e61` (fix/review-20oct): CERTIFIED for scope S, 19 Oct: the submission build
+
+`66c31e7e` plus the three fixes of Hao En's review of the submission build (19 Oct): `90116810` (REV-1, a `COUNTERPARTY` claim on
+`POST /operations` is the agent's; REV-2, tokens compared as bytes; REV-3, a queued buyer message is answered without the word
+"acceptance") and `c66a5e61` (two chat tests updated to the REV-3 wording). A first gate on `90116810` was stopped when those two
+tests failed in `tests/nl`; it is not evidence. The documentation commits after `c66a5e61` change documents, evidence and the
+document build tooling only.
+
+**Evidence:** [int-c66a5e61/](evidence/2026-10-19/int-c66a5e61/), id `sha256:37ff16748cf56bca` (the sha256 of its `SHA256SUMS`,
+LF line endings); gate 19 Oct 2026, 08:41 to 09:33 UTC, on a clean detached checkout. Sandbox runs on the same code:
+`run-20261019T093629Z-inproc` and `run-20261019T093658Z-http` in `docs/deliverables/evidence/sandbox-2026-10-19/`.
+
+| Check | Result |
+| --- | --- |
+| API suite (155 processes) | 11,426 passed, 0 failed, 47 skipped |
+| Attack catalogue | 279 cases, 0 harm, 0 not reached; 120 of 128 named controls; detection 97.66% (API), 70.25% (all) |
+| Route policy; credential sweep in three modes | 16 tests over 113 routes; 0 policy violations; 0 differences from `66c31e7e` |
+| Reproductions; approval flip | refused, as on `66c31e7e` |
+| Language boundary | 0 wrong-and-material (cache and fake) |
+| PostgreSQL 17 | concurrency 3 of 3; audit guards 10 passed |
+| Audits; secret scan | pip-audit clean; `pnpm audit --prod` 0; `braces` only (development, the approved exception); 0 secret findings |
+| Mock browser; typecheck, lint, unit | 479 passed, 0 failed, 77 skipped; pass; 197 unit tests |
+| Live browser (one worker) | 177 passed, 0 failed, 51 skipped |
+| CSP (production build and `pnpm demo`) | 17 pages each, 0 violations, injection blocked |
+| Judge pack | 49 of 49; 279 attacks, 0 harm; audit chain VALID |
+| Sandbox | in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID |
+
+**Verdict: CERTIFIED for scope S.** Disclosed, open: R-7 (Moderate) and REV-4 (a reversed payer or a wholly quoted buyer message
+is accepted at Tier 1 as the plain discount; found in Hao En's review of `feat/reader-dates`, which is NO-GO for the submission).
+The REV-4 fix (`fix/rev4-coverage`) is outside this build. Local paths in the outputs were replaced before sealing
+(`tools/scrub_paths.py`).
+
+## `66c31e7e` (int/sl-final, then `dev`): CERTIFIED for scope S, 19 Oct
 
 `5926ef29` (round eight, the demo launcher on loopback, round nine, the API lint and public-release cleanups, the unseen
 evaluation set) plus `cc1703cc`, the fix of the demo stepper race that kept `5926ef29` from release. Product code is identical

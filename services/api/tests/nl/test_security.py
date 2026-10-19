@@ -112,7 +112,7 @@ def test_a_rebate_acceptance_is_not_agreed_until_the_owner_approves(client, rt):
         "Rebate of 1% on next quarter purchases, nothing else changes.")
     assert ops(r) == [] and stored_ops(rt) == [("ACCEPT_OFFER", "PENDING_APPROVAL")]
     assert json.loads(rt.store.operations()[-1].result_json)["tier"] == "TIER_2"
-    assert "Agreed" not in r["reply"] and "awaits the owner's approval" in r["reply"]
+    assert "Agreed" not in r["reply"] and "acceptance" not in r["reply"] and "awaits the owner's decision" in r["reply"]
     assert "APR-" not in r["reply"]  # the approval id is the owner's, never sent to a counterparty
     assert rt.store.get_state().forward_concessions == []
 

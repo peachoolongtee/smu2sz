@@ -1,7 +1,7 @@
 # Figures for the technical document
 
 PNG figures and product screenshots for FLOW's final technical document (the 18 Oct 2026 refresh adds `fig11a`,
-`fig11b`, the three `fig-eval-*` panels and five frames retaken from `int/final3`; `work/figures.md` maps each to its place). Each figure is 2400 px wide (8 in at
+`fig11b`, the three `fig-eval-*` panels and five frames retaken from `2ce5265c`; `work/figures.md` maps each to its place). Each figure is 2400 px wide (8 in at
 300 dpi) on white. Each has a matplotlib source in `src/` that regenerates it. The style lives in `src/flowstyle.py`:
 
 - **Palette:** the FLOW brand from `apps/web/app/globals.css`. Brand blue `#0368e9`, ink `#24324a`, purple `#9252dc`,
@@ -30,7 +30,7 @@ uv run --no-project --with matplotlib --with pillow python fig1_architecture.py
 | `fig3-permission-tiers.png` | Who may do what: the three permission tiers with examples, and the executor's gates in the order the code runs them. | `src/fig3_permission_tiers.py` | `app/mandate/tiers.py` (`tier_for`), `app/operations/executor.py` (`_run`, `_screen_commitment`, `_handle`) |
 | `fig4-golden-cash.png` | The golden books' cash over 60 days: without new funding, cash falls below the ¥300k minimum on day 12; FLOW's plan keeps it at or above the minimum. | `src/fig4_golden_cash.py` | `GET /home` on the golden books, in-process (TestClient, `LLM_MODE=cache`, `DATABASE_URL=memory`, `DEMO_MODE=1`), `cash.series` and `cash.plan_series`. The values are printed in the script, and `--fetch` refreshes them. |
 | `fig5-heldout-results.png` | The compiler's held-out results, each labelled as unseen or tuned on: no misread message was accepted without the owner after ADR-0005. | `src/fig5_heldout_results.py` | First run and live DeepSeek rows: `services/api/evals/accuracy_summary.md` (1 Oct 2026, 389cfd9). Today rows and form baseline: `../evidence/EVIDENCE_PACK.md` section 1 (dev 975e082f, 17 Oct 2026) |
-| `fig6-contract-reading.png` | Reading Chinese contracts, by format: 98% on the tuned batch, 75% on the held-out batch, 86% after the fixes, and nothing from scans or photos, which have no OCR. | `src/fig6_contract_reading.py` | Scoring logs of 16–17 Oct 2026 (`b2fix/b1-redact.log`, `b2fix/b2-redact.log`, `contract-cn2/mismatches.csv` = `b2fix/b2-base.log`). These are not in the repo, so the script quotes the per-format rows. |
+| `fig6-contract-reading.png` | Reading Chinese contracts, by format: 98% on the tuned batch, 75% on the held-out batch, 86% after the fixes, and nothing from scans or photos, which have no OCR. | `src/fig6_contract_reading.py` | Scoring logs of 16–17 Oct 2026 (`b2fix/b1-redact.log`, `b2fix/b2-redact.log`, `contract-cn2/mismatches.csv` = `b2fix/b2-base.log`). These are not in the repo, so the script quotes the per-format rows; the field scores are in `../submission/work/eval/contracts_*_fields.json`. |
 | `fig7-security-results.png` | The attack catalogue: 279 stored cases by class (128 API, 151 chat), none violating the defined harm oracles; all reached their path, 120 of 128 API cases stopped by the named control. | `src/fig7_security_results.py` | `services/api/evals/security/latest_report.json` (regenerated on the round-five batch, 18 Oct 2026) |
 | `fig-eval-buyer.png` | Buyer messages: how often FLOW's verdict is the labelled one, on the unseen first runs, after tuning on their misses, against today's policy and with a live model, each with its denominator and its wrong autonomous accepts (6 in the first runs, 0 of 3 today). | `src/fig_eval_panels.py` | `services/api/evals/heldout3_report.md`, `heldout2_report.md`, `heldout3_live_deepseek_report.md` (1 Oct 2026); `../submission/work/eval/offline_reruns_20261018.json` (`571ea64f`, 18 Oct) |
 | `fig-eval-contracts.png` | Contract fields: on the unseen batch 2, the first reading got 75% of fields right on the 17 text-layer contracts and 45% over all 30 (13 scans refused); decision-critical fields split into right, missing and wrong; the tuned sets are hatched. | `src/fig_eval_panels.py` | `../submission/work/evaluation.md` §5 (recorded DeepSeek readings re-scored with `eval_contracts.py score`; the documents and keys are outside the repo) |
@@ -47,8 +47,8 @@ of 285), 12 wrong values and 18 stage items matching no key item; batch 2 after 
 (hatched, tuned). Live DeepSeek calls (amber): held-out 3 on 1 Oct, 67% (42 of 63), no wrong accepts; Ask router answers
 on 18 Oct, 67% right (22 of 33), 1 wrong and 10 partial. A note says each bar is a share of its own row's denominator and
 rows with different oracles do not compare.
-| `fig8-system-architecture.png` | FLOW's architecture: the three model-assisted steps see redacted text only and propose typed output; deterministic code computes every figure, and every typed operation goes through the executor; a footnote names the logged writes outside it (clock, books setup, a new customer) and the demo reset. | `src/fig8_system_architecture.py` | Read from the code on `docs/techdoc-chat-fixes` `571ea64f`: `app/main.py` routers, `app/compiler`, `app/nl/classifier.py`, `app/nl/router`, `app/egress/guard.py`, `app/operations/executor.py`, `app/persistence` |
-| `fig9-request-to-settlement.png` | One buyer request from request to settlement: a registered buyer on its own channel key is answered by FLOW alone inside the signed mandate (Tier 1), any other request waits for the owner; the figure marks what is only proposed, what is authorised, what is recorded, what has settled, and the end state "agreement recorded; funding incomplete". | `src/fig9_request_to_settlement.py` | `app/api/offers.py`, `decide.py`, `accept.py`, `outbound.py`, the executor's `AcceptOffer`, `app/commitments`, `app/api/alerts.py`, `app/alerts/reconcile.py` (`571ea64f`); the Tier-1 branch and outcome 9b re-checked on `int/final3` `2ce5265c`: `app/api/nl.py` (channel key binds the sender), `app/nl/offers.py` `counterparty_message`, `app/mandate/tiers.py` `tier_for`, `app/api/accept.py` `funding_next` |
+| `fig8-system-architecture.png` | FLOW's architecture: the three model-assisted steps see redacted text only and propose typed output; deterministic code computes every figure, and every typed operation goes through the executor; a footnote names the logged writes outside it (clock, books setup, a new customer) and the demo reset. | `src/fig8_system_architecture.py` | Read from the code on `571ea64f`: `app/main.py` routers, `app/compiler`, `app/nl/classifier.py`, `app/nl/router`, `app/egress/guard.py`, `app/operations/executor.py`, `app/persistence` |
+| `fig9-request-to-settlement.png` | One buyer request from request to settlement: a registered buyer on its own channel key is answered by FLOW alone inside the signed mandate (Tier 1), any other request waits for the owner; the figure marks what is only proposed, what is authorised, what is recorded, what has settled, and the end state "agreement recorded; funding incomplete". | `src/fig9_request_to_settlement.py` | `app/api/offers.py`, `decide.py`, `accept.py`, `outbound.py`, the executor's `AcceptOffer`, `app/commitments`, `app/api/alerts.py`, `app/alerts/reconcile.py` (`571ea64f`); the Tier-1 branch and outcome 9b re-checked on `2ce5265c`: `app/api/nl.py` (channel key binds the sender), `app/nl/offers.py` `counterparty_message`, `app/mandate/tiers.py` `tier_for`, `app/api/accept.py` `funding_next` |
 | `fig10-authority-matrix.png` | The authority matrix: what FLOW may do inside the signed mandate (Tier 1), what waits for the owner (Tier 2) and what is refused whoever asks (Tier 3), with the demo mandate's limits. | `src/fig10_authority_matrix.py` | `app/mandate/tiers.py` `tier_for`; `fixtures/scenarios/golden_sme.mandate.signed.json` (`571ea64f`) |
 | `fig11-cash-scenarios.png` | The demo company's closing cash under four scenarios, days 0 to 62, against the ¥300,000 reserve, with nine dated events. Superseded by `fig11a` and `fig11b` (18 Oct 2026), which separate the like-for-like alternatives from what happened after the choice; kept, and its source still renders. | `src/fig11_cash_scenarios.py` | `../submission/work/fin/daily_cash.csv` and `events.csv` (financial audit, 18 Oct 2026): the independent recomputation from the golden fixtures, equal to the engine replayed through the API to the fen (`work/fin/compare.csv`, 39 of 39) |
 | `fig11a-cash-alternatives.png` | The financing alternatives for Foshan's request, like for like: the same events in every series, so the lines differ only by the choice made on day 0. No action falls to −¥105,000; accepting as asked with no funding falls below the ¥300,000 reserve on days 47–61; the standing plan, Option A and Option B each touch the reserve exactly on days 30–31. Day-62 cash is ¥590,000 minus each choice's net cost. | `src/fig11a_cash_alternatives.py` | `daily_cash.csv` columns `baseline_no_funding_cny`, `standing_plan_line150k_if255k_cny`, `ex01_as_asked_no_funding_cny`, `option_a_as_quoted_cny`, `option_b_with_its_funding_cny`; `events.csv`; costs from `work/financial_audit.md` §4 (the script asserts day 62 = 590,000.00 − net cost) |
@@ -65,7 +65,7 @@ hexagon simulated), tier badges and bullets shaped square / circle / octagon, an
 
 **Chart helper for data figures.** `flowstyle.chart()`, `SERIES` (colour, marker and line style per series), `BAR_HATCHES`,
 the `yuan` / `yuan_k` tick formatters, `stamp()` for the build and scenario line, and `BUILD`. The docstring at the
-helper shows a complete example; the financial chart of `docs/sub-financial-audit` can use it as is.
+helper shows a complete example; the financial audit's charts can use it as is.
 
 ### Alt text
 
@@ -177,7 +177,7 @@ helper shows a complete example; the financial chart of `docs/sub-financial-audi
 
 ## Product screenshots (`screens/`)
 
-Seven frames of one end-to-end product walk, taken on 18 Oct 2026 from `docs/techdoc-chat-fixes` at `571ea64f` with the web
+Seven frames of one end-to-end product walk, taken on 18 Oct 2026 from `571ea64f` with the web
 app in **mock mode** (`NEXT_PUBLIC_API_MODE=mock`: the JSON mocks in `apps/web/mocks`, checked against the golden values; no API, no
 model, no money), Chromium at 1440×900 and device scale 2, signed in with the published demo owner token. `src/capture_screens.mjs`
 takes them and `src/crop_screens.py` crops them and adds the orange numbered callouts and the legend band (the style of
@@ -197,7 +197,7 @@ own markers, not callouts.
 
 ### Refreshed frames from the submission build candidate (18 Oct 2026)
 
-Five frames retaken from `int/final3` at `2ce5265c` in **mock mode** (an export of that commit's `apps/web`, `pnpm install
+Five frames retaken from `2ce5265c` in **mock mode** (an export of that commit's `apps/web`, `pnpm install
 --frozen-lockfile`, `NEXT_PUBLIC_API_MODE=mock next dev -p 3571`; no API, no model, no money), same browser settings and
 annotation style. They replace the `../screenshots` frames of the same names (taken 17 Oct from `dev` `975e082f`).
 Capture: `SET=final WEB_DIR=<that apps/web> node src/capture_screens.mjs http://localhost:3571 <raw dir>`; cut:

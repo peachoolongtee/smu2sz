@@ -89,7 +89,7 @@ def test_counterparty_reply_never_carries_an_approval_id(client, rt):
     r = Chat(client, "cp-reb", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(
         "Rebate of 1% on next quarter purchases, nothing else changes.")
     assert_sealed(r)
-    assert "awaits the owner's approval" in r["reply"]
+    assert "awaits the owner's decision" in r["reply"] and "nothing is agreed" in r["reply"]
 
 
 def test_api_layer_allow_lists_counterparty_keys():

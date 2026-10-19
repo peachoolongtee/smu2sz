@@ -1,0 +1,39 @@
+✓ Lockfile passes supply-chain policies (verified 2d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: ~\AppData\Local\pnpm\store\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 159, reused 159, downloaded 0, added 144
+Progress: resolved 258, reused 258, downloaded 0, added 243
+Progress: resolved 314, reused 314, downloaded 0, added 302
+Progress: resolved 351, reused 351, downloaded 0, added 342
+Progress: resolved 360, reused 360, downloaded 0, added 355
+Progress: resolved 386, reused 386, downloaded 0, added 380
+Progress: resolved 396, reused 396, downloaded 0, added 392
+Packages: +397
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 397, reused 397, downloaded 0, added 397, done
+
+dependencies:
++ @fontsource-variable/plus-jakarta-sans 5.3.0
++ js-sha256 1.0.0
++ next 16.3.8
++ react 19.3.0
++ react-dom 19.3.0
++ recharts 3.10.1
+
+devDependencies:
++ @axe-core/playwright 4.13.0
++ @playwright/test 1.63.0
++ @tailwindcss/postcss 4.3.3
++ @types/node 26.6.3
++ @types/react 19.3.0
++ @types/react-dom 19.3.0
++ eslint 9.39.5
++ eslint-config-next 16.3.7
++ postcss 8.5.28
++ tailwindcss 4.3.3
++ typescript 5.9.3
+
+Done in 12.8s using pnpm v12.11.2

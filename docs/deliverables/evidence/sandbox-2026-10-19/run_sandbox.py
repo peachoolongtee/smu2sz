@@ -51,7 +51,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[3]
 API = ROOT / "services" / "api"
 VERIFY = ROOT / "scripts" / "verify_evidence.py"
-CODE_COMMIT = "5926ef29"
+CODE_COMMIT = "c66a5e61"  # the submission build: 66c31e7e + the review fixes of 19 Oct (90116810, c66a5e61)
 
 # The published demo credentials (accepted only while DEMO_MODE=1; docs/SECURITY_SELF_ASSESSMENT.md 1.2). They are public, but the
 # outputs still name a credential by its role only.
@@ -1134,7 +1134,7 @@ def _not_funded(gap: str) -> Callable:
 
 def case4b1(p: Part) -> None:
     p.reset()
-    p.group("4b-i", "No admissible funding plan: facility limits capped (store write); the buyer refuses", "OWNER",
+    p.group("4b1", "No admissible funding plan: facility limits capped (store write); the buyer refuses", "OWNER",
             "NOT_FUNDED; the message names the ¥405,000 gap; never \"funded\" (FUND-1)")
     p.direct("cap the facility limits (in-process only)", "as tests/security/test_round_eight.py does", _cap_lines)
     _send_ex01(p, "hard_line", None, "NO_DEAL; NOT_FUNDED; \"the near-term gap of ¥405,000 is not funded\"",
@@ -1143,7 +1143,7 @@ def case4b1(p: Part) -> None:
 
 def case4b2(p: Part) -> None:
     p.reset()
-    p.group("4b-ii", "No admissible funding plan after the evaluation: the lines drained (store write); the buyer accepts", "OWNER",
+    p.group("4b2", "No admissible funding plan after the evaluation: the lines drained (store write); the buyer accepts", "OWNER",
             "DEAL; NOT_FUNDED; the message names the ¥147,210 remaining gap; never \"funded\"")
     _send_ex01(p, "cooperative", _drain_lines, "DEAL; NOT_FUNDED; \"the remaining gap of ¥147,210 is not funded\"",
                _not_funded("the remaining gap of ¥147,210 is not funded"))
@@ -1151,7 +1151,7 @@ def case4b2(p: Part) -> None:
 
 def case4b3(p: Part) -> None:
     p.reset("short_facilities")
-    p.group("4b-iii", "No plan that can run today: the short_facilities demo books (line and invoice financing cut to ¥60,000); "
+    p.group("4b3", "No plan that can run today: the short_facilities demo books (line and invoice financing cut to ¥60,000); "
             "the buyer refuses", "OWNER", "NO_DEAL; NOT_FUNDED; nothing executed; never \"funded\"")
     _send_ex01(p, "hard_line", None, "NOT_FUNDED; \"is not funded\"", _not_funded("is not funded"))
     p.assert_("proof: nothing executed for the gap", "no DRAW/SUBMIT on the chain; nothing drawn",
@@ -1204,7 +1204,7 @@ def case4c(p: Part) -> None:
     p.req(f"the owner declines {apr}", "POST", f"/approvals/{apr}", "OWNER", {"decision": "REJECT"}, expect="REJECTED; nothing runs",
           check=lambda s, b: (b["approval"]["decision"] == "REJECTED" and b["approval"]["ran"] is False, f"approval {b['approval']}"))
     p.assert_("proof: the executed leg is not reversed", "FAC-LINE still drawn ¥150,000.00 (SEC-28: no automatic reversal)", part_run)
-    p.req("the owner tries to repay the draw today (the compensating action of Table 10)", "POST", "/operations", "OWNER",
+    p.req("the owner tries to repay the draw today (the compensating action of Table 11)", "POST", "/operations", "OWNER",
           {"kind": "REPAY_FACILITY", "op_id": "4c-repay", "idempotency_key": "4c-repay", "mandate_version": 1, "requested_by": "OWNER",
            "facility_id": "FAC-LINE", "amount_fen": 15_000_000},
           expect="admission applies to a repayment too (docs/SECURITY_SELF_ASSESSMENT.md Table 5): with the gap still open, repaying "
@@ -1313,11 +1313,12 @@ def cell(x: Any, n: int = 300) -> str:
 
 def summary_md(run: Run, meta: dict) -> str:
     L = [f"# FLOW sandbox run ({meta['transport']})", "",
-         f"Build `{meta['build_commit']}` (product code identical to `{CODE_COMMIT}`: `{meta['code_diff_check']['command']}` printed "
+         f"Build `{meta['build_commit']}` (product code "
+         f"{'identical to' if meta['code_diff_check']['empty'] else 'DIFFERENT FROM'} `{CODE_COMMIT}`: `{meta['code_diff_check']['command']}` printed "
          f"{'nothing' if meta['code_diff_check']['empty'] else 'a diff'}). Transport `{meta['transport']}`"
          f"{' (' + meta['configuration'].get('base_url', '') + ')' if meta['transport'] == 'http' else ''}; DEMO_MODE=1, "
          f"DATABASE_URL=memory, LLM_MODE={meta['configuration'].get('LLM_MODE')} (recorded model outputs, no model provider called); "
-         f"books `fixtures/scenarios/golden_sme.json` (4b-iii: `short_facilities.json`). Started {meta['started_utc']}, "
+         f"books `fixtures/scenarios/golden_sme.json` (4b3: `short_facilities.json`). Started {meta['started_utc']}, "
          f"ended {meta['ended_utc']}.", "",
          *([f"Server: {meta['configuration']['server_started_as']}", ""] if meta['configuration'].get('server_started_as') else []),
          f"**{meta['totals']['steps_passed']} steps passed, {meta['totals']['steps_failed']} failed, "
@@ -1421,15 +1422,14 @@ def main() -> int:
     notes = []
     notes.append("Case 3b: after \"1\" has shown the item (its reply says: To approve it, say \"approve APR-…\"), \"approve 1\" is "
                  "not understood and decides nothing; the approval stays PENDING (fail-safe), and \"approve APR-…\" then decides it. "
-                 "\"approve 1\" directly after the numbered list decides it (case 3c). docs/SECURITY_SELF_ASSESSMENT.md 1.6 (\"Chat is "
-                 "inside the boundary\", Approvals) still says a number picked from a list that followed a \"yes\" decides it; on this "
-                 "build a bare pick after \"yes\" only shows the item (CON-1).")
+                 "\"approve 1\" directly after the numbered list decides it (case 3c), as Table 8 of docs/SECURITY_SELF_ASSESSMENT.md "
+                 "states: a bare pick after \"yes\" only shows the item (CON-1).")
     notes.append("Case 2d: with the bank-feed key and the agent key together, an unpaused DRAW_FACILITY sent as SYSTEM is not refused: "
                  "it is rewritten to the agent's own request and runs at the agent's Tier 1 within the mandate, as "
                  "docs/SECURITY_SELF_ASSESSMENT.md 1.2 and services/api/app/api/operations.py describe. The bank-feed key confers no "
                  "SYSTEM authority beyond a receipt: alone it gets 401; while paused the same draw is refused (PAUSE-1).")
     if any(s["title"].startswith("the owner tries to repay the draw") for s in steps):
-        notes.append("Case 4c: the compensating repayment of docs/SECURITY_SELF_ASSESSMENT.md Table 10 is itself judged by admission "
+        notes.append("Case 4c: the compensating repayment of docs/SECURITY_SELF_ASSESSMENT.md Table 11 is itself judged by admission "
                      "(Table 5): with the gap still open, repaying the ¥150,000.00 draw on day 0 would leave ¥60,000.00 on day 12, so it is "
                      "REFUSED. The first version of this script expected it to execute; the expectation was corrected to the documented rule.")
     if any(s["title"].startswith("paused: BUYER-1 offers") for s in steps):

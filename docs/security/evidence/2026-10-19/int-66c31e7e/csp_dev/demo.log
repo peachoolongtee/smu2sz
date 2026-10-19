@@ -1,0 +1,332 @@
+[demo] starting the API on http://localhost:8420 (in-memory books, demo credentials, cached LLM outputs) ...
+INFO:     Started server process [15224]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8420 (Press CTRL+C to quit)
+INFO:     127.0.0.1:61237 - "GET /health HTTP/1.1" 200 OK
+[demo] API ready on http://localhost:8420.
+[demo] starting the web app on http://localhost:3419 (live mode against http://localhost:8420) ...
+2026-10-19 14:45:21 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-19 14:45:21 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-19 14:45:21 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+▲ Next.js 16.3.8 (Turbopack)
+- Local:         http://127.0.0.1:3419
+- Network:       http://127.0.0.1:3419
+✓ Ready in 629ms
+✓ Running next.config.mjs took 21ms
+INFO:     127.0.0.1:61238 - "GET /cash/price-curve?lang=en HTTP/1.1" 200 OK
+
+[demo] 
+[demo] Ready. Open http://localhost:3419 in your browser. Owner token: demo-owner-token (prefilled).
+[demo] Press Ctrl+C here to stop.
+ GET / 200 in 1162ms (next.js: 857ms, proxy.ts: 123ms, application-code: 183ms)
+ HEAD / 200 in 28ms (next.js: 4ms, proxy.ts: 3ms, application-code: 20ms)
+ GET / 200 in 28ms (next.js: 4ms, proxy.ts: 3ms, application-code: 21ms)
+INFO:     127.0.0.1:61307 - "OPTIONS /home?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61218 - "OPTIONS /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59475 - "OPTIONS /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49852 - "OPTIONS /home?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "OPTIONS /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51788 - "OPTIONS /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61218 - "OPTIONS /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "OPTIONS /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59475 - "OPTIONS /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49852 - "OPTIONS /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "OPTIONS /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51788 - "OPTIONS /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49852 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51788 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59475 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61218 - "GET /home?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49852 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59475 - "GET /home?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49852 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "OPTIONS /customers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61218 - "OPTIONS /customers?lang=en HTTP/1.1" 200 OK
+ GET /deals 200 in 99ms (next.js: 44ms, proxy.ts: 3ms, application-code: 52ms)
+INFO:     127.0.0.1:56552 - "OPTIONS /deals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "OPTIONS /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "OPTIONS /ledger?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "OPTIONS /decisions?lang=en&family=DEAL HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "OPTIONS /deals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "OPTIONS /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "OPTIONS /ledger?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /customers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "OPTIONS /decisions?lang=en&family=DEAL HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /clock HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /ledger?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /decisions?lang=en&family=DEAL HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /deals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /clock HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /ledger?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /customers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /decisions?lang=en&family=DEAL HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /deals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /documents 200 in 115ms (next.js: 25ms, proxy.ts: 3ms, application-code: 88ms)
+INFO:     127.0.0.1:61307 - "OPTIONS /documents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "OPTIONS /documents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /documents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /documents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /cash 200 in 70ms (next.js: 31ms, proxy.ts: 3ms, application-code: 36ms)
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "OPTIONS /trajectory?mode=CONSERVATIVE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "OPTIONS /mandate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /customers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "OPTIONS /cash/price-curve?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "OPTIONS /trajectory?mode=CONSERVATIVE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "OPTIONS /cash/price-curve?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "OPTIONS /mandate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /home?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /trajectory?mode=CONSERVATIVE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /mandate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /cash/price-curve?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /customers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /home?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61239 - "GET /buyers/BUYER-1/envelope?lang=en&zone=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /trajectory?mode=CONSERVATIVE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /cash/price-curve?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /mandate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "OPTIONS /router/plan?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "POST /router/plan?lang=en HTTP/1.1" 200 OK
+ GET /receivables 200 in 69ms (next.js: 30ms, proxy.ts: 3ms, application-code: 35ms)
+INFO:     127.0.0.1:57808 - "OPTIONS /receivables?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "OPTIONS /receivables?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /receivables?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /receivables?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "OPTIONS /buyers/BUYER-1/exposure?lang=en&spare=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "OPTIONS /reconciliation?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "OPTIONS /buyers/BUYER-1/exposure?lang=en&spare=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "OPTIONS /reconciliation?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /reconciliation?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /buyers/BUYER-1/exposure?lang=en&spare=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /reconciliation?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /buyers/BUYER-1/exposure?lang=en&spare=0 HTTP/1.1" 200 OK
+ GET /approvals 200 in 63ms (next.js: 30ms, proxy.ts: 2ms, application-code: 31ms)
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /home?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /home?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /activity 200 in 65ms (next.js: 29ms, proxy.ts: 4ms, application-code: 32ms)
+INFO:     127.0.0.1:59279 - "OPTIONS /activity?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "OPTIONS /activity?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /clock HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /activity?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /clock HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /activity?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /limits 200 in 64ms (next.js: 32ms, proxy.ts: 3ms, application-code: 29ms)
+INFO:     127.0.0.1:61307 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /mandate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /mandate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /customers/BUYER-1 200 in 526ms (next.js: 492ms, proxy.ts: 3ms, application-code: 31ms)
+INFO:     127.0.0.1:59279 - "OPTIONS /customers/BUYER-1/overview?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "OPTIONS /deals?customer=BUYER-1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "OPTIONS /customers/BUYER-1/overview?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "OPTIONS /deals?customer=BUYER-1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /customers/BUYER-1/overview?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /deals?customer=BUYER-1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /customers/BUYER-1/overview?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /deals?customer=BUYER-1 HTTP/1.1" 200 OK
+ GET /customers/BUYER-1/inputs 200 in 516ms (next.js: 484ms, proxy.ts: 3ms, application-code: 29ms)
+INFO:     127.0.0.1:57808 - "OPTIONS /buyers/BUYER-1/inputs?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "OPTIONS /buyers/BUYER-1/inputs?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /buyers/BUYER-1/inputs?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /buyers/BUYER-1/inputs?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /capex 200 in 69ms (next.js: 30ms, proxy.ts: 5ms, application-code: 35ms)
+INFO:     127.0.0.1:59279 - "OPTIONS /purchases HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "OPTIONS /finance/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "OPTIONS /purchases HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "OPTIONS /finance/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /clock HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /purchases HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /clock HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /finance/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /purchases HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /finance/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /buy 200 in 63ms (next.js: 30ms, proxy.ts: 6ms, application-code: 27ms)
+INFO:     127.0.0.1:56552 - "GET /purchases HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /purchases HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /buy/contract 200 in 59ms (next.js: 24ms, proxy.ts: 3ms, application-code: 32ms)
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "OPTIONS /purchases/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "OPTIONS /purchases/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /purchases/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:61307 - "GET /purchases/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /purchases HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /purchases HTTP/1.1" 200 OK
+ GET /finance 200 in 67ms (next.js: 34ms, proxy.ts: 3ms, application-code: 30ms)
+INFO:     127.0.0.1:51771 - "OPTIONS /lending/eligibility HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "OPTIONS /lending/eligibility HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /finance/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /lending/eligibility HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /finance/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /lending/eligibility HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /plans 200 in 69ms (next.js: 33ms, proxy.ts: 3ms, application-code: 33ms)
+INFO:     127.0.0.1:59279 - "GET /purchases HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /purchases HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /whatif 200 in 529ms (next.js: 494ms, proxy.ts: 3ms, application-code: 33ms)
+INFO:     127.0.0.1:56552 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /deals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /deals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET /strategy 404 in 246ms (next.js: 214ms, proxy.ts: 4ms, application-code: 29ms)
+INFO:     127.0.0.1:56552 - "OPTIONS /demo/story?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /demo/story?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+ GET / 200 in 47ms (next.js: 21ms, proxy.ts: 5ms, application-code: 21ms)
+INFO:     127.0.0.1:51771 - "OPTIONS /home?lang=en&since_day=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "OPTIONS /home?lang=en&since_day=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /nav/counts?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /home?lang=en&since_day=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /worklist?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /home?lang=en&since_day=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /setup/status?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "OPTIONS /worklist?lang=en&since_day=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54160 - "OPTIONS /worklist?lang=en&since_day=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /customers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /worklist?lang=en&since_day=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /worklist?lang=en&since_day=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /customers?lang=en HTTP/1.1" 200 OK

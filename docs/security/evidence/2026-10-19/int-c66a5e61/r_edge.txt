@@ -1,0 +1,19 @@
+2026-10-19 17:06:12 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+yes: 409 NOT_RECORDED
+after refused yes: AWAITING_BUYER False None
+withdraw: 200 withdrawn Corrected: the message is not marked as sent. Nothing else changed.
+after withdraw: FAILED terminal True state_text: Could not run; nothing changed outbound: None
+waiting: None
+history: ['received', 'checked', 'offered', 'withdrawn', 'accepted_as_asked']
+commitments: [('CMT-f83cf62605322b78', 'PROPOSED', 7)]
+ops: [('ACCEPT_OFFER', 'REFUSED', 'buyer-yes-CMT-f83cf62605322b78')]
+facts: [('RECEIVED', 'OFF-4f6bf9834d4d:v1'), ('EVALUATED', 'VER-0037f3c3b0c5'), ('OFFERED', 'VER-0037f3c3b0c5:CTR-55285308b712'), ('OFFER_WITHDRAWN', 'withdrawn:VER-0037f3c3b0c5:CTR-55285308b712:0')]
+approvals: []
+worklist/deals entries mention: [{'subject_text': 'Foshan · Early payment, 1.5% off', 'subject_demo_text': 'Foshan · Early payment, 1.5% off · OFF-4f6bf9834d4d', 'lifecycle': 'declined', 'status_text': 'Declined', 'id': 'deal:OFF-4f6bf9834d4d', 'family': 'DEAL', 'state': 'FAILED', 'state_text': 'Could not run; nothing changed', 'state_tone': 'bad', 'terminal': True, 'headline': 'Offer from Foshan Home Retail Co.', 'counterparty_name': 'Foshan Home Retail Co.', 'amount_display': '¥260,000.00', 'opened_when': 'today', 'updated_when': 'today', 'waiting_for': {'code': 'NOTHING', 'party': 'none', 'party_name': None, 'day': None, 'when': None, 'text': 'Nothing is waiting: the action is complete.'}, 'residual': None}]
+re-evaluate: VER-bbf88eb28435 3
+message again: 200 None
+re-mark: 200 ok
+after re-mark: AWAITING_BUYER None FLOW could not record their yes: nothing is in force. The books changed since verdict VER-0037f3c3b0c5 (state v1 → v2) and the terms no longer verify; re-evaluate Check your books, then record it again while the offer is open.
+yes2: 200 agreed
+commitments: [('CMT-f83cf62605322b78', 'PROPOSED'), ('CMT-c4f7395ec944a96d', 'ACTIVE')]
+accept-as-asked: 409 {"detail":{"code":"ALREADY_ACCEPTED","offer_id":"OFF-4f6bf9834d4d","message":"An agreement for this request already exists; nothing was recorded again.","message_when":"An agreement for this request a

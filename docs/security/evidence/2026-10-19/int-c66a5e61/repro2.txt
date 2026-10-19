@@ -1,0 +1,30 @@
+=== D: orphan PROPOSED commitments after a later successful accept ===
+2026-10-19 17:05:12 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:17 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:18 [info     ] compiler.call                  backend=cache doc_hash=39cabafae4ee1e7944bdc0a52c469c0836013cca8f72b3aeb892fd96b081d506 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:19 [info     ] compiler.call                  backend=cache doc_hash=80047a9654396def08426567680368202582eb51b2028cf652ab81c4a96cbc85 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:19 [info     ] compiler.call                  backend=cache doc_hash=ea1ac57ae2a03aebb8a9d7e2612fb0c5da266b41504563c6feccdc391d590015 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:20 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:22 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+accept #1 200
+reset circuit EXECUTED
+accept #2 409
+commitments [('CMT-55e1858463', 'ACTIVE', 7)]
+expiry alerts: []
+
+=== E: bank-feed key alone moves the clock arbitrarily far ===
+2026-10-19 17:05:23 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:27 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:28 [info     ] compiler.call                  backend=cache doc_hash=39cabafae4ee1e7944bdc0a52c469c0836013cca8f72b3aeb892fd96b081d506 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:29 [info     ] compiler.call                  backend=cache doc_hash=80047a9654396def08426567680368202582eb51b2028cf652ab81c4a96cbc85 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:29 [info     ] compiler.call                  backend=cache doc_hash=ea1ac57ae2a03aebb8a9d7e2612fb0c5da266b41504563c6feccdc391d590015 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:30 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.5 model=fixture-cache outcome=ok prompt_version=offer-v4
+mandate expires_day 90 day 0
+bank key on /operations: 401
+advance 403 day None
+advance 403 day None
+advance 403 day None
+log kind APPLY_FOR_FACILITY requested_by in payload: {"amount_fen":20000000,"day":0,"facility_id":"FAC-GGL","idempotency_key":"seed-busy-0","kind":"APPLY_FOR_FACILITY","mandate_version":1,"op_id":"seed-busy-0","re
+expired commitments: 0
+mandate validity now: []
+agent op after advance: REFUSED PRECONDITION_FAILED
