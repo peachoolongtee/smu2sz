@@ -1,11 +1,13 @@
 Copyright (c) 2026 Team ISMOGGER. All rights reserved.
 
-FLOW (code name TermsLedger) is not licensed for reuse, modification or redistribution.
+This repository holds FLOW (code name TermsLedger). It is public so that anyone can read it.
+Being public does not grant a licence: no permission is given to copy, modify or redistribute
+it, in whole or in part.
 
-The organisers and judges of the 2026 Fintechathon (International AI Track) may view, run and
-evaluate this repository for the purpose of judging the competition.
+The organisers and judges of the 2026 FinTechathon (International AI Track) may run, test and
+evaluate it for the purpose of judging the competition.
 
-Third-party components keep their own licences. They are used unmodified as libraries and are
+Third-party dependencies keep their own licences. They are used unmodified as libraries and are
 permissively or weak-copyleft licensed: MIT, BSD-2-Clause, BSD-3-Clause, Apache-2.0, ISC, 0BSD,
 MPL-2.0 (certifi, hypothesis), LGPL-3.0 (psycopg, the PostgreSQL driver), OFL-1.1 (a web font)
 and CC-BY-4.0 (a data file). No GPL or AGPL component is included.
