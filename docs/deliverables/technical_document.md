@@ -61,15 +61,16 @@ release gate's scope. Section 02 measures what the model adds, on unseen items, 
 | Demo video: International-AI-Track-ISMOGGER-DemoVideo.mp4, submitted alongside this document |
 | Licence: all rights reserved; the organisers and judges may view, run and evaluate the repository for judging ([LICENSE](../../LICENSE)) |
 
-**Table R. The judging criteria, what FLOW demonstrates, and where to verify it.** The sandbox run is the Execution
+**Table R. The judging criteria, what FLOW demonstrates, and where to verify it.** Results are those of the submission build
+`66c31e7e` (Table V); the live-model row ran on the same reading code (`5926ef29`). The sandbox run is the Execution
 Evidence's sandbox run ([docs/deliverables/evidence/sandbox-2026-10-19/](evidence/sandbox-2026-10-19/), cases 1 to 5, each
 step with its request, response, the state read back and PASS or FAIL). Appendix A indexes every template prompt.
 
 | Criterion | What FLOW demonstrates | In this document | In the sandbox run | Measured result |
 | --- | --- | --- | --- | --- |
-| **Task completion (40%)** | The supplier's whole workflow on synthetic books: request, reading, financial evaluation, counter, owner authorisation, funding, settlement and reconciliation, with a hash-chained record | 01 journey and Table 2; 02 Table W; 03 "Task completion", Table 4; Appendices D, F | Case 1 (the journey, groups 1.1 to 1.9); case 4 (a plan that only partly runs, reported as it ran) | 49 of 49 scripted tasks (88 turns), demo walk chain VALID, tampered copy rejected (judge pack, `5926ef29`, 19 Oct); on 66c31e7e: 49 of 49 tasks; 279 attacks, 0 harm; audit chain VALID. Sandbox: in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID |
-| **Security and compliance (30%)** | Authority by structure: typed operations with no payee field, tiers computed by the executor, the signed mandate, the chat consent rules, the owner's pause, a tamper-evident log; 279 stored attacks with harm oracles | 04: Table 5, Figure 5, "Who can execute what", Tables 6 and 7; the Security Self-Assessment | Case 2 (unauthorised callers, a claimed agreement, Tier 3, an unverified sender); case 3 (ambiguity, consent); case 5 (the pause) | 279 attack cases, 0 harm, 120 of 128 API cases stopped by the control they name (`5926ef29`, 19 Oct); on 66c31e7e: 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66%. Release state of 66c31e7e: certified for scope S on 19 Oct |
-| **Innovation and interaction (30%)** | A supplier-side agent across both debt books (credit given, credit taken); the model reads and routes, code decides; bilingual chat with clarification, correction and fallback | Opening; 01 "What is new", Table L1; 02 "What the model contributes"; 03 Table 3 and the dialogue; Appendices G, K | Case 1 groups 1.6 and 1.7 (FLOW speaks first, "go ahead" queues, "approve APR-…" runs); case 3 (a clarification) | Unseen buyer messages, live DeepSeek on `5926ef29` (19 Oct): shipped path 2 of 6 correct against the rules' 1, 0 wrong; unseen Chinese contracts: party names 14 of 17 (recorded readings) against 0 for the rules |
+| **Task completion (40%)** | The supplier's whole workflow on synthetic books: request, reading, financial evaluation, counter, owner authorisation, funding, settlement and reconciliation, with a hash-chained record | 01 journey and Table 2; 02 Table W; 03 "Task completion", Table 4; Appendices D, F | Case 1 (the journey, groups 1.1 to 1.9); case 4 (a plan that only partly runs, reported as it ran) | 49 of 49 scripted tasks; demo walk chain VALID, tampered copy rejected; sandbox 159 of 159 steps (in process), 142 of 142 run (HTTP); every export VALID |
+| **Security and compliance (30%)** | Authority by structure: typed operations with no payee field, tiers computed by the executor, the signed mandate, the chat consent rules, the owner's pause, a tamper-evident log; 279 stored attacks with harm oracles | 04: Table 5, Figure 5, "Who can execute what", Tables 6 and 7; the Security Self-Assessment | Case 2 (unauthorised callers, a claimed agreement, Tier 3, an unverified sender); case 3 (ambiguity, consent); case 5 (the pause) | 279 attacks, 0 with harm; 120 of 128 API cases stopped by the named control (8 known gaps); certified for scope S on 19 Oct |
+| **Innovation and interaction (30%)** | A supplier-side agent across both debt books (credit given, credit taken); the model reads and routes, code decides; bilingual chat with clarification, correction and fallback | Opening; 01 "What is new", Table L1; 02 "What the model contributes"; 03 Table 3 and the dialogue; Appendices G, K | Case 1 groups 1.6 and 1.7 (FLOW speaks first, "go ahead" queues, "approve APR-…" runs); case 3 (a clarification) | Unseen messages (live, 19 Oct): 2 of 6 correct against the rules' 1, 0 wrong; Chinese contracts: party names 14 of 17 against 0 |
 | **Bonus (0–5)** | Not claimed: FLOW is a local simulation (Table 7) | — | — | — |
 
 **Table 1. FLOW at a glance. Each figure names its build; engine and agent figures: dev `975e082f` (17 Oct 2026), re-run
@@ -293,7 +294,8 @@ security events. Storage is PostgreSQL with row-level security, SQLite locally, 
 #### The supplier workflow, step by step, and who decides each step
 
 Table W is the complete workflow of one buyer request; Figure 3 draws it. "Recorded readings" means cache mode, in which
-the reader's earlier outputs replay (the 19 shipped recordings are rules-grammar output; no model output ships).
+the reader's earlier outputs replay (the 19 shipped recordings are rules-grammar output; no model output ships). The owner's pause
+(sandbox case 5) stops steps 4 to 6 on the agent's or a buyer's authority; section 04 gives the exceptions.
 
 **Table W. The supplier workflow: what happens, who decides, and where the sandbox run shows it.**
 
@@ -307,7 +309,6 @@ the reader's earlier outputs replay (the 19 shipped recordings are rules-grammar
 | 6. Funding | With the simulated buyer the agreement and its funding draw run in the same step at Tier 1; a draw above 15% a year, or one the router cannot run alone, queues. A keyed buyer's acceptance and an owner-recorded real acceptance fund nothing: the gap stays open and an alert asks the owner | **The executor's tiers**; **the owner** above the threshold | 1.3, 1.6; 4a, 4b (not funded, said so), 4c (a part-run plan) |
 | 7. Settlement and reconciliation | The bank feed's receipts post at Tier 1; reconciliation marks each promise received, lapsed or settled otherwise; every outcome is on the hash-chained log | **The bank feed** (simulated) and **deterministic code** | 1.4 to 1.9 (chain VALID) |
 
-The owner's pause (case 5) stops steps 4 to 6 on the agent's or a buyer's authority; section 04 gives the exceptions.
 
 <!-- figure: figures/fig9-request-to-settlement.png | Figure 3. One buyer request, from request to settlement: proposed terms (steps 1 to 6), the autonomous Tier-1 branch for a registered buyer's keyed message, the authorised acceptance, the recorded commitment, the funding legs (ending "agreement recorded; funding incomplete" when a leg waits for approval or is refused) and the actual settlement. Badge shapes show who acts: code, model, owner or a simulated party. | page -->
 

@@ -167,7 +167,7 @@ and any leg that needs approval waits. An approval is decided only with the word
 
 ## System Architecture
 
-![FLOW in one picture: the compiler is the only model-backed step, the deterministic core decides, only the executor writes](docs/deliverables/figures/fig1-architecture.png)
+![FLOW in one picture: the compiler is the only model-backed step, the deterministic core decides, the executor runs every financial operation](docs/deliverables/figures/fig1-architecture.png)
 
 FLOW is a modular monolith: one FastAPI service ([`services/api`](services/api), Python 3.12), one Next.js 16 web app
 ([`apps/web`](apps/web), TypeScript) and one database (SQLite or in-memory locally, PostgreSQL in deployment). Modules talk
@@ -177,7 +177,8 @@ only through typed contracts in `services/api/app/domain/`.
   abstains. It never sees the books, the mandate or the funding options.
 - **The deterministic core decides.** The engine, router and verifier project the trajectory, price the gap and return the
   verdict; the verifier cannot read free text (a test enforces its imports).
-- **Only the executor writes.** It runs Tier 1, queues Tier 2 for the owner, refuses Tier 3, and appends every outcome to a
+- **The executor makes every financial change.** Agreements, draws, advances, repayments, receipts and purchases go
+  through it (the owner-only clock posts flows already scheduled; other routes record documents, customers and facts). It runs Tier 1, queues Tier 2 for the owner, refuses Tier 3, and appends every outcome to a
   **hash-chained log** that anyone can verify (`scripts/verify_evidence.py`).
 - **The browser computes no money and no dates.** Every figure and sentence comes from the server, in English and Chinese.
 
@@ -292,7 +293,7 @@ DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.p
 
 ## Security Notes
 
-The language model only reads text; deterministic code decides, and only the executor writes. Actions are split into three
+The language model only reads text; deterministic code decides, and every financial operation runs through the executor. Actions are split into three
 permission tiers under an owner-signed, expiring mandate, with nonces, idempotency, a circuit breaker and a hash-chained log.
 The [Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) gives the verdicts for the submission build, code commit
 `66c31e7e` on `dev`, certified for scope S on 19 Oct by the Security Lead (`docs/security/CERTIFICATIONS.md`):
