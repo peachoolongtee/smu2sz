@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { onSignedIn, useAuth } from "@/lib/auth";
 import { getDemoStory } from "@/lib/api";
-import { requestStart, resumeStart, resumeStoryAction, runStoryAction, seenOf } from "@/lib/demo-control";
+import { requestStart, resumeStart, resumeStoryAction, runStoryAction, seenOf, storyControlWaits } from "@/lib/demo-control";
 import { DEMO_STEPS } from "@/lib/demo";
 import { reachedOf, useDemo } from "@/lib/demo-store";
 import { stepNarration } from "@/lib/demo-text";
@@ -113,7 +113,7 @@ export function DemoStepper() {
                 <ArrowRightIcon />
               </ButtonLink>
             ) : (
-              <Button size="sm" variant="primary" loading={demo.busy} onClick={() => press(view.next.action ?? "", view.books)} data-testid="demo-next">
+              <Button size="sm" variant="primary" loading={storyControlWaits(demo.busy, story.loading)} onClick={() => press(view.next.action ?? "", view.books)} data-testid="demo-next">
                 {view.next.label}
                 <ArrowRightIcon />
               </Button>
