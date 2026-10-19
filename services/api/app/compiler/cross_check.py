@@ -29,7 +29,7 @@ SINGLE_READER_NOTE = "one-reader fields require owner review; reader agreement d
 FIELDS = (
     "counterparty_id", "rate_bp", "amount_fen", "days_delta", "target_terms_days", "effective_day",
     "base.kind", "base.amount_fen", "base.receivable_id", "base.events_per_year",
-    "duration.kind", "duration.invoices", "duration.end_day", "contingency", "payment_timing",
+    "duration.kind", "duration.invoices", "duration.end_day", "contingency",
 )
 FieldOutcome = Literal["both", "model", "rules", "unread", "conflict"]
 

@@ -124,3 +124,14 @@ def test_a_chinese_percentage_point_is_not_an_intraday_time():
     assert offer.obligations[0].rate_bp == 60
     assert offer.obligations[0].payment_timing is not None
     assert offer.autonomy_eligible, offer.autonomy_notes
+
+
+def test_date_proof_does_not_claim_that_two_independent_readers_read_the_date():
+    from app.compiler.cross_check import check_against_rules
+
+    offer = reading("We will pay invoice RCV-A (¥420,000) tomorrow, 0.5% off.")
+    checked = check_against_rules(offer, offer)
+    ob = checked.obligations[0]
+    assert ob.payment_timing.proof == "calendar_grammar_v1"
+    assert "payment_timing" not in ob.field_provenance
+    assert checked.autonomy_eligible

@@ -126,6 +126,7 @@ class PaymentTiming(Contract):
     include its year; a weekday must say this week. The reference is immutable.
     """
 
+    proof: Literal["calendar_grammar_v1"] = "calendar_grammar_v1"
     expression: SourceSpan
     reference_day: Day = Field(ge=0)
     basis: Literal["relative_days", "this_weekday", "calendar_date", "week_end"]
