@@ -14,6 +14,7 @@ from app.api.auth import counterparty_for_key, is_agent, require_owner
 from app.api.decisions import latest_verdict_for, record_fact
 from app.api.display import displayed
 from app.api.presentation import abstention_words, business_text
+from app.api.provenance import SENDER_RANK
 from app.api.runtime import Runtime, get_runtime
 from app.api.selection import Selection, build_context, selection
 from app.compiler import compile_offer, compile_term_sheet
@@ -173,10 +174,6 @@ def intake_offer(rt: Runtime, body: OfferIn, lang: str = "en", *, via: Via = "ow
     return store_compiled(rt, docs, compile_offer(docs, cp), lang, via=via, in_reply_to=in_reply_to)
 
 
-# How much a sender vouches for a request: a stronger sender may upgrade how the same request arrived, never the other way (F4).
-SENDER_RANK: dict[str, int] = {"anonymous": 0, "agent": 1, "buyer_key": 2, "buyer_reply": 2, "owner": 3}
-
-
 def received_key(rt: Runtime, offer: CompiledOffer, via: Via) -> str | None:
     """The fact key to record how this request (offer, version) arrived: the plain key when nothing is recorded; a key naming the sender
     when `via` is stronger than every sender recorded so far (facts are append-only, the stronger one is a new fact that the reader prefers);
@@ -192,6 +189,18 @@ def received_key(rt: Runtime, offer: CompiledOffer, via: Via) -> str | None:
     return f"{base}:{via}"
 
 
+def record_received(rt: Any, offer: CompiledOffer, via: Via, *, in_reply_to: str | None = None) -> None:
+    """Record how this request (offer, version) reached FLOW, as the deal's RECEIVED fact, unless an equal or stronger sender already filed
+    it (`received_key`). Reads only `rt.store` and `rt.day`, so the chat's buyer channel records its requests too (SEC-19). Call under
+    `rt.lock`."""
+    key = received_key(rt, offer, via)
+    if key is not None:
+        record_fact(rt, deal_id(offer.offer_id), key,
+                    ReceivedFact(offer_id=offer.offer_id, offer_version=offer.version, counterparty_id=offer.counterparty_id, via=via,
+                                 in_reply_to_offer_id=in_reply_to),
+                    state_version=rt.store.get_state().state_version, day=rt.day)
+
+
 def store_compiled(rt: Runtime, docs: list[SourceDocument], offer: CompiledOffer, lang: str = "en", *, via: Via,
                    in_reply_to: str | None = None) -> dict:
     """Store a compiled offer and its documents, with how it reached FLOW (its RECEIVED fact). `intake_offer` and the buyer's pasted reply
@@ -204,12 +213,7 @@ def store_compiled(rt: Runtime, docs: list[SourceDocument], offer: CompiledOffer
             raise HTTPException(409, {"code": "OFFER_VERSION_CONFLICT", "offer_id": offer.offer_id}) from None
         for d in docs:
             rt.documents[d.doc_id] = d
-        key = received_key(rt, offer, via)
-        if key is not None:
-            record_fact(rt, deal_id(offer.offer_id), key,
-                        ReceivedFact(offer_id=offer.offer_id, offer_version=offer.version, counterparty_id=offer.counterparty_id, via=via,
-                                     in_reply_to_offer_id=in_reply_to),
-                        state_version=rt.store.get_state().state_version, day=rt.day)
+        record_received(rt, offer, via, in_reply_to=in_reply_to)
     return {"offer": _offer_view(rt, offer, {d.doc_id: d.channel for d in docs}, lang),
             "documents": [json.loads(d.model_dump_json()) for d in docs]}
 

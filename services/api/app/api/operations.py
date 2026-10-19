@@ -43,6 +43,7 @@ from app.api.presentation import (
     t,
     when_text,
 )
+from app.api.provenance import sender_unverified
 from app.api.purchase_card import purchase_schedule_view
 from app.api.quotes import FUNDING_OPS, build_shown_quote, reason_rate
 from app.api.receipt import approval_receipt
@@ -294,6 +295,8 @@ def _approvals_queue(rt, lang: str) -> dict:
         except ValueError:
             d["operation"] = None
         op = d["operation"] or {}
+        # SEC-19: an operation on a request nobody signed (no buyer's key) says so on its card ("Unverified sender")
+        d["sender_unverified"] = sender_unverified(rt.store, op.get("offer_id"), op.get("offer_version"))
         amt = op.get("amount_fen", op.get("advance_fen"))
         # an approval exists only because the executor judged the operation Tier 2, so a record that kept no entry for it is that tier
         d.update({"tier": judged.get(a.id, "TIER_2"), "created_day": op.get("day"), "amount_fen": amt,

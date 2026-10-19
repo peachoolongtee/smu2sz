@@ -311,6 +311,25 @@ def approval_verdict(text: str) -> Literal["approve", "reject"] | None:
     return None
 
 
+_PICK = re.compile(r"(?<![a-z0-9-])(?:apr-\d{6}|\d{1,2})(?![0-9])")
+
+
+def pick_verdict(text: str) -> Literal["approve", "reject"] | None:
+    """The decision in a reply that picks one option of a numbered list of approvals ("approve 1", "reject APR-000001", "批准 1",
+    "拒绝 2"): the full-match grammar of `approval_verdict`, with the option's number standing for the id. A bare number or a bare id
+    ("1", "APR-000001") is None: it names the item, it does not decide it (CON-1); so is anything with a second pick or a rider."""
+    core = _core(text)
+    if core is None or len(_PICK.findall(core)) != 1:
+        return None
+    masked = re.sub(r"\s+", " ", _PICK.sub(f" {_ID} ", core)).strip()
+    masked = re.sub(rf"(?<={_ID}) (?=[一-鿿])", "", masked)
+    if _APPROVE_ID.fullmatch(masked) and not _REJECT_ID.fullmatch(masked):
+        return "approve"
+    if _REJECT_ID.fullmatch(masked):
+        return "reject"
+    return None
+
+
 def bare_verdict(text: str) -> Literal["approve", "reject"] | None:
     """The same, for a decision that names no id ("approve it", "reject the pending one", 批准这个): it may
     only bind to the item this session just showed, which the service checks."""

@@ -60,6 +60,7 @@ from app.api.presentation import (
     t,
     with_roles,
 )
+from app.api.provenance import sender_unverified
 from app.api.refusal import refusal_plan, runnable
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import owner_verdict_extras, trajectory_view
@@ -321,8 +322,17 @@ def _picture_paths(rt: Runtime, offer_id: str, view: dict, lang: str) -> dict[st
 
 
 def _accept_block(rt: Runtime, offer: CompiledOffer, verdict, state, mandate, lang: str) -> dict | None:
-    """The block for accepting the asked terms, the offer picture's own (the cost words are the asked path's, so the two never differ). When the
-    picture cannot be read the block is built without cost words: the receipt then carries no cost line rather than a guess."""
+    """The block for accepting the asked terms, the offer picture's own (the cost words are the asked path's, so the two never differ), with
+    `sender_unverified` as the picture route reads it (SEC-19)."""
+    block = _asked_block(rt, offer, verdict, state, mandate, lang)
+    if block is None:
+        return None
+    with rt.lock:
+        return {**block, "sender_unverified": sender_unverified(rt.store, offer.offer_id, offer.version)}
+
+
+def _asked_block(rt: Runtime, offer: CompiledOffer, verdict, state, mandate, lang: str) -> dict | None:
+    """When the picture cannot be read the block is built without cost words: the receipt then carries no cost line rather than a guess."""
     from app.api.offer_picture import (
         cached_picture,  # the picture reads the decision record, which reads this module
     )

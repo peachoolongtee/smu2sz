@@ -49,15 +49,23 @@ def t(ctx: NlContext, en: str, zh: str) -> str:
     return zh if ctx.lang == "zh" else en
 
 
-def counter_line(ctx: NlContext, label: str, text: str, offer_id: str | None = None) -> str:
-    """A counter as one line, "Option A: <terms>", in the reader's language. The counter's English text is the engine's (it is what
-    the log holds and the egress guard scanned); in Chinese the line is that same text through the translation layer, so a Chinese
-    buyer or owner reads "方案 A：<条款>" with the same figures.
-
-    `offer_id` is the offer the counter answers. The early-pay counter's lead says "No rebate is on record" for every claimed prior
-    agreement; the line names what the buyer claimed instead ("No payment-terms agreement is on record"), and only that clause changes."""
+def counter_text(ctx: NlContext, text: str, offer_id: str | None) -> str:
+    """A counter's English text as the reader gets it. `offer_id` is the offer the counter answers: a lead that says "No rebate is on
+    record" for a claimed prior agreement names what the buyer claimed instead ("No payment-terms agreement is on record"), and only
+    that clause changes. A counter that is sent passes through here before the egress guard (LOG-2), so the text scanned is the text
+    the plan step records and the buyer reads."""
     if offer_id is not None and (offer := ctx.store.get_offer(offer_id)) is not None:
-        text = restate_not_on_record(text, offer.obligations)
+        return restate_not_on_record(text, offer.obligations)
+    return text
+
+
+def counter_line(ctx: NlContext, label: str, text: str, offer_id: str | None = None) -> str:
+    """A counter as one line, "Option A: <terms>", in the reader's language; in Chinese the line is the same English text through the
+    translation layer, so a Chinese buyer or owner reads "方案 A：<条款>" with the same figures.
+
+    With `offer_id` (a counter only shown, never sent) the lead is named for the claim here (`counter_text`). A sent counter's text
+    comes from `send_counters` already in its final English words, the ones the egress guard scanned: it is passed without `offer_id`."""
+    text = counter_text(ctx, text, offer_id)
     if ctx.lang != "zh":
         return f"{label}: {text}"
     from app.api.engine_zh import translate
@@ -178,14 +186,15 @@ def reject(ctx: NlContext, steps: Steps, verdict: Verdict) -> OperationResult | 
 
 def send_counters(ctx: NlContext, steps: Steps, verdict: Verdict, counters: Sequence[CounterProposal],
                   recipient_id: str) -> list[tuple[CounterProposal, str]]:
-    """Guard each counter's template text, then send CounterOffer. Returns (counter, text sent): none on a request the owner answered
-    outside FLOW (`sent_outside`)."""
+    """Guard each counter's final English text (its lead named for the claim, `counter_text`), then send CounterOffer. Returns (counter,
+    text sent), the text the guard scanned and the plan step records: none on a request the owner answered outside FLOW (`sent_outside`).
+    A hit withholds the counter: nothing is sent for it."""
     sent: list[tuple[CounterProposal, str]] = []
     if (said := sent_outside(ctx, verdict.offer_id)) is not None:
         steps.add("COUNTER_OFFER", said, "SKIPPED")
         return sent
     for c in counters:
-        text, ok = ctx.guard(c.text, recipient_id, allow=allowed_for_counter(c))
+        text, ok = ctx.guard(counter_text(ctx, c.text, verdict.offer_id), recipient_id, allow=allowed_for_counter(c))
         if not ok:
             steps.add("COUNTER_OFFER", t(ctx, f"{c.label} withheld by the egress guard",
                                          f"{c.label} 被出站防护拦截"), "SKIPPED")
@@ -193,7 +202,7 @@ def send_counters(ctx: NlContext, steps: Steps, verdict: Verdict, counters: Sequ
         op = CounterOffer(**ctx.base("COUNTER_OFFER"), source_verdict_id=verdict.id, offer_id=verdict.offer_id,
                           counter_id=c.id)
         r = ctx.execute(op)
-        steps.result("COUNTER_OFFER", counter_line(ctx, c.label, text, verdict.offer_id), r)
+        steps.result("COUNTER_OFFER", counter_line(ctx, c.label, text), r)  # `text` is final: no rewrite after the scan
         if r.status in LIVE_STATUSES:
             sent.append((c, text))
     return sent
