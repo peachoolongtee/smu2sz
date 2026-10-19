@@ -85,6 +85,9 @@ def post_operation(body: dict, x_owner_token: str | None = Header(default=None),
     if body.get("requested_by") == Actor.SYSTEM.value and not (is_bank_feed(x_bank_feed_key) and body.get("kind") == "RECEIVE_PAYMENT"):
         # only the bank feed speaks as SYSTEM (F-02), and only to report a receipt (PAUSE-1): any other kind it asks for is the agent's
         body = {**body, "requested_by": Actor.AGENT.value}
+    if body.get("requested_by") == Actor.COUNTERPARTY.value:
+        # a buyer speaks only through its own keyed channel (/nl, /offers), never with the owner's or agent's credential: the claim is the agent's
+        body = {**body, "requested_by": Actor.AGENT.value}
     if body.get("kind") == "RECEIVE_PAYMENT" and body.get("requested_by") == Actor.OWNER.value:
         return _owner_receipt(rt, body, lang)
     return run_operation(rt, body, lang)

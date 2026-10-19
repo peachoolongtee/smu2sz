@@ -42,7 +42,8 @@ def _expected(env: str, demo_value: str) -> str | None:
 
 
 def _match(given: str | None, expected: str | None) -> bool:
-    return bool(given) and expected is not None and hmac.compare_digest(given or "", expected)
+    # bytes, not str: compare_digest raises TypeError on a non-ASCII str, which would bypass the refusal handling
+    return bool(given) and expected is not None and hmac.compare_digest((given or "").encode("utf-8"), expected.encode("utf-8"))
 
 
 def is_owner(token: str | None) -> bool:
