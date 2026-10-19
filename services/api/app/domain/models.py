@@ -119,6 +119,23 @@ class Duration(Contract):
     end_day: Day | None = None
 
 
+class PaymentTiming(Contract):
+    """Code-read settlement promise; never a receipt. Dates use the books' local day calendar.
+
+    No wall-clock timezone or holiday inference is supported. An explicit date must
+    include its year; a weekday must say this week. The reference is immutable.
+    """
+
+    expression: SourceSpan
+    reference_day: Day = Field(ge=0)
+    basis: Literal["relative_days", "this_weekday", "calendar_date", "week_end"]
+    relation: Literal["on", "by"]
+    offset_days: int | None = Field(default=None, ge=0, le=99)
+    weekday: int | None = Field(default=None, ge=0, le=6)
+    calendar_date: str | None = None
+    payment_basis: Literal["whole_invoice"] = "whole_invoice"
+
+
 class Obligation(Contract):
     """One typed promise the supplier would make. Proposed by the compiler; decided by code."""
 
@@ -136,13 +153,14 @@ class Obligation(Contract):
     spans: list[SourceSpan] = Field(min_length=1)
     confidence: float = Field(ge=0.0, le=1.0)
     unresolved: list[str] = Field(default_factory=list)
+    payment_timing: PaymentTiming | None = None
     # Reader agreement is evidence, not authority. A one-reader field requires owner review.
     field_provenance: dict[str, Literal["rules", "model", "both"]] = Field(default_factory=dict)
 
     @model_serializer(mode="wrap")
     def _serialize_provenance(self, handler: SerializerFunctionWrapHandler) -> object:
         # Preserve historical cached readings, state hashes and evidence when no check ran.
-        return _omit_empty(handler(self), self, ("field_provenance",))
+        return _omit_empty(handler(self), self, ("field_provenance", "payment_timing"))
 
 
 class Abstention(Contract):

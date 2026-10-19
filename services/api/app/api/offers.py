@@ -169,6 +169,9 @@ def intake_offer(rt: Runtime, body: OfferIn, lang: str = "en", *, via: Via = "ow
     `via` is how the request reached FLOW, kept as the deal's RECEIVED fact: a message to the buyer is prepared only for a request whose
     sender is known (SEC-19)."""
     docs, cp = _docs(body)
+    if body.fixture_id is None:
+        # Relative settlement uses receipt on the trusted books clock, never a caller-selected day.
+        docs = [d.model_copy(update={"received_day": rt.day}) for d in docs]
     with rt.lock:
         _unclaimed(rt, docs)
     return store_compiled(rt, docs, compile_offer(docs, cp), lang, via=via, in_reply_to=in_reply_to)

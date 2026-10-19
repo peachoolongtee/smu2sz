@@ -841,7 +841,16 @@ def obligation_sentence(state: FinancialState, ob: Obligation, today: int, lang:
         en, zh = _OBLIGATION_LABEL.get(ob.type.value, (ob.type.value.replace("_", " ").capitalize(), ob.type.value))
         sentence = f"{t(lang, en, zh)}: {base}"
     notes: list[str] = []
-    if ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.effective_day is not None:
+    if ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.payment_timing is not None:
+        from app.financial.settlement import resolve_payment_day
+
+        settlement = ob.effective_day if ob.effective_day is not None else resolve_payment_day(ob.payment_timing, state.as_of)
+        if settlement is None:
+            notes.append(t(lang, "settlement date needs clarification", "付款日期需要确认"))
+        else:
+            notes.append(t(lang, f"discount applies only to payment received by {when_text(settlement, today, 'en')}; payment is not yet received",
+                           f"仅限{when_text(settlement, today, 'zh')}前收到的款项享受折扣；尚未收款"))
+    elif ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.effective_day is not None:
         notes.append(t(lang, f"effective {when_text(ob.effective_day, today, 'en')}", f"{when_text(ob.effective_day, today, 'zh')}生效"))
     d = ob.duration
     if d.kind == DurationKind.ONE_OFF:

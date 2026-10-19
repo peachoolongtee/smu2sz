@@ -215,9 +215,10 @@ def test_claims_and_data_requests_fail_the_proof(rules_compiler: Compiler, text:
     assert _verdict(offer) != "ACCEPT"
 
 
-def test_right_now_is_a_stated_settlement_time_and_never_autonomous(rules_compiler: Compiler) -> None:
-    # "right now" is a stated time: not provably the day the binding assigns, so it is unread timing
-    _not_eligible(rules_compiler, "Pay the ¥420k invoice right now, less 0.6%?", why="settlement date")
+def test_right_now_is_proven_as_the_message_day(rules_compiler: Compiler) -> None:
+    offer = _eligible(rules_compiler, "Pay the ¥420k invoice right now, less 0.6%?")
+    assert offer.obligations[0].payment_timing.offset_days == 0
+    assert _verdict(offer) == "ACCEPT"
 
 
 @pytest.mark.parametrize("text", [
@@ -229,9 +230,10 @@ def test_right_now_is_a_stated_settlement_time_and_never_autonomous(rules_compil
     "42万的发票我们明天就付清，扣千分之五，谢谢",
     "42万的发票我们现在就付清，扣千分之五，谢谢",
 ])
-def test_a_stated_today_tomorrow_or_now_is_unread_timing_and_never_autonomous(rules_compiler: Compiler, text: str) -> None:
-    offer = _not_eligible(rules_compiler, text, why="settlement date")
-    assert _verdict(offer) != "ACCEPT"
+def test_a_stated_today_tomorrow_or_now_is_proven_before_acceptance(rules_compiler: Compiler, text: str) -> None:
+    offer = _eligible(rules_compiler, text)
+    assert offer.obligations[0].payment_timing is not None
+    assert _verdict(offer) == "ACCEPT"
 
 
 def test_an_override_alone_does_not_turn_a_clean_offer_into_a_data_extraction_refusal(rules_compiler: Compiler) -> None:

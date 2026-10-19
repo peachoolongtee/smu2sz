@@ -38,6 +38,7 @@ from app.compiler.schema import (
     XFundingClaim,
     XObligation,
 )
+from app.compiler.settlement import attach_payment_timing
 from app.domain.models import (
     Abstention,
     AuthorityClaim,
@@ -983,6 +984,7 @@ def build_offer(
     material_abstain |= boundary_material
     ordered, ref_material = bind_invoice_refs(by_id, ordered, abst)
     material_abstain |= ref_material
+    ordered = attach_payment_timing(by_id, ordered)
     obligations: list[Obligation] = []
     conflict_values = set().union(*conflicts.values()) if conflicts else set()
     for n, ob in enumerate(ordered, start=1):
