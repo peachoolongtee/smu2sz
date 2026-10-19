@@ -18,7 +18,7 @@ echo "deploying $(git -C "$ROOT" rev-parse --short "$REF") to https://$HOST"
 git -C "$ROOT" archive --format=tar.gz "$REF" | "${SSH[@]}" 'rm -rf ~/flow.new && mkdir -p ~/flow.new && tar -xzf - -C ~/flow.new && cat > /dev/null && rm -rf ~/flow && mv ~/flow.new ~/flow'  # cat drains the gzip trailer tar leaves unread (else SIGPIPE)
 
 if [ ! -f "$CRED" ]; then
-  PASS=$(LC_ALL=C tr -dc 'A-HJ-NP-Za-km-z2-9' < /dev/urandom | head -c 20)
+  PASS=$(python3 -c "import secrets; a='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; print(''.join(secrets.choice(a) for _ in range(20)))" 2>/dev/null || python -c "import secrets; a='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; print(''.join(secrets.choice(a) for _ in range(20)))")
   printf 'url=https://%s\nuser=judges\npassword=%s\n' "$HOST" "$PASS" > "$CRED"; chmod 600 "$CRED"
 fi
 PASS=$(sed -n 's/^password=//p' "$CRED")
