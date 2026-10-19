@@ -39,3 +39,17 @@ def test_owner_words_state_the_condition_and_do_not_claim_receipt(client):
     assert "not yet received" not in en  # the same term is also shown in a paid agreement
     assert "payment received" in en
     assert "享受折扣" in zh and "含当日" in zh and "尚未收款" not in zh
+
+
+def test_unsupported_payment_timing_remains_a_visible_waiting_task(client):
+    rt = get_runtime()
+    before = rt.store.get_state()
+    result = client.post("/nl", json={"actor": "COUNTERPARTY", "counterparty_id": "BUYER-1",
+                                      "text": "We will pay the ¥420k invoice 10 days early for a 1% discount.", "lang": "en"})
+    assert result.status_code == 200
+    assert "clarify" in result.json()["reply"].lower()
+    worklist = client.get("/worklist?lang=en").json()
+    waiting = [row for row in worklist["waiting"] if row["kind"] == "BUYER_REPLY"]
+    assert len(waiting) == 1 and waiting[0]["lifecycle"] == "more_information"
+    assert rt.store.get_state() == before
+    assert not any(c.status.value in {"ACTIVE", "ACCEPTED"} for c in rt.store.commitments())
