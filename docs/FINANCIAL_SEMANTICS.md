@@ -3,7 +3,7 @@
 The one place that says what each financial quantity means. Planner, verifier, executor, clock, alerts, capex,
 the borrower file and the UI must all follow it. Decided by the technical owner on 3 Oct 2026 after the independent
 audit (`docs/research/independent-principal-audit-2026-10-03.md`). "Status" says whether the code follows the rule
-yet; the open ones are tracked in `docs/CONTINUOUS_OPTIMIZATION.md`.
+yet.
 
 Money is integer fen; rates are basis points; days are absolute integers; a year is 365 days; a posting is rounded
 half-up to the fen once, where the cash moves (ADR-0002).

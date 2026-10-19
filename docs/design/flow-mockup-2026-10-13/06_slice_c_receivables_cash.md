@@ -30,7 +30,7 @@ The brief was written against the pages of 14 Oct. Dylan's pages are the base no
   `#cash-plan`; the owed-by-customer donut and the worklist are unchanged.
 - **The design of record** for both pages is dev as merged (the No Rail Rule with the alarm-card exception, the section hue
   and backdrop, `home-f` on every main); the brief's "Home's cards" means the cards as Dylan restyled them.
-- **Rules**: `docs/agents/integration.md` applies (small branches from dev, the full mock suite before hand-in, the lead
+- **Rules**: the team's integration rules apply (small branches from dev, the full mock suite before hand-in, the lead
   merges). The Cash chart (§3.5) no longer waits on round three (merged); it waits only on its own design.
 
 ## 1. What each page is for

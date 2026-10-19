@@ -1,7 +1,7 @@
 # Slice B round three: the selected deal as one comparison (owner's review of 14 Oct 2026, golden books, 1440)
 
 > **Superseded (16 Oct 2026).** Round three was built from this brief, reviewed by the owner on 15 Oct and redesigned under #160
-> (a deal as its own page; see `docs/handover/18_round_three_checkpoint_2026-10-15.md`, `docs/research/deals-flow-audit-2026-10-15.md`
+> (a deal as its own page; see `docs/research/deals-flow-audit-2026-10-15.md`
 > and DESIGN.md "Deals, the redesign of 15 October"). §11's entry points and the tracker fold landed; the tabs, rail, breadcrumb, chips,
 > outcome table, headroom plot and per-day inspector did not. Kept for the record; do not build from it.
 

@@ -184,7 +184,7 @@ What serves it today:
 Missing: facility headroom before and after a decision through a date, and the day it recovers (section 38); invoice-
 financing capacity over time (advance rate × eligible receivables, which depends on which invoices are open and not
 yet due). Gap: **D + P**, no new data. The engine module stays untouched if the per-facility path is rebuilt from the
-events of a projection run with the plan's actions (the stability gate, `docs/CONTINUOUS_OPTIMIZATION.md` section 0).
+events of a projection run with the plan's actions (the stability gate, the optimisation log's section 0, an internal note, in the git history).
 
 ### E. Late payment and concentration: detection and lateness exist; history does not
 

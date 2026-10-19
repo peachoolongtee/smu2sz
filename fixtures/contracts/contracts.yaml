@@ -1,4 +1,4 @@
-# Demo documents for contract ingestion (docs/handover/03_contract_ingestion_brief.md, section 6.6).
+# Demo documents for contract ingestion (ADR-0012).
 # Synthetic: each was written to match fixtures/scenarios/golden_sme.json, and each says so in its own text.
 # `file` is the canonical text the agent reads when the demo picks the fixture; `formats` are generated copies
 # (scripts/build_contract_files.py) that exercise the .docx and text-PDF upload path.

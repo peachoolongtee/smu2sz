@@ -1,4 +1,4 @@
-"""The buy side's merge-blocking security findings (docs/capex_handover.md; the Security Lead's register).
+"""The buy side's merge-blocking security findings (the Security Lead's register, docs/security/FINDINGS_REGISTER.md).
 
 CAPEX-1  a schedule can book money coming IN (a rate above 100%, a negative share): refused at derivation, in owner words
          (en and zh), and again by the executor.

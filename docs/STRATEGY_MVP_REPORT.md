@@ -2,7 +2,7 @@
 
 8 October 2026. Wayfinder map #47 built the synthesis's BUILD NOW set (`docs/STRATEGY_RESEARCH.md`, branch
 `research/strategy`) as a read-only, feature-flagged MVP on the integration branch `feat/strategy-mvp` (from `dev` at
-`bcc67d4`), in seven waves and three fix passes, with the delegation model of `docs/handover/05_strategy_and_ux_handoff.md`
+`bcc67d4`), in seven waves and three fix passes, with the delegation model of the strategy and UX handoff (an internal note, in the git history)
 section 2: the lead architected, specified, reviewed and merged; `sonnet` implementers coded; `verifier` agents reproduced
 every displayed figure from the kernel; a `code-reviewer` and two cold readers reviewed. The contract is
 `docs/STRATEGY_MVP_BRIEF.md` (section 12 holds the Wave 7 decisions that supersede the earlier sections).

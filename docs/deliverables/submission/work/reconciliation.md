@@ -455,7 +455,7 @@ model step" (item 8) and "every outcome, refusals too" for the log (only executo
 executor are security events).
 
 **Obsolete names.** The technical document says FLOW throughout. "TermsLedger" remains in `SECURITY_SELF_ASSESSMENT.md:31`
-("TermsLedger v2 (FLOW)"), the findings register's title (`FINDINGS_REGISTER.md:1`), `docs/HANDOVER.md` (3 Oct, stale throughout)
+("TermsLedger v2 (FLOW)"), the findings register's title (`FINDINGS_REGISTER.md:1`)
 and the code (`termsledger-api`, `TERMSLEDGER_*` variables, `termsledger.db`; `README.md:27-28` explains this). Add to TD section
 05: "The code and its variables still use the working name TermsLedger (`TERMSLEDGER_NO_DOTENV` etc.); it is the same system."
 
@@ -483,8 +483,7 @@ demo_run_output.txt` (16 Oct, says ¥162,800 unpaid; today ¥160,000); `FINDINGS
   `uv run --project services/api python scripts/run_scenarios.py --inproc` (and `PYTHONUTF8=1` on Windows).
 - The attack command needs `TERMSLEDGER_NO_DOTENV=1` too, and **overwrites the committed** `services/api/evals/security/
   latest_report.*`; `judge_eval.py` without `--out` overwrites `services/api/evals/judge/judge-report.*`. Say so, or add `--out`.
-- `uv run pytest` (services/api): tests opt in to demo mode through `tests/conftest.py`; on Windows add `SKIP_PERF_BENCH=1`
-  (`docs/HANDOVER.md:18-20`).
+- `uv run pytest` (services/api): tests opt in to demo mode through `tests/conftest.py`; on Windows add `SKIP_PERF_BENCH=1`.
 - The contract evaluation cannot be reproduced: its 70 contracts are outside the repository.
 - PostgreSQL concurrency needs `TERMSLEDGER_TEST_DATABASE_URL` for an empty local database.
 - TD:940-941 "Run it": add the prerequisites (uv with Python 3.12, Node 22+, pnpm) on the same line.

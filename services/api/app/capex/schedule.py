@@ -1,4 +1,4 @@
-"""A capex contract's payment schedule, derived by code (ADR-0013 decision 2; docs/capex_handover.md D4 and D5).
+"""A capex contract's payment schedule, derived by code (ADR-0013 decision 2).
 
 Input: the reading of a capex contract (`CompiledContract`: every value already parsed by code from a quoted span) and the
 owner's timeline (the days the contract cannot fix: signing, delivery, acceptance, invoice). Output: a dated list of
