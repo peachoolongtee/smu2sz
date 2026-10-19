@@ -66,8 +66,10 @@ def claim_kinds(obligations: Iterable[Obligation]) -> list[ClaimKind]:
 
 # The two clauses where the verifier's early-pay counter names what is not on record (app/verifier/counters.py, `early_pay_counter`).
 # It says "rebate" for every claim; `restate_not_on_record` says what was claimed, in the layer that shows the counter to the reader.
+# Only a lead that says "rebate" alone is rewritten: one that already names the claim ("no rebate or payment-terms agreement") is left as
+# the verifier wrote it, so a second pass changes nothing (LOG-2: it read "... or payment-terms agreement or payment-terms agreement").
 _LEAD_NONE = re.compile(r"^No rebate is on record, so none applies")
-_LEAD_STAYS = re.compile(r"^(Terms stay at \d+ days), no rebate\b")
+_LEAD_STAYS = re.compile(r"^(Terms stay at \d+ days), no rebate(?=\s*[.;]|\s*$)")
 
 
 def restate_not_on_record(text: str, offer_obligations: Iterable[Obligation]) -> str:

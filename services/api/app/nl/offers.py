@@ -328,7 +328,7 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
                 steps.add("COUNTER_OFFER", counter_line(ctx, c.label, c.text, v.offer_id))
             return []
         sent = send_counters(ctx, steps, v, v.counters, recipient)
-        lines = [counter_line(ctx, c.label, text, v.offer_id) for c, text in sent]
+        lines = [counter_line(ctx, c.label, text) for c, text in sent]  # the text the egress guard scanned, unchanged (LOG-2)
         if ViolationCode.DATA_EXTRACTION_REFUSED in codes:
             lines.insert(0, REFUSAL_REPLY_ZH if ctx.lang == "zh" else REFUSAL_REPLY)
         return lines
