@@ -1255,18 +1255,17 @@ understood.
 
 #### 4.7 Planned improvements, in priority order
 
-1. **Engine follow-ups the project lead deferred:** SEC-27 (record the run's outcome on the approval) and the rest of SEC-28
-   (stop at the first leg that does not execute; resume after an approval); FUND-4's wording.
+1. **Engine follow-ups the project lead deferred:** SEC-27 (the run's outcome on the approval); the rest of SEC-28 (stop at
+   the first leg that does not run; resume after approval); FUND-4's wording.
 2. **Before any network demo:** a tested deployment profile; anonymous intake off, and "unverified sender" in the chat's reply
    (SEC-19); browser injection tests (S3).
 3. **Owner control:** mandate revoke and renew routes; a pause control in the web app and an "agent queued this before the
    pause" mark (R-14, OPS, PAUSE-Q); key rotation (R-2).
 4. **Capex payee:** record the vendor's receiving account and flag a change (CAPEX-ACCT).
-5. **Audit integrity:** a restricted database role; signed checkpoints anchored outside the system (R-13).
+5. **Audit integrity and scale:** a restricted database role; signed checkpoints anchored outside the system (R-13); the day
+   and the pause read inside the unit of work; a PostgreSQL CI job (SEC-11, PAUSE-2, OPS).
 6. **Privacy before any live use:** the live language-boundary run; named-entity detection; provider retention settings; the
    PIPL assessment; a live-mode indicator (LIVE, PRIV-4, PRIV-5).
-7. **Scale:** read the day and the pause from stored state inside the unit of work; a PostgreSQL CI job (SEC-11, PAUSE-2,
-   OPS).
 
 ## Appendix A. Evidence folders
 
@@ -1476,6 +1475,6 @@ condition added to a verdict is the trusted network for `70f23ac5` and `03215a20
 | Egress guard | the scan of outbound text before it is sent (each counter's final text, the whole buyer reply, the message the owner copies); blocks a message holding a protected value or a canary |
 | Pause | the owner's switch that refuses the agent's, buyers' and non-receipt bank-feed operations, recorded on the chain |
 | Checkpoint | a saved count and head hash of the chain, kept outside the system, against which later exports are verified |
-| PREVENTED, DETECTED, UNTESTED, ACCEPTED LIMITATION | the classes of Table 3: blocked before effect; logged or flagged, not necessarily blocked; stated, not tested; a known gap, rated in section 04 |
+| The four classes | PREVENTED, DETECTED, UNTESTED and ACCEPTED LIMITATION, the classes of Table 3: blocked before effect; logged or flagged, not necessarily blocked; stated, not tested; a known gap, rated in section 04 |
 | The project lead | the team member (a person) who took the team's decisions on risks and engine changes; "the owner" is always the SME owner, the product's user |
 | Finding ids | SEC, CAPEX, SETUP, OUT, PRIV, RT, ASK, REG, CT, PAY, PAUSE, APR, LOG, FUND, CON and DEMO are the Security Lead's; F the team's own suite; A the 3 Oct audit; R the original risk register; PAUSE-Q, CAPEX-ACCT, OPT-B, OPS, LIVE and S1 to S14 this document's; PC, PI, FL, FH, SE, PE, MX, CB, TC, RV, FR, NL the catalogue's cases |
