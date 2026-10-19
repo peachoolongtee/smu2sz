@@ -133,3 +133,30 @@ def test_fund3_go_ahead_with_no_admissible_plan_says_the_gap_is_not_funded(clien
     assert "no gap to cover" not in reply and "无资金缺口" not in reply, reply
     assert said in reply, reply
     assert ("NO DEAL" if lang == "en" else "未成交") in reply
+
+
+# ---------------------------------------------------------------- FUND-5
+
+
+@pytest.mark.parametrize("lang,yes,said,proposed", [
+    ("en", "go ahead", "BUYER-1 refused. The near-term gap of ¥405,000 is not funded: no admissible plan on the funding menu",
+     "the near-term gap of ¥405,000 stays unfunded"),
+    ("zh", "好，执行", "近期缺口 ¥405,000 未获融资：融资菜单上没有可行的方案", "近期缺口 ¥405,000 仍未获融资")])
+def test_fund5_early_settlement_with_no_admissible_fallback_says_the_gap_is_not_funded(client, lang, yes, said, proposed):
+    """The early-settlement proposal said "If BUYER-1 refuses: no fallback needed" and the go-ahead "BUYER-1 refused, and there is
+    no gap to fund." when the gap was open and no admissible plan covered it."""
+    _cap_lines()
+
+    def say(text: str) -> dict:
+        body = {"session_id": f"r8-accel-{lang}", "actor": "OWNER", "text": text, "lang": lang, "buyer_profile": "BUYER-1-HARDLINE"}
+        r = client.post("/nl", json=body)
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    plan = say("get Foshan to pay early" if lang == "en" else "让佛山提前付款")
+    assert plan["intent"] == "ACCELERATE_RECEIPT", plan
+    assert "no fallback needed" not in plan["reply"] and "无需后备" not in plan["reply"], plan["reply"]
+    assert proposed in plan["reply"], plan["reply"]
+    reply = say(yes)["reply"]
+    assert "no gap to fund" not in reply and "无资金缺口" not in reply, reply
+    assert said in reply, reply
