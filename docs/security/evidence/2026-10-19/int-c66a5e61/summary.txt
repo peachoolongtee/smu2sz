@@ -1,0 +1,39 @@
+VERDICT: CERTIFIED for scope S (local simulation on loopback), c66a5e61 (c66a5e6189e0e34087c5d104197eb89c67d9c18f; = 66c31e7e + the review fixes REV-1 to REV-3)
+
+Gate of c66a5e61, 19 Oct 2026, 08:41:39 to 09:33:16 UTC, by the Security Lead (an AI agent) on a clean detached checkout
+(tree_status.txt and tree_after_post.txt empty). Scope S: pnpm demo on one machine, API and web app on 127.0.0.1, one API
+process, DEMO_MODE=1, DATABASE_URL=memory, LLM_MODE=cache (no model provider called), synthetic fixtures.
+
+What changed since 66c31e7e (certified 19 Oct): 90116810 (REV-1: a COUNTERPARTY claim on POST /operations is the agent's;
+REV-2: tokens compared as bytes; REV-3: a queued buyer message is answered without the word "acceptance") and c66a5e61 (two
+chat tests updated to the REV-3 wording). A first gate on 90116810 was stopped when tests/nl failed on those two assertions; it
+is not evidence and is not cited.
+
+Results (files in this folder):
+  API suite, 155 processes:     11,426 passed, 0 failed, 47 skipped (suite_totals.txt, shards/)
+  Attack catalogue:             279 cases, 0 harm, 0 not reached; 120/128 named controls; detection 97.66% API, 70.25% all;
+                                security events 74.22% (attacks.txt, latest_report.*)
+  Credential sweep, 3 modes:    112 routes, 0 policy violations; 0 differences from 66c31e7e (sweep_*.json, sweep_policy.txt)
+  Reproductions, approval flip: refused, as on 66c31e7e (r3, r4_bounded, repro1-3, r_nl, r_paths, r_edge, approval_flip.txt;
+                                r3, repro1 and repro3 exit 1 because they crash when the attack is refused)
+  Language boundary, 231 items: 0 wrong-and-material, recorded (cache) and scripted (fake) answers (lb_cache*, lb_fake*)
+  PostgreSQL 17:                concurrency 3 of 3 (31 tests, 10 on PostgreSQL, each run); audit guards 10 passed (pg_*.txt)
+  Dependency audits:            pip-audit: no known vulnerabilities; pnpm audit --prod 0; full audit: braces only
+                                (GHSA-vfj7-8cjw-p6xm, development-only, accepted by the project lead)
+  Secret scan:                  0 findings in the tracked files and every branch's history (secret_scan.txt)
+  Mock browser suite:           479 passed, 0 failed, 77 skipped; typecheck, lint, unit pass (web/)
+  Live browser suite:           177 passed, 0 failed, 51 skipped, one worker (live_e2e.txt)
+  CSP:                          production build and the pnpm demo dev server: 17 pages each, 0 violations, injected script
+                                blocked; the dev header adds 'unsafe-eval' (csp/, csp_dev/)
+  Judge pack:                   49 of 49 tasks; 279 attacks, 0 harm; audit chain VALID; tampered copy rejected (judge/)
+  Sandbox (outside this folder): docs/deliverables/evidence/sandbox-2026-10-19/run-20261019T093629Z-inproc (159 passed,
+                                0 failed, 16/16 exports VALID) and run-20261019T093658Z-http (142 passed, 0 failed, 1 skipped,
+                                13/13 VALID), 19 Oct 09:36 to 09:37 UTC, on the same product code (code_diff_check empty)
+
+Disclosed, open (not blocking scope S): R-7 Moderate (a refused or qualified buyer offer reaches the owner's approvals as the
+plain discount, never alone); B2 and B3 of Hao En's 19 Oct review of feat/reader-dates (a reversed payer or a quoted buyer
+message is accepted at Tier 1 inside the mandate's caps; fix on fix/rev4-coverage, gated separately) and the other risks of the
+self-assessment, section 04.
+
+Before sealing, this machine's local paths in the outputs were replaced with $SCRATCH, <repo-root>, ~ and <project-slug>
+(scrub_paths.py); no other byte was changed. Tools: tools/ (the gate scripts as run, with the same replacements).

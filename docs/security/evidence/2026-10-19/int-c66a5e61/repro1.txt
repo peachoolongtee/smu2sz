@@ -1,0 +1,36 @@
+=== A: agent opens a buyer's circuit; owner accept leaves an orphan PROPOSED commitment ===
+2026-10-19 17:04:49 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:04:53 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:04:55 [info     ] compiler.call                  backend=cache doc_hash=39cabafae4ee1e7944bdc0a52c469c0836013cca8f72b3aeb892fd96b081d506 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:04:56 [info     ] compiler.call                  backend=cache doc_hash=80047a9654396def08426567680368202582eb51b2028cf652ab81c4a96cbc85 latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:04:56 [info     ] compiler.call                  backend=cache doc_hash=ea1ac57ae2a03aebb8a9d7e2612fb0c5da266b41504563c6feccdc391d590015 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:04:57 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:04:58 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+verdict VER-1be462be77fe NEEDS_OWNER_APPROVAL sv 1
+agent counter 200 REFUSED
+agent counter 200 REFUSED
+agent counter 200 REFUSED
+before {'commitments': [], 'approvals': [('APR-000001', 'PENDING')], 'ops': 4, 'state_version': 1, 'sec': 0}
+owner accept 200 OK 
+owner accept 409 ALREADY_ACCEPTED 
+owner decline 409 ALREADY_ACCEPTED
+after  {'commitments': [('CMT-4c93a286d4', 'ACTIVE')], 'approvals': [('APR-000001', 'PENDING'), ('APR-000002', 'APPROVED')], 'ops': 6, 'state_version': 2, 'sec': 0}
+picture accept block available: False An agreement for this request is already in place.
+
+=== B: agent pre-claims the deterministic decline idempotency key ===
+2026-10-19 17:05:00 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:04 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:05 [info     ] compiler.call                  backend=cache doc_hash=39cabafae4ee1e7944bdc0a52c469c0836013cca8f72b3aeb892fd96b081d506 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:06 [info     ] compiler.call                  backend=cache doc_hash=80047a9654396def08426567680368202582eb51b2028cf652ab81c4a96cbc85 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:06 [info     ] compiler.call                  backend=cache doc_hash=ea1ac57ae2a03aebb8a9d7e2612fb0c5da266b41504563c6feccdc391d590015 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:07 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.5 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 17:05:08 [info     ] compiler.call                  backend=cache doc_hash=ea1ac57ae2a03aebb8a9d7e2612fb0c5da266b41504563c6feccdc391d590015 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+agent RejectOffer under owner's key: 200 EXECUTED
+owner decline: 200 None 
+before {'commitments': [], 'approvals': [('APR-000001', 'PENDING')], 'ops': 2, 'state_version': 1, 'sec': 0}
+after  {'commitments': [], 'approvals': [('APR-000001', 'PENDING')], 'ops': 3, 'state_version': 1, 'sec': 0}
+Traceback (most recent call last):
+  File "$SCRATCH\repro1.py", line 73, in <module>
+    print("last sec event:", rt.store.security_events()[-1].kind, rt.store.security_events()[-1].detail[:160])
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+IndexError: list index out of range

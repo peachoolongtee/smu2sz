@@ -1,0 +1,9 @@
+2026-10-19 17:04:43 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+owner seeded OFF-f806f79b6c21 ['EX01-msg']
+owner GET before: We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward and give us 1% off next q
+anon POST /offers: 409 keys ['detail']
+Traceback (most recent call last):
+  File "$SCRATCH\r3.py", line 20, in <module>
+    print("anon response offer:", json.dumps(r.json()["offer"], ensure_ascii=False)[:1200])
+                                             ~~~~~~~~^^^^^^^^^
+KeyError: 'offer'
