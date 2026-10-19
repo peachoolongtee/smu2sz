@@ -1,0 +1,26 @@
+........................................................................ [ 10%]
+........................................................................ [ 21%]
+........................................................................ [ 31%]
+........................................................................ [ 42%]
+........................................................................ [ 52%]
+........................................................................ [ 63%]
+........................................................................ [ 73%]
+........................................................................ [ 84%]
+...................................................................
+[route-policy] 113 routes (HEAD/OPTIONS skipped) in DEMO_MODE=1: public 3, docs 4, buyer 3, agent 3, owner_side 3, demo_setup 9, owner 88
+..... [ 95%]
+....
+[route-policy] DEMO_MODE=1: 54.0s for 791 requests; the owner reached the handler on 96 of 97 owner and demo/setup routes (Counter({'handler': 96, 'not_found': 1})); 108 of 109 counting every class
+  stopped before the handler: POST /documents/{document_id}/terms/undo -> 404 not_found UNKNOWN_SET_UP
+  owner answers: {200: 87, 201: 1, 404: 1, 409: 7, 501: 1}
+.....
+[route-policy] DEMO_MODE=0: 71.0s for 1130 requests; the owner reached the handler on 91 of 97 owner and demo/setup routes (Counter({'handler': 91, 'refused': 5, 'not_found': 1})); 103 of 109 counting every class
+  stopped before the handler: POST /documents/{document_id}/terms/undo -> 404 not_found UNKNOWN_SET_UP
+  stopped before the handler: POST /demo/bank-receipt -> 403 refused DEMO_ONLY
+  stopped before the handler: GET /setup/documents -> 403 refused SETUP_REFUSED
+  stopped before the handler: POST /setup/documents -> 403 refused SETUP_REFUSED
+  stopped before the handler: POST /setup/preview -> 403 refused SETUP_REFUSED
+  stopped before the handler: POST /setup/open -> 403 refused SETUP_REFUSED
+  owner answers: {200: 82, 201: 1, 403: 5, 404: 1, 409: 7, 501: 1}
+.........................                                       [100%]
+682 passed in 278.00s (0:04:37)

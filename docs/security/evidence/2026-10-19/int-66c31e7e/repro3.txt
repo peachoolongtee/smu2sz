@@ -1,0 +1,13 @@
+2026-10-19 14:19:04 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 14:19:09 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 14:19:10 [info     ] compiler.call                  backend=cache doc_hash=39cabafae4ee1e7944bdc0a52c469c0836013cca8f72b3aeb892fd96b081d506 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 14:19:11 [info     ] compiler.call                  backend=cache doc_hash=80047a9654396def08426567680368202582eb51b2028cf652ab81c4a96cbc85 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 14:19:12 [info     ] compiler.call                  backend=cache doc_hash=ea1ac57ae2a03aebb8a9d7e2612fb0c5da266b41504563c6feccdc391d590015 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 14:19:13 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 14:19:14 [info     ] compiler.call                  backend=cache doc_hash=96e709c2b1d8b2196df9a235f285362061ca52328abfa753806c66850aa7fff7 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+owner accept 409
+Traceback (most recent call last):
+  File "C:\Users\ian\AppData\Local\Temp\claude\C--Users-ian-Documents-Projects-smu2sz\aa96fbfb-4038-45c2-8bb9-e28d412a5861\scratchpad\repro3.py", line 16, in <module>
+    orphan = next(x for x in led if x["offer_id"] == oid and x["status"] == "PROPOSED")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration

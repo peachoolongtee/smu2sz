@@ -12,6 +12,7 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
+| 19 Oct | `66c31e7e` (int/sl-final: `5926ef29` + the demo stepper fix `cc1703cc`; **the submission build**) | everything since `03215a20` | **CERTIFIED** for scope S (the local simulation, API and web app on 127.0.0.1); every check passes, the live browser suite included |
 | 19 Oct | `5926ef29` (int/sl-final: 03215a20 + rounds eight and nine, the demo launcher on loopback, the lint and public-release cleanups) | everything since `03215a20` | **NOT RELEASED**: every check passes except the live browser suite (tracker.spec.ts:216, a timing race in the web demo stepper, older than round nine); fixed in `cc1703cc` and gated again |
 | 19 Oct | `03215a20` (dev: round seven merged as `c707ee8c`, code `bee9c50d`; certified, then superseded) | everything since `5941e95a`; the SEC-28 reporting fix re-reviewed | **CERTIFIED** for scope S, on a trusted machine and network (DEMO-L1); SEC-28 with FUND-1 to FUND-4 disclosed |
 | 18 Oct | `5941e95a` (dev: the owner pause, funding report, small talk, pay everyone, the consent narrowing, round six) | everything since `70f23ac5` | **NOT CERTIFIED**: every automated check passes, but PAY-1 (Medium, consent bound to a plan not shown) is open; fixed by `sec/round-seven` |
@@ -52,6 +53,40 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
   `app.api.decide.plan`, so it ran the real (runnable) plan and failed without testing the guard. Patched at the new site it passes, and
   it fails when `runnable()` is disabled. Fix: `sec/redteam-d-patch-target` 1b58291f (test only) — merge it so the guard is tested again.
 - Scope: catalogue figures cover the routes it attacks; quote "0 of 259 attacks caused harm" with that scope.
+
+## `66c31e7e` (int/sl-final, then `dev`): CERTIFIED for scope S, 19 Oct: the submission build
+
+`5926ef29` (round eight, the demo launcher on loopback, round nine, the API lint and public-release cleanups, the unseen
+evaluation set) plus `cc1703cc`, the fix of the demo stepper race that kept `5926ef29` from release. Product code is identical
+to `5926ef29` apart from three web files and a web unit test. The documentation commits after it change documents, evidence and
+the document build tooling only (`git diff 66c31e7e <tag> -- services/api/app apps/web` is empty).
+
+Evidence: `evidence/2026-10-19/int-66c31e7e/` (`summary.txt`, `tools/`, `MANIFEST.json`, `SHA256SUMS`; id
+`sha256:4a418fe4fb4c6c4d`). The gate ran 05:55 to 06:41 UTC and the post-gate checks to 06:46, on a quiet machine.
+
+| Check | Result |
+| --- | --- |
+| Full suite (155 test processes) | **11,421 passed, 0 failed, 47 skipped**; `tests/__pycache__` ran no tests (exit 5) |
+| Attack catalogue | 128 API + 151 chat cases, 0 with harm, 0 NOT_REACHED; 120 of 128 stopped by the named control, 8 known gaps; detection 97.66% (API), 70.25% (all) |
+| Route policy | 16 tests pass over 113 routes; owner 96 of 97 (demo mode), 91 of 97 (`DEMO_MODE=0`); the one miss is `POST /documents/{id}/terms/undo` → 404 `UNKNOWN_SET_UP` |
+| Sweep, three modes | 112 routes, 0 policy violations, 0 differences from `03215a20` |
+| Reproductions; approval flip | refused, outputs identical to `03215a20` apart from timestamps; the database refuses the flip |
+| Language boundary | 0 wrong-and-material (cache and fake) |
+| PostgreSQL 17 | concurrency 3 of 3; guards 10 passed |
+| Dependency scans | `pip-audit` clean; `pnpm audit --prod` 0; `braces` only (development, accepted) |
+| Secret scan | 0 findings in the tracked files at `66c31e7e` and every branch's history |
+| Mock browser suite | 479 passed, 0 failed, 77 skipped; typecheck, lint pass; web unit 197 passed |
+| Live browser suite (one worker, as configured) | **177 passed, 0 failed, 51 skipped** |
+| CSP | production build and the development server `pnpm demo` runs: 17 pages each, 0 violations, injection blocked; the development server adds `'unsafe-eval'` |
+| Judge pack | 49 of 49 tasks (88 turns); 279 attacks, 0 harm; demo walk OK; audit chain VALID |
+| Sandbox (execution evidence) | in process 159 passed, 0 failed, exports 16 of 16 VALID; over HTTP against the API as `pnpm demo` starts it 142 passed, 0 failed, 1 skipped (in-process only), exports 13 of 13 VALID |
+| Live model, unseen set (uncertified evidence) | rules 1/6 correct; shipped path 2/6; model alone 2/6; 0 wrong in all (`services/api/evals/live_unseen/`) |
+
+**Verdict: CERTIFIED for scope S.** An internal release decision for the local simulation: `pnpm demo` on one machine, the API
+and the web app on 127.0.0.1, one API process, `DEMO_MODE=1`, in-memory books, `LLM_MODE=cache`, synthetic data, contract terms
+and the router as the launcher sets them. Live model mode, any network or hosted deployment and production are outside it.
+Disclosed: SEC-28 (plans not reversed; FUND-4 wording), PAUSE-2 and PAUSE-Q, SEC-27, SEC-19 (the chat reply), CAPEX-ACCT, OPT-B,
+LOG-3 and the open risks of the self-assessment, whose ratings are unchanged. Not a claim of absolute security.
 
 ## `5926ef29` (int/sl-final): NOT RELEASED, 19 Oct; a failure in the live browser suite
 

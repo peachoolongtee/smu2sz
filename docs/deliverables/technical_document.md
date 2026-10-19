@@ -54,7 +54,7 @@ release gate's scope. Section 02 measures what the model adds, on unseen items, 
 
 | Build and verification |
 | --- |
-| Submission: product code ⟦SUB⟧ (`⟦SUB-FULL⟧`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20`, and the commits after the product code change documentation, evidence and the document build tooling only. Release state of ⟦SUB⟧: ⟦SUB-VERDICT⟧ (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical and named as such (Table B2) |
+| Submission: product code 66c31e7e (`66c31e7ec179fb29f4d5cebb01c1fcbf30652ae9`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20`, and the commits after the product code change documentation, evidence and the document build tooling only. Release state of 66c31e7e: certified for scope S on 19 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical and named as such (Table B2) |
 | Supported configuration (scope S): `pnpm demo` on one machine: API and web app on 127.0.0.1, one API process, `DEMO_MODE=1` with the published demo credentials, in-memory books, `LLM_MODE=cache` (no model provider called), synthetic fixtures. Not covered: live model mode, any network or hosted deployment, production |
 | Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20`). Repository paths in this document link to that revision |
 | Runs offline after installation. Installing needs the npm and PyPI registries (uv also downloads Python 3.12, and the browser suites need Playwright's Chromium); users in mainland China may need registry mirrors. After that, no account, VPN, API key or foreign service is needed. Live mode (`pnpm demo --live-llm`) needs a DeepSeek or Anthropic API key |
@@ -67,8 +67,8 @@ step with its request, response, the state read back and PASS or FAIL). Appendix
 
 | Criterion | What FLOW demonstrates | In this document | In the sandbox run | Measured result |
 | --- | --- | --- | --- | --- |
-| **Task completion (40%)** | The supplier's whole workflow on synthetic books: request, reading, financial evaluation, counter, owner authorisation, funding, settlement and reconciliation, with a hash-chained record | 01 journey and Table 2; 02 Table W; 03 "Task completion", Table 4; Appendices D, F | Case 1 (the journey, groups 1.1 to 1.9); case 4 (a plan that only partly runs, reported as it ran) | 49 of 49 scripted tasks (88 turns), demo walk chain VALID, tampered copy rejected (judge pack, `5926ef29`, 19 Oct); on ⟦SUB⟧: ⟦SUB-JUDGE⟧. Sandbox: ⟦SUB-SANDBOX⟧ |
-| **Security and compliance (30%)** | Authority by structure: typed operations with no payee field, tiers computed by the executor, the signed mandate, the chat consent rules, the owner's pause, a tamper-evident log; 279 stored attacks with harm oracles | 04: Table 5, Figure 5, "Who can execute what", Tables 6 and 7; the Security Self-Assessment | Case 2 (unauthorised callers, a claimed agreement, Tier 3, an unverified sender); case 3 (ambiguity, consent); case 5 (the pause) | 279 attack cases, 0 harm, 120 of 128 API cases stopped by the control they name (`5926ef29`, 19 Oct); on ⟦SUB⟧: ⟦SUB-ATTACKS⟧. Release state of ⟦SUB⟧: ⟦SUB-VERDICT⟧ |
+| **Task completion (40%)** | The supplier's whole workflow on synthetic books: request, reading, financial evaluation, counter, owner authorisation, funding, settlement and reconciliation, with a hash-chained record | 01 journey and Table 2; 02 Table W; 03 "Task completion", Table 4; Appendices D, F | Case 1 (the journey, groups 1.1 to 1.9); case 4 (a plan that only partly runs, reported as it ran) | 49 of 49 scripted tasks (88 turns), demo walk chain VALID, tampered copy rejected (judge pack, `5926ef29`, 19 Oct); on 66c31e7e: 49 of 49 tasks; 279 attacks, 0 harm; audit chain VALID. Sandbox: in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID |
+| **Security and compliance (30%)** | Authority by structure: typed operations with no payee field, tiers computed by the executor, the signed mandate, the chat consent rules, the owner's pause, a tamper-evident log; 279 stored attacks with harm oracles | 04: Table 5, Figure 5, "Who can execute what", Tables 6 and 7; the Security Self-Assessment | Case 2 (unauthorised callers, a claimed agreement, Tier 3, an unverified sender); case 3 (ambiguity, consent); case 5 (the pause) | 279 attack cases, 0 harm, 120 of 128 API cases stopped by the control they name (`5926ef29`, 19 Oct); on 66c31e7e: 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66%. Release state of 66c31e7e: certified for scope S on 19 Oct |
 | **Innovation and interaction (30%)** | A supplier-side agent across both debt books (credit given, credit taken); the model reads and routes, code decides; bilingual chat with clarification, correction and fallback | Opening; 01 "What is new", Table L1; 02 "What the model contributes"; 03 Table 3 and the dialogue; Appendices G, K | Case 1 groups 1.6 and 1.7 (FLOW speaks first, "go ahead" queues, "approve APR-…" runs); case 3 (a clarification) | Unseen buyer messages, live DeepSeek on `5926ef29` (19 Oct): shipped path 2 of 6 correct against the rules' 1, 0 wrong; unseen Chinese contracts: party names 14 of 17 (recorded readings) against 0 for the rules |
 | **Bonus (0–5)** | Not claimed: FLOW is a local simulation (Table 7) | — | — | — |
 
@@ -85,7 +85,7 @@ offline on `571ea64f` (18 Oct) with the same results. Appendix C gives each comm
 | Owner questions | 228 of 427 answerable bank questions answered, 45 partly, 0 wrong (tuned bank); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic | Tuned; held-out |
 | Live model | Unseen buyer messages, 19 Oct on `5926ef29`: shipped path 2 of 6 correct, 0 wrong; the question router fully correct on 22 of 63 questions (18 Oct, one reviewer) | Live, single runs; outside the release gate |
 | Security | 279 stored attack cases (128 API, 151 chat), 0 harm-oracle violations (`5926ef29`, 19 Oct; rules path and a scripted hostile model; no real model read any catalogue case) | Tests |
-| Tests | Every suite's passed, failed and skipped counts on ⟦SUB⟧: Table V. Earlier builds: Table B2. A count measures the size of a suite, not correctness | Tests |
+| Tests | Every suite's passed, failed and skipped counts on 66c31e7e: Table V. Earlier builds: Table B2. A count measures the size of a suite, not correctness | Tests |
 
 **How to read this document.** Sections 01 to 05 follow the official template; detail is in the appendices. Every number is
 synthetic and labelled with the build it was measured on, or points to Table V. Amounts are Chinese yuan (CNY, ¥) on
@@ -266,7 +266,7 @@ data: they show the scale of the problem, not FLOW's effect.
 ### Architecture diagram and component responsibilities
 
 FLOW is a modular monolith: one FastAPI service ([services/api](../../services/api)), one Next.js web app
-([apps/web](../../apps/web)) and one database. Modules talk only through typed contracts in `app/domain/`. Figure 2 shows who
+([apps/web](../../apps/web)) and one database. Modules talk only through typed contracts in [app/domain/](../../services/api/app/domain/). Figure 2 shows who
 calls it, the three places a model assists, the deterministic core that computes every figure, and the action path through
 which every operation that commits the business or moves money must pass. Five roles divide the work: the
 **compiler** (model-assisted, untrusted) turns text into typed obligations tied to source words and sees no books; the
@@ -506,7 +506,7 @@ do not compare across panels.
 
 #### Task Completion: scripted tasks in a simulated environment
 
-**49 of 49 scripted conversations pass their own checks** (88 turns; judge pack on `5926ef29`, 19 Oct; on ⟦SUB⟧ see Table V),
+**49 of 49 scripted conversations pass their own checks** (88 turns; judge pack on `5926ef29`, 19 Oct; on 66c31e7e see Table V),
 each with a verifiable evidence chain; a tampered copy is rejected. The tasks were written by the team that built the
 handlers, so they show that the paths written work, not how real owners would talk. The demo walk (the journey in section 01)
 exits cleanly with 14 hash-chained operations that verify. The engine matches an independently written oracle on 67 of 67
@@ -565,7 +565,7 @@ exercise it and what it does not cover. The grouping under the four threats is o
 categories into six classes, and the SA's section 2 groups the same cases by technique; all three add up to the same cases.
 
 **Table 5. The four threats in the rubric, the control that stops each, and its limits (catalogue results on `5926ef29`,
-19 Oct; on ⟦SUB⟧: Table V).**
+19 Oct; on 66c31e7e: Table V).**
 
 | Threat, and what an attacker tries | Control that stops it | Attack cases (all reached their path; 0 harm) | Limits |
 | --- | --- | --- | --- |
@@ -654,7 +654,7 @@ resumed; recovery is manual (SA 1.12; sandbox run, 4c).
   refusal never depends on.
 - **Privilege escalation** (SA 1.5). The executor trusts no caller-supplied tier, actor or approval. A route-policy test calls
   every route as every kind of caller, with demo mode on and off, and the release gate's route sweep repeats it in three modes;
-  the counts on ⟦SUB⟧ are in Table V (⟦SUB-ROUTES⟧; sweep ⟦SUB-SWEEP⟧). With `DEMO_MODE=0`, `/demo/bank-receipt` and the four
+  the counts on 66c31e7e are in Table V (16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0); sweep 0 policy violations in three modes; 0 differences from 03215a20). With `DEMO_MODE=0`, `/demo/bank-receipt` and the four
   setup actions answer 403; `/demo/reset` and `/demo/restore` stay owner-only and work on the in-memory store (refused on a
   persistent store).
 - **Privacy and data extraction** (SA 3.2 to 3.4). The outbound guard blocks a whole message stating a value the recipient is not
@@ -671,8 +671,8 @@ resumed; recovery is manual (SA 1.12; sandbox run, 4c).
   until the owner confirms them. FLOW is decision support, not a licensed lender, broker or adviser.
 
 **Table 6. Attack results (279 stored cases: 128 API, 151 chat; each in a fresh in-memory runtime, offline, rules grammar
-and a scripted hostile model). Measured on `5926ef29` (19 Oct) and with the same result on `03215a20`; on ⟦SUB⟧:
-⟦SUB-ATTACKS⟧.**
+and a scripted hostile model). Measured on `5926ef29` (19 Oct) and with the same result on `03215a20`; on 66c31e7e:
+279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66%.**
 
 | Measure | Result |
 | --- | --- |
@@ -690,7 +690,7 @@ and no running deployment has had a penetration test.
 
 **Assurance and release state** (SA 2.7, 4.6, Appendix C). Every review was internal and AI-assisted; none was independent assurance. The
 Security Lead, an AI agent in a separate session, reproduced findings, wrote fixes with regression tests (so it gated fixes it
-wrote) and runs the internal release gate on an exact commit. **The release state of ⟦SUB⟧ is ⟦SUB-VERDICT⟧** (Table V);
+wrote) and runs the internal release gate on an exact commit. **The release state of 66c31e7e is certified for scope S on 19 Oct** (Table V);
 the history of earlier gates is Table B2. Still open and disclosed: SEC-28 with FUND-4, PAUSE-2 and SEC-11 (one API process),
 SEC-27, SEC-19 in chat, and the pause rated risk.
 
@@ -698,7 +698,7 @@ SEC-27, SEC-19 in chat, and the pause rated risk.
 
 | Configuration | Verdict | Minimum blockers |
 | --- | --- | --- |
-| Local demo, scope S (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | ⟦SUB-VERDICT⟧ for ⟦SUB⟧ (Table V) | A trusted machine; nobody but the presenter holds the published demo credentials |
+| Local demo, scope S (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | certified for scope S on 19 Oct for 66c31e7e (Table V) | A trusted machine; nobody but the presenter holds the published demo credentials |
 | Live-LLM mode (`pnpm demo --live-llm`, opt-in) | **Outside the release gate** | A gate run in live mode; the language-boundary set and attack catalogue against a live model; a provider agreement on retention and region; PRIV-4 and PRIV-5 |
 | A demo reachable over a network | **NO-GO** | A tested deployment profile: changed credentials and signing key, TLS with per-client limits, anonymous intake off (SEC-19), API docs hidden, one API process, the route sweep and browser checks run against it |
 | Production with real customers, documents or money | **NO-GO** | A runnable configuration (SEC-06); one API process enforced (SEC-11); separate custody of token and key (R-2); an external anchor and a log the database owner cannot rewrite (R-13); mandate revoke and renew (R-14); resumable or reversible plans (SEC-28); an aggregate draw limit (R-3); vendor account verification; a PIPL assessment; backups; a penetration test; real counterparties, lenders and bank feeds |
@@ -725,20 +725,20 @@ pnpm --dir apps/web install
 uv sync --directory services/api
 ```
 
-Expected: both installs finish without errors; `git diff --stat ⟦SUB⟧ submission-2026-10-20 -- services apps` prints nothing
-(the tag's product code is ⟦SUB⟧).
+Expected: both installs finish without errors; `git diff --stat 66c31e7e submission-2026-10-20 -- services apps` prints nothing
+(the tag's product code is 66c31e7e).
 
 **Commands, expected outcomes and where results go.** Every command writes new results under `out/`, which the repository
 ignores, so the submitted evidence is never overwritten. Run them from the repository root.
 
 | What | Command | Expected outcome |
 | --- | --- | --- |
-| The judge pack: 49 scripted tasks, 279 attacks, the demo walk, the audit chain and a tampered copy (about 2 minutes) | `uv run --project services/api python scripts/judge_eval.py --out out/judge-report.md` | exit 0; `out/judge-report.md` reports ⟦SUB-JUDGE⟧. Without `--out` it overwrites the committed report |
-| The sandbox run: the journey, unauthorised callers, ambiguity, partial failure and the pause, each step checked against the state read back | `uv run --project services/api python docs/deliverables/evidence/sandbox-2026-10-19/run_sandbox.py --inproc` | exit 0 only if every step passed; a new dated run folder next to the script (never over an existing one) with `SUMMARY.md`; submitted result: ⟦SUB-SANDBOX⟧ |
+| The judge pack: 49 scripted tasks, 279 attacks, the demo walk, the audit chain and a tampered copy (about 2 minutes) | `uv run --project services/api python scripts/judge_eval.py --out out/judge-report.md` | exit 0; `out/judge-report.md` reports 49 of 49 tasks; 279 attacks, 0 harm; audit chain VALID. Without `--out` it overwrites the committed report |
+| The sandbox run: the journey, unauthorised callers, ambiguity, partial failure and the pause, each step checked against the state read back | `uv run --project services/api python docs/deliverables/evidence/sandbox-2026-10-19/run_sandbox.py --inproc` | exit 0 only if every step passed; a new dated run folder next to the script (never over an existing one) with `SUMMARY.md`; submitted result: in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID |
 | The same against the running product | start `pnpm demo`, then, in a second terminal, `uv run --project services/api python docs/deliverables/evidence/sandbox-2026-10-19/run_sandbox.py --base-url http://127.0.0.1:8000` | the same cases; a step that needs a direct store write is recorded as SKIPPED ("in-process only") |
 | The scripted tasks with their evidence chains | `uv run --project services/api python scripts/run_scenarios.py --inproc --out out/e2e` | `49/49 scenarios passed`; each chain verifies |
 | Check a submitted chain without running anything | `python scripts/verify_evidence.py docs/deliverables/evidence/demo_walk/operations_log.jsonl` | `VALID` |
-| The API suite (about 25 minutes on 8 cores) | POSIX: `cd services/api && SKIP_PERF_BENCH=1 uv run pytest -q`; PowerShell: `cd services/api; $env:SKIP_PERF_BENCH = "1"; uv run pytest -q` | ⟦SUB-SUITE⟧ on ⟦SUB⟧ (Table V); the tests set `TERMSLEDGER_NO_DOTENV=1` and `DEMO_MODE=1` themselves |
+| The API suite (about 25 minutes on 8 cores) | POSIX: `cd services/api && SKIP_PERF_BENCH=1 uv run pytest -q`; PowerShell: `cd services/api; $env:SKIP_PERF_BENCH = "1"; uv run pytest -q` | 11,421 passed, 0 failed, 47 skipped on 66c31e7e (Table V); the tests set `TERMSLEDGER_NO_DOTENV=1` and `DEMO_MODE=1` themselves |
 | The product | `pnpm demo` (also `pnpm demo --blank` for empty books, `--web-port`/`--api-port` for other ports) | "Ready" and the address; API on 127.0.0.1:8000, web on 127.0.0.1:3000; Ctrl+C stops both |
 
 On Windows, set `PYTHONUTF8=1` for the Python scripts (PowerShell: `$env:PYTHONUTF8 = "1"`). The browser suites need
@@ -751,12 +751,12 @@ the six scenes, or use the Business pages directly (Appendix K).
 the oracle, verifier, router, executor, mandate, persistence, compiler, chat, security harness, route policy); the mock
 browser suite (Playwright on recorded JSON, every page against the golden values, desktop and phone); the live browser suite
 (Playwright against a local API, one worker); web unit, types and lint; scripted-model tests (router, language boundary,
-cards, chat attacks); the attack catalogue; and the sandbox run. Their counts on ⟦SUB⟧ are in Table V and on earlier builds in
+cards, chat attacks); the attack catalogue; and the sandbox run. Their counts on 66c31e7e are in Table V and on earlier builds in
 Table B2; Appendix D lists representative cases, and [TEST_CASES.md](TEST_CASES.md) the full catalogue.
 
 **Known failures.** On `5926ef29` the live browser suite failed one test, `tracker.spec.ts:216` ("after the owner's approval
-the page's figures are the API's own"), which kept `5926ef29` from release. It was a timing race in the web demo stepper: its next button re-enabled before the story read had settled, so a quick press re-ran the step just run and the walk ended one step short of the owner's approval. The race predates round nine and shows only under load; a bisect first pointed at round nine's `a12548fd`, but reverting that commit does not remove it. Fixed in `cc1703cc` (the button waits for a settled story read), with a web unit test that fails before the fix. The result on ⟦SUB⟧
-is ⟦SUB-LIVE⟧.
+the page's figures are the API's own"), which kept `5926ef29` from release. It was a timing race in the web demo stepper: its next button re-enabled before the story read had settled, so a quick press re-ran the step just run and the walk ended one step short of the owner's approval. The race predates round nine and shows only under load; a bisect first pointed at round nine's `a12548fd`, but reverting that commit does not remove it. Fixed in `cc1703cc` (the button waits for a settled story read), with a web unit test that fails before the fix. The result on 66c31e7e
+is 177 passed, 0 failed, 51 skipped.
 Timing benches fail on a busy machine (`SKIP_PERF_BENCH=1`).
 
 **Known limitations.**
@@ -802,36 +802,36 @@ Each prompt of the technical document template, with the part of this document t
 
 ## Appendix B. Verification manifest
 
-**What was frozen.** Product code ⟦SUB⟧ (`⟦SUB-FULL⟧`) on `dev`; it contains `5926ef29`: dev `03215a20` with round eight
+**What was frozen.** Product code 66c31e7e (`66c31e7ec179fb29f4d5cebb01c1fcbf30652ae9`) on `dev`; it contains `5926ef29`: dev `03215a20` with round eight
 (FUND-1, 2, 3, 5), the demo launcher on loopback (DEMO-L1), round nine (LOG-2, SEC-19 display, CON-1, pinned authority tests),
 the API lint cleanup, the public-release cleanup and the unseen evaluation set. The documentation revision is the `dev` commit
 tagged `submission-2026-10-20`; every commit after the product code changes documentation, evidence and the document build
 tooling only. The gate covers scope S (section 05); live mode, networked or hosted deployments and production are outside it.
 The evidence folder is under [docs/security/evidence/2026-10-19/](../../docs/security/evidence/2026-10-19/) with
-`MANIFEST.json` and `SHA256SUMS` (evidence id ⟦SUB-ID⟧, the sha256 of `SHA256SUMS`); the verdict is recorded in
+`MANIFEST.json` and `SHA256SUMS` (evidence id sha256:4a418fe4fb4c6c4d, the sha256 of `SHA256SUMS`); the verdict is recorded in
 [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md).
 
-**Table V. Verification manifest for the submission build ⟦SUB⟧ (the Security Lead's release gate, ⟦SUB-WINDOW⟧ UTC, on a
-clean checkout; evidence ⟦SUB-ID⟧). Commands run from the repository root unless stated.**
+**Table V. Verification manifest for the submission build 66c31e7e (the Security Lead's release gate, 19 Oct 2026, 05:55 to 06:46 UTC UTC, on a
+clean checkout; evidence sha256:4a418fe4fb4c6c4d). Commands run from the repository root unless stated.**
 
 | Check | Command | Result | Evidence |
 | --- | --- | --- | --- |
-| Release state, scope S | the release-gate scripts in the evidence folder | ⟦SUB-VERDICT⟧ | `CERTIFICATIONS.md`; the evidence folder |
-| API suite, per test folder and per `tests/api` file | `uv run pytest` (from `services/api`) | ⟦SUB-SUITE⟧ | the folder's suite shards |
-| Mock browser suite (desktop and phone) | `E2E_TARGET=mock pnpm exec playwright test --workers=6` (from `apps/web`) | ⟦SUB-MOCK⟧ | the folder's browser logs |
-| Live browser suite (a local API, one worker, as configured) | `E2E_TARGET=live pnpm exec playwright test` (from `apps/web`) | ⟦SUB-LIVE⟧ | the folder's browser logs |
-| Web typecheck, lint, unit | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` (from `apps/web`) | ⟦SUB-WEB⟧ | the folder |
-| Attack catalogue | `uv run python -m app.security.attacks --report` (from `services/api`) | ⟦SUB-ATTACKS⟧ | `latest_report.json` in the folder |
-| Route policy | `uv run pytest tests/security/test_route_policy.py` (from `services/api`) | ⟦SUB-ROUTES⟧ | the folder |
-| Credential sweep, three modes | the folder's sweep scripts, compared with `03215a20` | ⟦SUB-SWEEP⟧ | the folder's sweep files |
-| Language boundary, 231 items | `scripts/certify_language_boundary.py --backend cache` and `--backend fake` | ⟦SUB-LB⟧ | the folder |
-| PostgreSQL 17: concurrency, three runs; audit guards | `TERMSLEDGER_TEST_DATABASE_URL=<empty local database> uv run pytest tests/concurrency tests/persistence/test_audit_guards.py` | ⟦SUB-PG⟧ | the folder |
-| Dependency audits | `pip-audit` on the exported production lockfile; `pnpm audit --prod`; `pnpm audit` | ⟦SUB-AUDITS⟧ | the folder |
-| Secret scan: tracked files and every branch's history | the folder's `secret_scan.py` | ⟦SUB-SECRETS⟧ | the folder's scan output |
-| CSP in a browser, production build (`next start`, the demo's flags) | `csp_check.mjs` | ⟦SUB-CSP⟧ | the folder |
-| CSP in a browser, the development server `pnpm demo` runs | `csp_check.mjs` against `pnpm demo` | ⟦SUB-CSPDEV⟧ | the folder |
-| Judge pack | `scripts/judge_eval.py --out <folder>` | ⟦SUB-JUDGE⟧ | the folder's judge report |
-| Sandbox run | `run_sandbox.py --inproc` | ⟦SUB-SANDBOX⟧ | the Execution Evidence's sandbox run, [sandbox-2026-10-19/](evidence/sandbox-2026-10-19/) |
+| Release state, scope S | the release-gate scripts in the evidence folder | certified for scope S on 19 Oct | `CERTIFICATIONS.md`; the evidence folder |
+| API suite, per test folder and per [tests/api](../../services/api/tests/api/) file | `uv run pytest` (from [services/api](../../services/api/)) | 11,421 passed, 0 failed, 47 skipped | the folder's suite shards |
+| Mock browser suite (desktop and phone) | `E2E_TARGET=mock pnpm exec playwright test --workers=6` (from [apps/web](../../apps/web/)) | 479 passed, 0 failed, 77 skipped | the folder's browser logs |
+| Live browser suite (a local API, one worker, as configured) | `E2E_TARGET=live pnpm exec playwright test` (from [apps/web](../../apps/web/)) | 177 passed, 0 failed, 51 skipped | the folder's browser logs |
+| Web typecheck, lint, unit | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` (from [apps/web](../../apps/web/)) | typecheck and lint pass; 197 unit tests passed | the folder |
+| Attack catalogue | `uv run python -m app.security.attacks --report` (from [services/api](../../services/api/)) | 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66% | `latest_report.json` in the folder |
+| Route policy | `uv run pytest tests/security/test_route_policy.py` (from [services/api](../../services/api/)) | 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0) | the folder |
+| Credential sweep, three modes | the folder's sweep scripts, compared with `03215a20` | 0 policy violations in three modes; 0 differences from 03215a20 | the folder's sweep files |
+| Language boundary, 231 items | `scripts/certify_language_boundary.py --backend cache` and `--backend fake` | 0 wrong-and-material (recorded and scripted answers) | the folder |
+| PostgreSQL 17: concurrency, three runs; audit guards | `TERMSLEDGER_TEST_DATABASE_URL=<empty local database> uv run pytest tests/concurrency tests/persistence/test_audit_guards.py` | concurrency 3 of 3; audit guards 10 passed | the folder |
+| Dependency audits | `pip-audit` on the exported production lockfile; `pnpm audit --prod`; `pnpm audit` | pip-audit clean; pnpm audit --prod 0; braces only (development) | the folder |
+| Secret scan: tracked files and every branch's history | the folder's `secret_scan.py` | 0 findings in the tracked files and every branch's history | the folder's scan output |
+| CSP in a browser, production build (`next start`, the demo's flags) | `csp_check.mjs` | 17 pages, 0 violations, injection blocked | the folder |
+| CSP in a browser, the development server `pnpm demo` runs | `csp_check.mjs` against `pnpm demo` | 17 pages, 0 violations; the header adds 'unsafe-eval' | the folder |
+| Judge pack | `scripts/judge_eval.py --out <folder>` | 49 of 49 tasks; 279 attacks, 0 harm; audit chain VALID | the folder's judge report |
+| Sandbox run | `run_sandbox.py --inproc` | in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID | the Execution Evidence's sandbox run, [sandbox-2026-10-19/](evidence/sandbox-2026-10-19/) |
 
 **Historical builds (not the submission build).** "Passed" means the internal release gate passed on that commit for scope S.
 
@@ -846,7 +846,7 @@ clean checkout; evidence ⟦SUB-ID⟧). Commands run from the repository root un
 | `03215a20` | 19 Oct | Passed, scope S, on a trusted network (DEMO-L1); evidence `sha256:712d6bd18b80e1ef` | API 11,368 passed, 0 failed, 47 skipped; 279 cases, 0 harm; mock browser 479 passed, 77 skipped; web unit 187; CSP 17 pages, 0 violations; PostgreSQL 3 of 3 |
 | `eb3c1059` | 19 Oct | Intermediate gate only, superseded; never released | API 11,383 passed, 0 failed, 47 skipped; its live browser run used four workers by mistake and is not cited |
 | `5926ef29` | 19 Oct, 04:14–05:05 UTC | Not released: the live browser suite failed once, a demo stepper race (section 05, "Known failures") | API 11,421 passed, 0 failed, 47 skipped (155 processes; one empty shard exits 5); 279 cases, 0 harm, 120 of 128 by the named control; route policy 16 tests over 113 routes; sweep 0 violations and 0 differences from `03215a20`; reproductions and the approval flip refused; language boundary 0 wrong-and-material; PostgreSQL 3 of 3, guards 10 passed; pip-audit clean, `pnpm audit --prod` 0, `braces` (development only, no patched version, accepted by the project lead); secret scan 0; mock browser 479 passed, 0 failed, 77 skipped; web unit 196; live browser 176 passed, 1 failed, 51 skipped; CSP 17 pages, 0 violations in production and development builds; judge pack 49 of 49 |
-| ⟦SUB⟧ | ⟦SUB-WINDOW⟧ | ⟦SUB-VERDICT⟧ | Table V |
+| 66c31e7e | 19 Oct 2026, 05:55 to 06:46 UTC | certified for scope S on 19 Oct | Table V |
 
 ## Appendix C. Evaluation commands and results
 
@@ -888,14 +888,14 @@ noted. The gated suites are in Table V.
 | Honest no deal | A hard-line buyer refuses every counter | NO DEAL within 3 rounds; the gap funded for ¥3,113.93; the reserve holds | Evaluation gate E5 (7/7) |
 | Early-payment boundary | Whole-invoice early payment at 0.75%, then 0.74% | 0.75% (¥3,150.00) countered as dearer than the plan; 0.74% (¥3,108.00) accepted at Tier 1 | Verifier hand-calculation tests |
 | Cure above the approval threshold | Day 34: "go ahead" on a ¥200,000 advance at 32.5% a year | Queued, nothing runs (Figure 11); it runs only on the owner's approval, and the cash lands on day 37 | [scripts/demo_run.py](../../scripts/demo_run.py); sandbox run 1.6, 1.7 |
-| Consent | Negated, conditional, future-dated, foreign-currency or quoted instructions, in both languages; "yes", "1", then "approve APR-000001", with an approval queued | Nothing executes; "1" only shows the item; "approve APR-000001" (or "approve 1" directly after the list) decides | 41 consent attacks; `tests/security/test_round_nine.py`; sandbox run 3b |
+| Consent | Negated, conditional, future-dated, foreign-currency or quoted instructions, in both languages; "yes", "1", then "approve APR-000001", with an approval queued | Nothing executes; "1" only shows the item; "approve APR-000001" (or "approve 1" directly after the list) decides | 41 consent attacks; [tests/security/test_round_nine.py](../../services/api/tests/security/test_round_nine.py); sandbox run 3b |
 | Injection in a contract | A clause addressed to the agent | Never read as a term; cannot be confirmed; a security event is logged | Contract-ingestion attacks |
-| Wrong company or role | A contract naming two other companies, one naming Foshan only as the supplier, a reading with no parties | Cannot be confirmed; the companies it names are shown | `tests/contracts/test_party_roles.py` |
-| Tier 3, plain or as a question | "Sign a personal guarantee", "should we pledge the equipment?", 要不要签个人担保？, as the owner or the agent key | Refused, logged, a Tier-3 security event | 18 chat attacks; `tests/nl/test_tier3_questions.py`; sandbox run 2c |
-| A paused agent | An agent draw and a keyed buyer's early-payment acceptance while paused; the owner's decision on an approval queued before | Both refused and logged; the owner's decision runs (the rated risk) | `tests/api/test_agent_pause.py`; sandbox run case 5 |
-| Not funded, said so | A send or alert with no admissible funding plan | NOT_FUNDED with the gap named; never "funded" | `tests/security/test_round_eight.py`; sandbox run 4b |
+| Wrong company or role | A contract naming two other companies, one naming Foshan only as the supplier, a reading with no parties | Cannot be confirmed; the companies it names are shown | [tests/contracts/test_party_roles.py](../../services/api/tests/contracts/test_party_roles.py) |
+| Tier 3, plain or as a question | "Sign a personal guarantee", "should we pledge the equipment?", 要不要签个人担保？, as the owner or the agent key | Refused, logged, a Tier-3 security event | 18 chat attacks; [tests/nl/test_tier3_questions.py](../../services/api/tests/nl/test_tier3_questions.py); sandbox run 2c |
+| A paused agent | An agent draw and a keyed buyer's early-payment acceptance while paused; the owner's decision on an approval queued before | Both refused and logged; the owner's decision runs (the rated risk) | [tests/api/test_agent_pause.py](../../services/api/tests/api/test_agent_pause.py); sandbox run case 5 |
+| Not funded, said so | A send or alert with no admissible funding plan | NOT_FUNDED with the gap named; never "funded" | [tests/security/test_round_eight.py](../../services/api/tests/security/test_round_eight.py); sandbox run 4b |
 | Tampered evidence | One log entry edited | The verifier rejects the copy; untouched chains verify | Judge pack |
-| Two writers on one database | Two worker processes call the executor on the same books at once | Eight store invariants hold and a serial replay gives identical books (SQLite; PostgreSQL 17). This covers the store, not two API processes (SEC-11) | `tests/concurrency/` |
+| Two writers on one database | Two worker processes call the executor on the same books at once | Eight store invariants hold and a serial replay gives identical books (SQLite; PostgreSQL 17). This covers the store, not two API processes (SEC-11) | [tests/concurrency/](../../services/api/tests/concurrency/) |
 
 ## Appendix E. Evaluation detail
 
@@ -1088,24 +1088,24 @@ rounds seven to nine are listed by file); tests under [services/api/tests/](../.
 
 | Control | Code | Tests |
 | --- | --- | --- |
-| Credentials, constant-time compare, body actor downgraded, demo mode off by default | `app/api/auth.py:25-80, 155-175`; `app/config.py:52-56`; `app/api/operations.py:82-85, 366-377` | `security/test_route_policy.py`, `security/test_demo_mode_default.py` |
-| Rate limits and refusal budget (SEC-20, SEC-26) | `app/api/ratelimit.py` | `security/test_rate_limits.py`, `security/test_sec26_refusal_budget.py` |
-| No payee or account field; claims are never facts | `app/domain/models.py` (operation types); `app/domain/claims.py` | catalogue classes fake lender (10), claimed prior concession (7) |
+| Credentials, constant-time compare, body actor downgraded, demo mode off by default | `app/api/auth.py:25-80, 155-175`; [app/config.py:52-56](../../services/api/app/config.py); `app/api/operations.py:82-85, 366-377` | `security/test_route_policy.py`, `security/test_demo_mode_default.py` |
+| Rate limits and refusal budget (SEC-20, SEC-26) | [app/api/ratelimit.py](../../services/api/app/api/ratelimit.py) | `security/test_rate_limits.py`, `security/test_sec26_refusal_budget.py` |
+| No payee or account field; claims are never facts | [app/domain/models.py](../../services/api/app/domain/models.py) (operation types); [app/domain/claims.py](../../services/api/app/domain/claims.py) | catalogue classes fake lender (10), claimed prior concession (7) |
 | Tier computed from the operation; Tier 3 for everyone | `app/mandate/tiers.py:46, 73-77, 85-120` | `mandate/`, `nl/test_tier3_questions.py` |
-| Hard rules and the approval thresholds | `app/verifier/evaluate.py:190-193, 447, 562-573, 726-758`; `app/api/accept.py:97-107, 129-137`; `app/funding/admission.py:6-13`; `app/operations/executor.py:852-854` | `verifier/`, `funding/`, `security/test_approval_thresholds.py` |
-| Signed mandate and pinned key | `app/mandate/signing.py:13-56`; `app/mandate/validity.py:9-70`; `app/api/runtime.py:284-293`; demo key [owner_demo_ed25519.json](../../fixtures/keys/owner_demo_ed25519.json) | `mandate/`; catalogue class revoked mandate (7) |
-| Exact-offer binding, nonce, expiry | `app/commitments/lifecycle.py:90-157`; `app/commitments/terms.py:21-30`; `executor.py:861-870, 963-1004` | catalogue classes replay (8), changed offer (4), expired commitment (3) |
-| Approval, decide once, idempotency | `executor.py:360-416, 689, 757-796`; `app/persistence/guards.py:55-136`; migration 0009 | `operations/`, `persistence/` |
-| Sent outside FLOW; owner-reported acceptance | `app/api/outbound.py:348-396, 455-513, 554-646`; `app/api/decisions.py:101-115` | `security/test_out1b_raw_operations.py` |
-| Reading schema, quotes, no free text in the deciding modules | `app/compiler/schema.py:9, 29-30`; `app/compiler/grounding.py:97-162, 342-352`; `app/compiler/cross_check.py:81` | `verifier/test_invariants.py:20-62`, `compiler/test_injection.py`, `compiler/test_lexicon_evasion.py` |
-| Chat consent, classifier closed list, buyer turns (CON-1) | `app/nl/consent.py`; `app/nl/rules.py`; `app/nl/service.py`; `app/nl/classifier.py:33-34` | `nl/test_authority_audit.py`, `security/test_round_nine.py`, `security/test_nl_attacks.py` |
-| Question router (read-only tools, validation, no books in the prompt) | `app/nl/router/route.py:61-123, 425-434`; `app/nl/router/catalogue.py` | `nl/test_ask_router.py`, `certification/test_ask_router_boundary.py` |
-| Outbound guard, counterparty entitlement, text scanned as sent (LOG-2) | `app/outbound/message.py`; `app/egress/guard.py`, `app/egress/protected.py` | `egress/`, `security/test_round_six.py`, `security/test_round_nine.py` |
-| Redaction and provider calls | `app/compiler/redaction.py:4-12, 42, 73-80`; `app/compiler/backends.py:64-82`; `app/config.py:97-99` | `compiler/test_redaction_mandatory.py`, `security/test_model_privacy_paths.py` |
-| Hash-chained log and guards | `app/persistence/chain.py:4-36`; `app/persistence/guards.py:19-23, 55-188`; [scripts/verify_evidence.py](../../scripts/verify_evidence.py) | `persistence/`, `security/test_evidence_verifier.py`, `concurrency/` |
-| The owner's pause; the bank feed limited to receipts (PAUSE-1) | `app/api/agent_pause.py`; `app/api/operations.py` | `api/test_agent_pause.py`, `security/test_round_seven.py` |
-| Partial plans (SEC-28); funding reported as it is (FUND-1, 2, 3, 5) | `app/nl/plans.py:211-254`; `app/api/alerts.py:236-241`; `app/api/decide.py:358-375, 534-555`; `app/api/funding_report.py`; `app/nl/offers.py`; `apps/web/lib/send-result.ts` | `nl/`, `alerts/`, `security/test_round_eight.py` |
-| Attack harness and harm oracles | `app/security/attacks.py`; `evals/security/attacks.yaml` | `security/test_attacks.py`, `security/test_positive_controls.py`, `security/test_mutations.py` |
+| Hard rules and the approval thresholds | `app/verifier/evaluate.py:190-193, 447, 562-573, 726-758`; `app/api/accept.py:97-107, 129-137`; [app/funding/admission.py:6-13](../../services/api/app/funding/admission.py); [app/operations/executor.py:852-854](../../services/api/app/operations/executor.py) | `verifier/`, `funding/`, `security/test_approval_thresholds.py` |
+| Signed mandate and pinned key | [app/mandate/signing.py:13-56](../../services/api/app/mandate/signing.py); [app/mandate/validity.py:9-70](../../services/api/app/mandate/validity.py); [app/api/runtime.py:284-293](../../services/api/app/api/runtime.py); demo key [owner_demo_ed25519.json](../../fixtures/keys/owner_demo_ed25519.json) | `mandate/`; catalogue class revoked mandate (7) |
+| Exact-offer binding, nonce, expiry | [app/commitments/lifecycle.py:90-157](../../services/api/app/commitments/lifecycle.py); [app/commitments/terms.py:21-30](../../services/api/app/commitments/terms.py); `executor.py:861-870, 963-1004` | catalogue classes replay (8), changed offer (4), expired commitment (3) |
+| Approval, decide once, idempotency | `executor.py:360-416, 689, 757-796`; [app/persistence/guards.py:55-136](../../services/api/app/persistence/guards.py); migration 0009 | `operations/`, `persistence/` |
+| Sent outside FLOW; owner-reported acceptance | `app/api/outbound.py:348-396, 455-513, 554-646`; [app/api/decisions.py:101-115](../../services/api/app/api/decisions.py) | `security/test_out1b_raw_operations.py` |
+| Reading schema, quotes, no free text in the deciding modules | `app/compiler/schema.py:9, 29-30`; `app/compiler/grounding.py:97-162, 342-352`; [app/compiler/cross_check.py:81](../../services/api/app/compiler/cross_check.py) | `verifier/test_invariants.py:20-62`, `compiler/test_injection.py`, `compiler/test_lexicon_evasion.py` |
+| Chat consent, classifier closed list, buyer turns (CON-1) | [app/nl/consent.py](../../services/api/app/nl/consent.py); [app/nl/rules.py](../../services/api/app/nl/rules.py); [app/nl/service.py](../../services/api/app/nl/service.py); [app/nl/classifier.py:33-34](../../services/api/app/nl/classifier.py) | `nl/test_authority_audit.py`, `security/test_round_nine.py`, `security/test_nl_attacks.py` |
+| Question router (read-only tools, validation, no books in the prompt) | `app/nl/router/route.py:61-123, 425-434`; [app/nl/router/catalogue.py](../../services/api/app/nl/router/catalogue.py) | `nl/test_ask_router.py`, `certification/test_ask_router_boundary.py` |
+| Outbound guard, counterparty entitlement, text scanned as sent (LOG-2) | [app/outbound/message.py](../../services/api/app/outbound/message.py); [app/egress/guard.py](../../services/api/app/egress/guard.py), [app/egress/protected.py](../../services/api/app/egress/protected.py) | `egress/`, `security/test_round_six.py`, `security/test_round_nine.py` |
+| Redaction and provider calls | `app/compiler/redaction.py:4-12, 42, 73-80`; [app/compiler/backends.py:64-82](../../services/api/app/compiler/backends.py); [app/config.py:97-99](../../services/api/app/config.py) | `compiler/test_redaction_mandatory.py`, `security/test_model_privacy_paths.py` |
+| Hash-chained log and guards | [app/persistence/chain.py:4-36](../../services/api/app/persistence/chain.py); `app/persistence/guards.py:19-23, 55-188`; [scripts/verify_evidence.py](../../scripts/verify_evidence.py) | `persistence/`, `security/test_evidence_verifier.py`, `concurrency/` |
+| The owner's pause; the bank feed limited to receipts (PAUSE-1) | [app/api/agent_pause.py](../../services/api/app/api/agent_pause.py); [app/api/operations.py](../../services/api/app/api/operations.py) | `api/test_agent_pause.py`, `security/test_round_seven.py` |
+| Partial plans (SEC-28); funding reported as it is (FUND-1, 2, 3, 5) | [app/nl/plans.py:211-254](../../services/api/app/nl/plans.py); [app/api/alerts.py:236-241](../../services/api/app/api/alerts.py); `app/api/decide.py:358-375, 534-555`; [app/api/funding_report.py](../../services/api/app/api/funding_report.py); [app/nl/offers.py](../../services/api/app/nl/offers.py); [apps/web/lib/send-result.ts](../../apps/web/lib/send-result.ts) | `nl/`, `alerts/`, `security/test_round_eight.py` |
+| Attack harness and harm oracles | [app/security/attacks.py](../../services/api/app/security/attacks.py); [evals/security/attacks.yaml](../../services/api/evals/security/attacks.yaml) | `security/test_attacks.py`, `security/test_positive_controls.py`, `security/test_mutations.py` |
 
 ## Appendix K. The screens, and the journey through them
 
