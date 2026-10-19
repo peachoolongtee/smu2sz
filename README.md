@@ -16,7 +16,7 @@ FinTechathon 2026 · International AI Track · Topic E: SME Finance Copilot · T
 
 > **Runs offline with one command.** After a one-time install, `pnpm demo` needs no account, no VPN, no API key and no
 > foreign service: it works in mainland China as delivered. The optional live-model mode (`pnpm demo --live-llm`) needs a
-> DeepSeek key in your shell.
+> DeepSeek or Anthropic API key in your shell, and is outside the security certification.
 
 ![A buyer's request in FLOW: the verdict, why it cannot be accepted as asked, and the priced choices](docs/deliverables/screenshots/shot2-deal-decision.png)
 
@@ -82,7 +82,7 @@ git clone https://github.com/peachoolongtee/smu2sz.git
 cd smu2sz
 pnpm --dir apps/web install     # once: the web app's packages
 
-pnpm demo                       # API on :8000 and web app on :3000 against it
+pnpm demo                       # API on 127.0.0.1:8000 and web app on 127.0.0.1:3000 against it
 ```
 
 Open **http://localhost:3000** when the launcher prints `Ready`. The owner sign-in is prefilled with the local demo token
@@ -120,11 +120,14 @@ Attach deals, Cash & funding, Sandbox, Capex, Receivables, Activity). **Ask FLOW
 allow. Run `pnpm demo` and open the address it prints; if it says a port is taken, pass `--web-port` / `--api-port`.
 
 **No browser at all.** One command runs the evaluation a judge needs, offline and deterministic, and writes a readable report
-to `services/api/evals/judge/judge-report.md` (and `.json`):
+into a folder of your choice, so the submitted report (`services/api/evals/judge/judge-report.md`) is not overwritten:
 
 ```bash
-uv run --project services/api python scripts/judge_eval.py
+uv run --project services/api python scripts/judge_eval.py --out out/judge-report.md
 ```
+
+The full, tested reproduction guide, with what each command should print, is
+[`docs/deliverables/REPRODUCE.md`](docs/deliverables/REPRODUCE.md).
 
 It runs the 49 scripted conversations, the 279-attack catalogue, the 17-step demo walk, and a hash-chain check of the walk's
 log together with a tampered copy that must fail; it exits non-zero on any failure. Eight questions to ask FLOW live, with the
@@ -145,9 +148,11 @@ cost of borrowing.
 5. **Follows through:** watches for late or partial payment, warns the owner first, proposes a cure inside the limits with
    its cost, and closes the loop when the money lands.
 
-FLOW may accept a buyer's offer on its own only when it can prove it accounted for every figure and request in it
-([ADR-0005](docs/adr/0005-autonomy-requires-proof.md)); everything else goes to the owner. Free text executes only as one
-closed affirmative command, and a plan runs only on the owner's "go ahead", as exactly the operations shown.
+FLOW may accept a buyer's offer on its own only when it is a plain early-payment discount and FLOW can prove it accounted
+for every figure and request in it ([ADR-0005](docs/adr/0005-autonomy-requires-proof.md)); everything else goes to the owner.
+In chat, a plan runs only on the owner's explicit "go ahead" (or "yes", "do it", 执行, 确认), as exactly the operations shown,
+and any leg that needs approval waits. An approval is decided only with the word "approve" or "reject", or the approval's id;
+"yes" and "go ahead" never decide one.
 
 **The demo story** (golden books, `scripts/demo_run.py`):
 
@@ -181,25 +186,25 @@ Full detail: the [technical document](docs/deliverables/technical_document.md) (
 
 ## Results at a glance
 
-Build `dev` at `975e082f`, 17 Oct 2026, offline (`LLM_MODE=cache`, in-memory store). Every figure is quoted from
-[`docs/deliverables/evidence/EVIDENCE_PACK.md`](docs/deliverables/evidence/EVIDENCE_PACK.md), which gives the command and
-the source for each.
+Submission build: code commit ⟦FIN-SHA⟧ on `dev`, ⟦EB3C-VERDICT⟧ (see [Security Notes](#security-notes)). Offline
+(`LLM_MODE=cache`, in-memory store). The full list of checks, with commands and counts, is the
+[verification manifest](docs/deliverables/VERIFICATION_MANIFEST.md).
 
 | Area | Result |
 | --- | --- |
-| Engine correctness | Financial values exact to the fen against an independent oracle: **67/67**; covenant and capex values **27/27** |
-| Funding router | Optimal against an exhaustive brute force: **26/26** scenarios (runnable and priced) |
-| Safety of autonomy | **0 wrong autonomous accepts** on two held-out sets (115 buyer messages) |
-| Usefulness of autonomy | **3 of 14** economically eligible early-pay offers handled on its own; the other **11** go to the owner for one review |
-| Security | **279 attacks** (128 through the API, 151 through chat), **0 caused harm**; 97.66% of the API attacks detected (re-run on 18 Oct 2026 at `b0cc7a4b`; 259 at `975e082f`) |
-| Agent tasks | **49/49** scripted conversations (88 turns on 18 Oct 2026 at `b0cc7a4b`), each with an evidence chain |
-| Demo walk | 17 steps; audit chain **VALID** (14 operations); a tampered copy is rejected |
-| API tests | **9,085** collected; **9,040** passed; the one failure is **#161**, a hash that differs by machine |
-| Web and browser tests | **169** web unit tests; Playwright **445** mock passed, 0 failed; **139** live passed (known failures `live.spec:333` and `:347`) |
-| Offline evaluation | `scripts/evaluate.py` completed in 7 min 41 s with 0 targets missed in every suite |
-| Chinese contract reading | 75% on a held-out batch, 86% after fixes, 98% on the tuned batch (measured in session on 17 Oct, cache replay of recorded DeepSeek readings; not a committed report) |
+| Engine correctness | Financial values exact to the fen against an independently written oracle: **67/67**; covenant and capex values **27/27** |
+| Funding router | Matches an exhaustive brute force over the actions FLOW can run on **26/26** scenarios; on the pricing reading the brute force hit its budget in 2 cases, so there the plan is the best found in a bounded search |
+| Safety of autonomy | **0 wrong autonomous accepts** on two held-out sets (115 buyer messages), but FLOW accepted only **3 of the 14** genuinely acceptable offers on its own, on sets tuned after their first runs; the other 11 go to the owner |
+| Security | **279 attacks** (128 through the API, 151 through chat), **0 caused harm**; 120 of the 128 API attacks stopped by the control they name, 8 known gaps; 97.66% detected and logged |
+| Agent tasks | **49/49** scripted conversations, each with an evidence chain |
+| Demo walk | 17 steps; audit chain **VALID**; a tampered copy is rejected |
+| API tests | ⟦EB3C-SUITE⟧ |
+| Web and browser tests | web unit, typecheck and lint pass; mock browser ⟦EB3C-MOCK⟧; live browser ⟦EB3C-LIVE⟧ |
+| Chinese contract reading | 75% of key fields on a held-out batch, 86% after fixes; 98% on the 30 text-layer contracts of the batch the reader was built on (scans are refused) |
+| What the model adds | On a frozen set of 20 new messages, the model reads phrasings the rules cannot (fully correct: rules alone 6, model alone 10), and the shipped checks turn its 2 wrong readings into questions for the owner, at a cost: 5 items held back that were readable (technical document, section 03) |
 
-Where FLOW falls short is stated beside these figures in the technical document (section 03) and in the evidence pack.
+Where FLOW falls short is stated beside these figures in the technical document (section 03) and the
+[audit dispositions](docs/deliverables/AUDIT_DISPOSITIONS.md).
 
 ## Deliverables
 
@@ -214,8 +219,15 @@ Where FLOW falls short is stated beside these figures in the technical document 
 | Demo video script, deck outline | [`demo_video_script.md`](docs/deliverables/demo_video_script.md), [`deck_outline.md`](docs/deliverables/deck_outline.md) | |
 | Judging questions | [`JUDGING_QUESTIONS.md`](docs/deliverables/JUDGING_QUESTIONS.md) | |
 
-Rebuild the `.docx` files with `uv run --project services/api python scripts/build_deliverables.py` (add
-`--refresh-evidence` to regenerate the evidence first).
+Rebuild the `.docx` files with `uv run --project services/api python scripts/build_deliverables.py` (add `--word` for the
+PDFs and the table of contents, on Windows with Word installed).
+
+| Submission record | What it holds |
+| --- | --- |
+| [`VERIFICATION_MANIFEST.md`](docs/deliverables/VERIFICATION_MANIFEST.md) | The frozen build, documentation revision, configuration, evidence cutoff and every check's result |
+| [`REPRODUCE.md`](docs/deliverables/REPRODUCE.md) | Tested commands for judges, writing new results into `out/`, apart from the submitted evidence |
+| [`AUDIT_DISPOSITIONS.md`](docs/deliverables/AUDIT_DISPOSITIONS.md) | Every finding of the 19 Oct document audit and what was done about it |
+| [`docs/security/CERTIFICATIONS.md`](docs/security/CERTIFICATIONS.md) | The Security Lead's certification records |
 
 ## Repository layout
 
@@ -229,10 +241,10 @@ services/api/    FastAPI service: compiler, engine, router, verifier, executor, 
 fixtures/        synthetic data: golden books and oracle values, offers, held-out sets, contracts, recorded model readings, demo keys
 scripts/         demo launcher, demo walk, evaluations, judge pack, evidence verification, deliverables build
 infra/           docker-compose.yml, API and web Dockerfiles, .env.example
-docs/            architecture, ADRs, security self-assessment, deliverables, handover
+docs/            architecture, ADRs, security self-assessment and records, deliverables
 CONTEXT.md       glossary of the domain terms
 PRODUCT.md       product brief: users, purpose, open questions
-AGENTS.md        instructions for coding agents working in this repository
+SECURITY.md      how to report a vulnerability
 ```
 
 ## Testing
@@ -254,7 +266,7 @@ cd apps/web && pnpm test:e2e:mock                               # desktop and ph
 cd apps/web && pnpm test:e2e:live                               # live project: starts its own in-memory API (:8000) and web build (:3000)
 
 # Evaluation (repository root)
-uv run --project services/api python scripts/judge_eval.py                     # the judge pack: tasks, attacks, demo walk, chain check
+uv run --project services/api python scripts/judge_eval.py --out out/judge-report.md   # the judge pack: tasks, attacks, demo walk, chain check
 DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py           # every offline suite, including the funding brute force
 DEMO_MODE=1 uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout3   # a held-out set
 uv run --project services/api python scripts/run_scenarios.py --inproc         # the 49 scripted tasks and their evidence chains
@@ -284,12 +296,12 @@ DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.p
 
 The language model only reads text; deterministic code decides, and only the executor writes. Actions are split into three
 permission tiers under an owner-signed, expiring mandate, with nonces, idempotency, a circuit breaker and a hash-chained log.
-The [Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) gives the verdicts for the submission build, `dev` at
-`03215a20`, certified by the Security Lead on 19 Oct 2026 for the local simulation (`docs/security/CERTIFICATIONS.md`):
+The [Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) gives the verdicts for the submission build, code commit
+`eb3c1059` on `dev`, ⟦EB3C-VERDICT⟧ by the Security Lead (`docs/security/CERTIFICATIONS.md`):
 
 | Use | Verdict |
 | --- | --- |
-| Local simulation (`DEMO_MODE=1`, cache mode, simulated counterparties, one API process) | **GO**, on a trusted machine and network: `pnpm demo` serves the web app on every interface (DEMO-L1) |
+| Local simulation (`DEMO_MODE=1`, cache mode, simulated counterparties, one API process) | **GO**: `pnpm demo` serves the API and the web app on 127.0.0.1 only |
 | Live model mode (`pnpm demo --live-llm`) | **not certified** |
 | Demo reachable over a network | **NO-GO** until one tested deployment profile exists (changed credentials and signing key, a TLS reverse proxy with rate and body limits, documentation hidden, anonymous intake off) |
 | Production with real customers, documents or money | **NO-GO** |
@@ -297,9 +309,10 @@ The [Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) gives the verdi
 - **Permission tiers.** Tier 1 runs alone inside the signed mandate; Tier 2 (for example funding above the cost the owner
   signed for FLOW to borrow without approval, or accepting an offer that is not a qualifying early-pay discount) is queued and runs only after the owner approves
   it with the owner token; Tier 3 (personal guarantees, mandate changes, collateral pledges, equity) is refused, whoever asks.
-- **Confirmation for sensitive operations.** Chat never executes on its own: "go ahead" queues what needs approval, the agent
-  key cannot decide an approval, a counterparty's "the owner agreed" is only an inbound message, and every operation carries
-  an idempotency key so a replay executes once.
+- **Confirmation for sensitive operations.** "Go ahead" runs only the plan just shown, and any leg that needs approval waits;
+  an approval is decided only with "approve" or "reject" or its id, never by "yes"; the agent key cannot decide an approval; a
+  counterparty's "the owner agreed" is only an inbound message; and every operation carries an idempotency key, so a replay
+  executes once. The owner can pause the agent (`POST /agent/pause`); the owner's own decisions still run while it is paused.
 - **Data handling.** All data in the repository is synthetic. In the default cache mode nothing leaves the machine; in live
   mode only redacted text goes to the model provider (see [Data and compliance](#data-and-compliance)). `GET /evidence`
   needs the owner token.
@@ -406,8 +419,7 @@ compliance.
 | [`docs/DEMO_FLOW.md`](docs/DEMO_FLOW.md) | The scripted demo and its numbers |
 | [`docs/SYSTEM_WALKTHROUGH.md`](docs/SYSTEM_WALKTHROUGH.md) | A walk through the whole system |
 | [`docs/SECURITY_SELF_ASSESSMENT.md`](docs/SECURITY_SELF_ASSESSMENT.md) | Permission model, attack results, privacy, risk register |
-| [`docs/HANDOVER.md`](docs/HANDOVER.md), [`docs/NEXT_FIXES.md`](docs/NEXT_FIXES.md) | Current state, standing instructions and the live tracker |
-| [`docs/agents/integration.md`](docs/agents/integration.md) | Branching and integration rules for contributors |
+| [`SECURITY.md`](SECURITY.md) | How to report a vulnerability |
 | [`services/api/evals/accuracy_summary.md`](services/api/evals/accuracy_summary.md) | What we claim about the compiler, and what we do not |
 
 ## Team and licence

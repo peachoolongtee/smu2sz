@@ -26,7 +26,7 @@ FLOW is the product name; the code and its variables still use the working name 
 - a committed ¥150,000 credit line and a committed invoice-financing facility;
 - an owner-signed mandate v1 (cash floor ¥300,000, forward-concession cap ¥5,000, DSCR at least 1.25×, leverage at most 2.5×).
 
-The evidence is a **fresh deterministic sandbox run made on 18 Oct 2026 at commit `b0cc7a4b`, re-run on `5941e95a` and again on the submission build (code `bee9c50d`, 19 Oct) with the same result** (only the approval-threshold wording and a commitment id differ) (the current engine, after the 16 Oct rounding of the early-pay counter to two significant figures, ¥10,000 steps on this invoice), offline, with `DEMO_MODE=1`, `TERMSLEDGER_NO_DOTENV=1`, `DATABASE_URL=memory` (an in-memory store) and `LLM_MODE=cache` (recorded model outputs). It has four parts, all under `docs/deliverables/evidence/` (index: [evidence/README.md](evidence/README.md)):
+The evidence is a **fresh deterministic sandbox run made on 18 Oct 2026 at commit `b0cc7a4b`, re-run on `5941e95a` and again on `03215a20` (code `bee9c50d`, 19 Oct, the build certified before the submission build) with the same result** (only the approval-threshold wording and a commitment id differ) (the current engine, after the 16 Oct rounding of the early-pay counter to two significant figures, ¥10,000 steps on this invoice), offline, with `DEMO_MODE=1`, `TERMSLEDGER_NO_DOTENV=1`, `DATABASE_URL=memory` (an in-memory store) and `LLM_MODE=cache` (recorded model outputs). It has four parts, all under `docs/deliverables/evidence/` (index: [evidence/README.md](evidence/README.md)):
 
 1. **The demo walk.** `scripts/demo_run.py` drives the whole path through the API in 17 steps and exits 0: the buyer's packaged offer is rejected and countered, the buyer accepts Option A (early settlement of up to ¥260,000 at 0.85%), the agreed early payment of ¥257,790.00 arrives on day 2, the other ¥160,000.00 does not arrive by day 34, FLOW tells the owner first and proposes a ¥200,000.00 advance, "go ahead" queues it (it costs more a year than the 15% the owner signed for FLOW to borrow without approval), "approve" runs it and the cash lands on day 37, the late receipt and the financed one are reconciled, the ¥147,210.00 credit-line draw is repaid with ¥1,213.17 interest, and a hostile message through chat changes nothing. Output: [demo_run_output.txt](evidence/demo_run_output.txt). Its operations log, exported with `GET /evidence` per ADR-0004: [14 operations, 9 security events, one valid hash chain](evidence/demo_walk/operations_log.md).
 2. **49 scripted tasks.** `scripts/run_scenarios.py --inproc` ran the 49 `/nl` tasks (88 turns): **49/49 passed**, median 9.1 ms per turn, and all 49 hash chains verify. Each task starts from `POST /demo/reset`, then checks the expected intent, verdict and reason codes, and the kinds and statuses of the operations. They cover the three demo scenes, the worked examples of spec v2 §8 (early-pay counters, "as usual" references, claimed rebates, an acceptance that waits for the owner, a bounded extension, conflicting sources, joint offers against one cap, a term sheet with a personal guarantee, an unknown lender, capex out of scope, goal-to-plan with a fallback in English and Chinese), interaction (correction, clarification, repay held by the reserve, what-if), security (the FastCapital fake lender, Tier-3 requests, injection and data extraction in both languages, replay, a counterparty trying to approve), and later capabilities (financing comparison, reconciliation, covenant ratios, capex, the borrower file, chat declining to record a stated figure). Table of all 49: [scenarios/summary.md](evidence/scenarios/summary.md); seven of them turn by turn: [scenarios/turn_logs.md](evidence/scenarios/turn_logs.md), with their chains in [scenarios/evidence/](evidence/scenarios/evidence/). The full run (49 chains, 88 turn cards, `results.json`) is committed at `services/api/evals/e2e/latest/`; its tables are at the end of section 02.
@@ -34,6 +34,8 @@ The evidence is a **fresh deterministic sandbox run made on 18 Oct 2026 at commi
 4. **Chinese contract reading.** The scoring harness and its fixes are merged; the 30-contract table is not in the repository, so only the reference is given. [contracts_cn.md](evidence/contracts_cn.md).
 
 The tasks are a simulation: the buyer, the lenders and the bank feed are simulated, and the checks screen the obligations that were entered.
+
+**Builds.** The submission build is `eb3c1059`: `03215a20` plus the demo web app on loopback (DEMO-L1) and round eight's fixes to how funding is reported (FUND-1, FUND-2, FUND-3, FUND-5). Its certification: ⟦EB3C-VERDICT⟧. `03215a20` was certified for scope S on 19 Oct. The live model runs (1, 16 and 18 Oct) are not part of this evidence; they are uncertified and outside every certification.
 
 ### What the evidence demonstrates
 
@@ -124,7 +126,7 @@ All 49 chains were recorded on 18 Oct 2026 at `b0cc7a4b` by `scripts/run_scenari
 | Offers fixture | sha256 `9e57dfc8597dd18c…` |
 | Mandate | version 1, Ed25519 signature `e97190f4d8bc3cdf…` |
 | Model mode | `cache` (recorded model outputs; no network) |
-| Code version | git `b0cc7a4b`; re-run on `5941e95a` (demo walk output in `evidence/demo_run_output.txt`) and on the submission build, code `bee9c50d` (19 Oct: judge pack 49/49, 279 attacks with 0 harm, demo walk OK, chain VALID) |
+| Code version | git `b0cc7a4b`; re-run on `5941e95a` (demo walk output in `evidence/demo_run_output.txt`) and on `03215a20`, code `bee9c50d` (19 Oct: judge pack 49/49, 279 attacks with 0 harm, demo walk OK, chain VALID) |
 | Recorded (wall clock, UTC; outside every hash) | 2026-10-18T06:23:14+00:00 to 2026-10-18T06:23:21+00:00 |
 | Tasks | **49/49 passed**, 88 `/nl` turns |
 | Operations logged | 51: 2 DUPLICATE, 38 EXECUTED, 4 PENDING_APPROVAL, 7 REFUSED |
@@ -300,12 +302,18 @@ All 49 chains were recorded on 18 Oct 2026 at `b0cc7a4b` by `scripts/run_scenari
 
 ### Steps required for judges to reproduce or verify the evidence
 
-**Requirements:** Python 3.12 and [`uv`](https://docs.astral.sh/uv/); no API key and no network after the dependencies are installed. Clone https://github.com/peachoolongtee/smu2sz and check out the submitted branch (the evidence in this document was generated at commit `b0cc7a4b`; any later commit on the submitted branch reproduces the same figures and `VALID` chains, with different head hashes), then work from its root. The runs below use the published demo credentials, so they need `DEMO_MODE=1` (it is off by default). `TERMSLEDGER_NO_DOTENV=1` makes the API ignore any local `.env` file, `DATABASE_URL=memory` keeps the books in memory, and `LLM_MODE=cache` replays recorded model outputs, so nothing leaves the machine. `PYTHONUTF8=1` keeps the Windows console from mangling ¥. On Windows, run the commands in Git Bash; with PowerShell, set each variable with `$env:NAME = "value"` first.
+**Requirements:** Python 3.12 and [`uv`](https://docs.astral.sh/uv/); no API key and no network after the dependencies are installed. Clone https://github.com/peachoolongtee/smu2sz and check out the submitted branch (the evidence in this document was generated at commit `b0cc7a4b`; any later commit on the submitted branch reproduces the same figures and `VALID` chains, with different head hashes), then work from its root. The runs below use the published demo credentials, so they need `DEMO_MODE=1` (it is off by default). `TERMSLEDGER_NO_DOTENV=1` makes the API ignore any local `.env` file, `DATABASE_URL=memory` keeps the books in memory, and `LLM_MODE=cache` replays recorded model outputs, so nothing leaves the machine. `PYTHONUTF8=1` keeps the Windows console from mangling ¥. On Windows, run the blocks in Git Bash: the `for` loops and `/tmp` paths are POSIX shell. In PowerShell, set the variables with the second block below and run the single commands, with a Windows folder in place of `/tmp`.
 
-Set the environment once per shell:
+Set the environment once per shell. POSIX shell:
 
 ```
-export DEMO_MODE=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1
+export DEMO_MODE=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 SKIP_PERF_BENCH=1
+```
+
+PowerShell:
+
+```
+$env:DEMO_MODE="1"; $env:TERMSLEDGER_NO_DOTENV="1"; $env:DATABASE_URL="memory"; $env:LLM_MODE="cache"; $env:PYTHONUTF8="1"; $env:SKIP_PERF_BENCH="1"
 ```
 
 **A. Verify the submitted evidence without installing our code** (standard library only):
@@ -366,8 +374,8 @@ Expected: `1/1 scenarios passed`, then `VALID: 7 operations, 0 security events, 
 **F. Other checks** (optional):
 
 ```
-cd services/api && uv run pytest                           # the API test suite (technical document, section 05: 9,085 collected, 9,040 passed, 1 known failure, the rest skipped by design)
-cd services/api && uv run python -m app.security.attacks   # the attack catalogue: 128 API attacks plus 151 chat attacks (279); prints the zero-harm metrics
+uv run --directory services/api pytest                     # the API test suite (technical document, Table V: 11,368 passed, 0 failed, 47 skipped on 03215a20; on the submission build ⟦EB3C-SUITE⟧)
+uv run --directory services/api python -m app.security.attacks   # the attack catalogue: 128 API attacks plus 151 chat attacks (279); prints the zero-harm metrics
 ```
 
 For the second command (re-run on 18 Oct 2026 at `b0cc7a4b`, about 80 seconds), expect every zero-harm metric at 0 and 0 with harm at every entry point: 128 API attacks, 52 as the owner, 64 as a counterparty and 35 with the agent key through chat. `--report` also rewrites `services/api/evals/security/latest_report.{json,md}`. The test catalogue is [TEST_CASES.md](TEST_CASES.md).
