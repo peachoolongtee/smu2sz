@@ -84,8 +84,8 @@ tests `tests/api/test_home.py`, `test_presentation_words.py`, `test_intake_cap.p
 `lib/when.ts`, `lib/inbox.ts`, `lib/types.ts`, `lib/api.ts`, `lib/live/index.ts`, `lib/chart-helpers.ts`, `lib/dictionary.ts`;
 specs `home`, `live`, `cash`, `receivables`, `deals`, `activity`, `approvals`, `chat`, `demo`, `alerts`, `whatif`; the mocks
 re-recorded after every wave. Documents: this file, `docs/UX_INTEGRATION_BRIEF.md`, `docs/research/ux-port-inventory-2026-10-06.md`,
-`docs/research/ex01-benchmark-profile-2026-10-06.md`, `docs/UX_AUDIT.md` section 18, `docs/CONTINUOUS_OPTIMIZATION.md` (UX2),
-`docs/HANDOVER.md` section 6, `apps/web/README.md`.
+`docs/research/ex01-benchmark-profile-2026-10-06.md`, `docs/UX_AUDIT.md` section 18,
+`apps/web/README.md`.
 
 ## Test results (the gate on `dev` at `30bf4ca`, then the Wave 8 fixes, 7 Oct, Mac, `SKIP_PERF_BENCH=1`)
 

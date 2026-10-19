@@ -1,6 +1,6 @@
 # UX audit of the TermsLedger web app (5 Oct 2026)
 
-The audit the owner's third brief asks for (`docs/handover/03_ux_redesign_brief.md`, sections 3, 4 and 20). It was made
+The audit the owner's third brief asks for (the UX redesign brief, sections 3, 4 and 20; an internal note, in the git history). It was made
 on `dev` at `682a610` by reading every file under `apps/web` (14 pages, 30 components, the dictionary, the client and the
 mocks), reading the API views the pages consume, and then running the real application (the API in memory with the cached
 model, the web app in live mode) and walking it as the five readers the brief names: an SME owner, a finance manager, a
@@ -8,7 +8,7 @@ first-time user, a judge, and someone who did not build it. Every screen was cap
 states: the opening books on day 0, each of the fifteen demo steps, the quiet books after the Scene 1 deal, and day 34 with
 the late invoice, the queued cure and the approval. The findings below quote what the screens showed.
 
-The design reference is `docs/handover/03_ux_reference_dashboard.webp`: a top navigation of a few sections, KPI tiles with
+The design reference was a third-party dashboard image the owner supplied (not redistributed here): a top navigation of a few sections, KPI tiles with
 a sparkline and a comparison, one chart with series toggles, a cost list, one filterable table, one primary button, calm
 green on white.
 
@@ -348,8 +348,7 @@ shells), `lib/mode.ts`, `lib/demo-control.ts` (new), `components/demo-stepper.ts
 `lib/types.ts`, `lib/api.ts`, `lib/live/*`, `lib/mock/*`, `lib/dictionary.ts` (English and Chinese), `scripts/record-mocks.mjs`,
 seven new mock recordings and the re-recorded approvals, `e2e/home.spec.ts`, `catchup.spec.ts`, `responsive.spec.ts`
 (rewritten), `approvals.spec.ts` and `demo.spec.ts` (wording). Documents: this file, `apps/web/README.md`,
-`docs/SYSTEM_WALKTHROUGH.md` section 6, `docs/ARCHITECTURE.md`, `docs/HANDOVER.md`, `docs/CONTINUOUS_OPTIMIZATION.md`
-(UX1), `docs/NEXT_FIXES.md`, `README.md`.
+`docs/SYSTEM_WALKTHROUGH.md` section 6, `docs/ARCHITECTURE.md`, `README.md`.
 
 **API changes.** `GET /home?lang=en|zh` (owner): status, headline, note, cash figures, next action, approvals, changes,
 receivables, warnings, facilities. `GET /approvals/queue`: each row gains `presentation` (headline, what, facility and

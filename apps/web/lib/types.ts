@@ -5182,7 +5182,7 @@ export interface DemoRestoreResult {
   story: DemoStoryView;
 }
 
-// ------------------------------------------------------------------ the buy side (ADR-0013, docs/capex_handover.md)
+// ------------------------------------------------------------------ the buy side (ADR-0013)
 //
 // Read-only views of the API's buy side (FEATURE_CAPEX_CONTRACTS): the owner's capex contracts, the screen on a contract's
 // payment schedule, financial health, indicative loan eligibility and long-term plans. Every money figure arrives with

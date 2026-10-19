@@ -1,5 +1,5 @@
 {
-  "note": "Synthetic loan catalogue for the TermsLedger demo (ADR-0013, docs/capex_handover.md D7). Every product is illustrative: it is not a real lender's offer, its rates and criteria were written for the demo scenario, and an eligibility read against it is indicative only, never a lender's decision. Amounts are fen; rates and ratio limits are basis points.",
+  "note": "Synthetic loan catalogue for the TermsLedger demo (ADR-0013). Every product is illustrative: it is not a real lender's offer, its rates and criteria were written for the demo scenario, and an eligibility read against it is indicative only, never a lender's decision. Amounts are fen; rates and ratio limits are basis points.",
   "products": [
     {
       "id": "PRD-BANK1-TERM-60",

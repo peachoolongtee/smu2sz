@@ -1,5 +1,4 @@
-"""Long-term plans: the permutations of several purchases, their start months and their financing (ADR-0013, phase 7;
-docs/capex_handover.md D9, D10).
+"""Long-term plans: the permutations of several purchases, their start months and their financing (ADR-0013, phase 7).
 
 A **monthly estimate**, labelled so everywhere, never a hard constraint and never a substitute for the conservative daily
 test (the capex screen runs that for each contract, and the best plan's contract projects are re-run through it here):

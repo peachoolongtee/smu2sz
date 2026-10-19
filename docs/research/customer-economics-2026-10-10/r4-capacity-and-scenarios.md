@@ -1,6 +1,6 @@
 # R4 (ticket #93, map #88): capacity consumption, the additional-need figure, shadow cost, and the scenario comparator
 
-Researcher's resolution, 10 October 2026. Repository `/Users/ianpong/Hackathons/smu2sz`, branch `dev` at `0cd60cb`, read-only.
+Researcher's resolution, 10 October 2026. This repository, branch `dev` at `0cd60cb`, read-only.
 Paths below are relative to `services/api/` unless they start with `docs/` or `fixtures/`. Every Demo figure was computed by
 hand from the fixture and then checked against the engine: read-only scripts, in-memory store, in
 `scratchpad/r4work/r4_calc*.py`. `git status --short` was empty at the end. Calendar: day 0 = 2026-10-01
@@ -442,4 +442,4 @@ The same command runs `r4_calc2.py`, `r4_calc2c.py`, `r4_calc3.py`, `r4_calc4.py
 - `r4_calc4.py`: Option B's binding constraint.
 - `r4_calc5.py`: the `line_balances` double count.
 
-Afterwards run `git -C /Users/ianpong/Hackathons/smu2sz checkout -- services/api/evals`. `git status --short` was empty.
+Afterwards run `git checkout -- services/api/evals` from the repository root. `git status --short` was empty.

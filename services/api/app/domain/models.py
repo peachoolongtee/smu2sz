@@ -5,7 +5,6 @@ Conventions (see docs/ARCHITECTURE.md):
 - Time is an integer day offset from the fixture's `as_of` date (day 0). Month m covers days
   30(m-1)+1 .. 30m.
 - Every model is strict, rejects unknown fields and is immutable. Use `model_copy(update=...)`.
-- Change requests go through INTERFACE_CHANGE_REQUEST (docs/SUBAGENT_TASKBOARD.md).
 """
 
 from __future__ import annotations
@@ -306,7 +305,7 @@ class CompiledTermSheet(Contract):
 
 # ---------------------------------------------------------------- contracts (read by the agent, confirmed by the owner)
 #
-# docs/handover/03_contract_ingestion_brief.md. A contract reading is shown and confirmed, nothing more: no term of
+# ADR-0012. A contract reading is shown and confirmed, nothing more: no term of
 # it is projected, verified or executed, and a confirmed contract never writes the books (the language model never
 # sets the starting state). Every term carries the span it was read from; no span, no term.
 

@@ -170,7 +170,7 @@ the first setup customer (`BUYER-1`).
 
 | Feature | For the owner | Where | Flag | How to demo | Test | Status | Tech doc |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Simulated clock | Move the day: scheduled flows post, funding lands, instalments are paid, recurring invoices issue, lapsed commitments expire; it never records a receipt | **UI only on `/demo`** → Operator tools → The clock (`components/home/today-card.tsx`: +1, +7, +30, days); the story stepper; `GET /clock`, `POST /clock/advance` (owner only, forward only, ≤ 366 days a step) | none | Demo → Operator tools → +30 | `tests/api/test_clock.py`, `tests/clock/*`; `e2e/demo.spec.ts` | works on any books; golden books also apply `fixtures/scenarios/golden_sme.events.json` (DEMO_MODE only) | yes (§03 "Time", Table 11, Appendix C); `docs/SECURITY_LEAD_HANDOFF.md` L117 still says the bank feed can move it (stale; SEC-09) |
+| Simulated clock | Move the day: scheduled flows post, funding lands, instalments are paid, recurring invoices issue, lapsed commitments expire; it never records a receipt | **UI only on `/demo`** → Operator tools → The clock (`components/home/today-card.tsx`: +1, +7, +30, days); the story stepper; `GET /clock`, `POST /clock/advance` (owner only, forward only, ≤ 366 days a step) | none | Demo → Operator tools → +30 | `tests/api/test_clock.py`, `tests/clock/*`; `e2e/demo.spec.ts` | works on any books; golden books also apply `fixtures/scenarios/golden_sme.events.json` (DEMO_MODE only) | yes (§03 "Time", Table 11, Appendix C) |
 | Recurring invoices issued | Each contract's repeating invoice becomes a receivable on its day, with agreed terms written on | `app/clock/__init__.py`; sources: setup step "customers" contract row, or "Set up in my books" | contracts, contract_terms | advance the clock past the next invoice date | `tests/clock/test_clock.py`, `tests/books/test_invoice_terms.py` | works; the forecast assumes they are paid on the due day | yes |
 | Receipts | Money in, partial payments leave the rest open, a financed invoice repays its advance first | bank feed: `POST /operations` `RECEIVE_PAYMENT` with `X-Bank-Feed-Key`; owner: the same route with the owner token; Demo: `POST /demo/bank-receipt` (one awaited early payment only) | none / DEMO_MODE | golden story scene 4 ("bank") | `tests/api/test_demo_bank_receipt.py`, `tests/operations/test_partial_settlement.py`; `e2e/receipt-basis.spec.ts` | **partial: no button records a receipt in the web app** (the owner path is API only; Receivables offers Chase only), although the setup wizard says a late invoice is not counted "until a payment is recorded" | yes (Tier 1 receipt); the missing UI: **no** |
 | Late-payment alerts and cures | An overdue invoice is flagged (WARNING, CRITICAL when financed) with "chase the buyer"; when that pushes cash under the reserve, a reserve alert carries a funding cure | `alerts/engine.py _past_due`, `RESERVE_BREACH_AHEAD`; Home changes, worklist, Receivables, Deals; `/alerts` (Demo engine view); `GET /alerts`, `GET /receivables/{id}/chase` | alerts | golden day 34 | `tests/alerts/test_alerts.py`; `e2e/live.spec.ts`, `alerts.spec.ts` | works; the late invoice itself has no runnable cure (409 `NO_EXECUTABLE_CURE`); own books verified in process (section 0b), no automated test | yes (§01 "Follows through"); alert kinds not named |
@@ -287,7 +287,7 @@ curve and the envelope (web flag `NEXT_PUBLIC_STRATEGY_MVP` off). "Unreachable" 
 
 ## 14. Not yet built, or discussed but not done
 
-From the code above, `docs/NEXT_FIXES.md`, `docs/HANDOVER.md`, the ADRs, the open GitHub issues (17 Oct) and
+From the code above, the project's internal tracker and handover notes, the ADRs, the open GitHub issues (17 Oct) and
 `services/api/evals/owner_questions/BASELINE.md` section 7.
 
 **Promised on screen but not built (fix the words or build the feature before the video):**
@@ -360,9 +360,7 @@ Activity Reconciliation tab, the deal page's previous/next or the opener; `capex
 `cash-stress.spec.ts` run on mocks only; nothing tests `scripts/judge_eval.py` itself; own books plus clock plus a late
 invoice has no automated test (verified in process for this document).
 
-**Stale documents found on the way:** `docs/capex_handover.md` §6 (says `pnpm demo` starts without
-`FEATURE_CAPEX_CONTRACTS`; it sets it), `docs/NEGOTIATION_COMMUNICATION_HANDOFF.md:204` (every send against BUYER-1's
-profile; no longer), `docs/SECURITY_LEAD_HANDOFF.md` L117 (the bank feed can move the clock; not since SEC-09),
+**Stale documents found on the way:**
 `docs/deliverables/JUDGING_QUESTIONS.md` Q8 (export on Activity; it is on `/trust?view=evidence`),
 `services/api/evals/e2e/latest/summary.md` (S16 as CAPEX; now ASK_BOOKS), `services/api/evals/judge/judge-report.md`
 (259 attacks, 16 Oct; the technical document's 260 is the round-four figure), `apps/web/DESIGN.md:884` (the Attach a deal

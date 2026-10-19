@@ -8,7 +8,7 @@ Tags: **CONFIRMED** means I saw it in the template file (or the site bundle, whe
 
 ## Files
 
-All under `docs/research/templates/`. Each original sits beside a `.txt` extraction (python-docx and python-pptx; headings are marked `#`, tables `[TABLE]`). All the originals have Last-Modified 22 Sep 2026 02:43 GMT.
+The three document templates that `scripts/build_deliverables.py` fills are kept under `docs/research/templates/`, unmodified, because the deliverables are built from the organiser's official template. The demo-video guide, the deck template and the `.txt` extractions made during this research are the organisers' material and are not redistributed in this repository; they are on the official site. All the originals have Last-Modified 22 Sep 2026 02:43 GMT.
 
 | Template | File | Bytes | SHA-256 (first 12) | Site label, international track [SITE] |
 | --- | --- | --- | --- | --- |

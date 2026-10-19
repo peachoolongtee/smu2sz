@@ -52,7 +52,7 @@ dev `eee7ec70`:
 ## Round two, 16 Oct: five branches for `dev` (merged in `719c9dcf`)
 
 Each branch was cut from `dev`, has the latest `dev` (`fe56b357`, the final UI and the R-10 rounding) merged in, holds one concern,
-carries a regression test that fails before and passes after, and passed the full mock browser suite (docs/agents/integration.md rule 4).
+carries a regression test that fails before and passes after, and passed the full mock browser suite (the team's integration rule 4).
 None touches an engine module (`app/financial`, `verifier`, `funding`, `alerts`, `operations`, `clock`, `books`, `mandate`). None
 depends on another; they touch different files except `app/main.py` (SEC-20 adds one middleware line). Test counts: first on `b07bb6a4`,
 then again on `fe56b357` where marked.

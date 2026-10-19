@@ -123,7 +123,7 @@
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8182
 //   node scripts/record-mocks.mjs --api http://localhost:8182 --home-v2
 //
-// --buyside records ONLY apps/web/mocks/buyside/*.json and exits (ADR-0013, docs/capex_handover.md): the buy side's reads on the opening books
+// --buyside records ONLY apps/web/mocks/buyside/*.json and exits (ADR-0013): the buy side's reads on the opening books
 // with the demo capex contract (fixtures/capex), in the order an owner walks it:
 //   fixtures.json                      GET /fixtures/capex-contracts
 //   purchases_{review,ready,awaiting,committed}.json   { en, zh } of GET /purchases after the upload, the confirmation, the commitment

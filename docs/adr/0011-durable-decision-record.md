@@ -2,7 +2,7 @@
 
 Status: accepted. Implemented 10 Oct 2026 (map #65, ticket #71). Proposed 9 Oct 2026. Owner: main architect. Addresses audit (independent-flow-ux-audit-2026-10-09) F02, F04,
 F06, F07, F13, F14, F17; sets the time-wording contract Wave 1 needs for F01 and F03. Changes no financial rule: the
-engine stability gate (CONTINUOUS_OPTIMIZATION section 0) holds.
+engine stability gate holds.
 
 ## Problem
 

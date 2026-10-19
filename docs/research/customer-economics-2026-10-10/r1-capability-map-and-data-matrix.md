@@ -1,6 +1,6 @@
 # Ticket #90 (map #88): capability map and data availability matrix
 
-Researcher's resolution, 10 October 2026. Repository `/Users/ianpong/Hackathons/smu2sz`, branch `dev` at `0cd60cb`.
+Researcher's resolution, 10 October 2026. This repository, branch `dev` at `0cd60cb`.
 Read-only: no repository file changed; `git checkout -- services/api/evals` was run after the scripts and `git status
 --short` is empty. Paths below are relative to `services/api/app/` unless they start with `docs/`, `fixtures/`,
 `services/` or `apps/`. The buyers' hidden state in `fixtures/counterparties/buyers.yaml` was not used as a data source
@@ -11,12 +11,12 @@ Read-only: no repository file changed; `git checkout -- services/api/evals` was 
 Two read-only scripts, kept in the scratchpad (`map-econ/r1-scripts/`), not in the repository:
 
 ```bash
-cd /Users/ianpong/Hackathons/smu2sz/services/api
+cd services/api
 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache \
   uv run --project "$PWD" --directory "$PWD" python <scratchpad>/map-econ/r1-scripts/count_fixtures.py
 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache \
   uv run --project "$PWD" --directory "$PWD" python <scratchpad>/map-econ/r1-scripts/stress_probe.py
-git -C /Users/ianpong/Hackathons/smu2sz checkout -- services/api/evals && git -C /Users/ianpong/Hackathons/smu2sz status --short   # empty
+git -C ../.. checkout -- services/api/evals && git -C ../.. status --short   # empty
 ```
 
 `count_fixtures.py` loads each scenario with `app.domain.fixtures.load_scenario`, counts receivables, past-due invoices,
@@ -184,7 +184,7 @@ What serves it today:
 Missing: facility headroom before and after a decision through a date, and the day it recovers (section 38); invoice-
 financing capacity over time (advance rate × eligible receivables, which depends on which invoices are open and not
 yet due). Gap: **D + P**, no new data. The engine module stays untouched if the per-facility path is rebuilt from the
-events of a projection run with the plan's actions (the stability gate, `docs/CONTINUOUS_OPTIMIZATION.md` section 0).
+events of a projection run with the plan's actions (the stability gate, the optimisation log's section 0, an internal note, in the git history).
 
 ### E. Late payment and concentration: detection and lateness exist; history does not
 

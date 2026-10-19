@@ -105,7 +105,7 @@ Best-of-7 cold `evaluate` of EX01, same script, each commit's `services/api/app`
 
 So the test has been over its target since `3dc8033` on 1 Oct, about eleven hours after it was written: a new
 required check (ADR-0007) added about 90 ms of router search, then Option B's term walk added more, and the 3 Oct
-latency work brought the figure from 1,058 ms back to about 280 ms but not below 250. `docs/NEXT_FIXES.md` already
+latency work brought the figure from 1,058 ms back to about 280 ms but not below 250. The fix tracker (an internal note, in the git history) already
 recorded one 261 ms miss ("isolated rerun passed"); the 5 Oct 270 ms figure is the same condition. It is not a
 regression in the last week: the application code is unchanged since `db097e0` (292 ms on this harness, 255 to 277 ms
 today, the difference being load).

@@ -2,7 +2,7 @@
 
 8 October 2026. Wayfinder map #47 built the synthesis's BUILD NOW set (`docs/STRATEGY_RESEARCH.md`, branch
 `research/strategy`) as a read-only, feature-flagged MVP on the integration branch `feat/strategy-mvp` (from `dev` at
-`bcc67d4`), in seven waves and three fix passes, with the delegation model of `docs/handover/05_strategy_and_ux_handoff.md`
+`bcc67d4`), in seven waves and three fix passes, with the delegation model of the strategy and UX handoff (an internal note, in the git history)
 section 2: the lead architected, specified, reviewed and merged; `sonnet` implementers coded; `verifier` agents reproduced
 every displayed figure from the kernel; a `code-reviewer` and two cold readers reviewed. The contract is
 `docs/STRATEGY_MVP_BRIEF.md` (section 12 holds the Wave 7 decisions that supersede the earlier sections).
@@ -169,7 +169,7 @@ passing price (0.95%); one rule should decide both.
 ## 11. Wave 8: the finish (the Impeccable suite over the whole UI)
 
 At the owner's request, after the MVP, the Impeccable suite ran over every page as a refinement of the incumbent
-identity in `apps/web/DESIGN.md`, with the two reference dashboards in `docs/research/inspiration/` as the bar for
+identity in `apps/web/DESIGN.md`, with two third-party reference dashboards (not redistributed here) as the bar for
 density, hierarchy and finish. `PRODUCT.md` was written by inference from the repository's documents (every line
 labelled) and `.impeccable/config.json` names `apps/web`, so the launcher resolves both.
 

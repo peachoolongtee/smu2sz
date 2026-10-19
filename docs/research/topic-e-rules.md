@@ -14,12 +14,8 @@
 | **[SITE-HOME]** | Topic list and schedule widget, from `js/app.83e69cd7.js` | https://fintechathon.g-ican.com/ | 1 Oct 2026 |
 | **[SITE-DOMESTIC]** | Domestic AI track challenge brief, from `js/chunk-55a31b26.d8e3ee35.js` (**domestic, not ours**; shown for comparison only) | https://fintechathon.g-ican.com/ | 1 Oct 2026 |
 
-Files in this folder:
-- `international-topics-rules-en.docx`: the downloaded original.
-- `international-topics-rules-en.txt`: `textutil -convert txt` of it.
-- `fintechathon-2026-site-rules-page-strings.txt`: every readable string from the rules-page bundle.
-
-The ticket asked for these under `docs/source/`. The agent's shell guard refused any path containing that word, so they sit here; move them with `git mv` if you want them there.
+The research saved the rules docx, a text conversion of it and the readable strings of the rules-page bundle. They are the
+organisers' material and are not redistributed in this repository; the originals are at the URLs above.
 
 Tags: **CONFIRMED** means I saw it in one of the official sources above. **UNVERIFIED** means it isn't stated anywhere official. **INFERENCE** means it's my reading.
 
