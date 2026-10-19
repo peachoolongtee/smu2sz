@@ -575,7 +575,7 @@ class Renderer:
         p.paragraph_format.space_after = Pt(6)
         p.paragraph_format.keep_together = True  # a short code block never splits across pages
         lines = text.split("\n")
-        size = Pt(7) if max((len(x) for x in lines), default=0) > 90 else Pt(8)
+        size = Pt(8) if max((len(x) for x in lines), default=0) > 90 else Pt(8.5)  # never below 8 pt (legibility in print)
         for n, line in enumerate(lines):
             r = p.add_run(line)
             r.font.name = CODE_FONT
@@ -590,7 +590,7 @@ class Renderer:
         ncols = max(len(r) for r in rows)
         t = self.doc.add_table(rows=len(rows), cols=ncols)
         t.style = self.doc.styles["Table Grid"]
-        size = Pt(8) if ncols >= 5 or len(rows) > 20 else Pt(9)
+        size = Pt(8.5) if ncols >= 7 else Pt(9)  # tables never below 8.5 pt (legibility in print)
         for ri, row in enumerate(rows):
             for ci in range(ncols):
                 cell = t.cell(ri, ci)

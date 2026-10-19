@@ -207,7 +207,7 @@ Capture: `SET=final WEB_DIR=<that apps/web> node src/capture_screens.mjs http://
 | --- | --- | --- |
 | `shot1-home.png` | Home on the opening books: without new funding cash falls to −¥105,000 within 30 days; the red card recommends securing ¥405,000 before payroll in 12 days (credit line ¥150,000 today, invoice financing ¥255,000 in 3 days) for ¥3,113.93, with no approval needed. | 01, "What the owner sees", or Appendix E (replaces `screenshots/shot1-home.png`) |
 | `shot3-approval.png` | An approval waiting (story scene 5, day 34): FLOW queued a ¥200,000 invoice-financing request because 32.5% a year is above the 15% ceiling the owner signed. It costs ¥1,782.19; nothing runs until the owner authorizes or declines. | 04 or 05, beside the tiered permissions (replaces `screenshots/shot3-approval.png`) |
-| `shot6-capex.png` | Capex, the quick check of the demo's ¥600,000 machine: worth doing on the owner's estimate (NPV ¥380,885.77, payback in month 31); the 36-month term loan is selected; the 18-month loan fails DSCR in months 1–3; figures that do not apply read "—", not "None". | 03, the capex screen, or Appendix E (replaces `screenshots/shot6-capex.png`) |
+| `shot6-capex.png` | Capex, the quick check of the demo's ¥600,000 machine: worth doing on the owner's estimate (NPV ¥380,885.77, payback in month 31); the 48-month lease is selected and the cheaper 36-month loan is rejected (reserve breach on day 44); the 18-month loan fails DSCR in months 1–3 (1.13×); captured live against the submission build on 19 Oct (`crop_screens.py <raw> capex-live`); figures that do not apply read "—", not "None". | 03, the capex screen, or Appendix E (replaces `screenshots/shot6-capex.png`) |
 | `shot9-attach.png` | Documents, attaching a contract: say what the file is and who it is with, then drop or upload a PDF with text, Word or plain text up to 5 MB; below, the documents already read, each confirmed by the owner. | 02, "Models, tools, data sources", or Appendix E (replaces `screenshots/shot9-attach.png`) |
 | `shot10-ask-answer.png` | Ask FLOW, full page, in its card: "Are we safe?" answered from the books, with the lead sentence, three key figures, the plan's cost and links. The mocks hold no recording of "Can I pay everyone?", so the frame shows the recorded "Are we safe?". | 03, Ask FLOW (replaces `screenshots/shot10-ask-answer.png` and `screen4-ask-answer.png`) |
 
@@ -225,14 +225,16 @@ Capture: `SET=final WEB_DIR=<that apps/web> node src/capture_screens.mjs http://
   invoice financing (onboarded platform), on the ¥420,000.00 invoice to Foshan Home Retail Co. What if you decline:
   ¥200,000.00 below the minimum cash reserve in 8 days. Buttons "Authorize the financing request" and "Decline". Callouts:
   1 waiting, 2 why, 3 cost, 4 decline, 5 the two buttons.
-- **shot6-capex.png.** The "Test a machine without a contract" card. A purple verdict: worth doing on the owner's estimate,
-  NPV ¥380,885.77 at 10%, payback in month 31; finance with the 36-month term loan at 5.60% (¥18,144.62 a month), the lowest
-  total charges, ¥53,206.14, of the structures that pass; a new facility is Tier 2. Tiles: NPV, payback month 31, leverage
-  2.28× (limit 2.50×), 2.47× if the extension were also funded. A table of four structures with monthly payment, interest,
-  charges, DSCR for months 1–6 and the result: cash + credit line shows "—" in every figure and is infeasible (only
-  ¥250,000 above the reserve); the 18-month loan fails months 1–3 at 1.09× and is an illustration only; the 36-month loan
-  passes every month (1.37× to 1.71×) and is selected; the 48-month lease passes but costs ¥39,121.18 more. Callouts: 1 the
-  verdict, 2 the tiles, 3 the "—" row, 4 the failing DSCR months, 5 the selected structure.
+- **shot6-capex.png.** Retaken live against the submission build's API on 19 Oct (the 18 Oct capture came from a stale
+  recorded mock). The "Test a machine without a contract" card. A purple verdict: worth doing on the owner's estimate, NPV
+  ¥380,885.77 at 10.00%, payback in month 31; finance with the 48-month lease at 7.20% (¥14,423.49 a month), the lowest total
+  charges, ¥92,327.32, of the structures that pass; the lower-charge 36-month term loan is rejected (RESERVE_BREACH); a new
+  facility is Tier 2. Tiles: NPV, payback month 31, leverage 1.90× (limit 2.50×), 2.10× if the extension were also funded. A
+  table of four structures with monthly payment, interest, charges, DSCR for months 1–6 and the result: cash + credit line
+  shows "—" and is infeasible (only ¥250,000 above the reserve); the 18-month loan fails months 1–3 at 1.13× and is an
+  illustration only; the 36-month loan passes DSCR but is rejected, RESERVE_BREACH on day 44; the 48-month lease is feasible
+  and selected. Callouts: 1 the verdict, 2 the tiles, 3 the "—" row, 4 the failing DSCR months, 5 the rejected loan, 6 the
+  selected structure.
 - **shot9-attach.png.** Documents. "Your own file": a "What it is" select (Contract with a buyer), a "Who it is with" select
   with "+Add a new customer", and a dashed drop zone, "Drag and drop a document to check it" (PDF, Word or plain text, up to
   5 MB) with an "Upload and read" button. Below, "Review a document": supply agreement FHR-2026-07 (Foshan Home Retail Co.,
