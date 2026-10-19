@@ -7,7 +7,7 @@ it lapses when either changes. It is never a claim of absolute security or zero 
 
 | Id | Configuration |
 |---|---|
-| **S** (hackathon simulation) | API and web on loopback only (`127.0.0.1`), one uvicorn process, `DEMO_MODE=1`, `DATABASE_URL=memory` or a local SQLite file, `LLM_MODE=cache`, simulated buyers, lenders and bank, demo credentials, no real money, no real customer data |
+| **S** (hackathon simulation) | API and web on loopback only (`127.0.0.1`; `pnpm demo` serves the web app on every interface until `sec/demo-loopback` is merged, so until then a trusted machine and network, or a firewall rule for the web port: DEMO-L1), one uvicorn process, `DEMO_MODE=1`, `DATABASE_URL=memory` or a local SQLite file, `LLM_MODE=cache`, simulated buyers, lenders and bank, demo credentials, no real money, no real customer data |
 | **S-net** | as S, but reachable from a network (a shared demo URL, a judging booth on Wi-Fi) |
 | **P** (production) | compose (`DEMO_MODE=0`, PostgreSQL 16) behind TLS, real credentials, real customer data, possibly `LLM_MODE=live` |
 
@@ -23,17 +23,21 @@ it lapses when either changes. It is never a claim of absolute security or zero 
 | `0f92d433` (dev, owner's decisions) | **GO** (certified 16 Oct) | CONDITIONAL GO, as above | **NO-GO** |
 | `b8c65b24` (dev, buyer messages, demo launcher) | **NOT CERTIFIED** (OUT-1): usable for S only if the presenter never marks a counter sent outside FLOW and then negotiates in the chat | NO-GO until OUT-1 is fixed | **NO-GO** |
 | `719c9dcf` (dev, 17 Oct: round-two fixes, OUT-1 fixed, ui-final) | **GO** (certified 17 Oct; not live mode with real customer documents: PRIV-1 to PRIV-3) | **CONDITIONAL GO**: the S-net conditions below; in-app rate limits now exist (SEC-20) but behind a proxy every caller shares its address, so the proxy's per-client limit stays a condition; SEC-19 accepted or anonymous intake off | **NO-GO** |
-| `70f23ac5` (dev, 18 Oct: round five; **the final assessed build**) | **GO** (certified 18 Oct): loopback, one process, cache mode, synthetic data; contract terms and the router as `pnpm demo` sets them; not live model mode | **NO-GO** until a tested deployment profile exists | **NO-GO** |
+| `03215a20` (dev, 19 Oct: round seven merged as `c707ee8c`, code `bee9c50d`; **the submission build**) | **GO** (certified 19 Oct): loopback, one process, cache mode, synthetic data; contract terms and the router as `pnpm demo` sets them; a trusted machine and network (DEMO-L1); not live model mode. Disclosed: SEC-28 with FUND-1 to FUND-4, PAUSE-2, SEC-27, LOG-2, LOG-3 | **NO-GO** until a tested deployment profile exists | **NO-GO** |
+| `5941e95a` (dev, 18 Oct: round six, the pause, the consent narrowing) | **NOT CERTIFIED** (PAY-1, Medium: "Can I pay everyone?" showed one plan and saved another); superseded by `03215a20` | NO-GO | **NO-GO** |
+| `70f23ac5` (dev, 18 Oct: round five; the last certified build before the submission build) | **GO** (certified 18 Oct): loopback, one process, cache mode, synthetic data; contract terms and the router as `pnpm demo` sets them; not live model mode. Amended 19 Oct: also a trusted machine and network, because `pnpm demo` serves the web app on every interface (DEMO-L1, present in this build) | **NO-GO** until a tested deployment profile exists | **NO-GO** |
 | `6d2b6941` (dev, 18 Oct: batches 7 to 10) | **CONDITIONAL**: only with `FEATURE_CONTRACT_TERMS` off | NO-GO | **NO-GO** |
 | `85309b63` (dev, 17 Oct: batches 5 and 6) | **GO** (certified 17 Oct): loopback, one process, cache mode, synthetic data; ASK-1, ASK-2 and REG-1 to REG-7 disclosed | **NO-GO** until a tested deployment profile exists | **NO-GO** |
 | `29fa0ea2` (dev, 17 Oct: round four, redaction, v3) | **GO** (certified 17 Oct, no test exception): loopback, one process, cache mode, synthetic data | **NO-GO** until one tested deployment profile exists; `ANONYMOUS_INTAKE=0` is now available for it | **NO-GO** |
 | `0fde33fd` (dev, 17 Oct: SEC-08 executor check, OUT-1b, RT-2, RT-1) | **GO** (certified 17 Oct, with the #161 test exception) | **NO-GO** until one tested deployment profile exists (below); revised 17 Oct after the 17 Oct review of the self-assessment: the conditions were never exercised on a deployment, and SEC-19 provenance is not shown on the accept card or approvals | **NO-GO** |
 | `fe56b357` (dev head, 16 Oct: final UI, R-10 rounding) | not certified: OUT-1 still present (the chat paths do not check the outside mark); R-10 reassessed, residual Low | NO-GO until OUT-1 is fixed | **NO-GO** |
 
-**Submission build (integration lead's note, not a gate decision).** The build submitted on 20 Oct is `5941e95a`. It
-extends `70f23ac5` with `sec/round-six` (REG-8, REG-9, CT-2b), the SEC-28 reporting fix and later product changes. All are listed
-in the self-assessment's Appendix E, "Submission build addendum". This gate has no verdict for that commit until the Security Lead
-re-certifies it. The S verdict above is for `70f23ac5`.
+**Conditions for S on `03215a20` (the submission build).** `DEMO_MODE=1`; memory or SQLite; one API process (PAUSE-2,
+SEC-11); `LLM_MODE=cache`; synthetic fixtures; simulated counterparties; nobody but the presenter holds the demo credentials;
+the demo laptop on a trusted network, or its firewall closed to the web port, because `pnpm demo` serves the web app on every
+interface (DEMO-L1; the API stays on 127.0.0.1); results shown are simulation results. The presenter should not rely on the
+send result's "the agreement is on your books" or a "gap funded" sentence when an approval is waiting: read the approvals
+list (FUND-1, FUND-2). Live model mode (`pnpm demo --live-llm`) is outside this verdict.
 
 **Conditions for S on `e8e270f8`:** loopback only; nobody but the presenter holds the demo credentials; the presenter does not approve
 a second agreement for a request already agreed (SEC-02 is fixed only on the branch); results shown are simulation results.

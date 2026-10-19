@@ -1,0 +1,27 @@
+2026-10-19 07:27:19 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=offer-v4
+agent accept this offer -> 200 OUT_OF_SCOPE []
+agent accept the buyer's request as asked -> 200 OUT_OF_SCOPE []
+agent send the counter to the buyer -> 200 NEGOTIATE []
+agent decline this offer -> 200 OUT_OF_SCOPE []
+owner accept this offer -> 200 OUT_OF_SCOPE []
+owner accept the buyer's request as asked -> 200 OUT_OF_SCOPE []
+owner send the counter to the buyer -> 200 NEGOTIATE []
+owner decline this offer -> 200 OUT_OF_SCOPE []
+ops: []
+state: AWAITING_BUYER history: ['received', 'checked', 'offered']
+negotiate: 404 {"detail":"Not Found"}
+refused yes: 409
+awaiting after refused yes; history: ['received', 'checked', 'offered', 'accepted_as_asked'] accepted_as_asked text: ['You accepted their request as asked']
+2026-10-19 07:27:24 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 07:27:24 [info     ] compiler.call                  backend=cache doc_hash=68f99b0cf9ce1cf062d772cfbf4b89c86532a4e048ec6df3addd05a9d46e60aa error=CacheMiss latency_ms=0.3 outcome=fallback prompt_version=offer-v4
+2026-10-19 07:27:24 [info     ] compiler.call                  backend=rules doc_hash=68f99b0cf9ce1cf062d772cfbf4b89c86532a4e048ec6df3addd05a9d46e60aa latency_ms=1.7 model=rules-v1 outcome=ok prompt_version=offer-v4
+anon preclaim (different doc): 200
+owner paste after preclaim: 409 {"detail":{"code":"DOCUMENT_ID_TAKEN","doc_id":"reply-65ec518474de7421","message":"a different document already has this id; send it under a new id"}}
+2026-10-19 07:27:24 [info     ] compiler.call                  backend=cache doc_hash=4f6bf9834d4d3539ae66b31610c6c611c3560371c33a7d3002faa04a381f3436 latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+2026-10-19 07:27:25 [info     ] compiler.call                  backend=cache doc_hash=5b306fc86313204841ca93623ec3322802d3de6e90f671a83ca023c7683489d7 error=CacheMiss latency_ms=0.2 outcome=fallback prompt_version=offer-v4
+2026-10-19 07:27:25 [info     ] compiler.call                  backend=rules doc_hash=5b306fc86313204841ca93623ec3322802d3de6e90f671a83ca023c7683489d7 latency_ms=0.9 model=rules-v1 outcome=ok prompt_version=offer-v4
+anon identical preclaim: 200 OFF-5b306fc86313
+2026-10-19 07:27:25 [info     ] compiler.call                  backend=cache doc_hash=5b306fc86313204841ca93623ec3322802d3de6e90f671a83ca023c7683489d7 error=CacheMiss latency_ms=0.2 outcome=fallback prompt_version=offer-v4
+2026-10-19 07:27:25 [info     ] compiler.call                  backend=rules doc_hash=5b306fc86313204841ca93623ec3322802d3de6e90f671a83ca023c7683489d7 latency_ms=0.9 model=rules-v1 outcome=ok prompt_version=offer-v4
+owner paste after identical preclaim: 200 {"offer_id":"OFF-4f6bf9834d4d","decision_id":"deal:OFF-4f6bf9834d4d","reply_offer_id":"OFF-5b306fc86313","reply_decision_id":"deal:OFF-5b306fc86313","reply_href
+received facts: ['OFF-5b306fc86313:v1', 'OFF-5b306fc86313:v1:buyer_reply']

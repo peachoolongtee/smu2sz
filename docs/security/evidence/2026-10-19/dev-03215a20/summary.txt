@@ -1,0 +1,30 @@
+Certification of dev 03215a20, the submission build (code bee9c50d, round seven, merged as c707ee8c), by the Security Lead.
+Run 18 Oct 16:59 to 17:26 UTC (suite, catalogue, sweep, reproductions 1 to 3), stopped when the session closed; resumed on the
+same checkout 18 Oct 23:27 to 23:35 UTC from the approval flip (tools/certify_0321_resume.sh); then the CSP check and the
+secret scan. Script: tools/certify_0321.sh; results by step: steps.txt; totals: suite_totals.txt.
+
+full suite                     11,368 passed, 0 failed, 47 skipped (tests/__pycache__ was picked up as a shard: exit 5, no tests)
+attack catalogue               128 API + 151 chat, 0 harm, 0 NOT_REACHED, 120/128 named control, 8 known gaps; detection 97.66%,
+                               security events 74.22% (latest_report.json)
+route-policy test              16 tests pass (shards/tests_security.txt); 113 routes; the owner reaches the handler on 96 of 97
+                               owner and demo routes in demo mode and 91 of 97 with DEMO_MODE=0; the one miss in both is
+                               POST /documents/{id}/terms/undo -> 404 UNKNOWN_SET_UP (no set-up to undo), not a feature flag
+sweep, three modes             112 routes, 0 policy violations; the only difference from 70f23ac5: the three pause routes are
+                               new, owner-only (401 OWNER_TOKEN_REQUIRED for every other caller) (sweep_policy.txt)
+reproductions; approval flip   refused, output identical to 70f23ac5 apart from timestamps; the database refuses the flip
+language boundary              cache 0 wrong-and-material; fake 0 wrong-and-material (identical counts to 70f23ac5)
+PostgreSQL 17                  concurrency 3/3 (10 PostgreSQL tests each); guards 10 passed
+dependency scans               pnpm audit --prod 0; full audit: braces (dev only); pip-audit clean
+secret scan (E10)              tracked files at 03215a20 and every branch's history: 0 findings; 4 placeholder database URLs;
+                               tracked env files: apps/web/.env.example, infra/.env.example only (secret_scan.txt, tools/secret_scan.py)
+mock browser suite             479 passed, 77 skipped; typecheck, lint, unit pass (web/)
+CSP, production build          17 pages with the flags pnpm demo sets, nonce policy on all, 0 violations, 0 page errors,
+                               injected inline script blocked (csp_browser.json)
+code review                    code identical to bee9c50d (round seven, reviewed 18 to 19 Oct). The SEC-28 reporting fix
+                               f52870d1 reviewed (review_sec28/): queued and refused legs now reported truthfully; still
+                               misreported FUND-1 (no admissible plan reads FUNDED, Medium), FUND-2 (the web's send result says
+                               the agreement is on the books while it waits or was refused, Medium), FUND-3 (chat "no gap to
+                               cover", Low/Medium), FUND-4 (Low); all present in 70f23ac5 already, part of the disclosed SEC-28
+
+Verdict: CERTIFIED for scope S (local simulation, trusted machine and network: DEMO-L1). Disclosed: SEC-28 with FUND-1 to FUND-4,
+DEMO-L1, PAUSE-2, SEC-27, LOG-2, LOG-3 and the open risks of the self-assessment. Not a claim of absolute security.
