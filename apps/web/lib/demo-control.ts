@@ -186,6 +186,16 @@ export async function runStoryAction(action: string, push: (route: string) => vo
   return outcome;
 }
 
+/**
+ * Whether the story's one next control waits instead of taking a press: while a step runs (`busy`), and while the story read is not
+ * settled for the books as they stand (`storyLoading`). After a step, `useAsync` keeps the read from before it until GET /demo/story
+ * answers again, and that read's action is the step just run: a press in that moment ran it a second time and left the story one step
+ * behind (the round-nine walk stopped at the cure, one press short of the owner's approval).
+ */
+export function storyControlWaits(busy: boolean, storyLoading: boolean): boolean {
+  return busy || storyLoading;
+}
+
 /** `seen` for GET /demo/story: the last view step (the three that change nothing: cash, outcome, proof) this browser has shown; the server accepts it only when the books support it. */
 export function seenOf(reached: number): string | null {
   return DEMO_STEPS.slice(0, reached + 1).reverse().find((s) => s.id === "cash" || s.id === "outcome" || s.id === "proof")?.id ?? null;
