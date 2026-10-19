@@ -8,7 +8,13 @@ from fractions import Fraction
 import pytest
 
 from app.capex import CapexRequest, evaluate_capex
-from app.capex.appraisal import npv_fen, npv_schedule_fen, payback_month, payback_month_schedule, payment_month
+from app.capex.appraisal import (
+    npv_fen,
+    npv_schedule_fen,
+    payback_month,
+    payback_month_schedule,
+    payment_month,
+)
 from app.capex.buyside import CapexEstimate, NotACapexContract, evaluate_contract
 from app.capex.models import CapexPayment
 from app.capex.schedule import Timeline

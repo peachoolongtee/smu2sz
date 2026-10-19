@@ -387,8 +387,8 @@ def test_the_buyers_yes_reads_as_what_happened(api: TestClient, rt: Runtime) -> 
                                    "The other ¥160,000.00 stays due on 2 November 2026.",
                                    "No cash has been received yet; FLOW reconciles the payment when it arrives.",
                                    # recording the yes funds nothing (18 Oct): the reserve gap still ahead and where the plan is
-                                   "The agreement ran no funding: cash still falls ¥102,210.00 below your minimum in 20 days. FLOW's plan to "
-                                   "cover it is ready on Cash & funding; it runs only when you run it."]
+                                   ("The agreement ran no funding: cash still falls ¥102,210.00 below your minimum in 20 days. FLOW's plan to "
+                                    "cover it is ready on Cash & funding; it runs only when you run it.")]
     assert [x["href"] for x in out["links"]] == ["/cash", "/receivables#RCV-A", "/customers/BUYER-1"]
 
 
@@ -561,7 +561,7 @@ def test_after_a_correction_the_owners_other_answers_are_open_again(api: TestCli
 
 def test_the_words_sent_stay_readable_after_the_books_move(api: TestClient, rt: Runtime) -> None:
     """Finding 5: the record shows the exact words the owner marked sent, checked by their hash, even once the invoice changes."""
-    oid, v, m = _sent(api)
+    oid, _v, m = _sent(api)
     rcv = next(r for r in rt.store.get_state().receivables if r.id == "RCV-A")
     rt.store.put_state(rt.store.get_state().model_copy(update={"receivables": [
         r.model_copy(update={"settled_fen": 1_000_000}) if r.id == rcv.id else r for r in rt.store.get_state().receivables]}))

@@ -256,10 +256,10 @@ def test_scenarios_leave_the_picture_and_the_books_as_they_were(api: TestClient,
 
 
 def test_zhuhai_has_scenarios_and_the_scenario_words_are_clean_in_both_languages(api: TestClient) -> None:
-    z_offer, zhuhai = _busy_zhuhai(api)
+    z_offer, _zhuhai = _busy_zhuhai(api)
     z_cards = _scenario_list(api, z_offer)
     assert {s["key"] for s in z_cards} <= {"no_new_agreement", "late_30", "customer_loss"} and z_cards
-    g_offer, _ = (lambda: (_evaluate(api, EX01), None))()
+    g_offer = _evaluate(api, EX01)
     for cards in (_scenario_list(api, g_offer), z_cards):
         for key, text in _texts(cards):
             assert not BAD.search(text), (key, text)
@@ -444,7 +444,7 @@ def test_the_strip_is_one_function_at_every_moment_of_the_golden_story(api: Test
 
 
 def test_day_zero_has_no_history_and_the_busy_books_stage_strips_never_fail(api: TestClient) -> None:
-    offer, pic = _golden(api)
+    _offer, pic = _golden(api)
     assert pic["buyer_history_text"] is None and pic["buyer_history_title"] is None
     assert [s["key"] for s in pic["lifecycle_stages"]] == ["received", "analysed", "reply_ready", "sent", "agreed"]
     _, zhuhai = _busy_zhuhai(api)
@@ -492,7 +492,7 @@ def test_the_late_payment_label_is_in_chinese_and_the_groups_are_ordered(api: Te
 
 
 def test_a_revoked_agreement_with_money_owed_is_payment_late_never_closed(api: TestClient, rt: Runtime) -> None:
-    offer, did = _agree(api)
+    _offer, did = _agree(api)
     commitment = rt.store.commitments()[0].id
     assert api.post(f"/commitments/{commitment}/revoke").status_code == 200
     api.post("/clock/advance", json={"to_day": 40})
@@ -519,7 +519,7 @@ def test_the_recommendation_is_null_once_the_negotiation_is_answered(api: TestCl
 
 
 def test_the_recommendation_is_null_once_the_buyer_walks_away(api: TestClient) -> None:
-    offer, pic = _golden(api)
+    offer, _pic = _golden(api)
     assert api.post(f"/negotiate/{offer}", json={"buyer_profile": "hard_line"}).json()["outcome"] == "NO_DEAL"
     assert _picture(api, offer)["recommendation"] is None
 
@@ -556,7 +556,7 @@ def test_the_cause_lines_list_the_same_events_as_the_cause_text(api: TestClient)
                         assert not BAD.search(item), item
         assert seen > 0 and b
         two = _point(a, 2)["comparison"][b["key"]]["cause_lines"]
-        assert [ln["label"] for ln in two][0] == ("Accept their request" if lang == "en" else "接受对方的要求")
+        assert two[0]["label"] == ("Accept their request" if lang == "en" else "接受对方的要求")
         if lang == "zh":
             assert english_leaks([ln for got in two for ln in [got["label"], *got["items"]]], NAMES) == []
 
@@ -567,7 +567,7 @@ def test_the_cause_lines_list_the_same_events_as_the_cause_text(api: TestClient)
 def test_a_deal_whose_early_part_was_paid_still_owes_the_rest_so_it_is_an_open_agreement(api: TestClient) -> None:
     """The record calls the deal FULFILLED once the early payment is kept, but the rest of the invoice is still owed: it is awaiting payment and the
     worklist counts it as an open agreement (on dev it dropped out of the queue; under the owner's rule it stays until nothing is owed)."""
-    offer, did = _agree(api)
+    _offer, did = _agree(api)
     api.post("/clock/advance", json={"to_day": 2})
     api.post("/demo/bank-receipt")
     counts = api.get("/worklist").json()["counts"]
@@ -582,7 +582,7 @@ def test_a_deal_whose_early_part_was_paid_still_owes_the_rest_so_it_is_an_open_a
 
 
 def test_the_trackers_cost_tone_is_what_it_was_on_the_golden_walk(api: TestClient) -> None:
-    offer, did = _agree(api)
+    _offer, did = _agree(api)
 
     def tracker() -> dict[str, Any]:
         return api.get(f"/decisions/{did}/tracker").json()  # type: ignore[no-any-return]
@@ -654,7 +654,7 @@ def test_a_cold_picture_read_on_the_golden_books_is_small(api: TestClient) -> No
 
 
 def test_a_revoked_agreement_is_grouped_by_money_alone(api: TestClient, rt: Runtime) -> None:
-    offer, did = _agree(api)
+    _offer, did = _agree(api)
     assert api.post(f"/commitments/{rt.store.commitments()[0].id}/revoke").status_code == 200
     # revoked at agreement: the invoice is open and not yet due, so the deal awaits payment and says the agreement was revoked
     for lang, word, label in (("en", "Agreement revoked", "Awaiting payment"), ("zh", "协议已撤销", "等待付款")):

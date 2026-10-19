@@ -123,7 +123,7 @@ def test_a_late_discounted_receipt_is_a_plain_receipt_not_the_agreed_payment(sto
     """Red team d, F6: the executor books P − d after the promised day as a plain receipt (the difference stays due);
     reconciliation must not call it the agreed early payment or settle the whole portion in its replay."""
     c = accepted(store, ex, clock)
-    p, d, expected, day = terms(c)
+    _p, d, expected, day = terms(c)
     assert day is not None
     advance(store, day + 1)
     clock.day = day + 1

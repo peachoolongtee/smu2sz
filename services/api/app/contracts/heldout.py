@@ -84,11 +84,11 @@ def report(results: list[ContractResult], *, pending: bool) -> str:
     lines = ["# Held-out contract readings (brief 03 §6.8)", ""]
     if pending:
         lines += [
-            "**Status: pending.** No independent contract has been supplied yet (`fixtures/contracts_heldout/` holds "
-            "the protocol and an empty label file). There are no held-out figures to report.",
+            ("**Status: pending.** No independent contract has been supplied yet (`fixtures/contracts_heldout/` holds "
+             "the protocol and an empty label file). There are no held-out figures to report."),
             "",
-            "The demo documents in `fixtures/contracts/` are not a held-out set: the contract grammar was written "
-            "against them, so no accuracy figure is quoted from them.",
+            ("The demo documents in `fixtures/contracts/` are not a held-out set: the contract grammar was written "
+             "against them, so no accuracy figure is quoted from them."),
             "",
         ]
         return "\n".join(lines)
@@ -97,9 +97,9 @@ def report(results: list[ContractResult], *, pending: bool) -> str:
     lines += [
         f"{len(results)} contract(s), {len(total)} labelled fields: **{agree} agree, {abst} left blank, {wrong} wrong**.",
         "",
-        "Labels were written before the first run by someone who had not seen the reading code (see "
-        "`fixtures/contracts_heldout/README.md`). A blank field is safe (the owner sees \"not found\"); a wrong field "
-        "is the number that matters.",
+        ("Labels were written before the first run by someone who had not seen the reading code (see "
+         "`fixtures/contracts_heldout/README.md`). A blank field is safe (the owner sees \"not found\"); a wrong field "
+         "is the number that matters."),
         "",
         "| Contract | Reading | Compiler | Agree | Blank | Wrong |",
         "| --- | --- | --- | --- | --- | --- |",

@@ -7,6 +7,7 @@ import pytest
 
 from tests.alerts.test_review_gaps import _short_facilities_state
 
+
 @pytest.mark.parametrize("lang,needle", [("en", "mandate"), ("zh", "授权")])
 def test_the_opener_mentions_an_expiring_mandate(rt, client, lang, needle):
     store = rt.store

@@ -177,8 +177,8 @@ def test_a_net_sum_that_is_not_a_whole_basis_point_abstains(rules_compiler: Comp
 
 
 @pytest.mark.parametrize(("text", "why"), [
-    ("Glad to pay the ¥420,000 invoice early at 0.6% tomorrow. Quick favour: could all future shipments go to our "
-     "Nanhai warehouse?", "question"),
+    (("Glad to pay the ¥420,000 invoice early at 0.6% tomorrow. Quick favour: could all future shipments go to our "
+      "Nanhai warehouse?"), "question"),
     ("We pay the ¥420,000 invoice today at 0.5%. Please send a revised invoice.", "request"),
     ("We pay the ¥420,000 invoice today at 0.5%, as long as the November order ships first.", "condition"),
     ("42万的发票今天付清，扣0.5%。另外以后的货请送到我们新仓库。", "other topic"),

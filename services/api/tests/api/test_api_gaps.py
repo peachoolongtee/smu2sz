@@ -157,7 +157,7 @@ def test_short_facilities_scenario_is_the_golden_books_with_two_short_limits():
     assert mandate == gold_m
     limits = {f.id: f.limit_fen for f in state.facilities}
     assert limits["FAC-LINE"] == limits["FAC-IF"] == 6_000_000
-    rest = lambda s: s.model_copy(update={"facilities": [f for f in s.facilities if f.id not in ("FAC-LINE", "FAC-IF")]})  # noqa: E731
+    rest = lambda s: s.model_copy(update={"facilities": [f for f in s.facilities if f.id not in ("FAC-LINE", "FAC-IF")]})
     assert rest(state) == rest(gold)
     assert [f.model_copy(update={"limit_fen": 0}) for f in state.facilities if f.id in ("FAC-LINE", "FAC-IF")] == \
         [f.model_copy(update={"limit_fen": 0}) for f in gold.facilities if f.id in ("FAC-LINE", "FAC-IF")]

@@ -515,7 +515,7 @@ def setup_preview(body: PreviewIn, lang: str = "en") -> dict:
     try:
         out["summary"] = _summary(built, body.draft, lg)
         out["first_look"] = _first_look(built, lg)
-    except Exception:  # noqa: BLE001  the engine refused these books: say so, never a 500
+    except Exception:  # the engine refused these books: say so, never a 500
         log.exception("setup: the preview could not project the draft")
         out["ok"] = False
         out["summary"] = out["first_look"] = None
@@ -553,7 +553,7 @@ def _restore_blank(rt: Any) -> None:
     """After a failed open: the blank books again, never half-built ones."""
     try:
         rt.reset_demo("blank")
-    except Exception:  # noqa: BLE001  the caller still answers with the refusal; the log says what else went wrong
+    except Exception:  # the caller still answers with the refusal; the log says what else went wrong
         log.exception("setup: the blank books could not be put back after a failed open")
 
 

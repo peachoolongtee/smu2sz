@@ -7,11 +7,10 @@ from __future__ import annotations
 import pytest
 
 from app.compiler import Compiler
-from app.compiler.rules import RulesBackend
 from app.compiler.cache import CacheBackend
 from app.compiler.cross_check import DISAGREE_FIELD
 from app.compiler.parsing import find_money, parse_money
-from app.compiler.rules import rules_offer
+from app.compiler.rules import RulesBackend, rules_offer
 from app.compiler.service import cache_dir
 from app.config import get_settings
 from app.domain.models import CompileStatus, ObligationType, SourceDocument

@@ -49,7 +49,7 @@ def _trip_circuit_as_agent(c: TestClient, oid: str) -> None:
 
 
 def test_sec04_the_agent_cannot_preclaim_the_owners_decline(env):
-    rt, c = env
+    _rt, c = env
     oid, v = _evaluate(c, ZHUHAI)
     key = f"decline-{oid}-{v['id']}"  # the key the route used to build
     c.post("/operations", headers=AGENT, json={"kind": "REJECT_OFFER", "op_id": key, "idempotency_key": key, "mandate_version": 1,
@@ -74,7 +74,7 @@ def test_sec05_an_agent_tripped_circuit_does_not_take_the_owners_accept(env):
 
 
 def test_sec05_an_agent_tripped_circuit_does_not_take_the_owners_decline(env):
-    rt, c = env
+    _rt, c = env
     oid, v = _evaluate(c, ZHUHAI)
     _trip_circuit_as_agent(c, oid)
     assert c.post(f"/offers/{oid}/decline", headers=OWNER, json={"verdict_id": v["id"], "state_version": v["state_version"]}).status_code == 200

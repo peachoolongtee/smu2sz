@@ -12,7 +12,14 @@ from datetime import date, timedelta
 
 from app.compiler.contract_parsing import CN_COUNT, COUNT_PAT, cn_int, parse_count, parse_date
 from app.compiler.parsing import find_money
-from app.domain.models import Abstention, ContractField, ContractTerm, PaymentBasis, SourceDocument, SourceSpan
+from app.domain.models import (
+    Abstention,
+    ContractField,
+    ContractTerm,
+    PaymentBasis,
+    SourceDocument,
+    SourceSpan,
+)
 
 F = ContractField
 
@@ -171,8 +178,8 @@ _ZH_TRIGGERS: tuple[tuple[str, re.Pattern[str]], ...] = tuple((k, re.compile(p))
     ("sign", r"签订|签署|签约|生效"),
 ))
 _EN_TRIGGERS: tuple[tuple[str, re.Pattern[str]], ...] = tuple((k, re.compile(p, re.IGNORECASE)) for k, p in (
-    ("warranty_end", r"warranty\s+(?:period\s+)?(?:ends?|expires?|expiry|has\s+expired)|(?:end|expiry|expiration)\s+of\s+"
-                     r"(?:the\s+)?(?:warranty|defects?\s+liability)|defects?\s+liability\s+period"),
+    ("warranty_end", (r"warranty\s+(?:period\s+)?(?:ends?|expires?|expiry|has\s+expired)|(?:end|expiry|expiration)\s+of\s+"
+                      r"(?:the\s+)?(?:warranty|defects?\s+liability)|defects?\s+liability\s+period")),
     ("audit", r"\baudit"),
     ("quarter", r"\bquarter(?:ly)?\b|\bper\s+quarter\b"),
     ("milestone", r"\bmilestones?\b"),

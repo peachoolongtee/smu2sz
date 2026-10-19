@@ -90,7 +90,10 @@ def _reply_words(ctx: Any, offer_id: str) -> str | None:
 
 def _changes(ctx: Any, ours: Any, theirs: Any, buyer: str | None, lang: str) -> list[dict[str, Any]]:
     """Our last offer beside their reply, row by row (payment terms, early payment, rebate or price), each in the offer picture's own words."""
-    from app.api.offer_picture import _TERM_ROWS, _term_rows  # the picture's reading of terms; it reads the record, so imported here
+    from app.api.offer_picture import (  # the picture's reading of terms; it reads the record, so imported here
+        _TERM_ROWS,
+        _term_rows,
+    )
 
     mine = _term_rows(ctx.state, list(ours or []), buyer, lang)
     them = _term_rows(ctx.state, list(theirs or []), buyer, lang)
@@ -351,7 +354,10 @@ def _refused_yes(ctx: Any, inp: Any, offer_id: str, lang: str, *, still_open: bo
 
 def _offered_rows(ctx: Any, counter: Any, buyer: str | None, lang: str) -> list[str]:
     """The counter's terms as offered, one line per row of the offer picture ("Early payment: 0.85% off ¥257,200.00"), with no effective day."""
-    from app.api.offer_picture import _TERM_ROWS, _term_rows  # the picture's reading of terms; it reads the record, so imported here
+    from app.api.offer_picture import (  # the picture's reading of terms; it reads the record, so imported here
+        _TERM_ROWS,
+        _term_rows,
+    )
 
     rows = _term_rows(ctx.state, list(counter.obligations) if counter is not None else [], buyer, lang)
     return [f"{t(lang, en, zh)}{t(lang, ': ', '：')}{rows[key][0] or t(lang, 'Not offered', '未提供')}" for key, en, zh in _TERM_ROWS]
