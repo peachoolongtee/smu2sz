@@ -15,7 +15,7 @@ HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(git -C "$HERE" rev-parse --show-topl
 CRED="$HERE/.credentials"
 
 echo "deploying $(git -C "$ROOT" rev-parse --short "$REF") to https://$HOST"
-git -C "$ROOT" archive --format=tar.gz "$REF" | "${SSH[@]}" 'rm -rf ~/flow.new && mkdir -p ~/flow.new && tar -xzf - -C ~/flow.new && rm -rf ~/flow && mv ~/flow.new ~/flow'
+git -C "$ROOT" archive --format=tar.gz "$REF" | "${SSH[@]}" 'rm -rf ~/flow.new && mkdir -p ~/flow.new && tar -xzf - -C ~/flow.new && cat > /dev/null && rm -rf ~/flow && mv ~/flow.new ~/flow'  # cat drains the gzip trailer tar leaves unread (else SIGPIPE)
 
 if [ ! -f "$CRED" ]; then
   PASS=$(LC_ALL=C tr -dc 'A-HJ-NP-Za-km-z2-9' < /dev/urandom | head -c 20)
