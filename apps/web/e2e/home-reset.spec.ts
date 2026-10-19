@@ -15,7 +15,8 @@ const API = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
 const OWNER = { "X-Owner-Token": DEMO_TOKEN };
 const DEAL = /deal%3A(OFF-[0-9a-f]+)/g;
 const FIRST = "We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward and give us 1% off next quarter.";
-const SECOND = "We will pay the ¥420k invoice 10 days early for a 1% discount.";
+// The reset/cache test needs a priceable offer; an unproved settlement expression is covered by compiler tests.
+const SECOND = "We will pay the ¥420k invoice early for a 1% discount.";
 const EX01 = { fixture_id: "EX01_PACKAGE" };
 
 async function post(api: APIRequestContext, path: string, data: object = {}) {

@@ -1,0 +1,597 @@
+{
+  "SB01": {
+    "documents": [
+      {
+        "doc_id": "SB01",
+        "channel": "chat",
+        "sender_id": "BUYER-1",
+        "received_day": 0,
+        "text": "We will pay invoice RCV-A (¥420,000) today, 0.5% off.",
+        "parent_doc_id": null,
+        "filename": null
+      }
+    ],
+    "extraction": {
+      "obligations": [
+        {
+          "type": "IMMEDIATE_DISCOUNT",
+          "quotes": [
+            {
+              "doc_id": "SB01",
+              "text": "We will pay invoice RCV-A (¥420,000) today, 0.5% off."
+            }
+          ],
+          "rate_text": "0.5%",
+          "amount_text": null,
+          "base_kind": "INVOICE",
+          "base_amount_text": "¥420,000",
+          "events_per_year_text": null,
+          "target_terms_text": null,
+          "current_terms_text": null,
+          "contingency": "FIRM",
+          "duration_kind": "ONE_OFF",
+          "bounded_invoices_text": null,
+          "confidence": 0.9,
+          "unresolved": []
+        }
+      ],
+      "quantities": [
+        {
+          "kind": "invoice_amount",
+          "doc_id": "SB01",
+          "quote": "We will pay invoice RCV-A (¥420,000) today, 0.5% off.",
+          "amount_text": "¥420,000"
+        }
+      ],
+      "unresolved_references": [],
+      "missing_material": [],
+      "data_requests": [],
+      "authority_claims": [],
+      "funding_claims": []
+    },
+    "model_id": "deepseek-flash",
+    "compiled": {
+      "offer_id": "OFF-86e53ef8ad2a",
+      "version": 1,
+      "counterparty_id": "BUYER-1",
+      "doc_ids": [
+        "SB01"
+      ],
+      "received_day": 0,
+      "status": "COMPILED",
+      "obligations": [
+        {
+          "id": "OFF-86e53ef8ad2a-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 50,
+          "amount_fen": null,
+          "days_delta": null,
+          "target_terms_days": null,
+          "effective_day": null,
+          "base": {
+            "kind": "INVOICE",
+            "amount_fen": 42000000,
+            "receivable_id": "RCV-A",
+            "events_per_year": null
+          },
+          "contingency": "FIRM",
+          "duration": {
+            "kind": "ONE_OFF",
+            "invoices": null,
+            "end_day": null
+          },
+          "spans": [
+            {
+              "doc_id": "SB01",
+              "start": 0,
+              "end": 53,
+              "text": "We will pay invoice RCV-A (¥420,000) today, 0.5% off."
+            },
+            {
+              "doc_id": "SB01",
+              "start": 44,
+              "end": 52,
+              "text": "0.5% off"
+            },
+            {
+              "doc_id": "SB01",
+              "start": 8,
+              "end": 42,
+              "text": "pay invoice RCV-A (¥420,000) today"
+            },
+            {
+              "doc_id": "SB01",
+              "start": 12,
+              "end": 35,
+              "text": "invoice RCV-A (¥420,000"
+            }
+          ],
+          "confidence": 0.9,
+          "unresolved": [],
+          "payment_timing": {
+            "proof": "calendar_grammar_v1",
+            "expression": {
+              "doc_id": "SB01",
+              "start": 37,
+              "end": 42,
+              "text": "today"
+            },
+            "reference_day": 0,
+            "basis": "relative_days",
+            "relation": "on",
+            "offset_days": 0,
+            "weekday": null,
+            "calendar_date": null,
+            "payment_basis": "whole_invoice"
+          },
+          "field_provenance": {
+            "counterparty_id": "both",
+            "rate_bp": "both",
+            "base.kind": "both",
+            "base.amount_fen": "both",
+            "base.receivable_id": "both",
+            "duration.kind": "both",
+            "contingency": "both"
+          }
+        }
+      ],
+      "abstentions": [],
+      "data_requests": [],
+      "authority_claims": [],
+      "funding_claims": [],
+      "compiler": "deepseek-flash",
+      "prompt_version": "offer-v4",
+      "autonomy_eligible": true,
+      "autonomy_notes": []
+    }
+  },
+  "SB03": {
+    "documents": [
+      {
+        "doc_id": "SB03",
+        "channel": "chat",
+        "sender_id": "BUYER-1",
+        "received_day": 0,
+        "text": "We will pay invoice RCV-A (¥420,000) in 2 calendar days, 0.5% off.",
+        "parent_doc_id": null,
+        "filename": null
+      }
+    ],
+    "extraction": {
+      "obligations": [
+        {
+          "type": "IMMEDIATE_DISCOUNT",
+          "quotes": [
+            {
+              "doc_id": "SB03",
+              "text": "We will pay invoice RCV-A (¥420,000) in 2 calendar days, 0.5% off."
+            }
+          ],
+          "rate_text": "0.5%",
+          "amount_text": null,
+          "base_kind": "INVOICE",
+          "base_amount_text": null,
+          "events_per_year_text": null,
+          "target_terms_text": null,
+          "current_terms_text": null,
+          "contingency": "FIRM",
+          "duration_kind": "ONE_OFF",
+          "bounded_invoices_text": null,
+          "confidence": 0.9,
+          "unresolved": [
+            "receivable_id"
+          ]
+        }
+      ],
+      "quantities": [
+        {
+          "kind": "invoice_amount",
+          "doc_id": "SB03",
+          "quote": "invoice RCV-A (¥420,000)",
+          "amount_text": "¥420,000"
+        }
+      ],
+      "unresolved_references": [],
+      "missing_material": [],
+      "data_requests": [],
+      "authority_claims": [],
+      "funding_claims": []
+    },
+    "model_id": "deepseek-flash",
+    "compiled": {
+      "offer_id": "OFF-f010fc0c1ee9",
+      "version": 1,
+      "counterparty_id": "BUYER-1",
+      "doc_ids": [
+        "SB03"
+      ],
+      "received_day": 0,
+      "status": "COMPILED",
+      "obligations": [
+        {
+          "id": "OFF-f010fc0c1ee9-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 50,
+          "amount_fen": null,
+          "days_delta": null,
+          "target_terms_days": null,
+          "effective_day": null,
+          "base": {
+            "kind": "INVOICE",
+            "amount_fen": 42000000,
+            "receivable_id": "RCV-A",
+            "events_per_year": null
+          },
+          "contingency": "FIRM",
+          "duration": {
+            "kind": "ONE_OFF",
+            "invoices": null,
+            "end_day": null
+          },
+          "spans": [
+            {
+              "doc_id": "SB03",
+              "start": 0,
+              "end": 66,
+              "text": "We will pay invoice RCV-A (¥420,000) in 2 calendar days, 0.5% off."
+            },
+            {
+              "doc_id": "SB03",
+              "start": 57,
+              "end": 65,
+              "text": "0.5% off"
+            },
+            {
+              "doc_id": "SB03",
+              "start": 8,
+              "end": 55,
+              "text": "pay invoice RCV-A (¥420,000) in 2 calendar days"
+            },
+            {
+              "doc_id": "SB03",
+              "start": 12,
+              "end": 35,
+              "text": "invoice RCV-A (¥420,000"
+            }
+          ],
+          "confidence": 0.9,
+          "unresolved": [
+            "receivable_id"
+          ],
+          "payment_timing": {
+            "proof": "calendar_grammar_v1",
+            "expression": {
+              "doc_id": "SB03",
+              "start": 37,
+              "end": 55,
+              "text": "in 2 calendar days"
+            },
+            "reference_day": 0,
+            "basis": "relative_days",
+            "relation": "on",
+            "offset_days": 2,
+            "weekday": null,
+            "calendar_date": null,
+            "payment_basis": "whole_invoice"
+          },
+          "field_provenance": {
+            "counterparty_id": "both",
+            "rate_bp": "both",
+            "base.kind": "both",
+            "base.amount_fen": "rules",
+            "base.receivable_id": "both",
+            "duration.kind": "both",
+            "contingency": "both"
+          }
+        }
+      ],
+      "abstentions": [],
+      "data_requests": [],
+      "authority_claims": [],
+      "funding_claims": [],
+      "compiler": "deepseek-flash",
+      "prompt_version": "offer-v4",
+      "autonomy_eligible": false,
+      "autonomy_notes": [
+        "IMMEDIATE_DISCOUNT leaves receivable_id unresolved",
+        "one-reader fields require owner review; reader agreement does not prove autonomy"
+      ]
+    }
+  },
+  "SB12": {
+    "documents": [
+      {
+        "doc_id": "SB12",
+        "channel": "chat",
+        "sender_id": "BUYER-1",
+        "received_day": 0,
+        "text": "42万的发票我们明天提前付清，扣0.5%。",
+        "parent_doc_id": null,
+        "filename": null
+      }
+    ],
+    "extraction": {
+      "obligations": [
+        {
+          "type": "IMMEDIATE_DISCOUNT",
+          "quotes": [
+            {
+              "doc_id": "SB12",
+              "text": "42万的发票我们明天提前付清，扣0.5%。"
+            }
+          ],
+          "rate_text": "0.5%",
+          "amount_text": null,
+          "base_kind": "INVOICE",
+          "base_amount_text": null,
+          "events_per_year_text": null,
+          "target_terms_text": null,
+          "current_terms_text": null,
+          "contingency": "FIRM",
+          "duration_kind": "ONE_OFF",
+          "bounded_invoices_text": null,
+          "confidence": 0.85,
+          "unresolved": [
+            "receivable_id"
+          ]
+        }
+      ],
+      "quantities": [
+        {
+          "kind": "invoice_amount",
+          "doc_id": "SB12",
+          "quote": "42万的发票",
+          "amount_text": "42万"
+        }
+      ],
+      "unresolved_references": [],
+      "missing_material": [],
+      "data_requests": [],
+      "authority_claims": [],
+      "funding_claims": []
+    },
+    "model_id": "deepseek-flash",
+    "compiled": {
+      "offer_id": "OFF-e03fefb35438",
+      "version": 1,
+      "counterparty_id": "BUYER-1",
+      "doc_ids": [
+        "SB12"
+      ],
+      "received_day": 0,
+      "status": "COMPILED",
+      "obligations": [
+        {
+          "id": "OFF-e03fefb35438-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 50,
+          "amount_fen": null,
+          "days_delta": null,
+          "target_terms_days": null,
+          "effective_day": null,
+          "base": {
+            "kind": "INVOICE",
+            "amount_fen": 42000000,
+            "receivable_id": null,
+            "events_per_year": null
+          },
+          "contingency": "FIRM",
+          "duration": {
+            "kind": "ONE_OFF",
+            "invoices": null,
+            "end_day": null
+          },
+          "spans": [
+            {
+              "doc_id": "SB12",
+              "start": 0,
+              "end": 21,
+              "text": "42万的发票我们明天提前付清，扣0.5%。"
+            },
+            {
+              "doc_id": "SB12",
+              "start": 10,
+              "end": 20,
+              "text": "提前付清，扣0.5%"
+            },
+            {
+              "doc_id": "SB12",
+              "start": 0,
+              "end": 6,
+              "text": "42万的发票"
+            }
+          ],
+          "confidence": 0.85,
+          "unresolved": [
+            "receivable_id"
+          ],
+          "payment_timing": {
+            "proof": "calendar_grammar_v1",
+            "expression": {
+              "doc_id": "SB12",
+              "start": 8,
+              "end": 10,
+              "text": "明天"
+            },
+            "reference_day": 0,
+            "basis": "relative_days",
+            "relation": "on",
+            "offset_days": 1,
+            "weekday": null,
+            "calendar_date": null,
+            "payment_basis": "whole_invoice"
+          },
+          "field_provenance": {
+            "counterparty_id": "both",
+            "rate_bp": "both",
+            "base.kind": "both",
+            "base.amount_fen": "rules",
+            "duration.kind": "both",
+            "contingency": "both"
+          }
+        }
+      ],
+      "abstentions": [],
+      "data_requests": [],
+      "authority_claims": [],
+      "funding_claims": [],
+      "compiler": "deepseek-flash",
+      "prompt_version": "offer-v4",
+      "autonomy_eligible": false,
+      "autonomy_notes": [
+        "IMMEDIATE_DISCOUNT leaves receivable_id unresolved",
+        "one-reader fields require owner review; reader agreement does not prove autonomy"
+      ]
+    }
+  },
+  "SB17": {
+    "documents": [
+      {
+        "doc_id": "SB17",
+        "channel": "chat",
+        "sender_id": "BUYER-1",
+        "received_day": 0,
+        "text": "42万的发票我们2026年10月5日提前付清，扣0.5%。",
+        "parent_doc_id": null,
+        "filename": null
+      }
+    ],
+    "extraction": {
+      "obligations": [
+        {
+          "type": "IMMEDIATE_DISCOUNT",
+          "quotes": [
+            {
+              "doc_id": "SB17",
+              "text": "42万的发票我们2026年10月5日提前付清，扣0.5%。"
+            }
+          ],
+          "rate_text": "0.5%",
+          "amount_text": null,
+          "base_kind": "INVOICE",
+          "base_amount_text": null,
+          "events_per_year_text": null,
+          "target_terms_text": null,
+          "current_terms_text": null,
+          "contingency": "FIRM",
+          "duration_kind": "ONE_OFF",
+          "bounded_invoices_text": null,
+          "confidence": 0.85,
+          "unresolved": [
+            "base_amount"
+          ]
+        }
+      ],
+      "quantities": [
+        {
+          "kind": "invoice_amount",
+          "doc_id": "SB17",
+          "quote": "42万的发票",
+          "amount_text": "42万"
+        }
+      ],
+      "unresolved_references": [],
+      "missing_material": [],
+      "data_requests": [],
+      "authority_claims": [],
+      "funding_claims": []
+    },
+    "model_id": "deepseek-flash",
+    "compiled": {
+      "offer_id": "OFF-8a413f3419aa",
+      "version": 1,
+      "counterparty_id": "BUYER-1",
+      "doc_ids": [
+        "SB17"
+      ],
+      "received_day": 0,
+      "status": "COMPILED",
+      "obligations": [
+        {
+          "id": "OFF-8a413f3419aa-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 50,
+          "amount_fen": null,
+          "days_delta": null,
+          "target_terms_days": null,
+          "effective_day": null,
+          "base": {
+            "kind": "INVOICE",
+            "amount_fen": 42000000,
+            "receivable_id": null,
+            "events_per_year": null
+          },
+          "contingency": "FIRM",
+          "duration": {
+            "kind": "ONE_OFF",
+            "invoices": null,
+            "end_day": null
+          },
+          "spans": [
+            {
+              "doc_id": "SB17",
+              "start": 0,
+              "end": 29,
+              "text": "42万的发票我们2026年10月5日提前付清，扣0.5%。"
+            },
+            {
+              "doc_id": "SB17",
+              "start": 18,
+              "end": 28,
+              "text": "提前付清，扣0.5%"
+            },
+            {
+              "doc_id": "SB17",
+              "start": 0,
+              "end": 6,
+              "text": "42万的发票"
+            }
+          ],
+          "confidence": 0.85,
+          "unresolved": [
+            "base_amount"
+          ],
+          "payment_timing": {
+            "proof": "calendar_grammar_v1",
+            "expression": {
+              "doc_id": "SB17",
+              "start": 8,
+              "end": 18,
+              "text": "2026年10月5日"
+            },
+            "reference_day": 0,
+            "basis": "calendar_date",
+            "relation": "on",
+            "offset_days": null,
+            "weekday": null,
+            "calendar_date": "2026-10-05",
+            "payment_basis": "whole_invoice"
+          },
+          "field_provenance": {
+            "counterparty_id": "both",
+            "rate_bp": "both",
+            "base.kind": "both",
+            "base.amount_fen": "rules",
+            "duration.kind": "both",
+            "contingency": "both"
+          }
+        }
+      ],
+      "abstentions": [],
+      "data_requests": [],
+      "authority_claims": [],
+      "funding_claims": [],
+      "compiler": "deepseek-flash",
+      "prompt_version": "offer-v4",
+      "autonomy_eligible": false,
+      "autonomy_notes": [
+        "IMMEDIATE_DISCOUNT leaves base_amount unresolved",
+        "one-reader fields require owner review; reader agreement does not prove autonomy"
+      ]
+    }
+  }
+}

@@ -1,0 +1,24 @@
+20 items against http://127.0.0.1:8585 (llm_mode=live, label=field_cross_check_live)
+  LF01 en a_supported   correct              compiler=deepseek-flash 2041.3 ms
+  LF02 zh a_supported   abstained wrongly    compiler=deepseek-flash 1618.2 ms
+  LF03 en a_supported   correct              compiler=deepseek-flash 1434.6 ms
+  LF04 zh a_supported   correct              compiler=deepseek-flash 1423.2 ms
+  LF05 en a_supported   correct              compiler=deepseek-flash 1797.6 ms
+  LF06 zh a_supported   partially correct    compiler=deepseek-flash 2068.7 ms
+  LF07 en a_supported   correct              compiler=deepseek-flash 1703.7 ms
+  LF08 en b_ambiguity   abstained correctly  compiler=deepseek-flash 1504.7 ms
+  LF09 zh b_ambiguity   abstained correctly  compiler=deepseek-flash 1526.3 ms
+  LF10 en b_ambiguity   abstained correctly  compiler=deepseek-flash 1018.0 ms
+  LF11 zh b_ambiguity   abstained correctly  compiler=deepseek-flash 1101.1 ms
+  LF12 zh c_conditions  abstained wrongly    compiler=deepseek-flash 1202.0 ms
+  LF13 en c_conditions  abstained correctly  compiler=deepseek-flash 1794.5 ms
+  LF14 zh c_conditions  abstained correctly  compiler=deepseek-flash 1169.1 ms
+  LF15 en d_conflict    abstained correctly  compiler=deepseek-flash 1261.0 ms
+  LF16 zh d_conflict    abstained correctly  compiler=deepseek-flash 1469.2 ms
+  LF17 zh d_conflict    abstained correctly  compiler=deepseek-flash 1449.1 ms
+  LF18 en e_injection   correct              compiler=deepseek-flash 1471.2 ms
+  LF19 zh e_injection   correct              compiler=deepseek-flash 1374.1 ms
+  LF20 en e_injection   abstained correctly  compiler=deepseek-flash 1550.2 ms
+totals: correct 7/20, partially correct 1/20, wrong 0/20, abstained correctly 10/20, abstained wrongly 2/20
+source-span grounded: 36/36
+wrote /tmp/flow-field-cross-check-fresh-live/results_field_cross_check_live_2026-10-19.json and /tmp/flow-field-cross-check-fresh-live/results_field_cross_check_live_2026-10-19.md

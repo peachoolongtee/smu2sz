@@ -9,7 +9,7 @@ Whatever backend answers, its extraction goes through the same grounding (span v
 parsing, lexicon union, conflict detection). The output is a proposal only.
 
 In live mode a model's reading of a buyer message is also checked against the rules grammar's reading of the same
-documents (`compiler.cross_check`): a term the two read differently is abstained on, never decided by either alone.
+documents (`compiler.cross_check`): conflicting values are held; a field read by only one reader is retained for owner review, never autonomous acceptance.
 LLM_LIVE_RAW=1 keeps live mode as it was (no recording first, no check), to measure a model on its own.
 
 A model never sees the identifiers FLOW does not read (accounts, phones, emails, credit codes, ID numbers, labelled
@@ -34,11 +34,12 @@ from app.compiler.backends import ClaudeBackend, DeepSeekBackend
 from app.compiler.base import BackendError, ContractResult, LLMBackend, OfferResult, TermSheetResult
 from app.compiler.cache import CACHE_MODEL_ID, CacheBackend
 from app.compiler.contract import MAX_CHUNKS, ContractTooLong, build_contract, chunk_document, chunk_source
-from app.compiler.cross_check import check_against_rules
+from app.compiler.cross_check import DISAGREE_FIELD, check_against_rules
 from app.compiler.grounding import build_offer, build_term_sheet, docs_hash
 from app.compiler.prompts import CONTRACT_PROMPT_VERSION, PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
 from app.compiler.redaction import redacting
 from app.compiler.rules import RULES_MODEL_ID, RulesBackend
+from app.compiler.settlement import finalize_reconciled_timing
 from app.config import Settings, get_settings
 from app.domain.models import CompiledContract, CompiledOffer, CompiledTermSheet, DocumentKind, SourceDocument
 
@@ -121,10 +122,17 @@ class Compiler:
         rules = next(b for b in self.backends if isinstance(b, RulesBackend))
         try:
             res = rules.extract_offer(docs)
-        except BackendError:  # the grammar read nothing, so there is nothing to disagree with
-            return offer
-        checked = check_against_rules(offer, build_offer(docs, counterparty_id, res.extraction, res.model_id, PROMPT_VERSION))
-        log.info("compiler.cross_check", model=offer.compiler, outcome="agree" if checked is offer else "disagree",
+        except BackendError:  # no second reading: keep the proposal, but never prove autonomy
+            rules_offer = offer.model_copy(update={"obligations": []})
+        else:
+            rules_offer = build_offer(docs, counterparty_id, res.extraction, res.model_id, PROMPT_VERSION)
+        checked = finalize_reconciled_timing(docs, check_against_rules(offer, rules_offer))
+        counts = {source: sum(value == source for ob in checked.obligations for value in ob.field_provenance.values())
+                  for source in ("rules", "model", "both")}
+        disputed = any(a.field.startswith(DISAGREE_FIELD) for a in checked.abstentions)
+        outcome = "disagree" if disputed else "review_only" if counts["rules"] or counts["model"] else "agree"
+        log.info("compiler.cross_check", model=offer.compiler, outcome=outcome,
+                 rules_fields=counts["rules"], model_fields=counts["model"], agreed_fields=counts["both"],
                  prompt_version=PROMPT_VERSION, doc_hash=doc_hash)
         return checked
 

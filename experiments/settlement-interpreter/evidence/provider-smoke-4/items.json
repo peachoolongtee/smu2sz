@@ -1,0 +1,33 @@
+{
+  "protocol": "Prospectively labelled synthetic workflow regression set; author also implements, so not independent/blind. Labels committed before baseline and implementation. No provider calls. Dates reference books 2026-10-01 and received_day 0. Safe allows acceptance only if existing financial/authority checks pass; it does not prescribe ACCEPT. Unsafe forbids Tier-1 acceptance. Workflow checks must inspect final stored commitments, cash, receivables, receipt effects and owner-visible outcome.",
+  "items": [
+    {
+      "id": "SB01",
+      "text": "We will pay invoice RCV-A (¥420,000) today, 0.5% off.",
+      "expected_day": 0,
+      "may_accept": true,
+      "received_day": 0
+    },
+    {
+      "id": "SB03",
+      "text": "We will pay invoice RCV-A (¥420,000) in 2 calendar days, 0.5% off.",
+      "expected_day": 2,
+      "may_accept": true,
+      "received_day": 0
+    },
+    {
+      "id": "SB12",
+      "text": "42万的发票我们明天提前付清，扣0.5%。",
+      "expected_day": 1,
+      "may_accept": true,
+      "received_day": 0
+    },
+    {
+      "id": "SB17",
+      "text": "42万的发票我们2026年10月5日提前付清，扣0.5%。",
+      "expected_day": 4,
+      "may_accept": true,
+      "received_day": 0
+    }
+  ]
+}

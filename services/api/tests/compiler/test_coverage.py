@@ -215,22 +215,34 @@ def test_claims_and_data_requests_fail_the_proof(rules_compiler: Compiler, text:
     assert _verdict(offer) != "ACCEPT"
 
 
-def test_right_now_is_a_stated_settlement_time_and_never_autonomous(rules_compiler: Compiler) -> None:
-    # "right now" is a stated time: not provably the day the binding assigns, so it is unread timing
-    _not_eligible(rules_compiler, "Pay the ¥420k invoice right now, less 0.6%?", why="settlement date")
+def test_right_now_is_proven_as_the_message_day(rules_compiler: Compiler) -> None:
+    offer = _eligible(rules_compiler, "Pay the ¥420k invoice right now, less 0.6%?")
+    assert offer.obligations[0].payment_timing.offset_days == 0
+    assert _verdict(offer) == "ACCEPT"
 
 
 @pytest.mark.parametrize("text", [
     "We can pay the ¥420,000 invoice today at 0.6%. Nothing else changes.",
     "We can pay the ¥420,000 invoice tomorrow at 0.6%. Nothing else changes.",
-    "We can pay the ¥420,000 invoice now at 0.6%.",
     "hey the 420k invoice, we pay in full tmrw if u give us 0.6% disc. ok?",
     "42万的发票我们今天就付清，扣千分之五，谢谢",
     "42万的发票我们明天就付清，扣千分之五，谢谢",
+])
+def test_a_stated_today_tomorrow_or_now_is_proven_before_acceptance(rules_compiler: Compiler, text: str) -> None:
+    offer = _eligible(rules_compiler, text)
+    assert offer.obligations[0].payment_timing is not None
+    assert _verdict(offer) == "ACCEPT"
+
+
+@pytest.mark.parametrize("text", [
+    "We can pay the ¥420,000 invoice now at 0.6%.",
     "42万的发票我们现在就付清，扣千分之五，谢谢",
 ])
-def test_a_stated_today_tomorrow_or_now_is_unread_timing_and_never_autonomous(rules_compiler: Compiler, text: str) -> None:
-    offer = _not_eligible(rules_compiler, text, why="settlement date")
+def test_a_bare_now_is_not_a_proven_day_and_is_never_accepted_alone(rules_compiler: Compiler, text: str) -> None:
+    # "now" also means "at this point" ("we can now pay early"); it is held for clarification, never read as today.
+    offer = _compile(rules_compiler, text)
+    assert not offer.autonomy_eligible
+    assert all(o.payment_timing is None for o in offer.obligations)
     assert _verdict(offer) != "ACCEPT"
 
 

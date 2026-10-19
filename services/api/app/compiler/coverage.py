@@ -6,8 +6,8 @@ false negative costs the owner one click, a false positive commits the business.
 
 (a) Every numeric mention in every document is accounted for by an extracted obligation: its rate, its base or
     fixed amount, its terms or bound, a discount sum or net payment that equals rate x face, or an invoice
-    reference the obligation binds. Dates and settlement windows are never read into a term, so any stated one
-    fails the proof. Phone numbers, e-mail and web addresses, clock times and the lines of a header or signature
+    reference the obligation binds. Only a specifically code-read payment-timing span explains a date or settlement window;
+    unsupported timing fails the proof. Phone numbers, e-mail and web addresses, clock times and the lines of a header or signature
     are the only allow-list (`ALLOWED`).
 (b) Figures agree: `settlement_conflicts()` marks a stated discount sum or net payment that is not rate x face
     within one fen; `build_offer` then returns CONFLICTING_SOURCES.
@@ -314,12 +314,15 @@ class _Known:
     counts: set[int]
     refs: set[str]
     sums: list[tuple[int, Fraction, Fraction]]
+    timing: list[SourceSpan]
 
 
 def _known(obs: Sequence[Obligation], docs: Sequence[SourceDocument]) -> _Known:
-    k = _Known(set(), set(), set(), set(), {d.doc_id.upper() for d in docs}, [])
+    k = _Known(set(), set(), set(), set(), {d.doc_id.upper() for d in docs}, [], [])
     k.refs |= {d.filename.upper() for d in docs if d.filename}
     for ob in obs:
+        if ob.payment_timing is not None:
+            k.timing.append(ob.payment_timing.expression)
         for v in (ob.base.amount_fen, ob.amount_fen):
             if v is not None:
                 k.money.add(v)
@@ -345,6 +348,8 @@ def _known(obs: Sequence[Obligation], docs: Sequence[SourceDocument]) -> _Known:
 
 
 def _explained(m: Mention, k: _Known) -> bool:
+    if any(s.doc_id == m.doc_id and s.start <= m.start and m.end <= s.end for s in k.timing):
+        return True
     match m.kind:
         case "money":
             v = int(m.value)  # type: ignore[call-overload]
@@ -487,8 +492,12 @@ def _residue(doc: SourceDocument, known: _Known) -> str:
     span must be on the filler list too, which the vocabulary of the supported pattern is."""
     f = fold(doc.text)
     gone = bytearray(len(doc.text))
+    for sp in known.timing:
+        if sp.doc_id == doc.doc_id:
+            for i in range(sp.start, min(sp.end, len(gone))):
+                gone[i] = 1
     for m in mentions(doc):
-        if m.kind != "date" and _explained(m, known):
+        if _explained(m, known):
             for i in range(m.start, min(m.end, len(gone))):
                 gone[i] = 1
     text = "".join(" " if gone[f.starts[i]] else ch for i, ch in enumerate(f.text))
@@ -584,12 +593,15 @@ def prove(
     known = _known(obligations, docs)
     for d in docs:
         for m in mentions(d):
-            if m.kind == "date":
+            if m.kind == "date" and not _explained(m, known):
                 note("a settlement date or window is stated but not read into the terms")
             elif not _explained(m, known):
                 note(f"{_KIND_NOTE[m.kind]} in {d.doc_id} is not accounted for by the extracted terms")
-        if TIMING_RE.search(fold(d.text).text):
-            note("a settlement date or window is stated but not read into the terms")
+        f = fold(d.text)
+        for timing in TIMING_RE.finditer(f.text):
+            start, end = f.span(timing.start(), timing.end())
+            if not any(s.doc_id == d.doc_id and s.start <= start and end <= s.end for s in known.timing):
+                note("a settlement date or window is stated but not read into the terms")
 
     # (c): requests, conditions, questions and other topics
     spans = [sp for ob in obligations for sp in ob.spans]

@@ -162,24 +162,43 @@ def test_the_counterparty_view_is_unchanged_on_the_authenticated_channel(client,
     assert r["verdict"] is None and r["operations"] == [] and r["plan"] == [] and r["security_events"] == []
 
 
-# ---------------------------------------------------------------- S-06: a stated settlement time is not autonomous
+# ---------------------------------------------------------------- S-06: a stated settlement time binds as stated or not at all
+# Until a stated day was typed (Build B, the settlement grammar) any stated time failed autonomous coverage. Now a day
+# the code proves on the books' calendar becomes the agreement's day; anything it cannot prove still binds nothing.
 
 
-@pytest.mark.parametrize("timing", ["today", "tomorrow", "now", "tonight", "right away"])
-def test_a_stated_day_is_not_accepted_autonomously_even_with_the_buyer_key(client, rt, timing) -> None:
+def _bound_days(rt) -> list[int | None]:
+    (c,) = [c for c in rt.store.commitments() if c.status.value in LIVE]
+    return [o.effective_day for o in c.obligations]
+
+
+@pytest.mark.parametrize("timing,day", [("today", 0), ("tomorrow", 1), ("tonight", 0), ("right away", 0)])
+def test_a_proven_stated_day_binds_that_day_not_the_facility_lead(client, rt, timing, day) -> None:
     r = post(client, body(f"We will pay the ¥420,000 invoice {timing} at a 0.5% discount."), KEY1)
     assert r.status_code == 200
-    assert not [c for c in rt.store.commitments() if c.status.value in LIVE]
-    assert ("ACCEPT_OFFER", "EXECUTED") not in stored_ops(rt)
-    assert "Agreed" not in r.json()["reply"]
+    assert ("ACCEPT_OFFER", "EXECUTED") in stored_ops(rt)
+    assert _bound_days(rt) == [day]
 
 
-@pytest.mark.parametrize("text", ["今天我们付清42万的发票，扣千分之五", "我们明天付清42万的发票，扣千分之五"])
-def test_a_stated_day_in_chinese_is_not_accepted_autonomously(client, rt, text) -> None:
+@pytest.mark.parametrize("text,day", [("今天我们付清42万的发票，扣千分之五", 0), ("我们明天付清42万的发票，扣千分之五", 1)])
+def test_a_proven_stated_day_in_chinese_binds_that_day(client, rt, text, day) -> None:
+    r = post(client, body(text), KEY1)
+    assert r.status_code == 200
+    assert _bound_days(rt) == [day]
+
+
+@pytest.mark.parametrize("text", [
+    "We will pay the ¥420,000 invoice now at a 0.5% discount.",        # "now" is not a proven day
+    "We can now pay the ¥420,000 invoice early at a 0.5% discount.",
+    "我们现在付清42万的发票，扣千分之五",
+    "We will pay the ¥420,000 invoice after the holiday at a 0.5% discount.",
+])
+def test_an_unproven_stated_time_binds_nothing_even_with_the_buyer_key(client, rt, text) -> None:
     r = post(client, body(text), KEY1)
     assert r.status_code == 200
     assert not [c for c in rt.store.commitments() if c.status.value in LIVE]
-    assert "同意：" not in r.json()["reply"]
+    assert ("ACCEPT_OFFER", "EXECUTED") not in stored_ops(rt)
+    assert "Agreed" not in r.json()["reply"] and "同意：" not in r.json()["reply"]
 
 
 def test_early_alone_keeps_the_facility_lead_time_and_restates_the_day(client, rt) -> None:
@@ -188,3 +207,25 @@ def test_early_alone_keeps_the_facility_lead_time_and_restates_the_day(client, r
     assert "on day 2" in r.json()["reply"]
     (c,) = rt.store.commitments()
     assert c.status.value == "ACTIVE"
+
+
+# ---------------------------------------------------------------- Build A: a one-reader field on the buyer's own channel
+
+
+def test_a_one_reader_field_is_not_accepted_alone_on_the_buyer_channel(client, rt, monkeypatch) -> None:
+    """The live cross-check's one-reader result, delivered through the authenticated chat path, still needs the owner."""
+    import app.nl.offers as nl_offers
+    from app.compiler.cross_check import check_against_rules
+
+    real = nl_offers.compile_offer
+
+    def one_reader(docs, cp):  # the rules reader saw no rate; the model did
+        offer = real(docs, cp).model_copy(update={"autonomy_eligible": True})
+        rules = offer.model_copy(update={"obligations": [o.model_copy(update={"rate_bp": None}) for o in offer.obligations]})
+        return check_against_rules(offer, rules)
+
+    monkeypatch.setattr(nl_offers, "compile_offer", one_reader)
+    r = post(client, body("We will pay the ¥420,000 invoice early at a 0.5% discount."), KEY1)
+    assert r.status_code == 200
+    assert ("ACCEPT_OFFER", "EXECUTED") not in stored_ops(rt)
+    assert not [c for c in rt.store.commitments() if c.status.value in LIVE]

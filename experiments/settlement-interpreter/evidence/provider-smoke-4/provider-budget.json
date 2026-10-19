@@ -1,0 +1,23 @@
+{
+  "maximum_total_approved_attempts": 40,
+  "previous_stage_attempts": 36,
+  "maximum_this_stage_attempts": 4,
+  "provider_request_attempts": 4,
+  "cumulative_provider_request_attempts": 40,
+  "prior_budget_sha256": "170bd4f77592edbe31ae920bd251af979d37886f2272e37110fc56f8f2110584",
+  "model_alias": "deepseek-flash",
+  "sdk_retries": 0,
+  "database": "memory",
+  "redaction": true,
+  "commit": "f9fab6749a04d54db3dcc2f0e468d784418b6a3d",
+  "items_sha256": "08397e54a1253fc11d8b3b69fc4d48534662f1113e276a550e3b4f3ac733756c",
+  "scope": "Four repeated original cases after date-finalization fix; targeted diagnostic smoke, not blind or a full benchmark rerun. Raw typed extraction retained for root-cause diagnosis.",
+  "returned_model_identifiers": [
+    "deepseek-flash"
+  ],
+  "usage_tokens": {
+    "prompt_tokens": 13777,
+    "completion_tokens": 830,
+    "total_tokens": 14607
+  }
+}

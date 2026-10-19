@@ -1,0 +1,8 @@
+import os,sys
+from pathlib import Path
+root=Path('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter')
+sys.path.insert(0,str(root/'services/api'))
+os.environ.update(TERMSLEDGER_NO_DOTENV='1',DATABASE_URL='memory',DEMO_MODE='1',LLM_MODE='cache',CORS_ORIGINS='http://localhost:3423',OWNER_TOKEN='demo-owner-token',AGENT_KEY='demo-agent-key',BANK_FEED_KEY='demo-bank-feed-key',COUNTERPARTY_KEYS='BUYER-1=demo-buyer-1-key,BUYER-2=demo-buyer-2-key',FEATURE_EXPOSURE='1',FEATURE_CONTRACT_TERMS='1')
+Path('/tmp/flow-b-cache-api.pid').write_text(str(os.getpid()))
+import uvicorn
+uvicorn.run('app.main:app',host='127.0.0.1',port=8584,access_log=False)

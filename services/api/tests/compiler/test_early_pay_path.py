@@ -64,18 +64,14 @@ def test_clear_early_pay_below_break_even_is_read_and_accepted(rules_compiler: C
     ("Hello, our treasury can transfer the ¥420,000 for your invoice (due late October) within 3 business days "
      "provided you allow a 0.6% discount."),
     "420,000元那张invoice我们下周early pay, discount 0.6% 可以吗",
-    # zh window "两天内付清"
-    "42万那张发票我们两天内付清，折扣0.6%",
-    "We can pay within 5 days if you give us 0.6% off the ¥420k invoice",
 ])
-def test_a_stated_settlement_window_is_read_but_waits_for_the_owner(rules_compiler: Compiler, text: str) -> None:
-    """The window is not read into the term (the verifier assumes its own settlement day), so the coverage proof
-    fails and the discount, below break-even, waits for the owner instead of being accepted (ADR-0005)."""
+def test_an_unproven_settlement_window_needs_clarification(rules_compiler: Compiler, text: str) -> None:
+    """An unsupported calendar cannot be replaced by a facility's assumed payment day."""
     offer = _compile(rules_compiler, text)
     assert offer.status == CompileStatus.COMPILED
     assert [(o.type, o.base.amount_fen) for o in offer.obligations] == [(T.IMMEDIATE_DISCOUNT, 42_000_000)]
     assert not offer.autonomy_eligible
-    assert _verdict(offer)[0] == "NEEDS_OWNER_APPROVAL"
+    assert _verdict(offer)[0] == "NO_VERDICT"
 
 
 def test_due_early_names_the_due_date_not_an_early_payment(rules_compiler: Compiler) -> None:
@@ -269,3 +265,16 @@ def test_a_bare_k_amount_is_money_only_next_to_its_bill() -> None:
     assert parse_money("the 420,000 invoice") == 42_000_000
     assert parse_money("420k") is None
     assert parse_money("420 invoices") is None
+
+
+@pytest.mark.parametrize(("text", "day"), [
+    ("42万那张发票我们两天内付清，折扣0.6%", 2),
+    ("We can pay within 5 days if you give us 0.6% off the ¥420k invoice", 5),
+])
+def test_a_proven_calendar_window_is_priced_at_its_latest_day(rules_compiler: Compiler, text: str, day: int) -> None:
+    offer = _compile(rules_compiler, text)
+    assert offer.status == CompileStatus.COMPILED
+    assert offer.autonomy_eligible, offer.autonomy_notes
+    result = evaluate(offer, STATE, MANDATE, trusted_owner_key_hex=KEY)
+    assert result.bound_obligations[0].effective_day == day
+    assert result.verdict.outcome.value == "ACCEPT"

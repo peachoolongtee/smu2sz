@@ -38,6 +38,7 @@ from app.compiler.schema import (
     XFundingClaim,
     XObligation,
 )
+from app.compiler.settlement import attach_payment_timing, has_unread_timing
 from app.domain.models import (
     Abstention,
     AuthorityClaim,
@@ -983,6 +984,13 @@ def build_offer(
     material_abstain |= boundary_material
     ordered, ref_material = bind_invoice_refs(by_id, ordered, abst)
     material_abstain |= ref_material
+    ordered = attach_payment_timing(by_id, ordered)
+    # An unread stated date must not be replaced by the facility's default lead.
+    # The binder consumes this typed gap; it never reads document text.
+    ordered = [ob.model_copy(update={"unresolved": list(dict.fromkeys([*ob.unresolved, "settlement_day"]))})
+               if len(ordered) == 1 and ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.payment_timing is None
+               and any(has_unread_timing(by_id[sp.doc_id], ob.spans) for sp in ob.spans)
+               else ob for ob in ordered]
     obligations: list[Obligation] = []
     conflict_values = set().union(*conflicts.values()) if conflicts else set()
     for n, ob in enumerate(ordered, start=1):

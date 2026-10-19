@@ -32,6 +32,7 @@ from app.domain.models import (
 )
 from app.domain.money import fmt_pct, fmt_yuan
 from app.financial.invoices import terms_in_force
+from app.financial.settlement import resolve_payment_day
 from app.verifier.models import BindNote
 
 DEFAULT_EARLY_PAY_LEAD_DAYS = 2  # the engine's default when the buyer has no early-pay facility
@@ -105,6 +106,10 @@ class _Binder:
     # ------------------------------------------------------------ per type
 
     def discount(self, ob: Obligation) -> Obligation:
+        if "settlement_day" in ob.unresolved:
+            self.note(ob, "settlement_day", False, True,
+                      "stated settlement timing is unresolved; clarification needed, nothing booked")
+            return ob
         cp = ob.counterparty_id
         base = ob.base
         receivable: Receivable | None = None
@@ -137,7 +142,19 @@ class _Binder:
                                             "amount_fen": amount}),
             "unresolved": _drop(ob.unresolved, "receivable_id", "base_amount", "base"),
         }
-        if ob.effective_day is None:
+        if ob.payment_timing is not None:
+            day = resolve_payment_day(ob.payment_timing, self.state.as_of)
+            if (day is None or ob.payment_timing.reference_day > self.state.as_of_day
+                    or day < self.state.as_of_day or day >= receivable.due_day
+                    or ob.effective_day is not None and ob.effective_day != day):
+                self.note(ob, "payment_timing", False, True,
+                          "settlement date is invalid, stale, not early, or inconsistent; clarification needed")
+                return ob
+            upd["effective_day"] = day
+            self.note(ob, "effective_day", True, True,
+                      f"stated settlement resolves from message day {ob.payment_timing.reference_day} to books day {day}; "
+                      "payment remains a promise until a bank-feed receipt")
+        elif ob.effective_day is None:
             upd["effective_day"] = early_pay_lead(self.state, cp)
         if ob.rate_bp is None and ob.amount_fen is None:
             self.note(ob, "rate_bp", False, True, "immediate discount without a rate or amount")
