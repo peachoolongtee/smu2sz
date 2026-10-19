@@ -42,7 +42,7 @@ as asked and prices two counter-offers; the owner chooses which to send.</sub>
 | --- | --- |
 | Track | FinTechathon 2026, International AI Track, Topic E: SME Finance Copilot |
 | Team name | ISMOGGER |
-| Project name | FLOW (code name TermsLedger) |
+| Project name | FLOW |
 | One-line summary | An AI working-capital agent a small supplier owns: it prices buyers' payment-term requests and funding against limits the owner signed, acts alone only inside them, and logs every step in a verifiable hash chain |
 
 This README follows the competition's Source Code README template. Its seven sections are here:
