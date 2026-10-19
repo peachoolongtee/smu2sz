@@ -984,8 +984,9 @@ export interface NegotiationView {
   message: string;
   /** The message in the requested language (distances from today); absent in older recordings. */
   message_when?: string | null;
-  /** What became of the funding legs once they all ran (SEC-28): the web does not read these yet. Absent in older recordings. */
-  funding_status?: "FUNDED" | "WAITING_APPROVAL" | "PARTLY_FUNDED" | "NOT_FUNDED";
+  /** What became of the funding legs once they all ran (SEC-28); NOT_NEEDED when the books need no funding (FUND-1). Absent in older recordings. */
+  funding_status?: "FUNDED" | "WAITING_APPROVAL" | "PARTLY_FUNDED" | "NOT_FUNDED" | "NOT_NEEDED";
+  /** The accept operation's status on a DEAL (EXECUTED, PENDING_APPROVAL, REFUSED); null on NO_DEAL. The send result reads it (FUND-2): only EXECUTED is "on your books". Absent in older recordings. */
   accept_status?: string | null;
   funding_legs?: { op_id: string; kind: string; status: string; approval_id: string | null; text: string }[];
   /** The deal's record, and whether this send was written to it. Absent in older recordings. */

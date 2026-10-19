@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from contextvars import ContextVar
 
+from app.api.presentation import whole
 from app.compiler import compile_offer, compile_term_sheet
 from app.compiler.cross_check import DISAGREE_FIELD
 from app.domain.fixtures import load_offers, offer_documents
@@ -471,9 +472,12 @@ def followups(ctx: NlContext, steps: Steps, offer: CompiledOffer, counters: list
     """The funding that may follow a negotiation, built now so that the owner sees it and a go-ahead sends exactly
     these legs (app/nl/plans.py): the router's plan if the buyer refuses, and for each counter the plan for the rest
     of the gap if the buyer accepts it. Returns what is stored with the plan; the legs are shown as plan steps."""
-    fallback = committed_plan(ctx.evaluate(status_quo_offer(ctx, ctx.state()), remember=False))
+    sq = ctx.evaluate(status_quo_offer(ctx, ctx.state()), remember=False)
+    fallback = committed_plan(sq)
+    # A gap the router has no admissible plan for is not "no gap" (FUND-3): its size is kept so a refusal says it is not funded.
+    raw = sq.plan_committed or sq.verdict.plan
     out: dict = {"refuse_ops": [], "refuse_label": None, "refuse_note": "", "accept_ops": {}, "accept_labels": {},
-                 "accept_notes": {}}
+                 "accept_notes": {}, "refuse_gap_fen": raw.need_fen if fallback is None and raw is not None else 0}
     if fallback is not None:
         out["refuse_ops"], out["refuse_note"] = runnable_legs(ctx, fallback)
         out["refuse_label"] = fallback.label
@@ -598,6 +602,10 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
             reply.extend(lines)
         elif stored.get("refuse_note"):  # a plan exists but cannot run today: nothing was stored for it
             reply.append(t(ctx, "NO DEAL. ", "未成交。") + stored["refuse_note"])
+        elif gap := stored.get("refuse_gap_fen"):  # a gap with no admissible plan: nothing was funded (FUND-3)
+            reply.append(t(ctx, f"NO DEAL. The near-term gap of {whole(gap)} is not funded: no admissible plan on the funding menu "
+                                f"covers it. Nothing was executed for it.",
+                           f"未成交。近期缺口 {whole(gap)} 未获融资：融资菜单上没有可行的方案能覆盖它。未执行任何融资操作。"))
         else:
             reply.append(t(ctx, "NO DEAL, and there is no gap to cover.", "未成交，且无资金缺口。"))
     return Turn(intent=Intent.NEGOTIATE, reply="\n".join(reply), plan=steps.items, verdict=v,

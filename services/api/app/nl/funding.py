@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from fractions import Fraction
 
+from app.api.presentation import whole
 from app.counterparties import BuyerKernel
 from app.domain.models import (
     BaseKind,
@@ -76,6 +77,14 @@ class Gap:
     low_day: int
     shortfall_fen: int
 
+
+
+def _no_fallback(ctx: NlContext, gap_fen: int) -> str:
+    """The proposal's "if the buyer refuses" when there is no fallback plan: no gap, or a gap no admissible plan covers (FUND-5)."""
+    if gap_fen > 0:
+        return t(ctx, f"the near-term gap of {whole(gap_fen)} stays unfunded (no admissible plan on the funding menu covers it)",
+                 f"近期缺口 {whole(gap_fen)} 仍未获融资（融资菜单上没有可行的方案能覆盖它）")
+    return t(ctx, "no fallback needed", "无需后备")
 
 def gaps(state: FinancialState, floor_fen: int, horizon: int, live: Sequence[Obligation] = (),
          from_day: int = 0) -> list[Gap]:
@@ -367,6 +376,9 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
     steps = Steps()
     sq = ctx.evaluate(status_quo_offer(ctx, state), remember=False)
     fallback = committed_plan(sq)
+    # A gap the router has no admissible plan for is not "no gap" (FUND-5): its size is kept so a refusal says it is not funded.
+    raw = sq.plan_committed or sq.verdict.plan
+    refuse_gap = raw.need_fen if fallback is None and raw is not None else 0
     if_cond = t(ctx, "if the buyer refuses (fallback)", "若买方拒绝（后备方案）")
 
     if slots.use_financing:  # correction: invoice financing instead of the early-pay counter
@@ -463,11 +475,11 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
     head = t(ctx, f"Plan (Tier 1): offer {cp} early settlement on up to "
                   f"{fmt_yuan(_face(counter))} of {rcv.id} at {fmt_pct(Fraction(_rate(counter), BP_DENOM))} "
                   f"(below the {fmt_pct(be_ratio.value)} break-even), terms unchanged, no rebate: ¥0.00 of forward "
-                  f"concessions. If {cp} refuses: {fallback.label if fallback else 'no fallback needed'}."
+                  f"concessions. If {cp} refuses: {fallback.label if fallback else _no_fallback(ctx, refuse_gap)}."
                   + (f" If {cp} accepts, the rest of the gap: {accept_plan.label}." if accept_ops and accept_plan else ""),
              f"方案（一级权限）：向 {cp} 提议对 {rcv.id} 最多 {fmt_yuan(_face(counter))} 按 "
              f"{fmt_pct(Fraction(_rate(counter), BP_DENOM))} 提前结算（低于盈亏平衡 {fmt_pct(be_ratio.value)}），"
-             f"账期不变、无返利：远期让步 ¥0.00。若对方拒绝：{_label_zh(fallback.label) if fallback else '无需后备'}。"
+             f"账期不变、无返利：远期让步 ¥0.00。若对方拒绝：{_label_zh(fallback.label) if fallback else _no_fallback(ctx, refuse_gap)}。"
              + (f"若对方接受，其余缺口：{_label_zh(accept_plan.label)}。" if accept_ops and accept_plan else ""))
     head += (t(ctx, f" If {cp} refuses: {when_refuse}", f" 若 {cp} 拒绝：{when_refuse}") if when_refuse else "")
     head += (t(ctx, f" If {cp} refuses: {refuse_note}", f" 若 {cp} 拒绝：{refuse_note}") if refuse_note else "")
@@ -475,7 +487,7 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
     head += (t(ctx, f" If {cp} accepts: {accept_note}", f" 若 {cp} 接受：{accept_note}") if accept_note else "")
     data = {"verdict_id": gv.id, "counter_id": counter.id, "cp": cp, "accept_ops": accept_ops, "refuse_ops": refuse_ops,
             "verify": steps.items[0].description, "text": text, "terms": (_face(counter), _rate(counter)),
-            "refuse_note": refuse_note, "accept_note": accept_note}
+            "refuse_note": refuse_note, "accept_note": accept_note, "refuse_gap_fen": refuse_gap}
     pending = PendingPlan(Intent.ACCELERATE_RECEIPT, slots, steps.items, data).bind(ctx, [*accept_ops, *refuse_ops])
     return Turn(intent=Intent.ACCELERATE_RECEIPT, verdict=gv, plan=steps.items, awaiting=True, amended=amended,
                 pending=pending,
@@ -518,6 +530,10 @@ def run_accelerate(ctx: NlContext, pending: PendingPlan) -> Turn:
         reply += lines
     elif d.get("refuse_note"):  # a plan exists, but not one that can run today: nothing was stored for it
         reply.append(t(ctx, f"{cp} refused. ", f"{cp} 拒绝。") + d["refuse_note"])
+    elif gap := d.get("refuse_gap_fen"):  # a gap with no admissible plan: nothing was funded (FUND-5)
+        reply.append(t(ctx, f"{cp} refused. The near-term gap of {whole(gap)} is not funded: no admissible plan on the funding menu "
+                            f"covers it. Nothing was executed for it.",
+                       f"{cp} 拒绝。近期缺口 {whole(gap)} 未获融资：融资菜单上没有可行的方案能覆盖它。未执行任何融资操作。"))
     else:
         reply.append(t(ctx, f"{cp} refused, and there is no gap to fund.", f"{cp} 拒绝，且无资金缺口。"))
     return Turn(intent=Intent.ACCELERATE_RECEIPT, reply="\n".join(reply), plan=run.items, verdict=gv,
