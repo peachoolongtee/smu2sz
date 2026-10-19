@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
+from app.compiler.folding import fold
 from app.domain.models import Obligation, ObligationType, PaymentTiming, SourceDocument, SourceSpan
 
 _WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
@@ -95,3 +96,19 @@ def attach_payment_timing(docs: dict[str, SourceDocument], obligations: Sequence
     span = SourceSpan(doc_id=doc.doc_id, start=match.start(), end=match.end(), text=match[0])
     timing = _parse(span, doc.received_day)
     return [o.model_copy(update={"payment_timing": timing}) if o is ob else o for o in result]
+
+
+def has_unread_timing(doc: SourceDocument) -> bool:
+    """Unconsumed timing in a single-discount message, excluding metadata headers.
+
+    Multi-term packages retain their existing owner-reviewed semantics; assigning a
+    period across several commercial clauses requires the later clarification build.
+    """
+    from app.compiler.coverage import ALLOWED, TIMING_RE, mentions
+
+    if any(m.kind in {"date", "days"} for m in mentions(doc)):
+        return True
+    text = fold(doc.text).text
+    allowed = [(m.start(), m.end()) for pat in ALLOWED for m in pat.finditer(text)]
+    return any(not any(start <= m.start() and m.end() <= end for start, end in allowed)
+               for m in TIMING_RE.finditer(text))

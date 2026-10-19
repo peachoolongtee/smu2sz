@@ -106,6 +106,10 @@ class _Binder:
     # ------------------------------------------------------------ per type
 
     def discount(self, ob: Obligation) -> Obligation:
+        if "settlement_day" in ob.unresolved:
+            self.note(ob, "settlement_day", False, True,
+                      "stated settlement timing is unresolved; clarification needed, nothing booked")
+            return ob
         cp = ob.counterparty_id
         base = ob.base
         receivable: Receivable | None = None

@@ -90,7 +90,7 @@ def test_x_percent_off_a_named_invoice_being_paid_is_a_discount_not_a_rebate(rul
                                      "you're ok to take 0.5% off.")
     (ob,) = offer.obligations
     assert (ob.type, ob.rate_bp, ob.contingency) == (T.IMMEDIATE_DISCOUNT, 50, Contingency.FIRM)
-    assert _verdict(offer)[0] == "NEEDS_OWNER_APPROVAL"  # the holiday timing is not read: the owner decides
+    assert _verdict(offer)[0] == "NO_VERDICT"  # holiday timing needs clarification before it can be priced
 
 
 def test_a_discount_on_an_on_time_payment_is_not_an_early_pay_discount(rules_compiler: Compiler) -> None:

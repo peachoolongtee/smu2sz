@@ -65,14 +65,13 @@ def test_clear_early_pay_below_break_even_is_read_and_accepted(rules_compiler: C
      "provided you allow a 0.6% discount."),
     "420,000元那张invoice我们下周early pay, discount 0.6% 可以吗",
 ])
-def test_a_stated_settlement_window_is_read_but_waits_for_the_owner(rules_compiler: Compiler, text: str) -> None:
-    """The window is not read into the term (the verifier assumes its own settlement day), so the coverage proof
-    fails and the discount, below break-even, waits for the owner instead of being accepted (ADR-0005)."""
+def test_an_unproven_settlement_window_needs_clarification(rules_compiler: Compiler, text: str) -> None:
+    """An unsupported calendar cannot be replaced by a facility's assumed payment day."""
     offer = _compile(rules_compiler, text)
     assert offer.status == CompileStatus.COMPILED
     assert [(o.type, o.base.amount_fen) for o in offer.obligations] == [(T.IMMEDIATE_DISCOUNT, 42_000_000)]
     assert not offer.autonomy_eligible
-    assert _verdict(offer)[0] == "NEEDS_OWNER_APPROVAL"
+    assert _verdict(offer)[0] == "NO_VERDICT"
 
 
 def test_due_early_names_the_due_date_not_an_early_payment(rules_compiler: Compiler) -> None:

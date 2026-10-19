@@ -108,3 +108,12 @@ def test_an_existing_effective_day_cannot_override_the_quoted_date():
     state, _ = load_scenario()
     result = evaluate(conflicting, state, load_signed_mandate(), trusted_owner_key_hex=demo_owner_public_key_hex())
     assert result.verdict.outcome.value == "NO_VERDICT"
+
+
+@pytest.mark.parametrize("expression", ["after the holiday", "within 3 business days", "next Friday", "on Oct 12", "ｔｏｍｏｒｒｏｗ"])
+def test_unsupported_timing_is_never_priced_on_a_default_day(expression):
+    offer = reading(f"We will pay invoice RCV-A (¥420,000) {expression}, 0.5% off.")
+    state, _ = load_scenario()
+    result = evaluate(offer, state, load_signed_mandate(), trusted_owner_key_hex=demo_owner_public_key_hex())
+    assert result.verdict.outcome.value == "NO_VERDICT"
+    assert all(ob.effective_day is None for ob in result.bound_obligations)
