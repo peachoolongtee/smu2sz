@@ -179,3 +179,21 @@ def test_timing_finalization_does_not_heal_real_scope_uncertainty_or_abstentions
     doc = SourceDocument(doc_id="date-test", channel="chat", sender_id="BUYER-1", received_day=0, text=text)
     offer = reading(text).model_copy(update={"status": CompileStatus.ABSTAINED, "autonomy_eligible": False})
     assert finalize_reconciled_timing([doc], offer) == offer
+
+
+@pytest.mark.parametrize("text,days", [
+    ("十五天内", 15), ("十一天内", 11), ("二十天内", 20), ("二十五天内", 25), ("九十九天内", 99), ("十天内", 10),
+    ("三天后", 3), ("15天内", 15),
+])
+def test_a_chinese_day_count_is_read_whole(text: str, days: int) -> None:
+    from app.compiler.settlement import _EXPR, _count
+
+    (hit,) = [m[0] for m in _EXPR.finditer(text)]
+    assert hit == text and _count(hit) == days
+
+
+@pytest.mark.parametrize("text", ["115天内", "We can now pay", "我们现在付款"])
+def test_a_partial_count_or_a_bare_now_is_not_a_proven_date(text: str) -> None:
+    from app.compiler.settlement import _EXPR
+
+    assert not list(_EXPR.finditer(text))
