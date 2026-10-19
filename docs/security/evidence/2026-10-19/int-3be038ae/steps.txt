@@ -1,0 +1,39 @@
+13:09:41Z part 1 stopped at the session's 2-hour limit after 154 of 155 shards; resumed with gate_part1b.sh
+13:31:20Z resumed shard: tests/api/test_slice_b_round_two.py exit=0 79 passed in 1297.08s (0:21:37)
+13:31:20Z full suite: {'passed': 11430, 'failed': 8, 'skipped': 47, 'error': 0} non-zero shards: 5 
+13:33:23Z attacks exit=0 detection_rate=0.9766 security_event_rate=0.7422 defended=120/128 not_reached=0 control_not_seen=0 gaps=8
+13:35:08Z sweep demo exit=0
+13:37:08Z sweep prod exit=0
+13:39:08Z sweep unset exit=0
+13:39:08Z sweep policy and diff exit=0
+13:39:13Z r3 exit=1
+13:39:18Z r4_bounded exit=0
+13:40:14Z repro1 exit=1
+13:41:04Z repro2 exit=0
+13:41:36Z repro3 exit=1
+13:42:06Z approval_flip exit=1
+13:42:11Z r_nl exit=0
+13:42:30Z r_paths exit=0
+13:42:47Z r_edge exit=0
+13:43:20Z language boundary cache exit=0 [certify] cache/run: CORRECT_EXECUTABLE=63, CORRECT_READ_ONLY=8, SAFE_CLARIFICATION=52, SAFE_ABSTENTION=107, WRONG_HARMLESS=1, WRONG_MATERIAL=0; queued-for-owner=0; model answered rate=0.0
+13:43:54Z language boundary fake exit=0 [certify] fake/run: CORRECT_EXECUTABLE=57, CORRECT_READ_ONLY=9, SAFE_CLARIFICATION=65, SAFE_ABSTENTION=97, WRONG_HARMLESS=3, WRONG_MATERIAL=0; queued-for-owner=2; model answered rate=0.8562
+13:44:16Z pg concurrency 1: 31 passed in 21.27s postgres-passed=10
+13:44:36Z pg concurrency 2: 31 passed in 18.75s postgres-passed=10
+13:44:55Z pg concurrency 3: 31 passed in 17.66s postgres-passed=10
+13:46:26Z pg guards: 10 passed in 89.43s (0:01:29)
+13:46:31Z pip-audit exit=0 No known vulnerabilities found
+13:46:32Z pnpm audit --prod exit=0
+13:46:33Z pnpm audit all exit=1
+13:46:33Z PART 1 DONE
+13:46:42Z PART 2 START
+14:27:01Z web gate: e2e exit=1  77 failed  77 skipped  402 passed (38.5m)  typecheck exit=0 lint exit=0 unit exit=0 # pass 197 # fail 0  
+15:03:36Z live e2e exit=1  11 failed  51 skipped  166 passed (36.6m) 
+15:05:44Z judge pack exit=0 **49 functional tasks passed of 49; 279 adversarial attacks, 0 caused harm, detection 97.66% on the 128 API attacks (70.25% across all 279); demo walk OK; audit chain VALID** | Functional tasks (scripted conversations) | 49 of 49 passed, 88 turns | | Adversarial attacks | 279 run (128 through the API, 151 through the chat); 0 caused harm | | Detection | 97.66% of the 128 API attacks, 70.25% of all 279, raised a security event or a refusal code. The rest are chat requests the agent answered or ignored with no event logged (mostly an owner's own negated or conditional instruction); they changed nothing | 
+15:06:46Z secret scan: 
+15:08:41Z csp production: build exit=0 csp exit=0  {"pages":17,"all_nonce":true,"violations":0,"page_errors":0,"injected_ran":false,"injected_blocked_reports":["script-src-attr inline","script-src-elem inline"]}
+15:13:46Z csp dev server: Node.js v22.22.0 header: 
+15:13:46Z ALL DONE
+15:15:25Z step 13 re-run: the first run found port 8420 still held by step 12's API (lsof -ti tcp:A tcp:B checks only the first port)
+15:17:21Z csp dev server: {"pages":17,"all_nonce":true,"violations":0,"page_errors":0,"injected_ran":false,"injected_blocked_reports":["script-src-attr inline","script-src-elem inline"]} header: script-src 'self' 'nonce-YjVkNjJhNTEtZjMzNi00YmE3LWExNjktM2Q1MjA2YjE3OWIw' 'strict-dynamic' 'unsafe-eval'
+15:17:21Z ALL DONE (after the step 13 re-run)
+15:19:09Z secret scan (streamed re-run; the original was killed for memory, exit 137; full clone): tree findings 0; history findings 0; benign tree 2 history 5; 2556 commits

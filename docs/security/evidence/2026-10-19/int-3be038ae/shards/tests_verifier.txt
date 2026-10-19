@@ -1,0 +1,13 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+........................................................................ [ 27%]
+......................................................F................. [ 54%]
+........................................................................ [ 82%]
+...............................................                          [100%]
+=================================== FAILURES ===================================
+E   assert (1809.936509285 - 1804.766524701) < 2.0
+     +  where 1809.936509285 = <built-in function perf_counter>()
+     +    where <built-in function perf_counter> = time.perf_counter
+<repo-root>/services/api/tests/verifier/test_golden_verdicts.py:174: assert (1809.936509285 - 1804.766524701) < 2.0
+=========================== short test summary info ============================
+FAILED tests/verifier/test_golden_verdicts.py::test_ex01_evaluates_under_two_seconds
+1 failed, 262 passed in 1012.01s (0:16:52)

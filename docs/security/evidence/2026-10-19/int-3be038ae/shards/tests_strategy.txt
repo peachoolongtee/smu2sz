@@ -1,0 +1,31 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+.............................................................F.......... [ 14%]
+................................s....................................... [ 29%]
+.................s...................................................... [ 43%]
+........................................................................ [ 58%]
+........................................................................ [ 73%]
+..............
+price curve, day 0, warm: 7.07 s
+F....................F...F..sss........................... [ 87%]
+...................s.......................................              [100%]
+=================================== FAILURES ===================================
+E   assert 5.116802322000012 < 1.5
+----------------------------- Captured stdout call -----------------------------
+collections worth, day 34, warm: 5.117 s (first: 10.447 s)
+<repo-root>/services/api/tests/strategy/test_collections.py:404: assert 5.116802322000012 < 1.5
+E   assert 7.0691277559999435 < 5
+<repo-root>/services/api/tests/strategy/test_price_curve.py:181: assert 7.0691277559999435 < 5
+E   assert (0 == 2)
+     +  where 0 = len([])
+<repo-root>/services/api/tests/strategy/test_routes.py:178: assert (0 == 2)
+E   assert [] == [1]
+      
+      Right contains one more item: 1
+      Use -v to get more diff
+<repo-root>/services/api/tests/strategy/test_routes.py:248: assert [] == [1]
+=========================== short test summary info ============================
+FAILED tests/strategy/test_collections.py::test_day34_answer_is_fast_when_warm
+FAILED tests/strategy/test_price_curve.py::test_the_runtime_of_the_day0_curve
+FAILED tests/strategy/test_routes.py::test_two_requests_for_one_key_compute_once
+FAILED tests/strategy/test_routes.py::test_a_cache_hit_computes_nothing_and_reports_its_own_time[envelope]
+4 failed, 481 passed, 6 skipped in 4835.77s (1:20:35)

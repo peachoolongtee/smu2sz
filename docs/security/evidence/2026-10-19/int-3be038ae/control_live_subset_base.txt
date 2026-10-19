@@ -1,0 +1,334 @@
+[WebServer] warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+
+[WebServer] INFO:     Started server process [8179]
+[WebServer] INFO:     Waiting for application startup.
+
+[WebServer] INFO:     Application startup complete.
+
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:8420 (Press CTRL+C to quit)
+
+
+Running 11 tests using 1 worker
+
+[1/11] [live] › e2e/accept-as-asked.spec.ts:81:7 › live › Zhuhai: Review the request opens the receipt before the one filled button; accepting agrees it, the record reads Agreed, the queue drops it and Activity says so
+[2/11] [live] › e2e/accept-as-asked.spec.ts:191:9 › live › at 1440 the receipt precedes the commit button, and ?review=1 opens the review on arrival
+  1) [live] › e2e/accept-as-asked.spec.ts:191:9 › live › at 1440 the receipt precedes the commit button, and ?review=1 opens the review on arrival 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  getByTestId('accept-go')
+    Expected: enabled
+    Received: disabled
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toBeEnabled" getByTestId('accept-go') with timeout 10000ms
+      - waiting for getByTestId('accept-go')
+        23 × locator resolved to <button disabled type="button" data-testid="accept-go" class="motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 min-h-10 px-4 text-sm touch:min-h-11 bg-brand-600 text-white border-transparent shadow-(--shadow-f) hover:shadow-(--shadow-lift) hover:brightness-110 ">Accept their request</button>
+           - unexpected value "disabled"
+
+
+      197 |       await page.goto(`/deals?decision=${encodeURIComponent("deal:" + (await offerOfRow(request, "Zhuhai")))}&review=1`);
+      198 |       await expect(page.getByTestId("accept-review")).toBeVisible();
+    > 199 |       await expect(page.getByTestId("accept-go")).toBeEnabled();
+          |                                                   ^
+      200 |       await receiptBeforeButton(page);
+      201 |       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+      202 |     });
+        at <control-root>/apps/web/e2e/accept-as-asked.spec.ts:199:51
+
+    Error Context: test-results/accept-as-asked-live-at-14-b011e-opens-the-review-on-arrival-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/accept-as-asked-live-at-14-b011e-opens-the-review-on-arrival-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/accept-as-asked-live-at-14-b011e-opens-the-review-on-arrival-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[3/11] [live] › e2e/accept-as-asked.spec.ts:191:9 › live › at 390 the receipt precedes the commit button, and ?review=1 opens the review on arrival
+  2) [live] › e2e/accept-as-asked.spec.ts:191:9 › live › at 390 the receipt precedes the commit button, and ?review=1 opens the review on arrival 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  getByTestId('accept-go')
+    Expected: enabled
+    Received: disabled
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toBeEnabled" getByTestId('accept-go') with timeout 10000ms
+      - waiting for getByTestId('accept-go')
+        24 × locator resolved to <button disabled type="button" data-testid="accept-go" class="motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 min-h-10 px-4 text-sm touch:min-h-11 bg-brand-600 text-white border-transparent shadow-(--shadow-f) hover:shadow-(--shadow-lift) hover:brightness-110 ">Accept their request</button>
+           - unexpected value "disabled"
+
+
+      197 |       await page.goto(`/deals?decision=${encodeURIComponent("deal:" + (await offerOfRow(request, "Zhuhai")))}&review=1`);
+      198 |       await expect(page.getByTestId("accept-review")).toBeVisible();
+    > 199 |       await expect(page.getByTestId("accept-go")).toBeEnabled();
+          |                                                   ^
+      200 |       await receiptBeforeButton(page);
+      201 |       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+      202 |     });
+        at <control-root>/apps/web/e2e/accept-as-asked.spec.ts:199:51
+
+    Error Context: test-results/accept-as-asked-live-at-39-d9159-opens-the-review-on-arrival-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/accept-as-asked-live-at-39-d9159-opens-the-review-on-arrival-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/accept-as-asked-live-at-39-d9159-opens-the-review-on-arrival-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[4/11] [live] › e2e/accept-as-asked.spec.ts:205:7 › live › Home's deal row and the Customer page lead to the Deals pane with the review open on arrival, and the queue row says the server's own consequence
+  3) [live] › e2e/accept-as-asked.spec.ts:205:7 › live › Home's deal row and the Customer page lead to the Deals pane with the review open on arrival, and the queue row says the server's own consequence 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByTestId('customer-decision-primary')
+    Expected: "Review the request"
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" getByTestId('customer-decision-primary') with timeout 10000ms
+      - waiting for getByTestId('customer-decision-primary')
+
+
+      215 |     await page.goto(`/customers/BUYER-3?decision=${encodeURIComponent(decision)}`);
+      216 |     const primary = page.getByTestId("customer-decision-primary");
+    > 217 |     await expect(primary).toHaveText("Review the request");
+          |                           ^
+      218 |     await expect(primary).toHaveAttribute("href", /review=1/);
+      219 |     await primary.click();
+      220 |     await expect(page.getByTestId("accept-review")).toBeVisible();
+        at <control-root>/apps/web/e2e/accept-as-asked.spec.ts:217:27
+
+    Error Context: test-results/accept-as-asked-live-Home--a9ad3-he-server-s-own-consequence-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/accept-as-asked-live-Home--a9ad3-he-server-s-own-consequence-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/accept-as-asked-live-Home--a9ad3-he-server-s-own-consequence-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[5/11] [live] › e2e/accept-as-asked.spec.ts:233:7 › live › a refusal (the books moved) is said in the server's own words in place, with no spinner, and nothing was accepted
+  4) [live] › e2e/accept-as-asked.spec.ts:233:7 › live › a refusal (the books moved) is said in the server's own words in place, with no spinner, and nothing was accepted 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  getByTestId('accept-go')
+    Expected: enabled
+    Received: disabled
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toBeEnabled" getByTestId('accept-go') with timeout 10000ms
+      - waiting for getByTestId('accept-go')
+        24 × locator resolved to <button disabled type="button" data-testid="accept-go" class="motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 min-h-10 px-4 text-sm touch:min-h-11 bg-brand-600 text-white border-transparent shadow-(--shadow-f) hover:shadow-(--shadow-lift) hover:brightness-110 ">Accept their request</button>
+           - unexpected value "disabled"
+
+
+      235 |     await selectRequest(page, "Zhuhai");
+      236 |     await page.getByTestId("accept-review-open").click();
+    > 237 |     await expect(page.getByTestId("accept-go")).toBeEnabled();
+          |                                                 ^
+      238 |     // The books move under the open review (a day passes), so what the owner was shown is stale.
+      239 |     const moved = await request.post(`${API()}/clock/advance`, { headers, data: { days: 1 } });
+      240 |     expect(moved.ok()).toBeTruthy();
+        at <control-root>/apps/web/e2e/accept-as-asked.spec.ts:237:49
+
+    Error Context: test-results/accept-as-asked-live-a-ref-a8439-er-and-nothing-was-accepted-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/accept-as-asked-live-a-ref-a8439-er-and-nothing-was-accepted-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/accept-as-asked-live-a-ref-a8439-er-and-nothing-was-accepted-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[6/11] [live] › e2e/documents.spec.ts:565:7 › against the live API › both controls go dead the moment one is pressed: one request, never two
+[7/11] [live] › e2e/home-v2-states.spec.ts:396:5 › 11 customer selected in the crisis: the alert persists
+  5) [live] › e2e/home-v2-states.spec.ts:396:5 › 11 customer selected in the crisis: the alert persists › 1440 en 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByTestId('focus-title')
+    Expected: "Foshan Home Retail Co."
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" getByTestId('focus-title') with timeout 10000ms
+      - waiting for getByTestId('focus-title')
+
+
+      406 |     expect(new URL(page.url()).searchParams.get("customer")).toBe("BUYER-1");
+      407 |     const overview = await get<{ name: string; figures: { key: string; value_display: string }[] }>(request, `/customers/BUYER-1/overview?lang=${lang}`);
+    > 408 |     await expect(page.getByTestId("focus-title")).toHaveText(overview.name);
+          |                                                   ^
+      409 |     for (const f of overview.figures) await expect(page.getByTestId(`focus-figure-${f.key}-value`)).toHaveText(f.value_display);
+      410 |     await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "held");
+      411 |     await expect(page.getByTestId("home-action-title")).toHaveText(reads.home[lang].home_v2!.action.title);
+        at <control-root>/apps/web/e2e/home-v2-states.spec.ts:408:51
+        at <control-root>/apps/web/e2e/home-v2-states.spec.ts:294:11
+        at look (<control-root>/apps/web/e2e/home-v2-states.spec.ts:288:7)
+        at <control-root>/apps/web/e2e/home-v2-states.spec.ts:402:3
+
+    Error Context: test-results/home-v2-states-11-customer-53a3d-e-crisis-the-alert-persists-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-v2-states-11-customer-53a3d-e-crisis-the-alert-persists-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/home-v2-states-11-customer-53a3d-e-crisis-the-alert-persists-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[8/11] [live] › e2e/live.spec.ts:455:5 › approving after the mandate has expired is refused: the card ends as 'could not run', with no buttons and no money moved
+  6) [live] › e2e/live.spec.ts:455:5 › approving after the mandate has expired is refused: the card ends as 'could not run', with no buttons and no money moved 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByTestId('alert-approval-link-ALERT-RESERVE-34')
+
+
+      461 |   expect(alertId).toMatch(/^ALERT-RESERVE/);
+      462 |   await runPlan(page.getByTestId("home-next-action"), alertId);
+    > 463 |   await page.getByTestId(`alert-approval-link-${alertId}`).click();
+          |                                                            ^
+      464 |   await expect(page).toHaveURL(/\/approvals#approval-APR-/);
+      465 |   const card = page.locator('[id^="approval-APR-"]').first();
+      466 |   const approve = card.getByRole("button", { name: /^Authorize/ });
+        at <control-root>/apps/web/e2e/live.spec.ts:463:60
+
+    Error Context: test-results/live-approving-after-the-m-721f5--buttons-and-no-money-moved-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/live-approving-after-the-m-721f5--buttons-and-no-money-moved-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/live-approving-after-the-m-721f5--buttons-and-no-money-moved-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[9/11] [live] › e2e/live.spec.ts:630:5 › Cash & funding: a cure that cannot restore the reserve leaves a remaining task with the routes it names, and the invoice link lands on its row
+  7) [live] › e2e/live.spec.ts:630:5 › Cash & funding: a cure that cannot restore the reserve leaves a remaining task with the routes it names, and the invoice link lands on its row 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByTestId('alert-approval-link-ALERT-RESERVE-34')
+
+
+      634 |   const alertId = ((await open.getAttribute("data-testid")) ?? "").replace("fix-open-", "");
+      635 |   await runPlan(page.getByTestId("home-next-action"), alertId);
+    > 636 |   await page.getByTestId(`alert-approval-link-${alertId}`).click();
+          |                                                            ^
+      637 |   await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Authorize/ }).click();
+      638 |   await expect(page.locator('[id^="approval-APR-"]').first().locator('[data-testid^="approval-decided-"]')).toBeVisible();
+      639 |   // While the cash is on its way the record waits for the lender; once it has landed the reserve is still short and the owner is asked.
+        at <control-root>/apps/web/e2e/live.spec.ts:636:60
+
+    Error Context: test-results/live-Cash-funding-a-cure-t-9f63c-voice-link-lands-on-its-row-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/live-Cash-funding-a-cure-t-9f63c-voice-link-lands-on-its-row-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/live-Cash-funding-a-cure-t-9f63c-voice-link-lands-on-its-row-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[10/11] [live] › e2e/slice-b-round-two.spec.ts:147:7 › live › Foshan's EX01 on the busy books: the comparison says the request breaches the reserve, the terms say the difference of the period, and the customer page leads with the selected negotiation
+  8) [live] › e2e/slice-b-round-two.spec.ts:147:7 › live › Foshan's EX01 on the busy books: the comparison says the request breaches the reserve, the terms say the difference of the period, and the customer page leads with the selected negotiation 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByTestId('customer-relationship')
+    Expected substring: "Foshan contributes an estimated"
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByTestId('customer-relationship') with timeout 10000ms
+      - waiting for getByTestId('customer-relationship')
+
+
+      155 |     if (await page.getByTestId("deal-tab-overview").count()) await page.getByTestId("deal-tab-overview").click();
+      156 |     await page.getByTestId("deal-selected-customer").click();
+    > 157 |     await expect(page.getByTestId("customer-relationship")).toContainText("Foshan contributes an estimated");
+          |                                                             ^
+      158 |     await expect(page.getByTestId("customer-decision-heading")).toContainText("60-day terms");
+      159 |     await expect(page.getByTestId("customer-others")).toContainText("Other open negotiations (3)");
+      160 |     await expect(page.getByTestId("customer-flow-links").getByRole("link").first()).toBeVisible();
+        at <control-root>/apps/web/e2e/slice-b-round-two.spec.ts:157:61
+
+    Error Context: test-results/slice-b-round-two-live-Fos-ccee6-th-the-selected-negotiation-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/slice-b-round-two-live-Fos-ccee6-th-the-selected-negotiation-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/slice-b-round-two-live-Fos-ccee6-th-the-selected-negotiation-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[11/11] [live] › e2e/slice-b-round-two.spec.ts:174:7 › live › the flow's financing link lands on the facility it names on Cash: the element has the id, opens and takes focus
+  9) [live] › e2e/slice-b-round-two.spec.ts:174:7 › live › the flow's financing link lands on the facility it names on Cash: the element has the id, opens and takes focus 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.getAttribute: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid^="customer-flow-step-link-"]').filter({ hasText: /financing/i }).first()
+
+
+      176 |     await page.goto("/customers/BUYER-1");
+      177 |     const link = page.locator('[data-testid^="customer-flow-step-link-"]').filter({ hasText: /financing/i }).first();
+    > 178 |     const href = await link.getAttribute("href");
+          |                             ^
+      179 |     expect(href).toMatch(/^\/cash#facility-/);
+      180 |     await link.click();
+      181 |     await expect(page).toHaveURL(/\/cash#facility-/);
+        at <control-root>/apps/web/e2e/slice-b-round-two.spec.ts:178:29
+
+    Error Context: test-results/slice-b-round-two-live-the-60ea5-he-id-opens-and-takes-focus-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/slice-b-round-two-live-the-60ea5-he-id-opens-and-takes-focus-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/slice-b-round-two-live-the-60ea5-he-id-opens-and-takes-focus-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  9 failed
+    [live] › e2e/accept-as-asked.spec.ts:191:9 › live › at 1440 the receipt precedes the commit button, and ?review=1 opens the review on arrival 
+    [live] › e2e/accept-as-asked.spec.ts:191:9 › live › at 390 the receipt precedes the commit button, and ?review=1 opens the review on arrival 
+    [live] › e2e/accept-as-asked.spec.ts:205:7 › live › Home's deal row and the Customer page lead to the Deals pane with the review open on arrival, and the queue row says the server's own consequence 
+    [live] › e2e/accept-as-asked.spec.ts:233:7 › live › a refusal (the books moved) is said in the server's own words in place, with no spinner, and nothing was accepted 
+    [live] › e2e/home-v2-states.spec.ts:396:5 › 11 customer selected in the crisis: the alert persists 
+    [live] › e2e/live.spec.ts:455:5 › approving after the mandate has expired is refused: the card ends as 'could not run', with no buttons and no money moved 
+    [live] › e2e/live.spec.ts:630:5 › Cash & funding: a cure that cannot restore the reserve leaves a remaining task with the routes it names, and the invoice link lands on its row 
+    [live] › e2e/slice-b-round-two.spec.ts:147:7 › live › Foshan's EX01 on the busy books: the comparison says the request breaches the reserve, the terms say the difference of the period, and the customer page leads with the selected negotiation 
+    [live] › e2e/slice-b-round-two.spec.ts:174:7 › live › the flow's financing link lands on the facility it names on Cash: the element has the id, opens and takes focus 
+  2 passed (8.9m)

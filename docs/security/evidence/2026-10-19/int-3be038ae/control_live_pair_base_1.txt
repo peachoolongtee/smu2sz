@@ -1,0 +1,81 @@
+[WebServer] warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+
+[WebServer] INFO:     Started server process [10821]
+
+[WebServer] INFO:     Waiting for application startup.
+
+[WebServer] INFO:     Application startup complete.
+
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:8420 (Press CTRL+C to quit)
+
+
+Running 2 tests using 1 worker
+
+[1/2] [live] › e2e/accept-as-asked.spec.ts:81:7 › live › Zhuhai: Review the request opens the receipt before the one filled button; accepting agrees it, the record reads Agreed, the queue drops it and Activity says so
+  1) [live] › e2e/accept-as-asked.spec.ts:81:7 › live › Zhuhai: Review the request opens the receipt before the one filled button; accepting agrees it, the record reads Agreed, the queue drops it and Activity says so 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: getByTestId('deal-pane')
+    Expected: "AGREED"
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" getByTestId('deal-pane') with timeout 10000ms
+      - waiting for getByTestId('deal-pane')
+        15 × locator resolved to <section class="min-w-0" data-view="overview" data-testid="deal-pane" data-state="RESPONSE_READY" aria-labelledby="_r_3_-title" data-decision="deal:OFF-96e709c2b1d8">…</section>
+           - unexpected value "RESPONSE_READY"
+
+
+      109 |     // The server's own account of what ran, then the record: Agreed, with the agreement's receipt.
+      110 |     await expect(page.getByTestId("deal-accepted-ran")).not.toBeEmpty();
+    > 111 |     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
+          |                                                 ^
+      112 |     // Accepting funds nothing (the owner runs the funding): the busy books' reserve gap is still ahead, and the next step says so once, with the way on.
+      113 |     await expect(page.getByTestId("deal-funding-next")).toHaveCount(1);
+      114 |     await expect(page.getByTestId("deal-funding-next-text")).toContainText(/^The agreement ran no funding: cash still falls ¥[\d,.]+ below your minimum/);
+        at <control-root>/apps/web/e2e/accept-as-asked.spec.ts:111:49
+
+    Error Context: test-results/accept-as-asked-live-Zhuha-8fc9a-ops-it-and-Activity-says-so-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/accept-as-asked-live-Zhuha-8fc9a-ops-it-and-Activity-says-so-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/accept-as-asked-live-Zhuha-8fc9a-ops-it-and-Activity-says-so-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[2/2] [live] › e2e/documents.spec.ts:565:7 › against the live API › both controls go dead the moment one is pressed: one request, never two
+  2) [live] › e2e/documents.spec.ts:565:7 › against the live API › both controls go dead the moment one is pressed: one request, never two 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 2
+
+      580 |     await reject.dispatchEvent("click");
+      581 |     await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
+    > 582 |     expect(sent).toBe(1);
+          |                  ^
+      583 |   });
+      584 |
+      585 |   test("a blocked document: confirm is off, the reason sits beside it and describes it; reject stays", async ({ page }) => {
+        at <control-root>/apps/web/e2e/documents.spec.ts:582:18
+
+    Error Context: test-results/documents-against-the-live-793d5-essed-one-request-never-two-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/documents-against-the-live-793d5-essed-one-request-never-two-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/documents-against-the-live-793d5-essed-one-request-never-two-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    [live] › e2e/accept-as-asked.spec.ts:81:7 › live › Zhuhai: Review the request opens the receipt before the one filled button; accepting agrees it, the record reads Agreed, the queue drops it and Activity says so 
+    [live] › e2e/documents.spec.ts:565:7 › against the live API › both controls go dead the moment one is pressed: one request, never two 

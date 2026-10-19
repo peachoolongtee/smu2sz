@@ -1,0 +1,80 @@
+[WebServer] warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+
+[WebServer] INFO:     Started server process [11962]
+[WebServer] INFO:     Waiting for application startup.
+
+[WebServer] INFO:     Application startup complete.
+
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:8420 (Press CTRL+C to quit)
+
+
+Running 2 tests using 1 worker
+
+[1/2] [live] › e2e/accept-as-asked.spec.ts:81:7 › live › Zhuhai: Review the request opens the receipt before the one filled button; accepting agrees it, the record reads Agreed, the queue drops it and Activity says so
+  1) [live] › e2e/accept-as-asked.spec.ts:81:7 › live › Zhuhai: Review the request opens the receipt before the one filled button; accepting agrees it, the record reads Agreed, the queue drops it and Activity says so 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  getByTestId('accept-go')
+    Expected: enabled
+    Received: disabled
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toBeEnabled" getByTestId('accept-go') with timeout 10000ms
+      - waiting for getByTestId('accept-go')
+        24 × locator resolved to <button disabled type="button" data-testid="accept-go" class="motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 min-h-10 px-4 text-sm touch:min-h-11 bg-brand-600 text-white border-transparent shadow-(--shadow-f) hover:shadow-(--shadow-lift) hover:brightness-110 ">Accept their request</button>
+           - unexpected value "disabled"
+
+
+      101 |     // The one filled button names the act; the decline is quiet beside it.
+      102 |     const go = page.getByTestId("accept-go");
+    > 103 |     await expect(go).toBeEnabled();
+          |                      ^
+      104 |     await expect(go).toHaveText("Accept their request");
+      105 |     await expect(page.getByTestId("accept-decline")).toHaveText("Decline the request");
+      106 |     expect(await go.evaluate((el) => getComputedStyle(el).backgroundColor), "the one filled button is the ink primary").toBe("rgb(23, 29, 30)");
+        at <repo-root>/apps/web/e2e/accept-as-asked.spec.ts:103:22
+
+    Error Context: test-results/accept-as-asked-live-Zhuha-8fc9a-ops-it-and-Activity-says-so-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/accept-as-asked-live-Zhuha-8fc9a-ops-it-and-Activity-says-so-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/accept-as-asked-live-Zhuha-8fc9a-ops-it-and-Activity-says-so-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[2/2] [live] › e2e/documents.spec.ts:565:7 › against the live API › both controls go dead the moment one is pressed: one request, never two
+  2) [live] › e2e/documents.spec.ts:565:7 › against the live API › both controls go dead the moment one is pressed: one request, never two 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 2
+
+      580 |     await reject.dispatchEvent("click");
+      581 |     await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
+    > 582 |     expect(sent).toBe(1);
+          |                  ^
+      583 |   });
+      584 |
+      585 |   test("a blocked document: confirm is off, the reason sits beside it and describes it; reject stays", async ({ page }) => {
+        at <repo-root>/apps/web/e2e/documents.spec.ts:582:18
+
+    Error Context: test-results/documents-against-the-live-793d5-essed-one-request-never-two-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/documents-against-the-live-793d5-essed-one-request-never-two-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/documents-against-the-live-793d5-essed-one-request-never-two-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    [live] › e2e/accept-as-asked.spec.ts:81:7 › live › Zhuhai: Review the request opens the receipt before the one filled button; accepting agrees it, the record reads Agreed, the queue drops it and Activity says so 
+    [live] › e2e/documents.spec.ts:565:7 › against the live API › both controls go dead the moment one is pressed: one request, never two 

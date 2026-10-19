@@ -1,0 +1,6 @@
+$OUT/sweep_demo.json: 112 routes; 0 policy violations; owner answers {200: 50, 403: 2, 404: 27, 409: 2, 422: 31}
+$OUT/sweep_prod.json: 112 routes; 0 policy violations; owner answers {200: 46, 403: 4, 404: 30, 409: 1, 422: 31}
+$OUT/sweep_unset.json: 112 routes; 0 policy violations; owner answers {200: 46, 403: 4, 404: 30, 409: 1, 422: 31}
+672 and 672 answers; 0 differ
+784 and 784 answers; 0 differ
+784 and 784 answers; 0 differ

@@ -1,0 +1,1 @@
+content-security-policy: default-src 'self'; script-src 'self' 'nonce-YjVkNjJhNTEtZjMzNi00YmE3LWExNjktM2Q1MjA2YjE3OWIw' 'strict-dynamic' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' http://localhost:8420; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'

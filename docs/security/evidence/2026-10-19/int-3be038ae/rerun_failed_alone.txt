@@ -1,0 +1,24 @@
+== cand (3be038ae), one process, nothing else running
+PASSED tests/verifier/test_golden_verdicts.py::test_ex01_evaluates_under_two_seconds
+PASSED tests/funding/test_golden.py::test_plan_runs_under_one_second
+PASSED tests/api/test_exposure_routes.py::test_the_golden_cost_of_a_cold_full_read_is_under_three_seconds_and_the_light_read_is_far_cheaper
+PASSED tests/strategy/test_collections.py::test_day34_answer_is_fast_when_warm
+PASSED tests/strategy/test_price_curve.py::test_the_runtime_of_the_day0_curve
+PASSED tests/strategy/test_routes.py::test_two_requests_for_one_key_compute_once
+PASSED tests/strategy/test_routes.py::test_a_cache_hit_computes_nothing_and_reports_its_own_time[envelope]
+PASSED tests/strategy/test_routes.py::test_a_cache_hit_computes_nothing_and_reports_its_own_time[curve]
+PASSED tests/strategy/test_routes.py::test_a_cache_hit_computes_nothing_and_reports_its_own_time[worth]
+PASSED tests/api/test_strategy_warm.py::test_a_demo_reset_warms_the_envelope_and_the_price_curve
+10 passed in 91.07s (0:01:31)
+== base (c66a5e61), one process, nothing else running
+PASSED tests/verifier/test_golden_verdicts.py::test_ex01_evaluates_under_two_seconds
+PASSED tests/funding/test_golden.py::test_plan_runs_under_one_second
+PASSED tests/api/test_exposure_routes.py::test_the_golden_cost_of_a_cold_full_read_is_under_three_seconds_and_the_light_read_is_far_cheaper
+PASSED tests/strategy/test_collections.py::test_day34_answer_is_fast_when_warm
+PASSED tests/strategy/test_price_curve.py::test_the_runtime_of_the_day0_curve
+PASSED tests/strategy/test_routes.py::test_two_requests_for_one_key_compute_once
+PASSED tests/strategy/test_routes.py::test_a_cache_hit_computes_nothing_and_reports_its_own_time[envelope]
+PASSED tests/strategy/test_routes.py::test_a_cache_hit_computes_nothing_and_reports_its_own_time[curve]
+PASSED tests/strategy/test_routes.py::test_a_cache_hit_computes_nothing_and_reports_its_own_time[worth]
+PASSED tests/api/test_strategy_warm.py::test_a_demo_reset_warms_the_envelope_and_the_price_curve
+10 passed in 93.97s (0:01:33)

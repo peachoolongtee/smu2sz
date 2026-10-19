@@ -1,0 +1,100 @@
+VERDICT: NO-GO by the REV-4 handoff's blocker rule. The probe finds 31 reversed-payer or quoted buyer messages still accepted at
+Tier 1 on 3be038ae. Every one of them is also accepted at Tier 1 on the fallback c66a5e61, so REV-4 is strictly safer than
+c66a5e61: 41 messages move from accepted-alone to queued, none move the other way, no false hold is introduced, and Table 4 is
+unchanged. The gate found no failure caused by REV-4. If the project lead prefers REV-4 with the remaining B2/B3 gaps disclosed
+under R-7, this evidence supports that decision; it does not certify REV-4 as closing B2 and B3.
+
+Review and gate of fix/rev4-coverage 3be038ae (= e5bc3f49, product code c66a5e61, + REV-4: services/api/app/compiler/coverage.py
++14 lines and tests/nl/test_rev4_payer_and_quoted.py), 19 Oct 2026, by Hao En with an AI agent (Claude) in a separate cloud
+session, per HANDOFF_HaoEn_REV4.md and HANDOFF_HaoEn_reader_dates.md sections 8 to 11. Clean detached checkout of 3be038ae
+(tree_status.txt and tree_after.txt empty). Baseline sweep: int-c66a5e61 (fix/review-20oct).
+
+DEVIATIONS from the handoff's environment (read every result with these in mind):
+  - machine: a 2-core, 7 GB Linux cloud workspace, not the reviewer's own machine. The API suite ran 8 shards at a time on 2
+    cores, as the gate script does; timing tests fail under that load (below).
+  - PostgreSQL 16.15, not 17 (17 cannot be downloaded here); local throwaway databases, role and password masked.
+  - Chromium 141 (the workspace's preinstalled build) through a shim, not Playwright 1.63's Chromium 153 (download blocked).
+  - Node 22.22.0 and pnpm 10.28.0, not Node 24.11.1 and pnpm 12.11.2; Python 3.12.3 and uv 0.11.32, not 3.12.14 and 0.12.10
+    (the locked Python packages are the same versions as in int-c66a5e61's manifest).
+  - part 1 was stopped by the session's 2-hour limit after 154 of 155 API shards; tools/gate_part1b.sh ran the last shard and
+    steps 2 to 7 (steps.txt). Steps 8 to 13 ran as tools/gate_part2.sh. Both are the handoff's gate.sh, split (tools/).
+  - step 13 (CSP on the dev server) was re-run (tools/gate_step13.sh): the first run found port 8420 still held by step 12's API,
+    because gate.sh's `lsof -ti tcp:A tcp:B` checks only the first port (a gate-script bug to fix).
+  - the secret scan was re-run with tools/secret_scan_stream.py: the original reads `git log --all -p` whole and was killed for
+    memory (exit 137); the wrapper uses the original's patterns and scan function unchanged and streams the history, on a full
+    (unshallowed) clone, 2,556 commits.
+
+PROBE (probe/probe_rev4_table.md; 163 messages, in process, BUYER-1's key, c66a5e61 as the control; tools/probe_rev4.py)
+  3be038ae: AUTO 53, QUEUED 107, HELD 3. Verdicts: ok 118, BLOCKER 31, FALSE HOLD 14.
+  c66a5e61: AUTO 94, QUEUED 66, HELD 3.
+  Changed outcomes: 41, all AUTO -> QUEUED (the writer's ten; U, YOU, you can settle, you pay, newline or extra spaces after
+  'You', 'You can then pay', 'Thank you, you can pay', homoglyphs 'Yοu' and 'Ｙｏｕ', 'pаy' with a Cyrillic а, 您/你/贵方,
+  付清/结清/付款, a quoted line in the middle or at the end, ＞, 》, 『』, “”, "", an indented '>'). None AUTO <- QUEUED.
+  BLOCKERS (still AUTO, all also AUTO on c66a5e61):
+    B2  "You're able to pay", "You'll pay", "You'd pay", "You'll settle" (the regex needs whitespace after 'you'; the
+        contractions are filler); "You, if ok, can pay", "You, if ok, will pay", "You can, if ok, pay", "You - can pay",
+        "You: pay" (punctuation after 'you'); "Thanks you can pay" (look-behind); "You can do the payment of" (a noun);
+        你们，可以…, 你们 可以…, 贵司，… (a comma or space ends the Chinese window); 你们也可以就是想提前支付… (over six characters).
+    B3  'Hi, "…"' and 'Hi, “…”' (the quote does not start the line); '…', ‘…’, ＂…＂, «…», „…“, a ``` fence (characters not in
+        the set; _QUOTED reads the raw text, not the folded text); › ‹ │ ¦ 〉 《…》 (markers not in the set); a zero-width or
+        non-breaking space before '>' (only spaces and tabs may precede the marker).
+  False holds: 14 plain offers queued on 3be038ae, identically queued on c66a5e61 (unread words such as like, agree, prefer, know,
+  works, so much, 同意, 确认一下, 配合, 看); none caused by REV-4. Negations: all 18 held or queued.
+
+TABLE 4 (funnel/; scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2 --out, on both builds)
+  identical on 3be038ae and c66a5e61, row by row: held-out 3 eligible 14, accepted alone 1, escalated unnecessarily 9,
+  escalations 36, counters 10, rejects 19; held-out 2 eligible 9, 2, 2, 22, 10, 15; wrong autonomous accepts 0 in both.
+
+FAIL-CLOSED PROTOTYPE (a suggestion, not reviewed or gated: tools/suggested_fail_closed_prototype.diff, probe/probe_prototype.json)
+  Hold on any second-person word outside a fixed courtesy phrase, and on any quotation or quote-marker character (after removing
+  zero-width and non-breaking spaces): 30 of the 31 blockers held ("Thanks you can pay" needs the courtesy list narrowed);
+  3 new false holds among 36 plain offers ("We can pay you …", "Can we pay you …?", 请您确认，我们可以…); Table 4 unchanged.
+  The fix's writer, not the reviewer, should write and test the real change.
+
+GATE (steps.txt; files in this folder)
+  API suite, 155 shards        11,430 passed, 8 failed, 47 skipped (suite_totals.txt, shards/). 11,438 run = c66a5e61's 11,426
+                               + REV-4's 12. The 8 failures are timing and cache tests run 8 at a time on 2 cores:
+                               verifier test_ex01_evaluates_under_two_seconds (5.2 s), funding test_plan_runs_under_one_second
+                               (1.02 s), exposure cold read (29.5 s against 3 s), strategy collections day34 warm, price-curve
+                               runtime, routes 'two requests compute once' and 'a cache hit computes nothing', strategy_warm
+                               'a demo reset warms'. Re-run alone: all 10 cases pass on 3be038ae and on c66a5e61
+                               (rerun_failed_alone.txt). Not caused by REV-4.
+  Attack catalogue             279 cases (128 API, 151 chat), 0 with harm, 0 not reached, 120/128 named controls, the same 8
+                               gaps; detection 97.66% API, security events 74.22% (attacks.txt, latest_report.*)
+  Credential sweep, 3 modes    112 routes, 0 policy violations; 0 differences from int-c66a5e61 (sweep_*.json, sweep_policy.txt)
+  Reproductions, approval flip exit codes equal to int-c66a5e61's (r3, repro1, repro3, approval_flip exit 1: they crash when the
+                               attack is refused); outputs equal apart from timestamps, latencies and log lines
+  Language boundary            0 wrong-and-material, cache and fake (lb_cache*, lb_fake*)
+  PostgreSQL 16 (not 17)       concurrency 3 of 3 (31 tests, 10 on PostgreSQL each); audit guards 10 passed (pg_*.txt)
+  Audits                       pip-audit: no known vulnerabilities; pnpm audit --prod 0; full audit: braces only
+                               (GHSA-vfj7-8cjw-p6xm, development-only, accepted by the project lead)
+  Secret scan                  0 findings in the tracked files and in 2,556 commits of every branch (secret_scan.txt; streamed)
+  Mock browser suite           402 passed, 77 failed, 77 skipped (web/mock_e2e.txt); typecheck, lint pass; web unit 197 passed.
+                               The mock suite uses recorded JSON and no API, and apps/web is identical on both builds, so REV-4
+                               cannot change it (git diff c66a5e61 3be038ae -- apps/web is empty). Control on c66a5e61, same
+                               machine, same 6 workers: full suite 407 passed, 72 failed, 77 skipped (control_mock_full_base.txt);
+                               the 77 as a subset first: 57 passed, 28 failed (control_mock_subset_base.txt). 48 of the 77 also
+                               failed on c66a5e61 in one of the two runs; 29 did not, and 25 tests failed on c66a5e61 that
+                               passed on 3be038ae (web/mock_failed_*.txt). The failing set moves from run to run on an unchanged web
+                               app: load flakiness on 2 cores, not REV-4. This does not meet the strict "fails on the tag too"
+                               rule for those 29; it needs a rerun on a normal machine before the row can read green.
+  Live browser suite (1 worker) 166 passed, 11 failed, 51 skipped (live_e2e.txt). Control on c66a5e61, same machine: the 11 as a
+                               subset failed 9 on c66a5e61 and 8 on 3be038ae (control_live_subset_*.txt); the two not failed on
+                               c66a5e61 in that subset (accept-as-asked.spec.ts:81, documents.spec.ts:565) were re-run twice on
+                               each build and failed on c66a5e61 too (control_live_pair_*.txt). Every one of the 11 fails on
+                               c66a5e61 on this machine: pre-existing for this environment, not caused by REV-4. REV-4's two
+                               patterns cannot match the Zhuhai message the :81 test uses.
+  CSP                          production build and the pnpm demo dev server: 17 pages each, 0 violations, injected script
+                               blocked; the dev header adds 'unsafe-eval' (csp/, csp_dev/)
+  Judge pack                   49 of 49 tasks (88 turns); 279 attacks, 0 harm; demo walk OK; audit chain VALID; tampered copy
+                               rejected (judge/)
+  Sandbox (outside this folder, on sec/rev4-gate, CODE_COMMIT = 3be038ae)
+                               docs/deliverables/evidence/sandbox-2026-10-19/run-20261019T110532Z-inproc: 159 passed, 0 failed,
+                               exports 16/16 VALID; run-20261019T110627Z-http: 142 passed, 0 failed, 1 skipped, exports 13/13
+                               VALID; run.json code_diff_check.empty true in both
+
+Paths: local paths are replaced by <repo-root>, <control-root>, $OUT, $SCRATCH and ~ (tools/scrub_paths_linux.py, the
+Linux counterpart of int-c66a5e61's scrub_paths.py). The PostgreSQL password appears in no file here.
+
+For the Security Lead: the gate script's port clean-up (`lsof -ti tcp:$WEB_PORT tcp:$API_PORT`) needs `-i` per port, and
+`kill` of the `uv run` PID leaves uvicorn running; secret_scan.py needs to stream `git log --all -p`.

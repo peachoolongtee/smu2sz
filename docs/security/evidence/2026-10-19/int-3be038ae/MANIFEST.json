@@ -1,0 +1,54 @@
+{
+  "commit": "3be038ae9eb591d67ee7e31b99c0c2f80066198b",
+  "branch": "fix/rev4-coverage",
+  "base": {
+    "fix/review-20oct": "e5bc3f49",
+    "product_code": "c66a5e61"
+  },
+  "evidence_branch": "sec/rev4-gate",
+  "working_tree_clean": true,
+  "build": "source checkout at 3be038ae (detached, clean); no container image (local simulation)",
+  "manifest_written_utc": "2026-10-19T16:40:13Z",
+  "assessment_window_utc": "2026-10-19T11:04:50Z to 2026-10-19T16:45:00Z (gate, controls and re-runs)",
+  "assessor": "Hao En",
+  "assisted_by": "an AI agent (Claude) in a separate cloud session",
+  "verdict": "NO-GO by HANDOFF_HaoEn_REV4.md's blocker rule: 31 reversed-payer or quoted messages still accepted at Tier 1 (all also accepted on c66a5e61); REV-4 is strictly safer than c66a5e61 (41 AUTO->QUEUED, 0 the other way, 0 new false holds, Table 4 unchanged)",
+  "baseline_sweep": "docs/security/evidence/2026-10-19/int-c66a5e61 (fix/review-20oct)",
+  "scope": "local simulation: loopback, one API process, cache mode, synthetic data",
+  "runtime": {
+    "os": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39 (2 cores, 7 GB cloud workspace)",
+    "python": "Python 3.12.3",
+    "uv": "uv 0.11.32 (x86_64-unknown-linux-gnu)",
+    "node": "v22.22.0",
+    "pnpm": "10.28.0",
+    "postgresql": "16.15 (local throwaway, for tests/concurrency and the guards only; 17 not downloadable here)",
+    "chromium": "141 (preinstalled) through a shim, not Playwright's 153"
+  },
+  "python_packages": {
+    "fastapi": "0.142.2",
+    "pydantic": "2.13.5",
+    "starlette": "1.7.0",
+    "sqlalchemy": "2.1.1",
+    "psycopg": "3.3.6",
+    "anthropic": "1.9.0",
+    "openai": "3.22.1",
+    "cryptography": "not locked"
+  },
+  "web_packages": {
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "configuration": {
+    "DATABASE_URL": "memory (suites, catalogue, sweep, probe); local PostgreSQL 16 for tests/concurrency and the guards",
+    "LLM_MODE": "cache (no model provider is called)",
+    "DEMO_MODE": "1 for the suites, the catalogue and the probe; the sweep runs demo, prod (0) and unset",
+    "TERMSLEDGER_NO_DOTENV": "1 (.env is never loaded)",
+    "API processes": "1"
+  },
+  "deviations": "see summary.txt, DEVIATIONS",
+  "exclusions": [],
+  "approved_exceptions": [
+    "braces (GHSA-vfj7-8cjw-p6xm): development-only lint dependency, accepted by the project lead"
+  ]
+}

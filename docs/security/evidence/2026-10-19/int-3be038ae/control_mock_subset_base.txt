@@ -1,0 +1,962 @@
+
+Running 86 tests using 6 workers
+
+[1/86] [desktop] › e2e/approvals.spec.ts:70:5 › an approval card expands in place to the operation, the reason, the amount and who asked
+[2/86] [desktop] › e2e/cash.spec.ts:218:5 › the doors lead to Capex and the what-if without a day number in their prose
+[3/86] [desktop] › e2e/activity.spec.ts:73:5 › the failed sign-ins are one line apart from the real alert, their rows under a fold, and every row of the read is reachable with All and no search
+[4/86] [desktop] › e2e/cash-stress.spec.ts:64:7 › the link from receivables lands on the stressed picture with the way back
+[5/86] [desktop] › e2e/a11y.spec.ts:41:5 › Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0
+[6/86] [desktop] › e2e/ask.spec.ts:340:5 › Chinese: the panel, the page and the card speak Chinese; a question follows its own language whatever the page's
+[7/86] [desktop] › e2e/cash-stress.spec.ts:64:7 › the link from customer lands on the stressed picture with the way back
+  1) [desktop] › e2e/cash.spec.ts:218:5 › the doors lead to Capex and the what-if without a day number in their prose 
+
+    Error: expect(received).not.toMatch(expected)
+
+    Expected pattern: not /\bday \d/i
+    Received string:      "Skip to contentFLOWAI working-capital agentAsk FLOWDemo dataModeBusinessDemoOSigned in as OwnerSign outYour limitsSecurity and evidenceSet up your booksShow me aroundLanguageEnglish中文A simulated company: the lenders, the buyer and the bank feed are simulated. No real funds move.HomeDealsAttach dealsCash & fundingSandboxCapexReceivablesActivityA simulated company: the lenders, the buyer and the bank feed are simulated. No real funds move.Keep openCapexEquipment you are buying: whether each purchase is worth it, how to pay for it without breaking a covenant, and the step to commit.Above your minimum today¥100,000.00Cash ¥400,000.00 · minimum ¥300,000.00Lowest point aheadon day 30−¥105,000.00−¥405,000.00 against your minimum90-day cash coverage2.55×cash and money in over the next 90 days, against money outWorst DSCR ahead2.00×minimum 1.25×Financial health and loansYour purchasesEach vendor contract FLOW has read. Pick one to plan its payments and financing here.All purchasesGPEquipment purchase contract GZPM-2026-114Choose the timeline and financing, then commit¥600,000.00Ready to planLong-term plansTest a machine without a contractThe capex screen on the demo's ¥600k machine: worth it, and which financing holds every covenant.Worth doing on the owner's estimate: NPV ¥380,885.77 at 10.00%, payback in month 31. Finance with the 36-month term loan, 5.60% (¥18,144.62 a month): it has the lowest total financing charges (interest + fees, not discounted) of the structures that pass, ¥53,206.14. A new facility is Tier 2: the agent recommends and the owner applies.Owner's estimate, not observed by the system: +¥22,000.00 a month of operating cash flow from month 4 through month 60.Computed today: a snapshot, not a live figure.Net present value¥380,885.77¥600k machinePaybackMonth 31Leverage after financing2.28×Limit 2.50×Leverage, extension also funded2.47×If the 60-day extension were accepted tooFinancing structuresDSCR by month against the 1.25× minimum. DSCR is a reserve-coverage reading on the conservative projection, not a bank covenant.Financing structuresStructureMonthly paymentTotal interestTotal chargesDSCR M1DSCR M2DSCR M3DSCR M4DSCR M5DSCR M6ResultCash + credit line—————————InfeasibleInfeasible: only ¥250,000.00 available above the reserve; RESERVE_BREACH on purchase day.18-month term loan, 5.60%¥34,830.60¥26,950.84¥26,950.841.09×1.09×1.09×1.36×1.36×1.36×Illustration onlyIllustration at 18 months, not the facility's actual term; never selected or applied for. Rejected: DSCR_BREACH@month 1 (1.09× < 1.25×).36-month term loan, 5.60%Selected¥18,144.62¥53,206.14¥53,206.141.37×1.37×1.37×1.71×1.71×1.71×FeasibleSelected: lowest total financing charges (interest + fees, not discounted) among the structures that hold DSCR and leverage in every month and do not push daily cash below the reserve.48-month lease, 7.20%¥14,423.49¥92,327.32¥92,327.321.45×1.45×1.45×1.81×1.81×1.81×FeasibleAdmissible, but ¥39,121.18 more in total financing charges (interest + fees) than the 36-month term loan, 5.60%.¥39,121.18 more in total financing charges than the selected structureWhy a structure failsCash drops below your minimum cash reserveCodeRESERVE_BREACHtodayNot curableOnly ¥250,000.00 is available above the ¥300,000.00 reserve (cash plus the ¥0.00 line) for a ¥600,000.00 price; cash falls to −¥50,000.00 on purchase day.Observed−¥50,000.00Limit≥ ¥300,000.00FormulaInputscash¥550,000.00min_cash¥300,000.00line_available¥0.00available_above_reserve¥250,000.00price¥600,000.00shortfall¥350,000.00closing_cash−¥50,000.00Earnings don't cover loan payments enoughCodeDSCR_BREACHMonth 1DSCR is 1.09× in month 1, below the 1.25× minimum (fails in months 1–3 of 18).DSCR is a reserve-coverage reading on the conservative projection, not a bank covenant.Observed1.09×Limit≥ 1.25×FormulaInputsEBITDA_m¥90,000.00uplift_m¥0.00existing_debt_service¥47,457.50new_payment¥34,830.60DS_m¥82,288.10failing_months1–3limit_sourcemandate v1Needs your approvalTier 2Needs the owner's approval.Equipment financing always needs your approval. FLOW prepares the borrower file from verified books; only you apply, and the application waits for your approval.Evaluating changes nothing. Applying is a separate step; the application then waits for your approval.Apply for this structurePrepare the borrower fileHow this was worked outWorth it if it pays back in timeIt must earn more than 10.00% a year and pay for itself within 36 months.Your estimate of the extra cash¥22,000.00 a month from month 4 to month 60. FLOW has not seen this in your books yet.Lowest financing chargesWays to pay are ranked by interest plus fees. Tax and resale value are left out.Real terms onlyEach way is tested at the lender's actual term. Other terms are illustrations and can't be applied for.Cash checked day by dayThe machine is paid when the loan lands. A way fails if it pushes cash below your reserve.Your existing debt countsMonthly payments include what you have already borrowed. Leverage is debt over a year of earnings.Simple monthly ratesThe annual rate divided by 12, not the effective annual cost.Full assumptionsStructures are ranked on lowest total financing charges (interest + fees, not discounted). Residual value, tax, discounting of financing flows and per-period fees are not modelled; this is a screen, not an investment appraisal.A structure is evaluated only at its facility's actual term. Any other term is a hypothetical illustration: it is never selected and never applied for.Liquidity is tested day by day on current books: the purchase is paid on the day the loan proceeds land (request day + the facility's lead time), and the proceeds, the upfront fee and every scheduled payment post. A day below the reserve fails a structure when the structure makes that day's cash lower than the same day on current books without the purchase; a shortfall the books already have is reported beside it, not blamed on the structure. The owner's uplift is not counted as cash in that test.Monthly debt service includes every balance already drawn on a facility that counts in debt service: an amortising facility at its annuity payment over its term, a bullet term loan at (principal + interest) / term (ADR-0008), a revolving line interest-only. Leverage is month-end debt (principal of existing debt + drawn balances that count in leverage) / (12 × monthly EBITDA), read from each structure's own projection; a committed line's undrawn room is not debt. The leverage figures before a structure is projected (financed, and with a terms extension funded) are labelled estimates. The upfront fee is a cash cost, not debt service.Rates are nominal annual rates divided by 12 for monthly schedules, leases included; they are not effective annual rates.The uplift is the owner's estimate and is treated as EBITDA in the DSCR test and as cash in NPV and payback; the system has not observed it.HomeDealsAttachCashReceivablesActivity"
+
+      222 |   await page.getByRole("button", { name: /Evaluate/ }).first().click();
+      223 |   await expect(page.getByTestId("capex-as-of")).toHaveText("Computed today: a snapshot, not a live figure.");
+    > 224 |   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
+          |                                   ^
+      225 |   await page.goto("/cash");
+      226 |   await page.locator("#cash-whatif").getByRole("link").click();
+      227 |   await expect(page).toHaveURL(/\/whatif/);
+        at <control-root>/apps/web/e2e/cash.spec.ts:224:35
+
+    Error Context: test-results/cash-the-doors-lead-to-Cap-e876e-a-day-number-in-their-prose-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cash-the-doors-lead-to-Cap-e876e-a-day-number-in-their-prose-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/cash-the-doors-lead-to-Cap-e876e-a-day-number-in-their-prose-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[8/86] [desktop] › e2e/cash.spec.ts:248:5 › the page has one h1 (the server's headline) and one filled primary, and no card chrome above the picture
+[9/86] [desktop] › e2e/cash-stress.spec.ts:64:7 › the link from deals lands on the stressed picture with the way back
+[10/86] [desktop] › e2e/cash.spec.ts:257:5 › choosing a plan row draws its line on the picture under its name; a row with no line says why and leaves the baseline
+  2) [desktop] › e2e/cash-stress.spec.ts:64:7 › the link from deals lands on the stressed picture with the way back 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('cash-headline')
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('cash-headline') with timeout 10000ms
+      - waiting for getByTestId('cash-headline')
+
+
+      52 |   );
+      53 |   await page.goto(query ? `/cash?${query}` : "/cash");
+    > 54 |   await expect(page.getByTestId("cash-headline")).toBeVisible();
+         |                                                   ^
+      55 | }
+      56 |
+      57 | const back = (b: { label: string; href: string }) => JSON.stringify({ context: { back: b } });
+        at open (<control-root>/apps/web/e2e/cash-stress.spec.ts:54:51)
+        at <control-root>/apps/web/e2e/cash-stress.spec.ts:65:5
+
+    Error Context: test-results/cash-stress-the-link-from--ff4c9-d-picture-with-the-way-back-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cash-stress-the-link-from--ff4c9-d-picture-with-the-way-back-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/cash-stress-the-link-from--ff4c9-d-picture-with-the-way-back-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[11/86] [desktop] › e2e/approvals.spec.ts:141:10 › the stepper's Start resumes by itself after the owner signs in from the dialog it opened
+[12/86] [desktop] › e2e/cash-stress.spec.ts:93:5 › the address's context reaches the buyer read, `from` included: the Customer page's link (with an invoice) returns to the customer
+[13/86] [desktop] › e2e/contract-terms.spec.ts:42:5 › a lender agreement has no such step: a contract sets up only a customer's invoices
+[14/86] [desktop] › e2e/cash.spec.ts:292:5 › your funding sources: a utilisation bar per facility in use with the server's limit, drawn and available
+[15/86] [desktop] › e2e/customer-overview.spec.ts:281:5 › a history row with a link says where it goes and opens it
+  3) [desktop] › e2e/activity.spec.ts:73:5 › the failed sign-ins are one line apart from the real alert, their rows under a fold, and every row of the read is reachable with All and no search 
+
+    Test timeout of 60000ms exceeded.
+
+    Error Context: test-results/activity-the-failed-sign-i-d01ca-able-with-All-and-no-search-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/activity-the-failed-sign-i-d01ca-able-with-All-and-no-search-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/activity-the-failed-sign-i-d01ca-able-with-All-and-no-search-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  4) [desktop] › e2e/a11y.spec.ts:41:5 › Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: page.evaluate: Test timeout of 60000ms exceeded.
+
+      17 |   // Read the page until nothing in it is running (a fresh read each time). Awaiting the `finished` promises of the animations present at one instant can wait for ever on one whose
+      18 |   // element the router removes half way through its fade (a detached animation never settles); an animation that really never ends still fails here.
+    > 19 |   await expect.poll(() => page.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").length), { message: `${label}: animations still running` }).toBe(0);
+         |                                ^
+      20 |   const result = await new AxeBuilder({ page }).analyze();
+      21 |   const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+      22 |   const text = bad.map((v) => `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes.slice(0, 4).map((n) => n.target.join(" ")).join("\n  ")}`);
+        at _fixtures.expect.poll.message (<control-root>/apps/web/e2e/a11y.spec.ts:19:32)
+        at scan (<control-root>/apps/web/e2e/a11y.spec.ts:19:3)
+        at <control-root>/apps/web/e2e/a11y.spec.ts:46:5
+
+    Error Context: test-results/a11y-Home-Cash-Receivables-a0056--customer-overview-at-day-0-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-Home-Cash-Receivables-a0056--customer-overview-at-day-0-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/a11y-Home-Cash-Receivables-a0056--customer-overview-at-day-0-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  5) [desktop] › e2e/contract-terms.spec.ts:42:5 › a lender agreement has no such step: a contract sets up only a customer's invoices 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: getByTestId('doc-review')
+    Expected: "LENDER_AGREEMENT"
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" getByTestId('doc-review') with timeout 10000ms
+      - waiting for getByTestId('doc-review')
+
+
+      42 | test("a lender agreement has no such step: a contract sets up only a customer's invoices", async ({ page }) => {
+      43 |   await page.goto("/documents?id=DOC-000002");
+    > 44 |   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-kind", "LENDER_AGREEMENT");
+         |                                                ^
+      45 |   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
+      46 |   await expect(page.getByTestId("terms-step")).toHaveCount(0);
+      47 | });
+        at <control-root>/apps/web/e2e/contract-terms.spec.ts:44:48
+
+    Error Context: test-results/contract-terms-a-lender-ag-5ba4f--only-a-customer-s-invoices-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/contract-terms-a-lender-ag-5ba4f--only-a-customer-s-invoices-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/contract-terms-a-lender-ag-5ba4f--only-a-customer-s-invoices-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[16/86] [desktop] › e2e/activity.spec.ts:135:5 › the set-aside line on Deals lands on the refused section of Activity
+[17/86] [desktop] › e2e/cash-stress.spec.ts:127:5 › the invoice's financing charges follow the net a month later when the server has them
+[18/86] [desktop] › e2e/a11y.spec.ts:50:5 › Deals: the inbox, a checked deal with its priced response, and the decision page
+[19/86] [desktop] › e2e/demo.spec.ts:47:5 › one filled next control at every step of the walk; the owner's step only opens the approval
+[20/86] [desktop] › e2e/deals-queue.spec.ts:239:5 › a selection that names nothing asks which negotiation and never shows a sample
+[21/86] [desktop] › e2e/design-system.spec.ts:134:5 › type scale: the roles are variables, the headline steps with the screen, and no figure or qualification on the five pages is under 13 px
+[22/86] [desktop] › e2e/cash-stress.spec.ts:154:5 › the way back and the switch work from the keyboard: Tab reaches them, the arrow keys move the choice
+[23/86] [desktop] › e2e/documents.spec.ts:78:5 › Deals: before a deal is agreed the confirmed contract is its own row; once the buyer agrees, the summary is in the agreement
+[24/86] [desktop] › e2e/cash-stress.spec.ts:181:5 › a home read with no event rail still says the late-payment sentences, under a plain heading
+[25/86] [desktop] › e2e/deals-queue.spec.ts:412:5 › the first visit's cue: with nothing selected the top row's chevron pulses twice, once, and not on the second load
+[26/86] [desktop] › e2e/cash-stress.spec.ts:250:5 › a phone (390 x 844): the way back and the switch are in the first screen, the picture comes before the plan, nothing scrolls sideways
+[27/86] [desktop] › e2e/home-v2.spec.ts:387:5 › the company forecast is in the outlook card (no Expand since the final UI fold), with the events as markers and the selected event's sentence
+[28/86] [desktop] › e2e/documents.spec.ts:174:5 › focusing a term lights its clause with the shared dialogs mounted, wherever the pointer is parked (the page scrolls under it)
+  6) [desktop] › e2e/deals-queue.spec.ts:412:5 › the first visit's cue: with nothing selected the top row's chevron pulses twice, once, and not on the second load 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  getByTestId('queue-row').first().getByTestId('row-chevron')
+    Expected: "true"
+    Received: ""
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toHaveAttribute" getByTestId('queue-row').first().getByTestId('row-chevron') with timeout 10000ms
+      - waiting for getByTestId('queue-row').first().getByTestId('row-chevron')
+        17 × locator resolved to <span aria-hidden="true" data-selected="false" data-testid="row-chevron" class="pointer-events-none grid size-6 shrink-0 place-items-center rounded-pill transition-colors duration-(--dur) text-ink-3 group-hover:text-ink group-focus-visible:text-ink group-has-[:focus-visible]:text-ink  ">…</span>
+           - unexpected value "null"
+
+
+      417 |   await page.goto("/deals");
+      418 |   const first = page.getByTestId("queue-row").first().getByTestId("row-chevron");
+    > 419 |   await expect(first).toHaveAttribute("data-hint", "true");
+          |                       ^
+      420 |   expect(await first.evaluate((el) => [getComputedStyle(el).animationName, getComputedStyle(el).animationIterationCount, getComputedStyle(el).animationDuration])).toEqual(["row-hint", "2", "0.6s"]);
+      421 |   await expect(first).not.toHaveAttribute("data-hint", "true", { timeout: 4000 });
+      422 |   expect(await page.evaluate(() => localStorage.getItem("tl-deals-hint"))).toBe("1");
+        at <control-root>/apps/web/e2e/deals-queue.spec.ts:419:23
+
+    Error Context: test-results/deals-queue-the-first-visi-2f9e3--and-not-on-the-second-load-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/deals-queue-the-first-visi-2f9e3--and-not-on-the-second-load-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/deals-queue-the-first-visi-2f9e3--and-not-on-the-second-load-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  7) [desktop] › e2e/a11y.spec.ts:50:5 › Deals: the inbox, a checked deal with its priced response, and the decision page 
+
+    Test timeout of 60000ms exceeded.
+
+    Error Context: test-results/a11y-Deals-the-inbox-a-che-5f921-ponse-and-the-decision-page-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-Deals-the-inbox-a-che-5f921-ponse-and-the-decision-page-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/a11y-Deals-the-inbox-a-che-5f921-ponse-and-the-decision-page-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[29/86] [desktop] › e2e/inputs-sheet.spec.ts:158:5 › axe finds nothing serious on the sheet
+[30/86] [desktop] › e2e/a11y.spec.ts:72:5 › contract ingestion and the send step: the documents and a review, the buyer choice, the deal summary, the borrower file
+  8) [desktop] › e2e/documents.spec.ts:174:5 › focusing a term lights its clause with the shared dialogs mounted, wherever the pointer is parked (the page scrolls under it) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('doc-terms').locator('li').filter({ hasText: '¥420,000.00 per delivery batch' })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('doc-terms').locator('li').filter({ hasText: '¥420,000.00 per delivery batch' }) with timeout 10000ms
+      - waiting for getByTestId('doc-terms').locator('li').filter({ hasText: '¥420,000.00 per delivery batch' })
+
+
+      176 |   const terms = page.getByTestId("doc-terms");
+      177 |   const price = terms.locator("li", { hasText: "¥420,000.00 per delivery batch" });
+    > 178 |   await expect(price).toBeVisible();
+          |                       ^
+      179 |   const id = (await price.getAttribute("data-testid"))!.replace("doc-item-", "");
+      180 |   // The books confirmation dialog is part of every Business page, closed: it takes no focus and shows nothing.
+      181 |   await expect(page.getByTestId("books-dialog")).toBeAttached();
+        at <control-root>/apps/web/e2e/documents.spec.ts:178:23
+
+    Error Context: test-results/documents-focusing-a-term--06ef5--the-page-scrolls-under-it--desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/documents-focusing-a-term--06ef5--the-page-scrolls-under-it--desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/documents-focusing-a-term--06ef5--the-page-scrolls-under-it--desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  9) [desktop] › e2e/design-system.spec.ts:134:5 › type scale: the roles are variables, the headline steps with the screen, and no figure or qualification on the five pages is under 13 px 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByTestId('inbox-msg-EX01')
+        - locator resolved to <button type="button" data-testid="inbox-msg-EX01" class="flex min-h-11 w-full flex-wrap items-start gap-x-3 gap-y-1 px-2 py-3 text-left transition-colors hover:bg-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-wait  ">…</button>
+      - attempting click action
+        - waiting for element to be visible, enabled and stable
+
+
+       at helpers.ts:183
+
+      181 |   await page.goto("/deals");
+      182 |   await openInbox(page);
+    > 183 |   await page.getByTestId(`inbox-msg-${message}`).click();
+          |                                                  ^
+      184 |   await page.getByTestId("queue-check-button").click();
+      185 |   await page.getByTestId("queue-recommends").waitFor();
+      186 | }
+        at checkedDeal (<control-root>/apps/web/e2e/helpers.ts:183:50)
+        at <control-root>/apps/web/e2e/design-system.spec.ts:177:3
+
+    Error Context: test-results/design-system-type-scale-t-3e633-e-five-pages-is-under-13-px-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/design-system-type-scale-t-3e633-e-five-pages-is-under-13-px-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/design-system-type-scale-t-3e633-e-five-pages-is-under-13-px-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[31/86] [desktop] › e2e/home-v2.spec.ts:765:5 › zh parity: the cards, the recommendation, the worklist, the forecast and the deal in Chinese, the server's words as recorded
+[32/86] [desktop] › e2e/new-customer.spec.ts:221:7 › a contract filed under a company it does not name › the actions pass axe and fit a phone
+[33/86] [desktop] › e2e/design-system.spec.ts:189:5 › rail: a 56 px icon rail by default from a laptop up, an overlay on hover and on focus that never moves the page, closing after it is left; the pin persists
+[34/86] [desktop] › e2e/pages-a1.spec.ts:34:5 › Receivables day 0: Who pays when has one mark, the facts are one unboxed row, no bar, one h1
+[35/86] [desktop] › e2e/pages-a1.spec.ts:181:5 › Activity: an empty record shows the empty state with no tabs, and the page has no sideways scroll at 390
+[36/86] [desktop] › e2e/home-v2.spec.ts:896:5 › a selected customer: Dismiss and Escape restore the overview and clear the address; the context panel replaces the upcoming movements and the cards come back
+[37/86] [desktop] › e2e/receipt-basis.spec.ts:55:5 › day 0: Cash says the invoice is owed, the later billing is scheduled, and no pending line or legend is drawn
+[38/86] [desktop] › e2e/receivables-layers.spec.ts:357:5 › day 34 with no receipt: the overdue invoice is first and the promise did not arrive
+[39/86] [desktop] › e2e/receivables.spec.ts:165:5 › day 34 after the half receipt: the chase dialog's balance is the one the page shows, and the receipt row names its four facts
+[40/86] [desktop] › e2e/demo.spec.ts:100:5 › each done scene shows what happened and its proof, and every proof link opens a record that exists
+  10) [desktop] › e2e/a11y.spec.ts:72:5 › contract ingestion and the send step: the documents and a review, the buyer choice, the deal summary, the borrower file 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: frame.evaluate: Test timeout of 60000ms exceeded.
+
+      18 |   // element the router removes half way through its fade (a detached animation never settles); an animation that really never ends still fails here.
+      19 |   await expect.poll(() => page.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").length), { message: `${label}: animations still running` }).toBe(0);
+    > 20 |   const result = await new AxeBuilder({ page }).analyze();
+         |                  ^
+      21 |   const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+      22 |   const text = bad.map((v) => `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes.slice(0, 4).map((n) => n.target.join(" ")).join("\n  ")}`);
+      23 |   expect(result.passes.length, `${label}: axe ran its rules`).toBeGreaterThan(10);
+        at AxeBuilder.runPartialRecursive (<control-root>/apps/web/node_modules/.pnpm/@axe-core+playwright@4.13.0_playwright-core@1.63.0/node_modules/@axe-core/playwright/dist/index.js:318:34)
+        at AxeBuilder.analyze (<control-root>/apps/web/node_modules/.pnpm/@axe-core+playwright@4.13.0_playwright-core@1.63.0/node_modules/@axe-core/playwright/dist/index.js:245:28)
+        at scan (<control-root>/apps/web/e2e/a11y.spec.ts:20:18)
+        at <control-root>/apps/web/e2e/a11y.spec.ts:90:3
+
+    Error Context: test-results/a11y-contract-ingestion-an-890b5-l-summary-the-borrower-file-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-contract-ingestion-an-890b5-l-summary-the-borrower-file-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/a11y-contract-ingestion-an-890b5-l-summary-the-borrower-file-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[41/86] [desktop] › e2e/home-v2.spec.ts:942:5 › accessibility: no axe violations on the default Home (its forecast open in the outlook) and with the customer, at 1440 and at 390
+[42/86] [desktop] › e2e/a11y.spec.ts:108:5 › an approval waiting, the chase dialog and the remaining task at day 34
+  11) [desktop] › e2e/design-system.spec.ts:189:5 › rail: a 56 px icon rail by default from a laptop up, an overlay on hover and on focus that never moves the page, closing after it is left; the pin persists 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  getByTestId('sidebar-toggle')
+    Expected: "true"
+    Received: ""
+
+
+      275 |   await page.goto("/");
+      276 |   await page.getByTestId("sidebar-toggle").click();
+    > 277 |   await expect(page.getByTestId("sidebar-toggle")).toHaveAttribute("aria-pressed", "true");
+          |                                                    ^
+      278 |   await page.mouse.move(900, 600);
+      279 |   const pinnedPrimary = page.getByTestId("home-check-plan");
+      280 |   await expect(pinnedPrimary).toBeVisible();
+        at <control-root>/apps/web/e2e/design-system.spec.ts:277:52
+
+    Error Context: test-results/design-system-rail-a-56-px-791d9-it-is-left-the-pin-persists-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/design-system-rail-a-56-px-791d9-it-is-left-the-pin-persists-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/design-system-rail-a-56-px-791d9-it-is-left-the-pin-persists-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[43/86] [desktop] › e2e/receivables-layers.spec.ts:395:5 › the customer link carries that row's own invoice and the origin, never what the address holds for another row (audit UX07, UX34)
+[44/86] [desktop] › e2e/design-system.spec.ts:328:5 › rail: reduced motion opens it at once, and axe finds nothing serious on the collapsed rail or the open one, with the page beside it
+[45/86] [desktop] › e2e/receivables-layers.spec.ts:431:5 › Chinese: the same page and figures in the server's Chinese, with the dictionary's words
+[46/86] [desktop] › e2e/record-payment.spec.ts:68:7 › record a payment › part of it: the rest stays open on the invoice
+[47/86] [desktop] › e2e/record.spec.ts:223:5 › after the cure is approved, Home's strip says the funding is on its way; the approval links to its record; Activity links each row to its record
+[48/86] [desktop] › e2e/demo.spec.ts:177:5 › operator tools are closed by default and hold the clock, the books and the engine views
+[49/86] [desktop] › e2e/receivables-layers.spec.ts:470:5 › a failed read of the receivables says so with Retry, and Retry brings the page back
+[50/86] [desktop] › e2e/demo.spec.ts:193:5 › the optional scenes run from the operator tools and never move the story's pointer
+[51/86] [desktop] › e2e/receivables-layers.spec.ts:497:5 › patched: an invoice marked financed with no financing on record says so in place of the net, and the section is still named
+  12) [desktop] › e2e/home-v2.spec.ts:942:5 › accessibility: no axe violations on the default Home (its forecast open in the outlook) and with the customer, at 1440 and at 390 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: frame.evaluate: Test timeout of 60000ms exceeded.
+
+      946 |     await expect(page.getByTestId("home-v2")).toBeVisible();
+      947 |     await expect(page.getByTestId("deal-working")).toHaveCount(0);
+    > 948 |     const found = await new AxeBuilder({ page }).analyze();
+          |                   ^
+      949 |     expect(found.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+      950 |     await page.setViewportSize({ width: 390, height: 844 });
+      951 |     await expect(page.getByTestId("home-v2")).toBeVisible();
+        at AxeBuilder.runPartialRecursive (<control-root>/apps/web/node_modules/.pnpm/@axe-core+playwright@4.13.0_playwright-core@1.63.0/node_modules/@axe-core/playwright/dist/index.js:318:34)
+        at AxeBuilder.analyze (<control-root>/apps/web/node_modules/.pnpm/@axe-core+playwright@4.13.0_playwright-core@1.63.0/node_modules/@axe-core/playwright/dist/index.js:245:28)
+        at <control-root>/apps/web/e2e/home-v2.spec.ts:948:19
+
+    Error Context: test-results/home-v2-accessibility-no-a-30fc8-customer-at-1440-and-at-390-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-v2-accessibility-no-a-30fc8-customer-at-1440-and-at-390-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/home-v2-accessibility-no-a-30fc8-customer-at-1440-and-at-390-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  13) [desktop] › e2e/a11y.spec.ts:108:5 › an approval waiting, the chase dialog and the remaining task at day 34 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  locator('[data-testid^="chase-detail-CHASE-dialog-"][open]').first()
+    Expected: visible
+    Received: undefined
+
+
+      121 |   await scan(page, "/receivables day 34");
+      122 |   await chase.click();
+    > 123 |   await expect(page.locator('[data-testid^="chase-detail-CHASE-dialog-"][open]').first()).toBeVisible();
+          |                                                                                           ^
+      124 |   await scan(page, "chase dialog");
+      125 |   await page.keyboard.press("Escape");
+      126 |   await page.goto("/activity");
+        at <control-root>/apps/web/e2e/a11y.spec.ts:123:91
+
+    Error Context: test-results/a11y-an-approval-waiting-t-1d81b-he-remaining-task-at-day-34-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-an-approval-waiting-t-1d81b-he-remaining-task-at-day-34-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/a11y-an-approval-waiting-t-1d81b-he-remaining-task-at-day-34-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[52/86] [desktop] › e2e/home-v2.spec.ts:1000:5 › sizes at 1440: the cash card 360 px tall at most and padded 16 px, the outlook padded 24 px with a 22 px title and a 40 px figure, the recommendation's 18 px title and 36 px amount; rows 56 px and 44 px; nothing wraps to a third line
+[53/86] [desktop] › e2e/a11y.spec.ts:131:5 › the chat panel and the Demo story
+[54/86] [desktop] › e2e/receivables-layers.spec.ts:508:5 › patched: a partial read shows the notice with Retry
+  14) [desktop] › e2e/design-system.spec.ts:328:5 › rail: reduced motion opens it at once, and axe finds nothing serious on the collapsed rail or the open one, with the page beside it 
+
+    Test timeout of 60000ms exceeded.
+
+    Error Context: test-results/design-system-rail-reduced-b393f-one-with-the-page-beside-it-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/design-system-rail-reduced-b393f-one-with-the-page-beside-it-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/design-system-rail-reduced-b393f-one-with-the-page-beside-it-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[55/86] [desktop] › e2e/design-system.spec.ts:590:5 › rail: on every page the collapsed rail covers no content, the open panel is whole and on top, and pinned the content sits beside it
+[56/86] [desktop] › e2e/receivables-layers.spec.ts:515:5 › patched: a missed promise is overdue in tone, has its own pill, and Chase payment leads
+[57/86] [desktop] › e2e/demo.spec.ts:333:5 › the optional scene that replaces the books asks first when work would be lost, and replaces nothing on cancel
+  15) [desktop] › e2e/record.spec.ts:223:5 › after the cure is approved, Home's strip says the funding is on its way; the approval links to its record; Activity links each row to its record 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByTestId('approval-record-APR-000001')
+        - locator resolved to <a data-testid="approval-record-APR-000001" href="/decisions/alert%3AALERT-RESERVE-42%3Av7" class="motion-press hit inline-flex min-h-8 items-center rounded-pill px-2 text-meta font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50">See the decision record</a>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div data-testid="nav-rail-panel" class="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden bg-canvas/80 px-2 pb-20 pt-5 backdrop-blur-md">…</div> from <aside data-rail="open" data-testid="nav-rail" class="rail relative hidden lg:block">…</aside> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div data-testid="nav-rail-panel" class="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden bg-canvas/80 px-2 pb-20 pt-5 backdrop-blur-md">…</div> from <aside data-rail="open" data-testid="nav-rail" class="rail relative hidden lg:block">…</aside> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        41 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <div data-testid="nav-rail-panel" class="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden bg-canvas/80 px-2 pb-20 pt-5 backdrop-blur-md">…</div> from <aside data-rail="open" data-testid="nav-rail" class="rail relative hidden lg:block">…</aside> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+
+
+      233 |   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "covered");
+      234 |   await page.goto("/approvals");
+    > 235 |   await page.getByTestId("approval-record-APR-000001").click();
+          |                                                        ^
+      236 |   await expect(page).toHaveURL(/\/decisions\/alert%3AALERT-RESERVE-42/);
+      237 |   await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "SETTLEMENT_PENDING");
+      238 |   await expect(page.getByTestId("record-settlement")).toContainText("¥200,000.00");
+        at <control-root>/apps/web/e2e/record.spec.ts:235:56
+
+    Error Context: test-results/record-after-the-cure-is-a-ea84e-inks-each-row-to-its-record-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/record-after-the-cure-is-a-ea84e-inks-each-row-to-its-record-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/record-after-the-cure-is-a-ea84e-inks-each-row-to-its-record-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[58/86] [desktop] › e2e/responsive.spec.ts:21:5 › no page overflows horizontally after the demo has run
+[59/86] [desktop] › e2e/shell.spec.ts:103:5 › a quiet day: the sidebar carries no counts
+  16) [desktop] › e2e/home-v2.spec.ts:1000:5 › sizes at 1440: the cash card 360 px tall at most and padded 16 px, the outlook padded 24 px with a 22 px title and a 40 px figure, the recommendation's 18 px title and 36 px amount; rows 56 px and 44 px; nothing wraps to a third line 
+
+    Error: hv2-cash-card at 1280
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 360
+    Received:    375
+
+      1043 |       expect(clipped, `${id} clips nothing at ${width}`).toBeLessThanOrEqual(1);
+      1044 |     }
+    > 1045 |     expect((await page.getByTestId("hv2-cash-card").boundingBox())!.height, `hv2-cash-card at ${width}`).toBeLessThanOrEqual(CARD_MAX);
+           |                                                                                                          ^
+      1046 |   }
+      1047 | });
+      1048 |
+        at <control-root>/apps/web/e2e/home-v2.spec.ts:1045:106
+
+    Error Context: test-results/home-v2-sizes-at-1440-the--a1b39-thing-wraps-to-a-third-line-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-v2-sizes-at-1440-the--a1b39-thing-wraps-to-a-third-line-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/home-v2-sizes-at-1440-the--a1b39-thing-wraps-to-a-third-line-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[60/86] [desktop] › e2e/slice-b.spec.ts:48:7 › mock › a selection that names nothing asks which negotiation, on Deals and on What-if, and never shows a sample
+[61/86] [desktop] › e2e/tracker.spec.ts:116:7 › mock › each moment of the story shows the recorded read's own words and figures
+[62/86] [desktop] › e2e/trust.spec.ts:151:7 › the trust views are chosen by the address › an entry the record does not have says nothing was removed
+  17) [desktop] › e2e/a11y.spec.ts:131:5 › the chat panel and the Demo story ───────────────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByTestId('demo-next')
+        - locator resolved to <button type="button" data-testid="demo-next" class="motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 min-h-8 px-3 text-meta touch:min-h-11 bg-brand-600 text-white border-transparent shadow-(--shadow-f) hover:shadow-(--shadow-lift) hover:brightness-110 ">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <dialog open="" data-testid="owner-signin" aria-labelledby="owner-auth-title" class="fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/50 backdrop:backdrop-blur-sm">…</dialog> intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <dialog open="" data-testid="owner-signin" aria-labelledby="owner-auth-title" class="fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/50 backdrop:backdrop-blur-sm">…</dialog> intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        6 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <dialog open="" data-testid="owner-signin" aria-labelledby="owner-auth-title" class="fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/50 backdrop:backdrop-blur-sm">…</dialog> intercepts pointer events
+        - retrying click action
+          - waiting 500ms
+        - waiting for element to be visible, enabled and stable
+        - element is visible, enabled and stable
+        - scrolling into view if needed
+        - done scrolling
+
+
+      141 |   await page.goto("/mandate");
+      142 |   for (let i = 0; i < 4; i++) {
+    > 143 |     await page.getByTestId("demo-next").click();
+          |                                         ^
+      144 |     await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(/Scene \d of 6|All 6 scenes/);
+      145 |   }
+      146 |   await scan(page, "Demo story, step 4");
+        at <control-root>/apps/web/e2e/a11y.spec.ts:143:41
+
+    Error Context: test-results/a11y-the-chat-panel-and-the-Demo-story-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-the-chat-panel-and-the-Demo-story-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/a11y-the-chat-panel-and-the-Demo-story-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[63/86] [desktop] › e2e/demo.spec.ts:378:5 › a double click on a book-replacing control never confirms, at 390 px
+[64/86] [desktop] › e2e/a11y.spec.ts:149:5 › the approval question, its decided card with the execution summary, the record, and Waiting on
+  18) [desktop] › e2e/trust.spec.ts:151:7 › the trust views are chosen by the address › an entry the record does not have says nothing was removed 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByTestId('trust-entry-missing')
+    Expected substring: "Nothing was removed"
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByTestId('trust-entry-missing') with timeout 10000ms
+      - waiting for getByTestId('trust-entry-missing')
+
+
+      151 |   test("an entry the record does not have says nothing was removed", async ({ page }) => {
+      152 |     await page.goto("/trust?view=evidence&entry=9999");
+    > 153 |     await expect(page.getByTestId("trust-entry-missing")).toContainText("Nothing was removed");
+          |                                                           ^
+      154 |     await expect(page.getByTestId("trust-back")).toHaveCount(0);
+      155 |   });
+      156 |
+        at <control-root>/apps/web/e2e/trust.spec.ts:153:59
+
+    Error Context: test-results/trust-the-trust-views-are--5eae1-ve-says-nothing-was-removed-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/trust-the-trust-views-are--5eae1-ve-says-nothing-was-removed-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/trust-the-trust-views-are--5eae1-ve-says-nothing-was-removed-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[65/86] [desktop] › e2e/trust.spec.ts:197:7 › a record the address names that is not in the record says so › an event id that is not in the security record, and an entry that is not a number
+  19) [desktop] › e2e/responsive.spec.ts:21:5 › no page overflows horizontally after the demo has run 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: page.goto: Target page, context or browser has been closed
+
+      24 |   await expect(page).toHaveURL(/\/activity/);
+      25 |   for (const route of ENGINE_ROUTES) {
+    > 26 |     await page.goto(route);
+         |                ^
+      27 |     await expect(page.locator("h1")).toBeVisible();
+      28 |     // Tables scroll inside their own region; the page itself must not.
+      29 |     expect(await overflowX(page), `${route} overflows horizontally`).toBeLessThanOrEqual(1);
+        at <control-root>/apps/web/e2e/responsive.spec.ts:26:16
+
+    Error Context: test-results/responsive-no-page-overflo-0cfb3-ally-after-the-demo-has-run-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/responsive-no-page-overflo-0cfb3-ally-after-the-demo-has-run-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/responsive-no-page-overflo-0cfb3-ally-after-the-demo-has-run-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[66/86] [desktop] › e2e/responsive.spec.ts:101:5 › the last content clears the bottom bar and Ask FLOW on every Business page
+[67/86] [desktop] › e2e/upload-company.spec.ts:39:5 › the list of the books' customers opens on a click with nothing typed, filters as the owner types, and ends with Add a new customer
+  20) [desktop] › e2e/demo.spec.ts:378:5 › a double click on a book-replacing control never confirms, at 390 px 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByTestId('books-dialog')
+    Expected: visible
+    Received: hidden
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('books-dialog') with timeout 10000ms
+      - waiting for getByTestId('books-dialog')
+        19 × locator resolved to <dialog aria-modal="true" data-testid="books-dialog" aria-labelledby="books-dialog-title" class="flow-f fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(34rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/40"></dialog>
+           - unexpected value "hidden"
+
+
+      403 |     await page.mouse.click(x, y, { clickCount: 2 });
+      404 |     await page.mouse.click(x, y); // even a single click is ignored until the dialog has been open for a moment
+    > 405 |     await expect(c.dialog).toBeVisible();
+          |                            ^
+      406 |     await expect(page).toHaveURL(/\/demo$/);
+      407 |     await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+      408 |     await c.cancel.click();
+        at <control-root>/apps/web/e2e/demo.spec.ts:405:28
+
+    Error Context: test-results/demo-a-double-click-on-a-b-8f553-ol-never-confirms-at-390-px-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/demo-a-double-click-on-a-b-8f553-ol-never-confirms-at-390-px-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/demo-a-double-click-on-a-b-8f553-ol-never-confirms-at-390-px-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[68/86] [phone] › e2e/a11y.spec.ts:41:5 › Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0
+[69/86] [desktop] › e2e/demo.spec.ts:466:5 › Which books comes first: three cards with their help, the loaded one marked and without a button, the busy one linking to Home; the old fold and the engine sidebar are gone
+  21) [desktop] › e2e/a11y.spec.ts:149:5 › the approval question, its decided card with the execution summary, the record, and Waiting on 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: frame.evaluate: Test timeout of 60000ms exceeded.
+
+      18 |   // element the router removes half way through its fade (a detached animation never settles); an animation that really never ends still fails here.
+      19 |   await expect.poll(() => page.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").length), { message: `${label}: animations still running` }).toBe(0);
+    > 20 |   const result = await new AxeBuilder({ page }).analyze();
+         |                  ^
+      21 |   const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+      22 |   const text = bad.map((v) => `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes.slice(0, 4).map((n) => n.target.join(" ")).join("\n  ")}`);
+      23 |   expect(result.passes.length, `${label}: axe ran its rules`).toBeGreaterThan(10);
+        at AxeBuilder.runPartialRecursive (<control-root>/apps/web/node_modules/.pnpm/@axe-core+playwright@4.13.0_playwright-core@1.63.0/node_modules/@axe-core/playwright/dist/index.js:315:39)
+        at AxeBuilder.analyze (<control-root>/apps/web/node_modules/.pnpm/@axe-core+playwright@4.13.0_playwright-core@1.63.0/node_modules/@axe-core/playwright/dist/index.js:245:39)
+        at scan (<control-root>/apps/web/e2e/a11y.spec.ts:20:18)
+        at <control-root>/apps/web/e2e/a11y.spec.ts:164:3
+
+    Error Context: test-results/a11y-the-approval-question-343ca-y-the-record-and-Waiting-on-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-the-approval-question-343ca-y-the-record-and-Waiting-on-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/a11y-the-approval-question-343ca-y-the-record-and-Waiting-on-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[70/86] [desktop] › e2e/a11y.spec.ts:173:5 › the remaining task, when the cure left the reserve short
+[71/86] [desktop] › e2e/demo.spec.ts:508:5 › the busy card's Load is visible without scrolling at 1440 and at 390, and from worked books it asks first
+  22) [desktop] › e2e/demo.spec.ts:508:5 › the busy card's Load is visible without scrolling at 1440 and at 390, and from worked books it asks first 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('demo-current')
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('demo-current') with timeout 10000ms
+      - waiting for getByTestId('demo-current')
+
+
+      12 | async function openDemo(page: Page): Promise<void> {
+      13 |   await page.goto("/demo");
+    > 14 |   await expect(page.getByTestId("demo-current")).toBeVisible();
+         |                                                  ^
+      15 | }
+      16 |
+      17 | /** The story page as the owner would read it, reset first: the opening books (live shares one API between specs). */
+        at openDemo (<control-root>/apps/web/e2e/demo.spec.ts:14:50)
+        at freshDemo (<control-root>/apps/web/e2e/demo.spec.ts:19:3)
+        at <control-root>/apps/web/e2e/demo.spec.ts:510:3
+
+    Error Context: test-results/demo-the-busy-card-s-Load--dd15a--worked-books-it-asks-first-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/demo-the-busy-card-s-Load--dd15a--worked-books-it-asks-first-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/demo-the-busy-card-s-Load--dd15a--worked-books-it-asks-first-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[72/86] [desktop] › e2e/demo.spec.ts:565:5 › the proof appendix: the chain badge is the server's verdict (green when valid) and its scope is text under it, not a tooltip
+  23) [desktop] › e2e/responsive.spec.ts:101:5 › the last content clears the bottom bar and Ask FLOW on every Business page 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: page.waitForLoadState: Test timeout of 60000ms exceeded.
+
+      104 |     await expect(page.locator("h1")).toHaveCount(1);
+      105 |     // The h1 is there before the page's data is: wait for the reads to settle, then scroll and measure until the measure holds (content that arrives late grows the page under the scroll).
+    > 106 |     await page.waitForLoadState("networkidle");
+          |                ^
+      107 |     const measure = () =>
+      108 |       page.evaluate(() => {
+      109 |       window.scrollTo(0, document.documentElement.scrollHeight);
+        at <control-root>/apps/web/e2e/responsive.spec.ts:106:16
+
+    Error Context: test-results/responsive-the-last-conten-d0a11-FLOW-on-every-Business-page-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/responsive-the-last-conten-d0a11-FLOW-on-every-Business-page-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/responsive-the-last-conten-d0a11-FLOW-on-every-Business-page-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[73/86] [desktop] › e2e/responsive.spec.ts:129:5 › a hard load names the tab: the title survives hydration
+  24) [phone] › e2e/a11y.spec.ts:41:5 › Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: frame.evaluate: Test timeout of 60000ms exceeded.
+
+      18 |   // element the router removes half way through its fade (a detached animation never settles); an animation that really never ends still fails here.
+      19 |   await expect.poll(() => page.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").length), { message: `${label}: animations still running` }).toBe(0);
+    > 20 |   const result = await new AxeBuilder({ page }).analyze();
+         |                  ^
+      21 |   const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+      22 |   const text = bad.map((v) => `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes.slice(0, 4).map((n) => n.target.join(" ")).join("\n  ")}`);
+      23 |   expect(result.passes.length, `${label}: axe ran its rules`).toBeGreaterThan(10);
+        at AxeBuilder.runPartialRecursive (<control-root>/apps/web/node_modules/.pnpm/@axe-core+playwright@4.13.0_playwright-core@1.63.0/node_modules/@axe-core/playwright/dist/index.js:315:39)
+        at AxeBuilder.analyze (<control-root>/apps/web/node_modules/.pnpm/@axe-core+playwright@4.13.0_playwright-core@1.63.0/node_modules/@axe-core/playwright/dist/index.js:245:39)
+        at scan (<control-root>/apps/web/e2e/a11y.spec.ts:20:18)
+        at <control-root>/apps/web/e2e/a11y.spec.ts:46:5
+
+    Error Context: test-results/a11y-Home-Cash-Receivables-a0056--customer-overview-at-day-0-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-Home-Cash-Receivables-a0056--customer-overview-at-day-0-phone/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/a11y-Home-Cash-Receivables-a0056--customer-overview-at-day-0-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[74/86] [phone] › e2e/a11y.spec.ts:50:5 › Deals: the inbox, a checked deal with its priced response, and the decision page
+[75/86] [phone] › e2e/deals-queue.spec.ts:239:5 › a selection that names nothing asks which negotiation and never shows a sample
+[76/86] [desktop] › e2e/tracker.spec.ts:134:7 › mock › once the rest of the invoice is paid the deal has ended: the close-out card after the header, and the Paid late promise with its word
+[77/86] [phone] › e2e/responsive.spec.ts:21:5 › no page overflows horizontally after the demo has run
+[78/86] [phone] › e2e/deals-queue.spec.ts:412:5 › the first visit's cue: with nothing selected the top row's chevron pulses twice, once, and not on the second load
+  25) [desktop] › e2e/responsive.spec.ts:129:5 › a hard load names the tab: the title survives hydration 
+
+    Test timeout of 60000ms exceeded.
+
+    Error Context: test-results/responsive-a-hard-load-nam-6ae3c-he-title-survives-hydration-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/responsive-a-hard-load-nam-6ae3c-he-title-survives-hydration-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/responsive-a-hard-load-nam-6ae3c-he-title-survives-hydration-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[79/86] [desktop] › e2e/tracker.spec.ts:183:7 › mock › the late day in Chinese shows the zh read's own words and the same figures
+  26) [desktop] › e2e/design-system.spec.ts:590:5 › rail: on every page the collapsed rail covers no content, the open panel is whole and on top, and pinned the content sits beside it 
+
+    Test timeout of 240000ms exceeded.
+
+    Error: mouse.move: Target page, context or browser has been closed
+
+      629 |       await page.mouse.move(width - 100, 500);
+      630 |       await page.getByTestId("sidebar-toggle").click({ force: true });
+    > 631 |       await page.mouse.move(width - 100, 500);
+          |                        ^
+      632 |       await expect(page.locator("html")).toHaveAttribute("data-sidebar", "pinned");
+      633 |       expect(await railColumn(page), `${at} pinned column`).toBe(200);
+      634 |       expect(await contentLeft(page), `${at} pinned content left`).toBeGreaterThanOrEqual(200 + GUTTER);
+        at <control-root>/apps/web/e2e/design-system.spec.ts:631:24
+
+    Error Context: test-results/design-system-rail-on-ever-b7a85--the-content-sits-beside-it-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/design-system-rail-on-ever-b7a85--the-content-sits-beside-it-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/design-system-rail-on-ever-b7a85--the-content-sits-beside-it-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  27) [phone] › e2e/a11y.spec.ts:50:5 › Deals: the inbox, a checked deal with its priced response, and the decision page 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: page.evaluate: Target page, context or browser has been closed
+
+      18 |   // element the router removes half way through its fade (a detached animation never settles); an animation that really never ends still fails here.
+      19 |   await expect.poll(() => page.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").length), { message: `${label}: animations still running` }).toBe(0);
+    > 20 |   const result = await new AxeBuilder({ page }).analyze();
+         |                  ^
+      21 |   const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+      22 |   const text = bad.map((v) => `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes.slice(0, 4).map((n) => n.target.join(" ")).join("\n  ")}`);
+      23 |   expect(result.passes.length, `${label}: axe ran its rules`).toBeGreaterThan(10);
+        at AxeBuilder.analyze (<control-root>/apps/web/node_modules/.pnpm/@axe-core+playwright@4.13.0_playwright-core@1.63.0/node_modules/@axe-core/playwright/dist/index.js:237:42)
+        at scan (<control-root>/apps/web/e2e/a11y.spec.ts:20:18)
+        at <control-root>/apps/web/e2e/a11y.spec.ts:69:3
+
+    Error Context: test-results/a11y-Deals-the-inbox-a-che-5f921-ponse-and-the-decision-page-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-Deals-the-inbox-a-che-5f921-ponse-and-the-decision-page-phone/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/a11y-Deals-the-inbox-a-che-5f921-ponse-and-the-decision-page-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[80/86] [phone] › e2e/a11y.spec.ts:72:5 › contract ingestion and the send step: the documents and a review, the buyer choice, the deal summary, the borrower file
+  28) [phone] › e2e/responsive.spec.ts:21:5 › no page overflows horizontally after the demo has run 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: page.evaluate: Test timeout of 60000ms exceeded.
+
+       9 |
+      10 | async function overflowX(page: Page): Promise<number> {
+    > 11 |   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+         |               ^
+      12 | }
+      13 |
+      14 | /** Cash keeps the plans it weighed in a fold (closed until asked for); open it so the list can be measured. */
+        at overflowX (<control-root>/apps/web/e2e/responsive.spec.ts:11:15)
+        at <control-root>/apps/web/e2e/responsive.spec.ts:29:18
+
+    Error Context: test-results/responsive-no-page-overflo-0cfb3-ally-after-the-demo-has-run-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/responsive-no-page-overflo-0cfb3-ally-after-the-demo-has-run-phone/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/responsive-no-page-overflo-0cfb3-ally-after-the-demo-has-run-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[81/86] [phone] › e2e/responsive.spec.ts:101:5 › the last content clears the bottom bar and Ask FLOW on every Business page
+[82/86] [phone] › e2e/a11y.spec.ts:108:5 › an approval waiting, the chase dialog and the remaining task at day 34
+[83/86] [phone] › e2e/responsive.spec.ts:129:5 › a hard load names the tab: the title survives hydration
+[84/86] [phone] › e2e/a11y.spec.ts:131:5 › the chat panel and the Demo story
+[85/86] [phone] › e2e/a11y.spec.ts:149:5 › the approval question, its decided card with the execution summary, the record, and Waiting on
+[86/86] [phone] › e2e/a11y.spec.ts:173:5 › the remaining task, when the cure left the reserve short
+  28 failed
+    [desktop] › e2e/a11y.spec.ts:41:5 › Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0 
+    [desktop] › e2e/a11y.spec.ts:50:5 › Deals: the inbox, a checked deal with its priced response, and the decision page 
+    [desktop] › e2e/a11y.spec.ts:72:5 › contract ingestion and the send step: the documents and a review, the buyer choice, the deal summary, the borrower file 
+    [desktop] › e2e/a11y.spec.ts:108:5 › an approval waiting, the chase dialog and the remaining task at day 34 
+    [desktop] › e2e/a11y.spec.ts:131:5 › the chat panel and the Demo story ─────────────────────────
+    [desktop] › e2e/a11y.spec.ts:149:5 › the approval question, its decided card with the execution summary, the record, and Waiting on 
+    [desktop] › e2e/activity.spec.ts:73:5 › the failed sign-ins are one line apart from the real alert, their rows under a fold, and every row of the read is reachable with All and no search 
+    [desktop] › e2e/cash-stress.spec.ts:64:7 › the link from deals lands on the stressed picture with the way back 
+    [desktop] › e2e/cash.spec.ts:218:5 › the doors lead to Capex and the what-if without a day number in their prose 
+    [desktop] › e2e/contract-terms.spec.ts:42:5 › a lender agreement has no such step: a contract sets up only a customer's invoices 
+    [desktop] › e2e/deals-queue.spec.ts:412:5 › the first visit's cue: with nothing selected the top row's chevron pulses twice, once, and not on the second load 
+    [desktop] › e2e/demo.spec.ts:378:5 › a double click on a book-replacing control never confirms, at 390 px 
+    [desktop] › e2e/demo.spec.ts:508:5 › the busy card's Load is visible without scrolling at 1440 and at 390, and from worked books it asks first 
+    [desktop] › e2e/design-system.spec.ts:134:5 › type scale: the roles are variables, the headline steps with the screen, and no figure or qualification on the five pages is under 13 px 
+    [desktop] › e2e/design-system.spec.ts:189:5 › rail: a 56 px icon rail by default from a laptop up, an overlay on hover and on focus that never moves the page, closing after it is left; the pin persists 
+    [desktop] › e2e/design-system.spec.ts:328:5 › rail: reduced motion opens it at once, and axe finds nothing serious on the collapsed rail or the open one, with the page beside it 
+    [desktop] › e2e/design-system.spec.ts:590:5 › rail: on every page the collapsed rail covers no content, the open panel is whole and on top, and pinned the content sits beside it 
+    [desktop] › e2e/documents.spec.ts:174:5 › focusing a term lights its clause with the shared dialogs mounted, wherever the pointer is parked (the page scrolls under it) 
+    [desktop] › e2e/home-v2.spec.ts:942:5 › accessibility: no axe violations on the default Home (its forecast open in the outlook) and with the customer, at 1440 and at 390 
+    [desktop] › e2e/home-v2.spec.ts:1000:5 › sizes at 1440: the cash card 360 px tall at most and padded 16 px, the outlook padded 24 px with a 22 px title and a 40 px figure, the recommendation's 18 px title and 36 px amount; rows 56 px and 44 px; nothing wraps to a third line 
+    [desktop] › e2e/record.spec.ts:223:5 › after the cure is approved, Home's strip says the funding is on its way; the approval links to its record; Activity links each row to its record 
+    [desktop] › e2e/responsive.spec.ts:21:5 › no page overflows horizontally after the demo has run 
+    [desktop] › e2e/responsive.spec.ts:101:5 › the last content clears the bottom bar and Ask FLOW on every Business page 
+    [desktop] › e2e/responsive.spec.ts:129:5 › a hard load names the tab: the title survives hydration 
+    [desktop] › e2e/trust.spec.ts:151:7 › the trust views are chosen by the address › an entry the record does not have says nothing was removed 
+    [phone] › e2e/a11y.spec.ts:41:5 › Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0 
+    [phone] › e2e/a11y.spec.ts:50:5 › Deals: the inbox, a checked deal with its priced response, and the decision page 
+    [phone] › e2e/responsive.spec.ts:21:5 › no page overflows horizontally after the demo has run ──
+  1 skipped
+  57 passed (12.1m)

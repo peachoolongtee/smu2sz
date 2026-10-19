@@ -1,0 +1,1196 @@
+
+> termsledger-web@0.1.0 test:unit <repo-root>/apps/web
+> node --no-warnings --import ./scripts/ts-resolve.mjs --test scripts/check-mocks.test.mjs scripts/retry.test.mjs scripts/presentation-fallbacks.test.mjs scripts/strategy.test.mjs scripts/w1-trust.test.mjs scripts/w5-collections.test.mjs scripts/chat-prompts.test.mjs scripts/w2-record.test.mjs scripts/w3-flows.test.mjs scripts/w6-demo.test.mjs scripts/timeout.test.mjs scripts/w9-demo-story.test.mjs scripts/customer-href.test.mjs scripts/cash-stress.test.mjs scripts/w11-queue.test.mjs scripts/w12-design-system.test.mjs scripts/w13-home-v2.test.mjs scripts/slice-b.test.mjs scripts/slice-d.test.mjs scripts/slice-b-r2.test.mjs scripts/tracker-lines.test.mjs scripts/accept-as-asked.test.mjs scripts/slice-b-r3.test.mjs scripts/buyer-message.test.mjs scripts/csp.test.mjs scripts/record-payment.test.mjs scripts/home-covered.test.mjs scripts/recording-findings.test.mjs scripts/http-errors.test.mjs scripts/send-result.test.mjs scripts/unverified-sender.test.mjs
+
+TAP version 13
+# Subtest: a 409 with a code is the server's refusal: its own sentence in the owner's language, else its message; any other error is not
+ok 1 - a 409 with a code is the server's refusal: its own sentence in the owner's language, else its message; any other error is not
+  ---
+  duration_ms: 2.293657
+  type: 'test'
+  ...
+# Subtest: a link to a request that needs review opens the review on arrival; another address, and one that says so already, are left as they are
+ok 2 - a link to a request that needs review opens the review on arrival; another address, and one that says so already, are left as they are
+  ---
+  duration_ms: 0.370146
+  type: 'test'
+  ...
+# Subtest: the words the web adds are in both languages; the decline's one line and the empty workspace say what the owner asked
+ok 3 - the words the web adds are in both languages; the decline's one line and the empty workspace say what the owner asked
+  ---
+  duration_ms: 0.208383
+  type: 'test'
+  ...
+# Subtest: the lifecycles `answered` and `no_answer` are a closed deal's (neutral), and a deal waiting for the buyer's answer is the buyer's turn (lavender)
+ok 4 - the lifecycles `answered` and `no_answer` are a closed deal's (neutral), and a deal waiting for the buyer's answer is the buyer's turn (lavender)
+  ---
+  duration_ms: 1.561032
+  type: 'test'
+  ...
+# Subtest: the panel's and the history's labels exist in both languages
+ok 5 - the panel's and the history's labels exist in both languages
+  ---
+  duration_ms: 1.633213
+  type: 'test'
+  ...
+# Subtest: the recording holds together: the message marked sent is the one shown, every ending is on the record, and every refusal is the server's own
+ok 6 - the recording holds together: the message marked sent is the one shown, every ending is on the record, and every refusal is the server's own
+  ---
+  duration_ms: 0.68335
+  type: 'test'
+  ...
+# Subtest: the buyer read asks for the language, the light read and only the context parts it has, `from` included
+ok 7 - the buyer read asks for the language, the light read and only the context parts it has, `from` included
+  ---
+  duration_ms: 2.590709
+  type: 'test'
+  ...
+# Subtest: only the three origins the server knows are passed on
+ok 8 - only the three origins the server knows are passed on
+  ---
+  duration_ms: 0.183316
+  type: 'test'
+  ...
+# Subtest: the stress link is the buyer and the delay; a buyer alone is a link; nothing is none
+ok 9 - the stress link is the buyer and the delay; a buyer alone is a link; nothing is none
+  ---
+  duration_ms: 0.360617
+  type: 'test'
+  ...
+# Subtest: Business shows two to four questions per page when the page holds what they ask about
+ok 10 - Business shows two to four questions per page when the page holds what they ask about
+  ---
+  duration_ms: 2.981682
+  type: 'test'
+  ...
+# Subtest: a question whose prerequisite is missing is hidden, not shown to fail
+ok 11 - a question whose prerequisite is missing is hidden, not shown to fail
+  ---
+  duration_ms: 0.355716
+  type: 'test'
+  ...
+# Subtest: every other Business route gets the Home questions, and nothing from the Demo set
+ok 12 - every other Business route gets the Home questions, and nothing from the Demo set
+  ---
+  duration_ms: 0.280207
+  type: 'test'
+  ...
+# Subtest: Demo keeps the general prompts (fixtures, the amendment, approve it) and the buyer role-play
+ok 13 - Demo keeps the general prompts (fixtures, the amendment, approve it) and the buyer role-play
+  ---
+  duration_ms: 0.301399
+  type: 'test'
+  ...
+# Subtest: every suggested question is one the API's rules read (the same list as tests/nl/test_business_page_prompts.py)
+ok 14 - every suggested question is one the API's rules read (the same list as tests/nl/test_business_page_prompts.py)
+  ---
+  duration_ms: 0.605923
+  type: 'test'
+  ...
+# Subtest: Customer and Activity have prompts of their own, each one the API's rules read
+ok 15 - Customer and Activity have prompts of their own, each one the API's rules read
+  ---
+  duration_ms: 0.321802
+  type: 'test'
+  ...
+# Subtest: the page context carries the route and a day; nothing from the session
+ok 16 - the page context carries the route and a day; nothing from the session
+  ---
+  duration_ms: 0.498332
+  type: 'test'
+  ...
+# Subtest: every span in every mock offer matches its document text exactly
+ok 17 - every span in every mock offer matches its document text exactly
+  ---
+  duration_ms: 2.030377
+  type: 'test'
+  ...
+# Subtest: verdict figures are the golden values, server-formatted
+ok 18 - verdict figures are the golden values, server-formatted
+  ---
+  duration_ms: 60.661383
+  type: 'test'
+  ...
+# Subtest: the EX01 verdict, the counters and the buyer turns are the live API's, as recorded
+ok 19 - the EX01 verdict, the counters and the buyer turns are the live API's, as recorded
+  ---
+  duration_ms: 8.829515
+  type: 'test'
+  ...
+# Subtest: funding, trajectory and capex mocks match the golden values
+ok 20 - funding, trajectory and capex mocks match the golden values
+  ---
+  duration_ms: 4.003673
+  type: 'test'
+  ...
+# Subtest: alerts and reconciliation mocks are the recorded server output for the opening books
+ok 21 - alerts and reconciliation mocks are the recorded server output for the opening books
+  ---
+  duration_ms: 0.636633
+  type: 'test'
+  ...
+# Subtest: funding lands later: the day-0 plan leaves the advance in transit, cash is only what has landed
+ok 22 - funding lands later: the day-0 plan leaves the advance in transit, cash is only what has landed
+  ---
+  duration_ms: 2.917776
+  type: 'test'
+  ...
+# Subtest: the day-34 cure waits for the owner: PENDING_APPROVAL, then EXECUTED on approval, cash on day 37
+ok 23 - the day-34 cure waits for the owner: PENDING_APPROVAL, then EXECUTED on approval, cash on day 37
+  ---
+  duration_ms: 1.934764
+  type: 'test'
+  ...
+# Subtest: every term, clause and flag in the recorded document readings quotes its document exactly
+ok 24 - every term, clause and flag in the recorded document readings quotes its document exactly
+  ---
+  duration_ms: 2.934873
+  type: 'test'
+  ...
+# Subtest: each decision on a document carries the server's outcome card in both languages, with no id or reference code in its words
+ok 25 - each decision on a document carries the server's outcome card in both languages, with no id or reference code in its words
+  ---
+  duration_ms: 2.404272
+  type: 'test'
+  ...
+# Subtest: the demo opens on the three demo documents confirmed by the owner, the first three ledger entries
+ok 26 - the demo opens on the three demo documents confirmed by the owner, the first three ledger entries
+  ---
+  duration_ms: 2.271976
+  type: 'test'
+  ...
+# Subtest: the demo documents read as the demo books: the supply agreement's terms and both lender agreements against their facilities
+ok 27 - the demo documents read as the demo books: the supply agreement's terms and both lender agreements against their facilities
+  ---
+  duration_ms: 1.528362
+  type: 'test'
+  ...
+# Subtest: the deal summary: the confirmed contract once the buyer agrees, then the day-34 story as the prototype shows it
+ok 28 - the deal summary: the confirmed contract once the buyer agrees, then the day-34 story as the prototype shows it
+  ---
+  duration_ms: 2.286655
+  type: 'test'
+  ...
+# Subtest: a buyer with an invoice and no contract: the deals read lists the invoice and says it in words (deals_short.json)
+ok 29 - a buyer with an invoice and no contract: the deals read lists the invoice and says it in words (deals_short.json)
+  ---
+  duration_ms: 0.378057
+  type: 'test'
+  ...
+# Subtest: a confirmed contract with no deal agreed: the deals read says it in words; an agreed deal does not (deals_day0.json, deals_day0_agreed.json)
+ok 30 - a confirmed contract with no deal agreed: the deals read says it in words; an agreed deal does not (deals_day0.json, deals_day0_agreed.json)
+  ---
+  duration_ms: 0.730758
+  type: 'test'
+  ...
+# Subtest: scripts need the request's nonce: no unsafe-inline, and no unsafe-eval outside development
+ok 31 - scripts need the request's nonce: no unsafe-inline, and no unsafe-eval outside development
+  ---
+  duration_ms: 3.013935
+  type: 'test'
+  ...
+# Subtest: nothing may frame the console, load plugins or rebase its URLs
+ok 32 - nothing may frame the console, load plugins or rebase its URLs
+  ---
+  duration_ms: 0.31921
+  type: 'test'
+  ...
+# Subtest: requests go only to this origin and the API the build points at
+ok 33 - requests go only to this origin and the API the build points at
+  ---
+  duration_ms: 0.321857
+  type: 'test'
+  ...
+# Subtest: a customer's href carries the decision, the path and the invoice, in that order, encoded
+ok 34 - a customer's href carries the decision, the path and the invoice, in that order, encoded
+  ---
+  duration_ms: 0.990077
+  type: 'test'
+  ...
+# Subtest: the stress link is marked as opened from the customer, the server's href kept
+ok 35 - the stress link is marked as opened from the customer, the server's href kept
+  ---
+  duration_ms: 0.162243
+  type: 'test'
+  ...
+# Subtest: the context is read from a URL's query: only the three keys, only when set
+ok 36 - the context is read from a URL's query: only the three keys, only when set
+  ---
+  duration_ms: 1.414759
+  type: 'test'
+  ...
+# Subtest: the recording holds both languages at every moment, the four figures, and the back link of each query the specs use
+ok 37 - the recording holds both languages at every moment, the four figures, and the back link of each query the specs use
+  ---
+  duration_ms: 0.574128
+  type: 'test'
+  ...
+# Subtest: every word the page itself owns exists in both languages
+ok 38 - every word the page itself owns exists in both languages
+  ---
+  duration_ms: 0.939281
+  type: 'test'
+  ...
+# Subtest: the server's word wins over every flag the page could read
+ok 39 - the server's word wins over every flag the page could read
+  ---
+  duration_ms: 0.980449
+  type: 'test'
+  ...
+# Subtest: without the action's word, the cash block's own `covered` decides
+ok 40 - without the action's word, the cash block's own `covered` decides
+  ---
+  duration_ms: 0.267666
+  type: 'test'
+  ...
+# Subtest: an older recording without either word: no plan, no unsafe day and not under the minimum today
+ok 41 - an older recording without either word: no plan, no unsafe day and not under the minimum today
+  ---
+  duration_ms: 0.146365
+  type: 'test'
+  ...
+# Subtest: the recorded Home states decide as they did: covered only once nothing needs funding
+ok 42 - the recorded Home states decide as they did: covered only once nothing needs funding
+  ---
+  duration_ms: 40.026818
+  type: 'test'
+  ...
+# Subtest: the API's INTERNAL_ERROR 500 is a server error with its status, not unreachable
+ok 43 - the API's INTERNAL_ERROR 500 is a server error with its status, not unreachable
+  ---
+  duration_ms: 57.962905
+  type: 'test'
+  ...
+# Subtest: a 500 with no words of its own (plain text) is a server error too
+ok 44 - a 500 with no words of its own (plain text) is a server error too
+  ---
+  duration_ms: 1.097987
+  type: 'test'
+  ...
+# Subtest: a 5xx that explains itself keeps the server's words
+ok 45 - a 5xx that explains itself keeps the server's words
+  ---
+  duration_ms: 1.076036
+  type: 'test'
+  ...
+# Subtest: only a request that never got an answer is unreachable
+ok 46 - only a request that never got an answer is unreachable
+  ---
+  duration_ms: 0.636591
+  type: 'test'
+  ...
+# Subtest: the server's status wins over anything derived
+ok 47 - the server's status wins over anything derived
+  ---
+  duration_ms: 1.367423
+  type: 'test'
+  ...
+# Subtest: without a status, a row that is not admissible is insufficient when it breaks the reserve, else unavailable
+ok 48 - without a status, a row that is not admissible is insufficient when it breaks the reserve, else unavailable
+  ---
+  duration_ms: 0.274779
+  type: 'test'
+  ...
+# Subtest: without a status, the selected row is recommended and an admissible one is an alternative
+ok 49 - without a status, the selected row is recommended and an admissible one is an alternative
+  ---
+  duration_ms: 0.34422
+  type: 'test'
+  ...
+# Subtest: the server's business action wins; an older verdict gets the rule from its outcome and counters
+ok 50 - the server's business action wins; an older verdict gets the rule from its outcome and counters
+  ---
+  duration_ms: 0.320052
+  type: 'test'
+  ...
+# Subtest: a typed amount is read as whole fen, and anything that is not an amount is null
+ok 51 - a typed amount is read as whole fen, and anything that is not an amount is null
+  ---
+  duration_ms: 1.55715
+  type: 'test'
+  ...
+# Subtest: the recorded answers carry the server's words in both languages, and a booked payment its books after
+ok 52 - the recorded answers carry the server's words in both languages, and a booked payment its books after
+  ---
+  duration_ms: 0.454576
+  type: 'test'
+  ...
+# Subtest: every label of the form is in both dictionaries
+ok 53 - every label of the form is in both dictionaries
+  ---
+  duration_ms: 1.181149
+  type: 'test'
+  ...
+# Subtest: the chat's security line counts one event in the singular, two in the plural, and Chinese is unchanged
+ok 54 - the chat's security line counts one event in the singular, two in the plural, and Chinese is unchanged
+  ---
+  duration_ms: 1.468585
+  type: 'test'
+  ...
+# Subtest: the other counted strings agree with their count too
+ok 55 - the other counted strings agree with their count too
+  ---
+  duration_ms: 0.552195
+  type: 'test'
+  ...
+# Subtest: no English string puts a bare plural noun straight after a count
+ok 56 - no English string puts a bare plural noun straight after a count
+  ---
+  duration_ms: 8.220399
+  type: 'test'
+  ...
+# Subtest: a conflict is retried once after the hint, and the second answer is returned
+ok 57 - a conflict is retried once after the hint, and the second answer is returned
+  ---
+  duration_ms: 61.545106
+  type: 'test'
+  ...
+# Subtest: a second conflict is returned as it is: no third attempt
+ok 58 - a second conflict is returned as it is: no third attempt
+  ---
+  duration_ms: 1.410792
+  type: 'test'
+  ...
+# Subtest: another 409 (already decided, alert changed) and other statuses are not retried
+ok 59 - another 409 (already decided, alert changed) and other statuses are not retried
+  ---
+  duration_ms: 2.504294
+  type: 'test'
+  ...
+# Subtest: the first answer body stays readable by the caller
+ok 60 - the first answer body stays readable by the caller
+  ---
+  duration_ms: 0.791224
+  type: 'test'
+  ...
+# Subtest: the wait follows the hint in the body, then the header, defaults to one second and is capped
+ok 61 - the wait follows the hint in the body, then the header, defaults to one second and is capped
+  ---
+  duration_ms: 0.236443
+  type: 'test'
+  ...
+# Subtest: the error text says the books were busy
+ok 62 - the error text says the books were busy
+  ---
+  duration_ms: 0.205146
+  type: 'test'
+  ...
+# Subtest: an accept that executed (or an older recording without accept_status) says the agreement is on the books
+ok 63 - an accept that executed (or an older recording without accept_status) says the agreement is on the books
+  ---
+  duration_ms: 0.953176
+  type: 'test'
+  ...
+# Subtest: an accept waiting for the owner's approval never says the agreement is on the books
+ok 64 - an accept waiting for the owner's approval never says the agreement is on the books
+  ---
+  duration_ms: 0.271452
+  type: 'test'
+  ...
+# Subtest: a refused accept says the agreement was not recorded
+ok 65 - a refused accept says the agreement was not recorded
+  ---
+  duration_ms: 0.243983
+  type: 'test'
+  ...
+# Subtest: no deal is still no deal
+ok 66 - no deal is still no deal
+  ---
+  duration_ms: 0.133196
+  type: 'test'
+  ...
+# Subtest: the new words are in both languages
+ok 67 - the new words are in both languages
+  ---
+  duration_ms: 0.304485
+  type: 'test'
+  ...
+# Subtest: the Deals queue lists negotiations only: an approval, a collection, a setup task and a settlement are other pages' rows; the promised payments stay under the agreements
+ok 68 - the Deals queue lists negotiations only: an approval, a collection, a setup task and a settlement are other pages' rows; the promised payments stay under the agreements
+  ---
+  duration_ms: 3.795361
+  type: 'test'
+  ...
+# Subtest: the tabs' counts are the server's `queue.deals` when it sends them, else the negotiation rows held; the Customers tab is gone
+ok 69 - the tabs' counts are the server's `queue.deals` when it sends them, else the negotiation rows held; the Customers tab is gone
+  ---
+  duration_ms: 0.720383
+  type: 'test'
+  ...
+# Subtest: the pill is the server's lifecycle word with a tone that says who acts; without a lifecycle the old 'state . who acts' is split and the tier decides the tone
+ok 70 - the pill is the server's lifecycle word with a tone that says who acts; without a lifecycle the old 'state . who acts' is split and the tier decides the tone
+  ---
+  duration_ms: 0.851683
+  type: 'test'
+  ...
+# Subtest: urgency sorts the owner's turn first, then severity, then the nearer deadline, and keeps the server's order on a tie; latest activity needs a day from the server
+ok 71 - urgency sorts the owner's turn first, then severity, then the nearer deadline, and keeps the server's order on a tie; latest activity needs a day from the server
+  ---
+  duration_ms: 0.651658
+  type: 'test'
+  ...
+# Subtest: group by customer keeps the sort: a group is placed by its first row, a row with no customer stands alone
+ok 72 - group by customer keeps the sort: a group is placed by its first row, a row with no customer stands alone
+  ---
+  duration_ms: 0.409175
+  type: 'test'
+  ...
+# Subtest: the terms table is grouped by scope (existing invoice, future invoices, next quarter), the server's labels and values, the changed ones flagged and an untouched term 'unchanged'
+ok 73 - the terms table is grouped by scope (existing invoice, future invoices, next quarter), the server's labels and values, the changed ones flagged and an untouched term 'unchanged'
+  ---
+  duration_ms: 0.789431
+  type: 'test'
+  ...
+# Subtest: the walk through the list (previous, next, Deal i of N): one deal per record in the list's order; a promised payment and its agreement are one deal; a row that is not a deal is not walked
+ok 74 - the walk through the list (previous, next, Deal i of N): one deal per record in the list's order; a promised payment and its agreement are one deal; a row that is not a deal is not walked
+  ---
+  duration_ms: 0.675297
+  type: 'test'
+  ...
+# Subtest: the cost table aligns the components of the paths by key (else label); a path without one has no cell; the headline keeps its basis words
+ok 75 - the cost table aligns the components of the paths by key (else label); a path without one has no cell; the headline keeps its basis words
+  ---
+  duration_ms: 0.533538
+  type: 'test'
+  ...
+# Subtest: a cost row's note (the funding the plan cannot incur today) rides with its cell, and a row with no amount is no cell
+ok 76 - a cost row's note (the funding the plan cannot incur today) rides with its cell, and a row with no amount is no cell
+  ---
+  duration_ms: 0.535937
+  type: 'test'
+  ...
+# Subtest: every round-two label has a Chinese twin and no key is empty
+ok 77 - every round-two label has a Chinese twin and no key is empty
+  ---
+  duration_ms: 2.384518
+  type: 'test'
+  ...
+# Subtest: the address: view= names the tab; the retired keys are flagged and land on the Overview (Compare responses is gone); nothing is Overview
+ok 78 - the address: view= names the tab; the retired keys are flagged and land on the Overview (Compare responses is gone); nothing is Overview
+  ---
+  duration_ms: 3.224372
+  type: 'test'
+  ...
+# Subtest: the sections: three before agreement (the choices table replaced Compare responses), three from it; a deal with nothing to draw has no cash section; a section the deal lacks is the Overview
+ok 79 - the sections: three before agreement (the choices table replaced Compare responses), three from it; a deal with nothing to draw has no cash section; a section the deal lacks is the Overview
+  ---
+  duration_ms: 0.342036
+  type: 'test'
+  ...
+# Subtest: the day-by-day lines: the series inside the picture's window, as positions along it; the labelled days are the picture's moments inside it
+ok 80 - the day-by-day lines: the series inside the picture's window, as positions along it; the labelled days are the picture's moments inside it
+  ---
+  duration_ms: 0.887196
+  type: 'test'
+  ...
+# Subtest: pair words: the request against a reply reads the reply's map entry; the old strip beside it is only the fallback for the recommended reply
+ok 81 - pair words: the request against a reply reads the reply's map entry; the old strip beside it is only the fallback for the recommended reply
+  ---
+  duration_ms: 0.432367
+  type: 'test'
+  ...
+# Subtest: pair words carry the server's cause_lines beside cause_text, and never split the string themselves
+ok 82 - pair words carry the server's cause_lines beside cause_text, and never split the string themselves
+  ---
+  duration_ms: 0.365916
+  type: 'test'
+  ...
+# Subtest: pair words: two replies read comparison_pairs on the first's point, in the server's order or the reverse, with whose difference it is
+ok 83 - pair words: two replies read comparison_pairs on the first's point, in the server's order or the reverse, with whose difference it is
+  ---
+  duration_ms: 0.149025
+  type: 'test'
+  ...
+# Subtest: the cash scale: positions come from the fen numbers only, widened to the server's labelled ticks; the minimum and a value on it share a place; one value draws at the middle
+ok 84 - the cash scale: positions come from the fen numbers only, widened to the server's labelled ticks; the minimum and a value on it share a place; one value draws at the middle
+  ---
+  duration_ms: 0.504077
+  type: 'test'
+  ...
+# Subtest: the comparison's three rows are server words: the economic headline and the buyer status; the terms cells list each scope's own word
+ok 85 - the comparison's three rows are server words: the economic headline and the buyer status; the terms cells list each scope's own word
+  ---
+  duration_ms: 0.729891
+  type: 'test'
+  ...
+# Subtest: terms by scope: the server's scope and cell word decide the row and the cell; a tinted cell is one that says what it stands instead of; an untouched row is the server's word, not blank
+ok 86 - terms by scope: the server's scope and cell word decide the row and the cell; a tinted cell is one that says what it stands instead of; an untouched row is the server's word, not blank
+  ---
+  duration_ms: 0.499684
+  type: 'test'
+  ...
+# Subtest: every new Deals word has its Chinese twin, and the rule sentence is the server's (its dictionary key is gone)
+ok 87 - every new Deals word has its Chinese twin, and the rule sentence is the server's (its dictionary key is gone)
+  ---
+  duration_ms: 1.525312
+  type: 'test'
+  ...
+# Subtest: the Agreed tab's count is the server's deals in force (awaiting payment + payment late), never the rows; closed is counted apart
+ok 88 - the Agreed tab's count is the server's deals in force (awaiting payment + payment late), never the rows; closed is counted apart
+  ---
+  duration_ms: 0.861973
+  type: 'test'
+  ...
+# Subtest: the six keys are the selection: read in the keys' order, only when set
+ok 89 - the six keys are the selection: read in the keys' order, only when set
+  ---
+  duration_ms: 4.161577
+  type: 'test'
+  ...
+# Subtest: changing one key keeps the others and the path; a null removes it
+ok 90 - changing one key keeps the others and the path; a null removes it
+  ---
+  duration_ms: 0.596663
+  type: 'test'
+  ...
+# Subtest: an origin is named for the pages that can be one, and a decision names its offer
+ok 91 - an origin is named for the pages that can be one, and a decision names its offer
+  ---
+  duration_ms: 0.329088
+  type: 'test'
+  ...
+# Subtest: a customer link carries the row's own context and the origin: decision, path, invoice, scenario, from, in that order
+ok 92 - a customer link carries the row's own context and the origin: decision, path, invoice, scenario, from, in that order
+  ---
+  duration_ms: 0.305682
+  type: 'test'
+  ...
+# Subtest: the scope is the narrowest the route's own keys name; a key the route does not use is not a scope
+ok 93 - the scope is the narrowest the route's own keys name; a key the route does not use is not a scope
+  ---
+  duration_ms: 0.664257
+  type: 'test'
+  ...
+# Subtest: the chip offers the kinds the address holds, narrowest first, Company always; the owner's narrowing is for its route only
+ok 94 - the chip offers the kinds the address holds, narrowest first, Company always; the owner's narrowing is for its route only
+  ---
+  duration_ms: 1.627048
+  type: 'test'
+  ...
+# Subtest: the queue has one row per negotiation, never one per customer; the counts are the server's; All is the tasks
+ok 95 - the queue has one row per negotiation, never one per customer; the counts are the server's; All is the tasks
+  ---
+  duration_ms: 0.90002
+  type: 'test'
+  ...
+# Subtest: a negotiation, an agreement and a promise select in place; any other task leads where the server says it is done
+ok 96 - a negotiation, an agreement and a promise select in place; any other task leads where the server says it is done
+  ---
+  duration_ms: 0.565767
+  type: 'test'
+  ...
+# Subtest: the status pill and the next step are the server's words, split at its own separator
+ok 97 - the status pill and the next step are the server's words, split at its own separator
+  ---
+  duration_ms: 0.557145
+  type: 'test'
+  ...
+# Subtest: the search filters the words the server wrote, and the tab named in the address is the only one that is read
+ok 98 - the search filters the words the server wrote, and the tab named in the address is the only one that is read
+  ---
+  duration_ms: 0.976911
+  type: 'test'
+  ...
+# Subtest: the commitment receipt is eleven lines in the ticket's order, and a line the server has no value for is omitted
+ok 99 - the commitment receipt is eleven lines in the ticket's order, and a line the server has no value for is omitted
+  ---
+  duration_ms: 0.817251
+  type: 'test'
+  ...
+# Subtest: the send's receipt is the server's block for THAT reply; a reply the server did not price has none and nothing is composed from the path's words
+ok 100 - the send's receipt is the server's block for THAT reply; a reply the server did not price has none and nothing is composed from the path's words
+  ---
+  duration_ms: 0.435301
+  type: 'test'
+  ...
+# Subtest: every word the slice owns exists in both languages
+ok 101 - every word the slice owns exists in both languages
+  ---
+  duration_ms: 2.566275
+  type: 'test'
+  ...
+# Subtest: the owner's widened choice holds on the route it was made on and is void once it is cleared (the panel clears it when the route changes)
+ok 102 - the owner's widened choice holds on the route it was made on and is void once it is cleared (the panel clears it when the route changes)
+  ---
+  duration_ms: 0.531783
+  type: 'test'
+  ...
+# Subtest: no code on the Demo page or in the story control presses the owner's approval
+ok 103 - no code on the Demo page or in the story control presses the owner's approval
+  ---
+  duration_ms: 2.379532
+  type: 'test'
+  ...
+# Subtest: the Demo page has exactly one filled next control (a link for the owner's step, a button otherwise) and the dialog one filled confirm
+ok 104 - the Demo page has exactly one filled next control (a link for the owner's step, a button otherwise) and the dialog one filled confirm
+  ---
+  duration_ms: 1.587525
+  type: 'test'
+  ...
+# Subtest: Activity computes no sentence: every row's words come from the read, and the filter only hides rows
+ok 105 - Activity computes no sentence: every row's words come from the read, and the filter only hides rows
+  ---
+  duration_ms: 0.439338
+  type: 'test'
+  ...
+# Subtest: the books dialog's confirm acts only on a deliberate click, and confirm_loss is only ever sent with the dialog's token
+ok 106 - the books dialog's confirm acts only on a deliberate click, and confirm_loss is only ever sent with the dialog's token
+  ---
+  duration_ms: 0.429455
+  type: 'test'
+  ...
+# Subtest: Which books: three cards, each loaded through the guard, and the old fold and the Demo's own engine sidebar are gone
+ok 107 - Which books: three cards, each loaded through the guard, and the old fold and the Demo's own engine sidebar are gone
+  ---
+  duration_ms: 0.594319
+  type: 'test'
+  ...
+# Subtest: the Demo reads the server's chain verdict and says its scope as text; the clock is one control; the receipt's reference is evidence
+ok 108 - the Demo reads the server's chain verdict and says its scope as text; the clock is one control; the receipt's reference is evidence
+  ---
+  duration_ms: 12.031604
+  type: 'test'
+  ...
+# Subtest: the story's next control waits while the story read is in flight, so a press never reruns the step just run
+ok 109 - the story's next control waits while the story read is in flight, so a press never reruns the step just run
+  ---
+  duration_ms: 365.772566
+  type: 'test'
+  ...
+# Subtest: STRATEGY_MVP is on only for NEXT_PUBLIC_STRATEGY_MVP=1 (unset, 0 and true are off)
+ok 110 - STRATEGY_MVP is on only for NEXT_PUBLIC_STRATEGY_MVP=1 (unset, 0 and true are off)
+  ---
+  duration_ms: 25.246237
+  type: 'test'
+  ...
+# Subtest: every strategy read goes through useStrategyAsync, which is the idle hook (the thunk never runs) unless the build flag is on
+ok 111 - every strategy read goes through useStrategyAsync, which is the idle hook (the thunk never runs) unless the build flag is on
+  ---
+  duration_ms: 0.963555
+  type: 'test'
+  ...
+# Subtest: the recordings are chosen by the clock's day: the opening books before the news day, day 34's from it
+ok 112 - the recordings are chosen by the clock's day: the opening books before the news day, day 34's from it
+  ---
+  duration_ms: 0.160454
+  type: 'test'
+  ...
+# Subtest: after the day-34 cure is approved the post-approval recording is served; before it, day 34's; before day 34, the opening books'
+ok 113 - after the day-34 cure is approved the post-approval recording is served; before it, day 34's; before day 34, the opening books'
+  ---
+  duration_ms: 0.127734
+  type: 'test'
+  ...
+# Subtest: the mock handlers choose with the home mock's own condition (the clock's day and cureStage() === 'approved') and the recordings are the right days
+ok 114 - the mock handlers choose with the home mock's own condition (the clock's day and cureStage() === 'approved') and the recordings are the right days
+  ---
+  duration_ms: 4.456231
+  type: 'test'
+  ...
+# Subtest: the recordings carry the server's strings the pages show, and no 'day N' in them
+ok 115 - the recordings carry the server's strings the pages show, and no 'day N' in them
+  ---
+  duration_ms: 1.144025
+  type: 'test'
+  ...
+# Subtest: the envelope recordings are BUYER-1's, carry the server's sentences and the zone, and say no 'day N'
+ok 116 - the envelope recordings are BUYER-1's, carry the server's sentences and the zone, and say no 'day N'
+  ---
+  duration_ms: 5.055429
+  type: 'test'
+  ...
+# Subtest: the Deals card renders the server's lever, package and zone strings and composes none
+ok 117 - the Deals card renders the server's lever, package and zone strings and composes none
+  ---
+  duration_ms: 0.538389
+  type: 'test'
+  ...
+# Subtest: the envelope call is behind the flag at its call site
+ok 118 - the envelope call is behind the flag at its call site
+  ---
+  duration_ms: 0.476712
+  type: 'test'
+  ...
+# Subtest: the Deals card says it is the most the owner can give, labels the figure an estimate, and the flag words are not ink-3
+ok 119 - the Deals card says it is the most the owner can give, labels the figure an estimate, and the flag words are not ink-3
+  ---
+  duration_ms: 4.396961
+  type: 'test'
+  ...
+# Subtest: the worth cell is one server figure (net_saving_display, or worth_text when there is no saving), the full sentence is in the row's details, and nothing is decided from the gross saving
+ok 120 - the worth cell is one server figure (net_saving_display, or worth_text when there is no saving), the full sentence is in the row's details, and nothing is decided from the gross saving
+  ---
+  duration_ms: 2.663241
+  type: 'test'
+  ...
+# Subtest: without the flag the Deals page reads no envelope, and the strategy spec gates as the config does
+ok 121 - without the flag the Deals page reads no envelope, and the strategy spec gates as the config does
+  ---
+  duration_ms: 0.738251
+  type: 'test'
+  ...
+# Subtest: pnpm demo builds with the strategy surfaces and the envelope on, its API warming the envelope's cache; dev:live has the strategy flag only; the pilot journal stays off
+ok 122 - pnpm demo builds with the strategy surfaces and the envelope on, its API warming the envelope's cache; dev:live has the strategy flag only; the pilot journal stays off
+  ---
+  duration_ms: 0.905229
+  type: 'test'
+  ...
+# Subtest: the pilot journal (map \#58) is read-only and mounted only with its own build flag (on top of the strategy one) AND a live API: the mock has no journal, the flag-off build reads nothing
+ok 123 - the pilot journal (map \#58) is read-only and mounted only with its own build flag (on top of the strategy one) AND a live API: the mock has no journal, the flag-off build reads nothing
+  ---
+  duration_ms: 7.094679
+  type: 'test'
+  ...
+# Subtest: every route has a timeout: 20 s by default, 60 s for the model, the evaluation and the strategy reads
+ok 124 - every route has a timeout: 20 s by default, 60 s for the model, the evaluation and the strategy reads
+  ---
+  duration_ms: 1.510382
+  type: 'test'
+  ...
+# Subtest: a timed-out request is a read, a write that may have landed, or a model reply
+ok 125 - a timed-out request is a read, a write that may have landed, or a model reply
+  ---
+  duration_ms: 0.512843
+  type: 'test'
+  ...
+# Subtest: the signal fires after the time and the failure becomes the timeout error
+ok 126 - the signal fires after the time and the failure becomes the timeout error
+  ---
+  duration_ms: 41.446776
+  type: 'test'
+  ...
+# Subtest: a request that finishes in time is returned, and one that fails in time keeps its own error
+ok 127 - a request that finishes in time is returned, and one that fails in time keeps its own error
+  ---
+  duration_ms: 0.734575
+  type: 'test'
+  ...
+# Subtest: on the golden story every line is in the table; the agreement's two components sum to the expected cost's parts, the cure counts once approved
+ok 128 - on the golden story every line is in the table; the agreement's two components sum to the expected cost's parts, the cure counts once approved
+  ---
+  duration_ms: 4.070917
+  type: 'test'
+  ...
+# Subtest: the cure queued for approval is in the table (it counts once approved), not outside the deal's cost
+ok 129 - the cure queued for approval is in the table (it counts once approved), not outside the deal's cost
+  ---
+  duration_ms: 0.641763
+  type: 'test'
+  ...
+# Subtest: a related line the server does not count is taken out of the table and the bar and shown apart (one field overridden in the test)
+ok 130 - a related line the server does not count is taken out of the table and the bar and shown apart (one field overridden in the test)
+  ---
+  duration_ms: 0.876569
+  type: 'test'
+  ...
+# Subtest: an agreement component is never outside the cost, whatever it carries
+ok 131 - an agreement component is never outside the cost, whatever it carries
+  ---
+  duration_ms: 2.712502
+  type: 'test'
+  ...
+# Subtest: the label shows only when a server view says the sender is unverified
+ok 132 - the label shows only when a server view says the sender is unverified
+  ---
+  duration_ms: 0.906362
+  type: 'test'
+  ...
+# Subtest: the label is in both languages, in the brief's words
+ok 133 - the label is in both languages, in the brief's words
+  ---
+  duration_ms: 0.235269
+  type: 'test'
+  ...
+# Subtest: every view where the owner accepts a request or approves an operation on it draws the label
+ok 134 - every view where the owner accepts a request or approves an operation on it draws the label
+  ---
+  duration_ms: 0.789775
+  type: 'test'
+  ...
+# Subtest: no recording carries the field yet, so the mock suite shows no label (absence is no label)
+ok 135 - no recording carries the field yet, so the mock suite shows no label (absence is no label)
+  ---
+  duration_ms: 268.304889
+  type: 'test'
+  ...
+# Subtest: Approve is disabled for a commercial approval whose terms are not available
+ok 136 - Approve is disabled for a commercial approval whose terms are not available
+  ---
+  duration_ms: 1.773082
+  type: 'test'
+  ...
+# Subtest: an older answer without the field fails closed on a commercial approval
+ok 137 - an older answer without the field fails closed on a commercial approval
+  ---
+  duration_ms: 0.202083
+  type: 'test'
+  ...
+# Subtest: available but empty terms also fail closed
+ok 138 - available but empty terms also fail closed
+  ---
+  duration_ms: 0.12176
+  type: 'test'
+  ...
+# Subtest: Approve is enabled when the terms are shown, and a funding approval needs no terms
+ok 139 - Approve is enabled when the terms are shown, and a funding approval needs no terms
+  ---
+  duration_ms: 0.475761
+  type: 'test'
+  ...
+# Subtest: a decision in flight disables Approve whatever the terms say
+ok 140 - a decision in flight disables Approve whatever the terms say
+  ---
+  duration_ms: 0.310931
+  type: 'test'
+  ...
+# Subtest: the agreement label follows the commitment's status
+ok 141 - the agreement label follows the commitment's status
+  ---
+  duration_ms: 0.397056
+  type: 'test'
+  ...
+# Subtest: a deadline that has passed is a distance in the past and is never rewritten to today
+ok 142 - a deadline that has passed is a distance in the past and is never rewritten to today
+  ---
+  duration_ms: 0.776118
+  type: 'test'
+  ...
+# Subtest: globals.css: the touch variant is the block form that keeps both branches
+ok 143 - globals.css: the touch variant is the block form that keeps both branches
+  ---
+  duration_ms: 0.280502
+  type: 'test'
+  ...
+# Subtest: globals.css: the reduced-motion ellipsis comes after the base rule that hides it
+ok 144 - globals.css: the reduced-motion ellipsis comes after the base rule that hides it
+  ---
+  duration_ms: 0.288746
+  type: 'test'
+  ...
+# Subtest: the exposure recording holds both languages, every path's sentences and no stray timing
+ok 145 - the exposure recording holds both languages, every path's sentences and no stray timing
+  ---
+  duration_ms: 4.475636
+  type: 'test'
+  ...
+# Subtest: every queue word is said in English and in Chinese
+ok 146 - every queue word is said in English and in Chinese
+  ---
+  duration_ms: 0.926806
+  type: 'test'
+  ...
+# Subtest: SegmentedTabs keyboard: arrows move and wrap, Home and End jump, other keys are left alone
+ok 147 - SegmentedTabs keyboard: arrows move and wrap, Home and End jump, other keys are left alone
+  ---
+  duration_ms: 1.088679
+  type: 'test'
+  ...
+# Subtest: SegmentedTabs keyboard: a disabled tab is skipped, and is never the first or last stop
+ok 148 - SegmentedTabs keyboard: a disabled tab is skipped, and is never the first or last stop
+  ---
+  duration_ms: 0.242038
+  type: 'test'
+  ...
+# Subtest: SegmentedTabs ARIA: role tab, aria-selected on the chosen one only, one tab stop, the id and the panel it controls
+ok 149 - SegmentedTabs ARIA: role tab, aria-selected on the chosen one only, one tab stop, the id and the panel it controls
+  ---
+  duration_ms: 1.417314
+  type: 'test'
+  ...
+# Subtest: SegmentedTabs ARIA: with nothing chosen, or the chosen tab disabled, the first tab that can be chosen is the stop
+ok 150 - SegmentedTabs ARIA: with nothing chosen, or the chosen tab disabled, the first tab that can be chosen is the stop
+  ---
+  duration_ms: 0.227763
+  type: 'test'
+  ...
+# Subtest: SegmentedTabs badge: a number (zero too) or a word is shown, nothing else; red is its own tone and neutral the other
+ok 151 - SegmentedTabs badge: a number (zero too) or a word is shown, nothing else; red is its own tone and neutral the other
+  ---
+  duration_ms: 0.334126
+  type: 'test'
+  ...
+# Subtest: StateWord: the twelve states each have a tone and a glyph, and no two states share a glyph
+ok 152 - StateWord: the twelve states each have a tone and a glyph, and no two states share a glyph
+  ---
+  duration_ms: 0.318666
+  type: 'test'
+  ...
+# Subtest: StateWord: the tone of a collection state is the page's: overdue and a missed promise red, due soon amber, current green; the plan is blue, never green
+ok 153 - StateWord: the tone of a collection state is the page's: overdue and a missed promise red, due soon amber, current green; the plan is blue, never green
+  ---
+  duration_ms: 0.211347
+  type: 'test'
+  ...
+# Subtest: StateWord: the server's enums map to a state; NONE and a word the browser does not know draw no state
+ok 154 - StateWord: the server's enums map to a state; NONE and a word the browser does not know draw no state
+  ---
+  duration_ms: 0.169236
+  type: 'test'
+  ...
+# Subtest: a decision row opens its deal; any other row of the Home's own URL opens the customer; a server href that is elsewhere stays
+ok 155 - a decision row opens its deal; any other row of the Home's own URL opens the customer; a server href that is elsewhere stays
+  ---
+  duration_ms: 1.698551
+  type: 'test'
+  ...
+# Subtest: the three selections live in the address: read, written, and opened in place from a row
+ok 156 - the three selections live in the address: read, written, and opened in place from a row
+  ---
+  duration_ms: 1.751257
+  type: 'test'
+  ...
+# Subtest: every recorded Home V2 read is in both languages and carries the block the page draws
+ok 157 - every recorded Home V2 read is in both languages and carries the block the page draws
+  ---
+  duration_ms: 23.436027
+  type: 'test'
+  ...
+# Subtest: the alert is counted nowhere and the funding state follows the plan: planned before the run, arranged after
+ok 158 - the alert is counted nowhere and the funding state follows the plan: planned before the run, arranged after
+  ---
+  duration_ms: 6.16235
+  type: 'test'
+  ...
+# Subtest: every Home V2 label has both languages and no word of the banned list
+ok 159 - every Home V2 label has both languages and no word of the banned list
+  ---
+  duration_ms: 1.891085
+  type: 'test'
+  ...
+# Subtest: a deal's record id is deal:{offer_id}
+ok 160 - a deal's record id is deal:{offer_id}
+  ---
+  duration_ms: 0.955086
+  type: 'test'
+  ...
+# Subtest: the steps: a response that is ready is not sent, and an acceptable offer is not agreed
+ok 161 - the steps: a response that is ready is not sent, and an acceptable offer is not agreed
+  ---
+  duration_ms: 1.428938
+  type: 'test'
+  ...
+# Subtest: the steps: each record state has its own place and tone
+ok 162 - the steps: each record state has its own place and tone
+  ---
+  duration_ms: 0.236059
+  type: 'test'
+  ...
+# Subtest: the steps follow the recorded story: agreed on day 0, fulfilled with the receipt, missed without it, no deal when the buyer walks
+ok 163 - the steps follow the recorded story: agreed on day 0, fulfilled with the receipt, missed without it, no deal when the buyer walks
+  ---
+  duration_ms: 0.250192
+  type: 'test'
+  ...
+# Subtest: the execution summary is read from the record: the agreement in the server's words, the funding it ran, the lots
+ok 164 - the execution summary is read from the record: the agreement in the server's words, the funding it ran, the lots
+  ---
+  duration_ms: 0.49237
+  type: 'test'
+  ...
+# Subtest: the agreement tone follows the commitment status, never the verdict
+ok 165 - the agreement tone follows the commitment status, never the verdict
+  ---
+  duration_ms: 0.110342
+  type: 'test'
+  ...
+# Subtest: a 409 COUNTER_CHANGED is recognised with its counters or its re-evaluate flag; other errors are not
+ok 166 - a 409 COUNTER_CHANGED is recognised with its counters or its re-evaluate flag; other errors are not
+  ---
+  duration_ms: 0.344042
+  type: 'test'
+  ...
+# Subtest: a 404 DECISION_NOT_FOUND is a missing record, not a failure
+ok 167 - a 404 DECISION_NOT_FOUND is a missing record, not a failure
+  ---
+  duration_ms: 0.13709
+  type: 'test'
+  ...
+# Subtest: the recorded refused cure is FAILED and the stored quote survives the decision
+ok 168 - the recorded refused cure is FAILED and the stored quote survives the decision
+  ---
+  duration_ms: 0.24258
+  type: 'test'
+  ...
+# Subtest: a day with one event is labelled by that event
+ok 169 - a day with one event is labelled by that event
+  ---
+  duration_ms: 1.587435
+  type: 'test'
+  ...
+# Subtest: a day with several events is labelled by the server's net, never by its largest component
+ok 170 - a day with several events is labelled by the server's net, never by its largest component
+  ---
+  duration_ms: 0.490292
+  type: 'test'
+  ...
+# Subtest: a net that has the sign of the smaller event still labels the day by the net
+ok 171 - a net that has the sign of the smaller event still labels the day by the net
+  ---
+  duration_ms: 2.403951
+  type: 'test'
+  ...
+# Subtest: without a net (an older recording) each event stays its own candidate; a day with no mover has none
+ok 172 - without a net (an older recording) each event stays its own candidate; a day with no mover has none
+  ---
+  duration_ms: 0.276523
+  type: 'test'
+  ...
+# Subtest: the recorded forecast: every day with several events carries the server's net
+ok 173 - the recorded forecast: every day with several events carries the server's net
+  ---
+  duration_ms: 9.196933
+  type: 'test'
+  ...
+# Subtest: the recorded comparison: the server's groups in its order, a rank only where it ranked
+ok 174 - the recorded comparison: the server's groups in its order, a rank only where it ranked
+  ---
+  duration_ms: 7.363182
+  type: 'test'
+  ...
+# Subtest: the recorded ledger: causality on every row, the chain words and the refusal block
+ok 175 - the recorded ledger: causality on every row, the chain words and the refusal block
+  ---
+  duration_ms: 1.917156
+  type: 'test'
+  ...
+# Subtest: the recorded Deals workspace: the sections in the server's order, the immediate discount apart from the forward total
+ok 176 - the recorded Deals workspace: the sections in the server's order, the immediate discount apart from the forward total
+  ---
+  duration_ms: 2.794671
+  type: 'test'
+  ...
+# Subtest: a past-due invoice offers Chase payment; one that is not due and not at risk does not
+ok 177 - a past-due invoice offers Chase payment; one that is not due and not at risk does not
+  ---
+  duration_ms: 1.943466
+  type: 'test'
+  ...
+# Subtest: an invoice due inside the forecast's shortfall stretch offers it, one outside does not
+ok 178 - an invoice due inside the forecast's shortfall stretch offers it, one outside does not
+  ---
+  duration_ms: 0.271378
+  type: 'test'
+  ...
+# Subtest: no shortfall means no stretch; a lowest day before the breach does not invert it
+ok 179 - no shortfall means no stretch; a lowest day before the breach does not invert it
+  ---
+  duration_ms: 0.158294
+  type: 'test'
+  ...
+# Subtest: a lapsed promise offers it, a kept or awaited one does not
+ok 180 - a lapsed promise offers it, a kept or awaited one does not
+  ---
+  duration_ms: 0.212088
+  type: 'test'
+  ...
+# Subtest: the chase dictionary lines exist in both languages
+ok 181 - the chase dictionary lines exist in both languages
+  ---
+  duration_ms: 0.929987
+  type: 'test'
+  ...
+# Subtest: the recorded handoffs hold the server's figures for every open invoice, in both languages, with no record ids
+ok 182 - the recorded handoffs hold the server's figures for every open invoice, in both languages, with no record ids
+  ---
+  duration_ms: 1.087604
+  type: 'test'
+  ...
+# Subtest: the recorded reconciliations carry the four facts on the receipt row
+ok 183 - the recorded reconciliations carry the four facts on the receipt row
+  ---
+  duration_ms: 0.417167
+  type: 'test'
+  ...
+# Subtest: every step and scene has its words in English and Chinese
+ok 184 - every step and scene has its words in English and Chinese
+  ---
+  duration_ms: 1.139109
+  type: 'test'
+  ...
+# Subtest: no figure is typed into a step's sentences: the plain ones and the templates carry no digit and no money
+ok 185 - no figure is typed into a step's sentences: the plain ones and the templates carry no digit and no money
+  ---
+  duration_ms: 0.455608
+  type: 'test'
+  ...
+# Subtest: a step is narrated from what the server told it, and each sentence is omitted when its figure is missing
+ok 186 - a step is narrated from what the server told it, and each sentence is omitted when its figure is missing
+  ---
+  duration_ms: 0.540666
+  type: 'test'
+  ...
+# Subtest: the approve step never decides for the owner: invoked while the cure waits it approves nothing
+ok 187 - the approve step never decides for the owner: invoked while the cure waits it approves nothing
+  ---
+  duration_ms: 567.633067
+  type: 'test'
+  ...
+# Subtest: once the owner has decided, the approve step reads the decision and changes nothing
+ok 188 - once the owner has decided, the approve step reads the decision and changes nothing
+  ---
+  duration_ms: 15.46185
+  type: 'test'
+  ...
+# Subtest: Back then Next shows the steps already finished: nothing runs again, the ledger and the clock do not move
+ok 189 - Back then Next shows the steps already finished: nothing runs again, the ledger and the clock do not move
+  ---
+  duration_ms: 63.592285
+  type: 'test'
+  ...
+# Subtest: Show is allowed up to the highest finished step, and a step beyond it only runs after the one before it
+ok 190 - Show is allowed up to the highest finished step, and a step beyond it only runs after the one before it
+  ---
+  duration_ms: 38.51629
+  type: 'test'
+  ...
+# Subtest: a row whose superseded_by names another row on the page is dropped; one that names a row not on the page stays
+ok 191 - a row whose superseded_by names another row on the page is dropped; one that names a row not on the page stays
+  ---
+  duration_ms: 2.541314
+  type: 'test'
+  ...
+# Subtest: a row never supersedes itself, and rows with no ids are all kept
+ok 192 - a row never supersedes itself, and rows with no ids are all kept
+  ---
+  duration_ms: 0.206707
+  type: 'test'
+  ...
+# Subtest: with only the invoice id named, the plain LATE row of a part-paid invoice goes; another invoice's LATE row stays
+ok 193 - with only the invoice id named, the plain LATE row of a part-paid invoice goes; another invoice's LATE row stays
+  ---
+  duration_ms: 0.382345
+  type: 'test'
+  ...
+# Subtest: the recorded day-34 half-receipt Home holds the part-paid row and, until the API names it, its plain repeat
+ok 194 - the recorded day-34 half-receipt Home holds the part-paid row and, until the API names it, its plain repeat
+  ---
+  duration_ms: 2.353549
+  type: 'test'
+  ...
+# Subtest: overdue invoices come first whatever the savings ranking says; inside each group the server's rank leads
+ok 195 - overdue invoices come first whatever the savings ranking says; inside each group the server's rank leads
+  ---
+  duration_ms: 0.709512
+  type: 'test'
+  ...
+# Subtest: the server's overdue word on the worth row also pins an invoice; nothing is decided from a date
+ok 196 - the server's overdue word on the worth row also pins an invoice; nothing is decided from a date
+  ---
+  duration_ms: 0.633143
+  type: 'test'
+  ...
+# Subtest: the confirm word is the one the server's reply names; none named means none
+ok 197 - the confirm word is the one the server's reply names; none named means none
+  ---
+  duration_ms: 0.419595
+  type: 'test'
+  ...
+1..197
+# tests 197
+# suites 0
+# pass 197
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12908.243937

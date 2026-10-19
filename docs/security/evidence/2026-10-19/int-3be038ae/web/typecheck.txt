@@ -1,0 +1,4 @@
+
+> termsledger-web@0.1.0 typecheck <repo-root>/apps/web
+> tsc --noEmit
+

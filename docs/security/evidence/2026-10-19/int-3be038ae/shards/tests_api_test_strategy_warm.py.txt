@@ -1,0 +1,14 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+E   assert not True
+     +  where True = is_alive()
+     +    where is_alive = <Thread(strategy-warm, started daemon 140697179059904)>.is_alive
+----------------------------- Captured stdout call -----------------------------
+2026-10-19 12:45:05 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=0.5 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-19 12:45:05 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-19 12:45:05 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+<repo-root>/services/api/tests/api/test_strategy_warm.py:43: assert not True
+=========================== short test summary info ============================
+FAILED tests/api/test_strategy_warm.py::test_a_demo_reset_warms_the_envelope_and_the_price_curve
+1 failed, 2 passed in 402.94s (0:06:42)

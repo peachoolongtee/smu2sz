@@ -1,0 +1,11 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+.......F.........................                                        [100%]
+=================================== FAILURES ===================================
+E   AssertionError: 29.514
+    assert (True is True and 29.514 < 10)
+---------------------------- Captured stdout setup -----------------------------
+2026-10-19 12:19:47 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=offer-v4
+<repo-root>/services/api/tests/api/test_exposure_routes.py:218: AssertionError: 29.514
+=========================== short test summary info ============================
+FAILED tests/api/test_exposure_routes.py::test_the_golden_cost_of_a_cold_full_read_is_under_three_seconds_and_the_light_read_is_far_cheaper
+1 failed, 32 passed in 721.40s (0:12:01)

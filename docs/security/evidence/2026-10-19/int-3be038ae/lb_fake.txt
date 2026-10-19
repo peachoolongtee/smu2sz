@@ -1,0 +1,29 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[certify] fake/run: 10/231 items
+[certify] fake/run: 20/231 items
+[certify] fake/run: 30/231 items
+[certify] fake/run: 40/231 items
+[certify] fake/run: 50/231 items
+[certify] fake/run: 60/231 items
+[certify] fake/run: 70/231 items
+[certify] fake/run: 80/231 items
+[certify] fake/run: 90/231 items
+[certify] fake/run: 100/231 items
+[certify] fake/run: 110/231 items
+[certify] fake/run: 120/231 items
+[certify] fake/run: 130/231 items
+[certify] fake/run: 140/231 items
+[certify] fake/run: 150/231 items
+[certify] fake/run: 160/231 items
+[certify] fake/run: 170/231 items
+[certify] fake/run: 180/231 items
+[certify] fake/run: 190/231 items
+[certify] fake/run: 200/231 items
+[certify] fake/run: 210/231 items
+[certify] fake/run: 220/231 items
+[certify] fake/run: 230/231 items
+[certify] fake/run: 231/231 items
+[certify] fake/run: CORRECT_EXECUTABLE=57, CORRECT_READ_ONLY=9, SAFE_CLARIFICATION=65, SAFE_ABSTENTION=97, WRONG_HARMLESS=3, WRONG_MATERIAL=0; queued-for-owner=2; model answered rate=0.8562
+[certify] report: $OUT/lb_fake/language_boundary_fake_20261019T134354Z.md
+[certify]         $OUT/lb_fake/language_boundary_fake_20261019T134354Z.json
+[certify] exit 0

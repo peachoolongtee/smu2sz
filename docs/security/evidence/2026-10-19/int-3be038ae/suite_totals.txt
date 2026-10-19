@@ -1,0 +1,7 @@
+{'passed': 11430, 'failed': 8, 'skipped': 47, 'error': 0}
+non-zero shards: 5
+  tests/verifier exit=1 1 failed, 262 passed in 1012.01s (0:16:52)
+  tests/funding exit=1 1 failed, 1128 passed, 22 skipped in 3477.47s (0:57:57)
+  tests/api/test_exposure_routes.py exit=1 1 failed, 32 passed in 721.40s (0:12:01)
+  tests/strategy exit=1 4 failed, 481 passed, 6 skipped in 4835.77s (1:20:35)
+  tests/api/test_strategy_warm.py exit=1 1 failed, 2 passed in 402.94s (0:06:42)

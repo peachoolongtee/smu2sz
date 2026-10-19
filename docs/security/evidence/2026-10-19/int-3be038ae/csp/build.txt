@@ -1,0 +1,68 @@
+
+> termsledger-web@0.1.0 build <repo-root>/apps/web
+> next build
+
+▲ Next.js 16.3.8 (Turbopack)
+✓ Running next.config.mjs took 25ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 25.0s
+  Running TypeScript ...
+
+  We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+  The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+  	- include was updated to add '.next-csp/types/**/*.ts'
+  	- include was updated to add '.next-csp/dev/types/**/*.ts'
+
+  Finished TypeScript in 34.5s ...
+  Collecting page data using 1 worker ...
+  Generating static pages using 1 worker (0/32) ...
+  Generating static pages using 1 worker (8/32) 
+  Generating static pages using 1 worker (16/32) 
+  Generating static pages using 1 worker (24/32) 
+✓ Generating static pages using 1 worker (32/32) in 564ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /activity
+├ ƒ /alerts
+├ ƒ /approvals
+├ ƒ /ask
+├ ƒ /buy
+├ ƒ /buy/contract
+├ ƒ /capex
+├ ƒ /cash
+├ ƒ /chat
+├ ƒ /customers/[id]
+├ ƒ /customers/[id]/inputs
+├ ƒ /deals
+├ ƒ /decisions/[id]
+├ ƒ /decisions/[id]/tracker
+├ ƒ /demo
+├ ƒ /documents
+├ ƒ /evidence
+├ ƒ /finance
+├ ƒ /funding
+├ ƒ /inbox
+├ ƒ /ledger
+├ ƒ /limits
+├ ƒ /mandate
+├ ƒ /plans
+├ ƒ /receivables
+├ ƒ /reconciliation
+├ ƒ /security
+├ ƒ /setup
+├ ƒ /trajectory
+├ ƒ /trust
+├ ƒ /verdict
+├ ƒ /welcome
+└ ƒ /whatif
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+

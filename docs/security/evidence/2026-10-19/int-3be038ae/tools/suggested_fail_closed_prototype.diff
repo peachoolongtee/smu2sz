@@ -1,0 +1,31 @@
+diff --git a/services/api/app/compiler/coverage.py b/services/api/app/compiler/coverage.py
+index b5f27f7b..86bc8d25 100644
+--- a/services/api/app/compiler/coverage.py
++++ b/services/api/app/compiler/coverage.py
+@@ -521,6 +521,15 @@ _SECOND_PERSON_PAYS = re.compile(
+     r"(?<!thank )(?<!thanks )\b(?:you|u|your\s+(?:company|team|side|firm|finance|accounts?))\b\s+(?:(?!we\b|i\b|our\b|us\b)[a-z']+\s+){0,3}?"
+     r"(?:pay|paying|settle|settling|clear|remit|transfer)\b"
+     r"|(?:你们|您(?!好)|你(?!好)|贵司|贵方|贵公司)[^，。,.!！？?；;\s]{0,6}?(?:支付|付款|付清|结清|结算|付)", re.IGNORECASE)
++
++# PROTOTYPE (review only, not for merge): fail-closed variants of REV-4.
++_COURTESY_2P = re.compile(r"(?i)\b(?:thank\s+you|thanks?\s+(?:to\s+)?you|if\s+you\s+(?:agree|prefer|like)|as\s+you\s+know|"
++    r"hope\s+you(?:'re|\s+are)\s+well|could\s+you\s+confirm|can\s+you\s+confirm|please\s+let\s+us\s+know|works\s+for\s+you|for\s+you)\b")
++_ANY_2P = re.compile(r"(?i)(?<![\w'’])(?:you|you['’](?:re|ll|d|ve)|u|ya|y['’]?all|your|yours|yourselves?)(?![\w'’])"
++    r"|(?<!谢谢)(?<!感谢)(?<!多谢)(?:你们|您|你|贵司|贵方|贵公司|你方|贵单位)(?!好)")
++_INVISIBLE = re.compile("[\u200b-\u200f\u2060\ufeff]")
++_ANY_QUOTE = re.compile(r"[\"“”„‟«»‹›「」『』《》〈〉＂＞>|│¦`]|(?:^|\s)['‘]")
++
+ _QUOTED = re.compile(r"(?m)^[ \t]*(?:>|»|\||＞|》)|^\s*[「『“\"].*[」』”\"]\s*$", re.DOTALL)
+ 
+ 
+@@ -529,6 +538,10 @@ def _unread(docs: Sequence[SourceDocument], known: _Known, note: Callable[[str],
+         t = fold(d.text).text
+         if _SECOND_PERSON_PAYS.search(t):
+             note("the payment's subject is not the sender (\"you pay\")")
++        if _ANY_2P.search(_COURTESY_2P.sub(" ", t)):
++            note("PROTOTYPE: a second-person word outside a courtesy phrase")
++        if _ANY_QUOTE.search(_INVISIBLE.sub("", d.text).replace("\u00a0", " ")):
++            note("PROTOTYPE: a quotation or quote-marker character")
+         if _QUOTED.search(d.text):
+             note("the message is quoted or forwarded text")
+         if _FOREIGN_CURRENCY.search(t):

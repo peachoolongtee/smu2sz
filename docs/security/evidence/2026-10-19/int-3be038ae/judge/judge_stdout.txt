@@ -1,0 +1,12 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+(a) functional scenarios ...
+    49/49 passed in 20.3 s
+(b) adversarial attack catalogue ...
+    279 attacks, 0 with harm, in 104.1 s
+(c) demo walk and (d) audit chain ...
+    walk OK, chain VALID, tampered copy rejected, 2.6 s
+
+49 functional tasks passed of 49; 279 adversarial attacks, 0 caused harm, detection 97.66% on the 128 API attacks (70.25% across all 279); demo walk OK; audit chain VALID
+report: $OUT/judge/judge-report.md
+json:   $OUT/judge/judge-report.json
+total 127.2 s

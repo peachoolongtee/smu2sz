@@ -1,0 +1,4847 @@
+[
+ {
+  "i": 0,
+  "group": "P writer's ten",
+  "sender": "B1",
+  "setup": null,
+  "message": "You can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 1,
+  "group": "P writer's ten",
+  "sender": "B1",
+  "setup": null,
+  "message": "You could pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 2,
+  "group": "P writer's ten",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 3,
+  "group": "P writer's ten",
+  "sender": "B1",
+  "setup": null,
+  "message": "贵司可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 4,
+  "group": "P writer's ten",
+  "sender": "B1",
+  "setup": null,
+  "message": "> We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 5,
+  "group": "P writer's ten",
+  "sender": "B1",
+  "setup": null,
+  "message": ">> We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 6,
+  "group": "P writer's ten",
+  "sender": "B1",
+  "setup": null,
+  "message": "» We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 7,
+  "group": "P writer's ten",
+  "sender": "B1",
+  "setup": null,
+  "message": "| We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 8,
+  "group": "P writer's ten",
+  "sender": "B1",
+  "setup": null,
+  "message": "「我们可以提前支付420,000元发票，折扣0.5%」",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 9,
+  "group": "P writer's ten",
+  "sender": "B1",
+  "setup": null,
+  "message": "> 我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 10,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You guys can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 11,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Y'all can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 12,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Your side will pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 13,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You're able to pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 14,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You’re able to pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 15,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "U can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 16,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "YOU CAN PAY THE ¥420,000 INVOICE EARLY AT A 0.5% DISCOUNT.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 17,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You can settle the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 18,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You may pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "HELD",
+  "bound_day": null,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [],
+  "ops": [],
+  "reply": "Your offer is worded as a possibility (for example 'might' or 'maybe'), not a firm offer. Please confirm that you are offering these terms. Nothing has been agreed or executed."
+ },
+ {
+  "i": 19,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 20,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You'll pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 21,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You’ll pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 22,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You'd pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 23,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You'll settle the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 24,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You, if ok, can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 25,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You, if ok, will pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 26,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You - can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 27,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You: pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 28,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You\ncan pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 29,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You  can   pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 30,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You can, if ok, pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 31,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You can do the payment of the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 32,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Your company can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 33,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Your accounts team can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 34,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Your finance team can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 35,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Your people can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 36,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Your CFO can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 37,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You and your team can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 38,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You yourselves can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 39,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You can then pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 40,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You can so pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 41,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Can you pay the ¥420,000 invoice early at a 0.5% discount?",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 42,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Could you pay the ¥420,000 invoice early at a 0.5% discount?",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 43,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Thank you, you can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 44,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Thanks you can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 45,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Thank you you can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 46,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Ya can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 47,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Yu can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 48,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Yοu can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 49,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "Ｙｏｕ can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 50,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "You can pаy the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 51,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "It's you who can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 52,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "The payer is you: pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 53,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "您们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 54,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你方可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 55,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "贵单位可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 56,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "贵公司可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 57,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "贵方可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 58,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们可以付清420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 59,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们可以结清420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 60,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们可以结算420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "HELD",
+  "bound_day": null,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [],
+  "ops": [],
+  "reply": "请确认该折扣或返利适用于哪张发票或哪一期的采购，以及适用多长时间。"
+ },
+ {
+  "i": 61,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们可以付款420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 62,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们，可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 63,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们 可以 提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 64,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们也可以就是想提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 65,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "您可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 66,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 67,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们明天付清420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 68,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "您好你们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 69,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们好，你们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 70,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "贵司，提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 71,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "由你们提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 72,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们去提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 73,
+  "group": "B2 second person",
+  "sender": "B1",
+  "setup": null,
+  "message": "請你們提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 74,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "We can pay the ¥420,000 invoice early at a 0.5% discount.\n> earlier note",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 75,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "Hi,\n> We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 76,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "We can pay the ¥420,000 invoice early at a 0.5% discount.\n> Thanks",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 77,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "Re: We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 78,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "Fwd: We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 79,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "-----Original Message-----\nWe can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 80,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "On Monday Li wrote:\nWe can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 81,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "＞ We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 82,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "》 我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 83,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "『我们可以提前支付420,000元发票，折扣0.5%』",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 84,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "“We can pay the ¥420,000 invoice early at a 0.5% discount.”",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 85,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "\"We can pay the ¥420,000 invoice early at a 0.5% discount.\"",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 86,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "\"We can pay the ¥420,000 invoice early at a 0.5% discount.\"\nThanks, Li Wei",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 87,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "“We can pay the ¥420,000 invoice early at a 0.5% discount.”\nThanks!",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 88,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "Hi, \"We can pay the ¥420,000 invoice early at a 0.5% discount.\"",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 89,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "Hi, “We can pay the ¥420,000 invoice early at a 0.5% discount.”",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 90,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "'We can pay the ¥420,000 invoice early at a 0.5% discount.'",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 91,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "‘We can pay the ¥420,000 invoice early at a 0.5% discount.’",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 92,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "＂We can pay the ¥420,000 invoice early at a 0.5% discount.＂",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 93,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "› We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 94,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "‹ We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 95,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "│ We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 96,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "¦ We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 97,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "〉 We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 98,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "《我们可以提前支付420,000元发票，折扣0.5%》",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 99,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "  > We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 100,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "\t> We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 101,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "​> We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 102,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": " > We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 103,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "Thanks!\n> We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 104,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "We said: \"We can pay the ¥420,000 invoice early at a 0.5% discount.\"",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 105,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "«We can pay the ¥420,000 invoice early at a 0.5% discount.»",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 106,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "„We can pay the ¥420,000 invoice early at a 0.5% discount.“",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 107,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "```\nWe can pay the ¥420,000 invoice early at a 0.5% discount.\n```",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "BLOCKER",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 108,
+  "group": "B3 quoting",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们可以提前支付420,000元发票，折扣0.5%。\n——转发——",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 109,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 110,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "We will pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 111,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "We would like to pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 112,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Can we pay the ¥420,000 invoice early at a 0.5% discount?",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 113,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Hi, we can pay the ¥420,000 invoice early at a 0.5% discount. Thanks!",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 114,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Thank you, we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 115,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Thank you we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 116,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "If you agree we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 117,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "If you agree, we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 118,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Could you confirm, we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 119,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Please confirm: we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 120,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "We can pay you the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 121,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Can we pay you the ¥420,000 invoice early at a 0.5% discount?",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 122,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Hope you are well, we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 123,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Hope you are well we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 124,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Thanks to you we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 125,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "If you prefer we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 126,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "As you know, we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 127,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "We can pay the ¥420,000 invoice early at a 0.5% discount, if that works for you.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 128,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Let us know if you agree. We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 129,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Thank you so much, we can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 130,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "Thanks! We can pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed."
+ },
+ {
+  "i": 131,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 132,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "您好，我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 133,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "您好我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 134,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "谢谢你们，我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 135,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "感谢贵司，我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 136,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "如果你们同意，我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 137,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "如果你们同意我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 138,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "请您确认，我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 139,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "麻烦您确认一下，我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 140,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们可以付清420,000元发票，提前付款，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 141,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "谢谢您，我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "AUTO",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "EXECUTED",
+    "TIER_1",
+    "AGENT"
+   ]
+  ],
+  "reply": "同意：发票 RCV-A (¥420,000.00)于第2天付款，折扣0.50%。贵方消息中的其他内容均未同意。"
+ },
+ {
+  "i": 142,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "感谢您的配合，我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 143,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "您看我们可以提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 144,
+  "group": "OK plain offer",
+  "sender": "B1",
+  "setup": null,
+  "message": "你们看我们提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": 2,
+  "verdict": "FALSE HOLD",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 145,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "We won't pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 146,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "We can't pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 147,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "We cannot pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 148,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "We will never pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 149,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "We are unable to pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 150,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "We refuse to pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 151,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "We wouldn't pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 152,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "We couldn't pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 153,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "We decline to pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 154,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "We are not able to pay the ¥420,000 invoice early at a 0.5% discount.",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you."
+ },
+ {
+  "i": 155,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们不会提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 156,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们不能提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 157,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们无法提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 158,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们没法提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 159,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们不可能提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "HELD",
+  "bound_day": null,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [],
+  "ops": [],
+  "reply": "贵方的报价措辞是一种可能性（如“可能”“也许”），不是确定的报价。请确认贵方确实提出这些条款。目前尚未达成或执行任何事项。"
+ },
+ {
+  "i": 160,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们拒绝提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 161,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们不打算提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ },
+ {
+  "i": 162,
+  "group": "N negation",
+  "sender": "B1",
+  "setup": null,
+  "message": "我们不愿意提前支付420,000元发票，折扣0.5%。",
+  "http": 200,
+  "outcome": "QUEUED",
+  "bound_day": 2,
+  "expected_day": null,
+  "verdict": "ok",
+  "obligations": [
+   {
+    "type": "IMMEDIATE_DISCOUNT",
+    "rate_bp": 50,
+    "base_fen": 42000000,
+    "effective_day": 2,
+    "timing": null
+   }
+  ],
+  "ops": [
+   [
+    "ACCEPT_OFFER",
+    "PENDING_APPROVAL",
+    "TIER_2",
+    "AGENT"
+   ]
+  ],
+  "reply": "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。"
+ }
+]

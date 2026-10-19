@@ -1,0 +1,11 @@
+live e2e/accept-as-asked.spec.ts:191:9 | live › at 1440 the receipt precedes the commit button, and ?review=1 opens the review on arrival 
+live e2e/accept-as-asked.spec.ts:191:9 | live › at 390 the receipt precedes the commit button, and ?review=1 opens the review on arrival 
+live e2e/accept-as-asked.spec.ts:205:7 | live › Home's deal row and the Customer page lead to the Deals pane with the review open on arrival, and the queue row says the server's own consequence 
+live e2e/accept-as-asked.spec.ts:233:7 | live › a refusal (the books moved) is said in the server's own words in place, with no spinner, and nothing was accepted 
+live e2e/accept-as-asked.spec.ts:81:7 | live › Zhuhai: Review the request opens the receipt before the one filled button; accepting agrees it, the record reads Agreed, the queue drops it and Activity says so 
+live e2e/documents.spec.ts:565:7 | against the live API › both controls go dead the moment one is pressed: one request, never two 
+live e2e/home-v2-states.spec.ts:396:5 | 11 customer selected in the crisis: the alert persists › 1440 en 
+live e2e/live.spec.ts:455:5 | approving after the mandate has expired is refused: the card ends as 'could not run', with no buttons and no money moved 
+live e2e/live.spec.ts:630:5 | Cash & funding: a cure that cannot restore the reserve leaves a remaining task with the routes it names, and the invoice link lands on its row 
+live e2e/slice-b-round-two.spec.ts:147:7 | live › Foshan's EX01 on the busy books: the comparison says the request breaches the reserve, the terms say the difference of the period, and the customer page leads with the selected negotiation 
+live e2e/slice-b-round-two.spec.ts:174:7 | live › the flow's financing link lands on the facility it names on Cash: the element has the id, opens and takes focus 

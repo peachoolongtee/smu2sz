@@ -1,0 +1,10 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+2026-10-19 13:39:13 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=offer-v4
+owner seeded OFF-f806f79b6c21 ['EX01-msg']
+owner GET before: We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward and give us 1% off next q
+anon POST /offers: 409 keys ['detail']
+Traceback (most recent call last):
+  File "<repo-root>/docs/security/evidence/2026-10-19/dev-03215a20/tools/r3.py", line 20, in <module>
+    print("anon response offer:", json.dumps(r.json()["offer"], ensure_ascii=False)[:1200])
+                                             ~~~~~~~~^^^^^^^^^
+KeyError: 'offer'
