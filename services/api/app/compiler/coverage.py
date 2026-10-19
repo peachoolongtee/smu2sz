@@ -514,9 +514,23 @@ def _unread_tokens(residue: str) -> list[str]:
     return out
 
 
+# REV-4 (the 19 Oct review): the filler list cannot tell who pays or whether the words are the sender's own. A payment whose
+# subject is the reader ("you can pay", 你们/您/贵司 … 支付) is not the buyer's offer, and a quoted or forwarded line (">", "»", "|",
+# 「…」) may be someone else's words. Either one holds the message for the owner; it never decides anything by itself.
+_SECOND_PERSON_PAYS = re.compile(
+    r"(?<!thank )(?<!thanks )\b(?:you|u|your\s+(?:company|team|side|firm|finance|accounts?))\b\s+(?:(?!we\b|i\b|our\b|us\b)[a-z']+\s+){0,3}?"
+    r"(?:pay|paying|settle|settling|clear|remit|transfer)\b"
+    r"|(?:你们|您(?!好)|你(?!好)|贵司|贵方|贵公司)[^，。,.!！？?；;\s]{0,6}?(?:支付|付款|付清|结清|结算|付)", re.IGNORECASE)
+_QUOTED = re.compile(r"(?m)^[ \t]*(?:>|»|\||＞|》)|^\s*[「『“\"].*[」』”\"]\s*$", re.DOTALL)
+
+
 def _unread(docs: Sequence[SourceDocument], known: _Known, note: Callable[[str], None]) -> None:
     for d in docs:
         t = fold(d.text).text
+        if _SECOND_PERSON_PAYS.search(t):
+            note("the payment's subject is not the sender (\"you pay\")")
+        if _QUOTED.search(d.text):
+            note("the message is quoted or forwarded text")
         if _FOREIGN_CURRENCY.search(t):
             note("non-CNY currency stated")
         if any(_RATE_PERIOD.match(t, r.end) for r in find_rates(t)) or _ZH_PERIODIC.search(t):
