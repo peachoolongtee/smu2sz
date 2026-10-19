@@ -29,7 +29,7 @@ _PAY = re.compile(r"\b(?:pay|settle|transfer|remit|wire|payment)\b|付|结清|�
 _UNSAFE = re.compile(
     r"\b(?:due|issued?|dated?|after|before|until|not|never|next|last|yesterday|business|working|banking|holiday|"
     r"utc|gmt|pst|est|cst|cet|timezone|time\s+zone)\b|"
-    r"\b(?:am|pm)\b|\d{1,2}:\d{2}|到期|开票|工作日|节后|节前|下周|不付|未付|北京时间|时区|点[前后]?",
+    r"\b(?:am|pm)\b|\d{1,2}:\d{2}|到期|开票|工作日|节后|节前|下周|不付|未付|北京时间|时区|(?<![.\d])\d{1,2}\s*点",
     re.IGNORECASE,
 )
 _WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,

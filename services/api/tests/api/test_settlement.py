@@ -35,5 +35,7 @@ def test_owner_words_state_the_condition_and_do_not_claim_receipt(client):
     state = get_runtime().store.get_state()
     en = obligation_sentence(state, ob, 0, "en")
     zh = obligation_sentence(state, ob, 0, "zh")
-    assert "only to payment received by" in en and "not yet received" in en
-    assert "享受折扣" in zh and "尚未收款" in zh
+    assert "only to payment received by" in en
+    assert "not yet received" not in en  # the same term is also shown in a paid agreement
+    assert "payment received" in en
+    assert "享受折扣" in zh and "尚未收款" not in zh

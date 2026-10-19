@@ -117,3 +117,10 @@ def test_unsupported_timing_is_never_priced_on_a_default_day(expression):
     result = evaluate(offer, state, load_signed_mandate(), trusted_owner_key_hex=demo_owner_public_key_hex())
     assert result.verdict.outcome.value == "NO_VERDICT"
     assert all(ob.effective_day is None for ob in result.bound_obligations)
+
+
+def test_a_chinese_percentage_point_is_not_an_intraday_time():
+    offer = reading("42万的发票我们明天提前付清，扣零点六个点。")
+    assert offer.obligations[0].rate_bp == 60
+    assert offer.obligations[0].payment_timing is not None
+    assert offer.autonomy_eligible, offer.autonomy_notes

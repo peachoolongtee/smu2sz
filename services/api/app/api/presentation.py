@@ -848,8 +848,8 @@ def obligation_sentence(state: FinancialState, ob: Obligation, today: int, lang:
         if settlement is None:
             notes.append(t(lang, "settlement date needs clarification", "付款日期需要确认"))
         else:
-            notes.append(t(lang, f"discount applies only to payment received by {when_text(settlement, today, 'en')}; payment is not yet received",
-                           f"仅限{when_text(settlement, today, 'zh')}前收到的款项享受折扣；尚未收款"))
+            notes.append(t(lang, f"discount applies only to payment received by {when_text(settlement, today, 'en')}",
+                           f"仅限{when_text(settlement, today, 'zh')}前收到的款项享受折扣"))
     elif ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.effective_day is not None:
         notes.append(t(lang, f"effective {when_text(ob.effective_day, today, 'en')}", f"{when_text(ob.effective_day, today, 'zh')}生效"))
     d = ob.duration
