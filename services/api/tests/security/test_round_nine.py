@@ -8,6 +8,8 @@ the text recorded and sent, and a hit withholds the counter exactly as the guard
 
 from __future__ import annotations
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -362,3 +364,133 @@ def test_con1_approve_with_the_id_decides_after_a_list_offered_to_yes(queued) ->
     c.say("go ahead")
     c.say(f"approve {aid}")
     assert _status(rt, aid) == "APPROVED"
+
+
+# ================================================================ pinned: behaviour that is right by design and was untested
+#
+# No code changed for these. Each pins what the executor and the chat already do, so a change to it shows up as a failing test.
+
+
+def _owner_decides(client: TestClient, aid: str) -> dict:
+    r = client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}, headers=OWNER)
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def _codes(result: dict) -> list[str]:
+    return [v.get("code") for v in result.get("violations", [])]
+
+
+def test_pin_an_approval_queued_before_the_pause_runs_when_the_owner_approves_it_while_paused(queued) -> None:
+    """(a) The pause stops the agent, not the owner: `Executor.decide` runs the owner's own decision through `_run`, and
+    PausableExecutor wraps only `execute`. An approval the agent queued before POST /agent/pause, approved by the owner while
+    paused, EXECUTES."""
+    rt, client, aid = queued
+    assert client.post("/agent/pause", headers=OWNER, json={}).status_code == 200
+    out = _owner_decides(client, aid)
+    assert out["result"]["status"] == "EXECUTED", out
+    assert _status(rt, aid) == "APPROVED"
+
+
+@pytest.mark.parametrize("how", ["expired", "revoked"])
+def test_pin_an_approval_decided_after_the_mandate_ended_is_refused_and_stays_approved(queued, how: str) -> None:
+    """(b) The owner's yes is recorded (the row stays APPROVED, SEC-27) but the run is refused: MANDATE_EXPIRED after the mandate's
+    last day, MANDATE_REVOKED after a signed revocation. Nothing runs."""
+    from app.mandate import revoke
+    from app.mandate.fixture import load_demo_owner_key
+
+    rt, client, aid = queued
+    if how == "expired":
+        rt.advance_to(rt.store.get_mandate().expires_day + 1)
+    else:
+        rt.store.put_mandate(revoke(rt.store.get_mandate(), load_demo_owner_key()["private_key_hex"]))
+    out = _owner_decides(client, aid)
+    assert out["result"]["status"] == "REFUSED"
+    assert ("MANDATE_EXPIRED" if how == "expired" else "MANDATE_REVOKED") in _codes(out["result"])
+    assert _status(rt, aid) == "APPROVED"
+
+
+def _mandates():
+    from nacl.signing import SigningKey
+
+    from app.mandate import load_demo_owner_key, load_signed_mandate, revoke, sign
+
+    m = load_signed_mandate()
+    key = load_demo_owner_key()["private_key_hex"]
+    return {
+        "bad signature": (sign(m, SigningKey.generate().encode().hex()), 0),
+        "edited, not re-signed": (m.model_copy(update={"min_cash_fen": m.min_cash_fen - 1}), 0),
+        "expired": (m, m.expires_day + 1),
+        "revoked, signed": (revoke(m, key), 0),
+        "revoked, unsigned": (revoke(m), 0),
+    }
+
+
+@pytest.mark.parametrize("kind", ["receive", "repay"])
+@pytest.mark.parametrize(("mandate", "want"), [
+    ("bad signature", "BAD_SIGNATURE"), ("edited, not re-signed", "BAD_SIGNATURE"),
+    ("expired", "EXECUTED"), ("revoked, signed", "EXECUTED"), ("revoked, unsigned", "REFUSED"),
+])
+def test_pin_the_owners_receipt_and_repayment_under_a_mandate_that_is_not_in_force(kind: str, mandate: str, want: str) -> None:
+    """(c) An owner ReceivePayment or RepayFacility settles what is already owed, so it RUNS under an expired or a signed-revoked
+    mandate; a mandate whose signature does not verify (another key, or edited without re-signing) refuses them BAD_SIGNATURE, and an
+    unsigned revocation (which proves nothing) blocks them too."""
+    from app.domain.models import Actor, DrawFacility, ReceivePayment, RepayFacility
+    from tests.operations.builders import Clock, make_executor, op, seeded_store
+
+    store = seeded_store()
+    clock = Clock(0)
+    ex = make_executor(store, clock)
+    if kind == "repay":  # something to repay, drawn under the valid mandate
+        assert ex.execute(op(DrawFacility, clock, actor=Actor.OWNER, key="pre", facility_id="FAC-LINE", amount_fen=1_000_000)).status.value == "EXECUTED"
+    m, day = _mandates()[mandate]
+    store.put_mandate(m)
+    clock.day = day
+    typed = (op(ReceivePayment, clock, actor=Actor.OWNER, receivable_id="RCV-A", amount_fen=1_000_000) if kind == "receive"
+             else op(RepayFacility, clock, actor=Actor.OWNER, facility_id="FAC-LINE", amount_fen=1_000_000))
+    r = ex.execute(typed)
+    if want == "EXECUTED":
+        assert r.status.value == "EXECUTED", [v.code.value for v in r.violations]
+    else:
+        assert r.status.value == "REFUSED"
+        if want != "REFUSED":
+            assert want in [v.code.value for v in r.violations]
+
+
+def test_pin_a_keyed_buyers_early_pay_acceptance_is_refused_while_the_agent_is_paused(api: TestClient, rt: Runtime) -> None:
+    """(d) The buyer's own channel acts through the agent: unpaused, this message is agreed at once (ACCEPT_OFFER EXECUTED, Tier 1);
+    while paused the acceptance is REFUSED by the paused executor before it reaches the log, the buyer is told the terms cannot be
+    confirmed, and nothing is agreed."""
+    text = "We will pay the ¥420,000 invoice early at a 0.5% discount."
+    assert api.post("/agent/pause", headers=OWNER, json={}).status_code == 200
+    r = api.post("/nl", json={"session_id": "r9-pin-paused", "actor": "COUNTERPARTY", "counterparty_id": "BUYER-1", "text": text},
+                 headers=BUYER)
+    assert r.status_code == 200, r.text
+    assert r.json()["reply"] == "We are not able to confirm these terms."
+    assert [o.kind for o in rt.store.operations()] == ["PAUSE_AGENT"]
+    assert not [c for c in rt.store.commitments() if c.status.value in ("ACCEPTED", "ACTIVE")]
+    assert api.post("/agent/resume", headers=OWNER, json={}).status_code == 200
+    r = api.post("/nl", json={"session_id": "r9-pin-resumed", "actor": "COUNTERPARTY", "counterparty_id": "BUYER-1", "text": text},
+                 headers=BUYER)
+    assert r.json()["reply"].startswith("Agreed:")
+    assert [json.loads(o.result_json)["status"] for o in rt.store.operations() if o.kind == "ACCEPT_OFFER"] == ["EXECUTED"]
+
+
+def test_pin_approve_it_with_a_plan_waiting_and_an_approval_shown_runs_the_plan(queued) -> None:
+    """(e) With a plan waiting AND one approval named in the previous reply, "approve it" is the plan's go-ahead (app/nl/consent.py,
+    `confirmation`: "approve it" is a plan confirmation, and the parser reads a waiting plan's reply first). The PLAN WINS: it runs (its
+    Tier-2 leg is queued as a new approval) and the approval that was shown stays PENDING, undecided."""
+    from app.nl.sessions import SESSIONS
+    from tests.nl.conftest import Chat, ops
+    from tests.nl.test_plan_flags import GOAL, pending
+
+    rt, client, aid = queued
+    c = Chat(client, "r9-pin-both")
+    c.say(GOAL["en"])
+    session = SESSIONS.get("r9-pin-both")
+    assert session.pending_plan is not None
+    session.shown_approvals = [aid]  # the previous reply named it
+    r = c.say("approve it")
+    assert ops(r) == [("SUBMIT_INVOICE_FOR_FINANCING", "PENDING_APPROVAL")]
+    assert _status(rt, aid) == "PENDING" and len(pending(rt)) == 2
+    assert SESSIONS.get("r9-pin-both").pending_plan is None
