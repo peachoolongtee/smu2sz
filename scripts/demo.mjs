@@ -328,7 +328,8 @@ async function main() {
   }
 
   say(`starting the web app on ${webOrigin} (${opts.mock ? "mock mode, recorded answers" : `live mode against ${apiOrigin}`}) ...`);
-  const web = start("web app", process.execPath, [NEXT_BIN, "dev", "-p", String(opts.webPort)], WEB_DIR, {
+  // DEMO-L1: loopback only, like the API. `next dev` alone listens on every interface, and this build carries the demo token.
+  const web = start("web app", process.execPath, [NEXT_BIN, "dev", "-H", "127.0.0.1", "-p", String(opts.webPort)], WEB_DIR, {
     ...(opts.mock
       ? { NEXT_PUBLIC_API_MODE: "mock" }
       : { NEXT_PUBLIC_API_MODE: "live", NEXT_PUBLIC_API_URL: apiOrigin, NEXT_PUBLIC_DEMO: "1" }),
@@ -343,7 +344,7 @@ async function main() {
     NEXT_DIST_DIR: opts.mock ? ".next-demo-mock" : ".next-demo",
   });
   // The first page compiles on the first request, which this also does, so the browser opens on a warm page.
-  if (!(await waitFor(`${webOrigin}/`, "web app", 300, web))) return;
+  if (!(await waitFor(`http://127.0.0.1:${opts.webPort}/`, "web app", 300, web))) return;
   say("");
   say(`Ready. Open ${webOrigin} in your browser.${opts.mock ? "" : " Owner token: demo-owner-token (prefilled)."}`);
   if (opts.keep) say(`Your changes are kept in ${opts.keepDb}. To start again from new books: pnpm demo:keep --fresh`);

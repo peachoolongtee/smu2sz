@@ -34,7 +34,9 @@ const env =
         NEXT_PUBLIC_STRATEGY_MVP: "1",
       };
 
-const child = spawn(process.execPath, [NEXT_BIN, "dev", ...nextArgs], { cwd: WEB_DIR, stdio: "inherit", env: { ...process.env, ...env } });
+// DEMO-L1: loopback only unless a host is given (`-H 0.0.0.0` to share it on a trusted network); `next dev` alone listens everywhere.
+const host = nextArgs.some((a) => a === "-H" || a === "--hostname" || a.startsWith("--hostname=")) ? [] : ["-H", "127.0.0.1"];
+const child = spawn(process.execPath, [NEXT_BIN, "dev", ...host, ...nextArgs], { cwd: WEB_DIR, stdio: "inherit", env: { ...process.env, ...env } });
 for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) {
   try {
     process.on(sig, () => child.kill(sig));
