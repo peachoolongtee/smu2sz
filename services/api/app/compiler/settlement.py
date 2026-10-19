@@ -10,7 +10,14 @@ import re
 from collections.abc import Sequence
 
 from app.compiler.folding import fold
-from app.domain.models import Obligation, ObligationType, PaymentTiming, SourceDocument, SourceSpan
+from app.domain.models import (
+    CompiledOffer,
+    Obligation,
+    ObligationType,
+    PaymentTiming,
+    SourceDocument,
+    SourceSpan,
+)
 
 _WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 _NUMBER = r"(?:[1-9]\d?|one|two|three|four|five|six|seven|一|两|二|三|四|五|六|七|八|九|十)"
@@ -121,3 +128,45 @@ def has_unread_timing(doc: SourceDocument, spans: Sequence[SourceSpan]) -> bool:
     return any(in_payment(*folded.span(m.start(), m.end()))
                and not any(start <= m.start() and m.end() <= end for start, end in allowed)
                for m in TIMING_RE.finditer(text))
+
+
+def finalize_reconciled_timing(docs: Sequence[SourceDocument], offer: CompiledOffer) -> CompiledOffer:
+    """Resolve timing after Build A fills missing fields, retaining every authority restriction.
+
+    A missing amount is not an unresolved date. A rules-supplied amount may support
+    a correctly dated review proposal, but cannot turn its one-reader evidence into
+    autonomous authority. Genuine model uncertainty and all abstentions survive.
+    """
+    from app.compiler import coverage
+    from app.compiler.cross_check import SINGLE_READER_NOTE
+    from app.domain.models import CompileStatus
+
+    if offer.status != CompileStatus.COMPILED:
+        return offer
+    by_id = {d.doc_id: d for d in docs}
+    # The temporary probe lets the date grammar use a reconciled amount. It does
+    # not clear the model's real base uncertainty on the returned obligation.
+    probes = [ob.model_copy(update={"unresolved": [u for u in ob.unresolved if u != "base_amount"]})
+              if ob.base.amount_fen is not None and ob.field_provenance.get("base.amount_fen") == "rules"
+              else ob for ob in offer.obligations]
+    dated = attach_payment_timing(by_id, probes)
+    obligations = []
+    for original, probe in zip(offer.obligations, dated, strict=True):
+        unresolved = [u for u in original.unresolved if u != "settlement_day"]
+        if (len(offer.obligations) == 1 and original.type == ObligationType.IMMEDIATE_DISCOUNT
+                and probe.payment_timing is None
+                and any(has_unread_timing(by_id[sp.doc_id], original.spans) for sp in original.spans)):
+            unresolved.append("settlement_day")
+        obligations.append(original.model_copy(update={"payment_timing": probe.payment_timing,
+                                                        "unresolved": unresolved}))
+    eligible, notes = coverage.prove(docs, obligations, status=offer.status, abstentions=offer.abstentions,
+                                     data_requests=offer.data_requests, authority_claims=offer.authority_claims,
+                                     funding_claims=offer.funding_claims)
+    single = any(value != "both" for ob in obligations for value in ob.field_provenance.values())
+    if single:
+        notes.append(SINGLE_READER_NOTE)
+    # Reconciliation repairs proposals, never upgrades an earlier lack of proof.
+    if not offer.autonomy_eligible and not notes:
+        notes.append("reader coverage did not establish autonomy before reconciliation")
+    return offer.model_copy(update={"obligations": obligations, "autonomy_notes": notes,
+                                    "autonomy_eligible": offer.autonomy_eligible and eligible and not single})

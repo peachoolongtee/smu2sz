@@ -143,3 +143,39 @@ def test_a_date_in_a_separate_price_probe_is_not_the_discounts_settlement_date()
     assert offer.data_requests
     assert all("settlement_day" not in ob.unresolved for ob in offer.obligations)
     assert not offer.autonomy_eligible
+
+
+def test_a_reconciled_amount_repairs_date_pricing_without_upgrading_authority():
+    from app.compiler.cross_check import check_against_rules
+    from app.compiler.settlement import finalize_reconciled_timing
+
+    text = "We will pay invoice RCV-A (¥420,000) tomorrow, 0.5% off."
+    doc = SourceDocument(doc_id="date-test", channel="chat", sender_id="BUYER-1", received_day=0, text=text)
+    rules = reading(text)
+    ob = rules.obligations[0]
+    missing = ob.model_copy(update={"base": ob.base.model_copy(update={"amount_fen": None}),
+                                   "payment_timing": None, "unresolved": ["base_amount", "settlement_day"]})
+    model = rules.model_copy(update={"obligations": [missing], "autonomy_eligible": False,
+                                     "autonomy_notes": ["a settlement date or window is stated but not read into the terms"]})
+    merged = check_against_rules(model, rules)
+    repaired = finalize_reconciled_timing([doc], merged)
+    assert repaired.obligations[0].payment_timing is not None
+    assert "settlement_day" not in repaired.obligations[0].unresolved
+    assert "base_amount" in repaired.obligations[0].unresolved
+    assert repaired.obligations[0].field_provenance["base.amount_fen"] == "rules"
+    assert not repaired.autonomy_eligible
+    assert not any("settlement date or window" in n for n in repaired.autonomy_notes)
+    state, _ = load_scenario()
+    result = evaluate(repaired, state, load_signed_mandate(), trusted_owner_key_hex=demo_owner_public_key_hex())
+    assert result.verdict.outcome.value == "NEEDS_OWNER_APPROVAL"
+    assert result.bound_obligations[0].effective_day == 1
+
+
+def test_timing_finalization_does_not_heal_real_scope_uncertainty_or_abstentions():
+    from app.compiler.settlement import finalize_reconciled_timing
+    from app.domain.models import CompileStatus
+
+    text = "We will pay invoice RCV-A (¥420,000) tomorrow, 0.5% off."
+    doc = SourceDocument(doc_id="date-test", channel="chat", sender_id="BUYER-1", received_day=0, text=text)
+    offer = reading(text).model_copy(update={"status": CompileStatus.ABSTAINED, "autonomy_eligible": False})
+    assert finalize_reconciled_timing([doc], offer) == offer

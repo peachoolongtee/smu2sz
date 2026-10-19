@@ -39,6 +39,7 @@ from app.compiler.grounding import build_offer, build_term_sheet, docs_hash
 from app.compiler.prompts import CONTRACT_PROMPT_VERSION, PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
 from app.compiler.redaction import redacting
 from app.compiler.rules import RULES_MODEL_ID, RulesBackend
+from app.compiler.settlement import finalize_reconciled_timing
 from app.config import Settings, get_settings
 from app.domain.models import CompiledContract, CompiledOffer, CompiledTermSheet, DocumentKind, SourceDocument
 
@@ -125,7 +126,7 @@ class Compiler:
             rules_offer = offer.model_copy(update={"obligations": []})
         else:
             rules_offer = build_offer(docs, counterparty_id, res.extraction, res.model_id, PROMPT_VERSION)
-        checked = check_against_rules(offer, rules_offer)
+        checked = finalize_reconciled_timing(docs, check_against_rules(offer, rules_offer))
         counts = {source: sum(value == source for ob in checked.obligations for value in ob.field_provenance.values())
                   for source in ("rules", "model", "both")}
         disputed = any(a.field.startswith(DISAGREE_FIELD) for a in checked.abstentions)
