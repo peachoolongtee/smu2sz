@@ -38,9 +38,12 @@ money moves. We claim neither regulatory compliance nor absolute security.
 - **Release state** (section 2.7; every earlier gate is in Appendix C and
   [CERTIFICATIONS.md](security/CERTIFICATIONS.md)). **The submission build `c66a5e61`: certified for scope S on 19 Oct.**
 - **Review of the submission build (19 Oct).** Team member Hao En, who did not write the fixes, reviewed the submission build. The review re-ran the sandbox, the judge pack and the security test folders on
-  a fresh Linux machine (159 of 159 and 142 of 143 sandbox steps, 49 of 49 judge tasks, 279 attacks with 0 harm, 32 of 32
+  a fresh Linux machine (the sandbox: 159 PASS, 0 FAIL in process; 142 PASS, 0 FAIL, 1 SKIPPED over HTTP; 49 of 49 judge tasks, 279 attacks with 0 harm, 32 of 32
   evidence chains VALID) and probed the API with more than 160 attacks outside our catalogue. It found three defects; all three are
-  fixed in the submission build, each with a regression test (REV-1 to REV-3, Table 27).
+  fixed in the submission build, each with a regression test (REV-1 to REV-3, Table 27). A later review of a branch that is
+  not in the submission found one more that is open in this build (REV-4): a keyed buyer's message with the payer reversed
+  ("You can pay …") or wholly quoted (">") is accepted at Tier 1 as the plain early-payment discount, inside the mandate's
+  caps (section 4.4, R-7).
 - **Verdict by deployment** (section 4.6). Local simulation on loopback (scope S): certified for scope S on 19 Oct for `c66a5e61`. Live model
   mode (`pnpm demo --live-llm`): outside every certification. A demo over a network: **NO-GO** until a tested deployment
   profile exists. Production with real customers, documents or money: **NO-GO**.
@@ -53,7 +56,7 @@ money moves. We claim neither regulatory compliance nor absolute security.
 | Build and assessment | |
 | --- | --- |
 | Submission build | `c66a5e61` (full SHA `c66a5e6189e0e34087c5d104197eb89c67d9c18f`) on `dev`: `66c31e7e` (certified for scope S on 19 Oct) plus the three fixes of the 19 Oct review (REV-1 to REV-3). `66c31e7e` is dev `03215a20` with round eight (FUND-1, 2, 3, 5), the demo launcher on loopback (DEMO-L1), round nine (LOG-2, the SEC-19 display, CON-1 and pinned authority tests), the demo stepper fix, the API lint cleanup, the public-release cleanup and the unseen evaluation set. Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) |
-| Documentation revision | the `dev` commit tagged `submission-2026-10-20b`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
+| Documentation revision | the `dev` commit tagged `submission-2026-10-20c`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
 | Its release gate | certified for scope S on 19 Oct, by the Security Lead on a clean checkout of `c66a5e61`, 19 Oct 2026, 08:41 to 09:33 UTC; evidence [int-c66a5e61/](security/evidence/2026-10-19/int-c66a5e61/), id `sha256:37ff16748cf56bca` (the hash of its `SHA256SUMS`); every result in Table C2 |
 | Earlier gates | `66c31e7e`: certified for scope S on 19 Oct (`sha256:4a418fe4fb4c6c4d`); the builds before it in Appendix C |
 | Scope assessed (scope S) | `pnpm demo` on one machine: the API and the web app on 127.0.0.1; one API process; `DEMO_MODE=1` with the published demo credentials (the route checks also run with `DEMO_MODE=0` and unset); `DATABASE_URL=memory`; `LLM_MODE=cache` (no model provider is called); synthetic fixtures ([golden_sme.json](../fixtures/scenarios/golden_sme.json) and others). The CSP was checked on both the production build and the development server `pnpm demo` runs |
@@ -118,7 +121,7 @@ these tests passed inside the full API suite on the submission build `c66a5e61`:
 | CL2 | A buyer's keyed message can at most counter, reject or accept a plain early-pay discount within Tier 1, as the agent; it never draws or requests an advance. *Control:* `decide()` in [offers.py](../services/api/app/nl/offers.py); tiers; key binding (SEC-18) | 64 buyer chat cases; [test_round_nine.py](../services/api/tests/security/test_round_nine.py) (pinned buyer rules) | 0 harm; tests pass. *Evidence:* `attacks.txt`; sandbox: journey | PREVENTED |
 | CL3 | An anonymous sender gets a proposal only; the agent never agrees to it. *Control:* proposal-only intake; `ANONYMOUS_INTAKE=0` | [test_anonymous_intake_switch.py](../services/api/tests/security/test_anonymous_intake_switch.py); anonymous catalogue cases | tests pass. *Evidence:* `shards/` | PREVENTED |
 | CL4 | An anonymous offer under a buyer's name is shown as unverified. *Control:* `sender_unverified` on the deal header, accept review and approval cards | the SEC-19 tests in `test_round_nine.py`; [unverified-sender.test.mjs](../apps/web/scripts/unverified-sender.test.mjs) | tests pass; web unit 197 passed. *Evidence:* `web/unit.txt` | DETECTED; the chat reply does not say so: ACCEPTED LIMITATION (SEC-19) |
-| CL5 | Identity comes from the credential only; each route refuses every caller it does not admit. *Control:* constant-time checks on bytes; an `OWNER`, `SYSTEM` or `COUNTERPARTY` claim in a body that the credential does not prove is rewritten to `AGENT` (REV-1); route classes (Table 6) | [test_route_policy.py](../services/api/tests/security/test_route_policy.py) (16 tests, 113 routes); [test_bypass_sweep.py](../services/api/tests/security/test_bypass_sweep.py) (207 cases); [test_review_19oct.py](../services/api/tests/api/test_review_19oct.py); the sweep in three modes (112 routes) | 16 tests pass over 113 routes; owner 96 of 97 (91 of 97 with DEMO_MODE=0); sweep 0 violations, 0 differences from `c66a5e61`. *Evidence:* `sweep_policy.txt`; sandbox: unauthorized actions | PREVENTED |
+| CL5 | Identity comes from the credential only; each route refuses every caller it does not admit. *Control:* constant-time checks on bytes; an `OWNER`, `SYSTEM` or `COUNTERPARTY` claim in a body that the credential does not prove is rewritten to `AGENT` (REV-1); route classes (Table 6) | [test_route_policy.py](../services/api/tests/security/test_route_policy.py) (16 tests, 113 routes); [test_bypass_sweep.py](../services/api/tests/security/test_bypass_sweep.py) (207 cases); [test_review_19oct.py](../services/api/tests/api/test_review_19oct.py); the sweep in three modes (112 routes) | 16 tests pass over 113 routes; owner 96 of 97 (91 of 97 with DEMO_MODE=0); sweep 0 violations, 0 differences from `66c31e7e`. *Evidence:* `sweep_policy.txt`; sandbox: unauthorized actions | PREVENTED |
 | CL6 | The tier is computed by code; Tier 3 is refused for everyone; Tier 2 waits for the owner. *Control:* [tiers.py](../services/api/app/mandate/tiers.py); executor gates 4 and 7 | [test_tiers.py](../services/api/tests/mandate/test_tiers.py); 22 escalation cases; the tier mutation (Table 18) | tests pass; 0 harm on 279. *Evidence:* `shards/` | PREVENTED |
 | CL7 | The ¥100,000 threshold applies to a commitment's net new future concessions; an early-pay discount counts ¥0. *Control:* `tier2_single_commitment_fen` | [test_approval_thresholds.py](../services/api/tests/security/test_approval_thresholds.py) (`test_a_single_commitment_above_the_threshold_is_tier_2_and_at_it_is_not`) | tests pass. *Evidence:* `shards/` | PREVENTED (above it, queued) |
 | CL8 | The agent's draw is Tier 1 only on a committed, owner-approved facility within the signed rate (15% a year); otherwise it waits for the owner. *Control:* tiers; the executor's rate threshold; admission | `test_approval_thresholds.py`; PC-05; [test_admission.py](../services/api/tests/operations/test_admission.py) | tests pass. *Evidence:* `shards/` | PREVENTED; a compromised agent's Tier-1 reach: ACCEPTED LIMITATION (R-3) |
@@ -136,7 +139,7 @@ these tests passed inside the full API suite on the submission build `c66a5e61`:
 | CL20 | One bank event books once; a receipt above the open amount is refused. *Control:* `bank_reference` | [test_bank_reference.py](../services/api/tests/operations/test_bank_reference.py); PC-04 | tests pass. *Evidence:* `shards/` | PREVENTED; a receipt with no reference: ACCEPTED LIMITATION (SEC-29) |
 | CL21 | What anyone can send is bounded. *Control:* size bounds; token buckets; the buyer budget | [test_intake_hardening.py](../services/api/tests/security/test_intake_hardening.py), [test_rate_limits.py](../services/api/tests/security/test_rate_limits.py), [test_buyer_budget.py](../services/api/tests/security/test_buyer_budget.py) | tests pass. *Evidence:* `shards/` | PREVENTED; probing within the budget: ACCEPTED LIMITATION (R-10) |
 | CL22 | A capex purchase is the owner's, bound to the confirmed contract, and only money goes out. *Control:* `PURCHASE_OWNER_ONLY`; document and schedule hashes | [test_capex_security.py](../services/api/tests/api/test_capex_security.py) | tests pass. *Evidence:* `shards/` | PREVENTED; a changed receiving account is not detected: ACCEPTED LIMITATION (CAPEX-ACCT) |
-| CL23 | The published demo credentials work only with `DEMO_MODE=1`; demo and setup routes behave as Table 6 states. *Control:* SEC-07; route classes | `test_route_policy.py`; [test_demo_mode_default.py](../services/api/tests/security/test_demo_mode_default.py); the sweep with `DEMO_MODE=0` and unset | 0 policy violations in three modes; 0 differences from `c66a5e61`. *Evidence:* `sweep_prod.json`, `sweep_unset.json` | PREVENTED |
+| CL23 | The published demo credentials work only with `DEMO_MODE=1`; demo and setup routes behave as Table 6 states. *Control:* SEC-07; route classes | `test_route_policy.py`; [test_demo_mode_default.py](../services/api/tests/security/test_demo_mode_default.py); the sweep with `DEMO_MODE=0` and unset | 0 policy violations in three modes; 0 differences from `66c31e7e`. *Evidence:* `sweep_prod.json`, `sweep_unset.json` | PREVENTED |
 | CL24 | The web's nonce CSP blocks injected script. *Control:* per-request nonce with `strict-dynamic` | a browser check of the production build and of `pnpm demo`'s development server | 17 pages each (production build and the development server), 0 violations, injection blocked; the development server adds `'unsafe-eval'`. *Evidence:* `csp/`, `csp_dev/` | PREVENTED (checked pages); stored and reflected injection: UNTESTED (S3) |
 | CL25 | Every live model path receives redacted text only. *Control:* provider backends redact by default | [test_model_privacy_paths.py](../services/api/tests/security/test_model_privacy_paths.py), [test_redaction_mandatory.py](../services/api/tests/compiler/test_redaction_mandatory.py) | tests pass. *Evidence:* `shards/` | PREVENTED (the listed identifier types); names and other formats: ACCEPTED LIMITATION (PRIV-4, PRIV-5) |
 | CL26 | No secret in the repository; no known vulnerable production dependency. *Control:* the secret scan; `pip-audit`; `pnpm audit` | the gate's scans | secret scan 0 findings (tree and every branch's history); `pip-audit` clean; `pnpm audit --prod` 0; `braces` only (development). *Evidence:* [secret_scan.txt](security/evidence/2026-10-19/int-c66a5e61/secret_scan.txt), `pip_audit.txt`, `pnpm_audit_*.json` | DETECTED (scans); `braces`: ACCEPTED LIMITATION |
@@ -303,11 +306,11 @@ mode).**
 **Results on `5926ef29`.** The route-policy test passes (16 of 16) over 113 routes. The owner reaches the handler on 96 of 97
 owner and demo routes in demo mode and on 91 of 97 with `DEMO_MODE=0`: the five 403s above, and in both modes
 `POST /documents/{id}/terms/undo`, which answers 404 `UNKNOWN_SET_UP` because the test world holds no set-up to undo. The
-sweep: 0 policy violations, 0 differences from `c66a5e61`. The 207-case **credential-bypass sweep**
+sweep: 0 policy violations, 0 differences from `03215a20`. The 207-case **credential-bypass sweep**
 ([test_bypass_sweep.py](../services/api/tests/security/test_bypass_sweep.py)) sends every owner write and agent route each
 wrong or missing credential and each body-field claim of authority: none got through. It fills path parameters with a
 placeholder and sends empty bodies, so on about half the routes the owner's own request stops at validation; the
-route-policy test is what shows each owner route works. Submission build: 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0); 0 policy violations in three modes; 0 differences from c66a5e61.
+route-policy test is what shows each owner route works. Submission build: 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0); 0 policy violations in three modes; 0 differences from `66c31e7e`.
 
 #### 1.6 Architectural invariants ([INVARIANTS.md](INVARIANTS.md)), and what each proves
 
@@ -459,8 +462,8 @@ result carries status, tier, violations, effective day, approval id and message.
 held by the links), the idempotency-key column, any wall-clock time and any schema version.
 
 **What enforces it.** State, commitment, nonce, approval, security event and log entry commit in **one unit of work**. The
-store applies compare-and-swap to the state version and the log head; a losing unit re-runs at most 8 times, then answers
-409. Database triggers refuse UPDATE and DELETE on the log (migration `0003`); approvals are decided once and security events
+store applies compare-and-swap to the state version and the log head; a losing unit re-runs at most 8 times,
+then answers 409. Database triggers refuse UPDATE and DELETE on the log (migration `0003`); approvals are decided once and security events
 are append-only (migration `0009`, SEC-08); no session setting lifts these guards.
 
 **What is checked.** `GET /ledger` reports `chain_valid`: seq contiguous, links intact, hashes recomputed.
@@ -778,7 +781,7 @@ records are in [CERTIFICATIONS.md](security/CERTIFICATIONS.md). Appendix C lists
   before it, and the gates that did not pass (`5941e95a`, PAY-1; `5926ef29`, a web demo timing race fixed in `cc1703cc`), are
   in Appendix C.
 - **`66c31e7e` (19 Oct): certified for scope S** (gate 05:55 to 06:46 UTC, evidence id `sha256:4a418fe4fb4c6c4d`).
-- **`c66a5e61`, the submission build: certified for scope S on 19 Oct** (gate 19 Oct 2026, 08:41 to 09:33 UTC, evidence id `sha256:37ff16748cf56bca`; Table C2). It is `c66a5e61`
+- **`c66a5e61`, the submission build: certified for scope S on 19 Oct** (gate 19 Oct 2026, 08:41 to 09:33 UTC, evidence id `sha256:37ff16748cf56bca`; Table C2). It is `66c31e7e`
   plus the three fixes of the 19 Oct review (REV-1 to REV-3).
 
 #### 2.8 Dependency and secret scans

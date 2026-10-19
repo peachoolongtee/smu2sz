@@ -30,8 +30,8 @@ FLOW is the product name; the code and its variables still use the working name 
 
 | Run | Transport | Steps | Audit exports | Folder |
 | --- | --- | --- | --- | --- |
-| In process | FastAPI TestClient over a fresh in-memory runtime, as `scripts/run_scenarios.py --inproc` builds it | 159 PASS, 0 FAIL, of 163; 4 of the steps write the store directly, as the tests do | 16 of 16 `VALID` | [run-20261019T093629Z-inproc/](evidence/sandbox-2026-10-19/run-20261019T093629Z-inproc/SUMMARY.md) |
-| Over HTTP | the demo API on `127.0.0.1:8420` | 142 PASS, 0 FAIL, 1 SKIPPED, of 143; parts 4b1, 4b2 and 4c are in-process only (they write the store) | 13 of 13 `VALID` | [run-20261019T093658Z-http/](evidence/sandbox-2026-10-19/run-20261019T093658Z-http/SUMMARY.md) |
+| In process | FastAPI TestClient over a fresh in-memory runtime, as `scripts/run_scenarios.py --inproc` builds it | 163 steps: 159 PASS, 0 FAIL; 4 setup writes (they write the store directly, as the tests do, and pass or fail nothing) | 16 of 16 `VALID` | [run-20261019T093629Z-inproc/](evidence/sandbox-2026-10-19/run-20261019T093629Z-inproc/SUMMARY.md) |
+| Over HTTP | the demo API on `127.0.0.1:8420` | 143 steps: 142 PASS, 0 FAIL, 1 SKIPPED; parts 4b1, 4b2 and 4c are in-process only (they write the store) | 13 of 13 `VALID` | [run-20261019T093658Z-http/](evidence/sandbox-2026-10-19/run-20261019T093658Z-http/SUMMARY.md) |
 
 Both runs use `DEMO_MODE=1`, `TERMSLEDGER_NO_DOTENV=1`, `DATABASE_URL=memory` and `LLM_MODE=cache` (recorded model readings: no model provider is called), the published demo credentials, the feature flags that `pnpm demo` sets, the `golden_sme` books ([fixtures/scenarios/golden_sme.json](../../fixtures/scenarios/golden_sme.json); part 4b3 uses `short_facilities.json`), and `POST /demo/reset` before every case part. Each folder's `run.json` gives the commits, configuration, fixtures with their sha256, times and a secret scan: no credential value appears in any output, the public demo values included.
 
@@ -242,7 +242,7 @@ uv run --project services/api python scripts/demo_run.py                        
 uv run --project services/api python scripts/run_scenarios.py --inproc --out /tmp/tl-e2e          # 49/49 scenarios passed, 88 turns (18 Oct)
 uv run --project services/api python scripts/security_refusals_evidence.py /tmp/security_refusals.json   # four refusals, books_moved: false
 uv run --directory services/api pytest                     # the API test suite (technical document, Table V: 11,368 passed, 0 failed, 47 skipped on 03215a20; on the submission build 11,426 passed, 0 failed, 47 skipped)
-uv run --directory services/api python -m app.security.attacks   # 128 API attacks plus 151 chat attacks (279), 0 with harm (18 Oct, b0cc7a4b)
+uv run --directory services/api python -m app.security.attacks   # 128 API attacks plus 151 chat attacks (279), 0 with harm (19 Oct, c66a5e61)
 ```
 
 These need `DEMO_MODE=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1` in the shell (PowerShell: `$env:DEMO_MODE="1"` and so on); on Windows use a Windows folder in place of `/tmp`. The test catalogue is [TEST_CASES.md](TEST_CASES.md).
