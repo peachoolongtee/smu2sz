@@ -1,0 +1,91 @@
+model key present: True; deepseek: True; anthropic: False; database: memory
+INFO:     Started server process [2204]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8583 (Press CTRL+C to quit)
+INFO:     127.0.0.1:52211 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52212 - "GET /health HTTP/1.1" 200 OK
+2026-10-19 13:03:03 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=contract total=0 uscc=0
+2026-10-19 13:03:09 [info     ] compiler.call                  backend=deepseek doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=5696.0 model=deepseek-flash outcome=ok prompt_version=contract-v1
+2026-10-19 13:03:09 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:11 [info     ] compiler.call                  backend=deepseek doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=1886.0 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:03:11 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:13 [info     ] compiler.call                  backend=deepseek doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=1788.0 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:03:13 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=contract total=0 uscc=0
+2026-10-19 13:03:18 [info     ] compiler.call                  backend=deepseek doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=4819.9 model=deepseek-flash outcome=ok prompt_version=contract-v1
+2026-10-19 13:03:18 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:20 [info     ] compiler.call                  backend=deepseek doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=1904.9 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:03:20 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:21 [info     ] compiler.call                  backend=deepseek doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=1770.4 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:52213 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52219 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:03:21 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:03:23 [info     ] compiler.call                  backend=deepseek doc_hash=49ae70db2d02e5140b99daa3f1734635c044c92ab79417ce18ac112c2e69cdd6 latency_ms=1230.7 model=deepseek-flash outcome=ok prompt_version=offer-v4
+INFO:     127.0.0.1:52220 - "POST /offers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52221 - "POST /offers/OFF-49ae70db2d02/evaluate?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52222 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:03:23 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=contract total=0 uscc=0
+2026-10-19 13:03:28 [info     ] compiler.call                  backend=deepseek doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=4782.0 model=deepseek-flash outcome=ok prompt_version=contract-v1
+2026-10-19 13:03:28 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:29 [info     ] compiler.call                  backend=deepseek doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=1719.7 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:03:29 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:31 [info     ] compiler.call                  backend=deepseek doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=1574.7 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:52223 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52224 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:03:31 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:03:32 [info     ] compiler.call                  backend=deepseek doc_hash=7dd2ad883b23a19ed1e4c51ceb27465c303660ab297dd37172fe2808741d0d8d latency_ms=1338.1 model=deepseek-flash outcome=ok prompt_version=offer-v4
+INFO:     127.0.0.1:52225 - "POST /offers?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62272 - "POST /offers/OFF-7dd2ad883b23/evaluate?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62273 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:03:33 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=contract total=0 uscc=0
+2026-10-19 13:03:37 [info     ] compiler.call                  backend=deepseek doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=4650.8 model=deepseek-flash outcome=ok prompt_version=contract-v1
+2026-10-19 13:03:37 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:39 [info     ] compiler.call                  backend=deepseek doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=1629.2 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:03:39 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:41 [info     ] compiler.call                  backend=deepseek doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=1723.4 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:62274 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62277 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:03:41 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:03:42 [info     ] compiler.call                  backend=deepseek doc_hash=db22116ce59368f50e52b6f67d01cfc4e93db01a6ddfd34fad375a29496ddb30 latency_ms=1487.2 model=deepseek-flash outcome=ok prompt_version=offer-v4
+INFO:     127.0.0.1:62278 - "POST /offers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62279 - "POST /offers/OFF-db22116ce593/evaluate?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62280 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:03:42 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=contract total=0 uscc=0
+2026-10-19 13:03:48 [info     ] compiler.call                  backend=deepseek doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=5284.5 model=deepseek-flash outcome=ok prompt_version=contract-v1
+2026-10-19 13:03:48 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:50 [info     ] compiler.call                  backend=deepseek doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=1902.4 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:03:50 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:51 [info     ] compiler.call                  backend=deepseek doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=1595.7 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:62281 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59337 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:03:51 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:03:52 [info     ] compiler.call                  backend=deepseek doc_hash=b60342bfc6a5348bca885a63e40e05a1245f2c8c71a706c47cf942ef04852ec0 latency_ms=1177.5 model=deepseek-flash outcome=ok prompt_version=offer-v4
+INFO:     127.0.0.1:59338 - "POST /offers?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59339 - "POST /offers/OFF-b60342bfc6a5/evaluate?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59340 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:03:52 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=contract total=0 uscc=0
+2026-10-19 13:03:57 [info     ] compiler.call                  backend=deepseek doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=4088.4 model=deepseek-flash outcome=ok prompt_version=contract-v1
+2026-10-19 13:03:57 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:03:58 [info     ] compiler.call                  backend=deepseek doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=1554.2 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:03:58 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:04:00 [info     ] compiler.call                  backend=deepseek doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=1546.7 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:59341 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59343 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:04:00 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:04:01 [info     ] compiler.call                  backend=deepseek doc_hash=9dac8fce89e0c691d262519f84e56d91feccfbfb909dd37934c60af177df2012 latency_ms=1352.6 model=deepseek-flash outcome=ok prompt_version=offer-v4
+INFO:     127.0.0.1:59344 - "POST /offers?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59345 - "POST /offers/OFF-9dac8fce89e0/evaluate?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59346 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:04:01 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=contract total=0 uscc=0
+2026-10-19 13:04:06 [info     ] compiler.call                  backend=deepseek doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=4321.6 model=deepseek-flash outcome=ok prompt_version=contract-v1
+2026-10-19 13:04:06 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:04:07 [info     ] compiler.call                  backend=deepseek doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=1805.7 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:04:07 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=term_sheet total=0 uscc=0
+2026-10-19 13:04:09 [info     ] compiler.call                  backend=deepseek doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=1432.9 model=deepseek-flash outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:59347 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57145 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:04:09 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:04:10 [info     ] compiler.call                  backend=deepseek doc_hash=5898d383a29b1bc6d1678a92533b9c57c69eac60e9579a778be375b772d05b3a latency_ms=1159.8 model=deepseek-flash outcome=ok prompt_version=offer-v4
+INFO:     127.0.0.1:57146 - "POST /offers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57147 - "POST /offers/OFF-5898d383a29b/evaluate?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57148 - "GET /audit HTTP/1.1" 200 OK

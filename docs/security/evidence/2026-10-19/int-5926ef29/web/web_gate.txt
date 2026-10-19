@@ -1,0 +1,4 @@
+e2e exit=0  77 skipped  479 passed (4.6m) 
+typecheck exit=0
+lint exit=0
+unit exit=0 

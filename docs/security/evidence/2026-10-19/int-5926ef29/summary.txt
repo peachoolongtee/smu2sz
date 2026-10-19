@@ -1,0 +1,25 @@
+Release gate on 5926ef29 (int/sl-final: 03215a20 + round eight, the demo launcher on loopback, round nine, the API lint cleanup,
+the public-release cleanup, the unseen evaluation set), 19 Oct 2026, 04:14 to 05:05 UTC, then the post-gate checks, by the
+Security Lead. Scripts: tools/certify_final.sh and tools/certify_final_post.sh; results by step: steps.txt.
+
+VERDICT: NOT RELEASED. Every check passed except the live browser suite, which found a regression introduced by round nine
+(tracker.spec.ts:216). It is fixed on sec/round-nine-fix and the fixed build is gated again; see CERTIFICATIONS.md.
+
+full suite (155 processes)     11,421 passed, 0 failed, 47 skipped (tests/__pycache__ holds no tests: exit 5)
+attack catalogue               128 API + 151 chat, 0 harm, 0 not reached, 120/128 named control, 8 known gaps;
+                               detection 97.66% (API), 70.25% (all 279); security events 74.22% (API)
+route policy                   16 tests pass (shards/tests_security.txt); 113 routes; owner 96/97 (demo), 91/97 (DEMO_MODE=0);
+                               the miss: POST /documents/{id}/terms/undo -> 404 UNKNOWN_SET_UP
+sweep, three modes             112 routes, 0 policy violations, 0 differences from 03215a20 (sweep_policy.txt)
+reproductions; approval flip   refused; the database refuses the flip
+language boundary              cache and fake: 0 wrong-and-material
+PostgreSQL 17                  concurrency 3/3 (31 tests, 10 on PostgreSQL, each run); guards 10 passed
+dependency scans               pip-audit clean; pnpm audit --prod 0; full audit: braces (development only)
+secret scan                    tracked files at 5926ef29 and every branch's history: 0 findings (secret_scan.txt)
+mock browser suite             479 passed, 0 failed, 77 skipped; typecheck, lint, unit pass (web/)
+live browser suite             176 passed, 1 FAILED, 51 skipped, one worker as configured (live_e2e.txt). The failure,
+                               tracker.spec.ts:216 "after the owner's approval the page's figures are the API's own", also fails
+                               alone; it passes on eb3c1059 and fails from a12548fd (round nine, LOG-2) on (bisect/)
+CSP, production build          17 pages, nonce on all, 0 violations, 0 page errors, injection blocked (csp/)
+CSP, development server        pnpm demo (next dev): the same; header adds 'unsafe-eval' for hot reload (csp_dev/)
+judge pack                     49/49 tasks; 279 attacks, 0 harm; demo walk OK; audit chain VALID (judge/)
