@@ -60,6 +60,9 @@ class PendingClarification:
     slots: Slots
     values: dict[str, Any] = field(default_factory=dict)  # option id -> typed slot value
     text: str = ""  # the owner's words that raised the question: the answer resumes THEM ("60 days instead of 45"), not "Foshan"
+    # A list of approvals offered to a word that decides nothing ("yes", "go ahead", 执行): a bare pick of it ("1", the bare id) shows the
+    # item and decides nothing; only the approve or reject word decides ("approve 1", "reject APR-000001", 批准 1) (CON-1)
+    pick_only: bool = False
 
 
 @dataclass

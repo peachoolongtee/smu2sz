@@ -258,3 +258,107 @@ def test_sec19_an_approval_on_an_anonymous_request_is_marked_and_one_on_a_keyed_
     rows = {a["id"]: a for a in owner.get("/approvals/queue").json()["approvals"]}
     assert rows[anon_aid]["sender_unverified"] is True
     assert rows[keyed_aid]["sender_unverified"] is False
+
+
+# ================================================================ CON-1: a number picked from a list offered to "yes" decides nothing
+#
+# With an approval queued but not shown in the previous reply and no plan waiting, a bare "yes" / "go ahead" / 执行 lists the queue as
+# numbered options; answering "1" (or the bare id) then approved it, although "approve" was never said. The rule (app/nl/service.py,
+# `_decide_approval`): "go ahead" and "yes" never decide an approval. A pick from that list now shows the item and asks; "approve 1",
+# "approve APR-…", "批准 1" and "reject 1" still decide. A list offered to the word "approve" keeps deciding on a bare pick, as before.
+
+CON1 = {"en": {"yes": "yes", "approve": "approve 1", "reject": "reject 1", "approve_word": "approve"},
+        "zh": {"yes": "执行", "approve": "批准 1", "reject": "拒绝 1", "approve_word": "批准"}}
+
+
+@pytest.fixture
+def queued():
+    """An owner's funding plan whose leg the agent queued for approval (Tier 2), then a fresh conversation that has shown nothing."""
+    from tests.funding.test_planner_executor_agree import SHORT_HOLD, build
+    from tests.nl.conftest import Chat, build_app
+    from tests.nl.test_plan_flags import GOAL, pending
+
+    rt = build(SHORT_HOLD)
+    set_runtime(rt)
+    reset_sessions()
+    client = TestClient(build_app())
+    first = Chat(client, "r9-con1-plan")
+    first.say(GOAL["en"])
+    first.say("go ahead")
+    [aid] = pending(rt)
+    yield rt, client, aid
+    set_runtime(None)
+    reset_sessions()
+
+
+def _status(rt: Runtime, aid: str) -> str:
+    rec = rt.store.get_approval(aid)
+    return str(getattr(rec.status, "value", rec.status))
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_con1_a_bare_pick_from_a_list_offered_to_yes_decides_nothing(queued, lang: str) -> None:
+    from tests.nl.conftest import Chat, ops
+
+    rt, client, aid = queued
+    words = CON1[lang]
+    for n, pick in enumerate(("1", aid, aid.lower())):  # each in a new conversation that has shown nothing
+        c = Chat(client, f"r9-con1-{lang}-{n}")
+        listed = c.say(words["yes"], lang=lang)
+        assert ops(listed) == [] and listed["clarification"] and aid in listed["reply"]
+        r = c.say(pick, lang=lang)
+        assert ops(r) == [] and _status(rt, aid) == "PENDING", pick
+        assert f"approve {aid}" in r["reply"] or f"批准 {aid}" in r["reply"], "the pick shows the item and says how to decide it"
+    c = Chat(client, f"r9-con1-{lang}-decide")
+    c.say(words["yes"], lang=lang)
+    r = c.say(words["approve"], lang=lang)
+    assert ops(r) == [("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")], r["reply"]
+    assert _status(rt, aid) == "APPROVED"
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_con1_reject_1_rejects(queued, lang: str) -> None:
+    from tests.nl.conftest import Chat
+
+    rt, client, aid = queued
+    c = Chat(client, f"r9-con1-rej-{lang}")
+    c.say(CON1[lang]["yes"], lang=lang)
+    c.say(CON1[lang]["reject"], lang=lang)
+    assert _status(rt, aid) == "REJECTED"
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_con1_a_shown_item_is_decided_by_approve_it_and_still_not_by_yes(queued, lang: str) -> None:
+    """After the pick showed the item, the bare approve word binds to it (the one item shown); "yes" still does not."""
+    from tests.nl.conftest import Chat
+
+    rt, client, aid = queued
+    c = Chat(client, f"r9-con1-show-{lang}")
+    c.say(CON1[lang]["yes"], lang=lang)
+    c.say("1", lang=lang)
+    c.say(CON1[lang]["yes"], lang=lang)
+    assert _status(rt, aid) == "PENDING"
+    c.say(CON1[lang]["approve_word"], lang=lang)
+    assert _status(rt, aid) == "APPROVED"
+
+
+def test_con1_a_list_offered_to_the_word_approve_still_decides_on_a_bare_pick(queued) -> None:
+    from tests.nl.conftest import Chat
+
+    rt, client, aid = queued
+    c = Chat(client, "r9-con1-approve-word")
+    c.say("thanks")
+    listed = c.say("approve")
+    assert listed["clarification"] and _status(rt, aid) == "PENDING"
+    c.say("1")
+    assert _status(rt, aid) == "APPROVED"
+
+
+def test_con1_approve_with_the_id_decides_after_a_list_offered_to_yes(queued) -> None:
+    from tests.nl.conftest import Chat
+
+    rt, client, aid = queued
+    c = Chat(client, "r9-con1-approve-id")
+    c.say("go ahead")
+    c.say(f"approve {aid}")
+    assert _status(rt, aid) == "APPROVED"
