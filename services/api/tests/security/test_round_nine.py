@@ -158,3 +158,103 @@ def test_log2_the_lead_rewrite_leaves_a_lead_that_already_names_the_claim(text: 
     rebate = Obligation.model_construct(type=ObligationType.CONTINGENT_REBATE, contingency=None, target_terms_days=None,
                                         days_delta=None, spans=[])
     assert restate_not_on_record(text, [claim, rebate]) == text
+
+
+# ================================================================ SEC-19: the owner sees that nobody signed a request
+#
+# An anonymous sender (no channel key) may name a registered buyer, and its request is filed under that buyer (ANONYMOUS_INTAKE stays on for
+# the local demo). Every view where the owner can accept the request, or approve an operation on it, now carries the server's
+# `sender_unverified`: true for a request nobody signed, false for one the buyer's key (or the owner) filed. The web shows "Unverified sender"
+# from it; a recording without the field shows nothing (apps/web/scripts/unverified-sender.test.mjs).
+
+OWNER = {"X-Owner-Token": "demo-owner-token"}
+EX02 = "EX02_EARLY_1_5"
+
+
+def _file(app_client: TestClient, headers: dict[str, str], *, name_buyer: bool = True, doc_suffix: str = "") -> str:
+    from app.domain.fixtures import offer_documents
+
+    docs = [{**d.model_dump(mode="json"), "doc_id": d.doc_id + doc_suffix} for d in offer_documents(EX02)]
+    body = {"documents": docs, **({"counterparty_id": "BUYER-1"} if name_buyer else {})}
+    r = app_client.post("/offers", json=body, headers=headers)
+    assert r.status_code == 200, r.text
+    return r.json()["offer"]["offer_id"]
+
+
+def _views(owner: TestClient, oid: str) -> dict:
+    from app.decisions.identity import deal_id
+
+    v = owner.post(f"/offers/{oid}/evaluate")
+    assert v.status_code == 200, v.text
+    picture = owner.get(f"/offers/{oid}/picture").json()
+    record = owner.get(f"/decisions/{deal_id(oid)}").json()
+    return {"verdict": v.json(), "picture": picture, "record": record}
+
+
+@pytest.fixture
+def owner(rt: Runtime) -> TestClient:
+    from app.main import app
+
+    return TestClient(app, headers=OWNER)
+
+
+def test_sec19_an_anonymous_request_under_a_buyers_name_is_marked_unverified(api: TestClient, owner: TestClient) -> None:
+    oid = _file(api, {})
+    views = _views(owner, oid)
+    assert views["picture"]["sender_unverified"] is True
+    assert views["picture"]["accept"]["sender_unverified"] is True
+    assert views["record"]["source"]["sender_unverified"] is True
+
+
+def test_sec19_a_request_on_the_buyers_key_is_not_marked(api: TestClient, owner: TestClient) -> None:
+    oid = _file(api, BUYER, name_buyer=False)
+    views = _views(owner, oid)
+    assert views["picture"]["sender_unverified"] is False
+    assert views["picture"]["accept"]["sender_unverified"] is False
+    assert views["record"]["source"]["sender_unverified"] is False
+
+
+def test_sec19_the_owners_own_filing_upgrades_an_anonymous_one(api: TestClient, owner: TestClient) -> None:
+    """The strongest sender that filed the same request decides (`SENDER_RANK`), as the buyer-message view reads it."""
+    oid = _file(api, {})
+    assert _file(owner, {}) == oid
+    assert _views(owner, oid)["picture"]["sender_unverified"] is False
+
+
+def test_sec19_an_anonymous_chat_message_under_a_buyers_name_is_marked_unverified(api: TestClient, owner: TestClient, rt: Runtime) -> None:
+    """POST /nl without a key recorded no provenance at all; it now records the request as anonymous, and a keyed message as the buyer's."""
+    text = "We will pay invoice RCV-A early at 0.5%. Nothing else changes."
+    r = api.post("/nl", json={"session_id": "r9-sec19-anon", "text": text, "lang": "en", "actor": "COUNTERPARTY", "counterparty_id": "BUYER-1"})
+    assert r.status_code == 200, r.text
+    anon_offer = rt.store.verdicts()[-1].offer_id
+    assert owner.get(f"/offers/{anon_offer}/picture").json()["sender_unverified"] is True
+    r = api.post("/nl", json={"session_id": "r9-sec19-key", "text": text + " ", "lang": "en", "actor": "COUNTERPARTY"}, headers=BUYER)
+    assert r.status_code == 200, r.text
+    keyed_offer = next(v.offer_id for v in reversed(rt.store.verdicts()) if v.offer_id != anon_offer)
+    assert owner.get(f"/offers/{keyed_offer}/picture").json()["sender_unverified"] is False
+
+
+def _queue_accept(rt: Runtime, oid: str) -> str:
+    """An AcceptOffer on the request, queued for the owner as the executor queues a Tier-2 one (an agent's or a buyer channel's accept)."""
+    from app.domain.models import AcceptOffer, Actor
+
+    offer = rt.store.get_offer(oid)
+    verdict = next(v for v in reversed(rt.store.verdicts()) if v.offer_id == oid)
+    counter = verdict.counters[0].id if verdict.counters else None  # EX02's verdict is a counter: its Option A is what is accepted
+    c = rt.executor.propose_commitment(verdict.id, expires_day=rt.day + 14, counter_id=counter, nonce=f"r9-{oid}")
+    op = AcceptOffer(op_id=f"R9-{oid}", idempotency_key=f"r9:{oid}", mandate_version=rt.store.get_mandate().version, requested_by=Actor.AGENT,
+                     source_verdict_id=verdict.id, day=rt.day, offer_id=oid, offer_version=offer.version, terms_hash=c.terms_hash, nonce=c.nonce)
+    return rt.store.add_approval(op.model_dump_json(), "above the approval threshold")
+
+
+def test_sec19_an_approval_on_an_anonymous_request_is_marked_and_one_on_a_keyed_request_is_not(api: TestClient, owner: TestClient,
+                                                                                               rt: Runtime) -> None:
+    anon_oid = _file(api, {})
+    _views(owner, anon_oid)
+    anon_aid = _queue_accept(rt, anon_oid)
+    keyed_oid = _file(api, BUYER, name_buyer=False, doc_suffix="-KEYED")
+    _views(owner, keyed_oid)
+    keyed_aid = _queue_accept(rt, keyed_oid)
+    rows = {a["id"]: a for a in owner.get("/approvals/queue").json()["approvals"]}
+    assert rows[anon_aid]["sender_unverified"] is True
+    assert rows[keyed_aid]["sender_unverified"] is False

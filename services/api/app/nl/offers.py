@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from contextvars import ContextVar
+from typing import Any, cast
 
 from app.api.presentation import whole
 from app.compiler import compile_offer, compile_term_sheet
@@ -365,6 +366,11 @@ def counterparty_message(ctx: NlContext, text: str, counterparty_id: str | None)
     steps = Steps()
     steps.add("VERIFY", verdict_line(ctx, b.verdict), "DONE")
     authenticated = COUNTERPARTY_AUTHENTICATED.get()
+    from app.api.offers import record_received
+
+    # How the request arrived, as POST /offers records it (SEC-19): the buyer's own key, or nobody, whatever buyer the message names. The
+    # owner's views of the request say "Unverified sender" from it. Only `.store` and `.day` are read, which the context carries.
+    record_received(cast(Any, ctx), offer, "buyer_key" if authenticated else "anonymous")
     lines = decide(ctx, steps, b, execute=authenticated, recipient=cp)
     allow = [a for c in b.verdict.counters for a in allowed_for_counter(c)] if authenticated else []
     if authenticated and not b.verdict.counters:

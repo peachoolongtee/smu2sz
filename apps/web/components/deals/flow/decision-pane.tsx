@@ -35,6 +35,7 @@ import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { STRATEGY_ENVELOPE } from "@/lib/config";
 import { patchedHref } from "@/lib/selection";
 import { sendResultHead } from "@/lib/send-result";
+import { UnverifiedSender } from "@/components/ui/unverified-sender";
 import { ChoicesTable, Recommendation, SectionNav, type SectionItem } from "./deal-overview";
 import { EnvelopePackages } from "./investigate";
 
@@ -625,6 +626,8 @@ export function DecisionPane({
             </p>
             <StableTitle id={`${uid}-title`} ask={record?.subject_text ?? (outbound || record?.reply_to ? (row?.subject_text ?? askTitle) : askTitle)} fallback={nameFallback} />
             {customerLine}
+            {/* SEC-19: nobody signed this request; the owner sees it before accepting it or sending anything */}
+            <UnverifiedSender views={[picture, picture?.accept, record?.source]} testId="deal-unverified-sender" />
           </header>
           {agreedView && trackerRead?.next ? (
             <div className="mt-3" data-testid="deal-header-actions">

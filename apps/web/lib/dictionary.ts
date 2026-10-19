@@ -1787,6 +1787,8 @@ export const en = {
   "biz.chase.copied": "Copied",
   "biz.chase.copyfailed": "Could not copy. Select the request and copy it.",
   // The message the owner sends the buyer outside FLOW (ADR-0011 addendum): labels only; the message, its notice, the buttons the server names and every refusal are the server's.
+  // SEC-19: a request nobody signed, wherever the owner can accept it or approve an operation on it (the server's `sender_unverified`)
+  "sender.unverified": "Unverified sender: this message came without the buyer's key",
   "bm.title": "Message to the buyer",
   "bm.lang": "The buyer's language",
   "bm.lang.en": "English",
@@ -5524,6 +5526,7 @@ export const zh: Record<DictKey, string> = {
   "biz.chase.copy": "复制请求",
   "biz.chase.copied": "已复制",
   "biz.chase.copyfailed": "无法复制。请选中请求文字后手动复制。",
+  "sender.unverified": "未验证的发件人：此消息未附带买方密钥",
   "bm.title": "发给买方的消息",
   "bm.lang": "买方的语言",
   "bm.lang.en": "English",
