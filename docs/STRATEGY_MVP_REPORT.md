@@ -169,7 +169,7 @@ passing price (0.95%); one rule should decide both.
 ## 11. Wave 8: the finish (the Impeccable suite over the whole UI)
 
 At the owner's request, after the MVP, the Impeccable suite ran over every page as a refinement of the incumbent
-identity in `apps/web/DESIGN.md`, with the two reference dashboards in `docs/research/inspiration/` as the bar for
+identity in `apps/web/DESIGN.md`, with two third-party reference dashboards (not redistributed here) as the bar for
 density, hierarchy and finish. `PRODUCT.md` was written by inference from the repository's documents (every line
 labelled) and `.impeccable/config.json` names `apps/web`, so the launcher resolves both.
 

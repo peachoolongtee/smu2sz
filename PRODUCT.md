@@ -56,12 +56,12 @@ web
 - Voice: calm and plain, the owner's words, conclusions first, distances from today ("in 47 days", "arrives in 3 days"), sentences before formulas, named facts ("First breach", "Worst point"), no claim of a gain where the verifier floors at zero, refusals said once and quietly ("1 message from an unknown sender was set aside") (inferred from docs/UX_SIMPLIFICATION_BRIEF.md section 7, docs/UX_SIMPLIFICATION_REPORT.md).
 - Identity: `apps/web/DESIGN.md` is the incumbent system (colour option C, section hues, one radius scale, the motion kit, lifted base) and is referenced, not restated, here (inferred from apps/web/DESIGN.md, docs/UX_SIMPLIFICATION_REPORT.md).
 - The owner's recorded taste: "a middle ground" on colour; coloured icons, pill buttons and animations wanted; the muted palette found stale; gradients, rainbow icons and runtime web fonts left out (inferred from docs/UX_SIMPLIFICATION_REPORT.md).
-- References for the finish: the two light dashboards in `docs/research/inspiration/` set the bar for density, hierarchy and finish; not a redesign brief; the dark variant is not adopted (inferred from docs/research/inspiration/README.md).
+- References for the finish: two light third-party dashboards the owner supplied (not redistributed here) set the bar for density, hierarchy and finish; not a redesign brief; the dark variant is not adopted.
 
 ## Evidence on Hand
 
 - All data is synthetic: `fixtures/scenarios/golden_sme.json` (cash ¥400,000, floor ¥300,000, Foshan Home Retail's ¥420,000 monthly invoice on 45-day terms, a ¥5,000 concession budget, a standing plan of ¥405,000 at ¥3,113.93), recorded API answers in `apps/web/mocks/`, hash-chain evidence in `services/api/evals/e2e/latest/evidence/` (inferred from README.md, docs/STRATEGY_RESEARCH.md).
-- Screenshots per wave in `docs/screenshots/`; cold-user walks and the colour research under `docs/research/`; the inspiration images in `docs/research/inspiration/` (inferred from docs/UX_SIMPLIFICATION_REPORT.md, docs/research/inspiration/README.md).
+- Screenshots per wave in `docs/screenshots/`; cold-user walks and the colour research under `docs/research/` (inferred from docs/UX_SIMPLIFICATION_REPORT.md).
 - Absent, and not to be fabricated: real customers, pilot data, testimonials, pricing, an outbound channel ("Send this counter" runs the demo's buyer kernel and says so), a bank feed, a FLOW mark (inferred from README.md, docs/UX_SIMPLIFICATION_REPORT.md).
 
 ## Product Principles
@@ -80,7 +80,7 @@ web
 
 - A portfolio optimiser, buyer scoring or any ML, customer profitability, proposing looser mandates, and new action in the pilot windows (inferred from docs/STRATEGY_RESEARCH.md section K).
 - Real payments, lending, brokerage or advice: a simulation and decision support under the owner's own limits (inferred from README.md).
-- Dark theme, a "Buy equipment" navigation section, gradients on buttons or cards, runtime web fonts (inferred from docs/research/inspiration/README.md, docs/UX_SIMPLIFICATION_REPORT.md, apps/web/DESIGN.md).
+- Dark theme, a "Buy equipment" navigation section, gradients on buttons or cards, runtime web fonts (inferred from the owner's reference notes, docs/UX_SIMPLIFICATION_REPORT.md, apps/web/DESIGN.md).
 
 ## Open Questions for the Owner
 
