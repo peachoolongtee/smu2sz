@@ -1,7 +1,7 @@
 import json, urllib.request, urllib.error
 from pathlib import Path
 BASE='http://localhost:8031'
-OUT=Path('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w0-api/docs/research/ux-remediation-2026-10-09/api')
+OUT=Path(__file__).resolve().parents[1]
 OWNER={'X-Owner-Token':'demo-owner-token'}
 BANK={'X-Agent-Key':'demo-agent-key','X-Bank-Feed-Key':'demo-bank-feed-key'}
 AGENT={'X-Agent-Key':'demo-agent-key'}

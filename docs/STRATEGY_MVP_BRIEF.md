@@ -264,7 +264,7 @@ services/api/tests` runs once with the flags off and once on before the Wave 7 r
 
 Read-only reconnaissance of `dev` at `bcc67d4` by a research agent (8 October 2026); the page and component names the synthesis used at `d1eadb0` still hold.
 
-Read-only survey of `/Users/ianpong/Hackathons/smu2sz/apps/web` on branch `dev` (8 Oct 2026). All paths below are relative to `apps/web/` unless absolute. Nothing in the repo was changed.
+Read-only survey of `apps/web` on branch `dev` (8 Oct 2026). All paths below are relative to `apps/web/` unless absolute. Nothing in the repo was changed.
 
 ### 1. Deals page (`app/deals/page.tsx`, 266 lines) and `components/deals/*`
 

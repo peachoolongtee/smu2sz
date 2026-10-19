@@ -1,6 +1,6 @@
 # Ticket #95 (map #88): synthesis, deliverables A to L in one specification
 
-Drafted 10 October 2026 for the lead, from the five research reports. Repository `/Users/ianpong/Hackathons/smu2sz`, `dev` at
+Drafted 10 October 2026 for the lead, from the five research reports. This repository, `dev` at
 `0cd60cb`, read-only; nothing was written there. Nothing here is committed until the owner lifts the hold of 10 October; when
 it lifts, this file becomes `docs/CUSTOMER_ECONOMICS_BRIEF.md` on a research branch (ticket #95's output rule).
 
