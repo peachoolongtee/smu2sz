@@ -45,6 +45,7 @@ from app.api.presentation import (
     whole,
 )
 from app.api.presentation import t as say
+from app.api.provenance import sender_unverified
 from app.api.refusal import cached_refusal_plan, if_refused_text
 from app.api.refusal import clear_cache as clear_refusal_cache
 from app.api.runtime import get_runtime
@@ -1158,6 +1159,12 @@ def get_picture(offer_id: str, lang: str = "en", *, sel: Annotated[Selection, De
         picture = with_buyer_status(rt, offer_id, picture, lang)
         body = {**picture, "accept": answered_block(rt, offer_id, picture.get("accept"), lang), "context": context}
         body.update(workspace_words(rt, offer_id, lang))
+        # SEC-19: whether nobody signed the request (no buyer's key), read from the deal's RECEIVED facts on every read, never cached with
+        # the picture (a stronger filing upgrades it); the deal header and the accept review say "Unverified sender" from it.
+        unverified = sender_unverified(rt.store, offer_id)
+        body["sender_unverified"] = unverified
+        if isinstance(body.get("accept"), dict):
+            body["accept"] = {**body["accept"], "sender_unverified": unverified}
     # The scenarios are the Cash impact tab's, and the compare and exposure reads behind them cost seconds on a cold read: they come from their own
     # route, so the first read of the picture (which holds the runtime lock) stays small.
     return {**body, "scenarios": [], "scenarios_href": f"/offers/{quote(offer_id, safe='')}/scenarios?lang={lang}"}

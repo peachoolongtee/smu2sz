@@ -66,7 +66,7 @@ def test_a_confirmed_buyer_contract_is_filed_under_the_buyer_and_says_the_books_
 def test_an_upload_without_a_title_is_called_this_contract(client):
     from app.domain.fixtures import contract_fixture_bytes
 
-    name, data = contract_fixture_bytes(SUPPLY)
+    _, data = contract_fixture_bytes(SUPPLY)
     d = client.post("/documents", json={"kind": "BUYER_CONTRACT", "counterparty_id": "BUYER-1", "text": data.decode()}).json()["document"]
     buyer = _name(client, "BUYER-1")
     stop = "" if buyer.endswith(".") else "."
@@ -117,8 +117,8 @@ def test_a_confirmed_lender_agreement_names_the_facility_it_is_linked_to_and_tha
     assert o["title"] == f"Filed under {lender}"
     assert o["changed"]["lines"][0].startswith(f"The credit line agreement is now on file as your agreement with {lender}")
     assert o["changed"]["lines"][1].startswith("It is linked to ") and o["changed"]["lines"][1].endswith(" for reference.")
-    assert o["unchanged"]["lines"] == ["Your books, facilities and forecast are unchanged. FLOW plans your funding from the facility "
-                                       "terms in your books, not from this agreement."]
+    assert o["unchanged"]["lines"] == [("Your books, facilities and forecast are unchanged. FLOW plans your funding from the facility "
+                                        "terms in your books, not from this agreement.")]
     assert o["link"] == {"label": "See your funding", "href": "/funding"}
     _no_codes(o)
     unlinked = _decide(client, _read(client, FINANCING), "confirm", "zh")["outcome"]

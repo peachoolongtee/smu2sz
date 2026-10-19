@@ -1,4 +1,4 @@
-# Demo capex contracts (ADR-0013, docs/capex_handover.md). Synthetic: each was written to match
+# Demo capex contracts (ADR-0013). Synthetic: each was written to match
 # fixtures/scenarios/golden_sme.json and the capex case of app/capex (a ¥600,000 die-cutting line), and says so in its text.
 # Kept apart from fixtures/contracts/contracts.yaml on purpose: the demo confirms every document listed there at start,
 # and a capex contract must never be confirmed (or committed) for the owner by the demo.

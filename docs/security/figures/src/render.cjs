@@ -1,5 +1,8 @@
-const { chromium } = require("C:/Users/ian/Documents/Projects/smu2sz/.claude/worktrees/cert-719c/apps/web/node_modules/@playwright/test");
 const path = require("path");
+// Playwright comes from the web app's install (apps/web, pnpm install); PLAYWRIGHT_FROM names another folder to resolve it from.
+const repo = path.resolve(__dirname, "../../../..");
+const from = process.env.PLAYWRIGHT_FROM || path.join(repo, "apps", "web");
+const { chromium } = require(require.resolve("@playwright/test", { paths: [from] }));
 const { pathToFileURL } = require("url");
 (async () => {
   const b = await chromium.launch();

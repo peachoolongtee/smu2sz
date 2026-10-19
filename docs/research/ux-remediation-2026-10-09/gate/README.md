@@ -1,6 +1,6 @@
 # Wave 8 part A: the release gate (ticket #77, map #65)
 
-Verifier run of 9 Oct 2026 on the final integration head of `feat/ux-remediation`. No product code was changed. Every command below ran from absolute paths in a detached worktree (`/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate`). The raw summary tails are the `raw-*.txt` files in this folder.
+Verifier run of 9 Oct 2026 on the final integration head of `feat/ux-remediation`. No product code was changed. Every command below ran from absolute paths in a detached worktree (`.claude/worktrees/w8-gate` under the repository root). The raw summary tails are the `raw-*.txt` files in this folder.
 
 ## Result in one line
 

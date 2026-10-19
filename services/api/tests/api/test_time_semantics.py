@@ -69,7 +69,7 @@ def test_a_deadline_is_by_today_only_on_the_day_itself():
 
 def test_the_settlement_window_is_said_by_its_own_day():
     clause = "agreed early payment for ¥130,000.00 of face; up to ¥130,000.00 more may be settled early by day 2"
-    live = lambda text, today: settlement_words(text, today, live=True)  # noqa: E731
+    live = lambda text, today: settlement_words(text, today, live=True)
     assert live(clause, 2).endswith("; up to ¥130,000.00 more may still be settled early by today")
     assert live(clause, 1).endswith("more may still be settled early by tomorrow")
     assert live(clause, 0).endswith("more may still be settled early within 2 days")
@@ -88,7 +88,7 @@ def test_the_settlement_window_is_said_by_its_own_day():
 
 
 def test_a_commitment_id_never_reaches_the_owner():
-    ref = lambda text, **m: agreement_ref(text, m)  # noqa: E731
+    ref = lambda text, **m: agreement_ref(text, m)
     known = {"CMT-ab12": "Foshan Home Retail Co."}
     assert agreement_ref("promised under commitment CMT-ab12 did not arrive", known) == (
         "promised under the agreement with Foshan Home Retail Co. did not arrive")
@@ -268,8 +268,8 @@ def test_a_queued_agreement_carries_its_terms_and_the_buyer(client):
     row = _queue_agreement(client)
     p = row["presentation"]
     assert p["terms_available"] is True and p["terms_unavailable_reason"] is None
-    assert p["terms"] == ["The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. "
-                          "(effective in 2 days; one time)"]
+    assert p["terms"] == [("The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. "
+                           "(effective in 2 days; one time)")]
     assert p["counterparty_name"] == "Foshan Home Retail Co."
     # a zero forward value is not "free": no figure, and the economic effect said in words
     assert p["forward_value_display"] is None
@@ -438,8 +438,8 @@ def test_a_cap_below_the_invoice_is_a_cap_not_a_smaller_invoice(client):
     rt.store.put_commitment(capped)
     row = _queue(client)[0]
     assert row["presentation"]["terms"] == [
-        "The buyer may pay early and take 0.50% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. "
-        "(effective in 2 days; one time)"]
+        ("The buyer may pay early and take 0.50% off up to ¥260,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. "
+         "(effective in 2 days; one time)")]
     assert row["presentation"]["amount_display"] == "¥260,000.00"
     assert "RCV-" not in str(row["presentation"]["terms"])
 

@@ -786,7 +786,7 @@ that nothing runs and no code is raised). The report also records, as findings a
 key can read protected labels through chat status replies (NL-AC05, NL-CS10, NL-CS16, NL-CS31) and that an
 authenticated buyer can find the accept/counter threshold to 1 bp (NL-OP01K, NL-OP02K). Between 1 Oct and 3 Oct
 an independent audit and then five red-team rounds found 13 and 26 issues, all fixed (reports and probes under
-`docs/research/`; `docs/CONTINUOUS_OPTIMIZATION.md` sections 1 and 3). The owner stopped the red-team rounds on 3 Oct.
+`docs/research/`). The owner stopped the red-team rounds on 3 Oct.
 
 `GET /audit` computes its scoreboard from the run: money moved by operations tied to security events, and an
 outbound scan of every counter text. Nothing in it is a constant.
@@ -1109,7 +1109,7 @@ chat scenarios (87 turns), 49 evidence chains valid; 255 attacks (122 API, 133 c
 `scripts/evaluate.py` with every target passing (runnable optimality 26/26, priced 26/26); the language-boundary
 certification at WRONG_MATERIAL 0 on 231 items in the cache and fake runs; the concurrency suite at 20 passed and 10
 skipped (the PostgreSQL cases) on SQLite; web mock e2e 35 passed, live e2e 33 passed after the web refresh `2fc5aa9`
-(on macOS Chromium, 5 Oct, one phone-layout test fails; see `docs/HANDOVER.md`). Runs use recorded model
+(on macOS Chromium, 5 Oct, one phone-layout test fails). Runs use recorded model
 outputs and an in-memory store (the concurrency suite uses SQLite files); live-model mode and PostgreSQL were not
 exercised.
 
@@ -1263,8 +1263,8 @@ decision.
 An independent audit (13 findings), five red-team rounds (26 findings: 3, 7, 3, 7 and 6) and the business review's
 items (BC1 to BC11 and the simplifications S1 to S3) were fixed on 3 Oct; the owner then stopped the red-team rounds.
 The first table is the state at the first gate (`1bc96ba`); the second is what merged after it, up to `db097e0`. The rules are in
-`docs/FINANCIAL_SEMANTICS.md`; ADR-0009 and ADR-0010 record the two design decisions; the findings, decisions and
-scorecard are in `docs/CONTINUOUS_OPTIMIZATION.md` sections 1, 3 and 5; the reports are under `docs/research/`.
+`docs/FINANCIAL_SEMANTICS.md`; ADR-0009 and ADR-0010 record the two design decisions; the reports are under
+`docs/research/`.
 Test paths are under `services/api/tests/` unless they start with `apps/`.
 
 | Change | Where it is described | Test file |
@@ -1359,7 +1359,7 @@ section 14 lists the remaining debt.
 
 ## 13. Contract ingestion (brief 03), 5 Oct 2026
 
-Built on `feat/contract-ingestion` from `experiments` (`docs/handover/03_contract_ingestion_brief.md`). The owner's
+Built on `feat/contract-ingestion` from `experiments` (ADR-0012). The owner's
 decisions: deliverables are shown, not tracked (Q1); confirmation is an owner-only operation logged in the chain (Q2);
 a confirmed contract never changes the books (Q3); English contracts (Q4). With no model key, the demo readings were
 recorded with the deterministic grammar (`rules-v1`); `cd services/api && uv run python -m app.compiler.record_cache

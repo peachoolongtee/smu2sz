@@ -181,7 +181,7 @@ def test_f4_a_portion_paid_early_settles_its_face_and_the_rest_may_follow_by_the
 
 
 def test_f4_a_partial_promise_row_shows_the_portion_received(client: TestClient, rt: Runtime) -> None:
-    _, ep = _counter_a(client, rt)
+    _, _ep = _counter_a(client, rt)
     move(client, 1)
     _bank(client, rt, "rx-part", 10_000_000 - 85_000)
     from app.alerts import PromiseStatus, reconcile

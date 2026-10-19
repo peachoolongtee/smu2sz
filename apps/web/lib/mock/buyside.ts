@@ -1,5 +1,5 @@
 /**
- * Mock for the buy side (ADR-0013, docs/capex_handover.md). Serves mocks/buyside/*.json, recorded from the live API with
+ * Mock for the buy side (ADR-0013). Serves mocks/buyside/*.json, recorded from the live API with
  * FEATURE_CAPEX_CONTRACTS=1 (scripts/record-mocks.mjs --buyside): the demo capex contract read and confirmed (the recording's
  * DOC-000004), screened on three timelines, committed and approved; financial health, loan eligibility and a two-project plan.
  *

@@ -10,9 +10,22 @@ __pycache__/
 node_modules/
 .next/
 .env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.log
+.coverage
+prof.out
 
 .DS_Store
 
 # Demo videos and their key frames are recorded locally (pnpm demo:video), never committed: README and chapters json are.
 docs/deliverables/video/*.webm
 docs/deliverables/video/frames/
+
+# Local tool state, per machine: editor launch configs and design-tool caches.
+.claude/settings.local.json
+.claude/launch.json
+.impeccable/
+apps/web/.impeccable/

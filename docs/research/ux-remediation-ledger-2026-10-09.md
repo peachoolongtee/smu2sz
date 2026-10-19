@@ -142,7 +142,7 @@ Merged nothing. Compared with `git log origin/dev..<branch>`, `git diff --stat o
 | --- | --- | --- | --- |
 | `origin/test/ui-ux-dev` (`ca97b2e`) | 0 commits ahead of `origin/dev`, 220 behind; `git merge-base --is-ancestor` is true | 7 Oct | It is the merge of `feat/ux-integration` into dev. Fully contained in dev. Nothing to compare. |
 | `origin/test/ui-ux` (`f59149b`) | 15 ahead, 274 behind; 49 files, +4,424 lines under `apps/web` and `docs` | 4 to 6 Oct | The early single-shell redesign. Wave 0 of the UX integration map ported what was wanted (`docs/research/ux-port-inventory-2026-10-06.md`). |
-| `origin/ui-ux-testing` (`4cf0462`) | 4 ahead, 209 behind; 60 files, +13,306 lines (mostly recorded mocks and an older Business iteration) | 7 Oct | `test/ui-ux` plus Dylan's frontend-only fixes (`docs/handover/05_frontend_ux_fixes.md`). Many features have an equivalent already on dev. |
+| `origin/ui-ux-testing` (`4cf0462`) | 4 ahead, 209 behind; 60 files, +13,306 lines (mostly recorded mocks and an older Business iteration) | 7 Oct | `test/ui-ux` plus Dylan's frontend-only fixes (the frontend UX fixes note, an internal note, in the git history). Many features have an equivalent already on dev. |
 
 | Overlap (finding) | Branch | What it does | Decision | Reason |
 | --- | --- | --- | --- | --- |

@@ -1013,6 +1013,8 @@ export interface AcceptBlock {
   receipt?: CommitmentReceiptView | null;
   verdict_id?: string | null;
   state_version?: number | null;
+  /** SEC-19: nobody signed this request (it came without the buyer's key), so the page says "Unverified sender"; absent from an older server or a recording (then nothing is said). */
+  sender_unverified?: boolean;
 }
 
 /** POST /offers/{id}/accept and /decline: the verdict and books version the owner was shown. */
@@ -1532,6 +1534,8 @@ export type ApprovalView = Displayed<{
   amount_fen: Fen | null;
   detail: string;
   decided_day: Day | null;
+  /** SEC-19: the operation is on a request nobody signed (no buyer's key); absent from an older server or a recording (then nothing is said). */
+  sender_unverified?: boolean;
 }> &
   ApprovalDetail;
 
@@ -4337,6 +4341,8 @@ export interface DecisionView extends DecisionSummary, DealLifeWords {
     alert_id?: string;
     alert_kind?: string;
     alert_day?: Day | null;
+    /** SEC-19: nobody signed this request (it came without the buyer's key), so the page says "Unverified sender"; absent from an older server or a recording (then nothing is said). */
+    sender_unverified?: boolean;
   };
   interpretation: { terms: string[] } | null;
   evaluation: {
@@ -4426,6 +4432,8 @@ export interface OfferPictureView extends DealLifeWords {
   verdict_id: string | null;
   lang: "en" | "zh";
   day: Day;
+  /** SEC-19: nobody signed this request (it came without the buyer's key), so the page says "Unverified sender"; absent from an older server or a recording (then nothing is said). */
+  sender_unverified?: boolean;
   /** Null when the offer can no longer be drawn (`available` false). */
   asked: (OfferPictureLine & { first_breach_day: Day | null; first_breach_when: string | null }) | null;
   replies: (OfferPictureLine & { counter_id: string; note?: string })[];
@@ -5174,7 +5182,7 @@ export interface DemoRestoreResult {
   story: DemoStoryView;
 }
 
-// ------------------------------------------------------------------ the buy side (ADR-0013, docs/capex_handover.md)
+// ------------------------------------------------------------------ the buy side (ADR-0013)
 //
 // Read-only views of the API's buy side (FEATURE_CAPEX_CONTRACTS): the owner's capex contracts, the screen on a contract's
 // payment schedule, financial health, indicative loan eligibility and long-term plans. Every money figure arrives with

@@ -10,18 +10,18 @@ web
 
 ## Users
 
-- Primary: the owner (老板) of a small supplier that sells on payment terms, the only human with authority: signs the mandate, approves Tier-2 actions, decides what to offer a buyer, whether cash is safe and whom to chase (inferred from CONTEXT.md, docs/AGENT_MISSION.md).
+- Primary: the owner (老板) of a small supplier that sells on payment terms, the only human with authority: signs the mandate, approves Tier-2 actions, decides what to offer a buyer, whether cash is safe and whom to chase (inferred from CONTEXT.md and the owner's mission brief).
 - The CFO or finance manager reads the same pages; the owner's recorded decision is one user and no separate role views (inferred from docs/STRATEGY_RESEARCH.md, decision 2 and section D).
 - Sales reads the buyer's thread on Deals for what can be offered before the buyer asks (inferred from docs/STRATEGY_RESEARCH.md, sections E and K).
 - Situation: a buyer asks over WeChat for longer terms, an early-pay discount or a rebate; finance's spreadsheet is two weeks stale; the owner accepts to protect the relationship and the reserve breaks weeks later (inferred from docs/STRATEGY_RESEARCH.md, section E).
-- Evaluators: FinTechathon 2026 judges, and the CFO, banker or auditor who must reproduce why a decision was made (inferred from README.md, docs/AGENT_MISSION.md objective 8).
+- Evaluators: FinTechathon 2026 judges, and the CFO, banker or auditor who must reproduce why a decision was made (inferred from README.md and the owner's mission brief, objective 8).
 
 ## Product Purpose
 
 - FLOW is the supplier's agent over both debt books: the credit it gives buyers (Terms Guard) and the credit it takes from lenders (Debt Desk), inside an owner-signed, versioned, revocable mandate the agent can never change (inferred from CONTEXT.md, README.md).
 - It reads a buyer's offer, types its obligations, projects cash day by day, prices the gap against committed facilities, checks mandate and covenants, and answers with a business action: accept, counter, decline or wait for approval; NO DEAL is a first-class outcome (inferred from docs/ARCHITECTURE.md, CONTEXT.md).
 - Direction for the next quarter: answer three questions before anyone asks them, on the same engine: what can I offer this buyer (the Safe Deal Envelope), what is earlier cash worth to me (the cash price curve), whom should I chase first (collections worth); read-only, behind flags (inferred from docs/STRATEGY_RESEARCH.md section K, docs/STRATEGY_MVP_REPORT.md section 1).
-- Success: a cold reader finds the conclusion, the action and the three numbers in one reading; a CFO trusts every level-1 figure; no wrong financial action or unauthorised operation; in the pilot the owner's chosen response falls inside the envelope (inferred from docs/UX_SIMPLIFICATION_REPORT.md, docs/AGENT_MISSION.md section 4, docs/STRATEGY_RESEARCH.md kill criteria).
+- Success: a cold reader finds the conclusion, the action and the three numbers in one reading; a CFO trusts every level-1 figure; no wrong financial action or unauthorised operation; in the pilot the owner's chosen response falls inside the envelope (inferred from docs/UX_SIMPLIFICATION_REPORT.md, the owner's mission brief section 4, docs/STRATEGY_RESEARCH.md kill criteria).
 
 ## Positioning
 
@@ -34,7 +34,7 @@ web
 - One surface, `apps/web` (Next.js, `pnpm dev`; mock mode offline by default, `NEXT_PUBLIC_API_MODE=live` against the FastAPI service), with two shells switched by a segmented control (inferred from README.md, apps/web/DESIGN.md).
 - Business shell, five sections in a pill navigation and a five-tab phone bar: Home (with Approvals and Limits in the account sheet), Deals, Cash & funding, Receivables, Activity; "Ask FLOW" as a slide-over (inferred from docs/UX_SIMPLIFICATION_REPORT.md, apps/web/DESIGN.md).
 - Operate is the Business shell: distances from today, one inbox thread per buyer, business sentences, no tier, hash, code, id or day number at level 1 (inferred from docs/UX_SIMPLIFICATION_REPORT.md, "Business / Demo differences").
-- Demo is the same surface with the engine's evidence shown: "Day N", the simulated inbox with every message and the unknown-sender flag, the engine views, raw sentences beside their twins, a flat look with a deep-brand strip, plus the story page `/demo` (inferred from docs/UX_SIMPLIFICATION_REPORT.md, docs/HANDOVER.md).
+- Demo is the same surface with the engine's evidence shown: "Day N", the simulated inbox with every message and the unknown-sender flag, the engine views, raw sentences beside their twins, a flat look with a deep-brand strip, plus the story page `/demo` (inferred from docs/UX_SIMPLIFICATION_REPORT.md and the project handover notes).
 - Six disclosure levels: 1 conclusion, 2 recommended action, 3 cost, timing and consequence, 4 reasoning, 5 calculation (sentence before formula), 6 engine and audit evidence; Business interactions stop at 3 by default (inferred from docs/UX_SIMPLIFICATION_REPORT.md).
 - Rituals: full-page screenshots per wave under `docs/screenshots/`, cold-user walks read from the DOM at desktop and phone widths, the Impeccable detector on changed files, an independent second agent checking every money figure (inferred from docs/UX_SIMPLIFICATION_REPORT.md).
 - Languages: English and Chinese on one switch (`Lang = "en" | "zh"`, `<html lang>` set); Chinese strings follow for every new key (inferred from apps/web/lib/i18n.ts, docs/UX_SIMPLIFICATION_BRIEF.md section 7).
@@ -47,30 +47,30 @@ web
 - One brand-filled primary action per page; status colour only for status, always with a word; section hues for wayfinding only; the deep block only for the Home hero and the Demo strip (inferred from apps/web/DESIGN.md).
 - Flags: API `FEATURE_TERMS_GUARD`, `_DEBT_DESK`, `_CAPEX`, `_BORROWER_FILE`, `_BUYER_NEGOTIATION`, `_SECURITY_SCENES`, `_ALERTS`, `_EXPECTED_PLANS`, and default-off `_ENVELOPE`, `_PRICE_CURVE`, `_COLLECTIONS_WORTH`; web `NEXT_PUBLIC_STRATEGY_MVP`, `NEXT_PUBLIC_API_MODE`, `NEXT_PUBLIC_DEMO`. A disabled feature returns `FEATURE_DISABLED` and never breaks the core (inferred from services/api/app/config.py, docs/ARCHITECTURE.md).
 - Money is integer fen and rates integer bp; days are offsets from `as_of` with a simulated clock; conservative mode decides, expected mode is shown only (inferred from docs/ARCHITECTURE.md, CONTEXT.md).
-- Stability mode: no architecture change; the Home's structure refined, not redesigned; the five sections and the engine views in Demo mode stay (inferred from docs/AGENT_MISSION.md section 9, docs/UX_SIMPLIFICATION_REPORT.md "not changed").
+- Stability mode: no architecture change; the Home's structure refined, not redesigned; the five sections and the engine views in Demo mode stay (inferred from the owner's mission brief section 9, docs/UX_SIMPLIFICATION_REPORT.md "not changed").
 - Undecided: a Demo-only card-by-card walk of a deal; a FLOW visual mark; Chinese twins on `GET /ledger` and the verdict view (inferred from docs/UX_SIMPLIFICATION_REPORT.md "left").
 
 ## Brand Commitments
 
-- Name: FLOW 流 on the surface, "Ask FLOW", "Why FLOW recommends this"; the repository, glossary and package are still TermsLedger v2 (inferred from docs/HANDOVER.md section 6, CONTEXT.md, README.md; see open question 1).
+- Name: FLOW 流 on the surface, "Ask FLOW", "Why FLOW recommends this"; the repository, glossary and package are still TermsLedger v2 (inferred from the project handover notes, CONTEXT.md, README.md; see open question 1).
 - Voice: calm and plain, the owner's words, conclusions first, distances from today ("in 47 days", "arrives in 3 days"), sentences before formulas, named facts ("First breach", "Worst point"), no claim of a gain where the verifier floors at zero, refusals said once and quietly ("1 message from an unknown sender was set aside") (inferred from docs/UX_SIMPLIFICATION_BRIEF.md section 7, docs/UX_SIMPLIFICATION_REPORT.md).
 - Identity: `apps/web/DESIGN.md` is the incumbent system (colour option C, section hues, one radius scale, the motion kit, lifted base) and is referenced, not restated, here (inferred from apps/web/DESIGN.md, docs/UX_SIMPLIFICATION_REPORT.md).
 - The owner's recorded taste: "a middle ground" on colour; coloured icons, pill buttons and animations wanted; the muted palette found stale; gradients, rainbow icons and runtime web fonts left out (inferred from docs/UX_SIMPLIFICATION_REPORT.md).
-- References for the finish: the two light dashboards in `docs/research/inspiration/` set the bar for density, hierarchy and finish; not a redesign brief; the dark variant is not adopted (inferred from docs/research/inspiration/README.md).
+- References for the finish: two light third-party dashboards the owner supplied (not redistributed here) set the bar for density, hierarchy and finish; not a redesign brief; the dark variant is not adopted.
 
 ## Evidence on Hand
 
 - All data is synthetic: `fixtures/scenarios/golden_sme.json` (cash ¥400,000, floor ¥300,000, Foshan Home Retail's ¥420,000 monthly invoice on 45-day terms, a ¥5,000 concession budget, a standing plan of ¥405,000 at ¥3,113.93), recorded API answers in `apps/web/mocks/`, hash-chain evidence in `services/api/evals/e2e/latest/evidence/` (inferred from README.md, docs/STRATEGY_RESEARCH.md).
-- Screenshots per wave in `docs/screenshots/`; cold-user walks and the colour research under `docs/research/`; the inspiration images in `docs/research/inspiration/` (inferred from docs/UX_SIMPLIFICATION_REPORT.md, docs/research/inspiration/README.md).
+- Screenshots per wave in `docs/screenshots/`; cold-user walks and the colour research under `docs/research/` (inferred from docs/UX_SIMPLIFICATION_REPORT.md).
 - Absent, and not to be fabricated: real customers, pilot data, testimonials, pricing, an outbound channel ("Send this counter" runs the demo's buyer kernel and says so), a bank feed, a FLOW mark (inferred from README.md, docs/UX_SIMPLIFICATION_REPORT.md).
 
 ## Product Principles
 
 1. Conclusion first, evidence folded: the status words and the business action at level 1, the engine at level 6 (inferred from docs/UX_SIMPLIFICATION_REPORT.md).
 2. The server says it: every number, date and sentence is computed and worded once, on the server, and traceable (inferred from apps/web/DESIGN.md, docs/UX_SIMPLIFICATION_BRIEF.md).
-3. One owner, one mandate: nothing acts beyond the mandate, and an approval is the owner's explicit act on the exact item shown; code never approves (inferred from docs/AGENT_MISSION.md invariants I and M).
-4. Fail closed and say so: abstain, NO DEAL, "not available until", a set-aside message, rather than a confident guess (inferred from docs/AGENT_MISSION.md objective 4, CONTEXT.md).
-5. Features are not progress: delete, merge and simplify; correctness outranks the current demo numbers (inferred from docs/AGENT_MISSION.md sections 2 and 3).
+3. One owner, one mandate: nothing acts beyond the mandate, and an approval is the owner's explicit act on the exact item shown; code never approves (inferred from the owner's mission brief, invariants I and M).
+4. Fail closed and say so: abstain, NO DEAL, "not available until", a set-aside message, rather than a confident guess (inferred from the owner's mission brief objective 4, CONTEXT.md).
+5. Features are not progress: delete, merge and simplify; correctness outranks the current demo numbers (inferred from the owner's mission brief sections 2 and 3).
 
 ## Accessibility & Inclusion
 
@@ -80,7 +80,7 @@ web
 
 - A portfolio optimiser, buyer scoring or any ML, customer profitability, proposing looser mandates, and new action in the pilot windows (inferred from docs/STRATEGY_RESEARCH.md section K).
 - Real payments, lending, brokerage or advice: a simulation and decision support under the owner's own limits (inferred from README.md).
-- Dark theme, a "Buy equipment" navigation section, gradients on buttons or cards, runtime web fonts (inferred from docs/research/inspiration/README.md, docs/UX_SIMPLIFICATION_REPORT.md, apps/web/DESIGN.md).
+- Dark theme, a "Buy equipment" navigation section, gradients on buttons or cards, runtime web fonts (inferred from the owner's reference notes, docs/UX_SIMPLIFICATION_REPORT.md, apps/web/DESIGN.md).
 
 ## Open Questions for the Owner
 

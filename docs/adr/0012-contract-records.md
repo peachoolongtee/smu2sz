@@ -1,6 +1,6 @@
 # ADR-0012: A confirmed contract is a record the deal summary reads, never the books
 
-Status: accepted. Implemented 5 to 10 Oct 2026 on `feat/strategy-mvp-contracts` (brief `docs/handover/03_contract_ingestion_brief.md`), merged into `dev` on 11 Oct 2026 under an explicit, additive exception to the engine stability gate (CONTINUOUS_OPTIMIZATION section 0). Owner: main architect.
+Status: accepted. Implemented 5 to 10 Oct 2026 on `feat/strategy-mvp-contracts`, merged into `dev` on 11 Oct 2026 under an explicit, additive exception to the engine stability gate. Owner: main architect.
 
 ## Problem
 

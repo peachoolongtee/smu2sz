@@ -1,4 +1,4 @@
-"""Financial health for the buy side (ADR-0013, phase 5; docs/capex_handover.md D6).
+"""Financial health for the buy side (ADR-0013, phase 5).
 
 Four readings of the current books, read-only and each reconciled to a figure the product already shows:
 

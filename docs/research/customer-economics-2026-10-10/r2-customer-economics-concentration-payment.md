@@ -1,7 +1,7 @@
 # R2 (ticket #91 of map #88): customer economics, AR concentration, payment behaviour, late-payment stress
 
 Researcher's specification for deliverables C and G of the mission (sections 4, 5, 6, 17, 18, 19, 20, 35, 36, 39, 45, 46).
-Read-only against `/Users/ianpong/Hackathons/smu2sz` at `dev` 0cd60cb. Every figure in section 8 is computed by hand from
+Read-only against this repository at `dev` 0cd60cb. Every figure in section 8 is computed by hand from
 fixture values and checked with one read-only script (`scratchpad/map-econ/r2_stress.py`, which imports the engine, plans
 and projects copies of the Demo books, and writes nothing). Afterwards `git checkout -- services/api/evals` ran and
 `git status --short` was empty.

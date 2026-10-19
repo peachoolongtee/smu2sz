@@ -54,8 +54,8 @@ GOLDEN_ROUTER_PLAN = "24f1dc649f4363e3"  # also: actions and comparison rows car
 EX01_COUNTERS = [
     # face 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥100 (the gap net of the line includes the
     # existing loan's ¥45,000 day-30 payment; compute_golden.py counter_a_face)
-    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, "
-    "paid on or before day 2.",
+    ("Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, "
+     "paid on or before day 2."),
     # 60-day terms fail the counter's own re-check (day 47 ¥85,000 below the reserve, no admissible cure); 55 days is
     # curable in time. +10 days: 420,000 × 10/365 × 10.8417% = ¥1,247.53 per invoice → 0.30% (¥1,260.00)
     "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
@@ -350,8 +350,8 @@ def test_verdict_and_counters_carry_only_the_offers_obligations(client: TestClie
     # the cure of a longer extension needed, so 60-, 55- and 50-day terms leave the day-62 shortfall with no cure and
     # no price-adjustment counter is offered; against that dearer standing plan the early payment at 0.85% is offered.
     assert [c.text for c in stored.counters] == [
-        "Terms stay at 60 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, "
-        "paid on or before day 2."]
+        ("Terms stay at 60 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, "
+         "paid on or before day 2.")]
     # red team e, F2: the buyer's 60 days are the terms already in force (45 + 15), so the offer asks for no longer
     # terms and there is no price-adjustment counter to search for (the summary used to explain why 60-, 55- and
     # 50-day terms on top of the live 15 could not be funded); the counter text quotes the 60 days in force.

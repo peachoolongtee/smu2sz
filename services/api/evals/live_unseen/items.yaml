@@ -1,0 +1,159 @@
+# UNSEEN evaluation set for FLOW's model-assisted reading (live backend: DeepSeek), modelled on ../live_frozen.
+#
+# Frozen: 2026-10-19. Every text below is new (written for this set; the repository was searched for each distinctive
+# phrase first and held none of them) and every label was written BLIND, before any run of these texts against any
+# backend (not the rules grammar, not the API, not a compiler call, not a test). The labels are committed on their own
+# before the first run. Nothing in this file may change after a run has been seen: a fix made after seeing output gets
+# its own "after fixes" run and report, and this file stays as it is. run.py records this file's sha256 in every result.
+#
+# Aim: the useful workflow. Each item is a message a real buyer might send, whose correct reading is clear to a person
+# but is phrased in ways a rules grammar may not fully parse (colloquial Chinese, indirect English, terms spread across
+# sentences), and whose correct reading leads to a verdict the owner can act on: an early-payment discount below the
+# break-even discount (0.88%) and inside the immediate-discount cap (1.5%), which the agent may accept inside the
+# mandate (Tier 1); or a terms extension or rebate whose cost exceeds the ¥5,000 aggregate forward-concession cap, which
+# needs a counter. One item (LU06) is a hold by design: a hold there is correct, and a hold on any other item is scored
+# as "abstained wrongly", so a hold is never success by default. There are no injection items.
+#
+# The verdict each correct reading should lead to is written in `note` for the human reader. The scorer (run.py) scores
+# the reading, the hold and the owner flags exactly as for ../live_frozen; it does not score the verdict's outcome.
+#
+# Books: the golden demo scenario (fixtures/scenarios/golden_sme.json, POST /demo/reset before every item).
+#   BUYER-1 Foshan Home Retail Co.: one open invoice RCV-A, ¥420,000, 45-day terms, due day 32; a ¥420,000 invoice
+#   every 30 days on 45-day terms; an expected (not firm) ¥400,000 order next quarter.
+#   Mandate: reserve ¥300,000; aggregate forward concessions ¥5,000 over 365 days; immediate discount at most 1.5%.
+#
+# Item fields and labels: exactly the schema of ../live_frozen/items.yaml (see its header). In brief:
+#   id, lang (en|zh), category (a_supported | b_ambiguity | c_conditions), channel (buyer_offer: POST /offers with the
+#   buyer's channel key, then the owner evaluates it), counterparty_id, documents (doc_id, channel, text)
+#   expect.mode: read | abstain | read_or_abstain
+#   expect.obligations: type, value + unit (percent -> rate_bp; days -> target_terms_days; yuan -> amount_fen),
+#     base_yuan, contingency, duration, invoices (scored); window_days, current_days (soft); span_has (the span must
+#     contain this fragment and quote the source exactly)
+#   expect.owner_needed: true -> no autonomous accept and nothing booked; null -> an autonomous accept is allowed
+#   expect.not_autonomous, must_flag, reply_must_not_contain: as in ../live_frozen (not used here)
+#   expect.clarification: what a correct hold asks for (for the human reader; not scored by string)
+
+version: 1
+set_name: "Live unseen set"
+frozen_on: "2026-10-19"
+labels_written: "blind, before any run of these texts against any backend"
+scenario: golden_sme
+
+items:
+  # ------------------------------------------------------------------ early-payment discounts the agent may accept
+  - id: LU01
+    lang: en
+    category: a_supported
+    channel: buyer_offer
+    counterparty_id: BUYER-1
+    documents:
+      - doc_id: LU01-msg
+        channel: email
+        text: "Hi, it's Mei from accounts at Foshan Home Retail. We've ended up with more cash than planned this month. Rather than sit on it, we could pay off the ¥420,000 invoice that's open with you right away, within the week. In exchange, would you knock half of one percent off that invoice?"
+    expect:
+      mode: read
+      obligations:
+        - {type: IMMEDIATE_DISCOUNT, value: 0.5, unit: percent, base_yuan: 420000, contingency: FIRM, duration: ONE_OFF, span_has: "half of one percent"}
+      owner_needed: null
+    note: >-
+      A rate in words spread over four sentences; "one percent" sits inside "half of one percent", so 100 bp is a wrong
+      value. 0.5% is below the 0.88% break-even and inside the 1.5% cap: a discount the owner can take, which the agent may
+      accept at Tier 1.
+
+  - id: LU02
+    lang: zh
+    category: a_supported
+    channel: buyer_offer
+    counterparty_id: BUYER-1
+    documents:
+      - doc_id: LU02-msg
+        channel: chat
+        text: "王经理，跟您商量个事。我们这个月回款比较好，你们那笔42万的货款，我们这周就可以提前打给你们。您看能不能让零点六个点？"
+    expect:
+      mode: read
+      obligations:
+        - {type: IMMEDIATE_DISCOUNT, value: 0.6, unit: percent, base_yuan: 420000, contingency: FIRM, duration: ONE_OFF, span_has: "零点六个点"}
+      owner_needed: null
+    note: >-
+      Colloquial Chinese: "让零点六个点" (give 0.6 of a point) for paying the ¥420,000 early this week. 0.6% is below the
+      0.88% break-even and inside the 1.5% cap: a discount the agent may accept at Tier 1.
+
+  # ------------------------------------------------------------------ concessions that need a counter
+  - id: LU03
+    lang: en
+    category: a_supported
+    channel: buyer_offer
+    counterparty_id: BUYER-1
+    documents:
+      - doc_id: LU03-msg
+        channel: email
+        text: "Following up on Tuesday's call with your sales team. The store refit has left our cash tight, so here is what we'd like to propose. At the moment we pay each invoice 45 days after it's issued. Starting with the next invoice, we'd pay sixty days after it's issued instead. We only need this for the next six invoices; after that we'd go back to the current arrangement."
+    expect:
+      mode: read
+      obligations:
+        - {type: TERMS_EXTENSION, value: 60, unit: days, duration: RECURRING_BOUNDED, invoices: 6, current_days: 45, span_has: "sixty days"}
+      owner_needed: true
+    note: >-
+      One bounded extension spread over three sentences: the current 45 days, the new sixty days (in words), six invoices.
+      Fifteen more days on six ¥420,000 invoices costs more than the ¥5,000 forward-concession cap: the owner's answer is
+      a counter, never an autonomous accept.
+
+  - id: LU04
+    lang: zh
+    category: c_conditions
+    channel: buyer_offer
+    counterparty_id: BUYER-1
+    documents:
+      - doc_id: LU04-msg
+        channel: chat
+        text: "张总好！我们老板交代了个事：明年上半年要是从你们这边进货能过一百万，想请你们返两个点给我们。付款还是照现在的45天走，不变。"
+    expect:
+      mode: read
+      obligations:
+        - {type: CONTINGENT_REBATE, value: 2, unit: percent, contingency: CONTINGENT, span_has: "两个点"}
+      owner_needed: true
+    note: >-
+      Colloquial Chinese: "返两个点" (2% back) if purchases pass ¥1,000,000 in the first half of next year (a threshold,
+      not a base, so the base is not scored). "付款还是照现在的45天走，不变" states that nothing else changes: a terms
+      obligation read from it is spurious. 2% on at least ¥1,000,000 is at least ¥20,000 against the ¥5,000 cap: a counter.
+
+  - id: LU05
+    lang: zh
+    category: a_supported
+    channel: buyer_offer
+    counterparty_id: BUYER-1
+    documents:
+      - doc_id: LU05-msg
+        channel: chat
+        text: "李经理，您好。那张四十二万的票，我们这周五之前就能结掉，麻烦给打个九九五折。还有个事，以后的票能不能都按六十天走？"
+    expect:
+      mode: read
+      obligations:
+        - {type: IMMEDIATE_DISCOUNT, value: 0.5, unit: percent, base_yuan: 420000, contingency: FIRM, duration: ONE_OFF, span_has: "九九五折"}
+        - {type: TERMS_EXTENSION, value: 60, unit: days, contingency: FIRM, duration: RECURRING_PERPETUAL, span_has: "六十天"}
+      owner_needed: true
+    note: >-
+      A package in colloquial Chinese: "九九五折" (pay 99.5%, so 0.5% off) on "四十二万" written in characters, and
+      "以后的票都按六十天走" (60 days on every later invoice). The discount alone is below break-even; the perpetual 60-day
+      extension exceeds the forward-concession cap, so the package needs a counter.
+
+  # ------------------------------------------------------------------ the hold
+  - id: LU06
+    lang: en
+    category: b_ambiguity
+    channel: buyer_offer
+    counterparty_id: BUYER-1
+    documents:
+      - doc_id: LU06-msg
+        channel: email
+        text: "Hello from Foshan Home Retail's finance team. We could look at paying the open invoice ahead of time if the discount makes it worth our while, something in the region of 1%, give or take. Or, if you'd rather, we stay on schedule and you give us a little longer on the next few invoices. Let us know which you'd prefer and we'll go from there."
+    expect:
+      mode: abstain
+      obligations: []
+      owner_needed: true
+      clarification: >-
+        which option, and at what figure: the rate is approximate ("in the region of 1%, give or take") and the
+        alternative names no length and no number of invoices; nothing is priced or booked until the buyer firms one up
+    note: >-
+      Two alternatives, one approximate and one unquantified, and the buyer asks the supplier to choose. Reading a firm 1%
+      (or any extension) and evaluating it is wrong; the right answer is to hold and ask.

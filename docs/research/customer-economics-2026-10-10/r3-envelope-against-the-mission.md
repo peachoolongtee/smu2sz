@@ -1,6 +1,6 @@
 # Ticket #92 (map #88): the Safe Deal Envelope against the mission (deliverable E)
 
-Researcher's resolution, 10 October 2026. Repository `/Users/ianpong/Hackathons/smu2sz`, branch `dev` at 0cd60cb, read-only.
+Researcher's resolution, 10 October 2026. This repository, branch `dev` at 0cd60cb, read-only.
 Paths below are relative to `services/api/` unless they start with `docs/`, `apps/` or `fixtures/`. "Eval" = one setting put
 through `verifier._evaluate` by the envelope's `_Verifier` (the unit `evaluations` counts, `app/strategy/envelope.py:329-331`).
 

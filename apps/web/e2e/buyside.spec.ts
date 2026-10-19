@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 
 /**
- * The buy side (ADR-0013, docs/capex_handover.md) in mock mode: the recorded demo vendor contract (DOC-000004, a ¥600,000
+ * The buy side (ADR-0013) in mock mode: the recorded demo vendor contract (DOC-000004, a ¥600,000
  * die-cutting line: 30% on signing, 60% 45 days after delivery, 10% retention for 12 months after acceptance), its screen on
  * the owner's timeline, the commitment, financial health, loan eligibility and long-term plans. Every figure is the server's
  * recording (mocks/buyside).

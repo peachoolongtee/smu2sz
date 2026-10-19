@@ -4,7 +4,7 @@ Wayfinder map #47, Wave 0 (ticket #48), 8 October 2026. The lead's architecture 
 (`docs/STRATEGY_RESEARCH.md` on `research/strategy`, sections F, K, L and the three implementation plans) recommended
 and the owner authorised. Every later wave builds exactly what a section here names and pins exactly the figures its
 pin table lists. Vocabulary is CONTEXT.md's; quantities are `docs/FINANCIAL_SEMANTICS.md`'s; the rules are
-`docs/HANDOVER.md` sections 3 and 5 and the map's Notes.
+the project handover's sections 3 and 5 (an internal note, in the git history) and the map's Notes.
 
 ## 1. What is being built, in one paragraph
 
@@ -253,7 +253,7 @@ Writes `docs/research/strategy/06-backtest-<date>.md`; exit 1 on any failure; `g
 
 ## 10. Integration loop and ports for this map
 
-As `docs/handover/05_strategy_and_ux_handoff.md` section 3, with: worktrees `.claude/worktrees/mvp-w<N>`, branches
+As the strategy and UX handoff's section 3 (an internal note, in the git history), with: worktrees `.claude/worktrees/mvp-w<N>`, branches
 `feat/mvp-w<N>` from `feat/strategy-mvp`; mock e2e `E2E_PORT=3107+N`; live e2e `E2E_API_PORT=8011+N E2E_LIVE_PORT=3011+N`;
 the strategy live run adds `FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1` to the API's
 environment and `NEXT_PUBLIC_STRATEGY_MVP=1 E2E_STRATEGY=1` to the web's; the full API suite `pytest -o addopts= -q
@@ -264,7 +264,7 @@ services/api/tests` runs once with the flags off and once on before the Wave 7 r
 
 Read-only reconnaissance of `dev` at `bcc67d4` by a research agent (8 October 2026); the page and component names the synthesis used at `d1eadb0` still hold.
 
-Read-only survey of `/Users/ianpong/Hackathons/smu2sz/apps/web` on branch `dev` (8 Oct 2026). All paths below are relative to `apps/web/` unless absolute. Nothing in the repo was changed.
+Read-only survey of `apps/web` on branch `dev` (8 Oct 2026). All paths below are relative to `apps/web/` unless absolute. Nothing in the repo was changed.
 
 ### 1. Deals page (`app/deals/page.tsx`, 266 lines) and `components/deals/*`
 

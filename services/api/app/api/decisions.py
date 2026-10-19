@@ -49,6 +49,7 @@ from app.api.presentation import (
     waiting_text,
     when_text,
 )
+from app.api.provenance import strongest_via
 from app.api.receipt import agreement_receipt
 from app.api.runtime import Runtime, get_runtime
 from app.api.selection import Selection, build_context, selection
@@ -62,7 +63,7 @@ from app.decisions import (
     Waiting,
     waiting_for,
 )
-from app.decisions.facts import Fact, record_for
+from app.decisions.facts import Fact, parse_fact, record_for
 from app.decisions.identity import deal_id, decision_id_for, family_of, is_projection, offer_id_of
 from app.decisions.state import RESERVE_ALERT, RecordIndex, buyer_answer, derive, newest_reserve_decision
 from app.domain.models import CommitmentStatus, CompiledOffer, FinancialState, Mandate, Mode, OperationStatus
@@ -792,8 +793,11 @@ def decision_detail(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: 
     source: dict[str, Any]
     if ds.family == "DEAL" and ds.offer is not None:
         o = ds.offer
+        # SEC-19: nobody signed this request (no buyer's key); the deal says "Unverified sender" from it
+        unverified = strongest_via((parse_fact(r) for r in inp.facts if r.decision_id == ds.decision_id), o.offer_id, o.version) == "anonymous"
         source = {"kind": "OFFER", "offer_id": o.offer_id, "version": o.version, "counterparty_name": party_name(ctx.state, o.counterparty_id),
-                  "doc_ids": list(o.doc_ids), "received_day": o.received_day, "received_when": when_text(o.received_day, ctx.today, lang)}
+                  "doc_ids": list(o.doc_ids), "received_day": o.received_day, "received_when": when_text(o.received_day, ctx.today, lang),
+                  "sender_unverified": unverified}
     elif ds.quote is not None and ds.quote.alert_id == ds.decision_id:  # a chat plan or a direct operation: no alert behind it
         source = {"kind": "OPERATION"}
     elif ds.quote is not None:

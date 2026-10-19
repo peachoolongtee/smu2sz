@@ -95,7 +95,7 @@ def test_draw_that_breaches_dscr_is_refused_for_the_agent(api):
 
 
 def test_golden_plan_legs_are_still_admitted(api):
-    rt, c = api
+    _rt, c = api
     assert op(c, "DRAW_FACILITY", "line", facility_id="FAC-LINE", amount_fen=15_000_000)["status"] == "EXECUTED"
     assert op(c, "SUBMIT_INVOICE_FOR_FINANCING", "if", facility_id="FAC-IF", receivable_id="RCV-A",
               advance_fen=21_000_000)["status"] == "EXECUTED"

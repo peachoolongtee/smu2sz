@@ -1,3 +1,0 @@
-# Deals after ticket #105 (the moments walkthrough), 12 Oct 2026
-
-Desktop 1440 and phone 412 shots of the Deals page on `feat/deals-moments` (the walks of `e2e/live.spec.ts`: evaluated day 0, Ask FLOW, agreed, day 34 missed), taken with `apps/web/scripts/capture-remediation.mjs` (`ONLY=deals WIDTHS=desktop,phone`). The page: the verdict as the heading, the raised reply bar under it, three paths on one chart with no event labels, six moment chips with the server's words, one sentence and three tiles under the cursor, "What moved cash" folded, the path columns with authority pills and Option B's two components, then the folds.

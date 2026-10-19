@@ -9,6 +9,7 @@ import { Badge, Button, Callout, DecisionCard, KeyValueList, textLinkClass, type
 import { ApprovalLifecycle } from "@/components/approval-lifecycle";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { StateWord } from "@/components/ui/state-word";
+import { UnverifiedSender } from "@/components/ui/unverified-sender";
 import { approveDisabled, termsGate } from "@/lib/approval-terms";
 import { useI18n } from "@/lib/i18n";
 import type { ApprovalDecision, ApprovalQuote, ApprovalView } from "@/lib/types";
@@ -394,6 +395,8 @@ export function ApprovalCard({
           </div>
           {stateChip}
         </div>
+        {/* SEC-19: the operation is on a request that came without the buyer's key */}
+        <UnverifiedSender views={[a]} testId={`approval-unverified-sender-${a.id}`} />
 
         {words.authorize ? (
           <p className="text-pretty text-[15px] font-semibold leading-snug text-ink" data-testid={`approval-authorize-${a.id}`}>
@@ -502,6 +505,7 @@ export function ApprovalCard({
         </div>
         {stateChip}
       </div>
+      <UnverifiedSender views={[a]} testId={`approval-unverified-sender-${a.id}`} />
       {/* Where the application stands once the owner has authorized it (the server's stages: You authorize done, Lender reviews current, Funding decision next). */}
       <ApprovalLifecycle stages={words.lifecycle} id={a.id} />
       <div className="space-y-1 text-sm" data-testid={`approval-outcome-${a.id}`} data-execution={execution ?? ""}>

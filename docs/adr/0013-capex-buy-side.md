@@ -1,7 +1,7 @@
 # ADR-0013: The buy side: a committed capex contract books its payment schedule
 
-Status: proposed, 14 Oct 2026, on `feat/capex-buy-side` (handover: `docs/capex_handover.md`). An explicit, additive exception
-to the engine stability mode (docs/HANDOVER.md section 3), given by the owner on 14 Oct 2026. Owner: main architect.
+Status: proposed, 14 Oct 2026, on `feat/capex-buy-side`. An explicit, additive exception
+to the engine stability mode, given by the owner on 14 Oct 2026. Owner: main architect.
 
 ## Problem
 

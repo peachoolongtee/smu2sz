@@ -5,7 +5,7 @@ price table, 30 s to 80 s on the busy books), and the busy books' price curve ta
 web gives up. Both answers are cached by the books, the mandate, the day and the commitments (`app.strategy.cache`), so computing them
 once in the background, right after the books change, makes the owner's first visit a cache hit.
 
-A warm-up never blocks the owner (the 110 s reset stall of 17 Oct, NEXT_FIXES):
+A warm-up never blocks the owner (the 110 s reset stall of 17 Oct):
 
 - it computes in a process of its own (`app.api.strategy_warm_worker`, below normal priority), never in a thread of the API process:
   a funding search in a thread held the interpreter lock for seconds at a time, and every owner read that waited on SQLite or on the

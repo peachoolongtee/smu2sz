@@ -1,4 +1,4 @@
-"""Loan eligibility against a synthetic catalogue (ADR-0013, phase 6; docs/capex_handover.md D7, D8).
+"""Loan eligibility against a synthetic catalogue (ADR-0013, phase 6).
 
 Read-only and **indicative**: a lender decides, this only reads the lender's stated criteria against the company's own
 books. For each catalogue product:

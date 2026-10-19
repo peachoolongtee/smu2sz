@@ -139,20 +139,20 @@ def test_a_plan_on_an_invoice_not_issued_yet_is_not_offered_and_nothing_is_store
 
 
 def test_the_compare_reply_shows_both_flags_in_words(world):
-    rt, client = world(SHORT_HOLD)
+    _rt, client = world(SHORT_HOLD)
     # SHORT_HOLD has no gap on day 0 once the golden draws are made; ask on the books as they stand
     en = Chat(client, "cmp-sh").say(COMPARE["en"])["reply"]
     assert "It needs your approval: " in en and "32.53% a year, above the 15.00% you signed for me to borrow without your approval" in en
     assert "legs above your approval threshold will wait for your approval" in en  # the same queue in an owner session
     assert "its rate alone is above the 15.00% you signed for borrowing without your approval, so any use of it waits for your approval" in en
 
-    rt, client = world(UNISSUED)
+    _rt, client = world(UNISSUED)
     en = Chat(client, "cmp-un").say(COMPARE["en"])["reply"]
     assert "It cannot run today: " in en and "RI:BUYER-1:2 is not an invoice I can finance today" in en
     assert "'fund the gap' would not run this plan today" in en
     zh = Chat(client, "cmp-un-zh").say(COMPARE["zh"])["reply"]
     assert "该方案今天无法执行：" in zh and "今天回复“补足资金缺口”也不会执行该方案" in zh
-    rt, client = world(SHORT_HOLD)
+    _rt, client = world(SHORT_HOLD)
     zh = Chat(client, "cmp-sh-zh").say(COMPARE["zh"])["reply"]
     assert "该方案需要您批准：" in zh and "年化 32.53%，高于您签署的无需批准即可借款的 15.00% 批准线" in zh
     assert "其利率本身高于您签署的无需批准即可借款的 15.00% 批准线" in zh

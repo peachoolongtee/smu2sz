@@ -48,7 +48,7 @@ if str(ROOT) not in sys.path:
 
 from app.compiler.contract_checks import stage_trigger  # noqa: E402
 
-DOTENV = Path("C:/Users/ian/Documents/Projects/smu2sz/.env")
+DOTENV = Path(__file__).resolve().parents[3] / ".env"  # the repository root's .env (services/api/scripts -> root)
 
 NOT_EXPRESSIBLE = {
     "payment_stages[].instrument": "payment instrument (bank transfer, acceptance bill, commercial bill): no ContractField",

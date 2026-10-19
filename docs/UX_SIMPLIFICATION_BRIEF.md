@@ -163,7 +163,7 @@ Backend (presentation only): `services/api/app/api/presentation.py`, `app/api/ho
 
 Web: `apps/web/app/deals/page.tsx`, `components/deals/*.tsx` (inbox list, steps, glance replaced), `components/verdict-parts.tsx` (counter cards), `components/plan-card.tsx`, `app/cash/page.tsx`, `components/business/cash-forecast.tsx`, `components/business/next-action.tsx`, `components/business/status-block.tsx`, `app/page.tsx` (headroom), `app/activity/page.tsx`, `components/app-shell.tsx` (Ask FLOW, account menu), `lib/dictionary.ts`, `lib/types.ts`, the e2e specs (`deals`, `cash`, `home`, `activity`, `responsive`, `screenshots`), and the mocks (re-recorded, never hand-edited).
 
-Documents: `docs/UX_AUDIT.md`, `docs/HANDOVER.md` section 6, `apps/web/README.md`, `CONTEXT.md` (done), and the final `docs/UX_SIMPLIFICATION_REPORT.md`.
+Documents: `docs/UX_AUDIT.md`, `apps/web/README.md`, `CONTEXT.md` (done), and the final `docs/UX_SIMPLIFICATION_REPORT.md`.
 
 ## 10. Implementation waves
 

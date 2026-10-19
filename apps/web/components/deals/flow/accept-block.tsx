@@ -16,6 +16,7 @@ import { useI18n } from "@/lib/i18n";
 import type { AcceptBlock as AcceptView, OfferPictureView, PicturePath } from "@/lib/types";
 import { CostTable } from "./cost-table";
 import { StateWord } from "@/components/ui/state-word";
+import { UnverifiedSender } from "@/components/ui/unverified-sender";
 import { AUTH_TONE, quietLink } from "./flow-parts";
 import { Statements } from "./send-block";
 import { TermsTable } from "./terms-table";
@@ -211,6 +212,8 @@ export function AcceptBlock({
       )}
       {reviewing ? (
         <div id={`${uid}-review`} ref={regionRef} tabIndex={-1} role="region" aria-label={t("accept.review.region")} className="space-y-5 pt-1 outline-none" data-testid="accept-review" data-available={accept.available ? "1" : "0"}>
+          {/* SEC-19: the request the owner is about to accept came without the buyer's key */}
+          <UnverifiedSender views={[accept]} testId="accept-unverified-sender" />
           {accept.available ? (
             <>
               {lines.length ? (

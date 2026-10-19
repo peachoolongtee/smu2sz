@@ -85,7 +85,7 @@ the `test/ui-ux` file.
 | `pnpm typecheck` | clean |
 | `pnpm lint` | clean |
 | `pnpm mocks:record` against the API on :8011 (memory store, cached model, `DEMO_MODE=1`) | 52 files recorded, `git status apps/web/mocks` empty: the committed mocks are the engine's current figures |
-| `E2E_TARGET=mock pnpm exec playwright test` | 34 passed, 1 skipped, 2 failed: both are `responsive.spec.ts` "the slide-over chat fits the viewport with a long reply" (the chat dialog measures about 431 px against a 413 px bound), the macOS Chromium loose end listed in `docs/HANDOVER.md` section 6, now seen on the desktop project as well as the phone project; application code is `origin/dev` unchanged. Everything else, including every home, approval, demo, alert, what-if and chat spec, passes |
+| `E2E_TARGET=mock pnpm exec playwright test` | 34 passed, 1 skipped, 2 failed: both are `responsive.spec.ts` "the slide-over chat fits the viewport with a long reply" (the chat dialog measures about 431 px against a 413 px bound), the macOS Chromium loose end listed in the handover's section 6 (an internal note, in the git history), now seen on the desktop project as well as the phone project; application code is `origin/dev` unchanged. Everything else, including every home, approval, demo, alert, what-if and chat spec, passes |
 
 Facts for later waves, read from the recorder: the trajectory mocks are recorded with the EX01 verdict applied (line 170), the
 day-0 fix is asserted to run alone with two legs (`home_act_day0.json`, `executed === 2`), and the day-34 cure is asserted to

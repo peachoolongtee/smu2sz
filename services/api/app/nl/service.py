@@ -28,7 +28,7 @@ from app.domain.models import (
 from app.domain.ports import LedgerStore
 from app.nl import ask as asking
 from app.nl import binding as page
-from app.nl import business, landing, plans, reads, smalltalk
+from app.nl import business, consent, landing, plans, reads, smalltalk
 from app.nl import capabilities as cap
 from app.nl import classifier as clf
 from app.nl import lexicon as lx
@@ -351,6 +351,16 @@ def _resolve_clarification(ctx: NlContext, text: str) -> Parsed | None:
         return None
     value: Any = pc.values[choice]
     ctx.session.pending_clarification = None
+    if pc.slot == "approval_id":
+        # Which approval is the list's to say; whether to approve or reject it is the reply's own word ("approve 1", "reject 1", 批准 1).
+        # A bare pick ("1", the bare id) of a list offered to "yes" / "go ahead" / 执行 decides nothing: it shows the item (CON-1). A bare
+        # pick of a list offered to the approve or reject word keeps that word's decision.
+        said = consent.pick_verdict(text)
+        slots = pc.slots.model_copy(update={"approval_id": value})
+        if said is None and pc.pick_only:
+            return Parsed(intent=Intent.AMBIGUOUS, slots=slots, source="clarification", matched=[f"option:{choice}", "approval_pick"])
+        intent = pc.intent if said is None else Intent.APPROVE if said == "approve" else Intent.REJECT
+        return Parsed(intent=intent, slots=slots, source="clarification", matched=[f"option:{choice}"])
     if pc.slot == "intent":
         return Parsed(intent=Intent(value), slots=pc.slots, source="clarification", matched=[f"option:{choice}"])
     slots = pc.slots.model_copy(update={pc.slot: value})
@@ -381,6 +391,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         return _confirm(ctx, p.intent == Intent.APPROVE, text)
     if not llm and (tag := next((m for m in p.matched if m.startswith("consent:")), None)):
         return _consent_turn(ctx, p, tag.split(":", 1)[1], text)
+    if "approval_pick" in p.matched and p.slots.approval_id:
+        return _show_approval(ctx, p.slots.approval_id)
     if p.intent == Intent.AMBIGUOUS and p.source == "clarification" and s.pending_clarification is not None:
         pc = s.pending_clarification
         t_ = ask(pc.intent, pc.slot, t(ctx, "Sorry, which one?", "抱歉，请问是哪一个？"),
@@ -728,6 +740,19 @@ def _remember_shown(ctx: NlContext, turn: Turn) -> None:
     ctx.session.shown_approvals = [a for a in dict.fromkeys(x.upper() for x in lx.APPROVAL_ID_RE.findall(text)) if a in pending]
 
 
+def _show_approval(ctx: NlContext, aid: str) -> Turn:
+    """The approval the owner picked from a list offered to "yes" / "go ahead" / 执行: shown, never decided (CON-1). The reply names it, so
+    the session has now shown it (`_remember_shown`): a following bare "approve" or "reject" binds to it, and "yes" still decides nothing."""
+    rec = next((a for a in _pending_approvals(ctx) if a.id == aid), None)
+    if rec is None:
+        return Turn(intent=Intent.AMBIGUOUS, reply=t(ctx, f"{aid} is no longer waiting for approval. Nothing was approved or declined.",
+                                                     f"{aid} 已不在待审批队列中。未批准或驳回任何事项。"))
+    return Turn(intent=Intent.AMBIGUOUS, reply=t(
+        ctx, f"{aid}: {rec.reason}. I have not approved or declined it. To approve it, say \"approve {aid}\"; to decline it, say "
+             f"\"reject {aid}\".",
+        f"{aid}：{rec.reason}。我没有批准或驳回它。要批准，请说“批准 {aid}”；要驳回，请说“拒绝 {aid}”。"))
+
+
 def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = "", *, bare: bool = False) -> Turn:
     """Owner decision on a queued Tier-2 operation. Without the owner token the request is the AGENT's,
     and the executor refuses it (logged as PRIVILEGE_ESCALATION).
@@ -768,8 +793,11 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
             q = (t(ctx, "Nothing in this conversation is waiting for a yes. Which pending operation do you mean?",
                    "本次对话中没有待确认的事项。您指的是哪一项待审批操作？") if bare and not shown
                  else t(ctx, "Which pending operation?", "哪一项待审批操作？"))
-            return ask(intent, "approval_id", q, [(str(i), f"{a.id}: {a.reason}", a.id) for i, a in enumerate(pending, 1)],
-                       slots)
+            listed = ask(intent, "approval_id", q, [(str(i), f"{a.id}: {a.reason}", a.id) for i, a in enumerate(pending, 1)],
+                         slots)
+            if bare and listed.pending_clarification is not None:
+                listed.pending_clarification.pick_only = True  # offered to "yes": a pick shows the item, it never decides (CON-1)
+            return listed
     actor = Actor.OWNER if ctx.owner_authenticated else Actor.AGENT
     steps = Steps()
     rec = ctx.store.get_approval(aid)
