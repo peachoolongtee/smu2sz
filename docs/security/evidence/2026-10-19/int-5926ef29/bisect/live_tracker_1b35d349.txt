@@ -1,0 +1,55 @@
+[WebServer] INFO:     Started server process [18292]
+
+[WebServer] INFO:     Waiting for application startup.
+
+[WebServer] INFO:     Application startup complete.
+
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:8420 (Press CTRL+C to quit)
+
+[WebServer] $ next build
+
+[WebServer] $ next start -p 3421
+
+
+Running 7 tests using 1 worker
+
+[1/7] [live] › e2e\tracker.spec.ts:116:7 › mock › each moment of the story shows the recorded read's own words and figures
+[2/7] [live] › e2e\tracker.spec.ts:134:7 › mock › once the rest of the invoice is paid the deal has ended: the close-out card after the header, and the Paid late promise with its word
+[3/7] [live] › e2e\tracker.spec.ts:152:7 › mock › a deal that is not agreed gets the server's words and a way back, never an error
+[4/7] [live] › e2e\tracker.spec.ts:168:7 › mock › the decision record links to the tracker for an agreed deal, and the way back returns to the record
+[5/7] [live] › e2e\tracker.spec.ts:183:7 › mock › the late day in Chinese shows the zh read's own words and the same figures
+[6/7] [live] › e2e\tracker.spec.ts:194:7 › mock › on a phone the page is one column with no horizontal scroll, and it has no axe violations (after the approval)
+[7/7] [live] › e2e\tracker.spec.ts:216:7 › live › after the owner's approval the page's figures are the API's own
+  1) [live] › e2e\tracker.spec.ts:216:7 › live › after the owner's approval the page's figures are the API's own 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "bad"
+    Received: "neutral"
+
+    Call Log:
+    - Timeout 45000ms exceeded while waiting on the predicate
+
+      231 |         return read.cost?.actual.tone;
+      232 |       }, { timeout: 45_000 })
+    > 233 |       .toBe("bad");
+          |        ^
+      234 |     expect(read.available).toBe(true);
+      235 |     await page.goto(trackerUrl(id));
+      236 |     await expectRead(page, read);
+        at C:\Users\ian\Documents\Projects\smu2sz\.claude\worktrees\cert-719c\apps\web\e2e\tracker.spec.ts:233:8
+
+    Error Context: test-results\tracker-live-after-the-own-f88de-s-figures-are-the-API-s-own-live\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\tracker-live-after-the-own-f88de-s-figures-are-the-API-s-own-live\trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results\tracker-live-after-the-own-f88de-s-figures-are-the-API-s-own-live\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [live] › e2e\tracker.spec.ts:216:7 › live › after the owner's approval the page's figures are the API's own 
+  6 skipped

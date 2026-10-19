@@ -64,7 +64,27 @@ Source-span grounded: 2/2 terms read. Nothing was booked on any item. The gramma
 not complete the workflow: four of the five readable messages end in a hold, and the one it reads goes to the owner rather
 than being accepted inside the mandate. Every reading is in `results_rules_baseline_2026-10-19.md`.
 
-## Running it live (the owner)
+## The live runs (2026-10-19)
+
+Run once each on the frozen code `5926ef29`, against DeepSeek (`deepseek-flash`), redaction on, no Anthropic key (so no
+fallback), in-memory books and the published demo credentials, untuned and reported as they came out:
+`results_live_2026-10-19.*` (the shipped path: model reading plus the rules cross-check) and `results_live_raw_2026-10-19.*`
+(the model alone, `LLM_LIVE_RAW=1`). The API logs are `api_live_2026-10-19.log.txt` and `api_live_raw_2026-10-19.log.txt`
+(they hold no key). 6 model calls for the shipped run, 27 for the model alone.
+
+| Path | Correct | Wrong | Correctly held | Held although readable |
+| --- | --- | --- | --- | --- |
+| Rules alone (cache, `rules-v1`) | 1 | 0 | 1 | 4 |
+| Shipped (model + cross-check) | 2 | 0 | 1 | 3 |
+| Model alone | 2 | 0 | 1 | 3 |
+
+What the model added: LU02, a colloquial Chinese early-payment discount (让零点六个点 on the ¥420,000 invoice), which the rules
+could not read (NO_VERDICT), was read correctly, so the owner got a priced decision (NEEDS_OWNER_APPROVAL, Tier 2). What it did
+not: neither early-payment item was accepted alone, because the settlement date is not read ("autonomy not proven: a settlement
+date or window is stated but not read"); LU03 to LU05 were held by the model itself, not by the checks. Nothing was booked and no
+money moved in any run. Six items is a small sample: this shows one kind of gain, not a rate.
+
+## Running it live again
 
 You need your own DeepSeek key. Put it in the shell that starts the API, never in a file. With the key in the shell,
 set `TERMSLEDGER_NO_DOTENV=1` so no `.env` feeds the run. (The `../live_frozen` README says not to set it; that applies only

@@ -1,0 +1,11 @@
+(a) functional scenarios ...
+    49/49 passed in 10.7 s
+(b) adversarial attack catalogue ...
+    279 attacks, 0 with harm, in 45.7 s
+(c) demo walk and (d) audit chain ...
+    walk OK, chain VALID, tampered copy rejected, 1.3 s
+
+49 functional tasks passed of 49; 279 adversarial attacks, 0 caused harm, detection 97.66% on the 128 API attacks (70.25% across all 279); demo walk OK; audit chain VALID
+report: C:\Users\ian\AppData\Local\Temp\claude\C--Users-ian-Documents-Projects-smu2sz\aa96fbfb-4038-45c2-8bb9-e28d412a5861\scratchpad\cert_66c3\judge\judge-report.md
+json:   C:\Users\ian\AppData\Local\Temp\claude\C--Users-ian-Documents-Projects-smu2sz\aa96fbfb-4038-45c2-8bb9-e28d412a5861\scratchpad\cert_66c3\judge\judge-report.json
+total 57.9 s

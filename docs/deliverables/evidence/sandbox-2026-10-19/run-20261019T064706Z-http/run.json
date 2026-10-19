@@ -1,0 +1,268 @@
+{
+ "what": "FLOW sandbox evidence run (docs/deliverables/evidence/sandbox-2026-10-19/run_sandbox.py)",
+ "transport": "http",
+ "build_commit": "3ba36775bc0b9c85e74ab69243e38db59c4bb751",
+ "build_branch": "docs/deliverables-final",
+ "code_commit": "5926ef29",
+ "code_diff_check": {
+  "command": "git -C <root> diff --stat 5926ef29 HEAD -- services/api/app apps/web",
+  "output": "apps/web/app/demo/page.tsx           |  4 ++--\n apps/web/components/demo-stepper.tsx |  4 ++--\n apps/web/lib/demo-control.ts         | 10 ++++++++++\n apps/web/scripts/slice-d.test.mjs    | 13 +++++++++++++\n 4 files changed, 27 insertions(+), 4 deletions(-)",
+  "empty": false,
+  "working_tree_vs_code_commit": "apps/web/app/demo/page.tsx           |  4 ++--\n apps/web/components/demo-stepper.tsx |  4 ++--\n apps/web/lib/demo-control.ts         | 10 ++++++++++\n apps/web/scripts/slice-d.test.mjs    | 13 +++++++++++++\n 4 files changed, 27 insertions(+), 4 deletions(-)"
+ },
+ "started_utc": "2026-10-19T06:47:06+00:00",
+ "ended_utc": "2026-10-19T06:47:18+00:00",
+ "configuration": {
+  "base_url": "http://127.0.0.1:8420",
+  "health": {
+   "ok": true,
+   "llm_mode": "cache",
+   "features": {
+    "terms_guard": true,
+    "debt_desk": true,
+    "capex": true,
+    "borrower_file": true,
+    "buyer_negotiation": true,
+    "security_scenes": true,
+    "alerts": true,
+    "expected_plans": true,
+    "envelope": true,
+    "price_curve": true,
+    "collections_worth": true,
+    "exposure": true,
+    "customer_economics": false,
+    "contracts": true,
+    "pilot_journal": false,
+    "capex_contracts": true,
+    "contract_terms": true,
+    "ask_router": true,
+    "home_v2": true
+   }
+  },
+  "api_environment": "the API environment of scripts/demo.mjs (pnpm demo): TERMSLEDGER_NO_DOTENV=1, DATABASE_URL=memory (no --keep), DEMO_MODE=1, LLM_MODE=cache (no --live-llm), PYTHONUTF8=1, SKIP_PERF_BENCH=1, DEMO_WARM_STRATEGY=1, CORS_ORIGINS for the web port, and the feature flags in feature_env_set",
+  "DEMO_MODE": "1",
+  "DATABASE_URL": "memory",
+  "LLM_MODE": "cache",
+  "feature_flags": {
+   "terms_guard": true,
+   "debt_desk": true,
+   "capex": true,
+   "borrower_file": true,
+   "buyer_negotiation": true,
+   "security_scenes": true,
+   "alerts": true,
+   "expected_plans": true,
+   "envelope": true,
+   "price_curve": true,
+   "collections_worth": true,
+   "exposure": true,
+   "customer_economics": false,
+   "contracts": true,
+   "pilot_journal": false,
+   "capex_contracts": true,
+   "contract_terms": true,
+   "ask_router": true,
+   "home_v2": true
+  },
+  "feature_env_set": {
+   "FEATURE_ENVELOPE": "1",
+   "FEATURE_PRICE_CURVE": "1",
+   "FEATURE_COLLECTIONS_WORTH": "1",
+   "FEATURE_EXPOSURE": "1",
+   "FEATURE_CAPEX_CONTRACTS": "1",
+   "FEATURE_CONTRACT_TERMS": "1",
+   "FEATURE_ASK_ROUTER": "1"
+  },
+  "python_client": "3.12.14",
+  "server_started_as": "the API started as scripts/demo.mjs starts it (uvicorn on 127.0.0.1, DEMO_MODE=1, DATABASE_URL=memory, LLM_MODE=cache, the launcher's feature flags), code 66c31e7e"
+ },
+ "credentials": {
+  "rule": "published demo credentials only, accepted only with DEMO_MODE=1 (docs/SECURITY_SELF_ASSESSMENT.md 1.2); outputs name each by role",
+  "roles": {
+   "OWNER": "owner token (X-Owner-Token)",
+   "AGENT": "agent key (X-Agent-Key)",
+   "BANK_FEED": "bank-feed key with the agent key (X-Bank-Feed-Key + X-Agent-Key), as scripts/demo_run.py sends a receipt",
+   "BANK_FEED_KEY_ONLY": "bank-feed key alone (X-Bank-Feed-Key)",
+   "BUYER-1": "BUYER-1's channel key (X-Counterparty-Key), Foshan Home Retail Co.",
+   "ANONYMOUS": "no credential"
+  }
+ },
+ "fixtures": {
+  "fixtures/scenarios/golden_sme.json": "33bbf85d712a037bdb529448fed8688b7c98a919e6ad9d00ec8fe6ccb54cf5ac",
+  "fixtures/scenarios/golden_sme.mandate.signed.json": "0612e3854209379b4dad501bd47d2e1c2f855d7512d7645508a89046575d52d6",
+  "fixtures/scenarios/golden_sme.events.json": "a780a45abb98829e413554f9deecbb72b990c9aaca3f88f2f09c664d1f0c9427",
+  "fixtures/scenarios/short_facilities.json": "7520b2f0eed8a8a3edafed3b949e22e87be537a4427a612bcf64ebd147891910",
+  "fixtures/offers/offers.yaml": "9e57dfc8597dd18c35022b9a901bb95dff3d64933634218c4fe211e4a09d9910",
+  "fixtures/keys/owner_demo_ed25519.json": "8f58d05d3d9fa413236c7177e23aae19e79b47356e39528a0ee5ab6c11617f48",
+  "fixtures/compiler_cache/": "19 recorded readings"
+ },
+ "cases": [
+  {
+   "case": 1,
+   "name": "journey",
+   "parts": [
+    {
+     "part": "1",
+     "status": "RAN",
+     "passed": 32,
+     "failed": 0,
+     "reason": null
+    }
+   ]
+  },
+  {
+   "case": 2,
+   "name": "unauthorized",
+   "parts": [
+    {
+     "part": "2a",
+     "status": "RAN",
+     "passed": 7,
+     "failed": 0,
+     "reason": null
+    },
+    {
+     "part": "2b",
+     "status": "RAN",
+     "passed": 4,
+     "failed": 0,
+     "reason": null
+    },
+    {
+     "part": "2c",
+     "status": "RAN",
+     "passed": 5,
+     "failed": 0,
+     "reason": null
+    },
+    {
+     "part": "2d",
+     "status": "RAN",
+     "passed": 9,
+     "failed": 0,
+     "reason": null
+    },
+    {
+     "part": "2e",
+     "status": "RAN",
+     "passed": 11,
+     "failed": 0,
+     "reason": null
+    },
+    {
+     "part": "2f",
+     "status": "RAN",
+     "passed": 9,
+     "failed": 0,
+     "reason": null
+    }
+   ]
+  },
+  {
+   "case": 3,
+   "name": "ambiguity",
+   "parts": [
+    {
+     "part": "3a",
+     "status": "RAN",
+     "passed": 6,
+     "failed": 0,
+     "reason": null
+    },
+    {
+     "part": "3b",
+     "status": "RAN",
+     "passed": 16,
+     "failed": 0,
+     "reason": null
+    },
+    {
+     "part": "3c",
+     "status": "RAN",
+     "passed": 14,
+     "failed": 0,
+     "reason": null
+    }
+   ]
+  },
+  {
+   "case": 4,
+   "name": "partial_failure",
+   "parts": [
+    {
+     "part": "4a",
+     "status": "RAN",
+     "passed": 12,
+     "failed": 0,
+     "reason": null
+    },
+    {
+     "part": "4b1",
+     "status": "SKIPPED",
+     "passed": null,
+     "failed": null,
+     "reason": "in-process only: caps the facility limits by writing the store"
+    },
+    {
+     "part": "4b2",
+     "status": "SKIPPED",
+     "passed": null,
+     "failed": null,
+     "reason": "in-process only: drains the facilities by writing the store"
+    },
+    {
+     "part": "4b3",
+     "status": "RAN",
+     "passed": 5,
+     "failed": 0,
+     "reason": null
+    },
+    {
+     "part": "4c",
+     "status": "SKIPPED",
+     "passed": null,
+     "failed": null,
+     "reason": "in-process only: shortens RCV-A's terms by writing the store"
+    }
+   ]
+  },
+  {
+   "case": 5,
+   "name": "pause",
+   "parts": [
+    {
+     "part": "5",
+     "status": "RAN",
+     "passed": 12,
+     "failed": 0,
+     "reason": null
+    }
+   ]
+  }
+ ],
+ "totals": {
+  "steps": 143,
+  "steps_passed": 142,
+  "steps_failed": 0,
+  "steps_skipped": 1,
+  "store_writes": 0,
+  "parts_skipped": 3,
+  "exports": 13,
+  "exports_valid": 13
+ },
+ "notes": [
+  "Case 3b: after \"1\" has shown the item (its reply says: To approve it, say \"approve APR-…\"), \"approve 1\" is not understood and decides nothing; the approval stays PENDING (fail-safe), and \"approve APR-…\" then decides it. \"approve 1\" directly after the numbered list decides it (case 3c). docs/SECURITY_SELF_ASSESSMENT.md 1.6 (\"Chat is inside the boundary\", Approvals) still says a number picked from a list that followed a \"yes\" decides it; on this build a bare pick after \"yes\" only shows the item (CON-1).",
+  "Case 2d: with the bank-feed key and the agent key together, an unpaused DRAW_FACILITY sent as SYSTEM is not refused: it is rewritten to the agent's own request and runs at the agent's Tier 1 within the mandate, as docs/SECURITY_SELF_ASSESSMENT.md 1.2 and services/api/app/api/operations.py describe. The bank-feed key confers no SYSTEM authority beyond a receipt: alone it gets 401; while paused the same draw is refused (PAUSE-1).",
+  "Case 5 (5.06): while paused, the buyer's offer still leaves a PROPOSED commitment record (no money moves; not agreed), as docs/SECURITY_SELF_ASSESSMENT.md 1.11 states; the acceptance itself is refused.",
+  "Case 2b: the buyer's claim is answered with a Tier-1 COUNTER_OFFER (EXECUTED on the chain: a reply, not an agreement); no acceptance, commitment or money movement follows."
+ ],
+ "secret_scan": {
+  "checked_for": [
+   "the five published demo credential values (by value)",
+   "1 values of this process's environment variables named *KEY*, *TOKEN*, *SECRET* or *PASSWORD*"
+  ],
+  "files": 40,
+  "hits": [],
+  "clean": true
+ }
+}

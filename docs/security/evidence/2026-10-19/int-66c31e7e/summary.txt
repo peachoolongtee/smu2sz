@@ -1,0 +1,27 @@
+Release gate on 66c31e7e, the submission build (int/sl-final: 03215a20 + round eight, the demo launcher on loopback, round nine,
+the API lint cleanup, the public-release cleanup, the unseen evaluation set, and the demo stepper fix cc1703cc), 19 Oct 2026,
+05:55 to 06:41 UTC, then the post-gate checks to 06:46, by the Security Lead. Scripts: tools/certify_66c3.sh and
+tools/certify_66c3_post.sh; results by step: steps.txt. Run on a quiet machine (nothing else running).
+
+VERDICT: CERTIFIED FOR SCOPE S (the local simulation: pnpm demo on one machine, API and web app on 127.0.0.1, one API process,
+DEMO_MODE=1, in-memory books, LLM_MODE=cache, synthetic fixtures). Not covered: live model mode, any network or hosted
+deployment, production. An internal release decision, not accreditation; not a claim of absolute security.
+
+full suite (155 processes)     11,421 passed, 0 failed, 47 skipped (tests/__pycache__ holds no tests: exit 5)
+attack catalogue               128 API + 151 chat, 0 harm, 0 not reached, 120/128 named control, 8 known gaps;
+                               detection 97.66% (API), 70.25% (all 279); security events 74.22% (API)
+route policy                   16 tests pass (shards/tests_security.txt); 113 routes; owner 96/97 (demo), 91/97 (DEMO_MODE=0);
+                               the miss in both: POST /documents/{id}/terms/undo -> 404 UNKNOWN_SET_UP
+sweep, three modes             112 routes, 0 policy violations, 0 differences from 03215a20 (sweep_policy.txt)
+reproductions; approval flip   refused, output identical to 03215a20 apart from timestamps; the database refuses the flip
+language boundary              cache and fake: 0 wrong-and-material
+PostgreSQL 17                  concurrency 3/3 (31 tests, 10 on PostgreSQL, each run); guards 10 passed
+dependency scans               pip-audit clean; pnpm audit --prod 0; full audit: braces only (development, accepted)
+secret scan                    tracked files at 66c31e7e and every branch's history: 0 findings (secret_scan.txt)
+mock browser suite             479 passed, 0 failed, 77 skipped; typecheck, lint pass; web unit 197 passed (web/)
+live browser suite             177 passed, 0 failed, 51 skipped, one worker as configured (live_e2e.txt)
+CSP, production build          17 pages, nonce on all, 0 violations, 0 page errors, injection blocked (csp/)
+CSP, development server        pnpm demo (next dev): the same; header adds 'unsafe-eval' for hot reload (csp_dev/)
+judge pack                     49/49 tasks (88 turns); 279 attacks, 0 harm; demo walk OK; audit chain VALID (judge/)
+sandbox (execution evidence)   docs/deliverables/evidence/sandbox-2026-10-19/: in process 159 passed, 0 failed, exports 16/16
+                               VALID; over HTTP 142 passed, 0 failed, 1 skipped (in-process only), exports 13/13 VALID

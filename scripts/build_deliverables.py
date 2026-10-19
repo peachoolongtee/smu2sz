@@ -16,7 +16,7 @@ What it does:
        docs/SECURITY_SELF_ASSESSMENT.md -> out/Security_Self_Assessment.docx
      Each "## NN Heading" in the markdown must match a template heading, and each "### Prompt" a template
      prompt; the text under a prompt replaces that prompt's "Write here" placeholder. The template's title,
-     header table, headings, prompts and footer are kept. The header table gets [TEAM: ...] placeholders.
+     header table, headings and prompts are kept; the footer keeps page numbers (the template's instruction line is left out). The header table gets [TEAM: ...] placeholders.
   3. Verifies every output: it reopens the file, checks that every template heading and prompt is present
      and followed by content, and that no "Write here" or "Please complete" placeholder is left.
      Exits 1 on any failure. Deliberate {UPPER_CASE} tokens (for example {SUBMISSION_COMMIT} and
@@ -575,7 +575,7 @@ class Renderer:
         p.paragraph_format.space_after = Pt(6)
         p.paragraph_format.keep_together = True  # a short code block never splits across pages
         lines = text.split("\n")
-        size = Pt(7) if max((len(x) for x in lines), default=0) > 90 else Pt(8)
+        size = Pt(8) if max((len(x) for x in lines), default=0) > 90 else Pt(8.5)  # never below 8 pt (legibility in print)
         for n, line in enumerate(lines):
             r = p.add_run(line)
             r.font.name = CODE_FONT
@@ -590,7 +590,7 @@ class Renderer:
         ncols = max(len(r) for r in rows)
         t = self.doc.add_table(rows=len(rows), cols=ncols)
         t.style = self.doc.styles["Table Grid"]
-        size = Pt(8) if ncols >= 5 or len(rows) > 20 else Pt(9)
+        size = Pt(8.5) if ncols >= 7 else Pt(9)  # tables never below 8.5 pt (legibility in print)
         for ri, row in enumerate(rows):
             for ci in range(ncols):
                 cell = t.cell(ri, ci)
@@ -809,6 +809,9 @@ def finish(doc, title: str, contents: bool) -> None:
                 rpr.insert(0, fonts)
             fonts.set(qn("w:eastAsia"), CJK_FONT)
     footer = doc.sections[0].footer
+    for q in list(footer.paragraphs):  # the template's instruction line ("Complete this document ..."): left out at the owner's request
+        if "newer version prevails" in q.text or "Complete this document" in q.text:
+            q._element.getparent().remove(q._element)
     p = footer.add_paragraph()
     p.alignment = 1  # centred
     p.add_run("Page ")
@@ -933,8 +936,8 @@ def verify(out_path: Path, template: Path) -> list[str]:
     if [p.text for p in paras][:2] != tpl_title:
         problems.append("template title lines changed")
     footer = " ".join(p.text for p in doc.sections[0].footer.paragraphs)
-    if "newer version prevails" not in footer:
-        problems.append("template footer missing")
+    if "Page" not in footer:
+        problems.append("page numbers missing from the footer")
     if sys.platform == "darwin":
         # an independent reader (Cocoa's DOCX importer) must also open it
         r = subprocess.run(["textutil", "-convert", "txt", "-stdout", str(out_path)], capture_output=True, text=True)

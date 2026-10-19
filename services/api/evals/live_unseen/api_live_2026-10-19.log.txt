@@ -1,0 +1,82 @@
+model key present: True; deepseek: True; anthropic: False; database: memory
+INFO:     Started server process [14832]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8583 (Press CTRL+C to quit)
+INFO:     127.0.0.1:61566 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58630 - "GET /health HTTP/1.1" 200 OK
+2026-10-19 13:02:33 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=5.5 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-19 13:02:33 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=7.1 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:02:33 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=1.0 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:02:33 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-19 13:02:33 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:02:33 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:58631 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58632 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:33 [info     ] compiler.call                  backend=cache doc_hash=49ae70db2d02e5140b99daa3f1734635c044c92ab79417ce18ac112c2e69cdd6 error=CacheMiss latency_ms=0.1 outcome=fallback prompt_version=offer-v4
+2026-10-19 13:02:33 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:02:36 [info     ] compiler.call                  backend=deepseek doc_hash=49ae70db2d02e5140b99daa3f1734635c044c92ab79417ce18ac112c2e69cdd6 latency_ms=2882.8 model=deepseek-flash outcome=ok prompt_version=offer-v4
+2026-10-19 13:02:36 [info     ] compiler.cross_check           doc_hash=49ae70db2d02e5140b99daa3f1734635c044c92ab79417ce18ac112c2e69cdd6 model=deepseek-flash outcome=agree prompt_version=offer-v4
+INFO:     127.0.0.1:58633 - "POST /offers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61637 - "POST /offers/OFF-49ae70db2d02/evaluate?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61655 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:36 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-19 13:02:36 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:02:36 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:61656 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61657 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:36 [info     ] compiler.call                  backend=cache doc_hash=7dd2ad883b23a19ed1e4c51ceb27465c303660ab297dd37172fe2808741d0d8d error=CacheMiss latency_ms=0.1 outcome=fallback prompt_version=offer-v4
+2026-10-19 13:02:36 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:02:37 [info     ] compiler.call                  backend=deepseek doc_hash=7dd2ad883b23a19ed1e4c51ceb27465c303660ab297dd37172fe2808741d0d8d latency_ms=1100.0 model=deepseek-flash outcome=ok prompt_version=offer-v4
+2026-10-19 13:02:37 [info     ] compiler.cross_check           doc_hash=7dd2ad883b23a19ed1e4c51ceb27465c303660ab297dd37172fe2808741d0d8d model=deepseek-flash outcome=agree prompt_version=offer-v4
+INFO:     127.0.0.1:61658 - "POST /offers?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61717 - "POST /offers/OFF-7dd2ad883b23/evaluate?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61718 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:38 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-19 13:02:38 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:02:38 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:61719 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61720 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:38 [info     ] compiler.call                  backend=cache doc_hash=db22116ce59368f50e52b6f67d01cfc4e93db01a6ddfd34fad375a29496ddb30 error=CacheMiss latency_ms=0.1 outcome=fallback prompt_version=offer-v4
+2026-10-19 13:02:38 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:02:39 [info     ] compiler.call                  backend=deepseek doc_hash=db22116ce59368f50e52b6f67d01cfc4e93db01a6ddfd34fad375a29496ddb30 latency_ms=1161.8 model=deepseek-flash outcome=ok prompt_version=offer-v4
+2026-10-19 13:02:39 [info     ] compiler.cross_check           doc_hash=db22116ce59368f50e52b6f67d01cfc4e93db01a6ddfd34fad375a29496ddb30 model=deepseek-flash outcome=agree prompt_version=offer-v4
+INFO:     127.0.0.1:61721 - "POST /offers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61799 - "POST /offers/OFF-db22116ce593/evaluate?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61800 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:39 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-19 13:02:39 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:02:39 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:61801 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61802 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:39 [info     ] compiler.call                  backend=cache doc_hash=b60342bfc6a5348bca885a63e40e05a1245f2c8c71a706c47cf942ef04852ec0 error=CacheMiss latency_ms=0.1 outcome=fallback prompt_version=offer-v4
+2026-10-19 13:02:39 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:02:40 [info     ] compiler.call                  backend=deepseek doc_hash=b60342bfc6a5348bca885a63e40e05a1245f2c8c71a706c47cf942ef04852ec0 latency_ms=1104.0 model=deepseek-flash outcome=ok prompt_version=offer-v4
+2026-10-19 13:02:40 [info     ] compiler.cross_check           doc_hash=b60342bfc6a5348bca885a63e40e05a1245f2c8c71a706c47cf942ef04852ec0 model=deepseek-flash outcome=agree prompt_version=offer-v4
+INFO:     127.0.0.1:61803 - "POST /offers?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61874 - "POST /offers/OFF-b60342bfc6a5/evaluate?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61921 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:40 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-19 13:02:40 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:02:40 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:61928 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61940 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:40 [info     ] compiler.call                  backend=cache doc_hash=9dac8fce89e0c691d262519f84e56d91feccfbfb909dd37934c60af177df2012 error=CacheMiss latency_ms=0.1 outcome=fallback prompt_version=offer-v4
+2026-10-19 13:02:40 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:02:42 [info     ] compiler.call                  backend=deepseek doc_hash=9dac8fce89e0c691d262519f84e56d91feccfbfb909dd37934c60af177df2012 latency_ms=1433.0 model=deepseek-flash outcome=ok prompt_version=offer-v4
+2026-10-19 13:02:42 [info     ] compiler.cross_check           doc_hash=9dac8fce89e0c691d262519f84e56d91feccfbfb909dd37934c60af177df2012 model=deepseek-flash outcome=agree prompt_version=offer-v4
+INFO:     127.0.0.1:61941 - "POST /offers?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61942 - "POST /offers/OFF-9dac8fce89e0/evaluate?lang=zh HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61943 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:42 [info     ] compiler.call                  backend=cache doc_hash=a6de7f4f5bba851b49d4478a1cefa7c01823918b66def1e3fd04edf70c30d97f latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=contract-v1
+2026-10-19 13:02:42 [info     ] compiler.call                  backend=cache doc_hash=7efa41ebd9b36c3ec5ea212569eaf4d6c9015bcefb55453cf7d498330683beee latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+2026-10-19 13:02:42 [info     ] compiler.call                  backend=cache doc_hash=920dacc30de191808877efe83c4e114a61d5be7174d950b2029ffb0a28b64a4c latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+INFO:     127.0.0.1:61944 - "POST /demo/reset?scenario=golden_sme HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61945 - "GET /audit HTTP/1.1" 200 OK
+2026-10-19 13:02:42 [info     ] compiler.call                  backend=cache doc_hash=5898d383a29b1bc6d1678a92533b9c57c69eac60e9579a778be375b772d05b3a error=CacheMiss latency_ms=0.2 outcome=fallback prompt_version=offer-v4
+2026-10-19 13:02:42 [info     ] model.redaction                account=0 address=0 backend=deepseek email=0 national_id=0 phone=0 purpose=offer total=0 uscc=0
+2026-10-19 13:02:43 [info     ] compiler.call                  backend=deepseek doc_hash=5898d383a29b1bc6d1678a92533b9c57c69eac60e9579a778be375b772d05b3a latency_ms=1066.5 model=deepseek-flash outcome=ok prompt_version=offer-v4
+2026-10-19 13:02:43 [info     ] compiler.cross_check           doc_hash=5898d383a29b1bc6d1678a92533b9c57c69eac60e9579a778be375b772d05b3a model=deepseek-flash outcome=agree prompt_version=offer-v4
+INFO:     127.0.0.1:61946 - "POST /offers?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61947 - "POST /offers/OFF-5898d383a29b/evaluate?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61948 - "GET /audit HTTP/1.1" 200 OK

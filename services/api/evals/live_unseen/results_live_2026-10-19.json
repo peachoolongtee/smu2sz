@@ -1,0 +1,1390 @@
+{
+ "label": "live",
+ "base_url": "http://127.0.0.1:8583",
+ "llm_mode": "live",
+ "health": {
+  "ok": true,
+  "llm_mode": "live",
+  "features": {
+   "terms_guard": true,
+   "debt_desk": true,
+   "capex": true,
+   "borrower_file": true,
+   "buyer_negotiation": true,
+   "security_scenes": true,
+   "alerts": true,
+   "expected_plans": true,
+   "envelope": false,
+   "price_curve": false,
+   "collections_worth": false,
+   "exposure": false,
+   "customer_economics": false,
+   "contracts": true,
+   "pilot_journal": false,
+   "capex_contracts": true,
+   "contract_terms": true,
+   "ask_router": true,
+   "home_v2": true
+  }
+ },
+ "started": "2026-10-19T13:02:33+08:00",
+ "finished": "2026-10-19T13:02:43+08:00",
+ "set_name": "Live unseen set",
+ "items_file": "services/api/evals/live_unseen/items.yaml",
+ "items_sha256": "6daca796530bad1c8b5ff550bc1fa5f545cb23d4e087b02672485ab18acbf9fc",
+ "frozen_on": "2026-10-19",
+ "labels_written": "blind, before any run of these texts against any backend",
+ "partial_run": false,
+ "requests_sent": 31,
+ "reading_requests_sent": 6,
+ "caps": {
+  "requests": 150,
+  "reading_requests": 30
+ },
+ "log": "api_live.log",
+ "totals": {
+  "correct": 2,
+  "partially_correct": 0,
+  "wrong": 0,
+  "abstained_correctly": 1,
+  "abstained_wrongly": 3,
+  "n": 6
+ },
+ "by_language": {
+  "en": {
+   "correct": 1,
+   "partially_correct": 0,
+   "wrong": 0,
+   "abstained_correctly": 1,
+   "abstained_wrongly": 1,
+   "n": 3
+  },
+  "zh": {
+   "correct": 1,
+   "partially_correct": 0,
+   "wrong": 0,
+   "abstained_correctly": 0,
+   "abstained_wrongly": 2,
+   "n": 3
+  }
+ },
+ "by_category": {
+  "a_supported": {
+   "correct": 2,
+   "partially_correct": 0,
+   "wrong": 0,
+   "abstained_correctly": 0,
+   "abstained_wrongly": 2,
+   "n": 4
+  },
+  "b_ambiguity": {
+   "correct": 0,
+   "partially_correct": 0,
+   "wrong": 0,
+   "abstained_correctly": 1,
+   "abstained_wrongly": 0,
+   "n": 1
+  },
+  "c_conditions": {
+   "correct": 0,
+   "partially_correct": 0,
+   "wrong": 0,
+   "abstained_correctly": 0,
+   "abstained_wrongly": 1,
+   "n": 1
+  }
+ },
+ "span_grounded": {
+  "grounded": 4,
+  "read": 4
+ },
+ "items": [
+  {
+   "id": "LU01",
+   "lang": "en",
+   "category": "a_supported",
+   "mode": "read",
+   "expect": {
+    "mode": "read",
+    "obligations": [
+     {
+      "type": "IMMEDIATE_DISCOUNT",
+      "value": 0.5,
+      "unit": "percent",
+      "base_yuan": 420000,
+      "contingency": "FIRM",
+      "duration": "ONE_OFF",
+      "span_has": "half of one percent"
+     }
+    ],
+    "owner_needed": null
+   },
+   "record": {
+    "id": "LU01",
+    "lang": "en",
+    "category": "a_supported",
+    "channel": "buyer_offer",
+    "counterparty_id": "BUYER-1",
+    "requests": [
+     {
+      "call": "POST /demo/reset",
+      "status": 200,
+      "ms": 193.2
+     },
+     {
+      "call": "POST /offers",
+      "status": 200,
+      "ms": 2913.8
+     },
+     {
+      "call": "POST /offers/{id}/evaluate",
+      "status": 200,
+      "ms": 177.1
+     }
+    ],
+    "reading_ms": 2913.8,
+    "reading_status_code": 200,
+    "log": [
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:33",
+      "backend": "cache",
+      "doc_hash": "49ae70db2d02e5140b99daa3f1734635c044c92ab79417ce18ac112c2e69cdd6",
+      "error": "CacheMiss",
+      "latency_ms": "0.1",
+      "outcome": "fallback",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:36",
+      "backend": "deepseek",
+      "doc_hash": "49ae70db2d02e5140b99daa3f1734635c044c92ab79417ce18ac112c2e69cdd6",
+      "latency_ms": "2882.8",
+      "model": "deepseek-flash",
+      "outcome": "ok",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.cross_check",
+      "ts": "2026-10-19 13:02:36",
+      "doc_hash": "49ae70db2d02e5140b99daa3f1734635c044c92ab79417ce18ac112c2e69cdd6",
+      "model": "deepseek-flash",
+      "outcome": "agree",
+      "prompt_version": "offer-v4"
+     }
+    ],
+    "reading": {
+     "kind": "offer",
+     "offer_id": "OFF-49ae70db2d02",
+     "compiler": "deepseek-flash",
+     "prompt_version": "offer-v4",
+     "status": "COMPILED",
+     "obligations": [
+      {
+       "id": "OFF-49ae70db2d02-O1",
+       "type": "IMMEDIATE_DISCOUNT",
+       "rate_bp": 50,
+       "amount_fen": null,
+       "days_delta": null,
+       "target_terms_days": null,
+       "effective_day": null,
+       "base": {
+        "kind": "INVOICE",
+        "amount_fen": 42000000,
+        "receivable_id": null,
+        "events_per_year": null,
+        "amount_display": "¥420,000.00"
+       },
+       "contingency": "FIRM",
+       "duration": {
+        "kind": "ONE_OFF",
+        "invoices": null,
+        "end_day": null
+       },
+       "spans": [
+        {
+         "doc_id": "LU01-msg",
+         "start": 128,
+         "end": 214,
+         "text": "we could pay off the ¥420,000 invoice that's open with you right away, within the week"
+        },
+        {
+         "doc_id": "LU01-msg",
+         "start": 229,
+         "end": 282,
+         "text": "would you knock half of one percent off that invoice?"
+        }
+       ],
+       "confidence": 0.85,
+       "unresolved": []
+      }
+     ],
+     "abstentions": [],
+     "data_requests": [],
+     "authority_claims": [],
+     "funding_claims": [],
+     "autonomy_eligible": false,
+     "autonomy_notes": [
+      "a settlement date or window is stated but not read into the terms",
+      "LU01-msg holds a other topic beyond the extracted terms",
+      "LU01-msg holds a request beyond the extracted terms",
+      "text not read into the terms: 'mei', 'accounts', 'foshan', 'home', 'retail', ..."
+     ]
+    },
+    "verdict": {
+     "outcome": "NEEDS_OWNER_APPROVAL",
+     "required_tier": "TIER_2",
+     "business_action": "needs_owner",
+     "summary": "NEEDS OWNER APPROVAL. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.35x. owner approval needed: autonomy not proven (the compiler could not account for every figure and request in the message: a settlement date or window is stated but not read into the terms; LU01-msg holds a other topic beyond the extracted terms; LU01-msg holds a request beyond the extracted terms; text not read into the terms: 'mei', 'accounts', 'foshan', 'home', 'retail', ...).",
+     "summary_when": "NEEDS Owner APPROVAL. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.35x. owner approval needed: autonomy not proven (the compiler could not account for every figure and request in the message: a settlement date or window is stated but not read into the terms; LU01-msg holds a other topic beyond the extracted terms; LU01-msg holds a request beyond the extracted terms; text not read into the terms: 'mei', 'accounts', 'foshan', 'home', 'retail', ...).",
+     "codes": [],
+     "clarification_requested": false,
+     "clarification_when": [],
+     "autonomy_eligible": false,
+     "accepted_alone": false,
+     "counters": [],
+     "bound_obligations": [
+      {
+       "id": "OFF-49ae70db2d02-O1",
+       "type": "IMMEDIATE_DISCOUNT",
+       "rate_bp": 50,
+       "amount_fen": null,
+       "days_delta": null,
+       "target_terms_days": null,
+       "effective_day": 2,
+       "base": {
+        "kind": "INVOICE",
+        "amount_fen": 42000000,
+        "receivable_id": "RCV-A",
+        "events_per_year": null,
+        "amount_display": "¥420,000.00"
+       },
+       "contingency": "FIRM",
+       "duration": {
+        "kind": "ONE_OFF",
+        "invoices": null,
+        "end_day": null
+       }
+      }
+     ]
+    },
+    "security_events": [],
+    "books_delta": {
+     "commitments_booked": 0,
+     "operations": 0,
+     "money_moved_fen": 0,
+     "facilities_added": 0,
+     "unauthorised_executions": 0
+    },
+    "compiler_source": {
+     "response": "deepseek-flash",
+     "log": [
+      "cache:fallback(CacheMiss)",
+      "deepseek:ok model=deepseek-flash",
+      "cross_check:agree"
+     ],
+     "nl_log": []
+    },
+    "docs_sent": {
+     "LU01-msg": "Hi, it's Mei from accounts at Foshan Home Retail. We've ended up with more cash than planned this month. Rather than sit on it, we could pay off the ¥420,000 invoice that's open with you right away, within the week. In exchange, would you knock half of one percent off that invoice?"
+    }
+   },
+   "score": {
+    "class": "correct",
+    "abstained": false,
+    "flagged": false,
+    "notes": [],
+    "rows": [
+     {
+      "label": {
+       "type": "IMMEDIATE_DISCOUNT",
+       "value": 0.5,
+       "unit": "percent",
+       "base_yuan": 420000,
+       "contingency": "FIRM",
+       "duration": "ONE_OFF",
+       "span_has": "half of one percent"
+      },
+      "status": "matched",
+      "obligation_id": "OFF-49ae70db2d02-O1",
+      "type": "IMMEDIATE_DISCOUNT",
+      "diffs": [],
+      "span_grounded": true,
+      "span_relevant": true,
+      "span_notes": [],
+      "soft": []
+     }
+    ],
+    "spurious": [],
+    "grounded": 1,
+    "read": 1,
+    "span_relevant": 1,
+    "span_relevant_of": 1
+   }
+  },
+  {
+   "id": "LU02",
+   "lang": "zh",
+   "category": "a_supported",
+   "mode": "read",
+   "expect": {
+    "mode": "read",
+    "obligations": [
+     {
+      "type": "IMMEDIATE_DISCOUNT",
+      "value": 0.6,
+      "unit": "percent",
+      "base_yuan": 420000,
+      "contingency": "FIRM",
+      "duration": "ONE_OFF",
+      "span_has": "零点六个点"
+     }
+    ],
+    "owner_needed": null
+   },
+   "record": {
+    "id": "LU02",
+    "lang": "zh",
+    "category": "a_supported",
+    "channel": "buyer_offer",
+    "counterparty_id": "BUYER-1",
+    "requests": [
+     {
+      "call": "POST /demo/reset",
+      "status": 200,
+      "ms": 70.4
+     },
+     {
+      "call": "POST /offers",
+      "status": 200,
+      "ms": 1106.9
+     },
+     {
+      "call": "POST /offers/{id}/evaluate",
+      "status": 200,
+      "ms": 172.8
+     }
+    ],
+    "reading_ms": 1106.9,
+    "reading_status_code": 200,
+    "log": [
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:36",
+      "backend": "cache",
+      "doc_hash": "7dd2ad883b23a19ed1e4c51ceb27465c303660ab297dd37172fe2808741d0d8d",
+      "error": "CacheMiss",
+      "latency_ms": "0.1",
+      "outcome": "fallback",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:37",
+      "backend": "deepseek",
+      "doc_hash": "7dd2ad883b23a19ed1e4c51ceb27465c303660ab297dd37172fe2808741d0d8d",
+      "latency_ms": "1100.0",
+      "model": "deepseek-flash",
+      "outcome": "ok",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.cross_check",
+      "ts": "2026-10-19 13:02:37",
+      "doc_hash": "7dd2ad883b23a19ed1e4c51ceb27465c303660ab297dd37172fe2808741d0d8d",
+      "model": "deepseek-flash",
+      "outcome": "agree",
+      "prompt_version": "offer-v4"
+     }
+    ],
+    "reading": {
+     "kind": "offer",
+     "offer_id": "OFF-7dd2ad883b23",
+     "compiler": "deepseek-flash",
+     "prompt_version": "offer-v4",
+     "status": "COMPILED",
+     "obligations": [
+      {
+       "id": "OFF-7dd2ad883b23-O1",
+       "type": "IMMEDIATE_DISCOUNT",
+       "rate_bp": 60,
+       "amount_fen": null,
+       "days_delta": null,
+       "target_terms_days": null,
+       "effective_day": null,
+       "base": {
+        "kind": "INVOICE",
+        "amount_fen": 42000000,
+        "receivable_id": null,
+        "events_per_year": null,
+        "amount_display": "¥420,000.00"
+       },
+       "contingency": "FIRM",
+       "duration": {
+        "kind": "ONE_OFF",
+        "invoices": null,
+        "end_day": null
+       },
+       "spans": [
+        {
+         "doc_id": "LU02-msg",
+         "start": 22,
+         "end": 46,
+         "text": "你们那笔42万的货款，我们这周就可以提前打给你们"
+        },
+        {
+         "doc_id": "LU02-msg",
+         "start": 47,
+         "end": 59,
+         "text": "您看能不能让零点六个点？"
+        }
+       ],
+       "confidence": 0.7,
+       "unresolved": []
+      }
+     ],
+     "abstentions": [],
+     "data_requests": [],
+     "authority_claims": [],
+     "funding_claims": [],
+     "autonomy_eligible": false,
+     "autonomy_notes": [
+      "a settlement date or window is stated but not read into the terms",
+      "text not read into the terms: '跟', '商量', '事', '月回款比较好', '周', ..."
+     ]
+    },
+    "verdict": {
+     "outcome": "NEEDS_OWNER_APPROVAL",
+     "required_tier": "TIER_2",
+     "business_action": "needs_owner",
+     "summary": "NEEDS OWNER APPROVAL. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.35x. owner approval needed: autonomy not proven (the compiler could not account for every figure and request in the message: a settlement date or window is stated but not read into the terms; text not read into the terms: '跟', '商量', '事', '月回款比较好', '周', ...).",
+     "summary_when": "NEEDS Owner APPROVAL. 远期让步 ¥0.00，对照上限 ¥5,000.00。契约满足：DSCR_MIN 2.00x、LEVERAGE_MAX 1.35x. owner approval needed: autonomy not proven (the compiler could not account for every figure and request in the message: a settlement date or window is stated but not read into the terms; text not read into the terms: '跟'、'商量'、'事'、'月回款比较好'、'周'、...)。",
+     "codes": [],
+     "clarification_requested": false,
+     "clarification_when": [],
+     "autonomy_eligible": false,
+     "accepted_alone": false,
+     "counters": [],
+     "bound_obligations": [
+      {
+       "id": "OFF-7dd2ad883b23-O1",
+       "type": "IMMEDIATE_DISCOUNT",
+       "rate_bp": 60,
+       "amount_fen": null,
+       "days_delta": null,
+       "target_terms_days": null,
+       "effective_day": 2,
+       "base": {
+        "kind": "INVOICE",
+        "amount_fen": 42000000,
+        "receivable_id": "RCV-A",
+        "events_per_year": null,
+        "amount_display": "¥420,000.00"
+       },
+       "contingency": "FIRM",
+       "duration": {
+        "kind": "ONE_OFF",
+        "invoices": null,
+        "end_day": null
+       }
+      }
+     ]
+    },
+    "security_events": [],
+    "books_delta": {
+     "commitments_booked": 0,
+     "operations": 0,
+     "money_moved_fen": 0,
+     "facilities_added": 0,
+     "unauthorised_executions": 0
+    },
+    "compiler_source": {
+     "response": "deepseek-flash",
+     "log": [
+      "cache:fallback(CacheMiss)",
+      "deepseek:ok model=deepseek-flash",
+      "cross_check:agree"
+     ],
+     "nl_log": []
+    },
+    "docs_sent": {
+     "LU02-msg": "王经理，跟您商量个事。我们这个月回款比较好，你们那笔42万的货款，我们这周就可以提前打给你们。您看能不能让零点六个点？"
+    }
+   },
+   "score": {
+    "class": "correct",
+    "abstained": false,
+    "flagged": false,
+    "notes": [],
+    "rows": [
+     {
+      "label": {
+       "type": "IMMEDIATE_DISCOUNT",
+       "value": 0.6,
+       "unit": "percent",
+       "base_yuan": 420000,
+       "contingency": "FIRM",
+       "duration": "ONE_OFF",
+       "span_has": "零点六个点"
+      },
+      "status": "matched",
+      "obligation_id": "OFF-7dd2ad883b23-O1",
+      "type": "IMMEDIATE_DISCOUNT",
+      "diffs": [],
+      "span_grounded": true,
+      "span_relevant": true,
+      "span_notes": [],
+      "soft": []
+     }
+    ],
+    "spurious": [],
+    "grounded": 1,
+    "read": 1,
+    "span_relevant": 1,
+    "span_relevant_of": 1
+   }
+  },
+  {
+   "id": "LU03",
+   "lang": "en",
+   "category": "a_supported",
+   "mode": "read",
+   "expect": {
+    "mode": "read",
+    "obligations": [
+     {
+      "type": "TERMS_EXTENSION",
+      "value": 60,
+      "unit": "days",
+      "duration": "RECURRING_BOUNDED",
+      "invoices": 6,
+      "current_days": 45,
+      "span_has": "sixty days"
+     }
+    ],
+    "owner_needed": true
+   },
+   "record": {
+    "id": "LU03",
+    "lang": "en",
+    "category": "a_supported",
+    "channel": "buyer_offer",
+    "counterparty_id": "BUYER-1",
+    "requests": [
+     {
+      "call": "POST /demo/reset",
+      "status": 200,
+      "ms": 70.6
+     },
+     {
+      "call": "POST /offers",
+      "status": 200,
+      "ms": 1180.5
+     },
+     {
+      "call": "POST /offers/{id}/evaluate",
+      "status": 200,
+      "ms": 68.4
+     }
+    ],
+    "reading_ms": 1180.5,
+    "reading_status_code": 200,
+    "log": [
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:38",
+      "backend": "cache",
+      "doc_hash": "db22116ce59368f50e52b6f67d01cfc4e93db01a6ddfd34fad375a29496ddb30",
+      "error": "CacheMiss",
+      "latency_ms": "0.1",
+      "outcome": "fallback",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:39",
+      "backend": "deepseek",
+      "doc_hash": "db22116ce59368f50e52b6f67d01cfc4e93db01a6ddfd34fad375a29496ddb30",
+      "latency_ms": "1161.8",
+      "model": "deepseek-flash",
+      "outcome": "ok",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.cross_check",
+      "ts": "2026-10-19 13:02:39",
+      "doc_hash": "db22116ce59368f50e52b6f67d01cfc4e93db01a6ddfd34fad375a29496ddb30",
+      "model": "deepseek-flash",
+      "outcome": "agree",
+      "prompt_version": "offer-v4"
+     }
+    ],
+    "reading": {
+     "kind": "offer",
+     "offer_id": "OFF-db22116ce593",
+     "compiler": "deepseek-flash",
+     "prompt_version": "offer-v4",
+     "status": "ABSTAINED",
+     "obligations": [],
+     "abstentions": [
+      {
+       "field": "TERMS_EXTENSION.target_terms_days",
+       "reason": "value dropped: not parseable as an exact amount",
+       "reason_when": "value dropped: not parseable as an exact amount",
+       "spans": [
+        {
+         "doc_id": "LU03-msg",
+         "start": 132,
+         "end": 192,
+         "text": "At the moment we pay each invoice 45 days after it's issued."
+        },
+        {
+         "doc_id": "LU03-msg",
+         "start": 193,
+         "end": 271,
+         "text": "Starting with the next invoice, we'd pay sixty days after it's issued instead."
+        },
+        {
+         "doc_id": "LU03-msg",
+         "start": 272,
+         "end": 368,
+         "text": "We only need this for the next six invoices; after that we'd go back to the current arrangement."
+        }
+       ]
+      },
+      {
+       "field": "TERMS_EXTENSION.days_delta",
+       "reason": "material field has no grounded span: target terms missing",
+       "reason_when": "material field has no grounded span: target terms missing",
+       "spans": [
+        {
+         "doc_id": "LU03-msg",
+         "start": 132,
+         "end": 192,
+         "text": "At the moment we pay each invoice 45 days after it's issued."
+        },
+        {
+         "doc_id": "LU03-msg",
+         "start": 193,
+         "end": 271,
+         "text": "Starting with the next invoice, we'd pay sixty days after it's issued instead."
+        },
+        {
+         "doc_id": "LU03-msg",
+         "start": 272,
+         "end": 368,
+         "text": "We only need this for the next six invoices; after that we'd go back to the current arrangement."
+        }
+       ]
+      }
+     ],
+     "data_requests": [],
+     "authority_claims": [],
+     "funding_claims": [],
+     "autonomy_eligible": false,
+     "autonomy_notes": [
+      "the compilation is ABSTAINED, not clean",
+      "a term was not read (TERMS_EXTENSION.target_terms_days, TERMS_EXTENSION.days_delta)",
+      "no term was read",
+      "a settlement date or window is stated but not read into the terms",
+      "a day count in LU03-msg is not accounted for by the extracted terms",
+      "a number in LU03-msg is not accounted for by the extracted terms",
+      "a count in LU03-msg is not accounted for by the extracted terms",
+      "LU03-msg holds a request beyond the extracted terms",
+      "LU03-msg holds a other topic beyond the extracted terms",
+      "text not read into the terms: 'following', 'up', 'tuesday's', 'call', 'sales', ..."
+     ]
+    },
+    "verdict": {
+     "outcome": "NO_VERDICT",
+     "required_tier": "TIER_1",
+     "business_action": "cannot",
+     "summary": "NO VERDICT: UNRESOLVED_SCOPE (TERMS_EXTENSION.target_terms_days, TERMS_EXTENSION.days_delta vs one grounded value per material field). Clarification requested from BUYER-1; nothing booked.",
+     "summary_when": "NO VERDICT: UNRESOLVED_SCOPE (TERMS_EXTENSION.target_terms_days, TERMS_EXTENSION.days_delta vs one grounded value per material field). Clarification requested from Foshan Home Retail Co.; nothing booked.",
+     "codes": [
+      "UNRESOLVED_SCOPE"
+     ],
+     "clarification_requested": true,
+     "clarification_when": [
+      "No verdict: a material field has no evidence; clarification requested from Foshan Home Retail Co."
+     ],
+     "autonomy_eligible": false,
+     "accepted_alone": false,
+     "counters": [],
+     "bound_obligations": []
+    },
+    "security_events": [],
+    "books_delta": {
+     "commitments_booked": 0,
+     "operations": 0,
+     "money_moved_fen": 0,
+     "facilities_added": 0,
+     "unauthorised_executions": 0
+    },
+    "compiler_source": {
+     "response": "deepseek-flash",
+     "log": [
+      "cache:fallback(CacheMiss)",
+      "deepseek:ok model=deepseek-flash",
+      "cross_check:agree"
+     ],
+     "nl_log": []
+    },
+    "docs_sent": {
+     "LU03-msg": "Following up on Tuesday's call with your sales team. The store refit has left our cash tight, so here is what we'd like to propose. At the moment we pay each invoice 45 days after it's issued. Starting with the next invoice, we'd pay sixty days after it's issued instead. We only need this for the next six invoices; after that we'd go back to the current arrangement."
+    }
+   },
+   "score": {
+    "class": "abstained_wrongly",
+    "abstained": true,
+    "flagged": false,
+    "notes": [],
+    "rows": [
+     {
+      "label": {
+       "type": "TERMS_EXTENSION",
+       "value": 60,
+       "unit": "days",
+       "duration": "RECURRING_BOUNDED",
+       "invoices": 6,
+       "current_days": 45,
+       "span_has": "sixty days"
+      },
+      "status": "missing"
+     }
+    ],
+    "spurious": [],
+    "grounded": 0,
+    "read": 0,
+    "span_relevant": 0,
+    "span_relevant_of": 0
+   }
+  },
+  {
+   "id": "LU04",
+   "lang": "zh",
+   "category": "c_conditions",
+   "mode": "read",
+   "expect": {
+    "mode": "read",
+    "obligations": [
+     {
+      "type": "CONTINGENT_REBATE",
+      "value": 2,
+      "unit": "percent",
+      "contingency": "CONTINGENT",
+      "span_has": "两个点"
+     }
+    ],
+    "owner_needed": true
+   },
+   "record": {
+    "id": "LU04",
+    "lang": "zh",
+    "category": "c_conditions",
+    "channel": "buyer_offer",
+    "counterparty_id": "BUYER-1",
+    "requests": [
+     {
+      "call": "POST /demo/reset",
+      "status": 200,
+      "ms": 70.6
+     },
+     {
+      "call": "POST /offers",
+      "status": 200,
+      "ms": 1111.4
+     },
+     {
+      "call": "POST /offers/{id}/evaluate",
+      "status": 200,
+      "ms": 71.5
+     }
+    ],
+    "reading_ms": 1111.4,
+    "reading_status_code": 200,
+    "log": [
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:39",
+      "backend": "cache",
+      "doc_hash": "b60342bfc6a5348bca885a63e40e05a1245f2c8c71a706c47cf942ef04852ec0",
+      "error": "CacheMiss",
+      "latency_ms": "0.1",
+      "outcome": "fallback",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:40",
+      "backend": "deepseek",
+      "doc_hash": "b60342bfc6a5348bca885a63e40e05a1245f2c8c71a706c47cf942ef04852ec0",
+      "latency_ms": "1104.0",
+      "model": "deepseek-flash",
+      "outcome": "ok",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.cross_check",
+      "ts": "2026-10-19 13:02:40",
+      "doc_hash": "b60342bfc6a5348bca885a63e40e05a1245f2c8c71a706c47cf942ef04852ec0",
+      "model": "deepseek-flash",
+      "outcome": "agree",
+      "prompt_version": "offer-v4"
+     }
+    ],
+    "reading": {
+     "kind": "offer",
+     "offer_id": "OFF-b60342bfc6a5",
+     "compiler": "deepseek-flash",
+     "prompt_version": "offer-v4",
+     "status": "ABSTAINED",
+     "obligations": [
+      {
+       "id": "OFF-b60342bfc6a5-O1",
+       "type": "CONTINGENT_REBATE",
+       "rate_bp": 200,
+       "amount_fen": null,
+       "days_delta": null,
+       "target_terms_days": null,
+       "effective_day": null,
+       "base": {
+        "kind": "PERIOD_PURCHASES",
+        "amount_fen": 100000000,
+        "receivable_id": null,
+        "events_per_year": null,
+        "amount_display": "¥1,000,000.00"
+       },
+       "contingency": "CONTINGENT",
+       "duration": {
+        "kind": "ONE_OFF",
+        "invoices": null,
+        "end_day": null
+       },
+       "spans": [
+        {
+         "doc_id": "LU04-msg",
+         "start": 14,
+         "end": 45,
+         "text": "明年上半年要是从你们这边进货能过一百万，想请你们返两个点给我们"
+        }
+       ],
+       "confidence": 0.75,
+       "unresolved": []
+      }
+     ],
+     "abstentions": [
+      {
+       "field": "offer.unread_term.target_terms_days",
+       "reason": "a stated rate or payment-terms length was not read into any term; nothing booked rather than booking the package without it",
+       "reason_when": "a stated rate or payment-terms length was not read into any term; nothing booked rather than booking the package without it",
+       "spans": [
+        {
+         "doc_id": "LU04-msg",
+         "start": 54,
+         "end": 57,
+         "text": "45天"
+        }
+       ]
+      }
+     ],
+     "data_requests": [],
+     "authority_claims": [],
+     "funding_claims": [],
+     "autonomy_eligible": false,
+     "autonomy_notes": [
+      "the compilation is ABSTAINED, not clean",
+      "a term was not read (offer.unread_term.target_terms_days)",
+      "a day count in LU04-msg is not accounted for by the extracted terms",
+      "a settlement date or window is stated but not read into the terms",
+      "text not read into the terms: '老板交代', '事', '明年上半年要', '从', '边进货', ..."
+     ]
+    },
+    "verdict": {
+     "outcome": "NO_VERDICT",
+     "required_tier": "TIER_1",
+     "business_action": "cannot",
+     "summary": "NO VERDICT: UNRESOLVED_SCOPE (offer.unread_term.target_terms_days vs one grounded value per material field). Clarification requested from BUYER-1; nothing booked.",
+     "summary_when": "暂无结论：UNRESOLVED_SCOPE (offer.unread_term.target_terms_days 对 one grounded value per material field)。Clarification requested from Foshan Home Retail Co.; nothing booked.",
+     "codes": [
+      "UNRESOLVED_SCOPE"
+     ],
+     "clarification_requested": true,
+     "clarification_when": [
+      "No verdict: a material field has no evidence; clarification requested from Foshan Home Retail Co."
+     ],
+     "autonomy_eligible": false,
+     "accepted_alone": false,
+     "counters": [],
+     "bound_obligations": []
+    },
+    "security_events": [],
+    "books_delta": {
+     "commitments_booked": 0,
+     "operations": 0,
+     "money_moved_fen": 0,
+     "facilities_added": 0,
+     "unauthorised_executions": 0
+    },
+    "compiler_source": {
+     "response": "deepseek-flash",
+     "log": [
+      "cache:fallback(CacheMiss)",
+      "deepseek:ok model=deepseek-flash",
+      "cross_check:agree"
+     ],
+     "nl_log": []
+    },
+    "docs_sent": {
+     "LU04-msg": "张总好！我们老板交代了个事：明年上半年要是从你们这边进货能过一百万，想请你们返两个点给我们。付款还是照现在的45天走，不变。"
+    }
+   },
+   "score": {
+    "class": "abstained_wrongly",
+    "abstained": true,
+    "flagged": false,
+    "notes": [],
+    "rows": [
+     {
+      "label": {
+       "type": "CONTINGENT_REBATE",
+       "value": 2,
+       "unit": "percent",
+       "contingency": "CONTINGENT",
+       "span_has": "两个点"
+      },
+      "status": "matched",
+      "obligation_id": "OFF-b60342bfc6a5-O1",
+      "type": "CONTINGENT_REBATE",
+      "diffs": [],
+      "span_grounded": true,
+      "span_relevant": true,
+      "span_notes": [],
+      "soft": []
+     }
+    ],
+    "spurious": [],
+    "grounded": 1,
+    "read": 1,
+    "span_relevant": 1,
+    "span_relevant_of": 1
+   }
+  },
+  {
+   "id": "LU05",
+   "lang": "zh",
+   "category": "a_supported",
+   "mode": "read",
+   "expect": {
+    "mode": "read",
+    "obligations": [
+     {
+      "type": "IMMEDIATE_DISCOUNT",
+      "value": 0.5,
+      "unit": "percent",
+      "base_yuan": 420000,
+      "contingency": "FIRM",
+      "duration": "ONE_OFF",
+      "span_has": "九九五折"
+     },
+     {
+      "type": "TERMS_EXTENSION",
+      "value": 60,
+      "unit": "days",
+      "contingency": "FIRM",
+      "duration": "RECURRING_PERPETUAL",
+      "span_has": "六十天"
+     }
+    ],
+    "owner_needed": true
+   },
+   "record": {
+    "id": "LU05",
+    "lang": "zh",
+    "category": "a_supported",
+    "channel": "buyer_offer",
+    "counterparty_id": "BUYER-1",
+    "requests": [
+     {
+      "call": "POST /demo/reset",
+      "status": 200,
+      "ms": 72.6
+     },
+     {
+      "call": "POST /offers",
+      "status": 200,
+      "ms": 1439.4
+     },
+     {
+      "call": "POST /offers/{id}/evaluate",
+      "status": 200,
+      "ms": 69.6
+     }
+    ],
+    "reading_ms": 1439.4,
+    "reading_status_code": 200,
+    "log": [
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:40",
+      "backend": "cache",
+      "doc_hash": "9dac8fce89e0c691d262519f84e56d91feccfbfb909dd37934c60af177df2012",
+      "error": "CacheMiss",
+      "latency_ms": "0.1",
+      "outcome": "fallback",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:42",
+      "backend": "deepseek",
+      "doc_hash": "9dac8fce89e0c691d262519f84e56d91feccfbfb909dd37934c60af177df2012",
+      "latency_ms": "1433.0",
+      "model": "deepseek-flash",
+      "outcome": "ok",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.cross_check",
+      "ts": "2026-10-19 13:02:42",
+      "doc_hash": "9dac8fce89e0c691d262519f84e56d91feccfbfb909dd37934c60af177df2012",
+      "model": "deepseek-flash",
+      "outcome": "agree",
+      "prompt_version": "offer-v4"
+     }
+    ],
+    "reading": {
+     "kind": "offer",
+     "offer_id": "OFF-9dac8fce89e0",
+     "compiler": "deepseek-flash",
+     "prompt_version": "offer-v4",
+     "status": "ABSTAINED",
+     "obligations": [
+      {
+       "id": "OFF-9dac8fce89e0-O1",
+       "type": "IMMEDIATE_DISCOUNT",
+       "rate_bp": 50,
+       "amount_fen": null,
+       "days_delta": null,
+       "target_terms_days": null,
+       "effective_day": null,
+       "base": {
+        "kind": "INVOICE",
+        "amount_fen": 42000000,
+        "receivable_id": null,
+        "events_per_year": null,
+        "amount_display": "¥420,000.00"
+       },
+       "contingency": "FIRM",
+       "duration": {
+        "kind": "ONE_OFF",
+        "invoices": null,
+        "end_day": null
+       },
+       "spans": [
+        {
+         "doc_id": "LU05-msg",
+         "start": 7,
+         "end": 37,
+         "text": "那张四十二万的票，我们这周五之前就能结掉，麻烦给打个九九五折"
+        }
+       ],
+       "confidence": 0.85,
+       "unresolved": []
+      }
+     ],
+     "abstentions": [
+      {
+       "field": "TERMS_EXTENSION.target_terms_days",
+       "reason": "value dropped: not parseable as an exact amount",
+       "reason_when": "value dropped: not parseable as an exact amount",
+       "spans": [
+        {
+         "doc_id": "LU05-msg",
+         "start": 43,
+         "end": 56,
+         "text": "以后的票能不能都按六十天走"
+        }
+       ]
+      },
+      {
+       "field": "TERMS_EXTENSION.days_delta",
+       "reason": "material field has no grounded span: target terms missing",
+       "reason_when": "material field has no grounded span: target terms missing",
+       "spans": [
+        {
+         "doc_id": "LU05-msg",
+         "start": 43,
+         "end": 56,
+         "text": "以后的票能不能都按六十天走"
+        }
+       ]
+      }
+     ],
+     "data_requests": [],
+     "authority_claims": [],
+     "funding_claims": [],
+     "autonomy_eligible": false,
+     "autonomy_notes": [
+      "the compilation is ABSTAINED, not clean",
+      "a term was not read (TERMS_EXTENSION.target_terms_days, TERMS_EXTENSION.days_delta)",
+      "a settlement date or window is stated but not read into the terms",
+      "a number in LU05-msg is not accounted for by the extracted terms",
+      "LU05-msg holds a other topic beyond the extracted terms",
+      "LU05-msg holds a question beyond the extracted terms",
+      "text not read into the terms: '票', '周五之前', '结掉', '打', '还有', ..."
+     ]
+    },
+    "verdict": {
+     "outcome": "NO_VERDICT",
+     "required_tier": "TIER_1",
+     "business_action": "cannot",
+     "summary": "NO VERDICT: UNRESOLVED_SCOPE (TERMS_EXTENSION.target_terms_days, TERMS_EXTENSION.days_delta vs one grounded value per material field). Clarification requested from BUYER-1; nothing booked.",
+     "summary_when": "暂无结论：UNRESOLVED_SCOPE (TERMS_EXTENSION.target_terms_days, TERMS_EXTENSION.days_delta 对 one grounded value per material field)。Clarification requested from Foshan Home Retail Co.; nothing booked.",
+     "codes": [
+      "UNRESOLVED_SCOPE"
+     ],
+     "clarification_requested": true,
+     "clarification_when": [
+      "No verdict: a material field has no evidence; clarification requested from Foshan Home Retail Co."
+     ],
+     "autonomy_eligible": false,
+     "accepted_alone": false,
+     "counters": [],
+     "bound_obligations": []
+    },
+    "security_events": [],
+    "books_delta": {
+     "commitments_booked": 0,
+     "operations": 0,
+     "money_moved_fen": 0,
+     "facilities_added": 0,
+     "unauthorised_executions": 0
+    },
+    "compiler_source": {
+     "response": "deepseek-flash",
+     "log": [
+      "cache:fallback(CacheMiss)",
+      "deepseek:ok model=deepseek-flash",
+      "cross_check:agree"
+     ],
+     "nl_log": []
+    },
+    "docs_sent": {
+     "LU05-msg": "李经理，您好。那张四十二万的票，我们这周五之前就能结掉，麻烦给打个九九五折。还有个事，以后的票能不能都按六十天走？"
+    }
+   },
+   "score": {
+    "class": "abstained_wrongly",
+    "abstained": true,
+    "flagged": false,
+    "notes": [],
+    "rows": [
+     {
+      "label": {
+       "type": "IMMEDIATE_DISCOUNT",
+       "value": 0.5,
+       "unit": "percent",
+       "base_yuan": 420000,
+       "contingency": "FIRM",
+       "duration": "ONE_OFF",
+       "span_has": "九九五折"
+      },
+      "status": "matched",
+      "obligation_id": "OFF-9dac8fce89e0-O1",
+      "type": "IMMEDIATE_DISCOUNT",
+      "diffs": [],
+      "span_grounded": true,
+      "span_relevant": true,
+      "span_notes": [],
+      "soft": []
+     },
+     {
+      "label": {
+       "type": "TERMS_EXTENSION",
+       "value": 60,
+       "unit": "days",
+       "contingency": "FIRM",
+       "duration": "RECURRING_PERPETUAL",
+       "span_has": "六十天"
+      },
+      "status": "missing"
+     }
+    ],
+    "spurious": [],
+    "grounded": 1,
+    "read": 1,
+    "span_relevant": 1,
+    "span_relevant_of": 1
+   }
+  },
+  {
+   "id": "LU06",
+   "lang": "en",
+   "category": "b_ambiguity",
+   "mode": "abstain",
+   "expect": {
+    "mode": "abstain",
+    "obligations": [],
+    "owner_needed": true,
+    "clarification": "which option, and at what figure: the rate is approximate (\"in the region of 1%, give or take\") and the alternative names no length and no number of invoices; nothing is priced or booked until the buyer firms one up"
+   },
+   "record": {
+    "id": "LU06",
+    "lang": "en",
+    "category": "b_ambiguity",
+    "channel": "buyer_offer",
+    "counterparty_id": "BUYER-1",
+    "requests": [
+     {
+      "call": "POST /demo/reset",
+      "status": 200,
+      "ms": 84.2
+     },
+     {
+      "call": "POST /offers",
+      "status": 200,
+      "ms": 1083.4
+     },
+     {
+      "call": "POST /offers/{id}/evaluate",
+      "status": 200,
+      "ms": 118.0
+     }
+    ],
+    "reading_ms": 1083.4,
+    "reading_status_code": 200,
+    "log": [
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:42",
+      "backend": "cache",
+      "doc_hash": "5898d383a29b1bc6d1678a92533b9c57c69eac60e9579a778be375b772d05b3a",
+      "error": "CacheMiss",
+      "latency_ms": "0.2",
+      "outcome": "fallback",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.call",
+      "ts": "2026-10-19 13:02:43",
+      "backend": "deepseek",
+      "doc_hash": "5898d383a29b1bc6d1678a92533b9c57c69eac60e9579a778be375b772d05b3a",
+      "latency_ms": "1066.5",
+      "model": "deepseek-flash",
+      "outcome": "ok",
+      "prompt_version": "offer-v4"
+     },
+     {
+      "event": "compiler.cross_check",
+      "ts": "2026-10-19 13:02:43",
+      "doc_hash": "5898d383a29b1bc6d1678a92533b9c57c69eac60e9579a778be375b772d05b3a",
+      "model": "deepseek-flash",
+      "outcome": "agree",
+      "prompt_version": "offer-v4"
+     }
+    ],
+    "reading": {
+     "kind": "offer",
+     "offer_id": "OFF-5898d383a29b",
+     "compiler": "deepseek-flash",
+     "prompt_version": "offer-v4",
+     "status": "ABSTAINED",
+     "obligations": [],
+     "abstentions": [
+      {
+       "field": "IMMEDIATE_DISCOUNT.rate_bp",
+       "reason": "material field has no span: a concession is mentioned without its value",
+       "reason_when": "material field has no span: a concession is mentioned without its value",
+       "spans": [
+        {
+         "doc_id": "LU06-msg",
+         "start": 143,
+         "end": 186,
+         "text": "something in the region of 1%, give or take"
+        }
+       ]
+      },
+      {
+       "field": "TERMS_EXTENSION.rate_bp",
+       "reason": "material field has no span: a concession is mentioned without its value",
+       "reason_when": "material field has no span: a concession is mentioned without its value",
+       "spans": [
+        {
+         "doc_id": "LU06-msg",
+         "start": 233,
+         "end": 285,
+         "text": "you give us a little longer on the next few invoices"
+        }
+       ]
+      }
+     ],
+     "data_requests": [],
+     "authority_claims": [],
+     "funding_claims": [],
+     "autonomy_eligible": false,
+     "autonomy_notes": [
+      "the compilation is ABSTAINED, not clean",
+      "a term was not read (IMMEDIATE_DISCOUNT.rate_bp, TERMS_EXTENSION.rate_bp)",
+      "no term was read",
+      "a rate in LU06-msg is not accounted for by the extracted terms",
+      "LU06-msg holds a condition beyond the extracted terms",
+      "the message refers to a document that was not supplied",
+      "text not read into the terms: 'foshan', 'home', 'retail's', 'finance', 'team', ..."
+     ]
+    },
+    "verdict": {
+     "outcome": "NO_VERDICT",
+     "required_tier": "TIER_1",
+     "business_action": "cannot",
+     "summary": "NO VERDICT: UNRESOLVED_SCOPE (IMMEDIATE_DISCOUNT.rate_bp, TERMS_EXTENSION.rate_bp vs one grounded value per material field). Clarification requested from BUYER-1; nothing booked.",
+     "summary_when": "NO VERDICT: UNRESOLVED_SCOPE (IMMEDIATE_DISCOUNT.rate_bp, TERMS_EXTENSION.rate_bp vs one grounded value per material field). Clarification requested from Foshan Home Retail Co.; nothing booked.",
+     "codes": [
+      "UNRESOLVED_SCOPE"
+     ],
+     "clarification_requested": true,
+     "clarification_when": [
+      "No verdict: a material field has no evidence; clarification requested from Foshan Home Retail Co."
+     ],
+     "autonomy_eligible": false,
+     "accepted_alone": false,
+     "counters": [],
+     "bound_obligations": []
+    },
+    "security_events": [],
+    "books_delta": {
+     "commitments_booked": 0,
+     "operations": 0,
+     "money_moved_fen": 0,
+     "facilities_added": 0,
+     "unauthorised_executions": 0
+    },
+    "compiler_source": {
+     "response": "deepseek-flash",
+     "log": [
+      "cache:fallback(CacheMiss)",
+      "deepseek:ok model=deepseek-flash",
+      "cross_check:agree"
+     ],
+     "nl_log": []
+    },
+    "docs_sent": {
+     "LU06-msg": "Hello from Foshan Home Retail's finance team. We could look at paying the open invoice ahead of time if the discount makes it worth our while, something in the region of 1%, give or take. Or, if you'd rather, we stay on schedule and you give us a little longer on the next few invoices. Let us know which you'd prefer and we'll go from there."
+    }
+   },
+   "score": {
+    "class": "abstained_correctly",
+    "abstained": true,
+    "flagged": false,
+    "notes": [],
+    "rows": [],
+    "spurious": [],
+    "grounded": 0,
+    "read": 0,
+    "span_relevant": 0,
+    "span_relevant_of": 0
+   }
+  }
+ ]
+}

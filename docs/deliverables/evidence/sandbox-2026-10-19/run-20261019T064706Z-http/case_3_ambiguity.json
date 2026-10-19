@@ -1,0 +1,3082 @@
+{
+ "case": 3,
+ "name": "ambiguity",
+ "title": "Ambiguity",
+ "transport": "http",
+ "parts": [
+  {
+   "part": "3a",
+   "title": "ambiguous buyer message (LU06)",
+   "status": "RAN",
+   "in_process_only": null,
+   "passed": 6,
+   "failed": 0,
+   "groups": [
+    {
+     "gid": "3a",
+     "attempted": "An ambiguous buyer message: two alternatives and an approximate rate (LU06)",
+     "by": "BUYER-1 (keyed) in chat and on POST /offers; OWNER evaluates",
+     "expected": "chat: a request to clarify, no operation; the filed offer ABSTAINED; evaluation NO_VERDICT with a clarification and nothing booked",
+     "steps": [
+      "3a.03",
+      "3a.04",
+      "3a.05",
+      "3a.06"
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "id": "3a.01",
+     "kind": "action",
+     "title": "reset the demo books (golden_sme)",
+     "request": {
+      "method": "POST",
+      "path": "/demo/reset",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 71.8,
+     "response": {
+      "ok": true,
+      "scenario": "golden_sme",
+      "day": 0
+     },
+     "expected": "200, the golden_sme books loaded on day 0",
+     "observed": "HTTP 200 {'ok': True, 'scenario': 'golden_sme', 'day': 0}",
+     "result": "PASS"
+    },
+    {
+     "id": "3a.02",
+     "kind": "action",
+     "title": "end every chat session",
+     "request": {
+      "method": "POST",
+      "path": "/nl/reset",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 1.7,
+     "response": {
+      "ok": true
+     },
+     "expected": "200",
+     "observed": "HTTP 200",
+     "result": "PASS"
+    },
+    {
+     "id": "3a.03",
+     "kind": "action",
+     "title": "BUYER-1 in chat: the LU06 message",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "BUYER-1",
+      "credential": "BUYER-1's channel key (X-Counterparty-Key), Foshan Home Retail Co.",
+      "body": {
+       "session_id": "3a-buyer",
+       "actor": "COUNTERPARTY",
+       "counterparty_id": "BUYER-1",
+       "text": "Hello from Foshan Home Retail's finance team. We could look at paying the open invoice ahead of time if the discount makes it worth our while, something in the region of 1%, give or take. Or, if you'd rather, we stay on schedule and you give us a little longer on the next few invoices. Let us know which you'd prefer and we'll go from there."
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 13.1,
+     "response": {
+      "session_id": "3a-buyer",
+      "turn": 1,
+      "reply": "Please clarify the terms: we cannot establish them from your message.",
+      "intent": "COUNTERPARTY_MESSAGE",
+      "lang": "en",
+      "trace_id": "3a-buyer:1",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "actor",
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false
+     },
+     "expected": "asks to clarify; no operation",
+     "observed": "reply: Please clarify the terms: we cannot establish them from your message. | operations []",
+     "result": "PASS"
+    },
+    {
+     "id": "3a.04",
+     "kind": "action",
+     "title": "BUYER-1 files the LU06 message",
+     "request": {
+      "method": "POST",
+      "path": "/offers",
+      "params": null,
+      "credential_role": "BUYER-1",
+      "credential": "BUYER-1's channel key (X-Counterparty-Key), Foshan Home Retail Co.",
+      "body": {
+       "documents": [
+        {
+         "doc_id": "LU06-msg",
+         "channel": "email",
+         "sender_id": "BUYER-1",
+         "received_day": 0,
+         "text": "Hello from Foshan Home Retail's finance team. We could look at paying the open invoice ahead of time if the discount makes it worth our while, something in the region of 1%, give or take. Or, if you'd rather, we stay on schedule and you give us a little longer on the next few invoices. Let us know which you'd prefer and we'll go from there."
+        }
+       ]
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 11.3,
+     "response": {
+      "offer": {
+       "offer_id": "OFF-5898d383a29b",
+       "version": 1,
+       "counterparty_id": "BUYER-1",
+       "doc_ids": [
+        "LU06-msg"
+       ],
+       "received_day": 0,
+       "status": "ABSTAINED",
+       "obligations": [],
+       "abstentions": [
+        {
+         "field": "CONTINGENT_REBATE.rate_bp",
+         "reason": "material field has no span: a concession is mentioned without its value",
+         "spans": [
+          {
+           "doc_id": "LU06-msg",
+           "start": 108,
+           "end": 116,
+           "text": "discount"
+          }
+         ],
+         "reason_when": "material field has no span: a concession is mentioned without its value"
+        }
+       ],
+       "data_requests": [],
+       "authority_claims": [],
+       "funding_claims": [],
+       "compiler": "rules-v1",
+       "prompt_version": "offer-v4",
+       "autonomy_eligible": false,
+       "autonomy_notes": [
+        "the compilation is ABSTAINED, not clean",
+        "a term was not read (CONTINGENT_REBATE.rate_bp)",
+        "no term was read",
+        "a rate in LU06-msg is not accounted for by the extracted terms",
+        "LU06-msg holds a condition beyond the extracted terms",
+        "the message refers to a document that was not supplied",
+        "text not read into the terms: 'foshan', 'home', 'retail's', 'finance', 'team', ..."
+       ]
+      },
+      "documents": [
+       {
+        "doc_id": "LU06-msg",
+        "channel": "<omitted: presentation series>",
+        "sender_id": "BUYER-1",
+        "received_day": 0,
+        "text": "Hello from Foshan Home Retail's finance team. We could look at paying the open invoice ahead of time if the discount makes it worth our while, something in the region of 1%, give or take. Or, if you'd rather, we stay on schedule and you give us a little longer on the next few invoices. Let us know which you'd prefer and we'll go from there.",
+        "parent_doc_id": null,
+        "filename": null
+       }
+      ]
+     },
+     "expected": "ABSTAINED, no term read",
+     "observed": "OFF-5898d383a29b ABSTAINED, 0 terms; abstentions [('CONTINGENT_REBATE.rate_bp', 'material field has no span: a concession is mentioned without its value')]",
+     "result": "PASS"
+    },
+    {
+     "id": "3a.05",
+     "kind": "action",
+     "title": "the owner evaluates it",
+     "request": {
+      "method": "POST",
+      "path": "/offers/OFF-5898d383a29b/evaluate",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {}
+     },
+     "http_status": 200,
+     "latency_ms": 64.1,
+     "response": {
+      "id": "VER-ce5447e1cd5e",
+      "outcome": "NO_VERDICT",
+      "violations": [
+       {
+        "code": "UNRESOLVED_SCOPE",
+        "message": "No verdict: a material field has no evidence; clarification requested from BUYER-1",
+        "day": null,
+        "month": null,
+        "observed": "CONTINGENT_REBATE.rate_bp",
+        "limit": "one grounded value per material field",
+        "curable": null,
+        "cure_cost_fen": null,
+        "cure_note": null,
+        "formula": "every material field has exactly one grounded value",
+        "inputs": {
+         "fields": "CONTINGENT_REBATE.rate_bp",
+         "clarification": "requested",
+         "booked": "0"
+        },
+        "spans": [
+         {
+          "doc_id": "LU06-msg",
+          "start": 108,
+          "end": 116,
+          "text": "discount"
+         }
+        ],
+        "message_when": "No verdict: a material field has no evidence; clarification requested from Foshan Home Retail Co.",
+        "cure_note_when": null
+       }
+      ],
+      "counters": [],
+      "summary": "NO VERDICT: UNRESOLVED_SCOPE (CONTINGENT_REBATE.rate_bp vs one grounded value per material field). Clarification requested from BUYER-1; nothing booked.",
+      "plan": null
+     },
+     "expected": "NO_VERDICT, UNRESOLVED_SCOPE, clarification requested, nothing booked",
+     "observed": "NO_VERDICT ['UNRESOLVED_SCOPE']: NO VERDICT: UNRESOLVED_SCOPE (CONTINGENT_REBATE.rate_bp vs one grounded value per material field). Clarification requested from BUYER-1; nothing booked.",
+     "result": "PASS"
+    },
+    {
+     "id": "3a.06",
+     "kind": "proof",
+     "title": "proof: nothing booked",
+     "expected": "no operation beyond the reset, no commitment, books unchanged",
+     "observed": "operations added []; commitments 0; books unchanged",
+     "result": "PASS"
+    }
+   ],
+   "claims": null
+  },
+  {
+   "part": "3b",
+   "title": "yes / 1 / approve 1 / approve APR-… in owner chat (CON-1)",
+   "status": "RAN",
+   "in_process_only": null,
+   "passed": 16,
+   "failed": 0,
+   "groups": [
+    {
+     "gid": "prefix",
+     "attempted": "Set-up: the case-1 journey to day 34 (EX01 read and evaluated, Option A agreed and funded, the day-2 receipt, the residual late, the reserve alert)",
+     "by": "OWNER, BANK_FEED",
+     "expected": "as case 1, groups 1.1 to 1.5",
+     "steps": [
+      "3b.03",
+      "3b.04",
+      "3b.05",
+      "3b.06",
+      "3b.07",
+      "3b.08",
+      "3b.09",
+      "3b.10",
+      "3b.11",
+      "3b.12"
+     ]
+    },
+    {
+     "gid": "3b",
+     "attempted": "Owner chat with an approval queued but not shown: \"yes\", \"1\", \"approve 1\", then \"approve APR-…\" (CON-1)",
+     "by": "OWNER in a fresh chat session",
+     "expected": "\"yes\" lists the queue and decides nothing; \"1\" shows the item, decides nothing and tells the owner to say \"approve APR-…\"; \"approve 1\" (the list is no longer the last thing shown) is not understood and decides nothing (fail-safe); \"approve APR-…\" decides it: EXECUTED, APPROVED",
+     "steps": [
+      "3b.13",
+      "3b.14",
+      "3b.15",
+      "3b.16"
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "id": "3b.01",
+     "kind": "action",
+     "title": "reset the demo books (golden_sme)",
+     "request": {
+      "method": "POST",
+      "path": "/demo/reset",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 68.6,
+     "response": {
+      "ok": true,
+      "scenario": "golden_sme",
+      "day": 0
+     },
+     "expected": "200, the golden_sme books loaded on day 0",
+     "observed": "HTTP 200 {'ok': True, 'scenario': 'golden_sme', 'day': 0}",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.02",
+     "kind": "action",
+     "title": "end every chat session",
+     "request": {
+      "method": "POST",
+      "path": "/nl/reset",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 1.5,
+     "response": {
+      "ok": true
+     },
+     "expected": "200",
+     "observed": "HTTP 200",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.03",
+     "kind": "action",
+     "title": "file the buyer's request EX01",
+     "request": {
+      "method": "POST",
+      "path": "/offers",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "fixture_id": "EX01_PACKAGE"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 27.4,
+     "response": {
+      "offer": {
+       "offer_id": "OFF-f806f79b6c21",
+       "version": 1,
+       "counterparty_id": "BUYER-1",
+       "doc_ids": [
+        "EX01-msg"
+       ],
+       "received_day": 0,
+       "status": "COMPILED",
+       "obligations": [
+        {
+         "id": "OFF-f806f79b6c21-O1",
+         "type": "IMMEDIATE_DISCOUNT",
+         "counterparty_id": "BUYER-1",
+         "rate_bp": 120,
+         "amount_fen": null,
+         "days_delta": null,
+         "target_terms_days": null,
+         "effective_day": null,
+         "base": {
+          "kind": "INVOICE",
+          "amount_fen": 42000000,
+          "receivable_id": null,
+          "events_per_year": null,
+          "amount_display": "¥420,000.00"
+         },
+         "contingency": "FIRM",
+         "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+         },
+         "spans": [
+          {
+           "doc_id": "EX01-msg",
+           "start": 6,
+           "end": 36,
+           "text": "settle the ¥420k early at 1.2%"
+          }
+         ],
+         "confidence": 0.9,
+         "unresolved": [],
+         "rate_display": "1.20%"
+        },
+        {
+         "id": "OFF-f806f79b6c21-O2",
+         "type": "TERMS_EXTENSION",
+         "counterparty_id": "BUYER-1",
+         "rate_bp": null,
+         "amount_fen": null,
+         "days_delta": null,
+         "target_terms_days": 60,
+         "effective_day": null,
+         "base": {
+          "kind": "FUTURE_INVOICES",
+          "amount_fen": null,
+          "receivable_id": null,
+          "events_per_year": null
+         },
+         "contingency": "FIRM",
+         "duration": {
+          "kind": "RECURRING_PERPETUAL",
+          "invoices": null,
+          "end_day": null
+         },
+         "spans": [
+          {
+           "doc_id": "EX01-msg",
+           "start": 44,
+           "end": 94,
+           "text": "extend our standard terms to 60 days going forward"
+          }
+         ],
+         "confidence": 0.95,
+         "unresolved": [
+          "current_terms_days"
+         ]
+        },
+        {
+         "id": "OFF-f806f79b6c21-O3",
+         "type": "CONTINGENT_REBATE",
+         "counterparty_id": "BUYER-1",
+         "rate_bp": 100,
+         "amount_fen": null,
+         "days_delta": null,
+         "target_terms_days": null,
+         "effective_day": null,
+         "base": {
+          "kind": "PERIOD_PURCHASES",
+          "amount_fen": null,
+          "receivable_id": null,
+          "events_per_year": null
+         },
+         "contingency": "CONTINGENT",
+         "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+         },
+         "spans": [
+          {
+           "doc_id": "EX01-msg",
+           "start": 107,
+           "end": 126,
+           "text": "1% off next quarter"
+          }
+         ],
+         "confidence": 0.9,
+         "unresolved": [],
+         "rate_display": "1.00%"
+        }
+       ],
+       "abstentions": [],
+       "data_requests": [],
+       "authority_claims": [],
+       "funding_claims": [],
+       "compiler": "fixture-cache",
+       "prompt_version": "offer-v4",
+       "autonomy_eligible": false,
+       "autonomy_notes": [
+        "TERMS_EXTENSION leaves current_terms_days unresolved",
+        "a settlement date or window is stated but not read into the terms",
+        "EX01-msg holds a condition beyond the extracted terms",
+        "text not read into the terms: 'extend', 'standard', 'terms', 'going', 'forward', ..."
+       ]
+      },
+      "documents": [
+       {
+        "doc_id": "EX01-msg",
+        "channel": "<omitted: presentation series>",
+        "sender_id": "BUYER-1",
+        "received_day": 0,
+        "text": "We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward and give us 1% off next quarter.",
+        "parent_doc_id": null,
+        "filename": null
+       }
+      ]
+     },
+     "expected": "typed terms: IMMEDIATE_DISCOUNT 1.20% on ¥420,000, TERMS_EXTENSION to 60 days, CONTINGENT_REBATE 1%; spans exact",
+     "observed": "OFF-f806f79b6c21 from BUYER-1, status COMPILED, compiler fixture-cache; IMMEDIATE_DISCOUNT (1.20%) <- \"settle the ¥420k early at 1.2%\"; TERMS_EXTENSION (60) <- \"extend our standard terms to 60 days going forward\"; CONTINGENT_REBATE (1.00%) <- \"1% off next quarter\"; every span quotes the source exactly: True",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.04",
+     "kind": "action",
+     "title": "evaluate EX01 against the books and the signed mandate",
+     "request": {
+      "method": "POST",
+      "path": "/offers/OFF-f806f79b6c21/evaluate",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "fixture_id": "EX01_PACKAGE"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 811.9,
+     "response": {
+      "id": "VER-a899ca66120c",
+      "offer_id": "OFF-f806f79b6c21",
+      "outcome": "REJECT",
+      "required_tier": "TIER_1",
+      "violations": [
+       {
+        "code": "AGG_CONCESSION_EXCEEDED",
+        "message": "Forward concessions (all buyers) would reach ¥28,326.92, above the cap",
+        "day": null,
+        "month": null,
+        "observed": "¥28,326.92",
+        "limit": "¥5,000.00",
+        "curable": null,
+        "cure_cost_fen": null,
+        "cure_note": null,
+        "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00",
+        "inputs": {
+         "scope": "aggregate",
+         "existing": "¥0.00",
+         "new_concessions": "¥28,326.92",
+         "firm_gains_netted": "¥0.00",
+         "contingent_gains_ignored": "¥0.00",
+         "total": "¥28,326.92",
+         "total_fen": "2832692",
+         "cap": "¥5,000.00",
+         "netting_rule": "only FIRM gains offset concessions; contingent gains count as zero"
+        },
+        "spans": [
+         {
+          "doc_id": "EX01-msg",
+          "start": 44,
+          "end": 94,
+          "text": "extend our standard terms to 60 days going forward"
+         },
+         {
+          "doc_id": "EX01-msg",
+          "start": 107,
+          "end": 126,
+          "text": "1% off next quarter"
+         }
+        ],
+        "message_when": "Forward concessions (all buyers) would reach ¥28,326.92, above the cap",
+        "cure_note_when": null
+       },
+       {
+        "code": "RESERVE_BREACH",
+        "message": "Under this offer projected cash falls below the reserve on day 47",
+        "day": 47,
+        "month": null,
+        "observed": "¥209,960.00",
+        "limit": "¥300,000.00",
+        "curable": true,
+        "cure_cost_fen": 240667,
+        "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+        "formula": "closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00",
+        "inputs": {
+         "day": "47",
+         "closing_cash": "¥209,960.00",
+         "baseline_closing_cash": "¥635,000.00",
+         "min_cash": "¥300,000.00",
+         "shortfall": "¥90,040.00",
+         "shortfall_fen": "9004000",
+         "max_shortfall": "¥135,040.00",
+         "max_shortfall_day": "60",
+         "recovery_day": "62",
+         "days_below_floor": "15",
+         "mode": "CONSERVATIVE",
+         "rule": "charged to the offer only where its cash is below the floor and below the no-offer baseline",
+         "structural_cost_per_invoice": "¥1,871.30",
+         "covenant_pro_forma_dscr": "1.92x",
+         "covenant_pro_forma_leverage": "1.47x",
+         "covenant_pro_forma_leverage_month": "1",
+         "covenant_pro_forma_leverage_debt": "¥1,590,040.00",
+         "covenant_pro_forma_leverage_basis": "projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m)",
+         "cure_plan": "committed plan: ¥2,406.67 (cannot run today)",
+         "cure_executable_now": "false",
+         "cure_not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32"
+        },
+        "spans": [],
+        "cure_cost_display": "¥2,406.67",
+        "message_when": "Under this offer projected cash falls below the reserve in 47 days",
+        "cure_note_when": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days"
+       },
+       {
+        "code": "DISCOUNT_ABOVE_BREAK_EVEN",
+        "message": "Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%",
+        "day": null,
+        "month": null,
+        "observed": "1.20%",
+        "limit": "< 0.88%",
+        "curable": null,
+        "cure_cost_fen": null,
+        "cure_note": null,
+        "formula": "d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods)",
+        "inputs": {
+         "discount": "1.20%",
+         "days_early": "30",
+         "receivable_id": "RCV-A",
+         "implied_annual_rate": "14.7773%",
+         "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
+         "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93",
+         "break_even": "0.8832%",
+         "break_even_bp_floor": "88",
+         "break_even_days": "30"
+        },
+        "spans": [
+         {
+          "doc_id": "EX01-msg",
+          "start": 6,
+          "end": 36,
+          "text": "settle the ¥420k early at 1.2%"
+         }
+        ],
+        "message_when": "Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%",
+        "cure_note_when": null
+       },
+       {
+        "code": "EARLY_PAY_DEARER_THAN_PLAN",
+        "message": "The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58)",
+        "day": null,
+        "month": null,
+        "observed": "¥6,508.05",
+        "limit": "< ¥3,873.58",
+        "curable": null,
+        "cure_cost_fen": null,
+        "cure_note": null,
+        "formula": "C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required",
+        "inputs": {
+         "plan_with_offer": "committed plan: ¥1,468.05",
+         "plan_without_offer": "committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58",
+         "cost_with_offer": "¥6,508.05",
+         "cost_without_offer": "¥3,873.58",
+         "legs": "RCV-A at 1.20%"
+        },
+        "spans": [
+         {
+          "doc_id": "EX01-msg",
+          "start": 6,
+          "end": 36,
+          "text": "settle the ¥420k early at 1.2%"
+         }
+        ],
+        "message_when": "The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58)",
+        "cure_note_when": null
+       }
+      ],
+      "counters": [
+       {
+        "id": "CTR-193394b6ba8b",
+        "label": "Option A",
+        "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
+        "obligations": [
+         {
+          "id": "CTR-193394b6ba8b-O2",
+          "type": "IMMEDIATE_DISCOUNT",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 85,
+          "amount_fen": null,
+          "days_delta": null,
+          "target_terms_days": null,
+          "effective_day": 2,
+          "base": {
+           "kind": "INVOICE",
+           "amount_fen": 26000000,
+           "receivable_id": "RCV-A",
+           "events_per_year": null,
+           "amount_display": "¥260,000.00"
+          },
+          "contingency": "FIRM",
+          "duration": {
+           "kind": "ONE_OFF",
+           "invoices": null,
+           "end_day": null
+          },
+          "spans": [
+           {
+            "doc_id": "CTR-193394b6ba8b",
+            "start": 34,
+            "end": 134,
+            "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
+           }
+          ],
+          "confidence": 1.0,
+          "unresolved": [],
+          "rate_display": "0.85%"
+         }
+        ],
+        "supplier_cost_fen": 303599,
+        "forward_value_fen": 0,
+        "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
+        "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+        "supplier_cost_display": "¥3,035.99",
+        "forward_value_display": "¥0.00",
+        "outbound_blocked": false,
+        "text_when": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid within 2 days.",
+        "rationale_when": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
+        "label_when": "Option A",
+        "economics": "<omitted: presentation series>",
+        "send_scope": "Sends Option A to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits."
+       },
+       {
+        "id": "CTR-6b07cbf70441",
+        "label": "Option B",
+        "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
+        "obligations": [
+         {
+          "id": "CTR-6b07cbf70441-O1",
+          "type": "TERMS_EXTENSION",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": null,
+          "amount_fen": null,
+          "days_delta": 10,
+          "target_terms_days": 55,
+          "effective_day": null,
+          "base": {
+           "kind": "FUTURE_INVOICES",
+           "amount_fen": null,
+           "receivable_id": null,
+           "events_per_year": null
+          },
+          "contingency": "FIRM",
+          "duration": {
+           "kind": "RECURRING_PERPETUAL",
+           "invoices": null,
+           "end_day": null
+          },
+          "spans": [
+           {
+            "doc_id": "CTR-6b07cbf70441",
+            "start": 0,
+            "end": 21,
+            "text": "55-day terms accepted"
+           }
+          ],
+          "confidence": 1.0,
+          "unresolved": []
+         },
+         {
+          "id": "CTR-6b07cbf70441-O2",
+          "type": "PRICE_ADJUSTMENT",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 30,
+          "amount_fen": null,
+          "days_delta": null,
+          "target_terms_days": null,
+          "effective_day": null,
+          "base": {
+           "kind": "FUTURE_INVOICES",
+           "amount_fen": 42000000,
+           "receivable_id": null,
+           "events_per_year": null,
+           "amount_display": "¥420,000.00"
+          },
+          "contingency": "FIRM",
+          "duration": {
+           "kind": "RECURRING_PERPETUAL",
+           "invoices": null,
+           "end_day": null
+          },
+          "spans": [
+           {
+            "doc_id": "CTR-6b07cbf70441",
+            "start": 22,
+            "end": 82,
+            "text": "with a 0.30% price adjustment on future invoices, no rebate."
+           }
+          ],
+          "confidence": 1.0,
+          "unresolved": [],
+          "rate_display": "0.30%"
+         }
+        ],
+        "supplier_cost_fen": 0,
+        "forward_value_fen": 0,
+        "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
+        "formula": "smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
+        "supplier_cost_display": "¥0.00",
+        "forward_value_display": "¥0.00",
+        "outbound_blocked": false,
+        "text_when": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
+        "rationale_when": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 in 47 days, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
+        "label_when": "Option B",
+        "economics": "<omitted: presentation series>",
+        "send_scope": "Sends Option B to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits."
+       }
+      ],
+      "plan": {
+       "id": "PLAN-COM-98b519315a32",
+       "basis": "COMMITTED",
+       "need_fen": 13504000,
+       "actions": [
+        {
+         "kind": "FINANCE_INVOICE",
+         "facility_id": "FAC-IF",
+         "day": 0,
+         "amount_fen": 13504000,
+         "receivable_id": "RI:BUYER-1:32",
+         "repay_day": null,
+         "rate_bp": null,
+         "lands_day": 35,
+         "available_from_day": 32,
+         "amount_display": "¥135,040.00"
+        }
+       ],
+       "costs": [
+        {
+         "label": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32",
+         "fen": 240667,
+         "facility_id": "FAC-IF",
+         "formula": "135,040.00 × 7.8% × 60/365 (57 days billed as 2 × 30-day period) = 1,731.47; 135,040.00 × 0.25% × 2 = 675.20; total ¥2,406.67",
+         "needs_owner_approval": false,
+         "approval_reason": "",
+         "executable_now": false,
+         "not_executable_reason": "RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+         "display": "¥2,406.67",
+         "label_when": "Invoice financing (onboarded platform): advance ¥135,040.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days",
+         "not_executable_reason_when": "the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days"
+        }
+       ],
+       "total_cost_fen": 240667,
+       "admissible": true,
+       "violations": [],
+       "marginal_cost_annual": {
+        "num": 1301,
+        "den": 12000,
+        "text": "0.11"
+       },
+       "marginal_facility_id": "FAC-IF",
+       "rejected": [],
+       "label": "committed plan: ¥2,406.67 (cannot run today)",
+       "needs_owner_approval": false,
+       "approval_reason": "",
+       "executable_now": false,
+       "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+       "available_from_day": 32,
+       "need_display": "¥135,040.00",
+       "total_cost_display": "¥2,406.67",
+       "not_executable_reason_when": "Invoice financing (onboarded platform): advance ¥135,040.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days",
+       "label_when": "committed plan: ¥2,406.67 (cannot run today)"
+      },
+      "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
+      "summary_when": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 in 47 days has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 in 47 days, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
+      "forward_concession_total_display": "¥28,326.92",
+      "mandate_version": 1
+     },
+     "expected": "REJECT with the failing rules and their figures; priced counters",
+     "observed": "verdict VER-a899ca66120c REJECT (tier TIER_1); AGG_CONCESSION_EXCEEDED: ¥28,326.92 vs ¥5,000.00; RESERVE_BREACH: ¥209,960.00 vs ¥300,000.00; DISCOUNT_ABOVE_BREAK_EVEN: 1.20% vs < 0.88%; EARLY_PAY_DEARER_THAN_PLAN: ¥6,508.05 vs < ¥3,873.58; counters: Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. (cost to the supplier ¥3,035.99) | Option B: 55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate. (cost to the supplier ¥0.00)",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.05",
+     "kind": "action",
+     "title": "send Option A; the simulated buyer answers",
+     "request": {
+      "method": "POST",
+      "path": "/negotiate/OFF-f806f79b6c21",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "buyer_profile": "cooperative"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 23.3,
+     "response": {
+      "offer_id": "OFF-f806f79b6c21",
+      "decision_id": "deal:OFF-f806f79b6c21",
+      "decision_recorded": true,
+      "execution": {
+       "summary_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥147,210.00 was requested and has landed.",
+       "requested_fen": 14721000,
+       "requested_display": "¥147,210.00",
+       "landed_fen": 14721000,
+       "landed_display": "¥147,210.00",
+       "in_transit_fen": 0,
+       "in_transit_display": null
+      },
+      "outcome": "DEAL",
+      "rounds": [
+       {
+        "round": 1,
+        "counter_id": "CTR-193394b6ba8b",
+        "counter_label": "Option A",
+        "counter_label_when": "Option A",
+        "buyer_response": "ACCEPT",
+        "buyer_text": "Round 1. We accept Option A as proposed."
+       }
+      ],
+      "accepted_counter_id": "CTR-193394b6ba8b",
+      "commitment": {
+       "id": "CMT-cae34add44157d1e",
+       "offer_id": "OFF-f806f79b6c21",
+       "offer_version": 1,
+       "counterparty_id": "BUYER-1",
+       "verdict_id": "VER-a899ca66120c",
+       "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
+       "obligations": [
+        {
+         "id": "CTR-193394b6ba8b-O2",
+         "type": "IMMEDIATE_DISCOUNT",
+         "counterparty_id": "BUYER-1",
+         "rate_bp": 85,
+         "amount_fen": null,
+         "days_delta": null,
+         "target_terms_days": null,
+         "effective_day": 2,
+         "base": {
+          "kind": "INVOICE",
+          "amount_fen": 26000000,
+          "receivable_id": "RCV-A",
+          "events_per_year": null,
+          "amount_display": "¥260,000.00"
+         },
+         "contingency": "FIRM",
+         "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+         },
+         "spans": [
+          {
+           "doc_id": "CTR-193394b6ba8b",
+           "start": 34,
+           "end": 134,
+           "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
+          }
+         ],
+         "confidence": 1.0,
+         "unresolved": [],
+         "rate_display": "0.85%"
+        }
+       ],
+       "status": "ACTIVE",
+       "nonce": "7f6c14498294ad5e8f211a06efe150de",
+       "expires_day": 7,
+       "mandate_version": 1,
+       "forward_value_fen": 0,
+       "forward_value_display": "¥0.00"
+      },
+      "operations": [
+       {
+        "op_id": "accept-CMT-cae34add44157d1e",
+        "kind": "ACCEPT_OFFER",
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "seq": 4,
+        "entry_hash": "bc556f9a594d01df5a22e56faced7a721731042abda1833a69eb6459c8353f50",
+        "prev_hash": "1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
+        "effective_day": 0,
+        "approval_id": null,
+        "message": "Commitment CMT-cae34add44157d1e is ACTIVE; forward concession ¥0.00 booked"
+       },
+       {
+        "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
+        "kind": "DRAW_FACILITY",
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "seq": 5,
+        "entry_hash": "5586b7d6bf475d6c71ed5e99ecc31edd2af0bf8e9c215c5f3e5d8b9965574ffe",
+        "prev_hash": "bc556f9a594d01df5a22e56faced7a721731042abda1833a69eb6459c8353f50",
+        "effective_day": 0,
+        "approval_id": null,
+        "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
+       }
+      ],
+      "plan": {
+       "id": "PLAN-COM-9e5ae7275c08",
+       "basis": "COMMITTED",
+       "need_fen": 14721000,
+       "actions": [
+        {
+         "kind": "DRAW",
+         "facility_id": "FAC-LINE",
+         "day": 0,
+         "amount_fen": 14721000,
+         "receivable_id": null,
+         "repay_day": 32,
+         "rate_bp": null,
+         "lands_day": 0,
+         "available_from_day": 0,
+         "amount_display": "¥147,210.00"
+        }
+       ],
+       "costs": [
+        {
+         "label": "Bank credit line: draw ¥147,210.00, repaid day 32",
+         "fen": 82599,
+         "facility_id": "FAC-LINE",
+         "formula": "147,210.00 × 6.4% × 32/365 = 825.99",
+         "needs_owner_approval": false,
+         "approval_reason": "",
+         "executable_now": true,
+         "not_executable_reason": "",
+         "display": "¥825.99",
+         "label_when": "Bank credit line: draw ¥147,210.00, repaid in 32 days"
+        }
+       ],
+       "total_cost_fen": 82599,
+       "admissible": true,
+       "violations": [],
+       "marginal_cost_annual": {
+        "num": 1301,
+        "den": 12000,
+        "text": "0.11"
+       },
+       "marginal_facility_id": "FAC-IF",
+       "rejected": [
+        {
+         "label": "Discount the whole invoice at 1.2%",
+         "reasons": [],
+         "note": "cost ¥1,920.00; admissible but dearer than the selected plan",
+         "label_when": "Discount the whole invoice at 1.2%",
+         "note_when": "cost ¥1,920.00; within your limits but dearer than the selected plan"
+        }
+       ],
+       "label": "committed plan: ¥825.99",
+       "needs_owner_approval": false,
+       "approval_reason": "",
+       "executable_now": true,
+       "not_executable_reason": "",
+       "available_from_day": null,
+       "need_display": "¥147,210.00",
+       "total_cost_display": "¥825.99",
+       "label_when": "committed plan: ¥825.99"
+      },
+      "message": "CTR-193394b6ba8b accepted; commitment recorded; remaining gap funded.",
+      "message_when": "Option A was accepted and the agreement is recorded; the remaining gap is funded.",
+      "funding_status": "FUNDED",
+      "funding_legs": [
+       {
+        "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
+        "kind": "DRAW_FACILITY",
+        "status": "EXECUTED",
+        "approval_id": null,
+        "text": "¥147,210.00 drawn on the Bank credit line. Cash received today."
+       }
+      ],
+      "accept_status": "EXECUTED",
+      "lang": "en",
+      "transcript_hash": "25ee2e90a3baff56debf760d6dfb6e32e1a84761828d4cd34e96821c906cba57"
+     },
+     "expected": "DEAL; the agreement and the funding leg executed at Tier 1; funding_status FUNDED",
+     "observed": "outcome DEAL; buyer: \"Round 1. We accept Option A as proposed.\"; operations ['ACCEPT_OFFER:EXECUTED', 'DRAW_FACILITY:EXECUTED'] tiers ['TIER_1', 'TIER_1']; funding_status FUNDED; legs ['¥147,210.00 drawn on the Bank credit line. Cash received today.']; message: Option A was accepted and the agreement is recorded; the remaining gap is funded.",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.06",
+     "kind": "action",
+     "title": "clock to day 2",
+     "request": {
+      "method": "POST",
+      "path": "/clock/advance",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "to_day": 2
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 2.0,
+     "response": {
+      "from_day": 0,
+      "to_day": 2,
+      "posted_flow_ids": [],
+      "posted_net_fen": 0,
+      "skipped_unconfirmed_inflow_ids": [],
+      "issued_receivable_ids": [],
+      "expired_commitment_ids": [],
+      "added_flow_ids": [],
+      "result": {
+       "op_id": "clock-0-2",
+       "kind": "ADVANCE_CLOCK",
+       "status": "EXECUTED",
+       "tier": "TIER_1",
+       "violations": [],
+       "seq": 6,
+       "entry_hash": "0a1b85cb65d69a441afff0b7c04102a0aa4321d21a02960488b6e3dd2c4af712",
+       "prev_hash": "5586b7d6bf475d6c71ed5e99ecc31edd2af0bf8e9c215c5f3e5d8b9965574ffe",
+       "effective_day": 2,
+       "approval_id": null,
+       "message": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired"
+      },
+      "consumed_adjustment_ids": [],
+      "fulfilled_commitment_ids": [],
+      "settled_lot_ids": [],
+      "posted_debt_payments": [],
+      "lots_net_fen": 0,
+      "posted_debt_service": [],
+      "debt_service_fen": 0,
+      "lapsed_commitment_ids": [],
+      "day": 2,
+      "posted_net_display": "¥0.00"
+     },
+     "expected": "ADVANCE_CLOCK EXECUTED",
+     "observed": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.07",
+     "kind": "action",
+     "title": "the bank feed reports the agreed early payment",
+     "request": {
+      "method": "POST",
+      "path": "/operations",
+      "params": null,
+      "credential_role": "BANK_FEED",
+      "credential": "bank-feed key with the agent key (X-Bank-Feed-Key + X-Agent-Key), as scripts/demo_run.py sends a receipt",
+      "body": {
+       "kind": "RECEIVE_PAYMENT",
+       "op_id": "3b-receipt-1",
+       "idempotency_key": "3b-receipt-1",
+       "mandate_version": 1,
+       "requested_by": "SYSTEM",
+       "receivable_id": "RCV-A",
+       "amount_fen": 25779000,
+       "bank_reference": "BANK-3b-0001"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 2.0,
+     "response": {
+      "result": {
+       "op_id": "3b-receipt-1",
+       "kind": "RECEIVE_PAYMENT",
+       "status": "EXECUTED",
+       "tier": "TIER_1",
+       "violations": [],
+       "seq": 7,
+       "entry_hash": "9f4c3d9f0e5d907f3cf17d1264eaca93a006a7aa2f6a587123b94efacaeebe77",
+       "prev_hash": "0a1b85cb65d69a441afff0b7c04102a0aa4321d21a02960488b6e3dd2c4af712",
+       "effective_day": 2,
+       "approval_id": null,
+       "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)"
+      }
+     },
+     "expected": "EXECUTED Tier 1: ¥257,790.00 settles ¥260,000.00 at 0.85%; ¥160,000.00 still due",
+     "observed": "RECEIVE_PAYMENT EXECUTED TIER_1: Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.08",
+     "kind": "action",
+     "title": "clock to day 30",
+     "request": {
+      "method": "POST",
+      "path": "/clock/advance",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "to_day": 30
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 1.7,
+     "response": {
+      "from_day": 2,
+      "to_day": 30,
+      "posted_flow_ids": [
+       "F-PAYROLL",
+       "F-SUPPLIER"
+      ],
+      "posted_net_fen": -46000000,
+      "skipped_unconfirmed_inflow_ids": [],
+      "issued_receivable_ids": [
+       "RI:BUYER-1:2"
+      ],
+      "expired_commitment_ids": [],
+      "added_flow_ids": [
+       "F-PAYROLL-M2"
+      ],
+      "result": {
+       "op_id": "clock-2-30",
+       "kind": "ADVANCE_CLOCK",
+       "status": "EXECUTED",
+       "tier": "TIER_1",
+       "violations": [],
+       "seq": 8,
+       "entry_hash": "ff2ef003694a5886ebd6d7f77115ff92d1e23a84ec7e37eaa9c1fe2474970d24",
+       "prev_hash": "9f4c3d9f0e5d907f3cf17d1264eaca93a006a7aa2f6a587123b94efacaeebe77",
+       "effective_day": 30,
+       "approval_id": null,
+       "message": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded"
+      },
+      "consumed_adjustment_ids": [],
+      "fulfilled_commitment_ids": [],
+      "settled_lot_ids": [],
+      "posted_debt_payments": [],
+      "lots_net_fen": 0,
+      "posted_debt_service": [],
+      "debt_service_fen": 0,
+      "lapsed_commitment_ids": [],
+      "day": 30,
+      "posted_net_display": "−¥460,000.00"
+     },
+     "expected": "EXECUTED",
+     "observed": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.09",
+     "kind": "action",
+     "title": "clock to day 34",
+     "request": {
+      "method": "POST",
+      "path": "/clock/advance",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "to_day": 34
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 1.6,
+     "response": {
+      "from_day": 30,
+      "to_day": 34,
+      "posted_flow_ids": [],
+      "posted_net_fen": 0,
+      "skipped_unconfirmed_inflow_ids": [],
+      "issued_receivable_ids": [
+       "RI:BUYER-1:32"
+      ],
+      "expired_commitment_ids": [],
+      "added_flow_ids": [],
+      "result": {
+       "op_id": "clock-30-34",
+       "kind": "ADVANCE_CLOCK",
+       "status": "EXECUTED",
+       "tier": "TIER_1",
+       "violations": [],
+       "seq": 9,
+       "entry_hash": "a84a7a61b929accb9a1a340c3027cda4994b6de69702a3ddf886041182ab878c",
+       "prev_hash": "ff2ef003694a5886ebd6d7f77115ff92d1e23a84ec7e37eaa9c1fe2474970d24",
+       "effective_day": 34,
+       "approval_id": null,
+       "message": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)"
+      },
+      "consumed_adjustment_ids": [],
+      "fulfilled_commitment_ids": [],
+      "settled_lot_ids": [],
+      "posted_debt_payments": [],
+      "lots_net_fen": 0,
+      "posted_debt_service": [
+       {
+        "debt_id": "D-EQUIP",
+        "day": 30,
+        "principal_fen": 4500000,
+        "interest_fen": 0
+       }
+      ],
+      "debt_service_fen": 4500000,
+      "lapsed_commitment_ids": [],
+      "day": 34,
+      "posted_net_display": "¥0.00"
+     },
+     "expected": "EXECUTED",
+     "observed": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.10",
+     "kind": "action",
+     "title": "read the alerts",
+     "request": {
+      "method": "GET",
+      "path": "/alerts",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 14.2,
+     "response": {
+      "day": 34,
+      "counts": {
+       "CRITICAL": 1,
+       "WARNING": 2,
+       "INFO": 0
+      },
+      "alerts": [
+       {
+        "id": "ALERT-RESERVE-42",
+        "kind": "RESERVE_BREACH_AHEAD",
+        "severity": "CRITICAL",
+        "title": "Reserve breach ahead on day 42",
+        "detail": "Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.",
+        "amount_fen": 20000000,
+        "receivable_id": null,
+        "committed_cure": true,
+        "suggested": [
+         {
+          "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "facility_id": "FAC-IF",
+          "receivable_id": "RI:BUYER-1:2",
+          "commitment_id": null,
+          "offer_id": null,
+          "amount_fen": 20000000,
+          "note": "submit today: the invoice is open, buyer-confirmed and not yet due",
+          "cost_fen": 178219,
+          "cost_days": 10,
+          "annual_rate": {
+           "num": 13009987,
+           "den": 40000000,
+           "text": "0.33"
+          },
+          "cost_formula": "¥1,782.19 / ¥200,000.00 × 365/10 = 32.5% a year",
+          "above_apr_cap": true,
+          "executes_automatically": false,
+          "amount_display": "¥200,000.00",
+          "cost_display": "¥1,782.19",
+          "note_when": "submit today: the invoice is open, buyer-confirmed and not yet due"
+         }
+        ]
+       },
+       {
+        "id": "ALERT-PASTDUE-RCV-A",
+        "kind": "RECEIVABLE_PAST_DUE",
+        "severity": "WARNING",
+        "title": "Receivable RCV-A is 2 day(s) past due",
+        "detail": "¥160,000.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+        "amount_fen": 16000000,
+        "receivable_id": "RCV-A",
+        "committed_cure": null,
+        "suggested": [
+         {
+          "operation_kind": "RECEIVE_PAYMENT",
+          "facility_id": null,
+          "receivable_id": "RCV-A",
+          "commitment_id": null,
+          "offer_id": null,
+          "amount_fen": 16000000,
+          "note": "chase the buyer; record the receipt when the money lands",
+          "cost_fen": null,
+          "cost_days": null,
+          "annual_rate": null,
+          "cost_formula": "",
+          "above_apr_cap": false,
+          "executes_automatically": false,
+          "amount_display": "¥160,000.00",
+          "note_when": "chase the buyer; record the receipt when the money lands"
+         }
+        ]
+       },
+       {
+        "id": "ALERT-HEADROOM-34",
+        "kind": "RESERVE_HEADROOM_LOW",
+        "severity": "WARNING",
+        "title": "Reserve headroom thin on day 34",
+        "detail": "Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).",
+        "amount_fen": 0,
+        "receivable_id": null,
+        "committed_cure": null,
+        "suggested": []
+       }
+      ]
+     },
+     "expected": "the late payment and the reserve breach with its committed cure",
+     "observed": "day 34 counts {'CRITICAL': 1, 'WARNING': 2, 'INFO': 0}; Receivable RCV-A is 2 day(s) past due: ¥160,000.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.; Reserve breach ahead on day 42: Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.11",
+     "kind": "action",
+     "title": "the agent's opener",
+     "request": {
+      "method": "POST",
+      "path": "/nl/opener",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "session_id": "3b-first",
+       "lang": "en"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 79.6,
+     "response": {
+      "session_id": "3b-first",
+      "turn": 1,
+      "reply": "Day 34. Foshan Home Retail Co.'s ¥160,000.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for FLOW to borrow without your approval (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. A cheaper plan exists, ¥1,702.20 in all, but it would need 2 separate approvals; this one needs one. Go ahead?",
+      "intent": "SHOW_ALERTS",
+      "lang": "en",
+      "plan": [
+       {
+        "step": 1,
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "description": "Submit RI:BUYER-1:2 to FAC-IF for a ¥200,000.00 advance",
+        "status": "PROPOSED",
+        "op_id": null,
+        "condition": null
+       }
+      ],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": true,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "opener",
+      "trace_id": "3b-first:1",
+      "context_echo": "<omitted: presentation series>",
+      "scope_used": null,
+      "card": "<omitted: presentation series>",
+      "proactive": true,
+      "has_news": true
+     },
+     "expected": "has news, a plan awaiting confirmation that says it needs the owner's approval",
+     "observed": "Day 34. Foshan Home Retail Co.'s ¥160,000.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for FLOW to borrow without your approval (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. A cheaper plan exists, ¥1,702.20 in all, but it would need 2 separate approvals; this one needs one. Go ahead?",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.12",
+     "kind": "action",
+     "title": "owner: go ahead",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "session_id": "3b-first",
+       "actor": "OWNER",
+       "text": "go ahead"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 27.0,
+     "response": {
+      "session_id": "3b-first",
+      "turn": 2,
+      "reply": "It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for borrowing without your approval, so it waits for your approval. I have not run it: it is queued as APR-000001. Say \"approve APR-000001\" or use the approval card. Once it runs, the cash lands after the lead time: day 37 if that is today. The alert is still open.",
+      "intent": "SHOW_ALERTS",
+      "lang": "en",
+      "plan": [
+       {
+        "step": 1,
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "description": "Submit RI:BUYER-1:2 to FAC-IF for a ¥200,000.00 advance",
+        "status": "PENDING_APPROVAL",
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "condition": null
+       }
+      ],
+      "verdict": null,
+      "operations": [
+       {
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "status": "PENDING_APPROVAL",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 10,
+        "entry_hash": "d815ed065df5aa9130e80d5fe446dc91680886970d9e3dd94ea5f14b6588a46c",
+        "prev_hash": "a84a7a61b929accb9a1a340c3027cda4994b6de69702a3ddf886041182ab878c",
+        "effective_day": 34,
+        "approval_id": "APR-000001",
+        "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
+       }
+      ],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "3b-first:2",
+      "context_echo": "<omitted: presentation series>",
+      "scope_used": null,
+      "card": "<omitted: presentation series>",
+      "decision_id": "alert:ALERT-RESERVE-42:v7",
+      "decision_recorded": true
+     },
+     "expected": "queued for the owner's approval, not executed",
+     "observed": "operations ['SUBMIT_INVOICE_FOR_FINANCING:PENDING_APPROVAL'] tier TIER_2 approval APR-000001: Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%) | reply: It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for borrowing without your approval, so it waits for your approval. I have not run it: it is queued as APR-000001. Say \"approve APR-000001\" or use the approval card. Once it runs, the cash lands after the lead time: day 37 if that is today. The alert is still open.",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.13",
+     "kind": "action",
+     "title": "owner (new session): yes",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "session_id": "3b-second",
+       "actor": "OWNER",
+       "text": "yes"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 3.8,
+     "response": {
+      "session_id": "3b-second",
+      "turn": 1,
+      "reply": "Nothing in this conversation is waiting for a yes. Which pending operation do you mean? (1) APR-000001: effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
+      "intent": "AMBIGUOUS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": {
+       "question": "Nothing in this conversation is waiting for a yes. Which pending operation do you mean?",
+       "options": [
+        {
+         "id": "1",
+         "label": "APR-000001: effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
+        }
+       ]
+      },
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "3b-second:1",
+      "context_echo": "<omitted: presentation series>",
+      "scope_used": null,
+      "card": "<omitted: presentation series>"
+     },
+     "expected": "a numbered list with the approval; no operation; still PENDING",
+     "observed": "reply: Nothing in this conversation is waiting for a yes. Which pending operation do you mean? (1) APR-000001: effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%) | operations [] | APR-000001 PENDING",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.14",
+     "kind": "action",
+     "title": "owner: 1",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "session_id": "3b-second",
+       "actor": "OWNER",
+       "text": "1"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 4.0,
+     "response": {
+      "session_id": "3b-second",
+      "turn": 2,
+      "reply": "APR-000001: effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%). I have not approved or declined it. To approve it, say \"approve APR-000001\"; to decline it, say \"reject APR-000001\".",
+      "intent": "AMBIGUOUS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "clarification",
+      "trace_id": "3b-second:2",
+      "context_echo": "<omitted: presentation series>",
+      "scope_used": null,
+      "card": "<omitted: presentation series>"
+     },
+     "expected": "shows the item; the reply says: To approve it, say \"approve APR-000001\"; no operation; still PENDING",
+     "observed": "reply: APR-000001: effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%). I have not approved or declined it. To approve it, say \"approve APR-000001\"; to decline it, say \"reject APR-000001\". | operations [] | APR-000001 PENDING",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.15",
+     "kind": "action",
+     "title": "owner: approve 1 (after the item was shown)",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "session_id": "3b-second",
+       "actor": "OWNER",
+       "text": "approve 1"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 8.5,
+     "response": {
+      "session_id": "3b-second",
+      "turn": 3,
+      "reply": "I can't do that. The closest thing I can do is approve or reject a pending operation: try \"approve the pending one\".",
+      "intent": "OUT_OF_SCOPE",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "fallback",
+      "trace_id": "3b-second:3",
+      "context_echo": "<omitted: presentation series>",
+      "scope_used": null,
+      "card": "<omitted: presentation series>"
+     },
+     "expected": "fail-safe: not understood, no operation, the approval still PENDING (the reply before asked for \"approve APR-…\")",
+     "observed": "intent OUT_OF_SCOPE; reply: I can't do that. The closest thing I can do is approve or reject a pending operation: try \"approve the pending one\". | operations [] | APR-000001 PENDING",
+     "result": "PASS"
+    },
+    {
+     "id": "3b.16",
+     "kind": "action",
+     "title": "owner: approve APR-000001",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "session_id": "3b-second",
+       "actor": "OWNER",
+       "text": "approve APR-000001"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 6.3,
+     "response": {
+      "session_id": "3b-second",
+      "turn": 4,
+      "reply": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today",
+      "intent": "APPROVE",
+      "lang": "en",
+      "plan": [
+       {
+        "step": 1,
+        "kind": "DECIDE_APPROVAL",
+        "description": "Approve APR-000001 (SUBMIT_INVOICE_FOR_FINANCING)",
+        "status": "EXECUTED",
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "condition": null
+       }
+      ],
+      "verdict": null,
+      "operations": [
+       {
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "status": "EXECUTED",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 11,
+        "entry_hash": "eed1857eb02e8bf1aed61ccc2888379cc38dea92fe93b00232a5b668c5e7f256",
+        "prev_hash": "d815ed065df5aa9130e80d5fe446dc91680886970d9e3dd94ea5f14b6588a46c",
+        "effective_day": 34,
+        "approval_id": "APR-000001",
+        "message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+       }
+      ],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "3b-second:4",
+      "context_echo": "<omitted: presentation series>",
+      "scope_used": null,
+      "card": "<omitted: presentation series>"
+     },
+     "expected": "decides it: SUBMIT_INVOICE_FOR_FINANCING EXECUTED; APPROVED",
+     "observed": "reply: Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today | operations ['SUBMIT_INVOICE_FOR_FINANCING:EXECUTED'] | APR-000001 APPROVED",
+     "result": "PASS"
+    }
+   ],
+   "claims": null
+  },
+  {
+   "part": "3c",
+   "title": "approve 1 directly after the list",
+   "status": "RAN",
+   "in_process_only": null,
+   "passed": 14,
+   "failed": 0,
+   "groups": [
+    {
+     "gid": "prefix",
+     "attempted": "Set-up: the case-1 journey to day 34 (EX01 read and evaluated, Option A agreed and funded, the day-2 receipt, the residual late, the reserve alert)",
+     "by": "OWNER, BANK_FEED",
+     "expected": "as case 1, groups 1.1 to 1.5",
+     "steps": [
+      "3c.03",
+      "3c.04",
+      "3c.05",
+      "3c.06",
+      "3c.07",
+      "3c.08",
+      "3c.09",
+      "3c.10",
+      "3c.11",
+      "3c.12"
+     ]
+    },
+    {
+     "gid": "3c",
+     "attempted": "\"approve 1\" directly after the numbered list (tests/security/test_round_nine.py)",
+     "by": "OWNER in a fresh chat session",
+     "expected": "\"yes\" lists the queue and decides nothing; \"approve 1\" right after the list decides it: EXECUTED, APPROVED",
+     "steps": [
+      "3c.13",
+      "3c.14"
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "id": "3c.01",
+     "kind": "action",
+     "title": "reset the demo books (golden_sme)",
+     "request": {
+      "method": "POST",
+      "path": "/demo/reset",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 71.5,
+     "response": {
+      "ok": true,
+      "scenario": "golden_sme",
+      "day": 0
+     },
+     "expected": "200, the golden_sme books loaded on day 0",
+     "observed": "HTTP 200 {'ok': True, 'scenario': 'golden_sme', 'day': 0}",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.02",
+     "kind": "action",
+     "title": "end every chat session",
+     "request": {
+      "method": "POST",
+      "path": "/nl/reset",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 1.8,
+     "response": {
+      "ok": true
+     },
+     "expected": "200",
+     "observed": "HTTP 200",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.03",
+     "kind": "action",
+     "title": "file the buyer's request EX01",
+     "request": {
+      "method": "POST",
+      "path": "/offers",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "fixture_id": "EX01_PACKAGE"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 28.3,
+     "response": {
+      "offer": {
+       "offer_id": "OFF-f806f79b6c21",
+       "version": 1,
+       "counterparty_id": "BUYER-1",
+       "doc_ids": [
+        "EX01-msg"
+       ],
+       "received_day": 0,
+       "status": "COMPILED",
+       "obligations": [
+        {
+         "id": "OFF-f806f79b6c21-O1",
+         "type": "IMMEDIATE_DISCOUNT",
+         "counterparty_id": "BUYER-1",
+         "rate_bp": 120,
+         "amount_fen": null,
+         "days_delta": null,
+         "target_terms_days": null,
+         "effective_day": null,
+         "base": {
+          "kind": "INVOICE",
+          "amount_fen": 42000000,
+          "receivable_id": null,
+          "events_per_year": null,
+          "amount_display": "¥420,000.00"
+         },
+         "contingency": "FIRM",
+         "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+         },
+         "spans": [
+          {
+           "doc_id": "EX01-msg",
+           "start": 6,
+           "end": 36,
+           "text": "settle the ¥420k early at 1.2%"
+          }
+         ],
+         "confidence": 0.9,
+         "unresolved": [],
+         "rate_display": "1.20%"
+        },
+        {
+         "id": "OFF-f806f79b6c21-O2",
+         "type": "TERMS_EXTENSION",
+         "counterparty_id": "BUYER-1",
+         "rate_bp": null,
+         "amount_fen": null,
+         "days_delta": null,
+         "target_terms_days": 60,
+         "effective_day": null,
+         "base": {
+          "kind": "FUTURE_INVOICES",
+          "amount_fen": null,
+          "receivable_id": null,
+          "events_per_year": null
+         },
+         "contingency": "FIRM",
+         "duration": {
+          "kind": "RECURRING_PERPETUAL",
+          "invoices": null,
+          "end_day": null
+         },
+         "spans": [
+          {
+           "doc_id": "EX01-msg",
+           "start": 44,
+           "end": 94,
+           "text": "extend our standard terms to 60 days going forward"
+          }
+         ],
+         "confidence": 0.95,
+         "unresolved": [
+          "current_terms_days"
+         ]
+        },
+        {
+         "id": "OFF-f806f79b6c21-O3",
+         "type": "CONTINGENT_REBATE",
+         "counterparty_id": "BUYER-1",
+         "rate_bp": 100,
+         "amount_fen": null,
+         "days_delta": null,
+         "target_terms_days": null,
+         "effective_day": null,
+         "base": {
+          "kind": "PERIOD_PURCHASES",
+          "amount_fen": null,
+          "receivable_id": null,
+          "events_per_year": null
+         },
+         "contingency": "CONTINGENT",
+         "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+         },
+         "spans": [
+          {
+           "doc_id": "EX01-msg",
+           "start": 107,
+           "end": 126,
+           "text": "1% off next quarter"
+          }
+         ],
+         "confidence": 0.9,
+         "unresolved": [],
+         "rate_display": "1.00%"
+        }
+       ],
+       "abstentions": [],
+       "data_requests": [],
+       "authority_claims": [],
+       "funding_claims": [],
+       "compiler": "fixture-cache",
+       "prompt_version": "offer-v4",
+       "autonomy_eligible": false,
+       "autonomy_notes": [
+        "TERMS_EXTENSION leaves current_terms_days unresolved",
+        "a settlement date or window is stated but not read into the terms",
+        "EX01-msg holds a condition beyond the extracted terms",
+        "text not read into the terms: 'extend', 'standard', 'terms', 'going', 'forward', ..."
+       ]
+      },
+      "documents": [
+       {
+        "doc_id": "EX01-msg",
+        "channel": "<omitted: presentation series>",
+        "sender_id": "BUYER-1",
+        "received_day": 0,
+        "text": "We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward and give us 1% off next quarter.",
+        "parent_doc_id": null,
+        "filename": null
+       }
+      ]
+     },
+     "expected": "typed terms: IMMEDIATE_DISCOUNT 1.20% on ¥420,000, TERMS_EXTENSION to 60 days, CONTINGENT_REBATE 1%; spans exact",
+     "observed": "OFF-f806f79b6c21 from BUYER-1, status COMPILED, compiler fixture-cache; IMMEDIATE_DISCOUNT (1.20%) <- \"settle the ¥420k early at 1.2%\"; TERMS_EXTENSION (60) <- \"extend our standard terms to 60 days going forward\"; CONTINGENT_REBATE (1.00%) <- \"1% off next quarter\"; every span quotes the source exactly: True",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.04",
+     "kind": "action",
+     "title": "evaluate EX01 against the books and the signed mandate",
+     "request": {
+      "method": "POST",
+      "path": "/offers/OFF-f806f79b6c21/evaluate",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "fixture_id": "EX01_PACKAGE"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 814.4,
+     "response": {
+      "id": "VER-a899ca66120c",
+      "offer_id": "OFF-f806f79b6c21",
+      "outcome": "REJECT",
+      "required_tier": "TIER_1",
+      "violations": [
+       {
+        "code": "AGG_CONCESSION_EXCEEDED",
+        "message": "Forward concessions (all buyers) would reach ¥28,326.92, above the cap",
+        "day": null,
+        "month": null,
+        "observed": "¥28,326.92",
+        "limit": "¥5,000.00",
+        "curable": null,
+        "cure_cost_fen": null,
+        "cure_note": null,
+        "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00",
+        "inputs": {
+         "scope": "aggregate",
+         "existing": "¥0.00",
+         "new_concessions": "¥28,326.92",
+         "firm_gains_netted": "¥0.00",
+         "contingent_gains_ignored": "¥0.00",
+         "total": "¥28,326.92",
+         "total_fen": "2832692",
+         "cap": "¥5,000.00",
+         "netting_rule": "only FIRM gains offset concessions; contingent gains count as zero"
+        },
+        "spans": [
+         {
+          "doc_id": "EX01-msg",
+          "start": 44,
+          "end": 94,
+          "text": "extend our standard terms to 60 days going forward"
+         },
+         {
+          "doc_id": "EX01-msg",
+          "start": 107,
+          "end": 126,
+          "text": "1% off next quarter"
+         }
+        ],
+        "message_when": "Forward concessions (all buyers) would reach ¥28,326.92, above the cap",
+        "cure_note_when": null
+       },
+       {
+        "code": "RESERVE_BREACH",
+        "message": "Under this offer projected cash falls below the reserve on day 47",
+        "day": 47,
+        "month": null,
+        "observed": "¥209,960.00",
+        "limit": "¥300,000.00",
+        "curable": true,
+        "cure_cost_fen": 240667,
+        "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+        "formula": "closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00",
+        "inputs": {
+         "day": "47",
+         "closing_cash": "¥209,960.00",
+         "baseline_closing_cash": "¥635,000.00",
+         "min_cash": "¥300,000.00",
+         "shortfall": "¥90,040.00",
+         "shortfall_fen": "9004000",
+         "max_shortfall": "¥135,040.00",
+         "max_shortfall_day": "60",
+         "recovery_day": "62",
+         "days_below_floor": "15",
+         "mode": "CONSERVATIVE",
+         "rule": "charged to the offer only where its cash is below the floor and below the no-offer baseline",
+         "structural_cost_per_invoice": "¥1,871.30",
+         "covenant_pro_forma_dscr": "1.92x",
+         "covenant_pro_forma_leverage": "1.47x",
+         "covenant_pro_forma_leverage_month": "1",
+         "covenant_pro_forma_leverage_debt": "¥1,590,040.00",
+         "covenant_pro_forma_leverage_basis": "projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m)",
+         "cure_plan": "committed plan: ¥2,406.67 (cannot run today)",
+         "cure_executable_now": "false",
+         "cure_not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32"
+        },
+        "spans": [],
+        "cure_cost_display": "¥2,406.67",
+        "message_when": "Under this offer projected cash falls below the reserve in 47 days",
+        "cure_note_when": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days"
+       },
+       {
+        "code": "DISCOUNT_ABOVE_BREAK_EVEN",
+        "message": "Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%",
+        "day": null,
+        "month": null,
+        "observed": "1.20%",
+        "limit": "< 0.88%",
+        "curable": null,
+        "cure_cost_fen": null,
+        "cure_note": null,
+        "formula": "d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods)",
+        "inputs": {
+         "discount": "1.20%",
+         "days_early": "30",
+         "receivable_id": "RCV-A",
+         "implied_annual_rate": "14.7773%",
+         "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
+         "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93",
+         "break_even": "0.8832%",
+         "break_even_bp_floor": "88",
+         "break_even_days": "30"
+        },
+        "spans": [
+         {
+          "doc_id": "EX01-msg",
+          "start": 6,
+          "end": 36,
+          "text": "settle the ¥420k early at 1.2%"
+         }
+        ],
+        "message_when": "Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%",
+        "cure_note_when": null
+       },
+       {
+        "code": "EARLY_PAY_DEARER_THAN_PLAN",
+        "message": "The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58)",
+        "day": null,
+        "month": null,
+        "observed": "¥6,508.05",
+        "limit": "< ¥3,873.58",
+        "curable": null,
+        "cure_cost_fen": null,
+        "cure_note": null,
+        "formula": "C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required",
+        "inputs": {
+         "plan_with_offer": "committed plan: ¥1,468.05",
+         "plan_without_offer": "committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58",
+         "cost_with_offer": "¥6,508.05",
+         "cost_without_offer": "¥3,873.58",
+         "legs": "RCV-A at 1.20%"
+        },
+        "spans": [
+         {
+          "doc_id": "EX01-msg",
+          "start": 6,
+          "end": 36,
+          "text": "settle the ¥420k early at 1.2%"
+         }
+        ],
+        "message_when": "The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58)",
+        "cure_note_when": null
+       }
+      ],
+      "counters": [
+       {
+        "id": "CTR-193394b6ba8b",
+        "label": "Option A",
+        "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2.",
+        "obligations": [
+         {
+          "id": "CTR-193394b6ba8b-O2",
+          "type": "IMMEDIATE_DISCOUNT",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 85,
+          "amount_fen": null,
+          "days_delta": null,
+          "target_terms_days": null,
+          "effective_day": 2,
+          "base": {
+           "kind": "INVOICE",
+           "amount_fen": 26000000,
+           "receivable_id": "RCV-A",
+           "events_per_year": null,
+           "amount_display": "¥260,000.00"
+          },
+          "contingency": "FIRM",
+          "duration": {
+           "kind": "ONE_OFF",
+           "invoices": null,
+           "end_day": null
+          },
+          "spans": [
+           {
+            "doc_id": "CTR-193394b6ba8b",
+            "start": 34,
+            "end": 134,
+            "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
+           }
+          ],
+          "confidence": 1.0,
+          "unresolved": [],
+          "rate_display": "0.85%"
+         }
+        ],
+        "supplier_cost_fen": 303599,
+        "forward_value_fen": 0,
+        "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
+        "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥260,000.00 (rounded up to a whole ¥10,000, at most the outstanding amount). Cost: discount ¥2,210.00 + funding the rest of the gap ¥825.99 (committed plan: ¥825.99) = ¥3,035.99",
+        "supplier_cost_display": "¥3,035.99",
+        "forward_value_display": "¥0.00",
+        "outbound_blocked": false,
+        "text_when": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid within 2 days.",
+        "rationale_when": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
+        "label_when": "Option A",
+        "economics": "<omitted: presentation series>",
+        "send_scope": "Sends Option A to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits."
+       },
+       {
+        "id": "CTR-6b07cbf70441",
+        "label": "Option B",
+        "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
+        "obligations": [
+         {
+          "id": "CTR-6b07cbf70441-O1",
+          "type": "TERMS_EXTENSION",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": null,
+          "amount_fen": null,
+          "days_delta": 10,
+          "target_terms_days": 55,
+          "effective_day": null,
+          "base": {
+           "kind": "FUTURE_INVOICES",
+           "amount_fen": null,
+           "receivable_id": null,
+           "events_per_year": null
+          },
+          "contingency": "FIRM",
+          "duration": {
+           "kind": "RECURRING_PERPETUAL",
+           "invoices": null,
+           "end_day": null
+          },
+          "spans": [
+           {
+            "doc_id": "CTR-6b07cbf70441",
+            "start": 0,
+            "end": 21,
+            "text": "55-day terms accepted"
+           }
+          ],
+          "confidence": 1.0,
+          "unresolved": []
+         },
+         {
+          "id": "CTR-6b07cbf70441-O2",
+          "type": "PRICE_ADJUSTMENT",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 30,
+          "amount_fen": null,
+          "days_delta": null,
+          "target_terms_days": null,
+          "effective_day": null,
+          "base": {
+           "kind": "FUTURE_INVOICES",
+           "amount_fen": 42000000,
+           "receivable_id": null,
+           "events_per_year": null,
+           "amount_display": "¥420,000.00"
+          },
+          "contingency": "FIRM",
+          "duration": {
+           "kind": "RECURRING_PERPETUAL",
+           "invoices": null,
+           "end_day": null
+          },
+          "spans": [
+           {
+            "doc_id": "CTR-6b07cbf70441",
+            "start": 22,
+            "end": 82,
+            "text": "with a 0.30% price adjustment on future invoices, no rebate."
+           }
+          ],
+          "confidence": 1.0,
+          "unresolved": [],
+          "rate_display": "0.30%"
+         }
+        ],
+        "supplier_cost_fen": 0,
+        "forward_value_fen": 0,
+        "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
+        "formula": "smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
+        "supplier_cost_display": "¥0.00",
+        "forward_value_display": "¥0.00",
+        "outbound_blocked": false,
+        "text_when": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
+        "rationale_when": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 in 47 days, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
+        "label_when": "Option B",
+        "economics": "<omitted: presentation series>",
+        "send_scope": "Sends Option B to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits."
+       }
+      ],
+      "plan": {
+       "id": "PLAN-COM-98b519315a32",
+       "basis": "COMMITTED",
+       "need_fen": 13504000,
+       "actions": [
+        {
+         "kind": "FINANCE_INVOICE",
+         "facility_id": "FAC-IF",
+         "day": 0,
+         "amount_fen": 13504000,
+         "receivable_id": "RI:BUYER-1:32",
+         "repay_day": null,
+         "rate_bp": null,
+         "lands_day": 35,
+         "available_from_day": 32,
+         "amount_display": "¥135,040.00"
+        }
+       ],
+       "costs": [
+        {
+         "label": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32",
+         "fen": 240667,
+         "facility_id": "FAC-IF",
+         "formula": "135,040.00 × 7.8% × 60/365 (57 days billed as 2 × 30-day period) = 1,731.47; 135,040.00 × 0.25% × 2 = 675.20; total ¥2,406.67",
+         "needs_owner_approval": false,
+         "approval_reason": "",
+         "executable_now": false,
+         "not_executable_reason": "RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+         "display": "¥2,406.67",
+         "label_when": "Invoice financing (onboarded platform): advance ¥135,040.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days",
+         "not_executable_reason_when": "the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days"
+        }
+       ],
+       "total_cost_fen": 240667,
+       "admissible": true,
+       "violations": [],
+       "marginal_cost_annual": {
+        "num": 1301,
+        "den": 12000,
+        "text": "0.11"
+       },
+       "marginal_facility_id": "FAC-IF",
+       "rejected": [],
+       "label": "committed plan: ¥2,406.67 (cannot run today)",
+       "needs_owner_approval": false,
+       "approval_reason": "",
+       "executable_now": false,
+       "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+       "available_from_day": 32,
+       "need_display": "¥135,040.00",
+       "total_cost_display": "¥2,406.67",
+       "not_executable_reason_when": "Invoice financing (onboarded platform): advance ¥135,040.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days",
+       "label_when": "committed plan: ¥2,406.67 (cannot run today)"
+      },
+      "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
+      "summary_when": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 in 47 days has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 in 47 days, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
+      "forward_concession_total_display": "¥28,326.92",
+      "mandate_version": 1
+     },
+     "expected": "REJECT with the failing rules and their figures; priced counters",
+     "observed": "verdict VER-a899ca66120c REJECT (tier TIER_1); AGG_CONCESSION_EXCEEDED: ¥28,326.92 vs ¥5,000.00; RESERVE_BREACH: ¥209,960.00 vs ¥300,000.00; DISCOUNT_ABOVE_BREAK_EVEN: 1.20% vs < 0.88%; EARLY_PAY_DEARER_THAN_PLAN: ¥6,508.05 vs < ¥3,873.58; counters: Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2. (cost to the supplier ¥3,035.99) | Option B: 55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate. (cost to the supplier ¥0.00)",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.05",
+     "kind": "action",
+     "title": "send Option A; the simulated buyer answers",
+     "request": {
+      "method": "POST",
+      "path": "/negotiate/OFF-f806f79b6c21",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "buyer_profile": "cooperative"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 23.2,
+     "response": {
+      "offer_id": "OFF-f806f79b6c21",
+      "decision_id": "deal:OFF-f806f79b6c21",
+      "decision_recorded": true,
+      "execution": {
+       "summary_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥147,210.00 was requested and has landed.",
+       "requested_fen": 14721000,
+       "requested_display": "¥147,210.00",
+       "landed_fen": 14721000,
+       "landed_display": "¥147,210.00",
+       "in_transit_fen": 0,
+       "in_transit_display": null
+      },
+      "outcome": "DEAL",
+      "rounds": [
+       {
+        "round": 1,
+        "counter_id": "CTR-193394b6ba8b",
+        "counter_label": "Option A",
+        "counter_label_when": "Option A",
+        "buyer_response": "ACCEPT",
+        "buyer_text": "Round 1. We accept Option A as proposed."
+       }
+      ],
+      "accepted_counter_id": "CTR-193394b6ba8b",
+      "commitment": {
+       "id": "CMT-e5706e5ec2a9cbca",
+       "offer_id": "OFF-f806f79b6c21",
+       "offer_version": 1,
+       "counterparty_id": "BUYER-1",
+       "verdict_id": "VER-a899ca66120c",
+       "terms_hash": "b4aac5c40d6dce3068d380ca3d16f93b2f9888f8a70a7982a197867a98a1bf80",
+       "obligations": [
+        {
+         "id": "CTR-193394b6ba8b-O2",
+         "type": "IMMEDIATE_DISCOUNT",
+         "counterparty_id": "BUYER-1",
+         "rate_bp": 85,
+         "amount_fen": null,
+         "days_delta": null,
+         "target_terms_days": null,
+         "effective_day": 2,
+         "base": {
+          "kind": "INVOICE",
+          "amount_fen": 26000000,
+          "receivable_id": "RCV-A",
+          "events_per_year": null,
+          "amount_display": "¥260,000.00"
+         },
+         "contingency": "FIRM",
+         "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+         },
+         "spans": [
+          {
+           "doc_id": "CTR-193394b6ba8b",
+           "start": 34,
+           "end": 134,
+           "text": "We will accept early settlement on up to ¥260,000 of this invoice at 0.85%, paid on or before day 2."
+          }
+         ],
+         "confidence": 1.0,
+         "unresolved": [],
+         "rate_display": "0.85%"
+        }
+       ],
+       "status": "ACTIVE",
+       "nonce": "bd79916ec4a532ea8075c7239d8ebc25",
+       "expires_day": 7,
+       "mandate_version": 1,
+       "forward_value_fen": 0,
+       "forward_value_display": "¥0.00"
+      },
+      "operations": [
+       {
+        "op_id": "accept-CMT-e5706e5ec2a9cbca",
+        "kind": "ACCEPT_OFFER",
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "seq": 4,
+        "entry_hash": "e10608a41dc2fea1ed66d2a48f3e623e629c546c027ad95a5d766d7a8988b1c3",
+        "prev_hash": "1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
+        "effective_day": 0,
+        "approval_id": null,
+        "message": "Commitment CMT-e5706e5ec2a9cbca is ACTIVE; forward concession ¥0.00 booked"
+       },
+       {
+        "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
+        "kind": "DRAW_FACILITY",
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "seq": 5,
+        "entry_hash": "eb4f246070827a85623f3e1058b9bb2814e999937be046384dbc7a75b6f6f3db",
+        "prev_hash": "e10608a41dc2fea1ed66d2a48f3e623e629c546c027ad95a5d766d7a8988b1c3",
+        "effective_day": 0,
+        "approval_id": null,
+        "message": "Drew ¥147,210.00 on FAC-LINE on day 0"
+       }
+      ],
+      "plan": {
+       "id": "PLAN-COM-9e5ae7275c08",
+       "basis": "COMMITTED",
+       "need_fen": 14721000,
+       "actions": [
+        {
+         "kind": "DRAW",
+         "facility_id": "FAC-LINE",
+         "day": 0,
+         "amount_fen": 14721000,
+         "receivable_id": null,
+         "repay_day": 32,
+         "rate_bp": null,
+         "lands_day": 0,
+         "available_from_day": 0,
+         "amount_display": "¥147,210.00"
+        }
+       ],
+       "costs": [
+        {
+         "label": "Bank credit line: draw ¥147,210.00, repaid day 32",
+         "fen": 82599,
+         "facility_id": "FAC-LINE",
+         "formula": "147,210.00 × 6.4% × 32/365 = 825.99",
+         "needs_owner_approval": false,
+         "approval_reason": "",
+         "executable_now": true,
+         "not_executable_reason": "",
+         "display": "¥825.99",
+         "label_when": "Bank credit line: draw ¥147,210.00, repaid in 32 days"
+        }
+       ],
+       "total_cost_fen": 82599,
+       "admissible": true,
+       "violations": [],
+       "marginal_cost_annual": {
+        "num": 1301,
+        "den": 12000,
+        "text": "0.11"
+       },
+       "marginal_facility_id": "FAC-IF",
+       "rejected": [
+        {
+         "label": "Discount the whole invoice at 1.2%",
+         "reasons": [],
+         "note": "cost ¥1,920.00; admissible but dearer than the selected plan",
+         "label_when": "Discount the whole invoice at 1.2%",
+         "note_when": "cost ¥1,920.00; within your limits but dearer than the selected plan"
+        }
+       ],
+       "label": "committed plan: ¥825.99",
+       "needs_owner_approval": false,
+       "approval_reason": "",
+       "executable_now": true,
+       "not_executable_reason": "",
+       "available_from_day": null,
+       "need_display": "¥147,210.00",
+       "total_cost_display": "¥825.99",
+       "label_when": "committed plan: ¥825.99"
+      },
+      "message": "CTR-193394b6ba8b accepted; commitment recorded; remaining gap funded.",
+      "message_when": "Option A was accepted and the agreement is recorded; the remaining gap is funded.",
+      "funding_status": "FUNDED",
+      "funding_legs": [
+       {
+        "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
+        "kind": "DRAW_FACILITY",
+        "status": "EXECUTED",
+        "approval_id": null,
+        "text": "¥147,210.00 drawn on the Bank credit line. Cash received today."
+       }
+      ],
+      "accept_status": "EXECUTED",
+      "lang": "en",
+      "transcript_hash": "25ee2e90a3baff56debf760d6dfb6e32e1a84761828d4cd34e96821c906cba57"
+     },
+     "expected": "DEAL; the agreement and the funding leg executed at Tier 1; funding_status FUNDED",
+     "observed": "outcome DEAL; buyer: \"Round 1. We accept Option A as proposed.\"; operations ['ACCEPT_OFFER:EXECUTED', 'DRAW_FACILITY:EXECUTED'] tiers ['TIER_1', 'TIER_1']; funding_status FUNDED; legs ['¥147,210.00 drawn on the Bank credit line. Cash received today.']; message: Option A was accepted and the agreement is recorded; the remaining gap is funded.",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.06",
+     "kind": "action",
+     "title": "clock to day 2",
+     "request": {
+      "method": "POST",
+      "path": "/clock/advance",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "to_day": 2
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 1.9,
+     "response": {
+      "from_day": 0,
+      "to_day": 2,
+      "posted_flow_ids": [],
+      "posted_net_fen": 0,
+      "skipped_unconfirmed_inflow_ids": [],
+      "issued_receivable_ids": [],
+      "expired_commitment_ids": [],
+      "added_flow_ids": [],
+      "result": {
+       "op_id": "clock-0-2",
+       "kind": "ADVANCE_CLOCK",
+       "status": "EXECUTED",
+       "tier": "TIER_1",
+       "violations": [],
+       "seq": 6,
+       "entry_hash": "504616c0c9ca263d59ba9322cfde5d08710228faae26dbd15b82fc9370382a8e",
+       "prev_hash": "eb4f246070827a85623f3e1058b9bb2814e999937be046384dbc7a75b6f6f3db",
+       "effective_day": 2,
+       "approval_id": null,
+       "message": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired"
+      },
+      "consumed_adjustment_ids": [],
+      "fulfilled_commitment_ids": [],
+      "settled_lot_ids": [],
+      "posted_debt_payments": [],
+      "lots_net_fen": 0,
+      "posted_debt_service": [],
+      "debt_service_fen": 0,
+      "lapsed_commitment_ids": [],
+      "day": 2,
+      "posted_net_display": "¥0.00"
+     },
+     "expected": "ADVANCE_CLOCK EXECUTED",
+     "observed": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.07",
+     "kind": "action",
+     "title": "the bank feed reports the agreed early payment",
+     "request": {
+      "method": "POST",
+      "path": "/operations",
+      "params": null,
+      "credential_role": "BANK_FEED",
+      "credential": "bank-feed key with the agent key (X-Bank-Feed-Key + X-Agent-Key), as scripts/demo_run.py sends a receipt",
+      "body": {
+       "kind": "RECEIVE_PAYMENT",
+       "op_id": "3c-receipt-1",
+       "idempotency_key": "3c-receipt-1",
+       "mandate_version": 1,
+       "requested_by": "SYSTEM",
+       "receivable_id": "RCV-A",
+       "amount_fen": 25779000,
+       "bank_reference": "BANK-3c-0001"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 1.9,
+     "response": {
+      "result": {
+       "op_id": "3c-receipt-1",
+       "kind": "RECEIVE_PAYMENT",
+       "status": "EXECUTED",
+       "tier": "TIER_1",
+       "violations": [],
+       "seq": 7,
+       "entry_hash": "42e46bde0f36000b29fca874355a4cbb70e7ce36fcd51f19cf723a667f872dc3",
+       "prev_hash": "504616c0c9ca263d59ba9322cfde5d08710228faae26dbd15b82fc9370382a8e",
+       "effective_day": 2,
+       "approval_id": null,
+       "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)"
+      }
+     },
+     "expected": "EXECUTED Tier 1: ¥257,790.00 settles ¥260,000.00 at 0.85%; ¥160,000.00 still due",
+     "observed": "RECEIVE_PAYMENT EXECUTED TIER_1: Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.08",
+     "kind": "action",
+     "title": "clock to day 30",
+     "request": {
+      "method": "POST",
+      "path": "/clock/advance",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "to_day": 30
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 2.0,
+     "response": {
+      "from_day": 2,
+      "to_day": 30,
+      "posted_flow_ids": [
+       "F-PAYROLL",
+       "F-SUPPLIER"
+      ],
+      "posted_net_fen": -46000000,
+      "skipped_unconfirmed_inflow_ids": [],
+      "issued_receivable_ids": [
+       "RI:BUYER-1:2"
+      ],
+      "expired_commitment_ids": [],
+      "added_flow_ids": [
+       "F-PAYROLL-M2"
+      ],
+      "result": {
+       "op_id": "clock-2-30",
+       "kind": "ADVANCE_CLOCK",
+       "status": "EXECUTED",
+       "tier": "TIER_1",
+       "violations": [],
+       "seq": 8,
+       "entry_hash": "0fe500977bbb95e691b7a565d15f7585080294c58e6762193a2bdba0ace2080b",
+       "prev_hash": "42e46bde0f36000b29fca874355a4cbb70e7ce36fcd51f19cf723a667f872dc3",
+       "effective_day": 30,
+       "approval_id": null,
+       "message": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded"
+      },
+      "consumed_adjustment_ids": [],
+      "fulfilled_commitment_ids": [],
+      "settled_lot_ids": [],
+      "posted_debt_payments": [],
+      "lots_net_fen": 0,
+      "posted_debt_service": [],
+      "debt_service_fen": 0,
+      "lapsed_commitment_ids": [],
+      "day": 30,
+      "posted_net_display": "−¥460,000.00"
+     },
+     "expected": "EXECUTED",
+     "observed": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.09",
+     "kind": "action",
+     "title": "clock to day 34",
+     "request": {
+      "method": "POST",
+      "path": "/clock/advance",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "to_day": 34
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 1.5,
+     "response": {
+      "from_day": 30,
+      "to_day": 34,
+      "posted_flow_ids": [],
+      "posted_net_fen": 0,
+      "skipped_unconfirmed_inflow_ids": [],
+      "issued_receivable_ids": [
+       "RI:BUYER-1:32"
+      ],
+      "expired_commitment_ids": [],
+      "added_flow_ids": [],
+      "result": {
+       "op_id": "clock-30-34",
+       "kind": "ADVANCE_CLOCK",
+       "status": "EXECUTED",
+       "tier": "TIER_1",
+       "violations": [],
+       "seq": 9,
+       "entry_hash": "d9d7c19f935ae44e8992ed1f35089993033964592c5e856ab86ee3a7e0bde9fc",
+       "prev_hash": "0fe500977bbb95e691b7a565d15f7585080294c58e6762193a2bdba0ace2080b",
+       "effective_day": 34,
+       "approval_id": null,
+       "message": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)"
+      },
+      "consumed_adjustment_ids": [],
+      "fulfilled_commitment_ids": [],
+      "settled_lot_ids": [],
+      "posted_debt_payments": [],
+      "lots_net_fen": 0,
+      "posted_debt_service": [
+       {
+        "debt_id": "D-EQUIP",
+        "day": 30,
+        "principal_fen": 4500000,
+        "interest_fen": 0
+       }
+      ],
+      "debt_service_fen": 4500000,
+      "lapsed_commitment_ids": [],
+      "day": 34,
+      "posted_net_display": "¥0.00"
+     },
+     "expected": "EXECUTED",
+     "observed": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.10",
+     "kind": "action",
+     "title": "read the alerts",
+     "request": {
+      "method": "GET",
+      "path": "/alerts",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 13.7,
+     "response": {
+      "day": 34,
+      "counts": {
+       "CRITICAL": 1,
+       "WARNING": 2,
+       "INFO": 0
+      },
+      "alerts": [
+       {
+        "id": "ALERT-RESERVE-42",
+        "kind": "RESERVE_BREACH_AHEAD",
+        "severity": "CRITICAL",
+        "title": "Reserve breach ahead on day 42",
+        "detail": "Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.",
+        "amount_fen": 20000000,
+        "receivable_id": null,
+        "committed_cure": true,
+        "suggested": [
+         {
+          "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "facility_id": "FAC-IF",
+          "receivable_id": "RI:BUYER-1:2",
+          "commitment_id": null,
+          "offer_id": null,
+          "amount_fen": 20000000,
+          "note": "submit today: the invoice is open, buyer-confirmed and not yet due",
+          "cost_fen": 178219,
+          "cost_days": 10,
+          "annual_rate": {
+           "num": 13009987,
+           "den": 40000000,
+           "text": "0.33"
+          },
+          "cost_formula": "¥1,782.19 / ¥200,000.00 × 365/10 = 32.5% a year",
+          "above_apr_cap": true,
+          "executes_automatically": false,
+          "amount_display": "¥200,000.00",
+          "cost_display": "¥1,782.19",
+          "note_when": "submit today: the invoice is open, buyer-confirmed and not yet due"
+         }
+        ]
+       },
+       {
+        "id": "ALERT-PASTDUE-RCV-A",
+        "kind": "RECEIVABLE_PAST_DUE",
+        "severity": "WARNING",
+        "title": "Receivable RCV-A is 2 day(s) past due",
+        "detail": "¥160,000.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+        "amount_fen": 16000000,
+        "receivable_id": "RCV-A",
+        "committed_cure": null,
+        "suggested": [
+         {
+          "operation_kind": "RECEIVE_PAYMENT",
+          "facility_id": null,
+          "receivable_id": "RCV-A",
+          "commitment_id": null,
+          "offer_id": null,
+          "amount_fen": 16000000,
+          "note": "chase the buyer; record the receipt when the money lands",
+          "cost_fen": null,
+          "cost_days": null,
+          "annual_rate": null,
+          "cost_formula": "",
+          "above_apr_cap": false,
+          "executes_automatically": false,
+          "amount_display": "¥160,000.00",
+          "note_when": "chase the buyer; record the receipt when the money lands"
+         }
+        ]
+       },
+       {
+        "id": "ALERT-HEADROOM-34",
+        "kind": "RESERVE_HEADROOM_LOW",
+        "severity": "WARNING",
+        "title": "Reserve headroom thin on day 34",
+        "detail": "Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).",
+        "amount_fen": 0,
+        "receivable_id": null,
+        "committed_cure": null,
+        "suggested": []
+       }
+      ]
+     },
+     "expected": "the late payment and the reserve breach with its committed cure",
+     "observed": "day 34 counts {'CRITICAL': 1, 'WARNING': 2, 'INFO': 0}; Receivable RCV-A is 2 day(s) past due: ¥160,000.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.; Reserve breach ahead on day 42: Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.11",
+     "kind": "action",
+     "title": "the agent's opener",
+     "request": {
+      "method": "POST",
+      "path": "/nl/opener",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "session_id": "3c-first",
+       "lang": "en"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 72.9,
+     "response": {
+      "session_id": "3c-first",
+      "turn": 1,
+      "reply": "Day 34. Foshan Home Retail Co.'s ¥160,000.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for FLOW to borrow without your approval (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. A cheaper plan exists, ¥1,702.20 in all, but it would need 2 separate approvals; this one needs one. Go ahead?",
+      "intent": "SHOW_ALERTS",
+      "lang": "en",
+      "plan": [
+       {
+        "step": 1,
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "description": "Submit RI:BUYER-1:2 to FAC-IF for a ¥200,000.00 advance",
+        "status": "PROPOSED",
+        "op_id": null,
+        "condition": null
+       }
+      ],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": true,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "opener",
+      "trace_id": "3c-first:1",
+      "context_echo": "<omitted: presentation series>",
+      "scope_used": null,
+      "card": "<omitted: presentation series>",
+      "proactive": true,
+      "has_news": true
+     },
+     "expected": "has news, a plan awaiting confirmation that says it needs the owner's approval",
+     "observed": "Day 34. Foshan Home Retail Co.'s ¥160,000.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for FLOW to borrow without your approval (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. A cheaper plan exists, ¥1,702.20 in all, but it would need 2 separate approvals; this one needs one. Go ahead?",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.12",
+     "kind": "action",
+     "title": "owner: go ahead",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "session_id": "3c-first",
+       "actor": "OWNER",
+       "text": "go ahead"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 27.4,
+     "response": {
+      "session_id": "3c-first",
+      "turn": 2,
+      "reply": "It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for borrowing without your approval, so it waits for your approval. I have not run it: it is queued as APR-000001. Say \"approve APR-000001\" or use the approval card. Once it runs, the cash lands after the lead time: day 37 if that is today. The alert is still open.",
+      "intent": "SHOW_ALERTS",
+      "lang": "en",
+      "plan": [
+       {
+        "step": 1,
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "description": "Submit RI:BUYER-1:2 to FAC-IF for a ¥200,000.00 advance",
+        "status": "PENDING_APPROVAL",
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "condition": null
+       }
+      ],
+      "verdict": null,
+      "operations": [
+       {
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "status": "PENDING_APPROVAL",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 10,
+        "entry_hash": "7110e16dfa7e27c2162178aad6b4075b55c3726eb25e11877364dca76bc82dcd",
+        "prev_hash": "d9d7c19f935ae44e8992ed1f35089993033964592c5e856ab86ee3a7e0bde9fc",
+        "effective_day": 34,
+        "approval_id": "APR-000001",
+        "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
+       }
+      ],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "3c-first:2",
+      "context_echo": "<omitted: presentation series>",
+      "scope_used": null,
+      "card": "<omitted: presentation series>",
+      "decision_id": "alert:ALERT-RESERVE-42:v7",
+      "decision_recorded": true
+     },
+     "expected": "queued for the owner's approval, not executed",
+     "observed": "operations ['SUBMIT_INVOICE_FOR_FINANCING:PENDING_APPROVAL'] tier TIER_2 approval APR-000001: Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%) | reply: It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above the 15.00% you signed for borrowing without your approval, so it waits for your approval. I have not run it: it is queued as APR-000001. Say \"approve APR-000001\" or use the approval card. Once it runs, the cash lands after the lead time: day 37 if that is today. The alert is still open.",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.13",
+     "kind": "action",
+     "title": "owner (new session): yes",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "session_id": "3c-second",
+       "actor": "OWNER",
+       "text": "yes"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 3.4,
+     "response": {
+      "session_id": "3c-second",
+      "turn": 1,
+      "reply": "Nothing in this conversation is waiting for a yes. Which pending operation do you mean? (1) APR-000001: effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
+      "intent": "AMBIGUOUS",
+      "lang": "en",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": {
+       "question": "Nothing in this conversation is waiting for a yes. Which pending operation do you mean?",
+       "options": [
+        {
+         "id": "1",
+         "label": "APR-000001: effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
+        }
+       ]
+      },
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "3c-second:1",
+      "context_echo": "<omitted: presentation series>",
+      "scope_used": null,
+      "card": "<omitted: presentation series>"
+     },
+     "expected": "the numbered list; no operation; still PENDING",
+     "observed": "reply: Nothing in this conversation is waiting for a yes. Which pending operation do you mean? (1) APR-000001: effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
+     "result": "PASS"
+    },
+    {
+     "id": "3c.14",
+     "kind": "action",
+     "title": "owner: approve 1 (directly after the list)",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "session_id": "3c-second",
+       "actor": "OWNER",
+       "text": "approve 1"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 6.3,
+     "response": {
+      "session_id": "3c-second",
+      "turn": 2,
+      "reply": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today",
+      "intent": "APPROVE",
+      "lang": "en",
+      "plan": [
+       {
+        "step": 1,
+        "kind": "DECIDE_APPROVAL",
+        "description": "Approve APR-000001 (SUBMIT_INVOICE_FOR_FINANCING)",
+        "status": "EXECUTED",
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "condition": null
+       }
+      ],
+      "verdict": null,
+      "operations": [
+       {
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "status": "EXECUTED",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 11,
+        "entry_hash": "fa80b6bc3b859296a9b50063c6a5d4cdefe14c128ceae2bb424972c7f2ab9670",
+        "prev_hash": "7110e16dfa7e27c2162178aad6b4075b55c3726eb25e11877364dca76bc82dcd",
+        "effective_day": 34,
+        "approval_id": "APR-000001",
+        "message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+       }
+      ],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "clarification",
+      "trace_id": "3c-second:2",
+      "context_echo": "<omitted: presentation series>",
+      "scope_used": null,
+      "card": "<omitted: presentation series>"
+     },
+     "expected": "EXECUTED; APPROVED",
+     "observed": "reply: Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today | operations ['SUBMIT_INVOICE_FOR_FINANCING:EXECUTED'] | APR-000001 APPROVED",
+     "result": "PASS"
+    }
+   ],
+   "claims": null
+  }
+ ]
+}

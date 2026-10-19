@@ -29,3 +29,6 @@ docs/deliverables/video/frames/
 .claude/launch.json
 .impeccable/
 apps/web/.impeccable/
+
+# results a judge reproduces (docs/deliverables/REPRODUCE.md) go here, apart from the submitted evidence
+/out/

@@ -117,6 +117,22 @@ if len(sys.argv) > 2 and sys.argv[2] == "final":
         ]),
     }
 
+# Figure 13 retaken on 19 Oct (audit finding): the 18 Oct capture came from a recorded mock that predates the current screening,
+# so it showed the 36-month loan selected. `python crop_screens.py <raw dir> capex-live` cuts shot6-capex alone from a capture of
+# `pnpm demo` (live mode, the submission build's API) by `SET=final capture_screens.mjs`.
+if len(sys.argv) > 2 and sys.argv[2] == "capex-live":
+    SCENARIO = "Live mode against the submission build's API, golden books (synthetic), captured 19 Oct 2026 at 1440×900"
+    FRAMES = {
+        "shot6-capex": ("10-capex-quick.png", (84, 640, 1412, 1560), [
+            (1398, 757, "The verdict: worth doing on the owner's estimate; finance with the 48-month lease at 7.20% (Tier 2)."),
+            (415, 895, "Key figures: NPV ¥380,885.77, payback in month 31, leverage 1.90× against a 2.50× limit."),
+            (369, 1078, "A figure that does not apply reads \"—\", not \"None\": cash + credit line is infeasible."),
+            (594, 1167, "DSCR month by month: the 18-month loan fails months 1–3 (1.13× below 1.25×)."),
+            (1374, 1360, "The cheaper 36-month loan is rejected: cash would fall below the reserve on day 44."),
+            (252, 1433, "Selected: the lowest total charges among the structures that pass every check."),
+        ]),
+    }
+
 
 def font(px: int, bold=False):
     return ImageFont.truetype(FONT_B if bold else FONT, px)
