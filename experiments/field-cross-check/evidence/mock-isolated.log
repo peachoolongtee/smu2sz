@@ -1,0 +1,98 @@
+[WebServer] $ next build
+[WebServer] (node:28326) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28326) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28340) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28343) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28341) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28336) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28337) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28344) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28339) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28338) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28345) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28342) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28346) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] $ next start -p 3422
+[WebServer] (node:28348) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:28355) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [desktop] › e2e/home-v2.spec.ts:501:5 › round four: the worklist is a fixed-column table: the same columns on every row and under the header, 56 px rows, a one-line next step with its whole sentence in title, group headings under All, the pill never moving for Select (2.0s)
+(node:28365) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [desktop] › e2e/home-v2.spec.ts:1000:5 › sizes at 1440: the cash card 360 px tall at most and padded 16 px, the outlook padded 24 px with a 22 px title and a 40 px figure, the recommendation's 18 px title and 36 px amount; rows 56 px and 44 px; nothing wraps to a third line (1.9s)
+
+
+  1) [desktop] › e2e/home-v2.spec.ts:501:5 › round four: the worklist is a fixed-column table: the same columns on every row and under the header, 56 px rows, a one-line next step with its whole sentence in title, group headings under All, the pill never moving for Select 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 0
+    Received:    325
+
+      558 |   expect(n1!.y).toBeGreaterThan(s1!.y + s1!.height - 1);
+      559 |   await page.setViewportSize({ width: 390, height: 844 });
+    > 560 |   expect(await overflowX(page)).toBeLessThanOrEqual(0);
+          |                                 ^
+      561 |   // The Customers tab is the same rows.
+      562 |   await page.getByTestId("home-tab-customers").click();
+      563 |   await expect(page.getByTestId("hv2-group-heading")).toHaveCount(0);
+        at /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/field-cross-check/apps/web/e2e/home-v2.spec.ts:560:33
+
+    Error Context: ../../../../../../../../../tmp/flow-field-cross-check-mock-isolated-results/home-v2-round-four-the-wor-fd493-ill-never-moving-for-Select-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../../tmp/flow-field-cross-check-mock-isolated-results/home-v2-round-four-the-wor-fd493-ill-never-moving-for-Select-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../../tmp/flow-field-cross-check-mock-isolated-results/home-v2-round-four-the-wor-fd493-ill-never-moving-for-Select-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop] › e2e/home-v2.spec.ts:1000:5 › sizes at 1440: the cash card 360 px tall at most and padded 16 px, the outlook padded 24 px with a 22 px title and a 40 px figure, the recommendation's 18 px title and 36 px amount; rows 56 px and 44 px; nothing wraps to a third line 
+
+    Error: hv2-cash-card at 1280
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 360
+    Received:    375
+
+      1043 |       expect(clipped, `${id} clips nothing at ${width}`).toBeLessThanOrEqual(1);
+      1044 |     }
+    > 1045 |     expect((await page.getByTestId("hv2-cash-card").boundingBox())!.height, `hv2-cash-card at ${width}`).toBeLessThanOrEqual(CARD_MAX);
+           |                                                                                                          ^
+      1046 |   }
+      1047 | });
+      1048 |
+        at /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/field-cross-check/apps/web/e2e/home-v2.spec.ts:1045:106
+
+    Error Context: ../../../../../../../../../tmp/flow-field-cross-check-mock-isolated-results/home-v2-sizes-at-1440-the--a1b39-thing-wraps-to-a-third-line-desktop/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../../tmp/flow-field-cross-check-mock-isolated-results/home-v2-sizes-at-1440-the--a1b39-thing-wraps-to-a-third-line-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../../tmp/flow-field-cross-check-mock-isolated-results/home-v2-sizes-at-1440-the--a1b39-thing-wraps-to-a-third-line-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop] › e2e/home-v2.spec.ts:501:5 › round four: the worklist is a fixed-column table: the same columns on every row and under the header, 56 px rows, a one-line next step with its whole sentence in title, group headings under All, the pill never moving for Select 
+    [desktop] › e2e/home-v2.spec.ts:1000:5 › sizes at 1440: the cash card 360 px tall at most and padded 16 px, the outlook padded 24 px with a 22 px title and a 40 px figure, the recommendation's 18 px title and 36 px amount; rows 56 px and 44 px; nothing wraps to a third line 

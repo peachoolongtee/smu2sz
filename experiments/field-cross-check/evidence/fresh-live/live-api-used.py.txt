@@ -1,0 +1,128 @@
+"""Temporary evaluation instrumentation; never part of the product or deliverables."""
+import atexit
+import hashlib
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import threading
+from pathlib import Path
+
+ROOT = Path('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/field-cross-check')
+OUT = Path('/tmp/flow-field-cross-check-fresh-live')
+OUT.mkdir(exist_ok=True)
+sys.path.insert(0, str(ROOT / 'services/api'))
+sys.dont_write_bytecode = True
+os.environ.update({
+    'DATABASE_URL': 'memory', 'DEMO_MODE': '1', 'LLM_MODE': 'live', 'LLM_PRIMARY': 'deepseek',
+    'LLM_LIVE_RAW': '0', 'LLM_REDACT': '1', 'DEEPSEEK_MODEL': 'deepseek-flash',
+    'OWNER_TOKEN': 'demo-owner-token', 'AGENT_KEY': 'demo-agent-key',
+    'BANK_FEED_KEY': 'demo-bank-feed-key',
+    'COUNTERPARTY_KEYS': 'BUYER-1=demo-buyer-1-key,BUYER-2=demo-buyer-2-key',
+    'FEATURE_ENVELOPE': '1', 'FEATURE_PRICE_CURVE': '1', 'FEATURE_COLLECTIONS_WORTH': '1',
+    'FEATURE_EXPOSURE': '1', 'FEATURE_CAPEX_CONTRACTS': '1', 'FEATURE_CONTRACT_TERMS': '1',
+    'FEATURE_ASK_ROUTER': '1',
+})
+# Only the API process uses the application's authorized dotenv loader. No value
+# or file contents are printed; the explicit memory/demo settings cannot be replaced.
+from app.config import load_dotenv
+os.environ.pop('TERMSLEDGER_NO_DOTENV', None)
+load_dotenv(Path('/Users/ianpong/Hackathons/smu2sz/.env'))
+os.environ['TERMSLEDGER_NO_DOTENV'] = '1'
+assert os.environ['DATABASE_URL'] == 'memory'
+for name in ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN'):
+    os.environ.pop(name, None)
+key = os.environ.get('DEEPSEEK_API_KEY')
+print('deepseek_key_present=' + str(bool(key)), flush=True)
+if not key:
+    raise SystemExit('No DeepSeek credential available; no provider request attempted.')
+
+import httpx
+import openai
+from app.compiler.backends import DeepSeekBackend
+from app.compiler.base import BackendError
+from app.compiler.grounding import build_offer
+from app.compiler.prompts import PROMPT_VERSION
+from app.compiler.rules import RULES_MODEL_ID, RulesBackend
+from app.compiler.service import Compiler
+
+lock = threading.Lock()
+statistics = {'provider_request_attempts': 0, 'maximum_provider_requests': 30,
+              'code_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
+              'items_sha256': hashlib.sha256((ROOT/'services/api/evals/live_frozen/items.yaml').read_bytes()).hexdigest(),
+              'evidence_class': 'fresh provider responses on known frozen items; post-fix, not blind',
+              'sdk_retries': 0, 'provider': 'DeepSeek', 'model_alias': 'deepseek-flash',
+              'database': 'memory', 'redaction': True}
+
+def save_stats():
+    (OUT/'provider-budget.json').write_text(json.dumps(statistics, indent=2)+'\n')
+
+atexit.register(save_stats)
+
+def guard(request):
+    if request.url.host != 'api.deepseek.com':
+        raise BackendError('evaluation provider host refused')
+    with lock:
+        if statistics['provider_request_attempts'] >= 30:
+            raise BackendError('evaluation provider request cap reached')
+        statistics['provider_request_attempts'] += 1
+        save_stats()
+
+def response_metadata(response):
+    response.read()
+    try:
+        payload = response.json()
+    except ValueError:
+        return
+    with lock:
+        returned_model = payload.get('model')
+        if isinstance(returned_model, str) and key not in returned_model:
+            statistics.setdefault('returned_model_identifiers', [])
+            if returned_model not in statistics['returned_model_identifiers']:
+                statistics['returned_model_identifiers'].append(returned_model)
+        usage = payload.get('usage') or {}
+        for name in ('prompt_tokens', 'completion_tokens', 'total_tokens'):
+            value = usage.get(name)
+            if isinstance(value, int):
+                statistics.setdefault('usage_tokens', {}).setdefault(name, 0)
+                statistics['usage_tokens'][name] += value
+        save_stats()
+
+shared_client = openai.OpenAI(api_key=key, base_url='https://api.deepseek.com', max_retries=0,
+                             timeout=60, http_client=httpx.Client(event_hooks={'request':[guard], 'response':[response_metadata]}))
+DeepSeekBackend.client = property(lambda self: shared_client)
+
+# The two checks see identical already-grounded model output. Neither shadow
+# check calls another model or executes an operation. The API uses the new check.
+baseline_source = subprocess.check_output(['git','show','03215a2073a49e9bd72603561fcad67c3810c902:services/api/app/compiler/cross_check.py'], cwd=ROOT, text=True)
+baseline_dir = tempfile.TemporaryDirectory(prefix='flow-live-baseline-')
+atexit.register(baseline_dir.cleanup)
+baseline_path=Path(baseline_dir.name)/'baseline.py'
+baseline_path.write_text(baseline_source)
+spec=importlib.util.spec_from_file_location('flow_live_baseline',baseline_path)
+baseline=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(baseline)
+original=Compiler._checked
+
+def checked(self, docs, cp, offer, doc_hash):
+    rule_result=RulesBackend().extract_offer(docs)
+    rules=build_offer(docs,cp,rule_result.extraction,RULES_MODEL_ID,PROMPT_VERSION)
+    old=baseline.check_against_rules(offer,rules)
+    new=original(self,docs,cp,offer,doc_hash)
+    payload=json.dumps({'doc_hash':doc_hash,'documents':[d.model_dump(mode='json') for d in docs],
+                        'model':offer.model_dump(mode='json'),'rules':rules.model_dump(mode='json'),
+                        'before':old.model_dump(mode='json'),'after':new.model_dump(mode='json')},ensure_ascii=False)
+    if key in payload:
+        raise BackendError('refused to record a credential')
+    with lock:
+        with (OUT/'reader-shadow.jsonl').open('a') as f:
+            f.write(payload+'\n')
+    return new
+
+Compiler._checked=checked
+save_stats()
+(OUT/'api.pid').write_text(str(os.getpid()))
+import uvicorn
+uvicorn.run('app.main:app',host='127.0.0.1',port=8585,access_log=False)

@@ -1,0 +1,20 @@
+{
+  "provider_request_attempts": 23,
+  "maximum_provider_requests": 30,
+  "code_commit": "4bd24d0752b7adee924eb82ee43ecefa72a51f21",
+  "items_sha256": "961bec6b91539d67a00d87467a6418193714d0f9bd90b0aae297acf8c1346db7",
+  "evidence_class": "fresh provider responses on known frozen items; post-fix, not blind",
+  "sdk_retries": 0,
+  "provider": "DeepSeek",
+  "model_alias": "deepseek-flash",
+  "database": "memory",
+  "redaction": true,
+  "returned_model_identifiers": [
+    "deepseek-flash"
+  ],
+  "usage_tokens": {
+    "prompt_tokens": 76012,
+    "completion_tokens": 6337,
+    "total_tokens": 82349
+  }
+}
