@@ -4,6 +4,7 @@ FROM node:24-alpine AS build
 RUN npm install -g pnpm@12.11.2
 WORKDIR /web
 COPY apps/web/package.json apps/web/pnpm-lock.yaml apps/web/pnpm-workspace.yaml ./
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN pnpm install --frozen-lockfile
 COPY apps/web ./
 ARG PUBLIC_ORIGIN
