@@ -14,8 +14,9 @@ FinTechathon 2026 · International AI Track · Topic E: SME Finance Copilot · T
 > lenders and the bank feed are simulated, all data is synthetic (`fixtures/`), and no real money moves. FLOW is decision
 > support under the owner's own signed limits, not a lender, broker or adviser.
 
-> **Runs offline with one command.** After a one-time install, `pnpm demo` needs no account, no VPN, no API key and no
-> foreign service: it works in mainland China as delivered. The optional live-model mode (`pnpm demo --live-llm`) needs a
+> **Runs offline with one command.** After a one-time install, `pnpm demo` needs no account, no VPN and no API key, and
+> the running demo calls no foreign service. Installing it needs the PyPI and npm registries and uv's Python download (or
+> mirrors of them, which users in mainland China may need). The optional live-model mode (`pnpm demo --live-llm`) needs a
 > DeepSeek or Anthropic API key in your shell, and is outside the security certification.
 
 ![A buyer's request in FLOW: the verdict, why it cannot be accepted as asked, and the priced choices](docs/deliverables/screenshots/shot2-deal-decision.png)
@@ -52,7 +53,7 @@ This README follows the competition's Source Code README template. Its seven sec
 
 | Item | Value |
 | --- | --- |
-| Operating system | Windows 11, macOS or Linux. The evidence run of 18 Oct 2026 was made on Windows 11; CI runs on Ubuntu (`ubuntu-latest`, `.github/workflows/checks.yml`). Docker is needed only for the deployment stack |
+| Operating system | Windows 11, macOS or Linux. The evidence runs were made on Windows 11; CI runs on Ubuntu (`ubuntu-latest`, `.github/workflows/checks.yml`). Docker is needed only for the deployment stack |
 | Runtime versions | Python **3.12** (installed by `uv`; `pyproject.toml` allows 3.12 and 3.13), Node.js 22 or newer (CI uses **24**), pnpm (CI uses **12.11.2**), [uv](https://docs.astral.sh/uv/) any recent version |
 | Main dependencies, API | FastAPI, Uvicorn, Pydantic 2, SQLAlchemy 2 and Alembic, PyNaCl (Ed25519 mandate signatures), structlog, PyYAML, python-docx, pypdf, openpyxl, httpx, psycopg 3; the `anthropic` and `openai` clients are used only in live mode (`services/api/pyproject.toml`) |
 | Main dependencies, web | Next.js 16, React 19, Recharts, js-sha256 (`apps/web/package.json`); Playwright for the browser tests |
@@ -126,12 +127,13 @@ into a folder of your choice, so the submitted report (`services/api/evals/judge
 uv run --project services/api python scripts/judge_eval.py --out out/judge-report.md
 ```
 
-The tested reproduction steps, with what each command should print, are in the technical document's section 05 and the
-[execution evidence](docs/deliverables/execution_evidence.md) (the sandbox run on the submission build).
-
 It runs the 49 scripted conversations, the 279-attack catalogue, the 17-step demo walk, and a hash-chain check of the walk's
-log together with a tampered copy that must fail; it exits non-zero on any failure. Eight questions to ask FLOW live, with the
-exact input and the real answer, are in [`docs/deliverables/JUDGING_QUESTIONS.md`](docs/deliverables/JUDGING_QUESTIONS.md).
+log together with a tampered copy that must fail; it exits non-zero on any failure.
+
+The tested reproduction steps, with what each command should print, are in the technical document's section 05 and the
+[execution evidence](docs/deliverables/execution_evidence.md) (the sandbox run on the submission build). Eight questions to
+ask FLOW live, with the exact input and the real answer, are in
+[`docs/deliverables/JUDGING_QUESTIONS.md`](docs/deliverables/JUDGING_QUESTIONS.md).
 
 ## What it does
 

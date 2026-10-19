@@ -102,12 +102,12 @@ def main() -> int:
         "exclusions": args.exclusion,
         "approved_exceptions": args.exception,
     }
-    (folder / "MANIFEST.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (folder / "MANIFEST.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
 
     sums = []
     for f in sorted(p for p in folder.rglob("*") if p.is_file() and p.name != "SHA256SUMS"):
         sums.append(f"{hashlib.sha256(f.read_bytes()).hexdigest()}  {f.relative_to(folder).as_posix()}")
-    (folder / "SHA256SUMS").write_text("\n".join(sums) + "\n", encoding="utf-8")
+    (folder / "SHA256SUMS").write_text("\n".join(sums) + "\n", encoding="utf-8", newline="\n")  # LF on every OS: sha256sum -c reads it
     archive = hashlib.sha256((folder / "SHA256SUMS").read_bytes()).hexdigest()
     print(f"{folder.relative_to(ROOT).as_posix()}: {len(sums)} files; evidence id sha256:{archive[:16]} (of SHA256SUMS)")
     return 0

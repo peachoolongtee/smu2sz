@@ -32,7 +32,7 @@ release gate's scope. Section 02 measures what the model adds, on unseen items, 
 - **Why it matters financially.** On the demo company's books, a buyer asks for 60-day terms instead of 45, 1.2% off for
   paying one invoice early and a 1% rebate. Priced at the supplier's own cost of borrowing, accepting as asked gives away
   **CNY 33,366.92**: a ¥5,040 discount now and ¥28,326.92 of future concessions, 5.7 times the owner's limit for such
-  promises, and takes cash below the owner's safety reserve from day 47. FLOW's counter (Option A) gives away none of the
+  promises (priced at the 10.84% proxy against the demo's ¥5,000 cap; about 3 times at the 5% guaranteed-loan rate), and takes cash below the owner's safety reserve from day 47. FLOW's counter (Option A) gives away none of the
   future concessions and keeps the reserve. It costs **CNY 3,035.99** up front in discount and interest, against ¥3,113.93
   for the standing funding plan the books need with no request at all (synthetic books, illustrative). As the demo ran, with
   a late payment and an extra payroll, Option A's posted cost was ¥5,205.36 (Table 2).
@@ -70,7 +70,7 @@ step with its request, response, the state read back and PASS or FAIL). Appendix
 | --- | --- | --- | --- | --- |
 | **Task completion (40%)** | The supplier's whole workflow on synthetic books: request, reading, financial evaluation, counter, owner authorisation, funding, settlement and reconciliation, with a hash-chained record | 01 journey and Table 2; 02 Table W; 03 "Task completion", Table 4; Appendices D, F | Case 1 (the journey, groups 1.1 to 1.9); case 4 (a plan that only partly runs, reported as it ran) | 49 of 49 scripted tasks; demo walk chain VALID, tampered copy rejected; sandbox 159 of 159 steps (in process), 142 of 142 run (HTTP); every export VALID |
 | **Security and compliance (30%)** | Authority by structure: typed operations with no payee field, tiers computed by the executor, the signed mandate, the chat consent rules, the owner's pause, a tamper-evident log; 279 stored attacks with harm oracles | 04: Table 5, Figure 5, "Who can execute what", Tables 6 and 7; the Security Self-Assessment | Case 2 (unauthorised callers, a claimed agreement, Tier 3, an unverified sender); case 3 (ambiguity, consent); case 5 (the pause) | 279 attacks, 0 with harm; 120 of 128 API cases stopped by the named control (8 known gaps); certified for scope S on 19 Oct |
-| **Innovation and interaction (30%)** | A supplier-side agent across both debt books (credit given, credit taken); the model reads and routes, code decides; bilingual chat with clarification, correction and fallback | Opening; 01 "What is new", Table L1; 02 "What the model contributes"; 03 Table 3 and the dialogue; Appendices G, K | Case 1 groups 1.6 and 1.7 (FLOW speaks first, "go ahead" queues, "approve APR-…" runs); case 3 (a clarification) | Unseen messages (live, 19 Oct): 2 of 6 correct against the rules' 1, 0 wrong; Chinese contracts: party names 14 of 17 against 0 |
+| **Innovation and interaction (30%)** | A supplier-side agent across both debt books (credit given, credit taken); the model reads and routes, code decides; bilingual chat with clarification, correction and fallback | Opening; 01 "What is new", Table L1; 02 "What the model contributes"; 03 Table 3 and the dialogue; Appendices G, K | Case 1 groups 1.6 and 1.7 (FLOW speaks first, "go ahead" queues, "approve APR-…" runs); case 3 (a clarification) | Unseen messages (live, 19 Oct): 2 of 6 correct against the rules' 1, 0 wrong; Chinese contracts: both party names right in 14 of 17 (recorded readings) |
 | **Bonus (0–5)** | Not claimed: FLOW is a local simulation (Table 7) | — | — | — |
 
 **Table 1. FLOW at a glance. Each figure names its build; engine and agent figures: dev `975e082f` (17 Oct 2026), re-run
@@ -82,8 +82,8 @@ offline on `571ea64f` (18 Oct) with the same results. Appendix C gives each comm
 | Funding router | Within ¥1 of a bounded brute-force search on 26 of 26 scenarios; 19 plans run today, 6 are labelled "cannot run today", 1 scenario has no admissible plan and says so | Tests |
 | Safety of autonomy | On 115 held-out buyer messages FLOW accepted 3 on its own, all correctly, but that is only 3 of the 14 genuinely acceptable offers, on sets tuned after their first runs (Table 4). The first runs, before the coverage check (ADR-0005), accepted 6 misread messages | Unseen first runs, then tuned |
 | Usefulness | About half of messages need no owner review (57 of 115); 11 of the 14 good offers wait for the owner (Table 4) | Tuned |
-| Reading contracts | 75% of key fields on 17 unseen Chinese contracts with a text layer (45% over all 30: 13 scans and photos are refused) | Unseen, recorded model readings |
-| Owner questions | 228 of 427 answerable bank questions answered, 45 partly, 0 wrong (tuned bank); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic | Tuned; held-out |
+| Reading contracts | 75% of key fields on 17 unseen Chinese contracts with a text layer; the other 13 of the 30, scans and photos, are refused | Unseen, recorded model readings |
+| Owner questions | 228 of 427 answerable bank questions answered, 45 partly, 0 wrong (tuned bank); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic (126 and 4 on `90116810`) | Tuned; held-out |
 | Live model | Unseen buyer messages, 19 Oct on `5926ef29`: shipped path 2 of 6 correct, 0 wrong; the question router fully correct on 22 of 63 questions (18 Oct, one reviewer) | Live, single runs; outside the release gate |
 | Security | 279 stored attack cases (128 API, 151 chat), 0 harm-oracle violations (`5926ef29`, 19 Oct; rules path and a scripted hostile model; no real model read any catalogue case) | Tests |
 | Tests | Every suite's passed, failed and skipped counts on 66c31e7e: Table V. Earlier builds: Table B2. A count measures the size of a suite, not correctness | Tests |
@@ -163,7 +163,8 @@ repeats it through the API. **Proposed** terms bind nobody; an **authorised** op
    concession cap (¥28,326.92 against ¥5,000); the reserve (¥90,040 short on day 47, ¥135,040 at worst on day 60); break-even
    (1.2% is above 0.8832%); and price (with the early payment the funding costs ¥6,508.05, without it ¥3,873.58). It drafts
    **Option A** (terms stay at 45 days, no rebate, early payment on up to ¥260,000 at 0.85%) and **Option B** (55 days with a
-   0.30% price rise, a forward gain of ¥162.05 over 13 invoices, but still **CNY 3,706.46** of funding), and recommends A:
+   0.30% price rise, a forward gain of ¥162.05 over 13 invoices, but still **CNY 3,706.46** of funding, with the line held
+   to day 57), and recommends A:
    over the year it costs less (¥3,035.99 against ¥3,544.41 for B once B's forward gain is netted), it changes no terms, and
    it runs at Tier 1 while B needs the owner (Figure 10).
 4. **Agreement (authorised, then recorded).** The owner sends Option A to the simulated buyer, which accepts. The executor
@@ -184,7 +185,7 @@ repeats it through the API. **Proposed** terms bind nobody; an **authorised** op
 8. **Receipts and reconciliation (settled).** The ¥160,000 arrives on day 36 and the advance lands on day 37. On day 47
    Foshan's next invoice is paid, the advance is repaid from it first, and the credit line is repaid with ¥1,213.17 of
    interest (47 days instead of the quoted 32). Reconciliation closes the deal; the record holds 14 hash-chained entries that
-   verify.
+   verify (17 in the sandbox run's case 1, which also records the owner's confirmation of three agreements).
 
 **Table 2. Option A's cost, quoted on day 0 and actually posted by day 47 (CNY).**
 
@@ -335,14 +336,14 @@ gate. No item, in any run, booked a commitment or moved money.
 | --- | --- | --- | --- |
 | **Unseen buyer messages, 6 items** (19 Oct, code `5926ef29`; labels committed in `a79cb7a7` before any run; [services/api/evals/live_unseen/](../../services/api/evals/live_unseen/)): correct / wrong / correctly held / held although readable | 1 / 0 / 1 / 4 | 2 / 0 / 1 / 3 | **2 / 0 / 1 / 3** (6 model calls; 27 for the model alone) |
 | **Frozen set, 20 items** (18 Oct, `5941e95a`, labels fixed by hash; [services/api/evals/live_frozen/](../../services/api/evals/live_frozen/)): fully correct / wrong / held unnecessarily | 6 / 2 / 2 | 10 / 2 / 1 | 5 / 0 / 5 |
-| **Unseen Chinese contracts, 17 with a text layer:** both party names right | 0 (no Chinese party pattern; a scratch measurement, not a committed file) | 14, with buyer and seller swapped in 3 (recorded readings, [contracts_b2_heldout_fields.json](submission/work/eval/contracts_b2_heldout_fields.json); 16 after fixes) | the same reader; the owner confirms every reading |
+| **Unseen Chinese contracts, 17 with a text layer:** both party names right | not measured in a committed file | 14, with buyer and seller swapped in 3 (recorded readings, [contracts_b2_heldout_fields.json](submission/work/eval/contracts_b2_heldout_fields.json); 16 after fixes, [contracts_b2_afterfix_fields.json](submission/work/eval/contracts_b2_afterfix_fields.json)) | the same reader; the owner confirms every reading |
 | **Ask FLOW router, 63 questions** the deterministic answers did not cover (18 Oct, `28738f19`; one reviewer, not blind) | "cannot answer yet" | 33 answered: 22 fully right, 10 partly, 1 wrong; 29 "cannot answer yet"; 1 rejected for a missing slot | the router's output only picks read-only tools; code writes the answer |
 
 **What the model-assisted path completes better, narrowly.** (1) **Colloquial Chinese pricing.** In the unseen set, LU02
 offers an early-payment discount as 让零点六个点 on the ¥420,000 invoice. The rules grammar could not read it (NO_VERDICT);
 the shipped path read it correctly, so the owner got a priced decision (NEEDS_OWNER_APPROVAL, Tier 2) instead of a
-clarification. (2) **Contract parties.** On unseen Chinese contracts the model named both parties in 14 of 17 where the
-rules found none, and the party check stops a reading whose roles do not fit. (3) **Owner questions** outside the
+clarification. (2) **Contract parties.** On unseen Chinese contracts the model named both parties in 14 of 17 (and swapped
+buyer and seller in 3), and the party check stops a reading whose roles do not fit. (3) **Owner questions** outside the
 deterministic answers: 22 of 63 fully right through read-only tools, with code writing every figure.
 
 **Where the checks reduce usefulness, plainly.** In the frozen set the cross-check turned the model's two errors into
@@ -464,8 +465,10 @@ lead time, so a hard constraint never relies on money that has not arrived (ADR-
 **2. Funding router.** The cheapest plan that keeps closing cash at or above the reserve every day, breaks no covenant
 (clean-down included) and is allowed by the mandate, over up to three actions on a ¥10,000 grid, each requested today and
 landing after its lead time. A plan FLOW may run alone ranks before a cheaper one that needs the owner; a plan relying on an
-action no operation can perform yet is labelled "cannot run today". It is within ¥1 of a bounded brute-force search on 26 of
-26 scenarios; on the pricing reading that search hit its time budget in 2 cases (F09, R03). So it is the best plan found in a
+action no operation can perform yet is labelled "cannot run today". Requesting every leg on day 0 is a known simplification:
+drawing Option A's line when it is first needed (day 20) would cost ¥309.75 of interest instead of ¥825.99 (the standing
+plan ¥315.62 instead of ¥841.64); timing the legs is next work. Under that same-day constraint, which the brute force shares,
+it is within ¥1 of a bounded brute-force search on 26 of 26 scenarios; on the pricing reading that search hit its time budget in 2 cases (F09, R03). So it is the best plan found in a
 bounded search, not proven over every amount or date.
 
 **3. Marginal cost and break-even.** FLOW prices a concession at 10.84%, invoice financing's all-in rate. It is not an
@@ -501,7 +504,7 @@ do not compare across panels.
 
 <!-- figure: figures/fig-eval-buyer.png | Figure 4a. Buyer messages: the share of verdicts that match the label on the unseen first runs (33/63 and 28/47), after tuning (44/63 and 38/47), against today's policy (50/63 and 44/47) and in one live DeepSeek run on 1 Oct (42/63), each with its wrong autonomous accepts (4 of 8 and 2 in the first runs; 0 since). Rules path unless marked live. | page -->
 
-<!-- figure: figures/fig-eval-contracts.png | Figure 4b. Contract fields, recorded DeepSeek readings: the unseen batch's first reading got 215 of 285 fields right on the 17 text-layer contracts (75%), 45% over all 30 with the 13 scans refused; of the 234 decision-critical fields, 178 right, 45 missing, 11 wrong. The tuned sets (hatched) reach 85% and 97% of decision-critical fields. Not reproducible from the repository: the contracts and readings are kept outside it. | h=5.5 -->
+<!-- figure: figures/fig-eval-contracts.png | Figure 4b. Contract fields, recorded DeepSeek readings: the unseen batch's first reading got 215 of 285 fields right on the 17 text-layer contracts (75%), 45% over all 30 with the 13 scans refused (their 189 key fields are counted from the answer key kept outside the repository); of the 234 decision-critical fields, 178 right, 45 missing, 11 wrong. The tuned sets (hatched) reach 85% and 97% of decision-critical fields. Scores: `docs/deliverables/submission/work/eval/contracts_b2_heldout_fields.json`, `contracts_b2_afterfix_fields.json`, `contracts_b1_tuned_fields.json`. Not reproducible from the repository: the contracts and readings are kept outside it. | h=5.5 -->
 
 <!-- figure: figures/fig-eval-questions.png | Figure 4c. Owner questions: the bank the answers were built against answers 228 of 427 in-books turns (0 wrong, tuned); everyday wording 326 of 345, held-out part 127 of 142; the live router (one run, 18 Oct) was fully correct on 22 of the 63 questions that reached it, 22 of the 33 it answered. | h=5.5 -->
 
@@ -535,6 +538,8 @@ verdicts matched on 33 of 63 and 28 of 47, and FLOW accepted **6 misread message
 - **Safety comes from a rule, not from a large sample.** With 3 autonomous accepts on tuned sets, "no wrong accept" is weak
   evidence by itself; the evidence is that FLOW refuses to accept alone unless the coverage check passes, which the first runs
   showed is necessary.
+- **Labelled "accept", countered.** The "not acceptable" row holds 9 messages labelled "accept" (4 and 5) that FLOW
+  countered alone because the early payment costs more than the plan without it (`EARLY_PAY_DEARER_THAN_PLAN`, ADR-0007).
 - **What FLOW sends alone.** It answers 57 of 115 messages on its own: 3 accepts, 20 counters and 34 rejections. 53 of the 54
   counters and rejections rest on a correct reading of the labelled terms; one (H3-I05) dropped the early-payment term while
   rejecting an unknown lender.
@@ -545,11 +550,12 @@ verdicts matched on 33 of 63 and 28 of 47, and FLOW accepted **6 misread message
 repository, so a judge cannot re-run these figures; a reading changes nothing until the owner confirms it. On 30 new
 contracts, 13 scans and photos are refused (no OCR); on the 17 with a text layer the readings got **215 of 285 key fields
 (75%)**, 76% of the fields that move money, with payment triggers weakest (17 of 33). After fixes chosen from these failures:
-86% (no longer unseen).
+86% (no longer unseen). The scores are committed in
+[submission/work/eval/](submission/work/eval/) (`contracts_b2_heldout_fields.json`, `contracts_b2_afterfix_fields.json`).
 
 **Owner questions.** On the bank the answers were built against (tuned), 228 of 427 answerable turns are answered, 45 partly,
-0 wrong. On **142 held-out everyday wordings**, 127 reach the right answer (89.4%) and 3 a wrong topic (2.1%); offline, no
-question executed or changed the books. **The live stress test (18 Oct, `28738f19`, DeepSeek, router on):** 658 owner turns
+0 wrong. On **142 held-out everyday wordings**, 127 reach the right answer (89.4%) and 3 a wrong topic (2.1%) on `571ea64f`;
+on `90116810`, 126 (88.7%) and 4 (2.8%). Offline, no question executed or changed the books. **The live stress test (18 Oct, `28738f19`, DeepSeek, router on):** 658 owner turns
 all returned HTTP 200; of 589 sweep questions the rules parser read 546, the question gate 10 and the model classifier 12, and
 21 fell back; 63 questions the deterministic answers did not cover reached the router (Table M). The classifier turned 4
 questions into proposed plans that waited for "go ahead". Latency p50 0.13 s, p95 1.17 s.
@@ -726,7 +732,7 @@ pnpm --dir apps/web install
 uv sync --directory services/api
 ```
 
-Expected: both installs finish without errors; `git diff --stat 66c31e7e submission-2026-10-20 -- services apps` prints nothing
+Expected: both installs finish without errors; `git diff --stat 66c31e7e submission-2026-10-20 -- services/api/app apps/web` prints nothing
 (the tag's product code is 66c31e7e).
 
 **Commands, expected outcomes and where results go.** Every command writes new results under `out/`, which the repository
@@ -739,7 +745,7 @@ ignores, so the submitted evidence is never overwritten. Run them from the repos
 | The same against the running product | start `pnpm demo`, then, in a second terminal, `uv run --project services/api python docs/deliverables/evidence/sandbox-2026-10-19/run_sandbox.py --base-url http://127.0.0.1:8000` | the same cases; a step that needs a direct store write is recorded as SKIPPED ("in-process only") |
 | The scripted tasks with their evidence chains | `uv run --project services/api python scripts/run_scenarios.py --inproc --out out/e2e` | `49/49 scenarios passed`; each chain verifies |
 | Check a submitted chain without running anything | `python scripts/verify_evidence.py docs/deliverables/evidence/demo_walk/operations_log.jsonl` | `VALID` |
-| The API suite (about 25 minutes on 8 cores) | POSIX: `cd services/api && SKIP_PERF_BENCH=1 uv run pytest -q`; PowerShell: `cd services/api; $env:SKIP_PERF_BENCH = "1"; uv run pytest -q` | 11,421 passed, 0 failed, 47 skipped on 66c31e7e (Table V); the tests set `TERMSLEDGER_NO_DOTENV=1` and `DEMO_MODE=1` themselves |
+| The API suite (this command runs it serially; the release gate ran it as 155 shards, 8 at a time, in 19 minutes, the shards' times summing to 1.7 hours: [tools/certify_66c3.sh](../security/evidence/2026-10-19/int-66c31e7e/tools/certify_66c3.sh)) | POSIX: `cd services/api && SKIP_PERF_BENCH=1 uv run pytest -q`; PowerShell: `cd services/api; $env:SKIP_PERF_BENCH = "1"; uv run pytest -q` | 11,421 passed, 0 failed, 47 skipped on 66c31e7e (Table V); the tests set `TERMSLEDGER_NO_DOTENV=1` and `DEMO_MODE=1` themselves |
 | The product | `pnpm demo` (also `pnpm demo --blank` for empty books, `--web-port`/`--api-port` for other ports) | "Ready" and the address; API on 127.0.0.1:8000, web on 127.0.0.1:3000; Ctrl+C stops both |
 
 On Windows, set `PYTHONUTF8=1` for the Python scripts (PowerShell: `$env:PYTHONUTF8 = "1"`). The browser suites need
@@ -812,7 +818,7 @@ The evidence folder is under [docs/security/evidence/2026-10-19/](../../docs/sec
 `MANIFEST.json` and `SHA256SUMS` (evidence id sha256:4a418fe4fb4c6c4d, the sha256 of `SHA256SUMS`); the verdict is recorded in
 [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md).
 
-**Table V. Verification manifest for the submission build 66c31e7e (the Security Lead's release gate, 19 Oct 2026, 05:55 to 06:46 UTC UTC, on a
+**Table V. Verification manifest for the submission build 66c31e7e (the Security Lead's release gate, 19 Oct 2026, 05:55 to 06:46 UTC, on a
 clean checkout; evidence sha256:4a418fe4fb4c6c4d). Commands run from the repository root unless stated.**
 
 | Check | Command | Result | Evidence |
@@ -857,14 +863,14 @@ noted. The gated suites are in Table V.
 | Claim | Command | Result (build) |
 | --- | --- | --- |
 | Owner questions | `uv run python scripts/owner_questions_baseline.py` | Of the 427 turns the books can answer: 228 answered, 45 partly, 154 declined, 0 wrong; 75 of the 76 turns the books cannot answer declined honestly (`571ea64f`). The script's own tally, 303 answered and 46 partly of 503, counts those honest declines as answers |
-| Everyday wording | `uv run python scripts/owner_questions_general.py --part all` | 326/345, 4 wrong topic (1.2%); held-out 127/142 (89.4%), 3 wrong (2.1%) (`571ea64f`) |
+| Everyday wording | `uv run python scripts/owner_questions_general.py --part all` | 326/345, 4 wrong topic (1.2%); held-out 127/142 (89.4%), 3 wrong (2.1%) (`571ea64f`). On `90116810`: 325/345, 5 wrong (1.4%); held-out 126/142 (88.7%), 4 wrong (2.8%) |
 | Router and answer cards | `uv run pytest tests/nl/test_ask_router.py tests/nl/test_router_tools.py tests/certification/test_ask_router_boundary.py tests/nl/test_answer_card.py tests/security/test_nl_attacks.py` | 452 passed, 1 skipped (`571ea64f`) |
 | Offline evaluation | `uv run --project services/api python scripts/evaluate.py --out out/eval` (about 8 minutes) | Every target in its own gate met on its default offers set ([fixtures/heldout](../../fixtures/heldout), used in tuning); on held-out 3, scored separately, the material-error and silent-error targets are not met (`975e082f`) |
-| Autonomy funnel | `uv run --project services/api python scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2` | Table 4 (`571ea64f`) |
+| Autonomy funnel | `uv run --project services/api python scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2 --out out/funnel` | Table 4 (`571ea64f`; the same counts on `90116810`) |
 | Unseen live set | the commands in [live_unseen/README.md](../../services/api/evals/live_unseen/README.md) (a model key; paid calls) | Table M (`5926ef29`, 19 Oct) |
-| Contract reading | [scripts/evaluate_contracts.py](../../scripts/evaluate_contracts.py) and the scorer [eval_contracts.py](../../services/api/scripts/eval_contracts.py), on 70 contracts kept outside the repository | 75% of fields on unseen text-layer contracts, 86% after fixes, 98% on the 30 it was tuned on (recorded DeepSeek readings, 17 Oct). Not reproducible from the repository |
+| Contract reading | [scripts/evaluate_contracts.py](../../scripts/evaluate_contracts.py) and the scorer [eval_contracts.py](../../services/api/scripts/eval_contracts.py), on 70 contracts kept outside the repository | 75% of fields on unseen text-layer contracts, 86% after fixes, 98% on the 30 it was tuned on (recorded DeepSeek readings, 16–17 Oct; scores in [submission/work/eval/](submission/work/eval/) `contracts_b2_heldout_fields.json`, `contracts_b2_afterfix_fields.json`, `contracts_b1_tuned_fields.json`). Not reproducible from the repository |
 | Evidence chain | `uv run --project services/api python scripts/verify_evidence.py <exported.jsonl>` (`--checkpoint-out` prints a `COUNT:HEAD` to keep elsewhere; `--checkpoint` checks a later export against it) | VALID; an edited copy is rejected |
-| Routes and migrations | `python -I scripts/security_route_inventory.py . out/routes.json` (repository root) | 113 routes in demo mode (109 API routes and 4 documentation routes); migration 0009 (`5926ef29`) |
+| Routes and migrations | `python -I scripts/security_route_inventory.py . out/routes.json` (repository root); `uv run pytest -s tests/security/test_route_policy.py` | The inventory prints "108 routes" (the routes declared under `app/api`; it does not count `/health` or the documentation routes); the route-policy test prints 113 routes in demo mode (109 API routes and 4 documentation routes); migration 0009 (`5926ef29`) |
 
 ## Appendix D. Representative test cases
 
@@ -942,7 +948,7 @@ built on, 97% (412 of 424). Nothing here measures whether an owner would catch a
 | --- | --- | --- |
 | Foshan pays 10 days late | Same lowest point (day 30); 30 days below the reserve instead of 20 | Keeps the same funding longer (¥5,649.25) and **asks the owner**, because the advance's effective cost (16.7% a year) is now above the 15% approval threshold |
 | Foshan pays only half | 35 days below the reserve | Its cheapest cover needs a buyer early payment on a future invoice, so it is labelled **cannot run today** |
-| EBITDA 20% lower | Cash unchanged | Covenants weaken but hold (DSCR 1.50× at worst, leverage 2.15×); the plan is unchanged |
+| EBITDA 20% lower | Cash unchanged | Covenants weaken but hold (DSCR 1.50× at worst, leverage 2.15×); the plan is unchanged. The ¥1,500,000 equipment loan carries 0% interest, a fixture assumption that flatters both ratios |
 
 **Metric definitions.**
 - **Verdict agreement:** the share of labelled messages where FLOW's verdict equals the label (three held-out-3 and two
@@ -974,7 +980,7 @@ The forecast's ¥90,040 is the shortfall on the **first** day below the reserve 
 | EX01 + the cure the verdict prices (sources that can carry a permanent need) | invoice financing ¥135,040 on an invoice issued on day 32 | ¥300,000; no breach | ¥5,040.00 + ¥2,406.67 | ¥28,326.92 | **no**: the invoice does not exist yet |
 | EX01 + the router's plan (cheaper, but on the clean-down line) | credit line ¥135,040, drawn today, repaid day 62 | ¥300,000; no breach | ¥5,040.00 + ¥1,468.05 | ¥28,326.92 | yes |
 | **Option A** (FLOW's counter) | credit line ¥147,210 | ¥300,000 (day 30); no breach | ¥2,210.00 (¥260,000 at 0.85%) + ¥825.99 = **¥3,035.99** | ¥0 | yes; **Accept, Tier 1** |
-| Option B (FLOW's counter) | line ¥90,000 + invoice financing ¥315,000 | ¥300,000 (day 30); no breach | — + **¥3,706.46** (¥592.53 more than the standing plan) | 55 days + 0.30% price rise: a net forward gain of ¥162.05 over 13 invoices | the router's plan, yes; needs the owner (terms lengthen) |
+| Option B (FLOW's counter) | line ¥90,000 held to day 57 (¥899.51) + invoice financing ¥315,000, days 3 to 32 (¥2,806.95) | ¥300,000 (day 30); no breach | — + **¥3,706.46** (¥592.53 more than the standing plan) | 55 days + 0.30% price rise: a net forward gain of ¥162.05 over 13 invoices | the router's plan, yes; needs the owner (terms lengthen) |
 
 *The cure costs more than the router's plan because the extra 15 days recur on every invoice, so the cure is priced only on
 sources that can carry a permanent need, which clean-down excludes: invoice financing on the day-32 invoice (¥135,040 × 7.8% ×
@@ -997,7 +1003,7 @@ later invoice would land after a loan payment with no committed cure.*
 | Equity | Reference only (Tier 3) | n/a | n/a |
 
 **Capex, in detail.** The ¥600,000 machine earns +¥22,000 a month from month 4 to month 60 (no residual value, tax or
-maintenance): NPV ¥380,885.77 at a 10% hurdle, simple payback in month 31, discounted payback in month 35. Once FLOW's
+maintenance): NPV ¥380,885.77 at a 10% hurdle, discounted monthly at (1.1)^(1/12) − 1 (¥370,523.03 at 10%/12), simple payback in month 31, discounted payback in month 35. Once FLOW's
 ¥3,113.93 plan has been paid, every structure needs a few days' bridge on the line (the lease ¥3.11, the 36-month loan ¥3.29).
 The loan-plus-bridge combination, which the screening does not try, has about ¥39,000 less interest than the lease
 undiscounted across a 36- and a 48-month tenor, and CNY 7,493.45 less in present value. **The payee.** A vendor is identified
@@ -1058,8 +1064,9 @@ books, ranks long-term plans by NPV, and builds a lender-style borrower file tha
 
 ## Appendix I. The agent's tools
 
-Every tool is an HTTP route with a strict schema; 113 routes in demo mode (109 API routes and 4 documentation routes, listed by
-`python -I scripts/security_route_inventory.py . out/routes.json`). The SA's Table 6 classes every route by the caller it
+Every tool is an HTTP route with a strict schema; 113 routes in demo mode (109 API routes and 4 documentation routes, counted by
+the route-policy test; `python -I scripts/security_route_inventory.py . out/routes.json` lists the 108 declared under
+`app/api`, all but `/health`). The SA's Table 6 classes every route by the caller it
 admits. `GET /health`, `GET /clock` and the demo offer list are public; the buyer channel (`POST /nl`, `POST /offers`), the
 agent channel (`POST /operations`, `POST /approvals/{id}`, `POST /circuit/{id}/reset`) and the bank feed use their own
 credentials (Table J1); every other route needs the owner token. By area: setup and demo (demo mode); chat; offers,

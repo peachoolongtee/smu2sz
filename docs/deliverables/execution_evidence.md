@@ -10,9 +10,9 @@
 
 FLOW is the product name; the code and its variables still use the working name TermsLedger (`termsledger-api`, `TERMSLEDGER_NO_DOTENV`, the `project` field of each log). It is the same system.
 
-**Data notice.** All accounts, companies, buyers, lenders and amounts are **synthetic fixtures** in a simulated ledger. No real money, bank or customer is involved. Every run below uses `LLM_MODE=cache`: recorded model outputs, with no network calls and no paid model.
+**Data notice.** All accounts, companies, buyers, lenders and amounts are **synthetic fixtures** in a simulated ledger. No real money, bank or customer is involved. Every run cited as evidence uses `LLM_MODE=cache`: recorded model outputs, with no network calls and no paid model.
 
-**Demo video.** Video link: to be added at upload.
+**Demo video.** The demo video is submitted alongside this document.
 
 ## 01 Evidence Summary
 
@@ -26,14 +26,14 @@ FLOW is the product name; the code and its variables still use the working name 
 - a committed ¥150,000 credit line and a committed invoice-financing facility;
 - an owner-signed mandate v1 (cash floor ¥300,000, forward-concession cap ¥5,000, DSCR at least 1.25×, leverage at most 2.5×, and a 15% a year rate above which FLOW may not borrow without the owner's approval).
 
-**The evidence is a sandbox run on the submission build 66c31e7e:** [evidence/sandbox-2026-10-19/](evidence/sandbox-2026-10-19/). One script, [run_sandbox.py](evidence/sandbox-2026-10-19/run_sandbox.py), drives five cases through the API. For every step it records the request (method, path, body, and the credential by role only), the HTTP status, the response, the assertion it checks and PASS or FAIL. After each case part it reads the state back (the operations-log entries added, approvals, commitments, cash, facilities, receivables, reconciliation, security events, the pause) and verifies that part's audit-log export with [scripts/verify_evidence.py](../../scripts/verify_evidence.py). Nothing in a row depends on the conversation around it: each claim word ("queued", "executed", "funded", "settled", "refused") sits next to the state read that proves it. The runs cited here are those of the final submission build 66c31e7e, one per transport; each run's `run.json` records the build commit and the check that its product code is unchanged (`git diff --stat` against the frozen code commit prints nothing). The step counts below are those of the validation run of the same script (in process, on `5926ef29`); the final runs' own `SUMMARY.md` files are authoritative:
+**The evidence is a sandbox run on the submission build 66c31e7e:** [evidence/sandbox-2026-10-19/](evidence/sandbox-2026-10-19/). One script, [run_sandbox.py](evidence/sandbox-2026-10-19/run_sandbox.py), drives five cases through the API. For every step it records the request (method, path, body, and the credential by role only), the HTTP status, the response, the assertion it checks and PASS or FAIL. After each case part it reads the state back (the operations-log entries added, approvals, commitments, cash, facilities, receivables, reconciliation, security events, the pause) and verifies that part's audit-log export with [scripts/verify_evidence.py](../../scripts/verify_evidence.py). Nothing in a row depends on the conversation around it: each claim word ("queued", "executed", "funded", "settled", "refused") sits next to the state read that proves it. The runs cited here are those of the final submission build 66c31e7e, one per transport; each run's `run.json` records the build commit and the check that its product code is unchanged (`git diff --stat` against the frozen code commit prints nothing). The counts below are those in each run's `SUMMARY.md`:
 
 | Run | Transport | Steps | Audit exports | Folder |
 | --- | --- | --- | --- | --- |
 | In process | FastAPI TestClient over a fresh in-memory runtime, as `scripts/run_scenarios.py --inproc` builds it | 159 PASS, 0 FAIL, of 163; 4 of the steps write the store directly, as the tests do | 16 of 16 `VALID` | [run-20261019T064200Z-inproc/](evidence/sandbox-2026-10-19/run-20261019T064200Z-inproc/SUMMARY.md) |
-| Over HTTP | the demo API on `127.0.0.1:8420` | expected 142 PASS, 0 FAIL, 1 SKIPPED, of 143; parts 4b-i, 4b-ii and 4c are in-process only (they write the store) | expected 13 of 13 `VALID` | [run-20261019T064706Z-http/](evidence/sandbox-2026-10-19/run-20261019T064706Z-http/SUMMARY.md) |
+| Over HTTP | the demo API on `127.0.0.1:8420` | 142 PASS, 0 FAIL, 1 SKIPPED, of 143; parts 4b1, 4b2 and 4c are in-process only (they write the store) | 13 of 13 `VALID` | [run-20261019T064706Z-http/](evidence/sandbox-2026-10-19/run-20261019T064706Z-http/SUMMARY.md) |
 
-Both runs use `DEMO_MODE=1`, `TERMSLEDGER_NO_DOTENV=1`, `DATABASE_URL=memory` and `LLM_MODE=cache` (recorded model readings: no model provider is called), the published demo credentials, the feature flags that `pnpm demo` sets, the `golden_sme` books ([fixtures/scenarios/golden_sme.json](../../fixtures/scenarios/golden_sme.json); part 4b-iii uses `short_facilities.json`), and `POST /demo/reset` before every case part. Each folder's `run.json` gives the commits, configuration, fixtures with their sha256, times and a secret scan: no credential value appears in any output, the public demo values included.
+Both runs use `DEMO_MODE=1`, `TERMSLEDGER_NO_DOTENV=1`, `DATABASE_URL=memory` and `LLM_MODE=cache` (recorded model readings: no model provider is called), the published demo credentials, the feature flags that `pnpm demo` sets, the `golden_sme` books ([fixtures/scenarios/golden_sme.json](../../fixtures/scenarios/golden_sme.json); part 4b3 uses `short_facilities.json`), and `POST /demo/reset` before every case part. Each folder's `run.json` gives the commits, configuration, fixtures with their sha256, times and a secret scan: no credential value appears in any output, the public demo values included.
 
 **Builds.** The submission build is `66c31e7e`: `03215a20` plus the demo web app on loopback (DEMO-L1), round eight's fixes to how funding is reported (FUND-1, FUND-2, FUND-3, FUND-5), round nine (LOG-2, SEC-19, CON-1) and two cleanups (API lint, public release). Its certification: certified for scope S on 19 Oct. `03215a20` was certified for scope S on 19 Oct. The live model runs (1, 16, 18 Oct and the 19 Oct unseen-set run) are not part of this evidence; they are uncertified and outside every certification.
 
@@ -53,11 +53,11 @@ Step ids (`1.05`, `2a.04`) point into the run folders' `case_<n>_<name>.json`; t
 8. **Owner-only access to the evidence.** `GET /evidence` answers 401 without the owner token (1.32) and with a buyer's key (2e).
 9. **Contract confirmation** (not exercised by the sandbox; ADR-0012). A document the agent read becomes a record; the owner's confirmation is an owner-only operation bound to the hash of the text shown, and it changes no books. The demo reset opens on three demo documents already confirmed (seq 1 to 3 of every log). **No reading-accuracy claim is made from the demo contracts** ([contracts_cn.md](evidence/contracts_cn.md), historical).
 
-**Where the run differs from the documents.**
+**Points to note.**
 
-- **3b, the numbered pick.** A number decides an approval only while the numbered list is the last thing FLOW showed (3c). After "1" has shown the item, FLOW asks for "approve APR-…"; an "approve 1" then is not understood and decides nothing, and the approval stays PENDING. The run records this as a fail-safe step (PASS when nothing is decided); "approve APR-000001" then decides it. Separately, [SECURITY_SELF_ASSESSMENT.md](../SECURITY_SELF_ASSESSMENT.md) 1.6 ("Chat is inside the boundary", Approvals) still says that a number picked from a list that followed a "yes" decides it. On this build such a pick only shows the item (CON-1).
+- **3b, the numbered pick.** A number decides an approval only while the numbered list is the last thing FLOW showed (3c). After "1" has shown the item, FLOW asks for "approve APR-…"; an "approve 1" then is not understood and decides nothing, and the approval stays PENDING. The run records this as a fail-safe step (PASS when nothing is decided); "approve APR-000001" then decides it, as Table 8 of the [Security Self-Assessment](../SECURITY_SELF_ASSESSMENT.md) states (CON-1).
 - **2d.** With both the bank-feed key and the agent key, an unpaused draw sent as `SYSTEM` is not refused. It is rewritten to the agent's own request and runs at the agent's Tier 1 within the mandate, as section 1.2 of the self-assessment and [app/api/operations.py](../../services/api/app/api/operations.py) describe. The bank-feed key confers nothing beyond a receipt.
-- **4c.** The compensating repayment of Table 10 is itself judged by admission (Table 5). With the gap still open, repaying the ¥150,000.00 draw on day 0 would leave ¥60,000.00 on day 12, so it is refused. The script's first expectation for this step (executed) was wrong and was corrected to the documented rule.
+- **4c.** The compensating repayment of the self-assessment's Table 11 is itself judged by admission (Table 5). With the gap still open, repaying the ¥150,000.00 draw on day 0 would leave ¥60,000.00 on day 12, so it is refused. The script's first expectation for this step (executed) was wrong and was corrected to the documented rule.
 - **5.06.** While the agent is paused, a buyer's early-pay offer still leaves a PROPOSED commitment record (no money, not agreed), as section 1.11 states. The acceptance itself is refused.
 
 ## 02 Logs or Transactions
@@ -139,7 +139,7 @@ Chain line: 17 operations, `chain_valid: true`, and the head hash, which differs
 | 4c | A two-leg plan with RCV-A on 26-day terms (in process): go ahead, decline the queued leg, repay (OWNER) | the draw runs, the advance waits; nothing reversed | `DRAW_FACILITY` EXECUTED, `SUBMIT_INVOICE_FOR_FINANCING` PENDING_APPROVAL, "Still to arrange: ¥90,000.00"; after the decline the line is still drawn ¥150,000.00; the repayment is refused by the reserve | PASS |
 | 5 | Pause, then an agent draw and BUYER-1's offer; the owner approves an item queued before the pause; resume; the offer again | refused, refused, executed, agreed | `REFUSED` (paused) with `REVOKED` events and nothing on the chain; "We are not able to confirm these terms."; the approval EXECUTED while paused; after resume "Agreed: …", one `ACCEPT_OFFER` EXECUTED Tier 1 by AGENT | PASS |
 
-**Screenshots.** The sandbox records requests and state, not screens. The screenshots of the web app are in the technical document ([docs/deliverables/screenshots/](screenshots/)); each `/nl` turn of the historical 18 Oct run has a readable card under [services/api/evals/e2e/latest/transcripts/](../../services/api/evals/e2e/latest/transcripts/). The demo video: video link: to be added at upload.
+**Screenshots.** The sandbox records requests and state, not screens. The screenshots of the web app are in the technical document ([docs/deliverables/screenshots/](screenshots/)); each `/nl` turn of the historical 18 Oct run has a readable card under [services/api/evals/e2e/latest/transcripts/](../../services/api/evals/e2e/latest/transcripts/). The demo video is submitted alongside this document.
 
 #### Historical: the 49-task run of 18 Oct 2026 (generated tables)
 
@@ -232,7 +232,7 @@ Get-ChildItem docs/deliverables/evidence/sandbox-2026-10-19/run-*/evidence/*.jso
 
 Expected: `VALID: 17 operations, 0 security events, head <hash>…`, then one line starting `VALID` per part export (29: 16 in process, 13 over HTTP), exit 0 each. The script recomputes every `entry_hash` from `prev_hash + payload_json + result_json`, checks the links, the sequence and the readable fields against the hashed text, and compares the chain line's `head_hash`. Editing any payload, result or hash makes it print `INVALID` and exit 1. A new run of A or B gives the same outcomes with different head hashes.
 
-**Reference values.** The validation run (19 Oct 2026, Windows 11, Python 3.12.14, in process, code `5926ef29`, offline) gave the result in A: all 159 checked steps passed, 16 of 16 exports `VALID`, a clean secret scan. It was a draft and is not kept; the cited runs on 66c31e7e (run-20261019T064200Z-inproc, run-20261019T064706Z-http) replace it.
+**Reference values.** The cited runs on 66c31e7e (run-20261019T064200Z-inproc and run-20261019T064706Z-http; Windows 11, Python 3.12.14, offline) gave the results in A and B.
 
 **D. Historical runs** (earlier builds; kept for comparison, not results of the submission build):
 

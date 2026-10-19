@@ -13,7 +13,7 @@ FILES CHANGED: /tmp/flow-assessment-b.md; raw detector output /tmp/flow-detect-b
 
 ## Detector
 
-Command: /Users/ianpong/.agents/skills/impeccable/scripts/impeccable detect --json apps/web
+Command: ~/.agents/skills/impeccable/scripts/impeccable detect --json apps/web
 Result: exit 0; JSON [] (0 findings). Rule names: none. Locations: none. False positives: none returned. This is a detector result only, not proof that the app is accessible or free of technical defects. The manual CSS and failure-state findings below were not reported by this scan.
 
 ## Findings
