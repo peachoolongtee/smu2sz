@@ -1,0 +1,33 @@
+# The judges' demo: one HTTPS origin behind a password gate. Nothing (pages, API, health) is served without the password.
+{
+	admin off
+}
+
+{$DEMO_HOST} {
+	basic_auth {
+		{$DEMO_USER} {$DEMO_PASS_HASH}
+	}
+	request_body {
+		max_size 2MB
+	}
+	# documentation hidden, as the network profile requires (Security Self-Assessment, Table 28)
+	@docs path /api/docs /api/docs/* /api/redoc /api/redoc/* /api/openapi.json
+	respond @docs 404
+
+	handle_path /api/* {
+		reverse_proxy api:8000
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+		X-Robots-Tag "noindex, nofollow"
+	}
+	encode gzip
+	log {
+		output stdout
+		format console
+	}
+}

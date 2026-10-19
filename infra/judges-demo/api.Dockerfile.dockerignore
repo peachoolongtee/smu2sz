@@ -1,0 +1,15 @@
+**/node_modules
+**/.venv
+**/.next*
+**/__pycache__
+.git
+.claude
+apps
+docs/deliverables/out
+docs/deliverables/evidence
+docs/security/evidence
+docs/research
+experiments
+**/.env
+**/.env.*
+!**/.env.example
