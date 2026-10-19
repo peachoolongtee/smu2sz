@@ -51,7 +51,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[3]
 API = ROOT / "services" / "api"
 VERIFY = ROOT / "scripts" / "verify_evidence.py"
-CODE_COMMIT = "c66a5e61"  # the submission build: 66c31e7e + the review fixes of 19 Oct (90116810, c66a5e61)
+CODE_COMMIT = "3be038ae"  # the REV-4 fix (fix/rev4-coverage), gated on sec/rev4-gate
 
 # The published demo credentials (accepted only while DEMO_MODE=1; docs/SECURITY_SELF_ASSESSMENT.md 1.2). They are public, but the
 # outputs still name a credential by its role only.
