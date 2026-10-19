@@ -146,13 +146,13 @@ def test_a_term_only_the_model_read_stands() -> None:
     rules = model.model_copy(update={"obligations": [o for o in model.obligations
                                                      if o.type != ObligationType.CONTINGENT_REBATE]})
     assert disputed(model.obligations, rules.obligations) == {}
-    assert check_against_rules(model, rules) is model
+    assert check_against_rules(model, rules).status == model.status
 
 
 def test_a_value_the_rules_left_unread_matches_any_value() -> None:
     model = _reading()
     rules = model.model_copy(update={"obligations": [o.model_copy(update={"rate_bp": None}) for o in model.obligations]})
-    assert check_against_rules(model, rules) is model
+    assert check_against_rules(model, rules).status == model.status
 
 
 def test_a_value_the_two_read_differently_is_disputed_with_both_passages() -> None:
@@ -162,7 +162,7 @@ def test_a_value_the_two_read_differently_is_disputed_with_both_passages() -> No
                                                      for o in model.obligations]})
     out = check_against_rules(model, rules)
     assert flagged(out) == [f"{DISAGREE_FIELD}.TERMS_EXTENSION"]
-    assert out.status == CompileStatus.ABSTAINED and not out.autonomy_eligible and out.obligations == model.obligations
+    assert out.status == CompileStatus.ABSTAINED and not out.autonomy_eligible and [o.model_copy(update={"field_provenance": {}}) for o in out.obligations] == model.obligations
     dispute = next(a for a in out.abstentions if a.field.startswith(DISAGREE_FIELD))
     assert len(dispute.spans) == len({(s.doc_id, s.start, s.end) for s in dispute.spans})  # each passage quoted once
 

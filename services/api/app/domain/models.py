@@ -136,6 +136,13 @@ class Obligation(Contract):
     spans: list[SourceSpan] = Field(min_length=1)
     confidence: float = Field(ge=0.0, le=1.0)
     unresolved: list[str] = Field(default_factory=list)
+    # Reader agreement is evidence, not authority. A one-reader field requires owner review.
+    field_provenance: dict[str, Literal["rules", "model", "both"]] = Field(default_factory=dict)
+
+    @model_serializer(mode="wrap")
+    def _serialize_provenance(self, handler: SerializerFunctionWrapHandler) -> object:
+        # Preserve historical cached readings, state hashes and evidence when no check ran.
+        return _omit_empty(handler(self), self, ("field_provenance",))
 
 
 class Abstention(Contract):
