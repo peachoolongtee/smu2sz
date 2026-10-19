@@ -184,3 +184,18 @@ def test_rules_backend_failure_cannot_leave_model_only_fields_autonomous(monkeyp
     out = compiler._checked([], "BUYER-1", offer, "synthetic-hash")
     assert not out.autonomy_eligible
     assert all(set(o.field_provenance.values()) == {"model"} for o in out.obligations)
+
+
+def test_reader_evidence_does_not_change_the_terms_hash() -> None:
+    """Provenance and the settlement parse are evidence: the commitment's terms hash covers economics only."""
+    from app.commitments.terms import terms_hash
+    from app.domain.models import PaymentTiming, SourceSpan
+
+    terms = reading().obligations
+    span = SourceSpan(doc_id="d", start=0, end=8, text="tomorrow")
+    labelled = [o.model_copy(update={
+        "field_provenance": {"rate_bp": "model"},
+        "payment_timing": PaymentTiming(expression=span, reference_day=0, basis="relative_days", relation="on", offset_days=1),
+    }) for o in terms]
+    assert terms_hash(labelled) == terms_hash(terms)
+    assert terms_hash([labelled[0].model_copy(update={"rate_bp": (labelled[0].rate_bp or 0) + 1}), *labelled[1:]]) != terms_hash(terms)

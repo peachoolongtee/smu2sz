@@ -8,8 +8,9 @@ from collections.abc import Iterable
 from app.domain.models import Obligation
 from app.persistence.canonical import canonical_json
 
-# Fields that identify or evidence an obligation but do not change its economics.
-NON_ECONOMIC_FIELDS = frozenset({"id", "spans", "confidence"})
+# Fields that identify or evidence an obligation but do not change its economics. Reader provenance is evidence;
+# a settlement promise reaches the terms as the bound effective day, so its source span and parse stay out of the hash.
+NON_ECONOMIC_FIELDS = frozenset({"id", "spans", "confidence", "field_provenance", "payment_timing"})
 
 
 def economic_terms(obligation: Obligation) -> dict[str, object]:
