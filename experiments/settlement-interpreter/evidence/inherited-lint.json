@@ -1,0 +1,2225 @@
+[
+  {
+    "cell": null,
+    "code": "F811",
+    "end_location": {
+      "column": 24,
+      "row": 293
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/api/customer_overview.py",
+    "fix": null,
+    "location": {
+      "column": 5,
+      "row": 293
+    },
+    "message": "Redefinition of unused `projected_sales_fen` from line 228: `projected_sales_fen` redefined here",
+    "name": "redefined-while-unused",
+    "noqa_row": 293,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/redefined-while-unused"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 61,
+      "row": 93
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/api/outbound_record.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "    from app.api.offer_picture import (  # the picture's reading of terms; it reads the record, so imported here\n        _TERM_ROWS,\n        _term_rows,\n    )\n",
+          "end_location": {
+            "column": 1,
+            "row": 94
+          },
+          "location": {
+            "column": 1,
+            "row": 93
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 5,
+      "row": 93
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "name": "unsorted-imports",
+    "noqa_row": 93,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 61,
+      "row": 354
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/api/outbound_record.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "    from app.api.offer_picture import (  # the picture's reading of terms; it reads the record, so imported here\n        _TERM_ROWS,\n        _term_rows,\n    )\n",
+          "end_location": {
+            "column": 1,
+            "row": 355
+          },
+          "location": {
+            "column": 1,
+            "row": 354
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 5,
+      "row": 354
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "name": "unsorted-imports",
+    "noqa_row": 354,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "RUF100",
+    "end_location": {
+      "column": 38,
+      "row": 518
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/api/setup.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 91,
+            "row": 518
+          },
+          "location": {
+            "column": 22,
+            "row": 518
+          }
+        }
+      ],
+      "message": "Remove unused `noqa` directive"
+    },
+    "location": {
+      "column": 24,
+      "row": 518
+    },
+    "message": "Unused `noqa` directive (unused: `BLE001`)",
+    "name": "unused-noqa",
+    "noqa_row": 518,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+  },
+  {
+    "cell": null,
+    "code": "RUF100",
+    "end_location": {
+      "column": 38,
+      "row": 556
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/api/setup.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 116,
+            "row": 556
+          },
+          "location": {
+            "column": 22,
+            "row": 556
+          }
+        }
+      ],
+      "message": "Remove unused `noqa` directive"
+    },
+    "location": {
+      "column": 24,
+      "row": 556
+    },
+    "message": "Unused `noqa` directive (unused: `BLE001`)",
+    "name": "unused-noqa",
+    "noqa_row": 556,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 112,
+      "row": 15
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/compiler/contract_checks.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from __future__ import annotations\n\nimport re\nfrom dataclasses import dataclass\nfrom datetime import date, timedelta\n\nfrom app.compiler.contract_parsing import CN_COUNT, COUNT_PAT, cn_int, parse_count, parse_date\nfrom app.compiler.parsing import find_money\nfrom app.domain.models import (\n    Abstention,\n    ContractField,\n    ContractTerm,\n    PaymentBasis,\n    SourceDocument,\n    SourceSpan,\n)\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 17
+          },
+          "location": {
+            "column": 1,
+            "row": 7
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 7
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "name": "unsorted-imports",
+    "noqa_row": 7,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 99,
+      "row": 175
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/compiler/contract_checks.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 22,
+            "row": 174
+          },
+          "location": {
+            "column": 22,
+            "row": 174
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 99,
+            "row": 175
+          },
+          "location": {
+            "column": 99,
+            "row": 175
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 22,
+      "row": 174
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 174,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "RUF022",
+    "end_location": {
+      "column": 2,
+      "row": 253
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/compiler/contract_parsing.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "[\n    \"CN_COUNT\",\n    \"COUNT_PAT\",\n    \"DATE_PAT\",\n    \"EN_COUNT\",\n    \"Parsed\",\n    \"basis_of\",\n    \"business_days\",\n    \"cn_int\",\n    \"parse_count\",\n    \"parse_date\",\n    \"parse_days\",\n    \"parse_lead_days\",\n    \"parse_money\",\n    \"parse_months\",\n    \"parse_rate\",\n    \"unit_of\",\n]",
+          "end_location": {
+            "column": 2,
+            "row": 253
+          },
+          "location": {
+            "column": 11,
+            "row": 236
+          }
+        }
+      ],
+      "message": "Apply an isort-style sorting to `__all__`"
+    },
+    "location": {
+      "column": 11,
+      "row": 236
+    },
+    "message": "`__all__` is not sorted",
+    "name": "unsorted-dunder-all",
+    "noqa_row": 236,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-dunder-all"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 94,
+      "row": 88
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/contracts/heldout.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 13,
+            "row": 87
+          },
+          "location": {
+            "column": 13,
+            "row": 87
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 94,
+            "row": 88
+          },
+          "location": {
+            "column": 94,
+            "row": 88
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 13,
+      "row": 87
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 87,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 71,
+      "row": 91
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/contracts/heldout.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 13,
+            "row": 90
+          },
+          "location": {
+            "column": 13,
+            "row": 90
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 71,
+            "row": 91
+          },
+          "location": {
+            "column": 71,
+            "row": 91
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 13,
+      "row": 90
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 90,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 38,
+      "row": 102
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/contracts/heldout.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 9,
+            "row": 100
+          },
+          "location": {
+            "column": 9,
+            "row": 100
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 38,
+            "row": 102
+          },
+          "location": {
+            "column": 38,
+            "row": 102
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 9,
+      "row": 100
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 100,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 117,
+      "row": 615
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/nl/offers.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 6,
+            "row": 614
+          },
+          "location": {
+            "column": 6,
+            "row": 614
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 117,
+            "row": 615
+          },
+          "location": {
+            "column": 117,
+            "row": 615
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 6,
+      "row": 614
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 614,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 41,
+      "row": 619
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/nl/offers.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 6,
+            "row": 618
+          },
+          "location": {
+            "column": 6,
+            "row": 618
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 41,
+            "row": 619
+          },
+          "location": {
+            "column": 41,
+            "row": 619
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 6,
+      "row": 618
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 618,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 60,
+      "row": 622
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/nl/offers.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 6,
+            "row": 621
+          },
+          "location": {
+            "column": 6,
+            "row": 621
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 60,
+            "row": 622
+          },
+          "location": {
+            "column": 60,
+            "row": 622
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 6,
+      "row": 621
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 621,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 68,
+      "row": 625
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/nl/offers.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 6,
+            "row": 624
+          },
+          "location": {
+            "column": 6,
+            "row": 624
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 68,
+            "row": 625
+          },
+          "location": {
+            "column": 68,
+            "row": 625
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 6,
+      "row": 624
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 624,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 76,
+      "row": 628
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/nl/offers.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 6,
+            "row": 627
+          },
+          "location": {
+            "column": 6,
+            "row": 627
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 76,
+            "row": 628
+          },
+          "location": {
+            "column": 76,
+            "row": 628
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 6,
+      "row": 627
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 627,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 49,
+      "row": 634
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/nl/offers.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 6,
+            "row": 633
+          },
+          "location": {
+            "column": 6,
+            "row": 633
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 49,
+            "row": 634
+          },
+          "location": {
+            "column": 49,
+            "row": 634
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 6,
+      "row": 633
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 633,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "FURB157",
+    "end_location": {
+      "column": 26,
+      "row": 55
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/setup/__init__.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "1",
+          "end_location": {
+            "column": 26,
+            "row": 55
+          },
+          "location": {
+            "column": 23,
+            "row": 55
+          }
+        }
+      ],
+      "message": "Replace with `1`"
+    },
+    "location": {
+      "column": 23,
+      "row": 55
+    },
+    "message": "Verbose expression in `Decimal` constructor",
+    "name": "verbose-decimal-constructor",
+    "noqa_row": 55,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/verbose-decimal-constructor"
+  },
+  {
+    "cell": null,
+    "code": "FURB157",
+    "end_location": {
+      "column": 41,
+      "row": 55
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/setup/__init__.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "10",
+          "end_location": {
+            "column": 41,
+            "row": 55
+          },
+          "location": {
+            "column": 37,
+            "row": 55
+          }
+        }
+      ],
+      "message": "Replace with `10`"
+    },
+    "location": {
+      "column": 37,
+      "row": 55
+    },
+    "message": "Verbose expression in `Decimal` constructor",
+    "name": "verbose-decimal-constructor",
+    "noqa_row": 55,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/verbose-decimal-constructor"
+  },
+  {
+    "cell": null,
+    "code": "FURB157",
+    "end_location": {
+      "column": 47,
+      "row": 56
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/setup/__init__.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "10",
+          "end_location": {
+            "column": 47,
+            "row": 56
+          },
+          "location": {
+            "column": 43,
+            "row": 56
+          }
+        }
+      ],
+      "message": "Replace with `10`"
+    },
+    "location": {
+      "column": 43,
+      "row": 56
+    },
+    "message": "Verbose expression in `Decimal` constructor",
+    "name": "verbose-decimal-constructor",
+    "noqa_row": 56,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/verbose-decimal-constructor"
+  },
+  {
+    "cell": null,
+    "code": "DTZ011",
+    "end_location": {
+      "column": 24,
+      "row": 210
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/setup/__init__.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 210
+    },
+    "message": "`datetime.date.today()` used",
+    "name": "call-date-today",
+    "noqa_row": 210,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/call-date-today"
+  },
+  {
+    "cell": null,
+    "code": "FURB157",
+    "end_location": {
+      "column": 83,
+      "row": 282
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/app/setup/__init__.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "100",
+          "end_location": {
+            "column": 83,
+            "row": 282
+          },
+          "location": {
+            "column": 78,
+            "row": 282
+          }
+        }
+      ],
+      "message": "Replace with `100`"
+    },
+    "location": {
+      "column": 78,
+      "row": 282
+    },
+    "message": "Verbose expression in `Decimal` constructor",
+    "name": "verbose-decimal-constructor",
+    "noqa_row": 282,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/verbose-decimal-constructor"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 6,
+      "row": 126
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/alerts/test_reconcile_promises.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_p",
+          "end_location": {
+            "column": 6,
+            "row": 126
+          },
+          "location": {
+            "column": 5,
+            "row": 126
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 126
+    },
+    "message": "Unpacked variable `p` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 126,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 55,
+      "row": 15
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/alerts/test_review_gaps.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from __future__ import annotations\n\nimport pytest\n\nfrom app.alerts import AlertKind, Severity\nfrom app.api.runtime import get_runtime, set_runtime\nfrom app.config import get_settings\nfrom app.domain.fixtures import load_scenario\nfrom app.domain.models import FundingAction, FundingActionKind, Mode\nfrom app.financial import project\nfrom tests.alerts.test_act import _client, _log\nfrom tests.alerts.test_alerts import _of, _run, _store\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 18
+          },
+          "location": {
+            "column": 1,
+            "row": 4
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 4
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "name": "unsorted-imports",
+    "noqa_row": 4,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 6,
+      "row": 146
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/alerts/test_review_gaps.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_b",
+          "end_location": {
+            "column": 6,
+            "row": 146
+          },
+          "location": {
+            "column": 5,
+            "row": 146
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 146
+    },
+    "message": "Unpacked variable `b` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 146,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF100",
+    "end_location": {
+      "column": 136,
+      "row": 160
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_api_gaps.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 136,
+            "row": 160
+          },
+          "location": {
+            "column": 122,
+            "row": 160
+          }
+        }
+      ],
+      "message": "Remove unused `noqa` directive"
+    },
+    "location": {
+      "column": 124,
+      "row": 160
+    },
+    "message": "Unused `noqa` directive (non-enabled: `E731`)",
+    "name": "unused-noqa",
+    "noqa_row": 160,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 104,
+      "row": 391
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_buyer_message.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 36,
+            "row": 390
+          },
+          "location": {
+            "column": 36,
+            "row": 390
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 104,
+            "row": 391
+          },
+          "location": {
+            "column": 104,
+            "row": 391
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 36,
+      "row": 390
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 390,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 11,
+      "row": 564
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_buyer_message.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_v",
+          "end_location": {
+            "column": 11,
+            "row": 564
+          },
+          "location": {
+            "column": 10,
+            "row": 564
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 10,
+      "row": 564
+    },
+    "message": "Unpacked variable `v` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 564,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 9,
+      "row": 69
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_document_outcome.py",
+    "fix": null,
+    "location": {
+      "column": 5,
+      "row": 69
+    },
+    "message": "Unpacked variable `name` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 69,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 87,
+      "row": 121
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_document_outcome.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 40,
+            "row": 120
+          },
+          "location": {
+            "column": 40,
+            "row": 120
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 87,
+            "row": 121
+          },
+          "location": {
+            "column": 87,
+            "row": 121
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 40,
+      "row": 120
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 120,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 20,
+      "row": 259
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_slice_b_round_three.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_zhuhai",
+          "end_location": {
+            "column": 20,
+            "row": 259
+          },
+          "location": {
+            "column": 14,
+            "row": 259
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 14,
+      "row": 259
+    },
+    "message": "Unpacked variable `zhuhai` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 259,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "PLC3002",
+    "end_location": {
+      "column": 58,
+      "row": 262
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_slice_b_round_three.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 262
+    },
+    "message": "Lambda expression called directly. Execute the expression inline instead.",
+    "name": "unnecessary-direct-lambda-call",
+    "noqa_row": 262,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unnecessary-direct-lambda-call"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 10,
+      "row": 447
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_slice_b_round_three.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_offer",
+          "end_location": {
+            "column": 10,
+            "row": 447
+          },
+          "location": {
+            "column": 5,
+            "row": 447
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 447
+    },
+    "message": "Unpacked variable `offer` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 447,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 10,
+      "row": 495
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_slice_b_round_three.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_offer",
+          "end_location": {
+            "column": 10,
+            "row": 495
+          },
+          "location": {
+            "column": 5,
+            "row": 495
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 495
+    },
+    "message": "Unpacked variable `offer` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 495,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 15,
+      "row": 522
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_slice_b_round_three.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_pic",
+          "end_location": {
+            "column": 15,
+            "row": 522
+          },
+          "location": {
+            "column": 12,
+            "row": 522
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 12,
+      "row": 522
+    },
+    "message": "Unpacked variable `pic` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 522,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF015",
+    "end_location": {
+      "column": 46,
+      "row": 559
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_slice_b_round_three.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "next(ln[\"label\"] for ln in two)",
+          "end_location": {
+            "column": 46,
+            "row": 559
+          },
+          "location": {
+            "column": 16,
+            "row": 559
+          }
+        }
+      ],
+      "message": "Replace with `next(ln[\"label\"] for ln in two)`"
+    },
+    "location": {
+      "column": 16,
+      "row": 559
+    },
+    "message": "Prefer `next(ln[\"label\"] for ln in two)` over single element slice",
+    "name": "unnecessary-iterable-allocation-for-first-element",
+    "noqa_row": 559,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unnecessary-iterable-allocation-for-first-element"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 10,
+      "row": 570
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_slice_b_round_three.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_offer",
+          "end_location": {
+            "column": 10,
+            "row": 570
+          },
+          "location": {
+            "column": 5,
+            "row": 570
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 570
+    },
+    "message": "Unpacked variable `offer` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 570,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 10,
+      "row": 585
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_slice_b_round_three.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_offer",
+          "end_location": {
+            "column": 10,
+            "row": 585
+          },
+          "location": {
+            "column": 5,
+            "row": 585
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 585
+    },
+    "message": "Unpacked variable `offer` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 585,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 10,
+      "row": 657
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_slice_b_round_three.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_offer",
+          "end_location": {
+            "column": 10,
+            "row": 657
+          },
+          "location": {
+            "column": 5,
+            "row": 657
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 657
+    },
+    "message": "Unpacked variable `offer` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 657,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF100",
+    "end_location": {
+      "column": 86,
+      "row": 72
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_time_semantics.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 86,
+            "row": 72
+          },
+          "location": {
+            "column": 72,
+            "row": 72
+          }
+        }
+      ],
+      "message": "Remove unused `noqa` directive"
+    },
+    "location": {
+      "column": 74,
+      "row": 72
+    },
+    "message": "Unused `noqa` directive (non-enabled: `E731`)",
+    "name": "unused-noqa",
+    "noqa_row": 72,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+  },
+  {
+    "cell": null,
+    "code": "RUF100",
+    "end_location": {
+      "column": 65,
+      "row": 91
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_time_semantics.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 65,
+            "row": 91
+          },
+          "location": {
+            "column": 51,
+            "row": 91
+          }
+        }
+      ],
+      "message": "Remove unused `noqa` directive"
+    },
+    "location": {
+      "column": 53,
+      "row": 91
+    },
+    "message": "Unused `noqa` directive (non-enabled: `E731`)",
+    "name": "unused-noqa",
+    "noqa_row": 91,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 60,
+      "row": 272
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_time_semantics.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 27,
+            "row": 271
+          },
+          "location": {
+            "column": 27,
+            "row": 271
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 60,
+            "row": 272
+          },
+          "location": {
+            "column": 60,
+            "row": 272
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 27,
+      "row": 271
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 271,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 42,
+      "row": 442
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/api/test_time_semantics.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 9,
+            "row": 441
+          },
+          "location": {
+            "column": 9,
+            "row": 441
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 42,
+            "row": 442
+          },
+          "location": {
+            "column": 42,
+            "row": 442
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 9,
+      "row": 441
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 441,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 31,
+      "row": 58
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/books/test_modules_on_books.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 5,
+            "row": 57
+          },
+          "location": {
+            "column": 5,
+            "row": 57
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 31,
+            "row": 58
+          },
+          "location": {
+            "column": 31,
+            "row": 58
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 5,
+      "row": 57
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 57,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "ISC004",
+    "end_location": {
+      "column": 35,
+      "row": 354
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/books/test_modules_on_books.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "(",
+          "end_location": {
+            "column": 9,
+            "row": 353
+          },
+          "location": {
+            "column": 9,
+            "row": 353
+          }
+        },
+        {
+          "content": ")",
+          "end_location": {
+            "column": 35,
+            "row": 354
+          },
+          "location": {
+            "column": 35,
+            "row": 354
+          }
+        }
+      ],
+      "message": "Did you forget a comma?"
+    },
+    "location": {
+      "column": 9,
+      "row": 353
+    },
+    "message": "Unparenthesized implicit string concatenation in collection",
+    "name": "implicit-string-concatenation-in-collection-literal",
+    "noqa_row": 353,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/implicit-string-concatenation-in-collection-literal"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 52,
+      "row": 18
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/capex/test_buyside.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from __future__ import annotations\n\nfrom fractions import Fraction\n\nimport pytest\n\nfrom app.capex import CapexRequest, evaluate_capex\nfrom app.capex.appraisal import (\n    npv_fen,\n    npv_schedule_fen,\n    payback_month,\n    payback_month_schedule,\n    payment_month,\n)\nfrom app.capex.buyside import CapexEstimate, NotACapexContract, evaluate_contract\nfrom app.capex.models import CapexPayment\nfrom app.capex.schedule import Timeline\nfrom app.contracts import read_document\nfrom app.domain.fixtures import capex_contract_fixture_bytes, contract_fixture_bytes\nfrom app.domain.models import DocumentKind\nfrom app.funding.rates import break_even_cost_share\n\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 21
+          },
+          "location": {
+            "column": 1,
+            "row": 4
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 4
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "name": "unsorted-imports",
+    "noqa_row": 4,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "PIE808",
+    "end_location": {
+      "column": 84,
+      "row": 135
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/capex/test_plans.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 86,
+            "row": 135
+          },
+          "location": {
+            "column": 83,
+            "row": 135
+          }
+        }
+      ],
+      "message": "Remove `start` argument"
+    },
+    "location": {
+      "column": 83,
+      "row": 135
+    },
+    "message": "Unnecessary `start` argument in `range`",
+    "name": "unnecessary-range-start",
+    "noqa_row": 135,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unnecessary-range-start"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 36,
+      "row": 39
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/compiler/test_contract.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from __future__ import annotations\n\nimport json\nfrom pathlib import Path\n\nimport pytest\n\nfrom app.compiler import Compiler, compile_contract\nfrom app.compiler.base import ContractResult\nfrom app.compiler.cache import CACHE_MODEL_ID, CacheBackend, entry_path\nfrom app.compiler.contract import (\n    MAX_CHUNK_CHARS,\n    chunk_document,\n    chunk_source,\n    clause_label,\n    contract_document,\n    document_flags,\n)\nfrom app.compiler.contract_parsing import parse_count, parse_date, parse_days, parse_money, parse_months\nfrom app.compiler.contract_rules import rules_contract\nfrom app.compiler.prompts import (\n    CONTRACT_PROMPT_VERSION,\n    CONTRACT_SYSTEM_PROMPT,\n    PROMPT_CANARY,\n    contract_user_message,\n)\nfrom app.compiler.record_cache import contract_documents\nfrom app.compiler.rules import RulesBackend\nfrom app.compiler.schema import ContractExtraction, XContractTerm\nfrom app.domain.fixtures import contract_fixture_bytes\nfrom app.domain.models import (\n    CompileStatus,\n    ContractField,\n    DocumentKind,\n    PaymentBasis,\n    PriceUnit,\n    SourceDocument,\n)\nfrom app.ingest import extract_text\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 41
+          },
+          "location": {
+            "column": 1,
+            "row": 6
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 6
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "name": "unsorted-imports",
+    "noqa_row": 6,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "RUF007",
+    "end_location": {
+      "column": 48,
+      "row": 159
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/compiler/test_contract.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "import itertools\n",
+          "end_location": {
+            "column": 1,
+            "row": 40
+          },
+          "location": {
+            "column": 1,
+            "row": 40
+          }
+        },
+        {
+          "content": "itertools.pairwise(chunks)",
+          "end_location": {
+            "column": 82,
+            "row": 159
+          },
+          "location": {
+            "column": 45,
+            "row": 159
+          }
+        }
+      ],
+      "message": "Replace `zip()` with `itertools.pairwise()`"
+    },
+    "location": {
+      "column": 45,
+      "row": 159
+    },
+    "message": "Prefer `itertools.pairwise()` over `zip()` when iterating over successive pairs",
+    "name": "zip-instead-of-pairwise",
+    "noqa_row": 159,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/zip-instead-of-pairwise"
+  },
+  {
+    "cell": null,
+    "code": "C408",
+    "end_location": {
+      "column": 81,
+      "row": 287
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/compiler/test_contract.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "{\"value_text\": None, \"date_text\": None, \"period_text\": None, \"basis_text\": None, \"unit_text\": None,\n                        \"trigger_text\": None, \"reference_text\": None, \"confidence\": 0.99}",
+          "end_location": {
+            "column": 81,
+            "row": 287
+          },
+          "location": {
+            "column": 20,
+            "row": 286
+          }
+        }
+      ],
+      "message": "Rewrite as a literal"
+    },
+    "location": {
+      "column": 20,
+      "row": 286
+    },
+    "message": "Unnecessary `dict()` call (rewrite as a literal)",
+    "name": "unnecessary-collection-call",
+    "noqa_row": 286,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unnecessary-collection-call"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 38,
+      "row": 19
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/compiler/test_zh_money_units.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from __future__ import annotations\n\nimport pytest\n\nfrom app.compiler import Compiler\nfrom app.compiler.cache import CacheBackend\nfrom app.compiler.cross_check import DISAGREE_FIELD\nfrom app.compiler.parsing import find_money, parse_money\nfrom app.compiler.rules import RulesBackend, rules_offer\nfrom app.compiler.service import cache_dir\nfrom app.config import get_settings\nfrom app.domain.models import CompileStatus, ObligationType, SourceDocument\n\nfrom .test_cross_check import StandIn\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 21
+          },
+          "location": {
+            "column": 1,
+            "row": 5
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 5
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "name": "unsorted-imports",
+    "noqa_row": 5,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 7,
+      "row": 155
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/nl/test_plan_flags.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_rt",
+          "end_location": {
+            "column": 7,
+            "row": 155
+          },
+          "location": {
+            "column": 5,
+            "row": 155
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 155
+    },
+    "message": "Unpacked variable `rt` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 155,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 66,
+      "row": 8
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/nl/test_review_gaps_opener.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from __future__ import annotations\n\nimport pytest\n\nfrom tests.alerts.test_review_gaps import _short_facilities_state\n\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 10
+          },
+          "location": {
+            "column": 1,
+            "row": 4
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 4
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "name": "unsorted-imports",
+    "noqa_row": 4,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 7,
+      "row": 98
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/operations/test_admission.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_rt",
+          "end_location": {
+            "column": 7,
+            "row": 98
+          },
+          "location": {
+            "column": 5,
+            "row": 98
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 98
+    },
+    "message": "Unpacked variable `rt` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 98,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 10,
+      "row": 46
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/operations/test_bank_reference.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_store",
+          "end_location": {
+            "column": 10,
+            "row": 46
+          },
+          "location": {
+            "column": 5,
+            "row": 46
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 46
+    },
+    "message": "Unpacked variable `store` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 46,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 10,
+      "row": 53
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/operations/test_bank_reference.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_store",
+          "end_location": {
+            "column": 10,
+            "row": 53
+          },
+          "location": {
+            "column": 5,
+            "row": 53
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 53
+    },
+    "message": "Unpacked variable `store` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 53,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 10,
+      "row": 62
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/operations/test_bank_reference.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_store",
+          "end_location": {
+            "column": 10,
+            "row": 62
+          },
+          "location": {
+            "column": 5,
+            "row": 62
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 62
+    },
+    "message": "Unpacked variable `store` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 62,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 10,
+      "row": 184
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/operations/test_redteam_e.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_ep",
+          "end_location": {
+            "column": 10,
+            "row": 184
+          },
+          "location": {
+            "column": 8,
+            "row": 184
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 8,
+      "row": 184
+    },
+    "message": "Unpacked variable `ep` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 184,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 7,
+      "row": 52
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/operations/test_sec_authority_boundaries.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_rt",
+          "end_location": {
+            "column": 7,
+            "row": 52
+          },
+          "location": {
+            "column": 5,
+            "row": 52
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 52
+    },
+    "message": "Unpacked variable `rt` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 52,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF059",
+    "end_location": {
+      "column": 7,
+      "row": 77
+    },
+    "filename": "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/tests/operations/test_sec_authority_boundaries.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_rt",
+          "end_location": {
+            "column": 7,
+            "row": 77
+          },
+          "location": {
+            "column": 5,
+            "row": 77
+          }
+        }
+      ],
+      "message": "Prefix it with an underscore or any other dummy variable pattern"
+    },
+    "location": {
+      "column": 5,
+      "row": 77
+    },
+    "message": "Unpacked variable `rt` is never used",
+    "name": "unused-unpacked-variable",
+    "noqa_row": 77,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-unpacked-variable"
+  }
+]

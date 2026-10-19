@@ -1,0 +1,23 @@
+import os,subprocess,sys,json
+from pathlib import Path
+ROOT=Path('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter');OUT=Path('/tmp/flow-b-clean');OUT.mkdir(exist_ok=True)
+env={**os.environ,'TERMSLEDGER_NO_DOTENV':'1','DATABASE_URL':'memory','DEMO_MODE':'1','LLM_MODE':'cache','PYTHONPATH':'.'}
+def git(*args):return subprocess.check_output(['git',*args],cwd=ROOT,text=True).strip()
+commit=git('rev-parse','HEAD');assert not git('diff','--name-only','HEAD','--','services/api/app','services/api/tests')
+args=[sys.executable,'-m','pytest','-o','addopts=','-q','-p','no:cacheprovider','tests/compiler','tests/verifier','tests/operations','tests/financial','tests/clock','tests/books','tests/security','tests/api/test_settlement.py','tests/api/test_field_cross_check.py','tests/nl/test_authority_audit.py','tests/nl/test_consent.py','tests/nl/test_plan_binding.py','tests/persistence']
+print('clean code commit',commit,flush=True)
+with (OUT/'backend.log').open('w') as out:r=subprocess.run(args,cwd=ROOT/'services/api',env=env,stdout=out,stderr=subprocess.STDOUT)
+meta={'source_commit':commit,'backend_command':args[1:],'backend_exit_code':r.returncode,'product_tree_clean_before':True}
+(OUT/'checks.json').write_text(json.dumps(meta,indent=2)+'\n')
+print('backend exit',r.returncode,flush=True)
+if r.returncode:raise SystemExit(r.returncode)
+assert git('rev-parse','HEAD')==commit
+assert not git('diff','--name-only','HEAD','--','services/api/app','services/api/tests')
+os.chdir(ROOT);sys.path.insert(0,str(ROOT/'services/api'));os.environ.update(env)
+from evals.common import quiet
+from app.security.attacks import AttackRunner,NlAttackRunner,load_catalogue,nl_catalogue,write_report
+quiet();a=AttackRunner(load_catalogue()).run_all();n=NlAttackRunner(nl_catalogue()).run_all();m=write_report(a,OUT/'attacks',n)
+assert not any(o.harm for o in [*a,*n])
+assert m['attacks_defended']>=120 and not m['control_not_seen'] and not m['not_reached']
+meta.update(attack_api_count=len(a),attack_chat_count=len(n),attack_api_controls_defended=m['attacks_defended'],attack_harm_count=sum(bool(o.harm) for o in [*a,*n]),product_tree_clean_after=True)
+(OUT/'checks.json').write_text(json.dumps(meta,indent=2)+'\n');print('attack catalogue passed',len(a),len(n),m['attacks_defended'],flush=True)

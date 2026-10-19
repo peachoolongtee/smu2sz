@@ -1,0 +1,112 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+........................................................................ [ 10%]
+........................................................................ [ 12%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 23%]
+........................................................................ [ 25%]
+........................s............................................... [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 48%]
+........................................................................ [ 50%]
+................................................................s....... [ 52%]
+........................................................................ [ 54%]
+........................................................................ [ 56%]
+........................................................................ [ 58%]
+........................................................................ [ 60%]
+........................................................................ [ 62%]
+........................................................................ [ 64%]
+........................................................................ [ 67%]
+........................................................................ [ 69%]
+........................................................................ [ 71%]
+........................................................................ [ 73%]
+........................................................................ [ 75%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+.......................................................
+[route-policy] 113 routes (HEAD/OPTIONS skipped) in DEMO_MODE=1: public 3, docs 4, buyer 3, agent 3, owner_side 3, demo_setup 9, owner 88
+.........
+[route-policy] DEMO_MODE=1: 32.5s for 791 requests; the owner reached the handler on 96 of 97 owner and demo/setup routes (Counter({'handler': 96, 'not_found': 1})); 108 of 109 counting every class
+  stopped before the handler: POST /documents/{document_id}/terms/undo -> 404 not_found UNKNOWN_SET_UP
+  owner answers: {200: 87, 201: 1, 404: 1, 409: 7, 501: 1}
+.....
+[route-policy] DEMO_MODE=0: 43.4s for 1130 requests; the owner reached the handler on 91 of 97 owner and demo/setup routes (Counter({'handler': 91, 'refused': 5, 'not_found': 1})); 103 of 109 counting every class
+  stopped before the handler: POST /documents/{document_id}/terms/undo -> 404 not_found UNKNOWN_SET_UP
+  stopped before the handler: POST /demo/bank-receipt -> 403 refused DEMO_ONLY
+  stopped before the handler: GET /setup/documents -> 403 refused SETUP_REFUSED
+  stopped before the handler: POST /setup/documents -> 403 refused SETUP_REFUSED
+  stopped before the handler: POST /setup/preview -> 403 refused SETUP_REFUSED
+  stopped before the handler: POST /setup/open -> 403 refused SETUP_REFUSED
+  owner answers: {200: 82, 201: 1, 403: 5, 404: 1, 409: 7, 501: 1}
+... [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+....................................s................................... [ 96%]
+........................................................................ [ 98%]
+...................................................                      [100%]
+=============================== warnings summary ===============================
+tests/verifier/test_counter_property.py: 1 warning
+tests/operations/test_property.py: 2 warnings
+tests/financial/test_dated_valuation.py: 5 warnings
+tests/financial/test_properties.py: 1 warning
+tests/books/test_debt_service.py: 1 warning
+tests/books/test_funding_lots.py: 2 warnings
+tests/books/test_invoice_terms.py: 1 warning
+tests/security/test_attacks.py: 2 warnings
+  /Users/ianpong/Hackathons/smu2sz/services/api/.venv/lib/python3.12/site-packages/hypothesis/_settings.py:847: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/.hypothesis/examples')
+    self._fallback.database if self._database is not_set else self._database
+
+tests/financial/test_amortisation.py::test_schedule_clears_and_conserves
+tests/financial/test_properties.py::test_post_rounds_exact_halves_up
+tests/financial/test_properties.py::test_interest_posting_boundary_rounds_half_up
+tests/financial/test_properties.py::test_valuation_is_integer_and_antisymmetric
+  /Users/ianpong/Hackathons/smu2sz/services/api/.venv/lib/python3.12/site-packages/hypothesis/internal/conjecture/engine.py:352: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/.hypothesis/examples')
+    if self.database_key is not None and self.settings.database is not None:
+
+tests/financial/test_amortisation.py::test_schedule_clears_and_conserves
+tests/financial/test_properties.py::test_post_rounds_exact_halves_up
+tests/financial/test_properties.py::test_interest_posting_boundary_rounds_half_up
+tests/financial/test_properties.py::test_valuation_is_integer_and_antisymmetric
+  /Users/ianpong/Hackathons/smu2sz/services/api/.venv/lib/python3.12/site-packages/hypothesis/internal/conjecture/engine.py:1033: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/.hypothesis/examples')
+    return self.settings.database
+
+tests/financial/test_amortisation.py::test_schedule_clears_and_conserves
+tests/financial/test_properties.py::test_post_rounds_exact_halves_up
+tests/financial/test_properties.py::test_interest_posting_boundary_rounds_half_up
+tests/financial/test_properties.py::test_valuation_is_integer_and_antisymmetric
+  /Users/ianpong/Hackathons/smu2sz/services/api/.venv/lib/python3.12/site-packages/hypothesis/internal/conjecture/engine.py:1064: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/.hypothesis/examples')
+    self.settings.database.fetch(self.database_key), key=shortlex
+
+tests/financial/test_amortisation.py::test_schedule_clears_and_conserves
+tests/financial/test_properties.py::test_post_rounds_exact_halves_up
+tests/financial/test_properties.py::test_interest_posting_boundary_rounds_half_up
+tests/financial/test_properties.py::test_valuation_is_integer_and_antisymmetric
+  /Users/ianpong/Hackathons/smu2sz/services/api/.venv/lib/python3.12/site-packages/hypothesis/internal/conjecture/engine.py:1071: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/.hypothesis/examples')
+    extra_corpus = list(self.settings.database.fetch(self.secondary_key))
+
+tests/financial/test_amortisation.py::test_schedule_clears_and_conserves
+tests/financial/test_properties.py::test_post_rounds_exact_halves_up
+tests/financial/test_properties.py::test_interest_posting_boundary_rounds_half_up
+tests/financial/test_properties.py::test_valuation_is_integer_and_antisymmetric
+  /Users/ianpong/Hackathons/smu2sz/services/api/.venv/lib/python3.12/site-packages/hypothesis/internal/conjecture/engine.py:1120: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/services/api/.hypothesis/examples')
+    pareto_corpus = list(self.settings.database.fetch(self.pareto_key))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3432 passed, 3 skipped, 35 warnings in 352.74s (0:05:52)

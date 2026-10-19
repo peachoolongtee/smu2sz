@@ -1,0 +1,189 @@
+{
+  "status": "experimental; not release or merge certified",
+  "label_commit": "3a64f39f",
+  "baseline_commit": "3a61aceaaca6f6972b46a336e8057884fb64a79a",
+  "fresh_36_commit": "ed0626b78adc407d62d39c10ac66c40dbbe301b2",
+  "final_product_and_test_commit": "f9fab6749a04d54db3dcc2f0e468d784418b6a3d",
+  "date_finalization_commit": "0857012ad6ce9bcb8bc8c5a5216248986ac28f21",
+  "inputs_sha256": "de4300f4ce50db4e00154816e82141dbb9491014cff7076a0d5b4c1557107fed",
+  "paid_requests_full_set": 36,
+  "paid_requests_targeted_rechecks": 4,
+  "total_provider_attempts": 40,
+  "approved_cap": 40,
+  "usage_tokens_total": {
+    "prompt_tokens": 137834,
+    "completion_tokens": 8396,
+    "total_tokens": 146230
+  },
+  "primary_protocol": {
+    "before": {
+      "items": 36,
+      "eligible_labelled": 17,
+      "complete_verified_workflows": 0,
+      "bank_feed_receipts_executed": 0,
+      "bank_feed_cash_delta_fen": 0,
+      "wrong_tier1": 0,
+      "date_matches": 3,
+      "proven_date_matches": 0,
+      "state_mutations_during_read": 0,
+      "promise_mutated_cash_or_receivable": 0
+    },
+    "after_finalization_replay": {
+      "items": 36,
+      "eligible_labelled": 17,
+      "complete_verified_workflows": 2,
+      "bank_feed_receipts_executed": 2,
+      "bank_feed_cash_delta_fen": 83580000,
+      "wrong_tier1": 0,
+      "date_matches": 16,
+      "proven_date_matches": 16,
+      "state_mutations_during_read": 0,
+      "promise_mutated_cash_or_receivable": 0
+    }
+  },
+  "post_hoc_owner_inclusive_protocol": {
+    "before": {
+      "items": 36,
+      "eligible_labelled": 17,
+      "complete_verified_workflows": 3,
+      "autonomous_completed_workflows": 0,
+      "owner_reviewed_completed_workflows": 3,
+      "bank_feed_receipts_executed": 3,
+      "bank_feed_cash_delta_fen": 125370000,
+      "wrong_tier1": 0,
+      "date_matches": 3,
+      "proven_date_matches": 0,
+      "state_mutations_during_read": 0,
+      "promise_mutated_cash_or_receivable": 0
+    },
+    "after": {
+      "items": 36,
+      "eligible_labelled": 17,
+      "complete_verified_workflows": 15,
+      "autonomous_completed_workflows": 2,
+      "owner_reviewed_completed_workflows": 13,
+      "bank_feed_receipts_executed": 15,
+      "bank_feed_cash_delta_fen": 626850000,
+      "wrong_tier1": 0,
+      "date_matches": 16,
+      "proven_date_matches": 16,
+      "state_mutations_during_read": 0,
+      "promise_mutated_cash_or_receivable": 0
+    }
+  },
+  "cache_rules": {
+    "items": 36,
+    "eligible_labelled": 17,
+    "complete_verified_workflows": 15,
+    "bank_feed_receipts_executed": 15,
+    "bank_feed_cash_delta_fen": 626850000,
+    "wrong_tier1": 0,
+    "date_matches": 16,
+    "state_mutations_during_read": 0,
+    "promise_mutated_cash_or_receivable": 0
+  },
+  "fresh_36_initial_result": {
+    "items": 36,
+    "eligible_labelled": 17,
+    "complete_verified_workflows": 2,
+    "bank_feed_receipts_executed": 2,
+    "bank_feed_cash_delta_fen": 83580000,
+    "wrong_tier1": 0,
+    "date_matches": 3,
+    "state_mutations_during_read": 0,
+    "promise_mutated_cash_or_receivable": 0
+  },
+  "post_fix_smoke": {
+    "items": 4,
+    "eligible_labelled": 4,
+    "complete_verified_workflows": 1,
+    "autonomous_completed_workflows": 1,
+    "owner_reviewed_completed_workflows": 0,
+    "bank_feed_receipts_executed": 1,
+    "bank_feed_cash_delta_fen": 41790000,
+    "wrong_tier1": 0,
+    "date_matches": 4,
+    "proven_date_matches": 4,
+    "state_mutations_during_read": 0,
+    "promise_mutated_cash_or_receivable": 0
+  },
+  "final_clean_tests": {
+    "source_commit": "f9fab6749a04d54db3dcc2f0e468d784418b6a3d",
+    "backend_command": [
+      "-m",
+      "pytest",
+      "-o",
+      "addopts=",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/compiler",
+      "tests/verifier",
+      "tests/operations",
+      "tests/financial",
+      "tests/clock",
+      "tests/books",
+      "tests/security",
+      "tests/api/test_settlement.py",
+      "tests/api/test_field_cross_check.py",
+      "tests/nl/test_authority_audit.py",
+      "tests/nl/test_consent.py",
+      "tests/nl/test_plan_binding.py",
+      "tests/persistence"
+    ],
+    "backend_exit_code": 0,
+    "product_tree_clean_before": true,
+    "attack_api_count": 128,
+    "attack_chat_count": 151,
+    "attack_api_controls_defended": 120,
+    "attack_harm_count": 0,
+    "product_tree_clean_after": true
+  },
+  "backend_summary": "3432 passed, 3 skipped, 35 warnings in 352.74s (0:05:52)",
+  "web": {
+    "unit_passed": 187,
+    "typecheck_exit": 0,
+    "lint_exit": 0,
+    "mock": {
+      "passed": 478,
+      "skipped": 77,
+      "failed": 1,
+      "failure": "home-v2.spec.ts:1000 / assertion 1045, 375px cash card > 360px at 1280"
+    },
+    "api_backed_full": {
+      "passed": 176,
+      "skipped": 51,
+      "failed": 1,
+      "failure": "home-reset.spec.ts:37 stale dated seed"
+    },
+    "amended_reset_case_isolated": {
+      "passed": 1,
+      "failed": 0
+    },
+    "full_api_suite_rerun_after_test_amendment": false
+  },
+  "inherited_application_lint": {
+    "findings": 60,
+    "files": 26,
+    "changed_file_findings": []
+  },
+  "preserved": {
+    "submission_docs_fixtures_eval_files": true,
+    "web_production_sources_and_recorded_mocks": true,
+    "web_test_changed": [
+      "apps/web/e2e/home-reset.spec.ts"
+    ],
+    "dev": "3bd440a004214d669b5428d7d80391e682070c77",
+    "main": "beb8c66bd483fe99e0a630ef4309a479f2927da4",
+    "pushed": false,
+    "merged": false
+  },
+  "limitations": [
+    "Same author wrote labels and implementation; not independent/blind.",
+    "Final date stage tested with captured checked readings; initial full fresh run predates finalizer.",
+    "Owner-inclusive protocol added after seeing primary results and uses expected-date/safe-case labels to select simulated owner approvals.",
+    "Legacy language harness bootstrap aborts; 231-case reports use an explicitly logged unscored setup adapter.",
+    "Legacy held-out eligibility labels include obsolete pricing policy, partial and hostile cases; do not treat all as genuine autonomy opportunities.",
+    "No full release suite, PostgreSQL release gate or deployment certification."
+  ]
+}

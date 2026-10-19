@@ -1,0 +1,64 @@
+"""Use only the last four of the approved forty attempts for post-fix diagnostics."""
+import atexit,hashlib,json,os,runpy,subprocess,sys,threading
+from pathlib import Path
+ROOT=Path('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter');OUT=Path('/tmp/flow-b-live-smoke');OUT.mkdir(exist_ok=True)
+prior_path=Path('/tmp/flow-b-live/provider-budget.json');prior=json.loads(prior_path.read_text());spent=prior['provider_request_attempts']
+assert spent==36 and prior['maximum_provider_requests']==40
+if (OUT/'provider-budget.json').exists() and json.loads((OUT/'provider-budget.json').read_text()).get('provider_request_attempts',0):
+ raise SystemExit('Smoke attempts already spent; do not reset the shared approved budget.')
+items=json.loads((ROOT/'experiments/settlement-interpreter/workflow-items.json').read_text())
+subset={**items,'items':[x for x in items['items'] if x['id'] in {'SB01','SB03','SB12','SB17'}]};assert len(subset['items'])==4
+(OUT/'items.json').write_text(json.dumps(subset,ensure_ascii=False,indent=2)+'\n')
+sys.path.insert(0,str(ROOT/'services/api'));sys.dont_write_bytecode=True
+os.environ.update(DATABASE_URL='memory',DEMO_MODE='1',LLM_MODE='live',LLM_PRIMARY='deepseek',LLM_LIVE_RAW='0',LLM_REDACT='1',DEEPSEEK_MODEL='deepseek-flash',OWNER_TOKEN='demo-owner-token',AGENT_KEY='demo-agent-key',BANK_FEED_KEY='demo-bank-feed-key',COUNTERPARTY_KEYS='BUYER-1=demo-buyer-1-key,BUYER-2=demo-buyer-2-key')
+from app.config import load_dotenv
+os.environ.pop('TERMSLEDGER_NO_DOTENV',None);load_dotenv(Path('/Users/ianpong/Hackathons/smu2sz/.env'));os.environ['TERMSLEDGER_NO_DOTENV']='1'
+assert os.environ['DATABASE_URL']=='memory'
+for name in ('ANTHROPIC_API_KEY','ANTHROPIC_AUTH_TOKEN'):os.environ.pop(name,None)
+key=os.environ.get('DEEPSEEK_API_KEY')
+if not key:raise SystemExit('No key available; no diagnostic calls attempted.')
+import httpx,openai
+from app.compiler.backends import DeepSeekBackend
+from app.compiler.base import BackendError,OfferResult
+from app.compiler.service import Compiler
+from app.compiler.grounding import docs_hash
+lock=threading.Lock();records={};raw={}
+stats={'maximum_total_approved_attempts':40,'previous_stage_attempts':spent,'maximum_this_stage_attempts':40-spent,'provider_request_attempts':0,'cumulative_provider_request_attempts':spent,'prior_budget_sha256':hashlib.sha256(prior_path.read_bytes()).hexdigest(),'model_alias':'deepseek-flash','sdk_retries':0,'database':'memory','redaction':True,'commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),'items_sha256':hashlib.sha256((OUT/'items.json').read_bytes()).hexdigest(),'scope':'Four repeated original cases after date-finalization fix; targeted diagnostic smoke, not blind or a full benchmark rerun. Raw typed extraction retained for root-cause diagnosis.'}
+def save():
+ for path,value in [('provider-budget.json',stats),('extraction-records.json',records)]:
+  text=json.dumps(value,ensure_ascii=False,indent=2)+'\n'
+  if key in text:raise BackendError('Credential evidence refused')
+  (OUT/path).write_text(text)
+atexit.register(save)
+def guard(request):
+ if request.url.host!='api.deepseek.com':raise BackendError('Unexpected provider host refused')
+ with lock:
+  if spent+stats['provider_request_attempts']>=40:raise BackendError('Combined approved forty-attempt cap reached')
+  stats['provider_request_attempts']+=1;stats['cumulative_provider_request_attempts']=spent+stats['provider_request_attempts'];save()
+def metadata(response):
+ response.read()
+ try:data=response.json()
+ except ValueError:return
+ with lock:
+  model=data.get('model')
+  if isinstance(model,str) and key not in model:
+   stats.setdefault('returned_model_identifiers',[])
+   if model not in stats['returned_model_identifiers']:stats['returned_model_identifiers'].append(model)
+  for name in ('prompt_tokens','completion_tokens','total_tokens'):
+   n=(data.get('usage') or {}).get(name)
+   if isinstance(n,int):stats.setdefault('usage_tokens',{}).setdefault(name,0);stats['usage_tokens'][name]+=n
+  save()
+client=openai.OpenAI(api_key=key,base_url='https://api.deepseek.com',max_retries=0,timeout=60,http_client=httpx.Client(event_hooks={'request':[guard],'response':[metadata]}));DeepSeekBackend.client=property(lambda self:client)
+original_run=Compiler._run;original_compile=Compiler.compile_offer
+def run(self,call,version,h):
+ result=original_run(self,call,version,h)
+ if isinstance(result,OfferResult):raw[h]=(result.extraction.model_dump(mode='json'),result.model_id)
+ return result
+def compile(self,docs,cp):
+ result=original_compile(self,docs,cp);extraction,model_id=raw[docs_hash(docs)]
+ records[docs[0].doc_id]={'documents':[d.model_dump(mode='json') for d in docs],'extraction':extraction,'model_id':model_id,'compiled':result.model_dump(mode='json')};save();return result
+Compiler._run=run;Compiler.compile_offer=compile
+save();(OUT/'api-process.pid').write_text(str(os.getpid()))
+sys.argv=['/tmp/flow-b-run-workflows.py','--root',str(ROOT),'--items',str(OUT/'items.json'),'--out',str(OUT/'workflows.json'),'--live']
+try:runpy.run_path('/tmp/flow-b-run-workflows.py',init_globals={'_FLOW_CAPPED_PROVIDER_RUN':True},run_name='__main__')
+finally:save();client.close()

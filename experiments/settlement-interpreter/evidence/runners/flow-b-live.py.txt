@@ -1,0 +1,80 @@
+"""Approved capped fresh provider evaluation hosted in the in-process API, not shipped code."""
+import atexit,hashlib,importlib.util,json,os,runpy,subprocess,sys,tempfile,threading
+from pathlib import Path
+ROOT=Path('/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter')
+OUT=Path('/tmp/flow-b-live');OUT.mkdir(exist_ok=True)
+if (OUT/'provider-budget.json').exists() and json.loads((OUT/'provider-budget.json').read_text()).get('provider_request_attempts',0):
+ raise SystemExit('This evaluation already spent provider attempts; do not reset its paid budget.')
+sys.path.insert(0,str(ROOT/'services/api'));sys.dont_write_bytecode=True
+os.environ.update(DATABASE_URL='memory',DEMO_MODE='1',LLM_MODE='live',LLM_PRIMARY='deepseek',LLM_LIVE_RAW='0',LLM_REDACT='1',DEEPSEEK_MODEL='deepseek-flash',OWNER_TOKEN='demo-owner-token',AGENT_KEY='demo-agent-key',BANK_FEED_KEY='demo-bank-feed-key',COUNTERPARTY_KEYS='BUYER-1=demo-buyer-1-key,BUYER-2=demo-buyer-2-key')
+from app.config import load_dotenv
+os.environ.pop('TERMSLEDGER_NO_DOTENV',None)
+load_dotenv(Path('/Users/ianpong/Hackathons/smu2sz/.env'))
+os.environ['TERMSLEDGER_NO_DOTENV']='1'
+assert os.environ['DATABASE_URL']=='memory'
+for name in ('ANTHROPIC_API_KEY','ANTHROPIC_AUTH_TOKEN'):os.environ.pop(name,None)
+key=os.environ.get('DEEPSEEK_API_KEY')
+if not key:raise SystemExit('No DeepSeek key present; no paid requests attempted.')
+import httpx,openai
+from app.compiler.backends import DeepSeekBackend
+from app.compiler.base import BackendError,OfferResult
+from app.compiler.grounding import docs_hash
+from app.compiler.prompts import PROMPT_VERSION
+from app.compiler.rules import RulesBackend
+from app.compiler.service import Compiler,UNCHECKED
+lock=threading.Lock();stats={'maximum_provider_requests':40,'provider_request_attempts':0,'sdk_retries':0,'baseline_commit':subprocess.check_output(['git','rev-parse','3a61acea'],cwd=ROOT,text=True).strip(),'provider':'DeepSeek','model_alias':'deepseek-flash','database':'memory','redaction':True,'commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),'product_diff_sha256':hashlib.sha256(subprocess.check_output(['git','diff','--','services/api/app'],cwd=ROOT)).hexdigest(),'items_sha256':hashlib.sha256((ROOT/'experiments/settlement-interpreter/workflow-items.json').read_bytes()).hexdigest(),'scope':'Fresh provider responses on prospectively labelled synthetic items; same author, not independent/blind. In-process HTTP API, fresh memory state per item. Recorded before and after use identical extraction.'}
+records={}
+def save():
+ for path,value in [('provider-budget.json',stats),('reading-records.json',records)]:
+  text=json.dumps(value,ensure_ascii=False,indent=2)+'\n'
+  if key in text:raise BackendError('Credential in evidence refused')
+  (OUT/path).write_text(text)
+atexit.register(save)
+def guard(request):
+ if request.url.host!='api.deepseek.com':raise BackendError('Unexpected provider host refused')
+ with lock:
+  if stats['provider_request_attempts']>=40:raise BackendError('Provider cap reached')
+  stats['provider_request_attempts']+=1;save()
+def metadata(response):
+ response.read()
+ try:data=response.json()
+ except ValueError:return
+ with lock:
+  model=data.get('model')
+  if isinstance(model,str) and key not in model:
+   stats.setdefault('returned_model_identifiers',[])
+   if model not in stats['returned_model_identifiers']:stats['returned_model_identifiers'].append(model)
+  for name in ('prompt_tokens','completion_tokens','total_tokens'):
+   n=(data.get('usage') or {}).get(name)
+   if isinstance(n,int):stats.setdefault('usage_tokens',{}).setdefault(name,0);stats['usage_tokens'][name]+=n
+  save()
+client=openai.OpenAI(api_key=key,base_url='https://api.deepseek.com',max_retries=0,timeout=60,http_client=httpx.Client(event_hooks={'request':[guard],'response':[metadata]}))
+DeepSeekBackend.client=property(lambda self:client)
+# Load the actual Build A implementations for a matched-response causal comparison.
+tmp=tempfile.TemporaryDirectory(prefix='flow-b-baseline-');atexit.register(tmp.cleanup)
+def baseline(name,path):
+ src=subprocess.check_output(['git','show','3a61acea:'+path],cwd=ROOT,text=True)
+ p=Path(tmp.name)/(name+'.py');p.write_text(src)
+ spec=importlib.util.spec_from_file_location(name,p);module=importlib.util.module_from_spec(spec);sys.modules[name]=module;spec.loader.exec_module(module);return module
+old_coverage=baseline('flow_b_old_coverage','services/api/app/compiler/coverage.py')
+old_grounding=baseline('flow_b_old_grounding','services/api/app/compiler/grounding.py');old_grounding.coverage=old_coverage
+old_check=baseline('flow_b_old_check','services/api/app/compiler/cross_check.py')
+raw={};original_run=Compiler._run;original_compile=Compiler.compile_offer
+def run(self,call,version,h):
+ res=original_run(self,call,version,h)
+ if isinstance(res,OfferResult):raw[h]=res
+ return res
+def compile(self,docs,cp):
+ after=original_compile(self,docs,cp);res=raw[docs_hash(docs)]
+ before=old_grounding.build_offer(docs,cp,res.extraction,res.model_id,PROMPT_VERSION)
+ if self.cross_check and res.model_id not in UNCHECKED:
+  rr=RulesBackend().extract_offer(docs)
+  rules=old_grounding.build_offer(docs,cp,rr.extraction,rr.model_id,PROMPT_VERSION)
+  before=old_check.check_against_rules(before,rules)
+ records[docs[0].doc_id]={'before':before.model_dump(mode='json'),'after':after.model_dump(mode='json'),'model_id':res.model_id}
+ save();return after
+Compiler._run=run;Compiler.compile_offer=compile
+save();(OUT/'api-process.pid').write_text(str(os.getpid()))
+sys.argv=['/tmp/flow-b-run-workflows.py','--root',str(ROOT),'--items',str(ROOT/'experiments/settlement-interpreter/workflow-items.json'),'--out',str(OUT/'workflows-after.json'),'--live']
+try:runpy.run_path('/tmp/flow-b-run-workflows.py',run_name='__main__')
+finally:save();client.close()

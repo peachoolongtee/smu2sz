@@ -1,0 +1,16 @@
+[certify] cache/run: 10/231 items
+Traceback (most recent call last):
+  File "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/scripts/certify_language_boundary.py", line 1121, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/scripts/certify_language_boundary.py", line 1109, in main
+    results = run_certification(mode, items, args.strict_queued, progress=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/scripts/certify_language_boundary.py", line 901, in run_certification
+    results.append(run_item(item, mode, p, strict_queued))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/scripts/certify_language_boundary.py", line 857, in run_item
+    run_setup(rt, client, item)
+  File "/Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/scripts/certify_language_boundary.py", line 828, in run_setup
+    raise RuntimeError(f"{item['id']}: setup did not queue an approval")
+RuntimeError: BO-018: setup did not queue an approval

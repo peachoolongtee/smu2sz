@@ -1,0 +1,22 @@
+{
+  "maximum_provider_requests": 40,
+  "provider_request_attempts": 36,
+  "sdk_retries": 0,
+  "baseline_commit": "3a61aceaaca6f6972b46a336e8057884fb64a79a",
+  "provider": "DeepSeek",
+  "model_alias": "deepseek-flash",
+  "database": "memory",
+  "redaction": true,
+  "commit": "ed0626b78adc407d62d39c10ac66c40dbbe301b2",
+  "product_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "items_sha256": "de4300f4ce50db4e00154816e82141dbb9491014cff7076a0d5b4c1557107fed",
+  "scope": "Fresh provider responses on prospectively labelled synthetic items; same author, not independent/blind. In-process HTTP API, fresh memory state per item. Recorded before and after use identical extraction.",
+  "returned_model_identifiers": [
+    "deepseek-flash"
+  ],
+  "usage_tokens": {
+    "prompt_tokens": 124057,
+    "completion_tokens": 7566,
+    "total_tokens": 131623
+  }
+}

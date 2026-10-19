@@ -1,0 +1,32 @@
+{
+  "source_commit": "f9fab6749a04d54db3dcc2f0e468d784418b6a3d",
+  "backend_command": [
+    "-m",
+    "pytest",
+    "-o",
+    "addopts=",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/compiler",
+    "tests/verifier",
+    "tests/operations",
+    "tests/financial",
+    "tests/clock",
+    "tests/books",
+    "tests/security",
+    "tests/api/test_settlement.py",
+    "tests/api/test_field_cross_check.py",
+    "tests/nl/test_authority_audit.py",
+    "tests/nl/test_consent.py",
+    "tests/nl/test_plan_binding.py",
+    "tests/persistence"
+  ],
+  "backend_exit_code": 0,
+  "product_tree_clean_before": true,
+  "attack_api_count": 128,
+  "attack_chat_count": 151,
+  "attack_api_controls_defended": 120,
+  "attack_harm_count": 0,
+  "product_tree_clean_after": true
+}

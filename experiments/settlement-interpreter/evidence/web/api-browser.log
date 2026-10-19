@@ -1,0 +1,302 @@
+[WebServer] $ next build
+[WebServer] (node:32877) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32877) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32885) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32886) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32902) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32904) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32900) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32903) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32897) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32895) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32899) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32905) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32901) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32898) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] $ next start -p 3423
+[WebServer] (node:32907) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 228 tests using 1 worker
+
+(node:32914) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  -    1 [live] › e2e/accept-as-asked.spec.ts:47:7 › mock › the golden EX01 asked path is over the mandate: the comparison says it is outside the mandate, the server's reason is said once in full, and no accept button is offered
+  ✓    2 [live] › e2e/accept-as-asked.spec.ts:72:7 › live › the golden books' EX01 asked path is over the mandate: the server's reason is said and no accept button is offered (2.0s)
+  ✓    3 [live] › e2e/accept-as-asked.spec.ts:81:7 › live › Zhuhai: Review the request opens the receipt before the one filled button; accepting agrees it, the record reads Agreed, the queue drops it and Activity says so (15.6s)
+  ✓    4 [live] › e2e/accept-as-asked.spec.ts:129:7 › live › an agreed Zhuhai is in force and does not expire: no 'expire' word, no empty or trailing '·', no None or null, on the Deals pane, the Agreements tab, the Deals agreements section and the decision record (9.5s)
+  ✓    5 [live] › e2e/accept-as-asked.spec.ts:166:7 › live › Dongguan: declining asks once in one line, closes the request and leaves the queue; the pane shows Declined with the record (10.2s)
+  ✓    6 [live] › e2e/accept-as-asked.spec.ts:191:9 › live › at 1440 the receipt precedes the commit button, and ?review=1 opens the review on arrival (9.6s)
+  ✓    7 [live] › e2e/accept-as-asked.spec.ts:191:9 › live › at 390 the receipt precedes the commit button, and ?review=1 opens the review on arrival (9.6s)
+  ✓    8 [live] › e2e/accept-as-asked.spec.ts:205:7 › live › Home's deal row and the Customer page lead to the Deals pane with the review open on arrival, and the queue row says the server's own consequence (12.7s)
+  ✓    9 [live] › e2e/accept-as-asked.spec.ts:233:7 › live › a refusal (the books moved) is said in the server's own words in place, with no spinner, and nothing was accepted (11.9s)
+  -   10 [live] › e2e/activity.spec.ts:27:5 › one title, the state as a pill and a sentence, and the business rows first with why, what remains and the way to the decision
+  -   11 [live] › e2e/activity.spec.ts:55:5 › an evidence link lands on the trust view with that entry marked, and Back to Activity returns
+  -   12 [live] › e2e/activity.spec.ts:73:5 › the failed sign-ins are one line apart from the real alert, their rows under a fold, and every row of the read is reachable with All and no search
+  -   13 [live] › e2e/activity.spec.ts:112:5 › search and each category only hide rows; a filter that leaves nothing says nothing was removed
+  -   14 [live] › e2e/activity.spec.ts:135:5 › the set-aside line on Deals lands on the refused section of Activity
+  ✓   15 [live] › e2e/activity.spec.ts:146:5 › in Chinese the title, the search and the tabs are Chinese; at 390 px nothing scrolls sideways (220ms)
+  ✓   16 [live] › e2e/activity.spec.ts:156:5 › the page's order: the state, then the search, then the business rows (167ms)
+  -   17 [live] › e2e/activity.spec.ts:165:5 › the tour's Activity step names the fold the page has: Evidence, not Audit details
+  ✓   18 [live] › e2e/alerts.spec.ts:9:5 › alerts: the day-12 reserve breach shows its amounts, formula and fix (242ms)
+  ✓   19 [live] › e2e/alerts.spec.ts:26:5 › reconciliation: no receipts yet, one outstanding receivable, chain valid (286ms)
+  ✓   20 [live] › e2e/alerts.spec.ts:42:5 › alerts and reconciliation open by their address, in the app's own shell (the Demo has no sidebar of engine views) (228ms)
+  ✓   21 [live] › e2e/ask-header-live.spec.ts:10:5 › Enter in the header sends the Home's scope with the question and the chip shows the server's label (520ms)
+  ✓   22 [live] › e2e/ask-header-live.spec.ts:30:5 › on the company's Home the scope is empty and the server answers in the company (1.0s)
+  ✓   23 [live] › e2e/ask-header-live.spec.ts:48:7 › the header's example questions are answered by the chat (en): none is out of scope or ambiguous (369ms)
+  ✓   24 [live] › e2e/ask-header-live.spec.ts:48:7 › the header's example questions are answered by the chat (zh): none is out of scope or ambiguous (338ms)
+  ✓   25 [live] › e2e/ask.spec.ts:83:5 › the panel: its header buttons, FLOW speaks first once, and an answer laid out as a card (1.3s)
+  ✓   26 [live] › e2e/ask.spec.ts:150:5 › the composer: Enter sends, Shift+Enter adds a line, Enter while composing Chinese does not send, Escape closes (897ms)
+  ✓   27 [live] › e2e/ask.spec.ts:191:5 › Expand opens the same conversation as a full page that survives a reload; Back returns to the panel; New conversation starts over (987ms)
+  ✓   28 [live] › e2e/ask.spec.ts:228:5 › the Ask FLOW page: the greeting, four question cards, the opener, and a card with a customer's links (1.5s)
+  ✓   29 [live] › e2e/ask.spec.ts:291:5 › every link an answer can carry opens the page that shows what its chip names (5.2s)
+  ✓   30 [live] › e2e/ask.spec.ts:327:5 › a link opened from the panel closes it, and a link to a section of the page already open lands on that section (1.0s)
+  ✓   31 [live] › e2e/ask.spec.ts:340:5 › Chinese: the panel, the page and the card speak Chinese; a question follows its own language whatever the page's (2.1s)
+  ✓   32 [live] › e2e/ask.spec.ts:387:5 › a 390 px phone: the panel and the page fit without sideways scroll, and the links work (1.5s)
+  ✓   33 [live] › e2e/ask.spec.ts:414:5 › live: the opener and an answer card come from the server, owner only; the agent key gets no card (173ms)
+  ✓   34 [live] › e2e/chat.spec.ts:53:5 › owner: Evaluate EX01 is a REJECT, then go ahead lists the executed operations (2.0s)
+  ✓   35 [live] › e2e/chat.spec.ts:94:5 › details are closed on a plain reply and open when the turn has a security event or a refused operation (540ms)
+  ✓   36 [live] › e2e/chat.spec.ts:117:5 › buyer: the FastCapital message gets only the refusal reply, no verdict, and sends no credential (405ms)
+  ✓   37 [live] › e2e/chat.spec.ts:148:5 › clarification: options are buttons, and the chosen one is sent (548ms)
+  ✓   38 [live] › e2e/chat.spec.ts:170:5 › correction: 'actually make it 0.8%' amends the pending plan and is marked corrected (761ms)
+  ✓   39 [live] › e2e/chat.spec.ts:190:5 › a 401 opens the owner sign-in dialog, and signing in resends the refused message (448ms)
+  ✓   40 [live] › e2e/chat.spec.ts:226:5 › the slide-over chat opens from another page, keeps the conversation, and closes with Escape (726ms)
+  ✓   41 [live] › e2e/chat.spec.ts:261:5 › the Chinese UI offers Chinese prompts and gets a Chinese answer (1.2s)
+  ✓   42 [live] › e2e/chat.spec.ts:275:5 › network and credential failures are explained in the conversation and can be retried (676ms)
+  ✓   43 [live] › e2e/chat.spec.ts:313:5 › the prompt chips wrap inside the panel instead of running off its right edge (297ms)
+  ✓   44 [live] › e2e/chat.spec.ts:329:5 › the chat button says Ask FLOW, and a Business page offers only the questions it can answer (545ms)
+  ✓   45 [live] › e2e/chat.spec.ts:360:5 › Business chat is the owner's alone: no role switch, no Tier 1 hint, no fixture or approve-it chips (493ms)
+  ✓   46 [live] › e2e/chat.spec.ts:384:5 › the Deals question about the deal explains the verdict the page evaluated, and the panel says what it is discussing (3.5s)
+  ✓   47 [live] › e2e/chat.spec.ts:428:5 › Home's 'What changed today?' is a read of the books, not a list of what the agent can do (550ms)
+  ✓   48 [live] › e2e/chat.spec.ts:441:5 › Business chat says one outcome in the owner's words: no verdict panel, no intent chip, no tier or operation rows, and the confirmation is 'Yes, run it' (1.9s)
+  ✓   49 [live] › e2e/chat.spec.ts:462:5 › a pasted approval is read, approves nothing and opens no deal; a plan asked for in chat opens none either (684ms)
+  ✓   50 [live] › e2e/chat.spec.ts:483:5 › a refresh keeps the draft and the conversation, and a pending plan points to the Approvals page (1.7s)
+  ✓   51 [live] › e2e/chat.spec.ts:543:5 › New conversation starts over here and on the server: a go ahead afterwards does not run the old plan (1.3s)
+  ✓   52 [live] › e2e/chat.spec.ts:581:5 › New conversation on the Business shell clears the owner's conversation, whatever role a Demo visit left (622ms)
+  ✓   53 [live] › e2e/chat.spec.ts:602:5 › a demo reset clears Ask FLOW in this tab and in another open one, and a go ahead afterwards runs nothing (2.9s)
+  ✓   54 [live] › e2e/chat.spec.ts:639:5 › signing out ends the owner's session on the server before the token goes (1.1s)
+  ✓   55 [live] › e2e/contract-terms.spec.ts:33:5 › the demo's supply agreement is already in the books: one quiet line, nothing to set up (528ms)
+  ✓   56 [live] › e2e/contract-terms.spec.ts:42:5 › a lender agreement has no such step: a contract sets up only a customer's invoices (285ms)
+  ✓   57 [live] › e2e/contract-terms.spec.ts:74:7 › against the live API › a new customer's contract: the terms beside their clauses, the forecast before and after, set up on confirmation, then undone (4.4s)
+  ✓   58 [live] › e2e/contract-terms.spec.ts:125:7 › against the live API › Chinese: the step is in the owner's language (1.2s)
+  ✓   59 [live] › e2e/contract-terms.spec.ts:134:7 › against the live API › the agent key and a buyer's key reach none of it (1.1s)
+  ✓   60 [live] › e2e/contract.spec.ts:19:5 › trajectory adapter: the position today, then the offer applied (596ms)
+  ✓   61 [live] › e2e/contract.spec.ts:52:5 › funding, negotiation and ledger adapters keep the golden numbers and fill the operation fields (852ms)
+  ✓   62 [live] › e2e/contract.spec.ts:79:5 › approvals adapter: evaluating and the borrower file queue nothing, the capex application queues as Tier 2, and the owner token decides (173ms)
+  ✓   63 [live] › e2e/contract.spec.ts:121:5 › alerts and reconciliation adapters (56ms)
+  ✓   64 [live] › e2e/contract.spec.ts:135:5 › state adapter: funding requested on a facility with a lead time is a lot in transit until it lands (62ms)
+  ✓   65 [live] › e2e/contract.spec.ts:150:5 › /nl: the owner channel needs the token, a buyer turn does not, and the response has the shape the chat renders (669ms)
+  ✓   66 [live] › e2e/contract.spec.ts:185:5 › document and deal adapters: the demo opens on three confirmed documents; a new reading is reviewed and confirmed once (301ms)
+  ✓   67 [live] › e2e/demo.spec.ts:47:5 › one filled next control at every step of the walk; the owner's step only opens the approval (9.2s)
+  ✓   68 [live] › e2e/demo.spec.ts:100:5 › each done scene shows what happened and its proof, and every proof link opens a record that exists (6.1s)
+  ✓   69 [live] › e2e/demo.spec.ts:122:5 › Which books: Load on the busy card, with work on the books, shows the loss in a dialog; cancel changes nothing, confirm loads the busy books and restore brings the story back at scene one (12.4s)
+  ✓   70 [live] › e2e/demo.spec.ts:177:5 › operator tools are closed by default and hold the clock, the books and the engine views (274ms)
+  ✓   71 [live] › e2e/demo.spec.ts:193:5 › the optional scenes run from the operator tools and never move the story's pointer (3.1s)
+  ✓   72 [live] › e2e/demo.spec.ts:207:5 › in Chinese the page reads in Chinese with one filled next control (335ms)
+  ✓   73 [live] › e2e/demo.spec.ts:220:5 › on a phone the three books cards are in the first screen before the scene card, and the operator tools are a closed fold (255ms)
+  ✓   74 [live] › e2e/demo.spec.ts:237:5 › the tour points at the current scene on the Demo and its card does not cover it (755ms)
+  ✓   75 [live] › e2e/demo.spec.ts:248:5 › the strip on the other pages follows the server's story: its progress, its chips and its one next control are the page's (2.0s)
+  ✓   76 [live] › e2e/demo.spec.ts:269:5 › the filled buttons are the design language's ink, on a direct load of the Demo page, of its dialog, of the story's strip and of the tour (6.8s)
+  ✓   77 [live] › e2e/demo.spec.ts:296:5 › a reset with work on the books asks first and resets nothing on cancel; on fresh books there is no dialog (6.3s)
+  ✓   78 [live] › e2e/demo.spec.ts:333:5 › the optional scene that replaces the books asks first when work would be lost, and replaces nothing on cancel (9.0s)
+  ✓   79 [live] › e2e/demo.spec.ts:355:5 › a stale page cannot reset books it did not read: the server's sentence is shown and the main books are untouched (8.1s)
+  ✓   80 [live] › e2e/demo.spec.ts:378:5 › a double click on a book-replacing control never confirms, at 390 px (6.3s)
+  ✓   81 [live] › e2e/demo.spec.ts:426:5 › the confirmation is bound to the list shown: books that gained work under an open page are listed by the server's refusal, and nothing is reset until a second, informed click (12.3s)
+  ✓   82 [live] › e2e/demo.spec.ts:466:5 › Which books comes first: three cards with their help, the loaded one marked and without a button, the busy one linking to Home; the old fold and the engine sidebar are gone (9.2s)
+  ✓   83 [live] › e2e/demo.spec.ts:508:5 › the busy card's Load is visible without scrolling at 1440 and at 390, and from worked books it asks first (3.2s)
+  ✓   84 [live] › e2e/demo.spec.ts:545:5 › the Demo uses the app's own rail: no engine-views sidebar, and the engine views are reachable inside Operator tools (366ms)
+  ✓   85 [live] › e2e/demo.spec.ts:565:5 › the proof appendix: the chain badge is the server's verdict (green when valid) and its scope is text under it, not a tooltip (1.6s)
+  ✓   86 [live] › e2e/demo.spec.ts:578:5 › operator tools hold the clock once: the day's own control, not a second pair of advance buttons (247ms)
+  ✓   87 [live] › e2e/documents.spec.ts:78:5 › Deals: before a deal is agreed the confirmed contract is its own row; once the buyer agrees, the summary is in the agreement (5.3s)
+  ✓   88 [live] › e2e/documents.spec.ts:143:5 › the documents: the three demo documents confirmed, each term of the supply agreement beside its clause (1.4s)
+  ✓   89 [live] › e2e/documents.spec.ts:174:5 › focusing a term lights its clause with the shared dialogs mounted, wherever the pointer is parked (the page scrolls under it) (1.1s)
+  ✓   90 [live] › e2e/documents.spec.ts:198:5 › the confirm flow: a new reading is labelled AI-generated until the owner confirms it, and Activity logs it (1.7s)
+  ✓   91 [live] › e2e/documents.spec.ts:240:5 › a lender agreement (the PDF copy) is compared with the facility on the books and linked when confirmed (922ms)
+  ✓   92 [live] › e2e/documents.spec.ts:270:5 › a lender agreement confirmed with the link box left unticked: the card names no facility (612ms)
+  ✓   93 [live] › e2e/documents.spec.ts:279:5 › reject: a new reading is set aside and logged; the agreement already confirmed stays (897ms)
+  ✓   94 [live] › e2e/documents.spec.ts:300:5 › your own file: the upload form sends a Word, PDF or text file with what it is and who it is with (742ms)
+  ✓   95 [live] › e2e/documents.spec.ts:340:5 › a file before the company waits, named, and the field asks who it is with; nothing is sent until a company is chosen (323ms)
+  ✓   96 [live] › e2e/documents.spec.ts:371:5 › a file before the company is read as soon as a company is chosen from the list (436ms)
+  -   97 [live] › e2e/documents.spec.ts:385:5 › day 34: the deal summary tells the story and points at the approval
+  -   98 [live] › e2e/documents.spec.ts:417:5 › Chinese: the deal summary
+  ✓   99 [live] › e2e/documents.spec.ts:429:5 › Chinese: the review screen of a new reading (902ms)
+  ✓  100 [live] › e2e/documents.spec.ts:451:5 › Business words: no day numbers, ids, entry numbers, hashes, env names or raw codes outside the Audit details fold (605ms)
+  ✓  101 [live] › e2e/documents.spec.ts:470:5 › the decision is irreversible and says so; the controls are named, described and disabled while one is sent (829ms)
+  ✓  102 [live] › e2e/documents.spec.ts:489:5 › on a phone the decision controls are inside the first screen, above the tab bar, however long the terms list (425ms)
+  ✓  103 [live] › e2e/documents.spec.ts:521:7 › against the live API › a changed document, an earlier decision and a failed call are said in words, with the way forward (1.8s)
+  ✓  104 [live] › e2e/documents.spec.ts:565:7 › against the live API › both controls go dead the moment one is pressed: one request, never two (1.4s)
+  ✓  105 [live] › e2e/documents.spec.ts:585:7 › against the live API › a blocked document: confirm is off, the reason sits beside it and describes it; reject stays (590ms)
+  ✓  106 [live] › e2e/documents.spec.ts:603:7 › against the live API › the reads follow the language, and a failed deals read is shown, not hidden (805ms)
+  ✓  107 [live] › e2e/documents.spec.ts:619:7 › against the live API › the decision is asked in the owner's language, so the outcome card comes back in it (814ms)
+  ✘  108 [live] › e2e/home-reset.spec.ts:37:5 › reset several times quickly: the Home reads at once and Deals never lists the replaced books' deal (12.4s)
+(node:33088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  109 [live] › e2e/home-reset.spec.ts:69:7 › day 77 (en): cash under the minimum today is never "covered", whatever the forecast (999ms)
+  ✓  110 [live] › e2e/home-reset.spec.ts:69:7 › day 77 (zh): cash under the minimum today is never "covered", whatever the forecast (1.0s)
+  ✓  111 [live] › e2e/home-v2-states.spec.ts:310:7 › 01 no pending decisions: the plan ran, nothing needs the owner, one thing waits (2.0s)
+  ✓  112 [live] › e2e/home-v2-states.spec.ts:310:7 › 01b no pending decisions: fully empty after the buyer paid (2.3s)
+  ✓  113 [live] › e2e/home-v2-states.spec.ts:310:7 › 02 one deal: a single decision row (3.2s)
+  ✓  114 [live] › e2e/home-v2-states.spec.ts:310:7 › 03 five deals: sorted, the critical one first (4.6s)
+  ✓  115 [live] › e2e/home-v2-states.spec.ts:310:7 › 04 three deals, one customer: one customer row that counts them (4.1s)
+  ✓  116 [live] › e2e/home-v2-states.spec.ts:310:7 › 05 buyer reply pending: a waiting row, nothing to resend (2.5s)
+  ✓  117 [live] › e2e/home-v2-states.spec.ts:310:7 › 06a approval required: a facility application is an approval row of no customer (2.9s)
+  ✓  118 [live] › e2e/home-v2-states.spec.ts:310:7 › 06b approval required: the plan waits for the owner's approval (2.0s)
+  ✓  119 [live] › e2e/home-v2-states.spec.ts:310:7 › 07 funding proposed: planned, not cash (2.3s)
+  ✓  120 [live] › e2e/home-v2-states.spec.ts:310:7 › 08 funding submitted, not cash: arranged, pending, a settlement row (1.9s)
+  ✓  121 [live] › e2e/home-v2-states.spec.ts:310:7 › 09 payment overdue: a critical collection row (3.1s)
+  ✓  122 [live] › e2e/home-v2-states.spec.ts:310:7 › 10 cash critical: the reserve is unsafe today (2.0s)
+  ✓  123 [live] › e2e/home-v2-states.spec.ts:340:5 › busy books: a recommendation card and no alert row, at 1440 and 390, in both languages (11.3s)
+  ✓  124 [live] › e2e/home-v2-states.spec.ts:396:5 › 11 customer selected in the crisis: the alert persists (6.6s)
+  ✓  125 [live] › e2e/home-v2-states.spec.ts:421:5 › 12 scenario still calculating: the working word appears, then goes (6.8s)
+  ✓  126 [live] › e2e/home-v2-states.spec.ts:450:5 › reduced motion: the page and a selection arrive without an animation (1.1s)
+  ✓  127 [live] › e2e/home-v2-states.spec.ts:465:5 › accessibility: no axe violations on the five deals at 1440 and at 390 (5.0s)
+  ✓  128 [live] › e2e/lang.spec.ts:50:5 › in Chinese the approvals queue and the decision record read in Chinese with the same amounts as in English (3.8s)
+  ✓  129 [live] › e2e/live.spec.ts:17:5 › every API request carries the owner token (3.2s)
+  ✓  130 [live] › e2e/live.spec.ts:29:5 › a 401 from the API opens the owner sign-in dialog instead of leaving a blank screen (185ms)
+  ✓  131 [live] › e2e/live.spec.ts:45:5 › the borrower file downloads as HTML and Word, and the owner approves the one pending application (4.0s)
+  ✓  132 [live] › e2e/live.spec.ts:73:5 › the EX01 verdict shows each early-pay discount as a yearly rate, the offer's and Counter A's (3.2s)
+  ✓  133 [live] › e2e/live.spec.ts:85:5 › the day-0 plan: 'go ahead' brings cash now and leaves the advance in transit until its landing day (2.2s)
+  ✓  134 [live] › e2e/live.spec.ts:179:5 › on day 34 the cure needs the owner: the alert says so, the click queues it, approval runs it, the cash lands on day 37 (3.9s)
+  ✓  135 [live] › e2e/live.spec.ts:266:5 › when the books move after the alert was shown, the act answers 409 and the page says so without success styling (2.2s)
+  ✓  136 [live] › e2e/live.spec.ts:288:5 › an approval is refused when the server does not recognise the owner (1.5s)
+  ✓  137 [live] › e2e/live.spec.ts:307:5 › the plan card shows the landing day the API sent, not one derived from the lead time (3.2s)
+  ✓  138 [live] › e2e/live.spec.ts:334:5 › a write that lost a race is sent once more after the hint, and succeeds (14.0s)
+  ✓  139 [live] › e2e/live.spec.ts:348:5 › a second conflict is not retried again: the error says the books were busy (13.1s)
+  ✓  140 [live] › e2e/live.spec.ts:363:5 › the Business inbox waits for the books before it shows any sender, and says so when they fail to load (2.0s)
+  ✓  141 [live] › e2e/live.spec.ts:397:5 › day 34 with no receipt: the Home says below the reserve today, the promise is history, and no page says 'by today' (2.6s)
+  ✓  142 [live] › e2e/live.spec.ts:418:5 › day 34 after a half receipt: the early-payment window for the rest is said as ended, not 'by today' (1.6s)
+  ✓  143 [live] › e2e/live.spec.ts:431:5 › day 34 after a half receipt: Chase payment opens the API's handoff, its balance is the API's own, and the receipt row names its four facts (1.2s)
+  ✓  144 [live] › e2e/live.spec.ts:455:5 › approving after the mandate has expired is refused: the card ends as 'could not run', with no buttons and no money moved (6.2s)
+  ✓  145 [live] › e2e/live.spec.ts:493:5 › a buyer's agreement that expired before the owner looked cannot be approved: the card says why and keeps Decline (1.2s)
+  ✓  146 [live] › e2e/live.spec.ts:530:5 › Deals: Send carries what was shown, and the record's state follows: Agreed, then Fulfilled once the receipt came (4.1s)
+  ✓  147 [live] › e2e/live.spec.ts:573:5 › Deals: with no receipt on day 2 the line says the early payment did not arrive, and the agreement stays listed (3.9s)
+  ✓  148 [live] › e2e/live.spec.ts:602:5 › Deals: if the books moved after the proposal was shown, Send is refused, nothing is sent, and Check again gets a current one (6.9s)
+  ✓  149 [live] › e2e/live.spec.ts:630:5 › Cash & funding: a cure that cannot restore the reserve leaves a remaining task with the routes it names, and the invoice link lands on its row (8.9s)
+  ✓  150 [live] › e2e/live.spec.ts:661:5 › Deals: the negotiation is the API's, in its order, with the costs it prices (2.6s)
+  ✓  151 [live] › e2e/live.spec.ts:682:5 › Cash: the comparison arrives grouped and ordered by the API, and the forecast says what it counts (1.7s)
+  ✓  152 [live] › e2e/live.spec.ts:704:5 › Activity: each row says what changed, why it matters and what remains; the approval request is history with a link; the chain words are the API's (3.1s)
+  ✓  153 [live] › e2e/live.spec.ts:731:5 › Deals: books set up with a customer and an open invoice, no contract, show that invoice on the customer's row (owner's report, 17 Oct) (268ms)
+  ✓  154 [live] › e2e/live.spec.ts:759:5 › setup step 2: Fill from an agreement names the row after the lender the agreement names, never the uploaded file (demo recording, 18 Oct) (381ms)
+  ✓  155 [live] › e2e/live.spec.ts:773:5 › own books: a contract given before its company is read once the customer is picked, and once confirmed it is on Deals with its summary and invoices (owner's report, 17 Oct) (948ms)
+  ✓  156 [live] › e2e/record-payment.spec.ts:43:7 › record a payment › the whole amount: the invoice is paid, the server says so and the reconciliation reads it (445ms)
+  ✓  157 [live] › e2e/record-payment.spec.ts:68:7 › record a payment › part of it: the rest stays open on the invoice (546ms)
+  ✓  158 [live] › e2e/record-payment.spec.ts:93:7 › record a payment › more than is open: refused beside the button, nothing recorded (452ms)
+  ✓  159 [live] › e2e/record-payment.spec.ts:108:7 › record a payment › a financed invoice: the receipt repays the lender first (990ms)
+  ✓  160 [live] › e2e/record-payment.spec.ts:133:7 › record a payment › in Chinese: the labels are the dictionary's and the answer is the server's Chinese (470ms)
+  -  161 [live] › e2e/record-payment.spec.ts:144:7 › record a payment › on a phone the form fits the screen and its buttons are a finger wide
+  ✓  162 [live] › e2e/record-payment.spec.ts:160:7 › setup: no promise of a feature that does not exist › bills and limits say how they change after setup, in English and Chinese (425ms)
+  -  163 [live] › e2e/slice-b-round-two.spec.ts:20:7 › mock › the choices table's Terms row says each choice's terms by scope in the server's words; the payment-period bars, the timing diagram and the separate terms table are gone from the Overview
+  -  164 [live] › e2e/slice-b-round-two.spec.ts:32:7 › mock › the choices table's cost and lowest-cash cells say each choice's figures in the server's words, and Escape clears the selection (there is no rail to bring back)
+  -  165 [live] › e2e/slice-b-round-two.spec.ts:43:7 › mock › a deep link keeps the section: Cash impact opens on Cash impact with its two charts, and an address that still names Compare responses lands on the Overview
+  -  166 [live] › e2e/slice-b-round-two.spec.ts:55:7 › mock › the queue's controls: sort and grouping are offered only as the queue grows (four and six negotiations; the busy books in the live describe below pin them), and one row shows none
+  -  167 [live] › e2e/slice-b-round-two.spec.ts:62:7 › mock › Customer: the share figure has its bar, the flow's steps and chips lead to the invoice and the money, and the exposure is a table
+  -  168 [live] › e2e/slice-b-round-two.spec.ts:75:7 › mock › a picked reply is reviewed from its own column, and "FLOW recommends" stays with the recommended reply only
+  -  169 [live] › e2e/slice-b-round-two.spec.ts:88:7 › mock › Approvals: the lifecycle shows three stages, the first current while the owner has not authorized, and the button names the act
+  ✓  170 [live] › e2e/slice-b-round-two.spec.ts:126:7 › live › the busy queue: distinct subjects, lifecycle words, sort by latest activity and grouping by customer (7.2s)
+  ✓  171 [live] › e2e/slice-b-round-two.spec.ts:147:7 › live › Foshan's EX01 on the busy books: the comparison says the request breaches the reserve, the terms say the difference of the period, and the customer page leads with the selected negotiation (8.7s)
+  ✓  172 [live] › e2e/slice-b-round-two.spec.ts:163:7 › live › authorizing on the busy books leaves the three stages on the decided row, the first done (8.6s)
+  ✓  173 [live] › e2e/slice-b-round-two.spec.ts:174:7 › live › the flow's financing link lands on the facility it names on Cash: the element has the id, opens and takes focus (9.9s)
+  -  174 [live] › e2e/slice-b.spec.ts:25:7 › mock › a row's link is its own customer, decision and invoice plus the origin; the selected row's context is never copied onto it
+  -  175 [live] › e2e/slice-b.spec.ts:37:7 › mock › a deep link in a fresh session hydrates the negotiation, its reply and its open comparison from the server
+  -  176 [live] › e2e/slice-b.spec.ts:48:7 › mock › a selection that names nothing asks which negotiation, on Deals and on What-if, and never shows a sample
+  -  177 [live] › e2e/slice-b.spec.ts:60:7 › mock › a decision in the address that is not a deal (a funding request) asks which negotiation at once and never waits
+  -  178 [live] › e2e/slice-b.spec.ts:70:7 › mock › What-if opens on the named negotiation's own terms and says which negotiation it is for
+  -  179 [live] › e2e/slice-b.spec.ts:87:7 › mock › at 390 px the receipt's terms come before the one commit button, in the DOM and on screen
+  -  180 [live] › e2e/slice-b.spec.ts:110:7 › mock › the scope chip names what the question is about before it is asked, widens for this route only, and clears when the route changes
+  -  181 [live] › e2e/slice-b.spec.ts:132:7 › mock › the queue's card holds its row at 1440, 820 and 390, in English and in Chinese; with one negotiation it offers no tabs (the four tabs on one line are pinned on the busy books in slice-b-round-three.spec.ts)
+  -  182 [live] › e2e/slice-b.spec.ts:148:7 › mock › the scope chip's widened choice does not come back: Deals, widen to Company, Customer, Back, and the chip is the decision again
+  -  183 [live] › e2e/slice-b.spec.ts:168:7 › mock › no financial qualifier is 12 px: What-if's limit, face and current terms, and the approval's Amount requested, Facility and What if you decline
+  -  184 [live] › e2e/slice-b.spec.ts:200:7 › mock › a term or a figure the server has no word for is omitted, never the word None
+  -  185 [live] › e2e/slice-b.spec.ts:210:7 › mock › Receivables registers the invoice it shows as the scope, even when it is the default row
+  -  186 [live] › e2e/slice-b.spec.ts:223:7 › mock › Ask FLOW is a quiet outline pill, never a filled button
+  ✓  187 [live] › e2e/slice-b.spec.ts:253:7 › live › the busy company's queue has one row per task: three Foshan negotiations are three rows, an approval and a collection each their own, and the tab counts are the Home's (8.6s)
+  ✓  188 [live] › e2e/slice-b.spec.ts:284:7 › live › the approval row is a link to the Approvals page with that approval in view, never a selection; a differentiator is quoted once, on Deals and on Home (11.7s)
+  ✓  189 [live] › e2e/slice-b.spec.ts:319:7 › live › the What-if list offers negotiations only, not the loan approval; an agreed negotiation shows its record and no evaluation prompt; an ask that needs approval and has no counter shows its cost and offers no button (12.6s)
+  ✓  190 [live] › e2e/slice-b.spec.ts:364:7 › live › the send review of a picked reply reads that reply's own receipt, not the recommended one's, and Send names the picked reply (3.6s)
+  ✓  191 [live] › e2e/slice-b.spec.ts:385:7 › live › What-if runs on the addressed negotiation's own invoice, in the server's words, and says why when the buyer has none it can act on (10.3s)
+  ✓  192 [live] › e2e/slice-b.spec.ts:408:7 › live › a negotiation whose invoice was settled under another agreement is Lapsed: its word in the pane, no reply ready, no cost, and it is gone from the queue (10.8s)
+  ✓  193 [live] › e2e/slice-b.spec.ts:431:7 › live › the approval says what approving does and, once approved, the server's own result words; the queue row says the same (9.4s)
+  ✓  194 [live] › e2e/slice-b.spec.ts:452:7 › live › Ask FLOW sends the scope the chip showed and nothing stale, and says what the server used (3.5s)
+  ✓  195 [live] › e2e/slow.spec.ts:34:5 › a read that hangs shows the slow state, and Retry reads it again (6.7s)
+  ✓  196 [live] › e2e/slow.spec.ts:49:5 › a write that hangs may have landed: Retry reads the state first and sends nothing again (6.9s)
+  ✓  197 [live] › e2e/slow.spec.ts:70:5 › a partial home says which supporting facts were not read, with Retry; the freshness word sits beside the conclusion (483ms)
+  ✓  198 [live] › e2e/slow.spec.ts:84:5 › Cash, Receivables and Approvals carry the same freshness and partial lines (801ms)
+  ✓  199 [live] › e2e/slow.spec.ts:99:5 › a model reply that hangs says so, clears busy and Retry asks again with the same request (6.7s)
+  -  200 [live] › e2e/slow.spec.ts:124:5 › a price curve that cannot be read is an error with Retry, not a quiet page
+  -  201 [live] › e2e/strategy.spec.ts:96:7 › desktop › Cash & funding: the price sentence sits once in the risk card, in the server's words, with no chart or bands
+  -  202 [live] › e2e/strategy.spec.ts:115:7 › desktop › Receivables day 0: the ranking note, a worth cell and an action cell for the open invoice; nothing brand-filled
+  -  203 [live] › e2e/strategy.spec.ts:135:7 › desktop › Receivables: when the collections ranking cannot be read the page says so and Retry brings the ranking back
+  -  204 [live] › e2e/strategy.spec.ts:150:7 › desktop › Receivables day 34: the late invoice leads with Call now, and the existing columns and ids are intact
+  -  205 [live] › e2e/strategy.spec.ts:175:7 › desktop › Deals day 0: Compare responses ends with what the owner could answer instead, by who may send it, three or fewer listed whole
+  -  206 [live] › e2e/strategy.spec.ts:200:7 › desktop › Deals: the card's Details fold opens and closes from the keyboard
+  -  207 [live] › e2e/strategy.spec.ts:213:7 › desktop › Cash day 34: once the owner has approved the cure, the price sentence is the post-approval one (mock)
+  -  208 [live] › e2e/strategy.spec.ts:239:7 › phone › Receivables day 34: each list row carries the action pill, what it is worth and the sentence
+  -  209 [live] › e2e/strategy.spec.ts:265:7 › phone › Deals day 0: the envelope on a phone lists the packages, keeps the fold in reach and does not overflow
+  -  210 [live] › e2e/tracker.spec.ts:116:7 › mock › each moment of the story shows the recorded read's own words and figures
+  -  211 [live] › e2e/tracker.spec.ts:134:7 › mock › once the rest of the invoice is paid the deal has ended: the close-out card after the header, and the Paid late promise with its word
+  -  212 [live] › e2e/tracker.spec.ts:152:7 › mock › a deal that is not agreed gets the server's words and a way back, never an error
+  -  213 [live] › e2e/tracker.spec.ts:168:7 › mock › the decision record links to the tracker for an agreed deal, and the way back returns to the record
+  -  214 [live] › e2e/tracker.spec.ts:183:7 › mock › the late day in Chinese shows the zh read's own words and the same figures
+  -  215 [live] › e2e/tracker.spec.ts:194:7 › mock › on a phone the page is one column with no horizontal scroll, and it has no axe violations (after the approval)
+  ✓  216 [live] › e2e/tracker.spec.ts:216:7 › live › after the owner's approval the page's figures are the API's own (13.6s)
+  -  217 [live] › e2e/trust.spec.ts:15:5 › an agreement approval shows the buyer, the terms and the amount above the buttons
+  -  218 [live] › e2e/trust.spec.ts:43:5 › when the server cannot present the terms, Approve is disabled, the reason is shown and Decline stays
+  -  219 [live] › e2e/trust.spec.ts:62:5 › an approval the executor refuses ends as 'could not run', with no buttons and no money moved
+  -  220 [live] › e2e/trust.spec.ts:82:5 › day 34 without a receipt: the Home says it is below the reserve today, never 'N days ago'
+  -  221 [live] › e2e/trust.spec.ts:103:5 › a part-paid promise: Receivables names the four facts and the window
+  ✓  222 [live] › e2e/trust.spec.ts:124:7 › the trust views are chosen by the address › ?view=evidence shows the record's entries in words, a marked entry and the way back by origin (373ms)
+  ✓  223 [live] › e2e/trust.spec.ts:151:7 › the trust views are chosen by the address › an entry the record does not have says nothing was removed (166ms)
+  ✓  224 [live] › e2e/trust.spec.ts:157:7 › the trust views are chosen by the address › from=demo says 'Back to the story'; the view switch keeps the origin (227ms)
+  ✓  225 [live] › e2e/trust.spec.ts:167:7 › the trust views are chosen by the address › an event in the address is marked in the security view, with its words and a list of disclosed fields (481ms)
+  ✓  226 [live] › e2e/trust.spec.ts:185:7 › the trust views are chosen by the address › in Chinese the way back and the marks are in Chinese; at 390 px nothing scrolls sideways (234ms)
+  ✓  227 [live] › e2e/trust.spec.ts:197:7 › a record the address names that is not in the record says so › an event id that is not in the security record, and an entry that is not a number (275ms)
+  ✓  228 [live] › e2e/whatif.spec.ts:9:5 › what-if: moving the terms slider changes the hypothetical verdict (4.5s)
+
+
+  1) [live] › e2e/home-reset.spec.ts:37:5 › reset several times quickly: the Home reads at once and Deals never lists the replaced books' deal 
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 0
+    Received array:  []
+
+      55 |   await chat(request, SECOND);
+      56 |   const now = await dealsOnWorklist(request);
+    > 57 |   expect(now).toHaveLength(1);
+         |               ^
+      58 |   expect(now).not.toContain(first);
+      59 |   const queue = JSON.stringify((await get<{ queue: unknown }>(request, "/deals?lang=en")).queue);
+      60 |   expect(queue).toContain(now[0]);
+        at /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/settlement-interpreter/apps/web/e2e/home-reset.spec.ts:57:15
+
+    Error Context: test-results/home-reset-reset-several-t-bd3c3-sts-the-replaced-books-deal-live/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-reset-reset-several-t-bd3c3-sts-the-replaced-books-deal-live/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/home-reset-reset-several-t-bd3c3-sts-the-replaced-books-deal-live/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [live] › e2e/home-reset.spec.ts:37:5 › reset several times quickly: the Home reads at once and Deals never lists the replaced books' deal 
+  51 skipped
+  176 passed (10.0m)

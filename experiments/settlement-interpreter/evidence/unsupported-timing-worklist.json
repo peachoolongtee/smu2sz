@@ -1,0 +1,50 @@
+{
+  "reply": {
+    "session_id": "nls-87bc4b0294af4648",
+    "turn": 1,
+    "reply": "Please clarify the terms: we cannot establish them from your message.\nYour message has been received. It is a proposal only and is not agreed until it is confirmed through an authenticated channel; nothing has been booked.",
+    "intent": "COUNTERPARTY_MESSAGE",
+    "lang": "en",
+    "trace_id": "nls-87bc4b0294af4648:1",
+    "plan": [],
+    "verdict": null,
+    "operations": [],
+    "clarification": null,
+    "negotiation": null,
+    "security_events": [],
+    "parse_source": "actor",
+    "awaiting_confirmation": false,
+    "amended": false,
+    "replayed": false
+  },
+  "worklist_counts": {
+    "needs_you": 0,
+    "waiting": 1,
+    "agreements": 0,
+    "customers": 2
+  },
+  "needs_you": [],
+  "waiting": [
+    {
+      "key": "buyer-reply:OFF-12f7e8ae8f77",
+      "kind": "BUYER_REPLY",
+      "customer_id": "BUYER-1",
+      "subject_text": "Foshan · Early settlement on the ¥420k invoice",
+      "subject_demo_text": "Foshan · Early settlement on the ¥420k invoice · OFF-12f7e8ae8f77",
+      "lifecycle": "more_information",
+      "topic_text": "Early-payment discount",
+      "last_activity_day": 0,
+      "last_activity_text": "today",
+      "status_text": "More information needed",
+      "consequence_text": "Asked today. Nothing to resend.",
+      "since_day": 0,
+      "expected_day": null,
+      "owner": "WAITING",
+      "severity": "NORMAL",
+      "href": "/?customer=BUYER-1"
+    }
+  ],
+  "evaluated_offers": [
+    "OFF-12f7e8ae8f77"
+  ]
+}
