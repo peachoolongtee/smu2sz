@@ -228,7 +228,22 @@ def _word_money(text: str) -> list[Found]:
     return out
 
 
+# LIVE-3 (the live runs of 20 Oct, BO-014): \d matches full-width digits, but the decimal point and the thousands separator
+# below match ASCII only, so "０．５％" read as 5% and "４２０，０００" as 420, in both readers alike. Full-width ASCII forms
+# (U+FF01 to U+FF5E), the full-width yen sign and the ideographic space are mapped one character for one before matching, so
+# every offset still points into the original text and each Found quotes the original characters.
+_HALFWIDTH = {cp: cp - 0xFEE0 for cp in range(0xFF01, 0xFF5F)} | {0xFFE5: ord("¥"), 0x3000: ord(" ")}
+
+
+def _quoting(text: str, found: list[Found]) -> list[Found]:
+    return [Found(f.start, f.end, f.value, text[f.start:f.end]) for f in found]
+
+
 def find_money(text: str) -> list[Found]:
+    return _quoting(text, _find_money(text.translate(_HALFWIDTH)))
+
+
+def _find_money(text: str) -> list[Found]:
     out: list[Found] = []
     for m in MIXED_ZH_RE.finditer(text):
         tail = zh_number(m.group("tail").translate(_ARABIC_TO_ZH))
@@ -366,6 +381,10 @@ def _rate_value(m: re.Match[str]) -> Decimal | None:
 
 
 def find_rates(text: str) -> list[Found]:
+    return _quoting(text, _find_rates(text.translate(_HALFWIDTH)))
+
+
+def _find_rates(text: str) -> list[Found]:
     out: list[Found] = []
     for m in RATE_RE.finditer(text):
         v = _rate_value(m)

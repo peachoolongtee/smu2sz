@@ -42,3 +42,14 @@ def test_when_the_rules_read_nothing_every_term_is_the_models_alone() -> None:
     held = held_for_owner(model)
     assert held.autonomy_eligible is False and held.autonomy_notes.count(MODEL_ONLY_NOTE) == 1
     assert held_for_owner(held).autonomy_notes.count(MODEL_ONLY_NOTE) == 1  # idempotent
+
+
+def test_full_width_figures_read_as_their_ascii_forms_and_quote_the_original() -> None:
+    """LIVE-3 (BO-014): the decimal point and the thousands separator were ASCII-only, so both readers read the full-width
+    "０．５％" as 5% and "４２０，０００" as 420, and a counter went out on the misreading."""
+    from app.compiler.parsing import find_money, find_rates
+
+    text = "We can pay the full ¥４２０，０００ invoice early for ０．５％ off."
+    assert [(f.value, f.text) for f in find_rates(text)] == [(50, "０．５％")]
+    assert [(f.value, f.text) for f in find_money(text)] == [(42_000_000, "¥４２０，０００")]
+    assert [f.value for f in find_rates("0.5%")] == [50] and [f.value for f in find_money("¥420,000")] == [42_000_000]
