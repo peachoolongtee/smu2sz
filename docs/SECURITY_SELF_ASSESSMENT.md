@@ -37,7 +37,7 @@ money moves. We claim neither regulatory compliance nor absolute security.
   internal release gate on that exact commit for the stated scope; it is not accreditation.**
 - **Release state** (section 2.7; every earlier gate is in Appendix C and
   [CERTIFICATIONS.md](security/CERTIFICATIONS.md)). **The submission build `78b211f0`: certified for scope S on 20 Oct.**
-- **Review of the submission build (19 Oct).** Team member Hao En, who did not write the fixes, reviewed the submission build. The review re-ran the sandbox, the judge pack and the security test folders on
+- **Review of the 19 Oct build (`66c31e7e`).** Team member Hao En, who did not write the fixes, reviewed it. The review re-ran the sandbox, the judge pack and the security test folders on
   a fresh Linux machine (the sandbox: 159 PASS, 0 FAIL in process; 142 PASS, 0 FAIL, 1 SKIPPED over HTTP; 49 of 49 judge tasks, 279 attacks with 0 harm, 32 of 32
   evidence chains VALID) and probed the API with more than 160 attacks outside our catalogue. It found three defects; all three are
   fixed in the submission build, each with a regression test (REV-1 to REV-3, Table 27). A later review found one more
@@ -58,7 +58,7 @@ money moves. We claim neither regulatory compliance nor absolute security.
 | Build and assessment | |
 | --- | --- |
 | Submission build | `78b211f0` (full SHA `78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`: `c66a5e61` (certified for scope S on 19 Oct: `66c31e7e` plus the three fixes of the 19 Oct review, REV-1 to REV-3) plus the fail-closed REV-4 and the three live-mode fixes LIVE-1 to LIVE-3 (20 Oct). `66c31e7e` is dev `03215a20` with round eight (FUND-1, 2, 3, 5), the demo launcher on loopback (DEMO-L1), round nine (LOG-2, the SEC-19 display, CON-1 and pinned authority tests), the demo stepper fix, the API lint cleanup, the public-release cleanup and the unseen evaluation set. Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) |
-| Documentation revision | the `dev` commit tagged `submission-2026-10-20e`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
+| Documentation revision | the `dev` commit tagged `submission-2026-10-20f`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
 | Its release gate | certified for scope S on 20 Oct, by the Security Lead on a clean checkout of `78b211f0`, 20 Oct 2026, 04:31 to 05:24 UTC; evidence [int-78b211f0/](security/evidence/2026-10-20/int-78b211f0/), id `sha256:6f665b8ae82df362` (the hash of its `SHA256SUMS`); every result in Table C2 |
 | Earlier gates | `66c31e7e`: certified for scope S on 19 Oct (`sha256:4a418fe4fb4c6c4d`); the builds before it in Appendix C |
 | Scope assessed (scope S) | `pnpm demo` on one machine: the API and the web app on 127.0.0.1; one API process; `DEMO_MODE=1` with the published demo credentials (the route checks also run with `DEMO_MODE=0` and unset); `DATABASE_URL=memory`; `LLM_MODE=cache` (no model provider is called); synthetic fixtures ([golden_sme.json](../fixtures/scenarios/golden_sme.json) and others). The CSP was checked on both the production build and the development server `pnpm demo` runs |
@@ -747,7 +747,7 @@ an offline tier, not re-run. 16 to 18 Oct: the project lead's risk decisions, fo
 | Security Lead (14 to 19 Oct) | an AI agent (Claude, in Claude Code) in a separate session and git worktree, with delegated AI reviewer agents | did not build the product features it audited; **did write the security fixes it then gated**, each on its own branch with a test that fails first | yes: reproductions, sweeps and probes in [docs/security/evidence/](security/evidence/) | the integration lead merged until 19 Oct; the project lead approved engine changes and accepted risks |
 | Internal red-team run (16 Oct) | team member Hao En; **the report is not in the repository** and no location is recorded | a team member | yes | its five observations were re-checked by the Security Lead on the code; its live-tier results were not re-run |
 | Review of the self-assessment (17 Oct) | a written review supplied by the project lead; the reviewer is not recorded | not recorded | it reviewed the documents, not the code | the Security Lead acted on each point |
-| Review of the submission build (19 Oct) | team member Hao En | a team member; did not write the fixes it found | yes: more than 160 probes outside the catalogue | the Security Lead reproduced each finding, fixed it with a regression test and re-ran the gate (REV-1 to REV-3) |
+| Review of the 19 Oct build (`66c31e7e`) | team member Hao En | a team member; did not write the fixes it found | yes: more than 160 probes outside the catalogue | the Security Lead reproduced each finding, fixed it with a regression test and re-ran the gate (REV-1 to REV-3) |
 | Risk acceptance | the project lead, for the team (a person, not an agent) | | | recorded decisions of 16 to 18 Oct (section 04) |
 
 **Internal audit and five red-team rounds (1 to 3 Oct).** They found 39 issues (Appendix B); every finding became a
