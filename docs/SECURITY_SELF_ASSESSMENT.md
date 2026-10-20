@@ -1271,7 +1271,7 @@ alone are still accepted alone.
 | --- | --- | --- |
 | Local demo on loopback (scope S) | **certified for scope S on 20 Oct** for the submission build `78b211f0`. Earlier: `03215a20` passed on a trusted machine and network (its launcher served the web app on every interface, DEMO-L1); `70f23ac5` passed (the same condition, found later); `5941e95a` and `5926ef29` were not released | **Operating constraints:** `DEMO_MODE=1`; memory or SQLite; one API process; `LLM_MODE=cache` (the router on recorded answers only); synthetic fixtures; contract terms on, as `pnpm demo` sets them; simulated counterparties; nobody but the presenter holds the demo credentials; the API and the web app on 127.0.0.1. **Not covered:** live mode or real documents |
 | Live-model mode (`pnpm demo --live-llm`) with DeepSeek | **certified for DeepSeek on 20 Oct** on `78b211f0` (2.11); the fallback to a second provider is not certified | **Operating constraints:** those of scope S, with `LLM_MODE=live` and a DeepSeek key. **Not covered:** another provider; real documents (PRIV-4, PRIV-5); a provider agreement on retention and region, and the PIPL (3.6); a daily model-call budget (RT-3) |
-| Demo reachable over a network | **One tested profile:** the password-gated judges' demo: the local demo's configuration behind HTTPS and a password on every path, with the API documentation hidden, 2 MB request bodies and one API process; the published demo credentials and anonymous intake stay as in the local demo, reachable only behind the password. Checked from outside (every path 401 without the password; the sandbox and the browser CSP check through it): docs/security/evidence/2026-10-20/judges-demo-live-78b211f0/ (sha256:92e71fd3759897c3). **Any other: NO-GO** until its own profile is tested | **The profile must include:** credentials changed from the demo values and a new owner key pair (`OWNER_PUBLIC_KEY_HEX`); one worker; synthetic fixtures; `LLM_MODE=cache`; documentation hidden (`DEMO_MODE=0`); a TLS reverse proxy with per-client rate and body-size limits; the web server on loopback behind it; anonymous intake off (SEC-19); the stop procedure below. **It must pass:** the route sweep and the browser checks (S3) against that deployment |
+| Demo reachable over a network | **One tested profile,** the password-gated judges' demo: HTTPS, a password on every path, documentation hidden, 2 MB bodies, one API process; the demo credentials only behind the password. Checked from outside (`sha256:92e71fd3759897c3`). **Any other: NO-GO** | **A profile needs:** new credentials and owner key, or a password gate; one worker; synthetic data; docs hidden; TLS with per-client limits; the web server behind it; anonymous intake off or gated; the stop procedure. **It must pass:** the route and browser checks (S3) against it |
 | Production with real customers, documents or money | **NO-GO** | the prerequisites in 4.3; R-2, R-13, R-14, SEC-19, SEC-28, CAPEX-ACCT; R-3's aggregate draw limit; PRIV-4, PRIV-5 and the privacy assessment (3.6); backups; a penetration test; real counterparties, lenders and bank feeds |
 
 **The stop procedure for the local simulation**, in order: (1) `POST /agent/pause` with the owner token, which stops every
@@ -1285,15 +1285,14 @@ understood.
 
 1. **Engine follow-ups the project lead deferred:** SEC-27 (the run's outcome on the approval); the rest of SEC-28 (stop at
    the first leg that does not run; resume after approval); FUND-4's wording.
-2. **Before any network demo:** a tested deployment profile; anonymous intake off, and "unverified sender" in the chat's reply
+2. **Before any other network demo:** a tested profile; anonymous intake off and "unverified sender" in the chat's reply
    (SEC-19); browser injection tests (S3).
-3. **Owner control:** mandate revoke and renew routes; a pause control in the web app and an "agent queued this before the
-   pause" mark (R-14, OPS, PAUSE-Q); key rotation (R-2).
-4. **Capex payee:** record the vendor's receiving account and flag a change (CAPEX-ACCT).
-5. **Audit integrity and scale:** a restricted database role; signed checkpoints anchored outside the system (R-13); the day
-   and the pause read inside the unit of work; a PostgreSQL CI job (SEC-11, PAUSE-2, OPS).
-6. **Privacy before any live use with real documents:** named-entity detection; provider retention settings; the PIPL
-   assessment; a live-mode indicator; a pinned model version and a certified fallback (LIVE, PRIV-4, PRIV-5).
+3. **Owner control and payees:** mandate revoke and renew routes; a web pause control and an "agent queued this before the
+   pause" mark (R-14, OPS, PAUSE-Q); key rotation (R-2); a changed vendor account flagged (CAPEX-ACCT).
+4. **Audit integrity and scale:** a restricted database role and signed external checkpoints (R-13); the day and the pause
+   read inside the unit of work; a PostgreSQL CI job (SEC-11, PAUSE-2, OPS).
+5. **Live use with real documents:** named-entity detection; provider retention; the PIPL assessment; a live-mode
+   indicator; a pinned model and a certified fallback (LIVE, PRIV-4, PRIV-5).
 
 ## Appendix A. Evidence folders
 
