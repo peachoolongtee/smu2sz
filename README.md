@@ -77,7 +77,7 @@ The quickstart below takes a clean machine to a running demo: install, configure
 
 No version is pinned in `package.json` (no `engines` or `packageManager` field); the versions above are the ones
 `.github/workflows/checks.yml` runs. No API key and no network are needed after installation: the default `LLM_MODE=cache`
-replays recorded model readings and falls back to a deterministic rules grammar.
+replays recorded readings (made by the rules grammar) and falls back to a deterministic rules grammar.
 
 **Run it** (the same commands in PowerShell, cmd, macOS and Linux, from the repository root):
 
@@ -94,7 +94,7 @@ Open **http://localhost:3000** when the launcher prints `Ready`. The owner sign-
 
 | Command | What it starts |
 | --- | --- |
-| `pnpm demo` | The API with in-memory demo books, recorded model readings and the demo credentials, then the web app against it |
+| `pnpm demo` | The API with in-memory demo books, recorded readings and the demo credentials, then the web app against it |
 | `pnpm demo:keep` | Like `pnpm demo`, but the books live in a local SQLite file (`.demo-data/flow-demo.db`, git-ignored), so what you upload, confirm or book survives a restart |
 | `pnpm demo:keep --fresh` | The same, deleting that file first to start again from new demo books |
 | `pnpm demo:blank` | A new business with no books, opening on the setup wizard (combine with `--keep` to keep them) |
@@ -242,7 +242,7 @@ services/api/    FastAPI service: compiler, engine, router, verifier, executor, 
   tests/           the API test suite (pytest)
   evals/           evaluation reports: offline suites, held-out sets, attacks, scripted tasks, judge pack
   migrations/      Alembic migrations for PostgreSQL deployments (head 0009)
-fixtures/        synthetic data: golden books and oracle values, offers, held-out sets, contracts, recorded model readings, demo keys
+fixtures/        synthetic data: golden books and oracle values, offers, held-out sets, contracts, recorded readings, demo keys
 scripts/         demo launcher, demo walk, evaluations, judge pack, evidence verification, deliverables build
 infra/           docker-compose.yml, API and web Dockerfiles, .env.example
 docs/            architecture, ADRs, security self-assessment and records, deliverables
@@ -306,7 +306,7 @@ The [Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) gives the verdi
 | Use | Verdict |
 | --- | --- |
 | Local simulation (`DEMO_MODE=1`, cache mode, simulated counterparties, one API process) | **GO**: `pnpm demo` serves the API and the web app on 127.0.0.1 only |
-| Live model mode (`pnpm demo --live-llm`, the same conditions plus a DeepSeek key) | **certified for DeepSeek on 20 Oct** on `78b211f0`; the fallback to a second provider is not certified |
+| Live model mode (`pnpm demo --live-llm`, the same conditions plus a DeepSeek key) | **safety-certified for DeepSeek on 20 Oct** on `78b211f0`; the fallback to a second provider is not certified |
 | Demo reachable over a network | **One tested profile:** the password-gated judges' demo: the local demo's configuration behind HTTPS and a password on every path, with the API documentation hidden, 2 MB request bodies and one API process; the published demo credentials and anonymous intake stay as in the local demo, reachable only behind the password. Checked from outside (every path 401 without the password; the sandbox and the browser CSP check through it): docs/security/evidence/2026-10-20/judges-demo-live-78b211f0/ (sha256:92e71fd3759897c3). Any other network deployment: **NO-GO** until its own profile is tested |
 | Production with real customers, documents or money | **NO-GO** |
 
@@ -330,7 +330,7 @@ signed with a published key labelled DEMO ONLY.
 
 - **Everything outside FLOW is simulated:** lenders, buyers, rates and the bank feed. No real money moves.
 - **Recorded readings by default.** A new document gets the rules reading unless live mode (`LLM_MODE=live`, with a model
-  key) is on. Live mode's certification (DeepSeek, certified for DeepSeek on 20 Oct) covers the safety boundary, not accuracy, and rests on
+  key) is on. Live mode's certification (safety-certified for DeepSeek on 20 Oct) covers the safety boundary, not accuracy, and rests on
   single runs on one day; the model behind the alias `deepseek-flash` is not pinned.
 - **Autonomy is cautious.** Good early-payment offers that state a settlement date go to the owner, because the date is not yet
   read into the terms.

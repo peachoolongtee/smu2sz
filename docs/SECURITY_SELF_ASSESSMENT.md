@@ -28,7 +28,7 @@ money moves. We claim neither regulatory compliance nor absolute security.
 - **Test result, with its limits.** In the specified runs, the 279 stored attack cases (128 through the API, 151 through
   chat) produced **zero observed violations of the defined harm oracles** (section 2.4) on every gated build since
   `70f23ac5`, the last being the submission build `78b211f0`: 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66%. Each case ran in a fresh in-memory runtime
-  with recorded or scripted model answers; in the live run on `78b211f0` the attack phase was read by DeepSeek (279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control and 18 by an earlier one; detection 98.44%, 2.11). A route-policy test calls every route
+  with recorded or scripted model answers; in the live run on `78b211f0` the attack phase was read by DeepSeek (279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control, 18 by an earlier one and 7 known gaps without harm; detection 98.44%, 2.11). A route-policy test calls every route
   as every kind of caller (section 1.5). This is a test result within a scope, not evidence that no exploitable path exists,
   and no running deployment has had a penetration test.
 - **Review arrangement, and what "certified" means.** Every review was internal and AI-assisted (section 2.6). The Security
@@ -58,7 +58,7 @@ money moves. We claim neither regulatory compliance nor absolute security.
 | Build and assessment | |
 | --- | --- |
 | Submission build | `78b211f0` (full SHA `78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`: `c66a5e61` (certified for scope S on 19 Oct: `66c31e7e` plus the three fixes of the 19 Oct review, REV-1 to REV-3) plus the fail-closed REV-4 and the three live-mode fixes LIVE-1 to LIVE-3 (20 Oct). `66c31e7e` is dev `03215a20` with round eight (FUND-1, 2, 3, 5), the demo launcher on loopback (DEMO-L1), round nine (LOG-2, the SEC-19 display, CON-1 and pinned authority tests), the demo stepper fix, the API lint cleanup, the public-release cleanup and the unseen evaluation set. Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) |
-| Documentation revision | the `dev` commit tagged `submission-2026-10-20d`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
+| Documentation revision | the `dev` commit tagged `submission-2026-10-20e`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
 | Its release gate | certified for scope S on 20 Oct, by the Security Lead on a clean checkout of `78b211f0`, 20 Oct 2026, 04:31 to 05:24 UTC; evidence [int-78b211f0/](security/evidence/2026-10-20/int-78b211f0/), id `sha256:6f665b8ae82df362` (the hash of its `SHA256SUMS`); every result in Table C2 |
 | Earlier gates | `66c31e7e`: certified for scope S on 19 Oct (`sha256:4a418fe4fb4c6c4d`); the builds before it in Appendix C |
 | Scope assessed (scope S) | `pnpm demo` on one machine: the API and the web app on 127.0.0.1; one API process; `DEMO_MODE=1` with the published demo credentials (the route checks also run with `DEMO_MODE=0` and unset); `DATABASE_URL=memory`; `LLM_MODE=cache` (no model provider is called); synthetic fixtures ([golden_sme.json](../fixtures/scenarios/golden_sme.json) and others). The CSP was checked on both the production build and the development server `pnpm demo` runs |
@@ -146,7 +146,7 @@ these tests passed inside the full API suite on the submission build `78b211f0`:
 | CL25 | Every live model path receives redacted text only. *Control:* provider backends redact by default | [test_model_privacy_paths.py](../services/api/tests/security/test_model_privacy_paths.py), [test_redaction_mandatory.py](../services/api/tests/compiler/test_redaction_mandatory.py) | tests pass. *Evidence:* `shards/` | PREVENTED (the listed identifier types); names and other formats: ACCEPTED LIMITATION (PRIV-4, PRIV-5) |
 | CL26 | No secret in the repository; no known vulnerable production dependency. *Control:* the secret scan; `pip-audit`; `pnpm audit` | the gate's scans | secret scan 0 findings (tree and every branch's history); `pip-audit` clean; `pnpm audit --prod` 0; `braces` only (development). *Evidence:* [secret_scan.txt](security/evidence/2026-10-20/int-78b211f0/secret_scan.txt), `pip_audit.txt`, `pnpm_audit_*.json` | DETECTED (scans); `braces`: ACCEPTED LIMITATION |
 | CL27 | The web app works as the API says, end to end. *Control:* the mock and the live browser suites (desktop and phone) | Playwright suites | mock 479 passed, 0 failed, 77 skipped; live 177 passed, 0 failed, 51 skipped (on `5926ef29` the live suite caught the stepper race, 2.7). *Evidence:* `web/mock_e2e.txt`, `live_e2e.txt` | DETECTED (the stepper race was found by this suite) |
-| CL28 | The authority claims hold against a live model (DeepSeek as the primary). *Control:* the same as CL1 to CL27; a buyer message with a hidden character is read by the rules grammar alone (LIVE-1) | the 231-item language boundary twice and the 279-case catalogue once, live (2.11) | on `78b211f0`: run 1: 0 wrong-and-material (65 correct actions, 9 correct read-only answers, 53 safe clarifications, 99 safe abstentions, 5 wrong but harmless); run 2: 0 wrong-and-material (64, 8, 55, 100, 4); catalogue 279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control and 18 by an earlier one; detection 98.44%. *Evidence:* `docs/security/evidence/2026-10-20/live-78b211f0/` | PREVENTED (live, DeepSeek primary); the fallback provider: UNTESTED |
+| CL28 | The authority claims hold against a live model (DeepSeek as the primary). *Control:* the same as CL1 to CL27; a buyer message with a hidden character is read by the rules grammar alone (LIVE-1) | the 231-item language boundary twice and the 279-case catalogue once, live (2.11) | on `78b211f0`: run 1: 0 wrong-and-material (65 correct actions, 9 correct read-only answers, 53 safe clarifications, 99 safe abstentions, 5 wrong but harmless); run 2: 0 wrong-and-material (64, 8, 55, 100, 4); catalogue 279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control, 18 by an earlier one and 7 known gaps without harm; detection 98.44%. *Evidence:* `docs/security/evidence/2026-10-20/live-78b211f0/` | PREVENTED (live, DeepSeek primary); the fallback provider: UNTESTED |
 | CL29 | The authority claims hold in a hosted deployment and under races inside one API process. *Control:* none tested | not tested (S10, S1) | not measured | UNTESTED |
 
 ## 01 Permission Model
@@ -185,8 +185,8 @@ coverage check, which sends unread words or authority claims to the owner. Only 
 which never reads free text: the verifier (typed rows, the books and the signed mandate), the executor (tier computed by code,
 eight gates, Tier 2 waits for the owner, Tier 3 refused), the store (one unit of work per operation, a hash-chained
 append-only log), the egress guard and the template-filled reply. Trust boundary 2, the model provider (DeepSeek or
-Anthropic), is reached in live mode only and receives instructions, schema and redacted documents; in cache mode, the
-assessed one, nothing leaves the machine.
+Anthropic), is reached in live mode only and receives instructions, schema and redacted documents; in cache mode (scope S)
+nothing leaves the machine; in the assessed live runs, redacted text went to DeepSeek.
 
 #### 1.2 Actors and credentials
 
@@ -786,7 +786,7 @@ records are in [CERTIFICATIONS.md](security/CERTIFICATIONS.md). Appendix C lists
 - **`66c31e7e` (19 Oct): certified for scope S** (gate 05:55 to 06:46 UTC, evidence id `sha256:4a418fe4fb4c6c4d`).
 - **`78b211f0`, the submission build: certified for scope S on 20 Oct** (gate 20 Oct 2026, 04:31 to 05:24 UTC, evidence id `sha256:6f665b8ae82df362`; Table C2). It is `c66a5e61`
   (certified for scope S on 19 Oct, `sha256:37ff16748cf56bca`) plus the fail-closed REV-4 and LIVE-1 to LIVE-3. Live mode
-  with DeepSeek on it: certified for DeepSeek on 20 Oct (`sha256:ec02a982b50aa427`, 2.11).
+  with DeepSeek on it: safety-certified for DeepSeek on 20 Oct (`sha256:ec02a982b50aa427`, 2.11).
 
 #### 2.8 Dependency and secret scans
 
@@ -820,8 +820,8 @@ that the named scan found no published advisory on that date.
   (S3), a pause racing a write in a second process (PAUSE-2), and multi-step or persistent-store attack sequences (every case
   starts from a fresh in-memory runtime).
 - **PostgreSQL beyond one machine:** not on a migrated or hosted database; not with pooling, replicas or failover.
-- **A running deployment:** no TLS proxy configuration or backup and restore procedure exists to test, and no penetration test
-  was done. Up to `03215a20` the launcher served the web app on every interface (DEMO-L1); since `5926ef29` on 127.0.0.1 only.
+- **A running deployment:** the one TLS profile, the judges' demo, was checked from outside only; no backup and restore
+  procedure exists to test, and no penetration test was done. Up to `03215a20` the launcher served the web app on every interface (DEMO-L1); since `5926ef29` on 127.0.0.1 only.
 
 #### 2.10 How to reproduce
 
@@ -894,9 +894,9 @@ reading stands for the priced proposal shown to the owner, but nothing is sent o
 same item then showed the deeper cause (LIVE-3): the number parser, shared by both readers, matched the full-width digits
 but not the full-width decimal point and separator, so both read "０．５％" as 5% and "４２０，０００" as 420; full-width forms
 are now read as their ASCII forms. On `78b211f0` the language boundary then ran twice (run 1: 0 wrong-and-material (65 correct actions, 9 correct read-only answers, 53 safe clarifications, 99 safe abstentions, 5 wrong but harmless); run 2: 0 wrong-and-material (64, 8, 55, 100, 4)) and the 279-attack catalogue once
-(279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control and 18 by an earlier one; detection 98.44%), against DeepSeek, under scope S plus a model key; model calls answered: 144 of 144 in each language-boundary run, 0 timeouts. The harness reads each attack's setup
+(279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control, 18 by an earlier one and 7 known gaps without harm; detection 98.44%), against DeepSeek, under scope S plus a model key; model calls answered: 144 of 144 in each language-boundary run, 0 timeouts. The harness reads each attack's setup
 with recorded readings, so every attack reaches its control; only the attack phase calls the model. Evidence
-`docs/security/evidence/2026-10-20/live-78b211f0/`, id `sha256:ec02a982b50aa427`. **Verdict: certified for DeepSeek on 20 Oct**, for the safety boundary (the pass condition: 0 wrong-and-material, 0
+`docs/security/evidence/2026-10-20/live-78b211f0/`, id `sha256:ec02a982b50aa427`. **Verdict: safety-certified for DeepSeek on 20 Oct**, for the safety boundary (the pass condition: 0 wrong-and-material, 0
 harm), not for accuracy. It covers DeepSeek as the primary only: the fallback to a second provider is not certified (one provider key).
 Each result is a single run on one day, and the model behind the alias is not pinned.
 
@@ -904,7 +904,7 @@ Each result is a single run on one day, and the model behind the alias is not pi
 
 ### Data provenance, consent, minimisation, storage and deletion
 
-**All data is synthetic, and in the assessed configuration nothing leaves the machine.** FLOW is **one SME per instance**:
+**All data is synthetic, and in scope S (cache mode) nothing leaves the machine.** FLOW is **one SME per instance**:
 one owner, one set of books, one log; there are no tenants. Live model mode is opt-in, certified with DeepSeek only (2.11). When
 it is used, the provider receives redacted inbound text, and FLOW never attaches the books or the mandate itself.
 
@@ -1270,7 +1270,7 @@ alone are still accepted alone.
 | Deployment | Verdict | Conditions |
 | --- | --- | --- |
 | Local demo on loopback (scope S) | **certified for scope S on 20 Oct** for the submission build `78b211f0`. Earlier: `03215a20` passed on a trusted machine and network (its launcher served the web app on every interface, DEMO-L1); `70f23ac5` passed (the same condition, found later); `5941e95a` and `5926ef29` were not released | **Operating constraints:** `DEMO_MODE=1`; memory or SQLite; one API process; `LLM_MODE=cache` (the router on recorded answers only); synthetic fixtures; contract terms on, as `pnpm demo` sets them; simulated counterparties; nobody but the presenter holds the demo credentials; the API and the web app on 127.0.0.1. **Not covered:** live mode or real documents |
-| Live-model mode (`pnpm demo --live-llm`) with DeepSeek | **certified for DeepSeek on 20 Oct** on `78b211f0` (2.11); the fallback to a second provider is not certified | **Operating constraints:** those of scope S, with `LLM_MODE=live` and a DeepSeek key. **Not covered:** another provider; real documents (PRIV-4, PRIV-5); a provider agreement on retention and region, and the PIPL (3.6); a daily model-call budget (RT-3) |
+| Live-model mode (`pnpm demo --live-llm`) with DeepSeek | **safety-certified for DeepSeek on 20 Oct** on `78b211f0` (2.11); the fallback to a second provider is not certified | **Operating constraints:** those of scope S, with `LLM_MODE=live` and a DeepSeek key. **Not covered:** another provider; real documents (PRIV-4, PRIV-5); a provider agreement on retention and region, and the PIPL (3.6); a daily model-call budget (RT-3) |
 | Demo reachable over a network | **One tested profile,** the password-gated judges' demo: HTTPS, a password on every path, documentation hidden, 2 MB bodies, one API process; the demo credentials only behind the password. Checked from outside (`sha256:92e71fd3759897c3`). **Any other: NO-GO** | **A profile needs:** new credentials and owner key, or a password gate; one worker; synthetic data; docs hidden; TLS with per-client limits; the web server behind it; anonymous intake off or gated; the stop procedure. **It must pass:** the route and browser checks (S3) against it |
 | Production with real customers, documents or money | **NO-GO** | the prerequisites in 4.3; R-2, R-13, R-14, SEC-19, SEC-28, CAPEX-ACCT; R-3's aggregate draw limit; PRIV-4, PRIV-5 and the privacy assessment (3.6); backups; a penetration test; real counterparties, lenders and bank feeds |
 
@@ -1375,7 +1375,7 @@ Each has its reproduction, fix, regression test and merge commit in [FINDINGS_RE
 | 19 Oct | `5926ef29` | round nine, the lint and public-release cleanups, the unseen evaluation set | **not released**: a live browser failure, a stepper race (2.7); every other check passed (Table C2) |
 | 19 Oct | `66c31e7e` | the demo stepper fix on `5926ef29` | **certified for scope S on 19 Oct** (`sha256:4a418fe4fb4c6c4d`; Table C2) |
 | 19 Oct 2026, 08:41 to 09:33 UTC | `c66a5e61` | the three fixes of the 19 Oct review (REV-1 to REV-3) | **certified for scope S on 19 Oct** (`sha256:37ff16748cf56bca`) |
-| 20 Oct 2026, 04:31 to 05:24 UTC | `78b211f0` | the submission build: LIVE-1 to LIVE-3 and the fail-closed REV-4 | **certified for scope S on 20 Oct; live mode certified for DeepSeek on 20 Oct** (Table C2) |
+| 20 Oct 2026, 04:31 to 05:24 UTC | `78b211f0` | the submission build: LIVE-1 to LIVE-3 and the fail-closed REV-4 | **certified for scope S on 20 Oct; live mode safety-certified for DeepSeek on 20 Oct** (Table C2) |
 
 **Table C2. The release gate: `c66a5e61` (certified 19 Oct) and the submission build.**
 
@@ -1397,7 +1397,7 @@ Each has its reproduction, fix, regression test and merge commit in [FINDINGS_RE
 | CSP, development server (`pnpm demo`) | 17 pages, 0 violations; the header adds 'unsafe-eval' | 17 pages, 0 violations; the header adds 'unsafe-eval' |
 | Judge pack (`judge_eval.py --out`) | 49 of 49 tasks; 279 attacks, 0 harm; audit chain VALID | 49 of 49 tasks; 279 attacks, 0 harm; audit chain VALID |
 | Sandbox cases | in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID | in process 159 passed, 0 failed; over HTTP 142 passed, 0 failed, 1 skipped; every export VALID |
-| Live mode (DeepSeek), language boundary twice and catalogue | not run | run 1: 0 wrong-and-material (65 correct actions, 9 correct read-only answers, 53 safe clarifications, 99 safe abstentions, 5 wrong but harmless); run 2: 0 wrong-and-material (64, 8, 55, 100, 4); 279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control and 18 by an earlier one; detection 98.44% |
+| Live mode (DeepSeek), language boundary twice and catalogue | not run | run 1: 0 wrong-and-material (65 correct actions, 9 correct read-only answers, 53 safe clarifications, 99 safe abstentions, 5 wrong but harmless); run 2: 0 wrong-and-material (64, 8, 55, 100, 4); 279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control, 18 by an earlier one and 7 known gaps without harm; detection 98.44% |
 
 **The review of `5941e95a` (18 to 19 Oct), condensed.** The Security Lead reviewed every change after `70f23ac5` and found
 sound: the consent narrowing, the pause (owner-only, in front of the executor, on the chain), the verifier's wording change
@@ -1475,7 +1475,7 @@ change is also reflected there. The tests recorded with each change are in Table
 | `89e57719`, `fd63add1`, `5b9209a4` | live mode only: read intents to the router; `pnpm demo --live-llm`, forcing `LLM_REDACT=1` and `LLM_LIVE_RAW=0` | live mode only | in the live certification on `78b211f0` (2.11) |
 | `123f63aa`, `f23db573`, `3d4817f7`, `c8c04a9d` (round seven) | PAY-1, PAY-2, PAY-3, PAUSE-1, APR-1 | consent bound to the plan shown; the pause holds for the bank-feed key | in `03215a20` (passed) |
 | `da86b702`; `9fb43be7`, `4251fb46`, `61d4f363`, `ea6bb593` (round eight) | DEMO-L1; FUND-1, FUND-3, FUND-2, FUND-5 | the web app on 127.0.0.1; what the owner is told | in `5926ef29` |
-| `a12548fd`, `1b35d349`, `df35bf73`, `f360d880` (round nine) | LOG-2, SEC-19 display, CON-1, pinned authority tests | what is scanned and sent; what the owner sees; what decides an approval. `a12548fd` caused the web regression | in `5926ef29`; fix on `sec/round-nine-fix` |
+| `a12548fd`, `1b35d349`, `df35bf73`, `f360d880` (round nine) | LOG-2, SEC-19 display, CON-1, pinned authority tests | what is scanned and sent; what the owner sees; what decides an approval. a bisect first pointed at `a12548fd` for the stepper race, but reverting it does not remove the race (2.7) | in `5926ef29`; fix on `sec/round-nine-fix` |
 | `cc1703cc` (`66c31e7e`); `90116810`, `c66a5e61` (the 19 Oct review) | the demo stepper race; REV-1, REV-2, REV-3 | the live suite's walk; who the log names; a refused credential; what a buyer is told while the owner decides | fixed; in the submission build `c66a5e61` |
 | `37648189`, `2f33e2ea`, `7c165261`, `78b211f0` (the 19 Oct review and the 20 Oct live runs) | REV-4 (fail-closed); LIVE-1, LIVE-2, LIVE-3 | who pays and whose words; hidden characters; a model-only reading; full-width figures | fixed; in the submission build `78b211f0` |
 | web, test-only, lint, public-release and evaluation commits | display fixes; re-recorded mocks; the lint and public-release cleanups; the frozen and unseen evaluation sets; the LICENSE | no route, data or permission change | in `5926ef29` |
