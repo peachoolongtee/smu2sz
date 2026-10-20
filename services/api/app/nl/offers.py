@@ -13,7 +13,7 @@ from typing import Any, cast
 
 from app.api.presentation import whole
 from app.compiler import compile_offer, compile_term_sheet
-from app.compiler.cross_check import DISAGREE_FIELD
+from app.compiler.cross_check import DISAGREE_FIELD, MODEL_ONLY_NOTE
 from app.domain.fixtures import load_offers, offer_documents
 from app.domain.models import (
     BaseKind,
@@ -323,6 +323,12 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
         # countered here, and nothing goes to the buyer (OUT-1).
         steps.add("VERIFY", said, "INFO")
         return []
+    if v.counters and execute and offer is not None and MODEL_ONLY_NOTE in offer.autonomy_notes:
+        # LIVE-2: the counter rests on a reading only the model made; it waits for the owner, who can send it from the deal
+        steps.add("VERIFY", t(ctx, "Counter held for the owner: a term only the model read; nothing sent",
+                              "还价待业主决定：有条款仅由模型读取；未发送"), "INFO")
+        return [t(ctx, "Thank you. Your message awaits the owner's decision; nothing is agreed until we confirm it to you.",
+                  "谢谢。您的消息须经业主批准后方可答复；在我方向您确认之前，未达成任何约定。")]
     if v.counters:
         if not execute:
             for c in v.counters:

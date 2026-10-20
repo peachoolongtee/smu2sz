@@ -34,7 +34,7 @@ from app.compiler.backends import ClaudeBackend, DeepSeekBackend
 from app.compiler.base import BackendError, ContractResult, LLMBackend, OfferResult, TermSheetResult
 from app.compiler.cache import CACHE_MODEL_ID, CacheBackend
 from app.compiler.contract import MAX_CHUNKS, ContractTooLong, build_contract, chunk_document, chunk_source
-from app.compiler.cross_check import check_against_rules
+from app.compiler.cross_check import check_against_rules, held_for_owner
 from app.compiler.folding import has_format_characters
 from app.compiler.grounding import build_offer, build_term_sheet, docs_hash
 from app.compiler.prompts import CONTRACT_PROMPT_VERSION, PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
@@ -131,8 +131,8 @@ class Compiler:
         rules = next(b for b in self.backends if isinstance(b, RulesBackend))
         try:
             res = rules.extract_offer(docs)
-        except BackendError:  # the grammar read nothing, so there is nothing to disagree with
-            return offer
+        except BackendError:  # the grammar read nothing: every term is the model's alone (LIVE-2)
+            return held_for_owner(offer) if offer.obligations else offer
         checked = check_against_rules(offer, build_offer(docs, counterparty_id, res.extraction, res.model_id, PROMPT_VERSION))
         log.info("compiler.cross_check", model=offer.compiler, outcome="agree" if checked is offer else "disagree",
                  prompt_version=PROMPT_VERSION, doc_hash=doc_hash)

@@ -716,7 +716,12 @@ class AttackRunner:
         # setup offer leaves nothing to replay or accept, and the attack never reaches its control (NOT_REACHED).
         live_setup = phase == "setup" and os.environ.get("LLM_MODE") == "live"
         if live_setup:
+            from app.compiler import service as compiler_service
+
             os.environ["LLM_MODE"] = "cache"
+            live_compiler = compiler_service._default_compiler  # cached (lru_cache): swapped, not re-read from the environment
+            recorded = compiler_service.Compiler(backends=compiler_service.default_backends(compiler_service.get_settings()))
+            compiler_service._default_compiler = lambda: recorded  # type: ignore[assignment]
         try:
             handler(ctx, arg, obs, rec, phase)
         except Exception as exc:  # noqa: BLE001 - a step that blew up did not run; it is reported, never swallowed
@@ -724,6 +729,7 @@ class AttackRunner:
         finally:
             if live_setup:
                 os.environ["LLM_MODE"] = "live"
+                compiler_service._default_compiler = live_compiler  # type: ignore[assignment]
         if rec["run"] == "skipped":
             obs.skipped_steps.append({"index": index, "phase": phase, "step": kind, "reason": rec["reason"]})
         elif rec["run"] == "error":
