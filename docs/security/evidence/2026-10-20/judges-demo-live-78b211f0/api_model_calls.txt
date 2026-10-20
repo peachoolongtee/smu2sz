@@ -1,0 +1,17 @@
+api-1  | 2026-10-20 04:46:03 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=contract-v1
+api-1  | 2026-10-20 04:46:03 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+api-1  | 2026-10-20 04:46:03 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.1 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+api-1  | 2026-10-20 04:46:04 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=contract-v1
+api-1  | 2026-10-20 04:46:04 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.1 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+api-1  | 2026-10-20 04:46:04 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.1 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+api-1  | 2026-10-20 04:46:04 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.3 model=fixture-cache outcome=ok prompt_version=contract-v1
+api-1  | 2026-10-20 04:46:04 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+api-1  | 2026-10-20 04:46:04 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+api-1  | 2026-10-20 04:46:04 [info     ] compiler.call                  backend=cache doc_hash=… error=CacheMiss latency_ms=0.1 outcome=fallback prompt_version=offer-v4
+api-1  | 2026-10-20 04:46:07 [info     ] compiler.call                  backend=deepseek doc_hash=… latency_ms=3050.2 model=deepseek-flash outcome=ok prompt_version=offer-v4
+api-1  | 2026-10-20 04:46:07 [info     ] compiler.cross_check           doc_hash=… model=deepseek-flash outcome=disagree prompt_version=offer-v4
+api-1  | 2026-10-20 04:46:08 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.4 model=fixture-cache outcome=ok prompt_version=contract-v1
+api-1  | 2026-10-20 04:46:08 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.2 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+api-1  | 2026-10-20 04:46:08 [info     ] compiler.call                  backend=cache doc_hash=… latency_ms=0.1 model=fixture-cache outcome=ok prompt_version=termsheet-v3
+api-1  | 2026-10-20 04:46:08 [info     ] compiler.hidden_characters     doc_hash=… outcome=rules_only prompt_version=offer-v4
+api-1  | 2026-10-20 04:46:08 [info     ] compiler.call                  backend=rules doc_hash=… latency_ms=3.5 model=rules-v1 outcome=ok prompt_version=offer-v4

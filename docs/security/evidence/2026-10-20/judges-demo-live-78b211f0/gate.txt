@@ -1,0 +1,18 @@
+== without the password
+/                  401
+/api/health        401
+/api/state         401
+/api/docs          401
+/api/demo/reset    401
+wrong password: 401
+http -> 308 https://20-2-249-242.sslip.io/
+== with the password
+/                  200
+/deals             200
+/api/health        200
+/api/docs          404
+/api/openapi.json  404
+/api/redoc         404
+health: llm_mode=live
+3 MB body: 413
+certificate: Let's Encrypt | CN 20-2-249-242.sslip.io | until Jan 17 12:09:51 2027 GMT | verified

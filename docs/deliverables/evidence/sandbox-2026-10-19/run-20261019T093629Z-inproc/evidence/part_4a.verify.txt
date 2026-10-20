@@ -1,3 +1,0 @@
-$ python scripts/verify_evidence.py part_4a.jsonl
-VALID: 10 operations, 1 security events, head d9e995b02aac305b…
-exit 0

@@ -1,0 +1,2 @@
+{"pages":17,"all_nonce":true,"violations":0,"page_errors":0,"injected_ran":false,"injected_blocked_reports":["script-src-attr inline","script-src-elem inline"]}
+exit=0

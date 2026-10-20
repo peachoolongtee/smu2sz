@@ -1,0 +1,186 @@
+[run_live] deepseek key present: True; anthropic key present: False; database: memory
+[certify] live/primary: 10/231 items
+2026-10-20 12:35:08 [error    ] api.unhandled_exception        method=POST path=/nl
+Traceback (most recent call last):
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\main.py", line 76, in internal_error
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\middleware\base.py", line 173, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\middleware\base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 1817, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 2869, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 1843, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 1308, in handle
+    await effective_context.app(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 362, in run_endpoint_function
+    return await run_in_threadpool(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\anyio\to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\telemetry\_api.py", line 240, in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\api\nl.py", line 168, in post_nl
+    resp = handle(body, store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\nl\service.py", line 174, in handle
+    turn = counterparty_message(ctx, req.text, req.counterparty_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\nl\offers.py", line 370, in counterparty_message
+    offer = compile_text(ctx, text, cp)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\nl\offers.py", line 111, in compile_text
+    return compile_offer([doc], counterparty_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\compiler\service.py", line 169, in compile_offer
+    return _default_compiler().compile_offer(docs, counterparty_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\compiler\service.py", line 121, in compile_offer
+    res = self._run(lambda b: b.extract_offer(docs), PROMPT_VERSION, h, backends=rules)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: installed.<locals>.Tracking._run() got an unexpected keyword argument 'backends'
+2026-10-20 12:35:11 [error    ] api.unhandled_exception        method=POST path=/nl
+Traceback (most recent call last):
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\main.py", line 76, in internal_error
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\middleware\base.py", line 173, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\middleware\base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 1817, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 2869, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 1843, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 1308, in handle
+    await effective_context.app(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\routing.py", line 362, in run_endpoint_function
+    return await run_in_threadpool(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\starlette\concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\anyio\to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\.venv\Lib\site-packages\fastapi\telemetry\_api.py", line 240, in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\api\nl.py", line 168, in post_nl
+    resp = handle(body, store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\nl\service.py", line 174, in handle
+    turn = counterparty_message(ctx, req.text, req.counterparty_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\nl\offers.py", line 370, in counterparty_message
+    offer = compile_text(ctx, text, cp)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\nl\offers.py", line 111, in compile_text
+    return compile_offer([doc], counterparty_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\compiler\service.py", line 169, in compile_offer
+    return _default_compiler().compile_offer(docs, counterparty_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo-root>\.claude\worktrees\live-fix\services\api\app\compiler\service.py", line 121, in compile_offer
+    res = self._run(lambda b: b.extract_offer(docs), PROMPT_VERSION, h, backends=rules)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: installed.<locals>.Tracking._run() got an unexpected keyword argument 'backends'
+[certify] live/primary: 20/231 items
+[certify] live/primary: 30/231 items
+[certify] live/primary: 40/231 items
+[certify] live/primary: 50/231 items
+[certify] live/primary: 60/231 items
+[certify] live/primary: 70/231 items
+[certify] live/primary: 80/231 items
+[certify] live/primary: 90/231 items
+[certify] live/primary: 100/231 items
+[certify] live/primary: 110/231 items
+[certify] live/primary: 120/231 items
+[certify] live/primary: 130/231 items
+[certify] live/primary: 140/231 items
+[certify] live/primary: 150/231 items
+[certify] live/primary: 160/231 items
+[certify] live/primary: 170/231 items
+[certify] live/primary: 180/231 items
+[certify] live/primary: 190/231 items
+[certify] live/primary: 200/231 items
+[certify] live/primary: 210/231 items
+[certify] live/primary: 220/231 items
+[certify] live/primary: 230/231 items
+[certify] live/primary: 231/231 items
+[certify] live/primary: CORRECT_EXECUTABLE=64, CORRECT_READ_ONLY=8, SAFE_CLARIFICATION=55, SAFE_ABSTENTION=100, WRONG_HARMLESS=4, WRONG_MATERIAL=0; queued-for-owner=3; model answered rate=1.0
+[certify] report: $SCRATCH\live_cert4\lb2\language_boundary_live_20261020T043803Z.md
+[certify]         $SCRATCH\live_cert4\lb2\language_boundary_live_20261020T043803Z.json
+[certify] exit 3
+exit=3

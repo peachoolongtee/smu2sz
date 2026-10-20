@@ -1,0 +1,44 @@
+# The judges' demo: the certified local demo (scope S) on one VM, behind HTTPS and a password gate.
+# Settings come from infra/judges-demo/.env on the server (never committed): DEMO_HOST, DEMO_USER, DEMO_PASS_HASH.
+# Only the proxy publishes ports; the API and the web app are reachable only inside this compose network.
+services:
+  api:
+    build: {context: ../.., dockerfile: infra/judges-demo/api.Dockerfile}
+    restart: unless-stopped
+    environment:
+      CORS_ORIGINS: https://${DEMO_HOST:?set DEMO_HOST in infra/judges-demo/.env}
+      # Live AI mode (certified for DeepSeek as the primary; Security Self-Assessment 2.11): on only when the server's
+      # .env says LLM_MODE=live and holds DEEPSEEK_API_KEY (from ~/judges-demo.secrets, never committed). Redaction is forced
+      # on and the model never reads alone, as pnpm demo --live-llm does.
+      LLM_MODE: ${LLM_MODE:-cache}
+      LLM_PRIMARY: ${LLM_PRIMARY:-deepseek}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_REDACT: "1"
+      LLM_LIVE_RAW: "0"
+    expose: ["8000"]
+    mem_limit: 1500m
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/judges-demo/web.Dockerfile
+      args: {PUBLIC_ORIGIN: "https://${DEMO_HOST}"}
+    restart: unless-stopped
+    expose: ["3000"]
+    depends_on: [api]
+    mem_limit: 1000m
+  caddy:
+    image: caddy:2.8.4
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DEMO_HOST: ${DEMO_HOST}
+      DEMO_USER: ${DEMO_USER:?set DEMO_USER in infra/judges-demo/.env}
+      DEMO_PASS_HASH: ${DEMO_PASS_HASH:?set DEMO_PASS_HASH in infra/judges-demo/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [api, web]
+volumes:
+  caddy_data: {}
+  caddy_config: {}

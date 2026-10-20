@@ -1,0 +1,24 @@
+VERDICT: the judges' demo passes its deployment check (19 Oct 2026, 13:00 to 13:20 UTC).
+
+Deployment: https://20-2-249-242.sslip.io (Azure East Asia, Standard B2als v2, Ubuntu 24.04.5), from deploy/judges-demo ad1756f5:
+the submitted tag submission-2026-10-20c (product code c66a5e61, certified for scope S) plus infra/judges-demo/ only. The API and
+the web app run exactly the configuration of pnpm demo (DATABASE_URL=memory, DEMO_MODE=1, LLM_MODE=cache, the same feature
+flags, one process), behind Caddy: HTTPS (Let's Encrypt), basic auth on every path, API documentation hidden, 2 MB request
+bodies, HSTS, noindex. Only ports 22, 80 and 443 are open; the API and the web app are not published.
+
+Checks from outside (curl, Python ssl, Playwright):
+  without the password: /, /api/health, /api/state, /api/docs, /api/demo/reset (GET and POST) -> 401; a wrong password -> 401
+  http://  -> 308 to https://
+  certificate: Let's Encrypt, CN 20-2-249-242.sslip.io, valid to 17 Jan 2027, verified
+  with the password: pages 200; /api/health 200; /api/docs, /api/docs/*, /api/openapi.json, /api/redoc -> 404;
+                     /api/state without the owner token -> 401 (the API's own check still applies); a 3 MB body -> 413
+  sandbox over HTTPS through the gate (tools/run_sandbox_gate.py = run_sandbox.py with basic auth on its HTTP client):
+                     142 passed, 0 failed, 1 skipped; 13/13 exports VALID; code_diff_check empty against c66a5e61
+                     (sandbox-run-20261019T131039Z-http/) -- identical to the certified HTTP run
+  CSP in a browser through the gate (tools/csp_check_gate.mjs): 17 pages, nonce on all, 0 violations, 0 page errors,
+                     injected inline script blocked (csp_check.txt, csp_browser.json)
+  screenshots: home, demo, deals, cash (no page errors, no 5xx responses)
+  after the checks: POST /demo/reset (200); agent not paused; memory 230 MB of 3.8 GB in use by the containers
+
+Not covered: more than one simultaneous judge on the shared books (every visitor sees the same demo state); live model mode
+(off); load beyond a few users. The password is not in this folder or the repository.

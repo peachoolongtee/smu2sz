@@ -1,0 +1,16 @@
+[
+ {
+  "text": "老板你好，那张42万的发票我们这周五前能结清，给我们打个千分之五的折扣行不行？",
+  "reply": "我方无法确定贵方消息中的条款。请逐条清楚重述每项条款（比例、付款天数及金额），每句一项。目前尚未达成或执行任何事项。",
+  "compiler": null,
+  "status": null,
+  "autonomy_eligible": null
+ },
+ {
+  "text": "We can pay the full ¥420,000 invoice early for 0.​5% off.",
+  "reply": "Please clarify the terms: we cannot establish them from your message.",
+  "compiler": null,
+  "status": null,
+  "autonomy_eligible": null
+ }
+]

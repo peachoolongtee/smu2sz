@@ -34,7 +34,7 @@ from decimal import Decimal
 from fractions import Fraction
 
 from app.compiler import lexicon
-from app.compiler.folding import fold
+from app.compiler.folding import fold, has_format_characters
 from app.compiler.parsing import find_money, find_rates, rx
 from app.domain.models import (
     Abstention,
@@ -514,9 +514,40 @@ def _unread_tokens(residue: str) -> list[str]:
     return out
 
 
+# REV-4 and LIVE-1 (the 19 and 20 Oct reviews), fail-closed. The filler list cannot tell who pays or whose words these are, and
+# a list of bad patterns always misses one (the first version left 31 bypasses), so the rule runs the other way: any
+# second-person word outside a short list of courtesy and object phrases ("You can pay ...", 你们 ... 支付), any quotation or
+# quote-marker character (a quoted or forwarded message may be someone else's words) and any hidden formatting character
+# hold the message for the owner. Each only takes autonomy away; a wrong hold costs the owner one click.
+_COURTESY_2P = re.compile(
+    r"\b(?:thank\s+you|thanks\s+to\s+you|hope\s+you(?:'re|\s+are)\s+well|(?:could|can|would)\s+you\s+(?:please\s+)?confirm|"
+    r"(?:pay|paying|send|sending|transfer|transferring|remit|remitting)\s+you|"
+    r"(?:pay|paying|settle|settling|clear|clearing)\s+(?:you\s+)?your\s+(?:\S+\s+){0,2}?(?:invoice|bill|inv)s?|"
+    # the supplier granting what the buyer asks ("if you give us 0.5% off", "if you agree"): the reader grants, the buyer pays
+    r"(?:if\s+)?(?:you|u)\s+(?:can\s+|could\s+|will\s+|would\s+)?(?:give|offer|allow|grant|accept|agree|approve|let)|"
+    r"(?:if\s+)?(?:you|u)(?:'re|\s+are)\s+(?:ok|okay|happy|fine)\s+(?:to\s+(?:take|accept|give|offer|agree)|with))\b", re.IGNORECASE)
+_COURTESY_ZH = re.compile(r"(?:谢谢|感谢|多谢)(?:你们|您|你|贵司|贵方|贵公司)|(?:你|您)好|请(?:您|你)(?:确认|查收|知悉)|"
+                          r"(?:如果)?(?:你们|您|你|贵司|贵方)(?:能|可以|愿意)?(?:给|让|同意|接受|批准)")
+_ANY_2P = re.compile(r"(?<![\w'])(?:you|you'(?:re|ll|d|ve)|u|ya|y'?all|your|yours|yourself|yourselves)(?![\w'])"
+                     r"|你们|您们|您|你|贵司|贵方|贵公司|贵单位|你方", re.IGNORECASE)
+_QUOTE_MARK = re.compile(r"[\"«»‹›„‟“”「」『』《》〈〉>|│¦`]|(?:^|\s)['‘’]")
+
+
+def _second_person(t: str) -> bool:
+    """`t` is the folded text (NFKC, no format characters, Latin for lookalikes), with ’ as ' for the contractions."""
+    t = t.replace("’", "'")
+    return bool(_ANY_2P.search(_COURTESY_ZH.sub(" ", _COURTESY_2P.sub(" ", t))))
+
+
 def _unread(docs: Sequence[SourceDocument], known: _Known, note: Callable[[str], None]) -> None:
     for d in docs:
         t = fold(d.text).text
+        if has_format_characters(d.text):
+            note("hidden formatting characters (zero-width, bidi or soft hyphen)")
+        if _second_person(t):
+            note("a second-person word outside a courtesy phrase: who pays is not the sender's own statement")
+        if _QUOTE_MARK.search(t):
+            note("a quotation or quote-marker character: the words may not be the sender's own")
         if _FOREIGN_CURRENCY.search(t):
             note("non-CNY currency stated")
         if any(_RATE_PERIOD.match(t, r.end) for r in find_rates(t)) or _ZH_PERIODIC.search(t):

@@ -1,0 +1,20 @@
+VERDICT: the judges' demo in live AI mode passes its deployment check (20 Oct 2026, about 04:45 to 04:55 UTC).
+
+Deployment: https://20-2-249-242.sslip.io (Azure East Asia, Ubuntu 24.04), from docs/live-submission 18197e90, whose product
+code is 78b211f0 (git diff 78b211f0 18197e90 -- services/api/app apps/web is empty). The API runs the configuration of
+pnpm demo --live-llm: in-memory books, DEMO_MODE=1, LLM_MODE=live, LLM_PRIMARY=deepseek, LLM_REDACT=1, LLM_LIVE_RAW=0,
+one process; the DeepSeek key is in the server's environment only (~/judges-demo.secrets, mode 600, never in git). Live mode
+on this code is certified for DeepSeek (docs/security/evidence/2026-10-20/live-78b211f0/, sha256:ec02a982b50aa427).
+
+Checks from outside (gate.txt, live_calls.json, api_model_calls.txt, csp_*):
+  without the password: /, /api/health, /api/state, /api/docs, /api/demo/reset -> 401; a wrong password -> 401
+  http:// -> 308 to https://; certificate Let's Encrypt, CN 20-2-249-242.sslip.io, valid to 17 Jan 2027, verified
+  with the password: pages 200; /api/health 200 reporting llm_mode=live; /api/docs, /api/openapi.json, /api/redoc -> 404;
+                     a 3 MB body -> 413
+  live calls through the gate, as BUYER-1: a new colloquial Chinese offer was read by deepseek-flash, the rules grammar
+                     disagreed, and FLOW asked the buyer to restate the terms (nothing executed); a message with a zero-width
+                     character was read by the rules grammar alone (compiler.hidden_characters) and FLOW asked to clarify
+  CSP in a browser through the gate: 17 pages, nonce on all, 0 violations, 0 page errors, injected script blocked
+
+Not covered: several judges at once on the shared books; load beyond a few users; the provider's own availability. The
+password is not in this folder or the repository.

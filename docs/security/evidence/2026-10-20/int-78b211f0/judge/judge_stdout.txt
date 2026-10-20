@@ -1,0 +1,11 @@
+(a) functional scenarios ...
+    49/49 passed in 12.7 s
+(b) adversarial attack catalogue ...
+    279 attacks, 0 with harm, in 44.3 s
+(c) demo walk and (d) audit chain ...
+    walk OK, chain VALID, tampered copy rejected, 1.2 s
+
+49 functional tasks passed of 49; 279 adversarial attacks, 0 caused harm, detection 97.66% on the 128 API attacks (70.25% across all 279); demo walk OK; audit chain VALID
+report: $SCRATCH\cert_live3\judge\judge-report.md
+json:   $SCRATCH\cert_live3\judge\judge-report.json
+total 58.6 s

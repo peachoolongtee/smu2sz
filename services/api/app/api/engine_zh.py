@@ -1489,6 +1489,21 @@ def _note_no_amount(m: re.Match[str]) -> str:
     return "折扣没有写明发票金额"
 
 
+@rule(r"hidden formatting characters \(zero-width, bidi or soft hyphen\)")
+def _note_hidden(m: re.Match[str]) -> str:
+    return "消息含有隐藏的格式字符（零宽、双向或软连字符）"
+
+
+@rule(r"a second-person word outside a courtesy phrase: who pays is not the sender's own statement")
+def _note_second_person(m: re.Match[str]) -> str:
+    return "消息在客套语之外使用了第二人称：付款方并非发送方本人所述"
+
+
+@rule(r"a quotation or quote-marker character: the words may not be the sender's own")
+def _note_quote(m: re.Match[str]) -> str:
+    return "消息含有引号或引用标记：内容可能不是发送方本人的话"
+
+
 @rule(r"non-CNY currency stated")
 def _note_currency(m: re.Match[str]) -> str:
     return "消息使用了非人民币币种"

@@ -17,7 +17,8 @@ FinTechathon 2026 · International AI Track · Topic E: SME Finance Copilot · T
 > **Runs offline with one command.** After a one-time install, `pnpm demo` needs no account, no VPN and no API key, and
 > the running demo calls no foreign service. Installing it needs the PyPI and npm registries and uv's Python download (or
 > mirrors of them, which users in mainland China may need). The optional live-model mode (`pnpm demo --live-llm`) needs a
-> DeepSeek or Anthropic API key in your shell, and is outside the security certification.
+> DeepSeek or Anthropic API key in your shell; with DeepSeek it is certified on `78b211f0` (20 Oct) (the fallback provider is
+> not certified).
 
 > **Demo video:** [https://youtu.be/6y5_fKPInIo](https://youtu.be/6y5_fKPInIo)
 
@@ -191,7 +192,7 @@ Full detail: the [technical document](docs/deliverables/technical_document.md) (
 
 ## Results at a glance
 
-Submission build: code commit `c66a5e61` on `dev`, certified for scope S on 19 Oct (see [Security Notes](#security-notes)). Offline
+Submission build: code commit `78b211f0` on `dev`, certified for scope S on 20 Oct (see [Security Notes](#security-notes)). Offline
 (`LLM_MODE=cache`, in-memory store). The full list of checks, with commands and counts, is the
 technical document's verification manifest (Appendix B, Table V).
 
@@ -203,7 +204,7 @@ technical document's verification manifest (Appendix B, Table V).
 | Security | **279 attacks** (128 through the API, 151 through chat), **0 caused harm**; 120 of the 128 API attacks stopped by the control they name, 8 known gaps; 97.66% detected and logged |
 | Agent tasks | **49/49** scripted conversations, each with an evidence chain |
 | Demo walk | 17 steps; audit chain **VALID**; a tampered copy is rejected |
-| API tests | 11,426 passed, 0 failed, 47 skipped |
+| API tests | 11,499 passed, 0 failed, 47 skipped |
 | Web and browser tests | web unit, typecheck and lint pass; mock browser 479 passed, 0 failed, 77 skipped; live browser 177 passed, 0 failed, 51 skipped |
 | Chinese contract reading | 75% of key fields on a held-out batch, 86% after fixes; 98% on the 30 text-layer contracts of the batch the reader was built on (scans are refused) |
 | What the model adds | On a frozen set of 20 new messages, the model reads phrasings the rules cannot (fully correct: rules alone 6, model alone 10), and the shipped checks turn its 2 wrong readings into questions for the owner, at a cost: 5 items held back that were readable (technical document, section 03) |
@@ -292,7 +293,7 @@ DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.p
 | Item | Value |
 | --- | --- |
 | GitHub repository | https://github.com/peachoolongtee/smu2sz |
-| Live demo | None hosted. FLOW runs locally with one command (`pnpm demo`, see [Installation and Execution](#installation-and-execution)); the browser-free judge pack is `scripts/judge_eval.py` |
+| Live demo | A password-gated hosted demo for the judges (live AI mode, DeepSeek), at the URL given with the submission; the credentials go to the organisers and are not published. A hosted deployment is outside the certified scope (see [Security Notes](#security-notes)). FLOW also runs locally with one command (`pnpm demo`, see [Installation and Execution](#installation-and-execution)); the browser-free judge pack is `scripts/judge_eval.py` |
 | Deployment instructions | [Deployment (not production-ready)](#deployment-not-production-ready): a Docker Compose stack with PostgreSQL, the API and the web app. It does not yet produce a working API (SEC-06), so the supported way to run FLOW is the local launcher |
 
 ## Security Notes
@@ -300,13 +301,13 @@ DEMO_MODE=1 PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.p
 The language model only reads text; deterministic code decides, and every financial operation runs through the executor. Actions are split into three
 permission tiers under an owner-signed, expiring mandate, with nonces, idempotency, a circuit breaker and a hash-chained log.
 The [Security Self-Assessment](docs/SECURITY_SELF_ASSESSMENT.md) gives the verdicts for the submission build, code commit
-`c66a5e61` on `dev`, certified for scope S on 19 Oct by the Security Lead (`docs/security/CERTIFICATIONS.md`):
+`78b211f0` on `dev`, certified for scope S on 20 Oct by the Security Lead (`docs/security/CERTIFICATIONS.md`):
 
 | Use | Verdict |
 | --- | --- |
 | Local simulation (`DEMO_MODE=1`, cache mode, simulated counterparties, one API process) | **GO**: `pnpm demo` serves the API and the web app on 127.0.0.1 only |
-| Live model mode (`pnpm demo --live-llm`) | **not certified** |
-| Demo reachable over a network | **NO-GO** until one tested deployment profile exists (changed credentials and signing key, a TLS reverse proxy with rate and body limits, documentation hidden, anonymous intake off) |
+| Live model mode (`pnpm demo --live-llm`, the same conditions plus a DeepSeek key) | **certified for DeepSeek on 20 Oct** on `78b211f0`; the fallback to a second provider is not certified |
+| Demo reachable over a network | **One tested profile:** the password-gated judges' demo: the local demo's configuration behind HTTPS and a password on every path, with the API documentation hidden, 2 MB request bodies and one API process; the published demo credentials and anonymous intake stay as in the local demo, reachable only behind the password. Checked from outside (every path 401 without the password; the sandbox and the browser CSP check through it): docs/security/evidence/2026-10-20/judges-demo-live-78b211f0/ (sha256:92e71fd3759897c3). Any other network deployment: **NO-GO** until its own profile is tested |
 | Production with real customers, documents or money | **NO-GO** |
 
 - **Permission tiers.** Tier 1 runs alone inside the signed mandate; Tier 2 (for example funding above the cost the owner
@@ -329,7 +330,8 @@ signed with a published key labelled DEMO ONLY.
 
 - **Everything outside FLOW is simulated:** lenders, buyers, rates and the bank feed. No real money moves.
 - **Recorded readings by default.** A new document gets the rules reading unless live mode (`LLM_MODE=live`, with a model
-  key) is on. The language-boundary certification has not yet been run against a live model.
+  key) is on. Live mode's certification (DeepSeek, certified for DeepSeek on 20 Oct) covers the safety boundary, not accuracy, and rests on
+  single runs on one day; the model behind the alias `deepseek-flash` is not pinned.
 - **Autonomy is cautious.** Good early-payment offers that state a settlement date go to the owner, because the date is not yet
   read into the terms.
 - **Contracts:** text-layer documents only; scans and photos are refused (no OCR). Confirming a contract changes no books.

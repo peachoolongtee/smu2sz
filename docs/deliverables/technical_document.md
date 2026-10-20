@@ -21,8 +21,8 @@ contracts in English and Chinese, understands the owner's questions and routes t
 payment terms and arranges funding within a mandate the owner has signed. Its design principle is the innovation: **the
 model reads and routes; deterministic code computes every figure and enforces every limit.** No model output alone can
 price a deal, create a commitment, borrow or move money. In the demo, the tests and every offline result a deterministic
-rules grammar does the reading and recorded readings replay; a model is called only in live mode, which is outside the
-release gate's scope. Section 02 measures what the model adds, on unseen items, and where the checks cost usefulness.
+rules grammar does the reading and recorded readings replay; a model is called only in live mode, which with DeepSeek is
+certified on `78b211f0` (20 Oct) for safety, not accuracy (Table 7). Section 02 measures what the model adds, on unseen items, and where the checks cost usefulness.
 
 - **Who it is for.** The owner of a supplier with roughly 20 to 100 staff, 10 to 40 business buyers, one bank credit line
   and no finance team, who sells on credit to buyers larger than itself.
@@ -54,23 +54,23 @@ release gate's scope. Section 02 measures what the model adds, on unseen items, 
 
 | Build and verification |
 | --- |
-| Submission: product code c66a5e61 (`c66a5e6189e0e34087c5d104197eb89c67d9c18f`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20c`, and the commits after the product code change documentation, evidence and the document build tooling only. Release state of c66a5e61: certified for scope S on 19 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical and named as such (Table B2) |
-| Supported configuration (scope S): `pnpm demo` on one machine: API and web app on 127.0.0.1, one API process, `DEMO_MODE=1` with the published demo credentials, in-memory books, `LLM_MODE=cache` (no model provider called), synthetic fixtures. Not covered: live model mode, any network or hosted deployment, production |
-| Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20c`). Repository paths in this document link to that revision |
+| Submission: product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20d`, and the commits after the product code change documentation, evidence and the document build tooling only. Release state of 78b211f0: certified for scope S on 20 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical and named as such (Table B2) |
+| Supported configuration (scope S): `pnpm demo` on one machine: API and web app on 127.0.0.1, one API process, `DEMO_MODE=1` with the published demo credentials, in-memory books, `LLM_MODE=cache` (no model provider called), synthetic fixtures. Live mode with DeepSeek: certified on `78b211f0` (20 Oct) (Table 7). Not covered: another model provider, any network or hosted deployment, production |
+| Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20d`). Repository paths in this document link to that revision |
 | Runs offline after installation. Installing needs the npm and PyPI registries (uv also downloads Python 3.12, and the browser suites need Playwright's Chromium); users in mainland China may need registry mirrors. After that, no account, VPN, API key or foreign service is needed. Live mode (`pnpm demo --live-llm`) needs a DeepSeek or Anthropic API key |
 | Demo video: [https://youtu.be/6y5_fKPInIo](https://youtu.be/6y5_fKPInIo) |
 | Licence: all rights reserved; the organisers and judges may view, run and evaluate the repository for judging ([LICENSE](../../LICENSE)) |
 
 **Table R. The judging criteria, what FLOW demonstrates, and where to verify it.** Results are those of the submission build
-`c66a5e61` (Table V); the live-model row ran on the same reading code (`5926ef29`). The sandbox run is the Execution
+`78b211f0` (Table V); the live-model row ran on the same reading code (`5926ef29`). The sandbox run is the Execution
 Evidence's sandbox run ([docs/deliverables/evidence/sandbox-2026-10-19/](evidence/sandbox-2026-10-19/), cases 1 to 5, each
 step with its request, response, the state read back and PASS or FAIL). Appendix A indexes every template prompt.
 
 | Criterion | What FLOW demonstrates | In this document | In the sandbox run | Measured result |
 | --- | --- | --- | --- | --- |
 | **Task completion (40%)** | The supplier's whole workflow on synthetic books: request, reading, financial evaluation, counter, owner authorisation, funding, settlement and reconciliation, with a hash-chained record | 01 journey and Table 2; 02 Table W; 03 "Task completion", Table 4; Appendices D, F | Case 1 (the journey, groups 1.1 to 1.9); case 4 (a plan that only partly runs, reported as it ran) | 49 of 49 scripted tasks; demo walk chain VALID, tampered copy rejected; sandbox: in process 163 steps, 159 PASS, 0 FAIL, 4 setup writes; over HTTP 143 steps, 142 PASS, 0 FAIL, 1 SKIPPED; every export VALID |
-| **Security and compliance (30%)** | Authority by structure: typed operations with no payee field, tiers computed by the executor, the signed mandate, the chat consent rules, the owner's pause, a tamper-evident log; 279 stored attacks with harm oracles | 04: Table 5, Figure 5, "Who can execute what", Tables 6 and 7; the Security Self-Assessment | Case 2 (unauthorised callers, a claimed agreement, Tier 3, an unverified sender); case 3 (ambiguity, consent); case 5 (the pause) | 279 attacks, 0 with harm; 120 of 128 API cases stopped by the named control (8 known gaps); certified for scope S on 19 Oct |
-| **Innovation and interaction (30%)** | A supplier-side agent across both debt books (credit given, credit taken); the model reads and routes, code decides; bilingual chat with clarification, correction and fallback | Opening; 01 "What is new", Table L1; 02 "What the model contributes"; 03 Table 3 and the dialogue; Appendices G, K | Case 1 groups 1.6 and 1.7 (FLOW speaks first, "go ahead" queues, "approve APR-…" runs); case 3 (a clarification) | Unseen messages (live, 19 Oct): 2 of 6 correct against the rules' 1, 0 wrong; Chinese contracts: both party names right in 14 of 17 (recorded readings) |
+| **Security and compliance (30%)** | Authority by structure: typed operations with no payee field, tiers computed by the executor, the signed mandate, the chat consent rules, the owner's pause, a tamper-evident log; 279 stored attacks with harm oracles | 04: Table 5, Figure 5, "Who can execute what", Tables 6 and 7; the Security Self-Assessment | Case 2 (unauthorised callers, a claimed agreement, Tier 3, an unverified sender); case 3 (ambiguity, consent); case 5 (the pause) | 279 attacks, 0 with harm; 120 of 128 API cases stopped by the named control (8 known gaps); certified for scope S on 20 Oct |
+| **Innovation and interaction (30%)** | A supplier-side agent across both debt books (credit given, credit taken); the model reads and routes, code decides; bilingual chat with clarification, correction and fallback | Opening; 01 "What is new", Table L1; 02 "What the model contributes"; 03 Table 3 and the dialogue; Appendices G, K | Case 1 groups 1.6 and 1.7 (FLOW speaks first, "go ahead" queues, "approve APR-…" runs); case 3 (a clarification) | Unseen messages (live, 19 Oct): 2 of 6 correct against the rules' 1, 0 wrong; Chinese contracts: both party names right in 14 of 17 (recorded readings); live mode certified for DeepSeek on 20 Oct for safety (DeepSeek) |
 | **Bonus (0–5)** | Not claimed: FLOW is a local simulation (Table 7) | — | — | — |
 
 **Table 1. FLOW at a glance. Each figure names its build; engine and agent figures: dev `975e082f` (17 Oct 2026), re-run
@@ -84,9 +84,9 @@ offline on `571ea64f` (18 Oct) with the same results. Appendix C gives each comm
 | Usefulness | About half of messages need no owner review (57 of 115); 11 of the 14 good offers wait for the owner (Table 4) | Tuned |
 | Reading contracts | 75% of key fields on 17 unseen Chinese contracts with a text layer; the other 13 of the 30, scans and photos, are refused | Unseen, recorded model readings |
 | Owner questions | 228 of 427 answerable bank questions answered, 45 partly, 0 wrong (tuned bank); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic (126 and 4 on the submission build) | Tuned; held-out |
-| Live model | Unseen buyer messages, 19 Oct on `5926ef29`: shipped path 2 of 6 correct, 0 wrong; the question router fully correct on 22 of 63 questions (18 Oct, one reviewer) | Live, single runs; outside the release gate |
-| Security | 279 stored attack cases (128 API, 151 chat), 0 harm-oracle violations (the submission build `c66a5e61`, 19 Oct; rules path and a scripted hostile model; no real model read any catalogue case) | Tests |
-| Tests | Every suite's passed, failed and skipped counts on c66a5e61: Table V. Earlier builds: Table B2. A count measures the size of a suite, not correctness | Tests |
+| Live model | Unseen buyer messages, 19 Oct on `5926ef29`: shipped path 2 of 6 correct, 0 wrong; the question router fully correct on 22 of 63 questions (18 Oct, one reviewer) | Live, single runs, not certified; live mode itself certified for DeepSeek on 20 Oct for safety (DeepSeek, Table 7) |
+| Security | 279 stored attack cases (128 API, 151 chat), 0 harm-oracle violations (the submission build `78b211f0`, 19 Oct; rules path and a scripted hostile model); live against DeepSeek on `78b211f0`: 279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control and 18 by an earlier one; detection 98.44% | Tests; live |
+| Tests | Every suite's passed, failed and skipped counts on 78b211f0: Table V. Earlier builds: Table B2. A count measures the size of a suite, not correctness | Tests |
 
 **How to read this document.** Sections 01 to 05 follow the official template; detail is in the appendices. Every number is
 synthetic and labelled with the build it was measured on, or points to Table V. Amounts are Chinese yuan (CNY, ¥) on
@@ -376,7 +376,7 @@ amounts, unlabelled addresses and messaging handles still reach the provider (PR
 
 **Three ways to run FLOW, never mixed in our results:** the web app on recorded mocks (the screenshots here); the real engine
 offline with the rules grammar (the demo, the tests and every evaluation figure unless stated); and the real engine with a live
-model (`pnpm demo --live-llm`; opt-in, outside the release gate).
+model (`pnpm demo --live-llm`; opt-in; with DeepSeek certified for DeepSeek on 20 Oct, Table 7).
 
 **Tools and data.** Every tool is an HTTP route with a strict schema that rejects unknown fields (Appendix I). Operations are
 typed and none has a payee or account field. All data is synthetic: the demo company's books ("golden books": the journey in
@@ -510,7 +510,7 @@ do not compare across panels.
 
 #### Task Completion: scripted tasks in a simulated environment
 
-**49 of 49 scripted conversations pass their own checks** (88 turns; judge pack on `5926ef29`, 19 Oct; on c66a5e61 see Table V),
+**49 of 49 scripted conversations pass their own checks** (88 turns; judge pack on `5926ef29`, 19 Oct; on 78b211f0 see Table V),
 each with a verifiable evidence chain; a tampered copy is rejected. The tasks were written by the team that built the
 handlers, so they show that the paths written work, not how real owners would talk. The demo walk (the journey in section 01)
 exits cleanly with 14 hash-chained operations that verify. The engine matches an independently written oracle on 67 of 67
@@ -572,14 +572,14 @@ exercise it and what it does not cover. The grouping under the four threats is o
 categories into six classes, and the SA's section 2 groups the same cases by technique; all three add up to the same cases.
 
 **Table 5. The four threats in the rubric, the control that stops each, and its limits (catalogue results on `5926ef29`,
-19 Oct; on c66a5e61: Table V).**
+19 Oct; on 78b211f0: Table V).**
 
 | Threat, and what an attacker tries | Control that stops it | Attack cases (all reached their path; 0 harm) | Limits |
 | --- | --- | --- | --- |
 | **Induced transfers**: "the owner has approved this", a pasted approval, a "pre-approved lender", a claimed earlier deal, a conditional or negated "go ahead", a changed or expired offer | **Structural:** no operation has a free payee or account field; money moves only between the business's registered facilities, registered buyers, the vendor of a confirmed purchase contract and its books, named by id; the executor refuses a facility not on the owner's funding menu or a receivable not owed by a registered buyer. The executor computes every tier; Tier 2 runs only on the owner's approval, Tier 3 never. Chat consent is a whole-message closed command. A claim is never a fact | 32 API: 29 stopped by the named control, 3 by another. 75 chat (41 consent, 18 Tier-3 questions, 16 owner quoting a buyer) | Inside the mandate the **agent key** can draw on a committed, owner-approved facility up to its limit at no more than 15% a year, with no aggregate draw limit (R-3). A **keyed buyer message** can never draw or request an advance. One owner credential holds Tier-2 authority (R-2). FLOW cannot tell whether a buyer the owner reports as agreeing really did. A capex vendor's receiving account (收款账户) is read only to tell which party is paid and is not recorded, so a changed account in a later vendor document is not detected (payments are simulated) |
 | **Data extraction**: a buyer asking for the reserve or limits; probing the counter; asking for another buyer's terms; planting a canary; reading routes without a token | Every read of the books needs the owner token. Outbound text comes from approved templates, and an outbound guard blocks a whole message stating a protected internal value or another counterparty's terms; the recipient's own authorised counter passes by design. Model prompts carry redacted text and never the books | 22 API: 20 stopped by the named control, 2 by another. 42 chat | `/health`, `/clock` and the demo offer list are public (SEC-13). A keyed buyer can learn within one rounding step where the counter cap lies (R-10). Redaction is pattern-based (PRIV-4, PRIV-5) |
 | **Privilege escalation**: self-approval, a body field "requested_by: OWNER", a caller-supplied tier, a forged mandate, a reused nonce, a backdated operation, an agent resetting the circuit breaker, a session taken over | Tiers, actors and approvals come from code and credentials, never from the request. One pinned mandate key; single-use nonces; operations dated by the executor; approvals decided once, by the owner only; sessions bound to their caller | 37 API: all stopped by the named control. 16 chat. Every route is also called as every kind of caller (SA 1.5) | One person holds the owner token and the signing key (R-2). Code inside the process is trusted (R-5). The database owner can rewrite the log (R-13). No route revokes or renews the mandate (R-14) |
-| **Prompt injection**: override lines, fake system messages, role-play, encoded, full-width, zero-width or homoglyph text, an instruction inside a contract | The architecture, not detection: the reading schema has no field for an operation, approval, tier or facility; every term must quote the source; the deciding modules never read free text; the classifier's closed list has no approve or reject; buyer turns never reach a classifier; the router's tools are read-only | 17 API (14 by the named control, 3 by another) and 18 chat injections | The 279 catalogue cases were read by the rules grammar and a scripted hostile model; no real model read any of them. On the frozen set's injection items the rules read LF18 and LF19 correctly and misread LF20 (a claimed prior 2% concession read as a contingent rebate); all three were flagged and rejected, nothing booked |
+| **Prompt injection**: override lines, fake system messages, role-play, encoded, full-width, zero-width or homoglyph text, an instruction inside a contract | The architecture, not detection: the reading schema has no field for an operation, approval, tier or facility; every term must quote the source; the deciding modules never read free text; the classifier's closed list has no approve or reject; buyer turns never reach a classifier; the router's tools are read-only | 17 API (14 by the named control, 3 by another) and 18 chat injections | The 279 catalogue cases were read by the rules grammar and a scripted hostile model, and once by DeepSeek on `78b211f0` (279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control and 18 by an earlier one; detection 98.44%). On the frozen set's injection items the rules read LF18 and LF19 correctly and misread LF20 (a claimed prior 2% concession read as a contingent rebate); all three were flagged and rejected, nothing booked |
 
 A fifth class, integrity and recovery (20 cases: partial writes, double execution, an erased log), is all stopped by the
 named control. **Credentials** (owner token, agent key, bank-feed key, buyer channel key) travel in headers and are compared in
@@ -661,7 +661,7 @@ resumed; recovery is manual (SA 1.12; sandbox run, 4c).
   refusal never depends on.
 - **Privilege escalation** (SA 1.5). The executor trusts no caller-supplied tier, actor or approval. A route-policy test calls
   every route as every kind of caller, with demo mode on and off, and the release gate's route sweep repeats it in three modes;
-  the counts on c66a5e61 are in Table V (16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0); sweep 0 policy violations in three modes; 0 differences from 66c31e7e). With `DEMO_MODE=0`, `/demo/bank-receipt` and the four
+  the counts on 78b211f0 are in Table V (16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0); sweep 0 policy violations in three modes; 0 differences from c66a5e61). With `DEMO_MODE=0`, `/demo/bank-receipt` and the four
   setup actions answer 403; `/demo/reset` and `/demo/restore` stay owner-only and work on the in-memory store (refused on a
   persistent store).
 - **Privacy and data extraction** (SA 3.2 to 3.4). The outbound guard blocks a whole message stating a value the recipient is not
@@ -678,7 +678,7 @@ resumed; recovery is manual (SA 1.12; sandbox run, 4c).
   until the owner confirms them. FLOW is decision support, not a licensed lender, broker or adviser.
 
 **Table 6. Attack results (279 stored cases: 128 API, 151 chat; each in a fresh in-memory runtime, offline, rules grammar
-and a scripted hostile model). Measured on `5926ef29` (19 Oct) and with the same result on `03215a20`; on c66a5e61:
+and a scripted hostile model). Measured on `5926ef29` (19 Oct) and with the same result on `03215a20`; on 78b211f0:
 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66%.**
 
 | Measure | Result |
@@ -697,7 +697,7 @@ and no running deployment has had a penetration test.
 
 **Assurance and release state** (SA 2.7, 4.6, Appendix C). Every review was internal and AI-assisted; none was independent assurance. The
 Security Lead, an AI agent in a separate session, reproduced findings, wrote fixes with regression tests (so it gated fixes it
-wrote) and runs the internal release gate on an exact commit. **The release state of c66a5e61 is certified for scope S on 19 Oct** (Table V);
+wrote) and runs the internal release gate on an exact commit. **The release state of 78b211f0 is certified for scope S on 20 Oct** (Table V);
 the history of earlier gates is Table B2. Still open and disclosed: SEC-28 with FUND-4, PAUSE-2 and SEC-11 (one API process),
 SEC-27, SEC-19 in chat, and the pause rated risk.
 
@@ -705,9 +705,9 @@ SEC-27, SEC-19 in chat, and the pause rated risk.
 
 | Configuration | Verdict | Minimum blockers |
 | --- | --- | --- |
-| Local demo, scope S (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | certified for scope S on 19 Oct for c66a5e61 (Table V) | A trusted machine; nobody but the presenter holds the published demo credentials |
-| Live-LLM mode (`pnpm demo --live-llm`, opt-in) | **Outside the release gate** | A gate run in live mode; the language-boundary set and attack catalogue against a live model; a provider agreement on retention and region; PRIV-4 and PRIV-5 |
-| A demo reachable over a network | **NO-GO** | A tested deployment profile: changed credentials and signing key, TLS with per-client limits, anonymous intake off (SEC-19), API docs hidden, one API process, the route sweep and browser checks run against it |
+| Local demo, scope S (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | certified for scope S on 20 Oct for 78b211f0 (Table V) | A trusted machine; nobody but the presenter holds the published demo credentials |
+| Live-LLM mode (`pnpm demo --live-llm`, opt-in), scope S plus a DeepSeek key | **certified for DeepSeek on 20 Oct** on `78b211f0`: the language boundary twice (run 1: 0 wrong-and-material (65 correct actions, 9 correct read-only answers, 53 safe clarifications, 99 safe abstentions, 5 wrong but harmless); run 2: 0 wrong-and-material (64, 8, 55, 100, 4)) and the catalogue once (279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control and 18 by an earlier one; detection 98.44%), live; evidence `docs/security/evidence/2026-10-20/live-78b211f0/` | The fallback to a second provider is not certified; for real documents, a provider agreement on retention and region, the PIPL, PRIV-4 and PRIV-5, and a daily model-call budget (RT-3) |
+| A demo reachable over a network | **One tested profile:** the password-gated judges' demo: the local demo's configuration behind HTTPS and a password on every path, with the API documentation hidden, 2 MB request bodies and one API process; the published demo credentials and anonymous intake stay as in the local demo, reachable only behind the password. Checked from outside (every path 401 without the password; the sandbox and the browser CSP check through it): docs/security/evidence/2026-10-20/judges-demo-live-78b211f0/ (sha256:92e71fd3759897c3). Any other: **NO-GO** | A tested deployment profile: changed credentials and signing key, TLS with per-client limits, anonymous intake off (SEC-19), API docs hidden, one API process, the route sweep and browser checks run against it |
 | Production with real customers, documents or money | **NO-GO** | A runnable configuration (SEC-06); one API process enforced (SEC-11); separate custody of token and key (R-2); an external anchor and a log the database owner cannot rewrite (R-13); mandate revoke and renew (R-14); resumable or reversible plans (SEC-28); an aggregate draw limit (R-3); vendor account verification; a PIPL assessment; backups; a penetration test; real counterparties, lenders and bank feeds |
 
 ## 05 Deployment and Testing
@@ -732,8 +732,8 @@ pnpm --dir apps/web install
 uv sync --directory services/api
 ```
 
-Expected: both installs finish without errors; `git diff --stat c66a5e61 submission-2026-10-20c -- services/api/app apps/web` prints nothing
-(the tag's product code is c66a5e61).
+Expected: both installs finish without errors; `git diff --stat 78b211f0 submission-2026-10-20d -- services/api/app apps/web` prints nothing
+(the tag's product code is 78b211f0).
 
 **Commands, expected outcomes and where results go.** Every command writes new results under `out/`, which the repository
 ignores, so the submitted evidence is never overwritten. Run them from the repository root.
@@ -745,20 +745,20 @@ ignores, so the submitted evidence is never overwritten. Run them from the repos
 | The same against the running product | start `pnpm demo`, then, in a second terminal, `uv run --project services/api python docs/deliverables/evidence/sandbox-2026-10-19/run_sandbox.py --base-url http://127.0.0.1:8000` | the same cases; a step that needs a direct store write is recorded as SKIPPED ("in-process only") |
 | The scripted tasks with their evidence chains | `uv run --project services/api python scripts/run_scenarios.py --inproc --out out/e2e` | `49/49 scenarios passed`; each chain verifies |
 | Check a submitted chain without running anything | `python scripts/verify_evidence.py docs/deliverables/evidence/demo_walk/operations_log.jsonl` | `VALID` |
-| The API suite (this command runs it serially; the release gate ran it as 155 shards, 8 at a time, in 20 minutes, the shards' times summing to 1.75 hours: [tools/certify_c66a.sh](../security/evidence/2026-10-19/int-c66a5e61/tools/certify_c66a.sh)) | POSIX: `cd services/api && SKIP_PERF_BENCH=1 uv run pytest -q`; PowerShell: `cd services/api; $env:SKIP_PERF_BENCH = "1"; uv run pytest -q` | 11,426 passed, 0 failed, 47 skipped on c66a5e61 (Table V); the tests set `TERMSLEDGER_NO_DOTENV=1` and `DEMO_MODE=1` themselves |
+| The API suite (this command runs it serially; the release gate ran it as 155 shards, 8 at a time, in 19 minutes, the shards' times summing to 1.72 hours: [tools/certify_78b2.sh](../security/evidence/2026-10-20/int-78b211f0/tools/certify_78b2.sh)) | POSIX: `cd services/api && SKIP_PERF_BENCH=1 uv run pytest -q`; PowerShell: `cd services/api; $env:SKIP_PERF_BENCH = "1"; uv run pytest -q` | 11,499 passed, 0 failed, 47 skipped on 78b211f0 (Table V); the tests set `TERMSLEDGER_NO_DOTENV=1` and `DEMO_MODE=1` themselves |
 | The product | `pnpm demo` (also `pnpm demo --blank` for empty books, `--web-port`/`--api-port` for other ports) | "Ready" and the address; API on 127.0.0.1:8000, web on 127.0.0.1:3000; Ctrl+C stops both |
 
 On Windows, set `PYTHONUTF8=1` for the Python scripts (PowerShell: `$env:PYTHONUTF8 = "1"`). The browser suites need
 Playwright's Chromium (`pnpm --dir apps/web exec playwright install chromium`); their commands and the PostgreSQL concurrency
 command are in Table V. `pnpm demo --live-llm` reads a DeepSeek or Anthropic key from the shell only (never `.env`), forces
-redaction on, makes paid calls and is outside the release gate. In the demo, open **Demo**, choose **Golden story** and follow
+redaction on and makes paid calls; with DeepSeek it is certified for DeepSeek on 20 Oct (Table 7). In the demo, open **Demo**, choose **Golden story** and follow
 the six scenes, or use the Business pages directly (Appendix K).
 
 **Test cases.** No test runs against a deployed, networked system. The suites: the API (pytest and hypothesis: engine against
 the oracle, verifier, router, executor, mandate, persistence, compiler, chat, security harness, route policy); the mock
 browser suite (Playwright on recorded JSON, every page against the golden values, desktop and phone); the live browser suite
 (Playwright against a local API, one worker); web unit, types and lint; scripted-model tests (router, language boundary,
-cards, chat attacks); the attack catalogue; and the sandbox run. Their counts on c66a5e61 are in Table V and on earlier builds in
+cards, chat attacks); the attack catalogue; and the sandbox run. Their counts on 78b211f0 are in Table V and on earlier builds in
 Table B2; Appendix D lists representative cases, and [TEST_CASES.md](TEST_CASES.md) the full catalogue.
 
 **Known failures.** On `5926ef29` the live browser suite failed one test, `tracker.spec.ts:216` ("after the owner's approval
@@ -769,8 +769,9 @@ Timing benches fail on a busy machine (`SKIP_PERF_BENCH=1`).
 **Known limitations.**
 - **Offline only after installation.** Installing needs the npm and PyPI registries, a Python download and, for the browser
   suites, Playwright's browsers.
-- **Live mode is outside the release gate.** Each live result is one run on one day; the provider's model version is not
-  recorded; the language-boundary set and the attack catalogue have not been run against a live model.
+- **Live mode is certified for safety with DeepSeek only.** The certification (certified for DeepSeek on 20 Oct) rests on single runs on one
+  day; the model behind the alias `deepseek-flash` is not pinned; the fallback provider is not certified; it does not
+  measure accuracy.
 - **One API process.** Route checks use a per-process lock and each process keeps its own clock (SEC-11, PAUSE-2); the
   concurrency tests prove the store's compare-and-swap (SQLite, and PostgreSQL 17), not two API processes. Production is not
   ready: [infra/docker-compose.yml](../../infra/docker-compose.yml) refuses to start without real secrets but does not yet
@@ -788,10 +789,11 @@ Timing benches fail on a busy machine (`SKIP_PERF_BENCH=1`).
 - **Extra requests** are found by cue words and figures. A request with neither could pass the coverage check, but only for a
   pure early-payment discount below break-even.
 - **Screen defect.** Option B's headline "About ¥0" (Figure 10) is deferred.
-- **Reversed payer or quoted message (REV-4, open).** A keyed buyer's message with the payer reversed ("You can pay the
-  invoice early at 0.5%", 你们/贵司 … 支付) or wholly quoted (">", "»", "|", 「…」) is accepted at Tier 1 as the plain early-payment
-  discount, inside the mandate's caps. Table 4's "0 wrong autonomous accepts" is measured on the labelled sets, which hold
-  no such message. A fix holds both for the owner (Security Self-Assessment, R-7 and REV-4).
+- **Reversed payer or quoted message (REV-4, fixed in `78b211f0`).** Before the fix a keyed buyer's message with the
+  payer reversed ("You can pay the invoice early at 0.5%", 你们/贵司 … 支付) or wholly quoted was accepted at Tier 1 as the
+  plain discount. `78b211f0` holds, fail-closed, any second-person word outside a short list of courtesy phrases and any quote
+  mark; a message with a hidden formatting character is read by the rules alone and held too (LIVE-1); nothing is sent or
+  agreed on a term only the model read (LIVE-2); and full-width figures read as their ASCII forms (LIVE-3; SA Table 27).
 
 ## Appendix A. Criterion-to-evidence index
 
@@ -813,28 +815,28 @@ Each prompt of the technical document template, with the part of this document t
 
 ## Appendix B. Verification manifest
 
-**What was frozen.** Product code c66a5e61 (`c66a5e6189e0e34087c5d104197eb89c67d9c18f`) on `dev`: `66c31e7e` (certified for scope S on 19 Oct) plus the three fixes of the 19 Oct review (REV-1 to REV-3). `66c31e7e` is `5926ef29` with the demo stepper fix; `5926ef29` is dev `03215a20` with round eight
+**What was frozen.** Product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`: `c66a5e61` (certified for scope S on 19 Oct: `66c31e7e` plus the three fixes of the 19 Oct review, REV-1 to REV-3) plus the fail-closed REV-4 and the three live-mode fixes LIVE-1 to LIVE-3 (20 Oct). `66c31e7e` is `5926ef29` with the demo stepper fix; `5926ef29` is dev `03215a20` with round eight
 (FUND-1, 2, 3, 5), the demo launcher on loopback (DEMO-L1), round nine (LOG-2, SEC-19 display, CON-1, pinned authority tests),
 the API lint cleanup, the public-release cleanup and the unseen evaluation set. The documentation revision is the `dev` commit
-tagged `submission-2026-10-20c`; every commit after the product code changes documentation, evidence and the document build
-tooling only. The gate covers scope S (section 05); live mode, networked or hosted deployments and production are outside it.
+tagged `submission-2026-10-20d`; every commit after the product code changes documentation, evidence and the document build
+tooling only. The gate covers scope S (section 05); networked or hosted deployments and production are outside it, and live mode has its own certification on `78b211f0` (Table 7).
 The evidence folder is under [docs/security/evidence/2026-10-19/](../../docs/security/evidence/2026-10-19/) with
-`MANIFEST.json` and `SHA256SUMS` (evidence id sha256:37ff16748cf56bca, the sha256 of `SHA256SUMS`); the verdict is recorded in
+`MANIFEST.json` and `SHA256SUMS` (evidence id sha256:6f665b8ae82df362, the sha256 of `SHA256SUMS`); the verdict is recorded in
 [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md).
 
-**Table V. Verification manifest for the submission build c66a5e61 (the Security Lead's release gate, 19 Oct 2026, 08:41 to 09:33 UTC, on a
-clean checkout; evidence sha256:37ff16748cf56bca). Commands run from the repository root unless stated.**
+**Table V. Verification manifest for the submission build 78b211f0 (the Security Lead's release gate, 20 Oct 2026, 04:31 to 05:24 UTC, on a
+clean checkout; evidence sha256:6f665b8ae82df362). Commands run from the repository root unless stated.**
 
 | Check | Command | Result | Evidence |
 | --- | --- | --- | --- |
-| Release state, scope S | the release-gate scripts in the evidence folder | certified for scope S on 19 Oct | `CERTIFICATIONS.md`; the evidence folder |
-| API suite, per test folder and per [tests/api](../../services/api/tests/api/) file | `uv run pytest` (from [services/api](../../services/api/)) | 11,426 passed, 0 failed, 47 skipped | the folder's suite shards |
+| Release state, scope S | the release-gate scripts in the evidence folder | certified for scope S on 20 Oct | `CERTIFICATIONS.md`; the evidence folder |
+| API suite, per test folder and per [tests/api](../../services/api/tests/api/) file | `uv run pytest` (from [services/api](../../services/api/)) | 11,499 passed, 0 failed, 47 skipped | the folder's suite shards |
 | Mock browser suite (desktop and phone) | `E2E_TARGET=mock pnpm exec playwright test --workers=6` (from [apps/web](../../apps/web/)) | 479 passed, 0 failed, 77 skipped | the folder's browser logs |
 | Live browser suite (a local API, one worker, as configured) | `E2E_TARGET=live pnpm exec playwright test` (from [apps/web](../../apps/web/)) | 177 passed, 0 failed, 51 skipped | the folder's browser logs |
 | Web typecheck, lint, unit | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` (from [apps/web](../../apps/web/)) | typecheck and lint pass; 197 unit tests passed | the folder |
 | Attack catalogue | `uv run python -m app.security.attacks --report` (from [services/api](../../services/api/)) | 279 cases, 0 with harm; 120 of 128 API cases stopped by the named control, 8 known gaps; detection 97.66% | `latest_report.json` in the folder |
 | Route policy | `uv run pytest tests/security/test_route_policy.py` (from [services/api](../../services/api/)) | 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0) | the folder |
-| Credential sweep, three modes | the folder's sweep scripts, compared with `66c31e7e` | 0 policy violations in three modes; 0 differences from 66c31e7e | the folder's sweep files |
+| Credential sweep, three modes | the folder's sweep scripts, compared with `66c31e7e` | 0 policy violations in three modes; 0 differences from c66a5e61 | the folder's sweep files |
 | Language boundary, 231 items | `scripts/certify_language_boundary.py --backend cache` and `--backend fake` | 0 wrong-and-material (recorded and scripted answers) | the folder |
 | PostgreSQL 17: concurrency, three runs; audit guards | `TERMSLEDGER_TEST_DATABASE_URL=<empty local database> uv run pytest tests/concurrency tests/persistence/test_audit_guards.py` | concurrency 3 of 3; audit guards 10 passed | the folder |
 | Dependency audits | `pip-audit` on the exported production lockfile; `pnpm audit --prod`; `pnpm audit` | pip-audit clean; pnpm audit --prod 0; braces only (development) | the folder |
@@ -858,7 +860,8 @@ clean checkout; evidence sha256:37ff16748cf56bca). Commands run from the reposit
 | `eb3c1059` | 19 Oct | Intermediate gate only, superseded; never released | API 11,383 passed, 0 failed, 47 skipped; its live browser run used four workers by mistake and is not cited |
 | `5926ef29` | 19 Oct, 04:14–05:05 UTC | Not released: the live browser suite failed once, a demo stepper race (section 05, "Known failures") | API 11,421 passed, 0 failed, 47 skipped (155 processes; one empty shard exits 5); 279 cases, 0 harm, 120 of 128 by the named control; route policy 16 tests over 113 routes; sweep 0 violations and 0 differences from `03215a20`; reproductions and the approval flip refused; language boundary 0 wrong-and-material; PostgreSQL 3 of 3, guards 10 passed; pip-audit clean, `pnpm audit --prod` 0, `braces` (development only, no patched version, accepted by the project lead); secret scan 0; mock browser 479 passed, 0 failed, 77 skipped; web unit 196; live browser 176 passed, 1 failed, 51 skipped; CSP 17 pages, 0 violations in production and development builds; judge pack 49 of 49 |
 | `66c31e7e` | 19 Oct, 05:55–06:46 UTC | Certified for scope S (`5926ef29` + the demo stepper fix); evidence `sha256:4a418fe4fb4c6c4d` | API 11,421 passed, 0 failed, 47 skipped; every other check as on `c66a5e61` |
-| `c66a5e61` | 19 Oct 2026, 08:41 to 09:33 UTC | certified for scope S on 19 Oct (`66c31e7e` + the review fixes REV-1 to REV-3) | Table V |
+| `c66a5e61` | 19 Oct, 08:41–09:33 UTC | Certified for scope S (`66c31e7e` + the review fixes REV-1 to REV-3); evidence `sha256:37ff16748cf56bca` | API 11,426 passed, 0 failed, 47 skipped; every other check as on `78b211f0` |
+| `78b211f0` | 20 Oct 2026, 04:31 to 05:24 UTC | certified for scope S on 20 Oct (`c66a5e61` + LIVE-1 to LIVE-3 and the fail-closed REV-4); live mode certified for DeepSeek on 20 Oct | Table V |
 
 ## Appendix C. Evaluation commands and results
 
@@ -868,7 +871,7 @@ noted. The gated suites are in Table V.
 | Claim | Command | Result (build) |
 | --- | --- | --- |
 | Owner questions | `uv run python scripts/owner_questions_baseline.py` | Of the 427 turns the books can answer: 228 answered, 45 partly, 154 declined, 0 wrong; 75 of the 76 turns the books cannot answer declined honestly (`571ea64f`). The script's own tally, 303 answered and 46 partly of 503, counts those honest declines as answers |
-| Everyday wording | `uv run python scripts/owner_questions_general.py --part all` | 326/345, 4 wrong topic (1.2%); held-out 127/142 (89.4%), 3 wrong (2.1%) (`571ea64f`). On the submission build (run on `90116810`, whose product code is `c66a5e61`'s): 325/345, 5 wrong (1.4%); held-out 126/142 (88.7%), 4 wrong (2.8%) |
+| Everyday wording | `uv run python scripts/owner_questions_general.py --part all` | 326/345, 4 wrong topic (1.2%); held-out 127/142 (89.4%), 3 wrong (2.1%) (`571ea64f`). On the submission build (run on `90116810`, whose product code is `78b211f0`'s): 325/345, 5 wrong (1.4%); held-out 126/142 (88.7%), 4 wrong (2.8%) |
 | Router and answer cards | `uv run pytest tests/nl/test_ask_router.py tests/nl/test_router_tools.py tests/certification/test_ask_router_boundary.py tests/nl/test_answer_card.py tests/security/test_nl_attacks.py` | 452 passed, 1 skipped (`571ea64f`) |
 | Offline evaluation | `uv run --project services/api python scripts/evaluate.py --out out/eval` (about 8 minutes) | Every target in its own gate met on its default offers set ([fixtures/heldout](../../fixtures/heldout), used in tuning); on held-out 3, scored separately, the material-error and silent-error targets are not met (`975e082f`) |
 | Autonomy funnel | `uv run --project services/api python scripts/analysis/autonomy_funnel.py fixtures/heldout3 fixtures/heldout2 --out out/funnel` | Table 4 (`571ea64f`; the same counts on the submission build) |
@@ -888,7 +891,7 @@ noted. The gated suites are in Table V.
 | Web unit, types and lint | The web app's own logic |
 | Scripted model | Hostile or malformed model outputs written by the team: the router's validator, the classifier, the compiler's cross-check, the 231-item language boundary |
 | Recorded replay | Past readings replayed offline; the 19 shipped recordings are rules-grammar output |
-| Live provider | DeepSeek on the day: buyer messages (1 Oct, an older build), the stress test (18 Oct), the frozen set (18 Oct), the unseen set (19 Oct); single runs outside the release gate |
+| Live provider | DeepSeek on the day: buyer messages (1 Oct, an older build), the stress test (18 Oct), the frozen set (18 Oct), the unseen set (19 Oct), single runs, not certified; the certification runs of 20 Oct on `78b211f0` (Table 7) |
 | Sandbox run | Five cases through the API with every claim checked against the state read back |
 | Deployed system | None |
 
@@ -944,7 +947,7 @@ built on, 97% (412 of 424). Nothing here measures whether an owner would catch a
 | Is the router worth it, against a fair baseline? | Against "credit line first" restricted to actions FLOW can run, on the 18 scenarios where both can be compared: cheaper in 3 (¥169.78 in total) and equal in 15; in 1 more it finds a runnable plan where the baseline finds none | Tests |
 | Does it walk away honestly? | In the one hard-line scenario tested, NO DEAL within 3 rounds and the gap still funded; 7/7 checks | Tests, simulated buyer |
 | Is the router safe? | Every malformed or hostile output we scripted is rejected (24 kinds); its 40 tools are read-only | Scripted |
-| Does language stay safe at the boundary? | 231 adversarial inputs: 0 wrong material actions on the rules path and with a scripted model (`5926ef29`); not run against a live model | Rules, scripted |
+| Does language stay safe at the boundary? | 231 adversarial inputs: 0 wrong material actions on the rules path and with a scripted model (`5926ef29`); live against DeepSeek on `78b211f0`: run 1: 0 wrong-and-material (65 correct actions, 9 correct read-only answers, 53 safe clarifications, 99 safe abstentions, 5 wrong but harmless); run 2: 0 wrong-and-material (64, 8, 55, 100, 4) | Rules, scripted; live |
 | How fast is it? | In process, cache mode: router p50 81 ms (26 scenarios), chat turn p50 9 ms and p95 567 ms (87 turns), full Scene 1 p50 1.08 s (`975e082f`); these vary severalfold with machine load | Tests |
 
 **Table E3. Stress tests on the demo company (read-only copies of the books).**
@@ -1063,7 +1066,7 @@ books, ranks long-term plans by NPV, and builds a lender-style borrower file tha
 | Backend | Model | Used for |
 | --- | --- | --- |
 | Cache (default) | Recorded readings keyed by a hash of the document and prompt version; the 19 shipped recordings were made by the rules grammar | Tests, the demo and the offline evaluation; no network |
-| DeepSeek (live, opt-in) | `deepseek-flash` alias, OpenAI-compatible API; the model version is not recorded | The live runs in sections 02 and 03; reachable from mainland China |
+| DeepSeek (live, opt-in) | `deepseek-flash` alias, OpenAI-compatible API; the model version is not recorded | The live runs in sections 02 and 03, and the live certification (Table 7); reachable from mainland China |
 | Claude (live, opt-in) | `claude-sonnet-5-5`, with `claude-opus-5-5` for hard compilations | Alternative live backend |
 | Rules grammar | Deterministic patterns and lexicon, Chinese and English | Every offline reading; the fallback when a backend fails, times out or returns invalid JSON |
 

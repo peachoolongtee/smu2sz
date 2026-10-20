@@ -1,0 +1,43 @@
+✓ Lockfile passes supply-chain policies (verified 3d ago)
+Lockfile is up to date, resolution step is skipped
+Update available! 12.11.2 → 12.14.0.
+Changelog: https://pnpm.io/v/12.14.0
+To update, run: pnpm self-update
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: ~\AppData\Local\pnpm\store\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 106, reused 106, downloaded 0, added 91
+Progress: resolved 206, reused 206, downloaded 0, added 192
+Progress: resolved 271, reused 271, downloaded 0, added 256
+Progress: resolved 341, reused 341, downloaded 0, added 327
+Progress: resolved 370, reused 370, downloaded 0, added 361
+Progress: resolved 390, reused 390, downloaded 0, added 382
+Progress: resolved 395, reused 395, downloaded 0, added 390
+Progress: resolved 397, reused 397, downloaded 0, added 393
+Packages: +397
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 397, reused 397, downloaded 0, added 397, done
+
+dependencies:
++ @fontsource-variable/plus-jakarta-sans 5.3.0
++ js-sha256 1.0.0
++ next 16.3.8
++ react 19.3.0
++ react-dom 19.3.0
++ recharts 3.10.1
+
+devDependencies:
++ @axe-core/playwright 4.13.0
++ @playwright/test 1.63.0
++ @tailwindcss/postcss 4.3.3
++ @types/node 26.6.3
++ @types/react 19.3.0
++ @types/react-dom 19.3.0
++ eslint 9.39.5
++ eslint-config-next 16.3.7
++ postcss 8.5.28
++ tailwindcss 4.3.3
++ typescript 5.9.3
+
+Done in 18.5s using pnpm v12.11.2

@@ -1,0 +1,367 @@
+{
+ "case": 1,
+ "name": "journey",
+ "parts": [
+  {
+   "part": "1",
+   "title": "EX01 journey to settlement and a verified chain",
+   "simulated_day": 47,
+   "operations_log": {
+    "entries_total": 17,
+    "entries_before_this_part": 3,
+    "added": [
+     {
+      "seq": 4,
+      "day": 0,
+      "kind": "ACCEPT_OFFER",
+      "status": "EXECUTED",
+      "requested_by": "AGENT",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Commitment CMT-68a9eb87710d7567 is ACTIVE; forward concession ¥0.00 booked",
+      "entry_hash": "1e553ce4d4a0f9ad1a729cd87783e3395c19552ebbe51ef796d1fdd2a4ecc522"
+     },
+     {
+      "seq": 5,
+      "day": 0,
+      "kind": "DRAW_FACILITY",
+      "status": "EXECUTED",
+      "requested_by": "AGENT",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Drew ¥147,210.00 on FAC-LINE on day 0",
+      "entry_hash": "aebbdd7a77ae3b54c82320224886c2c99c5a9c636480a3091d55383bf6b84c27"
+     },
+     {
+      "seq": 6,
+      "day": 2,
+      "kind": "ADVANCE_CLOCK",
+      "status": "EXECUTED",
+      "requested_by": "SYSTEM",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
+      "entry_hash": "10c726c967c3f05aaaaf19e7066fcec6dc3d66cb94bab86e4639848b45cccde3"
+     },
+     {
+      "seq": 7,
+      "day": 2,
+      "kind": "RECEIVE_PAYMENT",
+      "status": "EXECUTED",
+      "requested_by": "SYSTEM",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Received ¥257,790.00 on RCV-A (settles ¥260,000.00 at the agreed 0.85% early-payment discount; ¥160,000.00 still due on day 32)",
+      "entry_hash": "d6c88fe9ebc42b8367600999859c6a48abe915932bb322bb75a82bef23602a6c"
+     },
+     {
+      "seq": 8,
+      "day": 30,
+      "kind": "ADVANCE_CLOCK",
+      "status": "EXECUTED",
+      "requested_by": "SYSTEM",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded",
+      "entry_hash": "a1a6828860645be2202d28ea8f89b0c6fa2cdca197f95d38bbc2f98928220e82"
+     },
+     {
+      "seq": 9,
+      "day": 34,
+      "kind": "ADVANCE_CLOCK",
+      "status": "EXECUTED",
+      "requested_by": "SYSTEM",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
+      "entry_hash": "ebf9f566bb8d2b39bd39a807377019702af31a40c12a1852a7a0e10bb218dcff"
+     },
+     {
+      "seq": 10,
+      "day": 34,
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "status": "PENDING_APPROVAL",
+      "requested_by": "AGENT",
+      "tier": "TIER_2",
+      "approval_id": "APR-000001",
+      "violations": [],
+      "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
+      "entry_hash": "59274e59e78d83902feecbd91c697374a9f1bb37db01a17eb9a31d1ff290fe7a"
+     },
+     {
+      "seq": 11,
+      "day": 34,
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "status": "EXECUTED",
+      "requested_by": "AGENT",
+      "tier": "TIER_2",
+      "approval_id": "APR-000001",
+      "violations": [],
+      "message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today",
+      "entry_hash": "148e173c2a69da43811be7a238f05703762f0e3657da5d8fbbc9f4f3ad03bbc3"
+     },
+     {
+      "seq": 12,
+      "day": 36,
+      "kind": "ADVANCE_CLOCK",
+      "status": "EXECUTED",
+      "requested_by": "SYSTEM",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Clock moved from day 34 to day 36: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
+      "entry_hash": "53e1fc57ab2763b40905b1efc51963548b85d03e65a059e06a00a9bfcdc2a818"
+     },
+     {
+      "seq": 13,
+      "day": 36,
+      "kind": "RECEIVE_PAYMENT",
+      "status": "EXECUTED",
+      "requested_by": "SYSTEM",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Received ¥160,000.00 on RCV-A",
+      "entry_hash": "c0decfc4bb07d57fd538aa63c4e2d39933b9355fcafe0bf34db0f40dd8adebd8"
+     },
+     {
+      "seq": 14,
+      "day": 38,
+      "kind": "ADVANCE_CLOCK",
+      "status": "EXECUTED",
+      "requested_by": "SYSTEM",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Clock moved from day 36 to day 38: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired, 1 funding request(s) landed (funding net ¥200,000.00)",
+      "entry_hash": "f8121fbf344017a500f83236284071838d6b95a8aaf6ff6598e216dc08d39a30"
+     },
+     {
+      "seq": 15,
+      "day": 47,
+      "kind": "ADVANCE_CLOCK",
+      "status": "EXECUTED",
+      "requested_by": "SYSTEM",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Clock moved from day 38 to day 47: 1 scheduled flow(s) posted (net −¥200,000.00), 0 invoice(s) issued, 0 commitment(s) expired",
+      "entry_hash": "46a9b9327cb6faf465aa8753e53d87f4511673a50b2b7fec9fe11b89941cc73f"
+     },
+     {
+      "seq": 16,
+      "day": 47,
+      "kind": "RECEIVE_PAYMENT",
+      "status": "EXECUTED",
+      "requested_by": "SYSTEM",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Received ¥420,000.00 on RI:BUYER-1:2; repaid advance ¥200,000.00 + interest ¥1,282.19 + fee ¥500.00 (10 days billed as 1 whole period(s)) to FAC-IF",
+      "entry_hash": "40b4a12f1843070ed6636b1bd8a18bcb0f5fa08c990941d23b3afcc69afaff89"
+     },
+     {
+      "seq": 17,
+      "day": 47,
+      "kind": "REPAY_FACILITY",
+      "status": "EXECUTED",
+      "requested_by": "AGENT",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Repaid ¥147,210.00 on FAC-LINE with interest ¥1,213.17 (¥147,210.00 × 640bp × 47/365 = ¥1,213.17)",
+      "entry_hash": "6da645a128becd22d1efdc5c6027d52cdb0da6232b46bb9dd1f1f9be862d655a"
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "APR-000001",
+     "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+     "status": "APPROVED",
+     "requested_by": "AGENT",
+     "decided_by": "OWNER",
+     "decided_day": 34,
+     "tier": "TIER_2",
+     "amount": "¥200,000.00",
+     "sender_unverified": false,
+     "result_message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+    }
+   ],
+   "commitments": [
+    {
+     "id": "CMT-68a9eb87710d7567",
+     "counterparty_id": "BUYER-1",
+     "status": "FULFILLED",
+     "offer_id": "OFF-f806f79b6c21",
+     "terms": [
+      "IMMEDIATE_DISCOUNT 0.85% on ¥260,000.00 of RCV-A"
+     ],
+     "forward_value": "¥0.00"
+    }
+   ],
+   "cash": {
+    "cash_fen": 52979464,
+    "cash": "¥529,794.64"
+   },
+   "facilities": [
+    {
+     "id": "FAC-LINE",
+     "status": "COMMITTED",
+     "limit": "¥150,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-IF",
+     "status": "COMMITTED",
+     "limit": "¥350,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-EARLYPAY",
+     "status": "COMMITTED",
+     "limit": "¥420,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-GGL",
+     "status": "NOT_APPLIED",
+     "limit": "¥500,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-ETL",
+     "status": "NOT_APPLIED",
+     "limit": "¥600,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-LEASE",
+     "status": "NOT_APPLIED",
+     "limit": "¥600,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-BILL",
+     "status": "COMMITTED",
+     "limit": "¥0.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-EQUITY",
+     "status": "REFERENCE_ONLY",
+     "limit": "¥0.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    }
+   ],
+   "funding_lots": [],
+   "receivables": [
+    {
+     "id": "RCV-A",
+     "counterparty_id": "BUYER-1",
+     "status": "SETTLED",
+     "face": "¥420,000.00",
+     "settled": "¥420,000.00",
+     "outstanding": "¥0.00",
+     "advance": "¥0.00",
+     "advance_facility_id": null,
+     "due_day": 32
+    },
+    {
+     "id": "RI:BUYER-1:2",
+     "counterparty_id": "BUYER-1",
+     "status": "SETTLED",
+     "face": "¥420,000.00",
+     "settled": "¥420,000.00",
+     "outstanding": "¥0.00",
+     "advance": "¥0.00",
+     "advance_facility_id": null,
+     "due_day": 47
+    },
+    {
+     "id": "RI:BUYER-1:32",
+     "counterparty_id": "BUYER-1",
+     "status": "OPEN",
+     "face": "¥420,000.00",
+     "settled": "¥0.00",
+     "outstanding": "¥420,000.00",
+     "advance": "¥0.00",
+     "advance_facility_id": null,
+     "due_day": 77
+    }
+   ],
+   "reconciliation": {
+    "matched": 3,
+    "flagged": 0,
+    "lapsed_promises": 0,
+    "promised": [
+     {
+      "status": "RECEIVED",
+      "detail": "the agreed ¥257,790.00 for RCV-A arrived (commitment CMT-68a9eb87710d7567)"
+     }
+    ],
+    "outstanding": [
+     {
+      "receivable_id": "RI:BUYER-1:32",
+      "face": "¥420,000.00",
+      "due_day": 77,
+      "past_due": false
+     }
+    ]
+   },
+   "security_events_added": [
+    {
+     "id": "SEC-AUTH-10d15d79d4d34a0c",
+     "day": 47,
+     "kind": "PRIVILEGE_ESCALATION",
+     "counterparty_id": null,
+     "action_taken": "request refused before reaching any module",
+     "detail": "owner token missing or wrong: GET /evidence"
+    }
+   ],
+   "agent_paused": false,
+   "security_summary": {
+    "operations": 17,
+    "by_status": {
+     "EXECUTED": 16,
+     "PENDING_APPROVAL": 1
+    },
+    "refused_by_code": {},
+    "refused_total": 0,
+    "security_events": 1,
+    "facilities_added_by_non_owner": 0,
+    "unauthorised_executions": 0,
+    "chain_valid": true,
+    "unreadable_entries": [],
+    "integrity_failures": 0
+   },
+   "chain": {
+    "chain_valid_in_api": true,
+    "chain_line": {
+     "chain_valid": true,
+     "genesis_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "head_hash": "6da645a128becd22d1efdc5c6027d52cdb0da6232b46bb9dd1f1f9be862d655a",
+     "operations": 17,
+     "record": "chain"
+    },
+    "export": "evidence/part_1.jsonl",
+    "verify_evidence_exit": 0,
+    "verify_evidence_output": "VALID: 17 operations, 1 security events, head 6da645a128becd22…"
+   }
+  }
+ ]
+}

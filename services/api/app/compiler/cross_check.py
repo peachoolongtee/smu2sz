@@ -31,6 +31,10 @@ DISAGREE_FIELD = "offer.readers_disagree"
 DISAGREE_PREFIX = "readers disagree"
 DISAGREE_REASON = f"{DISAGREE_PREFIX}: the model and the rules grammar read this term differently; clarification needed, nothing booked"
 DISAGREE_NOTE = "the model's reading and the rules grammar's reading differ on a term"
+# LIVE-2 (the second live run of 20 Oct, BO-014): a term or value that only the model read stands, because reading what the
+# rules grammar cannot is what the model is for, but it is never acted on alone: no Tier-1 counter or acceptance goes out on
+# it; the owner sees the priced verdict and decides.
+MODEL_ONLY_NOTE = "a term or value only the model read: nothing is sent or agreed on it without the owner"
 
 
 def _values(o: Obligation) -> tuple[object, ...]:
@@ -63,12 +67,32 @@ def disputed(model: Sequence[Obligation], rules: Sequence[Obligation]) -> dict[O
     return out
 
 
+def model_only(model: Sequence[Obligation], rules: Sequence[Obligation]) -> bool:
+    """True when the model read a term the rules grammar did not, or a value of a term the grammar left unread."""
+    free = list(rules)
+    for m in model:
+        match = next((r for r in free if _covers(m, r)), None)
+        if match is None:
+            return True
+        free = [r for r in free if r is not match]
+        if any(_unread(r) and not _unread(v) for v, r in zip(_values(m), _values(match), strict=True)):
+            return True
+    return False
+
+
+def held_for_owner(model: CompiledOffer) -> CompiledOffer:
+    """The model's reading, kept for a priced proposal, with autonomy off (LIVE-2)."""
+    if MODEL_ONLY_NOTE in model.autonomy_notes:
+        return model
+    return model.model_copy(update={"autonomy_eligible": False, "autonomy_notes": [*model.autonomy_notes, MODEL_ONLY_NOTE]})
+
+
 def check_against_rules(model: CompiledOffer, rules: CompiledOffer) -> CompiledOffer:
     """The model's reading when the rules grammar's reading agrees with it (the same object, unchanged); otherwise the model's
     reading abstaining on each disputed term, with both readers' passages quoted."""
     found = disputed(model.obligations, rules.obligations)
     if not found:
-        return model
+        return model if not model_only(model.obligations, rules.obligations) else held_for_owner(model)
     abstentions = list(model.abstentions)
     for kind, (ours, theirs) in found.items():
         spans: list[SourceSpan] = []
