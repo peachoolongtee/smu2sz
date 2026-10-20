@@ -61,9 +61,9 @@ certified on `78b211f0` (20 Oct) for safety, not accuracy (Table 7). Section 02 
 
 | Build and verification |
 | --- |
-| Submission: product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20f`, and the commits after the product code change documentation, evidence and the document build tooling only. Release state of 78b211f0: certified for scope S on 20 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical (Appendix B, "Earlier builds") |
+| Submission: product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20g`, and the commits after the product code change documentation, evidence, the document build tooling, the README and the judges' demo deployment files (`infra/judges-demo/`) only. Release state of 78b211f0: certified for scope S on 20 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical (Appendix B, "Earlier builds") |
 | Supported configuration (scope S): `pnpm demo` on one machine: API and web app on 127.0.0.1, one API process, `DEMO_MODE=1` with the published demo credentials, in-memory books, `LLM_MODE=cache` (no model provider called), synthetic fixtures. Live mode with DeepSeek: certified on `78b211f0` (20 Oct) (Table 7). Not covered: another model provider, any network or hosted deployment except the one tested judges' demo profile (Table 7), production |
-| Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20f`). Repository paths in this document link to that revision |
+| Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20g`). Repository paths in this document link to that revision |
 | Runs offline after installation. Installing needs the npm and PyPI registries (uv also downloads Python 3.12, and the browser suites need Playwright's Chromium); users in mainland China may need registry mirrors. After that, no account, VPN, API key or foreign service is needed. Live mode (`pnpm demo --live-llm`) needs a DeepSeek or Anthropic API key |
 | Demo video: [https://youtu.be/6y5_fKPInIo](https://youtu.be/6y5_fKPInIo) |
 | Licence: all rights reserved; the organisers and judges may view, run and evaluate the repository for judging ([LICENSE](../../LICENSE)) |
@@ -441,7 +441,7 @@ answer.
 message is one closed, affirmative command with one RMB amount; a negation, question, condition, future time, foreign
 currency, extra request, or quoted or pasted text executes nothing. Two separate things can be consented to:
 
-- **A pending plan** runs only on a whole short affirmative: "go ahead", "yes", "do it", "run it", "confirm", "approve",
+- **A pending plan** runs only on a whole short affirmative, for example "go ahead", "yes", "do it", "run it", "confirm", "approve",
   "ok, do it", 执行, 确认. Its Tier-2 legs then wait for an approval. "ok", "sure", 好的, 行 or 可以 alone, a question, a tag
   question or a condition decide nothing; "no", "cancel" or 取消 drops the plan. With a plan waiting, "approve" confirms the
   plan, not an approval (by design, pinned by a test).
@@ -714,7 +714,7 @@ SEC-27, SEC-19 in chat, and the pause rated risk.
 | --- | --- | --- |
 | Local demo, scope S (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | certified for scope S on 20 Oct for 78b211f0 (Table V) | A trusted machine; nobody but the presenter holds the published demo credentials |
 | Live-LLM mode (`pnpm demo --live-llm`, opt-in), scope S plus a DeepSeek key | **safety-certified for DeepSeek on 20 Oct** on `78b211f0`: the language boundary twice (run 1: 0 wrong-and-material (65 correct actions, 9 correct read-only answers, 53 safe clarifications, 99 safe abstentions, 5 wrong but harmless); run 2: 0 wrong-and-material (64, 8, 55, 100, 4)) and the catalogue once (279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control, 18 by an earlier one and 7 known gaps without harm; detection 98.44%), live; evidence `docs/security/evidence/2026-10-20/live-78b211f0/` | The fallback to a second provider is not certified; for real documents, a provider agreement on retention and region, the PIPL, PRIV-4 and PRIV-5, and a daily model-call budget (RT-3) |
-| A demo reachable over a network | **One tested profile:** the password-gated judges' demo: the local demo's configuration behind HTTPS and a password on every path, with the API documentation hidden, 2 MB request bodies and one API process; the published demo credentials and anonymous intake stay as in the local demo, reachable only behind the password. Checked from outside (every path 401 without the password; the sandbox and the browser CSP check through it): docs/security/evidence/2026-10-20/judges-demo-live-78b211f0/ (sha256:92e71fd3759897c3). Any other: **NO-GO** | A tested deployment profile: changed credentials and signing key, TLS with per-client limits, anonymous intake off (SEC-19), API docs hidden, one API process, the route sweep and browser checks run against it |
+| A demo reachable over a network | **One tested profile:** the password-gated judges' demo: the local demo's configuration behind HTTPS and a password on every path, with the API documentation hidden, 2 MB request bodies and one API process; the published demo credentials and anonymous intake stay as in the local demo, reachable only behind the password. Checked from outside on `78b211f0` in live mode: every path 401 without the password, the browser CSP check (docs/security/evidence/2026-10-20/judges-demo-live-78b211f0/, sha256:92e71fd3759897c3), and through the gate the route sweep (112 routes, 6 callers, 0 policy violations) and the sandbox (142 passed, 0 failed, 1 skipped; 13 of 13 exports VALID): docs/security/evidence/2026-10-20/judges-demo-checks-78b211f0/ (sha256:8e17f33e72969b11). Any other: **NO-GO** | A tested deployment profile: new credentials and owner key, or a password gate on every path; one API process; synthetic data; API docs hidden; TLS with per-client limits; anonymous intake off or behind the gate (SEC-19); the stop procedure; the route sweep and browser checks run against it |
 | Production with real customers, documents or money | **NO-GO** | A runnable configuration (SEC-06); one API process enforced (SEC-11); separate custody of token and key (R-2); an external anchor and a log the database owner cannot rewrite (R-13); mandate revoke and renew (R-14); resumable or reversible plans (SEC-28); an aggregate draw limit (R-3); vendor account verification; a PIPL assessment; backups; a penetration test; real counterparties, lenders and bank feeds |
 
 ## 05 Deployment and Testing
@@ -734,12 +734,12 @@ process, `DEMO_MODE=1` with the published demo credentials, in-memory books (`DA
 ```
 git clone https://github.com/peachoolongtee/smu2sz.git
 cd smu2sz
-git checkout submission-2026-10-20f
+git checkout submission-2026-10-20g
 pnpm --dir apps/web install
 uv sync --directory services/api
 ```
 
-Expected: both installs finish without errors; `git diff --stat 78b211f0 submission-2026-10-20f -- services/api/app apps/web` prints nothing
+Expected: both installs finish without errors; `git diff --stat 78b211f0 submission-2026-10-20g -- services/api/app apps/web` prints nothing
 (the tag's product code is 78b211f0).
 
 **Commands, expected outcomes and where results go.** Every command writes new results under `out/`, which the repository
@@ -823,8 +823,8 @@ Each prompt of the technical document template, with the part of this document t
 **What was frozen.** Product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`: the build certified on
 19 Oct (`c66a5e61`) plus the fail-closed REV-4 and the three live-mode fixes LIVE-1 to LIVE-3 (20 Oct); the full lineage
 is in [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md). The documentation revision is the `dev` commit
-tagged `submission-2026-10-20f`; every commit after the product code changes documentation, evidence and the document build
-tooling only. The gate covers scope S (section 05); networked or hosted deployments and production are outside it, and live mode has its own certification on `78b211f0` (Table 7).
+tagged `submission-2026-10-20g`; every commit after the product code changes documentation, evidence, the document build
+tooling, the README and the judges' demo deployment files only. The gate covers scope S (section 05); networked or hosted deployments and production are outside it, and live mode has its own certification on `78b211f0` (Table 7).
 The evidence folder is [docs/security/evidence/2026-10-20/int-78b211f0/](../../docs/security/evidence/2026-10-20/int-78b211f0/) with
 `MANIFEST.json` and `SHA256SUMS` (evidence id sha256:6f665b8ae82df362, the sha256 of `SHA256SUMS`); the verdict is recorded in
 [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md).

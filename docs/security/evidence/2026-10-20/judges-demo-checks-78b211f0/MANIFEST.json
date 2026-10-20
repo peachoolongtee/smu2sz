@@ -1,0 +1,42 @@
+{
+  "commit": "872476212ca34b1bd43e93c3ae2b5e07137f67db",
+  "working_tree_clean": true,
+  "build": "source checkout at 872476212ca3; no container image (local simulation)",
+  "manifest_written_utc": "2026-10-20T08:17:20Z",
+  "assessment_window_utc": "not recorded",
+  "assessor": "Security Lead (AI agent)",
+  "scope": "local simulation: loopback, one API process, cache mode, synthetic data",
+  "runtime": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "python": "Python 3.12.14",
+    "uv": "uv 0.12.10 (3c979abda 2026-09-04 x86_64-pc-windows-msvc)",
+    "node": "v24.11.1",
+    "pnpm": "12.11.2",
+    "postgresql": "17 (local, for tests/concurrency only)"
+  },
+  "python_packages": {
+    "fastapi": "0.142.2",
+    "pydantic": "2.13.5",
+    "starlette": "1.7.0",
+    "sqlalchemy": "2.1.1",
+    "psycopg": "3.3.6",
+    "anthropic": "1.9.0",
+    "openai": "3.22.1",
+    "cryptography": "not locked"
+  },
+  "web_packages": {
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "source-map-js": "1.2.2"
+  },
+  "configuration": {
+    "DATABASE_URL": "memory (suites, catalogue, sweep); local PostgreSQL 17 for tests/concurrency and the guards",
+    "LLM_MODE": "cache (no model provider is called)",
+    "DEMO_MODE": "1 for the suites and the catalogue; the sweep runs demo, prod (0) and unset",
+    "TERMSLEDGER_NO_DOTENV": "1 (.env is never loaded)",
+    "API processes": "1"
+  },
+  "exclusions": [],
+  "approved_exceptions": []
+}

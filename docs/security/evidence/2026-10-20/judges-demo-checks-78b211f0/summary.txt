@@ -1,0 +1,32 @@
+VERDICT: the judges' demo, in live AI mode on product code 78b211f0, passes the route sweep and the sandbox run through its
+password gate (20 Oct 2026, 08:11 to 08:16 UTC). These are the two checks the network-profile conditions require
+(SA Table 28, TD Table 7) that the deployment check of 04:45 UTC (../judges-demo-live-78b211f0/) did not include.
+
+Deployment: https://20-2-249-242.sslip.io, the same deployment as ../judges-demo-live-78b211f0/ (docs/live-submission
+18197e90, product code 78b211f0; LLM_MODE=live, LLM_PRIMARY=deepseek, LLM_REDACT=1, DEMO_MODE=1, DATABASE_URL=memory, one
+process). /api/health through the gate reported llm_mode=live before and after the runs.
+
+Route sweep (tools/authz_sweep_http.py: authz_sweep_v3.py over HTTPS through the password gate; sweep_demo_http.*):
+  112 routes from the app's own route table x 6 callers (anonymous, a wrong owner token, the agent key, the bank-feed key, a
+  buyer key, the owner token), placeholder ids and empty bodies; 0 retries for rate limits.
+  docs/security/evidence/tools/sweep_policy.py: 0 policy violations (sweep_policy.txt).
+  Against the release gate's in-process sweep of 78b211f0: 22 of 672 answers differ, none for a refused caller:
+    18 are /docs, /redoc and /openapi.json (200 in process, 404 here: the gate hides them, as intended);
+    4 are owner answers on routes behind feature flags: the gate's sweep turns every flag on, the demo runs pnpm demo's
+    flags (contract terms on, pilot journal off).
+  Unlike the in-process sweep, the deployment's books are shared between calls, so the owner's answers can depend on order;
+  the policy check does not (a refused caller must be refused whatever the state).
+
+Sandbox (tools/run_sandbox_gate.py: run_sandbox.py with basic auth on its HTTP client; sandbox-http-gate/):
+  142 passed, 0 failed, 1 skipped; 3 parts skipped (in-process only); 13 of 13 evidence exports VALID; secret scan clean.
+  The same counts as the release gate's local HTTP run on 78b211f0 (run-20261020T043231Z-http).
+  Buyer messages were read live: the readings record compiler deepseek-flash (case 2 and case 3). The runner's fixed
+  "api_environment" text in run.json describes pnpm demo's default (LLM_MODE=cache); the server's own answers (health,
+  readings) show live mode.
+  The runner's code_diff_check is of the local checkout it ran from (87247621, product code identical to 78b211f0); the
+  deployment's code identity is recorded in ../judges-demo-live-78b211f0/summary.txt.
+
+After the checks: POST /demo/reset and POST /nl/reset (200); the agent is not paused; the approval queue is empty.
+
+Not covered: several judges at once on the shared books; load beyond a few users. The password is not in this folder or the
+repository.

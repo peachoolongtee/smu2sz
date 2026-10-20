@@ -1,0 +1,255 @@
+{
+ "case": 5,
+ "name": "pause",
+ "parts": [
+  {
+   "part": "5",
+   "title": "pause, refusals, the owner's approval while paused, resume",
+   "simulated_day": 0,
+   "operations_log": {
+    "entries_total": 8,
+    "entries_before_this_part": 3,
+    "added": [
+     {
+      "seq": 4,
+      "day": 0,
+      "kind": "APPLY_FOR_FACILITY",
+      "status": "PENDING_APPROVAL",
+      "requested_by": "AGENT",
+      "tier": "TIER_2",
+      "approval_id": "APR-000001",
+      "violations": [],
+      "message": "Queued for owner approval (APR-000001): apply for facility FAC-GGL (¥200,000.00)",
+      "entry_hash": "895720c2e450d327d15a86de8b2b0941ffd2bb19377d66306c713e682b40eed6"
+     },
+     {
+      "seq": 5,
+      "day": 0,
+      "kind": "PAUSE_AGENT",
+      "status": "EXECUTED",
+      "requested_by": "OWNER",
+      "tier": "TIER_2",
+      "approval_id": null,
+      "violations": [],
+      "message": "Agent paused by the owner: nothing runs on the agent's or a buyer's authority until it is resumed",
+      "entry_hash": "e96e25f57a66626aa365643b9253c956c4fcd71c3ab592e0a8f00ecff1586f79"
+     },
+     {
+      "seq": 6,
+      "day": 0,
+      "kind": "APPLY_FOR_FACILITY",
+      "status": "EXECUTED",
+      "requested_by": "AGENT",
+      "tier": "TIER_2",
+      "approval_id": "APR-000001",
+      "violations": [],
+      "message": "Applied for ¥200,000.00 on FAC-GGL; it is PENDING and counts as zero until committed",
+      "entry_hash": "4152f24b63afefd53bb6791f70a1b0de40a887e974c0087aeecbd563b0018ddd"
+     },
+     {
+      "seq": 7,
+      "day": 0,
+      "kind": "RESUME_AGENT",
+      "status": "EXECUTED",
+      "requested_by": "OWNER",
+      "tier": "TIER_2",
+      "approval_id": null,
+      "violations": [],
+      "message": "Agent resumed by the owner",
+      "entry_hash": "82da816355de1833477fe3d0804f6b8ac93a242a8b1a6a2e4e66158f7117038a"
+     },
+     {
+      "seq": 8,
+      "day": 0,
+      "kind": "ACCEPT_OFFER",
+      "status": "EXECUTED",
+      "requested_by": "AGENT",
+      "tier": "TIER_1",
+      "approval_id": null,
+      "violations": [],
+      "message": "Commitment CMT-c385836e88b7d41d is ACTIVE; forward concession ¥0.00 booked",
+      "entry_hash": "2a171f89e28557a411741b235442d0fd69a4535dd5ae8b056e9e274f67dafda7"
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "APR-000001",
+     "kind": "APPLY_FOR_FACILITY",
+     "status": "APPROVED",
+     "requested_by": "AGENT",
+     "decided_by": "OWNER",
+     "decided_day": 0,
+     "tier": "TIER_2",
+     "amount": "¥200,000.00",
+     "sender_unverified": false,
+     "result_message": "Applied for ¥200,000.00 on FAC-GGL; it is PENDING and counts as zero until committed"
+    }
+   ],
+   "commitments": [
+    {
+     "id": "CMT-b9277797bb17753a",
+     "counterparty_id": "BUYER-1",
+     "status": "PROPOSED",
+     "offer_id": "OFF-61a406314f6a",
+     "terms": [
+      "IMMEDIATE_DISCOUNT 0.50% on ¥420,000.00 of RCV-A"
+     ],
+     "forward_value": "¥0.00"
+    },
+    {
+     "id": "CMT-c385836e88b7d41d",
+     "counterparty_id": "BUYER-1",
+     "status": "ACTIVE",
+     "offer_id": "OFF-82a8012b2ed0",
+     "terms": [
+      "IMMEDIATE_DISCOUNT 0.50% on ¥420,000.00 of RCV-A"
+     ],
+     "forward_value": "¥0.00"
+    }
+   ],
+   "cash": {
+    "cash_fen": 40000000,
+    "cash": "¥400,000.00"
+   },
+   "facilities": [
+    {
+     "id": "FAC-LINE",
+     "status": "COMMITTED",
+     "limit": "¥150,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-IF",
+     "status": "COMMITTED",
+     "limit": "¥350,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-EARLYPAY",
+     "status": "COMMITTED",
+     "limit": "¥420,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-GGL",
+     "status": "PENDING",
+     "limit": "¥500,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-ETL",
+     "status": "NOT_APPLIED",
+     "limit": "¥600,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-LEASE",
+     "status": "NOT_APPLIED",
+     "limit": "¥600,000.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-BILL",
+     "status": "COMMITTED",
+     "limit": "¥0.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    },
+    {
+     "id": "FAC-EQUITY",
+     "status": "REFERENCE_ONLY",
+     "limit": "¥0.00",
+     "drawn": "¥0.00",
+     "drawn_fen": 0
+    }
+   ],
+   "funding_lots": [],
+   "receivables": [
+    {
+     "id": "RCV-A",
+     "counterparty_id": "BUYER-1",
+     "status": "OPEN",
+     "face": "¥420,000.00",
+     "settled": "¥0.00",
+     "outstanding": "¥420,000.00",
+     "advance": "¥0.00",
+     "advance_facility_id": null,
+     "due_day": 32
+    }
+   ],
+   "reconciliation": {
+    "matched": 0,
+    "flagged": 0,
+    "lapsed_promises": 0,
+    "promised": [
+     {
+      "status": "AWAITED",
+      "detail": "¥417,900.00 promised for RCV-A by day 2 under commitment CMT-c385836e88b7d41d; the day has not passed"
+     }
+    ],
+    "outstanding": [
+     {
+      "receivable_id": "RCV-A",
+      "face": "¥420,000.00",
+      "due_day": 32,
+      "past_due": false
+     }
+    ]
+   },
+   "security_events_added": [
+    {
+     "id": "SEC-PAUSE-50a68e285be54aee",
+     "day": 0,
+     "kind": "REVOKED",
+     "counterparty_id": null,
+     "action_taken": "refused before the executor; nothing executed, queued or booked",
+     "detail": "AGENT DRAW_FACILITY 5-draw refused: the owner paused the agent (log seq 5)"
+    },
+    {
+     "id": "SEC-PAUSE-be11842723d842d8",
+     "day": 0,
+     "kind": "REVOKED",
+     "counterparty_id": null,
+     "action_taken": "refused before the executor; nothing executed, queued or booked",
+     "detail": "AGENT ACCEPT_OFFER NL-fbf9c85faf237568 refused: the owner paused the agent (log seq 5)"
+    }
+   ],
+   "agent_paused": false,
+   "security_summary": {
+    "operations": 8,
+    "by_status": {
+     "EXECUTED": 7,
+     "PENDING_APPROVAL": 1
+    },
+    "refused_by_code": {},
+    "refused_total": 0,
+    "security_events": 2,
+    "facilities_added_by_non_owner": 0,
+    "unauthorised_executions": 0,
+    "chain_valid": true,
+    "unreadable_entries": [],
+    "integrity_failures": 0
+   },
+   "chain": {
+    "chain_valid_in_api": true,
+    "chain_line": {
+     "chain_valid": true,
+     "genesis_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "head_hash": "2a171f89e28557a411741b235442d0fd69a4535dd5ae8b056e9e274f67dafda7",
+     "operations": 8,
+     "record": "chain"
+    },
+    "export": "evidence/part_5.jsonl",
+    "verify_evidence_exit": 0,
+    "verify_evidence_output": "VALID: 8 operations, 2 security events, head 2a171f89e28557a4…"
+   }
+  }
+ ]
+}

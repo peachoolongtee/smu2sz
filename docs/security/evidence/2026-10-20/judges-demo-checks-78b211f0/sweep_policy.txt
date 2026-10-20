@@ -1,0 +1,26 @@
+docs/security/evidence/2026-10-20/judges-demo-checks-78b211f0/sweep_demo_http.json: 112 routes; 0 policy violations; owner answers {200: 46, 403: 2, 404: 31, 409: 2, 422: 31}
+
+compared with the release gate's in-process sweep of 78b211f0 (all feature flags on):
+672 and 672 answers; 22 differ
+  - GET /docs as agent: 200 -> 404
+  - GET /docs as anon: 200 -> 404
+  - GET /docs as bad_owner: 200 -> 404
+  - GET /docs as bank: 200 -> 404
+  - GET /docs as buyer1: 200 -> 404
+  - GET /docs as owner: 200 -> 404
+  - GET /documents/{document_id}/terms as owner: 403:FEATURE_DISABLED -> 404:UNKNOWN_DOCUMENT
+  - GET /openapi.json as agent: 200 -> 404
+  - GET /openapi.json as anon: 200 -> 404
+  - GET /openapi.json as bad_owner: 200 -> 404
+  - GET /openapi.json as bank: 200 -> 404
+  - GET /openapi.json as buyer1: 200 -> 404
+  - GET /openapi.json as owner: 200 -> 404
+  - GET /pilot/journal as owner: 200 -> 403:FEATURE_DISABLED
+  - GET /redoc as agent: 200 -> 404
+  - GET /redoc as anon: 200 -> 404
+  - GET /redoc as bad_owner: 200 -> 404
+  - GET /redoc as bank: 200 -> 404
+  - GET /redoc as buyer1: 200 -> 404
+  - GET /redoc as owner: 200 -> 404
+  - POST /documents/{document_id}/terms as owner: 403:FEATURE_DISABLED -> 422:validation
+  - POST /pilot/journal as owner: 422:validation -> 403:FEATURE_DISABLED

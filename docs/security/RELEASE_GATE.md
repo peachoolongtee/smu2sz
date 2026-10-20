@@ -36,7 +36,7 @@ it lapses when either changes. It is never a claim of absolute security or zero 
 | `0fde33fd` (dev, 17 Oct: SEC-08 executor check, OUT-1b, RT-2, RT-1) | **GO** (certified 17 Oct, with the #161 test exception) | **NO-GO** until one tested deployment profile exists (below); revised 17 Oct after the 17 Oct review of the self-assessment: the conditions were never exercised on a deployment, and SEC-19 provenance is not shown on the accept card or approvals | **NO-GO** |
 | `fe56b357` (dev head, 16 Oct: final UI, R-10 rounding) | not certified: OUT-1 still present (the chat paths do not check the outside mark); R-10 reassessed, residual Low | NO-GO until OUT-1 is fixed | **NO-GO** |
 
-**Conditions for S on `66c31e7e` (the submission build)** are those for `03215a20` below, without the trusted-network
+**Conditions for S on `78b211f0` (the submission build; as on `66c31e7e` and `c66a5e61`)** are those for `03215a20` below, without the trusted-network
 condition: the launcher serves the web app on 127.0.0.1 (DEMO-L1 fixed). **Conditions for S on `03215a20`.** `DEMO_MODE=1`; memory or SQLite; one API process (PAUSE-2,
 SEC-11); `LLM_MODE=cache`; synthetic fixtures; simulated counterparties; nobody but the presenter holds the demo credentials;
 the demo laptop on a trusted network, or its firewall closed to the web port, because `pnpm demo` serves the web app on every
@@ -58,19 +58,19 @@ hidden (`DEMO_MODE=0`); a TLS reverse proxy with per-client rate and body-size l
 on every view of the offer (SEC-19); a written stop procedure; the route sweep and the browser injection checks (S3) run against it.
 Without such a profile the local configuration S is the one demonstrated.
 
-## P blockers (all must close; none is closed today)
+## P blockers (all must close; the ones marked closed are fixed and certified, the rest are open)
 
 1. SEC-06: no runnable production configuration (compose cannot start; no provisioning; web built against localhost).
-2. SEC-07: `DEMO_MODE` defaults on.
+2. SEC-07: `DEMO_MODE` defaults on. **Closed:** default off, certified on `0f92d433`.
 3. SEC-08: audit trail not tamper-evident (approvals and security events unguarded, unanchored chain, trigger bypass via a settable GUC
    on PostgreSQL, unverified).
 4. R-2: one owner credential and one signing key approve everything; no second approver for Tier 2.
 5. R-11 and R-10: protected values to the agent key; threshold and funding-gap oracle for keyed buyers.
 6. SEC-11: unsafe with more than one process (stale clock, per-process route locks).
-7. SEC-12: no CSP or frame protection while the owner token sits in `sessionStorage`.
-8. SEC-10, SEC-20: no rate limiting; unbounded security-event growth.
-9. Unverified: PostgreSQL concurrency and triggers; live-model language boundary (231 items) and live prompt injection; backup and
-   restore; an emergency write stop (no mandate revocation route, R-14).
+7. SEC-12: no CSP or frame protection while the owner token sits in `sessionStorage`. **Closed:** frame protection (`081541d1`) and a full CSP with a nonce (`719c9dcf`), certified 16 and 17 Oct; HSTS belongs to the proxy.
+8. SEC-10, SEC-20: no rate limiting; unbounded security-event growth. **Closed in the API:** `0ba8e4c1` and `719c9dcf`, certified 16 and 17 Oct; a per-client limit at the proxy is still needed.
+9. Unverified: backup and restore; an emergency write stop (no mandate revocation route, R-14). **Since verified:** PostgreSQL 17
+   concurrency and triggers (PG-1); the live-model language boundary (231 items) and live prompt injection with DeepSeek (20 Oct, `78b211f0`).
 
 ## Evidence for this gate
 

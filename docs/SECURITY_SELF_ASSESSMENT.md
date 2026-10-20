@@ -58,7 +58,7 @@ money moves. We claim neither regulatory compliance nor absolute security.
 | Build and assessment | |
 | --- | --- |
 | Submission build | `78b211f0` (full SHA `78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`: `c66a5e61` (certified for scope S on 19 Oct: `66c31e7e` plus the three fixes of the 19 Oct review, REV-1 to REV-3) plus the fail-closed REV-4 and the three live-mode fixes LIVE-1 to LIVE-3 (20 Oct). `66c31e7e` is dev `03215a20` with round eight (FUND-1, 2, 3, 5), the demo launcher on loopback (DEMO-L1), round nine (LOG-2, the SEC-19 display, CON-1 and pinned authority tests), the demo stepper fix, the API lint cleanup, the public-release cleanup and the unseen evaluation set. Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) |
-| Documentation revision | the `dev` commit tagged `submission-2026-10-20f`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
+| Documentation revision | the `dev` commit tagged `submission-2026-10-20g`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
 | Its release gate | certified for scope S on 20 Oct, by the Security Lead on a clean checkout of `78b211f0`, 20 Oct 2026, 04:31 to 05:24 UTC; evidence [int-78b211f0/](security/evidence/2026-10-20/int-78b211f0/), id `sha256:6f665b8ae82df362` (the hash of its `SHA256SUMS`); every result in Table C2 |
 | Earlier gates | `66c31e7e`: certified for scope S on 19 Oct (`sha256:4a418fe4fb4c6c4d`); the builds before it in Appendix C |
 | Scope assessed (scope S) | `pnpm demo` on one machine: the API and the web app on 127.0.0.1; one API process; `DEMO_MODE=1` with the published demo credentials (the route checks also run with `DEMO_MODE=0` and unset); `DATABASE_URL=memory`; `LLM_MODE=cache` (no model provider is called); synthetic fixtures ([golden_sme.json](../fixtures/scenarios/golden_sme.json) and others). The CSP was checked on both the production build and the development server `pnpm demo` runs |
@@ -66,7 +66,7 @@ money moves. We claim neither regulatory compliance nor absolute security.
 | Runtime | Python 3.12 (uv); Node 24 in CI and 24.11.1 at the gate; pnpm 12.11.2; PostgreSQL 17 for the concurrency suite only. FastAPI 0.142.2, Pydantic 2.13.5, Starlette 1.7.0; Next.js 16.3.8, React 19.3.0 (lockfiles unchanged since `70f23ac5`) |
 | CI | GitHub Actions has not run since 15 Oct because of a failed account payment, not a code failure. The checks it would run were run locally in each release gate; we claim nothing that CI currently enforces |
 | Approved exception | `braces` (GHSA-vfj7-8cjw-p6xm), a development-only dependency of the lint tooling, accepted by the project lead (section 2.8). No failing API test is excepted (submission build: 11,499 passed, 0 failed, 47 skipped) |
-| Assessors | the Security Lead (an AI agent, 14 to 19 Oct) for every gate and, from 19 Oct at the project lead's request, the merges into `dev`; the integration lead (an AI agent) for the alignment of this document up to `03215a20` |
+| Assessors | the Security Lead (an AI agent, 14 to 20 Oct) for every gate and, from 19 Oct at the project lead's request, the merges into `dev`; the integration lead (an AI agent) for the alignment of this document up to `03215a20` |
 
 **How this assessment answers the security criterion.** The competition's security criterion reads: "Defence against
 induced transfers, data extraction, privilege escalation and prompt injection; serious security failures trigger substantial
@@ -79,7 +79,7 @@ Table 3 ties each claim to its test, outcome and evidence.
 | --- | --- | --- | --- | --- |
 | **Induced transfers** (诱导转账) | No operation has a payee or account field, so no message can redirect money; a lender named in a message is a security event, never a facility; receipts count only from the bank feed or the owner; concessions only through the verifier's caps and the owner's tiers | 1.3, 1.6 | fake-lender and induced-transfer cases (10), fake prior concessions (7), the compromised-agent step on every case, extra-field differentials (FL-06, SE-04) | 0 money moved; 0 facilities added by non-owners; 0 concessions from unevidenced claims. Not covered: a vendor contract's changed receiving account (CAPEX-ACCT) |
 | **Data extraction** (信息套取) | Owner token on every read; template replies; the egress guard with canaries; the agent's allow-list view; the buyer's daily budget | 3.4, 1.2 | mandate, reserve and facility exfiltration (11), cross-buyer (6), canary extraction (5), 38 chat leak cases | 0 protected values disclosed; 0 readable without the owner token; 0 canaries; known detection gaps listed (SEC-33, SEC-34) |
-| **Privilege escalation** (越权操作) | Tiers computed by code; Tier 3 refused for everyone; Tier 2 waits for the owner; identity from the credential only; owner-only clock, circuit, approvals and pause | 1.2, 1.3, 1.5, 1.8 | privilege escalation (22), replay and expiry (11), revoked or forged mandate (7), changed offers (4); the route-policy test; the 207-case credential-bypass sweep; mutation tests | 0 unauthorised executions; 0 route-policy deviations; 0 bypasses |
+| **Privilege escalation** (越权操作) | Tiers computed by code; Tier 3 refused for everyone; Tier 2 waits for the owner; identity from the credential only; owner-only clock, circuit, approvals and pause | 1.2, 1.3, 1.5, 1.8 | privilege escalation (22), replay and expiry (11), revoked or forged mandate (7), changed offers (4); the route-policy test; the 213-case credential-bypass sweep; mutation tests | 0 unauthorised executions; 0 route-policy deviations; 0 bypasses |
 | **Prompt injection** (Prompt 注入) | The model fills typed data only, with exact source spans; the coverage check fails closed; the consent grammar for owner chat | 1.2, 1.6, 2.3 | prompt injection (17), consent (41), quoted approvals (16), buyer instructions (18); three injection items read by a live model (2.11); the 16 Oct run's live tier (report not in the repository) | 0 executions from injected text; misreadings stay within typed rows (R-7) |
 | Social engineering (template) | The same controls: urgency, authority or a claimed payment changes no tier | 2.4 | social engineering (8) | 0 harm |
 | Failure recovery (template) | One unit of work per operation; compare-and-swap; triggers; refusals fail closed; each leg of a plan reported as it ran | 1.10, 1.12 | failure recovery (20); the concurrency suite; a database failure mid-execute (FR-06); the funding-status tests | 0 partial writes; plans are atomic per operation only (SEC-28) |
@@ -123,7 +123,7 @@ these tests passed inside the full API suite on the submission build `78b211f0`:
 | CL2 | A buyer's keyed message can at most counter, reject or accept a plain early-pay discount within Tier 1, as the agent; it never draws or requests an advance. *Control:* `decide()` in [offers.py](../services/api/app/nl/offers.py); tiers; key binding (SEC-18) | 64 buyer chat cases; [test_round_nine.py](../services/api/tests/security/test_round_nine.py) (pinned buyer rules) | 0 harm; tests pass. *Evidence:* `attacks.txt`; sandbox: journey | PREVENTED |
 | CL3 | An anonymous sender gets a proposal only; the agent never agrees to it. *Control:* proposal-only intake; `ANONYMOUS_INTAKE=0` | [test_anonymous_intake_switch.py](../services/api/tests/security/test_anonymous_intake_switch.py); anonymous catalogue cases | tests pass. *Evidence:* `shards/` | PREVENTED |
 | CL4 | An anonymous offer under a buyer's name is shown as unverified. *Control:* `sender_unverified` on the deal header, accept review and approval cards | the SEC-19 tests in `test_round_nine.py`; [unverified-sender.test.mjs](../apps/web/scripts/unverified-sender.test.mjs) | tests pass; web unit 197 passed. *Evidence:* `web/unit.txt` | DETECTED; the chat reply does not say so: ACCEPTED LIMITATION (SEC-19) |
-| CL5 | Identity comes from the credential only; each route refuses every caller it does not admit. *Control:* constant-time checks on bytes; an `OWNER`, `SYSTEM` or `COUNTERPARTY` claim in a body that the credential does not prove is rewritten to `AGENT` (REV-1); route classes (Table 6) | [test_route_policy.py](../services/api/tests/security/test_route_policy.py) (16 tests, 113 routes); [test_bypass_sweep.py](../services/api/tests/security/test_bypass_sweep.py) (207 cases); [test_review_19oct.py](../services/api/tests/api/test_review_19oct.py); the sweep in three modes (112 routes) | 16 tests pass over 113 routes; owner 96 of 97 (91 of 97 with DEMO_MODE=0); sweep 0 violations, 0 differences from `c66a5e61`. *Evidence:* `sweep_policy.txt`; sandbox: unauthorized actions | PREVENTED |
+| CL5 | Identity comes from the credential only; each route refuses every caller it does not admit. *Control:* constant-time checks on bytes; an `OWNER`, `SYSTEM` or `COUNTERPARTY` claim in a body that the credential does not prove is rewritten to `AGENT` (REV-1); route classes (Table 6) | [test_route_policy.py](../services/api/tests/security/test_route_policy.py) (16 tests, 113 routes); [test_bypass_sweep.py](../services/api/tests/security/test_bypass_sweep.py) (213 cases); [test_review_19oct.py](../services/api/tests/api/test_review_19oct.py); the sweep in three modes (112 routes) | 16 tests pass over 113 routes; owner 96 of 97 (91 of 97 with DEMO_MODE=0); sweep 0 violations, 0 differences from `c66a5e61`. *Evidence:* `sweep_policy.txt`; sandbox: unauthorized actions | PREVENTED |
 | CL6 | The tier is computed by code; Tier 3 is refused for everyone; Tier 2 waits for the owner. *Control:* [tiers.py](../services/api/app/mandate/tiers.py); executor gates 4 and 7 | [test_tiers.py](../services/api/tests/mandate/test_tiers.py); 22 escalation cases; the tier mutation (Table 18) | tests pass; 0 harm on 279. *Evidence:* `shards/` | PREVENTED |
 | CL7 | The ¥100,000 threshold applies to a commitment's net new future concessions; an early-pay discount counts ¥0. *Control:* `tier2_single_commitment_fen` | [test_approval_thresholds.py](../services/api/tests/security/test_approval_thresholds.py) (`test_a_single_commitment_above_the_threshold_is_tier_2_and_at_it_is_not`) | tests pass. *Evidence:* `shards/` | PREVENTED (above it, queued) |
 | CL8 | The agent's draw is Tier 1 only on a committed, owner-approved facility within the signed rate (15% a year); otherwise it waits for the owner. *Control:* tiers; the executor's rate threshold; admission | `test_approval_thresholds.py`; PC-05; [test_admission.py](../services/api/tests/operations/test_admission.py) | tests pass. *Evidence:* `shards/` | PREVENTED; a compromised agent's Tier-1 reach: ACCEPTED LIMITATION (R-3) |
@@ -196,7 +196,7 @@ nothing leaves the machine; in the assessed live runs, redacted text went to Dee
 | --- | --- | --- | --- |
 | Owner | `X-Owner-Token`. The mandate is Ed25519-signed; the owner's public key is pinned in the executor at start-up | decide Tier-2 approvals and run operations directly; add a facility (Tier 2); reset a circuit breaker; **pause and resume the agent**; read every view; upload, confirm, reject or refile a document; add a customer; set up or undo a confirmed contract's repeating invoice (Tier 2); record a payment received or a real buyer's acceptance; ask questions about the books (read-only); move the simulated clock; demo and setup tools (Table 6) | execute a Tier-3 operation; revoke or renew the mandate through the API (no such route, R-14) |
 | Agent | `X-Agent-Key` | typed operations through `POST /operations`: Tier 1 inside the mandate, including a draw on a committed, owner-approved facility whose cost is within the owner's signed rate (15% a year); anything above queues for the owner (never a capex purchase); in chat, an allow-list view with only its own amounts (R-11) | approve, or learn the owner's decision on an approval (APR-1); reset a circuit; read owner views; move the clock; act while paused |
-| Bank feed (`SYSTEM`) | `X-Bank-Feed-Key` | record a received payment at Tier 1 | anything else, including the clock (SEC-09) and any other operation kind spoken as `SYSTEM` (PAUSE-1) |
+| Bank feed (`SYSTEM`) | `X-Bank-Feed-Key`, sent with the agent key or the owner token (`POST /operations` admits no other caller) | record a received payment at Tier 1 | anything else, including the clock (SEC-09) and any other operation kind spoken as `SYSTEM` (PAUSE-1) |
 | Registered buyer | `X-Counterparty-Key`; the server maps the key to the buyer and ignores any id in the body | send offers or chat: 5 per simulated day across both routes, then 429 `BUYER_BUDGET_EXHAUSTED` (R-10). A keyed chat message (`POST /nl`) can at most make FLOW counter, reject, or accept a plain early-payment discount within the Tier-1 limits, all as the agent (`requested_by: AGENT`); `POST /offers` with a buyer key stores the offer only | execute anything on its own authority or above Tier 1 (anything else queues for the owner); draw on a line or request an advance; act while the agent is paused |
 | Anonymous sender | none | the same text channels, as a **proposal only**: compiled and stored, never agreed by the agent; 200 intakes per simulated day per process, shared by all anonymous senders | reach any other route (401, recorded as a security event) |
 | Language model (live mode only) | none: an extraction component behind a JSON schema | fill `OfferExtraction`, `TermSheetExtraction` or `ContractExtraction`, quoting each term's source; in owner chat, pick one intent from a closed list or up to three of 40 read-only tools | name an operation, approval, tier, reply or facility: the schemas have no field for one |
@@ -309,13 +309,13 @@ mode).**
 **Results on `5926ef29`.** The route-policy test passes (16 of 16) over 113 routes. The owner reaches the handler on 96 of 97
 owner and demo routes in demo mode and on 91 of 97 with `DEMO_MODE=0`: the five 403s above, and in both modes
 `POST /documents/{id}/terms/undo`, which answers 404 `UNKNOWN_SET_UP` because the test world holds no set-up to undo. The
-sweep: 0 policy violations, 0 differences from `03215a20`. The 207-case **credential-bypass sweep**
+sweep: 0 policy violations, 0 differences from `03215a20`. The 213-case **credential-bypass sweep**
 ([test_bypass_sweep.py](../services/api/tests/security/test_bypass_sweep.py)) sends every owner write and agent route each
 wrong or missing credential and each body-field claim of authority: none got through. It fills path parameters with a
 placeholder and sends empty bodies, so on about half the routes the owner's own request stops at validation; the
 route-policy test is what shows each owner route works. Submission build: 16 tests pass over 113 routes; the owner reaches 96 of 97 owner and demo routes (91 of 97 with DEMO_MODE=0); 0 policy violations in three modes; 0 differences from `c66a5e61`.
 
-#### 1.6 Architectural invariants ([INVARIANTS.md](INVARIANTS.md)), and what each proves
+#### 1.6 Architectural invariants (from [INVARIANTS.md](INVARIANTS.md) and the code), and what each proves
 
 **Table 7. The invariants, what enforces each, and what each does not prove.**
 
@@ -336,7 +336,7 @@ route-policy test is what shows each owner route works. Submission build: 16 tes
 | **A paused agent cannot act** | [test_agent_pause.py](../services/api/tests/api/test_agent_pause.py); the round-seven and round-nine pause tests | a write that lands just after a pause in a second API process (PAUSE-2) |
 
 **Who writes, exactly.** Every financial decision (an agreement, a draw, an advance, a repayment, a receipt, a purchase) is
-made by the executor. Outside it: the owner-only clock posts flows already scheduled and fulfils or expires commitments; reset
+made by the executor. Outside it: the owner-only clock posts flows already scheduled and fulfils or expires commitments (its entries are logged with the `SYSTEM` actor, though only the owner token can move it); reset
 and setup replace the books (setup in demo mode only; reset owner-only, on the in-memory store or in demo mode); other routes
 record documents, customers, offers, facts, the pause switch and security events.
 
@@ -355,7 +355,7 @@ authorises ([test_authority_audit.py](../services/api/tests/nl/test_authority_au
 
 | The owner writes | When | Effect |
 | --- | --- | --- |
-| a whole short affirmative: "go ahead", "yes", "do it", "run it", "confirm", "approve", 执行, 确认, "ok, do it" | a plan is waiting | runs the plan's operations; its approval-tier legs then wait in the queue |
+| a whole short affirmative, for example "go ahead", "yes", "do it", "run it", "confirm", "approve", 执行, 确认, "ok, do it" | a plan is waiting | runs the plan's operations; its approval-tier legs then wait in the queue |
 | "ok", "sure", 好的, 行, 可以 alone; a question; a tag question; a condition | a plan is waiting | decides nothing |
 | "no", "cancel", 取消 (also beside small talk or a customer name, PAY-3) | a plan is waiting | drops the plan |
 | "approve" or 批准 | a plan is waiting and an approval was shown | confirms the plan, not the approval (CON-2, by design) |
@@ -426,14 +426,14 @@ the owner's or bank feed's `ReceivePayment` and the owner's `RepayFacility` stil
 that already moved. Neither survives a bad signature, an unsigned edit or an unsigned revocation
 ([test_mandate_gate.py](../services/api/tests/operations/test_mandate_gate.py), `test_round_nine.py`). A refusal does not use
 up an idempotency key; a key reused for a different operation is `REPLAY`. The circuit breaker counts only refused offer
-operations, so agent funding refusals cannot block a bank receipt, and the owner's own answers pass an open circuit (SEC-05).
+operations and refused facility additions (`AddFacility`), so agent funding refusals cannot block a bank receipt, and the owner's own answers pass an open circuit (SEC-05).
 
 <!-- figure: security/figures/fig2-executor-gates.png | Figure 3. The executor's gates, in order, and the outcome each can produce. -->
 
 *Figure 3 in words.* A typed operation (from the owner, the agent, the bank feed or a verdict; a body cannot claim a
 tier or an actor) first meets the owner's pause, then eight gates in order: (1) idempotency, DUPLICATE or REPLAY; (2) dating,
 STALE_OPERATION; (3) the mandate, BAD_SIGNATURE, MANDATE_EXPIRED or MANDATE_REVOKED; (4) Tier 3, refused for everyone; (5) the
-circuit breaker, CIRCUIT_OPEN after 3 refused offer operations in 7 days, reset only by the owner; (6) acceptance binding,
+circuit breaker, CIRCUIT_OPEN after 3 refused offer or facility operations in 7 days, reset only by the owner; (6) acceptance binding,
 STALE_VERDICT or CONFLICTING_COMMITMENT; (7) the Tier-2 queue, PENDING_APPROVAL; (8) preconditions and admission on today's
 books, REFUSED. After gate 8 the operation is EXECUTED in one unit of work: state, commitment, nonce, approval, security event
 and log entry commit together or not at all. After the mandate expires, is revoked or changes version, only a receipt and an
@@ -462,10 +462,10 @@ and an event records the totals when the hour turns
 genesis `"0" × 64`. `payload_json` and `result_json` are canonical JSON objects (sorted keys, no whitespace, no NaN). The
 hashed payload carries the operation's id, kind, requester, mandate version, source verdict and simulated day; the hashed
 result carries status, tier, violations, effective day, approval id and message. Not hashed: the `seq` column (its order is
-held by the links), the idempotency-key column, any wall-clock time and any schema version.
+held by the links), the idempotency-key column (the key itself is inside the hashed payload), any wall-clock time and any schema version.
 
 **What enforces it.** State, commitment, nonce, approval, security event and log entry commit in **one unit of work**. The
-store applies compare-and-swap to the state version and the log head; a losing unit re-runs at most 8 times,
+store applies compare-and-swap to the state version and the log head; a losing unit is tried at most 8 times in all,
 then answers 409. Database triggers refuse UPDATE and DELETE on the log (migration `0003`); approvals are decided once and security events
 are append-only (migration `0009`, SEC-08); no session setting lifts these guards.
 
@@ -728,7 +728,7 @@ examples), asserting zero unauthorised executions, an unchanged mandate and faci
 
 *Figure 5 in words.* None of these reviews was external professional assurance. 1 Oct: the attack catalogue, written by the
 team that built the system. 3 Oct: the principal audit by team members working with AI agents, and red-team rounds 1 to 5 by
-AI subagents; every finding became a regression test. 14 to 19 Oct: the Security Lead, an AI agent in a separate session,
+AI subagents; every finding became a regression test. 14 to 20 Oct: the Security Lead, an AI agent in a separate session,
 with its gates: `0ba8e4c1`, `a6de32a2`, `b6d1e519`, `0f92d433`, `719c9dcf`, `0fde33fd`, `29fa0ea2` and `85309b63` passed;
 `6d2b6941` conditional; `70f23ac5` passed (18 Oct); `5941e95a` not passed (PAY-1); `03215a20` passed on a trusted network (19
 Oct); `5926ef29` gated, not released (a live browser failure); `66c31e7e` passed; and `c66a5e61`, the submission build with the 19 Oct review's fixes, whose verdict is stated
@@ -744,7 +744,7 @@ an offline tier, not re-run. 16 to 18 Oct: the project lead's risk decisions, fo
 | Attack catalogue (1 Oct) | the implementation team | written by the people and agents who built the system | yes | the reviews below |
 | Principal audit (3 Oct) | three bounded reviewers and a principal: team members working with AI agents | separate review of the code | yes | the project lead |
 | Red-team rounds 1 to 5 (3 Oct) | AI subagents started with minimal context about the backlog | no implementation role | yes | the project lead; every finding became a regression test |
-| Security Lead (14 to 19 Oct) | an AI agent (Claude, in Claude Code) in a separate session and git worktree, with delegated AI reviewer agents | did not build the product features it audited; **did write the security fixes it then gated**, each on its own branch with a test that fails first | yes: reproductions, sweeps and probes in [docs/security/evidence/](security/evidence/) | the integration lead merged until 19 Oct; the project lead approved engine changes and accepted risks |
+| Security Lead (14 to 20 Oct) | an AI agent (Claude, in Claude Code) in a separate session and git worktree, with delegated AI reviewer agents | did not build the product features it audited; **did write the security fixes it then gated**, each on its own branch with a test that fails first | yes: reproductions, sweeps and probes in [docs/security/evidence/](security/evidence/) | the integration lead merged until 19 Oct; the project lead approved engine changes and accepted risks |
 | Internal red-team run (16 Oct) | team member Hao En; **the report is not in the repository** and no location is recorded | a team member | yes | its five observations were re-checked by the Security Lead on the code; its live-tier results were not re-run |
 | Review of the self-assessment (17 Oct) | a written review supplied by the project lead; the reviewer is not recorded | not recorded | it reviewed the documents, not the code | the Security Lead acted on each point |
 | Review of the 19 Oct build (`66c31e7e`) | team member Hao En | a team member; did not write the fixes it found | yes: more than 160 probes outside the catalogue | the Security Lead reproduced each finding, fixed it with a regression test and re-ran the gate (REV-1 to REV-3) |
@@ -753,7 +753,7 @@ an offline tier, not re-run. 16 to 18 Oct: the project lead's risk decisions, fo
 **Internal audit and five red-team rounds (1 to 3 Oct).** They found 39 issues (Appendix B); every finding became a
 regression test before it was closed.
 
-**Security Lead (14 to 19 Oct).** Audited `e8e270f8` and every later merge; reproduced each finding before recording it;
+**Security Lead (14 to 20 Oct).** Audited `e8e270f8` and every later merge; reproduced each finding before recording it;
 built each fix on its own branch, with a regression test that fails before and passes after; re-ran the gate on the exact
 merged commit. Records: [FINDINGS_REGISTER.md](security/FINDINGS_REGISTER.md),
 [CERTIFICATIONS.md](security/CERTIFICATIONS.md), [RELEASE_GATE.md](security/RELEASE_GATE.md) and the evidence folders.
@@ -898,7 +898,7 @@ are now read as their ASCII forms. On `78b211f0` the language boundary then ran 
 with recorded readings, so every attack reaches its control; only the attack phase calls the model. Evidence
 `docs/security/evidence/2026-10-20/live-78b211f0/`, id `sha256:ec02a982b50aa427`. **Verdict: safety-certified for DeepSeek on 20 Oct**, for the safety boundary (the pass condition: 0 wrong-and-material, 0
 harm), not for accuracy. It covers DeepSeek as the primary only: the fallback to a second provider is not certified (one provider key).
-Each result is a single run on one day, and the model behind the alias is not pinned.
+Each result is a single run on one day, and the model behind the alias is not pinned. The harnesses exit non-zero by design: 3 on each language-boundary run (the uncertified fallback path) and 1 on the catalogue (it counts a case stopped by an earlier control as a non-pass); the evidence summary explains both. Among the "wrong but harmless" items, BO-065 and BO-066 are acceptances of terms their labels do not allow that waited for the owner's approval and executed nothing: the owner then decides on the interpreted terms (R-7).
 
 ## 03 Data and Privacy
 
@@ -938,7 +938,7 @@ itself establish a legal basis for processing it (3.6).
 <!-- figure: security/figures/fig5-model-data-flow.png | Figure 6. What reaches the model provider in each mode, and what never does. -->
 
 *Figure 6 in words.* An inbound document (a buyer's message, term sheet or contract) may hold personal data. In cache mode,
-the assessed default, it is read from a recorded reading or by the local rules grammar, and nothing leaves the machine. In
+the default (scope S), it is read from a recorded reading or by the local rules grammar, and nothing leaves the machine. In
 live mode, opt-in and certified with DeepSeek only (2.11), it passes three steps: (1) redaction on this machine, where accounts, phones, emails,
 credit codes, ID and passport numbers and labelled addresses become placeholders; (2) the model provider, which gets the
 instructions, the schema and the redacted text only, and returns typed JSON with quotes; (3) the map back on this machine,
@@ -947,7 +947,9 @@ the books, mandate, funding menu or other buyers' terms, though a person can sti
 company names, file names, WeChat and QQ ids and some number formats still pass (PRIV-4, PRIV-5), which is why live mode's
 certification covers synthetic data only.
 
-- **Cache mode** (the assessed configuration and the tests) sends nothing anywhere. Extractions are replayed from
+- **The API documentation page** (`/docs`, served in demo mode only) loads Swagger UI's script and style from a public CDN in
+  the browser that opens it; no book data goes with that request, and the judges' demo hides the page.
+- **Cache mode** (scope S and the tests) sends nothing anywhere. Extractions are replayed from
   [fixtures/compiler_cache/](../fixtures/compiler_cache/) or produced by the local rules grammar.
 - **Live mode** (`LLM_MODE=live`, opt-in; certified with DeepSeek only, 2.11) sends a provider the static instructions, the output schema and the
   redacted inbound text. Five paths reach a provider: the offer, term-sheet and contract compilers, the chat classifier and
@@ -1271,7 +1273,7 @@ alone are still accepted alone.
 | --- | --- | --- |
 | Local demo on loopback (scope S) | **certified for scope S on 20 Oct** for the submission build `78b211f0`. Earlier: `03215a20` passed on a trusted machine and network (its launcher served the web app on every interface, DEMO-L1); `70f23ac5` passed (the same condition, found later); `5941e95a` and `5926ef29` were not released | **Operating constraints:** `DEMO_MODE=1`; memory or SQLite; one API process; `LLM_MODE=cache` (the router on recorded answers only); synthetic fixtures; contract terms on, as `pnpm demo` sets them; simulated counterparties; nobody but the presenter holds the demo credentials; the API and the web app on 127.0.0.1. **Not covered:** live mode or real documents |
 | Live-model mode (`pnpm demo --live-llm`) with DeepSeek | **safety-certified for DeepSeek on 20 Oct** on `78b211f0` (2.11); the fallback to a second provider is not certified | **Operating constraints:** those of scope S, with `LLM_MODE=live` and a DeepSeek key. **Not covered:** another provider; real documents (PRIV-4, PRIV-5); a provider agreement on retention and region, and the PIPL (3.6); a daily model-call budget (RT-3) |
-| Demo reachable over a network | **One tested profile,** the password-gated judges' demo: HTTPS, a password on every path, documentation hidden, 2 MB bodies, one API process; the demo credentials only behind the password. Checked from outside (`sha256:92e71fd3759897c3`). **Any other: NO-GO** | **A profile needs:** new credentials and owner key, or a password gate; one worker; synthetic data; docs hidden; TLS with per-client limits; the web server behind it; anonymous intake off or gated; the stop procedure. **It must pass:** the route and browser checks (S3) against it |
+| Demo reachable over a network | **One tested profile,** the password-gated judges' demo: HTTPS, a password on every path, documentation hidden, 2 MB bodies, one API process; the demo credentials only behind the password. Checked from outside: access and CSP (`sha256:92e71fd3759897c3`); route sweep, 0 policy violations, and sandbox, 142 passed, 0 failed (`sha256:8e17f33e72969b11`). **Any other: NO-GO** | **A profile needs:** new credentials and owner key, or a password gate; one worker; synthetic data; docs hidden; TLS with per-client limits; the web server behind it; anonymous intake off or gated; the stop procedure. **It must pass:** the route and browser checks (S3) against it |
 | Production with real customers, documents or money | **NO-GO** | the prerequisites in 4.3; R-2, R-13, R-14, SEC-19, SEC-28, CAPEX-ACCT; R-3's aggregate draw limit; PRIV-4, PRIV-5 and the privacy assessment (3.6); backups; a penetration test; real counterparties, lenders and bank feeds |
 
 **The stop procedure for the local simulation**, in order: (1) `POST /agent/pause` with the owner token, which stops every
@@ -1347,7 +1349,7 @@ Not in the repository: the 16 Oct red-team run's report (2.6).
 | F-08 | deciding a decided or unknown approval returned 500, unlogged | 409 or 404, with a security event |
 | F-09 to F-12 | authority flags not events; full-width and homoglyph overrides; a textual UPDATE missed; a corrupted row crashed `/audit` | events; NFKC folding; triggers; unreadable rows reported |
 
-**The Security Lead (14 to 19 Oct), by finding severity** (the register's scale, 4.1).
+**The Security Lead (14 to 20 Oct), by finding severity** (the register's scale, 4.1).
 - **High:** SEC-16, SEC-02, CAPEX-1, SEC-01 (coverage).
 - **Medium:** OUT-1, SEC-08, SEC-17, SEC-18, SEC-03 to SEC-05, SEC-09, SEC-10, CAPEX-2, CAPEX-3; PAY-1, FUND-1, FUND-2.
 - **Low:** SEC-12, SEC-13, SEC-20, SEC-21, SEC-22, PG-1, CAPEX-4, SETUP-1, 4, 5, 7, SEC-23, OUT-1b, RT-1, RT-2, PRIV-1 to PRIV-3,
@@ -1373,7 +1375,7 @@ Each has its reproduction, fix, regression test and merge commit in [FINDINGS_RE
 | 19 Oct | `03215a20` (code `bee9c50d`, merged as `c707ee8c`) | round seven: PAY-1 to PAY-3, PAUSE-1, APR-1 | **passed**, scope S on a trusted network: 11,368 passed, 0 failed, 47 skipped; 0 harm; mock 479 passed; CSP 17 pages, 0 violations; SEC-28 with FUND-1 to FUND-5 and DEMO-L1 disclosed |
 | 19 Oct | `eb3c1059` | round eight and the loopback launcher, before round nine | intermediate gate, superseded; not a release; its live browser run (four workers by mistake) is not cited |
 | 19 Oct | `5926ef29` | round nine, the lint and public-release cleanups, the unseen evaluation set | **not released**: a live browser failure, a stepper race (2.7); every other check passed (Table C2) |
-| 19 Oct | `66c31e7e` | the demo stepper fix on `5926ef29` | **certified for scope S on 19 Oct** (`sha256:4a418fe4fb4c6c4d`; Table C2) |
+| 19 Oct | `66c31e7e` | the demo stepper fix on `5926ef29` | **certified for scope S on 19 Oct** (`sha256:4a418fe4fb4c6c4d`; [CERTIFICATIONS.md](security/CERTIFICATIONS.md)) |
 | 19 Oct 2026, 08:41 to 09:33 UTC | `c66a5e61` | the three fixes of the 19 Oct review (REV-1 to REV-3) | **certified for scope S on 19 Oct** (`sha256:37ff16748cf56bca`) |
 | 20 Oct 2026, 04:31 to 05:24 UTC | `78b211f0` | the submission build: LIVE-1 to LIVE-3 and the fail-closed REV-4 | **certified for scope S on 20 Oct; live mode safety-certified for DeepSeek on 20 Oct** (Table C2) |
 

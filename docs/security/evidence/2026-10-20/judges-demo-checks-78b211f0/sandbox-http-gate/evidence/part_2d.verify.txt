@@ -1,0 +1,3 @@
+$ python scripts/verify_evidence.py part_2d.jsonl
+VALID: 7 operations, 1 security events, head 303effc9f6d390d0…
+exit 0

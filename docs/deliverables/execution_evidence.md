@@ -241,8 +241,8 @@ python3 scripts/verify_evidence.py docs/deliverables/evidence/demo_walk/operatio
 uv run --project services/api python scripts/demo_run.py                                         # the 17-step walk; RESULT: … cure executed and alert cleared: True
 uv run --project services/api python scripts/run_scenarios.py --inproc --out /tmp/tl-e2e          # 49/49 scenarios passed, 88 turns (18 Oct)
 uv run --project services/api python scripts/security_refusals_evidence.py /tmp/security_refusals.json   # four refusals, books_moved: false
-uv run --directory services/api pytest                     # the API test suite (technical document, Table V: 11,368 passed, 0 failed, 47 skipped on 03215a20; on the submission build 11,499 passed, 0 failed, 47 skipped)
-uv run --directory services/api python -m app.security.attacks   # 128 API attacks plus 151 chat attacks (279), 0 with harm (19 Oct, 78b211f0)
+uv run --directory services/api pytest                     # the API test suite (on the submission build 11,499 passed, 0 failed, 47 skipped; technical document, Table V)
+uv run --directory services/api python -m app.security.attacks   # 128 API attacks plus 151 chat attacks (279), 0 with harm (20 Oct, 78b211f0)
 ```
 
 These need `DEMO_MODE=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1` in the shell (PowerShell: `$env:DEMO_MODE="1"` and so on); on Windows use a Windows folder in place of `/tmp`. The test catalogue is [TEST_CASES.md](TEST_CASES.md).
