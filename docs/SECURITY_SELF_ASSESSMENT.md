@@ -31,18 +31,18 @@ money moves. We claim neither regulatory compliance nor absolute security.
   with recorded or scripted model answers; in the live run on `78b211f0` the attack phase was read by DeepSeek (279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control, 18 by an earlier one and 7 known gaps without harm; detection 98.44%, 2.11). A route-policy test calls every route
   as every kind of caller (section 1.5). This is a test result within a scope, not evidence that no exploitable path exists,
   and no running deployment has had a penetration test.
-- **Review arrangement, and what "certified" means.** Every review was internal and AI-assisted (section 2.6). The Security
-  Lead is an AI agent in a separate session and worktree; it also wrote the security fixes it then gated. The project lead
-  accepted the residual risks for the team. **"Certified" in this document means that a build passed the Security Lead's
-  internal release gate on that exact commit for the stated scope; it is not accreditation.**
-- **Release state** (section 2.7; every earlier gate is in Appendix C and
-  [CERTIFICATIONS.md](security/CERTIFICATIONS.md)). **The submission build `78b211f0`: certified for scope S on 20 Oct.**
 - **Review of the 19 Oct build (`66c31e7e`).** Team member Hao En, who did not write the fixes, reviewed it. The review re-ran the sandbox, the judge pack and the security test folders on
   a fresh Linux machine (the sandbox: 159 PASS, 0 FAIL in process; 142 PASS, 0 FAIL, 1 SKIPPED over HTTP; 49 of 49 judge tasks, 279 attacks with 0 harm, 32 of 32
   evidence chains VALID) and probed the API with more than 160 attacks outside our catalogue. It found three defects; all three are
   fixed in the submission build, each with a regression test (REV-1 to REV-3, Table 27). A later review found one more
   (REV-4): a keyed buyer's message with the payer reversed ("You can pay …") or wholly quoted (">") was accepted at Tier 1
   as the plain early-payment discount. It is fixed, fail-closed, in `78b211f0` (Table 27).
+- **Review arrangement, and what "certified" means.** Every review was internal and AI-assisted (section 2.6). The Security
+  Lead is an AI agent in a separate session and worktree; it also wrote the security fixes it then gated. The project lead
+  accepted the residual risks for the team. **"Certified" in this document means that a build passed the Security Lead's
+  internal release gate on that exact commit for the stated scope; it is not accreditation.**
+- **Release state** (section 2.7; every earlier gate is in Appendix C and
+  [CERTIFICATIONS.md](security/CERTIFICATIONS.md)). **The submission build `78b211f0` passed the internal release gate for scope S on 20 Oct ("certified").**
 - **Live model mode** (section 2.11). With DeepSeek as the provider, live mode is certified on `78b211f0` (20 Oct); the
   fallback to a second provider is not certified. The three findings of the first live runs (LIVE-1, a hidden character inside a rate;
   LIVE-2 and LIVE-3, a misread full-width figure acted on alone) are fixed in `78b211f0` (Table 27).
@@ -58,7 +58,7 @@ money moves. We claim neither regulatory compliance nor absolute security.
 | Build and assessment | |
 | --- | --- |
 | Submission build | `78b211f0` (full SHA `78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`: `c66a5e61` (certified for scope S on 19 Oct: `66c31e7e` plus the three fixes of the 19 Oct review, REV-1 to REV-3) plus the fail-closed REV-4 and the three live-mode fixes LIVE-1 to LIVE-3 (20 Oct). `66c31e7e` is dev `03215a20` with round eight (FUND-1, 2, 3, 5), the demo launcher on loopback (DEMO-L1), round nine (LOG-2, the SEC-19 display, CON-1 and pinned authority tests), the demo stepper fix, the API lint cleanup, the public-release cleanup and the unseen evaluation set. Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) |
-| Documentation revision | the `dev` commit tagged `submission-2026-10-20g`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
+| Documentation revision | the `dev` commit tagged `submission-2026-10-20h`; later commits change documentation, evidence and the document build tooling only, never [services/api/app](../services/api/app/) or [apps/web](../apps/web/) |
 | Its release gate | certified for scope S on 20 Oct, by the Security Lead on a clean checkout of `78b211f0`, 20 Oct 2026, 04:31 to 05:24 UTC; evidence [int-78b211f0/](security/evidence/2026-10-20/int-78b211f0/), id `sha256:6f665b8ae82df362` (the hash of its `SHA256SUMS`); every result in Table C2 |
 | Earlier gates | `66c31e7e`: certified for scope S on 19 Oct (`sha256:4a418fe4fb4c6c4d`); the builds before it in Appendix C |
 | Scope assessed (scope S) | `pnpm demo` on one machine: the API and the web app on 127.0.0.1; one API process; `DEMO_MODE=1` with the published demo credentials (the route checks also run with `DEMO_MODE=0` and unset); `DATABASE_URL=memory`; `LLM_MODE=cache` (no model provider is called); synthetic fixtures ([golden_sme.json](../fixtures/scenarios/golden_sme.json) and others). The CSP was checked on both the production build and the development server `pnpm demo` runs |
@@ -731,9 +731,9 @@ team that built the system. 3 Oct: the principal audit by team members working w
 AI subagents; every finding became a regression test. 14 to 20 Oct: the Security Lead, an AI agent in a separate session,
 with its gates: `0ba8e4c1`, `a6de32a2`, `b6d1e519`, `0f92d433`, `719c9dcf`, `0fde33fd`, `29fa0ea2` and `85309b63` passed;
 `6d2b6941` conditional; `70f23ac5` passed (18 Oct); `5941e95a` not passed (PAY-1); `03215a20` passed on a trusted network (19
-Oct); `5926ef29` gated, not released (a live browser failure); `66c31e7e` passed; and `c66a5e61`, the submission build with the 19 Oct review's fixes, whose verdict is stated
-in the text (2.7), not in the figure. 16 Oct: the internal red-team run by team member Hao En, with a live DeepSeek tier and
-an offline tier, not re-run. 16 to 18 Oct: the project lead's risk decisions, for the team. 19 Oct: team member Hao En's reviews of the submission build
+Oct); `5926ef29` gated, not released (a live browser failure); `66c31e7e` and `c66a5e61` (the 19 Oct review's fixes) certified on 19 Oct; and `78b211f0`, the submission build, certified
+on 20 Oct, with live mode safety-certified with DeepSeek. 16 Oct: the internal red-team run by team member Hao En, with a live DeepSeek tier and
+an offline tier, not re-run. 16 to 18 Oct: the project lead's risk decisions, for the team. 19 Oct: team member Hao En's reviews of the 19 Oct build
 (REV-1 to REV-3, fixed in `c66a5e61`) and of a later branch (REV-4, fixed in `78b211f0`; `feat/reader-dates` no-go).
 
 **Table 19. The review arrangement.**
@@ -924,7 +924,8 @@ it is used, the provider receives redacted inbound text, and FLOW never attaches
 | Application logs | the API | standard output: model call metadata, redaction counts per kind, rate-limit and refusal warnings, error traces naming ids; some planning lines include fen amounts; no document text or credentials. The access log records method, path with query string, status and client address | operators | never |
 | Live-evaluation results | the team, 18 and 19 Oct | [services/api/evals/live_frozen/](../services/api/evals/live_frozen/) and `live_unseen/`: synthetic items and the model's readings | the repository | they are the record of what a provider returned |
 | Strategy warm-up (demo only) | the API, after a demo reset or setup | a separate low-priority process that receives the books over a pipe, computes three read caches and exits; no store, no port, an allow-listed environment with no credentials (WARM-1) | the API's caches | never |
-| Browser storage | the web app | `sessionStorage`: the owner token, the last 12 chat turns, a chat draft, the last funding run; `localStorage`: language and layout settings and the **setup draft**, cleared after the books are opened but not on sign-out (PRIV-6) | anyone with access to that browser profile | never |
+| Browser storage | the web app | `sessionStorage`: the owner token, the last 12 chat turns, a chat draft, the last funding run; `localStorage`: language and layout settings, the last day visited, a has-an-account flag, tour progress, the deals hint, a
+books-epoch marker (none holds a figure or a credential) and the **setup draft**, cleared after the books are opened but not on sign-out (PRIV-6) | anyone with access to that browser profile | never |
 | Backups | none | no backup exists in the assessed configuration | | |
 
 **Provenance and consent.** Every company, person, amount and message in the demo, the tests and the evaluations is a
@@ -944,7 +945,7 @@ credit codes, ID and passport numbers and labelled addresses become placeholders
 instructions, the schema and the redacted text only, and returns typed JSON with quotes; (3) the map back on this machine,
 where quotes are mapped to the original text and grounding and the coverage check run on the original. FLOW never attaches
 the books, mandate, funding menu or other buyers' terms, though a person can still type such figures into a message; names,
-company names, file names, WeChat and QQ ids and some number formats still pass (PRIV-4, PRIV-5), which is why live mode's
+company names, file names, WeChat and QQ ids and some number formats still pass (PRIV-5), which is why live mode's
 certification covers synthetic data only.
 
 - **The API documentation page** (`/docs`, served in demo mode only) loads Swagger UI's script and style from a public CDN in
@@ -1006,8 +1007,9 @@ REG-8).
 #### 3.5 Storage, keys and deletion
 
 - **Store.** SQLite for development and tests; PostgreSQL in deployment. Row-level security is enabled on every table with
-  no policies (migration `0002_enable_rls`), so a hosted database's anonymous and authenticated roles read nothing through its
-  REST API. The API connects as the table owner (R-13).
+  no policies (migration `0002_enable_rls`, and `0005` to `0008` for the later tables), so a migrated hosted database's anonymous and authenticated roles read nothing through its
+  REST API. The API connects as the table owner (R-13). A database the API creates itself (tests and local development)
+  gets the append-only and decide-once triggers but not row-level security; a deployment runs the migrations.
 - **Keys.** The mandate key in [owner_demo_ed25519.json](../fixtures/keys/owner_demo_ed25519.json) and the `demo-*`
   credentials are published demo values, labelled DEMO ONLY and refused outside demo mode; a deployment must set its own.
   Provider API keys come from the environment (`.env` is git-ignored; the secret scan found none, 2.8) and are never logged.
@@ -1093,7 +1095,7 @@ prerequisites, not rated risks, and are not on the map.
 | SEC-28 | A multi-leg plan can stop part-way; it is reported leg by leg but not reversed or resumed | vulnerability | privileged (owner action) | Moderate | Moderate (I, H) | **Moderate** |
 | R-3 | A compromised agent can use its Tier-1 reach inside the mandate until the owner pauses it | by design | authenticated | Moderate | Moderate (F) | **Moderate** |
 | CAPEX-ACCT | A changed receiving account in a later vendor document is not detected (the classic induced-transfer pattern) | vulnerability (a missing check) | a vendor's document, uploaded by the owner | Moderate | Moderate (F, H) | **Moderate** |
-| PRIV-4, PRIV-5 | Redaction misses names and some identifier formats (live mode only) | vulnerability | any document sender | Moderate | Moderate (C) | **Moderate** |
+| PRIV-5 (with PRIV-4) | Redaction misses names and some identifier formats (PRIV-5); PRIV-4 is the reverse, bare 16-digit references hidden as accounts, which hides too much and leaks nothing (live mode only) | vulnerability | any document sender | Moderate | Moderate (C) | **Moderate** |
 | OPS | No backup, restore or PostgreSQL CI job; the pause is API-only | operational gap | privileged (the operator) | Moderate | Moderate (A, I) | **Moderate** |
 | S3 | Browser injection against the owner token has not been penetration-tested | unverified property | anonymous (content) | Low | High (credential) | **Moderate** |
 | R-7 | A buyer's refusal or qualified offer ("we won't pay early…", "half of…", "on every future invoice") can read as the plain discount; it never runs alone and reaches the owner as an approval, whose card shows the terms read, not the buyer's words | vulnerability | any message sender | Moderate | Moderate (H) | **Moderate** |
@@ -1290,7 +1292,8 @@ understood.
 2. **Before any other network demo:** a tested profile; anonymous intake off and "unverified sender" in the chat's reply
    (SEC-19); browser injection tests (S3).
 3. **Owner control and payees:** mandate revoke and renew routes; a web pause control and an "agent queued this before the
-   pause" mark (R-14, OPS, PAUSE-Q); key rotation (R-2); a changed vendor account flagged (CAPEX-ACCT).
+   pause" mark (R-14, OPS, PAUSE-Q); key rotation (R-2); a changed vendor account flagged (CAPEX-ACCT); a receipts-only route for the bank feed, so a bank
+   integration need not hold the agent key, which can also draw on the credit line.
 4. **Audit integrity and scale:** a restricted database role and signed external checkpoints (R-13); the day and the pause
    read inside the unit of work; a PostgreSQL CI job (SEC-11, PAUSE-2, OPS).
 5. **Live use with real documents:** named-entity detection; provider retention; the PIPL assessment; a live-mode
@@ -1471,7 +1474,7 @@ change is also reflected there. The tests recorded with each change are in Table
 | --- | --- | --- | --- |
 | `563de405` (round six) | REG-8, REG-9, CT-2b | egress entitlement; a demo-only allowance; the file shown to lenders | fixed; in `5941e95a` |
 | `f52870d1`, `f1b95e61`, `386775ca`, `d9923e92`, `7404f798` | SEC-28 reporting; the authority audit (explicit consent words, decision and run apart, an owner-recorded acceptance states its funding) | what the owner is told; consent and approval binding | fixed; in `5941e95a` |
-| `0e7badbd`, `c8f63dd4`, `16480b3f`, `30d0f105` | wording: the kind of prior agreement claimed; the 15% rate and the commitment limit as approval thresholds; the 207-case bypass sweep | no amount, verdict, tier or plan changes; the sweep found no gap | reviewed on `5941e95a` |
+| `0e7badbd`, `c8f63dd4`, `16480b3f`, `30d0f105` | wording: the kind of prior agreement claimed; the 15% rate and the commitment limit as approval thresholds; the bypass sweep (207 cases then; 213 on the submission build) | no amount, verdict, tier or plan changes; the sweep found no gap | reviewed on `5941e95a` |
 | `43996362`, `3bc3b1c0`, `38736b62`, `6f810424`, `406f5292`, `773f821e`, `e109fd78`, `ed178e14`, `5ad111e0` | Ask FLOW's new read-only answers; "can I pay everyone?" (may leave a plan waiting); small talk from fixed text; a JSON 500 with no exception text | owner-only, read-only; a waiting plan runs only through the consent grammar and the executor | reviewed on `5941e95a`; PAY-1 found here |
 | `0af4a6bc`, `464617b3`, `ab8bac83` | the owner's pause; saved chain checkpoints; every live model path redacted | new owner control; tamper evidence; privacy | reviewed on `5941e95a` |
 | `89e57719`, `fd63add1`, `5b9209a4` | live mode only: read intents to the router; `pnpm demo --live-llm`, forcing `LLM_REDACT=1` and `LLM_LIVE_RAW=0` | live mode only | in the live certification on `78b211f0` (2.11) |

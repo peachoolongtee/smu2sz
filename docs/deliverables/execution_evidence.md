@@ -14,6 +14,16 @@ FLOW is the product name; the code and its variables still use the working name 
 
 **Demo video.** [https://youtu.be/6y5_fKPInIo](https://youtu.be/6y5_fKPInIo).
 
+**Verify it in five minutes** (a clone of the tag, Python 3.12 and `uv`; no key and no network once installed):
+
+```
+cd services/api && uv sync --frozen && cd ../..
+uv run --project services/api --no-sync python docs/deliverables/evidence/sandbox-2026-10-19/run_sandbox.py --inproc
+python3 scripts/verify_evidence.py docs/deliverables/evidence/sandbox-2026-10-19/run-20261020T043153Z-inproc/operations_log.jsonl
+```
+
+The first prints one line per case part, then `159 passed, 0 failed, 0 skipped; 0 parts skipped; exports VALID 16/16; secret scan clean`: the five cases of section 01 re-run on fresh books, each step checked against the state read back. The second prints `VALID`: the committed log's hash chain verifies with the standard library alone. Section 03 has the PowerShell commands and the HTTP run.
+
 ## 01 Evidence Summary
 
 ### Selected topic and scenario

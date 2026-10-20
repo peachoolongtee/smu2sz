@@ -9,7 +9,7 @@ it lapses when either changes. It is never a claim of absolute security or zero 
 |---|---|
 | **S** (hackathon simulation) | API and web on loopback only (`127.0.0.1`; `pnpm demo` serves the web app on every interface until `sec/demo-loopback` is merged, so until then a trusted machine and network, or a firewall rule for the web port: DEMO-L1), one uvicorn process, `DEMO_MODE=1`, `DATABASE_URL=memory` or a local SQLite file, `LLM_MODE=cache`, simulated buyers, lenders and bank, demo credentials, no real money, no real customer data |
 | **S-net** | as S, but reachable from a network (a shared demo URL, a judging booth on Wi-Fi) |
-| **P** (production) | compose (`DEMO_MODE=0`, PostgreSQL 16) behind TLS, real credentials, real customer data, possibly `LLM_MODE=live` |
+| **P** (production) | compose (`DEMO_MODE=0`, PostgreSQL 17) behind TLS, real credentials, real customer data, possibly `LLM_MODE=live` |
 
 ## Verdicts
 
@@ -85,6 +85,8 @@ Without such a profile the local configuration S is the one demonstrated.
 
 ## Not covered by this gate (explicitly unverified)
 
-PostgreSQL (no database available to the Security Lead); live Claude/DeepSeek behaviour (no test key); the web app in a browser
-(reviewed as code only); a deployed TLS proxy; the 55 routes the catalogue does not attack beyond this audit's targeted tests;
+As of the 14 Oct audit: PostgreSQL, live model behaviour, the web app in a browser and a deployed TLS proxy. **Since covered:**
+PostgreSQL 17 concurrency and guards (every gate from 16 Oct), the browser suites and CSP checks (from 17 Oct), live mode with
+DeepSeek (20 Oct) and the password-gated judges' demo over TLS (20 Oct). **Still not covered:** Claude live behaviour; a
+production TLS deployment; the 55 routes the catalogue does not attack beyond this audit's targeted tests;
 round-three and other branches not on `dev`.

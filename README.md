@@ -15,7 +15,8 @@ FinTechathon 2026 · International AI Track · Topic E: SME Finance Copilot · T
 > support under the owner's own signed limits, not a lender, broker or adviser.
 
 > **Runs offline with one command.** After a one-time install, `pnpm demo` needs no account, no VPN and no API key, and
-> the running demo calls no foreign service. Installing it needs the PyPI and npm registries and uv's Python download (or
+> the running demo calls no foreign service (opening the optional API documentation page, `/docs`, loads its viewer from a
+> public CDN). Installing it needs the PyPI and npm registries and uv's Python download (or
 > mirrors of them, which users in mainland China may need). The optional live-model mode (`pnpm demo --live-llm`) needs a
 > DeepSeek or Anthropic API key in your shell; with DeepSeek it is certified on `78b211f0` (20 Oct) (the fallback provider is
 > not certified).

@@ -61,9 +61,9 @@ certified on `78b211f0` (20 Oct) for safety, not accuracy (Table 7). Section 02 
 
 | Build and verification |
 | --- |
-| Submission: product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20g`, and the commits after the product code change documentation, evidence, the document build tooling, the README and the judges' demo deployment files (`infra/judges-demo/`) only. Release state of 78b211f0: certified for scope S on 20 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical (Appendix B, "Earlier builds") |
+| Submission: product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20h`, and the commits after the product code change documentation, evidence, the document build tooling, the README and the judges' demo deployment files (`infra/judges-demo/`) only. Release state of 78b211f0: certified for scope S on 20 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical (Appendix B, "Earlier builds") |
 | Supported configuration (scope S): `pnpm demo` on one machine: API and web app on 127.0.0.1, one API process, `DEMO_MODE=1` with the published demo credentials, in-memory books, `LLM_MODE=cache` (no model provider called), synthetic fixtures. Live mode with DeepSeek: certified on `78b211f0` (20 Oct) (Table 7). Not covered: another model provider, any network or hosted deployment except the one tested judges' demo profile (Table 7), production |
-| Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20g`). Repository paths in this document link to that revision |
+| Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20h`). Repository paths in this document link to that revision |
 | Runs offline after installation. Installing needs the npm and PyPI registries (uv also downloads Python 3.12, and the browser suites need Playwright's Chromium); users in mainland China may need registry mirrors. After that, no account, VPN, API key or foreign service is needed. Live mode (`pnpm demo --live-llm`) needs a DeepSeek or Anthropic API key |
 | Demo video: [https://youtu.be/6y5_fKPInIo](https://youtu.be/6y5_fKPInIo) |
 | Licence: all rights reserved; the organisers and judges may view, run and evaluate the repository for judging ([LICENSE](../../LICENSE)) |
@@ -78,7 +78,7 @@ step with its request, response, the state read back and PASS or FAIL). Appendix
 | **Task completion (40%)** | The supplier's whole workflow on synthetic books: request, reading, financial evaluation, counter, owner authorisation, funding, settlement and reconciliation, with a hash-chained record | 01 journey and Table 2; 02 Table W; 03 "Task completion", Table 4; Appendices D, F | Case 1 (the journey, groups 1.1 to 1.9); case 4 (a plan that only partly runs, reported as it ran) | 49 of 49 scripted tasks; demo walk chain VALID, tampered copy rejected; sandbox: in process 163 steps, 159 PASS, 0 FAIL, 4 setup writes; over HTTP 143 steps, 142 PASS, 0 FAIL, 1 SKIPPED; every export VALID |
 | **Security and compliance (30%)** | Authority by structure: typed operations with no payee field, tiers computed by the executor, the signed mandate, the chat consent rules, the owner's pause, a tamper-evident log; 279 stored attacks with harm oracles | 04: Table 5, Figure 5, "Who can execute what", Tables 6 and 7; the Security Self-Assessment | Case 2 (unauthorised callers, a claimed agreement, Tier 3, an unverified sender); case 3 (ambiguity, consent); case 5 (the pause) | 279 attacks, 0 with harm; 120 of 128 API cases stopped by the named control (8 known gaps); certified for scope S on 20 Oct; live against DeepSeek, 279 attacks, 0 harm |
 | **Innovation and interaction (30%)** | A supplier-side agent across both debt books (credit given, credit taken); the model reads and routes, code decides; bilingual chat with clarification, correction and fallback | Opening; 01 "What is new", Table L1; 02 "What the model contributes"; 03 Table 3 and the dialogue; Appendices G, K | Case 1 groups 1.6 and 1.7 (FLOW speaks first, "go ahead" queues, "approve APR-…" runs); case 3 (a clarification) | Owner questions the rules could not answer (live, 18 Oct): 22 of 63 fully right, 10 partly, 1 wrong; unseen messages (live, 19 Oct): 2 of 6 correct against the rules' 1, 0 wrong; Chinese contracts: both party names right in 14 of 17 (recorded readings); live mode safety-certified for DeepSeek on 20 Oct |
-| **Bonus (0–5)** | Not claimed: FLOW is a local simulation (Table 7) | — | — | — |
+| **Bonus (0–5)** | A deployment judges can use: the password-gated HTTPS judges' demo runs live AI mode (DeepSeek) on synthetic books, checked from outside on `78b211f0` (Table 7). It is a demonstration, not production: no real customers, documents or money | Table 7; 05 "Deployment" | The sandbox through the demo's gate (Table 7) | Route sweep through the gate: 0 policy violations; sandbox: 142 passed, 0 failed |
 
 **Table 1. FLOW at a glance. Each figure names its build; engine and agent figures: dev `975e082f` (17 Oct 2026), re-run
 offline on `571ea64f` (18 Oct) with the same results. Appendix C gives each command.**
@@ -90,7 +90,7 @@ offline on `571ea64f` (18 Oct) with the same results. Appendix C gives each comm
 | Safety of autonomy | On 115 held-out buyer messages FLOW accepted 3 on its own, all correctly, but that is only 3 of the 14 genuinely acceptable offers, on sets tuned after their first runs (Table 4). The first runs, before the coverage check (ADR-0005), accepted 6 misread messages | Unseen first runs, then tuned |
 | Usefulness | About half of messages need no owner review (57 of 115); 11 of the 14 good offers wait for the owner (Table 4) | Tuned |
 | Reading contracts | 75% of key fields on 17 unseen Chinese contracts with a text layer; the other 13 of the 30, scans and photos, are refused | Unseen, recorded model readings |
-| Owner questions | 228 of 427 answerable bank questions answered, 45 partly, 0 wrong (tuned bank); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic (126 and 4 on the submission build) | Tuned; held-out |
+| Owner questions | 250 of 427 answerable bank questions answered, 43 partly, 0 wrong (tuned bank, submission build); 127 of 142 held-out everyday wordings reach the right answer (89%), 3 a wrong topic (126 and 4 on the submission build) | Tuned; held-out |
 | Live model | Unseen buyer messages, 19 Oct on `5926ef29`: shipped path 2 of 6 correct, 0 wrong; the question router fully correct on 22 of 63 questions (18 Oct, one reviewer) | Live, single runs, not certified; live mode itself safety-certified for DeepSeek on 20 Oct (Table 7) |
 | Security | 279 stored attack cases (128 API, 151 chat), 0 harm-oracle violations (the submission build `78b211f0`, 20 Oct; rules path and a scripted hostile model); live against DeepSeek on `78b211f0`: 279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control, 18 by an earlier one and 7 known gaps without harm; detection 98.44% | Tests; live |
 | Tests | Every suite's passed, failed and skipped counts on 78b211f0: Table V. Earlier builds: Appendix B. A count measures the size of a suite, not correctness | Tests |
@@ -346,6 +346,15 @@ gate. No item, in any run, booked a commitment or moved money.
 | **Unseen buyer messages, 6 items** (19 Oct, code `5926ef29`; labels committed in `a79cb7a7` before any run; [services/api/evals/live_unseen/](../../services/api/evals/live_unseen/)): correct / wrong / correctly held / held although readable | 1 / 0 / 1 / 4 | 2 / 0 / 1 / 3 | **2 / 0 / 1 / 3** (6 model calls; 27 for the model alone) |
 | **Frozen set, 20 items** (18 Oct, `5941e95a`, labels fixed by hash; [services/api/evals/live_frozen/](../../services/api/evals/live_frozen/)): fully correct / wrong / held unnecessarily | 6 / 2 / 2 | 10 / 2 / 1 | 5 / 0 / 5 |
 
+**Table M2. What the rules alone could not do, and what the shipped path does.**
+
+| Input | Rules grammar alone | FLOW as shipped (model + checks) |
+| --- | --- | --- |
+| Unseen buyer message LU02: an early-payment discount offered as 让零点六个点 on the ¥420,000 invoice | cannot read it (NO_VERDICT): the buyer is asked to restate | reads it; the owner gets a priced decision (Tier 2) |
+| 63 owner questions outside the deterministic answers (live, 18 Oct) | "cannot answer yet" for all 63 | 22 fully right and 10 partly through read-only tools, 1 wrong topic; code writes every figure |
+| 17 unseen Chinese contracts with a text layer | no party reading | both parties named in 14 (16 after fixes); a reading whose roles do not fit is stopped; the owner confirms every reading |
+| Frozen set, 20 items: fully correct / wrong | 6 / 2 | 5 / 0: the cross-check turned the model's 2 errors into clarifications and held 3 items the rules read right. That is the chosen trade: no wrong action, at the cost of an extra question |
+
 **What the model-assisted path completes better, narrowly.** (1) **Owner questions** outside the deterministic answers: 22
 of 63 fully right through read-only tools, with code writing every figure. (2) **Colloquial Chinese pricing.** In the unseen set, LU02
 offers an early-payment discount as 让零点六个点 on the ¥420,000 invoice. The rules grammar could not read it (NO_VERDICT);
@@ -513,7 +522,7 @@ do not compare across panels.
 
 <!-- figure: figures/fig-eval-contracts.png | Figure 4b. Contract fields, recorded DeepSeek readings: the unseen batch's first reading got 215 of 285 fields right on the 17 text-layer contracts (75%), 45% over all 30 with the 13 scans refused (their 189 key fields are counted from the answer key kept outside the repository); of the 234 decision-critical fields, 178 right, 45 missing, 11 wrong. The tuned sets (hatched) reach 85% and 97% of decision-critical fields. Scores: `docs/deliverables/submission/work/eval/contracts_b2_heldout_fields.json`, `contracts_b2_afterfix_fields.json`, `contracts_b1_tuned_fields.json`. Not reproducible from the repository: the contracts and readings are kept outside it. | h=5.5 -->
 
-<!-- figure: figures/fig-eval-questions.png | Figure 4c. Owner questions: the bank the answers were built against answers 228 of 427 in-books turns (0 wrong, tuned); everyday wording 326 of 345, held-out part 127 of 142; the live router (one run, 18 Oct) was fully correct on 22 of the 63 questions that reached it, 22 of the 33 it answered. | h=5.5 -->
+<!-- figure: figures/fig-eval-questions.png | Figure 4c. Owner questions: the bank the answers were built against answers 228 of 427 in-books turns on `571ea64f` and 250 on the submission build (0 wrong, tuned); everyday wording 326 of 345, held-out part 127 of 142; the live router (one run, 18 Oct) was fully correct on 22 of the 63 questions that reached it, 22 of the 33 it answered. | h=5.5 -->
 
 #### Task Completion: scripted tasks in a simulated environment
 
@@ -560,8 +569,8 @@ contracts, 13 scans and photos are refused (no OCR); on the 17 with a text layer
 86% (no longer unseen). The scores are committed in
 [submission/work/eval/](submission/work/eval/) (`contracts_b2_heldout_fields.json`, `contracts_b2_afterfix_fields.json`).
 
-**Owner questions.** On the bank the answers were built against (tuned), 228 of 427 answerable turns are answered, 45 partly,
-0 wrong. On **142 held-out everyday wordings**, 127 reach the right answer (89.4%) and 3 a wrong topic (2.1%) on `571ea64f`;
+**Owner questions.** On the bank the answers were built against (tuned), 250 of 427 answerable turns are answered, 43 partly,
+0 wrong, on the submission build ([owner-questions-78b211f0/](evidence/owner-questions-78b211f0/); 228 and 45 on `571ea64f`). On **142 held-out everyday wordings**, 127 reach the right answer (89.4%) and 3 a wrong topic (2.1%) on `571ea64f`;
 on the submission build, 126 (88.7%) and 4 (2.8%). Offline, no question executed or changed the books. **The live stress test (18 Oct, `28738f19`, DeepSeek, router on):** 658 owner turns
 all returned HTTP 200; of 589 sweep questions the rules parser read 546, the question gate 10 and the model classifier 12, and
 21 fell back; 63 questions the deterministic answers did not cover reached the router (Table M). The classifier turned 4
@@ -734,12 +743,12 @@ process, `DEMO_MODE=1` with the published demo credentials, in-memory books (`DA
 ```
 git clone https://github.com/peachoolongtee/smu2sz.git
 cd smu2sz
-git checkout submission-2026-10-20g
+git checkout submission-2026-10-20h
 pnpm --dir apps/web install
 uv sync --directory services/api
 ```
 
-Expected: both installs finish without errors; `git diff --stat 78b211f0 submission-2026-10-20g -- services/api/app apps/web` prints nothing
+Expected: both installs finish without errors; `git diff --stat 78b211f0 submission-2026-10-20h -- services/api/app apps/web` prints nothing
 (the tag's product code is 78b211f0).
 
 **Commands, expected outcomes and where results go.** Every command writes new results under `out/`, which the repository
@@ -823,7 +832,7 @@ Each prompt of the technical document template, with the part of this document t
 **What was frozen.** Product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`: the build certified on
 19 Oct (`c66a5e61`) plus the fail-closed REV-4 and the three live-mode fixes LIVE-1 to LIVE-3 (20 Oct); the full lineage
 is in [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md). The documentation revision is the `dev` commit
-tagged `submission-2026-10-20g`; every commit after the product code changes documentation, evidence, the document build
+tagged `submission-2026-10-20h`; every commit after the product code changes documentation, evidence, the document build
 tooling, the README and the judges' demo deployment files only. The gate covers scope S (section 05); networked or hosted deployments and production are outside it, and live mode has its own certification on `78b211f0` (Table 7).
 The evidence folder is [docs/security/evidence/2026-10-20/int-78b211f0/](../../docs/security/evidence/2026-10-20/int-78b211f0/) with
 `MANIFEST.json` and `SHA256SUMS` (evidence id sha256:6f665b8ae82df362, the sha256 of `SHA256SUMS`); the verdict is recorded in
@@ -853,8 +862,8 @@ clean checkout; evidence sha256:6f665b8ae82df362). Commands run from the reposit
 
 **Earlier builds.** Gates and runs covered nine earlier builds (17 to 19 Oct). The gate passed `70f23ac5`, `03215a20`, `66c31e7e` and
 `c66a5e61` for scope S, and kept `5941e95a` and `5926ef29` from release for the defects it found (section 05, "Known
-failures"). Each gate's results and evidence id are in [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md) and the
-Security Self-Assessment's Table C2. The frozen live set (Table M) ran on `5941e95a`.
+failures"). Each gate's results and evidence id are in [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md); the
+Security Self-Assessment's Table C1 lists every gate. The frozen live set (Table M) ran on `5941e95a`.
 
 ## Appendix C. Evaluation commands and results
 
@@ -863,7 +872,7 @@ noted. The gated suites are in Table V.
 
 | Claim | Command | Result (build) |
 | --- | --- | --- |
-| Owner questions | `uv run python scripts/owner_questions_baseline.py` | Of the 427 turns the books can answer: 228 answered, 45 partly, 154 declined, 0 wrong; 75 of the 76 turns the books cannot answer declined honestly (`571ea64f`). The script's own tally, 303 answered and 46 partly of 503, counts those honest declines as answers |
+| Owner questions | `uv run python scripts/owner_questions_baseline.py` | Of the 427 turns the books can answer: 250 answered, 43 partly, 134 declined, 0 wrong; 75 of the 76 turns the books cannot answer declined honestly (`78b211f0`, [owner-questions-78b211f0/](evidence/owner-questions-78b211f0/); on `571ea64f`: 228, 45, 154). The script's own tally, 325 answered and 44 partly of 503, counts those honest declines as answers |
 | Everyday wording | `uv run python scripts/owner_questions_general.py --part all` | 326/345, 4 wrong topic (1.2%); held-out 127/142 (89.4%), 3 wrong (2.1%) (`571ea64f`). On the submission build (run on `90116810`, whose product code is `78b211f0`'s): 325/345, 5 wrong (1.4%); held-out 126/142 (88.7%), 4 wrong (2.8%) |
 | Router and answer cards | `uv run pytest tests/nl/test_ask_router.py tests/nl/test_router_tools.py tests/certification/test_ask_router_boundary.py tests/nl/test_answer_card.py tests/security/test_nl_attacks.py` | 452 passed, 1 skipped (`571ea64f`) |
 | Offline evaluation | `uv run --project services/api python scripts/evaluate.py --out out/eval` (about 8 minutes) | Every target in its own gate met on its default offers set ([fixtures/heldout](../../fixtures/heldout), used in tuning); on held-out 3, scored separately, the material-error and silent-error targets are not met (`975e082f`) |
@@ -1087,7 +1096,7 @@ rounds seven to nine are listed by file); tests under [services/api/tests/](../.
 | --- | --- |
 | Owner token (`X-Owner-Token`) | Owner authority: every read of the books, Tier-2 decisions, answering a buyer's request, revoking a commitment, adding facilities and customers, purchases, the simulated clock, the pause; demo reset and books setup in demo mode only |
 | Agent key (`X-Agent-Key`) | The agent's tool channel: Tier 1 inside the mandate; Tier 2 is queued; it can never decide an approval; every chat reply passes an allow-list view with no cash, limit or reserve figure (R-11) |
-| Bank-feed key (`X-Bank-Feed-Key`) | Recording a receipt as the bank (Tier 1); nothing else (PAUSE-1, fixed) |
+| Bank-feed key (`X-Bank-Feed-Key`) | Recording a receipt as the bank (Tier 1), sent with the agent key or the owner token, since `POST /operations` admits no other caller; nothing else (PAUSE-1, fixed) |
 | Buyer channel key (`X-Counterparty-Key`) | That a message comes from that registered buyer. FLOW answers it at once within Tier 1 (a counter, a rejection, or a plain early-payment acceptance, as the agent); anything else is queued for the owner; it never draws or requests an advance. 5 messages a simulated day, then refused |
 | None | A message is read and checked as a proposal only and can never execute |
 
