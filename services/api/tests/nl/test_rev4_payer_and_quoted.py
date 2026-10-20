@@ -51,7 +51,7 @@ BLOCKERS = [
     "¦ We can pay the ¥420,000 invoice early at a 0.5% discount.",
     "〉 We can pay the ¥420,000 invoice early at a 0.5% discount.",
     "《我们可以提前支付420,000元发票，折扣0.5%》",
-    "​> We can pay the ¥420,000 invoice early at a 0.5% discount.",
+    "\u200b> We can pay the ¥420,000 invoice early at a 0.5% discount.",
     " > We can pay the ¥420,000 invoice early at a 0.5% discount.",
     "«We can pay the ¥420,000 invoice early at a 0.5% discount.»",
     "„We can pay the ¥420,000 invoice early at a 0.5% discount.“",
@@ -82,10 +82,10 @@ PLAIN = [
     "谢谢您，我们可以提前支付420,000元发票，折扣0.5%。",
 ]
 HIDDEN = [
-    "We can pay the full ¥420,000 invoice early for 0.​5% off.",  # BO-016 of the language-boundary set
-    "We can pay the ¥420,000 invoice early at a 0.5⁠% discount.",
-    "We can pay the ¥420,000 invoice early at a 0.5% dis­count.",
-    "‮We can pay the ¥420,000 invoice early at a 0.5% discount.",
+    "We can pay the full ¥420,000 invoice early for 0.\u200b5% off.",  # BO-016 of the language-boundary set
+    "We can pay the ¥420,000 invoice early at a 0.5\u2060% discount.",
+    "We can pay the ¥420,000 invoice early at a 0.5% dis\u00adcount.",
+    "\u202eWe can pay the ¥420,000 invoice early at a 0.5% discount.",
 ]
 
 
@@ -115,7 +115,7 @@ def test_the_plain_offer_is_still_accepted_alone(client, rt, text: str) -> None:
 class _ModelMustNotRead:
     name = "model"
 
-    def extract_offer(self, docs):  # noqa: ANN001, ANN201
+    def extract_offer(self, docs):
         raise AssertionError("a model read a message that carries hidden formatting characters")
 
 
@@ -127,7 +127,7 @@ def test_hidden_characters_never_reach_a_model() -> None:
 
 def test_a_model_still_reads_a_clean_message() -> None:
     class _Fails(_ModelMustNotRead):
-        def extract_offer(self, docs):  # noqa: ANN001, ANN201
+        def extract_offer(self, docs):
             raise BackendError("model consulted")
 
     doc = SourceDocument(doc_id="d1", channel="chat", sender_id="BUYER-1", received_day=0, text=PLAIN[0])

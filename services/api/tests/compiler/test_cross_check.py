@@ -12,7 +12,13 @@ from app.api.presentation import abstention_words
 from app.compiler import Compiler
 from app.compiler.base import OfferResult
 from app.compiler.cache import CacheBackend
-from app.compiler.cross_check import DISAGREE_FIELD, DISAGREE_REASON, check_against_rules, disputed
+from app.compiler.cross_check import (
+    DISAGREE_FIELD,
+    DISAGREE_REASON,
+    MODEL_ONLY_NOTE,
+    check_against_rules,
+    disputed,
+)
 from app.compiler.rules import RULES_MODEL_ID, rules_offer
 from app.compiler.schema import OfferExtraction
 from app.compiler.service import cache_dir
@@ -146,13 +152,16 @@ def test_a_term_only_the_model_read_stands() -> None:
     rules = model.model_copy(update={"obligations": [o for o in model.obligations
                                                      if o.type != ObligationType.CONTINGENT_REBATE]})
     assert disputed(model.obligations, rules.obligations) == {}
-    assert check_against_rules(model, rules) is model
+    out = check_against_rules(model, rules)  # it stands for the priced proposal, but nothing goes out on it alone (LIVE-2)
+    assert out.obligations == model.obligations and MODEL_ONLY_NOTE in out.autonomy_notes and not out.autonomy_eligible
 
 
 def test_a_value_the_rules_left_unread_matches_any_value() -> None:
     model = _reading()
     rules = model.model_copy(update={"obligations": [o.model_copy(update={"rate_bp": None}) for o in model.obligations]})
-    assert check_against_rules(model, rules) is model
+    out = check_against_rules(model, rules)  # matched, not disputed; the model's own value is held for the owner (LIVE-2)
+    assert disputed(model.obligations, rules.obligations) == {} and out.obligations == model.obligations
+    assert MODEL_ONLY_NOTE in out.autonomy_notes and not out.autonomy_eligible
 
 
 def test_a_value_the_two_read_differently_is_disputed_with_both_passages() -> None:
