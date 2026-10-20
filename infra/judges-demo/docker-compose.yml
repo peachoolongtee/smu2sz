@@ -7,6 +7,14 @@ services:
     restart: unless-stopped
     environment:
       CORS_ORIGINS: https://${DEMO_HOST:?set DEMO_HOST in infra/judges-demo/.env}
+      # Live AI mode (certified for DeepSeek as the primary; Security Self-Assessment 2.11): on only when the server's
+      # .env says LLM_MODE=live and holds DEEPSEEK_API_KEY (from ~/judges-demo.secrets, never committed). Redaction is forced
+      # on and the model never reads alone, as pnpm demo --live-llm does.
+      LLM_MODE: ${LLM_MODE:-cache}
+      LLM_PRIMARY: ${LLM_PRIMARY:-deepseek}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_REDACT: "1"
+      LLM_LIVE_RAW: "0"
     expose: ["8000"]
     mem_limit: 1500m
   web:

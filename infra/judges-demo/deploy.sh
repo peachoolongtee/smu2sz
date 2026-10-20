@@ -24,6 +24,9 @@ fi
 PASS=$(sed -n 's/^password=//p' "$CRED")
 HASH=$("${SSH[@]}" "sudo docker run --rm caddy:2.8.4 caddy hash-password --plaintext '$PASS'")
 "${SSH[@]}" "umask 077 && printf \"DEMO_HOST=%s\nDEMO_USER=judges\nDEMO_PASS_HASH='%s'\n\" '$HOST' '$HASH' > ~/flow/infra/judges-demo/.env"
+# ~/judges-demo.secrets (mode 600, outside the deployed tree, never in git) may hold LLM_MODE=live, LLM_PRIMARY=deepseek and
+# DEEPSEEK_API_KEY=...: appended to the server's .env; without it the demo runs on the recorded readings (cache mode).
+"${SSH[@]}" 'if [ -f ~/judges-demo.secrets ]; then cat ~/judges-demo.secrets >> ~/flow/infra/judges-demo/.env; fi'
 "${SSH[@]}" 'cd ~/flow/infra/judges-demo && { sudo docker compose up -d --build > ~/compose-up.log 2>&1; rc=$?; tail -15 ~/compose-up.log; sudo docker compose ps; exit $rc; }'
 echo
 echo "URL:      https://$HOST"
