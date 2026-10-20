@@ -73,4 +73,10 @@ def fold(text: str) -> Folded:
     return Folded(text, "".join(out), tuple(starts), tuple(ends))
 
 
-__all__ = ["HOMOGLYPHS", "Folded", "fold"]
+def has_format_characters(text: str) -> bool:
+    """True when `text` holds a format character (zero-width, soft hyphen, word joiner, BOM, bidi control): the folded copy
+    drops them silently, so a reader of the folded text cannot tell they were there (LIVE-1)."""
+    return any(_strip(ch) for ch in text)
+
+
+__all__ = ["HOMOGLYPHS", "Folded", "fold", "has_format_characters"]

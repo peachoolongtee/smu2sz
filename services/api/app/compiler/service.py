@@ -35,6 +35,7 @@ from app.compiler.base import BackendError, ContractResult, LLMBackend, OfferRes
 from app.compiler.cache import CACHE_MODEL_ID, CacheBackend
 from app.compiler.contract import MAX_CHUNKS, ContractTooLong, build_contract, chunk_document, chunk_source
 from app.compiler.cross_check import check_against_rules
+from app.compiler.folding import has_format_characters
 from app.compiler.grounding import build_offer, build_term_sheet, docs_hash
 from app.compiler.prompts import CONTRACT_PROMPT_VERSION, PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
 from app.compiler.redaction import redacting
@@ -88,9 +89,10 @@ class Compiler:
         if not any(isinstance(b, RulesBackend) for b in self.backends):
             self.backends.append(RulesBackend())  # the chain always ends in a backend that cannot fail
 
-    def _run(self, call: Callable[[LLMBackend], R], prompt_version: str, doc_hash: str) -> R:
+    def _run(self, call: Callable[[LLMBackend], R], prompt_version: str, doc_hash: str,
+             backends: Sequence[LLMBackend] | None = None) -> R:
         last: Exception | None = None
-        for b in self.backends:
+        for b in (self.backends if backends is None else backends):
             t0 = time.perf_counter()
             try:
                 res = call(b)
@@ -110,6 +112,14 @@ class Compiler:
         if not docs:
             raise ValueError("compile_offer needs at least one document")
         h = docs_hash(docs)
+        if any(has_format_characters(d.text) for d in docs):
+            # LIVE-1: hidden formatting characters (zero-width, bidi, soft hyphen). A model reads straight through them while the
+            # rules grammar refuses, so the cross-check had nothing to compare and the model's reading went unchecked. Such a
+            # message is read by the rules grammar alone, as in cache mode, and the coverage proof holds it for the owner.
+            rules = [b for b in self.backends if isinstance(b, RulesBackend)]
+            log.info("compiler.hidden_characters", outcome="rules_only", prompt_version=PROMPT_VERSION, doc_hash=h)
+            res = self._run(lambda b: b.extract_offer(docs), PROMPT_VERSION, h, backends=rules)
+            return build_offer(docs, counterparty_id, res.extraction, res.model_id, PROMPT_VERSION)
         res = self._run(lambda b: b.extract_offer(docs), PROMPT_VERSION, h)
         offer = build_offer(docs, counterparty_id, res.extraction, res.model_id, PROMPT_VERSION)
         if self.cross_check and res.model_id not in UNCHECKED:

@@ -711,10 +711,19 @@ class AttackRunner:
         if want:
             rec["expect_http"] = want
         obs.steps.append(rec)
+        # A live run reads each attack's SETUP with the recorded readings (cache mode), so every attack starts from the state
+        # its entry describes, and only the ATTACK phase consults the live model. Otherwise a cautious live reading of the
+        # setup offer leaves nothing to replay or accept, and the attack never reaches its control (NOT_REACHED).
+        live_setup = phase == "setup" and os.environ.get("LLM_MODE") == "live"
+        if live_setup:
+            os.environ["LLM_MODE"] = "cache"
         try:
             handler(ctx, arg, obs, rec, phase)
         except Exception as exc:  # noqa: BLE001 - a step that blew up did not run; it is reported, never swallowed
             rec["run"], rec["reason"] = "error", f"{type(exc).__name__}: {exc}"
+        finally:
+            if live_setup:
+                os.environ["LLM_MODE"] = "live"
         if rec["run"] == "skipped":
             obs.skipped_steps.append({"index": index, "phase": phase, "step": kind, "reason": rec["reason"]})
         elif rec["run"] == "error":
@@ -2340,7 +2349,7 @@ def write_report(observations: list[Observation], out_dir: Path = REPORT_DIR,
     m["nl_attacks"] = len(nl_observations)
     out_dir.mkdir(parents=True, exist_ok=True)
     doc = {"generated_by": "app.security.attacks", "catalogue": str(CATALOGUE.relative_to(API_DIR)),
-           "llm_mode": os.environ.get("LLM_MODE", "cache"), "metrics": m,
+           "llm_mode": os.environ.get("LLM_MODE", "cache"), "setup_reading": "cache (recorded readings) for setup steps; the attack phase runs in llm_mode" if os.environ.get("LLM_MODE") == "live" else "as llm_mode", "metrics": m,
            "attacks": [o.to_json() for o in observations],
            "nl_attacks": [o.to_json() for o in nl_observations]}
     (out_dir / "latest_report.json").write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
