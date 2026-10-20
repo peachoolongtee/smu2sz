@@ -1,11 +1,11 @@
 {
   "commit": "78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483",
   "working_tree_clean": true,
-  "build": "source checkout at 78b211f0ae3a; no container image (local simulation)",
+  "build": "checks run from the Security Lead's machine against the deployed judges' demo: Docker images built on the server from docs/live-submission 18197e90 (product code 78b211f0), behind Caddy on https://20-2-249-242.sslip.io",
   "manifest_written_utc": "2026-10-20T04:47:53Z",
-  "assessment_window_utc": "not recorded",
+  "assessment_window_utc": "2026-10-20T04:45Z to 2026-10-20T04:55Z",
   "assessor": "Security Lead (AI agent)",
-  "scope": "the judges' demo, live mode",
+  "scope": "the hosted judges' demo in live mode: access from outside, the password gate, hidden API documentation, body limit, TLS, two live model calls and the browser CSP check through the gate",
   "runtime": {
     "os": "Windows-11-10.0.26200-SP0",
     "python": "Python 3.12.14",
@@ -31,12 +31,23 @@
     "source-map-js": "1.2.2"
   },
   "configuration": {
-    "DATABASE_URL": "memory (suites, catalogue, sweep); local PostgreSQL 17 for tests/concurrency and the guards",
-    "LLM_MODE": "cache (no model provider is called)",
-    "DEMO_MODE": "1 for the suites and the catalogue; the sweep runs demo, prod (0) and unset",
-    "TERMSLEDGER_NO_DOTENV": "1 (.env is never loaded)",
-    "API processes": "1"
+    "deployed server": "Azure East Asia, Ubuntu 24.04; Caddy (HTTPS, basic auth on every path, /api/docs hidden, 2 MB bodies); api and web containers",
+    "LLM_MODE": "live (observed: /api/health reports llm_mode=live; the readings name deepseek-flash)",
+    "LLM_PRIMARY": "deepseek",
+    "LLM_REDACT": "1",
+    "LLM_LIVE_RAW": "0",
+    "model key": "in the server's environment only (~/judges-demo.secrets, mode 600), never in git or this folder",
+    "DATABASE_URL": "memory",
+    "DEMO_MODE": "1",
+    "API processes": "1",
+    "checking machine": "the Security Lead's machine (Windows 11): curl, Python and Playwright through the password gate"
   },
-  "exclusions": [],
-  "approved_exceptions": []
+  "exclusions": [
+    "several judges at once on the shared books",
+    "load beyond a few users",
+    "the provider's own availability",
+    "the route sweep and the sandbox (run later: judges-demo-checks-78b211f0)"
+  ],
+  "approved_exceptions": [],
+  "metadata_correction": "metadata corrected on 20 Oct 2026, 09:00 UTC: the manifest generator (scripts/security_manifest.py) had recorded the release gate's defaults for build, scope and configuration (LLM_MODE=cache), which do not describe these runs. The fields below describe them. No result file was changed; the folder was resealed and its evidence id changed (see docs/security/evidence/2026-10-20/METADATA_CORRECTION.md)."
 }

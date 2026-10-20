@@ -1,11 +1,11 @@
 {
   "commit": "872476212ca34b1bd43e93c3ae2b5e07137f67db",
   "working_tree_clean": true,
-  "build": "source checkout at 872476212ca3; no container image (local simulation)",
+  "build": "checks run from the Security Lead's checkout 87247621 (product code identical to 78b211f0) against the deployed judges' demo (docs/live-submission 18197e90, product code 78b211f0) on https://20-2-249-242.sslip.io",
   "manifest_written_utc": "2026-10-20T08:17:20Z",
-  "assessment_window_utc": "not recorded",
+  "assessment_window_utc": "2026-10-20T08:11:00Z (route sweep begins) to 2026-10-20T08:15:53Z (sandbox ends)",
   "assessor": "Security Lead (AI agent)",
-  "scope": "local simulation: loopback, one API process, cache mode, synthetic data",
+  "scope": "the hosted judges' demo in live mode, through its password gate: the route sweep (112 routes, 6 callers) and the sandbox",
   "runtime": {
     "os": "Windows-11-10.0.26200-SP0",
     "python": "Python 3.12.14",
@@ -31,12 +31,20 @@
     "source-map-js": "1.2.2"
   },
   "configuration": {
-    "DATABASE_URL": "memory (suites, catalogue, sweep); local PostgreSQL 17 for tests/concurrency and the guards",
-    "LLM_MODE": "cache (no model provider is called)",
-    "DEMO_MODE": "1 for the suites and the catalogue; the sweep runs demo, prod (0) and unset",
-    "TERMSLEDGER_NO_DOTENV": "1 (.env is never loaded)",
-    "API processes": "1"
+    "deployed server": "as in judges-demo-live-78b211f0: Caddy with HTTPS and basic auth; api and web containers",
+    "LLM_MODE": "live (observed: /api/health reports llm_mode=live; the sandbox readings name deepseek-flash)",
+    "LLM_PRIMARY": "deepseek",
+    "LLM_REDACT": "1",
+    "DATABASE_URL": "memory",
+    "DEMO_MODE": "1",
+    "API processes": "1",
+    "checking machine": "the Security Lead's machine (Windows 11): tools/authz_sweep_http.py and tools/run_sandbox_gate.py",
+    "note": "run.json's fixed api_environment text describes pnpm demo's default (cache); the server's answers show live mode"
   },
-  "exclusions": [],
-  "approved_exceptions": []
+  "exclusions": [
+    "several judges at once on the shared books",
+    "load beyond a few users"
+  ],
+  "approved_exceptions": [],
+  "metadata_correction": "metadata corrected on 20 Oct 2026, 09:00 UTC: the manifest generator (scripts/security_manifest.py) had recorded the release gate's defaults for build, scope and configuration (LLM_MODE=cache), which do not describe these runs. The fields below describe them. No result file was changed; the folder was resealed and its evidence id changed (see docs/security/evidence/2026-10-20/METADATA_CORRECTION.md)."
 }

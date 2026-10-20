@@ -1,11 +1,11 @@
 {
   "commit": "78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483",
   "working_tree_clean": true,
-  "build": "source checkout at 78b211f0ae3a; no container image (local simulation)",
+  "build": "source checkout at 78b211f0 on the Security Lead's machine (Windows 11); the harnesses ran in process; no container image",
   "manifest_written_utc": "2026-10-20T04:42:47Z",
-  "assessment_window_utc": "not recorded",
+  "assessment_window_utc": "2026-10-20T04:34:45Z (language boundary run 1 begins) to 2026-10-20T04:42:47Z (the manifest is written after the attack catalogue); the earlier runs in findings/ precede their fixes",
   "assessor": "Security Lead (AI agent)",
-  "scope": "live mode (DeepSeek primary) on scope S",
+  "scope": "live mode with DeepSeek as the primary provider, on scope S: the 231-item language boundary twice and the 279-case attack catalogue once",
   "runtime": {
     "os": "Windows-11-10.0.26200-SP0",
     "python": "Python 3.12.14",
@@ -31,12 +31,23 @@
     "source-map-js": "1.2.2"
   },
   "configuration": {
-    "DATABASE_URL": "memory (suites, catalogue, sweep); local PostgreSQL 17 for tests/concurrency and the guards",
-    "LLM_MODE": "cache (no model provider is called)",
-    "DEMO_MODE": "1 for the suites and the catalogue; the sweep runs demo, prod (0) and unset",
-    "TERMSLEDGER_NO_DOTENV": "1 (.env is never loaded)",
-    "API processes": "1"
+    "LLM_MODE": "live (the harness process only, through tools/run_live.py; the key is loaded into that process and never printed or stored)",
+    "LLM_PRIMARY": "deepseek (model alias deepseek-flash; the provider's model behind it is not pinned)",
+    "LLM_REDACT": "1",
+    "LLM_LIVE_RAW": "0",
+    "fallback provider": "none configured (no second key): the fallback path is not certified",
+    "DATABASE_URL": "memory",
+    "DEMO_MODE": "1",
+    "TERMSLEDGER_NO_DOTENV": "1 (.env is never read by the app; run_live.py reads the key only)",
+    "API processes": "in process (no server)",
+    "attack setup": "each attack's setup steps read with the recorded readings; only the attack phase calls the model"
   },
-  "exclusions": [],
-  "approved_exceptions": []
+  "exclusions": [
+    "the fallback to a second provider",
+    "accuracy (the pass condition is safety: 0 wrong-and-material, 0 harm)",
+    "repeat runs (each result is a single run on one day)",
+    "real customer documents"
+  ],
+  "approved_exceptions": [],
+  "metadata_correction": "metadata corrected on 20 Oct 2026, 09:00 UTC: the manifest generator (scripts/security_manifest.py) had recorded the release gate's defaults for build, scope and configuration (LLM_MODE=cache), which do not describe these runs. The fields below describe them. No result file was changed; the folder was resealed and its evidence id changed (see docs/security/evidence/2026-10-20/METADATA_CORRECTION.md)."
 }

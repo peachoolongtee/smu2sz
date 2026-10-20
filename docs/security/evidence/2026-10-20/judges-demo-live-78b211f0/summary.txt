@@ -4,7 +4,7 @@ Deployment: https://20-2-249-242.sslip.io (Azure East Asia, Ubuntu 24.04), from 
 code is 78b211f0 (git diff 78b211f0 18197e90 -- services/api/app apps/web is empty). The API runs the configuration of
 pnpm demo --live-llm: in-memory books, DEMO_MODE=1, LLM_MODE=live, LLM_PRIMARY=deepseek, LLM_REDACT=1, LLM_LIVE_RAW=0,
 one process; the DeepSeek key is in the server's environment only (~/judges-demo.secrets, mode 600, never in git). Live mode
-on this code is certified for DeepSeek (docs/security/evidence/2026-10-20/live-78b211f0/, sha256:ec02a982b50aa427).
+on this code is certified for DeepSeek (docs/security/evidence/2026-10-20/live-78b211f0/, sha256:1cf8bf8d9daa79d8).
 
 Checks from outside (gate.txt, live_calls.json, api_model_calls.txt, csp_*):
   without the password: /, /api/health, /api/state, /api/docs, /api/demo/reset -> 401; a wrong password -> 401

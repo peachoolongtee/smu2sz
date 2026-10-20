@@ -54,18 +54,19 @@ certified on `78b211f0` (20 Oct) for safety, not accuracy (Table 7). Section 02 
   registered facilities, registered buyers, the vendor of a purchase contract the owner confirmed, and its books, named by
   id. There is one operator and no second approver (R-2, section 04).
 - **What is simulated, and what is incomplete.** Buyers, lenders, the bank feed and the clock are simulated; no real money
-  moves and nothing comes from a deployed system. FLOW accepts an offer on its own only when every term is accounted for: 3 of
+  moves, and no result comes from a production deployment or a customer pilot (the hosted judges' demo runs on synthetic
+  books). FLOW accepts an offer on its own only when every term is accounted for: 3 of
   the 14 good offers in the held-out sets, with 0 wrong accepts (6 in the first runs, before that rule); the other 11 go to the owner, mostly
   because settlement dates are not yet read. It does not read scanned contracts (no OCR), and its live-model results are
   single runs.
 
 | Build and verification |
 | --- |
-| Submission: product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20h`, and the commits after the product code change documentation, evidence, the document build tooling, the README and the judges' demo deployment files (`infra/judges-demo/`) only. Release state of 78b211f0: certified for scope S on 20 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical (Appendix B, "Earlier builds") |
+| Submission: product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`; the documentation revision is the `dev` commit tagged `submission-2026-10-20i`, and the commits after the product code change documentation, evidence, the document build tooling, the README and the judges' demo deployment files (`infra/judges-demo/`) only. Release state of 78b211f0: certified for scope S on 20 Oct (Table V, Appendix B). "Certified" in this document means that the Security Lead's internal release gate passed on that exact commit for the stated scope; it is not external accreditation. Earlier builds are historical (Appendix B, "Earlier builds") |
 | Supported configuration (scope S): `pnpm demo` on one machine: API and web app on 127.0.0.1, one API process, `DEMO_MODE=1` with the published demo credentials, in-memory books, `LLM_MODE=cache` (no model provider called), synthetic fixtures. Live mode with DeepSeek: certified on `78b211f0` (20 Oct) (Table 7). Not covered: another model provider, any network or hosted deployment except the one tested judges' demo profile (Table 7), production |
-| Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20h`). Repository paths in this document link to that revision |
+| Repository: [https://github.com/peachoolongtee/smu2sz](https://github.com/peachoolongtee/smu2sz) (check out the tag `submission-2026-10-20i`). Repository paths in this document link to that revision |
 | Runs offline after installation. Installing needs the npm and PyPI registries (uv also downloads Python 3.12, and the browser suites need Playwright's Chromium); users in mainland China may need registry mirrors. After that, no account, VPN, API key or foreign service is needed. Live mode (`pnpm demo --live-llm`) needs a DeepSeek or Anthropic API key |
-| Demo video: [https://youtu.be/6y5_fKPInIo](https://youtu.be/6y5_fKPInIo) |
+| Demo video: [https://youtu.be/6y5_fKPInIo](https://youtu.be/6y5_fKPInIo). Hosted demo for judges (live AI mode, synthetic books): [https://20-2-249-242.sslip.io](https://20-2-249-242.sslip.io), behind a password the organisers receive with the submission; it is not in this document or the repository |
 | Licence: all rights reserved; the organisers and judges may view, run and evaluate the repository for judging ([LICENSE](../../LICENSE)) |
 
 **Table R. The judging criteria, what FLOW demonstrates, and where to verify it.** Results are those of the submission build
@@ -172,7 +173,8 @@ repeats it through the API. **Proposed** terms bind nobody; an **authorised** op
    **Option A** (terms stay at 45 days, no rebate, early payment on up to ¥260,000 at 0.85%) and **Option B** (55 days with a
    0.30% price rise, a forward gain of ¥162.05 over 13 invoices, but still **CNY 3,706.46** of funding, with the line held
    to day 57), and recommends A:
-   over the year it costs less (¥3,035.99 against ¥3,544.41 for B once B's forward gain is netted), it changes no terms, and
+   it costs ¥3,035.99 up front against B's quoted ¥3,706.46 of funding (B's model-valued forward gain of ¥162.05 is a separate
+   valuation, not a cash saving on the same horizon), it changes no terms, and
    it runs at Tier 1 while B needs the owner (Figure 10).
 4. **Agreement (authorised, then recorded).** The owner sends Option A to the simulated buyer, which accepts. The executor
    re-checks the acceptance on that day's books, binds it to the counter's terms hash and a single-use nonce, and records the
@@ -203,11 +205,11 @@ repeats it through the API. **Proposed** terms bind nobody; an **authorised** op
 | Advance to cover the new payroll | — | ¥1,782.19 |
 | **Total** | **¥3,035.99** | **¥5,205.36** |
 
-The supplier kept its 45-day terms and gave no rebate. It avoided ¥28,326.92 of future concessions, the ¥5,040 discount and a
-day-47 breach, and the reserve held on every day. Assumptions: the ¥160,000 is paid on day 36 and the next invoice on its due
+The supplier kept its 45-day terms and gave no rebate. It avoided ¥28,326.92 of model-valued future concessions and a day-47
+breach, and paid a ¥2,210 early-payment discount where ¥5,040 was asked (¥2,830 less), and the reserve held on every day. Assumptions: the ¥160,000 is paid on day 36 and the next invoice on its due
 day 47; the owner approves on day 34; no other cash flow is added.
 
-<!-- figure: figures/fig11a-cash-alternatives.png | Figure 1a. The financing alternatives for Foshan's request, like for like: five series of closing cash under the same events, differing only by the day-0 choice, against the ¥300,000 reserve. No action (A0) falls to −¥105,000 on days 30–31; EX01 accepted as asked with no funding (A2) is below the reserve on days 47–61; the standing plan (A1, ¥3,113.93), Option A (A3, ¥3,035.99) and Option B with its plan (A4) touch the reserve exactly on days 30–31. B's cost by day 62 (¥2,446.46) looks lower only because its price rise arrives before the cost of its longer terms: over the year B costs ¥3,544.41 against A's ¥3,035.99, and B needs the owner because terms change. Data: the financial audit's recomputation, equal to the engine to the fen (synthetic golden books, mandate v1). | h=7.0 -->
+<!-- figure: figures/fig11a-cash-alternatives.png | Figure 1a. The financing alternatives for Foshan's request, like for like: five series of closing cash under the same events, differing only by the day-0 choice, against the ¥300,000 reserve. No action (A0) falls to −¥105,000 on days 30–31; EX01 accepted as asked with no funding (A2) is below the reserve on days 47–61; the standing plan (A1, ¥3,113.93), Option A (A3, ¥3,035.99) and Option B with its plan (A4) touch the reserve exactly on days 30–31. B's cost by day 62 (¥2,446.46) looks lower only because its price rise arrives before the cost of its longer terms: B's plan is quoted at ¥3,706.46 of funding against A's ¥3,035.99, its model-valued forward gain of ¥162.05 is shown separately, and B needs the owner because terms change. Data: the financial audit's recomputation, equal to the engine to the fen (synthetic golden books, mandate v1). | h=7.0 -->
 
 <!-- figure: figures/fig11b-cash-disruption.png | Figure 1b. The disruption and cure, as the demo ran them after Option A was agreed: a second ¥200,000 payroll scheduled on day 25 for day 42, Foshan's ¥160,000 residual paid late (due day 32, received day 36), and the ¥200,000 advance FLOW proposed on day 34 (32.5% a year, so queued as APR-000001), approved by the owner and landed on day 37. As run (B2), cash stays at or above the reserve every day, for ¥5,205.36 against ¥3,035.99 quoted (B0); with the payroll and no cure (B1), cash would be ¥111,964.01 on days 42–46. | h=7.0 -->
 
@@ -232,7 +234,7 @@ browser computes no figure; the server writes every figure and sentence (Appendi
 
 **What we claim, and what we do not.** No model output alone can create a commitment, borrow or move money in FLOW; every
 verdict carries its failing rule, the figures, the formula and the source words. We do not claim that FLOW is a lender,
-broker or adviser, that it complies with any bank's covenants, that it has been deployed, or that it reads contracts or
+broker or adviser, that it complies with any bank's covenants, that it has been deployed for real customers, or that it reads contracts or
 messages perfectly.
 
 #### Gap coverage: the combination no product we found offers
@@ -353,7 +355,7 @@ gate. No item, in any run, booked a commitment or moved money.
 | Unseen buyer message LU02: an early-payment discount offered as 让零点六个点 on the ¥420,000 invoice | cannot read it (NO_VERDICT): the buyer is asked to restate | reads it; the owner gets a priced decision (Tier 2) |
 | 63 owner questions outside the deterministic answers (live, 18 Oct) | "cannot answer yet" for all 63 | 22 fully right and 10 partly through read-only tools, 1 wrong topic; code writes every figure |
 | 17 unseen Chinese contracts with a text layer | no party reading | both parties named in 14 (16 after fixes); a reading whose roles do not fit is stopped; the owner confirms every reading |
-| Frozen set, 20 items: fully correct / wrong | 6 / 2 | 5 / 0: the cross-check turned the model's 2 errors into clarifications and held 3 items the rules read right. That is the chosen trade: no wrong action, at the cost of an extra question |
+| Frozen set, 20 items: fully correct / wrong | 6 / 2 | 5 / 0: no wrong reading where the model alone had 2, and 3 items held that the rules read right (separate live runs: an observed difference, the one the cross-check is designed to produce). That is the chosen trade: no wrong action, at the cost of an extra question |
 
 **What the model-assisted path completes better, narrowly.** (1) **Owner questions** outside the deterministic answers: 22
 of 63 fully right through read-only tools, with code writing every figure. (2) **Colloquial Chinese pricing.** In the unseen set, LU02
@@ -362,8 +364,8 @@ the shipped path read it correctly, so the owner got a priced decision (NEEDS_OW
 clarification. (3) **Contract parties.** On unseen Chinese contracts the model named both parties in 14 of 17 (and swapped
 buyer and seller in 3), and the party check stops a reading whose roles do not fit.
 
-**Where the checks reduce usefulness, plainly.** In the frozen set the cross-check turned the model's two errors into
-clarifications (shipped: 0 wrong) but held back five items the model read correctly; the shipped path's fully correct count
+**Where the checks reduce usefulness, plainly.** In the frozen set the shipped path had no wrong reading where the model
+alone had two (separate live runs, so this is an observed difference, the one the cross-check is designed to produce) but held back five items the model read correctly; the shipped path's fully correct count
 (5) is one below the rules alone (6): it read LF05 and LF07 fully where the rules read them partly, and held LF15 and LF20,
 which the rules read wrongly, but held LF01, LF03 and LF04, which the rules read correctly. In the unseen set neither
 early-payment item was accepted alone, because the settlement date is not read ("autonomy not proven: a settlement date or
@@ -514,7 +516,7 @@ We evaluate the engine against an independent oracle and a brute force; the read
 the whole agent through scripted tasks, attacks and the sandbox run. Every result carries its **evidence class**: *unseen
 held-out* (labels written before the code saw the items, scored once, and that first score is the one quoted); *tuned*
 (re-scored after fixes chosen by studying its failures); *recorded model replay*; *live* (one sample of a non-deterministic
-provider); *rules*; *scripted* (a fake model we wrote); and *tests*. **No result comes from a deployed system.** Labels for
+provider); *rules*; *scripted* (a fake model we wrote); and *tests*. **No result comes from a production deployment or a customer pilot;** the hosted judges' demo was checked for access, routes and the sandbox (Table 7), not for accuracy. Labels for
 buyer messages were written by AI agents in separate sessions, not by people. The three panels below differ in oracle and
 do not compare across panels.
 
@@ -689,8 +691,9 @@ resumed; recovery is manual (SA 1.12; sandbox run, 4c).
 - **Text sent after the scan (LOG-2, fixed).** A counter's final text is composed first and is what is scanned, stored and
   sent, and the whole buyer reply is scanned again. Owner-only text (decision wording, plan steps, answer cards) is still
   reworded after the scan; it goes only to the owner.
-- **Compliance, in brief** (SA 3.6). With DeepSeek, text goes to a provider in mainland China; sending real documents would be a
-  cross-border transfer under the PIPL, which we have not assessed. Model readings are labelled "AI-generated, for reference"
+- **Compliance, in brief** (SA 3.6). With DeepSeek, redacted text goes to a provider in mainland China. Processing real documents requires a
+  deployment-specific privacy assessment; providing personal information outside mainland China may additionally trigger
+  the PIPL's cross-border requirements. We have not made that assessment. Model readings are labelled "AI-generated, for reference"
   until the owner confirms them. FLOW is decision support, not a licensed lender, broker or adviser.
 
 **Table 6. Attack results (279 stored cases: 128 API, 151 chat; each in a fresh in-memory runtime, offline, rules grammar
@@ -723,7 +726,7 @@ SEC-27, SEC-19 in chat, and the pause rated risk.
 | --- | --- | --- |
 | Local demo, scope S (`pnpm demo`, loopback, cache mode, one API process, synthetic data) | certified for scope S on 20 Oct for 78b211f0 (Table V) | A trusted machine; nobody but the presenter holds the published demo credentials |
 | Live-LLM mode (`pnpm demo --live-llm`, opt-in), scope S plus a DeepSeek key | **safety-certified for DeepSeek on 20 Oct** on `78b211f0`: the language boundary twice (run 1: 0 wrong-and-material (65 correct actions, 9 correct read-only answers, 53 safe clarifications, 99 safe abstentions, 5 wrong but harmless); run 2: 0 wrong-and-material (64, 8, 55, 100, 4)) and the catalogue once (279 cases, 0 harm, 0 not reached; 103 of 128 API cases stopped by the named control, 18 by an earlier one and 7 known gaps without harm; detection 98.44%), live; evidence `docs/security/evidence/2026-10-20/live-78b211f0/` | The fallback to a second provider is not certified; for real documents, a provider agreement on retention and region, the PIPL, PRIV-4 and PRIV-5, and a daily model-call budget (RT-3) |
-| A demo reachable over a network | **One tested profile:** the password-gated judges' demo: the local demo's configuration behind HTTPS and a password on every path, with the API documentation hidden, 2 MB request bodies and one API process; the published demo credentials and anonymous intake stay as in the local demo, reachable only behind the password. Checked from outside on `78b211f0` in live mode: every path 401 without the password, the browser CSP check (docs/security/evidence/2026-10-20/judges-demo-live-78b211f0/, sha256:92e71fd3759897c3), and through the gate the route sweep (112 routes, 6 callers, 0 policy violations) and the sandbox (142 passed, 0 failed, 1 skipped; 13 of 13 exports VALID): docs/security/evidence/2026-10-20/judges-demo-checks-78b211f0/ (sha256:8e17f33e72969b11). Any other: **NO-GO** | A tested deployment profile: new credentials and owner key, or a password gate on every path; one API process; synthetic data; API docs hidden; TLS with per-client limits; anonymous intake off or behind the gate (SEC-19); the stop procedure; the route sweep and browser checks run against it |
+| A demo reachable over a network | **One tested profile:** the password-gated judges' demo: the local demo's configuration behind HTTPS and a password on every path, with the API documentation hidden, 2 MB request bodies and one API process; the published demo credentials and anonymous intake stay as in the local demo, reachable only behind the password. Checked from outside on `78b211f0` in live mode: every path 401 without the password, the browser CSP check (docs/security/evidence/2026-10-20/judges-demo-live-78b211f0/, sha256:2135d88158086ce4), and through the gate the route sweep (112 routes, 6 callers, 0 policy violations) and the sandbox (142 passed, 0 failed, 1 skipped; 13 of 13 exports VALID): docs/security/evidence/2026-10-20/judges-demo-checks-78b211f0/ (sha256:95f3b4f46a7d9eba). Any other: **NO-GO** | A tested deployment profile: new credentials and owner key, or a password gate on every path; one API process; synthetic data; API docs hidden; TLS with per-client limits; anonymous intake off or behind the gate (SEC-19); the stop procedure; the route sweep and browser checks run against it |
 | Production with real customers, documents or money | **NO-GO** | A runnable configuration (SEC-06); one API process enforced (SEC-11); separate custody of token and key (R-2); an external anchor and a log the database owner cannot rewrite (R-13); mandate revoke and renew (R-14); resumable or reversible plans (SEC-28); an aggregate draw limit (R-3); vendor account verification; a PIPL assessment; backups; a penetration test; real counterparties, lenders and bank feeds |
 
 ## 05 Deployment and Testing
@@ -743,12 +746,12 @@ process, `DEMO_MODE=1` with the published demo credentials, in-memory books (`DA
 ```
 git clone https://github.com/peachoolongtee/smu2sz.git
 cd smu2sz
-git checkout submission-2026-10-20h
+git checkout submission-2026-10-20i
 pnpm --dir apps/web install
 uv sync --directory services/api
 ```
 
-Expected: both installs finish without errors; `git diff --stat 78b211f0 submission-2026-10-20h -- services/api/app apps/web` prints nothing
+Expected: both installs finish without errors; `git diff --stat 78b211f0 submission-2026-10-20i -- services/api/app apps/web` prints nothing
 (the tag's product code is 78b211f0).
 
 **Commands, expected outcomes and where results go.** Every command writes new results under `out/`, which the repository
@@ -770,7 +773,7 @@ command are in Table V. `pnpm demo --live-llm` reads a DeepSeek or Anthropic key
 redaction on and makes paid calls; it is safety-certified for DeepSeek on 20 Oct (Table 7). In the demo, open **Demo**, choose **Golden story** and follow
 the six scenes, or use the Business pages directly (Appendix K).
 
-**Test cases.** Apart from the outside checks of the judges' demo (`sha256:92e71fd3759897c3`), no test runs against a deployed, networked system. The suites: the API (pytest and hypothesis: engine against
+**Test cases.** Apart from the checks of the judges' demo through its gate (`sha256:2135d88158086ce4`, `sha256:95f3b4f46a7d9eba`), no test runs against a deployed, networked system. The suites: the API (pytest and hypothesis: engine against
 the oracle, verifier, router, executor, mandate, persistence, compiler, chat, security harness, route policy); the mock
 browser suite (Playwright on recorded JSON, every page against the golden values, desktop and phone); the live browser suite
 (Playwright against a local API, one worker); web unit, types and lint; scripted-model tests (router, language boundary,
@@ -825,14 +828,14 @@ Each prompt of the technical document template, with the part of this document t
 | 04 Tiered permissions and confirmation for sensitive actions | Table 5; Figure 5; "Who can execute what"; Appendix J | [tiers.py](../../services/api/app/mandate/tiers.py); [executor.py](../../services/api/app/operations/executor.py); the sandbox run, cases 2 and 5 |
 | 04 Protection against prompt injection, privilege escalation and privacy leakage | Tables 5 to 7; Figure 7 | [latest_report.json](../../services/api/evals/security/latest_report.json); [SECURITY_SELF_ASSESSMENT.md](../../docs/SECURITY_SELF_ASSESSMENT.md); [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md) |
 | 05 Environment, deployment instructions, test cases and known limitations | Section 05; Appendices B, C and D | [README.md](../../README.md); [scripts/demo.mjs](../../scripts/demo.mjs); [execution_evidence.md](execution_evidence.md) |
-| Bonus (0–5) | Not claimed: a local simulation (Table 7) | — |
+| Bonus (0–5) | A hosted demonstration on synthetic books: the password-gated judges' demo in live mode (Table 7); not a production deployment | Table 7; Table R |
 
 ## Appendix B. Verification manifest
 
 **What was frozen.** Product code 78b211f0 (`78b211f0ae3a8dd84f5dc2aed6abe6bfe326e483`) on `dev`: the build certified on
 19 Oct (`c66a5e61`) plus the fail-closed REV-4 and the three live-mode fixes LIVE-1 to LIVE-3 (20 Oct); the full lineage
 is in [CERTIFICATIONS.md](../../docs/security/CERTIFICATIONS.md). The documentation revision is the `dev` commit
-tagged `submission-2026-10-20h`; every commit after the product code changes documentation, evidence, the document build
+tagged `submission-2026-10-20i`; every commit after the product code changes documentation, evidence, the document build
 tooling, the README and the judges' demo deployment files only. The gate covers scope S (section 05); networked or hosted deployments and production are outside it, and live mode has its own certification on `78b211f0` (Table 7).
 The evidence folder is [docs/security/evidence/2026-10-20/int-78b211f0/](../../docs/security/evidence/2026-10-20/int-78b211f0/) with
 `MANIFEST.json` and `SHA256SUMS` (evidence id sha256:6f665b8ae82df362, the sha256 of `SHA256SUMS`); the verdict is recorded in
@@ -895,7 +898,7 @@ noted. The gated suites are in Table V.
 | Recorded replay | Past readings replayed offline; the 19 shipped recordings are rules-grammar output |
 | Live provider | DeepSeek on the day: buyer messages (1 Oct, an older build), the stress test (18 Oct), the frozen set (18 Oct), the unseen set (19 Oct), single runs, not certified; the certification runs of 20 Oct on `78b211f0` (Table 7) |
 | Sandbox run | Five cases through the API with every claim checked against the state read back |
-| Deployed system | None |
+| Deployed system | No production deployment. The password-gated judges' demo (synthetic books, live mode) passed the access, route-sweep and sandbox checks through its gate (Table 7) |
 
 **Table D2. Representative test cases.**
 
@@ -1177,7 +1180,7 @@ Every Business screen is in English and Chinese, and a tour (*Show me around*) e
 
 <!-- figure: figures/screens/screen5-documents.png | Figure 9. Documents: FLOW's reading of supply agreement FHR-2026-07. The focused term (Price, §3.1) lights its clause, and markers show which terms each clause holds. | h=3.9 -->
 
-<!-- figure: figures/screens/screen2-deal-verdict.png | Figure 10. Foshan's request after FLOW checked it (web app on recorded mocks, build 571ea64f). (1) The verdict: counter with Option A. (2) Why the request cannot be accepted as asked. (3) Option A is within the signed mandate. (4) Nothing is sent until the owner sends it. (5) The priced choices: Option A, early payment on up to ¥260,000 at 0.85%, costs ¥3,035.99. Known screen defect, deferred: for a reply whose cost nets a funding cost against a price rise, the headline shows "About ¥0" whatever the net (for Option B, a ¥162.05 gain) and leaves out the ¥3,706.46 shortfall plan, which appears only in the breakdown; B costs ¥3,544.41 in all (Appendix F). | h=6.6 -->
+<!-- figure: figures/screens/screen2-deal-verdict.png | Figure 10. Foshan's request after FLOW checked it (web app on recorded mocks, build 571ea64f). (1) The verdict: counter with Option A. (2) Why the request cannot be accepted as asked. (3) Option A is within the signed mandate. (4) Nothing is sent until the owner sends it. (5) The priced choices: Option A, early payment on up to ¥260,000 at 0.85%, costs ¥3,035.99. Known screen defect, deferred: for a reply whose cost nets a funding cost against a price rise, the headline shows "About ¥0" whatever the net (for Option B, a ¥162.05 gain) and leaves out the ¥3,706.46 shortfall plan, which appears only in the breakdown; B's funding plan is quoted at ¥3,706.46, with its model-valued forward gain of ¥162.05 shown separately (Appendix F). | h=6.6 -->
 
 <!-- figure: figures/screens/shot3-approval.png | Figure 11. An approval waiting: FLOW queued ¥200,000 of invoice financing because 32.5% a year is above the 15% threshold the owner signed; it costs ¥1,782.19, and nothing runs until the owner approves or declines. | h=6.6 -->
 

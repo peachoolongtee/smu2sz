@@ -12,7 +12,7 @@ security. Scope words follow `RELEASE_GATE.md` (S = local simulation on loopback
 | 16 Oct | `8911fb21` (`feat/capex-buy-side`) | CAPEX-1..4 fixes, setup feature | pre-merge: GO to merge dev into it |
 | 16 Oct | `b6d1e519` (`int/capex-fixes`: capex buy side + dev `bbbfb7ce` + `fix/capex4-setup1`) | the capex buy side as it would land on dev | **CERTIFIED** for scope S |
 | 16 Oct | `0f92d433` (dev) | the owner's decisions on R-11, R-10 and `DEMO_MODE` (`sec/owner-decisions-16oct`), with the capex buy side merged | **CERTIFIED** for scope S |
-| 20 Oct | `78b211f0` (docs/live-submission: `c66a5e61` + the fail-closed REV-4 and LIVE-1 to LIVE-3; **the submission build**) | the four fixes and their tests; live mode | **CERTIFIED** for scope S (`sha256:6f665b8ae82df362`); **live mode CERTIFIED for DeepSeek** (`sha256:ec02a982b50aa427`) |
+| 20 Oct | `78b211f0` (docs/live-submission: `c66a5e61` + the fail-closed REV-4 and LIVE-1 to LIVE-3; **the submission build**) | the four fixes and their tests; live mode | **CERTIFIED** for scope S (`sha256:6f665b8ae82df362`); **live mode CERTIFIED for DeepSeek** (`sha256:1cf8bf8d9daa79d8`) |
 | 19 Oct | `c66a5e61` (fix/review-20oct: `66c31e7e` + the review fixes REV-1 to REV-3; superseded by `78b211f0`) | the three fixes and their tests | **CERTIFIED** for scope S; evidence `sha256:37ff16748cf56bca`; REV-4 disclosed (R-7) |
 | 19 Oct | `66c31e7e` (int/sl-final: `5926ef29` + the demo stepper fix `cc1703cc`; superseded by `c66a5e61`) | everything since `03215a20` | **CERTIFIED** for scope S (the local simulation, API and web app on 127.0.0.1); every check passes, the live browser suite included |
 | 19 Oct | `5926ef29` (int/sl-final: 03215a20 + rounds eight and nine, the demo launcher on loopback, the lint and public-release cleanups) | everything since `03215a20` | **NOT RELEASED**: every check passes except the live browser suite (tracker.spec.ts:216, a timing race in the web demo stepper, older than round nine); fixed in `cc1703cc` and gated again |
@@ -71,12 +71,12 @@ guards 10; audits clean (`braces`, the approved exception); secret scan 0; mock 
 passed, 0 failed; web unit 197; CSP 17 pages, 0 violations on both servers; judge pack 49 of 49. Sandbox on the same code:
 in process 159 passed; over HTTP 142 passed, 1 skipped; every export VALID.
 
-**Live mode (DeepSeek primary):** [live-78b211f0/](evidence/2026-10-20/live-78b211f0/), id `sha256:ec02a982b50aa427`: the 231-item
+**Live mode (DeepSeek primary):** [live-78b211f0/](evidence/2026-10-20/live-78b211f0/), id `sha256:1cf8bf8d9daa79d8`: the 231-item
 language boundary twice, 0 wrong-and-material each, 144 of 144 model calls answered each; the 279-attack catalogue, 0 harm,
 0 not reached (setup read with recorded readings, the attack phase by the model). The fallback provider is not certified;
 the model behind `deepseek-flash` is not pinned; single runs on one day; the safety boundary, not accuracy.
 
-**The judges' demo:** [judges-demo-live-78b211f0/](evidence/2026-10-20/judges-demo-live-78b211f0/), id `sha256:92e71fd3759897c3`:
+**The judges' demo:** [judges-demo-live-78b211f0/](evidence/2026-10-20/judges-demo-live-78b211f0/), id `sha256:2135d88158086ce4`:
 live mode on this code behind HTTPS and a password on every path, checked from outside.
 
 **Verdict: CERTIFIED for scope S; live mode CERTIFIED for DeepSeek.** Disclosed, open: R-7 (a refused or qualified offer read as

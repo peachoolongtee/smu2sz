@@ -683,9 +683,9 @@ class Renderer:
             width = Inches(min(6.2, PAGE_FIG_HEIGHT_IN * img.px_width / img.px_height))
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.paragraph_format.page_break_before = True
-        elif self.compact:
+        elif self.compact or max_height:
             img = DocxImage.from_file(str(path))
-            # cap the height so a tall screenshot does not take a whole page
+            # cap the height so a tall screenshot does not take a whole page (an explicit h= caps it in any document)
             width = Inches(min(6.2, (max_height or MAX_FIG_HEIGHT_IN) * img.px_width / img.px_height))
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.add_run().add_picture(str(path), width=width)
