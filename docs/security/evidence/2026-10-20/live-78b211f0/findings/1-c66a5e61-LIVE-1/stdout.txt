@@ -1,0 +1,30 @@
+[run_live] deepseek key present: True; anthropic key present: False; database: memory
+[certify] live/primary: 10/231 items
+[certify] live/primary: 20/231 items
+[certify] live/primary: 30/231 items
+[certify] live/primary: 40/231 items
+[certify] live/primary: 50/231 items
+[certify] live/primary: 60/231 items
+[certify] live/primary: 70/231 items
+[certify] live/primary: 80/231 items
+[certify] live/primary: 90/231 items
+[certify] live/primary: 100/231 items
+[certify] live/primary: 110/231 items
+[certify] live/primary: 120/231 items
+[certify] live/primary: 130/231 items
+[certify] live/primary: 140/231 items
+[certify] live/primary: 150/231 items
+[certify] live/primary: 160/231 items
+[certify] live/primary: 170/231 items
+[certify] live/primary: 180/231 items
+[certify] live/primary: 190/231 items
+[certify] live/primary: 200/231 items
+[certify] live/primary: 210/231 items
+[certify] live/primary: 220/231 items
+[certify] live/primary: 230/231 items
+[certify] live/primary: 231/231 items
+[certify] live/primary: CORRECT_EXECUTABLE=65, CORRECT_READ_ONLY=8, SAFE_CLARIFICATION=51, SAFE_ABSTENTION=102, WRONG_HARMLESS=4, WRONG_MATERIAL=1; queued-for-owner=3; model answered rate=1.0
+[certify] report: $SCRATCH\live_cert\run1\language_boundary_live_20261020T012949Z.md
+[certify]         $SCRATCH\live_cert\run1\language_boundary_live_20261020T012949Z.json
+[certify] exit 1
+exit=1

@@ -1,0 +1,433 @@
+{
+ "case": 5,
+ "name": "pause",
+ "title": "The owner's pause",
+ "transport": "inproc",
+ "parts": [
+  {
+   "part": "5",
+   "title": "pause, refusals, the owner's approval while paused, resume",
+   "status": "RAN",
+   "in_process_only": null,
+   "passed": 12,
+   "failed": 0,
+   "groups": [
+    {
+     "gid": "5.1",
+     "attempted": "An approval queued before the pause; the owner pauses the agent",
+     "by": "AGENT, then OWNER",
+     "expected": "PENDING_APPROVAL; paused true",
+     "steps": [
+      "5.03",
+      "5.04"
+     ]
+    },
+    {
+     "gid": "5.2",
+     "attempted": "While paused: an agent operation and a keyed buyer's early-pay acceptance",
+     "by": "AGENT; BUYER-1 (keyed)",
+     "expected": "both refused; nothing on the chain for them; REVOKED security events; nothing agreed",
+     "steps": [
+      "5.05",
+      "5.06",
+      "5.07"
+     ]
+    },
+    {
+     "gid": "5.3",
+     "attempted": "While paused: the owner approves the approval queued before the pause",
+     "by": "OWNER",
+     "expected": "EXECUTED (by design: the owner's own decision re-runs the gates but not the pause check)",
+     "steps": [
+      "5.08",
+      "5.09"
+     ]
+    },
+    {
+     "gid": "5.4",
+     "attempted": "Resume: the same buyer message is agreed again",
+     "by": "OWNER; BUYER-1 (keyed)",
+     "expected": "resumed; \"Agreed: …\"; ACCEPT_OFFER EXECUTED Tier 1",
+     "steps": [
+      "5.10",
+      "5.11",
+      "5.12"
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "id": "5.01",
+     "kind": "action",
+     "title": "reset the demo books (golden_sme)",
+     "request": {
+      "method": "POST",
+      "path": "/demo/reset",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 76.4,
+     "response": {
+      "ok": true,
+      "scenario": "golden_sme",
+      "day": 0
+     },
+     "expected": "200, the golden_sme books loaded on day 0",
+     "observed": "HTTP 200 {'ok': True, 'scenario': 'golden_sme', 'day': 0}",
+     "result": "PASS"
+    },
+    {
+     "id": "5.02",
+     "kind": "action",
+     "title": "end every chat session",
+     "request": {
+      "method": "POST",
+      "path": "/nl/reset",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 2.9,
+     "response": {
+      "ok": true
+     },
+     "expected": "200",
+     "observed": "HTTP 200",
+     "result": "PASS"
+    },
+    {
+     "id": "5.03",
+     "kind": "action",
+     "title": "the agent asks to apply for the guaranteed loan (Tier 2)",
+     "request": {
+      "method": "POST",
+      "path": "/operations",
+      "params": null,
+      "credential_role": "AGENT",
+      "credential": "agent key (X-Agent-Key)",
+      "body": {
+       "kind": "APPLY_FOR_FACILITY",
+       "op_id": "5-apply",
+       "idempotency_key": "5-apply",
+       "mandate_version": 1,
+       "requested_by": "AGENT",
+       "facility_id": "FAC-GGL",
+       "amount_fen": 20000000
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 3.3,
+     "response": {
+      "result": {
+       "op_id": "5-apply",
+       "kind": "APPLY_FOR_FACILITY",
+       "status": "PENDING_APPROVAL",
+       "tier": "TIER_2",
+       "violations": [],
+       "seq": 4,
+       "entry_hash": "895720c2e450d327d15a86de8b2b0941ffd2bb19377d66306c713e682b40eed6",
+       "prev_hash": "1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
+       "effective_day": 0,
+       "approval_id": "APR-000001",
+       "message": "Queued for owner approval (APR-000001): apply for facility FAC-GGL (¥200,000.00)"
+      },
+      "decision_id": "approval:APR-000001",
+      "decision_recorded": true
+     },
+     "expected": "PENDING_APPROVAL Tier 2 with an approval id",
+     "observed": "PENDING_APPROVAL TIER_2: Queued for owner approval (APR-000001): apply for facility FAC-GGL (¥200,000.00)",
+     "result": "PASS"
+    },
+    {
+     "id": "5.04",
+     "kind": "action",
+     "title": "the owner pauses the agent",
+     "request": {
+      "method": "POST",
+      "path": "/agent/pause",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {}
+     },
+     "http_status": 200,
+     "latency_ms": 3.7,
+     "response": {
+      "paused": true,
+      "since_day": 0,
+      "pause_seq": 5,
+      "refuses": [
+       "AGENT",
+       "COUNTERPARTY"
+      ],
+      "changed": true
+     },
+     "expected": "paused, changed",
+     "observed": "{'paused': True, 'since_day': 0, 'pause_seq': 5, 'refuses': ['AGENT', 'COUNTERPARTY'], 'changed': True}",
+     "result": "PASS"
+    },
+    {
+     "id": "5.05",
+     "kind": "action",
+     "title": "paused: the agent draws ¥10,000 on the line",
+     "request": {
+      "method": "POST",
+      "path": "/operations",
+      "params": null,
+      "credential_role": "AGENT",
+      "credential": "agent key (X-Agent-Key)",
+      "body": {
+       "kind": "DRAW_FACILITY",
+       "op_id": "5-draw",
+       "idempotency_key": "5-draw",
+       "mandate_version": 1,
+       "requested_by": "AGENT",
+       "facility_id": "FAC-LINE",
+       "amount_fen": 1000000
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 2.6,
+     "response": {
+      "result": {
+       "op_id": "5-draw",
+       "kind": "DRAW_FACILITY",
+       "status": "REFUSED",
+       "tier": "TIER_2",
+       "violations": [
+        {
+         "code": "INSUFFICIENT_AUTHORITY",
+         "message": "Refused: the owner has paused FLOW's agent; nothing done on the agent's or a buyer's authority runs until the owner resumes it",
+         "day": 0,
+         "month": null,
+         "observed": "paused at seq 5",
+         "limit": "not paused",
+         "curable": null,
+         "cure_cost_fen": null,
+         "cure_note": null,
+         "formula": "no PAUSE_AGENT entry after the latest RESUME_AGENT",
+         "inputs": {
+          "requested_by": "AGENT",
+          "pause_seq": "5"
+         },
+         "spans": []
+        }
+       ],
+       "seq": null,
+       "entry_hash": null,
+       "prev_hash": null,
+       "effective_day": 0,
+       "approval_id": null,
+       "message": "Refused: the owner has paused FLOW's agent; nothing done on the agent's or a buyer's authority runs until the owner resumes it"
+      }
+     },
+     "expected": "REFUSED (paused)",
+     "observed": "REFUSED ['INSUFFICIENT_AUTHORITY']: Refused: the owner has paused FLOW's agent; nothing done on the agent's or a buyer's authority runs until the owner resumes it; books unchanged True",
+     "result": "PASS"
+    },
+    {
+     "id": "5.06",
+     "kind": "action",
+     "title": "paused: BUYER-1 offers to pay the ¥420,000 invoice early at 0.5%",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "BUYER-1",
+      "credential": "BUYER-1's channel key (X-Counterparty-Key), Foshan Home Retail Co.",
+      "body": {
+       "session_id": "5-buyer-paused",
+       "actor": "COUNTERPARTY",
+       "counterparty_id": "BUYER-1",
+       "text": "We will pay the ¥420,000 invoice early at a 0.5% discount."
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 12.0,
+     "response": {
+      "session_id": "5-buyer-paused",
+      "turn": 1,
+      "reply": "We are not able to confirm these terms.",
+      "intent": "COUNTERPARTY_MESSAGE",
+      "lang": "en",
+      "trace_id": "5-buyer-paused:1",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "actor",
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false
+     },
+     "expected": "\"We are not able to confirm these terms.\"; nothing agreed",
+     "observed": "reply: We are not able to confirm these terms.; commitments [('CMT-3695608c1cc53d9d', 'PROPOSED')] (a PROPOSED record moves no money and is not covered by the pause: docs/SECURITY_SELF_ASSESSMENT.md 1.11)",
+     "result": "PASS"
+    },
+    {
+     "id": "5.07",
+     "kind": "proof",
+     "title": "proof: refused in front of the executor",
+     "expected": "only the queued request and PAUSE_AGENT on the chain; REVOKED events",
+     "observed": "chain entries added ['APPLY_FOR_FACILITY:PENDING_APPROVAL', 'PAUSE_AGENT:EXECUTED']; REVOKED events ['AGENT DRAW_FACILITY 5-draw refused: the owner paused the agent (log seq 5)', 'AGENT ACCEPT_OFFER NL-c0573b852d8d5719 refused: the owner paused the agent (log ']",
+     "result": "PASS"
+    },
+    {
+     "id": "5.08",
+     "kind": "action",
+     "title": "paused: the owner approves APR-000001",
+     "request": {
+      "method": "POST",
+      "path": "/approvals/APR-000001",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {
+       "decision": "APPROVE"
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 3.5,
+     "response": {
+      "result": {
+       "op_id": "5-apply",
+       "kind": "APPLY_FOR_FACILITY",
+       "status": "EXECUTED",
+       "tier": "TIER_2",
+       "violations": [],
+       "seq": 6,
+       "entry_hash": "73424bf12bf9cc3461863a2fecaa2849a0e2a1233a2fbb6853c1bec18643ca32",
+       "prev_hash": "0cdc95b97d38530d6f6a067dd711f7afd13d3f60ea358e6d49dc9a6e1c4bf5e9",
+       "effective_day": 0,
+       "approval_id": "APR-000001",
+       "message": "Applied for ¥200,000.00 on FAC-GGL; it is PENDING and counts as zero until committed",
+       "message_when": "Applied for ¥200,000.00 on Government-guaranteed working-capital loan; the application is submitted and counts as zero cash until the bank commits",
+       "event_text": "You approved an application for ¥200,000.00 on Government-guaranteed working-capital loan.",
+       "event_detail": null
+      },
+      "approval": {
+       "id": "APR-000001",
+       "decision": "APPROVED",
+       "execution_status": "EXECUTED",
+       "ran": true,
+       "text": "You approved it and it ran."
+      },
+      "lang": "en"
+     },
+     "expected": "EXECUTED",
+     "observed": "result EXECUTED: Applied for ¥200,000.00 on FAC-GGL; it is PENDING and counts as zero until committed; approval {'id': 'APR-000001', 'decision': 'APPROVED', 'execution_status': 'EXECUTED', 'ran': True, 'text': 'You approved it and it ran.'}",
+     "result": "PASS"
+    },
+    {
+     "id": "5.09",
+     "kind": "proof",
+     "title": "proof: still paused",
+     "request": {
+      "method": "GET",
+      "path": "/agent/pause",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": null
+     },
+     "http_status": 200,
+     "latency_ms": 3.6,
+     "response": {
+      "paused": true,
+      "since_day": 0,
+      "pause_seq": 5,
+      "refuses": [
+       "AGENT",
+       "COUNTERPARTY"
+      ]
+     },
+     "expected": "paused true",
+     "observed": "{'paused': True, 'since_day': 0, 'pause_seq': 5, 'refuses': ['AGENT', 'COUNTERPARTY']}",
+     "result": "PASS"
+    },
+    {
+     "id": "5.10",
+     "kind": "action",
+     "title": "the owner resumes the agent",
+     "request": {
+      "method": "POST",
+      "path": "/agent/resume",
+      "params": null,
+      "credential_role": "OWNER",
+      "credential": "owner token (X-Owner-Token)",
+      "body": {}
+     },
+     "http_status": 200,
+     "latency_ms": 2.7,
+     "response": {
+      "paused": false,
+      "since_day": null,
+      "pause_seq": null,
+      "refuses": [],
+      "changed": true
+     },
+     "expected": "paused false",
+     "observed": "{'paused': False, 'since_day': None, 'pause_seq': None, 'refuses': [], 'changed': True}",
+     "result": "PASS"
+    },
+    {
+     "id": "5.11",
+     "kind": "action",
+     "title": "BUYER-1 sends the same offer again",
+     "request": {
+      "method": "POST",
+      "path": "/nl",
+      "params": null,
+      "credential_role": "BUYER-1",
+      "credential": "BUYER-1's channel key (X-Counterparty-Key), Foshan Home Retail Co.",
+      "body": {
+       "session_id": "5-buyer-resumed",
+       "actor": "COUNTERPARTY",
+       "counterparty_id": "BUYER-1",
+       "text": "We will pay the ¥420,000 invoice early at a 0.5% discount."
+      }
+     },
+     "http_status": 200,
+     "latency_ms": 149.9,
+     "response": {
+      "session_id": "5-buyer-resumed",
+      "turn": 1,
+      "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed.",
+      "intent": "COUNTERPARTY_MESSAGE",
+      "lang": "en",
+      "trace_id": "5-buyer-resumed:1",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "actor",
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false
+     },
+     "expected": "\"Agreed: …\"",
+     "observed": "reply: Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed.",
+     "result": "PASS"
+    },
+    {
+     "id": "5.12",
+     "kind": "proof",
+     "title": "proof: the acceptance after resume",
+     "expected": "one ACCEPT_OFFER EXECUTED Tier 1 by AGENT",
+     "observed": "ACCEPT_OFFER entries [(8, 'EXECUTED', 'TIER_1', 'AGENT', 'Commitment CMT-8b7fd67b9397c4a6 is ACTIVE; forward concession ¥0.00 booked')]",
+     "result": "PASS"
+    }
+   ],
+   "claims": null
+  }
+ ]
+}

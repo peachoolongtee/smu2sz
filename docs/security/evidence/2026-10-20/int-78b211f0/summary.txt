@@ -1,0 +1,28 @@
+VERDICT: CERTIFIED for scope S (local simulation on loopback), 78b211f0 (= c66a5e61 + REV-4 fail-closed and LIVE-1 to LIVE-3)
+
+Gate of 78b211f0, 20 Oct 2026, 04:31:23 to 05:24:08 UTC, by the Security Lead (an AI agent) on a clean detached checkout
+(tree_status.txt and tree_after_post.txt empty). Scope S: pnpm demo on one machine, API and web app on 127.0.0.1, one API
+process, DEMO_MODE=1, DATABASE_URL=memory, LLM_MODE=cache (no model provider called), synthetic fixtures. Live mode with
+DeepSeek on the same code is certified separately: docs/security/evidence/2026-10-20/live-78b211f0/ (sha256:ec02a982b50aa427).
+
+What changed since c66a5e61 (certified 19 Oct): 37648189 and 2f33e2ea (REV-4 fail-closed; LIVE-1 hidden characters),
+7c165261 (LIVE-2 model-only readings), 78b211f0 (LIVE-3 full-width figures); each with regression tests. Gates on 2f33e2ea
+and 7c165261 were stopped when the live runs found LIVE-2 and LIVE-3; they are not evidence.
+
+Results (files in this folder):
+  API suite, 155 processes:     11,499 passed, 0 failed, 47 skipped (suite_totals.txt, shards/)
+  Attack catalogue:             279 cases, 0 harm, 0 not reached; 120/128 named controls; detection 97.66% API, 70.25% all
+  Credential sweep, 3 modes:    112 routes, 0 policy violations; 0 differences from c66a5e61 (sweep_*.json, sweep_policy.txt)
+  Reproductions, approval flip: refused, exit codes identical to c66a5e61
+  Language boundary, 231 items: 0 wrong-and-material, recorded (cache) and scripted (fake) answers
+  PostgreSQL 17:                concurrency 3 of 3 (31 tests, 10 on PostgreSQL); audit guards 10 passed
+  Dependency audits:            pip-audit clean; pnpm audit --prod 0; braces only (development-only, accepted)
+  Secret scan:                  0 findings in the tracked files and every branch's history
+  Mock browser suite:           479 passed, 0 failed, 77 skipped; typecheck, lint, unit (197) pass
+  Live browser suite:           177 passed, 0 failed, 51 skipped, one worker
+  CSP:                          production build and pnpm demo dev server: 17 pages each, 0 violations, injection blocked
+  Judge pack:                   49 of 49; 279 attacks, 0 harm; audit chain VALID
+  Sandbox (outside this folder): run-20261020T043153Z-inproc (159 passed, 0 failed, 16/16 VALID) and
+                                run-20261020T043231Z-http (142 passed, 0 failed, 1 skipped, 13/13 VALID), on the same product code
+
+Local paths in the outputs were replaced before sealing (tools/scrub_paths.py).

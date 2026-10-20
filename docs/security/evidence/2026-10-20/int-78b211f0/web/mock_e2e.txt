@@ -1,0 +1,565 @@
+[WebServer] $ next build
+
+[WebServer] $ next start -p 3418
+
+
+Running 556 tests using 6 workers
+
+[1/556] [desktop] › e2e\activity.spec.ts:27:5 › one title, the state as a pill and a sentence, and the business rows first with why, what remains and the way to the decision
+[2/556] [desktop] › e2e\alerts.spec.ts:9:5 › alerts: the day-12 reserve breach shows its amounts, formula and fix
+[3/556] [desktop] › e2e\accept-as-asked.spec.ts:47:7 › mock › the golden EX01 asked path is over the mandate: the comparison says it is outside the mandate, the server's reason is said once in full, and no accept button is offered
+[4/556] [desktop] › e2e\approvals.spec.ts:24:5 › a REJECT verdict shows the outcome only, no tier badge, and says evaluation alone makes no changes
+[5/556] [desktop] › e2e\ask-header.spec.ts:27:5 › the header carries a rounded 36 px Ask FLOW input in its centre (the viewport's), 420 px wide and 520 px on focus, and no floating pill on a desktop
+[6/556] [desktop] › e2e\a11y.spec.ts:41:5 › Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0
+[7/556] [desktop] › e2e\ask-header.spec.ts:70:7 › with motion › the placeholder types six questions in turn and rests on 'Ask FLOW anything…'; focus pauses it; the Chinese set in Chinese
+[8/556] [desktop] › e2e\alerts.spec.ts:26:5 › reconciliation: no receipts yet, one outstanding receivable, chain valid
+[9/556] [desktop] › e2e\approvals.spec.ts:37:5 › a Tier 1 ACCEPT shows why the agent may accept it alone, with the server's three tests
+[10/556] [desktop] › e2e\accept-as-asked.spec.ts:72:7 › live › the golden books' EX01 asked path is over the mandate: the server's reason is said and no accept button is offered
+[11/556] [desktop] › e2e\accept-as-asked.spec.ts:81:7 › live › Zhuhai: Review the request opens the receipt before the one filled button; accepting agrees it, the record reads Agreed, the queue drops it and Activity says so
+[12/556] [desktop] › e2e\accept-as-asked.spec.ts:129:7 › live › an agreed Zhuhai is in force and does not expire: no 'expire' word, no empty or trailing '·', no None or null, on the Deals pane, the Agreements tab, the Deals agreements section and the decision record
+[13/556] [desktop] › e2e\accept-as-asked.spec.ts:166:7 › live › Dongguan: declining asks once in one line, closes the request and leaves the queue; the pane shows Declined with the record
+[14/556] [desktop] › e2e\accept-as-asked.spec.ts:191:9 › live › at 1440 the receipt precedes the commit button, and ?review=1 opens the review on arrival
+[15/556] [desktop] › e2e\accept-as-asked.spec.ts:191:9 › live › at 390 the receipt precedes the commit button, and ?review=1 opens the review on arrival
+[16/556] [desktop] › e2e\accept-as-asked.spec.ts:205:7 › live › Home's deal row and the Customer page lead to the Deals pane with the review open on arrival, and the queue row says the server's own consequence
+[17/556] [desktop] › e2e\accept-as-asked.spec.ts:233:7 › live › a refusal (the books moved) is said in the server's own words in place, with no spinner, and nothing was accepted
+[18/556] [desktop] › e2e\ask.spec.ts:83:5 › the panel: its header buttons, FLOW speaks first once, and an answer laid out as a card
+[19/556] [desktop] › e2e\alerts.spec.ts:42:5 › alerts and reconciliation open by their address, in the app's own shell (the Demo has no sidebar of engine views)
+[20/556] [desktop] › e2e\approvals.spec.ts:55:5 › the approval card and the page header share one left edge
+[21/556] [desktop] › e2e\activity.spec.ts:55:5 › an evidence link lands on the trust view with that entry marked, and Back to Activity returns
+[22/556] [desktop] › e2e\buyer-message.spec.ts:55:5 › send: what they asked beside what you offer, the letter in the buyer's language, Copy then I've sent it, and no simulator in Business
+[23/556] [desktop] › e2e\ask.spec.ts:150:5 › the composer: Enter sends, Shift+Enter adds a line, Enter while composing Chinese does not send, Escape closes
+[24/556] [desktop] › e2e\approvals.spec.ts:70:5 › an approval card expands in place to the operation, the reason, the amount and who asked
+[25/556] [desktop] › e2e\buyer-message.spec.ts:116:5 › mark sent: refused when the message changed, then the deal waits for the buyer, in one lavender state
+[26/556] [desktop] › e2e\ask.spec.ts:191:5 › Expand opens the same conversation as a full page that survives a reload; Back returns to the panel; New conversation starts over
+[27/556] [desktop] › e2e\activity.spec.ts:73:5 › the failed sign-ins are one line apart from the real alert, their rows under a fold, and every row of the read is reachable with All and no search
+[28/556] [desktop] › e2e\ask.spec.ts:228:5 › the Ask FLOW page: the greeting, four question cards, the opener, and a card with a customer's links
+[29/556] [desktop] › e2e\approvals.spec.ts:103:5 › an approval born of the reserve alert says what declining leaves, in days from today
+[30/556] [desktop] › e2e\a11y.spec.ts:50:5 › Deals: the inbox, a checked deal with its priced response, and the decision page
+[31/556] [desktop] › e2e\ask.spec.ts:291:5 › every link an answer can carry opens the page that shows what its chip names
+[32/556] [desktop] › e2e\approvals.spec.ts:141:10 › the stepper's Start resumes by itself after the owner signs in from the dialog it opened
+[33/556] [desktop] › e2e\activity.spec.ts:112:5 › search and each category only hide rows; a filter that leaves nothing says nothing was removed
+[34/556] [desktop] › e2e\approvals.spec.ts:152:10 › signed out, an owner page asks for the sign-in in words, not an error code, and opens the dialog
+[35/556] [desktop] › e2e\approvals.spec.ts:181:5 › with one approval waiting the page's title is stable, the card asks the question, and the picture shows both lines
+[36/556] [desktop] › e2e\activity.spec.ts:135:5 › the set-aside line on Deals lands on the refused section of Activity
+[37/556] [desktop] › e2e\buyer-message.spec.ts:170:5 › they accepted, with their message as evidence: the exact terms, what it binds, then the acceptance recorded, its source, what changes, the receipt folded
+[38/556] [desktop] › e2e\approvals.spec.ts:212:5 › an agreement approval shows its terms and no picture
+[39/556] [desktop] › e2e\a11y.spec.ts:72:5 › contract ingestion and the send step: the documents and a review, the buyer choice, the deal summary, the borrower file
+[40/556] [desktop] › e2e\activity.spec.ts:146:5 › in Chinese the title, the search and the tabs are Chinese; at 390 px nothing scrolls sideways
+[41/556] [desktop] › e2e\approvals.spec.ts:223:5 › the terms come before the one approve button at every width, and approving needs no second step (audit UX03)
+[42/556] [desktop] › e2e\activity.spec.ts:156:5 › the page's order: the state, then the search, then the business rows
+[43/556] [desktop] › e2e\buyer-message.spec.ts:217:5 › they countered: refused with no terms, then their reply is a request of its own, and the deal it answered says so
+[44/556] [desktop] › e2e\activity.spec.ts:165:5 › the tour's Activity step names the fold the page has: Evidence, not Audit details
+[45/556] [desktop] › e2e\approvals.spec.ts:245:5 › a decided approval is a row on a hairline under the plain title, and the page does not scroll sideways at 390 px
+[46/556] [desktop] › e2e\ask-header.spec.ts:97:7 › with motion › focus pauses the typewriter on the whole current line; the Chinese set is in Chinese
+[47/556] [desktop] › e2e\buyer-message.spec.ts:263:5 › they declined: the reason chips and what it leaves, then no agreement, the reason as reported, and the ways on
+[48/556] [desktop] › e2e\approvals.spec.ts:259:5 › the approval's new strings are in Chinese too
+[49/556] [desktop] › e2e\ask.spec.ts:327:5 › a link opened from the panel closes it, and a link to a section of the page already open lands on that section
+[50/556] [desktop] › e2e\buyside.spec.ts:10:5 › Deals is selling only: no buying card there; the purchases live on Capex & purchases, and Buying leads back to it
+[51/556] [desktop] › e2e\buyer-message.spec.ts:296:5 › no answer: once the clock passes the day the offer was open until, it closes as no deal on its own
+[52/556] [desktop] › e2e\ask.spec.ts:340:5 › Chinese: the panel, the page and the card speak Chinese; a question follows its own language whatever the page's
+[53/556] [desktop] › e2e\capex.spec.ts:7:5 › the borrower file's contents show its tables with their columns, not joined strings
+[54/556] [desktop] › e2e\ask-header.spec.ts:126:5 › under reduced motion the placeholder is the resting line, whole, and does not move
+[55/556] [desktop] › e2e\capex.spec.ts:26:5 › how this was worked out reads as short headings, with the server's full assumptions one tap away
+[56/556] [desktop] › e2e\buyside.spec.ts:23:5 › Capex is the buy side's one page: the health figures, every purchase, and the picked one worked through to the commitment
+[57/556] [desktop] › e2e\buyer-message.spec.ts:317:5 › marked sent by mistake: the quiet link, its effect, then the deal is a counter ready again and the timeline keeps the mark beside the correction
+[58/556] [desktop] › e2e\cash-stress.spec.ts:64:7 › the link from receivables lands on the stressed picture with the way back
+[59/556] [desktop] › e2e\ask.spec.ts:387:5 › a 390 px phone: the panel and the page fit without sideways scroll, and the links work
+[60/556] [desktop] › e2e\ask-header.spec.ts:146:5 › Enter opens the Ask FLOW panel with the question already sent, under the page's scope chip, and the input clears
+[61/556] [desktop] › e2e\cash-stress.spec.ts:64:7 › the link from customer lands on the stressed picture with the way back
+[62/556] [desktop] › e2e\buyside.spec.ts:49:5 › a vendor contract's schedule, financing and early payment, then the commitment
+[63/556] [desktop] › e2e\a11y.spec.ts:108:5 › an approval waiting, the chase dialog and the remaining task at day 34
+[64/556] [desktop] › e2e\buyer-message.spec.ts:334:5 › Demo mode: the simulated send is a dashed Demo-only row under the cards; a buyer with no simulated reply is refused in the server's words
+[65/556] [desktop] › e2e\ask-header.spec.ts:183:5 › the scope chip follows the Home's selection: a deal, a customer, the company
+[66/556] [desktop] › e2e\cash-stress.spec.ts:64:7 › the link from deals lands on the stressed picture with the way back
+[67/556] [desktop] › e2e\buyside.spec.ts:68:5 › signing on the contract's own date breaks the reserve, and the page says why
+[68/556] [desktop] › e2e\buyer-message.spec.ts:349:5 › the page in Chinese: the panel's words, the waiting state and its answers are the server's Chinese
+[69/556] [desktop] › e2e\cash-stress.spec.ts:93:5 › the address's context reaches the buyer read, `from` included: the Customer page's link (with an invoice) returns to the customer
+[70/556] [desktop] › e2e\buyside.spec.ts:76:5 › a missing day is asked for, not guessed
+[71/556] [desktop] › e2e\ask-header.spec.ts:211:5 › a phone keeps the bottom bar's Ask and has no header input; Enter in the panel's own composer still works
+[72/556] [desktop] › e2e\ask.spec.ts:414:5 › live: the opener and an answer card come from the server, owner only; the agent key gets no card
+[73/556] [desktop] › e2e\cash.spec.ts:22:5 › risk, plan, options, forecast: one set of figures, in the owner's order
+[74/556] [desktop] › e2e\catchup.spec.ts:22:5 › the books move after the alert was shown: 409 says so, shows the current alert, runs nothing and is not styled as success
+[75/556] [desktop] › e2e\buyside.spec.ts:84:5 › financial health, the owner's ratios and loan eligibility
+[76/556] [desktop] › e2e\chat.spec.ts:53:5 › owner: Evaluate EX01 is a REJECT, then go ahead lists the executed operations
+[77/556] [desktop] › e2e\cash-stress.spec.ts:111:5 › the invoice is named from the link, in the server's words for it
+[78/556] [desktop] › e2e\cash.spec.ts:117:5 › after the plan ran, the page states the current funding and folds the comparison away
+[79/556] [desktop] › e2e\buyside.spec.ts:108:5 › long-term plans rank the permutations and say what the limits cost
+[80/556] [desktop] › e2e\chat.spec.ts:94:5 › details are closed on a plain reply and open when the turn has a security event or a refused operation
+[81/556] [desktop] › e2e\cash-stress.spec.ts:119:5 › an invoice the books do not know is not named and not echoed
+[82/556] [desktop] › e2e\catchup.spec.ts:54:5 › the books move and the alert is gone: the 409 says the alert no longer applies
+[83/556] [desktop] › e2e\buyside.spec.ts:117:5 › the buying pages stay in the Business shell, each with its way back
+[84/556] [desktop] › e2e\cash-stress.spec.ts:127:5 › the invoice's financing charges follow the net a month later when the server has them
+[85/556] [desktop] › e2e\chat.spec.ts:117:5 › buyer: the FastCapital message gets only the refusal reply, no verdict, and sends no credential
+[86/556] [desktop] › e2e\cash.spec.ts:154:5 › covered after the walk: the comparison taken when the plan was chosen is history, closed under Other plans considered
+[87/556] [desktop] › e2e\a11y.spec.ts:131:5 › the chat panel and the Demo story
+[88/556] [desktop] › e2e\catchup.spec.ts:65:5 › MANDATE_EXPIRING: a warning 14 days before, critical once expired; information only, no button
+[89/556] [desktop] › e2e\cash-stress.spec.ts:133:5 › switching back to expected restores the ordinary picture and the address keeps its context
+[90/556] [desktop] › e2e\buyside.spec.ts:137:5 › the approval of a purchase shows the schedule the owner is committing to, in the server's words
+[91/556] [desktop] › e2e\chat.spec.ts:148:5 › clarification: options are buttons, and the chosen one is sent
+[92/556] [desktop] › e2e\chat.spec.ts:170:5 › correction: 'actually make it 0.8%' amends the pending plan and is marked corrected
+[93/556] [desktop] › e2e\cash-stress.spec.ts:154:5 › the way back and the switch work from the keyboard: Tab reaches them, the arrow keys move the choice
+[94/556] [desktop] › e2e\colour.spec.ts:35:5 › the Home headline sits on the canvas with no card; the planned pill meets AA; the figures meet AA on the panel
+[95/556] [desktop] › e2e\chat.spec.ts:190:5 › a 401 opens the owner sign-in dialog, and signing in resends the refused message
+[96/556] [desktop] › e2e\cash-stress.spec.ts:181:5 › a home read with no event rail still says the late-payment sentences, under a plain heading
+[97/556] [desktop] › e2e\catchup.spec.ts:84:5 › receivables and reconciliation list the bank's reference on a receipt that carries one
+[98/556] [desktop] › e2e\chat.spec.ts:226:5 › the slide-over chat opens from another page, keeps the conversation, and closes with Escape
+[99/556] [desktop] › e2e\cash-stress.spec.ts:193:5 › flag off: the read answers nothing and the page is the ordinary one
+[100/556] [desktop] › e2e\a11y.spec.ts:149:5 › the approval question, its decided card with the execution summary, the record, and Waiting on
+[101/556] [desktop] › e2e\colour.spec.ts:110:5 › one filled brand button per Business page, no gradient anywhere, the deep block only in the Demo strip
+[102/556] [desktop] › e2e\cash.spec.ts:172:5 › day 34 with a gap open: the options are today's plan, never the day-0 comparison
+[103/556] [desktop] › e2e\chat.spec.ts:261:5 › the Chinese UI offers Chinese prompts and gets a Chinese answer
+[104/556] [desktop] › e2e\cash-stress.spec.ts:206:5 › a buyer the books do not have is the ordinary page too
+[105/556] [desktop] › e2e\contract-terms.spec.ts:33:5 › the demo's supply agreement is already in the books: one quiet line, nothing to set up
+[106/556] [desktop] › e2e\chat.spec.ts:275:5 › network and credential failures are explained in the conversation and can be retried
+[107/556] [desktop] › e2e\cash.spec.ts:202:5 › day 34: the first breach is also the worst point, so the figures row says it once
+[108/556] [desktop] › e2e\cash-stress.spec.ts:213:5 › a failed read says so with a Retry and leaves the ordinary picture
+[109/556] [desktop] › e2e\chat.spec.ts:313:5 › the prompt chips wrap inside the panel instead of running off its right edge
+[110/556] [desktop] › e2e\chat.spec.ts:329:5 › the chat button says Ask FLOW, and a Business page offers only the questions it can answer
+[111/556] [desktop] › e2e\contract-terms.spec.ts:42:5 › a lender agreement has no such step: a contract sets up only a customer's invoices
+[112/556] [desktop] › e2e\cash-stress.spec.ts:224:5 › the stressed page has no accessibility violations
+[113/556] [desktop] › e2e\colour.spec.ts:137:5 › the day-34 pending home has one primary: the decision, and the owner's disc is brand, not green
+[114/556] [desktop] › e2e\cash.spec.ts:218:5 › the doors lead to Capex and the what-if without a day number in their prose
+[115/556] [desktop] › e2e\contract-terms.spec.ts:74:7 › against the live API › a new customer's contract: the terms beside their clauses, the forecast before and after, set up on confirmation, then undone
+[116/556] [desktop] › e2e\contract-terms.spec.ts:125:7 › against the live API › Chinese: the step is in the owner's language
+[117/556] [desktop] › e2e\contract-terms.spec.ts:134:7 › against the live API › the agent key and a buyer's key reach none of it
+[118/556] [desktop] › e2e\customer-overview.spec.ts:33:5 › the opening books: the name, the four figures, no decision waiting, the two other links, both panels and the history
+[119/556] [desktop] › e2e\chat.spec.ts:360:5 › Business chat is the owner's alone: no role switch, no Tier 1 hint, no fixture or approve-it chips
+[120/556] [desktop] › e2e\cash-stress.spec.ts:231:5 › Chinese: the switch, the sentences, the invoice and the way back are the server's Chinese
+[121/556] [desktop] › e2e\cash.spec.ts:233:5 › engine words stay out of level 1 on Cash & funding and Activity
+[122/556] [desktop] › e2e\colour.spec.ts:151:5 › the Demo shell says so in its own deep strip; the Business shell has none
+[123/556] [desktop] › e2e\cash-stress.spec.ts:250:5 › a phone (390 x 844): the way back and the switch are in the first screen, the picture comes before the plan, nothing scrolls sideways
+[124/556] [desktop] › e2e\chat.spec.ts:384:5 › the Deals question about the deal explains the verdict the page evaluated, and the panel says what it is discussing
+[125/556] [desktop] › e2e\customer-overview.spec.ts:83:5 › a deal waiting: the decision card leads with its primary, and the back link puts the owner on that deal and path
+[126/556] [desktop] › e2e\colour.spec.ts:162:5 › after the plan ran, the covered Home has no gradient anywhere and its title is solid ink
+[127/556] [desktop] › e2e\a11y.spec.ts:173:5 › the remaining task, when the cure left the reserve short
+[128/556] [desktop] › e2e\cash.spec.ts:248:5 › the page has one h1 (the server's headline) and one filled primary, and no card chrome above the picture
+[129/556] [desktop] › e2e\cash-stress.spec.ts:277:5 › reduced motion: the cursor moves without a transition; with motion it eases
+[130/556] [desktop] › e2e\chat.spec.ts:428:5 › Home's 'What changed today?' is a read of the books, not a list of what the agent can do
+[131/556] [desktop] › e2e\deals-queue.spec.ts:33:5 › cold: the page is 'Deals' with the state sentence under it, the server's work first, and the list alone (no empty workspace) while nothing is selected
+[132/556] [desktop] › e2e\cash.spec.ts:257:5 › choosing a plan row draws its line on the picture under its name; a row with no line says why and leaves the baseline
+[133/556] [desktop] › e2e\chat.spec.ts:441:5 › Business chat says one outcome in the owner's words: no verdict panel, no intent chip, no tier or operation rows, and the confirmation is 'Yes, run it'
+[134/556] [desktop] › e2e\deals-queue.spec.ts:55:5 › a message read becomes a negotiation: the address is the selection, the row is the negotiation's own, and the pane opens on it
+[135/556] [desktop] › e2e\cash.spec.ts:280:5 › each option carries a cost bar sized against the dearest row and a coverage bar with its uncovered part said in words
+[136/556] [desktop] › e2e\deals.spec.ts:14:5 › the inbox groups a buyer's messages into one thread and names each evaluated one's state in the record's words
+[137/556] [desktop] › e2e\chat.spec.ts:462:5 › a pasted approval is read, approves nothing and opens no deal; a plan asked for in chat opens none either
+[138/556] [desktop] › e2e\chat.spec.ts:483:5 › a refresh keeps the draft and the conversation, and a pending plan points to the Approvals page
+[139/556] [desktop] › e2e\customer-overview.spec.ts:116:5 › an offer not yet read: the decision says so and its primary is Read the offer
+[140/556] [desktop] › e2e\a11y.spec.ts:185:5 › keyboard: Tab reaches the primary action and shows a focus ring; every button has a name
+[141/556] [desktop] › e2e\cash.spec.ts:292:5 › your funding sources: a utilisation bar per facility in use with the server's limit, drawn and available
+[142/556] [desktop] › e2e\deals-queue.spec.ts:78:5 › with one negotiation the tabs, the search and the controls are not offered; the lifecycle tabs, search, sort and group appear with more rows (the busy books, in slice-b-round-three.spec.ts)
+[143/556] [desktop] › e2e\customer-overview.spec.ts:128:5 › after the day-0 plan the financing is linked, in the server's words
+[144/556] [desktop] › e2e\chat.spec.ts:543:5 › New conversation starts over here and on the server: a go ahead afterwards does not run the old plan
+[145/556] [desktop] › e2e\demo.spec.ts:47:5 › one filled next control at every step of the walk; the owner's step only opens the approval
+[146/556] [desktop] › e2e\chat.spec.ts:581:5 › New conversation on the Business shell clears the owner's conversation, whatever role a Demo visit left
+[147/556] [desktop] › e2e\deals-queue.spec.ts:86:5 › Overview: the server's subject is the deal's name, FLOW recommends first with its reason and three facts, then one table of the choices; who decides and the costs are cells of it
+[148/556] [desktop] › e2e\cash.spec.ts:312:5 › the plan bar is in flow at every width (under the picture at 1280 px, covering none of its plot; right after the headline at 390 px)
+[149/556] [desktop] › e2e\deals.spec.ts:49:5 › opening a message reads it into a negotiation; Check against my limits is the one action; then the receipt, the commit and the agreement
+[150/556] [desktop] › e2e\customer-overview.spec.ts:139:5 › a customer link carries that row's own customer, decision and invoice and the origin, never what the address holds for another row (audit UX07, UX34)
+[151/556] [desktop] › e2e\chat.spec.ts:602:5 › a demo reset clears Ask FLOW in this tab and in another open one, and a go ahead afterwards runs nothing
+[152/556] [desktop] › e2e\cash.spec.ts:344:5 › the new strings are in Chinese too
+[153/556] [desktop] › e2e\deals-queue.spec.ts:120:5 › Cash impact: two charts, each answering one question; the removed controls are not there
+[154/556] [desktop] › e2e\design-system.spec.ts:28:5 › the six motion tokens are the scale, and every duration in the stylesheet is one of them
+[155/556] [desktop] › e2e\deals-queue.spec.ts:171:5 › Your choices: a reply is picked and reviewed from its own column, and the review is of that reply
+[156/556] [desktop] › e2e\design-system.spec.ts:63:5 › reduced motion: one transition per token keeps only opacity, at its own token's duration; with no preference it keeps its property
+[157/556] [desktop] › e2e\deals.spec.ts:126:5 › a deep link in a fresh session hydrates the evaluated negotiation: nothing but the server is read
+[158/556] [desktop] › e2e\customer-overview.spec.ts:159:5 › the customer link on Activity carries the context of the URL it is on
+[159/556] [desktop] › e2e\design-system.spec.ts:78:5 › three card types: a standard card has a hairline and no shadow, the decision card one soft shadow and no frost, the selected card the tint and a 3 px rule
+[160/556] [desktop] › e2e\deals-queue.spec.ts:195:5 › the address restores the whole state: customer, decision, path and the section, in a fresh read
+[161/556] [desktop] › e2e\design-system.spec.ts:134:5 › type scale: the roles are variables, the headline steps with the screen, and no figure or qualification on the five pages is under 13 px
+[162/556] [desktop] › e2e\chat.spec.ts:639:5 › signing out ends the owner's session on the server before the token goes
+[163/556] [desktop] › e2e\documents.spec.ts:78:5 › Deals: before a deal is agreed the confirmed contract is its own row; once the buyer agrees, the summary is in the agreement
+[164/556] [desktop] › e2e\customer-overview.spec.ts:171:5 › while the exposure read is off the panel says why, in the server's words, and the stress link is not offered
+[165/556] [desktop] › e2e\deals.spec.ts:141:5 › Business mode never shows a sender the books have not vouched for, not even while they load
+[166/556] [desktop] › e2e\deals.spec.ts:156:5 › a buyer who refuses every counter ends in No deal, with what happens next, and nothing sounds like an agreement
+[167/556] [desktop] › e2e\customer-overview.spec.ts:181:5 › a customer the books do not hold says so and leads back to Deals
+[168/556] [desktop] › e2e\deals-queue.spec.ts:207:5 › opening a deal pushes one history entry, its sections replace it, All deals and Escape clear the selection, and Back leaves the deal in one step
+[169/556] [desktop] › e2e\customer-overview.spec.ts:188:5 › in Chinese the page reads in Chinese with the same figures
+[170/556] [desktop] › e2e\deals.spec.ts:175:5 › the simulated buyer's lean is chosen in the review in Demo mode; a buyer who holds firm refuses, and the deal ends in No deal
+[171/556] [desktop] › e2e\deals-queue.spec.ts:229:5 › the customer link carries the row's own context and the origin; the aside to the customer's page and back lands on the same negotiation
+[172/556] [desktop] › e2e\documents.spec.ts:143:5 › the documents: the three demo documents confirmed, each term of the supply agreement beside its clause
+[173/556] [desktop] › e2e\customer-overview.spec.ts:203:5 › on a phone the figures and links fit, nothing scrolls sideways, and the links reach 44 px
+[174/556] [desktop] › e2e\deals.spec.ts:190:5 › ?buyer= lists that buyer's tasks: the chase dialog's thread link lands on the queue for that customer
+[175/556] [desktop] › e2e\deals-queue.spec.ts:239:5 › a selection that names nothing asks which negotiation and never shows a sample
+[176/556] [desktop] › e2e\design-system.spec.ts:189:5 › rail: a 56 px icon rail by default from a laptop up, an overlay on hover and on focus that never moves the page, closing after it is left; the pin persists
+[177/556] [desktop] › e2e\documents.spec.ts:174:5 › focusing a term lights its clause with the shared dialogs mounted, wherever the pointer is parked (the page scrolls under it)
+[178/556] [desktop] › e2e\deals.spec.ts:203:5 › a buyer with an invoice and no contract is on Deals: the server's sentence on its row, the invoice in the summary's own table
+[179/556] [desktop] › e2e\demo.spec.ts:100:5 › each done scene shows what happened and its proof, and every proof link opens a record that exists
+[180/556] [desktop] › e2e\customer-overview.spec.ts:223:9 › on a phone the primary is wholly in view above the tab bar: offer_received, en
+[181/556] [desktop] › e2e\deals-queue.spec.ts:253:5 › a deal not yet checked offers one action, Check against my limits, and no review
+[182/556] [desktop] › e2e\documents.spec.ts:198:5 › the confirm flow: a new reading is labelled AI-generated until the owner confirms it, and Activity logs it
+[183/556] [desktop] › e2e\documents.spec.ts:240:5 › a lender agreement (the PDF copy) is compared with the facility on the books and linked when confirmed
+[184/556] [desktop] › e2e\documents.spec.ts:270:5 › a lender agreement confirmed with the link box left unticked: the card names no facility
+[185/556] [desktop] › e2e\documents.spec.ts:279:5 › reject: a new reading is set aside and logged; the agreement already confirmed stays
+[186/556] [desktop] › e2e\documents.spec.ts:300:5 › your own file: the upload form sends a Word, PDF or text file with what it is and who it is with
+[187/556] [desktop] › e2e\deals.spec.ts:221:5 › a buyer whose contract is confirmed and who has no deal yet is on Deals: its contract row, the server's sentence, the summary and the invoices (owner's report, 17 Oct)
+[188/556] [desktop] › e2e\deals-queue.spec.ts:265:5 › a send in flight holds the selection: the rows, All deals and the sections wait, and the send is not unmounted
+[189/556] [desktop] › e2e\documents.spec.ts:340:5 › a file before the company waits, named, and the field asks who it is with; nothing is sent until a company is chosen
+[190/556] [desktop] › e2e\customer-overview.spec.ts:223:9 › on a phone the primary is wholly in view above the tab bar: offer_evaluated, en
+[191/556] [desktop] › e2e\home-v2.spec.ts:57:5 › the header and the cards: the headline for a screen reader, Refresh, the cash card with the reserve bar, the outlook card with its forecast and the recommendation inside it
+[192/556] [desktop] › e2e\documents.spec.ts:371:5 › a file before the company is read as soon as a company is chosen from the list
+[193/556] [desktop] › e2e\documents.spec.ts:385:5 › day 34: the deal summary tells the story and points at the approval
+[194/556] [desktop] › e2e\customer-overview.spec.ts:223:9 › on a phone the primary is wholly in view above the tab bar: offer_received, zh
+[195/556] [desktop] › e2e\home-v2.spec.ts:109:5 › the recommendation: the title, the planned amount, one line that reconciles with the outlook, the cost, the actions, then one approval line in both forms
+[196/556] [desktop] › e2e\deals-queue.spec.ts:280:5 › when the books moved the API refuses, nothing is sent, and Check again is an explicit step
+[197/556] [desktop] › e2e\customer-overview.spec.ts:223:9 › on a phone the primary is wholly in view above the tab bar: offer_evaluated, zh
+[198/556] [desktop] › e2e\deals-queue.spec.ts:294:5 › the page in Chinese: the same negotiation in the owner's voice with the same figures
+[199/556] [desktop] › e2e\documents.spec.ts:417:5 › Chinese: the deal summary
+[200/556] [desktop] › e2e\home-v2.spec.ts:163:5 › when the owner must approve, the same line is a warn-tone alert line with the server's approval sentence, still one line and no box
+[201/556] [desktop] › e2e\demo.spec.ts:122:5 › Which books: Load on the busy card, with work on the books, shows the loss in a dialog; cancel changes nothing, confirm loads the busy books and restore brings the story back at scene one
+[202/556] [desktop] › e2e\customer-overview.spec.ts:246:5 › the keyboard, from the top of the page, reaches the back link, then the primary and the other two links in order
+[203/556] [desktop] › e2e\design-system.spec.ts:311:5 › rail: the pin works when storage throws, and below the laptop width there is no rail, only the tab bar
+[204/556] [desktop] › e2e\documents.spec.ts:429:5 › Chinese: the review screen of a new reading
+[205/556] [desktop] › e2e\documents.spec.ts:451:5 › Business words: no day numbers, ids, entry numbers, hashes, env names or raw codes outside the Audit details fold
+[206/556] [desktop] › e2e\documents.spec.ts:470:5 › the decision is irreversible and says so; the controls are named, described and disabled while one is sent
+[207/556] [desktop] › e2e\documents.spec.ts:489:5 › on a phone the decision controls are inside the first screen, above the tab bar, however long the terms list
+[208/556] [desktop] › e2e\documents.spec.ts:521:7 › against the live API › a changed document, an earlier decision and a failed call are said in words, with the way forward
+[209/556] [desktop] › e2e\documents.spec.ts:565:7 › against the live API › both controls go dead the moment one is pressed: one request, never two
+[210/556] [desktop] › e2e\documents.spec.ts:585:7 › against the live API › a blocked document: confirm is off, the reason sits beside it and describes it; reject stays
+[211/556] [desktop] › e2e\documents.spec.ts:603:7 › against the live API › the reads follow the language, and a failed deals read is shown, not hidden
+[212/556] [desktop] › e2e\documents.spec.ts:619:7 › against the live API › the decision is asked in the owner's language, so the outcome card comes back in it
+[213/556] [desktop] › e2e\inputs-sheet.spec.ts:34:5 › the sheet: three facts and the delay, each with where it came from, the check against the books and the firm's rows
+[214/556] [desktop] › e2e\deals-queue.spec.ts:306:5 › a phone: the choices are stacked cards, nothing scrolls sideways, the section links are rows, and the controls reach 44 px
+[215/556] [desktop] › e2e\home-v2.spec.ts:180:5 › no approval line when the server sends no approval text (a card with no plan)
+[216/556] [desktop] › e2e\design-system.spec.ts:328:5 › rail: reduced motion opens it at once, and axe finds nothing serious on the collapsed rail or the open one, with the page beside it
+[217/556] [desktop] › e2e\inputs-sheet.spec.ts:60:5 › Edit these facts lands here with the overview's context, and the back link returns to the overview
+[218/556] [desktop] › e2e\customer-overview.spec.ts:264:5 › a partial read shows the existing notice with Retry, and the rest of the page stays
+[219/556] [desktop] › e2e\inputs-sheet.spec.ts:71:5 › saving a margin: the server's words come back, and the overview's qualifier turns from assumed to what you entered
+[220/556] [desktop] › e2e\deals-queue.spec.ts:324:5 › axe finds nothing serious or critical on the queue with the review and the cash charts open
+[221/556] [desktop] › e2e\home-v2.spec.ts:189:5 › no funding amount: the figure line is omitted (the title carries the amount) and no null, undefined or 'None' is ever rendered on the Home
+[222/556] [desktop] › e2e\customer-overview.spec.ts:273:5 › with an edit place from the server, Edit these facts is a link and every fact row is shown
+[223/556] [desktop] › e2e\customer-overview.spec.ts:281:5 › a history row with a link says where it goes and opens it
+[224/556] [desktop] › e2e\inputs-sheet.spec.ts:89:5 › a value the field does not take: the server's sentence, under the field, and nothing saved
+[225/556] [desktop] › e2e\inputs-sheet.spec.ts:98:5 › a Save that partly fails: what saved reads as the server holds it and is not sent again, what failed keeps the owner's value and why
+[226/556] [desktop] › e2e\customer-overview.spec.ts:289:5 › a section the server did not send is not drawn, and the other panel takes the width
+[227/556] [desktop] › e2e\home-v2.spec.ts:228:5 › the alert row shows only when the Home renders no recommendation card: its kind, its words and the way to act
+[228/556] [desktop] › e2e\deals-queue.spec.ts:340:5 › every queue row has a decorative chevron, quiet at rest, ink on hover and keyboard focus, filled on the selected row; the row's accessible name is its own words
+[229/556] [desktop] › e2e\demo.spec.ts:177:5 › operator tools are closed by default and hold the clock, the books and the engine views
+[230/556] [desktop] › e2e\customer-overview.spec.ts:300:5 › the decision is a named region in both of its forms
+[231/556] [desktop] › e2e\inputs-sheet.spec.ts:111:5 › with the customer economics off: the server's sentence as a quiet notice and no form
+[232/556] [desktop] › e2e\demo.spec.ts:193:5 › the optional scenes run from the operator tools and never move the story's pointer
+[233/556] [desktop] › e2e\inputs-sheet.spec.ts:119:5 › in Chinese the sheet reads in Chinese with the same figures
+[234/556] [desktop] › e2e\deals-queue.spec.ts:381:5 › no purple connector, no rail and no empty workspace: the deal is its own page and the list comes back with All deals
+[235/556] [desktop] › e2e\home-v2.spec.ts:246:5 › failed read: a home_v2 the server could not read leaves the status, the server's sentence and Retry, and no strip
+[236/556] [desktop] › e2e\home-v2.spec.ts:260:5 › failed read: a home_v2 that is absent without a sentence says so in the dictionary's words, with Retry
+[237/556] [desktop] › e2e\lang.spec.ts:50:5 › in Chinese the approvals queue and the decision record read in Chinese with the same amounts as in English
+[238/556] [desktop] › e2e\inputs-sheet.spec.ts:135:5 › on a phone the title and the first fact are in the first screen, Save is reachable, nothing scrolls sideways
+[239/556] [desktop] › e2e\deals-queue.spec.ts:395:5 › a newly selected negotiation slides in from the queue's side over the base duration (a fade on a phone); under reduced motion there is none
+[240/556] [desktop] › e2e\home-v2.spec.ts:273:5 › the funding legs are one inline stacked bar in the card's gap: widths from the legs' amounts, the server's labels, amounts, landing words and shares, the total at the right; a leg card on hover and focus
+[241/556] [desktop] › e2e\design-system.spec.ts:349:5 › SegmentedTabs: the pill never leaves the track, and choosing never scrolls the page (Deals' queue is underline tabs: the control lives on Home, Receivables and the deal's timing)
+[242/556] [desktop] › e2e\inputs-sheet.spec.ts:146:5 › by keyboard alone: type a margin, reach Save and save
+[243/556] [desktop] › e2e\deals-queue.spec.ts:412:5 › the first visit's cue: with nothing selected the top row's chevron pulses twice, once, and not on the second load
+[244/556] [desktop] › e2e\inputs-sheet.spec.ts:158:5 › axe finds nothing serious on the sheet
+[245/556] [desktop] › e2e\new-customer.spec.ts:69:7 › adding a customer on Attach deals › a name not on the books offers to add it; once added, the field has it chosen
+[246/556] [desktop] › e2e\demo.spec.ts:207:5 › in Chinese the page reads in Chinese with one filled next control
+[247/556] [desktop] › e2e\design-system.spec.ts:389:5 › the owner's mockup tokens: the canvas app-wide, the palette and its dark pairs, the 24 px card with the one soft shadow on Home, the ink primary, the rail's white pill, a quiet Ask FLOW
+[248/556] [desktop] › e2e\home-v2.spec.ts:320:5 › a single-leg plan is one full bar with its one label; a plan with no legs shows the server's cost basis alone
+[249/556] [desktop] › e2e\pages-a1.spec.ts:34:5 › Receivables day 0: Who pays when has one mark, the facts are one unboxed row, no bar, one h1
+[250/556] [desktop] › e2e\demo.spec.ts:220:5 › on a phone the three books cards are in the first screen before the scene card, and the operator tools are a closed fold
+[251/556] [desktop] › e2e\new-customer.spec.ts:108:7 › adding a customer on Attach deals › a customer already on the books under that name is chosen, and the owner is told so
+[252/556] [desktop] › e2e\pages-a1.spec.ts:54:5 › Receivables day 34: the late invoice is a filled mark left of Today, the others are outlined, and pressing a mark highlights its row
+[253/556] [desktop] › e2e\new-customer.spec.ts:117:7 › adding a customer on Attach deals › Cancel and Escape close the panel and add nothing; an empty name is said beside the button
+[254/556] [desktop] › e2e\demo.spec.ts:237:5 › the tour points at the current scene on the Demo and its card does not cover it
+[255/556] [desktop] › e2e\design-system.spec.ts:462:5 › cards: a page has one decision card, and a chosen row, invoice or path is the one selected style (the tint and the 3 px rule)
+[256/556] [desktop] › e2e\home-v2.spec.ts:333:5 › a plan with no legs shows the server's cost basis alone in the gap
+[257/556] [desktop] › e2e\new-customer.spec.ts:145:7 › adding a customer on Attach deals › a lender agreement keeps the plain hint: only a buyer is added here
+[258/556] [desktop] › e2e\pages-a1.spec.ts:83:5 › Receivables day 34: the chase bar is the one raised surface, sticky from lg, in flow below it; one h1 and at most one filled primary
+[259/556] [desktop] › e2e\demo.spec.ts:248:5 › the strip on the other pages follows the server's story: its progress, its chips and its one next control are the page's
+[260/556] [desktop] › e2e\new-customer.spec.ts:155:7 › adding a customer on Attach deals › the panel passes axe and fits a phone
+[261/556] [desktop] › e2e\pages-a2.spec.ts:21:7 › /limits: one h1, at most one filled primary, no sideways scroll at 390 px
+[262/556] [desktop] › e2e\home-v2.spec.ts:342:5 › on a phone the funding bar and its legend stay inside the card, and in Chinese the words are the server's
+[263/556] [desktop] › e2e\pages-a2.spec.ts:21:7 › /documents: one h1, at most one filled primary, no sideways scroll at 390 px
+[264/556] [desktop] › e2e\pages-a1.spec.ts:98:5 › Receivables day 34: the buyer's name is on one line at 1440, and there is no sideways scroll at 390
+[265/556] [desktop] › e2e\pages-a2.spec.ts:21:7 › /whatif: one h1, at most one filled primary, no sideways scroll at 390 px
+[266/556] [desktop] › e2e\pages-a2.spec.ts:21:7 › /capex: one h1, at most one filled primary, no sideways scroll at 390 px
+[267/556] [desktop] › e2e\pages-a2.spec.ts:21:7 › /cash: one h1, at most one filled primary, no sideways scroll at 390 px
+[268/556] [desktop] › e2e\new-customer.spec.ts:172:7 › a contract filed under a company it does not name › the blocking flag offers to file it under the buyer it names, or to discard it
+[269/556] [desktop] › e2e\home-v2.spec.ts:359:5 › running the plan: no alert, the covered recommendation with its one button to the deals, the financing on the worklist
+[270/556] [desktop] › e2e\pages-a2.spec.ts:32:5 › a decision's record: one h1, the waiting approval's review link is the one filled primary, no sideways scroll at 390 px
+[271/556] [desktop] › e2e\pages-a1.spec.ts:108:5 › Receivables day 34 in Chinese: the picture, its legend, the facts and the bar are in Chinese
+[272/556] [desktop] › e2e\design-system.spec.ts:508:5 › rail: a bad stored value cannot skip the language, and the folds open at once under reduced motion
+[273/556] [desktop] › e2e\demo.spec.ts:269:5 › the filled buttons are the design language's ink, on a direct load of the Demo page, of its dialog, of the story's strip and of the tour
+[274/556] [desktop] › e2e\design-system.spec.ts:590:5 › rail: on every page the collapsed rail covers no content, the open panel is whole and on top, and pinned the content sits beside it
+[275/556] [desktop] › e2e\new-customer.spec.ts:192:7 › a contract filed under a company it does not name › a buyer not on the books is added as a new customer and the contract filed under it
+[276/556] [desktop] › e2e\home-v2.spec.ts:387:5 › the company forecast is in the outlook card (no Expand since the final UI fold), with the events as markers and the selected event's sentence
+[277/556] [desktop] › e2e\pages-a1.spec.ts:130:5 › Activity: a when-word per row, who acted and what became of it on one quiet line, time passing as a system row, one evidence fold per row
+[278/556] [desktop] › e2e\receipt-basis.spec.ts:55:5 › day 0: Cash says the invoice is owed, the later billing is scheduled, and no pending line or legend is drawn
+[279/556] [desktop] › e2e\receipt-basis.spec.ts:70:5 › Receivables says the same words as Cash, and the summary says the recurring billing is not owed yet
+[280/556] [desktop] › e2e\new-customer.spec.ts:213:7 › a contract filed under a company it does not name › discard rejects the reading
+[281/556] [desktop] › e2e\home-v2.spec.ts:443:5 › the worklist as the mockup's table: one alert line, tabs with counts, rows with the next step and the status pill, the count, the way to all deals
+[282/556] [desktop] › e2e\pages-a1.spec.ts:151:5 › Activity: the category tabs narrow the list by kind and never change its order
+[283/556] [desktop] › e2e\new-customer.spec.ts:221:7 › a contract filed under a company it does not name › the actions pass axe and fit a phone
+[284/556] [desktop] › e2e\receipt-basis.spec.ts:85:5 › with the counter ready: Cash draws the pending line dashed at 60%, with its legend, sentence and receipts
+[285/556] [desktop] › e2e\home-v2.spec.ts:501:5 › round four: the worklist is a fixed-column table: the same columns on every row and under the header, 56 px rows, a one-line next step with its whole sentence in title, group headings under All, the pill never moving for Select
+[286/556] [desktop] › e2e\demo.spec.ts:296:5 › a reset with work on the books asks first and resets nothing on cancel; on fresh books there is no dialog
+[287/556] [desktop] › e2e\pages-a1.spec.ts:172:5 › Activity in Chinese: the tabs, the search and the evidence fold
+[288/556] [desktop] › e2e\receipt-basis.spec.ts:99:5 › after the buyer accepts: the dashed line is gone and the moved receipts are agreed; Cash and Receivables say the same word
+[289/556] [desktop] › e2e\home-v2.spec.ts:566:5 › the upcoming cash movements are the rail's nearest events, and the way to the forecast; there is no tool-tile footer under the worklist
+[290/556] [desktop] › e2e\receivables-layers.spec.ts:69:5 › day 0: the answer, three plain cards, one invoice with no financing, and the actions in the server's order
+[291/556] [desktop] › e2e\receipt-basis.spec.ts:115:5 › a counter the buyer refuses changes nothing: no pending line, the terms in force stand
+[292/556] [desktop] › e2e\home-v2.spec.ts:587:5 › search narrows the rows already fetched, by the customers' search terms
+[293/556] [desktop] › e2e\pages-a1.spec.ts:181:5 › Activity: an empty record shows the empty state with no tabs, and the page has no sideways scroll at 390
+[294/556] [desktop] › e2e\pages-a1.spec.ts:193:5 › Activity day 34: no sideways scroll at 390
+[295/556] [desktop] › e2e\receipt-basis.spec.ts:132:5 › Chinese: the words, the legend and the pending rows are the server's, on Cash and Receivables
+[296/556] [desktop] › e2e\receivables-layers.spec.ts:135:5 › the financing is arranged: the repayment is said in the answer and in the breakdown only, the steps show where it is
+[297/556] [desktop] › e2e\home-v2.spec.ts:608:5 › day 0 with nothing open: Needs you is empty in words and the customers are listed
+[298/556] [desktop] › e2e\demo.spec.ts:333:5 › the optional scene that replaces the books asks first when work would be lost, and replaces nothing on cancel
+[299/556] [desktop] › e2e\home-v2.spec.ts:630:5 › a customer row opens the customer in place: the address is the selection, the overview's figures and state words, the open rows, the alert stays as the band
+[300/556] [desktop] › e2e\receivables.spec.ts:36:5 › day 0: the summary answers who owes what, with no empty panels
+[301/556] [desktop] › e2e\receivables.spec.ts:57:5 › day 34: the late invoice leads, the overdue total is the server's, and the early payment and receipt appear
+[302/556] [desktop] › e2e\receipt-basis.spec.ts:151:5 › phone 390x844: the pending picture, its sentence and rows fit, with no sideways scroll, on Cash and Receivables
+[303/556] [desktop] › e2e\home-v2.spec.ts:658:5 › Escape, 'All business' and the band's button clear the selection and the plan's control returns
+[304/556] [desktop] › e2e\receivables-layers.spec.ts:178:5 › day 38: the financing has been received, the step moves on
+[305/556] [desktop] › e2e\receivables.spec.ts:88:5 › day 34: the full list leads with the overdue invoice, and the red Overdue tile applies the Late filter
+[306/556] [desktop] › e2e\receivables-layers.spec.ts:193:5 › day 34: the pills filter by the server's collection state, an empty pill is disabled, and the late invoice leads
+[307/556] [desktop] › e2e\record-payment.spec.ts:43:7 › record a payment › the whole amount: the invoice is paid, the server says so and the reconciliation reads it
+[308/556] [desktop] › e2e\receivables.spec.ts:110:5 › day 0: nothing is overdue, so there are no group headings and the Overdue tile is not a button
+[309/556] [desktop] › e2e\record-payment.spec.ts:68:7 › record a payment › part of it: the rest stays open on the invoice
+[310/556] [desktop] › e2e\demo.spec.ts:355:5 › a stale page cannot reset books it did not read: the server's sentence is shown and the main books are untouched
+[311/556] [desktop] › e2e\receivables.spec.ts:123:5 › day 0: nothing is late or at risk, so no row offers Chase payment
+[312/556] [desktop] › e2e\demo.spec.ts:378:5 › a double click on a book-replacing control never confirms, at 390 px
+[313/556] [desktop] › e2e\home-v2.spec.ts:676:5 › a Home deal row opens that deal on the Deals page with the selection keys and from=home; Back to Home returns
+[314/556] [desktop] › e2e\receivables-layers.spec.ts:244:5 › the filter moves the selection: when the chosen invoice leaves the visible set, the first visible one is chosen
+[315/556] [desktop] › e2e\record-payment.spec.ts:93:7 › record a payment › more than is open: refused beside the button, nothing recorded
+[316/556] [desktop] › e2e\receivables.spec.ts:129:5 › day 34: only the late invoice offers Chase payment; the dialog holds the server's facts and the request, and Copy copies it
+[317/556] [desktop] › e2e\record-payment.spec.ts:108:7 › record a payment › a financed invoice: the receipt repays the lender first
+[318/556] [desktop] › e2e\home-v2.spec.ts:701:5 › an older Home address that names a deal is opened on the Deals page; the Home keeps no deal view
+[319/556] [desktop] › e2e\receivables-layers.spec.ts:258:5 › selecting an invoice replaces the detail in place and sets ?invoice=; the actions follow the invoice: Chase payment first when overdue
+[320/556] [desktop] › e2e\receivables.spec.ts:165:5 › day 34 after the half receipt: the chase dialog's balance is the one the page shows, and the receipt row names its four facts
+[321/556] [desktop] › e2e\record-payment.spec.ts:133:7 › record a payment › in Chinese: the labels are the dictionary's and the answer is the server's Chinese
+[322/556] [desktop] › e2e\record-payment.spec.ts:144:7 › record a payment › on a phone the form fits the screen and its buttons are a finger wide
+[323/556] [desktop] › e2e\receivables-layers.spec.ts:292:5 › day 34: Chase payment opens the handoff, Copy copies the request, Escape returns focus to the button
+[324/556] [desktop] › e2e\receivables.spec.ts:183:5 › day 34 in Chinese: the handoff and the request are the server's Chinese
+[325/556] [desktop] › e2e\home-v2.spec.ts:714:5 › back and forward restore the selections, a reload keeps them, and a deal row leaves the Home for the Deals page
+[326/556] [desktop] › e2e\record-payment.spec.ts:160:7 › setup: no promise of a feature that does not exist › bills and limits say how they change after setup, in English and Chinese
+[327/556] [desktop] › e2e\record.spec.ts:36:5 › the steps follow the record: Response ready names the recommendation, a send moves it to Sent and Agreed
+[328/556] [desktop] › e2e\demo.spec.ts:426:5 › the confirmation is bound to the list shown: books that gained work under an open page are listed by the server's refusal, and nothing is reset until a second, informed click
+[329/556] [desktop] › e2e\demo.spec.ts:466:5 › Which books comes first: three cards with their help, the loaded one marked and without a button, the busy one linking to Home; the old fold and the engine sidebar are gone
+[330/556] [desktop] › e2e\receivables-layers.spec.ts:318:5 › day 34 in Chinese: the chase handoff and the request are the server's Chinese
+[331/556] [desktop] › e2e\responsive.spec.ts:21:5 › no page overflows horizontally after the demo has run
+[332/556] [desktop] › e2e\screenshots.spec.ts:50:5 › Business pages on the opening books, after the deal is read and checked, and after the funding plan ran
+[333/556] [desktop] › e2e\screenshots.spec.ts:83:5 › Business pages on day 34: the fix needs approval, waits, then is approved
+[334/556] [desktop] › e2e\screenshots.spec.ts:113:5 › Demo pages: the story, the stepper before and after the walk, and the engine views
+[335/556] [desktop] › e2e\shell.spec.ts:36:5 › the Business home carries no demo control, no Day N and one product in the header
+[336/556] [desktop] › e2e\record.spec.ts:64:5 › the send names its option, says the reply is simulated, and carries what was shown; Option B is reviewed on its own
+[337/556] [desktop] › e2e\shell.spec.ts:54:5 › the language switch re-reads the Home in Chinese and back, and the shell follows
+[338/556] [desktop] › e2e\home-v2.spec.ts:738:5 › nothing in Business mode is an id, a code or a day number; every figure and its qualifier is at least 13 px
+[339/556] [desktop] › e2e\receivables-layers.spec.ts:326:5 › day 34: what was promised early and what arrived stay under the layers, in the layers' heading style
+[340/556] [desktop] › e2e\shell.spec.ts:69:5 › the tour is off by default, starts from the account sheet, has two steps on the home and can be closed
+[341/556] [desktop] › e2e\record.spec.ts:88:7 › COUNTER_CHANGED, the verdict was replaced: nothing was sent, and Check again is the explicit step to a current proposal
+[342/556] [desktop] › e2e\demo.spec.ts:508:5 › the busy card's Load is visible without scrolling at 1440 and at 390, and from worked books it asks first
+[343/556] [desktop] › e2e\receivables-layers.spec.ts:339:5 › day 34 after the half receipt: the receipt names its four facts and the chase balance is the one the row shows
+[344/556] [desktop] › e2e\home-v2.spec.ts:765:5 › zh parity: the cards, the recommendation, the worklist, the forecast and the deal in Chinese, the server's words as recorded
+[345/556] [desktop] › e2e\record.spec.ts:88:7 › COUNTER_CHANGED, the books moved: nothing was sent, and Check again is the explicit step to a current proposal
+[346/556] [desktop] › e2e\receivables-layers.spec.ts:357:5 › day 34 with no receipt: the overdue invoice is first and the promise did not arrive
+[347/556] [desktop] › e2e\shell.spec.ts:103:5 › a quiet day: the sidebar carries no counts
+[348/556] [desktop] › e2e\record.spec.ts:112:5 › day 34: the deal's steps say Fulfilled with the receipt and 'Early payment did not arrive' without it, never Agreed
+[349/556] [desktop] › e2e\shell.spec.ts:111:5 › an offer waiting: the sidebar counts the deal, and Deals leads with FLOW's read after the check
+[350/556] [desktop] › e2e\home-v2.spec.ts:805:5 › phone: the cards stack with the recommendation's primary in the first viewport; the worklist is a list with the pill under the subject; nothing scrolls sideways
+[351/556] [desktop] › e2e\receivables-layers.spec.ts:369:5 › the late-payment test is the buyer's own read, with no deal in context: the server's strings in the buyer's short name, a breach in red
+[352/556] [desktop] › e2e\record.spec.ts:125:5 › day 34 without the receipt: the line and the agreements card say the early payment did not arrive
+[353/556] [desktop] › e2e\demo.spec.ts:545:5 › the Demo uses the app's own rail: no engine-views sidebar, and the engine views are reachable inside Operator tools
+[354/556] [desktop] › e2e\receivables-layers.spec.ts:395:5 › the customer link carries that row's own invoice and the origin, never what the address holds for another row (audit UX07, UX34)
+[355/556] [desktop] › e2e\shell.spec.ts:133:5 › day 34: the sidebar counts the late invoice and the approval, and the count follows the language
+[356/556] [desktop] › e2e\demo.spec.ts:565:5 › the proof appendix: the chain badge is the server's verdict (green when valid) and its scope is text under it, not a tooltip
+[357/556] [desktop] › e2e\receivables-layers.spec.ts:400:5 › day 34: the buyer read is the one taken on day 34's books
+[358/556] [desktop] › e2e\home-v2.spec.ts:842:5 › phone: a deal row opens the deal on the Deals page; Back to Home returns to the cards; nothing scrolls sideways
+[359/556] [desktop] › e2e\record.spec.ts:157:5 › the execution summary is the record's: the agreement in its words, what ran, what has landed
+[360/556] [desktop] › e2e\receivables-layers.spec.ts:406:5 › a deal in the address (?decision=) is read for its own test; the counter's link carries the decision
+[361/556] [desktop] › e2e\shell.spec.ts:148:5 › day 34: the cure queued from Cash & funding waits on Approvals, where the card is a question; approving it clears the alert
+[362/556] [desktop] › e2e\home-v2.spec.ts:856:5 › a customer with a financed invoice: the card shows the net after repayment in the server's word, the breakdown with its shares and the one filled button View invoice
+[363/556] [desktop] › e2e\receivables-layers.spec.ts:422:5 › the stress figures are the very strings Home shows for the same buyer
+[364/556] [desktop] › e2e\receivables-layers.spec.ts:431:5 › Chinese: the same page and figures in the server's Chinese, with the dictionary's words
+[365/556] [desktop] › e2e\demo.spec.ts:578:5 › operator tools hold the clock once: the day's own control, not a second pair of advance buttons
+[366/556] [desktop] › e2e\record.spec.ts:173:5 › the approval card shows what was quoted, and once decided what happened and how it differs
+[367/556] [desktop] › e2e\slice-b-round-two.spec.ts:20:7 › mock › the choices table's Terms row says each choice's terms by scope in the server's words; the payment-period bars, the timing diagram and the separate terms table are gone from the Overview
+[368/556] [desktop] › e2e\slice-b.spec.ts:25:7 › mock › a row's link is its own customer, decision and invoice plus the origin; the selected row's context is never copied onto it
+[369/556] [desktop] › e2e\home-v2.spec.ts:882:5 › phone: the collection state, a customer's row opens its card and its context under the worklist, in one column
+[370/556] [desktop] › e2e\record.spec.ts:207:5 › a refused approval ends in the record's words: it could not run, no money moved
+[371/556] [desktop] › e2e\receivables-layers.spec.ts:463:5 › a server without GET /receivables keeps the page of before; a failure is an error with Retry, never a silent fallback
+[372/556] [desktop] › e2e\slice-b-round-two.spec.ts:32:7 › mock › the choices table's cost and lowest-cash cells say each choice's figures in the server's words, and Escape clears the selection (there is no rail to bring back)
+[373/556] [desktop] › e2e\slice-b.spec.ts:37:7 › mock › a deep link in a fresh session hydrates the negotiation, its reply and its open comparison from the server
+[374/556] [desktop] › e2e\receivables-layers.spec.ts:470:5 › a failed read of the receivables says so with Retry, and Retry brings the page back
+[375/556] [desktop] › e2e\record.spec.ts:223:5 › after the cure is approved, Home's strip says the funding is on its way; the approval links to its record; Activity links each row to its record
+[376/556] [desktop] › e2e\home-v2.spec.ts:896:5 › a selected customer: Dismiss and Escape restore the overview and clear the address; the context panel replaces the upcoming movements and the cards come back
+[377/556] [desktop] › e2e\slice-b-round-two.spec.ts:43:7 › mock › a deep link keeps the section: Cash impact opens on Cash impact with its two charts, and an address that still names Compare responses lands on the Overview
+[378/556] [desktop] › e2e\receivables-layers.spec.ts:481:5 › a failed read of the reconciliation shows the error with Retry under the layers, never a vanished section
+[379/556] [desktop] › e2e\slice-b.spec.ts:48:7 › mock › a selection that names nothing asks which negotiation, on Deals and on What-if, and never shows a sample
+[380/556] [desktop] › e2e\slice-b-round-two.spec.ts:55:7 › mock › the queue's controls: sort and grouping are offered only as the queue grows (four and six negotiations; the busy books in the live describe below pin them), and one row shows none
+[381/556] [desktop] › e2e\receivables-layers.spec.ts:497:5 › patched: an invoice marked financed with no financing on record says so in place of the net, and the section is still named
+[382/556] [desktop] › e2e\slice-b.spec.ts:60:7 › mock › a decision in the address that is not a deal (a funding request) asks which negotiation at once and never waits
+[383/556] [desktop] › e2e\slice-b-round-two.spec.ts:62:7 › mock › Customer: the share figure has its bar, the flow's steps and chips lead to the invoice and the money, and the exposure is a table
+[384/556] [desktop] › e2e\receivables-layers.spec.ts:508:5 › patched: a partial read shows the notice with Retry
+[385/556] [desktop] › e2e\record.spec.ts:248:5 › Cash & funding carries the remaining task, with the routes it names, after a cure that did not restore the reserve
+[386/556] [desktop] › e2e\home-v2.spec.ts:931:5 › reduced motion: a selection arrives without an animation
+[387/556] [desktop] › e2e\slice-b.spec.ts:70:7 › mock › What-if opens on the named negotiation's own terms and says which negotiation it is for
+[388/556] [desktop] › e2e\receivables-layers.spec.ts:515:5 › patched: a missed promise is overdue in tone, has its own pill, and Chase payment leads
+[389/556] [desktop] › e2e\slice-b-round-two.spec.ts:75:7 › mock › a picked reply is reviewed from its own column, and "FLOW recommends" stays with the recommended reply only
+[390/556] [desktop] › e2e\record.spec.ts:275:5 › in Chinese the record page and the remaining task on Cash & funding read in Chinese from the recordings
+[391/556] [desktop] › e2e\receivables-layers.spec.ts:532:5 › phone: the primary is in the first screen, the cards stack, a tapped invoice brings its detail into view, nothing scrolls sideways
+[392/556] [desktop] › e2e\home-v2.spec.ts:942:5 › accessibility: no axe violations on the default Home (its forecast open in the outlook) and with the customer, at 1440 and at 390
+[393/556] [desktop] › e2e\slice-b.spec.ts:87:7 › mock › at 390 px the receipt's terms come before the one commit button, in the DOM and on screen
+[394/556] [desktop] › e2e\slice-b-round-two.spec.ts:88:7 › mock › Approvals: the lifecycle shows three stages, the first current while the owner has not authorized, and the button names the act
+[395/556] [desktop] › e2e\slice-b.spec.ts:110:7 › mock › the scope chip names what the question is about before it is asked, widens for this route only, and clears when the route changes
+[396/556] [desktop] › e2e\strategy.spec.ts:96:7 › desktop › Cash & funding: the price sentence sits once in the risk card, in the server's words, with no chart or bands
+[397/556] [desktop] › e2e\strategy.spec.ts:115:7 › desktop › Receivables day 0: the ranking note, a worth cell and an action cell for the open invoice; nothing brand-filled
+[398/556] [desktop] › e2e\strategy.spec.ts:135:7 › desktop › Receivables: when the collections ranking cannot be read the page says so and Retry brings the ranking back
+[399/556] [desktop] › e2e\strategy.spec.ts:150:7 › desktop › Receivables day 34: the late invoice leads with Call now, and the existing columns and ids are intact
+[400/556] [desktop] › e2e\strategy.spec.ts:175:7 › desktop › Deals day 0: Compare responses ends with what the owner could answer instead, by who may send it, three or fewer listed whole
+[401/556] [desktop] › e2e\strategy.spec.ts:200:7 › desktop › Deals: the card's Details fold opens and closes from the keyboard
+[402/556] [desktop] › e2e\strategy.spec.ts:213:7 › desktop › Cash day 34: once the owner has approved the cure, the price sentence is the post-approval one (mock)
+[403/556] [desktop] › e2e\strategy.spec.ts:239:7 › phone › Receivables day 34: each list row carries the action pill, what it is worth and the sentence
+[404/556] [desktop] › e2e\strategy.spec.ts:265:7 › phone › Deals day 0: the envelope on a phone lists the packages, keeps the fold in reach and does not overflow
+[405/556] [desktop] › e2e\touch.spec.ts:16:5 › a button is 40 px with a mouse at desktop width
+[406/556] [desktop] › e2e\touch.spec.ts:23:5 › a button reaches 44 px at 412 wide
+[407/556] [desktop] › e2e\touch.spec.ts:28:5 › a button reaches 44 px under a coarse pointer at 1280 wide
+[408/556] [desktop] › e2e\touch.spec.ts:37:5 › under reduced motion the busy ellipsis is shown and the frozen arc is hidden
+[409/556] [desktop] › e2e\tour.spec.ts:49:11 › the tour at 1280 px › /: the step card does not cover its part
+[410/556] [desktop] › e2e\slice-b-round-two.spec.ts:126:7 › live › the busy queue: distinct subjects, lifecycle words, sort by latest activity and grouping by customer
+[411/556] [desktop] › e2e\slice-b-round-two.spec.ts:147:7 › live › Foshan's EX01 on the busy books: the comparison says the request breaches the reserve, the terms say the difference of the period, and the customer page leads with the selected negotiation
+[412/556] [desktop] › e2e\slice-b-round-two.spec.ts:163:7 › live › authorizing on the busy books leaves the three stages on the decided row, the first done
+[413/556] [desktop] › e2e\receivables-layers.spec.ts:559:5 › phone: tapping an invoice card brings its detail into view
+[414/556] [desktop] › e2e\slice-b-round-two.spec.ts:174:7 › live › the flow's financing link lands on the facility it names on Cash: the element has the id, opens and takes focus
+[415/556] [desktop] › e2e\tracker.spec.ts:116:7 › mock › each moment of the story shows the recorded read's own words and figures
+[416/556] [desktop] › e2e\slice-b.spec.ts:132:7 › mock › the queue's card holds its row at 1440, 820 and 390, in English and in Chinese; with one negotiation it offers no tabs (the four tabs on one line are pinned on the busy books in slice-b-round-three.spec.ts)
+[417/556] [desktop] › e2e\responsive.spec.ts:41:5 › the Business home puts the status and the next action in the first screen, with no demo control
+[418/556] [desktop] › e2e\receivables-layers.spec.ts:571:5 › reduced motion: the detail arrives without animation, and with motion allowed it does animate
+[419/556] [desktop] › e2e\home-v2.spec.ts:958:5 › the page is fluid: with the rail collapsed the cards fill the width to 1680 px, pinned the content reflows narrower; the cards and the worklist share the same edges
+[420/556] [desktop] › e2e\responsive.spec.ts:61:5 › Business navigation: the sections and the two doors (Sandbox, Capex) in the rail on a desktop, the six sections as tabs on a phone, the mode switch and Ask FLOW always visible
+[421/556] [desktop] › e2e\trust.spec.ts:15:5 › an agreement approval shows the buyer, the terms and the amount above the buttons
+[422/556] [desktop] › e2e\trust.spec.ts:43:5 › when the server cannot present the terms, Approve is disabled, the reason is shown and Decline stays
+[423/556] [desktop] › e2e\responsive.spec.ts:101:5 › the last content clears the bottom bar and Ask FLOW on every Business page
+[424/556] [desktop] › e2e\trust.spec.ts:62:5 › an approval the executor refuses ends as 'could not run', with no buttons and no money moved
+[425/556] [desktop] › e2e\slice-b.spec.ts:148:7 › mock › the scope chip's widened choice does not come back: Deals, widen to Company, Customer, Back, and the chip is the decision again
+[426/556] [desktop] › e2e\tour.spec.ts:49:11 › the tour at 1280 px › /deals: the step card does not cover its part
+[427/556] [desktop] › e2e\trust.spec.ts:82:5 › day 34 without a receipt: the Home says it is below the reserve today, never 'N days ago'
+[428/556] [desktop] › e2e\slice-b.spec.ts:168:7 › mock › no financial qualifier is 12 px: What-if's limit, face and current terms, and the approval's Amount requested, Facility and What if you decline
+[429/556] [desktop] › e2e\home-v2.spec.ts:1000:5 › sizes at 1440: the cash card 360 px tall at most and padded 16 px, the outlook padded 24 px with a 22 px title and a 40 px figure, the recommendation's 18 px title and 36 px amount; rows 56 px and 44 px; nothing wraps to a third line
+[430/556] [desktop] › e2e\tour.spec.ts:49:11 › the tour at 1280 px › /cash: the step card does not cover its part
+[431/556] [desktop] › e2e\trust.spec.ts:103:5 › a part-paid promise: Receivables names the four facts and the window
+[432/556] [desktop] › e2e\home-v2.spec.ts:1049:5 › every worklist row carries a chevron (quiet, ink on hover and focus, filled on the selected row); hover never changes the cards; a click or Enter on a customer selects it, on a deal opens it on Deals
+[433/556] [desktop] › e2e\trust.spec.ts:124:7 › the trust views are chosen by the address › ?view=evidence shows the record's entries in words, a marked entry and the way back by origin
+[434/556] [desktop] › e2e\slice-b.spec.ts:200:7 › mock › a term or a figure the server has no word for is omitted, never the word None
+[435/556] [desktop] › e2e\trust.spec.ts:151:7 › the trust views are chosen by the address › an entry the record does not have says nothing was removed
+[436/556] [desktop] › e2e\home-v2.spec.ts:1090:5 › selecting a customer transforms the cards: the company line, the customer card beside the cash card, the context panel; the three ways back and the browser's Back restore the overview
+[437/556] [desktop] › e2e\trust.spec.ts:157:7 › the trust views are chosen by the address › from=demo says 'Back to the story'; the view switch keeps the origin
+[438/556] [desktop] › e2e\slice-b.spec.ts:210:7 › mock › Receivables registers the invoice it shows as the scope, even when it is the default row
+[439/556] [desktop] › e2e\trust.spec.ts:167:7 › the trust views are chosen by the address › an event in the address is marked in the security view, with its words and a list of disclosed fields
+[440/556] [desktop] › e2e\slice-b.spec.ts:223:7 › mock › Ask FLOW is a quiet outline pill, never a filled button
+[441/556] [desktop] › e2e\slice-b.spec.ts:253:7 › live › the busy company's queue has one row per task: three Foshan negotiations are three rows, an approval and a collection each their own, and the tab counts are the Home's
+[442/556] [desktop] › e2e\slice-b.spec.ts:284:7 › live › the approval row is a link to the Approvals page with that approval in view, never a selection; a differentiator is quoted once, on Deals and on Home
+[443/556] [desktop] › e2e\slice-b.spec.ts:319:7 › live › the What-if list offers negotiations only, not the loan approval; an agreed negotiation shows its record and no evaluation prompt; an ask that needs approval and has no counter shows its cost and offers no button
+[444/556] [desktop] › e2e\slice-b.spec.ts:364:7 › live › the send review of a picked reply reads that reply's own receipt, not the recommended one's, and Send names the picked reply
+[445/556] [desktop] › e2e\slice-b.spec.ts:385:7 › live › What-if runs on the addressed negotiation's own invoice, in the server's words, and says why when the buyer has none it can act on
+[446/556] [desktop] › e2e\slice-b.spec.ts:408:7 › live › a negotiation whose invoice was settled under another agreement is Lapsed: its word in the pane, no reply ready, no cost, and it is gone from the queue
+[447/556] [desktop] › e2e\slice-b.spec.ts:431:7 › live › the approval says what approving does and, once approved, the server's own result words; the queue row says the same
+[448/556] [desktop] › e2e\slice-b.spec.ts:452:7 › live › Ask FLOW sends the scope the chip showed and nothing stale, and says what the server used
+[449/556] [desktop] › e2e\upload-company.spec.ts:39:5 › the list of the books' customers opens on a click with nothing typed, filters as the owner types, and ends with Add a new customer
+[450/556] [desktop] › e2e\trust.spec.ts:185:7 › the trust views are chosen by the address › in Chinese the way back and the marks are in Chinese; at 390 px nothing scrolls sideways
+[451/556] [desktop] › e2e\tour.spec.ts:49:11 › the tour at 1280 px › /receivables: the step card does not cover its part
+[452/556] [desktop] › e2e\upload-company.spec.ts:70:5 › the keyboard: Tab opens the list, the arrows move, Enter picks, Escape closes
+[453/556] [desktop] › e2e\trust.spec.ts:197:7 › a record the address names that is not in the record says so › an event id that is not in the security record, and an entry that is not a number
+[454/556] [desktop] › e2e\home-v2.spec.ts:1138:5 › what you are owed, by customer: its own card under the upcoming movements on the default page and on every selection (the same place), a ring of the customers' rows with every slice and row a button that selects that customer, the selected slice lifted 4 px
+[455/556] [desktop] › e2e\upload-company.spec.ts:106:5 › a file first, then a customer picked from the list: the file waits, named, and is read the moment the customer is chosen
+[456/556] [desktop] › e2e\tour.spec.ts:49:11 › the tour at 390 px › /: the step card does not cover its part
+[457/556] [desktop] › e2e\whatif.spec.ts:9:5 › what-if: moving the terms slider changes the hypothetical verdict
+[458/556] [desktop] › e2e\responsive.spec.ts:129:5 › a hard load names the tab: the title survives hydration
+[459/556] [desktop] › e2e\upload-company.spec.ts:126:5 › a file dropped first, then the customer typed in full and Enter: read at once
+[460/556] [desktop] › e2e\upload-company.spec.ts:148:5 › a file first, then a new customer added from the list's last choice: added, chosen and the file read
+[461/556] [desktop] › e2e\home-v2.spec.ts:1206:5 › what you are owed with fewer than two customers owed is the one figure, no ring, still a button that selects the customer
+[462/556] [desktop] › e2e\upload-company.spec.ts:167:5 › + Add a new customer is under the field with nothing typed: an empty panel; Remove discards a waiting file
+[463/556] [phone] › e2e\a11y.spec.ts:41:5 › Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0
+[464/556] [desktop] › e2e\upload-company.spec.ts:194:5 › a lender agreement lists the lenders on the books and offers no new customer
+[465/556] [desktop] › e2e\home-v2.spec.ts:1218:5 › Upcoming cash movements has no overdue row when nothing is overdue (the live matrix holds the busy books' row, its figure, its count and its link)
+[466/556] [desktop] › e2e\tracker.spec.ts:134:7 › mock › once the rest of the invoice is paid the deal has ended: the close-out card after the header, and the Paid late promise with its word
+[467/556] [desktop] › e2e\tour.spec.ts:49:11 › the tour at 390 px › /deals: the step card does not cover its part
+[468/556] [desktop] › e2e\upload-company.spec.ts:211:5 › the list and the waiting file pass axe and fit a phone (390 px)
+[469/556] [desktop] › e2e\home-v2.spec.ts:1227:7 › the customer view at 1440: the customer card with the cash card and the owed card; a deal row leaves for Deals
+[470/556] [desktop] › e2e\tour.spec.ts:49:11 › the tour at 390 px › /cash: the step card does not cover its part
+[471/556] [phone] › e2e\deals-queue.spec.ts:33:5 › cold: the page is 'Deals' with the state sentence under it, the server's work first, and the list alone (no empty workspace) while nothing is selected
+[472/556] [phone] › e2e\deals-queue.spec.ts:55:5 › a message read becomes a negotiation: the address is the selection, the row is the negotiation's own, and the pane opens on it
+[473/556] [desktop] › e2e\home-v2.spec.ts:1227:7 › the customer view at 1100: the customer card with the cash card and the owed card; a deal row leaves for Deals
+[474/556] [phone] › e2e\deals-queue.spec.ts:78:5 › with one negotiation the tabs, the search and the controls are not offered; the lifecycle tabs, search, sort and group appear with more rows (the busy books, in slice-b-round-three.spec.ts)
+[475/556] [desktop] › e2e\responsive.spec.ts:140:5 › the account sheet closes on Escape (focus returns to its button) and on a press outside
+[476/556] [phone] › e2e\a11y.spec.ts:50:5 › Deals: the inbox, a checked deal with its priced response, and the decision page
+[477/556] [desktop] › e2e\home-v2.spec.ts:1227:7 › the customer view at 820: the customer card with the cash card and the owed card; a deal row leaves for Deals
+[478/556] [desktop] › e2e\responsive.spec.ts:156:5 › a phone's controls reach 44 px (the pill itself may stay compact: its hit area is what a finger meets)
+[479/556] [desktop] › e2e\responsive.spec.ts:198:5 › the document review fits the viewport
+[480/556] [phone] › e2e\deals-queue.spec.ts:86:5 › Overview: the server's subject is the deal's name, FLOW recommends first with its reason and three facts, then one table of the choices; who decides and the costs are cells of it
+[481/556] [desktop] › e2e\tour.spec.ts:49:11 › the tour at 390 px › /receivables: the step card does not cover its part
+[482/556] [desktop] › e2e\responsive.spec.ts:213:5 › the story's strip and the app's navigation are reachable on an engine view; the engine views open from the Demo's Operator tools
+[483/556] [phone] › e2e\deals-queue.spec.ts:120:5 › Cash impact: two charts, each answering one question; the removed controls are not there
+[484/556] [desktop] › e2e\responsive.spec.ts:224:5 › the slide-over chat fits the viewport with a long reply
+[485/556] [desktop] › e2e\home-v2.spec.ts:1227:7 › the customer view at 390: the customer card with the cash card and the owed card; a deal row leaves for Deals
+[486/556] [phone] › e2e\responsive.spec.ts:21:5 › no page overflows horizontally after the demo has run
+[487/556] [phone] › e2e\deals-queue.spec.ts:171:5 › Your choices: a reply is picked and reviewed from its own column, and the review is of that reply
+[488/556] [desktop] › e2e\responsive.spec.ts:244:5 › Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox and the comparison fit, every control reaches 44 px
+[489/556] [desktop] › e2e\responsive.spec.ts:302:5 › phone priority: Home's primary action, Deals' priced response and Cash's options sit in the first screens at 412 x 915
+[490/556] [desktop] › e2e\home-v2.spec.ts:1243:5 › reduced motion: the stage crossfades by opacity alone
+[491/556] [desktop] › e2e\responsive.spec.ts:367:5 › on a desktop the deal is its own full-width page: no queue beside it, All deals at its top, and the list comes back in the same place
+[492/556] [phone] › e2e\deals-queue.spec.ts:195:5 › the address restores the whole state: customer, decision, path and the section, in a fresh read
+[493/556] [phone] › e2e\a11y.spec.ts:72:5 › contract ingestion and the send step: the documents and a review, the buyer choice, the deal summary, the borrower file
+[494/556] [desktop] › e2e\responsive.spec.ts:405:5 › phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash); the approval's button follows its terms
+[495/556] [desktop] › e2e\responsive.spec.ts:436:5 › a 1366 x 768 laptop: Home's primary ends in the first screen, under the plan bar's own 16 px of air
+[496/556] [desktop] › e2e\tracker.spec.ts:152:7 › mock › a deal that is not agreed gets the server's words and a way back, never an error
+[497/556] [desktop] › e2e\responsive.spec.ts:449:5 › at tablet width (820) the open invoices are one card each, so no column is clipped
+[498/556] [phone] › e2e\deals-queue.spec.ts:207:5 › opening a deal pushes one history entry, its sections replace it, All deals and Escape clear the selection, and Back leaves the deal in one step
+[499/556] [desktop] › e2e\home-v2.spec.ts:1258:7 › with motion allowed › the stage crossfades (opacity over 100 ms each way)
+[500/556] [desktop] › e2e\tracker.spec.ts:168:7 › mock › the decision record links to the tracker for an agreed deal, and the way back returns to the record
+[501/556] [desktop] › e2e\responsive.spec.ts:458:5 › phone: the Demo story keeps 'Operator tools' under one closed fold and the three books cards in the first screen, so the page is short
+[502/556] [phone] › e2e\screenshots.spec.ts:50:5 › Business pages on the opening books, after the deal is read and checked, and after the funding plan ran
+[503/556] [phone] › e2e\screenshots.spec.ts:83:5 › Business pages on day 34: the fix needs approval, waits, then is approved
+[504/556] [phone] › e2e\screenshots.spec.ts:113:5 › Demo pages: the story, the stepper before and after the walk, and the engine views
+[505/556] [phone] › e2e\strategy.spec.ts:96:7 › desktop › Cash & funding: the price sentence sits once in the risk card, in the server's words, with no chart or bands
+[506/556] [phone] › e2e\strategy.spec.ts:115:7 › desktop › Receivables day 0: the ranking note, a worth cell and an action cell for the open invoice; nothing brand-filled
+[507/556] [phone] › e2e\strategy.spec.ts:135:7 › desktop › Receivables: when the collections ranking cannot be read the page says so and Retry brings the ranking back
+[508/556] [phone] › e2e\strategy.spec.ts:150:7 › desktop › Receivables day 34: the late invoice leads with Call now, and the existing columns and ids are intact
+[509/556] [phone] › e2e\strategy.spec.ts:175:7 › desktop › Deals day 0: Compare responses ends with what the owner could answer instead, by who may send it, three or fewer listed whole
+[510/556] [phone] › e2e\strategy.spec.ts:200:7 › desktop › Deals: the card's Details fold opens and closes from the keyboard
+[511/556] [phone] › e2e\strategy.spec.ts:213:7 › desktop › Cash day 34: once the owner has approved the cure, the price sentence is the post-approval one (mock)
+[512/556] [phone] › e2e\strategy.spec.ts:239:7 › phone › Receivables day 34: each list row carries the action pill, what it is worth and the sentence
+[513/556] [phone] › e2e\strategy.spec.ts:265:7 › phone › Deals day 0: the envelope on a phone lists the packages, keeps the fold in reach and does not overflow
+[514/556] [phone] › e2e\deals-queue.spec.ts:229:5 › the customer link carries the row's own context and the origin; the aside to the customer's page and back lands on the same negotiation
+[515/556] [desktop] › e2e\home-v2.spec.ts:1275:7 › a selection lands with the company line and the selected card at the top of the content, at 1440: the page scrolls to them, never into the middle of the card; Dismiss scrolls back to the headline
+[516/556] [phone] › e2e\deals-queue.spec.ts:239:5 › a selection that names nothing asks which negotiation and never shows a sample
+[517/556] [phone] › e2e\deals-queue.spec.ts:253:5 › a deal not yet checked offers one action, Check against my limits, and no review
+[518/556] [desktop] › e2e\home-v2.spec.ts:1275:7 › a selection lands with the company line and the selected card at the top of the content, at 1100: the page scrolls to them, never into the middle of the card; Dismiss scrolls back to the headline
+[519/556] [phone] › e2e\deals-queue.spec.ts:265:5 › a send in flight holds the selection: the rows, All deals and the sections wait, and the send is not unmounted
+[520/556] [desktop] › e2e\tracker.spec.ts:183:7 › mock › the late day in Chinese shows the zh read's own words and the same figures
+[521/556] [phone] › e2e\a11y.spec.ts:108:5 › an approval waiting, the chase dialog and the remaining task at day 34
+[522/556] [desktop] › e2e\home-v2.spec.ts:1275:7 › a selection lands with the company line and the selected card at the top of the content, at 820: the page scrolls to them, never into the middle of the card; Dismiss scrolls back to the headline
+[523/556] [phone] › e2e\deals-queue.spec.ts:280:5 › when the books moved the API refuses, nothing is sent, and Check again is an explicit step
+[524/556] [desktop] › e2e\home-v2.spec.ts:1275:7 › a selection lands with the company line and the selected card at the top of the content, at 390: the page scrolls to them, never into the middle of the card; Dismiss scrolls back to the headline
+[525/556] [phone] › e2e\deals-queue.spec.ts:294:5 › the page in Chinese: the same negotiation in the owner's voice with the same figures
+[526/556] [desktop] › e2e\home-v2.spec.ts:1306:5 › browser Back and Forward between the overview and a selection land at the top of the selection again
+[527/556] [phone] › e2e\a11y.spec.ts:131:5 › the chat panel and the Demo story
+[528/556] [phone] › e2e\deals-queue.spec.ts:306:5 › a phone: the choices are stacked cards, nothing scrolls sideways, the section links are rows, and the controls reach 44 px
+[529/556] [phone] › e2e\deals-queue.spec.ts:324:5 › axe finds nothing serious or critical on the queue with the review and the cash charts open
+[530/556] [desktop] › e2e\home-v2.spec.ts:1329:5 › the selection paints at once: a row's reads start on hover and focus, so no skeleton shows and the card does not jump
+[531/556] [phone] › e2e\a11y.spec.ts:149:5 › the approval question, its decided card with the execution summary, the record, and Waiting on
+[532/556] [phone] › e2e\deals-queue.spec.ts:340:5 › every queue row has a decorative chevron, quiet at rest, ink on hover and keyboard focus, filled on the selected row; the row's accessible name is its own words
+[533/556] [desktop] › e2e\tracker.spec.ts:194:7 › mock › on a phone the page is one column with no horizontal scroll, and it has no axe violations (after the approval)
+[534/556] [desktop] › e2e\home-v2.spec.ts:1342:5 › until its read arrives the Home shows its own shape (a headline, the three cards, the worklist) and announces Loading; the canvas is never empty
+[535/556] [phone] › e2e\deals-queue.spec.ts:381:5 › no purple connector, no rail and no empty workspace: the deal is its own page and the list comes back with All deals
+[536/556] [phone] › e2e\deals-queue.spec.ts:395:5 › a newly selected negotiation slides in from the queue's side over the base duration (a fade on a phone); under reduced motion there is none
+[537/556] [phone] › e2e\deals-queue.spec.ts:412:5 › the first visit's cue: with nothing selected the top row's chevron pulses twice, once, and not on the second load
+[538/556] [phone] › e2e\a11y.spec.ts:173:5 › the remaining task, when the cure left the reserve short
+[539/556] [phone] › e2e\responsive.spec.ts:41:5 › the Business home puts the status and the next action in the first screen, with no demo control
+[540/556] [phone] › e2e\responsive.spec.ts:61:5 › Business navigation: the sections and the two doors (Sandbox, Capex) in the rail on a desktop, the six sections as tabs on a phone, the mode switch and Ask FLOW always visible
+[541/556] [phone] › e2e\a11y.spec.ts:185:5 › keyboard: Tab reaches the primary action and shows a focus ring; every button has a name
+[542/556] [phone] › e2e\responsive.spec.ts:101:5 › the last content clears the bottom bar and Ask FLOW on every Business page
+[543/556] [desktop] › e2e\tracker.spec.ts:216:7 › live › after the owner's approval the page's figures are the API's own
+[544/556] [phone] › e2e\responsive.spec.ts:129:5 › a hard load names the tab: the title survives hydration
+[545/556] [phone] › e2e\responsive.spec.ts:140:5 › the account sheet closes on Escape (focus returns to its button) and on a press outside
+[546/556] [phone] › e2e\responsive.spec.ts:156:5 › a phone's controls reach 44 px (the pill itself may stay compact: its hit area is what a finger meets)
+[547/556] [phone] › e2e\responsive.spec.ts:198:5 › the document review fits the viewport
+[548/556] [phone] › e2e\responsive.spec.ts:213:5 › the story's strip and the app's navigation are reachable on an engine view; the engine views open from the Demo's Operator tools
+[549/556] [phone] › e2e\responsive.spec.ts:224:5 › the slide-over chat fits the viewport with a long reply
+[550/556] [phone] › e2e\responsive.spec.ts:244:5 › Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox and the comparison fit, every control reaches 44 px
+[551/556] [phone] › e2e\responsive.spec.ts:302:5 › phone priority: Home's primary action, Deals' priced response and Cash's options sit in the first screens at 412 x 915
+[552/556] [phone] › e2e\responsive.spec.ts:367:5 › on a desktop the deal is its own full-width page: no queue beside it, All deals at its top, and the list comes back in the same place
+[553/556] [phone] › e2e\responsive.spec.ts:405:5 › phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash); the approval's button follows its terms
+[554/556] [phone] › e2e\responsive.spec.ts:436:5 › a 1366 x 768 laptop: Home's primary ends in the first screen, under the plan bar's own 16 px of air
+[555/556] [phone] › e2e\responsive.spec.ts:449:5 › at tablet width (820) the open invoices are one card each, so no column is clipped
+[556/556] [phone] › e2e\responsive.spec.ts:458:5 › phone: the Demo story keeps 'Operator tools' under one closed fold and the three books cards in the first screen, so the page is short
+  77 skipped
+  479 passed (5.0m)
